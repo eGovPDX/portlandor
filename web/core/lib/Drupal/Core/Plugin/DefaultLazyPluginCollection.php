@@ -87,6 +87,11 @@ class DefaultLazyPluginCollection extends LazyPluginCollection {
    * @return $this
    */
   public function sort() {
+    // Iterate to force lazy loading so uasort doesn't trigger changes
+    // that cause "Array was modified" warning.
+    foreach($this->instanceIDs as $id){
+      $this->get($id)->getPluginId();
+    }
     uasort($this->instanceIDs, [$this, 'sortHelper']);
     return $this;
   }

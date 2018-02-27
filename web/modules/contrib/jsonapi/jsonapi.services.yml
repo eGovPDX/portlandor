@@ -1,0 +1,145 @@
+services:
+  serializer.normalizer.sort.jsonapi:
+    class: Drupal\jsonapi\Normalizer\SortNormalizer
+    tags:
+      - { name: normalizer }
+  serializer.normalizer.offset_page.jsonapi:
+    class: Drupal\jsonapi\Normalizer\OffsetPageNormalizer
+    tags:
+      - { name: normalizer }
+  serializer.normalizer.entity_condition.jsonapi:
+    class: Drupal\jsonapi\Normalizer\EntityConditionNormalizer
+    tags:
+      - { name: normalizer }
+  serializer.normalizer.entity_condition_group.jsonapi:
+    class: Drupal\jsonapi\Normalizer\EntityConditionGroupNormalizer
+    tags:
+      - { name: normalizer }
+  serializer.normalizer.filter.jsonapi:
+    class: Drupal\jsonapi\Normalizer\FilterNormalizer
+    arguments: ['@jsonapi.field_resolver', '@serializer.normalizer.entity_condition.jsonapi', '@serializer.normalizer.entity_condition_group.jsonapi']
+    tags:
+      - { name: normalizer }
+  serializer.normalizer.http_exception.jsonapi:
+    class: Drupal\jsonapi\Normalizer\HttpExceptionNormalizer
+    arguments: ['@current_user']
+    tags:
+      - { name: normalizer, priority: 1 }
+  serializer.normalizer.unprocessable_entity_exception.jsonapi:
+    class: Drupal\jsonapi\Normalizer\UnprocessableHttpEntityExceptionNormalizer
+    arguments: ['@current_user']
+    tags:
+      - { name: normalizer, priority: 2 }
+  serializer.normalizer.entity_access_exception.jsonapi:
+    class: Drupal\jsonapi\Normalizer\EntityAccessDeniedHttpExceptionNormalizer
+    arguments: ['@current_user']
+    tags:
+      - { name: normalizer, priority: 2 }
+  serializer.normalizer.scalar.jsonapi:
+    class: Drupal\jsonapi\Normalizer\ScalarNormalizer
+    tags:
+      - { name: normalizer, priority: 5 }
+  serializer.normalizer.entity_reference_item.jsonapi:
+    class: Drupal\jsonapi\Normalizer\RelationshipItemNormalizer
+    arguments: ['@jsonapi.resource_type.repository', '@serializer.normalizer.jsonapi_document_toplevel.jsonapi',]
+    tags:
+      - { name: normalizer, priority: 21 }
+  serializer.normalizer.field_item.jsonapi:
+    class: Drupal\jsonapi\Normalizer\FieldItemNormalizer
+    tags:
+      - { name: normalizer, priority: 21 }
+  serializer.normalizer.field.jsonapi:
+    class: Drupal\jsonapi\Normalizer\FieldNormalizer
+    tags:
+      - { name: normalizer, priority: 21 }
+  serializer.normalizer.relationship.jsonapi:
+    class: Drupal\jsonapi\Normalizer\RelationshipNormalizer
+    arguments: ['@jsonapi.resource_type.repository', '@jsonapi.link_manager']
+    tags:
+      - { name: normalizer, priority: 21 }
+  serializer.normalizer.entity.jsonapi:
+    class: Drupal\jsonapi\Normalizer\ContentEntityNormalizer
+    arguments: ['@jsonapi.link_manager', '@jsonapi.resource_type.repository', '@entity_type.manager']
+    tags:
+      - { name: normalizer, priority: 21 }
+  serializer.normalizer.config_entity.jsonapi:
+    class: Drupal\jsonapi\Normalizer\ConfigEntityNormalizer
+    arguments: ['@jsonapi.link_manager', '@jsonapi.resource_type.repository', '@entity_type.manager']
+    tags:
+      - { name: normalizer, priority: 21 }
+  serializer.normalizer.jsonapi_document_toplevel.jsonapi:
+    class: Drupal\jsonapi\Normalizer\JsonApiDocumentTopLevelNormalizer
+    arguments: ['@jsonapi.link_manager', '@jsonapi.current_context', '@entity_type.manager', '@jsonapi.resource_type.repository', '@jsonapi.field_resolver']
+    tags:
+      - { name: normalizer, priority: 22 }
+  serializer.normalizer.entity_reference_field.jsonapi:
+    class: Drupal\jsonapi\Normalizer\EntityReferenceFieldNormalizer
+    arguments: ['@jsonapi.link_manager', '@entity_field.manager', '@plugin.manager.field.field_type', '@jsonapi.resource_type.repository', '@entity.repository']
+    tags:
+      - { name: normalizer, priority: 31 }
+  serializer.encoder.jsonapi:
+    class: Drupal\jsonapi\Encoder\JsonEncoder
+    tags:
+      - { name: encoder, priority: 21, format: 'api_json' }
+  jsonapi.resource_type.repository:
+    class: Drupal\jsonapi\ResourceType\ResourceTypeRepository
+    arguments: ['@entity_type.manager', '@entity_type.bundle.info']
+  jsonapi.route_enhancer:
+    class: Drupal\jsonapi\Routing\RouteEnhancer
+    tags:
+      - { name: route_enhancer }
+  jsonapi.params.enhancer:
+    class: Drupal\jsonapi\Routing\JsonApiParamEnhancer
+    arguments: ['@serializer.normalizer.filter.jsonapi', '@serializer.normalizer.sort.jsonapi', '@serializer.normalizer.offset_page.jsonapi']
+    tags:
+      - { name: route_enhancer }
+  jsonapi.link_manager:
+    class: Drupal\jsonapi\LinkManager\LinkManager
+    arguments: ['@router.no_access_checks', '@url_generator']
+  jsonapi.current_context:
+    class: Drupal\jsonapi\Context\CurrentContext
+    arguments: ['@jsonapi.resource_type.repository', '@request_stack', '@current_route_match']
+  jsonapi.field_resolver:
+    class: Drupal\jsonapi\Context\FieldResolver
+    arguments: ['@jsonapi.current_context', '@entity_field.manager', '@entity_type.bundle.info', '@jsonapi.resource_type.repository']
+  access_check.jsonapi.custom_query_parameter_names:
+    class: Drupal\jsonapi\Access\CustomQueryParameterNamesAccessCheck
+    tags:
+      - { name: access_check, applies_to: _jsonapi_custom_query_parameter_names, needs_incoming_request: TRUE }
+  paramconverter.jsonapi.entity_uuid:
+    class: Drupal\jsonapi\ParamConverter\EntityUuidConverter
+    tags:
+      # Priority 10, to ensure it runs before @paramconverter.entity.
+      - { name: paramconverter, priority: 10 }
+    arguments: ['@entity.manager']
+  jsonapi.exception_subscriber:
+    class: Drupal\jsonapi\EventSubscriber\DefaultExceptionSubscriber
+    tags:
+      - { name: event_subscriber }
+    arguments: ['@serializer', '%serializer.formats%']
+  jsonapi.http_middleware.format_setter:
+    class: Drupal\jsonapi\StackMiddleware\FormatSetter
+    tags:
+      # Set priority to 201 so it happens right before the page cache
+      # middleware (priority 200)has the opportunity to respond.
+      - { name: http_middleware, priority: 201 }
+
+  jsonapi.entity.to_jsonapi:
+    class: Drupal\jsonapi\EntityToJsonApi
+    arguments: ['@serializer', '@jsonapi.resource_type.repository', '@current_user']
+
+  logger.channel.jsonapi:
+    parent: logger.channel_base
+    arguments: ['jsonapi']
+
+  # Event subscribers.
+  jsonapi.resource_response.subscriber:
+    class: Drupal\jsonapi\EventSubscriber\ResourceResponseSubscriber
+    tags:
+      - { name: event_subscriber }
+    arguments: ['@serializer', '@renderer', '@logger.channel.jsonapi']
+
+  # Deprecated services.
+  serializer.normalizer.htt_exception.jsonapi:
+    alias: serializer.normalizer.http_exception.jsonapi
+    deprecated: The "%service_id%" service is deprecated. You should use the 'serializer.normalizer.http_exception.jsonapi' service instead.

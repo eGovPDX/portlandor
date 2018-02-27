@@ -117,11 +117,6 @@ class HelpController extends ControllerBase {
       $module_name = $this->moduleHandler()->getName($name);
       $build['#title'] = $module_name;
 
-      $info = system_get_info('module', $name);
-      if ($info['package'] === 'Core (Experimental)') {
-        drupal_set_message($this->t('This module is experimental. <a href=":url">Experimental modules</a> are provided for testing purposes only. Use at your own risk.', [':url' => 'https://www.drupal.org/core/experimental']), 'warning');
-      }
-
       $temp = $this->moduleHandler()->invoke($name, 'help', ["help.page.$name", $this->routeMatch]);
       if (empty($temp)) {
         $build['top'] = ['#markup' => $this->t('No help is available for module %module.', ['%module' => $module_name])];

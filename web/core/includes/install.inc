@@ -10,6 +10,7 @@ use Symfony\Component\HttpFoundation\RedirectResponse;
 use Drupal\Component\Utility\Crypt;
 use Drupal\Component\Utility\OpCodeCache;
 use Drupal\Component\Utility\UrlHelper;
+use Drupal\Core\Config\FileStorage;
 use Drupal\Core\Extension\ExtensionDiscovery;
 use Drupal\Core\Site\Settings;
 
@@ -483,12 +484,20 @@ function _drupal_rewrite_settings_dump_one(\stdClass $variable, $prefix = '', $s
  * @see update_prepare_d8_bootstrap()
  */
 function drupal_install_config_directories() {
-  global $config_directories;
+  global $config_directories, $install_state;
 
-  // Add a randomized config directory name to settings.php, unless it was
-  // manually defined in the existing already.
+  // If settings.php does not contain a config sync directory name we need to
+  // configure one.
   if (empty($config_directories[CONFIG_SYNC_DIRECTORY])) {
-    $config_directories[CONFIG_SYNC_DIRECTORY] = \Drupal::service('site.path') . '/files/config_' . Crypt::randomBytesBase64(55) . '/sync';
+    if (empty($install_state['profile_sync'])) {
+      // Add a randomized config directory name to settings.php
+      $config_directories[CONFIG_SYNC_DIRECTORY] = \Drupal::service('site.path') . '/files/config_' . Crypt::randomBytesBase64(55) . '/sync';
+    }
+    else {
+      // Install profiles can contain a config sync directory. If they do,
+      // 'profile_sync' is a path to the directory.
+      $config_directories[CONFIG_SYNC_DIRECTORY] = $install_state['profile_sync'];
+    }
     $settings['config_directories'][CONFIG_SYNC_DIRECTORY] = (object) [
       'value' => $config_directories[CONFIG_SYNC_DIRECTORY],
       'required' => TRUE,
@@ -1047,6 +1056,14 @@ function drupal_check_module($module) {
  *   - install: Optional parameters to override the installer:
  *     - theme: The machine name of a theme to use in the installer instead of
  *       Drupal's default installer theme.
+ * - base profile: Existence of this key denotes that the installation profile
+ *   depends on a parent installation profile.
+ *   - name: The shortname of the base installation profile.
+ *   - excluded_dependencies: An array of shortnames of other modules that have
+ *     to be excluded from the base profile requirements. This allows e.g. to
+ *     disable a demo module that would be installed by the base profile.
+ *   If there are no excluded_dependencies, a shortcut of "base profile: name"
+ *   can be used.
  *
  * Note that this function does an expensive file system scan to get info file
  * information for dependencies. If you only need information from the info
@@ -1073,18 +1090,7 @@ function install_profile_info($profile, $langcode = 'en') {
   $cache = &drupal_static(__FUNCTION__, []);
 
   if (!isset($cache[$profile][$langcode])) {
-    // Set defaults for module info.
-    $defaults = [
-      'dependencies' => [],
-      'themes' => ['stark'],
-      'description' => '',
-      'version' => NULL,
-      'hidden' => FALSE,
-      'php' => DRUPAL_MINIMUM_PHP,
-    ];
-    $profile_file = drupal_get_path('profile', $profile) . "/$profile.info.yml";
-    $info = \Drupal::service('info_parser')->parse($profile_file);
-    $info += $defaults;
+    $info = \Drupal::service('profile_handler')->getProfileInfo($profile);
 
     // drupal_required_modules() includes the current profile as a dependency.
     // Remove that dependency, since a module cannot depend on itself.
@@ -1094,6 +1100,13 @@ function install_profile_info($profile, $langcode = 'en') {
 
     $info['dependencies'] = array_unique(array_merge($required, $info['dependencies'], $locale));
 
+    // If the profile has a config/sync directory use that to install drupal.
+    $profile_path = drupal_get_path('profile', $profile);
+    if (is_dir($profile_path . '/config/sync')) {
+      $info['profile_sync'] = $profile_path . '/config/sync';
+      $sync = new FileStorage($profile_path . '/config/sync');
+      $info['config']['system.site'] = $sync->read('system.site');
+    }
     $cache[$profile][$langcode] = $info;
   }
   return $cache[$profile][$langcode];

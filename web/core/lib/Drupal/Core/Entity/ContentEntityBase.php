@@ -1367,4 +1367,30 @@ abstract class ContentEntityBase extends Entity implements \IteratorAggregate, C
     return FALSE;
   }
 
+  /**
+   * {@inheritdoc}
+   */
+  public function getLatestRevisionId() {
+    if (!$this->getEntityType()->isRevisionable() || $this->isNew()) {
+      return NULL;
+    }
+    $revision_ids = $this->entityTypeManager()
+      ->getStorage($this->entityTypeId)
+      ->getQuery()
+      ->allRevisions()
+      ->condition($this->getEntityType()->getKey('id'), $this->id())
+      ->sort($this->getEntityType()->getKey('revision'), 'DESC')
+      ->range(0, 1)
+      ->execute();
+    $keys = array_keys($revision_ids);
+    return array_shift($keys);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function isLatestRevision() {
+    return $this->getLoadedRevisionId() == $this->getLatestRevisionId();
+  }
+
 }

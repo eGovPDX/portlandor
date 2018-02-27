@@ -66,8 +66,14 @@ class EntityReferenceItemNormalizer extends FieldItemNormalizer implements UuidR
     unset($context['langcode']);
     $context['included_fields'] = ['uuid'];
 
-    // Normalize the target entity.
-    $embedded = $this->serializer->normalize($target_entity, $format, $context);
+    // Normalize the target entity unless it recurses onto itself
+    if ($field_item->getEntity()->getEntityType() == $target_entity->getEntityType() &&
+      $field_item->getEntity()->id() == $target_entity->id()) {
+      return parent::normalize($field_item, $format, $context);
+    }
+    else {
+      $embedded = $this->serializer->normalize($target_entity, $format, $context);
+    }
     $link = $embedded['_links']['self'];
     // If the field is translatable, add the langcode to the link relation
     // object. This does not indicate the language of the target entity.

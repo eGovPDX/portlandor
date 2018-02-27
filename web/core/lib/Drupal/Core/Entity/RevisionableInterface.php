@@ -61,4 +61,20 @@ interface RevisionableInterface {
    */
   public function preSaveRevision(EntityStorageInterface $storage, \stdClass $record);
 
+  /**
+   * Get the latest revision ID of the entity.
+   *
+   * @return int|null
+   *   The latest revision ID or NULL if the entity does not have a revision.
+   */
+  public function getLatestRevisionId();
+
+  /**
+   * Check if the loaded revision is the latest.
+   *
+   * @return bool
+   *   TRUE if the loaded revision is the latest revision, FALSE otherwise.
+   */
+  public function isLatestRevision();
+
 }
