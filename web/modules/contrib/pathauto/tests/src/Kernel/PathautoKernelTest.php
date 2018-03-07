@@ -548,6 +548,22 @@ class PathautoKernelTest extends KernelTestBase {
   }
 
   /**
+   * Tests that the pathauto state property gets set to CREATED for new nodes.
+   *
+   * In some cases, this can trigger $node->path to be set up with no default
+   * value for the pathauto property.
+   */
+  public function testCreateNodeWhileAccessingPath() {
+    $node = Node::create([
+      'type' => 'article',
+      'title' => 'TestAlias',
+    ]);
+    $node->path->langcode;
+    $node->save();
+    $this->assertEntityAlias($node, '/content/testalias');
+  }
+
+  /**
    * Creates a node programmatically.
    *
    * @param array $settings

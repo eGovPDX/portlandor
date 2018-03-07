@@ -122,11 +122,14 @@
 {% endif %}
 
 {# The template default set classes. #}
+{# Sets Paragraph ID as class. #}
 {%
 set classes = [
 'paragraph',
 'paragraph--type--' ~ paragraph.bundle|clean_class,
 view_mode ? 'paragraph--view-mode--' ~ view_mode|clean_class,
+'paragraph--id--' ~ paragraph.id.value,
+accordion_active ? 'paragraph--accordion_active--',
 ]
 %}
 
@@ -146,34 +149,39 @@ view_mode ? 'paragraph--view-mode--' ~ view_mode|clean_class,
 {% set paragraph_id = 'accordion-' ~ paragraph.id.value %}
 
 {# Prints Accordion template. #}
-<div{{ attributes.addClass(classes).setAttribute('id', paragraph_id) }} role="tablist" aria-multiselectable="true">
-  <div class="paragraph__column">
-    {{ title_suffix }}
-    <div class="card panel panel-default">
-      {# Loop through all of the accordion sections. #}
-      {% for key, item in content.bp_accordion_section if key|first != '#' %}
-        <div class="card-header panel-heading" role="tab" id="heading-{{ paragraph_id }}-{{ key + 1 }}">
-          <div class="panel-title">
-            <a data-toggle="collapse" data-parent="{{ paragraph_id }}" href="#collapse-{{ paragraph_id }}-{{ key + 1 }}" aria-expanded="false" aria-controls="collapse-{{ paragraph_id }}-{{ key + 1 }}">
-              {# Print the accordion section title. #}
-              {{ item['#paragraph'].bp_accordion_section_title.value }}
-            </a>
+<div class="paragraph--bp-accordion--container">
+  <button type="button" class="btn btn-primary bp-accordion--button" title="{{ 'Click to expand all accordions in this section.'|trans }}">
+      {{ 'Expand All'|trans }}
+  </button>
+  <div{{ attributes.addClass(classes).setAttribute('id', paragraph_id) }} role="tablist" aria-multiselectable="true">
+    <div class="paragraph__column">
+      {{ title_suffix }}
+      <div class="card panel panel-default">
+        {# Loop through all of the accordion sections. #}
+        {% for key, item in content.bp_accordion_section if key|first != '#' %}
+          <div class="card-header panel-heading" role="tab" id="heading-{{ paragraph_id }}-{{ key + 1 }}">
+            <div class="panel-title">
+              <a role="button" data-toggle="collapse" data-parent="{{ paragraph_id }}" href="#collapse-{{ paragraph_id }}-{{ key + 1 }}" aria-expanded="false" aria-controls="collapse-{{ paragraph_id }}-{{ key + 1 }}">
+                {# Print the accordion section title. #}
+                {{ item['#paragraph'].bp_accordion_section_title.value }}
+              </a>
+            </div>
           </div>
-        </div>
-        <div id="collapse-{{ paragraph_id }}-{{ key + 1 }}" class="card-block panel-collapse collapse" role="tabpanel" aria-labelledby="heading-{{ paragraph_id }}-{{ key + 1 }}">
-          {# Loop through all of the accordion section bodies. #}
-          {% for body_key, body_item in item['#paragraph'].bp_accordion_section_body %}
-            {# Use the same render array as item and set the '#paragraph'. #}
-            {% set section_body = item %}
-            {# Load the entity for the current translation #}
-            {% set section_body = section_body|merge({'#paragraph': section_body['#paragraph'].bp_accordion_section_body[body_key].entity.getTranslation(section_body['#paragraph'].langcode[0].value)}) %}
-            {# Remove the cache keys so it doesn't repeat the first value. #}
-            {% set section_body = section_body|merge({'#cache': {}}) %}
-            {# Print the compiled section body. #}
-            {{ section_body }}
-          {% endfor %}
-        </div>
-      {% endfor %}
+          <div id="collapse-{{ paragraph_id }}-{{ key + 1 }}" class="card-block panel-collapse collapse" role="tabpanel" aria-labelledby="heading-{{ paragraph_id }}-{{ key + 1 }}">
+            {# Loop through all of the accordion section bodies. #}
+            {% for body_key, body_item in item['#paragraph'].bp_accordion_section_body %}
+              {# Use the same render array as item and set the '#paragraph'. #}
+              {% set section_body = item %}
+              {# Load the entity for the current translation #}
+              {% set section_body = section_body|merge({'#paragraph': section_body['#paragraph'].bp_accordion_section_body[body_key].entity.getTranslation(section_body['#paragraph'].langcode[0].value)}) %}
+              {# Remove the cache keys so it doesn't repeat the first value. #}
+              {% set section_body = section_body|merge({'#cache': {}}) %}
+              {# Print the compiled section body. #}
+              {{ section_body }}
+            {% endfor %}
+          </div>
+        {% endfor %}
+      </div>
     </div>
   </div>
 </div>

@@ -226,7 +226,7 @@ class EntityAliasTypeBase extends ContextAwarePluginBase implements AliasTypeInt
     $query->range(0, 100);
     $pids_by_id = $query->execute()->fetchAllKeyed();
 
-    $this->bulkDelete($pids_by_id);
+    PathautoState::bulkDelete($this->getEntityTypeId(), $pids_by_id);
     $context['sandbox']['count'] += count($pids_by_id);
     $context['sandbox']['current'] = max($pids_by_id);
     $context['results']['deletions'][] = $this->getLabel();
@@ -285,19 +285,11 @@ class EntityAliasTypeBase extends ContextAwarePluginBase implements AliasTypeInt
    *
    * @param int[] $pids_by_id
    *   A list of path IDs keyed by entity ID.
+   *
+   * @deprecated Use \Drupal\pathauto\PathautoState::bulkDelete() instead.
    */
   protected function bulkDelete(array $pids_by_id) {
-    $collection = 'pathauto_state.' . $this->getEntityTypeId();
-    $states = $this->keyValue->get($collection)->getMultiple(array_keys($pids_by_id));
-
-    $pids = [];
-    foreach ($pids_by_id as $id => $pid) {
-      // Only delete aliases that were created by this module.
-      if (isset($states[$id]) && $states[$id] == PathautoState::CREATE) {
-        $pids[] = $pid;
-      }
-    }
-    \Drupal::service('pathauto.alias_storage_helper')->deleteMultiple($pids);
+    PathautoState::bulkDelete($this->getEntityTypeId(), $pids_by_id);
   }
 
   /**

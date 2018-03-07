@@ -18,14 +18,13 @@
  * @ingroup pathauto
  */
 
-use Drupal\Core\Entity\ContentEntityInterface;
-use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\Core\Field\BaseFieldDefinition;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\Core\Url;
-use Drupal\pathauto\PathautoState;
+use Drupal\pathauto\PathautoFieldItemList;
+use Drupal\pathauto\PathautoItem;
 
 /**
  * The default ignore word list.
@@ -84,34 +83,11 @@ function pathauto_help($route_name, RouteMatchInterface $route_match) {
 }
 
 /**
- * Implements hook_entity_insert().
- */
-function pathauto_entity_insert(EntityInterface $entity) {
-  \Drupal::service('pathauto.generator')->updateEntityAlias($entity, 'insert');
-}
-
-/**
- * Implements hook_entity_update().
- */
-function pathauto_entity_update(EntityInterface $entity) {
-  \Drupal::service('pathauto.generator')->updateEntityAlias($entity, 'update');
-}
-
-/**
- * Implements hook_entity_update().
- */
-function pathauto_entity_delete(EntityInterface $entity) {
-  if ($entity->hasLinkTemplate('canonical') && $entity instanceof ContentEntityInterface && $entity->hasField('path')) {
-    \Drupal::service('pathauto.alias_storage_helper')->deleteEntityPathAll($entity);
-    $entity->path->first()->get('pathauto')->purge();
-  }
-}
-
-/**
  * Implements hook_field_info_alter().
  */
 function pathauto_field_info_alter(&$info) {
-  $info['path']['class'] = '\Drupal\pathauto\PathautoItem';
+  $info['path']['class'] = PathautoItem::class;
+  $info['path']['list_class'] = PathautoFieldItemList::class;
 }
 
 /**
@@ -143,17 +119,6 @@ function pathauto_entity_base_field_info(EntityTypeInterface $entity_type) {
 
       return $fields;
     }
-  }
-}
-
-/**
- * Implements hook_entity_base_field_info_alter().
- */
-function pathauto_entity_base_field_info_alter(&$fields, EntityTypeInterface $entity_type) {
-  if (isset($fields['path'])) {
-    // Path fields need to be computed so that the pathauto state can be
-    // accessed even if there is no alias being set.
-    $fields['path']->setComputed(TRUE);
   }
 }
 

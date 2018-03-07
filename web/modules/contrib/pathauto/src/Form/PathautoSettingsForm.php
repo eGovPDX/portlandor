@@ -199,10 +199,9 @@ class PathautoSettingsForm extends ConfigFormBase {
     );
 
     $form['punctuation'] = array(
-      '#type' => 'fieldset',
+      '#type' => 'details',
       '#title' => $this->t('Punctuation'),
-      '#collapsible' => TRUE,
-      '#collapsed' => TRUE,
+      '#open' => FALSE,
       '#tree' => TRUE,
     );
 
@@ -241,7 +240,6 @@ class PathautoSettingsForm extends ConfigFormBase {
 
     $form_state->cleanValues();
 
-    $original_entity_types = $config->get('enabled_entity_types');
     foreach ($form_state->getValues() as $key => $value) {
       if ($key == 'enabled_entity_types') {
         $enabled_entity_types = [];
