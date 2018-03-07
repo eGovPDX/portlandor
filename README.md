@@ -10,8 +10,9 @@
     url = ssh://codeserver.dev.5c6715db-abac-4633-ada8-1c9efe354629@codeserver.dev.5c6715db-abac-4633-ada8-1c9efe354629.drush.in:2222/~/repository.git
     url = git@github.com:eGovPDX/portlandor.git
 ```
+4. You should now be able to issue `git push origin` and update both repos.
 
-You should now be able to issue `git push origin` and update both repos.
+Keep in mind, that you want to follow the development workflow below.
 
 ## Installing Lando
 
