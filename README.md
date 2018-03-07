@@ -12,7 +12,7 @@
 ```
 4. You should now be able to issue `git push origin` and update both repos.
 
-Keep in mind, that you want to follow the development workflow below.
+Keep in mind, that you want to follow the development workflow below in order to keep our repo clean and master continously ready for deploy to production.
 
 ## Installing Lando
 
