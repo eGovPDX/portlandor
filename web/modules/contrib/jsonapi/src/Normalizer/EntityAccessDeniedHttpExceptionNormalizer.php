@@ -6,11 +6,15 @@ use Drupal\jsonapi\Exception\EntityAccessDeniedHttpException;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
 /**
- * Normalizes an EntityAccessDeniedException object for JSON output which
- * complies with the JSON API specification. A source pointer is added to help
- * client applications report to know which entity was access denied.
+ * Normalizes an EntityAccessDeniedException.
+ *
+ * Normalizes an EntityAccessDeniedException in compliance with the JSON API
+ * specification. A source pointer is added to help client applications report
+ * which entity was access denied.
  *
  * @see http://jsonapi.org/format/#error-objects
+ *
+ * @internal
  */
 class EntityAccessDeniedHttpExceptionNormalizer extends HttpExceptionNormalizer {
 
@@ -32,12 +36,14 @@ class EntityAccessDeniedHttpExceptionNormalizer extends HttpExceptionNormalizer 
       $pointer = $error['pointer'];
       $reason = $error['reason'];
 
-      $errors[0]['id'] = sprintf(
-        '/%s--%s/%s',
-        $entity->getEntityTypeId(),
-        $entity->bundle(),
-        $entity->uuid()
-      );
+      if (isset($entity)) {
+        $errors[0]['id'] = sprintf(
+          '/%s--%s/%s',
+          $entity->getEntityTypeId(),
+          $entity->bundle(),
+          $entity->uuid()
+        );
+      }
       $errors[0]['source']['pointer'] = $pointer;
 
       if ($reason) {

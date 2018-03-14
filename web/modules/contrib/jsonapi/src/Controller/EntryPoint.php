@@ -12,16 +12,22 @@ use Drupal\jsonapi\ResourceType\ResourceTypeRepositoryInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
+ * Controller for the API entry point.
+ *
  * @internal
  */
 class EntryPoint extends ControllerBase {
 
   /**
+   * The JSON API resource type repository.
+   *
    * @var \Drupal\jsonapi\ResourceType\ResourceTypeRepositoryInterface
    */
   protected $resourceTypeRepository;
 
   /**
+   * The renderer service.
+   *
    * @var \Drupal\Core\Render\RendererInterface
    */
   protected $renderer;
@@ -53,6 +59,7 @@ class EntryPoint extends ControllerBase {
    * Controller to list all the resources.
    *
    * @return \Drupal\Core\Cache\CacheableJsonResponse
+   *   The response object.
    */
   public function index() {
     // Execute the request in context so the cacheable metadata from the entity
@@ -63,9 +70,14 @@ class EntryPoint extends ControllerBase {
     $do_build_urls = function () {
       $self = Url::fromRoute('jsonapi.resource_list')->setAbsolute();
 
-      return array_reduce($this->resourceTypeRepository->all(), function (array $carry, ResourceType $resource_type) {
-        // TODO: Learn how to invalidate the cache for this page when a new entity
-        // type or bundle gets added, removed or updated.
+      // Only build URLs for exposed resources.
+      $resources = array_filter($this->resourceTypeRepository->all(), function ($resource) {
+        return !$resource->isInternal();
+      });
+
+      return array_reduce($resources, function (array $carry, ResourceType $resource_type) {
+        // TODO: Learn how to invalidate the cache for this page when a new
+        // entity type or bundle gets added, removed or updated.
         // $this->response->addCacheableDependency($definition);
         $url = Url::fromRoute(sprintf('jsonapi.%s.collection', $resource_type->getTypeName()))
           ->setAbsolute();

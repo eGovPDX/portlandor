@@ -51,7 +51,7 @@ class RequestHandler implements ContainerAwareInterface, ContainerInjectionInter
 
     // Deserialize incoming data if available.
     /* @var \Symfony\Component\Serializer\SerializerInterface $serializer */
-    $serializer = $this->container->get('serializer');
+    $serializer = $this->container->get('jsonapi.serializer_do_not_use_removal_imminent');
     /* @var \Drupal\jsonapi\Context\CurrentContext $current_context */
     $current_context = $this->container->get('jsonapi.current_context');
     $current_context->reset();
@@ -88,6 +88,7 @@ class RequestHandler implements ContainerAwareInterface, ContainerInjectionInter
       ->executeInRenderContext($context, function () use ($resource, $action, $parameters, $extra_parameters) {
         return call_user_func_array([$resource, $action], array_merge($parameters, $extra_parameters));
       });
+    $response->getCacheableMetadata()->addCacheContexts(static::$requiredCacheContexts);
     if (!$context->isEmpty()) {
       $response->addCacheableDependency($context->pop());
     }
@@ -115,12 +116,13 @@ class RequestHandler implements ContainerAwareInterface, ContainerInjectionInter
     if (empty($received) || $request->isMethodCacheable()) {
       return NULL;
     }
-    $format = $request->getContentType();
+    $resource_type = $current_context->getResourceType();
+    $field_related = $resource_type->getInternalName($request->get('related'));
     try {
-      return $serializer->deserialize($received, $serialization_class, $format, [
-        'related' => $request->get('related'),
+      return $serializer->deserialize($received, $serialization_class, 'api_json', [
+        'related' => $field_related,
         'target_entity' => $request->get($current_context->getResourceType()->getEntityTypeId()),
-        'resource_type' => $current_context->getResourceType(),
+        'resource_type' => $resource_type,
       ]);
     }
     catch (UnexpectedValueException $e) {
@@ -145,6 +147,7 @@ class RequestHandler implements ContainerAwareInterface, ContainerInjectionInter
   protected function action(RouteMatchInterface $route_match, $method) {
     $on_relationship = ($route_match->getRouteObject()->getDefault('_on_relationship'));
     switch ($method) {
+      case 'head':
       case 'get':
         if ($on_relationship) {
           return 'getRelationship';
@@ -207,7 +210,8 @@ class RequestHandler implements ContainerAwareInterface, ContainerInjectionInter
       $field_manager,
       $current_context,
       $plugin_manager,
-      $link_manager
+      $link_manager,
+      $resource_type_repository
     );
     return $resource;
   }

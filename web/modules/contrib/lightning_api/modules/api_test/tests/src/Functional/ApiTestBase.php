@@ -17,7 +17,7 @@ abstract class ApiTestBase extends BrowserTestBase {
   /**
    * {@inheritdoc}
    */
-  protected $profile = 'lightning';
+  protected $profile = 'standard';
 
   /**
    * {@inheritdoc}

@@ -1,3 +1,61 @@
+## 3.1.0
+* Drupal core has been updated to 8.5.0.
+* Lightning API has been updated to 2.0.0, which patches Simple OAuth to make it
+  compatible with TranslatableRevisionableInterface. (Issue #2945431)
+* Lightning Media has been updated to 2.1.0, which:
+  * Modifies the labels on some Media-provided views so that they match those of
+    new installs of the core Media module.
+  * Updates Crop API to RC1.
+  * Modifies any configured Media-related actions to use the new, generic action
+    plugins provided by core.
+* Behat contexts used for testing were moved into the 
+  `Acquia\LightningExtension\Context` namespace.
+
+## 3.0.3
+* Lightning API has been updated to RC3, which:
+  * Only sets up developer-specific settings when Lightning's internal
+    developer tools are installed.
+  * The Entity CRUD test no longer tries to write to config entities via the
+    JSON API because it is insecure and unsupported, at least for now.
+* Lightning Core has been updated to RC2, which:
+  * Moves the Behat contexts used for testing into Lightning Core.
+  * Renames the lightning.versions config object to lightning_core.versions.
+* Lightning Media has been updated to RC3, which only sets up developer-
+  specific settings when Lightning's internal developer tools are installed.
+
+## 3.0.2
+* Drupal Core has been security updated to 8.4.5.
+* The `update:lightning` command:
+  * Has been ported to Drush 9.
+  * Reads the previous version from config and, as a result, no longer requires
+    nor accepts the `version` argument.
+  * Usage:
+  
+  ```
+  drush update:lightning
+  # To run all available configuration updates without any prompting, use:
+  drush update:lightning --no-inetraction 
+  ```
+  * Note: Configuration updates from versions of Lightning < 3.0.0 will not be
+    run when using the updated command. You should update to the last available
+    2.2.x release before updating to 3.x.
+* All Lightning components have been updated to RC1 or greater and are no longer
+  pinned to specific releases.
+* Component updates:
+  * Lightning API has updated JSON API to 1.10.0. See Lightning API's CHANGELOG
+    for more information. (Issue #2933279 and SA-CONTRIB-2018-15)
+  * Lightning Layout has fixed a configuration problem that caused an unneeded
+    dependency on the Lightning profile. This means that Lightning Profile is
+    now fully compatible with the
+    [Config Installer](https://www.drupal.org/project/config_installer).
+    (Issue #2933445)
+  * Lightning Media now allows media types to be configured without a Source
+    field. (Issue #2928658)
+  * Lightning Workflow can now be installed without the Views module.
+    (Issue #2938769)
+* Note: This is the last release on the 8.4.x branch of Drupal Core. The next
+  Lightning release will be 3.1.0 and will require core ~8.5.0.
+
 ## 3.0.1
 * Drupal Core has been updated to 8.4.4 (Issue #2934239)
 

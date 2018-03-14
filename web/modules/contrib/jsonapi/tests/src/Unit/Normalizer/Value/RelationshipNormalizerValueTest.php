@@ -13,6 +13,8 @@ use Prophecy\Argument;
 /**
  * @coversDefaultClass \Drupal\jsonapi\Normalizer\Value\RelationshipNormalizerValue
  * @group jsonapi
+ *
+ * @internal
  */
 class RelationshipNormalizerValueTest extends UnitTestCase {
 
@@ -25,10 +27,14 @@ class RelationshipNormalizerValueTest extends UnitTestCase {
     $link_manager
       ->getEntityLink(Argument::any(), Argument::any(), Argument::type('array'), Argument::type('string'))
       ->willReturn('dummy_entity_link');
+    $resource_type = new ResourceType($this->randomMachineName(), $this->randomMachineName(), NULL);
+    $resource_type->setRelatableResourceTypes([
+      'ipsum' => [$resource_type],
+    ]);
     $object = new RelationshipNormalizerValue($values, $cardinality, [
       'link_manager' => $link_manager->reveal(),
       'host_entity_id' => 'lorem',
-      'resource_type' => new ResourceType($this->randomMachineName(), $this->randomMachineName(), NULL),
+      'resource_type' => $resource_type,
       'field_name' => 'ipsum',
     ]);
     $this->assertEquals($expected, $object->rasterizeValue());

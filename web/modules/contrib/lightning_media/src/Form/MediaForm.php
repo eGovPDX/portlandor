@@ -25,7 +25,7 @@ class MediaForm extends BaseMediaForm {
     $entity = $this->getEntity();
 
     $field = Helper::getSourceField($entity);
-    if ($field) {
+    if ($field && !$field->isEmpty()) {
       // Get the source field widget element.
       $widget_keys = [
         $field->getName(),

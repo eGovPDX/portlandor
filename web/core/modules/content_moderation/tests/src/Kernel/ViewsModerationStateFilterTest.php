@@ -121,10 +121,10 @@ class ViewsModerationStateFilterTest extends ViewsKernelTestBase {
     $translated_forward_revision->moderation_state = 'translated_draft';
     $translated_forward_revision->save();
 
-    // Four revisions for the nodes when no filter.
-    $this->assertNodesWithFilters([$node, $second_node, $third_node, $third_node], []);
+    // The three default revisions are listed when no filter is specified.
+    $this->assertNodesWithFilters([$node, $second_node, $third_node], []);
 
-    // The default revision of node one and three is published.
+    // The default revision of node one and three are published.
     $this->assertNodesWithFilters([$node, $third_node], [
       'default_revision_state' => 'editorial-published',
     ]);
@@ -153,9 +153,9 @@ class ViewsModerationStateFilterTest extends ViewsKernelTestBase {
   }
 
   /**
-   * Test the moderation filter with a non-translateable entity type.
+   * Test the moderation filter with a non-translatable entity type.
    */
-  public function testNonTranslateableEntityType() {
+  public function testNonTranslatableEntityType() {
     $workflow = Workflow::load('editorial');
     $workflow->getTypePlugin()->addEntityTypeAndBundle('entity_test_no_bundle', 'entity_test_no_bundle');
     $workflow->save();
@@ -256,7 +256,7 @@ class ViewsModerationStateFilterTest extends ViewsKernelTestBase {
    */
   protected function assertPluginStates($states) {
     $plugin = Views::pluginManager('filter')->createInstance('moderation_state_filter', []);
-    $view = Views::getView('test_content_moderation_state_filter');
+    $view = Views::getView('test_content_moderation_state_filter_base_table');
     $plugin->init($view, $view->getDisplay());
     $this->assertEquals($states, $plugin->getValueOptions());
   }
@@ -271,7 +271,7 @@ class ViewsModerationStateFilterTest extends ViewsKernelTestBase {
    * @param string $view_id
    *   The view to execute for the results.
    */
-  protected function assertNodesWithFilters(array $nodes, array $filters, $view_id = 'test_content_moderation_state_filter') {
+  protected function assertNodesWithFilters(array $nodes, array $filters, $view_id = 'test_content_moderation_state_filter_base_table') {
     $view = Views::getView($view_id);
     $view->setExposedInput($filters);
     $view->execute();

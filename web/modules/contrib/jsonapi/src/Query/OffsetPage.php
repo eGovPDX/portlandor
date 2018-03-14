@@ -3,6 +3,8 @@
 namespace Drupal\jsonapi\Query;
 
 /**
+ * Value object for containing the requested offset and page parameters.
+ *
  * @internal
  */
 class OffsetPage {
@@ -73,6 +75,7 @@ class OffsetPage {
    * Returns the current offset.
    *
    * @return int
+   *   The query offset.
    */
   public function getOffset() {
     return $this->offset;
@@ -82,6 +85,7 @@ class OffsetPage {
    * Returns the page size.
    *
    * @return int
+   *   The requested size of the query result.
    */
   public function getSize() {
     return $this->size;

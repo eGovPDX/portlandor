@@ -6,6 +6,8 @@ use Drupal\Core\Entity\EntityInterface;
 use Drupal\jsonapi\ResourceType\ResourceTypeRepositoryInterface;
 
 /**
+ * Value object representing a JSON API relationship item.
+ *
  * @internal
  */
 class RelationshipItem {
@@ -13,21 +15,21 @@ class RelationshipItem {
   /**
    * The target key name.
    *
-   * @param string
+   * @var string
    */
   protected $targetKey = 'target_id';
 
   /**
    * The target entity.
    *
-   * @param \Drupal\Core\Entity\EntityInterface
+   * @var \Drupal\Core\Entity\EntityInterface
    */
   protected $targetEntity;
 
   /**
    * The target JSON API resource type.
    *
-   * @param \Drupal\jsonapi\ResourceType\ResourceType
+   * @var \Drupal\jsonapi\ResourceType\ResourceType
    */
   protected $targetResourceType;
 
@@ -74,6 +76,7 @@ class RelationshipItem {
    * Gets the target entity.
    *
    * @return \Drupal\Core\Entity\EntityInterface
+   *   The target entity of this relationship item.
    */
   public function getTargetEntity() {
     return $this->targetEntity;
@@ -83,6 +86,7 @@ class RelationshipItem {
    * Gets the targetResourceConfig.
    *
    * @return mixed
+   *   The target of this relationship item.
    */
   public function getTargetResourceType() {
     return $this->targetResourceType;
@@ -94,6 +98,7 @@ class RelationshipItem {
    * Defaults to the entity ID.
    *
    * @return string
+   *   The value of this relationship item.
    */
   public function getValue() {
     return [
@@ -106,6 +111,7 @@ class RelationshipItem {
    * Gets the relationship object that contains this relationship item.
    *
    * @return \Drupal\jsonapi\Normalizer\Relationship
+   *   The parent relationship of this item.
    */
   public function getParent() {
     return $this->parent;

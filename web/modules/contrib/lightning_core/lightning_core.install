@@ -6,6 +6,7 @@
  */
 
 use Drupal\Core\Entity\Entity\EntityViewMode;
+use Drupal\lightning_core\UpdateManager;
 
 /**
  * Implements hook_install().
@@ -15,6 +16,11 @@ function lightning_core_install() {
   if (\Drupal::isConfigSyncing()) {
     return;
   }
+
+  // Record all module version numbers, including our own, in config.
+  $modules = array_keys(\Drupal::moduleHandler()->getModuleList());
+  array_push($modules, 'lightning_core');
+  lightning_core_modules_installed($modules);
 
   // Mark core view modes as internal.
   lightning_core_update_8002();
@@ -85,4 +91,27 @@ function lightning_core_update_8005() {
     }
   }
   $source->clear('content_roles')->save();
+}
+
+/**
+ * Records all modules' semantic version numbers in config.
+ */
+function lightning_core_update_8006() {
+  $modules = \Drupal::moduleHandler()->getModuleList();
+
+  $keys = array_keys($modules);
+  $values = array_fill(0, count($keys), UpdateManager::VERSION_UNKNOWN);
+
+  \Drupal::configFactory()
+    ->getEditable('lightning.versions')
+    ->setData(array_combine($keys, $values))
+    ->save();
+}
+
+/**
+ * Renames the lightning.versions config object.
+ */
+function lightning_core_update_8007() {
+  \Drupal::configFactory()
+    ->rename('lightning.versions', UpdateManager::CONFIG_NAME);
 }

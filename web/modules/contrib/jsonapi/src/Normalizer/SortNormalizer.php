@@ -3,6 +3,7 @@
 namespace Drupal\jsonapi\Normalizer;
 
 use Drupal\jsonapi\Query\Sort;
+use Drupal\jsonapi\Context\FieldResolver;
 use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 
@@ -21,6 +22,20 @@ class SortNormalizer implements DenormalizerInterface {
   protected $supportedInterfaceOrClass = Sort::class;
 
   /**
+   * The field resolver service.
+   *
+   * @var \Drupal\jsonapi\Context\FieldResolver
+   */
+  protected $fieldResolver;
+
+  /**
+   * {@inheritdoc}
+   */
+  public function __construct(FieldResolver $field_resolver) {
+    $this->fieldResolver = $field_resolver;
+  }
+
+  /**
    * {@inheritdoc}
    */
   public function supportsDenormalization($data, $type, $format = NULL) {
@@ -32,6 +47,14 @@ class SortNormalizer implements DenormalizerInterface {
    */
   public function denormalize($data, $class, $format = NULL, array $context = []) {
     $expanded = $this->expand($data);
+    $expanded = array_map(function ($item) use ($context) {
+      $item[Sort::PATH_KEY] = $this->fieldResolver->resolveInternal(
+        $context['entity_type_id'],
+        $context['bundle'],
+        $item[Sort::PATH_KEY]
+      );
+      return $item;
+    }, $expanded);
     return new Sort($expanded);
   }
 

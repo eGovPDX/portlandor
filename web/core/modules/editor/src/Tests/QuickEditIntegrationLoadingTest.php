@@ -22,6 +22,13 @@ class QuickEditIntegrationLoadingTest extends WebTestBase {
   public static $modules = ['quickedit', 'filter', 'node', 'editor'];
 
   /**
+   * The test node.
+   *
+   * @var \Drupal\node\NodeInterface
+   */
+  protected $testNode;
+
+  /**
    * The basic permissions necessary to view content and use in-place editing.
    *
    * @var array
@@ -51,7 +58,7 @@ class QuickEditIntegrationLoadingTest extends WebTestBase {
     ]);
 
     // Create one node of the above node type using the above text format.
-    $this->drupalCreateNode([
+    $this->testNode = $this->drupalCreateNode([
       'type' => 'article',
       'body' => [
         0 => [
@@ -96,6 +103,24 @@ class QuickEditIntegrationLoadingTest extends WebTestBase {
       }
       $this->assertIdentical(Json::encode(['message' => $message]), $response);
     }
+  }
+
+  /**
+   * Test the latest revision of an entity is loaded for editing.
+   */
+  public function testLatestRevisionLoaded() {
+    $user = $this->drupalCreateUser(array_merge(static::$basicPermissions, ['edit any article content', 'access in-place editing']));
+    $this->drupalLogin($user);
+
+    $this->testNode->setNewRevision(TRUE);
+    $this->testNode->isDefaultRevision(FALSE);
+    $this->testNode->body->value = '<p>Content in a pending revision.</p>';
+    $this->testNode->save();
+    // Ensure the content from the latest revision is loaded from the quickedit
+    // editor route.
+    $response = $this->drupalPost('editor/' . 'node/1/body/en/full', '', [], ['query' => [MainContentViewSubscriber::WRAPPER_FORMAT => 'drupal_ajax']]);
+    $this->setRawContent($response);
+    $this->assertRaw('Content in a pending revision.');
   }
 
   /**

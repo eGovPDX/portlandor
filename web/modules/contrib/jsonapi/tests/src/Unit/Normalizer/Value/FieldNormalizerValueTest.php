@@ -9,6 +9,8 @@ use Drupal\Tests\UnitTestCase;
 /**
  * @coversDefaultClass \Drupal\jsonapi\Normalizer\Value\FieldNormalizerValue
  * @group jsonapi
+ *
+ * @internal
  */
 class FieldNormalizerValueTest extends UnitTestCase {
 
@@ -31,7 +33,14 @@ class FieldNormalizerValueTest extends UnitTestCase {
     $uuid_value->getInclude()->willReturn(NULL);
     return [
       [[$uuid_value->reveal()], 1, $uuid_raw],
-      [[$uuid_value->reveal(), $uuid_value->reveal()], -1, [$uuid_raw, $uuid_raw]],
+      [
+        [
+          $uuid_value->reveal(),
+          $uuid_value->reveal(),
+        ],
+        -1,
+        [$uuid_raw, $uuid_raw],
+      ],
     ];
   }
 

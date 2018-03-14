@@ -145,7 +145,8 @@ function lightning_workflow_modules_installed(array $modules) {
   if (\Drupal::isConfigSyncing()) {
     return;
   }
-  elseif (in_array('lightning_roles', $modules)) {
+
+  if (in_array('lightning_roles', $modules, TRUE)) {
     \Drupal::service('lightning.content_roles')
       ->grantPermissions('creator', [
         'view any unpublished content',
@@ -158,6 +159,30 @@ function lightning_workflow_modules_installed(array $modules) {
         'use editorial transition review',
         'use editorial transition archive',
       ]);
+  }
+
+  if (in_array('lightning_dev', $modules, TRUE)) {
+    /** @var \Drupal\Core\Extension\ModuleInstallerInterface $module_installer */
+    $module_installer = \Drupal::service('module_installer');
+    // Lightning Workflow optionally integrates with Diff, and for testing
+    // purposes we'd like to enable that integration.
+    $module_installer->install(['diff']);
+    // BigPipe breaks a couple of non-JS tests which expect to find local task
+    // links, but receive BigPipe placeholders instead. This is a bit of a
+    // sledgehammer approach, but until it's possible to disable a module during
+    // a single test, it's the best we can do.
+    $module_installer->uninstall(['big_pipe']);
+
+    // Add moderation to the page content type.
+    /** @var NodeTypeInterface $node_type */
+    $node_type = entity_load('node_type', 'page');
+    $node_type->setThirdPartySetting('lightning_workflow', 'workflow', 'editorial');
+    lightning_workflow_node_type_insert($node_type);
+
+    // Allow the content view to filter by moderation state.
+    $view = entity_load('view', 'content')->enforceIsNew();
+    lightning_workflow_view_presave($view);
+    $view->enforceIsNew(FALSE)->save();
   }
 }
 

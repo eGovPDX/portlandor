@@ -17,6 +17,8 @@ use Prophecy\Argument;
 /**
  * @coversDefaultClass \Drupal\jsonapi\Normalizer\Value\JsonApiDocumentTopLevelNormalizerValue
  * @group jsonapi
+ *
+ * @internal
  */
 class JsonApiDocumentTopLevelNormalizerValueTest extends UnitTestCase {
 
@@ -80,7 +82,9 @@ class JsonApiDocumentTopLevelNormalizerValueTest extends UnitTestCase {
     $field2->getIncludes()->willReturn(array_map(function ($included_item) {
       return $included_item->reveal();
     }, $included));
-    $context = ['resource_type' => new ResourceType('node', 'article', NodeInterface::class)];
+    $context = [
+      'resource_type' => new ResourceType('node', 'article', NodeInterface::class),
+    ];
     $entity = $this->prophesize(EntityInterface::class);
     $entity->id()->willReturn(1);
     $entity->isNew()->willReturn(FALSE);
@@ -100,8 +104,8 @@ class JsonApiDocumentTopLevelNormalizerValueTest extends UnitTestCase {
       ->setConstructorArgs([
         ['title' => $field1->reveal(), 'field_related' => $field2->reveal()],
         $context,
-        $entity->reveal(),
         ['link_manager' => $link_manager->reveal()],
+        $entity->reveal(),
       ])
       ->getMock();
     $this->object->method('addCacheableDependency');

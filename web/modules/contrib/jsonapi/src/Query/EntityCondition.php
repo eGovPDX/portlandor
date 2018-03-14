@@ -57,6 +57,7 @@ class EntityCondition {
    * The field to be evaluated.
    *
    * @return string
+   *   The field upon which to evaluate the condition.
    */
   public function field() {
     return $this->field;
@@ -70,6 +71,7 @@ class EntityCondition {
    * @see \Drupal\jsonapi\Query\EntityCondition::allowedOperators
    *
    * @return string
+   *   The condition operator.
    */
   public function operator() {
     return $this->operator;
@@ -79,6 +81,7 @@ class EntityCondition {
    * The value against which the condition should be evaluated.
    *
    * @return mixed
+   *   The condition comparison value.
    */
   public function value() {
     return $this->value;

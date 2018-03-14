@@ -192,4 +192,17 @@ class CropEffect extends ConfigurableImageEffectBase implements ContainerFactory
     $dimensions['height'] = $size['height'];
   }
 
+  /**
+   * {@inheritdoc}
+   */
+  public function calculateDependencies() {
+    $dependencies = parent::calculateDependencies();
+
+    if (isset($this->configuration['crop_type']) && $crop_type = $this->typeStorage->load($this->configuration['crop_type'])) {
+      $dependencies[$crop_type->getConfigDependencyKey()] = [$crop_type->getConfigDependencyName()];
+    }
+
+    return $dependencies;
+  }
+
 }

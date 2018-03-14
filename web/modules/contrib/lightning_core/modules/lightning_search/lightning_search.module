@@ -10,6 +10,38 @@ use Drupal\search_api\Entity\Index;
 use Drupal\views\Entity\View;
 
 /**
+ * Implements hook_modules_installed().
+ */
+function lightning_search_modules_installed(array $modules) {
+  if (\Drupal::isConfigSyncing()) {
+    return;
+  }
+
+  if (in_array('lightning_dev', $modules, TRUE)) {
+    /** @var \Drupal\block\BlockInterface $block */
+    $block = entity_create('block', [
+      'id' => 'seven_search',
+      'theme' => 'seven',
+      'region' => 'content',
+      'plugin' => 'views_exposed_filter_block:search-page',
+    ]);
+    $block->setVisibilityConfig('request_path', [
+      'pages' => '/search',
+    ]);
+    $block->save();
+
+    /** @var \Drupal\views\ViewEntityInterface $view */
+    $view = entity_load('view', 'search');
+    $display = &$view->getDisplay('default');
+    $display['display_options']['cache'] = [
+      'type' => 'none',
+      'options' => [],
+    ];
+    $view->save();
+  }
+}
+
+/**
  * Implements hook_ENTITY_TYPE_insert().
  */
 function lightning_search_node_type_insert(NodeTypeInterface $node_type) {
@@ -96,4 +128,13 @@ function lightning_search_node_type_delete(NodeTypeInterface $node_type) {
 function lightning_search_views_data_alter(array &$data) {
   // @TODO: Remove this when #2843724 is fixed.
   $data['search_api_index_content']['rendered']['field']['id'] = 'search_api';
+}
+
+/**
+ * Implements hook_entity_insert().
+ */
+function lightning_search_entity_insert() {
+  if (PHP_SAPI === 'cli') {
+    \Drupal::service('search_api.post_request_indexing')->onKernelTerminate();
+  }
 }

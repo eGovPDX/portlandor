@@ -7,6 +7,8 @@ use Symfony\Component\HttpKernel\HttpKernelInterface;
 
 /**
  * Sets the 'api_json' format on all requests to JSON API-managed routes.
+ *
+ * @internal
  */
 class FormatSetter implements HttpKernelInterface {
 

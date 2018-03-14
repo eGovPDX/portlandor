@@ -110,17 +110,33 @@ class TraceableEventDispatcherTest extends TestCase
         $tdispatcher->addListener('foo', function () {}, 5);
 
         $listeners = $tdispatcher->getNotCalledListeners();
-        $this->assertArrayHasKey('data', $listeners['foo.closure']);
-        unset($listeners['foo.closure']['data']);
+        $this->assertArrayHasKey('stub', $listeners['foo.closure']);
+        unset($listeners['foo.closure']['stub']);
         $this->assertEquals(array(), $tdispatcher->getCalledListeners());
         $this->assertEquals(array('foo.closure' => array('event' => 'foo', 'pretty' => 'closure', 'priority' => 5)), $listeners);
 
         $tdispatcher->dispatch('foo');
 
         $listeners = $tdispatcher->getCalledListeners();
-        unset($listeners['foo.closure']['data']);
+        $this->assertArrayHasKey('stub', $listeners['foo.closure']);
+        unset($listeners['foo.closure']['stub']);
         $this->assertEquals(array('foo.closure' => array('event' => 'foo', 'pretty' => 'closure', 'priority' => 5)), $listeners);
         $this->assertEquals(array(), $tdispatcher->getNotCalledListeners());
+    }
+
+    public function testClearCalledListeners()
+    {
+        $tdispatcher = new TraceableEventDispatcher(new EventDispatcher(), new Stopwatch());
+        $tdispatcher->addListener('foo', function () {}, 5);
+
+        $tdispatcher->dispatch('foo');
+        $tdispatcher->reset();
+
+        $listeners = $tdispatcher->getNotCalledListeners();
+        $this->assertArrayHasKey('stub', $listeners['foo.closure']);
+        unset($listeners['foo.closure']['stub']);
+        $this->assertEquals(array(), $tdispatcher->getCalledListeners());
+        $this->assertEquals(array('foo.closure' => array('event' => 'foo', 'pretty' => 'closure', 'priority' => 5)), $listeners);
     }
 
     public function testGetCalledListenersNested()

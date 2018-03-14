@@ -10,6 +10,8 @@ use Drupal\Tests\jsonapi\Kernel\JsonapiKernelTestBase;
  * @coversDefaultClass \Drupal\jsonapi\Controller\EntryPoint
  * @group jsonapi
  * @group legacy
+ *
+ * @internal
  */
 class EntryPointTest extends JsonapiKernelTestBase {
 

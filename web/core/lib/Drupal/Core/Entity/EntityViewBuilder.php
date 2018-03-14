@@ -11,7 +11,7 @@ use Drupal\Core\Field\FieldItemListInterface;
 use Drupal\Core\Language\LanguageManagerInterface;
 use Drupal\Core\Render\Element;
 use Drupal\Core\Theme\Registry;
-use Drupal\Core\TypedData\TranslatableInterface;
+use Drupal\Core\TypedData\TranslatableInterface as TranslatableDataInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
@@ -189,7 +189,7 @@ class EntityViewBuilder extends EntityHandlerBase implements EntityHandlerInterf
         'bin' => $this->cacheBin,
       ];
 
-      if ($entity instanceof TranslatableInterface && count($entity->getTranslationLanguages()) > 1) {
+      if ($entity instanceof TranslatableDataInterface && count($entity->getTranslationLanguages()) > 1) {
         $build['#cache']['keys'][] = $entity->language()->getId();
       }
     }
@@ -269,6 +269,7 @@ class EntityViewBuilder extends EntityHandlerBase implements EntityHandlerInterf
         $this->moduleHandler()->invokeAll($view_hook, [&$build_list[$key], $entity, $display, $view_mode]);
         $this->moduleHandler()->invokeAll('entity_view', [&$build_list[$key], $entity, $display, $view_mode]);
 
+        $this->addContextualLinks($build_list[$key], $entity);
         $this->alterBuild($build_list[$key], $entity, $display, $view_mode);
 
         // Assign the weights configured in the display.
@@ -320,6 +321,46 @@ class EntityViewBuilder extends EntityHandlerBase implements EntityHandlerInterf
       $display_build = $displays[$bundle]->buildMultiple($bundle_entities);
       foreach ($bundle_entities as $id => $entity) {
         $build[$id] += $display_build[$id];
+      }
+    }
+  }
+
+  /**
+   * Add contextual links.
+   *
+   * @param array $build
+   *   The render array that is being created.
+   * @param \Drupal\Core\Entity\EntityInterface $entity
+   *   The entity to be prepared.
+   */
+  protected function addContextualLinks(array &$build, EntityInterface $entity) {
+    if ($entity->isNew()) {
+      return;
+    }
+    $links = [];
+    // Only attach one of either the revision or canonical contextual link
+    // group.
+    if ($entity instanceof ContentEntityInterface && !$entity->isDefaultRevision()) {
+      $links[$entity->getEntityTypeId() . '_revision'] = 'revision';
+    }
+    else {
+      $links[$entity->getEntityTypeId()] = 'canonical';
+    }
+    // For entities which are non-default and are the latest version, add an
+    // additional group of contextual links.
+    if ($entity instanceof ContentEntityInterface && !$entity->isDefaultRevision() && $entity->isLatestRevision()) {
+      $links[$entity->getEntityTypeId() . '_latest_version'] = 'revision';
+    }
+    foreach ($links as $group => $link_template) {
+      if ($entity->hasLinkTemplate($link_template)) {
+        $build['#contextual_links'][$group] = [
+          'route_parameters' => $entity->toUrl($link_template)->getRouteParameters(),
+        ];
+        if ($entity instanceof EntityChangedInterface) {
+          $build['#contextual_links'][$group]['metadata'] = [
+            'changed' => $entity->getChangedTime(),
+          ];
+        }
       }
     }
   }

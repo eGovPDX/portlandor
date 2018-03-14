@@ -2,7 +2,7 @@
 
 namespace Drupal\Tests\jsonapi\Unit\Normalizer;
 
-use Drupal\Core\Session\AccountProxyInterface;
+use Drupal\Core\Session\AccountInterface;
 use Drupal\jsonapi\Normalizer\HttpExceptionNormalizer;
 use Drupal\Tests\UnitTestCase;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
@@ -10,6 +10,8 @@ use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 /**
  * @coversDefaultClass \Drupal\jsonapi\Normalizer\HttpExceptionNormalizer
  * @group jsonapi
+ *
+ * @internal
  */
 class HttpExceptionNormalizerTest extends UnitTestCase {
 
@@ -18,7 +20,7 @@ class HttpExceptionNormalizerTest extends UnitTestCase {
    */
   public function testNormalize() {
     $exception = new AccessDeniedHttpException('lorem', NULL, 13);
-    $current_user = $this->prophesize(AccountProxyInterface::class);
+    $current_user = $this->prophesize(AccountInterface::class);
     $current_user->hasPermission('access site reports')->willReturn(TRUE);
     $normalizer = new HttpExceptionNormalizer($current_user->reveal());
     $normalized = $normalizer->normalize($exception, 'api_json');
@@ -32,7 +34,7 @@ class HttpExceptionNormalizerTest extends UnitTestCase {
     $this->assertEquals('lorem', $error['detail']);
     $this->assertNull($error['meta']['trace'][1]['args'][0]);
 
-    $current_user = $this->prophesize(AccountProxyInterface::class);
+    $current_user = $this->prophesize(AccountInterface::class);
     $current_user->hasPermission('access site reports')->willReturn(FALSE);
     $normalizer = new HttpExceptionNormalizer($current_user->reveal());
     $normalized = $normalizer->normalize($exception, 'api_json');

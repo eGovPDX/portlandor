@@ -2,8 +2,8 @@
 
 namespace Drupal\Tests\lightning_roles\Kernel;
 
+use Drupal\KernelTests\KernelTestBase;
 use Drupal\node\Entity\NodeType;
-use Drupal\Tests\token\Kernel\KernelTestBase;
 use Drupal\user\Entity\Role;
 
 /**
@@ -15,9 +15,11 @@ class ContentRoleTest extends KernelTestBase {
   /**
    * {@inheritdoc}
    */
-  public static $modules = [
+  protected static $modules = [
     'lightning_roles',
     'node',
+    'system',
+    'user',
   ];
 
   /**

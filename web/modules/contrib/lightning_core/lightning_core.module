@@ -15,6 +15,7 @@ use Drupal\lightning_core\Entity\Role;
 use Drupal\lightning_core\Form\RoleForm;
 use Drupal\lightning_core\OverrideHelper as Override;
 use Drupal\lightning_core\Plugin\views\filter\Bundle;
+use Drupal\lightning_core\UpdateManager;
 
 /**
  * Implements hook_local_tasks_alter().
@@ -125,7 +126,19 @@ function lightning_core_modules_installed(array $modules) {
   if (\Drupal::isConfigSyncing()) {
     return;
   }
-  elseif (in_array('token', $modules)) {
+
+  // Record the semantic version of every module in config.
+  $versions = \Drupal::configFactory()->getEditable(UpdateManager::CONFIG_NAME);
+
+  /** @var \Drupal\lightning_core\UpdateManager $update_manager */
+  $update_manager = \Drupal::service('lightning.update_manager');
+
+  foreach ($modules as $module) {
+    $versions->set($module, $update_manager->getVersion($module));
+  }
+  $versions->save();
+
+  if (in_array('token', $modules, TRUE)) {
     $view_modes = [];
     foreach (\Drupal::entityTypeManager()->getDefinitions() as $entity_type) {
       $view_modes[] = $entity_type->id() . '.token';
@@ -137,6 +150,26 @@ function lightning_core_modules_installed(array $modules) {
       $view_mode->setThirdPartySetting('lightning_core', 'internal', TRUE)
         ->save();
     }
+  }
+
+  if (in_array('lightning_dev', $modules, TRUE)) {
+    $administrator = Role::load('administrator');
+    if ($administrator == NULL) {
+      $administrator = Role::create([
+        'id' => 'administrator',
+        'label' => 'Administrator'
+      ]);
+      $administrator->setIsAdmin(TRUE);
+      $administrator->save();
+    }
+
+    \Drupal::service('theme_installer')->install(['seven']);
+
+    \Drupal::configFactory()
+      ->getEditable('system.theme')
+      ->set('admin', 'seven')
+      ->set('default', 'seven')
+      ->save();
   }
 }
 

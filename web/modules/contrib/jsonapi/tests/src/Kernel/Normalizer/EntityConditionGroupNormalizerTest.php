@@ -10,6 +10,8 @@ use Drupal\jsonapi\Query\EntityConditionGroup;
  * @group jsonapi
  * @group jsonapi_normalizers
  * @group legacy
+ *
+ * @internal
  */
 class EntityConditionGroupNormalizerTest extends KernelTestBase {
 
@@ -43,7 +45,7 @@ class EntityConditionGroupNormalizerTest extends KernelTestBase {
    * @covers ::denormalize
    * @expectedException InvalidArgumentException
    */
-  public function testDenormalize_exception() {
+  public function testDenormalizeException() {
     $normalizer = $this->container->get('serializer.normalizer.entity_condition_group.jsonapi');
     $data = ['conjunction' => 'NOT_ALLOWED', 'members' => []];
     $normalized = $normalizer->denormalize($data, EntityConditionGroup::class);

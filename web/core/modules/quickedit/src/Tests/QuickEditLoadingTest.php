@@ -353,6 +353,22 @@ class QuickEditLoadingTest extends WebTestBase {
   }
 
   /**
+   * Test the latest revision of entities are loaded on the form route.
+   */
+  public function testLatestRevisionLoaded() {
+    $this->drupalLogin($this->editorUser);
+
+    $this->testNode->setNewRevision(TRUE);
+    $this->testNode->isDefaultRevision(FALSE);
+    $this->testNode->title = 'latest revision title';
+    $this->testNode->save();
+
+    $response = $this->drupalPost('quickedit/form/node/1/title/en/full', '', [], ['query' => [MainContentViewSubscriber::WRAPPER_FORMAT => 'drupal_ajax']]);
+    $this->setRawContent($response);
+    $this->assertRaw('latest revision title');
+  }
+
+  /**
    * Tests the loading of Quick Edit for the title base field.
    */
   public function testTitleBaseField() {

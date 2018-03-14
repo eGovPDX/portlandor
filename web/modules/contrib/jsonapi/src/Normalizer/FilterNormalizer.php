@@ -208,13 +208,15 @@ class FilterNormalizer implements DenormalizerInterface {
   /**
    * Organizes the flat, normalized filter items into a tree structure.
    *
+   * @param array $root
+   *   The root of the tree to build.
    * @param array $items
    *   The normalized entity conditions and groups.
    *
    * @return \Drupal\jsonapi\Query\EntityConditionGroup
    *   The entity condition group
    */
-  protected function buildTree(array $root, $items) {
+  protected function buildTree(array $root, array $items) {
     $id = $root['id'];
 
     // Recursively build a tree of denormalized conditions and condition groups.

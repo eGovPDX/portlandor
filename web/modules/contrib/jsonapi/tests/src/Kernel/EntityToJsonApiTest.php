@@ -21,6 +21,8 @@ use Prophecy\Argument;
  * @group jsonapi
  * @group jsonapi_serializer
  * @group legacy
+ *
+ * @internal
  */
 class EntityToJsonApiTest extends JsonapiKernelTestBase {
 

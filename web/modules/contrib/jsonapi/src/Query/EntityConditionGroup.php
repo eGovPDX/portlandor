@@ -11,6 +11,8 @@ class EntityConditionGroup {
 
   /**
    * The AND conjunction value.
+   *
+   * @var array
    */
   protected static $allowedConjunctions = ['AND', 'OR'];
 
@@ -36,7 +38,7 @@ class EntityConditionGroup {
    * @param array $members
    *   (optional) The group conjunction to use.
    */
-  public function __construct($conjunction, $members = []) {
+  public function __construct($conjunction, array $members = []) {
     if (!in_array($conjunction, self::$allowedConjunctions)) {
       throw new \InvalidArgumentException('Allowed conjunctions: AND, OR.');
     }
@@ -48,6 +50,7 @@ class EntityConditionGroup {
    * The condition group conjunction.
    *
    * @return string
+   *   The condition group conjunction.
    */
   public function conjunction() {
     return $this->conjunction;
@@ -57,6 +60,7 @@ class EntityConditionGroup {
    * The members which belong to the the condition group.
    *
    * @return \Drupal\jsonapi\Query\EntityCondition[]
+   *   The member conditions of this condition group.
    */
   public function members() {
     return $this->members;

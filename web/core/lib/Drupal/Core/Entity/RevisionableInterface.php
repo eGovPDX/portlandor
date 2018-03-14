@@ -52,6 +52,22 @@ interface RevisionableInterface {
   public function isDefaultRevision($new_value = NULL);
 
   /**
+   * Checks whether the entity object was a default revision when it was saved.
+   *
+   * @return bool
+   *   TRUE if the entity object was a revision, FALSE otherwise.
+   */
+  public function wasDefaultRevision();
+
+  /**
+   * Checks if this entity is the latest revision.
+   *
+   * @return bool
+   *   TRUE if the entity is the latest revision, FALSE otherwise.
+   */
+  public function isLatestRevision();
+
+  /**
    * Acts on a revision before it gets saved.
    *
    * @param EntityStorageInterface $storage
@@ -60,21 +76,5 @@ interface RevisionableInterface {
    *   The revision object.
    */
   public function preSaveRevision(EntityStorageInterface $storage, \stdClass $record);
-
-  /**
-   * Get the latest revision ID of the entity.
-   *
-   * @return int|null
-   *   The latest revision ID or NULL if the entity does not have a revision.
-   */
-  public function getLatestRevisionId();
-
-  /**
-   * Check if the loaded revision is the latest.
-   *
-   * @return bool
-   *   TRUE if the loaded revision is the latest revision, FALSE otherwise.
-   */
-  public function isLatestRevision();
 
 }

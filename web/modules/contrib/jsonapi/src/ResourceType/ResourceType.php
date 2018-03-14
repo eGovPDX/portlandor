@@ -10,7 +10,7 @@ namespace Drupal\jsonapi\ResourceType;
  *
  * @see \Drupal\jsonapi\ResourceType\ResourceTypeRepository
  *
- * @api
+ * @deprecated
  */
 class ResourceType {
 
@@ -41,6 +41,13 @@ class ResourceType {
    * @var string
    */
   protected $deserializationTargetClass;
+
+  /**
+   * Whether this resource type is internal.
+   *
+   * @var bool
+   */
+  protected $internal;
 
   /**
    * Gets the entity type ID.
@@ -145,6 +152,31 @@ class ResourceType {
   }
 
   /**
+   * Whether this resource type is internal.
+   *
+   * This must not be used as an access control mechanism.
+   *
+   * Internal resource types are not available via the HTTP API. They have no
+   * routes and cannot be used for filtering or sorting. They cannot be included
+   * in the response using the `include` query parameter.
+   *
+   * However, relationship fields on public resources *will include* a resource
+   * identifier for the referenced internal resource.
+   *
+   * This method exists to remove data that should not logically be exposed by
+   * the HTTP API. For example, read-only data from an internal resource might
+   * be embedded in a public resource using computed fields. Therefore,
+   * including the internal resource as a relationship with distinct routes
+   * might uneccesarilly expose internal implementation details.
+   *
+   * @return bool
+   *   TRUE if the resource type is internal. FALSE otherwise.
+   */
+  public function isInternal() {
+    return $this->internal;
+  }
+
+  /**
    * Instantiates a ResourceType object.
    *
    * @param string $entity_type_id
@@ -153,13 +185,72 @@ class ResourceType {
    *   A bundle.
    * @param string $deserialization_target_class
    *   The deserialization target class.
+   * @param bool $internal
+   *   (optional) Whether the resource type should be internal.
    */
-  public function __construct($entity_type_id, $bundle, $deserialization_target_class) {
+  public function __construct($entity_type_id, $bundle, $deserialization_target_class, $internal = FALSE) {
     $this->entityTypeId = $entity_type_id;
     $this->bundle = $bundle;
     $this->deserializationTargetClass = $deserialization_target_class;
+    $this->internal = $internal;
 
     $this->typeName = sprintf('%s--%s', $this->entityTypeId, $this->bundle);
+  }
+
+  /**
+   * Sets the relatable resource types.
+   *
+   * @param array $relatable_resource_types
+   *   The resource types with which this resource type may have a relationship.
+   *   The array should be a multi-dimensional array keyed by public field name
+   *   whose values are an array of resource types. There may be duplicate
+   *   across resource types across fields, but not within a field.
+   */
+  public function setRelatableResourceTypes(array $relatable_resource_types) {
+    $this->relatableResourceTypes = $relatable_resource_types;
+  }
+
+  /**
+   * Get all resource types with which this type may have a relationship.
+   *
+   * @return array
+   *   The relatable resource types, keyed by relationship field names.
+   *
+   * @see self::setRelatableResourceTypes()
+   */
+  public function getRelatableResourceTypes() {
+    if (!isset($this->relatableResourceTypes)) {
+      throw new \LogicException("setRelatableResourceTypes() must be called before getting relatable resource types.");
+    }
+    return $this->relatableResourceTypes;
+  }
+
+  /**
+   * Get all resource types with which the given field may have a relationship.
+   *
+   * @param string $field_name
+   *   The public field name.
+   *
+   * @return \Drupal\jsonapi\ResourceType\ResourceType[]
+   *   The relatable JSON API resource types.
+   *
+   * @see self::getRelatableResourceTypes()
+   */
+  public function getRelatableResourceTypesByField($field_name) {
+    $relatable_resource_types = $this->getRelatableResourceTypes();
+    return isset($relatable_resource_types[$field_name]) ?
+      $relatable_resource_types[$field_name] :
+      [];
+  }
+
+  /**
+   * Get the resource path.
+   *
+   * @return string
+   *   The path to access this resource type. Defaults to entity_type_id/bundle.
+   */
+  public function getPath() {
+    return sprintf('%s/%s', $this->getEntityTypeId(), $this->getBundle());
   }
 
 }

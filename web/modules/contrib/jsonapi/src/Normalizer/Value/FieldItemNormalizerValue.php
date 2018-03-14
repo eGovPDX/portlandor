@@ -3,6 +3,8 @@
 namespace Drupal\jsonapi\Normalizer\Value;
 
 /**
+ * Helps normalize field items in compliance with the JSON API spec.
+ *
  * @internal
  */
 class FieldItemNormalizerValue implements ValueExtractorInterface {
@@ -10,14 +12,14 @@ class FieldItemNormalizerValue implements ValueExtractorInterface {
   /**
    * Raw values.
    *
-   * @param array
+   * @var array
    */
   protected $raw;
 
   /**
    * Included entity objects.
    *
-   * @param \Drupal\jsonapi\Normalizer\Value\EntityNormalizerValue
+   * @var \Drupal\jsonapi\Normalizer\Value\EntityNormalizerValue
    */
   protected $include;
 

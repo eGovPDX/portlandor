@@ -1,0 +1,150 @@
+<?php
+
+namespace Drupal\Tests\jsonapi\Functional;
+
+use Drupal\Core\Url;
+use Drupal\field\Entity\FieldConfig;
+use Drupal\field\Entity\FieldStorageConfig;
+use Drupal\node\Entity\NodeType;
+
+/**
+ * JSON API integration test for the "FieldConfig" config entity type.
+ *
+ * @group jsonapi
+ */
+class FieldConfigTest extends ResourceTestBase {
+
+  /**
+   * {@inheritdoc}
+   */
+  public static $modules = ['field', 'node'];
+
+  /**
+   * {@inheritdoc}
+   */
+  protected static $entityTypeId = 'field_config';
+
+  /**
+   * {@inheritdoc}
+   */
+  protected static $resourceTypeName = 'field_config--field_config';
+
+  /**
+   * {@inheritdoc}
+   *
+   * @var \Drupal\field\FieldConfigInterface
+   */
+  protected $entity;
+
+  /**
+   * {@inheritdoc}
+   */
+  protected function setUpAuthorization($method) {
+    $this->grantPermissionsToTestedRole(['administer node fields']);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  protected function createEntity() {
+    $camelids = NodeType::create([
+      'name' => 'Camelids',
+      'type' => 'camelids',
+    ]);
+    $camelids->save();
+
+    $field_storage = FieldStorageConfig::create([
+      'field_name' => 'field_llama',
+      'entity_type' => 'node',
+      'type' => 'text',
+    ]);
+    $field_storage->save();
+
+    $entity = FieldConfig::create([
+      'field_storage' => $field_storage,
+      'bundle' => 'camelids',
+    ]);
+    $entity->save();
+
+    return $entity;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  protected function getExpectedDocument() {
+    $self_url = Url::fromUri('base:/jsonapi/field_config/field_config/' . $this->entity->uuid())->setAbsolute()->toString(TRUE)->getGeneratedUrl();
+    return [
+      'jsonapi' => [
+        'meta' => [
+          'links' => [
+            'self' => 'http://jsonapi.org/format/1.0/',
+          ],
+        ],
+        'version' => '1.0',
+      ],
+      'links' => [
+        'self' => $self_url,
+      ],
+      'data' => [
+        'id' => $this->entity->uuid(),
+        'type' => 'field_config--field_config',
+        'links' => [
+          'self' => $self_url,
+        ],
+        'attributes' => [
+          'bundle' => 'camelids',
+          'default_value' => [],
+          'default_value_callback' => '',
+          'dependencies' => [
+            'config' => [
+              'field.storage.node.field_llama',
+              'node.type.camelids',
+            ],
+            'module' => [
+              'text',
+            ],
+          ],
+          'description' => '',
+          'entity_type' => 'node',
+          'field_name' => 'field_llama',
+          'field_type' => 'text',
+          'id' => 'node.camelids.field_llama',
+          'label' => 'field_llama',
+          'langcode' => 'en',
+          'required' => FALSE,
+          'settings' => [],
+          'status' => TRUE,
+          'translatable' => TRUE,
+          'uuid' => $this->entity->uuid(),
+        ],
+      ],
+    ];
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  protected function getPostDocument() {
+    // @todo Update in https://www.drupal.org/node/2300677.
+  }
+
+  // @codingStandardsIgnoreStart
+  /**
+   * {@inheritdoc}
+   */
+  protected function getExpectedCacheContexts() {
+    // @todo Uncomment first line, remove second line in https://www.drupal.org/project/jsonapi/issues/2940342.
+//    return ['user.permissions'];
+    return parent::getExpectedCacheContexts();
+  }
+  // @codingStandardsIgnoreEnd
+
+  /**
+   * {@inheritdoc}
+   */
+  protected function getExpectedUnauthorizedAccessMessage($method) {
+    return "The 'administer node fields' permission is required.";
+  }
+
+}

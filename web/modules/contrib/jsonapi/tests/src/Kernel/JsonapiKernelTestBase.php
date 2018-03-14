@@ -7,6 +7,8 @@ use Drupal\field\Entity\FieldStorageConfig;
 use Drupal\KernelTests\KernelTestBase;
 
 /**
+ * Contains shared test utility methods.
+ *
  * @internal
  */
 abstract class JsonapiKernelTestBase extends KernelTestBase {
@@ -40,7 +42,7 @@ abstract class JsonapiKernelTestBase extends KernelTestBase {
    *
    * @see \Drupal\Core\Entity\Plugin\EntityReferenceSelection\SelectionBase::buildConfigurationForm()
    */
-  protected function createEntityReferenceField($entity_type, $bundle, $field_name, $field_label, $target_entity_type, $selection_handler = 'default', $handler_settings = [], $cardinality = 1) {
+  protected function createEntityReferenceField($entity_type, $bundle, $field_name, $field_label, $target_entity_type, $selection_handler = 'default', array $handler_settings = [], $cardinality = 1) {
     // Look for or add the specified field to the requested entity bundle.
     if (!FieldStorageConfig::loadByName($entity_type, $field_name)) {
       FieldStorageConfig::create([

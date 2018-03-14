@@ -4,10 +4,13 @@ namespace Drupal\jsonapi\Normalizer;
 
 use Drupal\Component\Plugin\Exception\PluginNotFoundException;
 use Drupal\Component\Utility\NestedArray;
+use Drupal\Component\Uuid\Uuid;
+use Drupal\Core\Access\AccessResult;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Field\EntityReferenceFieldItemListInterface;
 use Drupal\jsonapi\Context\CurrentContext;
 use Drupal\jsonapi\Context\FieldResolver;
+use Drupal\jsonapi\Exception\EntityAccessDeniedHttpException;
 use Drupal\jsonapi\Normalizer\Value\JsonApiDocumentTopLevelNormalizerValue;
 use Drupal\jsonapi\Resource\EntityCollection;
 use Drupal\jsonapi\LinkManager\LinkManager;
@@ -20,7 +23,11 @@ use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
 use Drupal\jsonapi\ResourceType\ResourceTypeRepositoryInterface;
 
 /**
+ * Normalizes the top-level document according to the JSON API specification.
+ *
  * @see \Drupal\jsonapi\Resource\JsonApiDocumentTopLevel
+ *
+ * @internal
  */
 class JsonApiDocumentTopLevelNormalizer extends NormalizerBase implements DenormalizerInterface, NormalizerInterface {
 
@@ -51,6 +58,13 @@ class JsonApiDocumentTopLevelNormalizer extends NormalizerBase implements Denorm
   protected $entityTypeManager;
 
   /**
+   * The JSON API resource type repository.
+   *
+   * @var \Drupal\jsonapi\ResourceType\ResourceTypeRepositoryInterface
+   */
+  protected $resourceTypeRepository;
+
+  /**
    * The field resolver.
    *
    * @var \Drupal\jsonapi\Context\FieldResolver
@@ -66,6 +80,10 @@ class JsonApiDocumentTopLevelNormalizer extends NormalizerBase implements Denorm
    *   The current context.
    * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
    *   The entity type manager.
+   * @param \Drupal\jsonapi\ResourceType\ResourceTypeRepositoryInterface $resource_type_repository
+   *   The JSON API resource type repository.
+   * @param \Drupal\jsonapi\Context\FieldResolver $field_resolver
+   *   The JSON API field resolver.
    */
   public function __construct(LinkManager $link_manager, CurrentContext $current_context, EntityTypeManagerInterface $entity_type_manager, ResourceTypeRepositoryInterface $resource_type_repository, FieldResolver $field_resolver) {
     $this->linkManager = $link_manager;
@@ -79,15 +97,27 @@ class JsonApiDocumentTopLevelNormalizer extends NormalizerBase implements Denorm
    * {@inheritdoc}
    */
   public function denormalize($data, $class, $format = NULL, array $context = []) {
+    // Validate a few common errors in document formatting.
+    $this->validateRequestBody($data);
+
     $context += [
       'on_relationship' => $this->currentContext->isOnRelationship(),
     ];
     $normalized = [];
+
     if (!empty($data['data']['attributes'])) {
       $normalized = $data['data']['attributes'];
     }
+
+    if (!empty($data['data']['id'])) {
+      $resource_type = $this->resourceTypeRepository->getByTypeName($data['data']['type']);
+      $uuid_key = $this->entityTypeManager->getDefinition($resource_type->getEntityTypeId())->getKey('uuid');
+      $normalized[$uuid_key] = $data['data']['id'];
+    }
+
     if (!empty($data['data']['relationships'])) {
-      // Turn all single object relationship data fields into an array of objects.
+      // Turn all single object relationship data fields into an array of
+      // objects.
       $relationships = array_map(function ($relationship) {
         if (isset($relationship['data']['type']) && isset($relationship['data']['id'])) {
           return ['data' => [$relationship['data']]];
@@ -173,7 +203,6 @@ class JsonApiDocumentTopLevelNormalizer extends NormalizerBase implements Denorm
     $normalized = $value_extractor->rasterizeValue();
     $included = array_filter($value_extractor->rasterizeIncludes());
     if (!empty($included)) {
-      $normalized['included'] = [];
       foreach ($included as $included_item) {
         if ($included_item['data'] === FALSE) {
           unset($included_item['data']);
@@ -201,7 +230,8 @@ class JsonApiDocumentTopLevelNormalizer extends NormalizerBase implements Denorm
 
     if ($data instanceof EntityReferenceFieldItemListInterface) {
       $output = $this->serializer->normalize($data, $format, $context);
-      // The only normalizer value that computes nested includes automatically is the JsonApiDocumentTopLevelNormalizerValue.
+      // The only normalizer value that computes nested includes automatically
+      // is the JsonApiDocumentTopLevelNormalizerValue.
       $output->setIncludes($output->getAllIncludes());
       return $output;
     }
@@ -230,7 +260,7 @@ class JsonApiDocumentTopLevelNormalizer extends NormalizerBase implements Denorm
       $link_context['total_count'] = $context['total_count'];
     }
 
-    return new JsonApiDocumentTopLevelNormalizerValue($normalizer_values, $context, $is_collection, $link_context);
+    return new JsonApiDocumentTopLevelNormalizerValue($normalizer_values, $context, $link_context, $is_collection);
   }
 
   /**
@@ -271,6 +301,26 @@ class JsonApiDocumentTopLevelNormalizer extends NormalizerBase implements Denorm
     }
 
     return $context;
+  }
+
+  /**
+   * Performs mimimal validation of the document.
+   */
+  protected static function validateRequestBody(array $document) {
+    // Ensure that the relationships key was not placed in the top level.
+    if (isset($document['relationships']) && !empty($document['relationships'])) {
+      throw new BadRequestHttpException("Found \"relationships\" within the document's top level. The \"relationships\" key must be within resource object.");
+    }
+    // Ensure that the resource object contains the "type" key.
+    if (!isset($document['data']['type'])) {
+      throw new BadRequestHttpException("Resource object must include a \"type\".");
+    }
+    // Ensure that the client provided ID is a valid UUID.
+    if (isset($document['data']['id']) && !Uuid::isValid($document['data']['id'])) {
+      // This should be a 422 response, but the JSON API specification dictates
+      // a 403 Forbidden response. We follow the specification.
+      throw new EntityAccessDeniedHttpException(NULL, AccessResult::forbidden(), '/data/id', 'IDs should be properly generated and formatted UUIDs as described in RFC 4122.');
+    }
   }
 
 }

@@ -61,6 +61,8 @@ class Filter {
    *
    * @param \Drupal\Entity\Query\QueryInterface $query
    *   The query to which the filter should be applied.
+   * @param \Drupal\Entity\Query\EntityConditionGroup $condition_group
+   *   The condition group to build.
    *
    * @return \Drupal\Entity\Query\QueryInterface
    *   The query with the filter applied.

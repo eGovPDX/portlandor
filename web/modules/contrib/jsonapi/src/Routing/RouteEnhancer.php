@@ -9,6 +9,8 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Route;
 
 /**
+ * Ensures the loaded entity matches the requested resource type.
+ *
  * @internal
  */
 class RouteEnhancer implements RouteEnhancerInterface {

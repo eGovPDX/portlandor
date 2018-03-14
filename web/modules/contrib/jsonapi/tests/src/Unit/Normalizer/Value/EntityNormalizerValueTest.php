@@ -16,6 +16,8 @@ use Prophecy\Argument;
 /**
  * @coversDefaultClass \Drupal\jsonapi\Normalizer\Value\EntityNormalizerValue
  * @group jsonapi
+ *
+ * @internal
  */
 class EntityNormalizerValueTest extends UnitTestCase {
 
@@ -70,7 +72,10 @@ class EntityNormalizerValueTest extends UnitTestCase {
     $field2->getIncludes()->willReturn(array_map(function ($included_item) {
       return $included_item->reveal();
     }, $included));
-    $context = ['resource_type' => new ResourceType('node', 'article', NodeInterface::class)];
+    $context = [
+      'resource_type' => new ResourceType('node', 'article',
+        NodeInterface::class),
+    ];
     $entity = $this->prophesize(EntityInterface::class);
     $entity->uuid()->willReturn('248150b2-79a2-4b44-9f49-bf405a51414a');
     $entity->isNew()->willReturn(FALSE);

@@ -16,6 +16,8 @@ use Symfony\Component\Serializer\SerializerInterface;
 /**
  * @coversDefaultClass \Drupal\jsonapi\Controller\RequestHandler
  * @group jsonapi
+ *
+ * @internal
  */
 class RequestHandlerTest extends UnitTestCase {
 

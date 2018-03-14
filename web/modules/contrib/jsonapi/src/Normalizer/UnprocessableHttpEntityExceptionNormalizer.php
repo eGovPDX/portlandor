@@ -2,17 +2,20 @@
 
 namespace Drupal\jsonapi\Normalizer;
 
-use Drupal\Core\Session\AccountProxyInterface;
+use Drupal\Component\Render\PlainTextOutput;
 use Drupal\jsonapi\Exception\UnprocessableHttpEntityException;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
 /**
- * Normalizes an UnprocessableHttpEntityException object for JSON output which
- * complies with the JSON API specification. A source pointer is added to help
- * client applications report validation errors, for example on an Entity edit
- * form.
+ * Normalizes and UnprocessableHttpEntityException.
+ *
+ * Normalizes an UnprocessableHttpEntityException in compliance with the JSON
+ * API specification. A source pointer is added to help client applications
+ * report validation errors, for example on an Entity edit form.
  *
  * @see http://jsonapi.org/format/#error-objects
+ *
+ * @internal
  */
 class UnprocessableHttpEntityExceptionNormalizer extends HttpExceptionNormalizer {
 
@@ -24,20 +27,10 @@ class UnprocessableHttpEntityExceptionNormalizer extends HttpExceptionNormalizer
   protected $supportedInterfaceOrClass = UnprocessableHttpEntityException::class;
 
   /**
-   * UnprocessableHttpEntityException constructor.
-   *
-   * @param \Drupal\Core\Session\AccountProxyInterface $current_user
-   *   The current user.
-   */
-  public function __construct(AccountProxyInterface $current_user) {
-    parent::__construct($current_user);
-  }
-
-  /**
    * {@inheritdoc}
    */
   protected function buildErrorObjects(HttpException $exception) {
-    /** @var $exception \Drupal\jsonapi\Exception\UnprocessableHttpEntityException */
+    /* @var $exception \Drupal\jsonapi\Exception\UnprocessableHttpEntityException */
     $errors = parent::buildErrorObjects($exception);
     $error = $errors[0];
     unset($error['links']);
@@ -64,7 +57,7 @@ class UnprocessableHttpEntityExceptionNormalizer extends HttpExceptionNormalizer
       foreach ($field_violations as $violation) {
         /** @var \Symfony\Component\Validator\ConstraintViolation $violation */
         $error['detail'] = $violation->getPropertyPath() . ': '
-          . $violation->getMessage();
+          . PlainTextOutput::renderFromHtml($violation->getMessage());
 
         $pointer = '/data/attributes/'
           . str_replace('.', '/', $violation->getPropertyPath());

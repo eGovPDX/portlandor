@@ -97,8 +97,8 @@ class EntityCollection implements \IteratorAggregate, \Countable {
   /**
    * Sets the has next page flag.
    *
-   * Once the collection query has been executed and we build the entity collection, we now if there will be a next page
-   * with extra entities.
+   * Once the collection query has been executed and we build the entity
+   * collection, we now if there will be a next page with extra entities.
    *
    * @param bool $has_next_page
    *   TRUE if the collection has a next page.

@@ -7,6 +7,8 @@ use Drupal\Core\Cache\RefinableCacheableDependencyTrait;
 use Drupal\Core\Entity\EntityInterface;
 
 /**
+ * Helps normalize entities in compliance with the JSON API spec.
+ *
  * @internal
  */
 class EntityNormalizerValue implements ValueExtractorInterface, RefinableCacheableDependencyInterface {
@@ -16,35 +18,35 @@ class EntityNormalizerValue implements ValueExtractorInterface, RefinableCacheab
   /**
    * The values.
    *
-   * @param array
+   * @var array
    */
   protected $values;
 
   /**
    * The includes.
    *
-   * @param array
+   * @var array
    */
   protected $includes;
 
   /**
    * The resource path.
    *
-   * @param array
+   * @var array
    */
   protected $context;
 
   /**
    * The resource entity.
    *
-   * @param \Drupal\Core\Entity\EntityInterface
+   * @var \Drupal\Core\Entity\EntityInterface
    */
   protected $entity;
 
   /**
    * The link manager.
    *
-   * @param \Drupal\jsonapi\LinkManager\LinkManager
+   * @var \Drupal\jsonapi\LinkManager\LinkManager
    */
   protected $linkManager;
 

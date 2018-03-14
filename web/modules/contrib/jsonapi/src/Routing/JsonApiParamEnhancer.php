@@ -12,6 +12,8 @@ use Symfony\Component\Routing\Route;
 use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
 
 /**
+ * Processes the request query parameters.
+ *
  * @internal
  */
 class JsonApiParamEnhancer implements RouteEnhancerInterface {
@@ -73,7 +75,7 @@ class JsonApiParamEnhancer implements RouteEnhancerInterface {
 
     if ($request->query->has('sort')) {
       $sort = $request->query->get('sort');
-      $options['sort'] = $this->sortNormalizer->denormalize($sort, Sort::class);
+      $options['sort'] = $this->sortNormalizer->denormalize($sort, Sort::class, NULL, $context);
     }
 
     $page = ($request->query->has('page')) ? $request->query->get('page') : [];

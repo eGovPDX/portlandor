@@ -3,6 +3,7 @@
 namespace Drupal\Tests\jsonapi\Kernel\Normalizer;
 
 use Drupal\KernelTests\KernelTestBase;
+use Drupal\jsonapi\Context\FieldResolver;
 use Drupal\jsonapi\Query\Sort;
 
 /**
@@ -10,6 +11,8 @@ use Drupal\jsonapi\Query\Sort;
  * @group jsonapi
  * @group jsonapi_normalizers
  * @group legacy
+ *
+ * @internal
  */
 class SortNormalizerTest extends KernelTestBase {
 
@@ -34,6 +37,7 @@ class SortNormalizerTest extends KernelTestBase {
    */
   public function setUp() {
     parent::setUp();
+    $this->container->set('jsonapi.field_resolver', $this->getFieldResolver('foo', 'bar'));
     $this->normalizer = $this->container->get('serializer.normalizer.sort.jsonapi');
   }
 
@@ -42,7 +46,7 @@ class SortNormalizerTest extends KernelTestBase {
    * @dataProvider denormalizeProvider
    */
   public function testDenormalize($input, $expected) {
-    $sort = $this->normalizer->denormalize($input, Sort::class);
+    $sort = $this->normalizer->denormalize($input, Sort::class, NULL, ['entity_type_id' => 'foo', 'bundle' => 'bar']);
     foreach ($sort->fields() as $index => $sort_field) {
       $this->assertEquals($expected[$index]['path'], $sort_field['path']);
       $this->assertEquals($expected[$index]['direction'], $sort_field['direction']);
@@ -55,16 +59,16 @@ class SortNormalizerTest extends KernelTestBase {
    */
   public function denormalizeProvider() {
     return [
-      ['lorem', [['path' => 'lorem', 'direction' => 'ASC', 'langcode' => NULL]]],
-      ['-lorem', [['path' => 'lorem', 'direction' => 'DESC', 'langcode' => NULL]]],
+      ['lorem', [['path' => 'foo', 'direction' => 'ASC', 'langcode' => NULL]]],
+      ['-lorem', [['path' => 'foo', 'direction' => 'DESC', 'langcode' => NULL]]],
       ['-lorem,ipsum', [
-        ['path' => 'lorem', 'direction' => 'DESC', 'langcode' => NULL],
-        ['path' => 'ipsum', 'direction' => 'ASC', 'langcode' => NULL],
+        ['path' => 'foo', 'direction' => 'DESC', 'langcode' => NULL],
+        ['path' => 'bar', 'direction' => 'ASC', 'langcode' => NULL],
       ],
       ],
       ['-lorem,-ipsum', [
-        ['path' => 'lorem', 'direction' => 'DESC', 'langcode' => NULL],
-        ['path' => 'ipsum', 'direction' => 'DESC', 'langcode' => NULL],
+        ['path' => 'foo', 'direction' => 'DESC', 'langcode' => NULL],
+        ['path' => 'bar', 'direction' => 'DESC', 'langcode' => NULL],
       ],
       ],
       [[
@@ -73,10 +77,10 @@ class SortNormalizerTest extends KernelTestBase {
         ['path' => 'dolor', 'direction' => 'ASC', 'langcode' => 'ca'],
         ['path' => 'sit', 'direction' => 'DESC', 'langcode' => 'ca'],
       ], [
-        ['path' => 'lorem', 'direction' => 'ASC', 'langcode' => NULL],
-        ['path' => 'ipsum', 'direction' => 'ASC', 'langcode' => 'ca'],
-        ['path' => 'dolor', 'direction' => 'ASC', 'langcode' => 'ca'],
-        ['path' => 'sit', 'direction' => 'DESC', 'langcode' => 'ca'],
+        ['path' => 'foo', 'direction' => 'ASC', 'langcode' => NULL],
+        ['path' => 'bar', 'direction' => 'ASC', 'langcode' => 'ca'],
+        ['path' => 'baz', 'direction' => 'ASC', 'langcode' => 'ca'],
+        ['path' => 'qux', 'direction' => 'DESC', 'langcode' => 'ca'],
       ],
       ],
     ];
@@ -99,6 +103,18 @@ class SortNormalizerTest extends KernelTestBase {
       [[['lorem']]],
       [''],
     ];
+  }
+
+  /**
+   * Provides a mock field resolver.
+   */
+  protected function getFieldResolver($entity_type_id, $bundle) {
+    $field_resolver = $this->prophesize(FieldResolver::class);
+    $field_resolver->resolveInternal('foo', 'bar', 'lorem')->willReturn('foo');
+    $field_resolver->resolveInternal('foo', 'bar', 'ipsum')->willReturn('bar');
+    $field_resolver->resolveInternal('foo', 'bar', 'dolor')->willReturn('baz');
+    $field_resolver->resolveInternal('foo', 'bar', 'sit')->willReturn('qux');
+    return $field_resolver->reveal();
   }
 
 }

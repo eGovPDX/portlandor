@@ -21,6 +21,8 @@ use Symfony\Component\Routing\Route;
 /**
  * @coversDefaultClass \Drupal\jsonapi\Context\CurrentContext
  * @group jsonapi
+ *
+ * @internal
  */
 class CurrentContextTest extends UnitTestCase {
 
@@ -46,6 +48,8 @@ class CurrentContextTest extends UnitTestCase {
   protected $requestStack;
 
   /**
+   * The route matcher service.
+   *
    * @var \Drupal\Core\Routing\StackedRouteMatchInterface
    */
   protected $routeMatcher;

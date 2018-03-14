@@ -40,6 +40,7 @@ class CustomQueryParameterNamesAccessCheck implements AccessInterface {
    *   The JSON API parameters.
    *
    * @return bool
+   *   Whether the parameter is valid.
    */
   protected function validate(array $json_api_params) {
     foreach (array_keys($json_api_params) as $query_parameter_name) {

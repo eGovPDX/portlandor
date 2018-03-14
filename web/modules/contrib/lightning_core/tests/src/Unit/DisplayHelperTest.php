@@ -1,6 +1,6 @@
 <?php
 
-namespace Drupal\Tests\lightning_core\Unit\DisplayHelperTest;
+namespace Drupal\Tests\lightning_core\Unit;
 
 use Drupal\Core\Entity\Display\EntityDisplayInterface;
 use Drupal\Core\Entity\EntityFieldManagerInterface;

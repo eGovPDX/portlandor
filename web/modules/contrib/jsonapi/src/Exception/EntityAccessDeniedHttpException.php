@@ -10,6 +10,8 @@ use Symfony\Component\HttpKernel\Exception\HttpException;
 
 /**
  * Enhances the access denied exception with information about the entity.
+ *
+ * @internal
  */
 class EntityAccessDeniedHttpException extends HttpException {
 
@@ -31,8 +33,8 @@ class EntityAccessDeniedHttpException extends HttpException {
   /**
    * EntityAccessDeniedHttpException constructor.
    *
-   * @param \Drupal\Core\Entity\EntityInterface $entity
-   *   The entity.
+   * @param \Drupal\Core\Entity\EntityInterface|null $entity
+   *   The entity, or NULL when an entity is being created.
    * @param \Drupal\Core\Access\AccessResultInterface $entity_access
    *   The access result.
    * @param string $pointer
@@ -46,7 +48,8 @@ class EntityAccessDeniedHttpException extends HttpException {
    * @param int $code
    *   The code.
    */
-  public function __construct(EntityInterface $entity, AccessResultInterface $entity_access, $pointer, $messsage = 'The current user is not allowed to GET the selected resource.', \Exception $previous = NULL, array $headers = [], $code = 0) {
+  public function __construct($entity, AccessResultInterface $entity_access, $pointer, $messsage = 'The current user is not allowed to GET the selected resource.', \Exception $previous = NULL, array $headers = [], $code = 0) {
+    assert(is_null($entity) || $entity instanceof EntityInterface);
     parent::__construct(403, $messsage, $previous, $headers, $code);
 
     $error = [
@@ -64,6 +67,7 @@ class EntityAccessDeniedHttpException extends HttpException {
    * Returns the error.
    *
    * @return array
+   *   The error.
    */
   public function getError() {
     return $this->error;

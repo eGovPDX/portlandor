@@ -13,7 +13,7 @@ Install the module as every other module.
 
 ## Compatibility
 
-This module is compatible with Drupal core 8.2.x and higher.
+This module is compatible with Drupal core 8.3.x and higher.
 
 ## Configuration
 

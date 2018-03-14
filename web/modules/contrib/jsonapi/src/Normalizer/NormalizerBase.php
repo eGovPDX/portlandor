@@ -6,6 +6,8 @@ use Drupal\serialization\Normalizer\NormalizerBase as SerializationNormalizerBas
 
 /**
  * Base normalizer used in all JSON API normalizers.
+ *
+ * @internal
  */
 abstract class NormalizerBase extends SerializationNormalizerBase {
 

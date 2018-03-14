@@ -5,6 +5,7 @@ namespace Drupal\jsonapi;
 use Drupal\Core\DependencyInjection\ContainerBuilder;
 use Drupal\Core\DependencyInjection\ServiceModifierInterface;
 use Drupal\Core\DependencyInjection\ServiceProviderInterface;
+use Drupal\jsonapi\DependencyInjection\Compiler\RegisterSerializationClassesCompilerPass;
 use Drupal\jsonapi\DependencyInjection\Compiler\RemoveJsonapiFormatCompilerPass;
 use Symfony\Component\DependencyInjection\Compiler\PassConfig;
 
@@ -35,6 +36,7 @@ class JsonapiServiceProvider implements ServiceModifierInterface, ServiceProvide
    * {@inheritdoc}
    */
   public function register(ContainerBuilder $container) {
+    $container->addCompilerPass(new RegisterSerializationClassesCompilerPass());
     $container->addCompilerPass(new RemoveJsonapiFormatCompilerPass(), PassConfig::TYPE_REMOVE);
   }
 

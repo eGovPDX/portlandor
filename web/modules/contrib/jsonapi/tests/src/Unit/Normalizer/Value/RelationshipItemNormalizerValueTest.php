@@ -9,6 +9,8 @@ use Drupal\Tests\UnitTestCase;
 /**
  * @coversDefaultClass \Drupal\jsonapi\Normalizer\Value\RelationshipItemNormalizerValue
  * @group jsonapi
+ *
+ * @internal
  */
 class RelationshipItemNormalizerValueTest extends UnitTestCase {
 
@@ -26,8 +28,18 @@ class RelationshipItemNormalizerValueTest extends UnitTestCase {
    */
   public function rasterizeValueProvider() {
     return [
-      [['target_id' => 1], 'node', 'article', ['type' => 'node--article', 'id' => 1]],
-      [['value' => 1], 'node', 'page', ['type' => 'node--page', 'id' => 1]],
+      [
+        ['target_id' => 1],
+        'node',
+        'article',
+        ['type' => 'node--article', 'id' => 1],
+      ],
+      [
+        ['value' => 1],
+        'node',
+        'page',
+        ['type' => 'node--page', 'id' => 1],
+      ],
       [[1], 'node', 'foo', ['type' => 'node--foo', 'id' => 1]],
       [[], 'node', 'bar', []],
       [[NULL], 'node', 'baz', NULL],

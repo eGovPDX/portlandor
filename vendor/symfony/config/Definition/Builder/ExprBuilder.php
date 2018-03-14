@@ -25,11 +25,6 @@ class ExprBuilder
     public $ifPart;
     public $thenPart;
 
-    /**
-     * Constructor.
-     *
-     * @param NodeDefinition $node The related node
-     */
     public function __construct(NodeDefinition $node)
     {
         $this->node = $node;
@@ -37,8 +32,6 @@ class ExprBuilder
 
     /**
      * Marks the expression as being always used.
-     *
-     * @param \Closure $then
      *
      * @return $this
      */
@@ -57,8 +50,6 @@ class ExprBuilder
      * Sets a closure to use as tests.
      *
      * The default one tests if the value is true.
-     *
-     * @param \Closure $closure
      *
      * @return $this
      */
@@ -124,8 +115,6 @@ class ExprBuilder
     /**
      * Tests if the value is in an array.
      *
-     * @param array $array
-     *
      * @return $this
      */
     public function ifInArray(array $array)
@@ -138,8 +127,6 @@ class ExprBuilder
     /**
      * Tests if the value is not in an array.
      *
-     * @param array $array
-     *
      * @return $this
      */
     public function ifNotInArray(array $array)
@@ -150,9 +137,20 @@ class ExprBuilder
     }
 
     /**
-     * Sets the closure to run if the test pass.
+     * Transforms variables of any type into an array.
      *
-     * @param \Closure $closure
+     * @return $this
+     */
+    public function castToArray()
+    {
+        $this->ifPart = function ($v) { return !is_array($v); };
+        $this->thenPart = function ($v) { return array($v); };
+
+        return $this;
+    }
+
+    /**
+     * Sets the closure to run if the test pass.
      *
      * @return $this
      */
@@ -188,7 +186,7 @@ class ExprBuilder
      */
     public function thenInvalid($message)
     {
-        $this->thenPart = function ($v) use ($message) {throw new \InvalidArgumentException(sprintf($message, json_encode($v))); };
+        $this->thenPart = function ($v) use ($message) { throw new \InvalidArgumentException(sprintf($message, json_encode($v))); };
 
         return $this;
     }

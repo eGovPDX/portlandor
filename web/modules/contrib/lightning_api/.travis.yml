@@ -1,0 +1,95 @@
+sudo: required
+dist: trusty
+language: php
+
+cache:
+  bundler: true
+  apt: true
+  directories:
+    - "$HOME/.composer/cache"
+    - "$HOME/.drush/cache"
+    - "$HOME/.npm"
+php:
+  - 7.1
+
+env:
+  - VERSION=HEAD
+  - VERSION=2.0.0
+  - VERSION=1.0.0-rc3
+  - VERSION=1.0.0-rc2
+  - VERSION=1.0.0-rc1
+
+addons:
+  apt:
+    packages:
+    # Dependencies for Chrome.
+    - libappindicator1
+    - fonts-liberation
+
+before_install:
+  - phpenv config-rm xdebug.ini
+  - composer self-update
+  - composer --version
+  # Initialize xvfb (see https://docs.travis-ci.com/user/gui-and-headless-browsers)
+  - export DISPLAY=:99.0
+  - sh -e /etc/init.d/xvfb start
+  - sleep 3
+
+  # Download Chrome Driver
+  - LATEST_CHROMEDRIVER=$(wget -q -O - http://chromedriver.storage.googleapis.com/LATEST_RELEASE)
+  - wget http://chromedriver.storage.googleapis.com/$LATEST_CHROMEDRIVER/chromedriver_linux64.zip
+  - unzip chromedriver_linux64.zip
+  - chmod +x chromedriver
+  - mkdir -p $HOME/.composer/vendor/bin
+  - mv -f chromedriver $HOME/.composer/vendor/bin/
+  - rm chromedriver_linux64.zip
+
+  # Update Chrome.
+  - export CHROME_BIN=/usr/bin/google-chrome
+  - wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+  - sudo dpkg -i google-chrome-stable_current_amd64.deb
+  - rm google-chrome-stable_current_amd64.deb
+  - google-chrome --version
+
+install:
+  # Add Composer's local bin directory to the PATH so that we will be running
+  # our installed versions of Drush, PHPCS, Behat, PhantomJS, etc.
+  - export PATH="$HOME/.composer/vendor/bin:$TRAVIS_BUILD_DIR/vendor/bin:$PATH"
+
+  # composer install should fail on bad patches.
+  - export COMPOSER_EXIT_ON_PATCH_FAILURE=1
+
+  # Create the MySQL database and add a user for testing.
+  - mysql -u root -e "CREATE DATABASE lightning; CREATE USER 'lightning'@'localhost' IDENTIFIED BY 'lightning'; GRANT ALL ON lightning.* TO 'lightning'@'localhost';"
+
+  # Install the PECL YAML extension for strict parsing. yes is used to
+  # acknowledge all prompts.
+  - yes '' | pecl install yaml
+  # Tweak PHP configuration.
+  - echo 'max_execution_time = 120' >> drupal.php.ini;
+  - echo 'sendmail_path = /bin/true' >> drupal.php.ini;
+  - phpenv config-add drupal.php.ini
+  - phpenv rehash
+
+  # Build the code base. There is no lock file in the repo, so dependencies will
+  # always be renegotiated.
+  - composer install
+  # Install on top of standard for testing.
+  - lightning install "mysql\://lightning:lightning@127.0.0.1/lightning" standard 'http://127.0.0.1:8080'
+  # Restore database fixture from the version we're testing and run database and
+  # and Lightning config updates.
+  - lightning update $VERSION
+
+before_script:
+  - drush runserver --default-server=builtin 8080 &>/dev/null &
+  - jdk_switcher use oraclejdk8
+  - sleep 5
+
+script:
+  - composer validate composer.json --no-check-all --ansi --no-interaction
+  - phpunit --config docroot/core --group lightning_api
+  - behat --config .behat.yml --tags lightning_api
+
+after_failure:
+  - cd docroot
+  - drush watchdog:show --count=100 --severity=Error --extended

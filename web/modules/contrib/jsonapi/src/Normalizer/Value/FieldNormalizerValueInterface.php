@@ -5,6 +5,8 @@ namespace Drupal\jsonapi\Normalizer\Value;
 use Drupal\Core\Cache\RefinableCacheableDependencyInterface;
 
 /**
+ * Interface to help normalize fields in compliance with the JSON API spec.
+ *
  * @internal
  */
 interface FieldNormalizerValueInterface extends ValueExtractorInterface, RefinableCacheableDependencyInterface {
@@ -43,7 +45,7 @@ interface FieldNormalizerValueInterface extends ValueExtractorInterface, Refinab
    * @param array $includes
    *   The includes.
    */
-  public function setIncludes($includes);
+  public function setIncludes(array $includes);
 
   /**
    * Computes all the nested includes recursively.

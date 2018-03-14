@@ -5,6 +5,8 @@ namespace Drupal\jsonapi\Normalizer\Value;
 use Drupal\Core\Cache\RefinableCacheableDependencyTrait;
 
 /**
+ * Normalizes null fields in accordance with the JSON API specification.
+ *
  * @internal
  */
 class NullFieldNormalizerValue implements FieldNormalizerValueInterface {
@@ -56,7 +58,7 @@ class NullFieldNormalizerValue implements FieldNormalizerValueInterface {
   /**
    * {@inheritdoc}
    */
-  public function setIncludes($includes) {
+  public function setIncludes(array $includes) {
     // Do nothing.
   }
 

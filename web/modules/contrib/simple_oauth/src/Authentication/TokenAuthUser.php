@@ -4,6 +4,7 @@ namespace Drupal\simple_oauth\Authentication;
 
 use Drupal\Core\Entity\EntityStorageInterface;
 use Drupal\Core\Entity\EntityTypeInterface;
+use Drupal\Core\Language\LanguageInterface;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\simple_oauth\Entity\Oauth2TokenInterface;
 use Drupal\user\Entity\User;
@@ -28,6 +29,25 @@ class TokenAuthUser implements TokenAuthUserInterface {
    * @var \Drupal\simple_oauth\Entity\Oauth2TokenInterface
    */
   protected $token;
+
+  /**
+   * Whether the revision translation affected flag has been enforced.
+   *
+   * An array, keyed by the translation language code.
+   *
+   * @var bool[]
+   */
+  protected $enforceRevisionTranslationAffected = [];
+
+  /**
+   * Language code identifying the entity active language.
+   *
+   * This is the language field accessors will use to determine which field
+   * values manipulate.
+   *
+   * @var string
+   */
+  protected $activeLangcode = LanguageInterface::LANGCODE_DEFAULT;
 
   /**
    * Constructs a TokenAuthUser object.
@@ -875,6 +895,42 @@ class TokenAuthUser implements TokenAuthUserInterface {
    */
   protected function getRoleStorage() {
     return \Drupal::entityTypeManager()->getStorage('user_role');
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function isLatestTranslationAffectedRevision() {
+    return FALSE;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setRevisionTranslationAffectedEnforced($enforced) {
+    $this->enforceRevisionTranslationAffected[$this->activeLangcode] = $enforced;
+    return $this;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function isRevisionTranslationAffectedEnforced() {
+    return !empty($this->enforceRevisionTranslationAffected[$this->activeLangcode]);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function wasDefaultRevision() {
+    return TRUE;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function isDefaultTranslationAffectedOnly() {
+    return FALSE;
   }
 
 }

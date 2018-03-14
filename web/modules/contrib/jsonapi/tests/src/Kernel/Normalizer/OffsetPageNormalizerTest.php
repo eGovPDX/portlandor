@@ -10,6 +10,8 @@ use Drupal\jsonapi\Query\OffsetPage;
  * @group jsonapi
  * @group jsonapi_normalizers
  * @group legacy
+ *
+ * @internal
  */
 class OffsetPageNormalizerTest extends KernelTestBase {
 

@@ -3,11 +3,14 @@
 namespace Drupal\jsonapi\Normalizer;
 
 use Drupal\Core\Field\FieldItemInterface;
+use Drupal\Core\TypedData\TypedDataInternalPropertiesHelper;
 use Drupal\jsonapi\Normalizer\Value\FieldItemNormalizerValue;
 use Symfony\Component\Serializer\Exception\UnexpectedValueException;
 
 /**
  * Converts the Drupal field item object to a JSON API array structure.
+ *
+ * @internal
  */
 class FieldItemNormalizer extends NormalizerBase {
 
@@ -33,6 +36,10 @@ class FieldItemNormalizer extends NormalizerBase {
     $values = [];
     // We normalize each individual property, so each can do their own casting,
     // if needed.
+    // @todo Remove this when JSON API requires Drupal 8.5 or newer.
+    if (floatval(\Drupal::VERSION) >= 8.5) {
+      $field_item = TypedDataInternalPropertiesHelper::getNonInternalProperties($field_item);
+    }
     foreach ($field_item as $property_name => $property) {
       $values[$property_name] = $this->serializer->normalize($property, $format, $context);
     }

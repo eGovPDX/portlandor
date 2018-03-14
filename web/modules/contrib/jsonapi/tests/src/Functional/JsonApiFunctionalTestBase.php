@@ -19,6 +19,8 @@ use GuzzleHttp\Exception\ServerException;
 
 /**
  * Provides helper methods for the JSON API module's functional tests.
+ *
+ * @internal
  */
 abstract class JsonApiFunctionalTestBase extends BrowserTestBase {
 
@@ -39,31 +41,43 @@ abstract class JsonApiFunctionalTestBase extends BrowserTestBase {
   ];
 
   /**
+   * Test user.
+   *
    * @var \Drupal\user\Entity\User
    */
   protected $user;
 
   /**
+   * Test user with access to view profiles.
+   *
    * @var \Drupal\user\Entity\User
    */
   protected $userCanViewProfiles;
 
   /**
+   * Test nodes.
+   *
    * @var \Drupal\node\Entity\Node[]
    */
   protected $nodes = [];
 
   /**
+   * Test taxonomy terms.
+   *
    * @var \Drupal\taxonomy\Entity\Term[]
    */
   protected $tags = [];
 
   /**
+   * Test files.
+   *
    * @var \Drupal\file\Entity\File[]
    */
   protected $files = [];
 
   /**
+   * The HTTP client.
+   *
    * @var \GuzzleHttp\ClientInterface
    */
   protected $httpClient;
@@ -108,6 +122,7 @@ abstract class JsonApiFunctionalTestBase extends BrowserTestBase {
         FieldStorageDefinitionInterface::CARDINALITY_UNLIMITED
       );
       $this->createImageField('field_image', 'article');
+      $this->createImageField('field_heroless', 'article');
     }
 
     FieldStorageConfig::create([
@@ -128,6 +143,30 @@ abstract class JsonApiFunctionalTestBase extends BrowserTestBase {
       'description' => '',
     ]);
     $field_config->save();
+
+    // Field for testing sorting.
+    FieldStorageConfig::create([
+      'field_name' => 'field_sort1',
+      'entity_type' => 'node',
+      'type' => 'integer',
+    ])->save();
+    FieldConfig::create([
+      'field_name' => 'field_sort1',
+      'entity_type' => 'node',
+      'bundle' => 'article',
+    ])->save();
+
+    // Another field for testing sorting.
+    FieldStorageConfig::create([
+      'field_name' => 'field_sort2',
+      'entity_type' => 'node',
+      'type' => 'integer',
+    ])->save();
+    FieldConfig::create([
+      'field_name' => 'field_sort2',
+      'entity_type' => 'node',
+      'bundle' => 'article',
+    ])->save();
 
     $this->user = $this->drupalCreateUser([
       'create article content',
@@ -154,8 +193,6 @@ abstract class JsonApiFunctionalTestBase extends BrowserTestBase {
    * Why wrap the Guzzle HTTP client? Because any error response is returned via
    * an exception, which would make the tests unnecessarily complex to read.
    *
-   * @see \GuzzleHttp\ClientInterface::request()
-   *
    * @param string $method
    *   HTTP method.
    * @param \Drupal\Core\Url $url
@@ -164,6 +201,11 @@ abstract class JsonApiFunctionalTestBase extends BrowserTestBase {
    *   Request options to apply.
    *
    * @return \Psr\Http\Message\ResponseInterface
+   *   The request response.
+   *
+   * @throws \GuzzleHttp\Exception\GuzzleException
+   *
+   * @see \GuzzleHttp\ClientInterface::request
    */
   protected function request($method, Url $url, array $request_options) {
     try {
@@ -243,6 +285,14 @@ abstract class JsonApiFunctionalTestBase extends BrowserTestBase {
           ),
         ];
       }
+
+      // Create values for the sort fields, to allow for testing complex
+      // sorting:
+      // - field_sort1 increments every 5 articles, starting at zero
+      // - field_sort2 decreases every article, ending at zero.
+      $values['field_sort1'] = ['value' => floor($created_nodes / 5)];
+      $values['field_sort2'] = ['value' => $num_articles - $created_nodes];
+
       $node = $this->createNode($values);
 
       if ($is_multilingual === static::IS_MULTILINGUAL) {

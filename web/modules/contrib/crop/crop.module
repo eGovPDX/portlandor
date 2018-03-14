@@ -141,19 +141,7 @@ function crop_file_url_alter(&$uri) {
       return;
     }
 
-    $crop_type = NULL;
-    // Find whether matched image style uses "crop_type" effect.
-    /* @var  \Drupal\image\ImageEffectInterface $effect */
-    foreach ($image_style->getEffects() as $uuid => $effect) {
-      $data_effect = $image_style->getEffect($uuid)->getConfiguration()['data'];
-      if (isset($data_effect['crop_type'])) {
-        $crop_type = $data_effect['crop_type'];
-        break;
-      }
-    }
-
-    // In case the image style uses "crop_type" effect, load the crop entity.
-    if ($crop_type && $crop = Crop::findCrop($file_uri, $crop_type)) {
+    if ($crop = Crop::getCropFromImageStyle($file_uri, $image_style)) {
       // Found a crop for this image, append a hash of it to the URL,
       // so that browsers reload the image and CDNs and proxies can be bypassed.
       $shortened_hash = substr(md5(implode($crop->position()) . implode($crop->anchor())), 0, 8);

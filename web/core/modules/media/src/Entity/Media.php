@@ -31,13 +31,14 @@ use Drupal\user\UserInterface;
  *   handlers = {
  *     "storage" = "Drupal\Core\Entity\Sql\SqlContentEntityStorage",
  *     "view_builder" = "Drupal\Core\Entity\EntityViewBuilder",
- *     "list_builder" = "Drupal\Core\Entity\EntityListBuilder",
+ *     "list_builder" = "Drupal\media\MediaListBuilder",
  *     "access" = "Drupal\media\MediaAccessControlHandler",
  *     "form" = {
  *       "default" = "Drupal\media\MediaForm",
  *       "add" = "Drupal\media\MediaForm",
  *       "edit" = "Drupal\media\MediaForm",
  *       "delete" = "Drupal\Core\Entity\ContentEntityDeleteForm",
+ *       "delete-multiple-confirm" = "Drupal\Core\Entity\Form\DeleteMultipleForm",
  *     },
  *     "translation" = "Drupal\content_translation\ContentTranslationHandler",
  *     "views_data" = "Drupal\media\MediaViewsData",
@@ -66,7 +67,7 @@ use Drupal\user\UserInterface;
  *     "revision_log_message" = "revision_log_message",
  *   },
  *   bundle_entity_type = "media_type",
- *   permission_granularity = "entity_type",
+ *   permission_granularity = "bundle",
  *   admin_permission = "administer media",
  *   field_ui_base_route = "entity.media_type.edit_form",
  *   common_reference_target = TRUE,
@@ -74,7 +75,9 @@ use Drupal\user\UserInterface;
  *     "add-page" = "/media/add",
  *     "add-form" = "/media/add/{media_type}",
  *     "canonical" = "/media/{media}",
+ *     "collection" = "/admin/content/media",
  *     "delete-form" = "/media/{media}/delete",
+ *     "delete-multiple-form" = "/media/delete",
  *     "edit-form" = "/media/{media}/edit",
  *     "revision" = "/media/{media}/revisions/{media_revision}/view",
  *   }
@@ -404,12 +407,7 @@ class Media extends EditorialContentEntityBase implements MediaInterface {
         'weight' => -5,
       ])
       ->setDisplayConfigurable('form', TRUE)
-      ->setDisplayConfigurable('view', TRUE)
-      ->setDisplayOptions('view', [
-        'label' => 'hidden',
-        'type' => 'string',
-        'weight' => -5,
-      ]);
+      ->setDisplayConfigurable('view', TRUE);
 
     $fields['thumbnail'] = BaseFieldDefinition::create('image')
       ->setLabel(t('Thumbnail'))

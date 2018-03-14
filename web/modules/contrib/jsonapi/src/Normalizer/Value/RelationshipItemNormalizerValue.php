@@ -6,6 +6,8 @@ use Drupal\Core\Cache\RefinableCacheableDependencyInterface;
 use Drupal\Core\Cache\RefinableCacheableDependencyTrait;
 
 /**
+ * Helps normalize relationship items in compliance with the JSON API spec.
+ *
  * @internal
  */
 class RelationshipItemNormalizerValue extends FieldItemNormalizerValue implements RefinableCacheableDependencyInterface {
@@ -15,7 +17,7 @@ class RelationshipItemNormalizerValue extends FieldItemNormalizerValue implement
   /**
    * Resource path.
    *
-   * @param string
+   * @var string
    */
   protected $resource;
 

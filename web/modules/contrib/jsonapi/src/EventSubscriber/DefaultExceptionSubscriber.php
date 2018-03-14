@@ -10,6 +10,8 @@ use Symfony\Component\HttpKernel\Event\GetResponseForExceptionEvent;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
 /**
+ * Serializes exceptions in compliance with the  JSON API specification.
+ *
  * @internal
  */
 class DefaultExceptionSubscriber extends SerializationDefaultExceptionSubscriber {

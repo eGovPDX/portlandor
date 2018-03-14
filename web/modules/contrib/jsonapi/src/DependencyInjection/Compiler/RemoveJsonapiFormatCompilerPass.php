@@ -27,6 +27,8 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
  * @see \Drupal\jsonapi\JsonapiServiceProvider::register()
  * @see \Drupal\jsonapi\EventSubscriber\DefaultExceptionSubscriber
  * @see \Drupal\Tests\jsonapi\Functional\RestJsonApiUnsupported
+ *
+ * @internal
  */
 class RemoveJsonapiFormatCompilerPass implements CompilerPassInterface {
 

@@ -86,7 +86,7 @@ class ImplicitFunctionalTest extends TokenBearerFunctionalTestBase {
     ]);
     $assert_session = $this->assertSession();
     $assert_session->statusCodeEquals(200);
-    $assert_session->addressMatches('/\/oauth\/test#access_token=.*&token_type=bearer&expires_in=\d*/');
+    $assert_session->addressMatches('/\/oauth\/test#access_token=.*&token_type=Bearer&expires_in=\d*/');
   }
 
 }

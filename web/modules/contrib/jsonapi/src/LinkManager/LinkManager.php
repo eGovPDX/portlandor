@@ -13,7 +13,7 @@ use Symfony\Component\Routing\Matcher\RequestMatcherInterface;
 /**
  * Class to generate links and queries for entities.
  *
- * @api
+ * @deprecated
  */
 class LinkManager {
 

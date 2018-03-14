@@ -65,15 +65,15 @@ class ViewsModerationStateFilterTest extends ViewTestBase {
   public function testModerationStateFilterDependencyHandling() {
     // First, check that the view doesn't have any config dependency when there
     // are no states configured in the filter.
-    $view_id = 'test_content_moderation_state_filter';
+    $view_id = 'test_content_moderation_state_filter_base_table';
     $view = Views::getView($view_id);
 
     $this->assertWorkflowDependencies([], $view);
     $this->assertTrue($view->storage->status());
 
     // Configure the Editorial workflow for a node bundle, set the filter value
-    // to use one its states and check that the workflow is now a dependency of
-    // the view.
+    // to use one of its states and check that the workflow is now a dependency
+    // of the view.
     $this->drupalPostForm('admin/config/workflow/workflows/manage/editorial/type/node', [
       'bundles[example_a]' => TRUE,
     ], 'Save');
@@ -123,10 +123,10 @@ class ViewsModerationStateFilterTest extends ViewTestBase {
 
   /**
    * Tests the moderation state filter when the configured workflow is changed.
+   *
+   * @dataProvider providerTestWorkflowChanges
    */
-  public function testWorkflowChanges() {
-    $view_id = 'test_content_moderation_state_filter';
-
+  public function testWorkflowChanges($view_id, $filter_name) {
     // Update the view and make the default filter not exposed anymore,
     // otherwise all results will be shown when there are no more moderated
     // bundles left.
@@ -188,7 +188,26 @@ class ViewsModerationStateFilterTest extends ViewTestBase {
     // Check that the view can not be edited without any intervention anymore
     // because the user needs to fix the filter.
     $this->drupalPostForm("admin/structure/views/view/$view_id", [], 'Save');
-    $this->assertSession()->pageTextContains('No valid values found on filter: Content: Moderation state.');
+    $this->assertSession()->pageTextContains("No valid values found on filter: $filter_name.");
+  }
+
+  /**
+   * Data provider for testWorkflowChanges.
+   *
+   * @return string[]
+   *   An array of view IDs.
+   */
+  public function providerTestWorkflowChanges() {
+    return [
+      'view on base table, filter on base table' => [
+        'test_content_moderation_state_filter_base_table',
+        'Content: Moderation state'
+      ],
+      'view on base table, filter on revision table' => [
+        'test_content_moderation_state_filter_base_table_filter_on_revision',
+        'Content revision: Moderation state'
+      ],
+    ];
   }
 
   /**
@@ -214,6 +233,25 @@ class ViewsModerationStateFilterTest extends ViewTestBase {
       'bundles[example_b]' => TRUE,
     ], 'Save');
     $this->assertFilterStates(['All', 'editorial-draft', 'editorial-published', 'editorial-archived', 'editorial-foo', 'new_workflow-draft', 'new_workflow-published', 'new_workflow-bar']);
+
+    // Add a few more states and change the exposed filter to allow multiple
+    // selections so we can check that the size of the select element does not
+    // exceed 8 options.
+    $this->drupalPostForm('admin/config/workflow/workflows/manage/editorial/add_state', [
+      'label' => 'Foo 2',
+      'id' => 'foo2',
+    ], 'Save');
+    $this->drupalPostForm('admin/config/workflow/workflows/manage/editorial/add_state', [
+      'label' => 'Foo 3',
+      'id' => 'foo3',
+    ], 'Save');
+
+    $view_id = 'test_content_moderation_state_filter_base_table';
+    $edit['options[expose][multiple]'] = TRUE;
+    $this->drupalPostForm("admin/structure/views/nojs/handler/$view_id/default/filter/moderation_state", $edit, 'Apply');
+    $this->drupalPostForm("admin/structure/views/view/$view_id", [], 'Save');
+
+    $this->assertFilterStates(['editorial-draft', 'editorial-published', 'editorial-archived', 'editorial-foo', 'editorial-foo2', 'editorial-foo3', 'new_workflow-draft', 'new_workflow-published', 'new_workflow-bar'], TRUE);
   }
 
   /**
@@ -221,13 +259,27 @@ class ViewsModerationStateFilterTest extends ViewTestBase {
    *
    * @param array $states
    *   The states which should appear in the filter.
+   * @param bool $check_size
+   *   (optional) Whether to check that size of the select element is not
+   *   greater than 8. Defaults to FALSE.
    */
-  protected function assertFilterStates($states) {
+  protected function assertFilterStates($states, $check_size = FALSE) {
     $this->drupalGet('/filter-test-path');
 
-    $this->assertSession()->elementsCount('css', '#edit-default-revision-state option', count($states));
+    $assert_session = $this->assertSession();
+
+    // Check that the select contains the correct number of options.
+    $assert_session->elementsCount('css', '#edit-default-revision-state option', count($states));
+
+    // Check that the size of the select element does not exceed 8 options.
+    if ($check_size) {
+      $this->assertGreaterThan(8, count($states));
+      $assert_session->elementAttributeContains('css', '#edit-default-revision-state', 'size', 8);
+    }
+
+    // Check that an option exists for each of the expected states.
     foreach ($states as $state) {
-      $this->assertSession()->optionExists('default_revision_state', $state);
+      $assert_session->optionExists('Default Revision State', $state);
     }
   }
 

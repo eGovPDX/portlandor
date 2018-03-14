@@ -15,6 +15,8 @@ use Symfony\Component\HttpFoundation\Request;
 /**
  * @coversDefaultClass \Drupal\jsonapi\LinkManager\LinkManager
  * @group jsonapi
+ *
+ * @internal
  */
 class LinkManagerTest extends UnitTestCase {
 

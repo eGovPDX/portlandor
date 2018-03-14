@@ -18,6 +18,8 @@ use Symfony\Component\DependencyInjection\Compiler\RepeatedPass;
 use Symfony\Component\DependencyInjection\Compiler\InlineServiceDefinitionsPass;
 use Symfony\Component\DependencyInjection\Reference;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Symfony\Component\DependencyInjection\Argument\ServiceClosureArgument;
+use Symfony\Component\DependencyInjection\Argument\IteratorArgument;
 
 class InlineServiceDefinitionsPassTest extends TestCase
 {
@@ -88,6 +90,79 @@ class InlineServiceDefinitionsPassTest extends TestCase
         $this->assertSame($ref, $arguments[1]);
         $this->assertEquals($container->getDefinition('bar'), $arguments[2]);
         $this->assertNotSame($container->getDefinition('bar'), $arguments[2]);
+    }
+
+    public function testProcessInlinesMixedServicesLoop()
+    {
+        $container = new ContainerBuilder();
+        $container
+            ->register('foo')
+            ->addArgument(new Reference('bar'))
+            ->setShared(false)
+        ;
+        $container
+            ->register('bar')
+            ->setPublic(false)
+            ->addMethodCall('setFoo', array(new Reference('foo')))
+        ;
+
+        $this->process($container);
+
+        $this->assertEquals($container->getDefinition('foo')->getArgument(0), $container->getDefinition('bar'));
+    }
+
+    /**
+     * @expectedException \Symfony\Component\DependencyInjection\Exception\ServiceCircularReferenceException
+     * @expectedExceptionMessage Circular reference detected for service "bar", path: "bar -> foo -> bar".
+     */
+    public function testProcessThrowsOnNonSharedLoops()
+    {
+        $container = new ContainerBuilder();
+        $container
+            ->register('foo')
+            ->addArgument(new Reference('bar'))
+            ->setShared(false)
+        ;
+        $container
+            ->register('bar')
+            ->setShared(false)
+            ->addMethodCall('setFoo', array(new Reference('foo')))
+        ;
+
+        $this->process($container);
+    }
+
+    public function testProcessNestedNonSharedServices()
+    {
+        $container = new ContainerBuilder();
+        $container
+            ->register('foo')
+            ->addArgument(new Reference('bar1'))
+            ->addArgument(new Reference('bar2'))
+        ;
+        $container
+            ->register('bar1')
+            ->setShared(false)
+            ->addArgument(new Reference('baz'))
+        ;
+        $container
+            ->register('bar2')
+            ->setShared(false)
+            ->addArgument(new Reference('baz'))
+        ;
+        $container
+            ->register('baz')
+            ->setShared(false)
+        ;
+
+        $this->process($container);
+
+        $baz1 = $container->getDefinition('foo')->getArgument(0)->getArgument(0);
+        $baz2 = $container->getDefinition('foo')->getArgument(1)->getArgument(0);
+
+        $this->assertEquals($container->getDefinition('baz'), $baz1);
+        $this->assertEquals($container->getDefinition('baz'), $baz2);
+        $this->assertNotSame($baz1, $baz2);
     }
 
     public function testProcessInlinesIfMultipleReferencesButAllFromTheSameDefinition()
@@ -221,6 +296,60 @@ class InlineServiceDefinitionsPassTest extends TestCase
 
         $calls = $container->getDefinition('foo')->getMethodCalls();
         $this->assertSame($ref, $calls[0][1][0]);
+    }
+
+    public function testProcessDoesNotSetLazyArgumentValuesAfterInlining()
+    {
+        $container = new ContainerBuilder();
+        $container
+            ->register('inline')
+            ->setShared(false)
+        ;
+        $container
+            ->register('service-closure')
+            ->setArguments(array(new ServiceClosureArgument(new Reference('inline'))))
+        ;
+        $container
+            ->register('iterator')
+            ->setArguments(array(new IteratorArgument(array(new Reference('inline')))))
+        ;
+
+        $this->process($container);
+
+        $values = $container->getDefinition('service-closure')->getArgument(0)->getValues();
+        $this->assertInstanceOf(Reference::class, $values[0]);
+        $this->assertSame('inline', (string) $values[0]);
+
+        $values = $container->getDefinition('iterator')->getArgument(0)->getValues();
+        $this->assertInstanceOf(Reference::class, $values[0]);
+        $this->assertSame('inline', (string) $values[0]);
+    }
+
+    /**
+     * @group legacy
+     */
+    public function testGetInlinedServiceIdData()
+    {
+        $container = new ContainerBuilder();
+        $container
+            ->register('inlinable.service')
+            ->setPublic(false)
+        ;
+        $container
+            ->register('non_inlinable.service')
+            ->setPublic(true)
+        ;
+
+        $container
+            ->register('other_service')
+            ->setArguments(array(new Reference('inlinable.service')))
+        ;
+
+        $inlinePass = new InlineServiceDefinitionsPass();
+        $repeatedPass = new RepeatedPass(array(new AnalyzeServiceReferencesPass(), $inlinePass));
+        $repeatedPass->process($container);
+
+        $this->assertEquals(array('inlinable.service' => array('other_service')), $inlinePass->getInlinedServiceIds());
     }
 
     protected function process(ContainerBuilder $container)

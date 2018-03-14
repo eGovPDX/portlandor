@@ -20,6 +20,8 @@ use Prophecy\Argument;
 /**
  * @coversDefaultClass \Drupal\jsonapi\Normalizer\EntityReferenceFieldNormalizer
  * @group jsonapi
+ *
+ * @internal
  */
 class EntityReferenceFieldNormalizerTest extends UnitTestCase {
 
@@ -150,9 +152,37 @@ class EntityReferenceFieldNormalizerTest extends UnitTestCase {
    */
   public function denormalizeInvalidResourceProvider() {
     return [
-      [['data' => [['type' => 'invalid', 'id' => '4e6cb61d-4f04-437f-99fe-42c002393658']]], 'field_dummy'],
-      [['data' => ['type' => 'lorem', 'id' => '4e6cb61d-4f04-437f-99fe-42c002393658']], 'field_dummy'],
-      [['data' => [['type' => 'lorem', 'id' => '4e6cb61d-4f04-437f-99fe-42c002393658']]], 'field_dummy_single'],
+      [
+        [
+          'data' => [
+            [
+              'type' => 'invalid',
+              'id' => '4e6cb61d-4f04-437f-99fe-42c002393658',
+            ],
+          ],
+        ],
+        'field_dummy',
+      ],
+      [
+        [
+          'data' => [
+            'type' => 'lorem',
+            'id' => '4e6cb61d-4f04-437f-99fe-42c002393658',
+          ],
+        ],
+        'field_dummy',
+      ],
+      [
+        [
+          'data' => [
+            [
+              'type' => 'lorem',
+              'id' => '4e6cb61d-4f04-437f-99fe-42c002393658',
+            ],
+          ],
+        ],
+        'field_dummy_single',
+      ],
     ];
   }
 

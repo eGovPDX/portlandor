@@ -11,4 +11,17 @@ use Drupal\Core\Entity\Sql\SqlEntityStorageInterface;
  */
 interface CropStorageInterface extends SqlEntityStorageInterface, DynamicallyFieldableEntityStorageSchemaInterface, EntityBundleListenerInterface {
 
+  /**
+   * Retrieve crop ID based on image URI and crop type.
+   *
+   * @param string $uri
+   *   URI of the image.
+   * @param string $type
+   *   Crop type.
+   *
+   * @return \Drupal\crop\CropInterface|null
+   *   A Crop object or NULL if nothing matches the search parameters.
+   */
+  public function getCrop($uri, $type);
+
 }

@@ -7,7 +7,6 @@ use Drupal\Core\Entity\EntityDisplayRepositoryInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
-use Drupal\Core\Session\AccountInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
@@ -148,42 +147,16 @@ class EntityBlock extends BlockBase implements ContainerFactoryPluginInterface {
    * {@inheritdoc}
    */
   public function build() {
-    if ($entity = $this->getEntity()) {
-      $view_mode = isset($this->configuration['view_mode']) ? $this->configuration['view_mode'] : 'default';
-      return $this->entityViewBuilder->view($entity, $view_mode);
-    }
-    else {
-      return [];
-    }
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  protected function blockAccess(AccountInterface $account) {
-    if ($entity = $this->getEntity()) {
-      return $this->entityTypeManager
-        ->getAccessControlHandler($this->entityTypeName)
-        ->access($entity, 'view', $account, TRUE);
-    }
-    else {
-      return parent::blockAccess($account);
-    }
-  }
-
-  /**
-   * Returns the entity to display.
-   *
-   * @return \Drupal\Core\Entity\EntityInterface|null
-   *   The entity to display, or NULL if none is configured.
-   */
-  protected function getEntity() {
     if ($entity_id = $this->configuration['entity']) {
-      return $this->entityStorage->load($entity_id);
+      if (($entity = $this->entityStorage->load($entity_id)) && $entity->access('view')) {
+        $render_controller = \Drupal::entityTypeManager()->getViewBuilder($entity->getEntityTypeId());
+        $view_mode = isset($this->configuration['view_mode']) ? $this->configuration['view_mode'] : 'default';
+
+        return $render_controller->view($entity, $view_mode);
+      }
     }
-    else {
-      return NULL;
-    }
+
+    return [];
   }
 
 }

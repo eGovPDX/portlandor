@@ -78,7 +78,11 @@ class ViewsData {
             ],
           ],
         ],
-        'field' => ['default_formatter' => 'content_moderation_state'],
+        'field' => [
+          'id' => 'field',
+          'default_formatter' => 'content_moderation_state',
+          'field_name' => 'moderation_state',
+        ],
         'filter' => ['id' => 'moderation_state_filter', 'allow empty' => TRUE],
       ];
 
@@ -98,7 +102,11 @@ class ViewsData {
             ],
           ],
         ],
-        'field' => ['default_formatter' => 'content_moderation_state'],
+        'field' => [
+          'id' => 'field',
+          'default_formatter' => 'content_moderation_state',
+          'field_name' => 'moderation_state',
+        ],
         'filter' => ['id' => 'moderation_state_filter', 'allow empty' => TRUE],
       ];
     }

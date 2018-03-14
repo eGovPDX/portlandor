@@ -8,6 +8,8 @@ use Drupal\Tests\UnitTestCase;
 /**
  * @coversDefaultClass \Drupal\jsonapi\Normalizer\Value\FieldItemNormalizerValue
  * @group jsonapi
+ *
+ * @internal
  */
 class FieldItemNormalizerValueTest extends UnitTestCase {
 

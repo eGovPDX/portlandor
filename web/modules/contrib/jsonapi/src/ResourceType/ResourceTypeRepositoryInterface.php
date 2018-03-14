@@ -4,6 +4,8 @@ namespace Drupal\jsonapi\ResourceType;
 
 /**
  * Provides a repository of all JSON API resource types.
+ *
+ * @internal
  */
 interface ResourceTypeRepositoryInterface {
 
@@ -38,5 +40,13 @@ interface ResourceTypeRepositoryInterface {
    *   The resource type, or NULL if none found.
    */
   public function getByTypeName($type_name);
+
+  /**
+   * Gets the path prefix for routes managed by JSON API.
+   *
+   * @return string
+   *   The route prefix in the JSON API route paths.
+   */
+  public function getPathPrefix();
 
 }

@@ -3,6 +3,7 @@
 namespace Drupal\crop;
 
 use Drupal\Core\Entity\ContentEntityInterface;
+use Drupal\image\ImageStyleInterface;
 
 /**
  * Provides an interface defining the crop entity.
@@ -96,5 +97,18 @@ interface CropInterface extends ContentEntityInterface {
    *   Crop entity or NULL if crop doesn't exist.
    */
   public static function findCrop($uri, $type);
+
+  /**
+   * Retrieve crop from given image style.
+   *
+   * @param string $uri
+   *   URI of the image.
+   * @param \Drupal\image\ImageStyleInterface $image_style
+   *   The image style.
+   *
+   * @return \Drupal\crop\CropInterface|null
+   *   Crop entity used by effect 'crop_crop' or NULL if crop doesn't exist.
+   */
+  public static function getCropFromImageStyle($uri, ImageStyleInterface $image_style);
 
 }

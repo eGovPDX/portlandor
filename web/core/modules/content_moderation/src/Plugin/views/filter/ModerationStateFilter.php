@@ -118,9 +118,9 @@ class ModerationStateFilter extends InOperator implements DependentWithRemovalPl
 
       // Filter the moderation states of the content via the
       // ContentModerationState field revision table, joining either the entity
-      // field data or revision table. This allows filtering states against either
-      // the default or latest revision, depending on the relationship of the
-      // filter.
+      // field data or revision table. This allows filtering states against
+      // either the default or latest revision, depending on the relationship of
+      // the filter.
       $left_entity_type = $this->entityTypeManager->getDefinition($this->getEntityType());
       $entity_type = $this->entityTypeManager->getDefinition('content_moderation_state');
       $configuration = [
@@ -156,6 +156,8 @@ class ModerationStateFilter extends InOperator implements DependentWithRemovalPl
       return;
     }
 
+    $this->ensureMyTable();
+
     $entity_type = $this->entityTypeManager->getDefinition($this->getEntityType());
     if ($entity_type->hasKey('bundle')) {
       // Get a list of bundles that are being moderated by the workflows
@@ -174,8 +176,8 @@ class ModerationStateFilter extends InOperator implements DependentWithRemovalPl
         $entity_base_table_alias = $this->table;
 
         // The bundle field of an entity type is not revisionable so we need to
-        // join the data table.
-        $entity_base_table = $entity_type->isTranslatable() ? $entity_type->getDataTable() : $entity_type->getBaseTable();
+        // join the base table.
+        $entity_base_table = $entity_type->getBaseTable();
         $entity_revision_base_table = $entity_type->isTranslatable() ? $entity_type->getRevisionDataTable() : $entity_type->getRevisionTable();
         if ($this->table === $entity_revision_base_table) {
           $configuration = [
@@ -185,12 +187,6 @@ class ModerationStateFilter extends InOperator implements DependentWithRemovalPl
             'left_field' => $entity_type->getKey('id'),
             'type' => 'INNER',
           ];
-          if ($entity_type->isTranslatable()) {
-            $configuration['extra'][] = [
-              'field' => $entity_type->getKey('langcode'),
-              'left_field' => $entity_type->getKey('langcode'),
-            ];
-          }
 
           $join = Views::pluginManager('join')->createInstance('standard', $configuration);
           $entity_base_table_alias = $this->query->addRelationship($entity_base_table, $join, $entity_revision_base_table);
@@ -205,9 +201,7 @@ class ModerationStateFilter extends InOperator implements DependentWithRemovalPl
       }
     }
 
-    $this->ensureMyTable();
-
-    if ($this->operator == 'in') {
+    if ($this->operator === 'in') {
       $operator = "=";
     }
     else {
