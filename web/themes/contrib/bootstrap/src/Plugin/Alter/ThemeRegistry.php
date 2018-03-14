@@ -77,7 +77,9 @@ class ThemeRegistry extends Registry implements AlterInterface {
     foreach ($this->currentTheme->getAncestry() as $ancestor) {
       $current_theme = $ancestor->getName() === $this->currentTheme->getName();
       $theme_path = $ancestor->getPath();
-      foreach ($ancestor->fileScan('/\.html\.twig$/', 'templates') as $file) {
+      // Scan entire theme root path.
+      // @see https://www.drupal.org/project/bootstrap/issues/2951575
+      foreach ($ancestor->fileScan('/\.html\.twig$/') as $file) {
         $hook = str_replace('-', '_', str_replace('.html.twig', '', $file->filename));
         $path = dirname($file->uri);
         $incomplete = !isset($cache[$hook]) || strrpos($hook, '__');

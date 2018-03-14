@@ -146,7 +146,7 @@ class Consumer extends ContentEntityBase {
         'weight' => 4,
       ])
       ->setDisplayOptions('form', [
-         'weight' => 4,
+        'weight' => 4,
       ])
       ->setRevisionable(TRUE)
       ->setTranslatable(TRUE)

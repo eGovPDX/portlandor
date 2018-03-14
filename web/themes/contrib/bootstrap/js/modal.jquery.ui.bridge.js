@@ -472,7 +472,7 @@
         attributes[button.disabled ? 'set' :'remove']('disabled', 'disabled');
 
         if (button.classes) {
-          attributes.addClass(Object.values(button.classes));
+          attributes.addClass(Object.keys(button.classes).map(function(key) { return button.classes[key]; }));
         }
         if (button['class']) {
           attributes.addClass(button['class']);
