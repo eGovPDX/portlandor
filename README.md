@@ -26,7 +26,7 @@ The .lando.yml file included in this repo will set you up to connect to the corr
 2. Log in to Pantheon and generate a machine token from My Dashboard > Account > Machine Tokens.
 3. Run `lando terminus auth:login --machine-token=[YOUR MACHINE TOKEN]`, this logs your Lando instance into our Pantheon account.
 4. Run `lando pull` to get the DB and files from pantheon. This process takes a while. #grabsomecoffee
-5. You should now be able to visit https://portland-alpha.lndo.site in your browser.
+5. You should now be able to visit https://portlandor.lndo.site in your browser.
 6. When you are done with your development for the day, run `Lando stop` to shut off your development containers.
 
 See other Lando with Pantheon commands at https://docs.devwithlando.io/tutorials/pantheon.html.
