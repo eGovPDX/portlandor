@@ -8,7 +8,7 @@ Run `git config core.autocrlf false` to make sure this repository does not try t
 
 Additionally, we want the repo to correctly pull down symlinks for use in the Lando containers.git. To do this, we will enable symlinks as part of the cloning of the repo.
 
-`git clone -c core.symlinks=true git@github.com:eGovPDX/portlandor.git'
+`git clone -c core.symlinks=true git@github.com:eGovPDX/portlandor.git`
 
 ## Using this repo
 
