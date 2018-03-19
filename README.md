@@ -1,5 +1,15 @@
 # Portland Oregon Drupal 8 Site
 
+## Git setup for our Windows developers
+
+Windows handles line endings differently than *nix based systems (Unix, Linux, macOS). To make sure our code is interoperable with the Linux servers to which they are deployed and to the local Linux containers where you develop, you will need to make sure your git configuration is set to properly handle line endings.
+
+Run `git config core.autocrlf false` to make sure this repository does not try to convert line endings for your Windows machine.
+
+Additionally, we want the repo to correctly pull down symlinks for use in the Lando containers.git. To do this, we will enable symlinks as part of the cloning of the repo.
+
+`git clone -c core.symlinks=true git@github.com:eGovPDX/portlandor.git'
+
 ## Using this repo
 
 1. Clone this repo.
