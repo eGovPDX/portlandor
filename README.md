@@ -45,7 +45,7 @@ See other Lando with Pantheon commands at https://docs.devwithlando.io/tutorials
 
 To best work with Pantheon Multidev, we are going to keep feature branch names simple and use the master branch as our integration point that builds to the Pantheon Dev environment.
 
-1. Use the issue ID from Jira for a new feature branch name to start work., from the master branch pulled from `github` run `git branch POWR-[ID]`.
+1. Use the issue ID from Jira for a new feature branch name to start work., from the master branch pulled from `github` run `git checkout -b powr-[ID]` to create and checkout a new branch. (We use lowercase to help create Pantheon multidev environments correctly.) If the branch already exists, you may use `git checkout powr-[ID]` to switch to your branch.
 2. Develop to you heart's content.
 3. When you want to preview your work, you have your local environment. If you want to preview a feature on Pantheon, you may push a feature branch via `git push origin` and it will trigger the creation of a Multidev instance.
 4. When your work is ready to be merged with the master branch, create a pull request using the UI in Github. [TODO: add some pictures of these steps]
