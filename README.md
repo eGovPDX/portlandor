@@ -1,5 +1,15 @@
 # Portland Oregon Drupal 8 Site
 
+## Git setup for our Windows developers
+
+Windows handles line endings differently than *nix based systems (Unix, Linux, macOS). To make sure our code is interoperable with the Linux servers to which they are deployed and to the local Linux containers where you develop, you will need to make sure your git configuration is set to properly handle line endings.
+
+Run `git config core.autocrlf false` to make sure this repository does not try to convert line endings for your Windows machine.
+
+Additionally, we want the repo to correctly pull down symlinks for use in the Lando containers.git. To do this, we will enable symlinks as part of the cloning of the repo.
+
+`git clone -c core.symlinks=true git@github.com:eGovPDX/portlandor.git`
+
 ## Using this repo
 
 1. Clone this repo.
@@ -26,7 +36,7 @@ The .lando.yml file included in this repo will set you up to connect to the corr
 2. Log in to Pantheon and generate a machine token from My Dashboard > Account > Machine Tokens.
 3. Run `lando terminus auth:login --machine-token=[YOUR MACHINE TOKEN]`, this logs your Lando instance into our Pantheon account.
 4. Run `lando pull` to get the DB and files from pantheon. This process takes a while. #grabsomecoffee
-5. You should now be able to visit https://portland-alpha.lndo.site in your browser.
+5. You should now be able to visit https://portlandor.lndo.site in your browser.
 6. When you are done with your development for the day, run `Lando stop` to shut off your development containers.
 
 See other Lando with Pantheon commands at https://docs.devwithlando.io/tutorials/pantheon.html.
@@ -35,7 +45,7 @@ See other Lando with Pantheon commands at https://docs.devwithlando.io/tutorials
 
 To best work with Pantheon Multidev, we are going to keep feature branch names simple and use the master branch as our integration point that builds to the Pantheon Dev environment.
 
-1. Use the issue ID from Jira for a new feature branch name to start work., from the master branch pulled from `github` run `git branch POWR-[ID]`.
+1. Use the issue ID from Jira for a new feature branch name to start work., from the master branch pulled from `github` run `git checkout -b powr-[ID]` to create and checkout a new branch. (We use lowercase to help create Pantheon multidev environments correctly.) If the branch already exists, you may use `git checkout powr-[ID]` to switch to your branch.
 2. Develop to you heart's content.
 3. When you want to preview your work, you have your local environment. If you want to preview a feature on Pantheon, you may push a feature branch via `git push origin` and it will trigger the creation of a Multidev instance.
 4. When your work is ready to be merged with the master branch, create a pull request using the UI in Github. [TODO: add some pictures of these steps]
