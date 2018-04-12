@@ -70,7 +70,7 @@ To best work with Pantheon Multidev, we are going to keep feature branch names s
 There are a few extra steps for the assigned build master. This person is the final sanity check before merging in changes to the Dev, Test and Live instances on Pantheon. Basically the Dev and Test deploys are an opportunity to practice and test the deployment of the feature.
 
 1. Run `git pull origin master` from your local repo to pull down the changes that were just merged into the Github master branch.
-1. Run `git push origin master` to push those changes into Pantheon. (We won't need this when CircleCI is propoerly integrated.)
+1. Run `git push origin master` to push those changes into Pantheon. (We won't need this when CircleCI is properly integrated.)
 1. Go to the Dev website and synchronize the configuration at /admin/config/development/configuration
 1. Test that everything still works Dev
 1. Go to the Pantheon dashboard and navigate to the Test environment.
