@@ -51,7 +51,7 @@ To best work with Pantheon Multidev, we are going to keep feature branch names s
         1. Go to the Pantheon dashboard for portlandor
         1. Got to Backups for the Dev environment
         1. Download the latest database backup to the /artifacts directory of your local project
-        1. Run `lando db-import /artifacts/portlandor_dev_2018-04-12T00-00-00_UTC_database.sql.gz`. (This is just an example, you'll need to use the actual filename of the database dump you downloaded.)
+        1. From the artifacts directory run `lando db-import portlandor_dev_2018-04-12T00-00-00_UTC_database.sql.gz`. (This is just an example, you'll need to use the actual filename of the database dump you downloaded.)
     1. Develop to you heart's content. 
 2. ### Getting your code ready to share to Github
     1. In addition to any custom modules or theming files you may have created, you need to export any configuraiton changes to the repo in order for those changes to be synchronized. Run `lando drush cex` (config-export) in your local envionrment to create/update/delete the necessary config files.
@@ -63,7 +63,7 @@ To best work with Pantheon Multidev, we are going to keep feature branch names s
 4. ### Github
     1. When your work is ready to be merged with the master branch, create a pull request using the UI in Github at https://github.com/eGovPDX/portlandor/pulls by clicking "New pull request". Make sure to include POWR-[ID] in your PR title so that Jira can relate that PR to the correct issue.
     1. Make sure to assign at least one team member as a reviewer. Reviews are required before the code can be merged.
-    1. After a team member has provided an approval, which may be after responding to feedback and resolving review issues, the build master will be able to push the merge button and commit the work to the repo. Make sure you merge message is prepended with the Jira issue ID (e.g. "POWR-42 Adding the super duper feature")
+    1. After a team member has provided an approval, which may be after responding to feedback and resolving review issues, the build master will be able to push the merge button and commit the work to the repo. Make sure the merge message is prepended with the Jira issue ID (e.g. "POWR-42 Adding the super duper feature")
     
 ## Build master
 
