@@ -47,6 +47,11 @@ To best work with Pantheon Multidev, we are going to keep feature branch names s
 
 1. ### Start new work
     1. Use the issue ID from Jira for a new feature branch name to start work., from the master branch pulled from `github` run `git checkout -b powr-[ID]` to create and checkout a new branch. (We use lowercase to help create Pantheon multidev environments correctly.) If the branch already exists, you may use `git checkout powr-[ID]` to switch to your branch.
+    1. At the start of every sprint you should update your local database with a copy of the database from Dev. 
+        1. Go to the Pantheon dashboard for portlandor
+        1. Got to Backups for the Dev environment
+        1. Download the latest database backup to the /artifacts directory of your local project
+        1. Run `lando db-import /artifacts/portlandor_dev_2018-04-12T00-00-00_UTC_database.sql.gz`. (This is just an example, you'll need to use the actual filename of the database dump you downloaded.)
     1. Develop to you heart's content. 
 2. ### Getting your code ready to share to Github
     1. In addition to any custom modules or theming files you may have created, you need to export any configuraiton changes to the repo in order for those changes to be synchronized. Run `lando drush cex` (config-export) in your local envionrment to create/update/delete the necessary config files.
@@ -62,7 +67,7 @@ To best work with Pantheon Multidev, we are going to keep feature branch names s
     
 ## Build master
 
-There are a few extra steps for the assigned build master.
+There are a few extra steps for the assigned build master. This person is the final sanity check before merging in changes to the Dev, Test and Live instances on Pantheon. Basically the Dev and Test deploys are an opportunity to practice and test the deployment of the feature.
 
 1. Run `git pull origin master` from your local repo to pull down the changes that were just merged into the Github master branch.
 1. Run `git push origin master` to push those changes into Pantheon. (We won't need this when CircleCI is propoerly integrated.)
