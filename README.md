@@ -78,7 +78,7 @@ There are a few extra steps for the assigned build master. This person is the fi
 1. Under Deploys, you should see that the code you just deployed to Dev is ready for Test. Merge that code and run the build on Test.
 1. Go to the Test website and synchronize the configuration at /admin/config/development/configuration
 1. Test that everything still works on Test
-1. If all work from teh issue is merged and the issue has been moved to the done column on our Jira board, you may delete the feature branch from Github.
+1. If all work from the issue is merged and the issue has been moved to the done column on our Jira board, you may delete the feature branch from Github.
 1. At the end of each sprint, we should clean up any completed multidev sites/branches from the Pantheon dashboard.
 
 TODO: some of this can be automated further—and should be for the build master's santity.
