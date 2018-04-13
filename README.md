@@ -46,6 +46,7 @@ See other Lando with Pantheon commands at https://docs.devwithlando.io/tutorials
 To best work with Pantheon Multidev, we are going to keep feature branch names simple and use the master branch as our integration point that builds to the Pantheon Dev environment.
 
 1. ### Start new work
+    1. Always start by running `git pull origin` from your master branch. This will make sure you have the latest changes. Optionally, running `git pull -p origin` will prune any local branches not on the remote to help keep your local repo clean.
     1. Use the issue ID from Jira for a new feature branch name to start work., from the master branch pulled from `github` run `git checkout -b powr-[ID]` to create and checkout a new branch. (We use lowercase to help create Pantheon multidev environments correctly.) If the branch already exists, you may use `git checkout powr-[ID]` to switch to your branch.
     1. At the start of every sprint you should update your local database with a copy of the database from Dev. 
         1. Go to the Pantheon dashboard for portlandor
@@ -77,6 +78,7 @@ There are a few extra steps for the assigned build master. This person is the fi
 1. Under Deploys, you should see that the code you just deployed to Dev is ready for Test. Merge that code and run the build on Test.
 1. Go to the Test website and synchronize the configuration at /admin/config/development/configuration
 1. Test that everything still works on Test
+1. If all work from teh issue is merged and the issue has been moved to the done column on our Jira board, you may delete the feature branch from Github.
+1. At the end of each sprint, we should clean up any completed multidev sites/branches from the Pantheon dashboard.
 
 TODO: some of this can be automated further—and should be for the build master's santity.
-
