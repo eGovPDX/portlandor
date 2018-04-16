@@ -150,7 +150,6 @@ class NodeTest extends ResourceTestBase {
             'langcode' => 'en',
           ],
           'promote' => TRUE,
-          'revision_default' => TRUE,
           'revision_log' => NULL,
           'revision_timestamp' => 123456789,
           // @todo uncomment this in https://www.drupal.org/project/jsonapi/issues/2929932
@@ -269,9 +268,7 @@ class NodeTest extends ResourceTestBase {
         [
           'title' => 'Forbidden',
           'status' => 403,
-          // @todo Remove this line in favor of the commented line once https://www.drupal.org/project/drupal/issues/2938053 lands.
-          'detail' => "The current user is not allowed to PATCH the selected field (path).",
-          /* 'detail' => "The current user is not allowed to PATCH the selected field (path). The following permissions are required: 'create url aliases' OR 'administer url aliases'.", */
+          'detail' => "The current user is not allowed to PATCH the selected field (path). The following permissions are required: 'create url aliases' OR 'administer url aliases'.",
           'links' => [
             'info' => HttpExceptionNormalizer::getInfoUrl(403),
           ],

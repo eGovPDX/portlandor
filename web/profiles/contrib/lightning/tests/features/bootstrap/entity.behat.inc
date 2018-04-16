@@ -10,9 +10,6 @@ use Drupal\DrupalExtension\Context\DrupalContext;
 use Drupal\DrupalExtension\Context\DrupalSubContextBase;
 use Drupal\DrupalExtension\Hook\Scope\BeforeNodeCreateScope;
 use Drupal\DrupalExtension\Hook\Scope\EntityScope;
-use Drupal\node\Entity\Node;
-use Drupal\taxonomy\Entity\Term;
-use Drupal\user\Entity\User;
 
 /**
  * Subcontext for creating and cleaning up entities of any type.
@@ -74,51 +71,12 @@ class EntitySubContext extends DrupalSubContextBase {
     $node = $scope->getEntity();
 
     if (!isset($node->uid)) {
-      $user = $this->getContext(DrupalContext::class)->user;
+      $user = $this->getContext(DrupalContext::class)->getUserManager()->getCurrentUser();
 
       if (is_object($user)) {
         $node->uid = $user->uid;
       }
     }
-  }
-
-  /**
-   * Queues a node to be deleted at the end of the scenario.
-   *
-   * @param \Drupal\DrupalExtension\Hook\Scope\EntityScope $scope
-   *   The hook scope.
-   *
-   * @afterNodeCreate
-   */
-  public function queueNode(EntityScope $scope) {
-    $node = Node::load($scope->getEntity()->nid);
-    $this->queueEntity($node);
-  }
-
-  /**
-   * Queues a taxonomy term to be deleted at the end of the scenario.
-   *
-   * @param \Drupal\DrupalExtension\Hook\Scope\EntityScope $scope
-   *   The hook scope.
-   *
-   * @afterTermCreate
-   */
-  public function queueTerm(EntityScope $scope) {
-    $term = Term::load($scope->getEntity()->tid);
-    $this->queueEntity($term);
-  }
-
-  /**
-   * Queues a user to be deleted at the end of the scenario.
-   *
-   * @param \Drupal\DrupalExtension\Hook\Scope\EntityScope $scope
-   *   The hook scope.
-   *
-   * @afterUserCreate
-   */
-  public function queueUser(EntityScope $scope) {
-    $user = User::load($scope->getEntity()->uid);
-    $this->queueEntity($user);
   }
 
   /**
@@ -130,6 +88,18 @@ class EntitySubContext extends DrupalSubContextBase {
   public function queueEntity(EntityInterface $entity) {
     $entity_type = $entity->getEntityTypeId();
     $this->entities[$entity_type][] = $entity;
+  }
+
+  public function queueNode() {
+    @trigger_error(__METHOD__ . ' is deprecated. Use ' . __CLASS__ . '::queueEntity() instead.', E_USER_DEPRECATED);
+  }
+
+  public function queueTerm() {
+    @trigger_error(__METHOD__ . ' is deprecated. Use ' . __CLASS__ . '::queueEntity() instead.', E_USER_DEPRECATED);
+  }
+
+  public function queueUser() {
+    @trigger_error(__METHOD__ . ' is deprecated. Use ' . __CLASS__ . '::queueEntity() instead.', E_USER_DEPRECATED);
   }
 
   /**

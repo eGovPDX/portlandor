@@ -22,7 +22,7 @@ class Icon32x32 extends LinkSizesBase {
   /**
    * {@inheritdoc}
    */
-  private function sizes() {
+  protected function sizes() {
     return '32x32';
   }
 

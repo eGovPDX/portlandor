@@ -66,7 +66,7 @@ class VariantPluginAddBlockForm extends VariantPluginConfigureBlockFormBase {
   /**
    * {@inheritdoc}
    */
-  public function buildForm(array $form, FormStateInterface $form_state, Request $request = NULL, $block_display = NULL, $block_id = NULL) {
+  public function buildForm(array $form, FormStateInterface $form_state, $block_display = NULL, $block_id = NULL, Request $request = NULL) {
     $form = parent::buildForm($form, $form_state, $block_display, $block_id);
     $form['region']['#default_value'] = $request->query->get('region');
     return $form;

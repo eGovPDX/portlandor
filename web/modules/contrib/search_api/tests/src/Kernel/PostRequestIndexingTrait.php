@@ -12,7 +12,7 @@ trait PostRequestIndexingTrait {
    */
   protected function triggerPostRequestIndexing() {
     \Drupal::getContainer()->get('search_api.post_request_indexing')
-      ->onKernelTerminate();
+      ->destruct();
   }
 
 }

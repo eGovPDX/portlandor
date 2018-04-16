@@ -30,7 +30,7 @@ class MetatagHreflangTagsTest extends MetatagTagsTestBase {
   /**
    * {@inheritdoc}
    */
-  private $testNameAttribute = 'hreflang';
+  private $testNameAttribute = 'alternate';
 
   /**
    * {@inheritdoc}

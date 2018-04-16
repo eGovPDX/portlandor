@@ -131,6 +131,11 @@ class MetatagViewsBasicsTest extends BrowserTestBase {
 
     // Confirm what the page title looks like now.
     $this->assertTitle('Metatag title');
+
+    // Load the Metatag admin page to confirm it still works.
+    $this->drupalGet('admin/config/search/metatag');
+    $this->assertResponse(200);
+    $this->assertText('Add default meta tags');
   }
 
 }

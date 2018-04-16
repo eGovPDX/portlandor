@@ -77,7 +77,7 @@ class MetatagViewsEditForm extends FormBase {
     $view_id = \Drupal::request()->get('view_id');
     $display_id = \Drupal::request()->get('display_id');
 
-    // Get metatags from the view entity.
+    // Get meta tags from the view entity.
     $metatags = [];
     if ($view_id && $display_id) {
       $metatags = metatag_get_view_tags($view_id, $display_id);
@@ -165,7 +165,7 @@ class MetatagViewsEditForm extends FormBase {
     /** @var \Drupal\views\ViewEntityInterface $view */
     $view = $this->viewsManager->load($view_id);
 
-    // Store the metatags on the view.
+    // Store the meta tags on the view.
     $config_name = $view->getConfigDependencyName();
     $config_path = 'display.' . $display_id . '.display_options.display_extenders.metatag_display_extender.metatags';
 

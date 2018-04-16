@@ -69,7 +69,7 @@ abstract class MetatagTagsTestBase extends WebTestBase {
     // Use the test page as the front page.
     $this->config('system.site')->set('page.front', '/test-page')->save();
 
-    // Initiate session with a user who can manage metatags and access content.
+    // Initiate session with a user who can manage meta tags and access content.
     $permissions = [
       'administer site configuration',
       'administer meta tags',

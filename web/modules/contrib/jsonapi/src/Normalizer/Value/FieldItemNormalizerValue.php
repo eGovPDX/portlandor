@@ -2,12 +2,17 @@
 
 namespace Drupal\jsonapi\Normalizer\Value;
 
+use Drupal\Core\Cache\CacheableDependencyInterface;
+use Drupal\jsonapi\Normalizer\CacheableDependencyTrait;
+
 /**
  * Helps normalize field items in compliance with the JSON API spec.
  *
  * @internal
  */
-class FieldItemNormalizerValue implements ValueExtractorInterface {
+class FieldItemNormalizerValue implements CacheableDependencyInterface {
+
+  use CacheableDependencyTrait;
 
   /**
    * Raw values.
@@ -17,20 +22,22 @@ class FieldItemNormalizerValue implements ValueExtractorInterface {
   protected $raw;
 
   /**
-   * Included entity objects.
-   *
-   * @var \Drupal\jsonapi\Normalizer\Value\EntityNormalizerValue
-   */
-  protected $include;
-
-  /**
    * Instantiate a FieldItemNormalizerValue object.
    *
    * @param array $values
    *   The normalized result.
+   * @param \Drupal\Core\Cache\CacheableDependencyInterface $values_cacheability
+   *   The cacheability of the normalized result. This cacheability is not part
+   *   of $values because field items are normalized by Drupal core's
+   *   serialization system, which was never designed with cacheability in mind.
+   *   FieldItemNormalizer::normalize() must catch the out-of-band bubbled
+   *   cacheability and then passes it to this value object.
+   *
+   * @see \Drupal\jsonapi\Normalizer\FieldItemNormalizer::normalize()
    */
-  public function __construct(array $values) {
+  public function __construct(array $values, CacheableDependencyInterface $values_cacheability) {
     $this->raw = $values;
+    $this->setCacheability($values_cacheability);
   }
 
   /**
@@ -41,33 +48,6 @@ class FieldItemNormalizerValue implements ValueExtractorInterface {
     $value = count($this->raw) == 1 ? reset($this->raw) : $this->raw;
 
     return $this->rasterizeValueRecursive($value);
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function rasterizeIncludes() {
-    return $this->include->rasterizeValue();
-  }
-
-  /**
-   * Add an include.
-   *
-   * @param ValueExtractorInterface $include
-   *   The included entity.
-   */
-  public function setInclude(ValueExtractorInterface $include) {
-    $this->include = $include;
-  }
-
-  /**
-   * Gets the include.
-   *
-   * @return \Drupal\jsonapi\Normalizer\Value\EntityNormalizerValue
-   *   The include.
-   */
-  public function getInclude() {
-    return $this->include;
   }
 
   /**

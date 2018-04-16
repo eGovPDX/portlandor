@@ -48,6 +48,13 @@ class DataDefinitionNormalizer extends JsonNormalizerBase {
       if ($maxLength = $context['parent']->getSetting('max_length')) {
         $property['maxLength'] = $maxLength;
       }
+
+      if (empty($context['parent']->getSetting('allowed_values_function'))
+        && !empty($context['parent']->getSetting('allowed_values'))
+      ) {
+        $allowed_values = $context['parent']->getSetting('allowed_values');
+        $property['enum'] = array_keys($allowed_values);
+      }
     }
 
     $normalized = ['properties' => []];

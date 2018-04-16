@@ -5,7 +5,7 @@ namespace Drupal\metatag\Tests;
 use Drupal\simpletest\WebTestBase;
 
 /**
- * Ensures that metatags do not allow xss vulnerabilities.
+ * Ensures that meta tags do not allow xss vulnerabilities.
  *
  * @group metatag
  */
@@ -19,7 +19,7 @@ class MetatagXssTest extends WebTestBase {
   private $xssTitleString = '<script>alert("xss");</script>';
 
   /**
-   * String that causes an alert when metatags aren't filtered for xss.
+   * String that causes an alert when meta tags aren't filtered for xss.
    *
    * @var string
    */
@@ -33,7 +33,7 @@ class MetatagXssTest extends WebTestBase {
   private $escapedXssTag = '<meta name="abstract" content="&quot;&gt;alert(&quot;xss&quot;);" />';
 
   /**
-   * String that causes an alert when metatags aren't filtered for xss.
+   * String that causes an alert when meta tags aren't filtered for xss.
    *
    * "Image" meta tags are processed differently to others, so this checks for a
    * different string.

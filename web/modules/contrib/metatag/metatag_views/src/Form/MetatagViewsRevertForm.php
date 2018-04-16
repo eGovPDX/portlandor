@@ -21,7 +21,7 @@ class MetatagViewsRevertForm extends ConfirmFormBase {
   protected $viewsManager;
 
   /**
-   * The view entity to revert metatags on.
+   * The view entity to revert meta tags on.
    *
    * @var \Drupal\views\ViewEntityInterface
    */
@@ -61,7 +61,7 @@ class MetatagViewsRevertForm extends ConfirmFormBase {
    * {@inheritdoc}
    */
   public function getQuestion() {
-    return $this->t('Do you want to revert metatags for @view_name : @display_name?', [
+    return $this->t('Do you want to revert meta tags for @view_name : @display_name?', [
       '@view_name' => $this->view->label(),
       '@display_name' => $this->view->getDisplay($this->displayId)['display_title'],
     ]);
@@ -78,7 +78,7 @@ class MetatagViewsRevertForm extends ConfirmFormBase {
    * {@inheritdoc}
    */
   public function getDescription() {
-    return $this->t('You are about to revert the custom metatags for the %display_name display on the %view_name view. This action cannot be undone.', [
+    return $this->t('You are about to revert the custom meta tags for the %display_name display on the %view_name view. This action cannot be undone.', [
       '%view_name' => $this->view->label(),
       '%display_name' => $this->view->getDisplay($this->displayId)['display_title'],
     ]);
@@ -112,7 +112,7 @@ class MetatagViewsRevertForm extends ConfirmFormBase {
    * {@inheritdoc}
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
-    // Removed metatags from the view.
+    // Removed meta tags from the view.
     $config_name = $this->view->getConfigDependencyName();
     $config_path = 'display.' . $this->displayId . '.display_options.display_extenders.metatag_display_extender.metatags';
 
@@ -123,7 +123,7 @@ class MetatagViewsRevertForm extends ConfirmFormBase {
     // Redirect back to the views list.
     $form_state->setRedirect('metatag_views.metatags.list');
 
-    drupal_set_message($this->t('Reverted metatags for @view_name : @display_name', [
+    drupal_set_message($this->t('Reverted meta tags for @view_name : @display_name', [
       '@view_name' => $this->view->label(),
       '@display_name' => $this->view->getDisplay($this->displayId)['display_title'],
     ]));

@@ -9,6 +9,7 @@ use Drupal\jsonapi\Resource\JsonApiDocumentTopLevel;
 use Drupal\jsonapi\ResourceType\ResourceTypeRepositoryInterface;
 use Drupal\jsonapi\Serializer\Serializer;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\RequestStack;
 
 /**
  * Simplifies the process of generating a JSON API version of an entity.
@@ -39,6 +40,13 @@ class EntityToJsonApi {
   protected $resourceTypeRepository;
 
   /**
+   * The request stack.
+   *
+   * @var \Symfony\Component\HttpFoundation\RequestStack
+   */
+  protected $requestStack;
+
+  /**
    * EntityToJsonApi constructor.
    *
    * @param \Drupal\jsonapi\Serializer\Serializer $serializer
@@ -47,11 +55,14 @@ class EntityToJsonApi {
    *   The resource type repository.
    * @param \Drupal\Core\Session\AccountInterface $current_user
    *   The currently logged in user.
+   * @param \Symfony\Component\HttpFoundation\RequestStack $request_stack
+   *   The request stack.
    */
-  public function __construct(Serializer $serializer, ResourceTypeRepositoryInterface $resource_type_repository, AccountInterface $current_user) {
+  public function __construct(Serializer $serializer, ResourceTypeRepositoryInterface $resource_type_repository, AccountInterface $current_user, RequestStack $request_stack) {
     $this->serializer = $serializer;
     $this->resourceTypeRepository = $resource_type_repository;
     $this->currentUser = $current_user;
+    $this->requestStack = $request_stack;
   }
 
   /**
@@ -105,7 +116,8 @@ class EntityToJsonApi {
     );
     $resource_path = $resource_type->getPath();
     $path = sprintf('/%s/%s/%s', $path_prefix, $resource_path, $entity->uuid());
-    $request = Request::create($path, 'GET');
+    $master_request = $this->requestStack->getMasterRequest();
+    $request = Request::create($master_request->getSchemeAndHttpHost() . $master_request->getBaseUrl() . $path, 'GET');
     return [
       'account' => $this->currentUser,
       'cacheable_metadata' => new CacheableMetadata(),

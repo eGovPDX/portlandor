@@ -3,16 +3,15 @@
 namespace Drupal\search_api\Utility;
 
 use Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException;
+use Drupal\Core\DestructableInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\search_api\LoggerTrait;
 use Drupal\search_api\SearchApiException;
-use Symfony\Component\EventDispatcher\EventSubscriberInterface;
-use Symfony\Component\HttpKernel\KernelEvents;
 
 /**
  * Provides a service for indexing items at the end of the page request.
  */
-class PostRequestIndexing implements PostRequestIndexingInterface, EventSubscriberInterface {
+class PostRequestIndexing implements PostRequestIndexingInterface, DestructableInterface {
 
   use LoggerTrait;
 
@@ -46,20 +45,7 @@ class PostRequestIndexing implements PostRequestIndexingInterface, EventSubscrib
   /**
    * {@inheritdoc}
    */
-  public static function getSubscribedEvents() {
-    $events[KernelEvents::TERMINATE][] = ['onKernelTerminate'];
-
-    return $events;
-  }
-
-  /**
-   * Indexes all items that were registered for indexing in this page request.
-   *
-   * Invoked by the terminate kernel event.
-   *
-   * @see \Symfony\Component\HttpKernel\Event\PostResponseEvent
-   */
-  public function onKernelTerminate() {
+  public function destruct() {
     foreach ($this->operations as $index_id => $item_ids) {
       try {
         $storage = $this->entityTypeManager->getStorage('search_api_index');

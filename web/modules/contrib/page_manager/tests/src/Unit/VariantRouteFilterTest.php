@@ -14,7 +14,7 @@ use Drupal\Core\Path\CurrentPathStack;
 use Drupal\page_manager\PageVariantInterface;
 use Drupal\page_manager\Routing\VariantRouteFilter;
 use Drupal\Tests\UnitTestCase;
-use Symfony\Cmf\Component\Routing\Enhancer\RouteEnhancerInterface;
+use Drupal\Core\Routing\EnhancerInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\Routing\Route;
@@ -331,7 +331,7 @@ class VariantRouteFilterTest extends UnitTestCase {
     $this->currentPath->getPath($request)->willReturn('/path/with/1');
     $this->pageVariantStorage->load('a_variant')->willReturn($page_variant->reveal());
 
-    $route_enhancer = $this->prophesize(RouteEnhancerInterface::class);
+    $route_enhancer = $this->prophesize(EnhancerInterface::class);
     $this->routeFilter->addRouteEnhancer($route_enhancer->reveal());
     $result_enhance_attributes = $expected_enhance_attributes = [
       'foo' => 'bar',
@@ -375,7 +375,7 @@ class VariantRouteFilterTest extends UnitTestCase {
     $this->currentPath->getPath($request)->willReturn('/path/with/1');
     $this->pageVariantStorage->load('a_variant')->willReturn($page_variant->reveal());
 
-    $route_enhancer = $this->prophesize(RouteEnhancerInterface::class);
+    $route_enhancer = $this->prophesize(EnhancerInterface::class);
     $this->routeFilter->addRouteEnhancer($route_enhancer->reveal());
     $expected_enhance_attributes = [
       'foo' => 'bar',
@@ -436,7 +436,7 @@ class VariantRouteFilterTest extends UnitTestCase {
     $this->currentPath->getPath($request)->willReturn('/path/with/1');
 
     $expected_attributes = ['slug' => 1, '_route_object' => $route, '_route' => $route_name];
-    $route_enhancer = $this->prophesize(RouteEnhancerInterface::class);
+    $route_enhancer = $this->prophesize(EnhancerInterface::class);
     $route_enhancer->enhance($expected_attributes, $request)->willReturn(['slug' => 'slug 1']);
     $this->routeFilter->addRouteEnhancer($route_enhancer->reveal());
 

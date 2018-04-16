@@ -2,8 +2,12 @@
 
 namespace Drupal\jsonapi\Normalizer;
 
+use Drupal\Component\Assertion\Inspector;
+use Drupal\Core\Field\EntityReferenceFieldItemList;
 use Drupal\Core\Field\FieldItemListInterface;
+use Drupal\jsonapi\Normalizer\Value\FieldItemNormalizerValue;
 use Drupal\jsonapi\Normalizer\Value\FieldNormalizerValue;
+use Drupal\jsonapi\Normalizer\Value\NullFieldNormalizerValue;
 use Symfony\Component\Serializer\Exception\UnexpectedValueException;
 
 /**
@@ -32,7 +36,37 @@ class FieldNormalizer extends NormalizerBase {
    */
   public function normalize($field, $format = NULL, array $context = []) {
     /* @var \Drupal\Core\Field\FieldItemListInterface $field */
-    return $this->normalizeFieldItems($field, $format, $context);
+
+    $access = $field->access('view', $context['account'], TRUE);
+    $property_type = static::isRelationship($field) ? 'relationships' : 'attributes';
+
+    if ($access->isAllowed()) {
+      $normalized_field_items = $this->normalizeFieldItems($field, $format, $context);
+      assert(Inspector::assertAll(function ($v) {
+        return $v instanceof FieldItemNormalizerValue;
+      }, $normalized_field_items));
+
+      $cardinality = $field->getFieldDefinition()
+        ->getFieldStorageDefinition()
+        ->getCardinality();
+      return new FieldNormalizerValue($access, $normalized_field_items, $cardinality, $property_type);
+    }
+    else {
+      return new NullFieldNormalizerValue($access, $property_type);
+    }
+  }
+
+  /**
+   * Checks if the passed field is a relationship field.
+   *
+   * @param mixed $field
+   *   The field.
+   *
+   * @return bool
+   *   TRUE if it's a JSON API relationship.
+   */
+  protected static function isRelationship($field) {
+    return $field instanceof EntityReferenceFieldItemList || $field instanceof Relationship;
   }
 
   /**
@@ -52,7 +86,7 @@ class FieldNormalizer extends NormalizerBase {
    * @param array $context
    *   The context array.
    *
-   * @return \Drupal\jsonapi\Normalizer\Value\FieldNormalizerValue
+   * @return \Drupal\jsonapi\Normalizer\Value\FieldItemNormalizerValue[]
    *   The array of normalized field items.
    */
   protected function normalizeFieldItems(FieldItemListInterface $field, $format, array $context) {
@@ -62,10 +96,7 @@ class FieldNormalizer extends NormalizerBase {
         $normalizer_items[] = $this->serializer->normalize($field_item, $format, $context);
       }
     }
-    $cardinality = $field->getFieldDefinition()
-      ->getFieldStorageDefinition()
-      ->getCardinality();
-    return new FieldNormalizerValue($normalizer_items, $cardinality);
+    return $normalizer_items;
   }
 
 }

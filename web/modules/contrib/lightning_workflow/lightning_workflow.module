@@ -5,7 +5,7 @@
  * Provides workflow enhancements for Drupal.
  */
 
-use Drupal\content_moderation\Plugin\WorkflowType\ContentModeration;
+use Drupal\content_moderation\Plugin\WorkflowType\ContentModerationInterface;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\EntityPublishedInterface;
 use Drupal\Core\Entity\Display\EntityViewDisplayInterface;
@@ -37,11 +37,16 @@ function lightning_workflow_node_type_insert(NodeTypeInterface $node_type) {
   }
 
   $plugin = $workflow->getTypePlugin();
-  if ($plugin instanceof ContentModeration) {
-    $configuration = $plugin->getConfiguration();
-    $configuration['entity_types']['node'][] = $node_type->id();
-    $plugin->setConfiguration($configuration);
+  if ($plugin instanceof ContentModerationInterface) {
+    $rebuild = ! in_array('node', $plugin->getEntityTypes(), TRUE);
+    $plugin->addEntityTypeAndBundle('node', $node_type->id());
     $workflow->save();
+
+    // We need to rebuild all routes because Content Moderation needs to ensure
+    // that edit forms load the latest revision.
+    if ($rebuild) {
+      Drupal::service('router.builder')->rebuild();
+    }
   }
 }
 
@@ -149,15 +154,17 @@ function lightning_workflow_modules_installed(array $modules) {
   if (in_array('lightning_roles', $modules, TRUE)) {
     \Drupal::service('lightning.content_roles')
       ->grantPermissions('creator', [
-        'view any unpublished content',
         'use editorial transition create_new_draft',
         'use editorial transition review',
+        'view any unpublished content',
         'view latest version',
       ])
       ->grantPermissions('reviewer', [
         'use editorial transition publish',
         'use editorial transition review',
         'use editorial transition archive',
+        'view any unpublished content',
+        'view latest version',
       ]);
   }
 
@@ -165,8 +172,9 @@ function lightning_workflow_modules_installed(array $modules) {
     /** @var \Drupal\Core\Extension\ModuleInstallerInterface $module_installer */
     $module_installer = \Drupal::service('module_installer');
     // Lightning Workflow optionally integrates with Diff, and for testing
-    // purposes we'd like to enable that integration.
-    $module_installer->install(['diff']);
+    // purposes we'd like to enable that integration. In order to test with
+    // meaningful responsibility-based roles, we also enable Lightning Roles.
+    $module_installer->install(['diff', 'lightning_roles']);
     // BigPipe breaks a couple of non-JS tests which expect to find local task
     // links, but receive BigPipe placeholders instead. This is a bit of a
     // sledgehammer approach, but until it's possible to disable a module during

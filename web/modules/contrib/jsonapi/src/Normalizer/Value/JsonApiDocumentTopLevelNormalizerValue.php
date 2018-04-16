@@ -144,7 +144,10 @@ class JsonApiDocumentTopLevelNormalizerValue implements ValueExtractorInterface,
 
         // Add the pre-calculated total count to the meta section.
         if (isset($this->context['total_count'])) {
-          $rasterized['meta']['count'] = $this->context['total_count'];
+          $rasterized = NestedArray::mergeDeepArray([
+            $rasterized,
+            ['meta' => ['count' => $this->context['total_count']]],
+          ]);
         }
       }
     }

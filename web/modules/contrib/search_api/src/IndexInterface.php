@@ -399,18 +399,15 @@ interface IndexInterface extends ConfigEntityInterface {
   /**
    * Adds a field to this index.
    *
-   * If the field is already present (with the same datasource and property
-   * path) its settings will be updated.
-   *
    * @param \Drupal\search_api\Item\FieldInterface $field
-   *   The field to add, or update.
+   *   The field to add.
    *
    * @return $this
    *
    * @throws \Drupal\search_api\SearchApiException
-   *   Thrown if the field could not be added, either because a different field
-   *   with the same field ID would be overwritten, or because the field
-   *   identifier is one of the pseudo-fields that can be used in search
+   *   Thrown if the field could not be added, either because a field with the
+   *   same field ID already exists, or because the field identifier is one of
+   *   the reserved field IDs of pseudo-fields that can be used in search
    *   queries.
    */
   public function addField(FieldInterface $field);

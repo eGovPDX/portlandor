@@ -175,7 +175,7 @@ class MetatagDisplayExtender extends DisplayExtenderPluginBase {
   }
 
   /**
-   * Sets the metatags for the given view.
+   * Sets the meta tags for the given view.
    *
    * @param array $metatags
    *   Metatag arrays as suitable for storage.

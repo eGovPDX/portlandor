@@ -19,7 +19,7 @@ class SearchApiLanguage extends LanguageFilter {
    * {@inheritdoc}
    */
   public function query() {
-    $substitutions = self::queryLanguageSubstitutions();
+    $substitutions = static::queryLanguageSubstitutions();
     foreach ($this->value as $i => $value) {
       if (isset($substitutions[$value])) {
         $this->value[$i] = $substitutions[$value];

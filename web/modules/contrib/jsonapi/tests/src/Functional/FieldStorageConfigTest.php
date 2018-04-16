@@ -117,15 +117,4 @@ class FieldStorageConfigTest extends ResourceTestBase {
     return "The 'administer node fields' permission is required.";
   }
 
-  // @codingStandardsIgnoreStart
-  /**
-   * {@inheritdoc}
-   */
-  protected function getExpectedCacheContexts() {
-    // @todo Uncomment first line, remove second line in https://www.drupal.org/project/jsonapi/issues/2940342.
-//    return ['user.permissions'];
-    return parent::getExpectedCacheContexts();
-  }
-  // @codingStandardsIgnoreEnd
-
 }

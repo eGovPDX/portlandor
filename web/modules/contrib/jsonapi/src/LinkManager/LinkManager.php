@@ -3,9 +3,9 @@
 namespace Drupal\jsonapi\LinkManager;
 
 use Drupal\Core\Routing\UrlGeneratorInterface;
+use Drupal\Core\Url;
 use Drupal\jsonapi\ResourceType\ResourceType;
 use Drupal\jsonapi\Query\OffsetPage;
-use Symfony\Cmf\Component\Routing\RouteObjectInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\Routing\Matcher\RequestMatcherInterface;
@@ -18,13 +18,6 @@ use Symfony\Component\Routing\Matcher\RequestMatcherInterface;
 class LinkManager {
 
   /**
-   * Used to determine the route from a given request.
-   *
-   * @var \Symfony\Component\Routing\Matcher\RequestMatcherInterface
-   */
-  protected $router;
-
-  /**
    * Used to generate a link to a jsonapi representation of an entity.
    *
    * @var \Drupal\Core\Render\MetadataBubblingUrlGenerator
@@ -34,13 +27,12 @@ class LinkManager {
   /**
    * Instantiates a LinkManager object.
    *
-   * @param \Symfony\Component\Routing\Matcher\RequestMatcherInterface $router
-   *   The router.
+   * @param \Symfony\Component\Routing\Matcher\RequestMatcherInterface|null $_router
+   *   Unused. Kept for backwards compatibility.
    * @param \Drupal\Core\Routing\UrlGeneratorInterface $url_generator
    *   The Url generator.
    */
-  public function __construct(RequestMatcherInterface $router, UrlGeneratorInterface $url_generator) {
-    $this->router = $router;
+  public function __construct(RequestMatcherInterface $_router = NULL, UrlGeneratorInterface $url_generator) {
     $this->urlGenerator = $url_generator;
   }
 
@@ -81,17 +73,12 @@ class LinkManager {
    *   The full URL.
    */
   public function getRequestLink(Request $request, $query = NULL) {
-    $query = $query ?: (array) $request->query->getIterator();
-    $result = $this->router->matchRequest($request);
-    $route_name = $result[RouteObjectInterface::ROUTE_NAME];
-    /* @var \Symfony\Component\HttpFoundation\ParameterBag $raw_variables */
-    $raw_variables = $result['_raw_variables'];
-    $route_parameters = $raw_variables->all();
-    $options = [
-      'absolute' => TRUE,
-      'query' => $query,
-    ];
-    return $this->urlGenerator->generateFromRoute($route_name, $route_parameters, $options);
+    if ($query === NULL) {
+      return $request->getUri();
+    }
+
+    $uri_without_query_string = $request->getSchemeAndHttpHost() . $request->getBaseUrl() . $request->getPathInfo();
+    return Url::fromUri($uri_without_query_string)->setOption('query', $query)->toString();
   }
 
   /**

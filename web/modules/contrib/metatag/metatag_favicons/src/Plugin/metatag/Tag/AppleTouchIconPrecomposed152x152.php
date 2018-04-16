@@ -22,7 +22,7 @@ class AppleTouchIconPrecomposed152x152 extends LinkSizesBase {
   /**
    * {@inheritdoc}
    */
-  private function sizes() {
+  protected function sizes() {
     return '152x152';
   }
 

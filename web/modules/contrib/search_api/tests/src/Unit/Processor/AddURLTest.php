@@ -4,6 +4,8 @@ namespace Drupal\Tests\search_api\Unit\Processor;
 
 use Drupal\Core\Entity\Plugin\DataType\EntityAdapter;
 use Drupal\Core\TypedData\DataDefinitionInterface;
+use Drupal\search_api\Datasource\DatasourceInterface;
+use Drupal\search_api\IndexInterface;
 use Drupal\search_api\Plugin\search_api\processor\AddURL;
 use Drupal\Tests\UnitTestCase;
 
@@ -49,7 +51,7 @@ class AddURLTest extends UnitTestCase {
       ->will($this->returnValue('http://www.example.com/node/example'));
 
     // Mock the data source of the indexer to return the mocked url object.
-    $datasource = $this->getMock('Drupal\search_api\Datasource\DatasourceInterface');
+    $datasource = $this->createMock(DatasourceInterface::class);
     $datasource->expects($this->any())
       ->method('getItemUrl')
       ->withAnyParameters()
@@ -57,7 +59,7 @@ class AddURLTest extends UnitTestCase {
 
     // Create a mock for the index to return the datasource mock.
     /** @var \Drupal\search_api\IndexInterface $index */
-    $index = $this->index = $this->getMock('Drupal\search_api\IndexInterface');
+    $index = $this->index = $this->createMock(IndexInterface::class);
     $this->index->expects($this->any())
       ->method('getDatasource')
       ->with('entity:node')
@@ -130,7 +132,7 @@ class AddURLTest extends UnitTestCase {
     }
 
     // Verify that there are no properties if a datasource is given.
-    $datasource = $this->getMock('Drupal\search_api\Datasource\DatasourceInterface');
+    $datasource = $this->createMock(DatasourceInterface::class);
     $properties = $this->processor->getPropertyDefinitions($datasource);
     $this->assertEmpty($properties, 'Datasource-specific properties did not get changed.');
   }

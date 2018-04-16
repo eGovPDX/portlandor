@@ -203,17 +203,6 @@ class FileTest extends ResourceTestBase {
     return parent::getExpectedUnauthorizedAccessMessage($method);
   }
 
-  // @codingStandardsIgnoreStart
-  /**
-   * {@inheritdoc}
-   */
-  protected function getExpectedCacheContexts() {
-    // @todo Uncomment first line, remove second line in https://www.drupal.org/project/jsonapi/issues/2940342.
-//    return ['user.permissions'];
-    return parent::getExpectedCacheContexts();
-  }
-  // @codingStandardsIgnoreEnd
-
   /**
    * {@inheritdoc}
    */

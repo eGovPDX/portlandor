@@ -6,6 +6,7 @@ use Drupal\Core\Entity\ContentEntityType;
 use Drupal\Core\Entity\EntityForm;
 use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\metatag\MetatagManager;
 
 /**
  * Class MetatagDefaultsForm.
@@ -93,6 +94,17 @@ class MetatagDefaultsForm extends EntityForm {
    */
   public function rebuildForm(array &$form, FormStateInterface $form_state) {
     return $form;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  protected function actions(array $form, FormStateInterface $form_state) {
+    $actions = parent::actions($form, $form_state);
+    if (isset($actions['delete'])) {
+      $actions['delete']['#access'] = $actions['delete']['#access'] && !in_array($this->entity->id(), MetatagManager::protectedDefaults());
+    }
+    return $actions;
   }
 
   /**

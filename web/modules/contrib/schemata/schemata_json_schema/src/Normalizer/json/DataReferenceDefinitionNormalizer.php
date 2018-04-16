@@ -2,7 +2,7 @@
 
 namespace Drupal\schemata_json_schema\Normalizer\json;
 
-use Drupal\Core\Entity\EntityTypeManager;
+use Drupal\Core\Entity\EntityTypeManagerInterface;
 
 /**
  * Normalizer for Entity References.
@@ -32,10 +32,10 @@ class DataReferenceDefinitionNormalizer extends DataDefinitionNormalizer {
   /**
    * Constructs an DataReferenceDefinitionNormalizer object.
    *
-   * @param \Drupal\Core\Entity\EntityTypeManager $entity_type_manager
+   * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
    *   The Entity Type Manager.
    */
-  public function __construct(EntityTypeManager $entity_type_manager) {
+  public function __construct(EntityTypeManagerInterface $entity_type_manager) {
     $this->entityTypeManager = $entity_type_manager;
   }
 

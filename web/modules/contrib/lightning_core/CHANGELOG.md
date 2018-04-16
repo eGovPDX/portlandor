@@ -1,3 +1,9 @@
+## 2.2.0
+* Security updated Drupal core to 8.5.1. (SA-2018-002)
+* When renaming the configuration which stores extension's version numbers,
+  Lightning Core will no longer assume configuration by the same name does not
+  already exist. (Issue #2955072) 
+
 ## 2.1.0
 * Behat contexts used for testing were moved into the
   `Acquia\LightningExtension\Context` namespace.

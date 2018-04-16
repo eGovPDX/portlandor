@@ -2,6 +2,7 @@
 
 namespace Drupal\Tests\page_manager\Kernel;
 
+use Drupal\Component\Utility\UrlHelper;
 use Drupal\entity_test\Entity\EntityTest;
 use Drupal\KernelTests\Core\Entity\EntityKernelTestBase;
 use Drupal\page_manager\Entity\Page;
@@ -102,6 +103,14 @@ class PageManagerRoutingTest extends EntityKernelTestBase {
    */
   public function testRouteFilter($path, $expected) {
     $request = Request::create($path);
+    // \Drupal\Core\StackMiddleware\NegotiationMiddleware usually handles query
+    // parameter based formats, but middlewares do not run during kernel tests
+    // so set it directly.
+    $query = UrlHelper::parse($path)['query'];
+    if (isset($query['_format'])) {
+      $request->setRequestFormat($query['_format']);
+    }
+
     try {
       $parameters = $this->container->get('router')->matchRequest($request);
     }

@@ -88,7 +88,7 @@ class MetatagFirehose extends WidgetBase implements ContainerFactoryPluginInterf
    */
   public function massageFormValues(array $values, array $form, FormStateInterface $form_state) {
     // Flatten the values array to remove the groups and then serialize all the
-    // metatags into one value for storage.
+    // meta tags into one value for storage.
     $tag_manager = \Drupal::service('plugin.manager.metatag.tag');
     $tags = $tag_manager->getDefinitions();
     foreach ($values as &$value) {

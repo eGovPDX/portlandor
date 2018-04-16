@@ -3,6 +3,7 @@
 namespace Drupal\Tests\jsonapi\Unit\Access;
 
 use Drupal\jsonapi\Access\CustomQueryParameterNamesAccessCheck;
+use Drupal\Tests\UnitTestCase;
 use Symfony\Component\HttpFoundation\Request;
 
 /**
@@ -11,7 +12,7 @@ use Symfony\Component\HttpFoundation\Request;
  *
  * @internal
  */
-class CustomQueryParameterNamesAccessCheckTest extends \PHPUnit_Framework_TestCase {
+class CustomQueryParameterNamesAccessCheckTest extends UnitTestCase {
 
   /**
    * Ensures that query params are properly validated.

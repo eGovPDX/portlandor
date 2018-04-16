@@ -18,7 +18,7 @@ abstract class HreflangBase extends LinkRelBase {
     if ($element) {
       // Rewrite the attributes so the hreflang value is before the href value.
       $element['#attributes'] = [
-        'rel' => 'hreflang',
+        'rel' => 'alternate',
         'hreflang' => $this->name(),
         'href' => $element['#attributes']['href'],
       ];

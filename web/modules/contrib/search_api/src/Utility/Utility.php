@@ -207,4 +207,34 @@ class Utility {
     return php_sapi_name() === 'cli';
   }
 
+  /**
+   * Checks whether a certain value matches the configuration.
+   *
+   * This unifies checking for matches with the common configuration pattern of
+   * having one "All except those selected"/"Only the selected" option
+   * ("default") and a list of options to select.
+   *
+   * @param mixed $value
+   *   The value to check.
+   * @param array $settings
+   *   The settings to check against, as an associative array with the following
+   *   keys:
+   *   - default: Boolean defining the default for not-selected items. TRUE
+   *     means "All except those selected", FALSE means "Only the selected".
+   *     Defaults to TRUE.
+   *   - selected: A numerically indexed array of the selected options. Defaults
+   *     to an empty array.
+   *
+   * @return bool
+   *   TRUE if the value matches according to the configuration, FALSE
+   *   otherwise.
+   */
+  public static function matches($value, array $settings) {
+    $settings += [
+      'default' => TRUE,
+      'selected' => [],
+    ];
+    return in_array($value, $settings['selected']) != $settings['default'];
+  }
+
 }

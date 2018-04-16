@@ -82,7 +82,7 @@ class PageAccessTest extends UnitTestCase {
     $page->status()->willReturn(TRUE);
     $page->language()->willReturn($this->prophesize(LanguageInterface::class)->reveal());
 
-    $page->uuid()->shouldBeCalled();
+    $page->uuid()->willReturn('some-uuid');
     $page->getEntityTypeId()->shouldBeCalled();
 
     $account = $this->prophesize(AccountInterface::class);
@@ -101,7 +101,7 @@ class PageAccessTest extends UnitTestCase {
     $page->getCacheMaxAge()->willReturn(0);
     $page->language()->willReturn($this->prophesize(LanguageInterface::class)->reveal());
 
-    $page->uuid()->shouldBeCalled();
+    $page->uuid()->willReturn('some-uuid');
     $page->getEntityTypeId()->shouldBeCalled();
 
     $account = $this->prophesize(AccountInterface::class);
@@ -121,7 +121,7 @@ class PageAccessTest extends UnitTestCase {
     $page->isNew()->willReturn($is_new);
     $page->language()->willReturn($this->prophesize(LanguageInterface::class)->reveal());
 
-    $page->uuid()->shouldBeCalled();
+    $page->uuid()->willReturn('some-uuid');
     $page->getEntityTypeId()->shouldBeCalled();
 
     // Ensure that the cache tag is added for the temporary conditions.

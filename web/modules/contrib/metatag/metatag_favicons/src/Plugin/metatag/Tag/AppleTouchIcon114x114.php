@@ -22,7 +22,7 @@ class AppleTouchIcon114x114 extends LinkSizesBase {
   /**
    * {@inheritdoc}
    */
-  private function sizes() {
+  protected function sizes() {
     return '114x114';
   }
 

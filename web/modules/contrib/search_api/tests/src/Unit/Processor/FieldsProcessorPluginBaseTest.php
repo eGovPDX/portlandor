@@ -41,7 +41,7 @@ class FieldsProcessorPluginBaseTest extends UnitTestCase {
     parent::setUp();
 
     $this->setUpMockContainer();
-    $this->index = $this->getMock('Drupal\search_api\IndexInterface');
+    $this->index = $this->createMock(IndexInterface::class);
     $this->index->expects($this->any())
       ->method('status')
       ->will($this->returnValue(TRUE));
@@ -121,7 +121,7 @@ class FieldsProcessorPluginBaseTest extends UnitTestCase {
     // Since it's not possible to override an already specified method on a mock
     // object, we need to create a new mock object for the index in this test.
     /** @var \Drupal\search_api\IndexInterface|\PHPUnit_Framework_MockObject_MockObject $index */
-    $index = $this->getMock(IndexInterface::class);
+    $index = $this->createMock(IndexInterface::class);
     $index->method('getFields')->willReturn([
       'float_field' => (new Field($this->index, ''))->setType('float'),
       'float_field_2' => (new Field($this->index, ''))->setType('float'),

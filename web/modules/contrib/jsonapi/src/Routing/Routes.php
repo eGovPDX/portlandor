@@ -26,7 +26,7 @@ class Routes implements ContainerInjectionInterface {
    *
    * @var string
    */
-  const FRONT_CONTROLLER = '\Drupal\jsonapi\Controller\RequestHandler::handle';
+  const FRONT_CONTROLLER = 'jsonapi.request_handler:handle';
 
   /**
    * The JSON API resource type repository.

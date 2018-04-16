@@ -2,6 +2,8 @@
 
 namespace Drupal\Tests\search_api\Unit\Processor;
 
+use Drupal\Component\Transliteration\TransliterationInterface;
+use Drupal\search_api\IndexInterface;
 use Drupal\search_api\Plugin\search_api\processor\Transliteration;
 use Drupal\Tests\UnitTestCase;
 
@@ -29,13 +31,13 @@ class TransliterationTest extends UnitTestCase {
   public function setUp() {
     parent::setUp();
 
-    $this->index = $this->getMock('Drupal\search_api\IndexInterface');
+    $this->index = $this->createMock(IndexInterface::class);
 
     $this->setUpMockContainer();
     $this->processor = new Transliteration([], 'transliteration', []);
     $this->processor->setLangcode('en');
 
-    $transliterator = $this->getMock('\Drupal\Component\Transliteration\TransliterationInterface');
+    $transliterator = $this->createMock(TransliterationInterface::class);
     $transliterate = function ($string, $langcode = 'en', $unknown_character = '?', $max_length = NULL) {
       return "translit-$string-$langcode$unknown_character$max_length";
     };

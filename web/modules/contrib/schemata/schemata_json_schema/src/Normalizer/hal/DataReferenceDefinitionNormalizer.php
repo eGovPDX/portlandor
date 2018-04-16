@@ -2,10 +2,10 @@
 
 namespace Drupal\schemata_json_schema\Normalizer\hal;
 
+use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\schemata_json_schema\Normalizer\json\DataReferenceDefinitionNormalizer as JsonDataReferenceDefinitionNormalizer;
 use Drupal\schemata\SchemaUrl;
-use Drupal\rest\LinkManager\LinkManagerInterface;
-use Drupal\Core\Entity\EntityTypeManager;
+use Drupal\hal\LinkManager\LinkManagerInterface;
 
 /**
  * Normalizer for Entity References in HAL+JSON style.
@@ -29,19 +29,19 @@ class DataReferenceDefinitionNormalizer extends JsonDataReferenceDefinitionNorma
   /**
    * The hypermedia link manager.
    *
-   * @var \Drupal\rest\LinkManager\LinkManagerInterface
+   * @var \Drupal\hal\LinkManager\LinkManagerInterface
    */
   protected $linkManager;
 
   /**
    * Constructs an DataReferenceDefinitionNormalizer object.
    *
-   * @param \Drupal\Core\Entity\EntityTypeManager $entity_type_manager
+   * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
    *   The Entity Type Manager.
-   * @param \Drupal\rest\LinkManager\LinkManagerInterface $link_manager
+   * @param \Drupal\hal\LinkManager\LinkManagerInterface $link_manager
    *   The hypermedia link manager.
    */
-  public function __construct(EntityTypeManager $entity_type_manager, LinkManagerInterface $link_manager) {
+  public function __construct(EntityTypeManagerInterface $entity_type_manager, LinkManagerInterface $link_manager) {
     parent::__construct($entity_type_manager);
     $this->linkManager = $link_manager;
   }

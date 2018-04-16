@@ -16,7 +16,8 @@ use Drupal\metatag\Plugin\metatag\Tag\MetaPropertyBase;
  *   weight = 3,
  *   type = "uri",
  *   secure = FALSE,
- *   multiple = FALSE
+ *   multiple = FALSE,
+ *   absolute_url = TRUE
  * )
  */
 class OgUrl extends MetaPropertyBase {

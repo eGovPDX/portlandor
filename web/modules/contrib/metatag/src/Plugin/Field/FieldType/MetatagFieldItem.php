@@ -64,7 +64,13 @@ class MetatagFieldItem extends FieldItemBase {
 
     // Get the value about to be saved.
     $current_value = $this->value;
-    $current_tags = unserialize($current_value);
+    // Only unserialize if still serialized string.
+    if (is_string($current_value)) {
+      $current_tags = unserialize($current_value);
+    }
+    else {
+      $current_tags = $current_value;
+    }
 
     // Only include values that differ from the default.
     // @todo When site defaults are added, account for those.

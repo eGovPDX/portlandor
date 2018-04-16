@@ -28,7 +28,7 @@ class MetatagViewsAddForm extends MetatagViewsEditForm {
 
     // Add a view select to the edit form.
     $views = Views::getViewsAsOptions(FALSE, 'enabled', NULL, TRUE, TRUE);
-    // Get only the views that do not have the metatags set yet.
+    // Get only the views that do not have the meta tags set yet.
     $in_use = MetatagViewsController::getTaggedViews();
     foreach ($in_use as $view_id => $displays) {
       foreach (array_keys($displays) as $display_id) {

@@ -16,4 +16,19 @@ use Drupal\search_api\DataType\DataTypePluginBase;
  */
 class DateDataType extends DataTypePluginBase {
 
+  /**
+   * {@inheritdoc}
+   */
+  public function getValue($value) {
+    if ((string) $value === '') {
+      return NULL;
+    }
+    if (is_numeric($value)) {
+      return (int) $value;
+    }
+    $timezone = new \DateTimezone('UTC');
+    $date = new \Datetime($value, $timezone);
+    return $date->getTimestamp();
+  }
+
 }

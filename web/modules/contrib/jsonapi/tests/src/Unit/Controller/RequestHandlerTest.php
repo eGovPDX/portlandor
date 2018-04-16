@@ -2,10 +2,15 @@
 
 namespace Drupal\Tests\jsonapi\Unit\Controller;
 
-use Drupal\Core\Entity\EntityStorageInterface;
+use Drupal\Core\Entity\EntityFieldManagerInterface;
+use Drupal\Core\Entity\EntityTypeManagerInterface;
+use Drupal\Core\Field\FieldTypePluginManagerInterface;
+use Drupal\Core\Render\RendererInterface;
+use Drupal\jsonapi\LinkManager\LinkManager;
 use Drupal\jsonapi\ResourceType\ResourceType;
 use Drupal\jsonapi\Context\CurrentContext;
 use Drupal\jsonapi\Controller\RequestHandler;
+use Drupal\jsonapi\ResourceType\ResourceTypeRepositoryInterface;
 use Drupal\Tests\UnitTestCase;
 use Prophecy\Argument;
 use Symfony\Component\HttpFoundation\Request;
@@ -27,8 +32,6 @@ class RequestHandlerTest extends UnitTestCase {
    * @expectedExceptionMessageRegExp "There was an error un-serializing the data\..*"
    */
   public function testDeserializeBodyFail() {
-    $entity_storage = $this->prophesize(EntityStorageInterface::class);
-    $request_handler = new RequestHandler($entity_storage->reveal());
     $request = $this->prophesize(Request::class);
     $request->getContentType()->willReturn(NULL);
     $request->getContent()->willReturn('this is not used');
@@ -44,12 +47,22 @@ class RequestHandlerTest extends UnitTestCase {
     $current_context = $this->prophesize(CurrentContext::class);
     $current_context->getResourceType()
       ->willReturn(new ResourceType($this->randomMachineName(), $this->randomMachineName(), NULL));
+
+    $request_handler = new RequestHandler(
+      $serializer->reveal(),
+      $current_context->reveal(),
+      $this->prophesize(RendererInterface::class)->reveal(),
+      $this->prophesize(ResourceTypeRepositoryInterface::class)->reveal(),
+      $this->prophesize(EntityTypeManagerInterface::class)->reveal(),
+      $this->prophesize(EntityFieldManagerInterface::class)->reveal(),
+      $this->prophesize(FieldTypePluginManagerInterface::class)->reveal(),
+      $this->prophesize(LinkManager::class)->reveal()
+    );
+
     try {
       $request_handler->deserializeBody(
         $request->reveal(),
-        $serializer->reveal(),
-        'invalid',
-        $current_context->reveal()
+        'invalid'
       );
       $this->fail('Expected exception.');
     }

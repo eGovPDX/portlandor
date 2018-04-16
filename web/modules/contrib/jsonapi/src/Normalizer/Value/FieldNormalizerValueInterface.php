@@ -2,14 +2,14 @@
 
 namespace Drupal\jsonapi\Normalizer\Value;
 
-use Drupal\Core\Cache\RefinableCacheableDependencyInterface;
+use Drupal\Core\Cache\CacheableDependencyInterface;
 
 /**
  * Interface to help normalize fields in compliance with the JSON API spec.
  *
  * @internal
  */
-interface FieldNormalizerValueInterface extends ValueExtractorInterface, RefinableCacheableDependencyInterface {
+interface FieldNormalizerValueInterface extends ValueExtractorInterface, CacheableDependencyInterface {
 
   /**
    * Gets the includes.
@@ -26,26 +26,6 @@ interface FieldNormalizerValueInterface extends ValueExtractorInterface, Refinab
    *   The propertyType.
    */
   public function getPropertyType();
-
-  /**
-   * Sets the propertyType.
-   *
-   * @param mixed $property_type
-   *   The propertyType to set.
-   */
-  public function setPropertyType($property_type);
-
-  /**
-   * Sets the includes.
-   *
-   * This is used to manually set the nested includes when using the
-   * relationship as a document root in a
-   * /{resource}/{id}/relationships/{fieldName}.
-   *
-   * @param array $includes
-   *   The includes.
-   */
-  public function setIncludes(array $includes);
 
   /**
    * Computes all the nested includes recursively.

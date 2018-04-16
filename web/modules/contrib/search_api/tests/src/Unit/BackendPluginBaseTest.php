@@ -29,10 +29,10 @@ class BackendPluginBaseTest extends UnitTestCase {
    * @dataProvider getQueryFulltextFieldsDataProvider
    */
   public function testGetQueryFulltextFields($query_fields, array $expected) {
-    $index = $this->getMock(IndexInterface::class);
+    $index = $this->createMock(IndexInterface::class);
     $index->method('getFulltextFields')->willReturn(['field1', 'field2']);
 
-    $query = $this->getMock(QueryInterface::class);
+    $query = $this->createMock(QueryInterface::class);
     $query->method('getFulltextFields')->willReturn($query_fields);
     $query->method('getIndex')->willReturn($index);
 

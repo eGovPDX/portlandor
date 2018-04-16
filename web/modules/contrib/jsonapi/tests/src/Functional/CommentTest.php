@@ -7,6 +7,8 @@ use Drupal\comment\Entity\CommentType;
 use Drupal\comment\Tests\CommentTestTrait;
 use Drupal\Component\Serialization\Json;
 use Drupal\Component\Utility\NestedArray;
+use Drupal\Core\Cache\Cache;
+use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Url;
 use Drupal\entity_test\Entity\EntityTest;
 use Drupal\Tests\rest\Functional\BcTimestampNormalizerUnixTestTrait;
@@ -42,14 +44,14 @@ class CommentTest extends ResourceTestBase {
    * {@inheritdoc}
    */
   protected static $patchProtectedFieldNames = [
-    'status' => NULL,
+    'status' => "The 'administer comments' permission is required.",
     // @todo These are relationships, and cannot be tested in the same way. Fix in https://www.drupal.org/project/jsonapi/issues/2939810.
     // 'pid' => NULL,
     // 'entity_id' => NULL,
     // 'uid' => NULL,
-    'name' => NULL,
-    'homepage' => NULL,
-    'created' => NULL,
+    'name' => "The 'administer comments' permission is required.",
+    'homepage' => "The 'administer comments' permission is required.",
+    'created' => "The 'administer comments' permission is required.",
     'changed' => NULL,
     'thread' => NULL,
     'entity_type' => NULL,
@@ -248,25 +250,36 @@ class CommentTest extends ResourceTestBase {
     ];
   }
 
-  // @codingStandardsIgnoreStart
   /**
    * {@inheritdoc}
    */
-  protected function getExpectedCacheTags() {
-    // @todo Uncomment first line, remove second line in https://www.drupal.org/project/jsonapi/issues/2940342.
-//    return Cache::mergeTags(parent::getExpectedCacheTags(), ['config:filter.format.plain_text']);
-    return parent::getExpectedCacheTags();
+  protected function getExpectedCacheTags(array $sparse_fieldset = NULL) {
+    // @todo Remove this when JSON API requires Drupal 8.5 or newer.
+    if (floatval(\Drupal::VERSION) < 8.5) {
+      return parent::getExpectedCacheTags($sparse_fieldset);
+    }
+
+    $tags = parent::getExpectedCacheTags($sparse_fieldset);
+    if ($sparse_fieldset === NULL || in_array('comment_body', $sparse_fieldset)) {
+      $tags = Cache::mergeTags($tags, ['config:filter.format.plain_text']);
+    }
+    return $tags;
   }
 
   /**
    * {@inheritdoc}
    */
-  protected function getExpectedCacheContexts() {
-    // @todo Uncomment first line, remove second line in https://www.drupal.org/project/jsonapi/issues/2940342.
-//    return Cache::mergeContexts(['languages:language_interface', 'theme'], parent::getExpectedCacheContexts());
-    return parent::getExpectedCacheContexts();
+  protected function getExpectedCacheContexts(array $sparse_fieldset = NULL) {
+    // @todo Remove this when JSON API requires Drupal 8.5 or newer.
+    if (floatval(\Drupal::VERSION) < 8.5) {
+      return parent::getExpectedCacheContexts($sparse_fieldset);
+    }
+    $contexts = parent::getExpectedCacheContexts($sparse_fieldset);
+    if ($sparse_fieldset === NULL || in_array('comment_body', $sparse_fieldset)) {
+      $contexts = Cache::mergeContexts($contexts, ['languages:language_interface', 'theme']);
+    }
+    return $contexts;
   }
-  // @codingStandardsIgnoreEnd
 
   /**
    * {@inheritdoc}
@@ -380,6 +393,23 @@ class CommentTest extends ResourceTestBase {
     // @see \Drupal\comment\CommentAccessControlHandler::checkAccess()
     return parent::getExpectedUnauthorizedAccessCacheability()
       ->addCacheTags(['comment:1']);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  protected function entityFieldAccess(EntityInterface $entity, $field_name, $operation) {
+    // Also reset the 'entity_test' entity access control handler because
+    // comment access also depends on access to the commented entity type.
+    \Drupal::entityTypeManager()->getAccessControlHandler('entity_test')->resetCache();
+    return parent::entityFieldAccess($entity, $field_name, $operation);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function testRelated() {
+    $this->markTestSkipped('Remove this in https://www.drupal.org/project/jsonapi/issues/2940339');
   }
 
 }

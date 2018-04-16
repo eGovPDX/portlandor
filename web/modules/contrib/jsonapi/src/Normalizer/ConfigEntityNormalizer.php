@@ -2,6 +2,7 @@
 
 namespace Drupal\jsonapi\Normalizer;
 
+use Drupal\Core\Access\AccessResult;
 use Drupal\Core\Config\Entity\ConfigEntityInterface;
 use Drupal\jsonapi\Normalizer\Value\ConfigFieldItemNormalizerValue;
 use Drupal\jsonapi\Normalizer\Value\FieldNormalizerValue;
@@ -46,12 +47,16 @@ class ConfigEntityNormalizer extends EntityNormalizer {
    * {@inheritdoc}
    */
   protected function serializeField($field, array $context, $format) {
-    $output = new FieldNormalizerValue(
+    return new FieldNormalizerValue(
+      // Config entities have no concept of "fields", nor any concept of
+      // "field access". For practical reasons, JSON API uses the same value
+      // object that it uses for content entities (FieldNormalizerValue), and
+      // that requires an access result. Therefore we can safely hardcode it.
+      AccessResult::allowed(),
       [new ConfigFieldItemNormalizerValue($field)],
-      1
+      1,
+      'attributes'
     );
-    $output->setPropertyType('attributes');
-    return $output;
   }
 
   /**

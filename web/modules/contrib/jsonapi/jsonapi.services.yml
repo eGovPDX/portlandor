@@ -1,6 +1,7 @@
 services:
   jsonapi.serializer_do_not_use_removal_imminent:
     class: Drupal\jsonapi\Serializer\Serializer
+    public: false
     calls:
       - [setFallbackNormalizer, ['@serializer']]
     arguments: [{  }, {  }]
@@ -131,11 +132,24 @@ services:
 
   jsonapi.entity.to_jsonapi:
     class: Drupal\jsonapi\EntityToJsonApi
-    arguments: ['@jsonapi.serializer_do_not_use_removal_imminent', '@jsonapi.resource_type.repository', '@current_user']
+    arguments: ['@jsonapi.serializer_do_not_use_removal_imminent', '@jsonapi.resource_type.repository', '@current_user', '@request_stack']
 
   logger.channel.jsonapi:
     parent: logger.channel_base
     arguments: ['jsonapi']
+
+  # Controllers.
+  jsonapi.request_handler:
+    class: \Drupal\jsonapi\Controller\RequestHandler
+    arguments:
+      - '@jsonapi.serializer_do_not_use_removal_imminent'
+      - '@jsonapi.current_context'
+      - '@renderer'
+      - '@jsonapi.resource_type.repository'
+      - '@entity_type.manager'
+      - '@entity_field.manager'
+      - '@plugin.manager.field.field_type'
+      - '@jsonapi.link_manager'
 
   # Event subscribers.
   jsonapi.resource_response.subscriber:

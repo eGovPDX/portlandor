@@ -127,4 +127,18 @@ class MessageTest extends ResourceTestBase {
     $this->markTestSkipped('Change this override in https://www.drupal.org/project/jsonapi/issues/2944977');
   }
 
+  /**
+   * {@inheritdoc}
+   */
+  public function testRelated() {
+    $this->markTestSkipped('Change this override in https://www.drupal.org/project/jsonapi/issues/2944977');
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function testGetRelationships() {
+    $this->markTestSkipped('Change this override in https://www.drupal.org/project/jsonapi/issues/2944977');
+  }
+
 }

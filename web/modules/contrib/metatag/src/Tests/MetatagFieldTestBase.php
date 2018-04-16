@@ -350,7 +350,6 @@ abstract class MetatagFieldTestBase extends WebTestBase {
     $entity = reset($entities);
 
     // @todo Confirm the values output correctly.
-
     // Add a field to the entity type.
     $this->addField();
 
@@ -433,7 +432,6 @@ abstract class MetatagFieldTestBase extends WebTestBase {
     $entity = reset($entities);
 
     // @todo Confirm the values output correctly.
-
     // Open the 'edit' form for the entity.
     $this->drupalGet($entity->toUrl('edit-form'));
     $this->assertResponse(200);
@@ -482,7 +480,7 @@ abstract class MetatagFieldTestBase extends WebTestBase {
     $this->assertTrue(count($elements) === 1, 'Found keywords metatag_test_tag from defaults');
     $this->assertEqual((string) $elements[0]['content'], 'Kilimanjaro', 'Field value for metatag_test_tag found when no default set.');
 
-    // @todo This should not be required, but metatags does not invalidate
+    // @todo This should not be required, but meta tags does not invalidate
     // cache upon setting globals.
     Cache::invalidateTags(['entity_test:' . $entity->id()]);
 

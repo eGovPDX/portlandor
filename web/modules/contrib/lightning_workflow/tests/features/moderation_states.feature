@@ -173,3 +173,17 @@ Feature: Workflow moderation states
     And I apply the exposed filters
     Then the "Action" field should not have a "node_publish_action" option
     And the "Action" field should not have a "node_unpublish_action" option
+
+  @22c6b9df
+  Scenario: Edit forms should load the latest revision
+    Given I am logged in as a user with the "create page content, edit own page content, view latest version, view own unpublished content, use editorial transition create_new_draft, use editorial transition publish" permissions
+    When I visit "/node/add/page"
+    And I enter "Smells Like Teen Spirit" for "Title"
+    And I select "Published" from "moderation_state[0][state]"
+    And I press "Save"
+    And I visit the edit form
+    And I enter "Polly" for "Title"
+    And I select "Draft" from "moderation_state[0][state]"
+    And I press "Save"
+    And I visit the edit form
+    Then the "Title" field should contain "Polly"

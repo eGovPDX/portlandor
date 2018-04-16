@@ -271,7 +271,7 @@ class Basic extends TrackerPluginBase implements PluginFormInterface {
         // (Otherwise, an item that's regularly being updated might never get
         // indexed.)
         if ($this->configuration['indexing_order'] === 'fifo') {
-          $update->condition('status', static::STATUS_INDEXED);
+          $update->condition('status', self::STATUS_INDEXED);
         }
         $update->execute();
       }

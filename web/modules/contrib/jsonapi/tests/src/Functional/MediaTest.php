@@ -177,7 +177,6 @@ class MediaTest extends ResourceTestBase {
           // @todo uncomment this in https://www.drupal.org/project/jsonapi/issues/2929932
           /* 'revision_created' => $this->formatExpectedTimestampItemValues((int) $this->entity->getRevisionCreationTime()), */
           'default_langcode' => TRUE,
-          'revision_default' => TRUE,
           'revision_log_message' => NULL,
           // @todo Attempt to remove this in https://www.drupal.org/project/drupal/issues/2933518.
           'revision_translation_affected' => TRUE,
@@ -190,12 +189,6 @@ class MediaTest extends ResourceTestBase {
               'meta' => [
                 'description' => NULL,
                 'display' => NULL,
-                // @todo Uncomment in https://www.drupal.org/project/jsonapi/issues/2921257.
-                // @codingStandardsIgnoreStart
-                /*
-                'url' => $file->url(),
-                */
-                // @codingStandardsIgnoreEnd
               ],
               'type' => 'file--file',
             ],
@@ -212,12 +205,6 @@ class MediaTest extends ResourceTestBase {
                 'width' => '180',
                 'height' => '180',
                 'title' => 'Llama',
-                // @todo Uncomment in https://www.drupal.org/project/jsonapi/issues/2921257.
-                // @codingStandardsIgnoreStart
-                /*
-                'url' => $thumbnail->url(),
-                */
-                // @codingStandardsIgnoreEnd
               ],
               'type' => 'file--file',
             ],
@@ -311,6 +298,35 @@ class MediaTest extends ResourceTestBase {
    */
   public function testPostIndividual() {
     $this->markTestSkipped('POSTing File Media items is not supported until https://www.drupal.org/node/1927648 is solved.');
+  }
+
+  /**
+   * {@inheritdoc}
+   *
+   * @todo Determine if this override should be removed in https://www.drupal.org/project/jsonapi/issues/2952522
+   */
+  protected function getExpectedGetRelationshipDocumentData($relationship_field_name) {
+    $data = parent::getExpectedGetRelationshipDocumentData($relationship_field_name);
+    switch ($relationship_field_name) {
+      case 'thumbnail':
+        $data['meta'] = [
+          'alt' => 'Thumbnail',
+          'width' => '180',
+          'height' => '180',
+          'title' => 'Llama',
+        ];
+        return $data;
+
+      case 'field_media_file':
+        $data['meta'] = [
+          'description' => NULL,
+          'display' => NULL,
+        ];
+        return $data;
+
+      default:
+        return $data;
+    }
   }
 
 }

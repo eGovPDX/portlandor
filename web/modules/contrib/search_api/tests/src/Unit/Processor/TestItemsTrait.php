@@ -11,6 +11,7 @@ use Drupal\search_api\Utility\DataTypeHelper;
 use Drupal\search_api\Utility\FieldsHelper;
 use Drupal\search_api\Item\Item;
 use Drupal\search_api\Query\Query;
+use Drupal\search_api\Utility\QueryHelperInterface;
 use Drupal\search_api\Utility\Utility;
 
 /**
@@ -136,7 +137,7 @@ trait TestItemsTrait {
       ->getMock();
     $fieldsHelper = new FieldsHelper($entityTypeManager, $entityFieldManager, $entityBundleInfo, $dataTypeHelper);
 
-    $queryHelper = $this->getMock('Drupal\search_api\Utility\QueryHelperInterface');
+    $queryHelper = $this->createMock(QueryHelperInterface::class);
     $queryHelper->method('createQuery')
       ->willReturnCallback(function (IndexInterface $index, array $options = []) {
         return Query::create($index, $options);

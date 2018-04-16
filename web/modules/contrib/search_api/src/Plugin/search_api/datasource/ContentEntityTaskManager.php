@@ -55,8 +55,8 @@ class ContentEntityTaskManager implements EventSubscriberInterface {
    * {@inheritdoc}
    */
   public static function getSubscribedEvents() {
-    $events['search_api.task.' . static::INSERT_ITEMS_TASK_TYPE][] = ['processEvent'];
-    $events['search_api.task.' . static::DELETE_ITEMS_TASK_TYPE][] = ['processEvent'];
+    $events['search_api.task.' . self::INSERT_ITEMS_TASK_TYPE][] = ['processEvent'];
+    $events['search_api.task.' . self::DELETE_ITEMS_TASK_TYPE][] = ['processEvent'];
 
     return $events;
   }

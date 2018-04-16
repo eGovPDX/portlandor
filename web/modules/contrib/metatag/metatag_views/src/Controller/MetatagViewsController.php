@@ -55,7 +55,7 @@ class MetatagViewsController extends ControllerBase {
   }
 
   /**
-   * Get metatags for all of the views / displays that have them set.
+   * Get meta tags for all of the views / displays that have them set.
    *
    * @return array
    *   List of tags grouped by view and display.
@@ -74,7 +74,7 @@ class MetatagViewsController extends ControllerBase {
   }
 
   /**
-   * Generates the renderable array for views metatags UI.
+   * Generates the renderable array for views meta tags UI.
    *
    * @return array
    *   Thelist of details.
@@ -83,7 +83,7 @@ class MetatagViewsController extends ControllerBase {
     $elements = [];
 
     $elements['header'] = [
-      '#markup' => '<p>' . t("To view a list of displays with meta tags set up, click on a view name. To view a summary of meta tags configuration for a particular display, click on the display name. If you need to set metatags for a specific view, choose Add views meta tags. Reverting the meta tags removes the specific configuration and falls back to defaults.") . '</p>',
+      '#markup' => '<p>' . t("To view a list of displays with meta tags set up, click on a view name. To view a summary of meta tags configuration for a particular display, click on the display name. If you need to set meta tags for a specific view, choose Add views meta tags. Reverting the meta tags removes the specific configuration and falls back to defaults.") . '</p>',
     ];
 
     // Iterate over the values and build the whole UI.
@@ -209,7 +209,7 @@ class MetatagViewsController extends ControllerBase {
    *   The meta tag to output.
    *
    * @return string
-   *   An imploded string for metatags that are nested, ex. robots.
+   *   An imploded string for meta tags that are nested, ex. robots.
    */
   protected function prepareTagValue($value) {
     if (is_array($value)) {

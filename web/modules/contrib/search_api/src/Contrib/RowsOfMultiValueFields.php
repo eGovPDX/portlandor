@@ -35,7 +35,7 @@ class RowsOfMultiValueFields extends RowsOfFields implements RenderCellInterface
   protected static function arrayToString(array $array) {
     $elements = [];
     foreach ($array as $element) {
-      $elements[] = is_array($element) ? '"' . self::arrayToString($element) . '"' : $element;
+      $elements[] = is_array($element) ? '"' . static::arrayToString($element) . '"' : $element;
     }
     return implode(',', $elements);
   }
