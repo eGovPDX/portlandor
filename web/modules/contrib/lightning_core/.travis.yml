@@ -14,10 +14,12 @@ php:
 
 env:
   - VERSION=HEAD
+  - VERSION=2.3.0
   - VERSION=2.2.0
   - VERSION=2.1.0
-  - VERSION=2.0.0
-  - VERSION=1.1.0-rc3
+  # The final CI slot should be used to test the update path from the oldest
+  # available database fixture.
+  - VERSION=1.0.0-rc1
 
 addons:
   apt:
@@ -75,8 +77,9 @@ install:
   # Build the code base. There is no lock file in the repo, so dependencies will
   # always be renegotiated.
   - composer install
-  # Install on top of minimal for testing.
-  - lightning install "mysql\://lightning:lightning@127.0.0.1/lightning" minimal "http://127.0.0.1:8080"
+  # Install on top of Minimal for testing, then export config and reinstall
+  # from that to ensure that the exported config is coherent.
+  - lightning install "mysql\://lightning:lightning@127.0.0.1/lightning" minimal "http://127.0.0.1:8080" --from-config
   # Restore database fixture from the version we're testing and run database and
   # and Lightning config updates.
   - lightning update $VERSION
