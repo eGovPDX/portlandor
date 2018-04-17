@@ -246,12 +246,8 @@ class EntityContext extends DrupalSubContextBase {
    * {@inheritdoc}
    */
   protected function getUser() {
-    try {
-      return parent::getUser()->uid;
-    }
-    catch (\Exception $e) {
-      return 0;
-    }
+    $user = $this->getUserManager()->getCurrentUser();
+    return $user ? $user->uid : 0;
   }
 
   /**

@@ -36,7 +36,7 @@ class NodeSchema extends Schema {
       return parent::createDescription($entityType, $bundle);
     }
 
-    return $description;
+    return addslashes(strip_tags($description));;
   }
 
 }

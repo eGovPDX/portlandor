@@ -88,7 +88,7 @@ class BasicTrackerTest extends KernelTestBase {
     // within any of the tracker methods will still cause a test fail.
     // @todo Change to createMock() once we depend on Drupal 8.5+. See #2930839.
     /** @var \PHPUnit_Framework_MockObject_MockObject|\Psr\Log\LoggerInterface $logger */
-    $logger = $this->getMock(LoggerInterface::class);
+    $logger = $this->createMock(LoggerInterface::class);
     $logger->method('log')
       ->willReturnCallback(function ($level, $message, array $variables) {
         $error = 'Tracking operation threw ';
@@ -318,7 +318,7 @@ class BasicTrackerTest extends KernelTestBase {
     $this->tracker->setDatabaseConnection($connection);
 
     /** @var \PHPUnit_Framework_MockObject_MockObject|\Psr\Log\LoggerInterface $logger */
-    $logger = $this->getMock(LoggerInterface::class);
+    $logger = $this->createMock(LoggerInterface::class);
     $log = [];
     $logger->method('log')->willReturnCallback(function () use (&$log) {
       $log[] = func_get_args();

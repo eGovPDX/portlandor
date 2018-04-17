@@ -5,7 +5,7 @@ namespace Drupal\metatag\Tests;
 use Drupal\simpletest\WebTestBase;
 
 /**
- * Ensures that metatags are rendering correctly on home page.
+ * Ensures that meta tags are rendering correctly on home page.
  *
  * @group metatag
  */
@@ -111,7 +111,7 @@ class MetatagFrontpageTest extends WebTestBase {
   }
 
   /**
-   * Test front page metatags when front page config is disabled.
+   * Test front page meta tags when front page config is disabled.
    */
   public function testFrontPageMetatagDisabledConfig() {
     // Disable front page metatag, enable node metatag & check.

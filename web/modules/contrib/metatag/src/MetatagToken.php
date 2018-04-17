@@ -49,7 +49,7 @@ class MetatagToken {
 
     // Ensure that there are no double-slash sequences due to empty token
     // values.
-    $replaced = preg_replace('/(?<!:)\/+\//', '/', $replaced);
+    $replaced = preg_replace('/(?<!:)(?<!)\/+\//', '/', $replaced);
 
     return $replaced;
   }

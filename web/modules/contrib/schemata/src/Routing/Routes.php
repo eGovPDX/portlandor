@@ -74,7 +74,8 @@ class Routes implements ContainerInjectionInterface {
       // Add a route for all entity types.
       $route_collection->add($this->createRouteName($entity_type_id), $this->createRoute($entity_type_id));
 
-      // If this entity type has a bundle entity type then add a route for each bundle.
+      // If this entity type has a bundle entity type,
+      // then add a route for each bundle.
       if ($entity_type->getBundleEntityType()) {
         // Loop through all the bundles for the entity type.
         $bundles_info = $this->entityTypeBundleInfo->getBundleInfo($entity_type_id);

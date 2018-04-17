@@ -11,7 +11,8 @@ use Drupal\Component\Plugin\Exception\ContextException;
 use Drupal\Component\Utility\NestedArray;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Path\CurrentPathStack;
-use Symfony\Cmf\Component\Routing\NestedMatcher\RouteFilterInterface;
+use Drupal\Core\Routing\Enhancer\RouteEnhancerInterface;
+use Drupal\Core\Routing\FilterInterface;
 use Symfony\Cmf\Component\Routing\RouteObjectInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
@@ -25,7 +26,7 @@ use Symfony\Component\Routing\RouteCollection;
  * needs to be filtered. Here is where we run variant selection, which requires
  * gathering contexts.
  */
-class VariantRouteFilter implements RouteFilterInterface {
+class VariantRouteFilter implements FilterInterface {
 
   use RouteEnhancerCollectorTrait;
 
@@ -227,6 +228,12 @@ class VariantRouteFilter implements RouteFilterInterface {
     // Run the route enhancers on the raw attributes. This performs the same
     // functionality as \Symfony\Cmf\Component\Routing\DynamicRouter::match().
     foreach ($this->getRouteEnhancers() as $enhancer) {
+      // Support the deprecated
+      // \Drupal\Core\Routing\Enhancer\RouteEnhancerInterface::applies() method.
+      if ($enhancer instanceof RouteEnhancerInterface && !$enhancer->applies($route)) {
+        continue;
+      }
+
       try {
         $attributes = $enhancer->enhance($attributes, $request);
       }

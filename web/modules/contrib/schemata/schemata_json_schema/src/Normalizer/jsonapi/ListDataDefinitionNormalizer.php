@@ -56,7 +56,11 @@ class ListDataDefinitionNormalizer extends DataDefinitionNormalizer {
       $property = $single_property;
     }
 
-    $normalized = ['type' => 'object', 'properties' => []];
+    $normalized = [
+      'description' => t('Entity attributes'),
+      'type' => 'object',
+      'properties' => [],
+    ];
     $normalized['properties'][$context['name']] = $property;
     if ($this->requiredProperty($entity)) {
       $normalized['required'][] = $context['name'];

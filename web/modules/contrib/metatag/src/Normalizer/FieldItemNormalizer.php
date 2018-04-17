@@ -15,10 +15,14 @@ class FieldItemNormalizer extends NormalizerBase {
   protected $supportedInterfaceOrClass = 'Drupal\metatag\Plugin\Field\FieldType\MetatagFieldItem';
 
   /**
-   * {inheritDoc}
+   * {@inheritdoc}
    */
-  public function normalize($object, $format = NULL, array $context = []) {
-    return t('Metatags are normalized in the metatag field.');
+  public function normalize($field_item, $format = NULL, array $context = []) {
+    $values = $field_item->getValue();
+
+    $normalized['value'] = unserialize($values['value']);
+
+    return $normalized;
   }
 
 }

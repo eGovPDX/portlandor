@@ -15,7 +15,7 @@ interface MetatagManagerInterface {
    * Extracts all tags of a given entity.
    *
    * @param \Drupal\Core\Entity\ContentEntityInterface $entity
-   *   The content entity to extract metatags from.
+   *   The content entity to extract meta tags from.
    *
    * @return array
    *   Array of metatags.
@@ -28,7 +28,7 @@ interface MetatagManagerInterface {
    * And combines them with sitewide, per-entity-type, and per-bundle defaults.
    *
    * @param \Drupal\Core\Entity\ContentEntityInterface $entity
-   *   The content entity to extract metatags from.
+   *   The content entity to extract meta tags from.
    *
    * @return array
    *   Array of metatags.

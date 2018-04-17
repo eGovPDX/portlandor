@@ -59,6 +59,9 @@ class RegisterSerializationClassesCompilerPass extends DrupalRegisterSerializati
 
     // Retrieve registered Normalizers and Encoders from the container.
     foreach ($container->findTaggedServiceIds(static::OVERRIDDEN_SERVICE_TAG) as $id => $attributes) {
+      // Normalizers are not an API: mark private.
+      $container->getDefinition($id)->setPublic(FALSE);
+
       // If there is a BC key present, pass this to determine if the normalizer
       // should be skipped.
       if (isset($attributes[0]['bc']) && $this->normalizerBcSettingIsEnabled($attributes[0]['bc'], $attributes[0]['bc_config_name'])) {
@@ -69,6 +72,9 @@ class RegisterSerializationClassesCompilerPass extends DrupalRegisterSerializati
       $normalizers[$priority][] = new Reference($id);
     }
     foreach ($container->findTaggedServiceIds('encoder') as $id => $attributes) {
+      // Encoders are not an API: mark private.
+      $container->getDefinition($id)->setPublic(FALSE);
+
       $priority = isset($attributes[0]['priority']) ? $attributes[0]['priority'] : 0;
       $encoders[$priority][] = new Reference($id);
     }

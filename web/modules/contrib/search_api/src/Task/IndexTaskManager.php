@@ -54,7 +54,7 @@ class IndexTaskManager implements IndexTaskManagerInterface, EventSubscriberInte
    * {@inheritdoc}
    */
   public static function getSubscribedEvents() {
-    $events['search_api.task.' . static::TRACK_ITEMS_TASK_TYPE][] = ['trackItems'];
+    $events['search_api.task.' . self::TRACK_ITEMS_TASK_TYPE][] = ['trackItems'];
 
     return $events;
   }
@@ -161,7 +161,7 @@ class IndexTaskManager implements IndexTaskManagerInterface, EventSubscriberInte
 
     if ($reschedule) {
       ++$data['page'];
-      $this->taskManager->addTask(static::TRACK_ITEMS_TASK_TYPE, NULL, $index, $data);
+      $this->taskManager->addTask(self::TRACK_ITEMS_TASK_TYPE, NULL, $index, $data);
     }
   }
 
@@ -178,7 +178,7 @@ class IndexTaskManager implements IndexTaskManagerInterface, EventSubscriberInte
         'datasource' => $datasource_id,
         'page' => 0,
       ];
-      $this->taskManager->addTask(static::TRACK_ITEMS_TASK_TYPE, NULL, $index, $data);
+      $this->taskManager->addTask(self::TRACK_ITEMS_TASK_TYPE, NULL, $index, $data);
     }
   }
 
@@ -193,7 +193,7 @@ class IndexTaskManager implements IndexTaskManagerInterface, EventSubscriberInte
    */
   protected function getTaskConditions(IndexInterface $index) {
     return [
-      'type' => static::TRACK_ITEMS_TASK_TYPE,
+      'type' => self::TRACK_ITEMS_TASK_TYPE,
       'index_id' => $index->id(),
     ];
   }

@@ -18,6 +18,8 @@
  * @ingroup pathauto
  */
 
+use Drupal\Core\Entity\ContentEntityInterface;
+use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\Core\Field\BaseFieldDefinition;
 use Drupal\Core\Form\FormStateInterface;
@@ -79,6 +81,30 @@ function pathauto_help($route_name, RouteMatchInterface $route_match) {
       $output .= t('It can also be used to regenerate URL aliases for items that have an old alias and for which the Pathauto pattern has been changed.') . '</p>';
       $output .= '<p>' . t('Note that this will only affect items which are configured to have their URL alias automatically set. Items whose URL alias is manually set are not affected.') . '</p>';
       return $output;
+  }
+}
+
+/**
+ * Implements hook_entity_insert().
+ */
+function pathauto_entity_insert(EntityInterface $entity) {
+  \Drupal::service('pathauto.generator')->updateEntityAlias($entity, 'insert');
+}
+
+/**
+ * Implements hook_entity_update().
+ */
+function pathauto_entity_update(EntityInterface $entity) {
+  \Drupal::service('pathauto.generator')->updateEntityAlias($entity, 'update');
+}
+
+/**
+ * Implements hook_entity_update().
+ */
+function pathauto_entity_delete(EntityInterface $entity) {
+  if ($entity->hasLinkTemplate('canonical') && $entity instanceof ContentEntityInterface && $entity->hasField('path')) {
+    \Drupal::service('pathauto.alias_storage_helper')->deleteEntityPathAll($entity);
+    $entity->get('path')->first()->get('pathauto')->purge();
   }
 }
 

@@ -1,3 +1,6 @@
+## 2.1.0
+* Security updated JSON API to 1.14 (Issue #2955026 and SA-CONTRIB-2018-016)
+
 ## 2.0.0
 * Updated JSON API to 1.12.
 * Updated core to 8.5.x and patched Simple OAuth to make it compatible.

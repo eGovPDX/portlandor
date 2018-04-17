@@ -2,6 +2,8 @@
 
 namespace Drupal\jsonapi\Normalizer\Value;
 
+use Drupal\Core\Access\AccessResultInterface;
+
 /**
  * Helps normalize relationships in compliance with the JSON API spec.
  *
@@ -40,6 +42,8 @@ class RelationshipNormalizerValue extends FieldNormalizerValue {
   /**
    * Instantiate a EntityReferenceNormalizerValue object.
    *
+   * @param \Drupal\Core\Access\AccessResultInterface $relationship_access_result
+   *   The relationship access result.
    * @param RelationshipItemNormalizerValue[] $values
    *   The normalized result.
    * @param int $cardinality
@@ -48,7 +52,7 @@ class RelationshipNormalizerValue extends FieldNormalizerValue {
    *   All the objects and variables needed to generate the links for this
    *   relationship.
    */
-  public function __construct(array $values, $cardinality, array $link_context) {
+  public function __construct(AccessResultInterface $relationship_access_result, array $values, $cardinality, array $link_context) {
     $this->hostEntityId = $link_context['host_entity_id'];
     $this->fieldName = $link_context['field_name'];
     $this->linkManager = $link_context['link_manager'];
@@ -58,7 +62,7 @@ class RelationshipNormalizerValue extends FieldNormalizerValue {
         throw new \RuntimeException(sprintf('Unexpected normalizer item value for this %s.', get_called_class()));
       }
     });
-    parent::__construct($values, $cardinality);
+    parent::__construct($relationship_access_result, $values, $cardinality, 'relationships');
   }
 
   /**

@@ -190,18 +190,6 @@ class EditorTest extends ResourceTestBase {
     // @todo Update in https://www.drupal.org/node/2300677.
   }
 
-  // @codingStandardsIgnoreStart
-  /**
-   * {@inheritdoc}
-   */
-  protected function getExpectedCacheContexts() {
-    // @see ::createEntity()
-    // @todo Uncomment first line, remove second line in https://www.drupal.org/project/jsonapi/issues/2940342.
-//    return ['user.permissions'];
-    return parent::getExpectedCacheContexts();
-  }
-  // @codingStandardsIgnoreEnd
-
   /**
    * {@inheritdoc}
    */

@@ -387,6 +387,7 @@ class EntityResource {
    */
   public function getRelated(EntityInterface $entity, $related_field, Request $request) {
     $related_field = $this->resourceType->getInternalName($related_field);
+    $this->relationshipAccess($entity, 'view', $related_field);
     /* @var \Drupal\Core\Field\EntityReferenceFieldItemListInterface $field_list */
     $field_list = $entity->get($related_field);
     $this->validateReferencedResource($field_list, $related_field);
@@ -451,6 +452,8 @@ class EntityResource {
    */
   public function getRelationship(EntityInterface $entity, $related_field, Request $request, $response_code = 200) {
     $related_field = $this->resourceType->getInternalName($related_field);
+    $this->relationshipAccess($entity, 'view', $related_field);
+    /* @var \Drupal\Core\Field\FieldItemListInterface $field_list */
     $field_list = $entity->get($related_field);
     $this->validateReferencedResource($field_list, $related_field);
     $response = $this->buildWrappedResponse($field_list, $response_code);
@@ -502,13 +505,13 @@ class EntityResource {
    */
   public function createRelationship(EntityInterface $entity, $related_field, $parsed_field_list, Request $request) {
     $related_field = $this->resourceType->getInternalName($related_field);
+    /* @var \Drupal\Core\Field\EntityReferenceFieldItemListInterface $parsed_field_list */
+    $this->relationshipAccess($entity, 'update', $related_field);
     if ($parsed_field_list instanceof Response) {
       // This usually means that there was an error, so there is no point on
       // processing further.
       return $parsed_field_list;
     }
-    /* @var \Drupal\Core\Field\EntityReferenceFieldItemListInterface $parsed_field_list */
-    $this->relationshipAccess($entity, $related_field);
     // According to the specification, you are only allowed to POST to a
     // relationship if it is a to-many relationship.
     /* @var \Drupal\Core\Field\EntityReferenceFieldItemListInterface $field_list */
@@ -558,7 +561,7 @@ class EntityResource {
       return $parsed_field_list;
     }
     /* @var \Drupal\Core\Field\EntityReferenceFieldItemListInterface $parsed_field_list */
-    $this->relationshipAccess($entity, $related_field);
+    $this->relationshipAccess($entity, 'update', $related_field);
     // According to the specification, PATCH works a little bit different if the
     // relationship is to-one or to-many.
     /* @var \Drupal\Core\Field\EntityReferenceFieldItemListInterface $field_list */
@@ -634,7 +637,7 @@ class EntityResource {
       throw new BadRequestHttpException(sprintf('You need to provide a body for DELETE operations on a relationship (%s).', $related_field));
     }
     /* @var \Drupal\Core\Field\EntityReferenceFieldItemListInterface $parsed_field_list */
-    $this->relationshipAccess($entity, $related_field);
+    $this->relationshipAccess($entity, 'update', $related_field);
 
     $field_name = $parsed_field_list->getName();
     $field_access = $parsed_field_list->access('edit', NULL, TRUE);
@@ -787,15 +790,21 @@ class EntityResource {
    *
    * @param \Drupal\Core\Entity\EntityInterface $entity
    *   The entity.
+   * @param string $operation
+   *   The operation to test.
    * @param string $related_field
    *   The name of the field to check.
+   *
+   * @see \Drupal\Core\Access\AccessibleInterface
    */
-  protected function relationshipAccess(EntityInterface $entity, $related_field) {
+  protected function relationshipAccess(EntityInterface $entity, $operation, $related_field) {
     /* @var \Drupal\Core\Field\EntityReferenceFieldItemListInterface $parsed_field_list */
-    $entity_access = $entity->access('update', NULL, TRUE);
-    if (!$entity_access->isAllowed()) {
+    $field_access = $entity->{$related_field}->access($operation, NULL, TRUE);
+    $entity_access = $entity->access($operation, NULL, TRUE);
+    $combined_access = $entity_access->andIf($field_access);
+    if (!$combined_access->isAllowed()) {
       // @todo Is this really the right path?
-      throw new EntityAccessDeniedHttpException($entity, $entity_access, $related_field, 'The current user is not allowed to update the selected resource.');
+      throw new EntityAccessDeniedHttpException($entity, $combined_access, $related_field, "The current user is not allowed to $operation this relationship.");
     }
     if (!($field_list = $entity->get($related_field)) || !$this->isRelationshipField($field_list)) {
       throw new NotFoundHttpException(sprintf('The relationship %s is not present in this resource.', $related_field));

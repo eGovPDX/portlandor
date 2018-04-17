@@ -16,7 +16,8 @@ use Drupal\metatag\Plugin\metatag\Tag\MetaPropertyBase;
  *   weight = 9,
  *   type = "video",
  *   secure = FALSE,
- *   multiple = TRUE
+ *   multiple = TRUE,
+ *   absolute_url = TRUE
  * )
  */
 class OgVideo extends MetaPropertyBase {

@@ -97,14 +97,14 @@ function lightning_core_update_8005() {
  * Records all modules' semantic version numbers in config.
  */
 function lightning_core_update_8006() {
-  $modules = \Drupal::moduleHandler()->getModuleList();
+  $modules = Drupal::moduleHandler()->getModuleList();
 
   $keys = array_keys($modules);
   $values = array_fill(0, count($keys), UpdateManager::VERSION_UNKNOWN);
 
   \Drupal::configFactory()
     ->getEditable('lightning.versions')
-    ->setData(array_combine($keys, $values))
+    ->merge(array_combine($keys, $values))
     ->save();
 }
 
@@ -112,6 +112,20 @@ function lightning_core_update_8006() {
  * Renames the lightning.versions config object.
  */
 function lightning_core_update_8007() {
-  \Drupal::configFactory()
-    ->rename('lightning.versions', UpdateManager::CONFIG_NAME);
+  $config_factory = Drupal::configFactory();
+
+  $old = $config_factory->getEditable('lightning.versions');
+  $new = $config_factory->getEditable(UpdateManager::CONFIG_NAME);
+
+  // If the new config object didn't exist by the time this update was executed,
+  // just rename the old config object and call it a day.
+  if ($new->isNew()) {
+    $config_factory->rename($old->getName(), $new->getName());
+  }
+  else {
+    // Meekly merge the old data into the old data (i.e., the new data will take
+    // precedence), then delete the old config object.
+    $new->setData($new->get() + $old->get())->save();
+    $old->delete();
+  }
 }

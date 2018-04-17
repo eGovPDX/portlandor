@@ -11,7 +11,7 @@ namespace Drupal\search_api\Plugin\DataType;
  *
  * @DataType(
  *   id = "search_api_html",
- *   label = @Translation("Text (Search API)")
+ *   label = @Translation("HTML text (Search API)")
  * )
  */
 class Html extends Text {}

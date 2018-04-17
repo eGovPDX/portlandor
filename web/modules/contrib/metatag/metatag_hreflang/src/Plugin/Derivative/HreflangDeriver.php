@@ -33,7 +33,7 @@ class HreflangDeriver extends DeriverBase {
       }
 
       // The base definition includes the annotations defined in the plugin,
-      // i.e. HreflangPerLanguage. Each one may be overridden
+      // i.e. HreflangPerLanguage. Each one may be overridden.
       $derivative = $base_plugin_definition;
 
       // Here we fill in any missing keys on the layout annotation.

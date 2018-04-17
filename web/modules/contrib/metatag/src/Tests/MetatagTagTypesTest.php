@@ -90,7 +90,7 @@ class MetatagTagTypesTest extends WebTestBase {
   /**
    * Tests whether HTML is correctly removed from metatags.
    *
-   * Tests three values in metatags -- one without any HTML; one with raw html;
+   * Tests three values in meta tags -- one without any HTML; one with raw html;
    * and one with escaped HTML. To pass all HTML including escaped should be
    * removed.
    */
@@ -164,7 +164,7 @@ class MetatagTagTypesTest extends WebTestBase {
    */
   public function todoTestUrl() {
     // $save_label = (floatval(\Drupal::VERSION) <= 8.3) ? t('Save and publish') : t('Save');
-    // // Tests metatags with URLs work.
+    // // Tests meta tags with URLs work.
     // $this->drupalGet($this->entity_add_path);
     // $this->assertResponse(200);
     // $edit = [

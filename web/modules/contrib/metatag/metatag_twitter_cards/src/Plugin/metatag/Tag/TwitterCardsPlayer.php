@@ -16,7 +16,8 @@ use Drupal\metatag\Plugin\metatag\Tag\MetaNameBase;
  *   weight = 400,
  *   type = "uri",
  *   secure = FALSE,
- *   multiple = FALSE
+ *   multiple = FALSE,
+ *   absolute_url = TRUE
  * )
  */
 class TwitterCardsPlayer extends MetaNameBase {

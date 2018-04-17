@@ -137,6 +137,20 @@ class ItemTest extends ResourceTestBase {
   /**
    * {@inheritdoc}
    */
+  public function testRelated() {
+    $this->markTestSkipped('Remove this override in https://www.drupal.org/project/drupal/issues/2149851');
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function testGetRelationships() {
+    $this->markTestSkipped('Remove this override in https://www.drupal.org/project/drupal/issues/2149851');
+  }
+
+  /**
+   * {@inheritdoc}
+   */
   public function testPostIndividual() {
     $this->markTestSkipped('Remove this override in https://www.drupal.org/project/drupal/issues/2149851');
   }

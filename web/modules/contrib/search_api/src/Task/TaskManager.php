@@ -267,6 +267,9 @@ class TaskManager implements TaskManagerInterface {
     ];
     // Schedule the batch.
     batch_set($batch_definition);
+    if (function_exists('drush_backend_batch_process')) {
+      drush_backend_batch_process();
+    }
   }
 
   /**

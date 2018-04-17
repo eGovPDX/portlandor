@@ -116,14 +116,7 @@ class ContentLanguageSettingsTest extends ResourceTestBase {
   /**
    * {@inheritdoc}
    */
-  protected function getExpectedCacheContexts() {
-    // @todo Uncomment first 4 lines, remove last line in https://www.drupal.org/project/jsonapi/issues/2940342.
-    // @codingStandardsIgnoreStart
-//    return [
-//      'languages:language_interface',
-//      'user.permissions',
-//    ];
-    // @codingStandardsIgnoreEnd
+  protected function getExpectedCacheContexts(array $sparse_fieldset = NULL) {
     return Cache::mergeContexts(parent::getExpectedCacheContexts(), ['languages:language_interface']);
   }
 

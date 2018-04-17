@@ -9,6 +9,8 @@ use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Entity\Plugin\DataType\EntityAdapter;
 use Drupal\file\Entity\File;
 use Drupal\node\Entity\Node;
+use Drupal\search_api\Datasource\DatasourceInterface;
+use Drupal\search_api\IndexInterface;
 use Drupal\search_api\Plugin\search_api\processor\EntityStatus;
 use Drupal\search_api\Utility\Utility;
 use Drupal\Tests\UnitTestCase;
@@ -56,10 +58,10 @@ class EntityStatusTest extends UnitTestCase {
 
     $this->processor = new EntityStatus([], 'entity_status', []);
 
-    $this->index = $this->getMock('Drupal\search_api\IndexInterface');
+    $this->index = $this->createMock(IndexInterface::class);
 
     foreach (['node', 'comment', 'user', 'file'] as $entity_type) {
-      $datasource = $this->getMock('Drupal\search_api\Datasource\DatasourceInterface');
+      $datasource = $this->createMock(DatasourceInterface::class);
       $datasource->expects($this->any())
         ->method('getEntityTypeId')
         ->will($this->returnValue($entity_type));
@@ -92,7 +94,7 @@ class EntityStatusTest extends UnitTestCase {
     // We therefore need to ensure each of these calls returns an appropriate
     // value.
     $self = $this;
-    $entity_type_manager = $this->getMock(EntityTypeManagerInterface::class);
+    $entity_type_manager = $this->createMock(EntityTypeManagerInterface::class);
     $entity_type_manager->method('getDefinition')
       ->willReturnCallback(function ($entity_type_id) use ($self) {
         $entity_type = $self->getMock(EntityTypeInterface::class);

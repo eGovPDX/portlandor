@@ -118,8 +118,6 @@ class EntityTestTest extends ResourceTestBase {
           // @todo uncomment this in https://www.drupal.org/project/jsonapi/issues/2929932
           /* 'created' => $this->formatExpectedTimestampItemValues((int) $this->entity->get('created')->value), */
           'field_test_text' => NULL,
-          // @todo Remove this in https://www.drupal.org/project/jsonapi/issues/2921257.
-          'internal_string_field' => 'This value shall not be internal!',
           'langcode' => 'en',
           'name' => 'Llama',
           'type' => 'entity_test',

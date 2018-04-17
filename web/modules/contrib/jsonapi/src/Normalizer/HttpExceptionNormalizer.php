@@ -2,6 +2,8 @@
 
 namespace Drupal\jsonapi\Normalizer;
 
+use Drupal\Core\Access\AccessResult;
+use Drupal\Core\Cache\CacheableMetadata;
 use Drupal\Core\Field\FieldStorageDefinitionInterface;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\jsonapi\Normalizer\Value\FieldItemNormalizerValue;
@@ -49,12 +51,16 @@ class HttpExceptionNormalizer extends NormalizerBase {
     $errors = $this->buildErrorObjects($object);
 
     $errors = array_map(function ($error) {
-      return new FieldItemNormalizerValue([$error]);
+      // @todo Either this should not use FieldItemNormalizerValue, or FieldItemNormalizerValue needs to be renamed to not be semantically coupled to "fields".
+      return new FieldItemNormalizerValue([$error], new CacheableMetadata());
     }, $errors);
 
+    // @todo The access result, cardinality and property type make no sense for HTTP exceptions, but it's because HttpExceptionNormalizerValue inappropriately subclasses FieldNormalizerValue
     return new HttpExceptionNormalizerValue(
+      AccessResult::allowed(),
       $errors,
-      FieldStorageDefinitionInterface::CARDINALITY_UNLIMITED
+      FieldStorageDefinitionInterface::CARDINALITY_UNLIMITED,
+      'attributes'
     );
   }
 

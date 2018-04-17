@@ -2,6 +2,7 @@
 
 namespace Drupal\Tests\jsonapi\Unit\Normalizer\Value;
 
+use Drupal\Core\Cache\CacheableMetadata;
 use Drupal\jsonapi\ResourceType\ResourceType;
 use Drupal\jsonapi\Normalizer\Value\RelationshipItemNormalizerValue;
 use Drupal\Tests\UnitTestCase;
@@ -19,7 +20,7 @@ class RelationshipItemNormalizerValueTest extends UnitTestCase {
    * @dataProvider rasterizeValueProvider
    */
   public function testRasterizeValue($values, $entity_type_id, $bundle, $expected) {
-    $object = new RelationshipItemNormalizerValue($values, new ResourceType($entity_type_id, $bundle, NULL));
+    $object = new RelationshipItemNormalizerValue($values, new CacheableMetadata(), new ResourceType($entity_type_id, $bundle, NULL), NULL);
     $this->assertEquals($expected, $object->rasterizeValue());
   }
 

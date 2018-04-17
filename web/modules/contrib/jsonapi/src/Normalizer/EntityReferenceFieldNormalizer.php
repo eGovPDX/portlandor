@@ -9,6 +9,7 @@ use Drupal\Core\Field\EntityReferenceFieldItemListInterface;
 use Drupal\Core\Field\FieldTypePluginManagerInterface;
 use Drupal\Core\Field\TypedData\FieldItemDataDefinition;
 use Drupal\Core\TypedData\TypedDataInternalPropertiesHelper;
+use Drupal\jsonapi\Normalizer\Value\NullFieldNormalizerValue;
 use Drupal\jsonapi\ResourceType\ResourceTypeRepositoryInterface;
 use Drupal\jsonapi\Resource\EntityCollection;
 use Drupal\jsonapi\LinkManager\LinkManager;
@@ -81,7 +82,13 @@ class EntityReferenceFieldNormalizer extends FieldNormalizer implements Denormal
    * {@inheritdoc}
    */
   public function normalize($field, $format = NULL, array $context = []) {
-    /* @var $field \Drupal\Core\Field\FieldItemListInterface */
+    /* @var \Drupal\Core\Field\FieldItemListInterface $field */
+
+    $field_access = $field->access('view', $context['account'], TRUE);
+    if (!$field_access->isAllowed()) {
+      return new NullFieldNormalizerValue($field_access, 'relationships');
+    }
+
     // Build the relationship object based on the Entity Reference and normalize
     // that object instead.
     $main_property = $field->getItemDefinition()->getMainPropertyName();
@@ -121,7 +128,7 @@ class EntityReferenceFieldNormalizer extends FieldNormalizer implements Denormal
       $entity_list[] = $this->entityRepository->getTranslationFromContext($entity);
     }
     $entity_collection = new EntityCollection($entity_list);
-    $relationship = new Relationship($this->resourceTypeRepository, $field->getName(), $entity_collection, $field->getEntity(), $cardinality, $main_property, $entity_list_metadata);
+    $relationship = new Relationship($this->resourceTypeRepository, $field->getName(), $entity_collection, $field->getEntity(), $field_access, $cardinality, $main_property, $entity_list_metadata);
     return $this->serializer->normalize($relationship, $format, $context);
   }
 

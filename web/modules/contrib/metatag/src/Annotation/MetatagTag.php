@@ -80,4 +80,11 @@ class MetatagTag extends Plugin {
    */
   public $multiple;
 
+  /**
+   * True if the URL value(s) must be absolute.
+   *
+   * @var bool
+   */
+  protected $absoluteUrl;
+
 }

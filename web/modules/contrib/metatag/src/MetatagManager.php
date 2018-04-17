@@ -71,6 +71,24 @@ class MetatagManager implements MetatagManagerInterface {
   }
 
   /**
+   * Returns the list of protected defaults.
+   *
+   * @return array
+   *   Th protected defaults.
+   */
+  public static function protectedDefaults() {
+    return [
+      'global',
+      '403',
+      '404',
+      'node',
+      'front',
+      'taxonomy_term',
+      'user',
+    ];
+  }
+
+  /**
    * {@inheritdoc}
    */
   public function tagsFromEntity(ContentEntityInterface $entity) {
@@ -204,7 +222,7 @@ class MetatagManager implements MetatagManagerInterface {
       if (!isset($groups[$tag_group])) {
         // If the tag is claiming a group that has no matching plugin, log an
         // error and force it to the basic group.
-        $this->logger->error("Undefined group '%group' on tag '%tag'", ['%group' => $tag_group, '%tag' => $tag_id]);
+        $this->logger->error("Undefined group '%group' on tag '%tag'", ['%group' => $tag_group, '%tag' => $tag_name]);
         $tag['group'] = 'basic';
         $tag_group = 'basic';
       }
@@ -289,7 +307,7 @@ class MetatagManager implements MetatagManagerInterface {
   }
 
   /**
-   * Returns a list of the metatags with values from a field.
+   * Returns a list of the meta tags with values from a field.
    *
    * @param Drupal\Core\Entity\ContentEntityInterface $entity
    *   The ContentEntityInterface object.
@@ -339,7 +357,7 @@ class MetatagManager implements MetatagManagerInterface {
       }
 
       if (!empty($entity)) {
-        // Get default metatags for a given entity.
+        // Get default meta tags for a given entity.
         $entity_defaults = $this->getEntityDefaultMetatags($entity);
         if ($entity_defaults != NULL) {
           $metatags->set('tags', array_merge($metatags->get('tags'), $entity_defaults));

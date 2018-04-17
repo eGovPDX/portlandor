@@ -286,6 +286,11 @@ interface QueryInterface extends ConditionSetInterface {
   /**
    * Executes this search query.
    *
+   * The results of the search will be cached on the query, so subsequent calls
+   * of this method will always return the same result set (even if conditions
+   * were changed in between). If you want to re-execute a query, use
+   * getOriginalQuery().
+   *
    * @return \Drupal\search_api\Query\ResultSetInterface
    *   The results of the search.
    *
@@ -519,5 +524,15 @@ interface QueryInterface extends ConditionSetInterface {
    *   existing tags.
    */
   public function &getTags();
+
+  /**
+   * Retrieves the original version of the query, before preprocessing occurred.
+   *
+   * Will be a clone of this query if preprocessing has not already run.
+   *
+   * @return \Drupal\search_api\Query\Query
+   *   The original, unpreprocessed version of this query.
+   */
+  public function getOriginalQuery();
 
 }

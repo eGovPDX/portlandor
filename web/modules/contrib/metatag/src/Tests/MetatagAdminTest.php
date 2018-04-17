@@ -2,6 +2,7 @@
 
 namespace Drupal\metatag\Tests;
 
+use Drupal\metatag\MetatagManager;
 use Drupal\simpletest\WebTestBase;
 
 /**
@@ -348,7 +349,7 @@ class MetatagAdminTest extends WebTestBase {
    * And that they can then be overridden correctly.
    */
   public function testEntityDefaultInheritence() {
-    // Initiate session with a user who can manage metatags and content type
+    // Initiate session with a user who can manage meta tags and content type
     // fields.
     $permissions = [
       'administer site configuration',
@@ -400,6 +401,44 @@ class MetatagAdminTest extends WebTestBase {
     $this->assertResponse(200);
     $this->assertFieldByName('field_meta_tags[0][basic][title]', 'Article title override');
     $this->assertFieldByName('field_meta_tags[0][basic][description]', 'Article description override');
+  }
+
+  /**
+   * Test that protected Metatag defaults cannot be deleted.
+   */
+  public function testDefaultProtected() {
+    // Initiate session with a user who can manage metatags.
+    $permissions = ['administer site configuration', 'administer meta tags'];
+    $account = $this->drupalCreateUser($permissions);
+    $this->drupalLogin($account);
+
+    // Add default metatag for Articles.
+    $edit = [
+      'id' => 'node__article',
+    ];
+    $this->drupalPostForm('/admin/config/search/metatag/add', $edit, 'Save');
+
+    // Check that protected defaults contains "Revert" link instead of "Delete".
+    foreach (MetatagManager::protectedDefaults() as $protected) {
+      $this->assertLinkByHref('/admin/config/search/metatag/' . $protected);
+      $this->assertLinkByHref('/admin/config/search/metatag/' . $protected . '/revert');
+      $this->assertNoLinkByHref('/admin/config/search/metatag/' . $protected . '/delete');
+    }
+
+    // Confirm that non protected defaults can be deleted.
+    $this->assertLinkByHref('/admin/config/search/metatag/node__article');
+    $this->assertNoLinkByHref('/admin/config/search/metatag/node__article/revert');
+    $this->assertLinkByHref('/admin/config/search/metatag/node__article/delete');
+
+    // Visit each protected default page to confirm "Delete" button is hidden.
+    foreach (MetatagManager::protectedDefaults() as $protected) {
+      $this->drupalGet('/admin/config/search/metatag/' . $protected);
+      $this->assertNoLink('Delete');
+    }
+
+    // Confirm that non protected defaults can be deleted.
+    $this->drupalGet('/admin/config/search/metatag/node__article');
+    $this->assertLink('Delete');
   }
 
 }

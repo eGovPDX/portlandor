@@ -1,3 +1,9 @@
+## 1.2.0
+* If you have Lightning Roles
+  (part of [Lightning Core](https://drupal.org/project/lightning_core))
+  installed, the "reviewer" roles will now receive permission to view
+  unpublished content and revisions.
+
 ## 1.1.0
 * Behat contexts used for testing were moved into the
   `Acquia\LightningExtension\Context` namespace.

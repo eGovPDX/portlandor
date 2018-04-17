@@ -23,13 +23,16 @@ class MetatagNormalizer extends NormalizerBase {
 
     $tags = metatag_get_tags_from_route($entity);
 
-    foreach ($tags['#attached']['html_head'] as $tag) {
-      // @todo Work out a proper, long-term fix for this.
-      if (isset($tag[0]['#attributes']['content'])) {
-        $normalized['value'][$tag[1]] = $tag[0]['#attributes']['content'];
-      }
-      elseif (isset($tag[0]['#attributes']['href'])) {
-        $normalized['value'][$tag[1]] = $tag[0]['#attributes']['href'];
+    $normalized['value'] = [];
+    if (isset($tags['#attached']['html_head'])) {
+      foreach ($tags['#attached']['html_head'] as $tag) {
+        // @todo Work out a proper, long-term fix for this.
+        if (isset($tag[0]['#attributes']['content'])) {
+          $normalized['value'][$tag[1]] = $tag[0]['#attributes']['content'];
+        }
+        elseif (isset($tag[0]['#attributes']['href'])) {
+          $normalized['value'][$tag[1]] = $tag[0]['#attributes']['href'];
+        }
       }
     }
 

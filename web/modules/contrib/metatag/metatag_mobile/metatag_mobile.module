@@ -58,14 +58,14 @@ function metatag_mobile_page_attachments_alter(array &$attachments) {
 
     foreach ($dupes as $core_tag => $meta_tag) {
       foreach ($attachments['#attached']['html_head'] as $key => $item) {
-        // The Metatag values are output before core's, so skip the first item
-        // found so it can be picked up as the dupe; this is important for the
-        // "viewport" meta tag where both core and Metatag use the same name.
-        if ($item[1] == $meta_tag && !isset($found[$meta_tag])) {
-          $found[$meta_tag] = $key;
-        }
-        elseif ($item[1] == $core_tag) {
-          if (isset($found[$meta_tag])) {
+        if (isset($item[1])) {
+          // The Metatag values are output before core's, so skip the first item
+          // found so it can be picked up as the dupe; this is important for the
+          // "viewport" meta tag where both core and Metatag use the same name.
+          if ($item[1] == $meta_tag && !isset($found[$meta_tag])) {
+            $found[$meta_tag] = $key;
+          }
+          elseif ($item[1] == $core_tag && isset($found[$meta_tag])) {
             // @todo This ought to work, but doesn't?
             // $attachments['#attached']['html_head'][$key]['#access'] = FALSE;
             unset($attachments['#attached']['html_head'][$key]);

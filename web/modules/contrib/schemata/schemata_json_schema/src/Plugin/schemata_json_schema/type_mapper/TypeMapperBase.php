@@ -44,7 +44,7 @@ class TypeMapperBase extends PluginBase implements TypeMapperInterface, Containe
       $value['title'] = $item;
     }
     if ($item = $property->getDescription()) {
-      $value['description'] = $item;
+      $value['description'] = addslashes(strip_tags($item));
     }
 
     return $value;

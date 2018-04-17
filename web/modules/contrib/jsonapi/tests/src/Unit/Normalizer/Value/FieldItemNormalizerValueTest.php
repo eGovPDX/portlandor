@@ -2,6 +2,7 @@
 
 namespace Drupal\Tests\jsonapi\Unit\Normalizer\Value;
 
+use Drupal\Core\Cache\CacheableMetadata;
 use Drupal\jsonapi\Normalizer\Value\FieldItemNormalizerValue;
 use Drupal\Tests\UnitTestCase;
 
@@ -18,7 +19,7 @@ class FieldItemNormalizerValueTest extends UnitTestCase {
    * @dataProvider rasterizeValueProvider
    */
   public function testRasterizeValue($values, $expected) {
-    $object = new FieldItemNormalizerValue($values);
+    $object = new FieldItemNormalizerValue($values, new CacheableMetadata());
     $this->assertEquals($expected, $object->rasterizeValue());
   }
 
@@ -34,10 +35,10 @@ class FieldItemNormalizerValueTest extends UnitTestCase {
       [
         [
           'lorem' => [
-            'ipsum' => new FieldItemNormalizerValue([
+            'ipsum' => [
               'dolor' => 'sid',
-              'amet' => new FieldItemNormalizerValue(['value' => 'ra']),
-            ]),
+              'amet' => 'ra',
+            ],
           ],
         ],
         ['ipsum' => ['dolor' => 'sid', 'amet' => 'ra']],

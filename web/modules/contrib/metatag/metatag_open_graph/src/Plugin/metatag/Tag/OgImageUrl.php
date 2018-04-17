@@ -16,7 +16,8 @@ use Drupal\metatag\Plugin\metatag\Tag\MetaPropertyBase;
  *   weight = 10,
  *   type = "image",
  *   secure = FALSE,
- *   multiple = TRUE
+ *   multiple = TRUE,
+ *   absolute_url = TRUE
  * )
  */
 class OgImageUrl extends MetaPropertyBase {

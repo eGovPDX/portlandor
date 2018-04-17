@@ -229,27 +229,21 @@ class JsonApiDocumentTopLevelNormalizer extends NormalizerBase implements Denorm
     }
 
     if ($data instanceof EntityReferenceFieldItemListInterface) {
-      $output = $this->serializer->normalize($data, $format, $context);
-      // The only normalizer value that computes nested includes automatically
-      // is the JsonApiDocumentTopLevelNormalizerValue.
-      $output->setIncludes($output->getAllIncludes());
-      return $output;
+      return $this->serializer->normalize($data, $format, $context);
     }
-    else {
-      $is_collection = $data instanceof EntityCollection;
-      $include_count = $context['resource_type']->includeCount();
-      // To improve the logical workflow deal with an array at all times.
-      $entities = $is_collection ? $data->toArray() : [$data];
-      $context['has_next_page'] = $is_collection ? $data->hasNextPage() : FALSE;
+    $is_collection = $data instanceof EntityCollection;
+    $include_count = $context['resource_type']->includeCount();
+    // To improve the logical workflow deal with an array at all times.
+    $entities = $is_collection ? $data->toArray() : [$data];
+    $context['has_next_page'] = $is_collection ? $data->hasNextPage() : FALSE;
 
-      if ($include_count) {
-        $context['total_count'] = $is_collection ? $data->getTotalCount() : 1;
-      }
-      $serializer = $this->serializer;
-      $normalizer_values = array_map(function ($entity) use ($format, $context, $serializer) {
-        return $serializer->normalize($entity, $format, $context);
-      }, $entities);
+    if ($include_count) {
+      $context['total_count'] = $is_collection ? $data->getTotalCount() : 1;
     }
+    $serializer = $this->serializer;
+    $normalizer_values = array_map(function ($entity) use ($format, $context, $serializer) {
+      return $serializer->normalize($entity, $format, $context);
+    }, $entities);
 
     $link_context = [
       'link_manager' => $this->linkManager,

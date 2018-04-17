@@ -77,6 +77,7 @@ class PageGeneralForm extends FormBase {
       '#title' => $this->t('Path'),
       '#maxlength' => 255,
       '#default_value' => $page->getPath(),
+      '#description' => $this->t('Path to your custom page. Beginning and Ending slashes are automatically removed.'),
       '#required' => TRUE,
       '#element_validate' => [[$this, 'validatePath']],
     ];
@@ -171,18 +172,24 @@ class PageGeneralForm extends FormBase {
     $page = $cached_values['page'];
 
     // Ensure the path has a leading slash.
-    $value = '/' . trim($element['#value'], '/');
-    $form_state->setValueForElement($element, $value);
+    if ($value = trim($element['#value'], '/')) {
+      $value = '/' . $value;
+      $form_state->setValueForElement($element, $value);
 
-    // Ensure each path is unique.
-    $path_query = $this->entityQuery->get('page')
-      ->condition('path', $value);
-    if (!$page->isNew()) {
-      $path_query->condition('id', $page->id(), '<>');
+      // Ensure each path is unique.
+      $path_query = $this->entityQuery->get('page')
+        ->condition('path', $value);
+      if (!$page->isNew()) {
+        $path_query->condition('id', $page->id(), '<>');
+      }
+      $path = $path_query->execute();
+      if ($path) {
+        $form_state->setErrorByName('path', $this->t('The page path must be unique.'));
+      }
     }
-    $path = $path_query->execute();
-    if ($path) {
-      $form_state->setErrorByName('path', $this->t('The page path must be unique.'));
+    // Check to make sure the path exists after stripping slashes.
+    else {
+      $form_state->setErrorByName('path', $this->t("Path is required."));
     }
   }
 

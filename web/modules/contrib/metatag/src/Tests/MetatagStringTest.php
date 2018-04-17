@@ -7,7 +7,7 @@ use Drupal\simpletest\WebTestBase;
 /**
  * Ensures that the Metatag field works correctly.
  *
- * @group Metatag
+ * @group metatag
  */
 class MetatagStringTest extends WebTestBase {
 

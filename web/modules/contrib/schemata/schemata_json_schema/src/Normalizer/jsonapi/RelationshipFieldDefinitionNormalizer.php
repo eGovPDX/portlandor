@@ -63,6 +63,7 @@ class RelationshipFieldDefinitionNormalizer extends ListDataDefinitionNormalizer
     $normalized = [
       'properties' => [
         'relationships' => [
+          'description' => t('Entity relationships'),
           'properties' => [$context['name'] => $this->normalizeRelationship($entity)],
           'type' => 'object',
         ],

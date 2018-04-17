@@ -43,6 +43,9 @@ The primary features include:
 * The fifteen Dublin Core Basic Element Set 1.1 meta tags may be added by
   enabling the "Metatag: Dublin Core" submodule.
 
+* Forty additional Dublin Core meta tags may be added by enabling the "Metatag:
+  Dublin Core Advanced" submodule.
+
 * The Open Graph Protocol meta tags, as used by Facebook, Pinterest, LinkedIn
   and other sites, may be added by enabling the "Metatag: Open Graph" submodule.
 
@@ -57,6 +60,9 @@ The primary features include:
   are using Facebook widgets or are building custom integration with Facebook's
   APIs, but they are not needed by most sites and have no bearing on the
   Open Graph meta tags.
+
+* The Pinterest meta tags may be added by enabling the "Metatag: Pinterest" 
+  submodule.
 
 * Site verification meta tags can be added, e.g. as used by the Google search
   engine to confirm ownership of the site; see the "Metatag: Verification"
@@ -95,7 +101,7 @@ Standard usage scenario
    automatically assign values.
 4. Additional bundle defaults may be added by clicking on "Add metatag
    defaults" and filling out the form.
-5. To adjust metatags for a specific entity, the Metatag field must be added
+5. To adjust meta tags for a specific entity, the Metatag field must be added
    first. Follow these steps:
 
    5.1 Go to the "Manage fields" of the bundle where the Metatag field is to
@@ -154,6 +160,53 @@ Option 2:
 In both examples, the custom meta tag values will still be merged with the
 values defined via the global defaults prior to being output - it is not
 necessary to copy each value to the new record.
+
+
+Obtain meta tags for an entity
+--------------------------------------------------------------------------------
+For developers needing to access the rendered meta tags for a given entity, a
+function is provided to make this easy to do:
+
+  $metatags = metatag_generate_entity_metatags($entity);
+
+This will return an array with the following structure:
+
+  [
+    'title' => [
+      '#tag' => 'meta',
+      '#attributes' => [
+        'name' => 'title',
+        'content' => 'The What | D8.4',
+      ],
+    ],
+    'canonical_url' => [
+      '#tag' => 'link',
+      '#attributes' => [
+        'rel' => 'canonical',
+        'href' => 'http://example.com/what',
+      ],
+    ],
+    'description' => [
+      '#tag' => 'meta',
+      '#attributes' => [
+        'name' => 'description',
+        'content' => 'I can't even.',
+      ],
+    ],
+    'generator' => [
+      '#tag' => 'meta',
+      '#attributes' => [
+        'name' => 'generator',
+        'content' => 'Drupal 8!',
+      ],
+    ],
+  ]
+
+The meta tags are keyed off the meta tag plugin's ID, e.g. "generator". Each
+meta tag is then provided as arguments suitable for use in a render array with
+the type "html_tag". Extracting the value of the meta tag will depend upon the
+type of meta tag, e.g. the generator meta tag uses the "content" attribute while
+the link tag uses the "href" attribute.
 
 
 DrupalConsole integration

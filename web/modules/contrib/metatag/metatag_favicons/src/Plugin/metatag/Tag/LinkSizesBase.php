@@ -32,7 +32,7 @@ abstract class LinkSizesBase extends LinkRelBase {
    * @return string
    *   A string in the format "XxY" for a given width and height.
    */
-  private function sizes() {
+  protected function sizes() {
     return '';
   }
 

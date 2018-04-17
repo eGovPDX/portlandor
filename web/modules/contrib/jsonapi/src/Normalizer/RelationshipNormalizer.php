@@ -2,6 +2,7 @@
 
 namespace Drupal\jsonapi\Normalizer;
 
+use Drupal\Core\Access\AccessResult;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\jsonapi\Normalizer\Value\RelationshipNormalizerValue;
 use Drupal\jsonapi\ResourceType\ResourceTypeRepositoryInterface;
@@ -90,7 +91,14 @@ class RelationshipNormalizer extends NormalizerBase {
       'link_manager' => $this->linkManager,
       'resource_type' => $context['resource_type'],
     ];
-    return new RelationshipNormalizerValue($normalizer_items, $cardinality, $link_context);
+    // If this is called, access to the Relationship field is allowed. The
+    // cacheability of the access result is carried by the Relationship value
+    // object. Therefore, we can safely construct an access result object here.
+    // Access to the targeted related resources will be checked separately.
+    // @see \Drupal\jsonapi\Normalizer\EntityReferenceFieldNormalizer::normalize()
+    // @see \Drupal\jsonapi\Normalizer\RelationshipItemNormalizer::normalize()
+    $relationship_access = AccessResult::allowed()->addCacheableDependency($relationship);
+    return new RelationshipNormalizerValue($relationship_access, $normalizer_items, $cardinality, $link_context);
   }
 
   /**

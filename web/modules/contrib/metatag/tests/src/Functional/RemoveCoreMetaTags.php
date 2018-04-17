@@ -7,7 +7,7 @@ use Drupal\taxonomy\Entity\Vocabulary;
 use Drupal\Tests\BrowserTestBase;
 
 /**
- * Ensures that metatags output by core are removed if we are overriding them.
+ * Ensures that meta tags output by core are removed if we are overriding them.
  *
  * @group metatag
  */
@@ -45,7 +45,7 @@ class RemoveCoreMetaTags extends BrowserTestBase {
     ]);
     $term->save();
 
-    // Set up metatags for taxonomy.
+    // Set up meta tags for taxonomy.
     $edit = [
       'canonical_url' => '[current-page:url:unaliased]',
     ];

@@ -347,6 +347,12 @@ class JsonApiFunctionalTest extends JsonApiFunctionalTestBase {
     $this->assertCount(5, $output_nids);
     $this->assertCount(1, $output['meta']['errors']);
     $this->assertEquals([56, 57, 58, 59, 60], $output_nids);
+    // 25. Test collection count.
+    $this->container->get('module_installer')->install(['jsonapi_test_collection_count']);
+    $collection_output = Json::decode($this->drupalGet('/jsonapi/node/article'));
+    $this->assertSession()->statusCodeEquals(200);
+    $this->assertEquals(61, $collection_output['meta']['count']);
+    $this->container->get('module_installer')->uninstall(['jsonapi_test_collection_count']);
 
     // Test documentation filtering examples.
     // 1. Only get published nodes.

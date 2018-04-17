@@ -30,8 +30,20 @@ class SchemataSchemaNormalizer extends JsonApiNormalizerBase {
       '$schema' => 'http://json-schema.org/draft-04/schema#',
       'id' => $generated_url->getGeneratedUrl(),
       'type' => 'object',
+      'properties' => [
+        'type' => [
+          'type' => 'string',
+          'title' => 'type',
+          'description' => t('Resource type'),
+        ],
+        'id' => [
+          'type' => 'string',
+          'title' => t('Resource ID'),
+          'format' => 'uuid',
+          'maxLength' => 128,
+        ],
+      ],
     ];
-    $normalized = array_merge($normalized, $entity->getMetadata());
 
     // Stash schema request parameters.
     $context['entityTypeId'] = $entity->getEntityTypeId();
@@ -43,9 +55,22 @@ class SchemataSchemaNormalizer extends JsonApiNormalizerBase {
       $format,
       $context
     );
-    $normalized = NestedArray::mergeDeep($normalized, $properties);
-
-    return $normalized;
+    $links = [
+      'properties' => [
+        'links' => [
+          'type' => 'object',
+          'description' => t('Entity links'),
+          'properties' => [
+            'self' => [
+              'type' => 'string',
+              'format' => 'uri',
+              'description' => t('The absolute link to this entity.'),
+            ],
+          ],
+        ],
+      ],
+    ];
+    return NestedArray::mergeDeep($normalized, $entity->getMetadata(), $properties, $links);
   }
 
   /**
