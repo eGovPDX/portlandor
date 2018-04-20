@@ -1,3 +1,6 @@
+## 2.4.0
+* Security updated Drupal core to 8.5.2.
+
 ## 2.3.0
 * Fixed an incompatibility with Search API which would cause fatal errors under
   certain circumstances. (Issue #2961547 and GitHub #46)
