@@ -151,66 +151,6 @@ class QuickEditImageControllerTest extends WebTestBase {
   }
 
   /**
-   * Test the latest revision of an entity is loaded for editing.
-   */
-  public function testLatestRevisionLoaded() {
-    $node = $this->drupalCreateNode([
-      'type' => 'article',
-      'title' => t('Test Node'),
-    ]);
-
-    // Create an image which only exists on a pending revision to make sure the
-    // latest revision is loaded for the quickedit info route.
-    $file = File::create([
-      'uri' => 'public://example.png',
-      'filename' => 'example.png',
-    ]);
-    $file->save();
-    $node->{$this->fieldName} = [
-      'target_id' => $file->id(),
-      'alt' => 'test alt',
-      'title' => 'test title',
-      'width' => 10,
-      'height' => 11,
-    ];
-    $node->setNewRevision(TRUE);
-    $node->isDefaultRevision(FALSE);
-    $node->save();
-
-    $info = $this->drupalGetJSON('quickedit/image/info/node/' . $node->id() . '/' . $this->fieldName . '/' . $node->language()->getId() . '/default');
-    $this->assertEqual('test alt', $info['alt']);
-    $this->assertEqual('test title', $info['title']);
-
-    // Find an image that passes field validation and upload it.
-    $image_factory = $this->container->get('image.factory');
-    foreach ($this->drupalGetTestFiles('image') as $image) {
-      $image_file = $image_factory->get($image->uri);
-      if ($image_file->getWidth() > 50 && $image_file->getWidth() < 100) {
-        $valid_image = $image;
-        break;
-      }
-    }
-    $this->uploadImage($valid_image, $node->id(), $this->fieldName, $node->language()->getId());
-
-    // Save the tempstore changes.
-    /** @var \Drupal\user\PrivateTempStore $tempstore */
-    $tempstore = \Drupal::service('user.private_tempstore')->get('quickedit');
-    $tempstore->get($node->uuid())->save();
-
-    // Load the default and latest revision.
-    /** @var \Drupal\Core\Entity\ContentEntityStorageInterface $storage */
-    $storage = $this->container->get('entity_type.manager')->getStorage('node');
-    $default = $storage->load($node->id());
-    $latest_revision_id = $storage->getLatestRevisionId($node->id());
-    $latest_revision = $storage->loadRevision($latest_revision_id);
-
-    // Ensure that the file was uploaded to the latest revision.
-    $this->assertEqual($latest_revision->{$this->fieldName}->entity->filename->value, $valid_image->filename);
-    // Ensure that the default revision was unchanged.
-    $this->assertNull($default->{$this->fieldName}->target_id);
-  }
-
-  /**
    * Uploads an image using the image module's Quick Edit route.
    *
    * @param object $image
@@ -242,6 +182,68 @@ class QuickEditImageControllerTest extends WebTestBase {
         'Content-Type: multipart/form-data',
       ],
     ]);
+  }
+
+  /**
+   * Test the latest revision of an entity is loaded for editing.
+   */
+  public function testLatestRevisionLoaded() {
+    $node = $this->drupalCreateNode([
+      'type' => 'article',
+      'title' => t('Test Node'),
+    ]);
+
+    // Create an image which only exists on a pending revision to make sure the
+    // latest revision is loaded for the quickedit info route.
+    $file = File::create([
+      'uri' => 'public://example.png',
+      'filename' => 'example.png',
+    ]);
+    $file->save();
+    $node->{$this->fieldName} = [
+      'target_id' => $file->id(),
+      'alt' => 'test alt',
+      'title' => 'test title',
+      'width' => 10,
+      'height' => 11,
+    ];
+    $node->setNewRevision(TRUE);
+    $node->isDefaultRevision(FALSE);
+    $node->save();
+
+    $info = $this->drupalGetJSON('quickedit/image/info/node/' . $node->id() . '/' . $this->fieldName . '/' . $node->language()
+        ->getId() . '/default');
+    $this->assertEqual('test alt', $info['alt']);
+    $this->assertEqual('test title', $info['title']);
+
+    // Find an image that passes field validation and upload it.
+    $image_factory = $this->container->get('image.factory');
+    foreach ($this->drupalGetTestFiles('image') as $image) {
+      $image_file = $image_factory->get($image->uri);
+      if ($image_file->getWidth() > 50 && $image_file->getWidth() < 100) {
+        $valid_image = $image;
+        break;
+      }
+    }
+    $this->uploadImage($valid_image, $node->id(), $this->fieldName, $node->language()
+      ->getId());
+
+    // Save the tempstore changes.
+    /** @var \Drupal\user\PrivateTempStore $tempstore */
+    $tempstore = \Drupal::service('user.private_tempstore')->get('quickedit');
+    $tempstore->get($node->uuid())->save();
+
+    // Load the default and latest revision.
+    /** @var \Drupal\Core\Entity\ContentEntityStorageInterface $storage */
+    $storage = $this->container->get('entity_type.manager')->getStorage('node');
+    $default = $storage->load($node->id());
+    $latest_revision_id = $storage->getLatestRevisionId($node->id());
+    $latest_revision = $storage->loadRevision($latest_revision_id);
+
+    // Ensure that the file was uploaded to the latest revision.
+    $this->assertEqual($latest_revision->{$this->fieldName}->entity->filename->value, $valid_image->filename);
+    // Ensure that the default revision was unchanged.
+    $this->assertNull($default->{$this->fieldName}->target_id);
   }
 
 }
