@@ -1,0 +1,110 @@
+{
+    "name": "acquia/lightning_core",
+    "description": "Shared functionality for the Lightning distribution.",
+    "type": "drupal-module",
+    "license": "GPL-2.0+",
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "repositories": {
+        "drupal": {
+            "type": "composer",
+            "url": "https://packages.drupal.org/8"
+        },
+        "assets": {
+            "type": "composer",
+            "url": "https://asset-packagist.org"
+        },
+        "dev": {
+            "type": "github",
+            "url": "https://github.com/acquia/lightning-dev",
+            "no-api": true
+        }
+    },
+    "config": {
+        "preferred-install": {
+            "drupal/core": "dist"
+        }
+    },
+    "require": {
+        "drupal/core": "~8.5.2",
+        "cweagans/composer-patches": "^1.6.4",
+        "drupal-composer/drupal-scaffold": "^2.0.0",
+        "oomphinc/composer-installers-extender": "^1.1",
+        "drupal/acquia_connector": "^1.1",
+        "drupal/metatag": "^1.0",
+        "drupal/token": "^1.0",
+        "drupal/pathauto": "^1.0",
+        "drupal/contact_storage": "^1.0",
+        "drupal/search_api": "^1.0",
+        "phpdocumentor/reflection-docblock": "^3.0|^4.0"
+    },
+    "scripts": {
+        "post-install-cmd": [
+            "@push",
+            "@drupal-scaffold"
+        ],
+        "post-update-cmd": [
+            "@push",
+            "@drupal-scaffold"
+        ],
+        "drupal-scaffold": "DrupalComposer\\DrupalScaffold\\Plugin::scaffold",
+        "nuke": "rm -r -f docroot vendor",
+        "pull": "Acquia\\Lightning\\Commands\\FileCommands::pull",
+        "push": "Acquia\\Lightning\\Commands\\FileCommands::push"
+    },
+    "extra": {
+        "installer-types": [
+            "bower-asset",
+            "npm-asset"
+        ],
+        "installer-paths": {
+            "docroot/core": [
+                "type:drupal-core"
+            ],
+            "docroot/libraries/{$name}": [
+                "type:drupal-library",
+                "type:bower-asset",
+                "type:npm-asset"
+            ],
+            "docroot/modules/contrib/{$name}": [
+                "type:drupal-module"
+            ],
+            "docroot/profiles/contrib/{$name}": [
+                "type:drupal-profile"
+            ],
+            "docroot/themes/contrib/{$name}": [
+                "type:drupal-theme"
+            ]
+        },
+        "patches": {
+            "drupal/core": {
+                "1356276 - Allow profiles to provide a base/parent profile and load them in the correct order":
+                "https://www.drupal.org/files/issues/1356278-408--8.5.x-real.patch",
+                "2880374 - Experimental modules should not have warnings after being installed":
+                "https://www.drupal.org/files/issues/2880374-remove-experimental-warnings-6.patch",
+                "2869592 - Disabled update module shouldn't produce a status report warning":
+                "https://www.drupal.org/files/issues/2869592-remove-update-warning-7.patch",
+                "2885441 - EntityReferenceAutocompleteWidget should define its size setting as an integer":
+                "https://www.drupal.org/files/issues/2885441-2.patch",
+                "2815221 - Add quickedit to the latest-revision route":
+                "https://www.drupal.org/files/issues/2018-04-18/2815221-87-8.5.2.patch"
+            }
+        },
+        "drush": {
+            "services": {
+                "drush.services.yml": "^9"
+            }
+        },
+        "enable-patching": true
+    },
+    "require-dev": {
+        "acquia/lightning_dev": "dev-8.x-1.x",
+        "drupal/console": "^1.6"
+    },
+    "conflict": {
+        "drupal/drupal-extension": "<3.4.0"
+    },
+    "autoload": {
+        "classmap": ["tests/contexts/AwaitTrait.inc"]
+    }
+}

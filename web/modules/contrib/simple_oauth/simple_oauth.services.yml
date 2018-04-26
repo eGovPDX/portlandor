@@ -1,0 +1,66 @@
+services:
+  simple_oauth.authentication.simple_oauth:
+    class: Drupal\simple_oauth\Authentication\Provider\SimpleOauthAuthenticationProvider
+    arguments: ['@simple_oauth.server.resource_server', '@entity_type.manager']
+    tags:
+      - { name: authentication_provider, provider_id: oauth2, global: TRUE, priority: 35 }
+  simple_oauth.page_cache_request_policy.disallow_oauth2_token_requests:
+    class: Drupal\simple_oauth\PageCache\DisallowSimpleOauthRequests
+    public: false
+    tags:
+      - { name: page_cache_request_policy }
+
+  simple_oauth.normalizer.oauth2_token:
+    class: Drupal\simple_oauth\Normalizer\TokenEntityNormalizer
+    arguments: ['@entity_type.manager']
+    tags:
+      - { name: normalizer, priority: 21 }
+  simple_oauth.normalizer.oauth2_refresh_token:
+    class: Drupal\simple_oauth\Normalizer\RefreshTokenEntityNormalizer
+    tags:
+      - { name: normalizer, priority: 20 }
+  simple_oauth.server.resource_server:
+    class: Drupal\simple_oauth\Server\ResourceServer
+    arguments:
+      - '@simple_oauth.repositories.access_token'
+      - '@config.factory'
+      - '@psr7.http_message_factory'
+      - '@psr7.http_foundation_factory'
+  simple_oauth.repositories.client:
+    class: Drupal\simple_oauth\Repositories\ClientRepository
+    arguments: ['@entity_type.manager', '@password']
+  simple_oauth.repositories.scope:
+    class: Drupal\simple_oauth\Repositories\ScopeRepository
+    arguments: ['@entity_type.manager']
+  simple_oauth.repositories.user:
+    class: Drupal\simple_oauth\Repositories\UserRepository
+    arguments: ['@user.auth']
+  simple_oauth.repositories.access_token:
+    class: Drupal\simple_oauth\Repositories\AccessTokenRepository
+    arguments: ['@entity_type.manager', '@serializer']
+  simple_oauth.repositories.refresh_token:
+    class: Drupal\simple_oauth\Repositories\RefreshTokenRepository
+    arguments: ['@entity_type.manager', '@serializer']
+  plugin.manager.oauth2_grant.processor:
+    class: Drupal\simple_oauth\Plugin\Oauth2GrantManager
+    parent: default_plugin_manager
+    arguments:
+      - '@simple_oauth.repositories.client'
+      - '@simple_oauth.repositories.scope'
+      - '@simple_oauth.repositories.access_token'
+      - '@simple_oauth.repositories.refresh_token'
+      - '@config.factory'
+  simple_oauth.expired_collector:
+    class: Drupal\simple_oauth\ExpiredCollector
+    arguments: ['@entity_type.manager', '@datetime.time']
+  simple_oauth.http_middleware.basic_auth_swap:
+    class: Drupal\simple_oauth\HttpMiddleware\BasicAuthSwap
+    tags:
+      - { name: http_middleware }
+# Keys Generator Services
+  simple_oauth.filesystem:
+    class: Drupal\simple_oauth\Service\Filesystem\Filesystem
+    arguments: ['@file_system']
+  simple_oauth.key.generator:
+    class: Drupal\simple_oauth\Service\KeyGeneratorService
+    arguments: ['@simple_oauth.filesystem']
