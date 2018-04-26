@@ -170,8 +170,10 @@ behat_tests: &behat_tests
             if grep -Fxq "$CIRCLE_BRANCH" ./env_list.txt; then
               echo "Found multidev site"
               # terminus multidev:delete --delete-branch portlandor.$CIRCLE_BRANCH -y
+              # Cloning files and DB from TEST environment to the multidev environment
+              terminus env:clone-content portlandor.test "$CIRCLE_BRANCH" -y 
             else
-              terminus multidev:create portlandor.dev $CIRCLE_BRANCH
+              terminus multidev:create portlandor.test $CIRCLE_BRANCH
             fi
             # don't check the repo host key
             export GIT_SSH_COMMAND="ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no"
@@ -194,8 +196,6 @@ behat_tests: &behat_tests
             git push -f pantheon $CIRCLE_BRANCH
             # Deploy code from local env to the new multidev site
             # terminus env:deploy portlandor.$CIRCLE_BRANCH --sync-content --note="Manual deploy to powr-118"
-            # Cloning files and DB from dev environment to powr-118 environment
-            # terminus env:clone-content portlandor.dev "$CIRCLE_BRANCH" -y
             # Wake up the multidev site
             terminus env:wake portlandor.$CIRCLE_BRANCH
             # Check site status
@@ -203,7 +203,7 @@ behat_tests: &behat_tests
             # The following two drush commands will fail without wait for a few seconds
             sleep 30s
             # Sanitize DB
-            # terminus drush portlandor.$CIRCLE_BRANCH -- sql-sanitize -y
+            terminus drush portlandor.$CIRCLE_BRANCH -- sql-sanitize -y
             # Clear cache
             # terminus drush portlandor.$CIRCLE_BRANCH -- cr
             # Import config files
