@@ -114,16 +114,16 @@ behat_tests: &behat_tests
           # Set the user email that will commit code into Pantheon repo 
           # git config --global user.email "kevin.wang@portlandoregon.gov"
           if [[ $CIRCLE_BRANCH = "master" ]]; then
-            echo "Master branch"
+            echo "Deploy to Pantheon dev site"
             export PATH=/var/www/html/vendor/bin:$PATH
             # don't check the repo host key
             export GIT_SSH_COMMAND="ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no"
             # Don't check for host key for Pantheon sites
             echo -e "host *.drush.in\n    StrictHostKeyChecking no" >> ~/.ssh/config
             # Set the connect to GIT
-            terminus connection:set portlandor.$CIRCLE_BRANCH git
+            terminus connection:set portlandor.dev git
             git remote add pantheon ssh://codeserver.dev.5c6715db-abac-4633-ada8-1c9efe354629@codeserver.dev.5c6715db-abac-4633-ada8-1c9efe354629.drush.in:2222/~/repository.git
-            git config --global user.email "xinju.wang@portlandoregon.gov"
+            git config --global user.email "$eGov_Email"
             # Without these lines, push will fail with "please remote git submodules" error
             rm -rf ./vendor/drupal/coder/.git
             rm -rf ./web/modules/contrib/facets/.git
@@ -134,22 +134,23 @@ behat_tests: &behat_tests
             git rm -r --cache web/sites/default/files --ignore-unmatch
             git commit -m "CircleCI deployment" --quiet
             # git filter-branch -f --index-filter 'git rm -rf --cached --ignore-unmatch sites/default/files' --prune-empty -- afc758c6..HEAD
-            git push -f pantheon $CIRCLE_BRANCH
+            git push -f pantheon master
             # Deploy code from local env to the new multidev site
             # terminus env:deploy portlandor.$CIRCLE_BRANCH --sync-content --note="Manual deploy to powr-118"
             # Cloning files and DB from dev environment to powr-118 environment
             # terminus env:clone-content portlandor.dev "$CIRCLE_BRANCH" -y
             # Wake up the multidev site
-            terminus env:wake portlandor.$CIRCLE_BRANCH
+            terminus env:wake portlandor.dev
             # Check site status
-            terminus drush portlandor.$CIRCLE_BRANCH -- status
+            terminus drush portlandor.dev -- status
             sleep 30s
+            # TODO: pull DB from Live
             # Sanitize DB
-            terminus drush portlandor.$CIRCLE_BRANCH -- sql-sanitize -y
+            # terminus drush portlandor.dev -- sql-sanitize -y
             # Clear cache
-            # terminus drush portlandor.$CIRCLE_BRANCH -- cr
+            terminus drush portlandor.dev -- cr
             # Import config files
-            terminus drush portlandor.$CIRCLE_BRANCH -- cim -y   
+            terminus drush portlandor.dev -- cim -y   
             # # Deploy code from local env to the new multidev site
             # terminus env:deploy portland-alpha.dev --sync-content --note="Manual deploy to powr-118"
             # # Cloning files and DB from dev environment to powr-118 environment
@@ -168,9 +169,10 @@ behat_tests: &behat_tests
             terminus multidev:list --format=list --field=Name portlandor > ./env_list.txt
             if grep -Fxq "$CIRCLE_BRANCH" ./env_list.txt; then
               echo "Found multidev site"
-              terminus multidev:delete --delete-branch portlandor.$CIRCLE_BRANCH -y
+              # terminus multidev:delete --delete-branch portlandor.$CIRCLE_BRANCH -y
+            else
+              terminus multidev:create portlandor.dev $CIRCLE_BRANCH
             fi
-            terminus multidev:create portlandor.dev $CIRCLE_BRANCH
             # don't check the repo host key
             export GIT_SSH_COMMAND="ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no"
             # Don't check for host key for Pantheon sites
