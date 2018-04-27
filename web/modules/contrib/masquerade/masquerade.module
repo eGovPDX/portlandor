@@ -1,0 +1,275 @@
+<?php
+
+/**
+ * @file
+ * Allows privileged users to masquerade as another user.
+ */
+
+use Drupal\Core\Entity\Display\EntityViewDisplayInterface;
+use Drupal\Core\Entity\EntityInterface;
+use Drupal\Core\Routing\RouteMatchInterface;
+use Drupal\Core\Url;
+use Drupal\user\Entity\User;
+use Drupal\user\UserInterface;
+
+/**
+ * Implements hook_help().
+ */
+function masquerade_help($route_name, RouteMatchInterface $route_match) {
+  switch ($route_name) {
+    case 'help.page.masquerade':
+      $output = '';
+      $output .= '<h3>' . t('About') . '</h3>';
+      $output .= '<p>' . t('The Masquerade module allows users to temporarily switch to another user account. It records the original user account, so users can easily switch back.') . '</p>';
+      $output .= '<h3>' . t('Uses') . '</h3>';
+      $output .= '<dl>';
+      $output .= '<dt>' . t('Granting masquerade access') . '</dt>';
+      $output .= '<dd>' . t('Users with the <a href=":permission_link">Masquerade as any user</a> permission are able to masquerade as someone else. Users may only masquerade if they have the same or more permissions as the user they want to switch to. Users are never able to escalate their privileges by masquerading as someone else.', [
+        ':permission_link' => Url::fromRoute('user.admin_permissions', [], ['fragment' => 'module-masquerade'])->toString(),
+      ]) . '</dd>';
+      $output .= '<dt>' . t('Masquerading as another user') . '</dt>';
+      $output .= '<dd>' . t('There are multiple ways to masquerade as another user:');
+      $output .= '<ul>';
+      $output .= '<li>' . t('On the <a href=":admin-people-url">administrative user listing</a>, choose the <em>Masquerade</em> operation of a certain user account.', [
+        ':admin-people-url' => Url::fromRoute('entity.user.collection')->toString(),
+      ]) . '</li>';
+      $output .= '<li>' . t('Masquerade can be used directly from menus provided by the %toolbar module.', [
+        '%toolbar' => t('Toolbar')
+      ]) . '</li>';
+      $output .= '</ul>';
+      $output .= '</dd>';
+      $output .= '<dt>' . t('Switching back') . '</dt>';
+      $output .= '<dd>' . t('To stop masquerading as another user, click the <em>Unmasquerade</em> link in the user account links menu.') . '</dd>';
+      $output .= '</dl>';
+      return $output;
+  }
+}
+
+/**
+ * Implements hook_toolbar().
+ *
+ * @todo Nest this with the "View profile", "Edit profile", and "Log out"
+ *   links under the username tab.
+ */
+function masquerade_toolbar() {
+  $items = array();
+  if (\Drupal::service('masquerade')->isMasquerading()) {
+    $items['masquerade_switch_back'] = array(
+      '#type' => 'toolbar_item',
+      'tab' => array(
+        '#type' => 'link',
+        '#title' => t('Unmasquerade'),
+        '#url' => Url::fromRoute('masquerade.unmasquerade'),
+      ),
+      // Hopefully shows immediately after the username tab.
+      '#weight' => 101,
+    );
+  }
+  return $items;
+}
+
+/**
+ * Returns whether the current user is allowed to masquerade as a certain target user.
+ *
+ * @param \Drupal\user\UserInterface $target_account
+ *   The user account object to masquerade as.
+ *
+ * @return bool
+ *   TRUE if allowed, FALSE otherwise.
+ *
+ * @see hook_masquerade_access()
+ */
+function masquerade_target_user_access(UserInterface $target_account) {
+  $user = \Drupal::currentUser();
+
+  // Deny access if the current user is masquerading already or tries to
+  // masquerade as himself.
+  if (\Drupal::service('masquerade')->isMasquerading() || $user->id() == $target_account->id()) {
+    return FALSE;
+  }
+
+  // Invoke hook_masquerade_access() implementations.
+  $access = NULL;
+  foreach (\Drupal::moduleHandler()->getImplementations('masquerade_access') as $module) {
+    $function = $module . '_masquerade_access';
+    $result = $function($user, $target_account);
+    // If an implementation explicitly denies access, then there is nothing else
+    // to check.
+    if ($result === FALSE) {
+      $access = FALSE;
+      break;
+    }
+    elseif ($result === TRUE) {
+      $access = TRUE;
+    }
+  }
+  // If no module granted access, then access is denied.
+  if (!isset($access) || !$access) {
+    return FALSE;
+  }
+  return TRUE;
+}
+
+/**
+ * Implements hook_masquerade_access().
+ *
+ * This default implementation only returns TRUE and never FALSE, since
+ * alternative access implementations could not work otherwise.
+ */
+function masquerade_masquerade_access($user, UserInterface $target_account) {
+  // Uid 1 may masquerade as anyone.
+  if ($user->id() == 1) {
+    return TRUE;
+  }
+  // Uid 1 gets special treatment with its own permission.
+  if ($target_account->id() == 1) {
+    if ($user->hasPermission('masquerade as super user')) {
+      return TRUE;
+    }
+    else {
+      return;
+    }
+  }
+  // The current user must be allowed to masquerade.
+  if ($user->hasPermission('masquerade as any user')) {
+    return TRUE;
+  }
+  // Permissions may be granted on a per-role basis.
+  $target_account_roles = $target_account->getRoles();
+  foreach ($target_account_roles as $role_id) {
+    if ($user->hasPermission('masquerade as ' . $role_id)) {
+      if ($role_id === UserInterface::AUTHENTICATED_ROLE) {
+        // Make sure that this is the only role user has to prevent collision
+        // with 'masquerade as any user' permission.
+        if (count($target_account_roles) == 1) {
+          return TRUE;
+        }
+      }
+      else {
+        return TRUE;
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_entity_extra_field_info().
+ */
+function masquerade_entity_extra_field_info() {
+  $fields['user']['user']['display']['masquerade'] = array(
+    'label' => t('Masquerade'),
+    'description' => t('Masquerade as user link.'),
+    'weight' => 50,
+  );
+  return $fields;
+}
+
+/**
+ * Implements hook_ENTITY_TYPE_view().
+ */
+function masquerade_user_view(array &$build, UserInterface $account, EntityViewDisplayInterface $display, $view_mode) {
+  if ($display->getComponent('masquerade')) {
+    // Use post render to allow caching.
+    $build['masquerade'] = [
+      '#lazy_builder' => [
+        'masquerade_render_cache_link', [
+          $account->id(),
+        ],
+      ],
+      '#create_placeholder' => TRUE,
+    ];
+  }
+}
+
+/**
+ * #post_render_cache callback; replaces placeholder with masquerade link.
+ *
+ * @param int $account_id
+ *   The account ID.
+ *
+ * @return array
+ *   A renderable array containing the comment form.
+ *
+ * @todo Move to service.
+ */
+function masquerade_render_cache_link($account_id) {
+  /** @var \Drupal\user\UserInterface $account */
+  $account = User::load($account_id);
+  $markup = '';
+  if (masquerade_target_user_access($account)) {
+    // @todo Attaching a CSS class to this would be nice.
+    $markup = [
+      '#type' => 'link',
+      '#title' => t('Masquerade as @name', ['@name' => $account->getDisplayName()]),
+      '#url' => $account->toUrl('masquerade'),
+    ];
+    $markup = \Drupal::service('renderer')->render($markup);
+  }
+  $element['#markup'] = $markup;
+  return $element;
+}
+
+/**
+ * Implements hook_entity_type_alter().
+ *
+ * Adds useful link template to user entity.
+ */
+function masquerade_entity_type_alter(array &$entity_types) {
+  /** @var \Drupal\Core\Entity\EntityTypeInterface[] $entity_types */
+  $entity_types['user']->setLinkTemplate('masquerade', '/user/{user}/masquerade');
+}
+
+/**
+ * Implements hook_entity_operation().
+ */
+function masquerade_entity_operation(EntityInterface $entity) {
+  $operations = array();
+  if ($entity->getEntityTypeId() === 'user') {
+    if (masquerade_target_user_access($entity)) {
+      $operations['masquerade'] = array(
+        'title' => t('Masquerade as'),
+        'weight' => 100,
+        'url' => $entity->toUrl('masquerade'),
+      );
+    }
+  }
+  return $operations;
+}
+
+/**
+ * Validates whether the current user can masquerade as a given target user.
+ *
+ * Use this function to generate user-friendly error messages to show in the
+ * user interface.
+ *
+ * @param \Drupal\user\UserInterface $target_account
+ *   The user account object to masquerade as.
+ *
+ * @return string|null
+ *   A string containing a validation error message, or NULL if the current user
+ *   can masquerade as $target_account.
+ */
+function masquerade_switch_user_validate(UserInterface $target_account) {
+  $user = \Drupal::currentUser();
+
+  if (\Drupal::service('masquerade')->isMasquerading()) {
+    return t('You are masquerading already. Please <a href="@unmasquerade-url">switch back</a> to your account to masquerade as another user.', array(
+      '@unmasquerade-url' => Url::fromRoute('masquerade.unmasquerade')->toString(),
+    ));
+  }
+  if ($target_account->id() == $user->id()) {
+    return t('You cannot masquerade as yourself. Please choose a different user to masquerade as.');
+  }
+  if (\Drupal::config('system.maintenance')->get('enabled') && !$target_account->hasPermission('access site in maintenance mode')) {
+    return t('@user is not permitted to %permission. <a href=":maintenance-url">Disable maintenance mode</a> to masquerade as @user.', array(
+      '%user' => $target_account->getDisplayName(),
+      '%permission' => t('Use the site in maintenance mode'),
+      ':maintenance-url' => Url::fromRoute('system.site_maintenance_mode')->toString(),
+    ));
+  }
+  if (!masquerade_target_user_access($target_account)) {
+    return t('You are not allowed to masquerade as %name.', array(
+      '%name' => $target_account->getDisplayName(),
+    ));
+  }
+}

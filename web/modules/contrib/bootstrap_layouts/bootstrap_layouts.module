@@ -1,0 +1,166 @@
+<?php
+
+/**
+ * @file
+ * Contains bootstrap_layouts.module.
+ */
+
+use Drupal\bootstrap_layouts\BootstrapLayout;
+use Drupal\Component\Utility\Html;
+use Drupal\Component\Utility\NestedArray;
+use Drupal\Core\Render\Element;
+use Drupal\Core\Template\Attribute;
+
+/**
+ * Implements hook_theme_registry_alter().
+ */
+function bootstrap_layouts_theme_registry_alter(&$theme_registry) {
+  // Immediately return if the layout manager cannot be loaded.
+  // This can happen during the update process.
+  if (!\Drupal::hasService('plugin.manager.core.layout')) {
+    return;
+  }
+
+  // Find all Bootstrap Layouts.
+  $layouts = \Drupal::service('plugin.manager.core.layout')->getDefinitions();
+  $layout_theme_hooks = [];
+  /** @var \Drupal\Core\Layout\LayoutDefinition $info */
+  foreach ($layouts as $info) {
+    if ($info->getClass() === 'Drupal\bootstrap_layouts\Plugin\Layout\BootstrapLayoutsBase') {
+      $layout_theme_hooks[] = $info->getThemeHook();
+    }
+  }
+
+  // Add a special internal preprocess function.
+  foreach ($theme_registry as $theme_hook => $info) {
+    if (in_array($theme_hook, $layout_theme_hooks) || (!empty($info['base hook']) && in_array($info['base hook'], $layout_theme_hooks))) {
+      $theme_registry[$theme_hook]['preprocess functions'][] = '_bootstrap_layouts_preprocess_layout';
+    }
+  }
+}
+
+/**
+ * Parses an attribute string saved in the UI.
+ *
+ * @param string $string
+ *   The attribute string to parse.
+ * @param array $tokens
+ *   An associative array of token data to use.
+ *
+ * @return array
+ *   A parsed attributes array.
+ */
+function _bootstrap_layouts_parse_attributes($string = NULL, array $tokens = []) {
+  static $token;
+  if (!isset($token)) {
+    /** @var \Drupal\Core\Utility\Token $token */
+    $token = \Drupal::service('token');
+  }
+  $attributes = [];
+  if (!empty($string)) {
+    $parts = explode(',', $string);
+    foreach ($parts as $attribute) {
+      if (strpos($attribute, '|') !== FALSE) {
+        list($key, $value) = explode('|', $token->replace($attribute, $tokens, ['clear' => TRUE]));
+        $attributes[$key] = $value;
+      }
+    }
+  }
+  return $attributes;
+}
+
+/**
+ * Internal preprocess callback.
+ *
+ * This is used to determine standardize variables to use in Bootstrap Layouts
+ * templates based on whatever implementation is used (i.e. Display Suite or
+ * Panels, etc.).
+ *
+ * @param array $variables
+ *   Variables array, passed by reference.
+ */
+function _bootstrap_layouts_preprocess_layout(array &$variables) {
+  /** @var \Drupal\Core\Layout\LayoutDefinition $layout_definition */
+  $layout_definition = $variables['layout'];
+
+  // Utilize the BootstrapLayout utility class to normalize DX readability here.
+  $layout = new BootstrapLayout($layout_definition->id(), [], $variables['settings']);
+
+  // Determine the entity, entity type and bundle.
+  /** @var \Drupal\Core\Entity\EntityInterface $entity */
+  $entity = isset($variables['content']['#entity']) ? $variables['content']['#entity'] : FALSE;
+  $entity_type = isset($variables['content']['#entity_type']) ? $variables['content']['#entity_type'] : FALSE;
+  $bundle = isset($variables['content']['#bundle']) ? $variables['content']['#bundle'] : FALSE;
+  $view_mode = isset($variables['content']['#view_mode']) ? $variables['content']['#view_mode'] : FALSE;
+
+  $tokens = [];
+  if ($entity_type && $entity) {
+    $tokens[$entity_type] = $entity;
+
+    // Copy entity to top level to improve theme experience.
+    $variables[$entity_type] = $entity;
+  }
+
+  // Add a layout wrapper and its attributes.
+  $variables['wrapper'] = $layout->getSetting('layout.wrapper', 'div');
+  $layout_attributes = isset($variables['attributes']) ? $variables['attributes'] : [];
+  $layout_attributes = NestedArray::mergeDeep(_bootstrap_layouts_parse_attributes($layout->getSetting('layout.attributes'), $tokens), $layout_attributes);
+
+  $attributes = new Attribute($layout_attributes);
+  $attributes->addClass(array_keys($layout->getSetting('layout.classes', [])));
+  if ($layout->getSetting('layout.add_layout_class')) {
+    $attributes->addClass(Html::cleanCssIdentifier($layout->getId()));
+  }
+
+  // Unfortunately since Display Suite doesn't abstract this bit of code, it
+  // must be duplicated in this module to support it from the UI.
+  if ($entity_type && isset($variables['content']['#ds_configuration'])) {
+    // Add theming-classes to template.
+    $entity_classes = !empty($variables['content']['#ds_configuration']['layout']['entity_classes']) ? $variables['content']['#ds_configuration']['layout']['entity_classes'] : 'old_view_mode';
+    if ($entity_classes !== 'no_classes') {
+      if ($entity_classes === 'all_classes') {
+        $entity_type_class = Html::cleanCssIdentifier($entity_type);
+        $entity_classes = [$entity_type_class];
+        if ($bundle) {
+          $entity_classes[] = "$entity_type_class--type-" . Html::cleanCssIdentifier($bundle);
+        }
+        if ($view_mode) {
+          $entity_classes[] = "$entity_type_class--view-mode-" . Html::cleanCssIdentifier($view_mode);
+        }
+        $attributes->addClass($entity_classes);
+      }
+      // Add (old style, non cleaned) view-mode-{name} to classes.
+      elseif ($entity_classes === 'old_view_mode' && $view_mode && !$attributes->hasClass("view-mode-$view_mode")) {
+        $attributes->addClass("view-mode-$view_mode");
+      }
+    }
+
+    // Let other modules know we have rendered.
+    $variables['rendered_by_ds'] = TRUE;
+
+    // Let other modules alter the ds array before rendering.
+    $context = [
+      'entity' => $entity,
+      'entity_type' => $entity_type,
+      'bundle' => $bundle,
+      'view_mode' => $view_mode,
+    ];
+    \Drupal::moduleHandler()->alter('ds_pre_render', $variables['content'], $context, $variables);
+  }
+
+  // Set the attributes variable.
+  $variables['attributes'] = $attributes;
+
+  // Create region variables based on the layout settings.
+  foreach ($layout->getSetting('regions', []) as $region => $region_settings) {
+    $region_attributes = new Attribute(_bootstrap_layouts_parse_attributes($region_settings['attributes'], $tokens));
+    $region_attributes->addClass(array_keys($region_settings['classes']));
+    if (!empty($region_settings['add_region_classes'])) {
+      $region_attributes->addClass(['bs-region', Html::cleanCssIdentifier("bs-region--$region")]);
+    }
+    unset($region_settings['classes']);
+    $region_settings['attributes'] = $region_attributes;
+    $region_settings['content'] = isset($variables['content'][$region]) && !Element::isEmpty($variables['content'][$region]) ? $variables['content'][$region] : NULL;
+    $variables[$region] = $region_settings;
+  }
+}

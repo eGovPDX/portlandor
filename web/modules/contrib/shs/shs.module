@@ -1,0 +1,127 @@
+<?php
+
+/**
+ * @file
+ * Main functions and methods for the "Simple hierarchical select" module.
+ */
+use Drupal\Core\Database\Database;
+
+/**
+ * List all javascript classes used to create models and views in the widget.
+ *
+ * @param string $field_name
+ *   Name of field to get the definitions for.
+ * @param array $context
+ *   Additional information about the current context (i.e. additional field
+ *   settings).
+ *
+ * @see hook_shs_class_definitions_alter()
+ *
+ * @return array
+ *   List of javascript classes keyed by type ("models", "views").
+ */
+function shs_get_class_definitions($field_name, array $context = []) {
+  $definitions = [
+    'models' => [
+      'app' => 'Drupal.shs.AppModel',
+      'container' => 'Drupal.shs.ContainerModel',
+      'widget' => 'Drupal.shs.WidgetModel',
+      'widgetItem' => 'Drupal.shs.WidgetItemModel',
+      'widgetItemOption' => 'Drupal.shs.WidgetItemOptionModel',
+    ],
+    'views' => [
+      'app' => 'Drupal.shs.AppView',
+      'addNew' => 'Drupal.shs.AddNewView',
+      'container' => 'Drupal.shs.ContainerView',
+      'widget' => 'Drupal.shs.WidgetView',
+      'widgetItem' => 'Drupal.shs.WidgetItemView',
+    ],
+  ];
+
+  $hooks = [
+    'shs_class_definitions',
+    "shs_{$field_name}_class_definitions",
+  ];
+
+  // Allow other modules to override the list of class definitions.
+  \Drupal::moduleHandler()->alter($hooks, $definitions, $context);
+
+  return $definitions;
+}
+
+/**
+ * Load parents for default values.
+ *
+ * @param array $default_values
+ *   List of default values of the widget.
+ * @param array $settings
+ *   Widget settings.
+ *
+ * @return array
+ *   List of parents for each default value.
+ */
+function shs_term_get_parents($default_values, $settings, $target_type) {
+  $parents = [];
+  if (!is_array($default_values)) {
+    $default_values = [$default_values];
+  }
+  foreach ($default_values as $delta => $value) {
+    if ($settings['anyValue'] === $value) {
+      $parents[$delta] = [
+        [
+          'parent' => 0,
+          'defaultValue' => $settings['anyValue'],
+        ]
+      ];
+      continue;
+    }
+    try {
+      $storage = Drupal::entityTypeManager()->getStorage($target_type);
+      $parent_terms = array_reverse(array_keys($storage->loadAllParents($value)));
+      $keys = array_merge([0], $parent_terms);
+      $values = array_merge($parent_terms, [$value]);
+      $parents[$delta] = [];
+      foreach ($keys as $index => $key) {
+        $parents[$delta][] = [
+          'parent' => $key,
+          'defaultValue' => $values[$index] ?: $settings['anyValue'],
+        ];
+      }
+    }
+    catch (Exception $ex) {
+      $parents[$delta] = [
+        [
+          'parent' => 0,
+          'defaultValue' => $settings['anyValue'],
+        ]
+      ];
+    }
+  }
+  return $parents;
+}
+
+/**
+ * Determine whether a term has children.
+ *
+ * @param int $tid
+ *   Term ID to check existence of children for.
+ *
+ * @return boolean
+ */
+function shs_term_has_children($tid) {
+  $query = Database::getConnection()->select('taxonomy_term_hierarchy', 'h');
+  $query->condition('h.parent', $tid);
+  $query->addTag('term_access');
+  return ($query->countQuery()->execute()->fetchField() > 0);
+}
+
+/**
+ * Implements hook_views_plugins_filter_alter().
+ */
+function shs_views_plugins_filter_alter(array &$plugins) {
+  foreach (['taxonomy_index_tid', 'taxonomy_index_tid_depth'] as $plugin) {
+    if (isset($plugins[$plugin])) {
+      $plugins[$plugin]['class'] = $plugins['shs_' . $plugin]['class'];
+    }
+  }
+}

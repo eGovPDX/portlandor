@@ -1,0 +1,119 @@
+<?php
+
+/**
+ * @file
+ * Install, update and uninstall functions for the group node module.
+ */
+
+use Drupal\Core\Config\ExtensionInstallStorage;
+use Drupal\Core\Config\InstallStorage;
+
+/**
+ * Update the group nodes view to use the argument provided title.
+ */
+function gnode_update_8001() {
+  if (\Drupal::moduleHandler()->moduleExists('views')) {
+    $view = \Drupal::configFactory()->getEditable('views.view.group_nodes');
+    if (!$view->isNew()) {
+      $view->set('display.default.display_options.title', 'Nodes');
+      $view->set('display.default.display_options.arguments.gid.title_enable', TRUE);
+      $view->set('display.default.display_options.arguments.gid.title', '{{ arguments.gid|placeholder }} nodes');
+      $view->save(TRUE);
+    }
+  }
+}
+
+/**
+ * Update the group nodes view to use the access overview permission.
+ */
+function gnode_update_8002() {
+  if (\Drupal::moduleHandler()->moduleExists('views')) {
+    $view = \Drupal::configFactory()->getEditable('views.view.group_nodes');
+    if (!$view->isNew()) {
+      $view->set('display.default.display_options.access.type', 'group_permission');
+      $view->set('display.default.display_options.access.options.group_permission', 'access group_node overview');
+      $view->save(TRUE);
+    }
+  }
+}
+
+/**
+ * Make sure the views.view.group_nodes exists and fix broken copies.
+ */
+function gnode_update_8003() {
+  $message = NULL;
+
+  $name = 'views.view.group_nodes';
+  $view = \Drupal::configFactory()->getEditable($name);
+
+  // Only update or insert the view if the Views module is enabled.
+  if (\Drupal::moduleHandler()->moduleExists('views')) {
+    $save_from_yaml = FALSE;
+
+    // If the view does not exist yet, we create it.
+    if ($view->isNew()) {
+      $save_from_yaml = TRUE;
+      $message = 'The view did not exist yet and has therefore been created.';
+    }
+    // We did not properly add the view in previous update functions, but did
+    // add keys to it, assuming the view existed. We should be able to find the
+    // broken views by checking for the absence of an ID.
+    elseif (!$view->get('id')) {
+      $save_from_yaml = TRUE;
+      $message = 'The view was broken by previous update hooks and has now been fixed.';
+    }
+
+    // If we flagged the view to be saved from the YAML definition, do so.
+    if ($save_from_yaml) {
+      // Get the storage for optional extension configuration.
+      $optional_storage = new ExtensionInstallStorage(
+        \Drupal::service('config.storage'),
+        InstallStorage::CONFIG_OPTIONAL_DIRECTORY
+      );
+
+      // Read the data from the YAML file and save it to the view.
+      $view->setData($optional_storage->read($name));
+      $view->save(TRUE);
+    }
+    else {
+      $message = 'The view was present and working as intended. Did nothing.';
+    }
+  }
+  // Otherwise delete the view if it exists in the storage.
+  elseif (!$view->isNew()) {
+    $view->delete();
+    $message = 'The view had been added even though the Views module is not installed. Removed the view.';
+  }
+
+  return $message;
+}
+
+/**
+ * Use the new generic group permission names.
+ */
+function gnode_update_8004() {
+  $config_factory = \Drupal::configFactory();
+
+  foreach ($config_factory->listAll('group.role.') as $group_role_config_name) {
+    $group_role = $config_factory->getEditable($group_role_config_name);
+
+    // Replace 'OP TYPE node' with 'OP group_node:TYPE entity'.
+    $search = '%^((?:\S+)(?: own| any)?) (\S+) node$%';
+    $replace = '$1 group_node:$2 entity';
+
+    $permissions = $group_role->get('permissions');
+    foreach ($permissions as &$permission) {
+      $permission = preg_replace($search, $replace, $permission);
+    }
+
+    $group_role->set('permissions', $permissions);
+    $group_role->save();
+  }
+}
+
+/**
+ * Flag node access for rebuild to reflect recent changes to node access realms.
+ */
+function gnode_update_8005() {
+  node_access_needs_rebuild(TRUE);
+}

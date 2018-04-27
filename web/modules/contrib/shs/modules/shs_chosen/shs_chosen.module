@@ -1,0 +1,67 @@
+<?php
+
+/**
+ * @file
+ * Main functions and methods for the "Simple hierarchical select: Chosen" module.
+ */
+
+/**
+ * Implements hook_shs_class_definitions_alter().
+ */
+function shs_chosen_shs_class_definitions_alter(&$definitions, $context) {
+  if (!isset($context['settings']['chosen_override']) || empty($context['settings']['chosen_settings'])) {
+    return;
+  }
+  // Use custom classes for widget.
+  $definitions['views']['app'] = 'Drupal.shs_chosen.ChosenAppView';
+  $definitions['views']['widget'] = 'Drupal.shs_chosen.ChosenWidgetView';
+}
+
+/**
+ * Alter Javascript settings of shs widgets in entity forms and views.
+ *
+ * @param array $settings_shs
+ *   Javascript settings for shs widgets.
+ * @param string $bundle
+ *   Bundle name of vocabulary the settings are used for.
+ * @param string $field_name
+ *   Name of field the provided settings are used for.
+ */
+function shs_chosen_shs_js_settings_alter(&$settings_shs, $bundle, $field_name) {
+  if (!isset($settings_shs['settings']['chosen_override']) || empty($settings_shs['settings']['chosen_settings'])) {
+    return;
+  }
+
+  $chosen_conf = Drupal::config('chosen.settings')->get();
+  if ($settings_shs['settings']['chosen_override']) {
+    $chosen_conf = $settings_shs['settings']['chosen_settings'] + $chosen_conf;
+  }
+
+  $settings_shs['display']['chosen'] = [
+    'selector' => 'select.shs-select',
+    'minimum_single' => 0,
+    'minimum_multiple' => 0,
+    'minimum_width' => (int) $chosen_conf['minimum_width'],
+    'options' => [
+      'disable_search' => (bool) $chosen_conf['disable_search'],
+      'disable_search_threshold' => (int) $chosen_conf['disable_search_threshold'],
+      'search_contains' => (bool) $chosen_conf['search_contains'],
+      'placeholder_text_multiple' => $chosen_conf['placeholder_text_multiple'],
+      'placeholder_text_single' => $chosen_conf['placeholder_text_single'],
+      'no_results_text' => $chosen_conf['no_results_text'],
+      'inherit_select_classes' => TRUE,
+    ],
+  ];
+}
+
+/**
+ * Implements hook_views_plugins_filter_alter().
+ */
+function shs_chosen_views_plugins_filter_alter(array &$plugins) {
+  foreach (['taxonomy_index_tid', 'taxonomy_index_tid_depth'] as $plugin) {
+    if (isset($plugins[$plugin])) {
+      $plugins['shs_' . $plugin]['class'] = $plugins['shs_chosen_' . $plugin]['class'];;
+      $plugins[$plugin]['class'] = $plugins['shs_' . $plugin]['class'];
+    }
+  }
+}

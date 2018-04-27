@@ -1,0 +1,83 @@
+<?php
+
+/**
+ * @file
+ * Install, uninstall and update hooks for the Bootstrap Layouts module.
+ */
+
+/**
+ * Ensures the proper module and services exist.
+ *
+ * @return bool
+ *   TRUE if the services exist, FALSE otherwise.
+ */
+function _bootstrap_layouts_ensure_dependency() {
+  $module_handler = \Drupal::moduleHandler();
+
+  /** @var \Drupal\Core\Extension\ModuleInstallerInterface $module_installer */
+  $module_installer = \Drupal::service('module_installer');
+
+  // Uninstall "layout_plugin".
+  if ($module_handler->moduleExists('layout_plugin')) {
+    $module_installer->uninstall(['layout_plugin'], FALSE);
+  }
+
+  // Install "layout_discovery".
+  if (!$module_handler->moduleExists('layout_discovery')) {
+    $module_installer->install(['layout_discovery'], FALSE);
+  }
+
+  // Rebuild the container if the layout managers don't exist.
+  if (!\Drupal::hasService('plugin.manager.core.layout') || !\Drupal::hasService('plugin.manager.bootstrap_layouts')) {
+    drupal_flush_all_caches();
+  }
+
+  return \Drupal::hasService('plugin.manager.core.layout') && \Drupal::hasService('plugin.manager.bootstrap_layouts');
+}
+
+/**
+ * Runs updates for registered update plugins.
+ *
+ * @param int $schema
+ *   The schema version to update.
+ *
+ * @see \Drupal\bootstrap_layouts\BootstrapLayoutsManager::update()
+ *
+ * @throws Exception
+ *   When the "plugin.manager.bootstrap_layouts" service could not be loaded.
+ */
+function _bootstrap_layouts_update($schema) {
+  // Ensure dependencies.
+  _bootstrap_layouts_ensure_dependency();
+
+  /** @var \Drupal\bootstrap_layouts\BootstrapLayoutsManager $bootstrap_layouts_manager */
+  if ($manager = \Drupal::service('plugin.manager.bootstrap_layouts')) {
+    $manager->update($schema);
+  }
+  else {
+    throw new Exception('Unable to load the "plugin.manager.bootstrap_layouts" service.');
+  }
+}
+
+/**
+ * Upgrade existing Bootstrap Layout instances.
+ */
+function bootstrap_layouts_update_8401() {
+  /** @see \Drupal\bootstrap_layouts\Plugin\BootstrapLayouts\Updates\BootstrapLayoutsUpdate8401 */
+  _bootstrap_layouts_update(8401);
+}
+
+/**
+ * Fix "1 Column (stacked)" regions.
+ */
+function bootstrap_layouts_update_8402() {
+  /** @see \Drupal\bootstrap_layouts\Plugin\BootstrapLayouts\Updates\BootstrapLayoutsUpdate8402 */
+  _bootstrap_layouts_update(8402);
+}
+
+/**
+ * Uninstall "layout_plugin" is install "layout_discovery".
+ */
+function bootstrap_layouts_update_8501() {
+  _bootstrap_layouts_ensure_dependency();
+}
