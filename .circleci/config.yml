@@ -152,12 +152,16 @@ behat_tests: &behat_tests
             # Import config files
             terminus drush portlandor.dev -- cim -y   
             # After success deployment to DEV, remove the multidev site if this is a merge of a PR
-            # Read the last Git log. Get the branch name at the end of the log.
+            # Read the last Git log in the master branch. Get the branch name at the end of the log.
             # Example: Merge pull request #35 from eGovPDX/powr-152
-            if [[ $(git log --pretty=format:%s -1) =~ (^Merge pull request #[0-9]* from eGovPDX\/)([^,]*) ]]; then 
+            if [[ $(git log origin master --pretty=format:%s -1) =~ (^Merge pull request #[0-9]* from eGovPDX\/)([^,]*) ]]; then 
               echo "Found a Pull Request Merge for branch: '${BASH_REMATCH[2]}'";
-              # Delete both the multidev site and branch
-              terminus multidev:delete --delete-branch portlandor.${BASH_REMATCH[2]} -y
+              # Check if a multidev environment with the branch name exists or not
+              terminus multidev:list --format=list --field=Name portlandor > ./env_list.txt
+              if grep -Fxq "${BASH_REMATCH[2]}" ./env_list.txt; then
+                # Delete both the multidev site and branch
+                terminus multidev:delete --delete-branch portlandor.${BASH_REMATCH[2]} -y
+              fi
             fi
           else
             # If the multidev branch site exists, delete it and recreate
@@ -207,10 +211,7 @@ behat_tests: &behat_tests
             # Clear cache
             # terminus drush portlandor.$CIRCLE_BRANCH -- cr
             # Import config files
-            terminus drush portlandor.$CIRCLE_BRANCH -- cim -y
-            if [[ $(git log --pretty=format:%s -1) =~ (^Kevin test merge pull request #[0-9]* from eGovPDX\/)([^,]*) ]]; then 
-              echo "Test - Found a Pull Request Merge for branch: '${BASH_REMATCH[2]}'";
-            fi        
+            terminus drush portlandor.$CIRCLE_BRANCH -- cim -y      
           fi
     - save_cache: *save_cache
     - store_test_results:
