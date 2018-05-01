@@ -151,19 +151,14 @@ behat_tests: &behat_tests
             terminus drush portlandor.dev -- cr
             # Import config files
             terminus drush portlandor.dev -- cim -y   
-            # # Deploy code from local env to the new multidev site
-            # terminus env:deploy portland-alpha.dev --sync-content --note="Manual deploy to powr-118"
-            # # Cloning files and DB from dev environment to powr-118 environment
-            # # terminus env:clone-content portlandor.dev "$CIRCLE_BRANCH"
-            # # Wake up the multidev site
-            # terminus env:wake portland-alpha.dev
-            # # don't check the repo host key
-            # # export GIT_SSH_COMMAND="ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no"
-            # # Don't check for host key for Pantheon sites
-            # echo -e "host *.drush.in\n    StrictHostKeyChecking no" >> ~/.ssh/config
-            # # Import config files
-            # terminus drush portland-alpha.dev -- sql-sanitize -y
-            # terminus drush portland-alpha.dev -- cim -y 
+            # After success deployment to DEV, remove the multidev site if this is a merge of a PR
+            # Read the last Git log. Get the branch name at the end of the log.
+            # Example: Merge pull request #35 from eGovPDX/powr-152
+            if [[ $(git log --pretty=format:%s -1) =~ (^Merge pull request #[0-9]* from eGovPDX\/)([^,]*) ]]; then 
+              echo "Found a Pull Request Merge for branch: '${BASH_REMATCH[2]}'";
+              # Delete both the multidev site and branch
+              terminus multidev:delete --delete-branch portlandor.${BASH_REMATCH[2]} -y
+            fi
           else
             # If the multidev branch site exists, delete it and recreate
             terminus multidev:list --format=list --field=Name portlandor > ./env_list.txt
