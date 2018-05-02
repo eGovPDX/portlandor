@@ -154,7 +154,9 @@ behat_tests: &behat_tests
             # After success deployment to DEV, remove the multidev site if this is a merge of a PR
             # Read the last Git log in the master branch. Get the branch name at the end of the log.
             # Example: Merge pull request #35 from eGovPDX/powr-152
-            if [[ $(git log origin master --pretty=format:%s -1) =~ (^Merge pull request #[0-9]* from eGovPDX\/)([^,]*) ]]; then 
+            cd /var/www/html
+            # Must the last commit message from Github. The last one in local repo is "CircleCI Deployment" 
+            if [[ $(git log origin/master --pretty=format:%s -1) =~ (^Merge pull request #[0-9]* from eGovPDX\/)([^,]*) ]]; then 
               echo "Found a Pull Request Merge for branch: '${BASH_REMATCH[2]}'";
               # Check if a multidev environment with the branch name exists or not
               terminus multidev:list --format=list --field=Name portlandor > ./env_list.txt
