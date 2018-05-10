@@ -99,8 +99,8 @@ class RoboFile extends \Robo\Tasks
         $force = true;
         $tasks = [];
         $tasks[] = $this->taskExec('rm -f dump.sql.gz');
-        $tasks[] = $this->taskExec('/var/www/html/vendor/bin/terminus backup:create portlandor.test --element=db');
-        $tasks[] = $this->taskExec('/var/www/html/vendor/bin/terminus backup:get --to dump.sql.gz portlandor.test --element=db');
+        $tasks[] = $this->taskExec('/var/www/html/vendor/bin/terminus backup:create portlandor.dev --element=db');
+        $tasks[] = $this->taskExec('/var/www/html/vendor/bin/terminus backup:get --to dump.sql.gz portlandor.dev --element=db');
         $tasks[] = $this->taskExec('gunzip -f dump.sql.gz');
         // $tasks[] = $this->taskExec('mysql -u root -h 127.0.0.1 -e "create database drupal8"');
         $tasks[] = $this->taskFilesystemStack()
