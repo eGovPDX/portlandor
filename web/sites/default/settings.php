@@ -5,8 +5,6 @@
  */
 $settings['container_yamls'][] = __DIR__ . '/services.yml';
 
-$settings['hash_salt'] = "test";
-
 /**
  * Include the Pantheon-specific settings file.
  *
