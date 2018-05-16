@@ -46,11 +46,11 @@ behat_tests: &behat_tests
     - run:
         name: Terminus Login
         command: |
-          composer config --global --auth github-oauth.github.com "$COMPOSER_TOKEN"
+          # composer config --global --auth github-oauth.github.com "$COMPOSER_TOKEN"
           # The newer version of these two packages conflict with Terminus. Downgrade here. Install Terminus
-          composer require nikic/php-parser:3.1.5 && composer require psy/psysh:^0.8 && composer require "pantheon-systems/terminus:^1.7" 
+          # composer require nikic/php-parser:3.1.5 && composer require psy/psysh:^0.8 && composer require "pantheon-systems/terminus:^1.7" 
           # Add vendor/bin to path 
-          export PATH=/var/www/html/vendor/bin:$PATH
+          # export PATH=/var/www/html/vendor/bin:$PATH
           #terminus auth:login --machine-token="$eGov_Terminus"
           # Verify terminus can be invoked
           #terminus --version
@@ -58,7 +58,7 @@ behat_tests: &behat_tests
           #mkdir -p ~/.terminus/plugins
           #composer create-project -n -d ~/.terminus/plugins pantheon-systems/terminus-build-tools-plugin:^1
           #composer create-project -n -d ~/.terminus/plugins pantheon-systems/terminus-secrets-plugin:^1
-          rm -rf /var/www/html/vendor/behat/* && composer require drupal/drupal-extension:^3.4 guzzlehttp/guzzle:^6.0@dev
+          # rm -rf /var/www/html/vendor/behat/* && composer require drupal/drupal-extension:^3.4 guzzlehttp/guzzle:^6.0@dev
     - run:
         name: Run Behat tests
         command: |
@@ -90,7 +90,8 @@ behat_tests: &behat_tests
         name: Deploy to Pantheon
         when: on_success
         command: |
-          export PATH=/var/www/html/vendor/bin:$PATH
+          export PATH=/tmp/vendor/bin:/var/www/html/vendor/bin:$PATH
+          cd /tmp && curl -O https://raw.githubusercontent.com/pantheon-systems/terminus-installer/master/builds/installer.phar && php installer.phar install
           # Make sure to log in
           # Set the user email that will commit code into Pantheon repo 
           terminus auth:login --machine-token="$eGov_Terminus" --email="$eGov_Email"
