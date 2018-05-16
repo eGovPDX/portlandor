@@ -36,12 +36,15 @@ behat_tests: &behat_tests
     - *copy_robo
     - restore_cache: *restore_cache
     - run:
-        name: Deploy to Pantheon
-        when: on_success
+        name: Install dependencies
         command: |
           # Remove any remaining dependencies. Install all packages form package.json 
           composer config --global --auth github-oauth.github.com "$COMPOSER_TOKEN"
           rm -rf vendor web/core web/vendor web/modules/contrib web/themes/contrib && composer install --no-interaction
+    - run:
+        name: Deploy to Pantheon
+        when: on_success
+        command: |
           export PATH=/tmp/vendor/bin:/var/www/html/vendor/bin:$PATH
           cd /tmp && curl -O https://raw.githubusercontent.com/pantheon-systems/terminus-installer/master/builds/installer.phar && php installer.phar install
           cd /var/www/html
