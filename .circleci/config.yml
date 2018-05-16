@@ -12,16 +12,6 @@ copy_robo: &copy_robo
 defaults: &defaults
   docker:
     - image: juampynr/drupal8ci:latest
-
-    - image: selenium/standalone-chrome-debug:3.7.1-beryllium
-
-    - image: mariadb:10.3
-      environment:
-        MYSQL_ALLOW_EMPTY_PASSWORD: 1
-        MYSQL_DATABASE: drupal8
-        MYSQL_USER: drupal8
-        MYSQL_PASSWORD: drupal8
-
   working_directory: /var/www/html
 
 ## Defines the cache restoring mechanism.
@@ -50,48 +40,41 @@ behat_tests: &behat_tests
     - run:
         name: Composer Install
         command: |
-          # Remove any remaining dependencies 
-          rm -rf vendor web/core web/vendor web/modules/contrib web/themes/contrib
-          # Install all packages form package.json 
-          composer install --no-interaction
+          # Remove any remaining dependencies. Install all packages form package.json 
+          composer config --global --auth github-oauth.github.com "$COMPOSER_TOKEN"
+          rm -rf vendor web/core web/vendor web/modules/contrib web/themes/contrib && composer install --no-interaction
     - run:
         name: Terminus Login
         command: |
           composer config --global --auth github-oauth.github.com "$COMPOSER_TOKEN"
-          # The newer version of these two packages conflict with Terminus. Downgrade here. 
-          composer require nikic/php-parser:3.1.5
-          composer require psy/psysh:^0.8
-          # Install Terminus 
-          composer require "pantheon-systems/terminus:^1.7"
+          # The newer version of these two packages conflict with Terminus. Downgrade here. Install Terminus
+          composer require nikic/php-parser:3.1.5 && composer require psy/psysh:^0.8 && composer require "pantheon-systems/terminus:^1.7" 
           # Add vendor/bin to path 
           export PATH=/var/www/html/vendor/bin:$PATH
           #terminus auth:login --machine-token="$eGov_Terminus"
           # Verify terminus can be invoked
-          terminus --version
+          #terminus --version
           # Create the Terminus plugins folder if it's not there 
-          mkdir -p ~/.terminus/plugins
-          composer create-project -n -d ~/.terminus/plugins pantheon-systems/terminus-build-tools-plugin:^1
-          composer create-project -n -d ~/.terminus/plugins pantheon-systems/terminus-secrets-plugin:^1
-          rm -rf /var/www/html/vendor/behat/*
-          composer require drupal/drupal-extension:^3.4 guzzlehttp/guzzle:^6.0@dev
+          #mkdir -p ~/.terminus/plugins
+          #composer create-project -n -d ~/.terminus/plugins pantheon-systems/terminus-build-tools-plugin:^1
+          #composer create-project -n -d ~/.terminus/plugins pantheon-systems/terminus-secrets-plugin:^1
+          rm -rf /var/www/html/vendor/behat/* && composer require drupal/drupal-extension:^3.4 guzzlehttp/guzzle:^6.0@dev
     - run:
         name: Run Behat tests
         command: |
-          composer config --global --auth github-oauth.github.com "$COMPOSER_TOKEN"
-          composer require behat/behat:^3.4 behat/mink:^1.7 behat/mink-extension:v2.2 behat/mink-selenium2-driver:^1.3 bex/behat-screenshot:^1.2 jcalderonzumba/mink-phantomjs-driver:~0.3.1
-          composer remove behat/mink-browserkit-driver
+          # composer config --global --auth github-oauth.github.com "$COMPOSER_TOKEN"
+          # composer require behat/behat:^3.4 behat/mink:^1.7 behat/mink-extension:v2.2 behat/mink-selenium2-driver:^1.3 bex/behat-screenshot:^1.2 jcalderonzumba/mink-phantomjs-driver:~0.3.1
+          # composer remove behat/mink-browserkit-driver
           pwd
-          mkdir -p web/sites/default/files
-          chmod 775 web/sites/default/files
-          chown -R :www-data web/sites/default/files
-          mkdir -p /root/tmp
-          chmod 777 /root/tmp
-          ls -l /root
+          # mkdir -p web/sites/default/files
+          # chmod 775 web/sites/default/files
+          # chown -R :www-data web/sites/default/files
+          # mkdir -p /root/tmp && chmod 777 /root/tmp && ls -l /root
           # import DB
-          rm -f dump.sql.gz
-          export PATH=/var/www/html/vendor/bin:$PATH
-          terminus auth:login --machine-token="$eGov_Terminus" --email="$eGov_Email"
-          robo job:run-behat-tests
+          # rm -f dump.sql.gz
+          # export PATH=/var/www/html/vendor/bin:$PATH
+          # terminus auth:login --machine-token="$eGov_Terminus" --email="$eGov_Email"
+          # robo job:run-behat-tests
           # terminus backup:create portlandor.dev --element=db
           # terminus backup:get --to dump.sql.gz portlandor.dev --element=db
           # gunzip -f dump.sql.gz
@@ -108,26 +91,21 @@ behat_tests: &behat_tests
         when: on_success
         command: |
           export PATH=/var/www/html/vendor/bin:$PATH
-          terminus --version
           # Make sure to log in
-          terminus auth:login --machine-token="$eGov_Terminus" --email="$eGov_Email"
           # Set the user email that will commit code into Pantheon repo 
-          # git config --global user.email "kevin.wang@portlandoregon.gov"
+          terminus auth:login --machine-token="$eGov_Terminus" --email="$eGov_Email"
           if [[ $CIRCLE_BRANCH = "master" ]]; then
-            echo "Deploy to Pantheon dev site"
-            export PATH=/var/www/html/vendor/bin:$PATH
-            # don't check the repo host key
+            echo "Deploy to Pantheon DEV site" && export PATH=/var/www/html/vendor/bin:$PATH
+            # Don't check the repo host key
             export GIT_SSH_COMMAND="ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no"
             # Don't check for host key for Pantheon sites
             echo -e "host *.drush.in\n    StrictHostKeyChecking no" >> ~/.ssh/config
-            # Set the connect to GIT
+            # Set the connection type to GIT
             terminus connection:set portlandor.dev git
             git remote add pantheon ssh://codeserver.dev.5c6715db-abac-4633-ada8-1c9efe354629@codeserver.dev.5c6715db-abac-4633-ada8-1c9efe354629.drush.in:2222/~/repository.git
             git config --global user.email "$eGov_Email"
             # Without these lines, push will fail with "please remote git submodules" error
-            rm -rf ./vendor/drupal/coder/.git
-            rm -rf ./web/modules/contrib/facets/.git
-            rm -rf ./web/modules/contrib/search_api_solr/.git
+            rm -rf ./vendor/drupal/coder/.git && rm -rf ./web/modules/contrib/facets/.git && rm -rf ./web/modules/contrib/search_api_solr/.git
             git add -f /var/www/html
             # Pantheon site will use the wrong DB if the local is kept
             git rm --cache  web/sites/default/settings.local.php --ignore-unmatch
@@ -142,8 +120,8 @@ behat_tests: &behat_tests
             # Wake up the multidev site
             terminus env:wake portlandor.dev
             # Check site status
-            terminus drush portlandor.dev -- status
-            sleep 30s
+            # terminus drush portlandor.dev -- status
+            sleep 20s
             # TODO: pull DB from Live
             # Sanitize DB
             # terminus drush portlandor.dev -- sql-sanitize -y
@@ -185,9 +163,7 @@ behat_tests: &behat_tests
             git remote add pantheon ssh://codeserver.dev.5c6715db-abac-4633-ada8-1c9efe354629@codeserver.dev.5c6715db-abac-4633-ada8-1c9efe354629.drush.in:2222/~/repository.git
             git config --global user.email "$eGov_Email"
             # Without these lines, push will fail with "please remote git submodules" error
-            rm -rf ./vendor/drupal/coder/.git
-            rm -rf ./web/modules/contrib/facets/.git
-            rm -rf ./web/modules/contrib/search_api_solr/.git
+            rm -rf ./vendor/drupal/coder/.git && rm -rf ./web/modules/contrib/facets/.git && rm -rf ./web/modules/contrib/search_api_solr/.git
             git add -f /var/www/html
             # Pantheon site will use the wrong DB if the local is kept
             git rm --cache  web/sites/default/settings.local.php --ignore-unmatch
@@ -200,9 +176,9 @@ behat_tests: &behat_tests
             # Wake up the multidev site
             terminus env:wake portlandor.$CIRCLE_BRANCH
             # Check site status
-            terminus drush portlandor.$CIRCLE_BRANCH -- status
+            # terminus drush portlandor.$CIRCLE_BRANCH -- status
             # The following two drush commands will fail without wait for a few seconds
-            sleep 30s
+            sleep 20s
             # Sanitize DB
             # if [[ $CIRCLE_BRANCH = "master" ]]; then
             #   echo "Deploying Master to DEV. Do not sanitize DB"
