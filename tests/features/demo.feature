@@ -5,7 +5,7 @@ Feature: Demo feature
   I need to be able to see the homepage
 
   Scenario: Visit the homepage
-    Given I am an anonymous user
-    When I visit "/"
+    Given I am on "/"
+    # When I visit "/"
     # Then print last response
     Then I should see "Portland Oregon"
