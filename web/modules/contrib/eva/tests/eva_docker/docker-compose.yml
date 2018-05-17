@@ -1,0 +1,36 @@
+version: '2'
+
+services:
+  # Apache
+  drupal:
+    image: newcity/apache
+    container_name: $CONTAINER
+    ports:
+      - "9000:80"
+    volumes:
+      - ../../.:/var/www/html/modules/contrib/$MODULE
+      - ./scripts:/var/www/html/scripts
+      - ./settings.php:/var/www/html/sites/default/settings.php
+      - ./services.yml:/var/www/html/sites/default/services.yml
+      - ./composer.json:/var/www/html/composer.json
+      - ./sync:/var/www/html/sync
+      - html:/var/www/html
+    links:
+      - database
+
+  # MariaDB Server
+  database:
+    image: mariadb:10
+    volumes:
+      - db_data:/var/lib/mysql
+    environment:
+      MYSQL_USER: drupal
+      MYSQL_PASSWORD: drupal
+      MYSQL_DATABASE: drupal
+      MYSQL_ROOT_PASSWORD: ''
+      MYSQL_ALLOW_EMPTY_PASSWORD: 'yes'
+    restart: always
+
+volumes:
+  db_data:
+  html:
