@@ -35,9 +35,10 @@ The .lando.yml file included in this repo will set you up to connect to the corr
 1. Run `lando start` to initialize your containers.
 2. Log in to Pantheon and generate a machine token from My Dashboard > Account > Machine Tokens.
 3. Run `lando terminus auth:login --machine-token=[YOUR MACHINE TOKEN]`, this logs your Lando instance into our Pantheon account.
-4. Run `lando pull` to get the DB and files from pantheon. This process takes a while. #grabsomecoffee
-5. You should now be able to visit https://portlandor.lndo.site in your browser.
-6. When you are done with your development for the day, run `Lando stop` to shut off your development containers.
+4. To make sure you don't hit rate limits with composer, log into Github and generate a personal access token and add it to your lando instance by using `lando composer config --global --auth github-oauth.github.com "$COMPOSER_TOKEN"`. (You should replace $COMPOSER_TOKEN with your generated token.) There is a handy tutorial for this at https://coderwall.com/p/kz4egw/composer-install-github-rate-limiting-work-around
+5. Run `lando pull` to get the DB and files from pantheon. This process takes a while. #grabsomecoffee
+6. You should now be able to visit https://portlandor.lndo.site in your browser.
+7. When you are done with your development for the day, run `Lando stop` to shut off your development containers.
 
 See other Lando with Pantheon commands at https://docs.devwithlando.io/tutorials/pantheon.html.
 
