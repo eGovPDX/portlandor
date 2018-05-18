@@ -42,15 +42,16 @@ behat_tests: &behat_tests
           export PATH=/tmp/vendor/bin:/var/www/html/vendor/bin:$PATH
           cd /tmp && curl -O https://raw.githubusercontent.com/pantheon-systems/terminus-installer/master/builds/installer.phar && php installer.phar install
           cd /var/www/html
+          # Don't check the repo host key
+          export GIT_SSH_COMMAND="ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no"
+          # Don't check for host key for Pantheon sites
+          echo -e "host *.drush.in\n    StrictHostKeyChecking no" >> ~/.ssh/config
           # Make sure to log in
           # Set the user email that will commit code into Pantheon repo 
           terminus auth:login --machine-token="$eGov_Terminus" --email="$eGov_Email"
+          # When commit on master, we deploy to DEV
           if [[ $CIRCLE_BRANCH = "master" ]]; then
-            echo "Deploy to Pantheon DEV site" && export PATH=/var/www/html/vendor/bin:$PATH
-            # Don't check the repo host key
-            export GIT_SSH_COMMAND="ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no"
-            # Don't check for host key for Pantheon sites
-            echo -e "host *.drush.in\n    StrictHostKeyChecking no" >> ~/.ssh/config
+            echo "Deploy to Pantheon DEV site"
             # Set the connection type to GIT
             terminus connection:set portlandor.dev git
             git remote add pantheon ssh://codeserver.dev.5c6715db-abac-4633-ada8-1c9efe354629@codeserver.dev.5c6715db-abac-4633-ada8-1c9efe354629.drush.in:2222/~/repository.git
@@ -95,7 +96,7 @@ behat_tests: &behat_tests
               fi
             fi
           else
-            # If the multidev branch site exists, delete it and recreate
+            # Check if the multidev branch site exists. If not, create it
             terminus multidev:list --format=list --field=Name portlandor > ./env_list.txt
             if grep -Fxq "$CIRCLE_BRANCH" ./env_list.txt; then
               echo "Found multidev site"
@@ -105,10 +106,6 @@ behat_tests: &behat_tests
             else
               echo "Creating new multidev site. This may take a few seconds." && terminus multidev:create portlandor.test $CIRCLE_BRANCH
             fi
-            # don't check the repo host key
-            export GIT_SSH_COMMAND="ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no"
-            # Don't check for host key for Pantheon sites
-            echo -e "host *.drush.in\n    StrictHostKeyChecking no" >> ~/.ssh/config
             # Set the connect to GIT
             terminus connection:set portlandor.$CIRCLE_BRANCH git
             git remote add pantheon ssh://codeserver.dev.5c6715db-abac-4633-ada8-1c9efe354629@codeserver.dev.5c6715db-abac-4633-ada8-1c9efe354629.drush.in:2222/~/repository.git
@@ -127,12 +124,6 @@ behat_tests: &behat_tests
             # Clear cache. Import config files
             terminus remote:drush portlandor.$CIRCLE_BRANCH -- cr
             sleep 20s && terminus remote:drush portlandor.$CIRCLE_BRANCH -- cim -y
-            # if curl -s https://$CIRCLE_BRANCH-portlandor.pantheonsite.io/ | grep -q "Portland Oregon"; then
-            #   echo "Site up and running"
-            # else
-            #   echo "Can't reach the site"
-            #   exit 1;
-            # fi 
           fi
     - run:
         name: Run tests against Pantheon
@@ -140,8 +131,12 @@ behat_tests: &behat_tests
         command: |
           cd /var/www/html && export PATH=/var/www/html/vendor/bin:$PATH
           composer require behat/behat:^3.4 behat/mink:^1.7 behat/mink-extension:v2.2 behat/mink-selenium2-driver:^1.3 bex/behat-screenshot:^1.2 jcalderonzumba/mink-phantomjs-driver:~0.3.1  drupal/drupal-extension:^3.4 guzzlehttp/guzzle:^6.0@dev
-          echo 'export BEHAT_PARAMS="{\"extensions\" : {\"Behat\\\MinkExtension\" : {\"base_url\" : \"https://${CIRCLE_BRANCH}-portlandor.pantheonsite.io\"}}}"' >> $BASH_ENV && source $BASH_ENV
-          echo $BEHAT_PARAMS
+          if [[ $CIRCLE_BRANCH = "master" ]]; then
+            echo 'export BEHAT_PARAMS="{\"extensions\" : {\"Behat\\\MinkExtension\" : {\"base_url\" : \"https://dev-portlandor.pantheonsite.io\"}}}"' >> $BASH_ENV && source $BASH_ENV
+          else
+            echo 'export BEHAT_PARAMS="{\"extensions\" : {\"Behat\\\MinkExtension\" : {\"base_url\" : \"https://${CIRCLE_BRANCH}-portlandor.pantheonsite.io\"}}}"' >> $BASH_ENV && source $BASH_ENV
+          fi
+          # echo $BEHAT_PARAMS
           behat -c tests/behat.yml
     - save_cache: *save_cache
     - store_test_results:
