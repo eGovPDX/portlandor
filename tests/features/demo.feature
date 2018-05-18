@@ -1,4 +1,4 @@
-@javascript @api
+@javascript
 Feature: Demo feature
   In order to test Drupal
   As an anonymous user
