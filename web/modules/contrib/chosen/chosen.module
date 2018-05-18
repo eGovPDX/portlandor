@@ -1,0 +1,255 @@
+<?php
+
+/**
+ * @file
+ * General functions and hook implementations.
+ *
+ * @see http://harvesthq.github.com/chosen/
+ */
+
+use Drupal\Core\Field\FieldStorageDefinitionInterface;
+use Drupal\Core\Form\FormStateInterface;
+use Drupal\field\Entity\FieldConfig;
+use Drupal\Core\Language\LanguageInterface;
+use Drupal\Core\Render\Element;
+use Drupal\Core\Routing\RouteMatchInterface;
+use Drupal\Core\Url;
+
+/**
+ * Define chosen library url.
+ */
+define('CHOSEN_WEBSITE_URL', 'http://harvesthq.github.io/chosen');
+define('CHOSEN_INCLUDE_ADMIN', 0);
+define('CHOSEN_INCLUDE_NO_ADMIN', 1);
+define('CHOSEN_INCLUDE_EVERYWHERE', 2);
+
+/**
+ * Implements hook_element_info_alter().
+ */
+function chosen_element_info_alter(&$info) {
+  $info['select']['#pre_render'][] = 'chosen_pre_render_select';
+
+  if (\Drupal::moduleHandler()->moduleExists('date')) {
+    $info['date_combo']['#pre_render'][] = 'chosen_pre_render_date_combo';
+  }
+
+  if (\Drupal::moduleHandler()->moduleExists('select_or_other')) {
+    $info['select_or_other']['#pre_render'][] = 'chosen_pre_render_select_or_other';
+  }
+
+  if (\Drupal::moduleHandler()->moduleExists('synonyms')) {
+    $info['synonyms_entity_select']['#pre_render'][] = 'chosen_pre_render_select';
+  }
+}
+
+/**
+ * Implements hook_field_widget_form_alter().
+ *
+ * Add entity type  and bundle information to the widget.
+ *
+ * @see chosen_pre_render_select()
+ */
+
+/**
+ * Implements hook_field_widget_form_alter().
+ */
+function chosen_field_widget_form_alter(&$element, FormStateInterface $form_state, $context) {
+  /** @var \Drupal\Core\Field\FieldDefinitionInterface $field_definition */
+  $field_definition = $context['items']->getFieldDefinition();
+  $element['#entity_type'] = $field_definition->getTargetEntityTypeId();
+  $element['#bundle'] = $field_definition->getTargetBundle();
+}
+
+/**
+ * Render API callback: Apply Chosen to a select element.
+ *
+ * @param array $element
+ *   The element.
+ *
+ * @return array
+ *   The element.
+ */
+function chosen_pre_render_select($element) {
+  // Exclude chosen from theme other than admin.
+  $theme = \Drupal::theme()->getActiveTheme()->getName();
+  $admin_theme = \Drupal::config('system.theme')->get('admin');
+  $is_admin_path = \Drupal::service('router.admin_context')->isAdminRoute();
+  $is_admin = $is_admin_path || $theme == $admin_theme;
+
+  $chosen_include = \Drupal::config('chosen.settings')->get('chosen_include');
+  if ($chosen_include != CHOSEN_INCLUDE_EVERYWHERE && $is_admin == $chosen_include) {
+    return $element;
+  }
+
+  // If the #chosen FAPI property is set, then add the appropriate class.
+  if (isset($element['#chosen'])) {
+    if (!empty($element['#chosen'])) {
+      // Element has opted-in for Chosen, ensure the library gets added.
+      $element['#attributes']['class'][] = 'chosen-enable';
+    }
+    else {
+      $element['#attributes']['class'][] = 'chosen-disable';
+      // Element has opted-out of Chosen. Do not add the library now.
+      return $element;
+    }
+  }
+  elseif (isset($element['#attributes']['class']) && is_array($element['#attributes']['class'])) {
+    if (array_intersect($element['#attributes']['class'], array('chosen-disable'))) {
+      // Element has opted-out of Chosen. Do not add the library now.
+      return $element;
+    }
+    elseif (array_intersect($element['#attributes']['class'], array('chosen-enable'))) {
+      // Element has opted-in for Chosen, ensure the library gets added.
+    }
+  }
+  else {
+    // Neither the #chosen property was set, nor any chosen classes found.
+    // This element still might match the site-wide critera, so add the library.
+  }
+
+  if (isset($element['#field_name']) && !empty($element['#multiple'])) {
+    // Remove '_none' from multi-select options.
+    unset($element['#options']['_none']);
+
+    if (isset($element['#entity_type']) && isset($element['#bundle']) && isset($element['#field_name'])) {
+      // Set data-cardinality for fields that aren't unlimited.
+      $field = FieldConfig::loadByName($element['#entity_type'], $element['#bundle'], $element['#field_name'])->getFieldStorageDefinition();
+      $cardinality = $field->getCardinality();
+      if ($cardinality != FieldStorageDefinitionInterface::CARDINALITY_UNLIMITED && $cardinality > 1) {
+        $element['#attributes']['data-cardinality'] = $cardinality;
+      }
+    }
+  }
+
+  // Attach the library.
+  chosen_attach_library($element);
+
+  // Right to Left Support.
+  $language_direction = \Drupal::languageManager()->getCurrentLanguage()->getDirection();
+  if (LanguageInterface::DIRECTION_RTL == $language_direction) {
+    $element['#attributes']['class'][] = 'chosen-rtl';
+  }
+
+  return $element;
+}
+
+/**
+ * Helper function to attach the Chosen library and settings to a given element.
+ *
+ * @param array &$element
+ *   An render array element.
+ */
+function chosen_attach_library(array &$element) {
+  $element['#attached']['library'][] = 'chosen/drupal.chosen';
+
+  $chosen_conf = \Drupal::config('chosen.settings');
+
+  $css_disabled_themes = $chosen_conf->get('disabled_themes');
+  if (empty($css_disabled_themes)) {
+    $css_disabled_themes = array();
+  }
+
+  // Only add the Chosen CSS if it is not disabled for the active theme.
+  $theme_name = \Drupal::theme()->getActiveTheme()->getName();
+  if (!in_array($theme_name, $css_disabled_themes, TRUE)) {
+    $element['#attached']['library'][] = 'chosen_lib/chosen.css';
+  }
+
+  $options = array(
+    'disable_search' => (bool) $chosen_conf->get('disable_search'),
+    'disable_search_threshold' => (int) $chosen_conf->get('disable_search_threshold'),
+    'allow_single_deselect' => (bool) $chosen_conf->get('allow_single_deselect'),
+    'search_contains' => (bool) $chosen_conf->get('search_contains'),
+    'placeholder_text_multiple' => $chosen_conf->get('placeholder_text_multiple'),
+    'placeholder_text_single' => $chosen_conf->get('placeholder_text_single'),
+    'no_results_text' => $chosen_conf->get('no_results_text'),
+    'inherit_select_classes' => TRUE,
+  );
+
+  $element['#attached']['drupalSettings']['chosen'] = array(
+    'selector' => $chosen_conf->get('jquery_selector'),
+    'minimum_single' => (int) $chosen_conf->get('minimum_single'),
+    'minimum_multiple' => (int) $chosen_conf->get('minimum_multiple'),
+    'minimum_width' => (int) $chosen_conf->get('minimum_width'),
+    'options' => $options,
+  );
+}
+
+/**
+ * Render API callback: Apply Chosen to a date_combo element.
+ *
+ * @param array $element
+ *   The element.
+ *
+ * @return array
+ *   The element.
+ */
+function chosen_pre_render_date_combo($element) {
+  // Because the date_combo field contains many different select elements, we
+  // need to recurse down and apply the FAPI property to each one.
+  if (isset($element['#chosen'])) {
+    chosen_element_apply_property_recursive($element, $element['#chosen']);
+  }
+  return $element;
+}
+
+/**
+ * Render API callback: Apply Chosen to a select_or_other element.
+ *
+ * @param array $element
+ *   The element.
+ *
+ * @return array
+ *   The element.
+ */
+function chosen_pre_render_select_or_other($element) {
+  if ($element['#select_type'] == 'select' && isset($element['#chosen'])) {
+    $element['select']['#chosen'] = $element['#chosen'];
+  }
+  return $element;
+}
+
+/**
+ * Recurse through an element to apply the chosen property to any select fields.
+ *
+ * @param array $element
+ *   The element.
+ * @param int $chosen_value
+ *   Chosen setting
+ *
+ * @return array
+ *   The element.
+ */
+function chosen_element_apply_property_recursive(array &$element, $chosen_value = NULL) {
+  if (!isset($chosen_value)) {
+    if (isset($element['#chosen'])) {
+      $chosen_value = $element['#chosen'];
+    }
+    else {
+      return;
+    }
+  }
+  if (isset($element['#type']) && $element['#type'] == 'select') {
+    $element['#chosen'] = $chosen_value;
+  }
+  foreach (Element::children($element) as $key) {
+    chosen_element_apply_property_recursive($element[$key], $chosen_value);
+  }
+}
+
+/**
+ * Implements hook_help().
+ */
+function chosen_help($route_name, RouteMatchInterface $route_match) {
+
+  switch ($route_name) {
+    case 'help.page.chosen':
+      $output = '';
+      $output = '<h3>' . t('About') . '</h3>';
+      $output .= '<p>' . t('Chosen uses the Chosen jQuery plugin to make your < select > elements more user-friendly.') . '</p>';
+      $output .= '<h3>' . t('Usage') . '</h3>';
+      $output .= '<p>' . t('Configure at: <a href=":structure_types">admin/config/user-interface/chosen</a>', [':structure_types' => Url::fromRoute('chosen.admin')->toString()]) . '</p>';
+      return $output;
+  }
+
+}

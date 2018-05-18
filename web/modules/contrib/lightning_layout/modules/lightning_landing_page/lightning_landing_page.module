@@ -1,0 +1,76 @@
+<?php
+
+/**
+ * @file
+ * Contains landing page functionality for Lightning.
+ */
+
+use Drupal\field\FieldConfigInterface;
+use Drupal\node\Entity\NodeType;
+use Drupal\workflows\Entity\Workflow;
+
+/**
+ * Implements hook_ENTITY_TYPE_insert().
+ */
+function lightning_landing_page_field_config_insert(FieldConfigInterface $field) {
+  // Don't do anything during config sync.
+  if (\Drupal::isConfigSyncing()) {
+    return;
+  }
+  elseif ($field->id() == 'node.landing_page.field_meta_tags') {
+    $component = [
+      'type' => 'metatag_empty_formatter',
+      'region' => 'content',
+    ];
+
+    entity_get_display('node', 'landing_page', 'default')
+      ->setComponent('field_meta_tags', $component)
+      ->save();
+
+    entity_get_display('node', 'landing_page', 'full')
+      ->setComponent('field_meta_tags', $component)
+      ->save();
+
+    entity_get_display('node', 'landing_page', 'teaser')
+      ->setComponent('field_meta_tags', $component)
+      ->save();
+
+    entity_get_form_display('node', 'landing_page', 'default')
+      ->setComponent('field_meta_tags', [
+        'type' => 'metatag_firehose',
+        'region' => 'content',
+      ])
+      ->save();
+  }
+}
+
+/**
+ * Implements hook_modules_installed().
+ */
+function lightning_landing_page_modules_installed(array $modules) {
+  // Don't do anything during config sync.
+  if (\Drupal::isConfigSyncing()) {
+    return;
+  }
+
+  $node_type = NodeType::load('landing_page');
+
+  if (in_array('lightning_search', $modules, TRUE)) {
+    lightning_search_node_type_insert($node_type);
+  }
+
+  if (in_array('content_moderation', $modules, TRUE)) {
+    $workflow = Workflow::load('editorial');
+    /** @var \Drupal\content_moderation\Plugin\WorkflowType\ContentModerationInterface $plugin */
+    $plugin = $workflow->getTypePlugin();
+    $plugin->addEntityTypeAndBundle('node', $node_type->id());
+    $workflow->save();
+  }
+
+  if (in_array('menu_ui', $modules, TRUE)) {
+    $node_type
+      ->setThirdPartySetting('menu_ui', 'available_menus', ['main'])
+      ->setThirdPartySetting('menu_ui', 'parent', 'main:')
+      ->save();
+  }
+}

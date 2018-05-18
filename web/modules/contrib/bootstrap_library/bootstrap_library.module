@@ -1,0 +1,311 @@
+<?php
+
+/**
+ * @file
+ * Primarily Drupal hooks.
+ */
+
+use Drupal\Component\Utility\Unicode;
+use Drupal\Core\Url;
+
+define('BOOTSTRAP_MIN_PLUGIN_VERSION', '2.0.0');
+
+/**
+ * Implements hook_page_attachments().
+ *
+ * Use Libraries API to load the js & css files into header.
+ */
+function bootstrap_library_page_attachments(array &$page) {
+  // Don't add the JavaScript and CSS during installation.
+  if (drupal_installation_attempted()) {
+    return;
+  }
+  // Don't add the JavaScript and CSS on specified paths or themes.
+  if (!_bootstrap_library_check_theme() || !_bootstrap_library_check_url()) {
+    return;
+  }
+  $config = \Drupal::config('bootstrap_library.settings');
+  $cdn = ($config->get('cdn.bootstrap'));
+  if ($cdn) {
+    $page['#attached']['library'][] = 'bootstrap_library/bootstrap-cdn';
+  }
+  else {
+    $variant_options = ['source', 'minified', 'composer'];
+    $variant = $variant_options[$config->get('minimized.options')];
+    switch ($variant) {
+      case 'minified':
+        $page['#attached']['library'][] = 'bootstrap_library/bootstrap';
+        break;
+      case 'source':
+        $page['#attached']['library'][] = 'bootstrap_library/bootstrap-dev';
+        break;
+      case 'composer':
+        $page['#attached']['library'][] = 'bootstrap_library/bootstrap-composer';
+        break;
+    }
+  }
+}
+
+/**
+ * Implements hook_library_info_build().
+ */
+function bootstrap_library_library_info_build() {
+  $libraries = [];
+  $config = \Drupal::config('bootstrap_library.settings');
+  $cdn = ($config->get('cdn.bootstrap'));
+  if ($cdn) {
+    $data = ($config->get('cdn.options'));
+    $cdn_options = json_decode($data);
+    $list = _bootstrap_library_object_to_array($cdn_options->bootstrap);
+    if (!is_array($list[$cdn]['js'])) {
+      $list[$cdn]['js'] = array($list[$cdn]['js']);
+    }
+    $css_uri = $list[$cdn]['css'];
+    $libraries['bootstrap-cdn'] = [
+      'dependencies' => [
+        'core/jquery',
+      ],
+    ];
+    $libraries['bootstrap-cdn']['css']['base'][$css_uri] = [
+      'type' => 'external',
+    ];
+    foreach ($list[$cdn]['js'] as $js_uri) {
+      $libraries['bootstrap-cdn']['js'][$js_uri] = [
+        'type' => 'external',
+      ];
+    }
+  }
+  return $libraries;
+}
+
+/**
+ * Verify if current theme is selected.
+ */
+function _bootstrap_library_check_theme() {
+  $config = \Drupal::config('bootstrap_library.settings');
+
+  $theme = \Drupal::theme()->getActiveTheme()->getName();
+  $valid_themes = $config->get('theme.themes');
+  $visibility = $config->get('theme.visibility');
+  $theme_match =  !empty($valid_themes) && in_array($theme, $valid_themes);
+  $theme_match = !($visibility xor $theme_match);
+  return $theme_match;
+}
+
+/**
+ * Check if bootstrap_library should be active for the current URL.
+ *
+ * @return bool
+ *   TRUE if bootstrap_library should be active for the current page.
+ */
+function _bootstrap_library_check_url() {
+  // Make it possible deactivate bootstrap with
+  // parameter ?bootstrap_library=no in the url.
+  if (isset($_GET['bootstrap']) && $_GET['bootstrap'] == 'no') {
+    return FALSE;
+  }
+
+  // Assume there are no matches until one is found.
+  $page_match = FALSE;
+
+  // Convert path to lowercase. This allows comparison of the same path
+  // with different case. Ex: /Page, /page, /PAGE.
+  $config = \Drupal::config('bootstrap_library.settings');
+  $pages = Unicode::strtolower(_bootstrap_library_array_to_string($config->get('url.pages')));
+
+  // Compare the lowercase path alias (if any) and internal path.
+  $path = Url::fromRoute('<current>')->toString();
+  $path_alias = Unicode::strtolower(\Drupal::service('path.alias_storage')->lookupPathAlias($path, 'en'));
+  $page_match = \Drupal::service('path.matcher')->matchPath($path_alias, $pages);
+  if ($path_alias != $path) {
+    $page_match = $page_match || \Drupal::service('path.matcher')->matchPath($path, $pages);
+  }
+  $page_match = $config->get('url.visibility') == 0 ? !$page_match : $page_match;
+
+  return $page_match;
+
+}
+
+/**
+ * Converts a text with lines (\n) into an array of lines.
+ *
+ * @return array
+ *   Array with as many items as non-empty lines in the text
+ */
+function _bootstrap_library_string_to_array($text) {
+  $text = str_replace("\r\n", "\n", $text);
+  return array_filter(explode("\n", $text), 'trim');
+}
+
+/**
+ * Converts an array of lines into an text with lines (\n).
+ *
+ * @return string
+ *   Text with lines
+ */
+function _bootstrap_library_array_to_string($array) {
+  return implode("\r\n", $array);
+}
+
+/**
+ * Converts an object to an array.
+ *
+ * @return array
+ *   Object converted.
+ */
+function _bootstrap_library_object_to_array($data) {
+  if (is_array($data) || is_object($data)) {
+    $result = array();
+    foreach ($data as $key => $value) {
+      $result[$key] = _bootstrap_library_object_to_array($value);
+    }
+    return $result;
+  }
+  return $data;
+}
+
+function _bootstrap_library_isSecure() {
+  if ((!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || $_SERVER['SERVER_PORT'] == 443) {
+    return 'https:';
+  }
+  else {
+    return 'http:';
+  }
+}
+
+/**
+ * Hopping someday libraries module could be used.
+ */
+
+/**
+ * Implements hook_libraries_info().
+
+function bootstrap_library_libraries_info() {
+  $config = \Drupal::config('bootstrap_library.settings');
+  $files = _bootstrap_library_get_files($config->get('files.types.css'), $config->get('files.types.js'));
+  $libraries['bootstrap'] = array(
+    'name' => 'Bootstrap',
+    'vendor url' => 'http://getbootstrap.com/',
+    'download url' => 'http://getbootstrap.com/',
+    'version arguments' => array(
+      'file' => 'js/bootstrap.js',
+      // 3.x.x: Botstrap v3.0.3
+      'pattern' => '/Bootstrap\s+v?([0-9\.]+)/',
+      'lines' => 2,
+    ),
+//    'dependencies' => array(
+//      'jquery',
+//     ),
+    'files' => array(
+      'js' => array(
+        'js/bootstrap.min.js',
+      ),
+      'css' => array(
+        'css/bootstrap.min.css',
+        'css/bootstrap-theme.min.css',
+      ),
+    ),
+    'variants' => array(
+      'minified' => array(
+        'files' => array(
+          'js' => array(
+            'js/bootstrap.min.js',
+          ),
+          'css' => array(
+            'css/bootstrap.min.css',
+            'css/bootstrap-theme.min.css',
+          ),
+        ),
+      ),
+      'source' => array(
+        'files' => array(
+          'js' => array(
+            'js/bootstrap.js',
+          ),
+          'css' => array(
+            'css/bootstrap.css',
+            'css/bootstrap-theme.css',
+          ),
+        ),
+      ),
+    ),
+  );
+
+  return $libraries;
+}
+
+/**
+ * Check if the Bootstrap library is installed.
+ *
+ * @return
+ *   A boolean indicating the installed status.
+
+function bootstrap_library_installed() {
+  if (($library = libraries_detect('bootstrap')) && !empty($library['installed'])) {
+    return TRUE;
+  }
+  else {
+    return FALSE;
+  }
+}
+
+/**
+ * Check if the Bootstrap library has been loaded.
+ *
+ * @return
+ *   A boolean indicating the loaded status.
+
+function bootstrap_library_loaded() {
+  if (($library = libraries_load('bootstrap')) && !empty($library['loaded'])) {
+    return TRUE;
+  }
+  else {
+    return FALSE;
+  }
+}
+
+/**
+ * Define which files needed to be loaded.
+ *
+ * @return
+ *   An array for variants and an array for files.
+
+function _bootstrap_library_get_files($css = 1, $js = 1) {
+  $js_min_array = array(
+    'js/bootstrap.min.js',
+  );
+  $css_min_array = array(
+    'css/bootstrap.min.css',
+    'css/bootstrap-theme.min.css',
+  );
+  $js_array = array(
+    'js/bootstrap.js',
+  );
+  $css_array = array(
+    'css/bootstrap.css',
+    'css/bootstrap-theme.css',
+  );
+  $min = array();
+  $files = array();
+  if ($css) {
+    $min['css'] = array( 'css' => $css_min_array, );
+    $files['css'] = $css_array;
+  }
+  if ($js) {
+    $min['js'] = array( 'js' => $js_min_array, );
+    $files['js'] = $js_array;
+  }
+  $variants = array(
+      'minified' => array(
+        'files' => array(
+          'js' => $min['js'],
+          'css' => $min['css'],
+        ),
+      ),
+      'source' => array(
+        'files' => $files,
+      ));
+
+  return array('variants' => $variants, 'files' => $files);
+}
+*/
