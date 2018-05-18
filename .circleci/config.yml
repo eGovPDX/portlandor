@@ -1,11 +1,5 @@
 # CircleCI integration with Drupal 8.
 
-## Copies .circle/Robofile to the repository root.
-copy_robo: &copy_robo
-  run:
-    name: Copy RoboFile.php
-    command: cp .circleci/RoboFile.php .
-
 ## Defines images and working directory.
 defaults: &defaults
   docker:
@@ -34,10 +28,9 @@ behat_tests: &behat_tests
   <<: *defaults
   steps:
     - checkout
-    - *copy_robo
     - restore_cache: *restore_cache
     - run:
-        name: Install dependencies
+        name: Composer install
         command: |
           # Remove any remaining dependencies. Install all packages form package.json 
           composer config --global --auth github-oauth.github.com "$COMPOSER_TOKEN"
@@ -142,7 +135,7 @@ behat_tests: &behat_tests
             # fi 
           fi
     - run:
-        name: Test with Pantheon
+        name: Run tests against Pantheon
         when: on_success
         command: |
           cd /var/www/html && export PATH=/var/www/html/vendor/bin:$PATH
