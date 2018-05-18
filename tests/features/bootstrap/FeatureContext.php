@@ -1,6 +1,6 @@
 <?php
 
-// use Drupal\DrupalExtension\Context\RawDrupalContext;
+use Drupal\DrupalExtension\Context\RawDrupalContext;
 use Behat\Behat\Context\SnippetAcceptingContext;
 
 /**
@@ -8,7 +8,6 @@ use Behat\Behat\Context\SnippetAcceptingContext;
  *
  * @codingStandardsIgnoreStart
  */
-// class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext {
-class FeatureContext extends Behat\MinkExtension\Context\MinkContext implements SnippetAcceptingContext {
+class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext {
 
 }
