@@ -111,6 +111,7 @@ behat_tests: &behat_tests
             # Without these lines, push will fail with "please remote git submodules" error
             rm -rf ./vendor/drupal/coder/.git && rm -rf ./web/modules/contrib/facets/.git && rm -rf ./web/modules/contrib/search_api_solr/.git
             git add -f /var/www/html
+            echo '' > web/sites/default/settings.php
             # Pantheon site will use the wrong DB if the local is kept
             git rm --cache  web/sites/default/settings.local.php --ignore-unmatch && git rm -r --cache web/sites/default/files --ignore-unmatch && git commit -m "CircleCI deployment" --quiet
             # git filter-branch -f --index-filter 'git rm -rf --cached --ignore-unmatch sites/default/files' --prune-empty -- afc758c6..HEAD
@@ -120,7 +121,8 @@ behat_tests: &behat_tests
             # The following two drush commands will fail without wait for a few seconds
             # sleep 40s
             # Clear cache. Import config files
-            sleep 30s && terminus remote:drush portlandor.$CIRCLE_BRANCH -- cr && terminus remote:drush portlandor.$CIRCLE_BRANCH -- cim -y
+            # sleep 30s && 
+            terminus remote:drush portlandor.$CIRCLE_BRANCH -- cr && terminus remote:drush portlandor.$CIRCLE_BRANCH -- cim -y
           fi
     - run:
         name: Run tests against Pantheon
