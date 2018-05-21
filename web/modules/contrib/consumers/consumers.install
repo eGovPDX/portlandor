@@ -1,0 +1,43 @@
+<?php
+
+/**
+ * @file
+ * Install, update and uninstall functions for Consumers.
+ */
+
+use Drupal\Core\Field\BaseFieldDefinition;
+use Drupal\Core\StringTranslation\TranslatableMarkup;
+
+/**
+ * Add field 'third_party' when not exist.
+ */
+function consumers_update_8101() {
+  // Replaced by consumers_update_8102().
+}
+
+
+/**
+ * Add field 'third_party' using the entity system.
+ */
+function consumers_update_8102() {
+  $field_definition = BaseFieldDefinition::create('boolean')
+    ->setLabel(new TranslatableMarkup('Is this consumer 3rd party?'))
+    ->setDescription(new TranslatableMarkup('Mark this if the organization behind this consumer is not the same as the one behind the Drupal API.'))
+    ->setDisplayOptions('view', [
+      'label' => 'inline',
+      'type' => 'boolean',
+      'weight' => 4,
+    ])
+    ->setDisplayOptions('form', [
+      'weight' => 4,
+    ])
+    ->setRevisionable(TRUE)
+    ->setTranslatable(TRUE)
+    ->setDefaultValue(TRUE)
+    // Explicitly initialue existing entities with TRUE, to ensure a consistent
+    // consistent behavior.
+    ->setInitialValue(TRUE);
+
+  \Drupal::entityDefinitionUpdateManager()
+    ->installFieldStorageDefinition('third_party', 'consumer', 'consumers', $field_definition);
+}

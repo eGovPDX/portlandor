@@ -1,0 +1,37 @@
+<?php
+
+/**
+ * Implements hook_theme().
+ */
+function openapi_redoc_theme() {
+  return [
+    'redoc' => [
+      'render element' => 'elements',
+      'variables' => [
+        'attributes' => [
+          'scroll-y-offset' => 150,
+          'lazy-rendering' => TRUE,
+        ],
+        'openapi_url' => '',
+        'js_url' => 'https://rebilly.github.io/ReDoc/releases/latest/redoc.min.js',
+      ],
+    ],
+  ];
+}
+
+
+/**
+ * Implements hook_menu_links_discovered_alter().
+ */
+function openapi_redoc_menu_links_discovered_alter(&$links) {
+  // Disable menu items depending on module enabled.
+  // @todo Is this possible to do in custom menu class?
+  //   Currently this is not working.
+  $module_handler = \Drupal::moduleHandler();
+  if (!$module_handler->moduleExists('jsonapi')) {
+    unset($links['openapi_redoc.jsonapi']);
+  }
+  if (!$module_handler->moduleExists('rest')) {
+    unset($links['openapi_redoc.rest']);
+  }
+}

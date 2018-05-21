@@ -1,0 +1,55 @@
+<?php
+
+/**
+ * @file
+ * Install, uninstall and update hooks for Boostrap Paragraphs module.
+ */
+
+use Drupal\field\Entity\FieldConfig;
+use Drupal\field\Entity\FieldStorageConfig;
+use Symfony\Component\Yaml\Yaml;
+
+/**
+ * Reads in new configuration.
+ *
+ * @param string $config_name
+ *   Configuration name.
+ * @param string $bp_path
+ *   Base path.
+ */
+function boostrap_paragraphs_read_in_new_config($config_name, $bp_path) {
+  /** @var \Drupal\Core\Config\StorageInterface $active_storage */
+  $active_storage = \Drupal::service('config.storage');
+  $active_storage->write($config_name, Yaml::parse(file_get_contents($bp_path . '/config/install/' . $config_name . '.yml')));
+}
+
+/**
+ * Adds Column Wrapper paragraphs bundle.
+ */
+function bootstrap_paragraphs_update_8201() {
+  // Sets variable for the path.
+  $bp_path = drupal_get_path('module', 'bootstrap_paragraphs');
+
+  // Create Paragraphs bundle.
+  boostrap_paragraphs_read_in_new_config('paragraphs.paragraphs_type.bp_column_wrapper', $bp_path);
+
+  // Create field storage.
+  $field_storage_yml = Yaml::parse(file_get_contents($bp_path . '/config/install/field.storage.paragraph.bp_column_content_w.yml'));
+  if (!FieldStorageConfig::loadByName($field_storage_yml['entity_type'], $field_storage_yml['field_name'])) {
+    FieldStorageConfig::create($field_storage_yml)->save();
+  }
+  // Create field instance.
+  $field_yml = Yaml::parse(file_get_contents($bp_path . '/config/install/field.field.paragraph.bp_column_wrapper.bp_column_content_w.yml'));
+  if (!FieldConfig::loadByName($field_yml['entity_type'], $field_yml['bundle'], $field_yml['field_name'])) {
+    FieldConfig::create($field_yml)->save();
+  }
+
+  // Create Paragraphs bundle form.
+  boostrap_paragraphs_read_in_new_config('core.entity_form_display.paragraph.bp_column_wrapper.default', $bp_path);
+  // Create Paragraphs bundle view.
+  boostrap_paragraphs_read_in_new_config('core.entity_view_display.paragraph.bp_column_wrapper.default', $bp_path);
+
+  // Send message to updater.
+  $message = t('The Column Wrapper Paragraphs bundle installed successfully. It allows you to add multiple Paragraphs in a single Column Content field. If you would like to use this bundle, allow it to be selected in the Column Content field of the three Columns Paragraphs bundles. For more detailed information, visit http://bp.jimbir.ch/updates/8201');
+  return $message;
+}
