@@ -1,0 +1,76 @@
+version: '2'
+
+services:
+  db:
+    image: mariadb
+    environment:
+      MYSQL_RANDOM_ROOT_PASSWORD: 'yes'
+      MYSQL_DATABASE: pantheon
+      MYSQL_USER: pantheon
+      MYSQL_PASSWORD: pantheon
+    volumes:
+      - db:/var/lib/mysql
+      - ./artifacts:/docker-entrypoint-initdb.d
+    networks:
+      - code-network
+      - db-network
+
+  mail:
+    image: mailhog/mailhog
+    ports:
+      - 1025:1025
+      - 8025:8025
+    restart: always
+    networks:
+      - mail-network
+  
+  redis:
+    image: redis
+    networks:
+      - cache-network
+
+  web:
+    image: nginx:latest
+    ports:
+      - 80:80
+    volumes:
+      - tmp:/tmp
+      - .:/var/www/html:cached
+      - ./site.conf:/etc/nginx/conf.d/default.conf
+    networks:
+      - code-network
+      - cache-network
+      - mail-network
+
+  php:
+    build:
+      context: .
+      dockerfile: php.Dockerfile
+    environment:
+      CACHE_HOST: redis
+      CACHE_PORT: 6379
+      XDEBUG_CONFIG: remote_host=docker.for.mac.localhost
+    volumes:
+      - tmp:/tmp
+      - .:/var/www/html:cached
+      - ./php.ini:/usr/local/etc/php/conf.d/custom.ini
+      - ./log.conf:/usr/local/etc/php-fpm.d/zz-log.conf
+    networks:
+      - code-network
+      - cache-network
+      - mail-network
+      - db-network
+
+networks:
+  code-network:
+    driver: bridge
+  db-network:
+    driver: bridge
+  cache-network:
+    driver: bridge
+  mail-network:
+    driver: bridge
+
+volumes:
+  db:
+  tmp:
