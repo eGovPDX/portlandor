@@ -1,0 +1,314 @@
+<?php
+
+/**
+ * @file
+ * Module implementing EVA extra field and views display
+ */
+
+use Drupal\views\Views;
+use Drupal\Core\Entity\EntityInterface;
+use Drupal\Core\Entity\Display\EntityViewDisplayInterface;
+use Drupal\Component\Utility\Xss;
+use Drupal\Component\Utility\Html;
+
+/**
+ * Implements hook_entity_extra_field_info() to add the view fields to relevant entities
+ */
+function eva_entity_extra_field_info() {
+  $extra = array();
+  $views = eva_get_views();
+
+  foreach ($views as $entity => $data) {
+    foreach ($data as $view) {
+      // if no bundles are set, apply to all bundles
+      // per current 7.x behavior (http://cgit.drupalcode.org/eva/tree/eva.module#n25)
+      $bundles = !empty($view['bundles'])? $view['bundles'] : array_keys(\Drupal::service('entity_type.bundle.info')->getBundleInfo($entity));
+      foreach ($bundles as $bundle) {
+        $extra[$entity][$bundle]['display'][$view['name'] . '_' . $view['display']] = array(
+          'label' => (empty($view['title'])) ? $view['name'] : $view['title'],
+          'description' => $view['title'],
+          'weight' => 10,
+        );
+        // Provide a separate extra field for the exposed form if there is any.
+        if ($view['uses exposed']) {
+          $extra[$entity][$bundle]['display'][$view['name'] . '_' . $view['display'] . '_form'] = array(
+            'label' => ((empty($view['title'])) ? $view['name'] : $view['title']) . ' (' . t('Exposed form') . ')',
+            'description' => t('The exposed filter form of the view.'),
+            'weight' => 9,
+          );
+        }
+      }
+    }
+  }
+
+  return $extra;
+}
+
+
+/**
+ * Get a list of views and displays attached to speficic entities.
+ *
+ * This function will cache its results into the views cache, so it gets
+ * cleared by Views appropriately.
+ *
+ * @param $type
+ *   The entity type we want to retrieve views for. If NULL is
+ *   specified, views for all entity types will be returned.
+ * @param $reset
+ *   Force a rebuild of the data.
+ * @return
+ *   An array of view name/display name values, or an empty array().
+ */
+function eva_get_views($type = NULL, $reset = FALSE) {
+  // Build and cache the data, both in the DB and statically.
+  $views = Views::getApplicableViews('uses_hook_entity_view');
+
+  $used_views = array();
+  foreach ($views as $data) {
+    list($view_name, $display_id) = $data;
+    $view = Views::getView($view_name);
+
+    // Initialize handlers, to determine if the view uses exposed filters.
+    $view->setDisplay($display_id);
+    $view->initHandlers();
+    $display = $view->display_handler;
+
+    $view_entity = $display->getOption('entity_type');
+    $used_views[$view_entity][] = array(
+      'name' => $view_name,
+      'id' => $view->storage->get('id'),
+      'title' => 'EVA: ' . $view->storage->get('label') . ' - ' . $view->storage->getDisplay($display_id)['display_title'],
+      'display' => $display_id,
+      'bundles' => $display->getOption('bundles'),
+      'uses exposed' => $display->usesExposed(),
+    );
+    $view->destroy();
+  }
+
+  if (!is_null($type)) {
+    return isset($used_views[$type]) ? $used_views[$type] : array();
+  }
+  return $used_views;
+}
+
+/**
+ * Implements hook_entity_view()
+ */
+function eva_entity_view(array &$build, EntityInterface $entity, EntityViewDisplayInterface $display, $view_mode) {
+  $type = $entity->getEntityTypeId();
+  $views = eva_get_views($type);
+
+  foreach ($views as $info) {
+    $longname = $info['name'] .'_'. $info['display'];
+
+    if ($display->getComponent($longname)) {
+      if ($view = Views::getView($info['name'])) {
+        $view->setDisplay($info['display']);
+        if ((empty($info['bundles']) || in_array($display->getTargetBundle(), $info['bundles'])) && $view->access($info['display'])) {
+
+          // save the entity for path calculation
+          $view->current_entity = $entity;
+
+          // exposed form
+          if ($info['uses exposed']) {
+            $view->initHandlers();
+            $exposed_form = $view->display_handler->getPlugin('exposed_form');
+            $build[$longname . '_form'] = $exposed_form->renderExposedForm(TRUE);
+          }
+
+          // gather info about the attched-to entity
+          $entity_type = $view->display_handler->getOption('entity_type');
+          $entity_info = \Drupal::entityManager()->getDefinition($entity_type);
+      
+          $arg_mode = $view->display_handler->getOption('argument_mode');
+          if ($arg_mode == 'token') {
+            if ($token_string = $view->display_handler->getOption('default_argument')) {
+              // Now do the token replacement.
+              $token_values = eva_get_arguments_from_token_string($token_string, $entity_type, $entity);
+              $new_args = array();
+              // We have to be careful to only replace arguments that have tokens.
+              foreach ($token_values as $key => $value) {
+                $new_args[Html::escape($key)] = Html::escape($value);
+              }
+      
+              $view->args = $new_args;
+            }
+          }
+          elseif ($arg_mode == 'id') {
+            $view->args = array($entity->id());
+          }
+
+          // add an argument cache key 
+          // If there are more than one of the same Eva on the same page,
+          // the first one gets cached.
+          // Presumably they should vary by contextual argument, so this 
+          // adds a cache key for the argument(s).
+          // see https://www.drupal.org/node/2873385
+          if ($view->args) {
+            $view->element['#cache'] += ['keys' => []];
+            $view->element['#cache']['keys'] = array_merge([implode(':', $view->args)], $view->element['#cache']['keys']);
+          }
+
+          // build the render
+          $element = $view->buildRenderable($info['display']);
+
+          if (!empty($element)) {
+            $build[$longname][] = $element;
+          }
+        }
+      }
+    }
+  }
+}
+
+
+/**
+ * Get view arguments array from string that contains tokens
+ *
+ * @param $string
+ *   The token string defined by the view.
+ * @param $type
+ *   The token type.
+ * @param $object
+ *   The object being used for replacement data (typically a node).
+ * @return
+ *   An array of argument values.
+ */
+function eva_get_arguments_from_token_string($string, $type, $object) {
+  $args = trim($string);
+  if (empty($args)) {
+    return array();
+  }
+  $args = \Drupal::token()->replace($args, array($type => $object), array('sanitize' => FALSE));
+  return explode('/', $args);
+}
+
+/**
+ * Implements hook_modules_enabled().
+ */
+function eva_modules_enabled($modules) {
+  _eva_reset();
+}
+
+/**
+ * Implements hook_modules_disabled().
+ */
+function eva_modules_disabled($modules) {
+  _eva_reset();
+}
+
+/**
+ * Implements hook_ENTITY_TYPE_presave().
+ * Address https://www.drupal.org/node/2922112: if Eva displays are removed,
+ * remove the module dependency from the View
+ */
+function eva_view_presave(EntityInterface $view) {
+  $dependencies = $view->get('dependencies');
+  if (in_array('eva', $dependencies['module'])) {
+    $eva_count = 0;
+    foreach ($view->get('display') as $display_id => $display) {
+      // is there a display that's still using Eva?
+      if ($display['display_plugin'] == 'entity_view') {
+        $eva_count += 1;
+      }
+    }
+    // no Eva's? Remove the dependency
+    if ($eva_count == 0) {
+      $dependencies['module'] = array_values(array_diff($dependencies['module'], ['eva']));
+      $view->set('dependencies', $dependencies);
+    }
+  }
+}
+
+/**
+ * Cache clearing helper function
+ * Reset the static cache in case any of the disabled modules
+ * implemented an eva view
+ */
+function _eva_reset() {
+  _eva_clear_detached(null, TRUE);
+  drupal_static_reset('eva_get_views');
+  \Drupal::cache('render')->deleteAll();
+}
+
+/**
+ * An extra field no longer present is not automatically removed from a display config
+ * Run through all entity displays and clear out views that shouldn't be there
+ * this should be called at Views save and module install/remove
+ *   $remove_one: force removal of a particular 'viewname_displayid' EVA
+ *   $remove_all: remove all Evas
+ */
+function _eva_clear_detached($remove_one = null, $remove_all = FALSE) {
+  $cf = \Drupal::configFactory();
+  $views = eva_get_views();
+
+  foreach ($views as $entity => $eva_info) {
+    $config_names = $cf->listAll('core.entity_view_display.'.$entity);
+    foreach ($config_names as $id) {
+      $config = $cf->getEditable($id);
+      $config_data = $config->get();
+      foreach ($eva_info as $eva) {
+        $eva_field_name = $eva['name'] . '_' . $eva['display'];
+        // eva should be considered for removal if one of these is true:
+        //  - all evas should be removed (i.e., when module is uninstalled)
+        //  - the current eva has at least on bundle specified (if no bundles are specified, an eva is attached to all bundles)
+        //  - the current eva is specifically targeted for removal (i.e., before deleting the display)
+        if ($remove_all || !empty($eva['bundles']) || ($eva_field_name == $remove_one)) {
+          // does the eva exist in this display config?
+          if (array_key_exists($eva_field_name, $config_data['content'])) {
+            // remove the eva if one of these is true:
+            //   - all evas should be removed
+            //   - the eva does not list the entity's bundle (any more)
+            //   - the eva is specifically targeted for removal
+            if ($remove_all || !in_array($config_data['bundle'], $eva['bundles']) || ($eva_field_name == $remove_one)) {
+              unset($config_data['content'][$eva_field_name]);
+              // exposed filter, too, if it's there
+              unset($config_data['content'][$eva_field_name . '_form']);
+              $config->setData($config_data);
+              $config->save();
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Clear the field cache when view cache clears
+ * this is intended to fire when a View is saved
+ */
+function eva_views_invalidate_cache() {
+  _eva_clear_detached();
+  // see https://www.drupal.org/node/2281897
+  \Drupal::entityManager()->clearCachedFieldDefinitions();
+}
+
+/**
+ * templating preprocessing
+ * figure out the title and whether there's an exposed form
+ */
+function template_preprocess_eva_display_entity_view(&$variables) {
+  $view = $variables['view'];
+  $display = $view->display_handler;
+  $variables['title'] = $display->getOption('show_title') ? Xss::filterAdmin($view->getTitle()) : '';
+  $variables['exposed_form_as_field'] = $display->getOption('exposed_form_as_field');
+
+  $id = $view->storage->id();
+  $variables['css_name'] = Html::cleanCssIdentifier($id);
+  $variables['id'] = $id;
+  $variables['display_id'] = $view->current_display;
+  $variables['dom_id'] = $view->dom_id;
+  
+  // pull in the display class
+  $css_class = $view->display_handler->getOption('css_class');
+  if (!empty($css_class)) {
+    $variables['css_class'] = preg_replace('/[^a-zA-Z0-9- ]/', '-', $css_class);
+    $variables['attributes']['class'][] = $variables['css_class'];
+  }
+
+  $variables['view_array']['#view_id'] = $view->storage->id();
+  $variables['view_array']['#view_display_show_admin_links'] = $view->getShowAdminLinks();
+  $variables['view_array']['#view_display_plugin_id'] = $display->getPluginId();
+  views_add_contextual_links($variables['view_array'], 'view', $display->getLinkDisplay());
+}

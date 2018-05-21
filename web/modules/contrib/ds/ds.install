@@ -1,0 +1,97 @@
+<?php
+
+/**
+ * @file
+ * Display Suite install file.
+ */
+
+use Drupal\Core\Entity\Entity\EntityViewDisplay;
+
+/**
+ * Implements hook_install().
+ */
+function ds_install() {
+  module_set_weight('ds', 1);
+}
+
+/**
+ * Disable adding entity, bundle, view mode classes per display.
+ */
+function ds_update_8001() {
+
+  /** @var \Drupal\Core\Entity\Display\EntityDisplayInterface $display */
+  foreach (EntityViewDisplay::loadMultiple() as $display) {
+    $ds = $display->getThirdPartySetting('ds', 'layout');
+    if (!empty($ds)) {
+      $ds['entity_classes'] = 'old_view_mode';
+      $display
+        ->setThirdPartySetting('ds', 'layout', $ds)
+        ->save();
+    }
+  }
+
+}
+
+/**
+ * Fix ds_switch being added to each content entity.
+ */
+function ds_update_8002() {
+  $entity_definition_update_manager = \Drupal::entityDefinitionUpdateManager();
+  $entity_types = \Drupal::entityTypeManager()->getDefinitions();
+  foreach ($entity_types as $entity_type_id => $entity_type) {
+    if ($entity_type->getGroup() == 'content' && $entity_type_id != 'node') {
+      if ($entity_definition_update_manager->getEntityType($entity_type_id)) {
+        $storage_definition = $entity_definition_update_manager->getFieldStorageDefinition('ds_switch', $entity_type_id);
+        if ($storage_definition) {
+          $entity_definition_update_manager->uninstallFieldStorageDefinition($storage_definition);
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Uninstalls Layout plugin, then enables Layout Discovery.
+ */
+function ds_update_8003() {
+  if (\Drupal::moduleHandler()->moduleExists('layout_plugin')) {
+    \Drupal::service('module_installer')->uninstall(['layout_plugin'], FALSE);
+    \Drupal::service('module_installer')->install(['layout_discovery'], FALSE);
+  }
+}
+
+/**
+ * Makes sure Layout Discovery is enabled on update, as 8003 could have failed to do so.
+ */
+function ds_update_8004() {
+  if (!\Drupal::moduleHandler()->moduleExists('layout_discovery')) {
+    \Drupal::service('module_installer')->install(['layout_discovery'], FALSE);
+  }
+}
+
+/**
+ * Fix scrambled fields in the UI
+ */
+function ds_update_8005() {
+  // Fix scrambled fields
+  $entity_storage = \Drupal::service('entity_type.manager')->getStorage('entity_view_display');
+  /** @var \Drupal\Core\Entity\Display\EntityViewDisplayInterface $entity_display */
+  foreach($entity_storage->loadMultiple() as $entity_display) {
+    if ($ds_config = $entity_display->getThirdPartySettings('ds')) {
+      $components = $entity_display->getComponents();
+      if (empty($ds_config['regions'])) {
+        continue;
+      }
+      foreach ($ds_config['regions'] as $region_name => $fields) {
+        foreach ($fields as $field_name) {
+          if (isset($components[$field_name])) {
+            $options = $components[$field_name];
+            $options['region'] = $region_name;
+            $entity_display->setComponent($field_name, $options);
+          }
+        }
+      }
+      $entity_display->save();
+    }
+  }
+}

@@ -1,0 +1,87 @@
+{
+    "name": "acquia/lightning_api",
+    "description": "Progressive decoupling? No problem.",
+    "type": "drupal-module",
+    "license": "GPL-2.0+",
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "repositories": {
+        "drupal": {
+            "type": "composer",
+            "url": "https://packages.drupal.org/8"
+        },
+        "assets": {
+            "type": "composer",
+            "url": "https://asset-packagist.org"
+        },
+        "dev": {
+            "type": "github",
+            "url": "https://github.com/acquia/lightning-dev",
+            "no-api": true
+        }
+    },
+    "config": {
+        "preferred-install": {
+            "drupal/core": "dist"
+        }
+    },
+    "require-dev": {
+        "acquia/lightning_dev": "dev-8.x-1.x"
+    },
+    "require": {
+        "drupal/lightning_core": "^2.5",
+        "cweagans/composer-patches": "^1.6.4",
+        "drupal-composer/drupal-scaffold": "^2.0.0",
+        "oomphinc/composer-installers-extender": "^1.1",
+        "drupal/jsonapi": "1.16",
+        "drupal/openapi": "1.0-alpha1",
+        "drupal/simple_oauth": "3.6.0"
+    },
+    "scripts": {
+        "post-install-cmd": [
+            "@push",
+            "@drupal-scaffold",
+            "PhantomInstaller\\Installer::installPhantomJS"
+        ],
+        "post-update-cmd": [
+            "@push",
+            "@drupal-scaffold"
+        ],
+        "drupal-scaffold": "DrupalComposer\\DrupalScaffold\\Plugin::scaffold",
+        "nuke": "rm -r -f docroot vendor && rm composer.lock",
+        "pull": "Acquia\\Lightning\\Commands\\FileCommands::pull",
+        "push": "Acquia\\Lightning\\Commands\\FileCommands::push"
+    },
+    "extra": {
+        "installer-types": [
+            "bower-asset",
+            "npm-asset"
+        ],
+        "installer-paths": {
+            "docroot/core": [
+                "type:drupal-core"
+            ],
+            "docroot/libraries/{$name}": [
+                "type:drupal-library",
+                "type:bower-asset",
+                "type:npm-asset"
+            ],
+            "docroot/modules/contrib/{$name}": [
+                "type:drupal-module"
+            ],
+            "docroot/profiles/contrib/{$name}": [
+                "type:drupal-profile"
+            ],
+            "docroot/themes/contrib/{$name}": [
+                "type:drupal-theme"
+            ]
+        },
+        "patches": {
+            "drupal/simple_oauth": {
+                "2966590 - Undefined variable $client in TokenAuthUser::__construct()":
+                "https://www.drupal.org/files/issues/2018-04-27/2966590-3.patch"
+            }
+        },
+        "enable-patching": true
+    }
+}
