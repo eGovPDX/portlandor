@@ -2,15 +2,27 @@
 
 use Drupal\group\Entity\GroupInterface;
 
+const GROUP_CONTENT_TYPES = array('services', 'locations', 'buildings');
 
 /**
  * Implements hook_ENTITY_TYPE_insert().
  */
 function portland_group_insert(GroupInterface $group) {
 
-    echo "HALT portland_group_insert";
-    exit();
+    $gid = $group->id();
+    $shortname = substr(str_replace(" ","_",trim(strtolower($group->get('field_shortname_or_acronym')->value))),0,60);
 
+    // POWR-142
+    // 1.2. Generate URL aliases for content type subpages using group shortname (ie. /bds/services)
+    foreach (GROUP_CONTENT_TYPES as $type) {
+        $system = "/group/$gid/$type";
+        $alias = "/$shortname/$type";
+        // save new path alias
+        $path = \Drupal::service('path.alias_storage')->save($system, $alias, "en");
+    }
+
+    // POWR-142 TODO:
+    // 1.3. Generate URL aliases for group action links using group shortname (ie. /bds/content, /bds/members) - LOW PRIORITY/DEFER
 }
   
 /**
@@ -18,10 +30,55 @@ function portland_group_insert(GroupInterface $group) {
  */
 function portland_group_update(GroupInterface $group) {
 
-    // TODO: if field field_shortname_or_acronym has changed, we need to update all the URL aliases
-    //       for content under this group 
-    
-    echo "HALT portland_group_update";
-    exit();
+    $gid = $group->id();
+    $shortname = substr(str_replace(" ","_",trim(strtolower($group->get('field_shortname_or_acronym')->value))),0,60);
+    $lang = \Drupal::languageManager()->getCurrentLanguage()->getId();
+
+    // POWR-142 TODO:
+    // 1.2. Regenerate URL aliases for content type subpages using group shortname (ie. /bds/services)
+    foreach (GROUP_CONTENT_TYPES as $type) {
+        $system = "/group/$gid/$type";
+        $alias = "/$shortname/$type";
+
+        // if it exists, delete it if it's changed
+        $exists = \Drupal::service('path.alias_storage')->aliasExists($alias, $lang);
+        if ($exists) {
+            \Drupal::service('path.alias_storage')->delete(['alias' => $alias, 'langcode' => $lang]);
+        }
+
+        // save alias
+        $path = \Drupal::service('path.alias_storage')->save($system, $alias, $lang);
+
+        // https://api.drupal.org/api/drupal/core%21lib%21Drupal%21Core%21Path%21AliasStorage.php/class/AliasStorage/8.2.x
+
+        //      $is_exists = \Drupal::service('path.alias_storage')->aliasExists($alias, $element['langcode']['#value'], $element['source']['#value']);
+
+        //    $conditions = [
+            // 'source' => '/' . $entity->toUrl()->getInternalPath(),
+            // 'langcode' => $entity->language()->getId(),
+            // ];
+            // \Drupal::service('path.alias_storage')->delete($conditions);
+
+
+        // if alias doesn't exist, create/save it.
+
+        // if alias does exist but is different, delete old then create new
+
+        // if alias does exist and hasn't changed, do nothing
+
+        // update?
+        // $existing_alias = \Drupal::service('path.alias_storage')->lookupPathAlias($system, $lang);
+        // if ($existing_alias != $alias) {
+        // }
+
+        //$group->toUrl()->toString(): "/silly-silly"
+
+        $test = 1;
+    }
+
+    // 1.3. Regenerate URL aliases for group action links using group shortname (ie. /bds/content, /bds/members) - LOW PRIORITY/DEFER
+    // 4.2. Bulk regenerate URL aliases for group child content usin group shortname
+    // 4.3. Regenerate URL aliases for group action links usin group shortname (ie. /bds/content, /bds/members) - LOW PRIORITY/DEFER
+
 
 }
