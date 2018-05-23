@@ -19,6 +19,7 @@ restore_cache: &restore_cache
 save_cache: &save_cache
   paths:
     - ./vendor
+    - /tmp
   key: v1-dependencies-{{ checksum "composer.lock" }}
 
 #Jobs
@@ -117,12 +118,10 @@ behat_tests: &behat_tests
             git push -f pantheon $CIRCLE_BRANCH
             # Wake up the multidev site
             terminus env:wake portlandor.$CIRCLE_BRANCH
-            while [[ "$(curl -s -o /dev/null -w ''%{http_code}'' https://$CIRCLE_BRANCH-portlandor.pantheonsite.io)" != "200" ]]; do sleep 5; done
             # The following two drush commands will fail without wait for a few seconds
-            # sleep 40s
             # Clear cache. Import config files
-            # sleep 30s 
-            terminus remote:drush portlandor.$CIRCLE_BRANCH -- cim -y && terminus remote:drush portlandor.$CIRCLE_BRANCH -- cc all
+            sleep 30s 
+            terminus remote:drush portlandor.$CIRCLE_BRANCH -- cim -y && terminus remote:drush portlandor.$CIRCLE_BRANCH -- cr
           fi
     - run:
         name: Run tests against Pantheon
