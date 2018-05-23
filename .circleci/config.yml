@@ -19,7 +19,6 @@ restore_cache: &restore_cache
 save_cache: &save_cache
   paths:
     - ./vendor
-    - /tmp
   key: v1-dependencies-{{ checksum "composer.lock" }}
 
 #Jobs
@@ -36,12 +35,15 @@ behat_tests: &behat_tests
           # Remove any remaining dependencies. Install all packages form package.json 
           composer config --global --auth github-oauth.github.com "$COMPOSER_TOKEN"
           rm -rf vendor web/core web/vendor web/modules/contrib web/themes/contrib && composer install --no-interaction
+    - restore_cache:
+        keys: terminus-{{ checksum "/tmp/composer.lock" }}
     - run:
         name: Deploy to Pantheon
         when: on_success
         command: |
           export PATH=/tmp/vendor/bin:/var/www/html/vendor/bin:$PATH
           cd /tmp && curl -O https://raw.githubusercontent.com/pantheon-systems/terminus-installer/master/builds/installer.phar && php installer.phar install
+          ls /tmp
           cd /var/www/html
           # Don't check the repo host key
           export GIT_SSH_COMMAND="ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no"
@@ -123,6 +125,10 @@ behat_tests: &behat_tests
             sleep 30s 
             terminus remote:drush portlandor.$CIRCLE_BRANCH -- cim -y && terminus remote:drush portlandor.$CIRCLE_BRANCH -- cr
           fi
+    - save_cache:
+        keys: terminus-{{ checksum "/tmp/composer.lock" }}
+        paths:
+          - /tmp/vendor
     - run:
         name: Run tests against Pantheon
         when: on_success
