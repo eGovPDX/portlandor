@@ -1,19 +1,20 @@
-uuid: 0e1adf7e-9dc1-4d81-8f93-032fa4a5b061
+uuid: 3472a5e1-4697-4806-b623-0212343fb064
 langcode: en
 status: true
 dependencies:
   config:
-    - search_api.index.services
+    - node.type.city_service
     - system.menu.main
   module:
-    - search_api
-id: services_index
-label: 'Services index'
+    - node
+    - user
+id: services
+label: Services
 module: views
 description: ''
 tag: ''
-base_table: search_api_index_services
-base_field: search_api_id
+base_table: node_field_data
+base_field: nid
 core: 8.x
 display:
   default:
@@ -23,28 +24,32 @@ display:
     position: 0
     display_options:
       access:
-        type: none
-        options: {  }
+        type: perm
+        options:
+          perm: 'access content'
       cache:
         type: tag
         options: {  }
       query:
         type: views_query
         options:
-          bypass_access: false
-          skip_access: false
+          disable_sql_rewrite: false
+          distinct: false
+          replica: false
+          query_comment: ''
+          query_tags: {  }
       exposed_form:
         type: basic
         options:
-          submit_button: Search
-          reset_button: true
+          submit_button: Apply
+          reset_button: false
           reset_button_label: Reset
           exposed_sorts_label: 'Sort by'
-          expose_sort_order: false
+          expose_sort_order: true
           sort_asc_label: Asc
           sort_desc_label: Desc
       pager:
-        type: mini
+        type: full
         options:
           items_per_page: 50
           offset: 0
@@ -53,6 +58,8 @@ display:
           tags:
             previous: ‹‹
             next: ››
+            first: '« First'
+            last: 'Last »'
           expose:
             items_per_page: false
             items_per_page_label: 'Items per page'
@@ -61,12 +68,13 @@ display:
             items_per_page_options_all_label: '- All -'
             offset: false
             offset_label: Offset
+          quantity: 9
       style:
         type: html_list
         options:
           grouping: {  }
           row_class: list-group-item
-          default_row_class: true
+          default_row_class: false
           type: ul
           wrapper_class: container
           class: 'list-group col-12'
@@ -75,8 +83,11 @@ display:
       fields:
         title:
           id: title
-          table: search_api_datasource_services_entity_node
+          table: node_field_data
           field: title
+          settings:
+            link_to_entity: true
+          plugin_id: field
           relationship: none
           group_type: group
           admin_label: ''
@@ -113,7 +124,7 @@ display:
           element_class: ''
           element_label_type: ''
           element_label_class: ''
-          element_label_colon: false
+          element_label_colon: true
           element_wrapper_type: ''
           element_wrapper_class: ''
           element_default_classes: true
@@ -123,8 +134,6 @@ display:
           hide_alter_empty: true
           click_sort_column: value
           type: string
-          settings:
-            link_to_entity: true
           group_column: value
           group_columns: {  }
           group_rows: true
@@ -135,90 +144,44 @@ display:
           multi_type: separator
           separator: ', '
           field_api_classes: false
-          field_rendering: true
-          fallback_handler: search_api
-          fallback_options:
-            link_to_item: false
-            use_highlighting: false
-            multi_type: separator
-            multi_separator: ', '
-          entity_type: node
-          plugin_id: search_api_field
       filters:
-        search_api_fulltext:
-          id: search_api_fulltext
-          table: search_api_index_services
-          field: search_api_fulltext
-          relationship: none
-          group_type: group
-          admin_label: ''
-          operator: and
-          value: ''
-          group: 1
-          exposed: true
+        status:
+          value: '1'
+          table: node_field_data
+          field: status
+          plugin_id: boolean
+          entity_type: node
+          entity_field: status
+          id: status
           expose:
-            operator_id: search_api_fulltext_op
-            label: ''
-            description: ''
-            use_operator: false
-            operator: search_api_fulltext_op
-            identifier: fulltext
-            required: false
-            remember: false
-            multiple: false
-            remember_roles:
-              authenticated: authenticated
-              anonymous: '0'
-              administrator: '0'
-              layout_manager: '0'
-              media_creator: '0'
-              media_manager: '0'
-            placeholder: ''
-          is_grouped: false
-          group_info:
-            label: ''
-            description: ''
-            identifier: ''
-            optional: true
-            widget: select
-            multiple: false
-            remember: false
-            default_group: All
-            default_group_multiple: {  }
-            group_items: {  }
-          parse_mode: terms
-          min_length: null
-          fields:
-            rendered_item: rendered_item
-          plugin_id: search_api_fulltext
+            operator: ''
+          group: 1
+        type:
+          id: type
+          table: node_field_data
+          field: type
+          value:
+            city_service: city_service
+          entity_type: node
+          entity_field: type
+          plugin_id: bundle
       sorts:
         title:
           id: title
-          table: search_api_index_services
+          table: node_field_data
           field: title
+          order: ASC
+          entity_type: node
+          entity_field: title
+          plugin_id: standard
           relationship: none
           group_type: group
           admin_label: ''
-          order: ASC
           exposed: false
           expose:
             label: ''
-          plugin_id: search_api
       title: Services
       header:
-        area:
-          id: area
-          table: views
-          field: area
-          relationship: none
-          group_type: group
-          admin_label: ''
-          empty: true
-          tokenize: false
-          content:
-            value: '<p>Browse or search through the services provided by the city as well as frequently requested services provided by the county and regional organizations.</p>'
-            format: simple_editor
-          plugin_id: text
         result:
           id: result
           table: views
@@ -234,14 +197,14 @@ display:
       relationships: {  }
       arguments: {  }
       display_extenders: {  }
-      use_ajax: true
     cache_metadata:
       max-age: -1
       contexts:
         - 'languages:language_content'
         - 'languages:language_interface'
-        - url
         - url.query_args
+        - 'user.node_grants:view'
+        - user.permissions
       tags: {  }
   page_1:
     display_plugin: page
@@ -254,27 +217,14 @@ display:
       menu:
         type: normal
         title: Services
-        description: ''
-        expanded: false
-        parent: ''
-        weight: -50
-        context: '0'
         menu_name: main
-      cache:
-        type: search_api_time
-        options:
-          results_lifespan: 3600
-          results_lifespan_custom: 0
-          output_lifespan: 3600
-          output_lifespan_custom: 0
-      defaults:
-        cache: false
-      exposed_block: false
+        weight: -50
     cache_metadata:
       max-age: -1
       contexts:
         - 'languages:language_content'
         - 'languages:language_interface'
-        - url
         - url.query_args
+        - 'user.node_grants:view'
+        - user.permissions
       tags: {  }
