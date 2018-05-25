@@ -147,11 +147,11 @@ behat_tests: &behat_tests
               git push pantheon $CIRCLE_BRANCH
             else
               git push -f pantheon $CIRCLE_BRANCH
+              # Wake up the multidev site
+              terminus env:wake portlandor.$CIRCLE_BRANCH
+              # The following two drush commands will fail without wait for a few seconds
+              sleep 30s
             fi
-            # Wake up the multidev site
-            terminus env:wake portlandor.$CIRCLE_BRANCH
-            # The following two drush commands will fail without wait for a few seconds
-            sleep 30s
             # Clear cache. Import config files
             terminus remote:drush portlandor.$CIRCLE_BRANCH -- cim -y && terminus remote:drush portlandor.$CIRCLE_BRANCH -- cr
           fi
