@@ -123,10 +123,9 @@ behat_tests: &behat_tests
             fi
           else
             # Check if the multidev branch site exists. If not, create it
-            terminus multidev:list --format=list --field=Name portlandor > ./env_list.txt && export HAS_MULTIDEV = 0
+            terminus multidev:list --format=list --field=Name portlandor > ./env_list.txt
             if grep -Fxq "$CIRCLE_BRANCH" ./env_list.txt; then
               echo "Found multidev site"
-              export HAS_MULTIDEV = 1
               # terminus multidev:delete --delete-branch portlandor.$CIRCLE_BRANCH -y
               # Cloning files and DB from TEST environment to the multidev environment
               terminus env:clone-content portlandor.test "$CIRCLE_BRANCH" -y 
@@ -143,7 +142,7 @@ behat_tests: &behat_tests
             # Pantheon site will use the wrong DB if the local is kept
             git rm --cache  web/sites/default/settings.local.php --ignore-unmatch && git rm -r --cache web/sites/default/files --ignore-unmatch && git commit -m "CircleCI deployment" --quiet
             # git filter-branch -f --index-filter 'git rm -rf --cached --ignore-unmatch sites/default/files' --prune-empty -- afc758c6..HEAD
-            if (( $HAS_MULTIDEV == 1 )); then
+            if grep -Fxq "$CIRCLE_BRANCH" ./env_list.txt;  then
               git push pantheon $CIRCLE_BRANCH
             else
               git push -f pantheon $CIRCLE_BRANCH
