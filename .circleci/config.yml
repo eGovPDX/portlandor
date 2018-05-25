@@ -51,6 +51,7 @@ behat_tests: &behat_tests
         command: |
           cd /tmp && composer require pantheon-systems/terminus
     - save_cache:
+        name: Save Terminus cache
         key: terminus_-{{ checksum "composer.lock" }}
         paths:
           - "/tmp/vendor"
@@ -60,7 +61,8 @@ behat_tests: &behat_tests
         command: |
           # Remove any remaining dependencies. Install all packages form package.json 
           composer config --global --auth github-oauth.github.com "$COMPOSER_TOKEN"
-          rm -rf vendor web/core web/vendor web/modules/contrib web/themes/contrib && composer install --no-interaction --no-dev
+          rm -rf vendor web/core web/vendor web/modules/contrib web/themes/contrib && composer install --no-interaction
+          # --no-dev
     - run:
         name: Deploy to Pantheon
         working_directory: /var/www/html
@@ -155,7 +157,7 @@ behat_tests: &behat_tests
         command: |
           export PATH=/var/www/html/vendor/bin:$PATH
           # Install Behat and its dependencies
-          composer install
+          # composer install
           if [[ $CIRCLE_BRANCH = "master" ]]; then
             echo 'export BEHAT_PARAMS="{\"extensions\" : {\"Behat\\\MinkExtension\" : {\"base_url\" : \"https://${HTTP_AUTH}@dev-portlandor.pantheonsite.io\"}}}"' >> $BASH_ENV && source $BASH_ENV
           else
