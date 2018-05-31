@@ -84,12 +84,12 @@
       '%drush-script' => 'drush',
      ),
   );
-  $aliases['portlandor.powr-45'] = array(
-    'uri' => 'powr-45-portlandor.pantheonsite.io',
-    'db-url' => 'mysql://pantheon:da93938b70474816b580dd9d7f95989e@dbserver.powr-45.5c6715db-abac-4633-ada8-1c9efe354629.drush.in:12432/pantheon',
+  $aliases['portlandor.powr-203'] = array(
+    'uri' => 'powr-203-portlandor.pantheonsite.io',
+    'db-url' => 'mysql://pantheon:da93938b70474816b580dd9d7f95989e@dbserver.powr-203.5c6715db-abac-4633-ada8-1c9efe354629.drush.in:12432/pantheon',
     'db-allows-remote' => TRUE,
-    'remote-host' => 'appserver.powr-45.5c6715db-abac-4633-ada8-1c9efe354629.drush.in',
-    'remote-user' => 'powr-45.5c6715db-abac-4633-ada8-1c9efe354629',
+    'remote-host' => 'appserver.powr-203.5c6715db-abac-4633-ada8-1c9efe354629.drush.in',
+    'remote-user' => 'powr-203.5c6715db-abac-4633-ada8-1c9efe354629',
     'ssh-options' => '-p 2222 -o "AddressFamily inet"',
     'path-aliases' => array(
       '%files' => 'code/sites/default/files',
