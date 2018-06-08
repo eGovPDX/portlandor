@@ -3,7 +3,9 @@
 ## Defines images and working directory.
 defaults: &defaults
   docker:
-    - image: juampynr/drupal8ci:latest
+    # - image: juampynr/drupal8ci:latest
+    # updated CI image
+    - image: kxwang/drupal-ci:circleci
     - image: selenium/standalone-chrome-debug:3.7.1-beryllium
   working_directory: /var/www/html
 
@@ -19,6 +21,11 @@ restore_cache: &restore_cache
 save_cache: &save_cache
   paths:
     - ./vendor
+    - ./web/core
+    - ./web/modules/contrib
+    - ./web/profiles/contrib
+    - ./web/themes/contrib
+    - ./web/libraries
   key: v1-dependencies-{{ checksum "composer.lock" }}
 
 #Jobs
@@ -27,57 +34,73 @@ save_cache: &save_cache
 behat_tests: &behat_tests
   <<: *defaults
   steps:
+    - restore_cache:
+        name: Retore Git cache
+        keys:
+          - source
     - checkout
+    - save_cache:
+        name: Save Git cache
+        key: source
+        paths:
+          - ".git"
+    - restore_cache:
+        name: Restore Terminus cache
+        keys:
+          - terminus_-{{ checksum "composer.lock" }}
+    - run:
+        name: Install Terminus
+        command: |
+          if [ ! -f "/tmp/vendor/pantheon-systems/terminus/bin/terminus" ]; then
+            cd /tmp && composer require pantheon-systems/terminus
+          fi
+    - save_cache:
+        name: Save Terminus cache
+        key: terminus_-{{ checksum "composer.lock" }}
+        paths:
+          - "/tmp/vendor"
     - restore_cache: *restore_cache
     - run:
         name: Composer install
         command: |
           # Remove any remaining dependencies. Install all packages form package.json 
           composer config --global --auth github-oauth.github.com "$COMPOSER_TOKEN"
-          rm -rf vendor web/core web/vendor web/modules/contrib web/themes/contrib && composer install --no-interaction
+          # rm -rf vendor web/core web/vendor web/modules/contrib web/themes/contrib
+          composer global require hirak/prestissimo && composer install --no-suggest --no-interaction
+          # TODO: should only deploy non-dev packages
+          # --no-dev
     - run:
         name: Deploy to Pantheon
         when: on_success
         command: |
-          export PATH=/tmp/vendor/bin:/var/www/html/vendor/bin:$PATH
-          cd /tmp && curl -O https://raw.githubusercontent.com/pantheon-systems/terminus-installer/master/builds/installer.phar && php installer.phar install
-          cd /var/www/html
+          export PATH=/tmp/vendor/bin:/var/www/html/vendor/bin:$PATH && cd /var/www/html
           # Don't check the repo host key
           export GIT_SSH_COMMAND="ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no"
           # Don't check for host key for Pantheon sites
           echo -e "host *.drush.in\n    StrictHostKeyChecking no" >> ~/.ssh/config
-          # Make sure to log in
-          # Set the user email that will commit code into Pantheon repo 
+          # Make sure to log in. Set the user email that will commit code into Pantheon repo 
           terminus auth:login --machine-token="$eGov_Terminus" --email="$eGov_Email"
+          # Git operations
+          git remote add pantheon ssh://codeserver.dev.5c6715db-abac-4633-ada8-1c9efe354629@codeserver.dev.5c6715db-abac-4633-ada8-1c9efe354629.drush.in:2222/~/repository.git
+          git config --global user.email "$eGov_Email"
+          # Without these lines, push will fail with "please remote git submodules" error
+          rm -rf ./vendor/drupal/coder/.git && rm -rf ./web/modules/contrib/facets/.git && rm -rf ./web/modules/contrib/search_api_solr/.git
+          git add -f /var/www/html
+          # Pantheon site will use the wrong DB if the local is kept
+          git rm --cache  web/sites/default/settings.local.php --ignore-unmatch
+          git rm -r --cache web/sites/default/files --ignore-unmatch
+          git commit -m "CircleCI deployment" --quiet
           # When commit on master, we deploy to DEV
           if [[ $CIRCLE_BRANCH = "master" ]]; then
             echo "Deploy to Pantheon DEV site"
             # Set the connection type to GIT
             terminus connection:set portlandor.dev git
-            git remote add pantheon ssh://codeserver.dev.5c6715db-abac-4633-ada8-1c9efe354629@codeserver.dev.5c6715db-abac-4633-ada8-1c9efe354629.drush.in:2222/~/repository.git
-            git config --global user.email "$eGov_Email"
-            # Without these lines, push will fail with "please remote git submodules" error
-            rm -rf ./vendor/drupal/coder/.git && rm -rf ./web/modules/contrib/facets/.git && rm -rf ./web/modules/contrib/search_api_solr/.git
-            git add -f /var/www/html
-            # Pantheon site will use the wrong DB if the local is kept
-            git rm --cache  web/sites/default/settings.local.php --ignore-unmatch
-            git rm -r --cache web/sites/default/files --ignore-unmatch
-            git commit -m "CircleCI deployment" --quiet
-            # git filter-branch -f --index-filter 'git rm -rf --cached --ignore-unmatch sites/default/files' --prune-empty -- afc758c6..HEAD
             git push -f pantheon master
-            # Deploy code from local env to the new multidev site
-            # terminus env:deploy portlandor.$CIRCLE_BRANCH --sync-content --note="Manual deploy to powr-118"
-            # Cloning files and DB from dev environment to powr-118 environment
-            # terminus env:clone-content portlandor.dev "$CIRCLE_BRANCH" -y
-            # Wake up the multidev site
-            terminus env:wake portlandor.dev
-            # Check site status
-            # terminus drush portlandor.dev -- status
-            # TODO: pull DB from Live
-            # Sanitize DB
-            # terminus drush portlandor.dev -- sql-sanitize -y
-            # Clear cache
-            sleep 40s
+            # TODO: Sanitize DB here
+            # terminus env:clone-content portlandor.test dev
+            # Don't need to wait for DEV because it's always up?
+            # Wake up the DEV site and must wait for 30s
+            # terminus env:wake portlandor.dev && sleep 30s
             terminus remote:drush portlandor.dev -- cim -y && terminus remote:drush portlandor.dev -- cr
             # echo 'node_access_rebuild();' | $(terminus remote:drush portlandor.dev -- php-script)
             # After success deployment to DEV, remove the multidev site if this is a merge of a PR
@@ -101,25 +124,32 @@ behat_tests: &behat_tests
               echo "Found multidev site"
               # terminus multidev:delete --delete-branch portlandor.$CIRCLE_BRANCH -y
               # Cloning files and DB from TEST environment to the multidev environment
-              terminus env:clone-content portlandor.test "$CIRCLE_BRANCH" -y 
+              # Do we need to clone DB/file every time for existing multidev?
+              # terminus env:clone-content portlandor.test "$CIRCLE_BRANCH" -y 
             else
               echo "Creating new multidev site. This may take a few seconds." && terminus multidev:create portlandor.test $CIRCLE_BRANCH
             fi
-            # Set the connect to GIT
+            # Set the connection type to GIT
             terminus connection:set portlandor.$CIRCLE_BRANCH git
-            git remote add pantheon ssh://codeserver.dev.5c6715db-abac-4633-ada8-1c9efe354629@codeserver.dev.5c6715db-abac-4633-ada8-1c9efe354629.drush.in:2222/~/repository.git
-            git config --global user.email "$eGov_Email"
-            # Without these lines, push will fail with "please remote git submodules" error
-            rm -rf ./vendor/drupal/coder/.git && rm -rf ./web/modules/contrib/facets/.git && rm -rf ./web/modules/contrib/search_api_solr/.git
-            git add -f /var/www/html
-            # Pantheon site will use the wrong DB if the local is kept
-            git rm --cache  web/sites/default/settings.local.php --ignore-unmatch && git rm -r --cache web/sites/default/files --ignore-unmatch && git commit -m "CircleCI deployment" --quiet
-            # git filter-branch -f --index-filter 'git rm -rf --cached --ignore-unmatch sites/default/files' --prune-empty -- afc758c6..HEAD
-            git push -f pantheon $CIRCLE_BRANCH
-            # Wake up the multidev site
-            terminus env:wake portlandor.$CIRCLE_BRANCH
-            # The following two drush commands will fail without wait for a few seconds
-            sleep 40s
+            # Only do force push when the multidev site doesn't exist
+            if grep -Fxq "$CIRCLE_BRANCH" ./env_list.txt;  then
+              rm -rf ./env_list.txt
+              # Get the tree from Pantheon. Rebase the CircleCI local repo on top of Pantheon. Push the new branch to Pantheon.
+              git fetch pantheon $CIRCLE_BRANCH
+              git rebase -X theirs pantheon/$CIRCLE_BRANCH
+              git push pantheon $CIRCLE_BRANCH
+              # Pantheon appears to need a short delay. Otherwise some files are not picked up by drush cim.
+              sleep 10s
+              # This is the old script left as a fallback solution. It wipes out the Pantheon tree.
+              # git push -f pantheon $CIRCLE_BRANCH
+              # terminus env:wake portlandor.$CIRCLE_BRANCH && sleep 30s
+            else
+              rm -rf ./env_list.txt
+              git push -f pantheon $CIRCLE_BRANCH
+              # Wake up the multidev site and wait 30s.
+              # The following two drush commands will fail without wait for a few seconds
+              terminus env:wake portlandor.$CIRCLE_BRANCH && sleep 30s
+            fi
             # Clear cache. Import config files
             terminus remote:drush portlandor.$CIRCLE_BRANCH -- cim -y && terminus remote:drush portlandor.$CIRCLE_BRANCH -- cr
             # echo 'node_access_rebuild();' | $(terminus drush portlandor.$CIRCLE_BRANCH -- php-script)
@@ -128,8 +158,10 @@ behat_tests: &behat_tests
         name: Run tests against Pantheon
         when: on_success
         command: |
-          cd /var/www/html && export PATH=/var/www/html/vendor/bin:$PATH
-          composer require behat/behat:^3.4 behat/mink:^1.7 behat/mink-extension:v2.2 behat/mink-selenium2-driver:^1.3 bex/behat-screenshot:^1.2 jcalderonzumba/mink-phantomjs-driver:~0.3.1  drupal/drupal-extension:^3.4 guzzlehttp/guzzle:^6.0@dev
+          export PATH=/var/www/html/vendor/bin:$PATH
+          # TODO: revisit this when we only deploy non-dev packages.
+          # Install Behat and its dependencies.
+          # composer install
           if [[ $CIRCLE_BRANCH = "master" ]]; then
             echo 'export BEHAT_PARAMS="{\"extensions\" : {\"Behat\\\MinkExtension\" : {\"base_url\" : \"https://${HTTP_AUTH}@dev-portlandor.pantheonsite.io\"}}}"' >> $BASH_ENV && source $BASH_ENV
           else
