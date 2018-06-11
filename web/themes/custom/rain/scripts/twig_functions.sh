@@ -31,6 +31,6 @@ then
   # Create symlinks for all contrib twig functions
   for i in "${twig_functions[@]}"
   do
-    cp $VENDORDIR/$i ./components/_twig-components/functions/.
+    cp $VENDORDIR/$i ./source/_twig-components/functions/.
   done
 fi
