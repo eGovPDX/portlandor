@@ -1,9 +1,73 @@
 <?php
 
+use Drupal\group\GroupMembershipLoaderInterface;
 use Drupal\group\Entity\GroupInterface;
+use Drupal\group\Entity\GroupTypeInterface;
+use Drupal\group\Entity\GroupContentTypeInterface;
 use Drupal\pathauto\Form\PathautoBulkUpdateForm;
 
-const GROUP_CONTENT_TYPES = array('services', 'locations', 'buildings');
+const GROUP_CONTENT_TYPES = array('services', 'locations', 'buildings', 'news');
+
+/**
+ * Implements hook_ENTITY_TYPE_create().
+ */
+// When a content type is installed to a group type, create the alias for all groups with that group type.
+function portland_group_content_type_create(GroupContentTypeInterface $groupContentType) {
+    // Get all groups of this type
+    $properties = ['type' => $groupContentType->getGroupTypeId()];
+    $grps = \Drupal::entityTypeManager()
+        ->getStorage('group')
+        ->loadByProperties($properties);
+    $lang = \Drupal::languageManager()->getCurrentLanguage()->getId();
+    // content_plugin:"group_node:news"
+    $contentTypePlugin = $groupContentType->getContentPluginId();
+    if(strpos($contentTypePlugin, 'group_node:') !== 0) return;
+    $contentType = substr($contentTypePlugin, strlen('group_node:'));
+
+    // For each group, generate a new URL alias "group.field_shortname_or_acronym/contents"
+    foreach ($grps as $grp) {
+        $shortname = \Drupal::service("pathauto.alias_cleaner")
+            ->cleanString($grp->get('field_shortname_or_acronym')->value);
+        $alias = "/$shortname/$contentType";
+        $gid = $grp->id();
+        $system_path = "/group/$gid/$contentType";
+        $path = \Drupal::service('path.alias_storage')->save($system_path, $alias, $lang);
+    }    
+}
+/**
+ * Implements hook_ENTITY_TYPE_delete().
+ */
+// When a content type is uninstaled from a group type, delete the alias added during creation time.
+function portland_group_content_type_delete(GroupContentTypeInterface $groupContentType) {
+    // Get all groups of this type
+    $properties = ['type' => $groupContentType->getGroupTypeId()];
+    $grps = \Drupal::entityTypeManager()
+        ->getStorage('group')
+        ->loadByProperties($properties);
+    $lang = \Drupal::languageManager()->getCurrentLanguage()->getId();
+    // content_plugin:"group_node:news"
+    $contentTypePlugin = $groupContentType->getContentPluginId();
+    if(strpos($contentTypePlugin, 'group_node:') !== 0) return;
+    $contentType = substr($contentTypePlugin, strlen('group_node:'));
+
+    // For each group, delete the URL alias "/group.field_shortname_or_acronym/contents". E.g. "/bds/news"
+    foreach ($grps as $grp) {
+        $shortname = \Drupal::service("pathauto.alias_cleaner")
+            ->cleanString($grp->get('field_shortname_or_acronym')->value);
+        $alias = "/$shortname/$contentType";
+        $gid = $grp->id();
+        $system_path = "/group/$gid/$contentType";
+
+        // If found an alias, delete it.
+        $existing_alias = \Drupal::service('path.alias_storage')
+            ->lookupPathAlias($system_path, $lang);
+        if($existing_alias) {
+            $path = \Drupal::service('path.alias_storage')
+                ->delete(['alias' => $existing_alias, 'langcode' => $lang]);
+        }
+    }  
+}
+
 
 /**
  * Implements hook_ENTITY_TYPE_insert().
