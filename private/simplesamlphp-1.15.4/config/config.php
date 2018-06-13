@@ -4,6 +4,14 @@
  * 
  */
 
+if (!ini_get('session.save_handler')) {
+    ini_set('session.save_handler', 'file');
+}
+
+$ps = json_decode($_SERVER['PRESSFLOW_SETTINGS'], TRUE);
+$host = $_SERVER['HTTP_HOST'];
+$db = $ps['databases']['default']['default'];
+
 $config = array(
 
     /*******************************
@@ -27,7 +35,7 @@ $config = array(
      * external url, no matter where you come from (direct access or via the
      * reverse proxy).
      */
-    'baseurlpath' => 'simplesaml/',
+    'baseurlpath' => 'https://'. $host .':443/simplesaml/',
 
     /*
      * The 'application' configuration array groups a set configuration options
@@ -63,9 +71,9 @@ $config = array(
      * root directory. 
      */
     'certdir' => 'cert/',
-    'loggingdir' => 'log/',
+    'loggingdir' => $_ENV['HOME'] . '/files/private/log/',
     'datadir' => 'data/',
-    'tempdir' => '/tmp/simplesaml',
+    'tempdir' => $_ENV['HOME'] . '/tmp/simplesaml',
 
     /*
      * Some information about the technical persons running this installation.
@@ -1007,7 +1015,7 @@ $config = array(
      *
      * (This option replaces the old 'session.handler'-option.)
      */
-    'store.type'                    => 'phpsession',
+    'store.type'                    => 'memcache',
 
     /*
      * The DSN the sql datastore should connect to.
