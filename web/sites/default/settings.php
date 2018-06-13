@@ -1,5 +1,6 @@
 <?php
 
+$settings['hash_salt'] = "testsalt";
 /**
  * Load services definition file.
  */
