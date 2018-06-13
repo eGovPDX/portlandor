@@ -49,7 +49,7 @@ $fields = array(
 // Customize the message based on the workflow type.  Note that slack_notification.php
 // must appear in your pantheon.yml for each workflow type you wish to send notifications on.
 switch($_POST['wf_type']) {
-  case 'deploy':
+  case 'deploy': // Code is deployed to Test or Live
     // Find out what tag we are on and get the annotation.
     $deploy_tag = `git describe --tags`;
     $deploy_message = $_POST['deploy_message'];
@@ -74,7 +74,7 @@ switch($_POST['wf_type']) {
     );  
     break;
 
-  case 'sync_code':
+  case 'sync_code': // Code is pushed via Git or SFTP
     // Get the committer, hash, and message for the most recent commit.
     $committer = `git log -1 --pretty=%cn`;
     $email = `git log -1 --pretty=%ce`;
