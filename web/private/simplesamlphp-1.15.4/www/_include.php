@@ -29,7 +29,7 @@ if (version_compare(PHP_VERSION, '5.4.0', '<')) {
 }
 
 // initialize the autoloader
-echo(dirname(dirname(__FILE__)) . '/lib/_autoload.php ***************');
+echo(dirname(dirname(__FILE__)) . '/lib/_autoload.php ****************');
 //exit();
 require_once(dirname(dirname(__FILE__)).'/lib/_autoload.php');
 
