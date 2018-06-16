@@ -63,7 +63,6 @@ behat_tests: &behat_tests
     - run:
         name: Composer install
         command: |
-          exit 1
           # Pantheon don't allow these folders but Composer needs them
           #rm -rf ./vendor/drupal/coder
           rm -rf ./web/modules/contrib/facets
@@ -154,17 +153,20 @@ behat_tests: &behat_tests
               # Wake up the multidev site and wait 30s.
               # The following two drush commands will fail without wait for a few seconds
               terminus env:wake portlandor.$CIRCLE_BRANCH # && sleep 60s
+              count = 0
               for i in {1..10}
               do
                 if (terminus remote:drush portlandor.$CIRCLE_BRANCH -- cim -y;) then 
                   terminus remote:drush portlandor.$CIRCLE_BRANCH -- cr;
+                  count = -1
                   break;
                 else
                   echo 'Wait for 10 seconds';
+                  count++
                   sleep 10s;
-                  exit 1;
                 fi
               done
+              if ((count != -1)) then exit 1; fi
             fi
             # Clear cache. Import config files
             # terminus remote:drush portlandor.$CIRCLE_BRANCH -- cim -y && terminus remote:drush portlandor.$CIRCLE_BRANCH -- cr
