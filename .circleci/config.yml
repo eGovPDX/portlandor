@@ -152,10 +152,19 @@ behat_tests: &behat_tests
               git push -f pantheon $CIRCLE_BRANCH
               # Wake up the multidev site and wait 30s.
               # The following two drush commands will fail without wait for a few seconds
-              terminus env:wake portlandor.$CIRCLE_BRANCH && sleep 60s
+              terminus env:wake portlandor.$CIRCLE_BRANCH # && sleep 60s
+              for i in {1..10}
+              do
+                if (terminus remote:drush portlandor.$CIRCLE_BRANCH -- cim -y;) then 
+                  terminus remote:drush portlandor.$CIRCLE_BRANCH -- cr;
+                else
+                  echo 'Wait for 10 seconds';
+                  sleep 10s;
+                fi
+              done
             fi
             # Clear cache. Import config files
-            terminus remote:drush portlandor.$CIRCLE_BRANCH -- cim -y && terminus remote:drush portlandor.$CIRCLE_BRANCH -- cr
+            # terminus remote:drush portlandor.$CIRCLE_BRANCH -- cim -y && terminus remote:drush portlandor.$CIRCLE_BRANCH -- cr
             # echo 'node_access_rebuild();' | $(terminus drush portlandor.$CIRCLE_BRANCH -- php-script)
           fi
     - run:
