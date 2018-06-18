@@ -59,9 +59,10 @@ switch($_POST['wf_type']) {
 
     // Prepare the slack payload as per:
     // https://api.slack.com/incoming-webhooks
-    $text = 'Deploy to the '. $_ENV['PANTHEON_ENVIRONMENT'];
+    $text = 'Deploy to the '. $env_with_link;
     $text .= ' environment of '. $_ENV['PANTHEON_SITE_NAME'] .' by '. $_POST['user_email'] .' complete!';
     $text .= ' <https://dashboard.pantheon.io/sites/'. PANTHEON_SITE .'#'. PANTHEON_ENVIRONMENT .'/deploys|View Dashboard>';
+    $text .= '\nDeploy note: '.$deploy_message;
     // Build an array of fields to be rendered with Slack Attachments as a table
     // attachment-style formatting:
     // https://api.slack.com/docs/attachments
