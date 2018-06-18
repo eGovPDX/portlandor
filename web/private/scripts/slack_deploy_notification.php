@@ -130,7 +130,7 @@ $attachment = array(
 
 //_slack_notification($secrets['slack_url'], $secrets['slack_channel'], $secrets['slack_username'], $text, $attachment, $secrets['always_show_text']);
 // Only send message when deploying from DEV to TEST. Don't show attachment.
-if($_POST['wf_type'] == 'deploy' && $_ENV['PANTHEON_ENVIRONMENT'] == 'powr-227') {
+if(/*$_POST['wf_type'] == 'deploy' && */ $_ENV['PANTHEON_ENVIRONMENT'] == 'powr-227') {
     _slack_notification($secrets['slack_url'], $secrets['slack_channel'], $secrets['slack_username'], $text);
 }
 
