@@ -20,8 +20,7 @@ const del = require('del');
 const cssConfig = {
   enabled: true,
   src: `./source/_patterns/**/*.scss`,
-  dest: `./dist/`,
-  pl: './source/css',
+  dest: `./source/css`,
   flattenDestOutput: true,
   lint: {
     enabled: false,
@@ -55,7 +54,6 @@ gulp.task('css', function(done) {
     .pipe(sourcemaps.write((cssConfig.sourceMapEmbed) ? null : './'))
     .pipe(gulpif(cssConfig.flattenDestOutput, flatten()))
     .pipe(gulp.dest(cssConfig.dest))
-    .pipe(gulp.dest(cssConfig.pl))
     .on('end', () => {
       reload('*.css');
       done();
