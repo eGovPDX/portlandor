@@ -8,7 +8,7 @@ $pantheon_yellow = '#EFD01B';
 // if you like: https://api.slack.com/docs/messages/builder
 $defaults = array(
   'slack_username' => 'Pantheon-Quicksilver',
-//   'always_show_text' => false,
+  'always_show_text' => true,
 );
 
 // Load our hidden credentials.
