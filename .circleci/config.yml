@@ -143,7 +143,7 @@ behat_tests: &behat_tests
               git rebase -X theirs -X no-renames pantheon/$CIRCLE_BRANCH
               git push pantheon $CIRCLE_BRANCH
               # Pantheon appears to need a short delay. Otherwise some files are not picked up by drush cim.
-              sleep 20s
+              # sleep 20s
               # This is the old script left as a fallback solution. It wipes out the Pantheon tree.
               # git push -f pantheon $CIRCLE_BRANCH
               # terminus env:wake portlandor.$CIRCLE_BRANCH && sleep 30s
@@ -152,10 +152,24 @@ behat_tests: &behat_tests
               git push -f pantheon $CIRCLE_BRANCH
               # Wake up the multidev site and wait 30s.
               # The following two drush commands will fail without wait for a few seconds
-              terminus env:wake portlandor.$CIRCLE_BRANCH && sleep 60s
+              terminus env:wake portlandor.$CIRCLE_BRANCH # && sleep 60s
             fi
             # Clear cache. Import config files
-            terminus remote:drush portlandor.$CIRCLE_BRANCH -- cim -y && terminus remote:drush portlandor.$CIRCLE_BRANCH -- cr
+            count=0
+            for i in {1..10}
+            do
+              if (terminus remote:drush portlandor.$CIRCLE_BRANCH -- cim -y;) then 
+                terminus remote:drush portlandor.$CIRCLE_BRANCH -- cr;
+                count=-1
+                break;
+              else
+                echo 'Wait for 10 seconds before retry...'
+                count++
+                sleep 10s
+              fi
+            done
+            if ((count != -1)); then exit 1; fi
+            # terminus remote:drush portlandor.$CIRCLE_BRANCH -- cim -y && terminus remote:drush portlandor.$CIRCLE_BRANCH -- cr
             # echo 'node_access_rebuild();' | $(terminus drush portlandor.$CIRCLE_BRANCH -- php-script)
           fi
     - run:
