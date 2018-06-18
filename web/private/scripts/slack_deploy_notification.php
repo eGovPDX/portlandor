@@ -19,11 +19,11 @@ $secrets = _get_secrets(array('slack_url'), $defaults);
 // attachment-style formatting:
 // https://api.slack.com/docs/attachments
 $fields = array(
-//   array(
-//     'title' => 'Site',
-//     'value' => $_ENV['PANTHEON_SITE_NAME'],
-//     'short' => 'true'
-//   ),
+  array(
+    'title' => 'Site',
+    'value' => $_ENV['PANTHEON_SITE_NAME'],
+    'short' => 'true'
+  ),
   array( // Render Environment name with link to site, <http://{ENV}-{SITENAME}.pantheon.io|{ENV}>
     'title' => 'Environment',
     'value' => '<http://' . $_ENV['PANTHEON_ENVIRONMENT'] . '-' . $_ENV['PANTHEON_SITE_NAME'] . '.pantheonsite.io|' . $_ENV['PANTHEON_ENVIRONMENT'] . '>',
@@ -39,11 +39,11 @@ $fields = array(
     'value' => ucfirst($_POST['stage']) . ' ' . str_replace('_', ' ',  $_POST['wf_type']),
     'short' => 'true'
   ),
-//   array(
-//     'title' => 'View Dashboard',
-//     'value' => '<https://dashboard.pantheon.io/sites/'. PANTHEON_SITE .'#'. PANTHEON_ENVIRONMENT .'/deploys|View Dashboard>',
-//     'short' => 'true'
-//   ),
+  array(
+    'title' => 'View Dashboard',
+    'value' => '<https://dashboard.pantheon.io/sites/'. PANTHEON_SITE .'#'. PANTHEON_ENVIRONMENT .'/deploys|View Dashboard>',
+    'short' => 'true'
+  ),
 );
 
 
@@ -128,10 +128,11 @@ $attachment = array(
   'fields' => $fields
 );
 
-// Kevin: don't show attachment
 //_slack_notification($secrets['slack_url'], $secrets['slack_channel'], $secrets['slack_username'], $text, $attachment, $secrets['always_show_text']);
-_slack_notification($secrets['slack_url'], $secrets['slack_channel'], $secrets['slack_username'], $text);
-
+// Only send message when deploying from DEV to TEST. Don't shwo attachment.
+if($_POST['wf_type'] == 'deploy' && $_ENV['PANTHEON_ENVIRONMENT'] == 'test') {
+    _slack_notification($secrets['slack_url'], $secrets['slack_channel'], $secrets['slack_username'], $text);
+}
 
 /**
  * Get secrets from secrets file.
