@@ -46,6 +46,9 @@ $fields = array(
 //   ),
 );
 
+
+$env_with_link = '<http://' . $_ENV['PANTHEON_ENVIRONMENT'] . '-' . $_ENV['PANTHEON_SITE_NAME'] . '.pantheonsite.io|' . $_ENV['PANTHEON_ENVIRONMENT'] . '>';
+
 // Customize the message based on the workflow type.  Note that slack_notification.php
 // must appear in your pantheon.yml for each workflow type you wish to send notifications on.
 switch($_POST['wf_type']) {
@@ -83,7 +86,7 @@ switch($_POST['wf_type']) {
 
     // Prepare the slack payload as per:
     // https://api.slack.com/incoming-webhooks
-    $text = 'Code sync to the ' . $_ENV['PANTHEON_ENVIRONMENT'] . ' environment of ' . $_ENV['PANTHEON_SITE_NAME'] . ' by ' . $_POST['user_email'] . "!\n";
+    $text = 'Code sync to the ' . $env_with_link . ' environment of ' . $_ENV['PANTHEON_SITE_NAME'] . ' by ' . $_POST['user_email'] . ".\n";
     $text .= 'Most recent commit: ' . rtrim($hash) . ' by ' . rtrim($committer) . ': ' . $message;
     // Build an array of fields to be rendered with Slack Attachments as a table
     // attachment-style formatting:
@@ -105,11 +108,14 @@ switch($_POST['wf_type']) {
   case 'clear_cache':
     $fields[] = array(
       'title' => 'Cleared caches',
-      'value' => 'Cleared caches on the ' . $_ENV['PANTHEON_ENVIRONMENT'] . ' environment of ' . $_ENV['PANTHEON_SITE_NAME'] . "!\n",
+      'value' => 'Cleared caches on the ' . $_ENV['PANTHEON_ENVIRONMENT'] . ' environment of ' . $_ENV['PANTHEON_SITE_NAME'] . ".\n",
       'short' => 'false'
     );
+    $text = 'Cleared caches on the ' . $env_with_link . ' environment of ' . $_ENV['PANTHEON_SITE_NAME'] . ".\n";
     break;
-
+  case 'create_cloud_development_environment':
+    $text = 'New multidev environement at '. $_ENV['PANTHEON_SITE_NAME'] .' created: ' . $env_with_link . ".\n";
+    break;
   default:
     $text = $_POST['qs_description'];
     break;
@@ -122,7 +128,9 @@ $attachment = array(
   'fields' => $fields
 );
 
-_slack_notification($secrets['slack_url'], $secrets['slack_channel'], $secrets['slack_username'], $text, $attachment, $secrets['always_show_text']);
+// Kevin: don't show attachment
+//_slack_notification($secrets['slack_url'], $secrets['slack_channel'], $secrets['slack_username'], $text, $attachment, $secrets['always_show_text']);
+_slack_notification($secrets['slack_url'], $secrets['slack_channel'], $secrets['slack_username'], $text);
 
 
 /**
