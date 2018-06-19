@@ -12,9 +12,9 @@ Component-driven prototyping tool using [Pattern Lab v2](http://patternlab.io/) 
 Install with NPM:
 `npm install`
 
-Compile the css:
+Compile the CSS:
 `npm run drupal:build`
-or 
+or
 watch the css for changes:
 `npm start`
 
@@ -30,7 +30,7 @@ Start Pattern Lab:
 
 ## Starting Pattern Lab and watch task
 
-For now, you will need to run two separate tasks to watch your pattern's sass files and run Pattern Lab: 
+For now, you will need to run two separate tasks to watch your pattern's Sass files and run Pattern Lab:
 
   1. `npm start`
   2. `npm run pl:start`
@@ -45,6 +45,9 @@ There are four different pieces to a pattern lab:
 4. The styleguidekit
 
 A combination of all four of these elements is called an edition.
+
+<img src="https://user-images.githubusercontent.com/30271981/41615447-29d29da8-73b0-11e8-94ad-701a5d4fa379.png" width="600" title="Github Logo">
+
 ### Sharing patterns
 Patterns developed by one team can easily be shared as a starterkit with the world. To do that, all you need is to commit your patterns into a dist folder in your repository on Github.  Once you have done that, you can install a starterkit in your Pattern Lab project using the Pattern Lab CLI (`php core/console --starterkit --install [starterkit-name]` in this PHP version)
 ### Pattern Lab's asset gap
@@ -67,7 +70,7 @@ Once there are patterns to use that are prototyped and tested, hooking them into
 ```
 You can call this pattern with the confidence of having prototyped and tested that this will work, without having to test through Drupal and running cache rebuilds endlessly.  Neat!
 ## This project's pattern structure choices
-There is not proscribed way for structuring patterns, so for this project we have come up with three options for structure:
+There is no proscribed way for structuring patterns, so for this project we have come up with three options for structure:
 | Atomic    | Water     | Component  |
 |:---------:|:---------:|:----------:|
 | base      | base      | utilities  |
@@ -79,5 +82,5 @@ There is not proscribed way for structuring patterns, so for this project we hav
 ## Project Roadmap
 * Webpack-based build process
   * Use Webpack for bundling any javascript created
-  * SASS compiling should be folded into that process so there is only one build process
+  * Sass compiling should be folded into that process so there is only one build process
 * Look at how to better use Twig functions between Pattern Lab and Drupal so there isn't reliance on naming conventions
