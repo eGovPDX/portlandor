@@ -71,14 +71,16 @@ Once there are patterns to use that are prototyped and tested, hooking them into
 You can call this pattern with the confidence of having prototyped and tested that this will work, without having to test through Drupal and running cache rebuilds endlessly.  Neat!
 ## This project's pattern structure choices
 There is no proscribed way for structuring patterns, so for this project we have come up with three options for structure:
-| Atomic    | Water     | Component  |
-|:---------:|:---------:|:----------:|
-| base      | base      | utilities  |
-| atoms     | drops     | base       |
-| molecules | puddles   | elements   |
-| organisms | ponds     | components |
-| templates | templates | layouts    |
-| pages     | pages     | pages      |
+
+Atomic    | Water     | Component  
+:--------:|:---------:|:--------:
+base      | base      | utilities
+atoms     | drops     | base  
+molecules | puddles   | elements
+organisms | ponds     | components
+templates | templates | layouts
+pages     | pages     | pages  
+
 ## Project Roadmap
 * Webpack-based build process
   * Use Webpack for bundling any javascript created
