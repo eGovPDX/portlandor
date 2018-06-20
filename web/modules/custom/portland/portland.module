@@ -6,32 +6,52 @@ use Drupal\group\Entity\GroupTypeInterface;
 use Drupal\group\Entity\GroupContentTypeInterface;
 use Drupal\pathauto\Form\PathautoBulkUpdateForm;
 
-const GROUP_CONTENT_TYPES = array('services', 'guides', 'service_location', 'news');
+const GROUP_CONTENT_TYPE_PLURAL = [
+    "service" => "services",
+    "guide" => "guides",
+    "building" => "buildings",
+];
+
+function createAliasForGroupContent($grp, $contentType, $lang) {
+    $contentTypePlural = (isset(GROUP_CONTENT_TYPE_PLURAL[$contentType]) ? GROUP_CONTENT_TYPE_PLURAL[$contentType] : $contentType);
+
+    // Clean up shortname as it's from the editor
+    $shortname = \Drupal::service("pathauto.alias_cleaner")
+                ->cleanString($grp->get('field_shortname_or_acronym')->value);
+    $alias = "/$shortname/$contentTypePlural";
+    $gid = $grp->id();
+    $system_path = "/group/$gid/$contentTypePlural";
+
+    // If there is already an alias, skip it.
+    $existing_alias = \Drupal::service('path.alias_storage')->lookupPathAlias($system_path, $lang);
+    if ($existing_alias && $existing_alias == $alias) {
+        return false;   
+    }
+
+    $path = \Drupal::service('path.alias_storage')->save($system_path, $alias, $lang);
+    return true;
+}
 
 /**
  * Implements hook_ENTITY_TYPE_create().
  */
 // When a content type is installed to a group type, create the alias for all groups with that group type.
 function portland_group_content_type_create(GroupContentTypeInterface $groupContentType) {
-    // Get all groups of this type
+    // Get all groups of this type. E.g. bureau_office
     $properties = ['type' => $groupContentType->getGroupTypeId()];
     $grps = \Drupal::entityTypeManager()
         ->getStorage('group')
         ->loadByProperties($properties);
-    $lang = \Drupal::languageManager()->getCurrentLanguage()->getId();
-    // content_plugin:"group_node:news"
+
+    // Get the content type from content_plugin ID. E.g. "group_node:news"
     $contentTypePlugin = $groupContentType->getContentPluginId();
     if(strpos($contentTypePlugin, 'group_node:') !== 0) return;
     $contentType = substr($contentTypePlugin, strlen('group_node:'));
 
     // For each group, generate a new URL alias "group.field_shortname_or_acronym/contents"
+    $lang = \Drupal::languageManager()->getCurrentLanguage()->getId();
     foreach ($grps as $grp) {
-        $shortname = \Drupal::service("pathauto.alias_cleaner")
-            ->cleanString($grp->get('field_shortname_or_acronym')->value);
-        $alias = "/$shortname/$contentType";
-        $gid = $grp->id();
-        $system_path = "/group/$gid/$contentType";
-        $path = \Drupal::service('path.alias_storage')->save($system_path, $alias, $lang);
+        createAliasForGroupContent($grp, $contentType, $lang);
     }    
 }
 /**
@@ -51,12 +71,10 @@ function portland_group_content_type_delete(GroupContentTypeInterface $groupCont
     $contentType = substr($contentTypePlugin, strlen('group_node:'));
 
     // For each group, delete the URL alias "/group.field_shortname_or_acronym/contents". E.g. "/bds/news"
+    $contentTypePlural = isset(GROUP_CONTENT_TYPE_PLURAL[$contentType]) ? GROUP_CONTENT_TYPE_PLURAL[$contentType] : $contentType;
     foreach ($grps as $grp) {
-        $shortname = \Drupal::service("pathauto.alias_cleaner")
-            ->cleanString($grp->get('field_shortname_or_acronym')->value);
-        $alias = "/$shortname/$contentType";
         $gid = $grp->id();
-        $system_path = "/group/$gid/$contentType";
+        $system_path = "/group/$gid/$contentTypePlural";
 
         // If found an alias, delete it.
         $existing_alias = \Drupal::service('path.alias_storage')
@@ -73,17 +91,11 @@ function portland_group_content_type_delete(GroupContentTypeInterface $groupCont
  * Implements hook_ENTITY_TYPE_insert().
  */
 function portland_group_insert(GroupInterface $group) {
-
-    $gid = $group->id();
-    $shortname = \Drupal::service("pathauto.alias_cleaner")->cleanString($group->get('field_shortname_or_acronym')->value);
-
-    // POWR-142
-    // 1.2. Generate URL aliases for content type subpages using group shortname (ie. /bds/services)
-    foreach (GROUP_CONTENT_TYPES as $type) {
-        $system = "/group/$gid/$type";
-        $alias = "/$shortname/$type";
-        // save new path alias
-        $path = \Drupal::service('path.alias_storage')->save($system, $alias, "en");
+    // Find all installed content types on this group type and generate alias if it's missing.
+    $installedContentTypes = $group->getGroupType()->getInstalledContentPlugins();
+    $lang = \Drupal::languageManager()->getCurrentLanguage()->getId();
+    foreach ($installedContentTypes as $contentType) {
+        createAliasForGroupContent($group, $contentType, $lang);
     }
 
     // Workaround for Drupal bug: https://www.drupal.org/project/inline_entity_form/issues/2966933
@@ -126,9 +138,12 @@ function portland_group_update(GroupInterface $group) {
     
     // POWR-142: Regenerate URL aliases for content type subpages using group shortname (ie. /bds/services)
     // reference: https://api.drupal.org/api/drupal/core%21lib%21Drupal%21Core%21Path%21AliasStorage.php/class/AliasStorage/8.6.x
-    foreach (GROUP_CONTENT_TYPES as $type) {
-        $system_path = "/group/$gid/$type";
-        $alias = "/$shortname/$type";
+    // Find all installed content types on this group type and generate alias if it's missing.
+    $installedContentTypes = $group->getGroupType()->getInstalledContentPlugins();
+    foreach ($installedContentTypes as $contentType) {
+        $contentTypePlural = isset(GROUP_CONTENT_TYPE_PLURAL[$contentType]) ? GROUP_CONTENT_TYPE_PLURAL[$contentType] : $contentType;
+        $system_path = "/group/$gid/$contentTypePlural";
+        $alias = "/$shortname/$contentTypePlural";
 
         $existing_alias = \Drupal::service('path.alias_storage')->lookupPathAlias($system_path, $lang);
 
