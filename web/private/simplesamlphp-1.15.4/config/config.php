@@ -1,8 +1,18 @@
 <?php
-/* 
+/*
  * The configuration of SimpleSAMLphp
- * 
+ *
  */
+
+// Enable local sessions to ensure that SimpleSAMLphp can keep a session when used in standalone mode
+if (!ini_get('session.save_handler')) {
+  ini_set('session.save_handler', 'file');
+}
+
+// Load necessary environmental data
+$ps = json_decode($_SERVER['PRESSFLOW_SETTINGS'], TRUE);
+$host = $_SERVER['HTTP_HOST'];
+$db = $ps['databases']['default']['default'];
 
 $config = array(
 
@@ -27,7 +37,7 @@ $config = array(
      * external url, no matter where you come from (direct access or via the
      * reverse proxy).
      */
-    'baseurlpath' => 'simplesaml/',
+    'baseurlpath' => 'https://'. $host .':443/simplesaml/', // SAML should always connect via 443
 
     /*
      * The 'application' configuration array groups a set configuration options
@@ -60,12 +70,12 @@ $config = array(
      * - 'temdir': Saving temporary files. SimpleSAMLphp will attempt to create
      *   this directory if it doesn't exist.
      * When specified as a relative path, this is relative to the SimpleSAMLphp
-     * root directory. 
+     * root directory.
      */
     'certdir' => 'cert/',
-    'loggingdir' => 'log/',
+    'loggingdir' => $_ENV['HOME'] . '/files/private/log/',
     'datadir' => 'data/',
-    'tempdir' => '/tmp/simplesaml',
+    'tempdir' => $_ENV['HOME'] . '/tmp/simplesaml',
 
     /*
      * Some information about the technical persons running this installation.
@@ -1007,7 +1017,7 @@ $config = array(
      *
      * (This option replaces the old 'session.handler'-option.)
      */
-    'store.type'                    => 'phpsession',
+    'store.type'                    => 'sql',
 
     /*
      * The DSN the sql datastore should connect to.
@@ -1015,13 +1025,13 @@ $config = array(
      * See http://www.php.net/manual/en/pdo.drivers.php for the various
      * syntaxes.
      */
-    'store.sql.dsn'                 => 'sqlite:/path/to/sqlitedatabase.sq3',
+    'store.sql.dsn'                 => 'mysql:host='. $db['host'] .';port='. $db['port'] .';dbname='. $db['database'],
 
     /*
      * The username and password to use when connecting to the database.
      */
-    'store.sql.username' => null,
-    'store.sql.password' => null,
+    'store.sql.username' => $db['username'],
+    'store.sql.password' => $db['password'],
 
     /*
      * The prefix we should use on our tables.
