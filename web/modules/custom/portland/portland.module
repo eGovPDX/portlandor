@@ -6,13 +6,21 @@ use Drupal\group\Entity\GroupTypeInterface;
 use Drupal\group\Entity\GroupContentTypeInterface;
 use Drupal\pathauto\Form\PathautoBulkUpdateForm;
 
+// The plural is used in the list page URL. E.g. "/bds/guides"
+// The group list view's path must match the plural form shown here.
+// If the group list view doesn't exist, visiting the alias will get a 404.
 const GROUP_CONTENT_TYPE_PLURAL = [
     "service" => "services",
     "guide" => "guides",
     "building" => "buildings",
+    "city_service" => "services",
+    "service_location" => "locations",
 ];
 
 function createAliasForGroupContent($grp, $contentType, $lang) {
+    // When a content type is not installed, $pluginType->getPluginDefinition()['entity_bundle'] returns false. Otherwise it's the string like "news".
+    if($contentType === false) return;
+
     $contentTypePlural = (isset(GROUP_CONTENT_TYPE_PLURAL[$contentType]) ? GROUP_CONTENT_TYPE_PLURAL[$contentType] : $contentType);
 
     // Clean up shortname as it's from the editor
@@ -94,7 +102,8 @@ function portland_group_insert(GroupInterface $group) {
     // Find all installed content types on this group type and generate alias if it's missing.
     $installedContentTypes = $group->getGroupType()->getInstalledContentPlugins();
     $lang = \Drupal::languageManager()->getCurrentLanguage()->getId();
-    foreach ($installedContentTypes as $contentType) {
+    foreach ($installedContentTypes as $pluginType) {
+        $contentType = $pluginType->getPluginDefinition()['entity_bundle'];
         createAliasForGroupContent($group, $contentType, $lang);
     }
 
@@ -140,7 +149,10 @@ function portland_group_update(GroupInterface $group) {
     // reference: https://api.drupal.org/api/drupal/core%21lib%21Drupal%21Core%21Path%21AliasStorage.php/class/AliasStorage/8.6.x
     // Find all installed content types on this group type and generate alias if it's missing.
     $installedContentTypes = $group->getGroupType()->getInstalledContentPlugins();
-    foreach ($installedContentTypes as $contentType) {
+    foreach ($installedContentTypes as $pluginType) {
+        $contentType = $pluginType->getPluginDefinition()['entity_bundle'];
+        // Skip if the content type is not installed with the group type.
+        if($contentType === false) return;
         $contentTypePlural = isset(GROUP_CONTENT_TYPE_PLURAL[$contentType]) ? GROUP_CONTENT_TYPE_PLURAL[$contentType] : $contentType;
         $system_path = "/group/$gid/$contentTypePlural";
         $alias = "/$shortname/$contentTypePlural";
