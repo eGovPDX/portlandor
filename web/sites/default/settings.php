@@ -55,4 +55,4 @@ if (isset($_ENV['PANTHEON_ENVIRONMENT']) && php_sapi_name() != 'cli') {
   }
 }
 
-$settings['simplesamlphp_dir'] = $_ENV['HOME'] . '/code/private/simplesamlphp-1.15.4';
+$settings['simplesamlphp_dir'] = $_ENV['HOME'] . '/code/web/private/simplesamlphp-1.15.4';
