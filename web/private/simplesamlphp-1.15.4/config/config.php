@@ -1060,7 +1060,7 @@ if (!function_exists('_get_secrets'))
      *
      * @param array $requiredKeys  List of keys in secrets file that must exist.
      */
-    function _get_simplesaml_secrets($requiredKeys, $defaults)
+    function _get_secrets($requiredKeys, $defaults)
     {
     $secretsFile = $_ENV['HOME'] . '/files/private/secrets.json';
     if (!file_exists($secretsFile)) {
