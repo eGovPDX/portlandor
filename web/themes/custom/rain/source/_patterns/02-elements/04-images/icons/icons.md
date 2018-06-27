@@ -13,7 +13,7 @@ The SVG component is found here: `/components/_patterns/01-base/04-images/icons/
 Simple: (no BEM renaming)
 
 ```
-{% include "@base/04-images/icons/_icon.twig" with {
+{% include "@elements/04-images/icons/_icon.twig" with {
   icon_name: 'bars',
 } %}
 ```
@@ -29,7 +29,7 @@ Simple: (no BEM renaming)
 Complex (BEM classes):
 
 ```
-{% include "@base/04-images/icons/_icon.twig" with {
+{% include "@elements/04-images/icons/_icon.twig" with {
   icon_base_class: 'icon',
   icon_blockname: 'toggle-expand',
   icon_name: 'bars',
