@@ -14,7 +14,7 @@ $db = $ps['databases']['default']['default'];
 
 // Load our hidden credentials.
 // See the README.md for instructions on storing secrets.
-$secrets = _get_simplesaml_secrets(array('simplesaml_secretsalt', 'simplesaml_adminpassword'), $defaults);
+$secrets = _get_secrets(array('simplesaml_secretsalt', 'simplesaml_adminpassword'), $defaults);
 
 $config = array(
 
@@ -1053,27 +1053,29 @@ $config = array(
 );
 
 
-/**
- * Get secrets from secrets file.
- *
- * @param array $requiredKeys  List of keys in secrets file that must exist.
- */
-function _get_simplesaml_secrets($requiredKeys, $defaults)
+if (!function_exists('_get_secrets')) 
 {
-  $secretsFile = $_ENV['HOME'] . '/files/private/secrets.json';
-  if (!file_exists($secretsFile)) {
-    die('No secrets file found. Aborting!');
-  }
-  $secretsContents = file_get_contents($secretsFile);
-  $secrets = json_decode($secretsContents, 1);
-  if ($secrets == FALSE) {
-    die('Could not parse json in secrets file. Aborting!');
-  }
-  $secrets += $defaults;
-  $missing = array_diff($requiredKeys, array_keys($secrets));
-  if (!empty($missing)) {
-    die('Missing required keys in json secrets file: ' . implode(',', $missing) . '. Aborting!');
-  }
-  return $secrets;
+    /**
+     * Get secrets from secrets file.
+     *
+     * @param array $requiredKeys  List of keys in secrets file that must exist.
+     */
+    function _get_simplesaml_secrets($requiredKeys, $defaults)
+    {
+    $secretsFile = $_ENV['HOME'] . '/files/private/secrets.json';
+    if (!file_exists($secretsFile)) {
+        die('No secrets file found. Aborting!');
+    }
+    $secretsContents = file_get_contents($secretsFile);
+    $secrets = json_decode($secretsContents, 1);
+    if ($secrets == FALSE) {
+        die('Could not parse json in secrets file. Aborting!');
+    }
+    $secrets += $defaults;
+    $missing = array_diff($requiredKeys, array_keys($secrets));
+    if (!empty($missing)) {
+        die('Missing required keys in json secrets file: ' . implode(',', $missing) . '. Aborting!');
+    }
+    return $secrets;
+    }
 }
-
