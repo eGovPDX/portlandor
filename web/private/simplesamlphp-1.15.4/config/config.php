@@ -35,7 +35,7 @@ $config = array(
      * external url, no matter where you come from (direct access or via the
      * reverse proxy).
      */
-    'baseurlpath' => 'https://' . $host . ':443/simplesaml/', // SAML should always connect via 443
+    'baseurlpath' => 'https://' . $host . '/simplesaml/', // SAML should always connect via 443
 
     /*
      * The 'application' configuration array groups a set configuration options
@@ -106,7 +106,7 @@ $config = array(
      * A possible way to generate a random salt is by running the following command from a unix shell:
      * tr -c -d '0123456789abcdefghijklmnopqrstuvwxyz' </dev/urandom | dd bs=32 count=1 2>/dev/null;echo
      */
-    'secretsalt' => 'defaultsecretsalt',
+    'secretsalt' => $secrets['simplesaml_secretsalt'],
 
     /*
      * This password must be kept secret, and modified from the default value 123.
@@ -114,7 +114,7 @@ $config = array(
      * metadata listing and diagnostics pages.
      * You can also put a hash here; run "bin/pwgen.php" to generate one.
      */
-    'auth.adminpassword' => '123',
+    'auth.adminpassword' => $secrets['simplesaml_adminpassword'],
 
     /*
      * Set this options to true if you want to require administrator password to access the web interface
@@ -1047,3 +1047,29 @@ $config = array(
      */
     'store.redis.prefix' => 'SimpleSAMLphp',
 );
+
+
+/**
+ * Get secrets from secrets file.
+ *
+ * @param array $requiredKeys  List of keys in secrets file that must exist.
+ */
+function _get_secrets($requiredKeys, $defaults)
+{
+    $secretsFile = $_ENV['HOME'] . '/files/private/secrets.json';
+    if (!file_exists($secretsFile)) {
+        die('No secrets file found. Aborting!');
+    }
+    $secretsContents = file_get_contents($secretsFile);
+    $secrets = json_decode($secretsContents, 1);
+    if ($secrets == false) {
+        die('Could not parse json in secrets file. Aborting!');
+    }
+    $secrets += $defaults;
+    $missing = array_diff($requiredKeys, array_keys($secrets));
+    if (!empty($missing)) {
+        die('Missing required keys in json secrets file: ' . implode(',', $missing) . '. Aborting!');
+    }
+    return $secrets;
+}
+
