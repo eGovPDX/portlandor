@@ -1,6 +1,6 @@
 <?php
 
-/**
+/** 
  * Load services definition file.
  */
 $settings['container_yamls'][] = __DIR__ . '/services.yml';
@@ -54,3 +54,5 @@ if (isset($_ENV['PANTHEON_ENVIRONMENT']) && php_sapi_name() != 'cli') {
     $settings['trusted_host_patterns'] = array('^'. preg_quote($primary_domain) .'$');
   }
 }
+
+$settings['simplesamlphp_dir'] = $_ENV['HOME'] . '/code/web/private/simplesamlphp-1.15.4';
