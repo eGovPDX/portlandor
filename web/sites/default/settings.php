@@ -54,5 +54,3 @@ if (isset($_ENV['PANTHEON_ENVIRONMENT']) && php_sapi_name() != 'cli') {
     $settings['trusted_host_patterns'] = array('^'. preg_quote($primary_domain) .'$');
   }
 }
-
-$settings['hash_salt'] = "testtest";
