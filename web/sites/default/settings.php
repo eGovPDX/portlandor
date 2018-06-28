@@ -56,4 +56,6 @@ if (isset($_ENV['PANTHEON_ENVIRONMENT']) && php_sapi_name() != 'cli') {
 }
 
 # Provide universal absolute path to the installation.
-$settings['simplesamlphp_dir'] = $_ENV['HOME'] .'/code/private/simplesamlphp-1.14.x';
+if (isset($_ENV['HOME']))  {
+  $settings['simplesamlphp_dir'] = $_ENV['HOME'] . '/files/private/simplesamlphp-1.15.4';
+}
