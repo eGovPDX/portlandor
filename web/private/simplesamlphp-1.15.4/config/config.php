@@ -12,6 +12,7 @@ $ps = json_decode($_SERVER['PRESSFLOW_SETTINGS'], TRUE);
 $host = $_SERVER['HTTP_HOST'];
 $db = $ps['databases']['default']['default'];
 
+
 // Load our hidden credentials.
 // See the README.md for instructions on storing secrets.
 if (!function_exists('_get_secrets')) 
@@ -21,7 +22,7 @@ if (!function_exists('_get_secrets'))
      *
      * @param array $requiredKeys  List of keys in secrets file that must exist.
      */
-    function _get_secrets($requiredKeys, $defaults)
+    function _get_secrets($requiredKeys)
     {
     $secretsFile = $_ENV['HOME'] . '/files/private/secrets.json';
     if (!file_exists($secretsFile)) {
@@ -40,7 +41,7 @@ if (!function_exists('_get_secrets'))
     return $secrets;
     }
 }
-$secrets = _get_secrets(array('simplesaml_secretsalt', 'simplesaml_adminpassword'), $defaults);
+$secrets = _get_secrets(array('simplesaml_secretsalt', 'simplesaml_adminpassword'));
 
 $config = array(
 
