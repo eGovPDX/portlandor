@@ -12,6 +12,7 @@ $ps = json_decode($_SERVER['PRESSFLOW_SETTINGS'], TRUE);
 $host = $_SERVER['HTTP_HOST'];
 $db = $ps['databases']['default']['default'];
 
+
 // Load our hidden credentials.
 // See the README.md for instructions on storing secrets.
 if (!function_exists('_get_secrets')) 
