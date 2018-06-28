@@ -21,7 +21,7 @@ if (!function_exists('_get_secrets'))
      *
      * @param array $requiredKeys  List of keys in secrets file that must exist.
      */
-    function _get_secrets($requiredKeys, $defaults)
+    function _get_secrets($requiredKeys)
     {
     $secretsFile = $_ENV['HOME'] . '/files/private/secrets.json';
     if (!file_exists($secretsFile)) {
@@ -32,7 +32,6 @@ if (!function_exists('_get_secrets'))
     if ($secrets == FALSE) {
         die('Could not parse json in secrets file. Aborting!');
     }
-    $secrets += $defaults;
     $missing = array_diff($requiredKeys, array_keys($secrets));
     if (!empty($missing)) {
         die('Missing required keys in json secrets file: ' . implode(',', $missing) . '. Aborting!');
@@ -40,7 +39,7 @@ if (!function_exists('_get_secrets'))
     return $secrets;
     }
 }
-$secrets = _get_secrets(array('simplesaml_secretsalt', 'simplesaml_adminpassword'), $defaults);
+$secrets = _get_secrets(array('simplesaml_secretsalt', 'simplesaml_adminpassword'));
 
 $config = array(
 
