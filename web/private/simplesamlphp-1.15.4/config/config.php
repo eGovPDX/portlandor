@@ -24,21 +24,21 @@ if (!function_exists('_get_secrets'))
      */
     function _get_secrets($requiredKeys)
     {
-    $secretsFile = $_ENV['HOME'] . '/files/private/secrets.json';
-    if (!file_exists($secretsFile)) {
-        die('No secrets file found. Aborting!');
-    }
-    $secretsContents = file_get_contents($secretsFile);
-    $secrets = json_decode($secretsContents, 1);
-    if ($secrets == FALSE) {
-        die('Could not parse json in secrets file. Aborting!');
-    }
-    $missing = array_diff($requiredKeys, array_keys($secrets));
-    if (!empty($missing)) {
-        die('Missing required keys in json secrets file: ' . implode(',', $missing) . '. Aborting!');
-    }
-    return $secrets;
-    }
+        $secretsFile = '/files/private/secrets.json';
+        if (!file_exists($secretsFile)) {
+            die('No secrets file found. Aborting!');
+        }
+        $secretsContents = file_get_contents($secretsFile);
+        $secrets = json_decode($secretsContents, 1);
+        if ($secrets == FALSE) {
+            die('Could not parse json in secrets file. Aborting!');
+        }
+        $missing = array_diff($requiredKeys, array_keys($secrets));
+        if (!empty($missing)) {
+            die('Missing required keys in json secrets file: ' . implode(',', $missing) . '. Aborting!');
+        }
+        return $secrets;
+        }
 }
 $secrets = _get_secrets(array('simplesaml_secretsalt', 'simplesaml_adminpassword'));
 
