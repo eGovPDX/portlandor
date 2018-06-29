@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Load services definition file.
  */
@@ -54,3 +53,12 @@ if (isset($_ENV['PANTHEON_ENVIRONMENT']) && php_sapi_name() != 'cli') {
     $settings['trusted_host_patterns'] = array('^'. preg_quote($primary_domain) .'$');
   }
 }
+
+# Provide universal absolute path to the installation.
+if (isset($_ENV['HOME'])) {
+  $settings['simplesamlphp_dir'] = $_ENV['HOME'] . '/code/web/private/simplesamlphp-1.15.4';
+} else {
+  echo('_ENV["HOME"] not set ***');
+  $settings['simplesamlphp_dir'] = '../../private/simplesamlphp-1.15.4';
+}
+
