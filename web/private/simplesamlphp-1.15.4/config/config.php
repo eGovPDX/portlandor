@@ -24,7 +24,7 @@ if (!function_exists('_get_secrets'))
      */
     function _get_secrets($requiredKeys)
     {
-        $secretsFile = '/files/private/secrets.json';
+        $secretsFile = $_SERVER['HOME'] . '/files/private/secrets.json';
         if (!file_exists($secretsFile)) {
             die('No secrets file found. Aborting!');
         }
