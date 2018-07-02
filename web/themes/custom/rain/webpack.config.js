@@ -5,17 +5,13 @@ const globby = require('globby');
 const ExtractTextPlugin = require('extract-text-webpack-plugin');
 
 module.exports = {
-  entry: { 
-    main: globby.sync([
-      './source/_patterns/**/*.js'
-    ])
-    .map(function(filePath) {
-      return filePath;
-    })
+  devtool: 'source-map',
+  entry: {
+    main: globby.sync(['./source/_patterns/**/*.js', './source/_patterns/style.scss'])
   },
   output: {
     path: path.resolve(__dirname, 'source'),
-    filename: 'js/main.js'
+    filename: 'js/[name].bundle.js'
   },
   module: {
     rules: [
@@ -38,11 +34,15 @@ module.exports = {
             fallback: 'style-loader',
             use: [
               {
-                loader: 'css-loader'
+                loader: 'css-loader',
+                options: {
+                  sourceMap: true,
+                }
               },
               {
                 loader: 'postcss-loader',
                 options: {
+                  sourceMap: true,
                   config: {
                     path: './postcss.config.js'
                   }
@@ -51,6 +51,7 @@ module.exports = {
               {
                 loader: 'sass-loader',
                 options: {
+                  sourceMap: true,
                   includePaths: require('node-normalize-scss').with(['./node_modules'])
                 }
               }],
@@ -61,9 +62,8 @@ module.exports = {
   plugins: [
     new ExtractTextPlugin(
       {
-        filename: 'css/style.css'
+        filename: 'css/styles.bundle.css'
       }
     )
-  ],
-  watch: process.env.NODE_ENV == 'development'
+  ]
 };
