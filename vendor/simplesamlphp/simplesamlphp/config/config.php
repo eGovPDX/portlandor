@@ -14,6 +14,34 @@ $ps = json_decode($_SERVER['PRESSFLOW_SETTINGS'], true);
 $host = $_SERVER['HTTP_HOST'];
 $db = $ps['databases']['default']['default'];
 
+// Load our hidden credentials.
+// See the README.md for instructions on storing secrets.
+if (!function_exists('_get_simplesaml_secrets')) {
+    /**
+     * Get secrets from secrets file.
+     *
+     * @param array $requiredKeys  List of keys in secrets file that must exist.
+     */
+    function _get_simplesaml_secrets($requiredKeys)
+    {
+        $secretsFile = $_SERVER['HOME'] . '/files/private/secrets.json';
+        if (!file_exists($secretsFile)) {
+            die('No secrets file found. Aborting!');
+        }
+        $secretsContents = file_get_contents($secretsFile);
+        $secrets = json_decode($secretsContents, 1);
+        if ($secrets == false) {
+            die('Could not parse json in secrets file. Aborting!');
+        }
+        $missing = array_diff($requiredKeys, array_keys($secrets));
+        if (!empty($missing)) {
+            die('Missing required keys in json secrets file: ' . implode(',', $missing) . '. Aborting!');
+        }
+        return $secrets;
+    }
+}
+$secrets = _get_simplesaml_secrets(array('simplesaml_secretsalt', 'simplesaml_adminpassword'));
+
 $config = array(
 
     /*******************************
@@ -73,10 +101,8 @@ $config = array(
      * root directory. 
      */
     'certdir' => 'cert/',
-    'loggingdir' => 'log/',
-    'datadir' => 'data/',
-    'tempdir' => '/tmp/simplesaml',
-
+    'loggingdir' => $_ENV['HOME'] . '/files/private/log/',    'datadir' => 'data/',
+    'tempdir' => $_ENV['HOME'] . '/tmp/simplesaml',
     /*
      * Some information about the technical persons running this installation.
      * The email address will be used as the recipient address for error reports, and
@@ -108,7 +134,7 @@ $config = array(
      * A possible way to generate a random salt is by running the following command from a unix shell:
      * tr -c -d '0123456789abcdefghijklmnopqrstuvwxyz' </dev/urandom | dd bs=32 count=1 2>/dev/null;echo
      */
-    'secretsalt' => 'defaultsecretsalt',
+    'secretsalt' => $secrets['simplesaml_secretsalt'],
 
     /*
      * This password must be kept secret, and modified from the default value 123.
@@ -116,14 +142,14 @@ $config = array(
      * metadata listing and diagnostics pages.
      * You can also put a hash here; run "bin/pwgen.php" to generate one.
      */
-    'auth.adminpassword' => '123',
+    'auth.adminpassword' => $secrets['simplesaml_adminpassword'],
 
     /*
      * Set this options to true if you want to require administrator password to access the web interface
      * or the metadata pages, respectively.
      */
-    'admin.protectindexpage' => false,
-    'admin.protectmetadata' => false,
+    'admin.protectindexpage' => true,
+    'admin.protectmetadata' => true,
 
     /*
      * Set this option to false if you don't want SimpleSAMLphp to check for new stable releases when
