@@ -173,3 +173,30 @@ function portland_group_update(GroupInterface $group) {
 
     // <TODO:>LOW PRIORITY: rEGenerate URL aliases for group action links using group shortname (ie. /bds/content, /bds/members)</TODO:>
 }
+
+function portland_preprocess_views_view_unformatted(&$vars) {
+    $view = $vars['view'];
+    $rows = $vars['rows'];
+    if ($view->id() == 'alerts') {
+        foreach ($rows as $id => $row) {
+            $vars['rows'][$id]['attributes']->addClass(["alert", "alert-".$view->result[$id]->_entity->field_severity->value]);
+        }
+    }
+}
+
+function portland_preprocess_views_view_field(&$vars) {
+    $view = $vars['view'];
+    $rows = $vars['rows'];
+    $field = $vars['field'];
+    if ($view->id() == "alerts" && $view->current_display == 'block_1') {
+        if($field->field == 'title') {
+            $vars['output'] = Drupal\Core\Render\Markup::create($vars['output'].'<button type="button" class="close" aria-label="Close"><span aria-hidden="true">×</span></button>');
+        }
+    }
+}
+
+function portland_preprocess_block(&$vars) {
+    if ($vars['elements']['#id'] == 'alerts') {
+      $vars['#attached']['library'][] = 'system/jquery.cookie';
+    }
+  }
