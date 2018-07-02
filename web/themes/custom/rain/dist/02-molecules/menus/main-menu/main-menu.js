@@ -1,0 +1,2 @@
+'use strict';(function(){'use strict';var a=document.getElementById('toggle-expand'),b=document.getElementById('main-nav'),c=b.getElementsByClassName('expand-sub');a.addEventListener('click',function(){a.classList.toggle('toggle-expand--open'),b.classList.toggle('main-nav--open')});for(var d=0;d<c.length;d++)c[d].addEventListener('click',function(a){var b=a.currentTarget,c=b.nextElementSibling;b.classList.toggle('expand-sub--open'),c.classList.toggle('main-menu--sub-open')})})();
+//# sourceMappingURL=main-menu.js.map
