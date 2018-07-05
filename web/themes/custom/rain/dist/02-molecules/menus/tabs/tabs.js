@@ -1,0 +1,2 @@
+'use strict';(function(){'use strict';for(var a=document.querySelectorAll('.tabs'),b=document.querySelectorAll('.tabs__link'),c=document.querySelectorAll('.tabs__tab'),d=0,f=function(a,b){a.addEventListener('click',function(a){a.preventDefault(),g(b)})},g=function(a){a!==d&&0<=a&&a<=b.length&&(b[d].classList.remove('is-active'),b[a].classList.add('is-active'),c[d].classList.remove('is-active'),c[a].classList.add('is-active'),d=a)},h=0;h<a.length;h++)a[h].classList.remove('no-js');for(var e,j=0;j<b.length;j++)e=b[j],f(e,j)})();
+//# sourceMappingURL=tabs.js.map
