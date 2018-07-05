@@ -4,17 +4,18 @@
  * 
  */
 
- // Enable local sessions to ensure that SimpleSAMLphp can keep a session when used in standalone mode
+// Customizations to support Pantheon environments:
+// Enable local sessions to ensure that SimpleSAMLphp can keep a session when used in standalone mode
 if (!ini_get('session.save_handler')) {
     ini_set('session.save_handler', 'file');
 }
-
 // Load necessary environmental data
 $ps = json_decode($_SERVER['PRESSFLOW_SETTINGS'], true);
 $host = $_SERVER['HTTP_HOST'];
 $db = $ps['databases']['default']['default'];
+// END Customizations to support Pantheon environments
 
-// Load our hidden credentials.
+// Load hidden credentials from Terminus Secrets
 // See the README.md for instructions on storing secrets.
 if (!function_exists('_get_simplesaml_secrets')) {
     /**
@@ -26,7 +27,10 @@ if (!function_exists('_get_simplesaml_secrets')) {
     {
         $secretsFile = $_SERVER['HOME'] . '/files/private/secrets.json';
         if (!file_exists($secretsFile)) {
-            die('No secrets file found. Aborting!');
+            // NOTE: don't die if secrets not found; this will cause the whole site to break if simplesamlphp_auth is
+            // enabled and the secrets don't exist. The only side effect of not having secrets is that the admin won't
+            // be able to log in.
+            //die('No secrets file found. Aborting!');
         }
         $secretsContents = file_get_contents($secretsFile);
         $secrets = json_decode($secretsContents, 1);
@@ -35,12 +39,16 @@ if (!function_exists('_get_simplesaml_secrets')) {
         }
         $missing = array_diff($requiredKeys, array_keys($secrets));
         if (!empty($missing)) {
-            die('Missing required keys in json secrets file: ' . implode(',', $missing) . '. Aborting!');
+            // NOTE: don't die if secrets not found; this will cause the whole site to break if simplesamlphp_auth is
+            // enabled and the secrets don't exist. The only side effect of not having secrets is that the admin won't
+            // be able to log in.
+            //die('Missing required keys in json secrets file: ' . implode(',', $missing) . '. Aborting!');
         }
         return $secrets;
     }
 }
 $secrets = _get_simplesaml_secrets(array('simplesaml_secretsalt', 'simplesaml_adminpassword'));
+// END Load hidden credentials from Terminus Secrets
 
 $config = array(
 
