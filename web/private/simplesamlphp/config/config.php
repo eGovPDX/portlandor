@@ -26,23 +26,25 @@ if (!function_exists('_get_simplesaml_secrets')) {
     function _get_simplesaml_secrets($requiredKeys)
     {
         $secretsFile = $_SERVER['HOME'] . '/files/private/secrets.json';
+        $secrets = array();
         if (!file_exists($secretsFile)) {
             // NOTE: don't die if secrets not found; this will cause the whole site to break if simplesamlphp_auth is
             // enabled and the secrets don't exist. The only side effect of not having secrets is that the admin won't
             // be able to log in.
             //die('No secrets file found. Aborting!');
-        }
-        $secretsContents = file_get_contents($secretsFile);
-        $secrets = json_decode($secretsContents, 1);
-        if ($secrets == false) {
-            die('Could not parse json in secrets file. Aborting!');
-        }
-        $missing = array_diff($requiredKeys, array_keys($secrets));
-        if (!empty($missing)) {
-            // NOTE: don't die if secrets not found; this will cause the whole site to break if simplesamlphp_auth is
-            // enabled and the secrets don't exist. The only side effect of not having secrets is that the admin won't
-            // be able to log in.
-            //die('Missing required keys in json secrets file: ' . implode(',', $missing) . '. Aborting!');
+        } else {
+            $secretsContents = file_get_contents($secretsFile);
+            $secrets = json_decode($secretsContents, 1);
+            if ($secrets == false) {
+                die('Could not parse json in secrets file. Aborting!');
+            }
+            $missing = array_diff($requiredKeys, array_keys($secrets));
+            if (!empty($missing)) {
+                // NOTE: don't die if secrets not found; this will cause the whole site to break if simplesamlphp_auth is
+                // enabled and the secrets don't exist. The only side effect of not having secrets is that the admin won't
+                // be able to log in.
+                //die('Missing required keys in json secrets file: ' . implode(',', $missing) . '. Aborting!');
+            }
         }
         return $secrets;
     }
