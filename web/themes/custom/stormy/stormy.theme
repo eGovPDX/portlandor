@@ -1,0 +1,17 @@
+<?php
+
+use Drupal\group\Entity\GroupContent;
+
+function stormy_preprocess_html(&$variables) {
+  $route_match = \Drupal::service('current_route_match');
+  // if this is a node
+  if ($node = $route_match->getParameter('node')) {
+    // that is group content
+    foreach (GroupContent::loadByEntity($node) as $group_content) {
+      // give it the shortname as a class
+      $shortname_or_acronym = $group_content->getGroup()->field_shortname_or_acronym->value;
+      $variables['attributes']['class'][] = 'group-node';
+      $variables['attributes']['class'][] = strtolower($shortname_or_acronym);
+    }
+  }
+}
