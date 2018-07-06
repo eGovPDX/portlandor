@@ -4,17 +4,18 @@
  * 
  */
 
- // Enable local sessions to ensure that SimpleSAMLphp can keep a session when used in standalone mode
+// START Pantehon specific customizaitons
+// Enable local sessions to ensure that SimpleSAMLphp can keep a session when used in standalone mode
 if (!ini_get('session.save_handler')) {
     ini_set('session.save_handler', 'file');
 }
-
 // Load necessary environmental data
 $ps = json_decode($_SERVER['PRESSFLOW_SETTINGS'], true);
 $host = $_SERVER['HTTP_HOST'];
 $db = $ps['databases']['default']['default'];
+// END
 
-// Load our hidden credentials.
+// Populate $secrets array with our hidden credentials.
 // See the README.md for instructions on storing secrets.
 if (!function_exists('_get_simplesaml_secrets')) {
     /**
