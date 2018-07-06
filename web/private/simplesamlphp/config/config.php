@@ -27,16 +27,16 @@ if (!function_exists('_get_simplesaml_secrets')) {
     {
         $secretsFile = $_SERVER['HOME'] . '/files/private/secrets.json';
         if (!file_exists($secretsFile)) {
-            die('No secrets file found. Aborting!');
+            die('No secrets file found. Aborting! See the SimpleSAMLphp implementation notes in the project wiki for instructions on how to set up secrets.');
         }
         $secretsContents = file_get_contents($secretsFile);
         $secrets = json_decode($secretsContents, 1);
         if ($secrets == false) {
-            die('Could not parse json in secrets file. Aborting!');
+            die('Could not parse json in secrets file. Aborting! See the SimpleSAMLphp implementation notes in the project wiki for instructions on how to set up secrets.');
         }
         $missing = array_diff($requiredKeys, array_keys($secrets));
         if (!empty($missing)) {
-            die('Missing required keys in json secrets file: ' . implode(',', $missing) . '. Aborting!');
+            die('Missing required keys in json secrets file: ' . implode(',', $missing) . '. Aborting! See the SimpleSAMLphp implementation notes in the project wiki for instructions on how to set up these secrets.');
         }
         return $secrets;
     }
