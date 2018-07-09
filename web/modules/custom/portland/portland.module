@@ -223,10 +223,29 @@ function portland_preprocess_views_view_unformatted(&$vars) {
         }
     }
 }
+
 /*
  * Implements hook_entity_type_alter().
  */
 function portland_entity_type_alter(array &$entity_types) {
     $node = $entity_types['node'];
     $node->addConstraint('EventDateTime', []);
+}
+
+/*
+ * Implements hook_node_presave().
+ */
+function portland_node_presave($node) {
+    if($node->bundle() == 'event') {
+        // Clear start and end time for all-day events.
+        if($node->field_all_day->value) {
+            $node->set('field_start_time', NULL);
+            $node->set('field_end_time', NULL);
+        }
+        // Clear the end date if it's the same as the start date.
+        if(isset($node->field_end_date->value) &&
+            $node->field_end_date->value == $node->field_start_date->value) {
+            $node->set('field_end_date', NULL);
+        }
+    }
 }

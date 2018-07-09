@@ -14,14 +14,14 @@ class EventDateTimeConstraintValidator extends ConstraintValidator {
    * {@inheritdoc}
    */
   public function validate($entity, Constraint $constraint) {
-    if (!isset($entity)) {
+    if (!isset($entity) || $entity->bundle() != 'event') {
       return;
     }
 
     // Unset the end date if it's the same as start date.
     if(isset($entity->field_end_date->value) &&
         $entity->field_end_date->value == $entity->field_start_date->value) {
-            unset($entity->field_end_date->value);
+      unset($entity->field_end_date->value);
     }
 
     // If the end date is the same as start date, we compare start and end time.
