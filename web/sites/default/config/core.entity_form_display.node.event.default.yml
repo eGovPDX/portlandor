@@ -3,6 +3,7 @@ langcode: en
 status: true
 dependencies:
   config:
+    - field.field.node.event.field_all_day
     - field.field.node.event.field_body
     - field.field.node.event.field_end_date
     - field.field.node.event.field_end_time
@@ -12,6 +13,7 @@ dependencies:
     - field.field.node.event.field_summary
     - node.type.event
   module:
+    - conditional_fields
     - content_moderation
     - datetime
     - paragraphs
@@ -27,8 +29,15 @@ content:
     region: content
     settings: {  }
     third_party_settings: {  }
+  field_all_day:
+    weight: 6
+    settings:
+      display_label: true
+    third_party_settings: {  }
+    type: boolean_checkbox
+    region: content
   field_body:
-    weight: 11
+    weight: 12
     settings:
       title: Paragraph
       title_plural: Paragraphs
@@ -40,20 +49,37 @@ content:
     type: entity_reference_paragraphs
     region: content
   field_end_date:
-    weight: 8
+    weight: 9
     settings: {  }
     third_party_settings: {  }
     type: datetime_default
     region: content
   field_end_time:
-    weight: 9
+    weight: 10
     settings: {  }
-    third_party_settings: {  }
+    third_party_settings:
+      conditional_fields:
+        199340d9-1e64-4676-be98-142450179a38:
+          dependee: field_all_day
+          settings:
+            state: '!visible'
+            condition: checked
+            grouping: AND
+            values_set: 1
+            value: ''
+            values: {  }
+            value_form:
+              value: false
+            effect: show
+            effect_options: {  }
+            selector: ''
+          entity_type: node
+          bundle: event
     type: time_widget
     region: content
   field_event_location:
     type: entity_reference_paragraphs
-    weight: 10
+    weight: 11
     settings:
       title: Paragraph
       title_plural: Paragraphs
@@ -64,28 +90,50 @@ content:
     third_party_settings: {  }
     region: content
   field_start_date:
-    weight: 6
+    weight: 7
     settings: {  }
     third_party_settings: {  }
     type: datetime_default
     region: content
   field_start_time:
-    weight: 7
+    weight: 8
     settings: {  }
-    third_party_settings: {  }
+    third_party_settings:
+      conditional_fields:
+        0e2a458c-ff52-4f8c-bf7a-6ef4359d1868:
+          dependee: field_all_day
+          settings:
+            state: '!visible'
+            condition: checked
+            grouping: AND
+            values_set: 1
+            value: ''
+            values: {  }
+            value_form:
+              value: false
+            effect: show
+            effect_options: {  }
+            selector: ''
+          entity_type: node
+          bundle: event
     type: time_widget
     region: content
   field_summary:
     weight: 5
     settings:
-      size: 60
+      rows: 2
       placeholder: ''
-    third_party_settings: {  }
-    type: string_textfield
+    third_party_settings:
+      maxlength:
+        maxlength_js: 300
+        maxlength_js_label: 'Content limited to @limit characters, remaining: <strong>@remaining</strong>'
+        maxlength_js_enforce: true
+        maxlength_js_truncate_html: true
+    type: string_textarea
     region: content
   moderation_state:
     type: moderation_state_default
-    weight: 12
+    weight: 13
     settings: {  }
     region: content
     third_party_settings: {  }
