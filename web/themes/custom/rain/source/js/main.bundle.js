@@ -86,10 +86,10 @@
 /************************************************************************/
 /******/ ({
 
-/***/ "./source/_patterns/02-molecules/accordion-item/accordion-item.js":
-/*!************************************************************************!*\
-  !*** ./source/_patterns/02-molecules/accordion-item/accordion-item.js ***!
-  \************************************************************************/
+/***/ "./source/_patterns/02-elements/accordion-item/accordion-item.js":
+/*!***********************************************************************!*\
+  !*** ./source/_patterns/02-elements/accordion-item/accordion-item.js ***!
+  \***********************************************************************/
 /*! no static exports found */
 /***/ (function(module, exports, __webpack_require__) {
 
@@ -155,10 +155,10 @@
 
 /***/ }),
 
-/***/ "./source/_patterns/02-molecules/menus/main-menu/main-menu.js":
-/*!********************************************************************!*\
-  !*** ./source/_patterns/02-molecules/menus/main-menu/main-menu.js ***!
-  \********************************************************************/
+/***/ "./source/_patterns/02-elements/menus/main-menu/main-menu.js":
+/*!*******************************************************************!*\
+  !*** ./source/_patterns/02-elements/menus/main-menu/main-menu.js ***!
+  \*******************************************************************/
 /*! no static exports found */
 /***/ (function(module, exports, __webpack_require__) {
 
@@ -215,10 +215,10 @@
 
 /***/ }),
 
-/***/ "./source/_patterns/02-molecules/menus/tabs/tabs.js":
-/*!**********************************************************!*\
-  !*** ./source/_patterns/02-molecules/menus/tabs/tabs.js ***!
-  \**********************************************************/
+/***/ "./source/_patterns/02-elements/menus/tabs/tabs.js":
+/*!*********************************************************!*\
+  !*** ./source/_patterns/02-elements/menus/tabs/tabs.js ***!
+  \*********************************************************/
 /*! no static exports found */
 /***/ (function(module, exports, __webpack_require__) {
 
@@ -307,16 +307,16 @@ __webpack_require__(/*! ./style.scss */ "./source/_patterns/style.scss");
 /***/ }),
 
 /***/ 0:
-/*!********************************************************************************************************************************************************************************************************************************************************!*\
-  !*** multi ./source/_patterns/index.js ./source/_patterns/02-molecules/accordion-item/accordion-item.js ./source/_patterns/02-molecules/menus/main-menu/main-menu.js ./source/_patterns/02-molecules/menus/tabs/tabs.js ./source/_patterns/style.scss ***!
-  \********************************************************************************************************************************************************************************************************************************************************/
+/*!*****************************************************************************************************************************************************************************************************************************************************!*\
+  !*** multi ./source/_patterns/index.js ./source/_patterns/02-elements/accordion-item/accordion-item.js ./source/_patterns/02-elements/menus/main-menu/main-menu.js ./source/_patterns/02-elements/menus/tabs/tabs.js ./source/_patterns/style.scss ***!
+  \*****************************************************************************************************************************************************************************************************************************************************/
 /*! no static exports found */
 /***/ (function(module, exports, __webpack_require__) {
 
 __webpack_require__(/*! ./source/_patterns/index.js */"./source/_patterns/index.js");
-__webpack_require__(/*! ./source/_patterns/02-molecules/accordion-item/accordion-item.js */"./source/_patterns/02-molecules/accordion-item/accordion-item.js");
-__webpack_require__(/*! ./source/_patterns/02-molecules/menus/main-menu/main-menu.js */"./source/_patterns/02-molecules/menus/main-menu/main-menu.js");
-__webpack_require__(/*! ./source/_patterns/02-molecules/menus/tabs/tabs.js */"./source/_patterns/02-molecules/menus/tabs/tabs.js");
+__webpack_require__(/*! ./source/_patterns/02-elements/accordion-item/accordion-item.js */"./source/_patterns/02-elements/accordion-item/accordion-item.js");
+__webpack_require__(/*! ./source/_patterns/02-elements/menus/main-menu/main-menu.js */"./source/_patterns/02-elements/menus/main-menu/main-menu.js");
+__webpack_require__(/*! ./source/_patterns/02-elements/menus/tabs/tabs.js */"./source/_patterns/02-elements/menus/tabs/tabs.js");
 module.exports = __webpack_require__(/*! ./source/_patterns/style.scss */"./source/_patterns/style.scss");
 
 
