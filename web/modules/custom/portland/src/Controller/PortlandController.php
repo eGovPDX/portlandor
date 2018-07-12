@@ -35,6 +35,7 @@ class PortlandController extends GroupContentController {
 
         // Overwrite the label and description for all of the displayed bundles.
         $storage_handler = $this->entityTypeManager->getStorage('node_type');
+        $media_storage_handler = $this->entityTypeManager->getStorage('media_type');
         $page_bundles = $this->addPageBundles($group, $create_mode);
         // NOTE: ksort is working here, but bundle types are still displayed out of order.
         // there must be some other sorting process that occurs after this point.
@@ -42,10 +43,16 @@ class PortlandController extends GroupContentController {
         foreach ($page_bundles as $plugin_id => $bundle_name) {
             if (!empty($build['#bundles'][$bundle_name])) {
                 $plugin = $group->getGroupType()->getContentPlugin($plugin_id);
-                $bundle_label = $storage_handler->load($plugin->getEntityBundle())->label();
-                $bundle_id = $storage_handler->load($plugin->getEntityBundle())->id();
-                $bundle_desc = \Drupal::config('node.type.' . $bundle_id)->get('description');
-
+                if(strpos($plugin_id, 'group_media:') === 0) {
+                    $bundle_label = $media_storage_handler->load($plugin->getEntityBundle())->label();
+                    $bundle_id = $media_storage_handler->load($plugin->getEntityBundle())->id();
+                    $bundle_desc = \Drupal::config('media.type.' . $bundle_id)->get('description');
+                }
+                else {
+                    $bundle_label = $storage_handler->load($plugin->getEntityBundle())->label();
+                    $bundle_id = $storage_handler->load($plugin->getEntityBundle())->id();
+                    $bundle_desc = \Drupal::config('node.type.' . $bundle_id)->get('description');
+                }
                 $t_args = ['%node_type' => $bundle_label];
                 $description = $create_mode
                 ? $this->t('Create a node of type %node_type in the group...<br>' . $bundle_desc, $t_args)
