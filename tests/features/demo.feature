@@ -8,4 +8,4 @@ Feature: Demo feature
     Given I am an anonymous user
     When I visit "/"
     # Then print last response
-    Then I should see "Portland Oregon"
+    Then I should see "Portland, Oregon"
