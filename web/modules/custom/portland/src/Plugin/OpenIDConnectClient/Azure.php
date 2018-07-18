@@ -121,6 +121,8 @@ class Azure extends OpenIDConnectClientBase {
     $primary_email_property = 'mail';
     $backup_mail_property = 'userPrincipalName';
 
+    $url = $this->getEndpoints()['userinfo'];
+
     // Perform the request.
     $options = [
       'method' => 'GET',
