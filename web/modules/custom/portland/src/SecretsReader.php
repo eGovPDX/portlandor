@@ -54,10 +54,10 @@ class SecretsReader {
    */
   private function readSecrets()
   {
-    $secretsFile = $_SERVER['HOME'] . '/files/private/secrets.json';
+    $secretsFile = $_ENV['HOME'] . '/files/private/secrets.json';
     if (!file_exists($secretsFile)) {
       $variables = [
-        '@message' => 'No secrets file found. Aborting!',
+        '@message' => 'No secrets file found. Returning empty array!',
       ];
       $this->loggerFactory->get('portland')
         ->warning('@message', $variables);
@@ -67,7 +67,7 @@ class SecretsReader {
     $secrets = json_decode($secretsContents, 1);
     if ($secrets == FALSE) {
       $variables = [
-        '@message' => 'Could not parse json in secrets file. Aborting!',
+        '@message' => 'Could not parse json in secrets file. Returning empty array!',
       ];
       $this->loggerFactory->get('portland')
         ->warning('@message', $variables);
