@@ -3,9 +3,18 @@
 namespace Drupal\portland\Plugin\OpenIDConnectClient;
 
 use Drupal\Core\Form\FormStateInterface;
-use Drupal\openid_connect\Plugin\OpenIDConnectClientBase;
+use Drupal\Core\Language\LanguageInterface;
+use Drupal\Core\Logger\LoggerChannelFactoryInterface;
+use Drupal\Core\Routing\TrustedRedirectResponse;
 use Drupal\Core\Url;
+use Drupal\openid_connect\Plugin\OpenIDConnectClientBase;
+use Drupal\openid_connect\StateToken;
+use Drupal\portland\SecretsReader;
+use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Exception\RequestException;
+use Symfony\Component\DependencyInjection\ContainerInterface;
+use Symfony\Component\HttpFoundation\RequestStack;
+
 
 /**
  *
@@ -15,12 +24,79 @@ use GuzzleHttp\Exception\RequestException;
  * )
  */
 class Azure extends OpenIDConnectClientBase {
+  /**
+   * The secrets reader.
+   *
+   * @var \Drupal\portland\SecretsReader
+   */
+  protected $secretsReader;
+
+  /**
+   * The constructor.
+   *
+   * @param array $configuration
+   *   The plugin configuration.
+   * @param string $plugin_id
+   *   The plugin identifier.
+   * @param mixed $plugin_definition
+   *   The plugin definition.
+   * @param \Symfony\Component\HttpFoundation\RequestStack $request_stack
+   *   The request stack.
+   * @param \GuzzleHttp\ClientInterface $http_client
+   *   The http client.
+   * @param \Drupal\Core\Logger\LoggerChannelFactoryInterface $logger_factory
+   *   The logger factory.
+   */
+  public function __construct(
+    array $configuration,
+    $plugin_id,
+    $plugin_definition,
+    RequestStack $request_stack,
+    ClientInterface $http_client,
+    LoggerChannelFactoryInterface $logger_factory,
+    SecretsReader $secrets_reader
+  ) {
+    parent::__construct(
+      $configuration,
+      $plugin_id,
+      $plugin_definition,
+      $request_stack,
+      $http_client,
+      $logger_factory
+    );
+
+    $this->secretsReader = $secrets_reader;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function create(
+      ContainerInterface $container,
+      array $configuration,
+      $plugin_id,
+      $plugin_definition
+  ) {
+    return new static(
+      $configuration,
+      $plugin_id,
+      $plugin_definition,
+      $container->get('request_stack'),
+      $container->get('http_client'),
+      $container->get('logger.factory'),
+      $container->get('portland.secrets_reader')
+    );
+  }
 
   /**
    * Overrides OpenIDConnectClientBase::buildConfigurationForm().
    */
   public function buildConfigurationForm(array $form, FormStateInterface $form_state) {
     $form = parent::buildConfigurationForm($form, $form_state);
+    // clear these fields out, they will be retrieved from a secrets file
+    unset($form['client_id']);
+    unset($form['client_secret']);
+
     $form['authorization_endpoint'] = [
       '#title' => $this->t('Authorization endpoint'),
       '#type' => 'textfield',
@@ -52,6 +128,53 @@ class Azure extends OpenIDConnectClientBase {
   }
 
   /**
+   * Implements OpenIDConnectClientInterface::authorize().
+   *
+   * @param string $scope
+   *   A string of scopes.
+   *
+   * @return \Drupal\Core\Routing\TrustedRedirectResponse
+   *   A trusted redirect response object.
+   */
+  public function authorize($scope = 'openid email') {
+    $language_none = \Drupal::languageManager()
+      ->getLanguage(LanguageInterface::LANGCODE_NOT_APPLICABLE);
+    $redirect_uri = Url::fromRoute(
+      'openid_connect.redirect_controller_redirect',
+      [
+        'client_name' => $this->pluginId,
+      ],
+      [
+        'absolute' => TRUE,
+        'language' => $language_none,
+      ]
+    )->toString(TRUE);
+
+    $url_options = [
+      'query' => [
+        'client_id' => $this->secretsReader->get('azure_client_id'),
+        'response_type' => 'code',
+        'scope' => $scope,
+        'redirect_uri' => $redirect_uri->getGeneratedUrl(),
+        'state' => StateToken::create(),
+      ],
+    ];
+
+    $endpoints = $this->getEndpoints();
+    // Clear _GET['destination'] because we need to override it.
+    $this->requestStack->getCurrentRequest()->query->remove('destination');
+    $authorization_endpoint = Url::fromUri($endpoints['authorization'], $url_options)->toString(TRUE);
+
+    $response = new TrustedRedirectResponse($authorization_endpoint->getGeneratedUrl());
+    // We can't cache the response, since this will prevent the state to be
+    // added to the session. The kill switch will prevent the page getting
+    // cached for anonymous users when page cache is active.
+    \Drupal::service('page_cache_kill_switch')->trigger();
+
+    return $response;
+  }
+
+  /**
    * Implements OpenIDConnectClientInterface::retrieveIDToken().
    *
    * @param string $authorization_code
@@ -71,8 +194,8 @@ class Azure extends OpenIDConnectClientBase {
     $request_options = [
       'form_params' => [
         'code' => $authorization_code,
-        'client_id' => $this->configuration['client_id'],
-        'client_secret' => $this->configuration['client_secret'],
+        'client_id' => $this->secretsReader->get('azure_client_id'),
+        'client_secret' => $this->secretsReader->get('azure_client_secret'),
         'redirect_uri' => $redirect_uri,
         'grant_type' => 'authorization_code',
         'resource' => 'https://graph.windows.net', // to access user profile
