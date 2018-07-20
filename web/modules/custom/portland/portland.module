@@ -5,6 +5,9 @@ use Drupal\group\Entity\GroupInterface;
 use Drupal\group\Entity\GroupTypeInterface;
 use Drupal\group\Entity\GroupContentTypeInterface;
 use Drupal\pathauto\Form\PathautoBulkUpdateForm;
+use Drupal\Core\Render\BubbleableMetadata;
+use Drupal\group\Entity\GroupContent;
+
 
 // The plural is used in the list page URL. E.g. "/bds/guides"
 // The group list view's path must match the plural form shown here.
@@ -16,6 +19,9 @@ const GROUP_CONTENT_TYPE_PLURAL = [
     "city_service" => "services",
     "service_location" => "locations",
     "event" => "events",
+    "image" => "images",
+    "document" => "documents",
+    "video" => "videos",
 ];
 
 function createAliasForGroupContent($grp, $contentType, $lang) {
@@ -54,8 +60,14 @@ function portland_group_content_type_create(GroupContentTypeInterface $groupCont
 
     // Get the content type from content_plugin ID. E.g. "group_node:news"
     $contentTypePlugin = $groupContentType->getContentPluginId();
-    if(strpos($contentTypePlugin, 'group_node:') !== 0) return;
-    $contentType = substr($contentTypePlugin, strlen('group_node:'));
+    
+    if(strpos($contentTypePlugin, 'group_node:') === 0) {
+        $contentType = substr($contentTypePlugin, strlen('group_node:'));
+    } else if( strpos($contentTypePlugin, 'group_media:') !== 0) {
+        $contentType = substr($contentTypePlugin, strlen('group_media:'));
+    } else {
+        return;
+    }
 
     // For each group, generate a new URL alias "group.field_shortname_or_acronym/contents"
     $lang = \Drupal::languageManager()->getCurrentLanguage()->getId();
@@ -76,8 +88,13 @@ function portland_group_content_type_delete(GroupContentTypeInterface $groupCont
     $lang = \Drupal::languageManager()->getCurrentLanguage()->getId();
     // content_plugin:"group_node:news"
     $contentTypePlugin = $groupContentType->getContentPluginId();
-    if(strpos($contentTypePlugin, 'group_node:') !== 0) return;
-    $contentType = substr($contentTypePlugin, strlen('group_node:'));
+    if(strpos($contentTypePlugin, 'group_node:') === 0) {
+        $contentType = substr($contentTypePlugin, strlen('group_node:'));
+    } else if( strpos($contentTypePlugin, 'group_media:') !== 0) {
+        $contentType = substr($contentTypePlugin, strlen('group_media:'));
+    } else {
+        return;
+    }
 
     // For each group, delete the URL alias "/group.field_shortname_or_acronym/contents". E.g. "/bds/news"
     $contentTypePlural = isset(GROUP_CONTENT_TYPE_PLURAL[$contentType]) ? GROUP_CONTENT_TYPE_PLURAL[$contentType] : $contentType;
@@ -249,3 +266,76 @@ function portland_node_presave($node) {
         }
     }
 }
+
+/**
+ * Implements hook_token_info().
+ */
+function portland_token_info() {
+    $tokens = [];
+  
+    $tokens['group'] = [
+      'name' => t('Group'),
+      'description' => t('The parent group.'),
+      'type' => 'group',
+    ];
+  
+    if (\Drupal::moduleHandler()->moduleExists('token')) {
+      $tokens['groups'] = [
+        'name' => t('Groups'),
+        'description' => t("An array of all the node parent groups."),
+        'type' => 'array',
+      ];
+    }
+  
+    return array(
+      'tokens' => array('media' => $tokens),
+    );
+  }
+  
+  /**
+   * Implements hook_tokens().
+   */
+  function portland_tokens($type, $tokens, array $data, array $options, BubbleableMetadata $bubbleable_metadata) {
+    if ($type != 'media' || empty($data['media'])) {
+      return [];
+    }
+  
+    $token_service = \Drupal::token();
+    $replacements = [];
+  
+    $group_content_array = GroupContent::loadByEntity($data['media']);
+    if (empty($group_content_array)) {
+      return [];
+    }
+  
+    $groups = [];
+    /** @var \Drupal\group\Entity\GroupContentInterface $group_content */
+    foreach ($group_content_array as $group_content) {
+      $group = $group_content->getGroup();
+      $groups[$group->id()] = $group->label();
+      $bubbleable_metadata->addCacheableDependency($group);
+    };
+  
+    if (isset($tokens['groups'])) {
+      $replacements[$tokens['groups']] = token_render_array($groups, $options);
+    }
+  
+    // [media:groups:*] chained tokens.
+    if ($parents_tokens = \Drupal::token()->findWithPrefix($tokens, 'groups')) {
+      $replacements += \Drupal::token()->generate('array', $parents_tokens, array('array' => $groups), $options, $bubbleable_metadata);
+    }
+  
+    /** @var \Drupal\group\Entity\GroupContentInterface $group_content */
+    $group_content = array_pop($group_content_array);
+    $group = $group_content->getGroup();
+    if (isset($tokens['group'])) {
+      $replacements[$tokens['group']] = $group->label();
+    }
+  
+    if ($group_tokens = $token_service->findWithPrefix($tokens, 'group')) {
+      $replacements += $token_service->generate('group', $group_tokens, array('group' => $group), $options, $bubbleable_metadata);
+    }
+  
+    return $replacements;
+  }
+  
