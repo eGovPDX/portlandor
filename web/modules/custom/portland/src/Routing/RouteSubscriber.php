@@ -5,6 +5,7 @@ namespace Drupal\portland\Routing;
 use Drupal\Core\Logger\LoggerChannelFactoryInterface;
 use Drupal\Core\Routing\RouteSubscriberBase;
 use Symfony\Component\Routing\RouteCollection;
+use Drupal\Core\Routing\RoutingEvents;
 
 /**
  * Listens to the dynamic route events.
