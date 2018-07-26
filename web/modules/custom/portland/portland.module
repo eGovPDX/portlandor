@@ -10,34 +10,36 @@ use Drupal\pathauto\Form\PathautoBulkUpdateForm;
 // The group list view's path must match the plural form shown here.
 // If the group list view doesn't exist, visiting the alias will get a 404.
 const GROUP_CONTENT_TYPE_PLURAL = [
-    "service" => "services",
-    "guide" => "guides",
-    "building" => "buildings",
-    "city_service" => "services",
-    "service_location" => "locations",
-    "event" => "events",
+    "service" => ["services"],
+    "guide" => ["guides"],
+    "building" => ["buildings"],
+    "city_service" => ["services"],
+    "service_location" => ["locations"],
+    "event" => ["events", "events/archive"],
 ];
 
 function createAliasForGroupContent($grp, $contentType, $lang) {
     // When a content type is not installed, $pluginType->getPluginDefinition()['entity_bundle'] returns false. Otherwise it's the string like "news".
     if($contentType === false) return;
 
-    $contentTypePlural = (isset(GROUP_CONTENT_TYPE_PLURAL[$contentType]) ? GROUP_CONTENT_TYPE_PLURAL[$contentType] : $contentType);
+    $contentTypePluralArray = (isset(GROUP_CONTENT_TYPE_PLURAL[$contentType]) ? GROUP_CONTENT_TYPE_PLURAL[$contentType] : [$contentType]);
 
-    // Clean up shortname as it's from the editor
-    $shortname = \Drupal::service("pathauto.alias_cleaner")
-                ->cleanString($grp->get('field_shortname_or_acronym')->value);
-    $alias = "/$shortname/$contentTypePlural";
-    $gid = $grp->id();
-    $system_path = "/group/$gid/$contentTypePlural";
+    foreach( $contentTypePluralArray as $contentTypePlural ) {
+        // Clean up shortname as it's from the editor
+        $shortname = \Drupal::service("pathauto.alias_cleaner")
+                    ->cleanString($grp->get('field_shortname_or_acronym')->value);
+        $alias = "/$shortname/$contentTypePlural";
+        $gid = $grp->id();
+        $system_path = "/group/$gid/$contentTypePlural";
 
-    // If there is already an alias, skip it.
-    $existing_alias = \Drupal::service('path.alias_storage')->lookupPathAlias($system_path, $lang);
-    if ($existing_alias && $existing_alias == $alias) {
-        return false;   
+        // If there is already an alias, skip it.
+        $existing_alias = \Drupal::service('path.alias_storage')->lookupPathAlias($system_path, $lang);
+        if ($existing_alias && $existing_alias == $alias) {
+            return false;   
+        }
+
+        $path = \Drupal::service('path.alias_storage')->save($system_path, $alias, $lang);
     }
-
-    $path = \Drupal::service('path.alias_storage')->save($system_path, $alias, $lang);
     return true;
 }
 
@@ -80,19 +82,22 @@ function portland_group_content_type_delete(GroupContentTypeInterface $groupCont
     $contentType = substr($contentTypePlugin, strlen('group_node:'));
 
     // For each group, delete the URL alias "/group.field_shortname_or_acronym/contents". E.g. "/bds/news"
-    $contentTypePlural = isset(GROUP_CONTENT_TYPE_PLURAL[$contentType]) ? GROUP_CONTENT_TYPE_PLURAL[$contentType] : $contentType;
-    foreach ($grps as $grp) {
-        $gid = $grp->id();
-        $system_path = "/group/$gid/$contentTypePlural";
+    $contentTypePluralArray = isset(GROUP_CONTENT_TYPE_PLURAL[$contentType]) ? GROUP_CONTENT_TYPE_PLURAL[$contentType] : [$contentType];
 
-        // If found an alias, delete it.
-        $existing_alias = \Drupal::service('path.alias_storage')
-            ->lookupPathAlias($system_path, $lang);
-        if($existing_alias) {
-            $path = \Drupal::service('path.alias_storage')
-                ->delete(['alias' => $existing_alias, 'langcode' => $lang]);
+    foreach( $contentTypePluralArray as $contentTypePlural ) {
+        foreach ($grps as $grp) {
+            $gid = $grp->id();
+            $system_path = "/group/$gid/$contentTypePlural";
+
+            // If found an alias, delete it.
+            $existing_alias = \Drupal::service('path.alias_storage')
+                ->lookupPathAlias($system_path, $lang);
+            if($existing_alias) {
+                $path = \Drupal::service('path.alias_storage')
+                    ->delete(['alias' => $existing_alias, 'langcode' => $lang]);
+            }
         }
-    }  
+    }
 }
 
 
@@ -154,22 +159,25 @@ function portland_group_update(GroupInterface $group) {
         $contentType = $pluginType->getPluginDefinition()['entity_bundle'];
         // Skip if the content type is not installed with the group type.
         if($contentType === false) return;
-        $contentTypePlural = isset(GROUP_CONTENT_TYPE_PLURAL[$contentType]) ? GROUP_CONTENT_TYPE_PLURAL[$contentType] : $contentType;
-        $system_path = "/group/$gid/$contentTypePlural";
-        $alias = "/$shortname/$contentTypePlural";
+        $contentTypePluralArray = isset(GROUP_CONTENT_TYPE_PLURAL[$contentType]) ? GROUP_CONTENT_TYPE_PLURAL[$contentType] : [$contentType];
 
-        $existing_alias = \Drupal::service('path.alias_storage')->lookupPathAlias($system_path, $lang);
+        foreach( $contentTypePluralArray as $contentTypePlural ) {
+            $system_path = "/group/$gid/$contentTypePlural";
+            $alias = "/$shortname/$contentTypePlural";
 
-        // if it already exists and matches, do nothing
-        if ($existing_alias && $existing_alias == $alias) continue;
+            $existing_alias = \Drupal::service('path.alias_storage')->lookupPathAlias($system_path, $lang);
 
-        // if it exists and doesn't match current alias, delete in preparation for re-save
-        if ($existing_alias && $existing_alias != $alias) {
-            \Drupal::service('path.alias_storage')->delete(['alias' => $existing_alias, 'langcode' => $lang]);
+            // if it already exists and matches, do nothing
+            if ($existing_alias && $existing_alias == $alias) continue;
+
+            // if it exists and doesn't match current alias, delete in preparation for re-save
+            if ($existing_alias && $existing_alias != $alias) {
+                \Drupal::service('path.alias_storage')->delete(['alias' => $existing_alias, 'langcode' => $lang]);
+            }
+
+            // save new or updated alias
+            $path = \Drupal::service('path.alias_storage')->save($system_path, $alias, $lang);
         }
-
-        // save new or updated alias
-        $path = \Drupal::service('path.alias_storage')->save($system_path, $alias, $lang);
     }
 
     // <TODO:>LOW PRIORITY: rEGenerate URL aliases for group action links using group shortname (ie. /bds/content, /bds/members)</TODO:>
