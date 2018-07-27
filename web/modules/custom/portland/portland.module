@@ -396,7 +396,7 @@ function portland_entity_insert($entity)
 {
     if ($entity->bundle() == 'alert') {
         // alert has been inserted, update alerts count in cache
-        echo ('<!-- ***** entity_insert -->');
+        \Drupal::logger('portland')->notice('Alert has been added, reset cached count.');
         _portland_get_active_alerts_count(true);
     }
 }
@@ -412,7 +412,7 @@ function portland_entity_update($entity)
         $origstate = $entity->original->get('moderation_state')->getString();
         $newstate = $entity->get('moderation_state')->getString();
         if ($origstate != $newstate) {
-            echo ('<!-- ***** entity_update -->');
+            \Drupal::logger('portland')->notice('Alert has been updated, reset cached count.');
             _portland_get_active_alerts_count(true);
         }
     }
@@ -425,7 +425,7 @@ function portland_entity_delete($entity)
 {
     if ($entity->bundle() == 'alert') {
         // alert has been deleted, update alerts count in cache
-        echo ('<!-- ***** entity_delete -->');
+        \Drupal::logger('portland')->notice('Alert has been deleted, reset cached count.');
         _portland_get_active_alerts_count(true);
     }
 }
@@ -435,19 +435,21 @@ function portland_entity_delete($entity)
  */
 function _portland_get_active_alerts_count($reset = false)
 {
-    echo ('<!-- ***** alerts count RESET CACHE? ' . $reset . ' -->');
+    $message = "Get active alerts count (reset = " . $reset . ").";
     $alertCount = 0;
     if (!$reset && $cache = \Drupal::cache()->get(ALERTS_COUNTER_CACHE_KEY)) {
         $alertCount = $cache->data;
-        echo ('<!-- ***** alerts count is CACHED -->');
+        $message .= 'Using cached value.';
     } else {
-        echo ('<!-- ***** alerts count is NOT CACHED -->');
+        $message .= 'Retrieving new count: ';
         $query = \Drupal::entityQuery('node')
             ->condition('type', 'alert')
             ->condition('status', 1);
         $nids = $query->execute();
         $alertCount = count($nids);
         \Drupal::cache()->set(ALERTS_COUNTER_CACHE_KEY, $alertCount);
+        $message .= $alertCount;
     }
+    \Drupal::logger('portland')->notice($message);
     return $alertCount;
 }
