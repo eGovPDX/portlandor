@@ -347,4 +347,18 @@ function portland_tokens($type, $tokens, array $data, array $options, Bubbleable
   
     return $replacements;
 }
-  
+
+/**
+ * Implements hook_form_alter().
+ */
+//Idea borrowed from https://julian.pustkuchen.com/node/659
+function portland_form_views_exposed_form_alter(&$form, &$form_state) {
+    // ------------------------------------------------------------
+    // Add an own reset button to all views exposed forms. The reason behind is,
+    // that the default Drupal reset button doesn't play nice with AJAX
+    $submit_btn_id = $form['actions']['submit']['#id'];
+    if (!empty($submit_btn_id) && !empty($form['actions']['reset'])) {
+      // Add own reset button
+      $form['actions']['reset']['#attributes'] = array('onclick' => 'javascript:jQuery(this.form).clearForm();jQuery(this.form).find(\'#' . $submit_btn_id . '\').trigger(\'click\');return false;');
+    }
+  }
