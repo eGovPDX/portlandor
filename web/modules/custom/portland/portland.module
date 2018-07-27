@@ -376,6 +376,7 @@ function portland_preprocess_menu(&$vars)
         echo('<!-- ***** preprocess_menu - main -->');
         foreach ($vars['items'] as $key => &$item) {
             if ($item['title'] == 'Alerts') {
+                echo ('<!-- ***** preprocess_menu - main -->');
                 $alertCount = _portland_get_active_alerts_count();
                 if ($alertCount < 1) {
                     unset($vars['items'][$key]);
@@ -395,6 +396,7 @@ function portland_entity_insert($entity)
 {
     if ($entity->bundle() == 'alert') {
         // alert has been inserted, update alerts count in cache
+        echo ('<!-- ***** entity_insert -->');
         _portland_get_active_alerts_count(true);
     }
 }
@@ -410,6 +412,7 @@ function portland_entity_update($entity)
         $origstate = $entity->original->get('moderation_state')->getString();
         $newstate = $entity->get('moderation_state')->getString();
         if ($origstate != $newstate) {
+            echo ('<!-- ***** entity_update -->');
             _portland_get_active_alerts_count(true);
         }
     }
@@ -422,6 +425,7 @@ function portland_entity_delete($entity)
 {
     if ($entity->bundle() == 'alert') {
         // alert has been deleted, update alerts count in cache
+        echo ('<!-- ***** entity_delete -->');
         _portland_get_active_alerts_count(true);
     }
 }
@@ -431,6 +435,7 @@ function portland_entity_delete($entity)
  */
 function _portland_get_active_alerts_count($reset = false)
 {
+    echo ('<!-- ***** alerts count RESET CACHE? ' . $reset . ' -->');
     $alertCount = 0;
     if (!$reset && $cache = \Drupal::cache()->get(ALERTS_COUNTER_CACHE_KEY)) {
         $alertCount = $cache->data;
