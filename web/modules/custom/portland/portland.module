@@ -373,10 +373,8 @@ function portland_preprocess_menu(&$vars)
     // find main menu and modify the Alerts link text to display number of alerts,
     // or remove the Alerts item if count is zero.
     if (array_key_exists('menu_name', $vars) && $vars['menu_name'] == 'main') {
-        echo('<!-- ***** preprocess_menu - main -->');
         foreach ($vars['items'] as $key => &$item) {
             if ($item['title'] == 'Alerts') {
-                echo ('<!-- ***** preprocess_menu - main -->');
                 $alertCount = _portland_get_active_alerts_count();
                 if ($alertCount < 1) {
                     unset($vars['items'][$key]);
@@ -396,7 +394,6 @@ function portland_entity_insert($entity)
 {
     if ($entity->bundle() == 'alert') {
         // alert has been inserted, update alerts count in cache
-        \Drupal::logger('portland')->notice('Alert has been added, reset cached count.');
         _portland_get_active_alerts_count(true);
     }
 }
@@ -408,11 +405,9 @@ function portland_entity_update($entity)
 {
     if ($entity->bundle() == 'alert') {
         // if moderation state has changed, update alerts count in cache
-        $test = $entity->getCacheTagsToInvalidate();
         $origstate = $entity->original->get('moderation_state')->getString();
         $newstate = $entity->get('moderation_state')->getString();
         if ($origstate != $newstate) {
-            \Drupal::logger('portland')->notice('Alert has been updated, reset cached count.');
             _portland_get_active_alerts_count(true);
         }
     }
@@ -425,7 +420,6 @@ function portland_entity_delete($entity)
 {
     if ($entity->bundle() == 'alert') {
         // alert has been deleted, update alerts count in cache
-        \Drupal::logger('portland')->notice('Alert has been deleted, reset cached count.');
         _portland_get_active_alerts_count(true);
     }
 }
@@ -435,22 +429,18 @@ function portland_entity_delete($entity)
  */
 function _portland_get_active_alerts_count($reset = false)
 {
-    $message = "Get active alerts count (reset = " . $reset . "). ";
     $alertCount = 0;
     if (!$reset && $cache = \Drupal::cache()->get(ALERTS_COUNTER_CACHE_KEY)) {
         $alertCount = $cache->data;
-        $message .= 'Using cached value. ';
     } else {
-        \Drupal\Core\Cache\Cache::invalidateTags(['block']);
-        $message .= 'Retrieving new count: ';
+        // invalidate main menu block in cache to show current alerts
+        \Drupal\Core\Cache\Cache::invalidateTags(['config:block.block.cloudy_main_menu']);
         $query = \Drupal::entityQuery('node')
             ->condition('type', 'alert')
             ->condition('status', 1);
         $nids = $query->execute();
         $alertCount = count($nids);
         \Drupal::cache()->set(ALERTS_COUNTER_CACHE_KEY, $alertCount);
-        $message .= $alertCount;
     }
-    \Drupal::logger('portland')->notice($message);
     return $alertCount;
 }
