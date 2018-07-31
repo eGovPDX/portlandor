@@ -6,7 +6,7 @@
 (function ($, Drupal, drupalSettings) {
 
     'use strict';
-  
+
     Drupal.behaviors.portland = {
       attach: function (context, settings) {
         // The server puts all publicshed alerts in drupalSettings.portland_alert.NID
@@ -28,12 +28,12 @@
           // Only show the alert if dismiss button has not been clicked. The
           // element is hidden by default in order to prevent it from momentarily
           // flickering onscreen.
-          if ($.cookie('Drupal.visitor.portland_alert_dismissed.' + nid) !== 
+          if ($.cookie('Drupal.visitor.portland_alert_dismissed.' + nid) !==
               drupalSettings.portland_alert[nid].changed) {
-            $('#'+nid).closest('.portland-alert').css('display', 'block');
+            $('[data-nid="'+ nid +'"]').closest('.portland-alert').css('display', 'block');
           }
         }
-  
+
         // Set the cookie value when dismiss button is clicked.
         $('.portland-alert .close').click(function(e) {
           // Hide this alert
@@ -49,18 +49,17 @@
           }
 
           var linkedTitleNode = $(this.previousElementSibling);
-          if(linkedTitleNode.data('nid')) {              
+          if(linkedTitleNode.data('nid')) {
             // Set cookie to the current key.
-            $.cookie('Drupal.visitor.portland_alert_dismissed.' + linkedTitleNode.data('nid'), 
-            linkedTitleNode.data('changed'), 
-                  { 
+            $.cookie('Drupal.visitor.portland_alert_dismissed.' + linkedTitleNode.data('nid'),
+            linkedTitleNode.data('changed'),
+                  {
                     //expires: 180, // expires in 180 days
-                    path: drupalSettings.path.baseUrl 
+                    path: drupalSettings.path.baseUrl
                   });
           }
         });
       }
     };
-  
+
   })(jQuery, Drupal, drupalSettings);
-  
