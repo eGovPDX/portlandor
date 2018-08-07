@@ -132,7 +132,7 @@ We are using the dev environment to integrate all the approved code from master 
 
 Once production is live, we should plan to deploy to production at least once per sprint—if not more frequently.
 
-## Local build process for template files
+## Local build process for theme files
 
 There is a separate build process that is run in local development environments, to compile template files such as CSS and JS. The resulting files, in addition to the modified source files, are committed to the repo and deployed to upstream environments. They are always built locally, never as part of the main build process we've implemented with CircleCI.
 
