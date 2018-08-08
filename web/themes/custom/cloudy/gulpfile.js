@@ -29,7 +29,7 @@ gulp.task('serve', ['sass'], function() {
         proxy: "https://portlandor.lndo.site/",
     });
 
-    gulp.watch(['node_modules/bootstrap/scss/bootstrap.scss', 'scss/*.scss'], ['sass']);
+    gulp.watch(['node_modules/bootstrap/scss/bootstrap.scss', 'scss/**/*.scss'], ['sass']);
     //    gulp.watch("src/*.html").on('change', browserSync.reload);
 });
 
