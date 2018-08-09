@@ -1,36 +1,79 @@
+{#
+/**
+ * @file
+ * Default theme implementation for displaying an alert.
+ *
+ * Available variables:
+ * - dismissible: Whether this alert should have a close button and all associated functionality.
+ * - type: What type of alert this is. Should be one of:
+ *     10 - danger
+ *     20 - warning
+ *     30 - information
+ * - nid: The id for the alert content so its dismissal can be tracked.
+ * - changed_timestamp: The UNIX timestamp so dismissal can be evaluated.
+ * - title: The title for the alert.
+ * - text: The text to show in the alert.
+ * - link_url: The URL for an associated action link.
+ * - link_text: The text to show in the action link.
+ * - changed: The text to show for the updated text.
+ *
+ * @see template_preprocess_views_portland_alerts()
+ *
+ * @ingroup themeable
+ */
+#}
+{# 'd-none' below because the javascript file will change to 'd-flex' if it should be shown #}
 {% set alert_classes = [
+  'portland-alert',
   'alert',
-  'alert-' ~ type|clean_class,
-  dismissable ? 'portland-alert' : '',
+  dismissible == 1 ? 'alert-dismissible' : '',
+  'border',
+  dismissible == 1 ? 'd-none' : 'd-flex',
 ] %}
 
 {% set button_attribute = create_attribute() %}
 {% set button_classes = [
   'btn',
-  'btn-' ~ type|clean_class,
+  type == '10' ? 'btn-danger' : '',
+  type == '20' ? 'btn-warning' : '',
+  type == '30' ? 'btn-outline-secondary' :'',
 ] %}
 
+{% set icon_attribute = create_attribute() %}
+
 <div{{ attributes.addClass(classes).addClass(alert_classes) }} role="alert">
-  <div class="row">
-    <div class="col">
+  <div class="flex-shrink-1">
+    {% if type == '20' %}
+    <i class="fa fa-exclamation-triangle"></i>
+    {% elseif type == '10' %}
+    <i class="fa fa-exclamation-circle"></i>
+    {% elseif type == '30' %}
+    <i class="fa fa-info-circle"></i>
+    {% endif %}
+  </div>
+  <div class="flex-grow-1 ml-4">
+    <div class="d-flex justify-content-between align-items-baseline">
       {% if title %}
-      <strong data-nid="{{ nid }}" data-changed="{{ changed_timestamp }}">{{ title }}</strong>
+      <h3 data-nid="{{ nid }}" data-changed="{{ changed_timestamp }}">{{ title }}</h3>
       {% endif %}
-      {% if dismissable == true %}
+      {% if dismissible == 1 %}
       <button type="button" class="close" aria-label="Close"><span aria-hidden="true">&times;</span></button>
       {% endif %}
     </div>
-  </div>
-  <div class="row">
-    <div class="col">
+    <div class="d-flex flex-column">
+      <div class="mb-4">
       {{ text }}
+      </div>
+      <div class="d-flex flex-column flex-md-row align-items-baseline">
+        {% if link_url %}
+        <a{{ button_attribute.addClass(button_classes).setAttribute('href', link_url) }}>
+          {{ link_text }}
+        </a>
+        {% endif %}
+        <span class="ml-md-auto" >
+        {{ changed }}
+        </span>
+      </div>
     </div>
-    <div class="col-auto d-flex flex-column align-self-end align-items-end">
-      {% if link_url %}
-      <a{{ button_attribute.addClass(button_classes).setAttribute('href', link_url) }}>
-        {{ link_text }}
-      </a>
-      {% endif %}
-      Updated {{ changed|date('g:i a M j, Y') }}
-    </div>
+  </div>
 </div>
