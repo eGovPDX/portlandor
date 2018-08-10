@@ -138,16 +138,16 @@ There is a separate build process that is run in local development environments,
 
 ### Install dependencies 
 
-1. Install Node.js using the Mac or Windows installer available on nodejs.org.
-1. Open a terminal window (PowerShell on Windows) and run "npm install -g gulp-cli" to install gulp.js
+1. Install Node.js using the Mac or Windows installer available at https://nodejs.org.
+1. Open a terminal window (PowerShell on Windows) and run `npm install -g gulp-cli` to install gulp.js. Administrator privileges are not required.
 1. Navigate to the project theme directory (portlandor/web/themes/custom/cloudy)
-1. Install project dependencies by running "npm install"
+1. Install project dependencies by running `npm install` 
 
 ### Using gulp.js to build CSS files
 
 1. Make modifications to the desired scss files in the theme. Never modify styles.css directly.
-1. In the root directory of the theme, run "gulp sass" to build just the CSS a single time.
-1. OR, in the root directory of the theme, run "gulp" to launch the gulp server, which watches for changes and rebuilds the CSS and JS whenever the source files are updated.
+1. In the root directory of the theme, run `gulp sass` to build just the CSS a single time, or run `gulp js` to build just the JS files.
+1. OR, in the root directory of the theme, run `gulp` to launch the gulp server, which watches for changes and rebuilds the CSS and JS whenever the source files are updated.
 1. Commit both the updated source files and the rebuilt CSS and JS files using the standard project workflow.
 
 #### Troubleshooting
