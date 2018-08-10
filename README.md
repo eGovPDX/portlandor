@@ -131,3 +131,30 @@ We are using the dev environment to integrate all the approved code from master 
 1. Test that everything still works on Test.
 
 Once production is live, we should plan to deploy to production at least once per sprint—if not more frequently.
+
+## Local build process for theme files
+
+There is a separate build process that is run in local development environments, to compile template files such as CSS and JS. The resulting files, in addition to the modified source files, are committed to the repo and deployed to upstream environments. They are always built locally, never as part of the main build process we've implemented with CircleCI.
+
+### Install dependencies 
+
+1. Install Node.js using the Mac or Windows installer available at https://nodejs.org.
+1. Open a terminal window (PowerShell on Windows) and run `npm install -g gulp-cli` to install gulp.js. Administrator privileges are not required.
+1. Navigate to the project theme directory (portlandor/web/themes/custom/cloudy)
+1. Install project dependencies by running `npm install` 
+
+### Using gulp.js to build CSS files
+
+1. Make modifications to the desired scss files in the theme. Never modify styles.css directly.
+1. In the root directory of the theme, run `gulp sass` to build just the CSS a single time, or run `gulp js` to build just the JS files.
+1. OR, in the root directory of the theme, run `gulp` to launch the gulp server, which watches for changes and rebuilds the CSS and JS whenever the source files are updated.
+1. Commit both the updated source files and the rebuilt CSS and JS files using the standard project workflow.
+
+#### Troubleshooting
+
+**ERROR (Windows): "The term 'gulp' is not recognized as the name of a cmdlet, function, script file, or operable program..."**
+This indicates one of two potential problems:
+1. Node.js was not added to the Windows Path. See: https://stackoverflow.com/questions/8768549/node-js-doesnt-recognize-system-path#8768567
+1. There is a conflict between your normal and _adm profiles on your Windows workstation relating to where gulp.js files were installed. Even if you installed gulp while running PowerShell as administrator, you may need to launch a new PowerShell window without administrator rights to get gulp to run.
+
+
