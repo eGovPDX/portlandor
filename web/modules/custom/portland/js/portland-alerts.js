@@ -14,9 +14,9 @@
       // The client has all previously dismissed alerts in cookies Drupal.visitor.portland_alert_dismissed.NID
       // Delete the cookies that don't have a matching server alert NID.
       var regex = new RegExp('^' + COOKIE_PREFIX + '([0-9]+)$', 'g');
-      Object.keys($.cookie()).forEach(function(cookie) {
+      Object.keys($.cookie()).forEach(function (cookie) {
         var match_array;
-        if((match_array = regex.exec(cookie)) !== null) {
+        if ((match_array = regex.exec(cookie)) !== null) {
           var nid = match_array[1];
           if (!drupalSettings.portland_alert.hasOwnProperty(nid)) {
             $.removeCookie(cookie);
@@ -26,25 +26,25 @@
 
       // Compare each server side alert changed time with browser cookie values.
       // If the changed time doesn't match for that alert, display the alert.
-      Object.keys(drupalSettings.portland_alert).forEach(function(nid) {
+      Object.keys(drupalSettings.portland_alert).forEach(function (nid) {
         if ($.cookie(COOKIE_PREFIX + nid) !== drupalSettings.portland_alert[nid].changed) {
           // Only show the alert if dismiss button has not been clicked. The
           // element is hidden by default in order to prevent it from momentarily
           // flickering onscreen.
-          var alertElement = $('[data-nid="' + nid + '"]').closest('.alert-dismissible');
+          var alertElement = $('[data-nid="' + nid + '"]');
           // use bootstrap classes
           alertElement.removeClass('d-none');
-          alertElement.addClass('d-flex');
         }
       });
 
       // Set the cookie value when dismiss button is clicked.
-      $('.alert-dismissible .close').click(function (e) {
+      $('.portland-alert .close').click(function (e) {
         // Do not perform default action.
         e.preventDefault();
 
         // Remove this alert
-        $(this).closest('.alert-dismissible').removeClass('d-flex').addClass('d-none');
+        var alertElement = $(this).closest('.portland-alert')
+        alertElement.addClass('d-none');
 
         // Find the nid and changed time, set a cookie.
         if (!this.previousElementSibling) {
@@ -52,13 +52,12 @@
           return;
         }
 
-        var linkedTitleNode = $(this.previousElementSibling);
         var nid;
-        if (nid = linkedTitleNode.data('nid')) {
+        if (nid = alertElement.data('nid')) {
           // Set cookie to the current key.
           $.cookie(
             COOKIE_PREFIX + nid,
-            linkedTitleNode.data('changed'),
+            alertElement.data('changed'),
             {
               path: drupalSettings.path.baseUrl
             }
