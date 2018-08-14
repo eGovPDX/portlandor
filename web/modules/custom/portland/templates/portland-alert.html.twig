@@ -25,55 +25,66 @@
 {# 'd-none' below because the javascript file will change to 'd-flex' if it should be shown #}
 {% set alert_classes = [
   'portland-alert',
-  'alert',
-  dismissible == 1 ? 'alert-dismissible' : '',
-  'border',
-  dismissible == 1 ? 'd-none' : 'd-flex',
+  'card',
+  'mb-2',
+  dismissible == 1 ? 'd-none' : '',
 ] %}
 
-{% set button_attribute = create_attribute() %}
-{% set button_classes = [
+{% set header_attribute = create_attribute() %}
+{% set header_classes = [
+  'card-header',
+  'd-flex',
+  'align-items-center',
+  type == '10' ? 'bg-danger' : '',
+  type == '10' ? 'text-white' : '',
+  type == '20' ? 'bg-warning' : '',
+  type == '20' ? 'text-dark' : '',
+  type == '30' ? 'bg-secondary' :'',
+  type == '30' ? 'text-white' :'',
+] %}
+
+
+{% set icon_attribute = create_attribute() %}
+{% set icon_classes = [
+  'fa',
+  type == '10' ? 'fa-exclamation-circle' : '',
+  type == '20' ? 'fa-exclamation-triangle' : '',
+  type == '30' ? 'fa-info-circle' :'',
+] %}
+
+{% set link_attribute = create_attribute() %}
+{% set link_classes = [
+  'mt-2',
   'btn',
+  'btn-block',
   type == '10' ? 'btn-danger' : '',
   type == '20' ? 'btn-warning' : '',
   type == '30' ? 'btn-outline-secondary' :'',
 ] %}
 
-{% set icon_attribute = create_attribute() %}
-
-<div{{ attributes.addClass(classes).addClass(alert_classes) }} role="alert">
-  <div class="flex-shrink-1">
-    {% if type == '20' %}
-    <i class="fa fa-exclamation-triangle"></i>
-    {% elseif type == '10' %}
-    <i class="fa fa-exclamation-circle"></i>
-    {% elseif type == '30' %}
-    <i class="fa fa-info-circle"></i>
+<div{{ attributes.addClass(classes).addClass(alert_classes) }}  data-nid="{{ nid }}" data-changed="{{ changed_timestamp }}" role="alert">
+  <div{{ header_attribute.addClass(header_classes) }}>
+    <i{{ icon_attribute.addClass(icon_classes) }}></i>
+    <span class="ml-2 flex-grow-1">
+      {{ changed }}
+    </span>
+    {% if dismissible == 1 %}
+      <button type="button" class="close" aria-label="Close"><span aria-hidden="true">&times;</span></button>
     {% endif %}
   </div>
-  <div class="flex-grow-1 ml-4">
-    <div class="d-flex justify-content-between align-items-baseline">
+  <div class="card-body">
+    <div class="card-title">
       {% if title %}
-      <h3 data-nid="{{ nid }}" data-changed="{{ changed_timestamp }}">{{ title }}</h3>
-      {% endif %}
-      {% if dismissible == 1 %}
-      <button type="button" class="close" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h3>{{ title }}</h3>
       {% endif %}
     </div>
-    <div class="d-flex flex-column">
-      <div class="mb-4">
+    <div>
       {{ text }}
-      </div>
-      <div class="d-flex flex-column flex-md-row align-items-baseline">
-        {% if link_url %}
-        <a{{ button_attribute.addClass(button_classes).setAttribute('href', link_url) }}>
-          {{ link_text }}
-        </a>
-        {% endif %}
-        <span class="ml-md-auto" >
-        {{ changed }}
-        </span>
-      </div>
     </div>
+    {% if link_url %}
+      <a{{ link_attribute.addClass(link_classes).setAttribute('href', link_url) }}>
+        {{ link_text }}
+      </a>
+    {% endif %}
   </div>
 </div>
