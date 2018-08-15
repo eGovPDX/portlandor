@@ -10,19 +10,6 @@
   Drupal.behaviors.portland = {
     attach: function (context, settings) {
       var COOKIE_PREFIX = 'Drupal.visitor.portland_alert_dismissed.';
-      // The server puts all published alerts in drupalSettings.portland_alert.NID
-      // The client has all previously dismissed alerts in cookies Drupal.visitor.portland_alert_dismissed.NID
-      // Delete the cookies that don't have a matching server alert NID.
-      var regex = new RegExp('^' + COOKIE_PREFIX + '([0-9]+)$', 'g');
-      Object.keys($.cookie()).forEach(function (cookie) {
-        var match_array;
-        if ((match_array = regex.exec(cookie)) !== null) {
-          var nid = match_array[1];
-          if (!drupalSettings.portland_alert.hasOwnProperty(nid)) {
-            $.removeCookie(cookie);
-          }
-        }
-      });
 
       // Compare each server side alert changed time with browser cookie values.
       // If the changed time doesn't match for that alert, display the alert.
@@ -45,12 +32,6 @@
         // Remove this alert
         var alertElement = $(this).closest('.portland-alert')
         alertElement.addClass('d-none');
-
-        // Find the nid and changed time, set a cookie.
-        if (!this.previousElementSibling) {
-          console.error('Cannot find title node');
-          return;
-        }
 
         var nid;
         if (nid = alertElement.data('nid')) {
