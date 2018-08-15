@@ -157,4 +157,3 @@ This indicates one of two potential problems:
 1. Node.js was not added to the Windows Path. See: https://stackoverflow.com/questions/8768549/node-js-doesnt-recognize-system-path#8768567
 1. There is a conflict between your normal and _adm profiles on your Windows workstation relating to where gulp.js files were installed. Even if you installed gulp while running PowerShell as administrator, you may need to launch a new PowerShell window without administrator rights to get gulp to run.
 
-
