@@ -494,18 +494,53 @@ function _portland_get_active_alerts_count($reset = false)
  * Implements template_preprocess_paragraph
  */
 function portland_preprocess_paragraph(&$vars) {
-    if( $vars['paragraph']->bundle()  == "image" ) {
-        $image = $vars['paragraph'];
-        if( $image->hasField("field_image_alignment") && 
-            $image->field_image_alignment->value !== NULL) {
-                // If there is not an existing class array, create an empty array.
-                if (!isset($vars['attributes']['class'])) {
-                    $vars['attributes']['class'] = [];
-                }
-                $vars['attributes']['class'] = array_merge(
-                    $vars['attributes']['class'], 
-                    ['float-'.$image->field_image_alignment->value, 'image-align']
-                );
-        }
+    switch( $vars['paragraph']->bundle()) {
+        case 'image':
+            $image = $vars['paragraph'];
+            if( $image->hasField("field_image_alignment") && 
+                $image->field_image_alignment->value !== NULL) {
+                    // If there is not an existing class array, create an empty array.
+                    if (!isset($vars['attributes']['class'])) {
+                        $vars['attributes']['class'] = [];
+                    }
+                    $vars['attributes']['class'] = array_merge(
+                        $vars['attributes']['class'], 
+                        ['float-'.$image->field_image_alignment->value, 'image-align']
+                    );
+            }
+            break;
+        case 'document':
+            // If there is not an existing class array, create an empty array.
+            if (!isset($vars['attributes']['class'])) {
+                $vars['attributes']['class'] = [];
+            }
+            $vars['attributes']['class'] = array_merge(
+                $vars['attributes']['class'], 
+                ['border']
+            );
+
+            // Map mimetype to font awesome icon names. Sources:
+            // https://api.drupal.org/api/drupal/includes%21file.mimetypes.inc/function/file_default_mimetype_mapping/7.x
+            // https://fontawesome.com/icons?d=gallery
+            $mimetypeToFontawesomeIcon = [
+                'text/plain' => 'file-text',
+                'application/pdf' => 'file-pdf',
+                'application/msword' => 'file-word', // *.doc
+                'application/vnd.openxmlformats-officedocument.wordprocessingml.document' => 'file-word', // *.docx
+                'application/vnd.ms-excel' => 'file-excel', // *.xls
+                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' => 'file-excel', // *.xlsx
+                'application/vnd.ms-powerpoint' => 'file-powerpoint', // *.ppt
+                'application/vnd.openxmlformats-officedocument.presentationml.presentation' => 'file-powerpoint',
+            ];
+            $document = $vars['paragraph'];
+            // Paragraph -> Media -> File
+            $vars['fileSize'] = format_size(
+                $document->field_document->entity->field_document->entity->getSize());
+            $vars['fileUrl'] = $document->field_document->entity->field_document->entity->url();
+            $mimeType = $document->field_document->entity->field_document->entity->getMimeType();
+            // Set fontawesome icon based on mime type. Use "file" as the default in case no matching mime type is found.
+            $vars['fontawesomeIcon'] = array_key_exists( $mimeType, $mimetypeToFontawesomeIcon ) ? 
+                $mimetypeToFontawesomeIcon[$mimeType] : 'file';
+            break;
     }
 }
