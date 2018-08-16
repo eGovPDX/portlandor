@@ -149,4 +149,7 @@ $settings['skip_permissions_hardening'] = TRUE;
  */
 $settings['hash_salt'] = 'thisismysaltittasteslikesalt';
 
-$settings['trusted_host_patterns'] = array('^'. preg_quote('portlandor.lndo.site') .'$');
+$settings['trusted_host_patterns'] = array(
+  '^'. preg_quote('portlandor.lndo.site') .'$',
+  '^'. preg_quote('localhost') .'$'
+);
