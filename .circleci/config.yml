@@ -67,7 +67,7 @@ behat_tests: &behat_tests
           #rm -rf ./vendor/drupal/coder
           rm -rf ./web/modules/contrib/facets
           #rm -rf ./web/modules/contrib/search_api_solr
-          # Remove any remaining dependencies. Install all packages form package.json 
+          # Remove any remaining dependencies. Install all packages form package.json
           composer config --global --auth github-oauth.github.com "$COMPOSER_TOKEN"
           # rm -rf vendor web/core web/vendor web/modules/contrib web/themes/contrib
           composer global require hirak/prestissimo && composer install --no-suggest --no-interaction
@@ -82,13 +82,13 @@ behat_tests: &behat_tests
           export GIT_SSH_COMMAND="ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no"
           # Don't check for host key for Pantheon sites
           echo -e "host *.drush.in\n    StrictHostKeyChecking no" >> ~/.ssh/config
-          # Make sure to log in. Set the user email that will commit code into Pantheon repo 
+          # Make sure to log in. Set the user email that will commit code into Pantheon repo
           terminus auth:login --machine-token="$eGov_Terminus" --email="$eGov_Email"
           # Git operations
           git remote add pantheon ssh://codeserver.dev.5c6715db-abac-4633-ada8-1c9efe354629@codeserver.dev.5c6715db-abac-4633-ada8-1c9efe354629.drush.in:2222/~/repository.git
           git config --global user.email "$eGov_Email"
           # Without these lines, push will fail with "please remote git submodules" error
-          rm -rf ./vendor/drupal/coder/.git && rm -rf ./web/modules/contrib/facets/.git && rm -rf ./web/modules/contrib/search_api_solr/.git 
+          rm -rf ./vendor/drupal/coder/.git && rm -rf ./web/modules/contrib/facets/.git && rm -rf ./web/modules/contrib/search_api_solr/.git
           git add -f /var/www/html
           # Pantheon site will use the wrong DB if the local is kept
           git rm --cache  web/sites/default/settings.local.php --ignore-unmatch
@@ -105,6 +105,7 @@ behat_tests: &behat_tests
             # Don't need to wait for DEV because it's always up?
             # Wake up the DEV site and must wait for 30s
             terminus env:wake portlandor.dev && sleep 120s
+            terminus remote:drush portlandor.dev -- cr
             terminus remote:drush portlandor.dev -- cim -y
             terminus remote:drush portlandor.dev -- -y updb
             terminus remote:drush portlandor.dev -- cr
@@ -113,8 +114,8 @@ behat_tests: &behat_tests
             # Read the last Git log in the master branch. Get the branch name at the end of the log.
             # Example: Merge pull request #35 from eGovPDX/powr-152
             cd /var/www/html
-            # Must the last commit message from Github. The last one in local repo is "CircleCI Deployment" 
-            if [[ $(git log origin/master --pretty=format:%s -1) =~ (^Merge pull request #[0-9]* from eGovPDX\/)([^,]*) ]]; then 
+            # Must the last commit message from Github. The last one in local repo is "CircleCI Deployment"
+            if [[ $(git log origin/master --pretty=format:%s -1) =~ (^Merge pull request #[0-9]* from eGovPDX\/)([^,]*) ]]; then
               echo "Found a Pull Request Merge for branch: '${BASH_REMATCH[2]}'";
               # Check if a multidev environment with the branch name exists or not
               terminus multidev:list --format=list --field=Name portlandor > ./env_list.txt
@@ -131,7 +132,7 @@ behat_tests: &behat_tests
               # terminus multidev:delete --delete-branch portlandor.$CIRCLE_BRANCH -y
               # Cloning files and DB from TEST environment to the multidev environment
               # Do we need to clone DB/file every time for existing multidev?
-              # terminus env:clone-content portlandor.test "$CIRCLE_BRANCH" -y 
+              # terminus env:clone-content portlandor.test "$CIRCLE_BRANCH" -y
             else
               echo "Creating new multidev site. This may take a few seconds." && terminus multidev:create portlandor.test $CIRCLE_BRANCH
             fi
