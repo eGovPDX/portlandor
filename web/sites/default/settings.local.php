@@ -149,6 +149,15 @@ $settings['skip_permissions_hardening'] = TRUE;
  */
 $settings['hash_salt'] = 'thisismysaltittasteslikesalt';
 
+/**
+ * Disable ClamAV integration.
+ * 
+ * Our local Lando dev environments do not have the ClamAV service so this 
+ * module needs to be disabled in order to allow file uploads.
+ */
+
+$config['clamav.settings']['enabled'] = 0;
+
 $settings['trusted_host_patterns'] = array(
   '^'. preg_quote('portlandor.lndo.site') .'$',
   '^'. preg_quote('localhost') .'$'
