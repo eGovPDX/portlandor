@@ -164,4 +164,5 @@ The Lando Pantheon recipe includes a Solr 3.6 instance. The service name is "ind
 
 1. Edit your Pantheon search server. Click on the save button without making any change:
 https://portlandor.lndo.site/admin/config/search/search-api/server/pantheon/edit?destination=/admin/config/search/search-api
-2. View the search index under the Pantheon search server. Click on "Index Now" button. If you get an error, try to run "Index Now" again.
+2. View the search index under the Pantheon search server. Click on "Queue all item for indexing" and "Index Now" button. If you get an error, try to run "Index Now" again.
+3. After you push to the multi-dev environment, you will see an error message "The Solr server of Pantheon could not be reached." at Search API config page. You need to repeat the two steps above.
