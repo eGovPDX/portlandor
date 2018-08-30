@@ -157,3 +157,12 @@ This indicates one of two potential problems:
 1. Node.js was not added to the Windows Path. See: https://stackoverflow.com/questions/8768549/node-js-doesnt-recognize-system-path#8768567
 1. There is a conflict between your normal and _adm profiles on your Windows workstation relating to where gulp.js files were installed. Even if you installed gulp while running PowerShell as administrator, you may need to launch a new PowerShell window without administrator rights to get gulp to run.
 
+
+## Enable local Solr
+
+The Lando Pantheon recipe includes a Solr 3.6 instance. The service name is "index". The database exported from Pantheon contains settings for the hosted environment. In order to use your local Solr, you must push the Solr schema file to your local Solr instance and rebuild your index.
+
+1. Edit your Pantheon search server. Click on the save button without making any change:
+https://portlandor.lndo.site/admin/config/search/search-api/server/pantheon/edit?destination=/admin/config/search/search-api
+2. View the search index under the Pantheon search server. Click on "Queue all item for indexing" and "Index Now" button. If you get an error, try to run "Index Now" again.
+3. After you push to the multi-dev environment, you will see an error message "The Solr server of Pantheon could not be reached." at Search API config page. You need to repeat the two steps above.
