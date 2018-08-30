@@ -20,9 +20,13 @@ function portland_legacy_redirects_entity_bundle_field_info_alter(&$fields, \Dru
  */
 function portland_legacy_redirects_form_alter(&$form, FormStateInterface $form_state, $form_id)
 {
+  // we want to check for and sync redirects on any node of a content type that includes the legacy path field
   if (array_key_exists('field_legacy_path', $form)) {
-    portland_legacy_redirects_sync_redirects($form);
-    // NOTE: if source is duplicate but destination changes, should we update redirect?
+    // only  call the sync function if the node has already been saved
+    $this_node = \Drupal::routeMatch()->getParameter('node');
+    if ($this_node) portland_legacy_redirects_sync_redirects($form, $this_node->Id());
+    
+    // TODO: if source is duplicate but destination changes, should we update redirect?
   }
 }
 
@@ -32,17 +36,21 @@ function portland_legacy_redirects_form_alter(&$form, FormStateInterface $form_s
  *
  * @return void
  */
-function portland_legacy_redirects_sync_redirects(&$form) {
+function portland_legacy_redirects_sync_redirects(&$form, $nid) {
 
-  $nid = \Drupal::routeMatch()->getParameter('node')->Id();
+  // if this is a new node, 
+  $this_node = \Drupal::routeMatch()->getParameter('node');
+  if (!$this_node) return;
+
+  $nid = $this_node->Id();
   $redirect_url = "entity:node/$nid";
   $redirects = \Drupal::service('redirect.repository')->findByDestinationUri([$redirect_url]);
   $new_deltas = array();
   $field = $form['field_legacy_path']['widget'];
   $max_delta = $field['#max_delta'];
 
-    // if max_delta is zero, that means no paths have been saved, and a blank field has
-    // been added to the form. we want that blank field to be at the end.
+  // if max_delta is zero, that means no paths have been saved, and a blank field has
+  // been added to the form. we want that blank field to be at the end.
   $delta_counter = $max_delta == 0 ? $max_delta : $max_delta + 1;
   $save_empty_delta;
   if ($max_delta == 0) {
@@ -53,12 +61,12 @@ function portland_legacy_redirects_sync_redirects(&$form) {
     $delta_counter = $max_delta + 1;
   }
 
-    // need to make sure there's a field delta for each of the redirects in $redirects,
+  // need to make sure there's a field delta for each of the redirects in $redirects,
   foreach ($redirects as $key => $redirect) {
 
     $source_path = $redirect->getSource()['path'];
 
-      // spin through field_legacy_path values to see if $source_path is in there. if not, add.
+    // spin through field_legacy_path values to see if $source_path is in there. if not, add.
     for ($i = 0; $i < $max_delta; $i++) {
       $source_value = portland_legacy_redirects_strip_leading_slash($field[$i]['value']['#default_value']);
       if ($source_path == $source_value) {
@@ -66,8 +74,8 @@ function portland_legacy_redirects_sync_redirects(&$form) {
       }
     }
 
-      // if there wasn't a match and break by this point, add $source_path to a temporary array,
-      // which will be appended to field_legacy_path widget after the loops.
+    // if there wasn't a match and break by this point, add $source_path to a temporary array,
+    // which will be appended to field_legacy_path widget after the loops.
     $new_deltas[$delta_counter] = [
       '#delta' => $delta_counter,
       '#weight' => $delta_counter,

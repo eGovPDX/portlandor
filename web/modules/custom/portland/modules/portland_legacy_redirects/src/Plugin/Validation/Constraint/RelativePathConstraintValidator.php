@@ -19,7 +19,7 @@ class RelativePathConstraintValidator extends ConstraintValidator {
 
     // is it single value or FieldItemList?
     if ($field instanceof FieldItemListInterface) {
-      foreach( $field as $delta => $value) {
+      foreach($field as $delta => $value) {
         $path = $value->value;
 
         // test if path is bare (no protocol)
@@ -42,10 +42,27 @@ class RelativePathConstraintValidator extends ConstraintValidator {
           $this->setViolation($message, $delta);
         }
 
+        // test if this path already exists.
+        if (!$this->validateUniquePathInForm($path, $delta, $field)) {
+          $message = $constraint->duplicate_in_form;
+          $this->setViolation($message, $delta);
+        }
+
+        // test if this path already exists. this validation function returns either
+        // true if valid, or the path to the other duplicate so that it can be included
+        // in the error message.
+        $is_unique_in_system = $this->validateUniquePathInSystem($path);
+        if ($is_unique_in_system !== true) {
+          $message = $constraint->duplicate_redirect;
+          //$message = "The legacy path already exists in the system (<a href=\"$is_unique_in_system\">$is_unique_in_system</a>). A path cannot redirect to multiple pages.";;
+          // NOTE: it might be helpful to show the user the node that contains the duplicate, but they then
+          // might try to remove it from that node, which wouldn't delete the existing redirect so that the
+          // new one could be recreated. this has the potential to cause confusion.
+          $this->setViolation($message, $delta);
+        }
+
       }
     }
-    
-    $test = "stop";
   }
 
   // creates and adds a violation, but also sets the property path so that the
@@ -69,5 +86,28 @@ class RelativePathConstraintValidator extends ConstraintValidator {
   function validateValidChars($path) {
     // only want to see these characters in path
     return !preg_match('/[^\/\w.-]/', $path);
+  }
+
+  function validateUniquePathInForm($path, $delta, $field) {
+    // first verify that path is unique within all the deltas in the field
+    foreach ($field as $delta2 => $value) {
+      $path2 = $value->value;
+      if ($delta == $delta2) continue;
+      if ($path == $path2) return false;
+    }
+    return true;
+  }
+
+  function validateUniquePathInSystem($path)
+  {
+    // search for any nodes that already use this path
+    $this_node = \Drupal::routeMatch()->getParameter('node');
+    $this_id = $this_node->Id();
+    $result = \Drupal::entityQuery('node')->condition("field_legacy_path", $path)->execute();
+    foreach ($result as $idx => $found_id) {
+      if ($found_id == $this_id) continue;
+      return \Drupal::service('path.alias_manager')->getAliasByPath('/node/' . $found_id);
+    }
+    return true;
   }
 }

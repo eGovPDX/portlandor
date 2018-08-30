@@ -22,5 +22,6 @@ class RelativePathConstraint extends Constraint
    */
   public $not_relative = "The legacy path must be relative (i.e. no protocol or domain) and start with a slash.";
   public $illegal_chars = "The legacy path contains invalid characters. It should only contain letters, numbers, and the following symbols: slash (/), dot (.), hyphen (-), and underscore (_)";
-
+  public $duplicate_in_form = "A legacy path may only be entered once. Please remove the duplicate path.";
+  public $duplicate_redirect = "This legacy path already redirects to a content node in the system. A path cannot redirect to multiple nodes.";
 }
