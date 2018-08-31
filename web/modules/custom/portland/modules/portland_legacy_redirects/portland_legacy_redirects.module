@@ -20,13 +20,23 @@ function portland_legacy_redirects_entity_bundle_field_info_alter(&$fields, \Dru
  */
 function portland_legacy_redirects_form_alter(&$form, FormStateInterface $form_state, $form_id)
 {
-  // we want to check for and sync redirects on any node of a content type that includes the legacy path field
-  if (array_key_exists('field_legacy_path', $form)) {
-    // only  call the sync function if the node has already been saved
-    $this_node = \Drupal::routeMatch()->getParameter('node');
-    if ($this_node) portland_legacy_redirects_sync_redirects($form, $this_node->Id());
-    
-    // TODO: if source is duplicate but destination changes, should we update redirect?
+  // so that we don't need to call out all applicable forms by id, try to get the entity type.
+  // the form and entity methods we need aren't available in all instances where this hook might
+  // be called, so we've added a bunch of null ref checks so nothing break.s
+  $form_object = $form_state->getFormObject();
+  if ($form_object && method_exists($form_object, 'getEntity')) {
+    $entity = $form_object->getEntity();
+    if ($entity && method_exists($entity, 'getEntityTypeId')) {
+      $type = $entity->getEntityTypeId();
+
+      // we want to check for and sync redirects on any node of a content type that includes the legacy path field
+      if (($type == 'node' || $type == 'group') && array_key_exists('field_legacy_path', $form)) {
+        // only  call the sync function if the node has already been saved
+        $this_node = \Drupal::routeMatch()->getParameter($type);
+        if ($this_node) portland_legacy_redirects_sync_redirects($form, $this_node->Id(), $type);
+      }
+      
+    }
   }
 }
 
@@ -36,14 +46,14 @@ function portland_legacy_redirects_form_alter(&$form, FormStateInterface $form_s
  *
  * @return void
  */
-function portland_legacy_redirects_sync_redirects(&$form, $nid) {
+function portland_legacy_redirects_sync_redirects(&$form, $nid, $type) {
 
-  // if this is a new node, 
-  $this_node = \Drupal::routeMatch()->getParameter('node');
+  // if this is a new node, return now
+  $this_node = \Drupal::routeMatch()->getParameter($type);
   if (!$this_node) return;
 
   $nid = $this_node->Id();
-  $redirect_url = "entity:node/$nid";
+  $redirect_url = "entity:$type/$nid";
   $redirects = \Drupal::service('redirect.repository')->findByDestinationUri([$redirect_url]);
   $new_deltas = array();
   $field = $form['field_legacy_path']['widget'];
@@ -105,12 +115,13 @@ function portland_legacy_redirects_sync_redirects(&$form, $nid) {
  */
 function portland_legacy_redirects_entity_update($entity) {
   // if this is a node that has the legacy path field, create redirects
-  if ($entity->getEntityTypeId() == 'node' && $entity->hasField('field_legacy_path')){
+  $type = $entity->getEntityTypeId();
+  if (($type == 'node' || $type == 'group') && $entity->hasField('field_legacy_path')){
 
     $field = $entity->get('field_legacy_path')->getValue();
     $field_orig = $entity->get('field_legacy_path')->getValue();
 
-    $redirect_url = "entity:node/" . $entity->id(); // $entity->toUrl()->toUriString()
+    $redirect_url = "entity:$type/" . $entity->id(); // $entity->toUrl()->toUriString()
     // $entity->toUrl()->toUriString() generates a URI string that looks like this: route:entity.node.canonical;node=332.
     // The Redirect module stores a string that looks like this: entity:node/332.
     // Both work for redirection, but only ones in the latter format appear in the node's URL Redirects panel.
