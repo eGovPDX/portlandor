@@ -28,14 +28,12 @@ function portland_legacy_redirects_form_alter(&$form, FormStateInterface $form_s
     $entity = $form_object->getEntity();
     if ($entity && method_exists($entity, 'getEntityTypeId')) {
       $type = $entity->getEntityTypeId();
-
       // we want to check for and sync redirects on any node of a content type that includes the legacy path field
       if (($type == 'node' || $type == 'group') && array_key_exists('field_legacy_path', $form)) {
         // only  call the sync function if the node has already been saved
         $this_node = \Drupal::routeMatch()->getParameter($type);
         if ($this_node) portland_legacy_redirects_sync_redirects($form, $this_node->Id(), $type);
       }
-
     }
   }
 }
@@ -73,9 +71,7 @@ function portland_legacy_redirects_sync_redirects(&$form, $nid, $type) {
 
   // need to make sure there's a field delta for each of the redirects in $redirects,
   foreach ($redirects as $key => $redirect) {
-
     $source_path = $redirect->getSource()['path'];
-
     // spin through field_legacy_path values to see if $source_path is in there. if not, add.
     for ($i = 0; $i < $max_delta; $i++) {
       $source_value = portland_legacy_redirects_strip_leading_slash($field[$i]['value']['#default_value']);
@@ -98,10 +94,9 @@ function portland_legacy_redirects_sync_redirects(&$form, $nid, $type) {
     ];
 
     $delta_counter++;
-    $test = $form;
   }
 
-    // now add new deltas to field
+  // now add new deltas to field
   foreach ($new_deltas as $idx => $delta) {
     $form['field_legacy_path']['widget'][] = $delta;
   }
@@ -121,7 +116,7 @@ function portland_legacy_redirects_entity_update($entity) {
     $field = $entity->get('field_legacy_path')->getValue();
     $field_orig = $entity->get('field_legacy_path')->getValue();
 
-    $redirect_url = "entity:$type/" . $entity->id(); // $entity->toUrl()->toUriString()
+    $redirect_url = "entity:$type/" . $entity->id();
     // $entity->toUrl()->toUriString() generates a URI string that looks like this: route:entity.node.canonical;node=332.
     // The Redirect module stores a string that looks like this: entity:node/332.
     // Both work for redirection, but only ones in the latter format appear in the node's URL Redirects panel.
@@ -129,25 +124,13 @@ function portland_legacy_redirects_entity_update($entity) {
     // existing redirects
     $redirects = \Drupal::service('redirect.repository')->findByDestinationUri([$redirect_url]);
 
-
     foreach ($field as $delta => $value) {
       $from_orig = $field_orig[$delta]['value'];
       $from = $value['value']; // from should always be unique because you can't have a source URL pointing to multiple destinations.
       if (substr($from, 0, 1) == "/") { $from = substr($from, 1); }
 
       $existing_from = \Drupal::service('redirect.repository')->findBySourcePath($from);
-
-      if ($existing_from) {
-        // this one already exists, don't add it to redirects table
-        continue;
-      }
-
-      // when to break?
-      // if (!$from == !$from_orig) break;
-
-      if ($from == $from_orig && !$existing_from) {
-        // first time, create it, nothing to delete
-      }
+      if ($existing_from) { continue; }
 
       Redirect::create([
         'redirect_source' => $from,
