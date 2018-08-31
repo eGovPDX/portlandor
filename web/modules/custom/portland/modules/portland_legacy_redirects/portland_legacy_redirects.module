@@ -20,9 +20,9 @@ function portland_legacy_redirects_entity_bundle_field_info_alter(&$fields, \Dru
  */
 function portland_legacy_redirects_form_alter(&$form, FormStateInterface $form_state, $form_id)
 {
-  // so that we don't need to call out all applicable forms by id, try to get the entity type.
-  // the form and entity methods we need aren't available in all instances where this hook might
-  // be called, so we've added a bunch of null ref checks so nothing break.s
+  // this hook gets called on every form in the site. filter out requests by checking the
+  // entity type. not all form objects support the getEntityTypeId method, so we need to do
+  // some checks first so nothing breaks.
   $form_object = $form_state->getFormObject();
   if ($form_object && method_exists($form_object, 'getEntity')) {
     $entity = $form_object->getEntity();
@@ -35,7 +35,7 @@ function portland_legacy_redirects_form_alter(&$form, FormStateInterface $form_s
         $this_node = \Drupal::routeMatch()->getParameter($type);
         if ($this_node) portland_legacy_redirects_sync_redirects($form, $this_node->Id(), $type);
       }
-      
+
     }
   }
 }
@@ -48,7 +48,7 @@ function portland_legacy_redirects_form_alter(&$form, FormStateInterface $form_s
  */
 function portland_legacy_redirects_sync_redirects(&$form, $nid, $type) {
 
-  // if this is a new node, return now
+  // if this is a new node form, exit this function
   $this_node = \Drupal::routeMatch()->getParameter($type);
   if (!$this_node) return;
 
@@ -80,7 +80,7 @@ function portland_legacy_redirects_sync_redirects(&$form, $nid, $type) {
     for ($i = 0; $i < $max_delta; $i++) {
       $source_value = portland_legacy_redirects_strip_leading_slash($field[$i]['value']['#default_value']);
       if ($source_path == $source_value) {
-        break 2;
+        continue 2;
       }
     }
 

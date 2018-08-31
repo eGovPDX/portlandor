@@ -89,7 +89,8 @@ class RelativePathConstraintValidator extends ConstraintValidator {
   }
 
   function validateUniquePathInForm($path, $delta, $field) {
-    // first verify that path is unique within all the deltas in the field
+    // verify that path is unique within all the deltas of the field.
+    // if not, both duplicated fields will be highlighted with validation errors.
     foreach ($field as $delta2 => $value) {
       $path2 = $value->value;
       if ($delta == $delta2) continue;
@@ -100,13 +101,24 @@ class RelativePathConstraintValidator extends ConstraintValidator {
 
   function validateUniquePathInSystem($path)
   {
-    // search for any nodes that already use this pathf
-    $this_node = \Drupal::routeMatch()->getParameter('group');
+    // search for any nodes that already use this path; might be a node or a group
+    $type = 'node';
+    $this_node = \Drupal::routeMatch()->getParameter($type);
+    if (!$this_node) {
+      $type = 'group';
+      $this_node = \Drupal::routeMatch()->getParameter($type);
+    }
     $this_id = $this_node->Id();
-    $result = \Drupal::entityQuery('group')->condition("field_legacy_path", $path)->execute();
-    foreach ($result as $idx => $found_id) {
+
+    $matches_node = \Drupal::entityQuery('node')->condition("field_legacy_path", $path)->execute();
+    $matches_group = \Drupal::entityQuery('group')->condition("field_legacy_path", $path)->execute();
+    $matches = array_merge($matches_node, $matches_group);
+
+    foreach ($matches as $idx => $found_id) {
       if ($found_id == $this_id) continue;
-      return \Drupal::service('path.alias_manager')->getAliasByPath('/group/' . $found_id);
+      // we return the path to the duplicate instead of "false" in case we want to display it
+      // in a message to the user. only a return value === true signals validity.
+      return \Drupal::service('path.alias_manager')->getAliasByPath("/$type/" . $found_id);
     }
     return true;
   }
