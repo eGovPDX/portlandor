@@ -100,13 +100,13 @@ class RelativePathConstraintValidator extends ConstraintValidator {
 
   function validateUniquePathInSystem($path)
   {
-    // search for any nodes that already use this path
-    $this_node = \Drupal::routeMatch()->getParameter('node');
+    // search for any nodes that already use this pathf
+    $this_node = \Drupal::routeMatch()->getParameter('group');
     $this_id = $this_node->Id();
-    $result = \Drupal::entityQuery('node')->condition("field_legacy_path", $path)->execute();
+    $result = \Drupal::entityQuery('group')->condition("field_legacy_path", $path)->execute();
     foreach ($result as $idx => $found_id) {
       if ($found_id == $this_id) continue;
-      return \Drupal::service('path.alias_manager')->getAliasByPath('/node/' . $found_id);
+      return \Drupal::service('path.alias_manager')->getAliasByPath('/group/' . $found_id);
     }
     return true;
   }
