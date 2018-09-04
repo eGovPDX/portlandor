@@ -108,8 +108,13 @@ class RelativePathConstraintValidator extends ConstraintValidator {
       $type = 'group';
       $this_node = \Drupal::routeMatch()->getParameter($type);
     }
+    if (!method_exists($this_node, 'Id')) {
+      // if we can't get the id of the node, we can assume the condition is valid
+      return true;
+    }
     $this_id = $this_node->Id();
 
+    // find all field values from both nodes and groups that match the path being validated
     $matches_node = \Drupal::entityQuery('node')->condition("field_legacy_path", $path)->execute();
     $matches_group = \Drupal::entityQuery('group')->condition("field_legacy_path", $path)->execute();
     $matches = array_merge($matches_node, $matches_group);
