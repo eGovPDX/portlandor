@@ -1,7 +1,6 @@
 <?php
 
 namespace Drupal\portland_legacy_redirects\Plugin\Validation\Constraint;
-
 use Symfony\Component\Validator\Constraint;
 use Symfony\Component\Validator\ConstraintValidator;
 use Drupal\Core\Field\FieldItemListInterface;
