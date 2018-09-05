@@ -1,0 +1,147 @@
+<?php
+
+use Drupal\redirect\Entity\Redirect;
+use Drupal\Core\Form\FormStateInterface;
+
+/**
+ * Implements hook_entity_bundle_field_info_alter().
+ * - Adds relative_path constraint to field_legacy_path if it exists in fields array for the given bundle
+ */
+function portland_legacy_redirects_entity_bundle_field_info_alter(&$fields, \Drupal\Core\Entity\EntityTypeInterface $entity_type, $bundle)
+{
+  if (array_key_exists('field_legacy_path', $fields)) {
+    $fields['field_legacy_path']->addConstraint('relative_path', []);
+  }
+}
+
+/**
+ * Implements hook_form_alter().
+ * - Queries db for redirects that point to this node's URI and adds them to the legacy_path field
+ */
+function portland_legacy_redirects_form_alter(&$form, FormStateInterface $form_state, $form_id)
+{
+  // this hook gets called on every form in the site. filter out requests by checking the
+  // entity type. not all form objects support the getEntityTypeId method, so we need to do
+  // some checks first so nothing breaks.
+  $form_object = $form_state->getFormObject();
+  if ($form_object && method_exists($form_object, 'getEntity')) {
+    $entity = $form_object->getEntity();
+    if ($entity && method_exists($entity, 'getEntityTypeId')) {
+      $type = $entity->getEntityTypeId();
+      // we want to check for and sync redirects on any node of a content type that includes the legacy path field
+      if (($type == 'node' || $type == 'group') && array_key_exists('field_legacy_path', $form)) {
+        // only  call the sync function if the node has already been saved
+        $this_node = \Drupal::routeMatch()->getParameter($type);
+        if ($this_node) portland_legacy_redirects_sync_redirects($form, $this_node->Id(), $type);
+      }
+    }
+  }
+}
+
+/**
+ * Called by hook_form_alter, this function synchrnized the legacy_paths field with the redirects table.
+ * The legacy_paths field is essentially a new specialized UI for redirects.
+ *
+ * @return void
+ */
+function portland_legacy_redirects_sync_redirects(&$form, $nid, $type) {
+
+  // if this is a new node form, exit this function
+  $this_node = \Drupal::routeMatch()->getParameter($type);
+  if (!$this_node) return;
+
+  $nid = $this_node->Id();
+  $redirect_url = "entity:$type/$nid";
+  $redirects = \Drupal::service('redirect.repository')->findByDestinationUri([$redirect_url]);
+  $new_deltas = array();
+  $field = $form['field_legacy_path']['widget'];
+  $max_delta = $field['#max_delta'];
+
+  // if max_delta is zero, that means no paths have been saved, and a blank field has
+  // been added to the form. we want that blank field to be at the end.
+  $delta_counter = $max_delta == 0 ? $max_delta : $max_delta + 1;
+  $save_empty_delta;
+  if ($max_delta == 0) {
+    $delta_counter = 0;
+    $save_empty_delta = $form['field_legacy_path']['widget'][0];
+    unset($form['field_legacy_path']['widget'][0]);
+  } else {
+    $delta_counter = $max_delta + 1;
+  }
+
+  // need to make sure there's a field delta for each of the redirects in $redirects,
+  foreach ($redirects as $key => $redirect) {
+    $source_path = $redirect->getSource()['path'];
+    // spin through field_legacy_path values to see if $source_path is in there. if not, add.
+    for ($i = 0; $i < $max_delta; $i++) {
+      $source_value = portland_legacy_redirects_strip_leading_slash($field[$i]['value']['#default_value']);
+      if ($source_path == $source_value) {
+        continue 2;
+      }
+    }
+
+    // if there wasn't a match and break by this point, add $source_path to a temporary array,
+    // which will be appended to field_legacy_path widget after the loops.
+    $new_deltas[$delta_counter] = [
+      '#delta' => $delta_counter,
+      '#weight' => $delta_counter,
+      'value' => [
+        '#type' => 'textfield',
+        '#size' => 60,
+        '#maxlength' => 255,
+        '#default_value' => '/' . $source_path
+      ],
+    ];
+
+    $delta_counter++;
+  }
+
+  // now add new deltas to field
+  foreach ($new_deltas as $idx => $delta) {
+    $form['field_legacy_path']['widget'][] = $delta;
+  }
+  if ($max_delta == 0) {
+    $form['field_legacy_path']['widget'][] = $save_empty_delta;
+  }
+}
+
+/**
+ * Implements hook_entity_update().
+ */
+function portland_legacy_redirects_entity_update($entity) {
+  // if this is a node that has the legacy path field, create redirects
+  $type = $entity->getEntityTypeId();
+  if (($type == 'node' || $type == 'group') && $entity->hasField('field_legacy_path')){
+
+    $field = $entity->get('field_legacy_path')->getValue();
+    $field_orig = $entity->get('field_legacy_path')->getValue();
+
+    $redirect_url = "entity:$type/" . $entity->id();
+    // $entity->toUrl()->toUriString() generates a URI string that looks like this: route:entity.node.canonical;node=332.
+    // The Redirect module stores a string that looks like this: entity:node/332.
+    // Both work for redirection, but only ones in the latter format appear in the node's URL Redirects panel.
+
+    // existing redirects
+    $redirects = \Drupal::service('redirect.repository')->findByDestinationUri([$redirect_url]);
+
+    foreach ($field as $delta => $value) {
+      $from_orig = $field_orig[$delta]['value'];
+      $from = $value['value']; // from should always be unique because you can't have a source URL pointing to multiple destinations.
+      if (substr($from, 0, 1) == "/") { $from = substr($from, 1); }
+
+      $existing_from = \Drupal::service('redirect.repository')->findBySourcePath($from);
+      if ($existing_from) { continue; }
+
+      Redirect::create([
+        'redirect_source' => $from,
+        'redirect_redirect' => $redirect_url,
+        'status_code' => 301,
+      ])->save();
+    }
+  }
+}
+
+function portland_legacy_redirects_strip_leading_slash($path) {
+  return substr($path, 0, 1) == "/" ? substr($path, 1) : $path;
+}
+
