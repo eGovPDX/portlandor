@@ -1,8 +1,10 @@
-uuid: 17fecfb5-744b-4a9a-9dc7-cae372cd9f02
+uuid: 080bebb3-7d74-40b8-9519-5eb353716ae3
 langcode: en
 status: true
 dependencies:
   config:
+    - taxonomy.vocabulary.audience
+    - taxonomy.vocabulary.community_actions
     - taxonomy.vocabulary.topics
   module:
     - node
@@ -11,10 +13,10 @@ dependencies:
 id: categories_on_a_node
 label: 'Categories on a node'
 module: views
-description: 'All topics associated with the current node'
+description: ''
 tag: ''
-base_table: taxonomy_term_field_data
-base_field: tid
+base_table: node_field_data
+base_field: nid
 core: 8.x
 display:
   default:
@@ -51,62 +53,64 @@ display:
       pager:
         type: none
         options:
-          items_per_page: 0
           offset: 0
       style:
         type: html_list
-        options:
-          row_class: ''
-          default_row_class: true
-          uses_fields: false
-          type: ul
-          wrapper_class: item-list
-          class: ''
       row:
         type: fields
-        options:
-          default_field_elements: true
-          inline: {  }
-          separator: ''
-          hide_empty: false
       fields:
         name:
           id: name
           table: taxonomy_term_field_data
           field: name
-          entity_type: taxonomy_term
-          entity_field: name
-          label: ''
-          alter:
-            alter_text: false
-            make_link: false
-            absolute: false
-            trim: false
-            word_boundary: false
-            ellipsis: false
-            strip_tags: false
-            html: false
-          hide_empty: false
-          empty_zero: false
-          type: string
-          settings:
-            link_to_entity: true
-          plugin_id: term_name
-          relationship: none
+          relationship: term_node_tid
           group_type: group
           admin_label: ''
+          label: ''
           exclude: false
+          alter:
+            alter_text: false
+            text: ''
+            make_link: false
+            path: ''
+            absolute: false
+            external: false
+            replace_spaces: false
+            path_case: none
+            trim_whitespace: false
+            alt: ''
+            rel: ''
+            link_class: ''
+            prefix: ''
+            suffix: ''
+            target: ''
+            nl2br: false
+            max_length: 0
+            word_boundary: true
+            ellipsis: true
+            more_link: false
+            more_link_text: ''
+            more_link_path: ''
+            strip_tags: false
+            trim: false
+            preserve_tags: ''
+            html: false
           element_type: ''
           element_class: ''
           element_label_type: ''
           element_label_class: ''
-          element_label_colon: true
+          element_label_colon: false
           element_wrapper_type: ''
           element_wrapper_class: ''
           element_default_classes: true
           empty: ''
+          hide_empty: false
+          empty_zero: false
           hide_alter_empty: true
           click_sort_column: value
+          type: string
+          settings:
+            link_to_entity: true
           group_column: value
           group_columns: {  }
           group_rows: true
@@ -118,38 +122,61 @@ display:
           separator: ', '
           field_api_classes: false
           convert_spaces: false
-      filters:
-        vid:
-          id: vid
-          table: taxonomy_term_field_data
-          field: vid
-          value:
-            topics: topics
           entity_type: taxonomy_term
-          entity_field: vid
-          plugin_id: bundle
-      sorts: {  }
+          entity_field: name
+          plugin_id: term_name
+      filters:
+        status:
+          value: '1'
+          table: node_field_data
+          field: status
+          plugin_id: boolean
+          entity_type: node
+          entity_field: status
+          id: status
+          expose:
+            operator: ''
+          group: 1
+      sorts:
+        name:
+          id: name
+          table: taxonomy_term_field_data
+          field: name
+          relationship: term_node_tid
+          group_type: group
+          admin_label: ''
+          order: ASC
+          exposed: false
+          expose:
+            label: ''
+          entity_type: taxonomy_term
+          entity_field: name
+          plugin_id: standard
       title: Categories
       header: {  }
       footer: {  }
       empty: {  }
       relationships:
-        reverse__node__field_topics:
-          id: reverse__node__field_topics
-          table: taxonomy_term_field_data
-          field: reverse__node__field_topics
+        term_node_tid:
+          id: term_node_tid
+          table: node_field_data
+          field: term_node_tid
           relationship: none
           group_type: group
-          admin_label: field_topics
+          admin_label: term
           required: true
-          entity_type: taxonomy_term
-          plugin_id: entity_reverse
+          vids:
+            - audience
+            - community_actions
+            - topics
+          entity_type: node
+          plugin_id: node_term_data
       arguments:
         nid:
           id: nid
           table: node_field_data
           field: nid
-          relationship: reverse__node__field_topics
+          relationship: none
           group_type: group
           admin_label: ''
           default_action: default
@@ -182,12 +209,17 @@ display:
           entity_field: nid
           plugin_id: node_nid
       display_extenders: {  }
+      filter_groups:
+        operator: AND
+        groups:
+          1: AND
     cache_metadata:
       max-age: -1
       contexts:
         - 'languages:language_content'
         - 'languages:language_interface'
         - url
+        - 'user.node_grants:view'
         - user.permissions
       tags: {  }
   block_1:
@@ -198,12 +230,12 @@ display:
     display_options:
       display_extenders: {  }
       block_description: 'Categories on a node'
-      block_hide_empty: true
     cache_metadata:
       max-age: -1
       contexts:
         - 'languages:language_content'
         - 'languages:language_interface'
         - url
+        - 'user.node_grants:view'
         - user.permissions
       tags: {  }
