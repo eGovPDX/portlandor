@@ -145,59 +145,66 @@ function portland_group_insert(GroupInterface $group) {
  */
 function portland_group_update(GroupInterface $group) {
 
-    // 4.2. Bulk regenerate URL aliases for content by running pathauto batch processing
-    $batch = array(
-        'title' => t('Bulk updating URL aliases'),
-        'operations' => array(
-          array('Drupal\pathauto\Form\PathautoBulkUpdateForm::batchStart', array()),
-        ),
-        'finished' => 'Drupal\pathauto\Form\PathautoBulkUpdateForm::batchFinished',
-    );
-    $batch['operations'][] = array('Drupal\pathauto\Form\PathautoBulkUpdateForm::batchProcess', ["canonical_entities:node", "update"]);
-    $batch['operations'][] = array('Drupal\pathauto\Form\PathautoBulkUpdateForm::batchProcess', ["canonical_entities:group", "update"]);
-    $batch['operations'][] = array('Drupal\pathauto\Form\PathautoBulkUpdateForm::batchProcess', ["canonical_entities:group_content", "update"]);
-    batch_set($batch);
-
-    // get goup shortname and build paths
-    $gid = $group->id();
+    // get group shortname
     $shortname = \Drupal::service("pathauto.alias_cleaner")->cleanString($group->get('field_shortname_or_acronym')->value);
-    $lang = \Drupal::languageManager()->getCurrentLanguage()->getId();
+    $orig_shortname = \Drupal::service("pathauto.alias_cleaner")->cleanString($group->original->get('field_shortname_or_acronym')->value);
 
-    // TODO: manually regenerate URL alias for main group page; pathauto bulk update isn't getting it sometimes
-    $existing_alias = \Drupal::service('path.alias_storage')->lookupPathAlias("/group/$gid", $lang);
-    $alias = "/$shortname";
-    // if it exists and doesn't match current alias, delete and re-save
-    if ($existing_alias && $existing_alias != $alias) {
-        \Drupal::service('path.alias_storage')->delete(['alias' => $existing_alias, 'langcode' => $lang]);
-        $path = \Drupal::service('path.alias_storage')->save("/group/$gid", $alias, $lang);
-    }
+    // only update URL aliases if shortname changes
+    if ($shortname != $orig_shortname) {
 
-    // POWR-142: Regenerate URL aliases for content type subpages using group shortname (ie. /bds/services)
-    // reference: https://api.drupal.org/api/drupal/core%21lib%21Drupal%21Core%21Path%21AliasStorage.php/class/AliasStorage/8.6.x
-    // Find all installed content types on this group type and generate alias if it's missing.
-    $installedContentTypes = $group->getGroupType()->getInstalledContentPlugins();
-    foreach ($installedContentTypes as $pluginType) {
-        $contentType = $pluginType->getPluginDefinition()['entity_bundle'];
-        // Skip if the content type is not installed with the group type.
-        if($contentType === false) return;
-        $contentTypePluralArray = isset(GROUP_CONTENT_TYPE_PLURAL[$contentType]) ? GROUP_CONTENT_TYPE_PLURAL[$contentType] : [$contentType];
+        // 4.2. Bulk regenerate URL aliases for content by running pathauto batch processing
+        $batch = array(
+            'title' => t('Bulk updating URL aliases'),
+            'operations' => array(
+            array('Drupal\pathauto\Form\PathautoBulkUpdateForm::batchStart', array()),
+            ),
+            'finished' => 'Drupal\pathauto\Form\PathautoBulkUpdateForm::batchFinished',
+        );
+        $batch['operations'][] = array('Drupal\pathauto\Form\PathautoBulkUpdateForm::batchProcess', ["canonical_entities:node", "update"]);
+        $batch['operations'][] = array('Drupal\pathauto\Form\PathautoBulkUpdateForm::batchProcess', ["canonical_entities:group", "update"]);
+        $batch['operations'][] = array('Drupal\pathauto\Form\PathautoBulkUpdateForm::batchProcess', ["canonical_entities:group_content", "update"]);
+        $batch['operations'][] = array('Drupal\pathauto\Form\PathautoBulkUpdateForm::batchProcess', ["canonical_entities:media", "update"]);
+        batch_set($batch);
 
-        foreach( $contentTypePluralArray as $contentTypePlural ) {
-            $system_path = "/group/$gid/$contentTypePlural";
-            $alias = "/$shortname/$contentTypePlural";
+        $gid = $group->id();
+        $lang = \Drupal::languageManager()->getCurrentLanguage()->getId();
 
-            $existing_alias = \Drupal::service('path.alias_storage')->lookupPathAlias($system_path, $lang);
+        // TODO: manually regenerate URL alias for main group page; pathauto bulk update isn't getting it sometimes
+        $existing_alias = \Drupal::service('path.alias_storage')->lookupPathAlias("/group/$gid", $lang);
+        $alias = "/$shortname";
+        // if it exists and doesn't match current alias, delete and re-save
+        if ($existing_alias && $existing_alias != $alias) {
+            \Drupal::service('path.alias_storage')->delete(['alias' => $existing_alias, 'langcode' => $lang]);
+            $path = \Drupal::service('path.alias_storage')->save("/group/$gid", $alias, $lang);
+        }
 
-            // if it already exists and matches, do nothing
-            if ($existing_alias && $existing_alias == $alias) continue;
+        // POWR-142: Regenerate URL aliases for content type subpages using group shortname (ie. /bds/services)
+        // reference: https://api.drupal.org/api/drupal/core%21lib%21Drupal%21Core%21Path%21AliasStorage.php/class/AliasStorage/8.6.x
+        // Find all installed content types on this group type and generate alias if it's missing.
+        $installedContentTypes = $group->getGroupType()->getInstalledContentPlugins();
+        foreach ($installedContentTypes as $pluginType) {
+            $contentType = $pluginType->getPluginDefinition()['entity_bundle'];
+            // Skip if the content type is not installed with the group type.
+            if($contentType === false) return;
+            $contentTypePluralArray = isset(GROUP_CONTENT_TYPE_PLURAL[$contentType]) ? GROUP_CONTENT_TYPE_PLURAL[$contentType] : [$contentType];
 
-            // if it exists and doesn't match current alias, delete in preparation for re-save
-            if ($existing_alias && $existing_alias != $alias) {
-                \Drupal::service('path.alias_storage')->delete(['alias' => $existing_alias, 'langcode' => $lang]);
+            foreach( $contentTypePluralArray as $contentTypePlural ) {
+                $system_path = "/group/$gid/$contentTypePlural";
+                $alias = "/$shortname/$contentTypePlural";
+
+                $existing_alias = \Drupal::service('path.alias_storage')->lookupPathAlias($system_path, $lang);
+
+                // if it already exists and matches, do nothing
+                if ($existing_alias && $existing_alias == $alias) continue;
+
+                // if it exists and doesn't match current alias, delete in preparation for re-save
+                if ($existing_alias && $existing_alias != $alias) {
+                    \Drupal::service('path.alias_storage')->delete(['alias' => $existing_alias, 'langcode' => $lang]);
+                }
+
+                // save new or updated alias
+                $path = \Drupal::service('path.alias_storage')->save($system_path, $alias, $lang);
             }
-
-            // save new or updated alias
-            $path = \Drupal::service('path.alias_storage')->save($system_path, $alias, $lang);
         }
     }
 
