@@ -20,6 +20,7 @@ function waitForCleave(callback) {
           waitForCleave(function() {
             var cleave = new Cleave(element, {
               phone: true,
+              delimiter: '-',
               phoneRegionCode: settings.phoneRegionCode,
             });
           });
