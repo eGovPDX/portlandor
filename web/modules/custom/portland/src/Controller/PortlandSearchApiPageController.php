@@ -13,12 +13,14 @@ class PortlandSearchApiPageController extends SearchApiPageController {
   public function page(Request $request, $search_api_page_name, $keys = '') {
     $render = parent::page($request, $search_api_page_name, $keys);
 
-    $render['#form'] = [
+    $render['#form']['box'] = [
       '#theme' => 'portland_search_form',
       '#size' => 'big',
       '#input' => $render['#form']['keys'],
       '#buttons' => $render['#form']['actions']['submit'],
     ];
+
+    unset($render['#form']['keys'], $render['#form']['actions']);
 
     return $render;
   }
