@@ -6,7 +6,7 @@ use Drupal\search_api_page\Controller\SearchApiPageController;
 use Symfony\Component\HttpFoundation\Request;
 
  /**
-  * Undocumented class
+  * Override SearchApiPageController form display
   */
 class PortlandSearchApiPageController extends SearchApiPageController {
 
