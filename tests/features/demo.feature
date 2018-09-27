@@ -9,3 +9,15 @@ Feature: Demo feature
     When I visit "/"
     # Then print last response
     Then I should see "Portland, Oregon"
+
+  @api
+  Scenario: Check site status
+    Given I am logged in as user "superAdmin" 
+    When I visit "/admin/reports/status"
+    Then I should not see "Errors found"
+
+  @api
+  Scenario: Check config import status
+    Given I am logged in as user "superAdmin" 
+    When I visit "/admin/config/development/configuration"
+    Then I should see "There are no configuration changes to import."

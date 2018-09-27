@@ -167,14 +167,16 @@ behat_tests: &behat_tests
         name: Run tests against Pantheon
         when: on_success
         command: |
-          export PATH=/var/www/html/vendor/bin:$PATH
+          export PATH=/var/www/html/vendor/bin:/tmp/vendor/pantheon-systems/terminus/bin:$PATH
+          terminus auth:login --machine-token="$eGov_Terminus" --email="$eGov_Email"
+          terminus aliases
           # TODO: revisit this when we only deploy non-dev packages.
           # Install Behat and its dependencies.
           # composer install
           if [[ $CIRCLE_BRANCH = "master" ]]; then
-            echo 'export BEHAT_PARAMS="{\"extensions\" : {\"Behat\\\MinkExtension\" : {\"base_url\" : \"https://${HTTP_AUTH}@dev-portlandor.pantheonsite.io\"}}}"' >> $BASH_ENV && source $BASH_ENV
+            echo 'export BEHAT_PARAMS="{\"extensions\" : {\"Behat\\\MinkExtension\" : {\"base_url\" : \"https://${HTTP_AUTH}@dev-portlandor.pantheonsite.io\"}, \"Drupal\\\DrupalExtension\" : {\"drush\" : { \"alias\": \"portlandor.dev\"}}}}"' >> $BASH_ENV && source $BASH_ENV
           else
-            echo 'export BEHAT_PARAMS="{\"extensions\" : {\"Behat\\\MinkExtension\" : {\"base_url\" : \"https://${CIRCLE_BRANCH}-portlandor.pantheonsite.io\"}}}"' >> $BASH_ENV && source $BASH_ENV
+            echo 'export BEHAT_PARAMS="{\"extensions\" : {\"Behat\\\MinkExtension\" : {\"base_url\" : \"https://${CIRCLE_BRANCH}-portlandor.pantheonsite.io\"}, \"Drupal\\\DrupalExtension\" : {\"drush\" : { \"alias\": \"portlandor.${CIRCLE_BRANCH}\"}}}}"' >> $BASH_ENV && source $BASH_ENV
           fi
           # echo $BEHAT_PARAMS
           behat -c tests/behat.yml
