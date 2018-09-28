@@ -43,9 +43,13 @@ class AlertMapping extends Mapping {
         '#toggle' => TRUE,
         '#required' => TRUE,
       ],
-      'type_field' => [
-        '#title' => $this->t('Type field'),
-        '#description' => $this->t('Choose the field where the type should be derived from.'),
+      'icon_field' => [
+        '#title' => $this->t('Icon field'),
+        '#description' => $this->t('Choose the field which outputs the icon.'),
+      ],
+      'severity_field' => [
+        '#title' => $this->t('Severity field'),
+        '#description' => $this->t('Choose the field where the severity should be derived from.'),
         '#required' => TRUE,
       ],
       'summary_field' => [
