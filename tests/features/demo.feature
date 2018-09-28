@@ -4,7 +4,7 @@ Feature: Demo feature
   As an anonymous user
   I need to be able to see the homepage
 
-  @multidev
+  @multidev @dev
   Scenario: Visit the homepage
     Given I am an anonymous user
     When I visit "/"
