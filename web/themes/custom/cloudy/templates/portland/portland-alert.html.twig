@@ -1,0 +1,117 @@
+{#
+/**
+ * @file
+ * Default theme implementation for displaying an alert.
+ *
+ * Available variables:
+ * - dismissible: Whether this alert should have a close button and all associated functionality.
+ * - icon: A rendered icon
+ * - type: What type of alert this is. Should be one of:
+ *     10 - danger
+ *     20 - warning
+ *     30 - information
+ * - nid: The id for the alert content so its dismissal can be tracked.
+ * - changed_timestamp: The UNIX timestamp so dismissal can be evaluated.
+ * - title: The title for the alert.
+ * - text: The text to show in the alert.
+ * - link_url: The URL for an associated action link.
+ * - link_text: The text to show in the action link.
+ * - changed: The text to show for the updated text.
+ *
+ * @see template_preprocess_views_portland_alerts()
+ *
+ * @ingroup themeable
+ */
+#}
+{# 'd-none' below because the javascript file will change to 'd-flex' if it should be shown #}
+{% set alert_classes = [
+  'portland-alert',
+  'container-fluid',
+  'py-4',
+  'flex-row',
+  'border-0',
+  'rounded-0',
+  type == '10' ? 'bg-danger' : '',
+  type == '20' ? 'bg-warning' : '',
+  type == '30' ? 'bg-secondary' :'',
+  dismissible == 1 ? 'd-none' : 'd-flex',
+] %}
+
+{% set text_classes = [
+  type == '10' ? 'text-white' : '',
+  type == '20' ? 'text-body' : '',
+  type == '30' ? 'text-white' :'',
+] %}
+
+{% set icon_attributes = create_attribute() %}
+{% set icon_classes = [
+  'align-self-start',
+  'pr-3',
+] %}
+
+{% set body_attributes = create_attribute() %}
+{% set body_classes = [
+  'd-flex',
+  'flex-column',
+] %}
+
+{% set footer_attributes = create_attribute() %}
+{% set footer_classes = [
+  'd-flex',
+  'flex-column',
+  'flex-sm-row',
+  'align-items-baseline',
+] %}
+
+{% set link_attributes = create_attribute() %}
+{% set link_classes = [
+  'mt-2',
+  'mr-3',
+  'font-weight-bold',
+  'btn',
+  type == '10' ? 'btn-danger' : '',
+  type == '20' ? 'btn-warning' : '',
+  type == '30' ? 'btn-secondary' :'',
+] %}
+
+{% set dismiss_attributes = create_attribute() %}
+{% set dismiss_classes = [
+  'mt-2',
+  'px-2',
+  'font-weight-bold',
+] %}
+
+<div{{ attributes.addClass(classes).addClass(alert_classes).addClass(text_classes) }}  data-nid="{{ nid }}" data-changed="{{ changed_timestamp }}" role="alert">
+  {%- if icon -%}
+  <div{{ icon_attributes.addClass(icon_classes) }}>
+    {{ icon }}
+  </div>
+  {%- endif -%}
+  <div{{ body_attributes.addClass(body_classes) }}>
+    {%- if title -%}
+    <h3>
+        <strong>{{- title -}}</strong>
+    </h3>
+    {%- endif -%}
+    <p>
+      {{- text -}}
+    </p>
+    <div{{ footer_attributes.addClass(footer_classes) }}>
+      {%- if link_url -%}
+      {% spaceless %}
+        <a{{ link_attributes.addClass(link_classes).addClass(text_classes).setAttribute('href', link_url) }}>
+          {{- link_text -}}
+        </a>
+      {% endspaceless %}
+      {%- endif -%}
+      {%- if dismissible == 1 -%}
+        <a{{ dismiss_attributes.addClass(dismiss_classes).addClass(text_classes).setAttribute('href', '#') }} type="close" aria-label="Close"><span aria-hidden="true">{{ 'Dismiss'|trans }}</span></a>
+      {%- endif -%}
+      {%- if changed -%}
+        <span class="ml-auto">
+            {{- changed -}}
+        </span>
+      {%- endif -%}
+    </div>
+  </div>
+</div>
