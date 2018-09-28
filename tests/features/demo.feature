@@ -4,19 +4,20 @@ Feature: Demo feature
   As an anonymous user
   I need to be able to see the homepage
 
+  @multidev
   Scenario: Visit the homepage
     Given I am an anonymous user
     When I visit "/"
     # Then print last response
     Then I should see "Portland, Oregon"
 
-  @api
+  @api @dev
   Scenario: Check site status
     Given I am logged in as user "superAdmin" 
     When I visit "/admin/reports/status"
     Then I should not see "Errors found"
 
-  @api
+  @api @dev
   Scenario: Check config import status
     Given I am logged in as user "superAdmin" 
     When I visit "/admin/config/development/configuration"
