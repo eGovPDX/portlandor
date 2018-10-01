@@ -7,6 +7,8 @@ use Drupal\group\Entity\GroupContentTypeInterface;
 use Drupal\pathauto\Form\PathautoBulkUpdateForm;
 use Drupal\Core\Render\BubbleableMetadata;
 use Drupal\group\Entity\GroupContent;
+use Drupal\media\Entity\Media;
+use Drupal\image\Entity\ImageStyle;
 
 
 // The plural is used in the list page URL. E.g. "/bds/guides"
@@ -498,6 +500,32 @@ function portland_preprocess_paragraph(&$vars) {
                         $vars['attributes']['class'], 
                         ['float-'.$quote->field_alignment->value, 'quote-align']
                     );
+            }
+            break;
+
+        case 'media_gallery':
+            $gallery = $vars['paragraph'];
+            //$media_entity = $gallery->get('field_gallery_media')->referencedEntities()[0];
+
+            // $id = $vars['content']['field_gallery_media'][0]['#item']->getValue()['target_id'];
+            // $entity = Media::load($id);
+            $media_entitites = $gallery->get('field_gallery_media')->referencedEntities();
+
+            foreach ($media_entitites as $entity) {
+                $mid = $entity->get('mid')[0]->value;
+                $media = Media::load($mid);
+
+                $alt = $media->image[0]->get('alt')->getValue();
+                $target_id = $media->image[0]->get('target_id')->getValue();
+                $thumbnail_uri = ImageStyle::load('medium')->buildUrl($media->image->entity->getFileUri());
+                $fullsize_uri = ImageStyle::load('responsive_extra')->buildUrl($media->image->entity->getFileUri());
+
+                $vars['gallery_data'][] = array(
+                    "thumbnail_uri" => $thumbnail_uri,
+                    "fullsize_uri" => $fullsize_uri,
+                    "alt" => $alt,
+                    "target_id" => $target_id
+                );
             }
             break;
     }
