@@ -104,11 +104,12 @@ behat_tests: &behat_tests
             # terminus env:clone-content portlandor.test dev
             # Don't need to wait for DEV because it's always up?
             # Wake up the DEV site and must wait for 30s
-            terminus env:wake portlandor.dev && sleep 120s
-            terminus remote:drush portlandor.dev -- cr
-            terminus remote:drush portlandor.dev -- cim -y
-            terminus remote:drush portlandor.dev -- -y updb
-            terminus remote:drush portlandor.dev -- cr
+            terminus env:wake portlandor.dev
+            # terminus remote:drush portlandor.dev -- cr
+            # terminus remote:drush portlandor.dev -- cim -y
+            for i in {1..12}; do terminus remote:drush portlandor.dev -- cim -y && break || sleep 10; done
+            for i in {1..12}; do terminus remote:drush portlandor.dev -- -y updb && break || sleep 10; done
+            for i in {1..12}; do terminus remote:drush portlandor.dev -- cr && break || sleep 10; done
             # echo 'node_access_rebuild();' | $(terminus remote:drush portlandor.dev -- php-script)
             # After success deployment to DEV, remove the multidev site if this is a merge of a PR
             # Read the last Git log in the master branch. Get the branch name at the end of the log.
@@ -149,18 +150,18 @@ behat_tests: &behat_tests
               # sleep 20s
               # This version wipes out the Pantheon tree.
               git push -f pantheon $CIRCLE_BRANCH
-              terminus env:wake portlandor.$CIRCLE_BRANCH && sleep 30s
+              terminus env:wake portlandor.$CIRCLE_BRANCH
             else
               rm -rf ./env_list.txt
               git push -f pantheon $CIRCLE_BRANCH
               # Wake up the multidev site and wait 30s.
               # The following two drush commands will fail without wait for a few seconds
-              terminus env:wake portlandor.$CIRCLE_BRANCH && sleep 60s
+              terminus env:wake portlandor.$CIRCLE_BRANCH
             fi
             # Clear cache. Import config files
-            terminus remote:drush portlandor.$CIRCLE_BRANCH -- cim -y
-            terminus remote:drush portlandor.$CIRCLE_BRANCH -- -y updb
-            terminus remote:drush portlandor.$CIRCLE_BRANCH -- cr
+            for i in {1..6}; do terminus remote:drush portlandor.$CIRCLE_BRANCH -- cim -y && break || sleep 10; done
+            for i in {1..6}; do terminus remote:drush portlandor.$CIRCLE_BRANCH -- -y updb && break || sleep 10; done
+            for i in {1..6}; do terminus remote:drush portlandor.$CIRCLE_BRANCH -- cr && break || sleep 10; done
             # echo 'node_access_rebuild();' | $(terminus drush portlandor.$CIRCLE_BRANCH -- php-script)
           fi
     - run:

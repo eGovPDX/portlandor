@@ -8,9 +8,12 @@ framework: drupal8
 xdebug: true
 services:
   appserver:
-    build:
-      - mkdir -p ~/.terminus/plugins
-      - composer create-project -d ~/.terminus/plugins pantheon-systems/terminus-secrets-plugin:~1
+    run_as_root:
+      - cp /app/cop_ca_*.crt /usr/local/share/ca-certificates/
+      - update-ca-certificates
+      - chown -R www-data:www-data /var/www/.terminus
+    run:
+      - if [ ! -d "/var/www/.terminus/plugins/terminus-secrets-plugin" ]; then { mkdir -p /var/www/.terminus/plugins; composer create-project -d ~/.terminus/plugins pantheon-systems/terminus-secrets-plugin:~1; } fi
     xdebug: true
     config:
       conf: xdebug.ini
