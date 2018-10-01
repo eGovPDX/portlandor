@@ -4,8 +4,11 @@ namespace Drupal\portland\Routing;
 
 use Drupal\Core\Logger\LoggerChannelFactoryInterface;
 use Drupal\Core\Routing\RouteSubscriberBase;
+use Drupal\Core\Entity\EntityTypeManagerInterface;
+use Drupal\Core\Language\LanguageManagerInterface;
 use Symfony\Component\Routing\RouteCollection;
 use Drupal\Core\Routing\RoutingEvents;
+use Drupal\search_api_page\Routing\SearchApiPageRoutes;
 
 /**
  * Listens to the dynamic route events.
@@ -19,13 +22,27 @@ class RouteSubscriber extends RouteSubscriberBase {
   protected $loggerFactory;
 
   /**
-   * Constructs a LoggerChannelFactoryInterface object.
+   * The entity type manager service.
    *
-   * @param \Drupal\Core\Logger\LoggerChannelFactoryInterface $logger_factory
-   *   The logger channel factory.
+   * @var \Drupal\Core\Entity\EntityTypeManagerInterface
    */
-  public function __construct(LoggerChannelFactoryInterface $logger_factory) {
+  protected $entityTypeManager;
+
+  /**
+   * The language manager service.
+   *
+   * @var \Drupal\Core\Language\LanguageManagerInterface
+   */
+  protected $languageManager;
+
+  public function __construct(
+    LoggerChannelFactoryInterface $logger_factory,
+    EntityTypeManagerInterface $entity_type_manager,
+    LanguageManagerInterface $language_manager
+  ) {
     $this->loggerFactory = $logger_factory;
+    $this->entityTypeManager = $entity_type_manager;
+    $this->languageManager = $language_manager;
   }
 
   /**
@@ -67,6 +84,21 @@ class RouteSubscriber extends RouteSubscriberBase {
       // don't accept POSTs to a password reset form
       if($route = $collection->get('user.pass.http')) {
         $route->setRequirement('_access', 'FALSE');
+      }
+    }
+
+    // Override the SearchApiPageRoutes dynamic routes with
+    // our static search routes
+    $searchApiPageRoutes = new SearchApiPageRoutes(
+      $this->entityTypeManager,
+      $this->languageManager
+    );
+
+    $searchApiRoutes = $searchApiPageRoutes->routes();
+
+    foreach (array_keys($searchApiRoutes) as $key) {
+      if($route = $collection->get($key)) {
+        $route->setDefault('_controller', 'Drupal\portland\Controller\PortlandSearchApiPageController::page');
       }
     }
   }
