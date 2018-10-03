@@ -20,18 +20,18 @@
           // flickering onscreen.
           var alertElement = $('[data-nid="' + nid + '"]');
           // use bootstrap classes
-          alertElement.removeClass('d-none');
+          alertElement.removeClass('d-none').addClass('d-flex');
         }
       });
 
       // Set the cookie value when dismiss button is clicked.
-      $('.portland-alert .close').click(function (e) {
+      $('.portland-alert a[type="close"]').click(function (e) {
         // Do not perform default action.
         e.preventDefault();
 
         // Remove this alert
         var alertElement = $(this).closest('.portland-alert')
-        alertElement.addClass('d-none');
+        alertElement.addClass('d-none').removeClass('d-flex');
 
         var nid;
         if (nid = alertElement.data('nid')) {
