@@ -54,3 +54,30 @@ if (isset($_ENV['PANTHEON_ENVIRONMENT']) && php_sapi_name() != 'cli') {
     $settings['trusted_host_patterns'] = array('^'. preg_quote($primary_domain) .'$');
   }
 }
+
+// Set environment variable for config_split module
+if (isset($_ENV['PANTHEON_ENVIRONMENT'])) {
+  // Pantheon environments are 'live', 'test', 'dev', and '[multidev name]'
+  $env = $_ENV['PANTHEON_ENVIRONMENT'];
+}
+else {
+  // Treat local dev same as Pantheon 'dev'
+  $env = 'dev';
+}
+
+// Enable/disable config_split configurations based on the current environment
+switch ($env) {
+  case 'live':
+    $config['config_split.config_split.config_dev']['status'] = FALSE;
+    $config['config_split.config_split.config_prod']['status'] = TRUE;
+    break;
+    case 'test':
+    $config['config_split.config_split.config_dev']['status'] = FALSE;
+    $config['config_split.config_split.config_prod']['status'] = FALSE;
+    break;
+    case 'dev':
+    default:  // Everything else (i.e. various multidev environments)
+    $config['config_split.config_split.config_dev']['status'] = TRUE;
+    $config['config_split.config_split.config_prod']['status'] = FALSE;
+    break;
+}
