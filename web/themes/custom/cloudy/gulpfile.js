@@ -8,7 +8,7 @@ var uglify = require("gulp-uglify");
 
 // Compile sass into CSS & auto-inject into browsers
 gulp.task('style', function() {
-  return gulp.src('scss/index.scss')
+  return gulp.src('scss/style.scss')
     .pipe(sourcemaps.init())
     .pipe(sass({
       includePaths: ['node_modules'],
