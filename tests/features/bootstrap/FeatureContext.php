@@ -14,11 +14,11 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
    * @Given I am logged in as user :name
    */
   public function iAmLoggedInAsUser($name) {
-    $domain = $this->getMinkParameter('base_url');
-
-    // Pass base url to drush command.
+    // Get the suffix for the site based on the environment
     $site_name = (getenv('CIRCLE_BRANCH') == "master") ? "dev" : getenv('CIRCLE_BRANCH');
-    $uli = shell_exec("terminus drush portlandor.$site_name uli");
+
+    // Generate the link to login
+    $uli = shell_exec("terminus drush portlandor.$site_name uli $name");
 
     // Trim EOL characters.
     $uli = trim($uli);
@@ -26,5 +26,5 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
     // Log in.
     $this->getSession()->visit($uli);
   }
-  
+
 }
