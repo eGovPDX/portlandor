@@ -134,6 +134,31 @@ function portland_group_insert(GroupInterface $group) {
         createAliasForGroupContent($group, $contentType, $lang);
     }
 
+    // POWR-438 Regenerate aliases for /bts/projects and /bts/programs
+    if($group->bundle() === 'bureau_office' || $group->bundle() === 'elected_official') {
+        $shortname = \Drupal::service("pathauto.alias_cleaner")->cleanString($group->get('field_shortname_or_acronym')->value);
+        $gid = $group->id();
+        $lang = \Drupal::languageManager()->getCurrentLanguage()->getId();
+
+        $childGroups = ['projects', 'programs'];
+        foreach($childGroups as $childGroup) {
+            $system_path = "/group/$gid/$childGroup";
+            $alias = "/$shortname/$childGroup";
+
+            $existing_alias = \Drupal::service('path.alias_storage')->lookupPathAlias($system_path, $lang);
+            // if it already exists and matches, do nothing
+            if ($existing_alias && $existing_alias == $alias) continue;
+
+            // if it exists and doesn't match current alias, delete in preparation for re-save
+            if ($existing_alias && $existing_alias != $alias) {
+                \Drupal::service('path.alias_storage')->delete(['alias' => $existing_alias, 'langcode' => $lang]);
+            }
+
+            // save new or updated alias
+            $path = \Drupal::service('path.alias_storage')->save($system_path, $alias, $lang);
+        }
+    }
+
     // Workaround for Drupal bug: https://www.drupal.org/project/inline_entity_form/issues/2966933
     $group->path->pathauto = Drupal\pathauto\PathautoState::CREATE;
 
@@ -177,6 +202,27 @@ function portland_group_update(GroupInterface $group) {
             \Drupal::service('path.alias_storage')->delete(['alias' => $existing_alias, 'langcode' => $lang]);
             $path = \Drupal::service('path.alias_storage')->save("/group/$gid", $alias, $lang);
         }
+
+        // POWR-438 Regenerate aliases for /bts/projects and /bts/programs
+        if($group->bundle() === 'bureau_office' || $group->bundle() === 'elected_official') {
+            $childGroups = ['projects', 'programs'];
+            foreach($childGroups as $childGroup) {
+                $system_path = "/group/$gid/$childGroup";
+                $alias = "/$shortname/$childGroup";
+    
+                $existing_alias = \Drupal::service('path.alias_storage')->lookupPathAlias($system_path, $lang);
+                // if it already exists and matches, do nothing
+                if ($existing_alias && $existing_alias == $alias) continue;
+    
+                // if it exists and doesn't match current alias, delete in preparation for re-save
+                if ($existing_alias && $existing_alias != $alias) {
+                    \Drupal::service('path.alias_storage')->delete(['alias' => $existing_alias, 'langcode' => $lang]);
+                }
+    
+                // save new or updated alias
+                $path = \Drupal::service('path.alias_storage')->save($system_path, $alias, $lang);
+            }
+        }        
 
         // POWR-142: Regenerate URL aliases for content type subpages using group shortname (ie. /bds/services)
         // reference: https://api.drupal.org/api/drupal/core%21lib%21Drupal%21Core%21Path%21AliasStorage.php/class/AliasStorage/8.6.x
