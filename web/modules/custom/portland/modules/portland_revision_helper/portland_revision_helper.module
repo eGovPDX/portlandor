@@ -5,22 +5,33 @@
  */
 function portland_revision_helper_form_alter(&$form, $form_state, $form_id)
 {
-  // if ($form_id == "node_city_service_edit_form") {
-  //   foreach (array_keys($form['actions']) as $action) {
-  //     if ($action != 'preview' && isset($form['actions'][$action]['#type']) && $form['actions'][$action]['#type'] === 'submit') {
-  //       array_unshift($form['actions'][$action]['#submit'], 'portland_revision_helper_need_revision_check');
-  //     }
-  //   }
-  // }
+  if (array_key_exists('revision_log',$form) && array_key_exists('revision', $form) && array_key_exists('field_revision_log_message', $form)) {
+    // hide revision checkbox and log message field; we're using a custom field for log message,
+    // so it can be required and adopts the same permissions as any other field
+    $form['revision_log']['#access'] = false;
+    $form['revision']['#access'] = false;
+    // move temp log message field into footer group, so that it's closest to the submit button
+    $form['field_revision_log_message']['#group'] = 'footer';
 
-  
-  // $test = $form;
+    // add submit handler to manually insert revision log message
+    foreach (array_keys($form['actions']) as $action) {
+      if ($action != 'preview' && isset($form['actions'][$action]['#type']) && $form['actions'][$action]['#type'] === 'submit') {
+        $form['actions'][$action]['#submit'][] = 'portland_revision_helper_handle_log_message';
+      }
+    }
+  }
+}
 
-  // $test2 = $form_state;
-
-  // $test3 = $form_id;
-
-  // $test4 = 'stop';
+/**
+ * Submit handler for any entity with a revision log and custom revision log message field
+ */
+function portland_revision_helper_handle_log_message(&$form, $form_state)
+{
+  $test = $form;
+  $message = $form_state->getValue('field_revision_log_message');
+  $entity = $form_state->getFormObject()->getEntity();
+  $entity->setRevisionLogMessage($message);
+  $entity->save();
 }
 
 /**
