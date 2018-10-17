@@ -121,6 +121,21 @@ function portland_group_content_type_delete(GroupContentTypeInterface $groupCont
     }
 }
 
+/**
+ * Implements hook_ENTITY_TYPE_presave().
+ */
+function portland_group_presave(GroupInterface $group) {
+    $cleanShortname = \Drupal::service("pathauto.alias_cleaner")->cleanString(
+        $group->get('field_shortname_or_acronym')->value);
+    $alias = "/$cleanShortname";
+    $gid = $group->id();
+    $lang = \Drupal::languageManager()->getCurrentLanguage()->getId();
+    // Update the group shortname when we have alias conflict
+    \Drupal::service("pathauto.alias_uniquifier")->uniquify(
+        $alias, "/group/$gid", $lang);
+    $group->set('field_shortname_or_acronym', substr($alias, 1)); // Remove the first character "/"
+}
+
 
 /**
  * Implements hook_ENTITY_TYPE_insert().
