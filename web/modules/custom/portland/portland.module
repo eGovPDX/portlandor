@@ -124,16 +124,29 @@ function portland_group_content_type_delete(GroupContentTypeInterface $groupCont
 /**
  * Implements hook_ENTITY_TYPE_presave().
  */
+// POWR-475 Changing short name of a group can cause the group URL to be different from 
+// the URLs in the sidebar menu. Root cause is that the group URL is set by PathAuto to be clean
+// and unique. But the URL in sidebar menu is formed by Twig code using the short name as is.
+// The solution is to update short name to ensure it's clean and unique when the group is updated.
 function portland_group_presave(GroupInterface $group) {
-    $cleanShortname = \Drupal::service("pathauto.alias_cleaner")->cleanString(
-        $group->get('field_shortname_or_acronym')->value);
-    $alias = "/$cleanShortname";
-    $gid = $group->id();
-    $lang = \Drupal::languageManager()->getCurrentLanguage()->getId();
-    // Update the group shortname when we have alias conflict
-    \Drupal::service("pathauto.alias_uniquifier")->uniquify(
-        $alias, "/group/$gid", $lang);
-    $group->set('field_shortname_or_acronym', substr($alias, 1)); // Remove the first character "/"
+    $newShortname = $group->get('field_shortname_or_acronym')->value;
+    if ($group->original === null) {
+        $originalShortname = ''; // new group
+    }
+    else {
+        $originalShortname = $group->original->get('field_shortname_or_acronym')->value;
+    }
+    // Check if this is a new group or an existing group whose shortname has been modified
+    if( $originalShortname !== $newShortname) {
+        $cleanShortname = \Drupal::service("pathauto.alias_cleaner")->cleanString($newShortname);
+        if( $cleanShortname === '') $cleanShortname = 'invalid-short-name';
+        $alias = "/$cleanShortname";
+        $gid = $group->id();
+        $lang = \Drupal::languageManager()->getCurrentLanguage()->getId();
+        // Update the group shortname when we have alias conflict
+        \Drupal::service("pathauto.alias_uniquifier")->uniquify($alias, "/group/$gid", $lang);
+        $group->set('field_shortname_or_acronym', substr($alias, 1)); // Remove the first character "/"
+    }
 }
 
 
