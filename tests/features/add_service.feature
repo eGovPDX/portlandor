@@ -1,6 +1,6 @@
 @api @javascript @multidev @dev
 Feature: Add a service feature
-  In order to edit services
+  In order to manage services
   As a group member
   I need to be able to add a service
 
@@ -18,5 +18,10 @@ Feature: Add a service feature
     When I visit "/group/14/content/create/group_node%3Acity_service"
     Then I should see "Title"
     And I should see "Step title"
-    And I should see "Add Button"
-    And I should see "Save"
+    And I should see "Step instruction"
+    And I should see "Related content"
+    And I should see "Legacy path"
+
+    When I press "Add Step"
+    And I wait for AJAX to finish
+    Then I should see "Step"
