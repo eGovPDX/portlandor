@@ -15,11 +15,11 @@ Feature: Add media feature
   Scenario: Access image creation page and create an image without an error
     Given I am logged in as user "marty.member@portlandoregon.gov"
     When I visit "/group/14/content/create/group_media%3Aimage"
-    And I fill "#edit-name-0-value" with "City seal"
-    And I attach the file "city-seal.png" to "#edit-image-0-upload"
+    And I fill in "edit-name-0-value" with "City seal"
+    And I attach the file "city-seal.png" to "edit-image-0-upload"
     And I wait for AJAX to finish
-    And I fill "[data-drupal-selector='edit-image-0-alt']" with "City seal"
+    And I fill in "image[0][alt]" with "City seal"
     And I press "Save"
     Then I should see the heading "City seal"
-    And I should not see "warning"
-    And I should not see "error"
+    And I should see a "success_message_selector" element
+    And I should not see a "error_message_selector" element
