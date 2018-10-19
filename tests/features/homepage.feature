@@ -8,7 +8,7 @@ Feature: Demo feature
     Given I am logged in as user "oliver.outsider@portlandoregon.gov"
     When I visit "/"
     Then I should see "Services"
-    And I should see "Bureas and offices"
+    And I should see "Bureaus and offices"
     And I should see "Alerts"
     And I should see "Pay online"
     And I should see "Permit or license"
