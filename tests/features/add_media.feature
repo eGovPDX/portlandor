@@ -16,7 +16,7 @@ Feature: Add media feature
     Given I am logged in as user "marty.member@portlandoregon.gov"
     When I visit "/group/14/content/create/group_media%3Aimage"
     And I fill in "edit-name-0-value" with "City seal"
-    And I attach the file "city-seal.png" to "edit-image-0-upload"
+    And I attach the file "star.png" to "edit-image-0-upload"
     And I wait for AJAX to finish
     And I fill in "image[0][alt]" with "City seal"
     And I press "Save"
