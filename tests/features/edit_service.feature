@@ -1,6 +1,6 @@
 @api @javascript @multidev @dev
-Feature: Add a service feature
-  In order to edit services
+Feature: Edit a service feature
+  In order to manage services
   As a group member
   I need to be able to edit a service
 
@@ -14,5 +14,5 @@ Feature: Add a service feature
     Given I am logged in as user "marty.member@portlandoregon.gov"
     And I am on "/node/52/edit"
     When I press "Save"
-    And I should see a "success_message_selector" element
-    And I should not see a "error_message_selector" element
+    Then I should see a ".alert.alert-success" element
+    And I should not see a ".alert.alert-danger" element
