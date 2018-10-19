@@ -18,5 +18,5 @@ Feature: Add a service feature
     When I visit "/group/14/content/create/group_node%3Acity_service"
     Then I should see "Title"
     And I should see "Step title"
-    And I should see "Add button"
+    And I should see "Add Button"
     And I should see "Save"

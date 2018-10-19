@@ -9,7 +9,7 @@ Feature: Add a service feature
     When I visit "/node/52/edit"
     Then I should see "Title"
     And I should see "Step title"
-    And I should see "Add button"
+    And I should see "Add Button"
     And I should see "Save"
 
   Scenario: Submit edit form
