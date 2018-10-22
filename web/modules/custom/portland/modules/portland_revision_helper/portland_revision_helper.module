@@ -1,5 +1,7 @@
 <?php
 
+use \Drupal\Core\Access\AccessResult;
+
 /**
  * Implements hook_preprocess_HOOK().
  * 
@@ -66,4 +68,21 @@ function portland_revision_helper_validate_log_message(&$form, $form_state)
 function portland_revision_helper_local_tasks_alter(&$local_tasks) {
   // Move "View Revision" task right after Revisions (20)
   $local_tasks['entity.node.revision']['weight'] = 30;
+}
+
+/**
+ * Implements hook_entity_field_access().
+ * 
+ * Grant access to the revision_log field.
+ * 
+ */
+function portland_revision_helper_entity_field_access($operation, \Drupal\Core\Field\FieldDefinitionInterface $field_definition, \Drupal\Core\Session\AccountInterface $account, \Drupal\Core\Field\FieldItemListInterface $items = null)
+{
+  $access = AccessResult::neutral();
+  if ($operation == 'edit' && $field_definition->getName() == 'revision_log') {
+    // assumption: if a user can add/edit a node, they should also have permission
+    // to add a log message, so access to that field should be assumed anytime it's referenced.
+    $access = AccessResult::allowed();
+  }
+  return $access;
 }
