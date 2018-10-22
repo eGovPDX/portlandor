@@ -4,15 +4,6 @@ Feature: Add a service feature
   As a group member
   I need to be able to add a service
 
-  Scenario: Access content creation page
-    Given I am logged in as user "marty.member@portlandoregon.gov"
-    When I visit "/group/14/node/create"
-    Then I should see "Service"
-    And I should see "Event"
-    And I should see "Guide"
-    And I should see "News"
-    And I should see "Information"
-
   Scenario: Access service creation page and have stuff to do
     Given I am logged in as user "marty.member@portlandoregon.gov"
     When I visit "/group/14/content/create/group_node%3Acity_service"
@@ -25,3 +16,11 @@ Feature: Add a service feature
     When I press "Add Step"
     And I wait for AJAX to finish
     Then I should see "Step"
+
+    When I fill in "Title" with "Test service"
+    And I press "Save"
+    Then I should not see an ".alert.alert-success" element
+
+    When I select "Online" from "edit-field-service-mode-0-subform-field-service-modes"
+    And I press "Save"
+    Then I should see an ".alert.alert-success" element
