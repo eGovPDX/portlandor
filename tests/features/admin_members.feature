@@ -23,6 +23,7 @@ Feature: Administer group membership
     And I should see "Remove"
 
     # Very hard to press the right edit or remove link so I'll navigate directly
+    #  to Marty Member's membership page
     When I go to "/group/14/content/61/edit"
     Then I should see "URL alias"
     And I should see "Roles"
