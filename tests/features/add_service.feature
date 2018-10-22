@@ -18,9 +18,10 @@ Feature: Add a service feature
     Then I should see "Step"
 
     When I fill in "Title" with "Test service"
-    And I press "Save"
-    Then I should not see an ".alert.alert-success" element
-
-    When I select "Online" from "edit-field-service-mode-0-subform-field-service-modes"
+    And I select "Online" from "edit-field-service-mode-0-subform-field-service-modes"
+    And I fill in "edit-revision-log-0-value" with:
+      """
+      Test revision message
+      """
     And I press "Save"
     Then I should see an ".alert.alert-success" element

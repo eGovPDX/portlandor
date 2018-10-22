@@ -13,12 +13,20 @@ Feature: Edit a service feature
     And I should see "Step title"
 
   Scenario: Submit edit form
-    When I press "Save"
+    When I fill in "edit-revision-log-0-value" with:
+      """
+      Test revision message
+      """
+    And I press "Save"
     Then I should see a ".alert.alert-success" element
     And I should not see a ".alert.alert-danger" element
 
   Scenario: Archive a service
     When I select "Archived" from "edit-moderation-state-0-state"
+    And I fill in "edit-revision-log-0-value" with:
+      """
+      Test revision message
+      """
     And I press "Save"
     Then I should see a ".alert.alert-success" element
     And I should see "Archived"
