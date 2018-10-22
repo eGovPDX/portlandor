@@ -1,5 +1,7 @@
 <?php
 
+use Drupal\group\Entity\GroupContent;
+
 /**
  * Implements hook_token_info().
  *
