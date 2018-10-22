@@ -16,3 +16,14 @@ Feature: Edit a service feature
     When I press "Save"
     Then I should see a ".alert.alert-success" element
     And I should not see a ".alert.alert-danger" element
+
+  Scenario: Archive a service
+    When I select "Archived" from "edit-moderation-state-0-state"
+    And I press "Save"
+    Then I should see a ".alert.alert-success" element
+    And I should see "Archived"
+
+    When I select "Published" from "edit-new-state"
+    And I press "Apply"
+    Then I should see a ".alert.alert-success" element
+    And I should see "The moderation state has been updated."
