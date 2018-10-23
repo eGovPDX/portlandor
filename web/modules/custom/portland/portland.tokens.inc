@@ -1,5 +1,8 @@
 <?php
 
+use Drupal\Core\Render\BubbleableMetadata;
+use Drupal\group\Entity\GroupContent;
+
 /**
  * Implements hook_token_info().
  *
@@ -45,7 +48,7 @@ function portland_token_info() {
  *
  * @ingroup portland
  */
-function portland_tokens($type, $tokens, array $data = array(), array $options = array()) {
+function portland_tokens($type, $tokens, array $data = array(), array $options = array(), BubbleableMetadata $bubbleable_metadata) {
   $replacements = [];
   $sanitize = !empty($options['sanitize']);
 
