@@ -1,23 +1,35 @@
 var gulp = require('gulp');
 var browserSync = require('browser-sync').create();
 var sass = require('gulp-sass');
+var postcss = require('gulp-postcss');
+var cssVariables = require('postcss-custom-properties');
 var sourcemaps = require('gulp-sourcemaps');
-var concat = require("gulp-concat");
-var minifyCss = require("gulp-minify-css");
-var uglify = require("gulp-uglify");
+var autoprefixer = require('autoprefixer');
+var runSequence = require('run-sequence');
 
 // Compile sass into CSS & auto-inject into browsers
-gulp.task('style', function() {
+gulp.task('sass', function() {
   return gulp.src('scss/style.scss')
-    .pipe(sourcemaps.init())
     .pipe(sass({
       includePaths: ['node_modules'],
       outputStyle: 'compressed'
     })).on('error', sass.logError)
-    .pipe(sourcemaps.write('./maps'))
     .pipe(gulp.dest('./css'))
     .pipe(browserSync.stream());
 });
+
+// Apply postcss processors to generated CSS, write source maps, then output
+gulp.task('css', ['sass'], function() {
+  var processors = [
+    autoprefixer({browsers: ['last 2 version', 'safari 5', 'ie 8', 'ie 9', 'opera 12.1', 'ios 6', 'android 4']}),
+    cssVariables()
+  ];
+  return gulp.src('css/style.css')
+    .pipe(sourcemaps.init())
+    .pipe(postcss(processors))
+    .pipe(sourcemaps.write('./maps'))
+    .pipe(gulp.dest('./css'))
+})
 
 // Move the javascript files into our js folder
 gulp.task('js', function() {
@@ -26,15 +38,21 @@ gulp.task('js', function() {
         .pipe(browserSync.stream());
 });
 
-// Static Server + watching scss/html files
-gulp.task('serve', ['style'], function() {
+// Static Server + watching for scss file changes
+gulp.task('serve', ['sass', 'css'], function() {
 
     browserSync.init({
         proxy: "https://portlandor.lndo.site/",
     });
 
-    gulp.watch(['node_modules/bootstrap/scss/bootstrap.scss', 'scss/**/*.scss'], ['style']);
-    //    gulp.watch("src/*.html").on('change', browserSync.reload);
+    gulp.watch(['scss/**/*.scss'], ['sass', 'css']).on('change', browserSync.reload);
 });
 
-gulp.task('default', ['js', 'serve']);
+// Default task for generating js and CSS files
+gulp.task('default', function() {
+	runSequence(
+    'js',
+    'sass',
+		'css',
+	);
+});
