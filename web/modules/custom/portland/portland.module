@@ -451,29 +451,33 @@ function portland_preprocess_paragraph(&$vars) {
             if (!isset($vars['attributes']['class'])) {
                 $vars['attributes']['class'] = [];
             };
-
-            // Map mimetype to font awesome icon names. Sources:
-            // https://api.drupal.org/api/drupal/includes%21file.mimetypes.inc/function/file_default_mimetype_mapping/7.x
-            // https://fontawesome.com/icons?d=gallery
-            $mimetypeToFontawesomeIcon = [
-                'text/plain' => 'file',
-                'application/pdf' => 'file-pdf',
-                'application/msword' => 'file-word', // *.doc
-                'application/vnd.openxmlformats-officedocument.wordprocessingml.document' => 'file-word', // *.docx
-                'application/vnd.ms-excel' => 'file-excel', // *.xls
-                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' => 'file-excel', // *.xlsx
-                'application/vnd.ms-powerpoint' => 'file-powerpoint', // *.ppt
-                'application/vnd.openxmlformats-officedocument.presentationml.presentation' => 'file-powerpoint',
-            ];
             $document = $vars['paragraph'];
-            // Paragraph -> Media -> File
-            $vars['fileSize'] = format_size(
-                $document->field_document->entity->field_document->entity->getSize());
-            $vars['fileUrl'] = $document->field_document->entity->field_document->entity->url();
-            $mimeType = $document->field_document->entity->field_document->entity->getMimeType();
-            // Set fontawesome icon based on mime type. Use "file" as the default in case no matching mime type is found.
-            $vars['fontawesomeIcon'] = array_key_exists( $mimeType, $mimetypeToFontawesomeIcon ) ?
-                $mimetypeToFontawesomeIcon[$mimeType] : 'file';
+
+            if ($document->hasField("field_document") && 
+                $document->field_document->value !== NULL) {
+                // Map mimetype to font awesome icon names. Sources:
+                // https://api.drupal.org/api/drupal/includes%21file.mimetypes.inc/function/file_default_mimetype_mapping/7.x
+                // https://fontawesome.com/icons?d=gallery
+                $mimetypeToFontawesomeIcon = [
+                    'text/plain' => 'file',
+                    'application/pdf' => 'file-pdf',
+                    'application/msword' => 'file-word', // *.doc
+                    'application/vnd.openxmlformats-officedocument.wordprocessingml.document' => 'file-word', // *.docx
+                    'application/vnd.ms-excel' => 'file-excel', // *.xls
+                    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' => 'file-excel', // *.xlsx
+                    'application/vnd.ms-powerpoint' => 'file-powerpoint', // *.ppt
+                    'application/vnd.openxmlformats-officedocument.presentationml.presentation' => 'file-powerpoint',
+                ];
+
+                // Paragraph -> Media -> File
+                $vars['fileSize'] = format_size(
+                    $document->field_document->entity->field_document->entity->getSize());
+                $vars['fileUrl'] = $document->field_document->entity->field_document->entity->url();
+                $mimeType = $document->field_document->entity->field_document->entity->getMimeType();
+                // Set fontawesome icon based on mime type. Use "file" as the default in case no matching mime type is found.
+                $vars['fontawesomeIcon'] = array_key_exists( $mimeType, $mimetypeToFontawesomeIcon ) ?
+                    $mimetypeToFontawesomeIcon[$mimeType] : 'file';
+            };
             break;
         case 'video':
         case 'audio':
