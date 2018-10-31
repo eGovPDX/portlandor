@@ -52,7 +52,7 @@
         selectTab(urlHash, selectedTab);
       }
 
-      $('#serviceModes a.nav-link').click(function () {
+      $('#serviceModes a.nav-link').click(function (event) {
         // when service mode tab nav is clicked, add fragment to URL; use pushState so that
         // page doesn't jump to the anchor associated with the fragment.
         var linkHash = $(this).attr("href"); // i.e. #pane-2
@@ -88,6 +88,8 @@
 
       function selectTab(linkHash, tab) {
         // add tab to history/location
+        // NOTE: this adds the URL to the history, but it doesn't respect the url fragment
+        // to open the corresponding tab.
         if (history.pushState) {
           history.pushState(null, null, linkHash);
         } else {
@@ -100,10 +102,14 @@
 
         // aria-hidden should be true for all but visible pane
         $('#serviceModesContent .tab-pane').attr('aria-hidden', 'true');
-        $(linkHash).attr('aria-hidden', false)
+        var panel = $(linkHash);
+        panel.attr('aria-hidden', false);
 
-        // focus selected tab
-        tab.focus(); // NOTE: this has focus, but is not picking up focus style
+        // focus the first element in the panel; race condition requires a timeout
+        var first = panel.children().first();
+        first.attr('tabindex', '-1');
+        setTimeout(function() { first.focus(); }, 500);
+        first.focus(); // NOTE: this has focus, but is not picking up focus style
         focusedTab = tab;
       }
 
