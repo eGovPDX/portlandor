@@ -9,38 +9,38 @@ use Drupal\group\Entity\GroupContent;
  * @ingroup portland
  */
 function portland_token_info() {
-  $tokens = [];
+  $info = [];
 
-  $tokens['types']['server'] = [
+  $info['types']['server'] = [
     'name' => t('Server vars'),
     'description' => t('Tokens from _SERVER.'),
   ];
 
-  $tokens['tokens']['server']['HTTP_REFERER'] = [
+  $info['tokens']['server']['HTTP_REFERER'] = [
     'name' => t('HTTP_REFERER'),
-    'description' => t("Refferer header value from _SERVER"),
+    'description' => t("Referrer header value from _SERVER"),
   ];
 
-  $tokens['tokens']['server']['HTTP_USER_AGENT'] = [
+  $info['tokens']['server']['HTTP_USER_AGENT'] = [
     'name' => t('HTTP_USER_AGENT'),
     'description' => t("User-agent header value from _SERVER"),
   ];
 
-  $tokens['tokens']['media']['group'] = [
+  $info['tokens']['media']['group'] = [
     'name' => t('Group'),
     'description' => t('The parent group.'),
     'type' => 'group',
   ];
 
   if (\Drupal::moduleHandler()->moduleExists('token')) {
-    $tokens['tokens']['media']['groups'] = [
+    $info['tokens']['media']['groups'] = [
       'name' => t('Groups'),
       'description' => t("An array of all the node parent groups."),
       'type' => 'array',
     ];
   }
 
-  return $tokens;
+  return $info;
 }
 
 /**

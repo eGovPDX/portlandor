@@ -77,7 +77,46 @@ function cloudy_preprocess_html(&$variables) {
       setGroupVariables($group_entity, $variables);
     }
   }
+
+  // Check if $title_override is set and if so, override the page's HTML <title>
+  $title_override = _persistent_var('title_override');
+  if ($title_override) {
+    $variables['head_title'] = $title_override . ' | ' . \Drupal::config('system.site')->get('name'); // [title override] | [site name]
+  }
 }
+
+function cloudy_preprocess_views_view(&$vars) {
+  $view = $vars['view'];
+  
+  /**
+   * Override HTML title of group-based views to prevent duplicate titles.
+   *
+   * Only target views that join the group_content tables. Or target specific views by name by using:
+   *    if ($view->storage->label() == 'Group services') {
+   */
+  if (isset($view->query->tables['node_field_data']['group_content_field_data_node_field_data'])
+      || isset($view->query->tables['media_field_data']['group_content_field_data_media_field_data'])) {
+    $gid = $view->args[0];
+    $group = Drupal\group\Entity\Group::load($gid);
+    if (isset($group)) {
+      $group_title = $group->label();
+      $title_override = $view->build_info['title'] . ' | ' . $group_title;  // [view name] | [group name]
+      _persistent_var( 'title_override', $title_override );
+    }
+  }  
+}
+
+// Persistent variable getter and setter helper function
+function _persistent_var($var_name, $new_val = NULL) {
+  $vars = &drupal_static(__FUNCTION__, array());
+
+  if ($new_val != NULL) {
+    $vars[$var_name] = $new_val;
+  }
+
+  return isset($vars[$var_name]) ? $vars[$var_name] : NULL;
+}
+
 
 ///**
 // * Pull in a class based on the field value.
