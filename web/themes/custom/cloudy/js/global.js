@@ -52,9 +52,18 @@
         selectTab(urlHash, selectedTab);
       }
 
+      // $(window).on('hashchange', function () {
+      //   selectedTabIndex = getSelectedTabIndex(urlHash);
+      //   var tabId = '#tab-' + selectedTabIndex;
+      //   selectedTab = $(tabId);
+      //   selectedTab.tab('show');
+      //   selectTab(urlHash, selectedTab);
+      // });
+
       $('#serviceModes a.nav-link').click(function (event) {
         // when service mode tab nav is clicked, add fragment to URL; use pushState so that
         // page doesn't jump to the anchor associated with the fragment.
+        event.preventDefault();
         var linkHash = $(this).attr("href"); // i.e. #pane-2
         selectTab(linkHash, $(this));
       });
@@ -88,8 +97,6 @@
 
       function selectTab(linkHash, tab) {
         // add tab to history/location
-        // NOTE: this adds the URL to the history, but it doesn't respect the url fragment
-        // to open the corresponding tab.
         if (history.pushState) {
           history.pushState(null, null, linkHash);
         } else {
@@ -105,15 +112,12 @@
         var panel = $(linkHash);
         panel.attr('aria-hidden', false);
 
-        // focus the first element in the panel; race condition requires a timeout
+        // focus the first element in the panel
         var first = panel.children().first();
-        first.attr('tabindex', '-1');
-        setTimeout(function() { first.focus(); }, 500);
-        first.focus(); // NOTE: this has focus, but is not picking up focus style
+        //setTimeout(function () { first.focus(); }, 2500);
+        first.focus();
         focusedTab = tab;
       }
-
-
     }
   };
 
