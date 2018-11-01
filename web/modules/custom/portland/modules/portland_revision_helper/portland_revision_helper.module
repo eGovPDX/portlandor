@@ -1,0 +1,88 @@
+<?php
+
+use \Drupal\Core\Access\AccessResult;
+
+/**
+ * Implements hook_preprocess_HOOK().
+ * 
+ * Used to add class 'form-required' to revision log message field label.
+ *
+ * @param [type] $variables
+ * @return void
+ */
+function portland_revision_helper_preprocess_form_element(&$variables) {
+  $id = array_key_exists('#id', $variables['element']) ? $variables['element']['#id'] : '';
+  if ($id == 'edit-revision-log-0-value') {
+    $variables['label']['#attributes'] = ['class' => ['form-required']];
+  }
+}
+
+/**
+ * Implements hook_form_alter().
+ * 
+ * For all forms with revision_log field:
+ * - Hide disabled revision checkbox (defaults to new revision).
+ * - Move revision_log to footer, right above submit.
+ * - Add a callback to a validation function that makes revision_log required.
+ * 
+ * NOTE: There is no documentation or information available online about making
+ *       the revision log message required. This would be a good candidate for
+ *       an entry level contrib module.
+ *
+ * @param [type] $form
+ * @param [type] $form_state
+ * @param [type] $form_id
+ * @return void
+ */
+function portland_revision_helper_form_alter(&$form, $form_state, $form_id)
+{
+  if (array_key_exists('revision_log',$form) && array_key_exists('revision', $form)) {
+    $form['revision']['#access'] = false;
+    $form['revision_log']['#group'] = 'footer';
+    $form['actions']['submit']['#validate'][] = 'portland_revision_helper_validate_log_message';
+    $form['actions']['submit']['#validate'][] = '::validateForm';
+  }
+}
+
+/**
+ * Validation handler for any form with a revision_log field. Makes the revision log message required.
+ *
+ * @param [type] $form
+ * @param [type] $form_state
+ * @return void
+ */
+function portland_revision_helper_validate_log_message(&$form, $form_state)
+{
+  $message = $form_state->getValue('revision_log')[0]['value'];
+  if (!$message) {
+    $form_state->setErrorByName('revision_log', 'The revision log message is requried');
+  }
+}
+
+/**
+ * Implements hook_local_tasks_alter().
+ *
+ * @param [type] $local_tasks
+ * @return void
+ */
+function portland_revision_helper_local_tasks_alter(&$local_tasks) {
+  // Move "View Revision" task right after Revisions (20)
+  $local_tasks['entity.node.revision']['weight'] = 30;
+}
+
+/**
+ * Implements hook_entity_field_access().
+ * 
+ * Grant access to the revision_log field.
+ * 
+ */
+function portland_revision_helper_entity_field_access($operation, \Drupal\Core\Field\FieldDefinitionInterface $field_definition, \Drupal\Core\Session\AccountInterface $account, \Drupal\Core\Field\FieldItemListInterface $items = null)
+{
+  $access = AccessResult::neutral();
+  if ($operation == 'edit' && $field_definition->getName() == 'revision_log') {
+    // assumption: if a user can add/edit a node, they should also have permission
+    // to add a log message, so access to that field should be assumed anytime it's referenced.
+    $access = AccessResult::allowed();
+  }
+  return $access;
+}
