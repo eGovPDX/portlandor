@@ -39,51 +39,39 @@
   Drupal.behaviors.tab_handler = {
     attach: function (context, settings) {
 
-      // on initial load, check for tab navigation fragment in URL. if present, attempt to activate that tab.
       var urlHash = window.location.hash;
       var selectedTabIndex = 0;
       var selectedTab;
       var focusedTab;
+
+      // on initial load, check for tab navigation fragment in URL and activate indicated tab
       if (urlHash.indexOf('#pane-') > -1) {
         selectedTabIndex = getSelectedTabIndex(urlHash);
-        var tabId = '#tab-' + selectedTabIndex;
-        selectedTab = $(tabId);
+        selectedTab = $('#tab-' + selectedTabIndex);
         selectedTab.tab('show');
         selectTab(urlHash, selectedTab);
       }
 
-      // $(window).on('hashchange', function () {
-      //   selectedTabIndex = getSelectedTabIndex(urlHash);
-      //   var tabId = '#tab-' + selectedTabIndex;
-      //   selectedTab = $(tabId);
-      //   selectedTab.tab('show');
-      //   selectTab(urlHash, selectedTab);
-      // });
-
       $('#serviceModes a.nav-link').click(function (event) {
-        // when service mode tab nav is clicked, add fragment to URL; use pushState so that
-        // page doesn't jump to the anchor associated with the fragment.
         event.preventDefault();
-        var linkHash = $(this).attr("href"); // i.e. #pane-2
-        selectTab(linkHash, $(this));
+        // activate clicked tab using the link href
+        selectTab($(this).attr("href"), $(this));
       });
 
       $('#serviceModes').keydown(function(event) {
-        if (event.which == 39) { // right arrow
+        if (event.which == 39) {
           // focus tab to the right, if it exists
           var foundNext = focusedTab.parent().next().find('a');
           if (foundNext.attr('id')) {
             focusedTab = foundNext;
             focusedTab.focus();
-            console.log('focus ' + focusedTab.attr('id'));
           }
-        } else if (event.which == 37) { // left arrow
+        } else if (event.which == 37) {
           // focus tab to the left
           var foundPrev = focusedTab.parent().prev().find('a');
           if (foundPrev.attr('id')) {
             focusedTab = foundPrev;
             focusedTab.focus();
-            console.log('focus ' + focusedTab.attr('id'));
           }
         }
       });
@@ -96,9 +84,10 @@
       }
 
       function selectTab(linkHash, tab) {
-        // add tab to history/location
-        if (history.pushState) {
-          history.pushState(null, null, linkHash);
+        // add fragment to url; use replaceState to avoid filling up the history with tab changes;
+        // we are not supporting browser navigation between tabs/url fragments at this time
+        if (history.replaceState) {
+          history.replaceState(null, null, linkHash);
         } else {
           location.hash = linkHash;
         }
@@ -107,15 +96,13 @@
         $('#serviceModes a.nav-link').attr('tabindex', -1);
         tab.removeAttr('tabindex');
 
-        // aria-hidden should be true for all but visible pane
+        // aria-hidden should be true for all but visible pane; bootstrap doesn't handle this
         $('#serviceModesContent .tab-pane').attr('aria-hidden', 'true');
         var panel = $(linkHash);
         panel.attr('aria-hidden', false);
 
-        // focus the first element in the panel
-        var first = panel.children().first();
-        //setTimeout(function () { first.focus(); }, 2500);
-        first.focus();
+        // focus the active tab; necessary in the case of page reload or direct navigation
+        tab.focus();
         focusedTab = tab;
       }
     }
