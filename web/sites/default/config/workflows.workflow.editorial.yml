@@ -29,29 +29,30 @@ type_settings:
       published: false
       default_revision: true
       label: Archived
-      weight: 2
+      weight: 1
     draft:
       label: Draft
       published: false
       default_revision: false
-      weight: 1
+      weight: -1
     published:
       label: Published
       published: true
       default_revision: true
+      weight: -2
+    review:
+      published: false
+      default_revision: false
+      label: 'In review'
       weight: 0
   transitions:
     archive:
       label: Archive
       from:
+        - draft
         - published
+        - review
       to: archived
-      weight: -1
-    archived_draft:
-      label: 'Restore to Draft'
-      from:
-        - archived
-      to: draft
       weight: 0
     archived_published:
       label: Restore
@@ -62,17 +63,29 @@ type_settings:
     create_new_draft:
       label: 'Create New Draft'
       to: draft
-      weight: -2
+      weight: -3
       from:
+        - archived
         - draft
         - published
+        - review
     publish:
       label: Publish
       to: published
-      weight: -3
+      weight: -1
       from:
         - draft
         - published
+        - review
+    send_to_review:
+      label: 'Send to review'
+      from:
+        - archived
+        - draft
+        - published
+        - review
+      to: review
+      weight: -2
   entity_types:
     media:
       - audio
