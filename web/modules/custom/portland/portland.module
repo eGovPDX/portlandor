@@ -509,3 +509,44 @@ function portland_pathauto_alias_alter(&$alias, array $context) {
         updateGroupAliases($context['data']['group']);
     }
 }
+/**
+ * Implements hook_form_alter
+ */
+function portland_form_pathauto_bulk_update_form_alter(&$form, $form_state) {
+    $form['actions']['submit']['#submit'][] = 'portland_handle_bulk_generate';
+}
+
+// When bulk generating aliases for taxonomy terms, we also generate aliases for "/taxonomy/term/CONTENT_TYPE" 
+// and "/taxonomy/term/GROUP_TYPE" 
+function portland_handle_bulk_generate($form, $form_state) {
+    $s = $form_state;
+    // If taxonomy_term is selected
+    if($form_state->getValues()['update']['canonical_entities:taxonomy_term'] == 'canonical_entities:taxonomy_term') {
+        // Generate aliases for "term/content_type"
+        $contentTypes = ['guides', 'bureaus', 'programs', 'projects'];
+        $lang = \Drupal::languageManager()->getCurrentLanguage()->getId();
+        $vid = 'topics';
+        $terms =\Drupal::entityTypeManager()->getStorage('taxonomy_term')->loadTree($vid);
+        foreach ($terms as $term) {
+            $tid = $term->tid;
+            // Check the term's alias
+            $existing_alias = \Drupal::service('path.alias_storage')->lookupPathAlias("/taxonomy/term/$tid", $lang);
+            if( !$existing_alias ) continue;
+            foreach($contentTypes as $contentType) {
+                $system_path = "/taxonomy/term/$tid/$contentType";
+
+                $existing_content_alias =  \Drupal::service('path.alias_storage')->lookupPathAlias("/taxonomy/term/$tid/$contentType", $lang);
+                $new_content_alias = "$existing_alias/$contentType";
+
+                if( $new_content_alias && $new_content_alias == $existing_content_alias) continue;
+
+                if ($existing_content_alias && $existing_content_alias != $new_content_alias) {
+                    \Drupal::service('path.alias_storage')->delete(['alias' => $existing_content_alias, 'langcode' => $lang]);
+                }
+
+                // // save new or updated alias
+                $path = \Drupal::service('path.alias_storage')->save($system_path, $new_content_alias, $lang);
+            }
+        }
+    }
+}
