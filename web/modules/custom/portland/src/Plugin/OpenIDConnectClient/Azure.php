@@ -20,7 +20,7 @@ use Symfony\Component\HttpFoundation\RequestStack;
  *
  * @OpenIDConnectClient(
  *   id = "azure",
- *   label = @Translation("Office 365")
+ *   label = @Translation("your network account")
  * )
  */
 class Azure extends OpenIDConnectClientBase {
