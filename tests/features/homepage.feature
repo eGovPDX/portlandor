@@ -21,5 +21,5 @@ Feature: Demo feature
     Given I am logged in as user "oliver.outsider@portlandoregon.gov"
     When I visit "/residents-of-portland"
     Then I should see "Resident"
-    And I should see "Services by action"
+    And I should see "services found"
     And I should see "Bureaus, offices, and programs"
