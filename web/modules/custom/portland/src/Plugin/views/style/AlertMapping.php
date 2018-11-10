@@ -28,16 +28,19 @@ class AlertMapping extends Mapping {
       'title_field' => [
         '#title' => $this->t('Title field'),
         '#description' => $this->t('Choose the field with the custom title.'),
+        '#toggle' => TRUE,
         '#required' => TRUE,
       ],
       'id_field' => [
         '#title' => $this->t('ID field'),
         '#description' => $this->t('Choose the field with the ID for the alert.'),
+        '#toggle' => TRUE,
         '#required' => TRUE,
       ],
       'changed_field' => [
         '#title' => $this->t('Changed timestamp field'),
         '#description' => $this->t('Choose the field with the changed timestamp.'),
+        '#toggle' => TRUE,
         '#required' => TRUE,
       ],
       'type_field' => [
