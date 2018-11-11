@@ -25,72 +25,84 @@
 {# 'd-none' below because the javascript file will change to 'd-flex' if it should be shown #}
 {% set alert_classes = [
   'portland-alert',
-  'card',
-  'border-0',
   'rounded-0',
+  'container',
+  'alert',
   dismissible == 1 ? 'd-none' : '',
 ] %}
 
 {% set header_attribute = create_attribute() %}
 {% set header_classes = [
-  'card-header',
   'rounded-0',
   'd-flex',
   'align-items-center',
-  'font-weight-bold',
-  type == '10' ? 'bg-danger' : '',
-  type == '10' ? 'text-white' : '',
-  type == '20' ? 'bg-warning' : '',
-  type == '20' ? 'text-dark' : '',
-  type == '30' ? 'bg-secondary' :'',
-  type == '30' ? 'text-white' :'',
+  'justify-content-between',
 ] %}
 
+{% set title_attribute = create_attribute() %}
+{% set title_classes = [
+  'font-weight-bold',
+  'h5',
+  'alert-heading',
+] %}
 
 {% set icon_attribute = create_attribute() %}
 {% set icon_classes = [
   'fa',
-  type == '10' ? 'fa-exclamation-circle' : '',
-  type == '20' ? 'fa-exclamation-triangle' : '',
-  type == '30' ? 'fa-info-circle' :'',
+  'fa-exclamation-triangle',
+  'mr-2',
+  'text-warning',
+] %}
+
+{% set dismiss_attribute = create_attribute() %}
+{% set dismiss_classes = [
+  'text-body',
+] %}
+
+{% set dismiss_icon_attribute = create_attribute() %}
+{% set dismiss_icon_classes = [
+  'fa',
+  'fa-window-close',
+  'mr-2',
 ] %}
 
 {% set link_attribute = create_attribute() %}
 {% set link_classes = [
-  'mt-4',
+  'mt-2',
   'btn',
-  'btn-block',
-  'col-md-8',
-  type == '10' ? 'btn-danger' : '',
-  type == '20' ? 'btn-warning' : '',
-  type == '30' ? 'btn-outline-secondary' :'',
+  'btn-outline-primary',
 ] %}
 
-<div{{ attributes.addClass(classes).addClass(alert_classes) }}  data-nid="{{ nid }}" data-changed="{{ changed_timestamp }}" role="alert">
-  <div{{ header_attribute.addClass(header_classes) }}>
-    <i{{ icon_attribute.addClass(icon_classes) }}></i>
-    <span class="ml-2 flex-grow-1">
-      {{ changed }}
-    </span>
-    {% if dismissible == 1 %}
-      <button type="button" class="close" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-    {% endif %}
-  </div>
-  <div class="card-body">
-    <div class="card-title">
-      {% if title %}
-        <strong>{{ title }}</strong>
-      {% endif %}
-    </div>
-    <div>
-      {{ text }}
-    </div>
-    {% if link_url %}
-      <div class="d-flex justify-content-around">
+
+<div>
+  <div{{ attributes.addClass(classes).addClass(alert_classes) }} data-nid="{{ nid }}" data-changed="{{ changed_timestamp }}" role="alert" aria-live="polite">
+      <div{{ header_attribute.addClass(header_classes) }}>
+      {# <i{{ icon_attribute.addClass(icon_classes) }}></i> #}
+        {% if title %}
+          <span{{ title_attribute.addClass(title_classes) }}>{{ title }}</span>
+        {% endif %}
+        {% if dismissible == 1 %}
+          <span>
+            <button type="button" class="close" data-dismiss="alert" aria-label="Dismiss notification">
+              <span{{ dismiss_attribute.addClass(dismiss_classes) }} aria-hidden="true">
+                <i{{ dismiss_icon_attribute.addClass(dismiss_icon_classes) }}></i>
+                Dismiss
+              </span>
+            </button>
+          </span>
+        {% endif %}
+      </div>
+      <div class="mb-0">
+        {{ text }}
+      </div>
+      {% if link_url %}
         <a{{ link_attribute.addClass(link_classes).setAttribute('href', link_url) }}>
           {{ link_text }}
         </a>
+      {% endif %}
+      <div>
+        <small>{{ changed }}</small>
       </div>
-    {% endif %}
+    </div>
   </div>
 </div>
