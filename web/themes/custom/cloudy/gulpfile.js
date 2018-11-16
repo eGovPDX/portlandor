@@ -38,3 +38,5 @@ gulp.task('serve', ['style'], function() {
 });
 
 gulp.task('default', ['js', 'serve']);
+
+gulp.task('js_and_style', ['js', 'style']);
