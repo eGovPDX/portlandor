@@ -109,12 +109,42 @@ behat_tests: &behat_tests
             # Don't need to wait for DEV because it's always up?
             # Wake up the DEV site and must wait for 30s
             terminus env:wake portlandor.dev && sleep 30s
-            # terminus remote:drush portlandor.dev -- cr
-            # terminus remote:drush portlandor.dev -- cim -y
-            for i in {1..12}; do terminus remote:drush portlandor.dev -- cim -y && break || sleep 10; done
-            for i in {1..12}; do terminus remote:drush portlandor.dev -- -y updb && break || sleep 10; done
-            for i in {1..12}; do terminus remote:drush portlandor.dev -- -y entup && break || sleep 10; done
-            for i in {1..12}; do terminus remote:drush portlandor.dev -- cr && break || sleep 10; done
+            # try to run drush cim
+            $result=0
+            for i in {1..12}; 
+              terminus remote:drush portlandor.dev -- cim -y
+              $result=$?
+              if [ "$result" = "0" ]; then break; fi
+              sleep 10; 
+            done
+            if (($result > 0)); then exit 1; fi
+            # try drush updb
+            $result=0
+            for i in {1..12}; 
+              terminus remote:drush portlandor.dev -- -y updb
+              $result=$?
+              if [ "$result" = "0" ]; then break; fi
+              sleep 10; 
+            done
+            if (($result > 0)); then exit 1; fi
+            # try drush entup
+            $result=0
+            for i in {1..12}; 
+              terminus remote:drush portlandor.dev -- -y entup
+              $result=$?
+              if [ "$result" = "0" ]; then break; fi
+              sleep 10; 
+            done
+            if (($result > 0)); then exit 1; fi
+            # try drush cr
+            $result=0
+            for i in {1..12}; 
+              terminus remote:drush portlandor.dev -- cr
+              $result=$?
+              if [ "$result" = "0" ]; then break; fi
+              sleep 10; 
+            done
+            if (($result > 0)); then exit 1; fi
             # echo 'node_access_rebuild();' | $(terminus remote:drush portlandor.dev -- php-script)
             # After success deployment to DEV, remove the multidev site if this is a merge of a PR
             # Read the last Git log in the master branch. Get the branch name at the end of the log.
@@ -164,10 +194,45 @@ behat_tests: &behat_tests
               terminus env:wake portlandor.$CIRCLE_BRANCH && sleep 60s
             fi
             # Clear cache. Import config files
-            for i in {1..6}; do terminus remote:drush portlandor.$CIRCLE_BRANCH -- cim -y && break || sleep 10; done
-            for i in {1..6}; do terminus remote:drush portlandor.$CIRCLE_BRANCH -- -y updb && break || sleep 10; done
-            for i in {1..12}; do terminus remote:drush portlandor.dev -- -y entup && break || sleep 10; done
-            for i in {1..6}; do terminus remote:drush portlandor.$CIRCLE_BRANCH -- cr && break || sleep 10; done
+
+            # try to run drush cim
+            $result=0
+            for i in {1..6}; 
+              terminus remote:drush portlandor.$CIRCLE_BRANCH -- cim -y
+              $result=$?
+              if [ "$result" = "0" ]; then break; fi
+              sleep 10; 
+            done
+            if (($result > 0)); then exit 1; fi
+
+            # try drush updb
+            $result=0
+            for i in {1..6}; 
+              terminus remote:drush portlandor.$CIRCLE_BRANCH -- -y updb
+              $result=$?
+              if [ "$result" = "0" ]; then break; fi
+              sleep 10; 
+            done
+            if (($result > 0)); then exit 1; fi
+            # try drush entup
+            $result=0
+            for i in {1..6}; 
+              terminus remote:drush portlandor.$CIRCLE_BRANCH -- -y entup
+              $result=$?
+              if [ "$result" = "0" ]; then break; fi
+              sleep 10; 
+            done
+            if (($result > 0)); then exit 1; fi
+            # try drush cr
+            $result=0
+            for i in {1..6}; 
+              terminus remote:drush portlandor.$CIRCLE_BRANCH -- cr
+              $result=$?
+              if [ "$result" = "0" ]; then break; fi
+              sleep 10; 
+            done
+            if (($result > 0)); then exit 1; fi
+
             # echo 'node_access_rebuild();' | $(terminus drush portlandor.$CIRCLE_BRANCH -- php-script)
           fi
     - run:
