@@ -75,34 +75,52 @@ function cloudy_preprocess_html(&$variables) {
     else {
       $group_entity = \Drupal::entityTypeManager()->getStorage('group')->load($group);
       setGroupVariables($group_entity, $variables);
+
+      // some views pages have duplidate html titles, such as group Services, Guides, etc.
+      // this function call appends the group name to the title for SEO purposes.
+      set_extended_title_for_group_views($variables);
     }
   }
 }
 
-///**
-// * Pull in a class based on the field value.
-// */
-//
-//use Drupal\taxonomy\Entity;
-//
-//function setTermVariables($term, &$variables) {
-//  $fontawesome_icon = 'fas-'. $term->field_fontawesome_icon->value;
-//  $variables['attributes']['class'][] = 'fas';
-//  $variables['attributes']['class'][] = $fontawesome_icon;
-//}
-//
-///**
-// * Implements hook_preprocess_HOOK() for page title templates.
-// */
-//function cloudy_preprocess_page_title(&$variables) {
-//  // Since the title and the shortcut link are both block level elements,
-//  // positioning them next to each other is much simpler with a wrapper div.
-//  $route_match = \Drupal::service('current_route_match');
-//  // if this is a node
-//  if ($term = $route_match->getParameter('term')) {
-//    // that is group content
-//    foreach (Term::loadByEntity($term) as $group_content) {
-//      // give it the shortname as a class
-//    setGroupVariables($group_content->getGroup(), $variables);
-//  }
-//}
+/**
+ * If loaded page is one of the specified group views, get the group name and
+ * add it to the html title by setting $vars['head_title']['title']. This prevents
+ * duplicate page titles within groups for views such as Services, Guides, etc.
+ * The title format is "[page title] | [group] | [site name]"
+ *
+ * @param [type] $vars
+ * @return void
+ */
+function set_extended_title_for_group_views(&$vars)
+{
+  // get the view id from the path
+  $route_match = \Drupal::routeMatch();
+  $view_id = $route_match->getParameter('view_id');
+
+  switch ($view_id) {
+    case "group_programs":
+    case "group_projects":
+    case "group_events":
+    case "group_guides":
+    case "group_information":
+    case "group_media":
+    case "group_news":
+    case "group_services":
+      $group_id = $route_match->getParameter('group');
+      if ($group_id) {
+        $group_entity = Drupal\group\Entity\Group::load($group_id);
+        if (isset($group_entity)) {
+          $page_title = $vars['page']['#title'];
+          $group_title = $group_entity->label();
+          $site_name = \Drupal::config('system.site')->get('name');
+          $vars['head_title']['title'] = "$page_title | $group_title | $site_name";
+          $vars['title_override_set'] = true;
+        } else {
+          // TODO: if we're bothering to check whether the group entity is set here, then
+          //       we should log an error if it's nott.
+        }
+      }
+      break;
+  }
+}
