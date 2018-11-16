@@ -1,29 +1,51 @@
-var gulp = require('gulp');
-var browserSync = require('browser-sync').create();
-var sass = require('gulp-sass');
-var sourcemaps = require('gulp-sourcemaps');
-var concat = require("gulp-concat");
-var minifyCss = require("gulp-minify-css");
-var uglify = require("gulp-uglify");
+var gulp = require('gulp'),
+    browserSync = require('browser-sync').create(),
+    sass = require('gulp-sass'),
+    sourcemaps = require('gulp-sourcemaps'),
+    concat = require("gulp-concat"),
+    minifyCss = require("gulp-minify-css"),
+    uglify = require("gulp-uglify"),
+    mode = require('gulp-mode')({
+      modes: ["production", "development"],
+      default: "development",
+      verbose: false
+    });
+
+const localConfig = {
+  sass:   {
+    src: [
+      './scss/style.scss'
+    ],
+    dest: './css',
+  },
+  js: {
+    src: [
+      'node_modules/bootstrap/dist/js/bootstrap.min.js',
+      'node_modules/jquery/dist/jquery.min.js',
+      'node_modules/popper.js/dist/umd/popper.min.js'
+    ],
+    dest: './js',
+  }
+};
 
 // Compile sass into CSS & auto-inject into browsers
 gulp.task('style', function() {
-  return gulp.src('scss/style.scss')
-    .pipe(sourcemaps.init())
+  return gulp.src(localConfig.sass.src)
+    .pipe(mode.development(sourcemaps.init()))
     .pipe(sass({
       includePaths: ['node_modules'],
       outputStyle: 'compressed'
     })).on('error', sass.logError)
-    .pipe(sourcemaps.write('./maps'))
-    .pipe(gulp.dest('./css'))
-    .pipe(browserSync.stream());
+    .pipe(mode.development(sourcemaps.write('./maps')))
+    .pipe(gulp.dest(localConfig.sass.dest))
+    .pipe(mode.development(browserSync.stream()));
 });
 
 // Move the javascript files into our js folder
 gulp.task('js', function() {
-    return gulp.src(['node_modules/bootstrap/dist/js/bootstrap.min.js', 'node_modules/jquery/dist/jquery.min.js', 'node_modules/popper.js/dist/umd/popper.min.js'])
-        .pipe(gulp.dest("js"))
-        .pipe(browserSync.stream());
+    return gulp.src(localConfig.js.src)
+        .pipe(gulp.dest(localConfig.js.dest))
+        .pipe(mode.development(browserSync.stream()));
 });
 
 // Static Server + watching scss/html files
@@ -33,10 +55,7 @@ gulp.task('serve', ['style'], function() {
         proxy: "https://portlandor.lndo.site/",
     });
 
-    gulp.watch(['node_modules/bootstrap/scss/bootstrap.scss', 'scss/**/*.scss'], ['style']);
-    //    gulp.watch("src/*.html").on('change', browserSync.reload);
+    gulp.watch(['scss/**/*.scss'], ['style']).on('change', browserSync.reload);
 });
 
 gulp.task('default', ['js', 'serve']);
-
-gulp.task('js_and_style', ['js', 'style']);
