@@ -571,7 +571,15 @@ function portland_set_extended_title_for_group_views(&$vars)
 function portland_generate_extended_title_for_group_views($orig_title, $route_match) {
     // get the view id from the path
     $view_id = $route_match->getParameter('view_id');
+    $taxonomy_term = $route_match->getParameter('taxonomy_term');
     $site_name = \Drupal::config('system.site')->get('name');
+
+    if (!isset($view_id) && isset($taxonomy_term)) {
+        // it's a taxonomy term page, use the term name in the title to prevent duplicates
+        $tid = $taxonomy_term->id();
+        $group_title = \Drupal::entityTypeManager()->getStorage('taxonomy_term')->load($tid)->name->value;
+        return "$orig_title | $group_title | $site_name";
+    }
 
     switch ($view_id) {
         case "group_programs":
@@ -582,9 +590,10 @@ function portland_generate_extended_title_for_group_views($orig_title, $route_ma
         case "group_media":
         case "group_news":
         case "group_services":
-            $group_id = $route_match->getParameter('group');
-            if ($group_id) {
-                $group_entity = Drupal\group\Entity\Group::load($group_id);
+            $group_id = $route_match->getParameter('group'); // sometimes the group object is returned; sometimes just the id string
+            $type = is_string($group_id) ? "string" : get_class($group_id);
+            $group_entity = $type == "Drupal\group\Entity\Group" ? $group_id : Drupal\group\Entity\Group::load($group_id);
+            if (isset($group_entity)) {
                 $page_title = $orig_title;
                 $group_title = $group_entity->label();
                 return "$page_title | $group_title | $site_name";

@@ -115,9 +115,13 @@ function portland_tokens($type, $tokens, array $data = array(), array $options =
         case 'title':
           $route_match = \Drupal::routeMatch();
           $request = \Drupal::request();
-          if ($route = $request->attributes->get(\Symfony\Cmf\Component\Routing\RouteObjectInterface::ROUTE_OBJECT)) {
-            $title = \Drupal::service('title_resolver')->getTitle($request, $route);
+          if ($route = \Drupal::routeMatch()->getCurrentRouteMatch()->getRouteObject()) {
+            $title = $route->getDefault('_title');
             if (isset($title)) {
+              if (is_array($title)) {
+                // $title may be dynamic
+                $title = $title['#markup'];
+              }
               $new_title = portland_generate_extended_title_for_group_views($title, $route_match);
               $replacements[$original] = $new_title;
             }
