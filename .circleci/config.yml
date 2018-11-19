@@ -59,6 +59,19 @@ behat_tests: &behat_tests
         key: terminus_-{{ checksum "composer.lock" }}
         paths:
           - "/tmp/vendor"
+    - restore_cache:
+        name: Restore Gulp cache
+        keys:
+          - gulp_-{{ checksum "web/themes/custom/cloudy/package.json" }}
+    - run:
+        name: Install Gulp
+        command: |
+          cd web/themes/custom/cloudy && npm install
+    - save_cache:
+        name: Save Gulp cache
+        key: gulp_-{{ checksum "web/themes/custom/cloudy/package.json" }}
+        paths:
+          - "web/themes/custom/cloudy/node_modules"
     - restore_cache: *restore_cache
     - run:
         name: Composer install
@@ -90,7 +103,7 @@ behat_tests: &behat_tests
           # Without these lines, push will fail with "please remote git submodules" error
           rm -rf ./vendor/drupal/coder/.git && rm -rf ./web/modules/contrib/facets/.git && rm -rf ./web/modules/contrib/search_api_solr/.git
           # Compile SCSS in our custom theme
-          cd ./web/themes/custom/cloudy && npm install && npm run build && cd /var/www/html
+          npm run build && cd /var/www/html
           # Add all files before pushing to Pantheon
           git add -f /var/www/html
           # Pantheon site will use the wrong DB if the local is kept
