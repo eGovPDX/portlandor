@@ -59,6 +59,19 @@ behat_tests: &behat_tests
         key: terminus_-{{ checksum "composer.lock" }}
         paths:
           - "/tmp/vendor"
+    - restore_cache:
+        name: Restore Gulp cache
+        keys:
+          - gulp_-{{ checksum "web/themes/custom/cloudy/package.json" }}
+    - run:
+        name: Install Gulp
+        command: |
+          cd web/themes/custom/cloudy && npm install
+    - save_cache:
+        name: Save Gulp cache
+        key: gulp_-{{ checksum "web/themes/custom/cloudy/package.json" }}
+        paths:
+          - "web/themes/custom/cloudy/node_modules"
     - restore_cache: *restore_cache
     - run:
         name: Composer install
@@ -89,6 +102,9 @@ behat_tests: &behat_tests
           git config --global user.email "$eGov_Email"
           # Without these lines, push will fail with "please remote git submodules" error
           rm -rf ./vendor/drupal/coder/.git && rm -rf ./web/modules/contrib/facets/.git && rm -rf ./web/modules/contrib/search_api_solr/.git
+          # Compile SCSS in our custom theme
+          cd web/themes/custom/cloudy && npm run build && cd /var/www/html
+          # Add all files before pushing to Pantheon
           git add -f /var/www/html
           # Pantheon site will use the wrong DB if the local is kept
           git rm --cache  web/sites/default/settings.local.php --ignore-unmatch
@@ -105,12 +121,46 @@ behat_tests: &behat_tests
             # Don't need to wait for DEV because it's always up?
             # Wake up the DEV site and must wait for 30s
             terminus env:wake portlandor.dev && sleep 30s
-            # terminus remote:drush portlandor.dev -- cr
-            # terminus remote:drush portlandor.dev -- cim -y
-            for i in {1..12}; do terminus remote:drush portlandor.dev -- cim -y && break || sleep 10; done
-            for i in {1..12}; do terminus remote:drush portlandor.dev -- -y updb && break || sleep 10; done
-            for i in {1..12}; do terminus remote:drush portlandor.dev -- -y entup && break || sleep 10; done
-            for i in {1..12}; do terminus remote:drush portlandor.dev -- cr && break || sleep 10; done
+            # try to run drush cim
+            result=0
+            for i in {1..12};
+            do
+              terminus remote:drush portlandor.dev -- cim -y
+              result=$?
+              if [ "$result" = "0" ]; then break; fi
+              sleep 10; 
+            done
+            if (($result > 0)); then exit 1; fi
+            # try drush updb
+            result=0
+            for i in {1..12};
+            do
+              terminus remote:drush portlandor.dev -- -y updb
+              result=$?
+              if [ "$result" = "0" ]; then break; fi
+              sleep 10; 
+            done
+            if (($result > 0)); then exit 1; fi
+            # try drush entup
+            result=0
+            for i in {1..12}; 
+            do
+              terminus remote:drush portlandor.dev -- -y entup
+              result=$?
+              if [ "$result" = "0" ]; then break; fi
+              sleep 10; 
+            done
+            if (($result > 0)); then exit 1; fi
+            # try drush cr
+            result=0
+            for i in {1..12}; 
+            do
+              terminus remote:drush portlandor.dev -- cr
+              result=$?
+              if [ "$result" = "0" ]; then break; fi
+              sleep 10; 
+            done
+            if (($result > 0)); then exit 1; fi
             # echo 'node_access_rebuild();' | $(terminus remote:drush portlandor.dev -- php-script)
             # After success deployment to DEV, remove the multidev site if this is a merge of a PR
             # Read the last Git log in the master branch. Get the branch name at the end of the log.
@@ -160,10 +210,49 @@ behat_tests: &behat_tests
               terminus env:wake portlandor.$CIRCLE_BRANCH && sleep 60s
             fi
             # Clear cache. Import config files
-            for i in {1..6}; do terminus remote:drush portlandor.$CIRCLE_BRANCH -- cim -y && break || sleep 10; done
-            for i in {1..6}; do terminus remote:drush portlandor.$CIRCLE_BRANCH -- -y updb && break || sleep 10; done
-            for i in {1..12}; do terminus remote:drush portlandor.dev -- -y entup && break || sleep 10; done
-            for i in {1..6}; do terminus remote:drush portlandor.$CIRCLE_BRANCH -- cr && break || sleep 10; done
+
+            # try to run drush cim
+            result=0
+            for i in {1..6}; 
+            do
+              terminus remote:drush portlandor.$CIRCLE_BRANCH -- cim -y
+              result=$?
+              if [ "$result" = "0" ]; then break; fi
+              sleep 10; 
+            done
+            if (($result > 0)); then exit 1; fi
+
+            # try drush updb
+            result=0
+            for i in {1..6}; 
+            do
+              terminus remote:drush portlandor.$CIRCLE_BRANCH -- -y updb
+              result=$?
+              if [ "$result" = "0" ]; then break; fi
+              sleep 10; 
+            done
+            if (($result > 0)); then exit 1; fi
+            # try drush entup
+            result=0
+            for i in {1..6}; 
+            do
+              terminus remote:drush portlandor.$CIRCLE_BRANCH -- -y entup
+              result=$?
+              if [ "$result" = "0" ]; then break; fi
+              sleep 10; 
+            done
+            if (($result > 0)); then exit 1; fi
+            # try drush cr
+            result=0
+            for i in {1..6}; 
+            do
+              terminus remote:drush portlandor.$CIRCLE_BRANCH -- cr
+              result=$?
+              if [ "$result" = "0" ]; then break; fi
+              sleep 10; 
+            done
+            if (($result > 0)); then exit 1; fi
+
             # echo 'node_access_rebuild();' | $(terminus drush portlandor.$CIRCLE_BRANCH -- php-script)
           fi
     - run:
