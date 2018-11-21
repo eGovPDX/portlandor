@@ -8,39 +8,50 @@ use Drupal\group\Entity\GroupContent;
  *
  * @ingroup portland
  */
-function portland_token_info() {
-  $tokens = [];
+function portland_token_info()
+{
+  $info = [];
 
-  $tokens['types']['server'] = [
+  $info['types']['server'] = [
     'name' => t('Server vars'),
     'description' => t('Tokens from _SERVER.'),
   ];
 
-  $tokens['tokens']['server']['HTTP_REFERER'] = [
+  $info['tokens']['server']['HTTP_REFERER'] = [
     'name' => t('HTTP_REFERER'),
-    'description' => t("Refferer header value from _SERVER"),
+    'description' => t("Referrer header value from _SERVER"),
   ];
 
-  $tokens['tokens']['server']['HTTP_USER_AGENT'] = [
+  $info['tokens']['server']['HTTP_USER_AGENT'] = [
     'name' => t('HTTP_USER_AGENT'),
     'description' => t("User-agent header value from _SERVER"),
   ];
 
-  $tokens['tokens']['media']['group'] = [
+  $info['tokens']['media']['group'] = [
     'name' => t('Group'),
     'description' => t('The parent group.'),
     'type' => 'group',
   ];
 
   if (\Drupal::moduleHandler()->moduleExists('token')) {
-    $tokens['tokens']['media']['groups'] = [
+    $info['tokens']['media']['groups'] = [
       'name' => t('Groups'),
       'description' => t("An array of all the node parent groups."),
       'type' => 'array',
     ];
   }
 
-  return $tokens;
+  $info['types']['portland'] = [
+    'name' => t('Portland'),
+    'description' => t('Custom tokens from Portland module'),
+  ];
+
+  $info['tokens']['portland']['title'] = [
+    'name' => t('Portland title'),
+    'description' => 'A token to display standardized page titles for Portland.gov',
+  ];
+
+  return $info;
 }
 
 /**
@@ -48,7 +59,8 @@ function portland_token_info() {
  *
  * @ingroup portland
  */
-function portland_tokens($type, $tokens, array $data = array(), array $options = array(), BubbleableMetadata $bubbleable_metadata) {
+function portland_tokens($type, $tokens, array $data = array(), array $options = array(), BubbleableMetadata $bubbleable_metadata)
+{
   $replacements = [];
   $sanitize = !empty($options['sanitize']);
 
@@ -93,6 +105,28 @@ function portland_tokens($type, $tokens, array $data = array(), array $options =
       $replacements[$original] = $_SERVER[$name];
       if ($sanitize) {
         $replacements[$original] = filter_xss($replacements[$original]);
+      }
+    }
+  }
+
+  if ($type == 'portland') {
+    foreach ($tokens as $name => $original) {
+      switch ($name) {
+        case 'title':
+          $route_match = \Drupal::routeMatch();
+          $request = \Drupal::request();
+          if ($route = \Drupal::routeMatch()->getCurrentRouteMatch()->getRouteObject()) {
+            $title = $route->getDefault('_title');
+            if (isset($title)) {
+              if (is_array($title)) {
+                // $title may be dynamic
+                $title = $title['#markup'];
+              }
+              $new_title = portland_generate_extended_title_for_group_views($title, $route_match);
+              $replacements[$original] = $new_title;
+            }
+          }
+          break;
       }
     }
   }
