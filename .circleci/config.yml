@@ -122,45 +122,34 @@ behat_tests: &behat_tests
             # Wake up the DEV site and must wait for 30s
             terminus env:wake portlandor.dev && sleep 30s
             # try to run drush cim
-            result=0
+            set +e
             for i in {1..12};
             do
+              if [ "$i" = "12" ]; then set -e; fi
               terminus remote:drush portlandor.dev -- cim -y
-              result=$?
-              if [ "$result" = "0" ]; then break; fi
               sleep 10; 
             done
-            if (($result > 0)); then exit 1; fi
             # try drush updb
-            result=0
             for i in {1..12};
             do
+              if [ "$i" = "12" ]; then set -e; fi
               terminus remote:drush portlandor.dev -- -y updb
-              result=$?
-              if [ "$result" = "0" ]; then break; fi
               sleep 10; 
             done
-            if (($result > 0)); then exit 1; fi
             # try drush entup
-            result=0
             for i in {1..12}; 
             do
+              if [ "$i" = "12" ]; then set -e; fi
               terminus remote:drush portlandor.dev -- -y entup
-              result=$?
-              if [ "$result" = "0" ]; then break; fi
               sleep 10; 
             done
-            if (($result > 0)); then exit 1; fi
             # try drush cr
-            result=0
             for i in {1..12}; 
             do
+              if [ "$i" = "12" ]; then set -e; fi
               terminus remote:drush portlandor.dev -- cr
-              result=$?
-              if [ "$result" = "0" ]; then break; fi
               sleep 10; 
             done
-            if (($result > 0)); then exit 1; fi
             # echo 'node_access_rebuild();' | $(terminus remote:drush portlandor.dev -- php-script)
             # After success deployment to DEV, remove the multidev site if this is a merge of a PR
             # Read the last Git log in the master branch. Get the branch name at the end of the log.
@@ -212,47 +201,35 @@ behat_tests: &behat_tests
             # Clear cache. Import config files
 
             # try to run drush cim
-            result=0
+            # ignore errors only check error at the last try of drush commands
+            set +e
             for i in {1..6}; 
             do
+              if [ "$i" = "6" ]; then set -e; fi
               terminus remote:drush portlandor.$CIRCLE_BRANCH -- cim -y
-              result=$?
-              if [ "$result" = "0" ]; then break; fi
               sleep 10; 
             done
-            if (($result > 0)); then exit 1; fi
-
             # try drush updb
-            result=0
             for i in {1..6}; 
             do
+              if [ "$i" = "6" ]; then set -e; fi
               terminus remote:drush portlandor.$CIRCLE_BRANCH -- -y updb
-              result=$?
-              if [ "$result" = "0" ]; then break; fi
               sleep 10; 
             done
-            if (($result > 0)); then exit 1; fi
             # try drush entup
-            result=0
             for i in {1..6}; 
             do
+              if [ "$i" = "6" ]; then set -e; fi
               terminus remote:drush portlandor.$CIRCLE_BRANCH -- -y entup
-              result=$?
-              if [ "$result" = "0" ]; then break; fi
               sleep 10; 
             done
-            if (($result > 0)); then exit 1; fi
             # try drush cr
-            result=0
             for i in {1..6}; 
             do
+              if [ "$i" = "6" ]; then set -e; fi
               terminus remote:drush portlandor.$CIRCLE_BRANCH -- cr
-              result=$?
-              if [ "$result" = "0" ]; then break; fi
               sleep 10; 
             done
-            if (($result > 0)); then exit 1; fi
-
             # echo 'node_access_rebuild();' | $(terminus drush portlandor.$CIRCLE_BRANCH -- php-script)
           fi
     - run:
