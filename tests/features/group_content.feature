@@ -35,4 +35,4 @@ Feature: Members can manage group content
   Scenario: Visit group media
     Given I am logged in as user "marty.member@portlandoregon.gov"
     When I visit "/group/14/media"
-    Then I should see "Transportation media"
+    Then I should see "Transportation"

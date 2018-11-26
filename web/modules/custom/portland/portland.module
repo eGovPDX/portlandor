@@ -550,3 +550,55 @@ function portland_handle_bulk_generate($form, $form_state) {
         }
     }
 }
+
+/**
+ * If loaded page is one of the specified group views, get the group name and
+ * add it to the html title by setting $vars['head_title']['title']. This prevents
+ * duplicate page titles within groups for views such as Services, Guides, etc.
+ * The title format is "[page title] | [group] | [site name]"
+ *
+ * @param [type] $vars
+ * @return void
+ */
+function portland_set_extended_title_for_group_views(&$vars)
+{
+    $route_match = \Drupal::routeMatch();
+    $new_title = portland_generate_extended_title_for_group_views($vars['page']['#title'], $route_match);
+    $vars['head_title']['title'] = $new_title;
+    $vars['title_override_set'] = true;
+}
+
+function portland_generate_extended_title_for_group_views($orig_title, $route_match) {
+    // get the view id from the path
+    $view_id = $route_match->getParameter('view_id');
+    $taxonomy_term = $route_match->getParameter('taxonomy_term');
+    $site_name = \Drupal::config('system.site')->get('name');
+
+    if (!isset($view_id) && isset($taxonomy_term)) {
+        // it's a taxonomy term page, use the term name in the title to prevent duplicates
+        $tid = $taxonomy_term->id();
+        $group_title = \Drupal::entityTypeManager()->getStorage('taxonomy_term')->load($tid)->name->value;
+        return "$orig_title | $group_title | $site_name";
+    }
+
+    switch ($view_id) {
+        case "group_programs":
+        case "group_projects":
+        case "group_events":
+        case "group_guides":
+        case "group_information":
+        case "group_media":
+        case "group_news":
+        case "group_services":
+            $group_id = $route_match->getParameter('group'); // sometimes the group object is returned; sometimes just the id string
+            $type = is_string($group_id) ? "string" : get_class($group_id);
+            $group_entity = $type == "Drupal\group\Entity\Group" ? $group_id : Drupal\group\Entity\Group::load($group_id);
+            if (isset($group_entity)) {
+                $page_title = $orig_title;
+                $group_title = $group_entity->label();
+                return "$page_title | $group_title | $site_name";
+            }
+            break;
+    }
+    return "$orig_title | $site_name";
+}
