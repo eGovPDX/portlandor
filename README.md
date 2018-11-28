@@ -149,7 +149,6 @@ Make modifications to the desired scss files in the theme. Never modify style.cs
 
 1. Open a second terminal window or tab so this process can run in the background outside of your regular work in git and the filesystem for your local environment.
 1. In the root directory of the theme (i.e. /web/themes/custom/cloudy), run `gulp` to launch the gulp server, which watches for changes and rebuilds the CSS and JS whenever the source files are updated.
-1. Commit both the updated source files and the rebuilt CSS and JS files using the standard project workflow.
 
 #### Troubleshooting
 
