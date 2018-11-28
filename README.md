@@ -145,9 +145,10 @@ There is a separate build process that is run in local development environments,
 
 ### Using gulp.js to build CSS files
 
-1. Make modifications to the desired scss files in the theme. Never modify styles.css directly.
-1. In the root directory of the theme, run `gulp sass` to build just the CSS a single time, or run `gulp js` to build just the JS files.
-1. OR, in the root directory of the theme, run `gulp` to launch the gulp server, which watches for changes and rebuilds the CSS and JS whenever the source files are updated.
+Make modifications to the desired scss files in the theme. Never modify style.css directly. We build style.css as part of our CI, you should run gulp locally to compile your scss files into style.css.
+
+1. Open a second terminal window or tab so this process can run in the background outside of your regular work in git and the filesystem for your local environment.
+1. In the root directory of the theme (i.e. /web/themes/custom/cloudy), run `gulp` to launch the gulp server, which watches for changes and rebuilds the CSS and JS whenever the source files are updated.
 1. Commit both the updated source files and the rebuilt CSS and JS files using the standard project workflow.
 
 #### Troubleshooting
