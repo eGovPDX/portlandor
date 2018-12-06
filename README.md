@@ -28,8 +28,6 @@ The .lando.yml file included in this repo will set you up to connect to the corr
 2. Log in to Pantheon and generate a machine token from My Dashboard > Account > Machine Tokens.
 3. Run `lando terminus auth:login --machine-token=[YOUR MACHINE TOKEN]`, this logs your Lando instance into our Pantheon account.
 4. To make sure you don't hit rate limits with composer, log into Github and generate a personal access token and add it to your lando instance by using `lando composer config --global --auth github-oauth.github.com "$COMPOSER_TOKEN"`. (You should replace $COMPOSER_TOKEN with your generated token.) There is a handy tutorial for this at https://coderwall.com/p/kz4egw/composer-install-github-rate-limiting-work-around
-6. Add a settings.local.php
-    - Ask a teammate for a copy of a sane file to put at `/web/sites/default/settings.local.php`. Depending on whether you do a lot of theming you may want that file to turn on twig debugging and turn off several layers of caching.
 5. You have two options to get your database and files set up:
     1. Lando quick start:
         1. Run `lando pull` to get the DB and files from pantheon. This process takes a while. #grabsomecoffee
