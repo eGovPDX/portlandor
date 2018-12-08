@@ -1,0 +1,84 @@
+{#
+/**
+ * @file
+ * Theme override for a field.
+ *
+ * To override output, copy the "field.html.twig" from the templates directory
+ * to your theme's directory and customize it, just like customizing other
+ * Drupal templates such as page.html.twig or node.html.twig.
+ *
+ * Instead of overriding the theming for all fields, you can also just override
+ * theming for a subset of fields using
+ * @link themeable Theme hook suggestions. @endlink For example,
+ * here are some theme hook suggestions that can be used for a field_foo field
+ * on an article node type:
+ * - field--node--field-foo--article.html.twig
+ * - field--node--field-foo.html.twig
+ * - field--node--article.html.twig
+ * - field--field-foo.html.twig
+ * - field--text-with-summary.html.twig
+ * - field.html.twig
+ *
+ * Available variables:
+ * - attributes: HTML attributes for the containing element.
+ * - label_hidden: Whether to show the field label or not.
+ * - title_attributes: HTML attributes for the title.
+ * - label: The label for the field.
+ * - multiple: TRUE if a field can contain multiple items.
+ * - items: List of all the field items. Each item contains:
+ *   - attributes: List of HTML attributes for each item.
+ *   - content: The field item's content.
+ * - entity_type: The entity type to which the field belongs.
+ * - field_name: The name of the field.
+ * - field_type: The type of the field.
+ * - label_display: The display settings for the label.
+ *
+ * @see template_preprocess_field()
+ */
+#}
+{% set margin = margin|default('0') %}
+
+{% set classes = classes|default([]) %}
+
+{%
+  set field_classes = [
+    'field',
+    'field--name-' ~ field_name|clean_class,
+    'field--type-' ~ field_type|clean_class,
+    'field--label-' ~ label_display,
+    'mb-' ~ margin,
+    label_display == 'inline' ? 'd-flex'
+  ]
+%}
+
+{%
+  set title_classes = title_classes|default([
+    label_display == 'visually_hidden' ? 'sr-only',
+    label_display == 'inline' ? 'mr-1',
+  ])
+%}
+
+{%
+  set item_classes = item_classes|default([
+    label_display == 'inline' ? 'mr-1',
+  ])
+%}
+
+{% spaceless %}
+  {% block field %}
+  <div{{ attributes.addClass(field_classes).addClass(classes) }}>
+    {% block label %}
+      {%- if not label_hidden -%}
+        <label{{ title_attributes.addClass(title_classes) }}>{{ label|render }}</label>
+      {%- endif -%}
+    {% endblock %}
+    {% block content %}
+      {%- for item in items -%}
+        <div{{ item.attributes.addClass(item_classes) }}>
+          {{ item.content }}
+        </div>
+      {%- endfor -%}
+    {% endblock %}
+  </div>
+  {% endblock %}
+{% endspaceless %}

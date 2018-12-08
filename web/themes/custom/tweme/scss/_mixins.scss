@@ -1,0 +1,151 @@
+
+/* EXTENDS */
+
+//
+// FontAwesome icon
+//
+%font-awesome-icon {
+  display: inline-block;
+  vertical-align: middle;
+  font-style: normal;
+  font-variant: normal;
+  text-rendering: auto;
+  -webkit-font-smoothing: antialiased;
+  font-family: "Font Awesome 5 Free";
+  font-size: $font-size-sm;
+  font-weight: 900;
+  padding-left: .5rem;
+}
+
+/* MIXINS */
+
+//
+// Alternate buttons
+//
+@each $color,
+$value in $theme-colors {
+  .btn-#{$color} a {
+    @include button-variant($value, $value);
+  }
+}
+
+@each $color,
+$value in $theme-colors {
+  .btn-outline-#{$color} a {
+    @include button-outline-variant($value);
+  }
+}
+
+//
+// Link states
+//
+@mixin links ($link, $visited, $hover, $active) {
+  & {
+      color: $link;
+      &:visited {
+          color: $visited;
+      }
+      &:hover {
+          color: $hover;
+      }
+      &:active, &:focus {
+          color: $active;
+      }
+  }
+}
+
+// Function That Checks For A Valid Type Scale Value
+//
+// It is important that you are not restricted to only
+// the values in the map as the may not be suitable for
+// your design.
+//
+// For this reason, the function below will check if
+// the value passed to the mixin is one of the values
+// set in the $type-scales map or it must be a unitless
+// value to create the type scale.
+@function check-type-scale-value($scale) {
+
+	// Check $scale against the values in $type-scales.
+	@if map-has-key($type-scales, $scale) {
+
+		// If the value of $scale is defined in
+		// $type-scales, return the value of $scale.
+	    @return map-get($type-scales, $scale);
+
+	// If the value of $scale is not defined in the
+	// $type-scales map, check if the value is a number
+	// and that the number is a unitless value.
+	} @else if type-of($scale) == number and unitless($scale) {
+
+		// If the value of $scale is a unitless number,
+		// return the number.
+		@return $scale;
+
+	// Lastly, should the value passed to $scale be neither
+	// found in the $type-scales map nor a unitless number,
+	// throw a Sass error to explain the issue.
+	} @else {
+
+		// Throw a Sass error if the $scale value is
+		// neither found in the $type-scales map nor
+		// a unitless number.
+		@error "Sorry, `#{$scale}` is not a unitless number value or a pre-defined key in the $type-scales map.";
+	}
+
+}
+
+// Mixins That Create Font Sizes
+//
+// Below are two mixin's that do very similar things.
+// They both take a type scale value either from the $type-scales
+// map or a custom unitless number.
+//
+// From there it uses the checkTypeScaleValue() function to
+// evaluate the $scale value and then create the font sizes.
+@mixin create-heading-type-scale($scale) {
+
+	// Check the $scale value and store in a variable to be
+	// used when calculating the font sizes.
+	$the-heading-type-scale: check-type-scale-value($scale);
+
+	// Starting from h6, multiply each previous value by the scale
+	// to get the next font size
+	$font-size-h6 : $font-size-base;
+	$font-size-h5 : $font-size-h6 * $the-heading-type-scale;
+	$font-size-h4 : $font-size-h5 * $the-heading-type-scale;
+	$font-size-h3 : $font-size-h4 * $the-heading-type-scale;
+	$font-size-h2 : $font-size-h3 * $the-heading-type-scale;
+	$font-size-h1 : $font-size-h2 * $the-heading-type-scale;
+	// $font-size-display-base is made global to allow for accessing the
+	// varibale in the next mixin.
+	$font-size-display-base : $font-size-h1 !global;
+
+	// Add the created font sizes to the elements and classes
+	h1, .h1 { font-size: $font-size-h1; }
+	h2, .h2 { font-size: $font-size-h2; }
+	h3, .h3 { font-size: $font-size-h3; }
+	h4, .h4 { font-size: $font-size-h4; }
+	h5, .h5 { font-size: $font-size-h5; }
+	h6, .h6 { font-size: $font-size-h6; }
+
+}
+
+@mixin create-display-type-scale($scale) {
+
+	// Store default type scale in a variable for calculations
+	$the-display-type-scale: check-type-scale-value($scale);
+
+	// Create variables to reference the previous font size
+	$font-size-display-4 : $font-size-display-base + $font-size-base;
+	$font-size-display-3 : $font-size-display-4 * $the-display-type-scale;
+	$font-size-display-2 : $font-size-display-3 * $the-display-type-scale;
+	$font-size-display-1 : $font-size-display-2 * $the-display-type-scale;
+
+	// Add the created font sizes to the elements and classes
+	.display-4 { font-size: $font-size-display-4; }
+	.display-3 { font-size: $font-size-display-3; }
+	.display-2 { font-size: $font-size-display-2; }
+	.display-1 { font-size: $font-size-display-1; }
+
+}
