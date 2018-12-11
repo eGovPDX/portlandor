@@ -8,14 +8,13 @@ dependencies:
     - media.type.video
     - user.role.authenticated
   module:
-    - content_moderation
     - group
     - media
     - user
 id: my_media
 label: 'My media'
 module: views
-description: 'All media created by the current user.'
+description: 'All media in all groups where the current user has membership.'
 tag: ''
 base_table: media_field_data
 base_field: mid
@@ -84,22 +83,14 @@ display:
           description: ''
           columns:
             name: name
-            gid: gid
             bundle: bundle
-            moderation_state: moderation_state
+            status: status
+            gid: gid
             created: created
             changed_1: changed_1
-            delete_media: delete_media
-            edit_media: edit_media
+            operations: operations
           info:
             name:
-              sortable: true
-              default_sort_order: asc
-              align: ''
-              separator: ''
-              empty_column: false
-              responsive: ''
-            gid:
               sortable: true
               default_sort_order: asc
               align: ''
@@ -113,7 +104,14 @@ display:
               separator: ''
               empty_column: false
               responsive: ''
-            moderation_state:
+            status:
+              sortable: true
+              default_sort_order: asc
+              align: ''
+              separator: ''
+              empty_column: false
+              responsive: ''
+            gid:
               sortable: true
               default_sort_order: asc
               align: ''
@@ -134,21 +132,12 @@ display:
               separator: ''
               empty_column: false
               responsive: ''
-            delete_media:
-              sortable: false
-              default_sort_order: asc
+            operations:
               align: ''
               separator: ''
               empty_column: false
               responsive: ''
-            edit_media:
-              sortable: false
-              default_sort_order: asc
-              align: ''
-              separator: ''
-              empty_column: false
-              responsive: ''
-          default: changed_1
+          default: name
           empty_table: false
       row:
         type: fields
@@ -157,57 +146,10 @@ display:
           id: name
           table: media_field_data
           field: name
-          entity_type: media
-          entity_field: media
-          alter:
-            alter_text: false
-            make_link: false
-            absolute: false
-            trim: false
-            word_boundary: false
-            ellipsis: false
-            strip_tags: false
-            html: false
-          hide_empty: false
-          empty_zero: false
-          settings:
-            link_to_entity: true
-          plugin_id: field
           relationship: none
           group_type: group
           admin_label: ''
-          label: Name
-          exclude: false
-          element_type: ''
-          element_class: ''
-          element_label_type: ''
-          element_label_class: ''
-          element_label_colon: true
-          element_wrapper_type: ''
-          element_wrapper_class: ''
-          element_default_classes: true
-          empty: ''
-          hide_alter_empty: true
-          click_sort_column: value
-          type: string
-          group_column: value
-          group_columns: {  }
-          group_rows: true
-          delta_limit: 0
-          delta_offset: 0
-          delta_reversed: false
-          delta_first_last: false
-          multi_type: separator
-          separator: ', '
-          field_api_classes: false
-        gid:
-          id: gid
-          table: group_content_field_data
-          field: gid
-          relationship: group_content
-          group_type: group
-          admin_label: ''
-          label: 'Parent group'
+          label: Title
           exclude: false
           alter:
             alter_text: false
@@ -227,8 +169,8 @@ display:
             target: ''
             nl2br: false
             max_length: 0
-            word_boundary: true
-            ellipsis: true
+            word_boundary: false
+            ellipsis: false
             more_link: false
             more_link_text: ''
             more_link_path: ''
@@ -248,11 +190,11 @@ display:
           hide_empty: false
           empty_zero: false
           hide_alter_empty: true
-          click_sort_column: target_id
-          type: entity_reference_label
+          click_sort_column: value
+          type: string
           settings:
-            link: true
-          group_column: target_id
+            link_to_entity: true
+          group_column: value
           group_columns: {  }
           group_rows: true
           delta_limit: 0
@@ -262,8 +204,8 @@ display:
           multi_type: separator
           separator: ', '
           field_api_classes: false
-          entity_type: group_content
-          entity_field: gid
+          entity_type: media
+          entity_field: media
           plugin_id: field
         bundle:
           id: bundle
@@ -330,14 +272,14 @@ display:
           entity_type: media
           entity_field: bundle
           plugin_id: field
-        moderation_state:
-          id: moderation_state
+        status:
+          id: status
           table: media_field_data
-          field: moderation_state
+          field: status
           relationship: none
           group_type: group
           admin_label: ''
-          label: 'Moderation state'
+          label: Published
           exclude: false
           alter:
             alter_text: false
@@ -379,8 +321,11 @@ display:
           empty_zero: false
           hide_alter_empty: true
           click_sort_column: value
-          type: content_moderation_state
-          settings: {  }
+          type: boolean
+          settings:
+            format: yes-no
+            format_custom_true: ''
+            format_custom_false: ''
           group_column: value
           group_columns: {  }
           group_rows: true
@@ -392,6 +337,72 @@ display:
           separator: ', '
           field_api_classes: false
           entity_type: media
+          entity_field: status
+          plugin_id: field
+        gid:
+          id: gid
+          table: group_content_field_data
+          field: gid
+          relationship: group_content
+          group_type: group
+          admin_label: ''
+          label: Group
+          exclude: false
+          alter:
+            alter_text: false
+            text: ''
+            make_link: false
+            path: ''
+            absolute: false
+            external: false
+            replace_spaces: false
+            path_case: none
+            trim_whitespace: false
+            alt: ''
+            rel: ''
+            link_class: ''
+            prefix: ''
+            suffix: ''
+            target: ''
+            nl2br: false
+            max_length: 0
+            word_boundary: true
+            ellipsis: true
+            more_link: false
+            more_link_text: ''
+            more_link_path: ''
+            strip_tags: false
+            trim: false
+            preserve_tags: ''
+            html: false
+          element_type: ''
+          element_class: ''
+          element_label_type: ''
+          element_label_class: ''
+          element_label_colon: true
+          element_wrapper_type: ''
+          element_wrapper_class: ''
+          element_default_classes: true
+          empty: ''
+          hide_empty: false
+          empty_zero: false
+          hide_alter_empty: true
+          click_sort_column: target_id
+          type: entity_reference_label
+          settings:
+            link: true
+          group_column: target_id
+          group_columns: {  }
+          group_rows: true
+          delta_limit: 0
+          delta_offset: 0
+          delta_reversed: false
+          delta_first_last: false
+          multi_type: separator
+          separator: ', '
+          field_api_classes: false
+          entity_type: group_content
+          entity_field: gid
           plugin_id: field
         created:
           id: created
@@ -527,14 +538,14 @@ display:
           entity_type: media
           entity_field: changed
           plugin_id: field
-        delete_media:
-          id: delete_media
+        operations:
+          id: operations
           table: media
-          field: delete_media
+          field: operations
           relationship: none
           group_type: group
           admin_label: ''
-          label: Delete
+          label: Operations
           exclude: false
           alter:
             alter_text: false
@@ -575,64 +586,9 @@ display:
           hide_empty: false
           empty_zero: false
           hide_alter_empty: true
-          text: delete
-          output_url_as_text: false
-          absolute: false
+          destination: false
           entity_type: media
-          plugin_id: entity_link_delete
-        edit_media:
-          id: edit_media
-          table: media_field_revision
-          field: edit_media
-          relationship: none
-          group_type: group
-          admin_label: ''
-          label: Edit
-          exclude: false
-          alter:
-            alter_text: false
-            text: ''
-            make_link: false
-            path: ''
-            absolute: false
-            external: false
-            replace_spaces: false
-            path_case: none
-            trim_whitespace: false
-            alt: ''
-            rel: ''
-            link_class: ''
-            prefix: ''
-            suffix: ''
-            target: ''
-            nl2br: false
-            max_length: 0
-            word_boundary: true
-            ellipsis: true
-            more_link: false
-            more_link_text: ''
-            more_link_path: ''
-            strip_tags: false
-            trim: false
-            preserve_tags: ''
-            html: false
-          element_type: ''
-          element_class: ''
-          element_label_type: ''
-          element_label_class: ''
-          element_label_colon: true
-          element_wrapper_type: ''
-          element_wrapper_class: ''
-          element_default_classes: true
-          empty: ''
-          hide_empty: false
-          empty_zero: false
-          hide_alter_empty: true
-          text: edit
-          output_url_as_text: false
-          absolute: false
-          entity_type: media
-          plugin_id: entity_link_edit
+          plugin_id: entity_operations
       filters:
         name:
           id: name
@@ -721,38 +677,105 @@ display:
           entity_type: media
           entity_field: bundle
           plugin_id: bundle
-      sorts:
-        created:
-          id: created
+        status:
+          id: status
           table: media_field_data
-          field: created
-          order: DESC
-          entity_type: media
-          entity_field: created
-          plugin_id: date
+          field: status
           relationship: none
           group_type: group
           admin_label: ''
-          exposed: false
+          operator: '='
+          value: All
+          group: 1
+          exposed: true
           expose:
+            operator_id: ''
+            label: Published
+            description: ''
+            use_operator: false
+            operator: status_op
+            identifier: status
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+              anonymous: '0'
+              administrator: '0'
+              sitewide_editor: '0'
+          is_grouped: false
+          group_info:
             label: ''
-          granularity: second
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
+          entity_type: media
+          entity_field: status
+          plugin_id: boolean
+        label:
+          id: label
+          table: groups_field_data
+          field: label
+          relationship: gid
+          group_type: group
+          admin_label: ''
+          operator: word
+          value: ''
+          group: 1
+          exposed: true
+          expose:
+            operator_id: label_op
+            label: 'Group name contains'
+            description: ''
+            use_operator: false
+            operator: label_op
+            identifier: label
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+              anonymous: '0'
+              administrator: '0'
+              sitewide_editor: '0'
+            placeholder: ''
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
+          entity_type: group
+          entity_field: label
+          plugin_id: string
+      sorts: {  }
       title: 'My media'
-      header: {  }
+      header:
+        result:
+          id: result
+          table: views
+          field: result
+          relationship: none
+          group_type: group
+          admin_label: ''
+          empty: false
+          content: '@total found'
+          plugin_id: result
       footer: {  }
       empty: {  }
       relationships:
-        uid:
-          id: uid
-          table: media_field_data
-          field: uid
-          relationship: none
-          group_type: group
-          admin_label: User
-          required: true
-          entity_type: media
-          entity_field: uid
-          plugin_id: standard
         group_content:
           id: group_content
           table: media_field_data
@@ -767,12 +790,61 @@ display:
             'group_media:video': 'group_media:video'
           entity_type: media
           plugin_id: group_content_to_entity_reverse
+        gid:
+          id: gid
+          table: group_content_field_data
+          field: gid
+          relationship: group_content
+          group_type: group
+          admin_label: Group
+          required: true
+          entity_type: group_content
+          entity_field: gid
+          plugin_id: standard
+        group_content_id:
+          id: group_content_id
+          table: groups_field_data
+          field: group_content_id
+          relationship: gid
+          group_type: group
+          admin_label: 'Group content'
+          required: true
+          group_content_plugins:
+            'group_media:audio': 'group_media:audio'
+            'group_media:document': 'group_media:document'
+            'group_media:image': 'group_media:image'
+            'group_media:video': 'group_media:video'
+            group_membership: group_membership
+            'group_node:alert': '0'
+            'group_node:building': '0'
+            'group_node:city_service': '0'
+            'group_node:event': '0'
+            'group_node:guide': '0'
+            'group_node:information': '0'
+            'group_node:news': '0'
+            'group_node:notification': '0'
+            'group_node:service_location': '0'
+            'group_node:top_search': '0'
+          entity_type: group
+          plugin_id: group_to_group_content
+        gc__user:
+          id: gc__user
+          table: group_content_field_data
+          field: gc__user
+          relationship: group_content_id
+          group_type: group
+          admin_label: 'Group content User'
+          required: true
+          group_content_plugins:
+            group_membership: group_membership
+          entity_type: group_content
+          plugin_id: group_content_to_entity
       arguments:
         uid:
           id: uid
           table: users_field_data
           field: uid
-          relationship: uid
+          relationship: gc__user
           group_type: group
           admin_label: ''
           default_action: default
