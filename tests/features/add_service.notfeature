@@ -13,7 +13,7 @@ Feature: Add a service feature
     And I should see "Related content"
     And I should see "Legacy path"
 
-    When I press "Add Step"
+    When I press "Add step"
     And I wait for AJAX to finish
     Then I should see "Step"
 
@@ -24,4 +24,4 @@ Feature: Add a service feature
       Test revision message
       """
     And I press "Save"
-    Then I should see an ".alert.alert-success" element
+    Then I should see "Service Title has been created."

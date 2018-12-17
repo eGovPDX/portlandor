@@ -6,7 +6,7 @@ use Drupal\Core\Controller\ControllerBase;
 use Drupal\Core\Entity\EntityFormBuilderInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Render\RendererInterface;
-use Drupal\gmedia\Controller\GroupMediaController;
+use Drupal\groupmedia\Controller\GroupMediaController;
 use Drupal\group\Entity\GroupInterface;
 use Drupal\group\Plugin\GroupContentEnablerManagerInterface;
 use Drupal\user\PrivateTempStoreFactory;
