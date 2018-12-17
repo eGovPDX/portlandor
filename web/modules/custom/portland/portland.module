@@ -25,6 +25,7 @@ const GROUP_CONTENT_TYPE_PLURAL = [
     "image" => ["images"],
     "document" => ["documents"],
     "video" => ["videos"],
+    "audio" => ["audios"],
     "media" => ["media"],
     "notification" => ["notifications"],
 ];
@@ -247,7 +248,7 @@ function portland_group_update(GroupInterface $group) {
         foreach ($installedContentTypes as $pluginType) {
             $contentType = $pluginType->getPluginDefinition()['entity_bundle'];
             // Skip if the content type is not installed with the group type.
-            if($contentType === false) return;
+            if($contentType === false) continue;
             $contentTypePluralArray = isset(GROUP_CONTENT_TYPE_PLURAL[$contentType]) ? GROUP_CONTENT_TYPE_PLURAL[$contentType] : [$contentType];
 
             foreach( $contentTypePluralArray as $contentTypePlural ) {
@@ -521,7 +522,7 @@ function portland_form_pathauto_bulk_update_form_alter(&$form, $form_state) {
 function portland_handle_bulk_generate($form, $form_state) {
     $s = $form_state;
     // If taxonomy_term is selected
-    if($form_state->getValues()['update']['canonical_entities:taxonomy_term'] == 'canonical_entities:taxonomy_term') {
+    if($form_state->getValues()['update']['canonical_entities:taxonomy_term'] === 'canonical_entities:taxonomy_term') {
         // Generate aliases for "term/content_type"
         $contentTypes = ['guides', 'bureaus', 'programs', 'projects'];
         $lang = \Drupal::languageManager()->getCurrentLanguage()->getId();
@@ -546,6 +547,23 @@ function portland_handle_bulk_generate($form, $form_state) {
 
                 // // save new or updated alias
                 $path = \Drupal::service('path.alias_storage')->save($system_path, $new_content_alias, $lang);
+            }
+        }
+    }
+    else if($form_state->getValues()['update']['canonical_entities:group'] === 'canonical_entities:group') {
+        $groupTypes = ['bureau_office', 'elected_official', 'projects', 'programs'];
+        foreach ($groupTypes as $groupType) {
+            // Get all groups of this type. E.g. bureau_office
+            $grps = \Drupal::entityTypeManager()
+                ->getStorage('group')
+                ->loadByProperties(['type' => $groupType]);
+            foreach($grps as $group) {
+                $installedContentTypes = $group->getGroupType()->getInstalledContentPlugins();
+                $lang = \Drupal::languageManager()->getCurrentLanguage()->getId();
+                foreach ($installedContentTypes as $pluginType) {
+                    $contentType = $pluginType->getPluginDefinition()['entity_bundle'];
+                    createAliasForGroupContent($group, $contentType, $lang);
+                }
             }
         }
     }

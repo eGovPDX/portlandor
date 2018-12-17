@@ -11,10 +11,10 @@ Feature: Members can manage group content
 
     When I click "+ Add Content"
     Then I should see "Service"
-    And I should see "Event"
-    And I should see "Guide"
-    And I should see "News"
-    And I should see "Information"
+    # And I should see "Event"
+    # And I should see "Guide"
+    # And I should see "News"
+    # And I should see "Information"
 
   Scenario: Visit group content
     Given I am logged in as user "marty.member@portlandoregon.gov"
