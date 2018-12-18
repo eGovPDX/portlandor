@@ -10,7 +10,6 @@ Feature: Edit a service feature
 
   Scenario: Access edit form
     Then I should see "Title"
-    And I should see "Step title"
 
   Scenario: Submit edit form
     When I fill in "edit-revision-log-0-value" with:
@@ -18,8 +17,7 @@ Feature: Edit a service feature
       Test revision message
       """
     And I press "Save"
-    Then I should see a ".alert.alert-success" element
-    And I should not see a ".alert.alert-danger" element
+    Then I should see "has been updated."
 
   Scenario: Archive a service
     When I select "Archived" from "edit-moderation-state-0-state"
@@ -28,10 +26,8 @@ Feature: Edit a service feature
       Test revision message
       """
     And I press "Save"
-    Then I should see a ".alert.alert-success" element
-    And I should see "Archived"
+    Then I should see "Archived"
 
     When I select "Published" from "edit-new-state"
     And I press "Apply"
-    Then I should see a ".alert.alert-success" element
-    And I should see "The moderation state has been updated."
+    Then I should see "The moderation state has been updated."
