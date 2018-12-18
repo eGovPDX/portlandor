@@ -10,9 +10,7 @@ Feature: Add media feature
     And I fill in "Name" with "Test audio"
     And I fill in "Audio Url" with "https://www.youtube.com/watch?v=9bZkp7q19f0"
     And I press "Save"
-    Then I should see an ".alert.alert-success" element
-    And I should not see a ".alert.alert-danger" element
-    And I should see "Test audio"
+    And I should see "Audio Test audio has been created."
 
   Scenario: Access video creation page and create video without error
     Given I am logged in as user "marty.member@portlandoregon.gov"
@@ -20,6 +18,4 @@ Feature: Add media feature
     And I fill in "Name" with "Test video"
     And I fill in "Video URL" with "https://www.youtube.com/watch?v=9bZkp7q19f0"
     And I press "Save"
-    Then I should see an ".alert.alert-success" element
-    And I should not see a ".alert.alert-danger" element
-    And I should see "Test video"
+    And I should see "Video Test video has been created."
