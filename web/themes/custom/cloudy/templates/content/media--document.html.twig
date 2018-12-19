@@ -1,7 +1,7 @@
 {#
 /**
  * @file
- * Embedded display for a media item.
+ * Default display template for document type media items.
  *
  * Available variables:
  * - media: The media item, with limited access to object properties and
@@ -36,18 +36,23 @@
 {% set kbytes = bytes / 1024 %}
 {% set mbytes = kbytes / 1024 %}
 {% if mbytes > 1 %}
-  {% set size = (mbytes|number_format(2)) ~ ' Mb' %}
+    {% set size = (mbytes | number_format(2)) ~ ' Mb' %}
 {% elseif kbytes > 1 %}
-  {% set size = (kbytes|number_format(2)) ~ ' Kb' %}
+    {% set size = (kbytes | number_format(2)) ~ ' Kb' %}
 {% else %}
-  {% set size = (bytes|number_format(2)) ~ ' bytes' %}
+    {% set size = (bytes | number_format(2)) ~ ' bytes' %}
 {% endif %}
 
 {% set filetype = content.field_mime_type[0]['#context']['value'] %}
 {% set doc_url = file_url(content.field_document[0]['#file'].get('uri')[0].value) %}
 {% set filename = content.field_document[0]['#file'].get('filename')[0].value %}
+{% set changed = content.created['#object'].get('changed')[0].value | date('m/d/Y g:i:s a') %}
 
 <div {{ attributes }}>
+  <h1>{{ content.name.0 }}</h1>
+  {{ content.field_summary }}
+
+
   {% if filetype == 'application/pdf' %}
     <i class="fas fa-file-pdf">&nbsp;</i>
   {% elseif filetype == 'application/msword' or filetype == 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' %}
@@ -59,5 +64,7 @@
   {% else %}
     <i class="fas fa-file">&nbsp;</i>
   {% endif %}
-  <a href="{{ doc_url }}">{{ filename }}</a> ({{ size }})
+  <a href="{{ doc_url }}">{{ filename }}</a> ({{ size }})<br>
+  Created on {{ content.created.0 }} by {{ content.uid.0 }}
+  <br>Updated on {{ changed }}
 </div>
