@@ -60,12 +60,25 @@
  */
 #}
 <div{{ attributes.addclass('mb-5') }}>
-  {{ title_prefix }}
-  <h2>
+  <h2{{ title_attributes }}>
     <a href="{{ url }}" rel="bookmark">{{ label }}</a>
   </h2>
-  {{ title_suffix }}
   <div{{ content_attributes }}>
-    {{ content }}
+    {{ content.field_summary }}
+    {% if node.field_topics.value %}
+      <div class="badges">
+        {% spaceless %}
+          {% for i, topic in node.field_topics %}
+            {% if node.field_topics[i].entity %}
+              {% set topic = {
+                url: path('entity.taxonomy_term.canonical', {'taxonomy_term': node.field_topics[i].entity.id}),
+                title: node.field_topics[i].entity.name.value
+              }%}
+              <a href="{{ topic.url }}" class="badge badge-primary--ghost mr-1">{{ topic.title }}</a>
+            {% endif %}
+          {% endfor %}
+        {% endspaceless %}
+      </div>
+    {% endif %}
   </div>
 </div>
