@@ -1,0 +1,67 @@
+{#
+/**
+ * @file
+ * Theme override to display a media item.
+ *
+ * Available variables:
+ * - name: Name of the media.
+ * - content: Media content.
+ *
+ * @see template_preprocess_media()
+ *
+ * @ingroup themeable
+ */
+#}
+{%
+  set classes = [
+    'media',
+    'media--type-' ~ media.bundle()|clean_class,
+    not media.isPublished() ? 'media--unpublished',
+    view_mode ? 'media--view-mode-' ~ view_mode|clean_class,
+  ]
+%}
+
+{% set bytes = content.field_file_size[0]['#markup'] %}
+{% set kbytes = bytes / 1024 %}
+{% set mbytes = kbytes / 1024 %}
+{% if mbytes > 1 %}
+    {% set size = (mbytes | number_format(2)) ~ ' Mb' %}
+{% elseif kbytes > 1 %}
+    {% set size = (kbytes | number_format(2)) ~ ' Kb' %}
+{% else %}
+    {% set size = (bytes | number_format(2)) ~ ' bytes' %}
+{% endif %}
+
+{% set filetype = content.field_mime_type[0]['#context']['value'] %}
+{% set doc_url = file_url(content.field_document[0]['#file'].get('uri')[0].value) %}
+{% set filename = content.field_document[0]['#file'].get('filename')[0].value %}
+
+<article{{ attributes.addClass(classes) }}>
+  {{ title_suffix.contextual_links }}
+  {% if content %}
+
+    {{ content.field_summary }}
+
+    <div class="mb-0 d-flex">
+        <a href="{{ doc_url }}">
+            {% if filetype == 'application/pdf' %}
+                <i class="fas fa-file-pdf">&nbsp;</i>
+            {% elseif filetype == 'application/msword' or filetype == 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' %}
+                <i class="fas fa-file-word">&nbsp;</i>
+            {% elseif filetype == 'application/vnd.ms-excel' or filetype == 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' %}
+                <i class="fas fa-file-excel">&nbsp;</i>
+            {% elseif filetype == 'application/vnd.ms-powerpoint' or filetype == 'application/vnd.openxmlformats-officedocument.presentationml.presentation' %}
+                <i class="fas fa-file-powerpoint">&nbsp;</i>
+            {% else %}
+                <i class="fas fa-file">&nbsp;</i>
+            {% endif %}
+            {{ filename }}</a>
+        {% if bytes > 1 %}&nbsp;({{ size }}){% endif %}
+    </div>
+
+    Created on {{ content.created.0 }}
+    {{ content.uid }}
+
+  {% endif %}
+</article>
+
