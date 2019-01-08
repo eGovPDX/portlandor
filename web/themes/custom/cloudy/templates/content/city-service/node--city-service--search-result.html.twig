@@ -59,29 +59,44 @@
  * @see template_preprocess_node()
  */
 #}
-<div{{ attributes.addclass('mb-5') }}>
-  <h2{{ title_attributes }}>
-    <a href="{{ url }}" rel="bookmark">{{ label }}</a>
-  </h2>
-  <div{{ content_attributes }}>
+<div class="teaser">
+  <h3{{title_attributes}} class="order-2">
+    <a href="{{ url }}" rel="bookmark">
+      {{ label }}</a>
+  </h3>
+  <div{{content_attributes}} class="order-3">
     {{ content.field_summary }}
-    {% if node.type.entity.label or node.field_topics.value %}
-      <div{{ attributes.addClass('badges') }}>
-        {% spaceless %}
-          {% if node.type.entity.label %}
-            <a href="{{ url('view.services_index.page_1') }}" class="badge badge-primary mr-1">{{ node.type.entity.label }}</a>
-          {% endif %}
-          {% for i, topic in node.field_topics %}
-            {% if node.field_topics[i].entity %}
-              {% set topic = {
+  </div>
+  {% if node.type.entity.label %}
+    <a href="{{ url('view.services_index.page_1') }}" class="badge badge-pill badge-light mb-1 order-1 align-self-start">
+      <span class="sr-only">Type is</span>
+      {{ node.type.entity.label }}</a>
+  {% endif %}
+  {% if node.field_topics.value or node.field_community_actions.value %}
+    <div{{attributes.addClass('teaser__tags', 'order-4')}}>
+      <span class="sr-only">Tagged in</span>
+      {% spaceless %}
+        {% for i, topic in node.field_topics %}
+          {% if node.field_topics[i].entity %}
+            {% set topic = {
                 url: path('entity.taxonomy_term.canonical', {'taxonomy_term': node.field_topics[i].entity.id}),
                 title: node.field_topics[i].entity.name.value,
               }%}
-              <a href="{{ topic.url }}" class="badge badge-primary--ghost mr-1">{{ topic.title }}</a>
-            {% endif %}
-          {% endfor %}
-        {% endspaceless %}
-      </div>
-    {% endif %}
-  </div>
+            <a href="{{ topic.url }}" class="teaser__tag">
+              {{ topic.title }}</a>
+          {% endif %}
+        {% endfor %}
+        {% for i, action in node.field_community_actions %}
+          {% if node.field_community_actions[i].entity %}
+            {% set action = {
+                url: path('entity.taxonomy_term.canonical', {'taxonomy_term': node.field_community_actions[i].entity.id}),
+                title: node.field_community_actions[i].entity.name.value,
+              }%}
+            <a href="{{ action.url }}" class="teaser__tag">
+              {{ action.title }}</a>
+          {% endif %}
+        {% endfor %}
+      {% endspaceless %}
+    </div>
+  {% endif %}
 </div>
