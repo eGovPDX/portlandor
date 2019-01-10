@@ -59,23 +59,26 @@
  * @see template_preprocess_node()
  */
 #}
+{# {{ kint() }} #}
 <div class="teaser">
-  <h3{{title_attributes}} class="order-2">
+  <h3 class="order-2">
     <a href="{{ url }}" rel="bookmark">
       {{ label }}</a>
   </h3>
-  <div{{content_attributes}} class="order-3">
-    {{ content.field_summary }}
+  {% if node.field_summary.value %}
+  <div class="order-3">
+    <p>{{ node.field_summary.value }}</p>
   </div>
-  {% if node.type.entity.label %}
-    <a href="{{ url('view.services_index.page_1') }}" class="badge badge-pill badge-light mb-1 order-1 align-self-start">
-      <span class="sr-only">Type is</span>
-      {{ node.type.entity.label }}</a>
   {% endif %}
-  {% if node.field_topics.value or node.field_community_actions.value %}
-    <div{{attributes.addClass('teaser__tags', 'order-4')}}>
-      <span class="sr-only">Tagged in</span>
-      {% spaceless %}
+  {% if node.type.entity.label %}
+    <span class="badge badge-pill badge-light mb-1 order-1 align-self-start">
+      <span class="sr-only">Type is</span>
+      {{ node.type.entity.label }}</span>
+  {% endif %}
+  {% if node.field_topics.value or node.field_community_actions.value or node.field_audience.value %}
+    {% spaceless %}
+      <div{{attributes.addClass('teaser__tags','order-4')}}>
+        <span class="sr-only">Tagged in</span>
         {% for i, topic in node.field_topics %}
           {% if node.field_topics[i].entity %}
             {% set topic = {
@@ -96,7 +99,17 @@
               {{ action.title }}</a>
           {% endif %}
         {% endfor %}
-      {% endspaceless %}
-    </div>
+        {% for i, audience in node.field_audience %}
+          {% if node.field_audience[i].entity %}
+            {% set audience = {
+                url: path('entity.taxonomy_term.canonical', {'taxonomy_term': node.field_audience[i].entity.id}),
+                title: node.field_audience[i].entity.name.value,
+              }%}
+            <a href="{{ audience.url }}" class="teaser__tag">
+              {{ audience.title }}</a>
+          {% endif %}
+        {% endfor %}
+      </div>
+    {% endspaceless %}
   {% endif %}
 </div>

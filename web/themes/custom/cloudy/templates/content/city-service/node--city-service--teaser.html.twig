@@ -60,17 +60,19 @@
  */
 #}
 <div class="teaser">
-  <h3{{title_attributes}}>
+  <h3>
     <a href="{{ url }}" rel="bookmark">
       {{ label }}</a>
   </h3>
-  <div{{content_attributes}}>
-    {{ content.field_summary }}
-  </div>
-  {% if node.field_topics.value or node.field_community_actions.value %}
-    <div{{attributes.addClass('teaser__tags')}}>
-      <span class="sr-only">Tagged in</span>
-      {% spaceless %}
+  {% if node.field_summary.value %}
+    <div>
+      <p>{{ node.field_summary.value }}</p>
+    </div>
+  {% endif %}
+  {% if node.field_topics.value or node.field_community_actions.value or node.field_audience.value %}
+    {% spaceless %}
+      <div{{attributes.addClass('teaser__tags','order-4')}}>
+        <span class="sr-only">Tagged in</span>
         {% for i, topic in node.field_topics %}
           {% if node.field_topics[i].entity %}
             {% set topic = {
@@ -91,7 +93,17 @@
               {{ action.title }}</a>
           {% endif %}
         {% endfor %}
-      {% endspaceless %}
-    </div>
+        {% for i, audience in node.field_audience %}
+          {% if node.field_audience[i].entity %}
+            {% set audience = {
+                url: path('entity.taxonomy_term.canonical', {'taxonomy_term': node.field_audience[i].entity.id}),
+                title: node.field_audience[i].entity.name.value,
+              }%}
+            <a href="{{ audience.url }}" class="teaser__tag">
+              {{ audience.title }}</a>
+          {% endif %}
+        {% endfor %}
+      </div>
+    {% endspaceless %}
   {% endif %}
 </div>
