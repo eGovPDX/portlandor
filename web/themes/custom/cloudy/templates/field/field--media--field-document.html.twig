@@ -74,35 +74,11 @@
     {% endblock %}
     {% block content %}
       {%- for item in items -%}
+
         <div{{ item.attributes.addClass(item_classes) }}>
 
-          {% set bytes = item.content['#file'].getSize %}
-          {% set kbytes = bytes / 1024 %}
-          {% set mbytes = kbytes / 1024 %}
-          {% if mbytes > 1 %}
-          {% set size = (mbytes | number_format(2)) ~ ' Mb' %}
-          {% elseif kbytes > 1 %}
-          {% set size = (kbytes | number_format(2)) ~ ' Kb' %}
-          {% else %}
-          {% set size = (bytes | number_format(2)) ~ ' bytes' %}
-          {% endif %}
-
-          {% set filetype = item.content['#file'].getMimeType %}
-          {% set icon = "<i class=\"fas fa-file\">&nbsp;</i>" %}
-          {% if filetype == "application/pdf" %}
-            {% set icon = "<i class=\"fas fa-file-pdf\">&nbsp;</i>" %}
-          {% elseif filetype == "application/msword" or filetype == "application/vnd.openxmlformats-officedocument.wordprocessingml.document" %}
-            {% set icon = "<i class=\"fas fa-file-word\">&nbsp;</i>" %}
-          {% elseif filetype == "application/vnd.ms-excel" or filetype == "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" %}
-            {% set icon = "<i class=\"fas fa-file-excel\">&nbsp;</i>" %}
-          {% elseif filetype == "application/vnd.ms-powerpoint" or filetype == "application/vnd.openxmlformats-officedocument.presentationml.presentation" %}
-            {% set icon = "<i class=\"fas fa-file-powerpoint\">&nbsp;</i>" %}
-          {% endif %}
-
-          {% set doc_url = file_url(item.content['#file'].getFileUri) %}
-          {% set filename = item.content['#file'].getFilename %}
-
-          <a href="{{ doc_url }}">{{ icon|raw }} {{ filename }} ({{ size }})</a>
+          <a href="{{ file_url(item.content['#file'].getFileUri) }}">{{ file_icon_markup(item.content['#file'].getMimeType) }} 
+            {{ item.content['#file'].getFilename }}</a> ({{ file_size_string(item.content['#file'].getSize) }})
 
         </div>
       {%- endfor -%}
