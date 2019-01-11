@@ -51,9 +51,9 @@ behat_tests: &behat_tests
     - run:
         name: Install Terminus
         command: |
-          if [ ! -f "/tmp/vendor/pantheon-systems/terminus/bin/terminus" ]; then
-            cd /tmp && composer require pantheon-systems/terminus
-          fi
+          # if [ ! -f "/tmp/vendor/pantheon-systems/terminus/bin/terminus" ]; then
+          cd /tmp && composer require pantheon-systems/terminus:1.9.0
+          # fi
     - save_cache:
         name: Save Terminus cache
         key: terminus_-{{ checksum "composer.lock" }}
@@ -196,13 +196,13 @@ behat_tests: &behat_tests
               # sleep 20s
               # This version wipes out the Pantheon tree.
               git push -f pantheon $CIRCLE_BRANCH
-              terminus env:wake portlandor.$CIRCLE_BRANCH && sleep 60s
+              terminus env:wake portlandor.$CIRCLE_BRANCH # && sleep 60s
             else
               rm -rf ./env_list.txt
               git push -f pantheon $CIRCLE_BRANCH
               # Wake up the multidev site and wait 30s.
               # The following two drush commands will fail without wait for a few seconds
-              terminus env:wake portlandor.$CIRCLE_BRANCH && sleep 60s
+              terminus env:wake portlandor.$CIRCLE_BRANCH # && sleep 60s
             fi
             # Clear cache. Import config files
 
@@ -260,7 +260,7 @@ behat_tests: &behat_tests
             echo 'export BEHAT_PARAMS="{\"extensions\" : {\"Behat\\\MinkExtension\" : {\"base_url\" : \"https://${CIRCLE_BRANCH}-portlandor.pantheonsite.io\"}, \"Drupal\\\DrupalExtension\" : {\"drush\" : { \"alias\": \"portlandor.${CIRCLE_BRANCH}\"}}}}"' >> $BASH_ENV && source $BASH_ENV
             behat -c tests/behat.yml --tags '@multidev'
           fi
-          # echo $BEHAT_PARAMS
+          echo $BEHAT_PARAMS
     - save_cache: *save_cache
     - store_test_results:
         path: /var/www/html/artifacts/behat
