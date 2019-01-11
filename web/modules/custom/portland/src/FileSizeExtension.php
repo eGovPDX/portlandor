@@ -3,9 +3,9 @@
 namespace Drupal\portland;
 
 /**
- * Class fileSizeExtension.
+ * Class FileSizeExtension.
  */
-class fileSizeExtension extends \Twig_Extension {
+class FileSizeExtension extends \Twig_Extension {
 
   /**
    * {@inheritdoc}

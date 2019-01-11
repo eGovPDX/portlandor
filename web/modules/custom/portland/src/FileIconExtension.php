@@ -3,9 +3,9 @@
 namespace Drupal\portland;
 
 /**
- * Class fileIconExtension.
+ * Class FileIconExtension.
  */
-class fileIconExtension extends \Twig_Extension {
+class FileIconExtension extends \Twig_Extension {
 
   /**
    * {@inheritdoc}
@@ -14,7 +14,7 @@ class fileIconExtension extends \Twig_Extension {
    */
   public function getName()
   {
-    return 'portland.fileIconExtension';
+    return 'portland.fileiconextension';
   }
  
   /**
