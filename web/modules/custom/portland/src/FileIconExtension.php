@@ -1,6 +1,6 @@
 <?php
 
-namespace Drupal\portland\TwigExtension;
+namespace Drupal\portland;
 
 /**
  * Class fileIconExtension.
