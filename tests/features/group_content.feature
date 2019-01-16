@@ -19,7 +19,7 @@ Feature: Members can manage group content
   Scenario: Visit group content
     Given I am logged in as user "marty.member@portlandoregon.gov"
     When I visit "/group/14/nodes"
-    Then I should see "Request materials on Vision Zero traffic safety"
+    Then I should see "Manage Transportation Content"
 
   Scenario: See tab to add content
     Given I am logged in as user "marty.member@portlandoregon.gov"
