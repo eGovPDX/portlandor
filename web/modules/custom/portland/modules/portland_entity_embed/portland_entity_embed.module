@@ -1,0 +1,34 @@
+<?php
+
+use Drupal\Core\Form\FormStateInterface;
+
+/**
+ * Implements hook_form_alter().
+ */
+function portland_entity_embed_form_alter(array &$form, FormStateInterface $form_state, $form_id)
+{
+  // for embedded documents, images and videos using the entity_embed align and caption filters,
+  // remove the filter fields from the embed form if the media item is a document.
+  if ($form_id == 'entity_embed_dialog') {
+    $hide_fields = true;
+    // there should only be 1 element in the entities array, but just in case there
+    // are more, don't hide the fields if one of them isn't a document.
+    foreach($form_state->getValue("entity_browser")["entities"] as $entity) {
+      if ($entity->bundle() != "document") {
+        $hide_fields = false;
+        break;
+      }
+    }
+    if ($hide_fields) {
+      if (isset($form['attributes']['data-caption'])) unset($form['attributes']['data-caption']);
+      if (isset($form['attributes']['data-align'])) unset($form['attributes']['data-align']);
+    }
+
+    // remove left and center alignment options; we only want to support full and right align
+    if (isset($form['attributes']['data-align'])) {
+      unset($form['attributes']['data-align']['#options']['left']);
+      unset($form['attributes']['data-align']['#options']['center']);
+    }
+  }
+
+}
