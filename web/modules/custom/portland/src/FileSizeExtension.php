@@ -41,7 +41,12 @@ class FileSizeExtension extends \Twig_Extension {
     } else {
       $size = $bytes . ' bytes';
     }
-    return $size;
+    $size = '(' . $size . ')';
+    if ($bytes) {
+      return $size;
+    } else {
+      return '';
+    }
   }
 
 }
