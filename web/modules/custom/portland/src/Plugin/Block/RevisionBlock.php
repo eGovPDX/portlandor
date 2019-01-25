@@ -18,22 +18,13 @@ use Drupal\Core\Cache\Cache;
  *
  * )
  */
-class RevisionBlock extends BlockBase {  
-    /**
-    * {@inheritdoc}
-    */
-    public function getCacheTags() {
-      $node = \Drupal::routeMatch()->getParameter('node');
-      $nid = (is_string($node)) ? $node : $node->nid->value;
-      return Cache::mergeTags(parent::getCacheTags(), ["node:{$nid}"]);
-    }
-
+class RevisionBlock extends BlockBase {
     /**
      * {@inheritdoc}
      */
-    // public function getCacheMaxAge() {
-    //   return 0;
-    // }
+    public function getCacheMaxAge() {
+      return 0;
+    }
 
     /**
      * {@inheritdoc}
@@ -90,25 +81,19 @@ class RevisionBlock extends BlockBase {
       if($node && $node_latest_revision) {
         // If this is the latest revision
         if($node->vid->value == $node_latest_revision->vid->value) {
-          // If the node is published
           $revision_link = NULL;
           $revision_description = NULL;
-          // if ($node_status == 1) {
-          //   $revision_link = '/node/'.$uri_parts[2];
-          //   $revision_description = 'View published version';
-          // }
           
-          // Warn the editor that she's viewing an unpublished version
           return array(
             '#theme' => 'portland_revision_block',
-            '#current_revision_state' => self::getModerationStateInString($node), // . ".  This is the Latest version.",
+            '#current_revision_state' => self::getModerationStateInString($node),
             '#severity' => self::getSeverity($node_latest_revision),
             '#revision_link' => $revision_link,
             '#revision_description' => $revision_description
           );
         }
         else {
-          // If the node is published
+          // If the node is published, show the link as View published version.
           if ($node_status == 1) {
             $revision_link = '/node/'.$uri_parts[2];
             $revision_description = 'View published version';
