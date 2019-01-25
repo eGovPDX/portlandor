@@ -19,6 +19,12 @@ use Drupal\Core\Cache\Cache;
  * )
  */
 class RevisionBlock extends BlockBase {
+    private static $severity_icon = [
+      'danger' => 'ban',
+      'warning' => 'exclamation-circle',
+      'success' => 'info-circle'
+    ];
+
     /**
      * {@inheritdoc}
      */
@@ -56,7 +62,8 @@ class RevisionBlock extends BlockBase {
             '#current_revision_state' => self::getModerationStateInString($node_latest_revision),
             '#severity' => 'warning',
             '#revision_link' => $revision_link,
-            '#revision_description' => $revision_description
+            '#revision_description' => $revision_description,
+            '#revision_state_icon' => self::$severity_icon['warning']
           );
         }
       }
@@ -89,7 +96,8 @@ class RevisionBlock extends BlockBase {
             '#current_revision_state' => self::getModerationStateInString($node),
             '#severity' => self::getSeverity($node_latest_revision),
             '#revision_link' => $revision_link,
-            '#revision_description' => $revision_description
+            '#revision_description' => $revision_description,
+            '#revision_state_icon' => self::$severity_icon[self::getSeverity($node_latest_revision)]
           );
         }
         else {
@@ -110,7 +118,8 @@ class RevisionBlock extends BlockBase {
             '#description' => ' and new <strong>'. self::getModerationStateInString($node_latest_revision) . '</strong> revision exists.',
             '#severity' => self::getSeverity($node),
             '#revision_link' => $revision_link,
-            '#revision_description' => $revision_description
+            '#revision_description' => $revision_description,
+            '#revision_state_icon' => self::$severity_icon[self::getSeverity($node)]
           );
         }
       }
