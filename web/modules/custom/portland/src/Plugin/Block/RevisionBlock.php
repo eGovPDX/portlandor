@@ -195,10 +195,10 @@ class RevisionBlock extends BlockBase {
             $result = "Unpublished/archived";
             break;
           case "review":
-            $result = "In review";
+            $result = "Unpublished and in review";
             break;
           default:
-            $result = "Draft";
+            $result = "Unpublished draft";
         }
       }
       else {
