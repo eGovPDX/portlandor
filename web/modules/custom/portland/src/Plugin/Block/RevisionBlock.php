@@ -7,6 +7,7 @@
 namespace Drupal\portland\Plugin\Block;
 
 use Drupal\Core\Block\BlockBase;
+use Drupal\Core\Cache\Cache;
 
 /**
  * Provides a 'portland revision' block.
@@ -17,13 +18,22 @@ use Drupal\Core\Block\BlockBase;
  *
  * )
  */
-class RevisionBlock extends BlockBase {
+class RevisionBlock extends BlockBase {  
+    /**
+    * {@inheritdoc}
+    */
+    public function getCacheTags() {
+      $node = \Drupal::routeMatch()->getParameter('node');
+      $nid = (is_string($node)) ? $node : $node->nid->value;
+      return Cache::mergeTags(parent::getCacheTags(), ["node:{$nid}"]);
+    }
+
     /**
      * {@inheritdoc}
      */
-    public function getCacheMaxAge() {
-      return 0;
-    }
+    // public function getCacheMaxAge() {
+    //   return 0;
+    // }
 
     /**
      * {@inheritdoc}
