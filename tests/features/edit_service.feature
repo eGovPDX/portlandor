@@ -12,11 +12,11 @@ Feature: Edit a service feature
     Then I should see "Title"
 
   Scenario: Archive a service
-    When I select "Archived" from "edit-moderation-state-0-state"
+    When I select "Draft" from "edit-moderation-state-0-state"
     And I fill in "edit-revision-log-0-value" with:
       """
       Test revision message
       """
     And I press "Save"
-    Then I should see "Archived"
+    Then I should see "draft"
     And I should see "has been updated."
