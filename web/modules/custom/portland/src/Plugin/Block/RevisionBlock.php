@@ -21,6 +21,13 @@ class RevisionBlock extends BlockBase {
     /**
      * {@inheritdoc}
      */
+    public function getCacheMaxAge() {
+      return 0;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
     public function build() {
       $current_path = \Drupal::service('path.current')->getPath();
       $uri_parts = explode('/', $current_path);
