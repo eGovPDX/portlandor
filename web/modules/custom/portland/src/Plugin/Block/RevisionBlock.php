@@ -40,94 +40,143 @@ class RevisionBlock extends BlockBase {
       $uri_parts = explode('/', $current_path);
       $count = count($uri_parts);
 
-      $node = NULL;
-      $node_revision = NULL;
+      $nid = NULL;
+      $node_default_revision= NULL;
       $node_latest_revision = NULL;
+      $node_current_revision = NULL;
 
-      // The "latest URL is only valid when the latest revision is unpublished. " /node/221/latest"
+      // Viewing the latest URL, which is only valid when the latest revision is draft or review. " /node/221/latest"
       if($count == 4 && $uri_parts[1] == "node" && $uri_parts[3] == "latest") {
-        $node_latest_revision = self::loadLatestRevision($uri_parts[2]);
-        $node = \Drupal::entityTypeManager()->getStorage('node')->load($uri_parts[2]);
-        $node_status = $node->status->value;
-        if($node_latest_revision->status->value == 0) {
-          // If the node is published
-          if ($node_status == 1) {
-            $revision_link = '/node/'.$uri_parts[2];
-            $revision_description = 'View published version';
-          }
+        $nid = $uri_parts[2];
+        $node_latest_revision = self::loadLatestRevision($nid);        $node_default_revision= \Drupal::entityTypeManager()->getStorage('node')->load($nid);
 
-          // Warn the editor that she's viewing an unpublished version
-          return array(
-            '#theme' => 'portland_revision_block',
-            '#current_revision_state' => self::getModerationStateInString($node_latest_revision),
-            '#severity' => 'warning',
-            '#revision_link' => $revision_link,
-            '#revision_description' => $revision_description,
-            '#revision_state_icon' => self::$severity_icon['warning']
-          );
-        }
+        return self::buildRenderArray(
+          $node_latest_revision, 
+          $node_latest_revision, // Curent revision is Latest revision
+          $node_default_revision
+        );
       }
-      // Load the default revision of the node. "/node/221"
+
+      // Viewing the default revision of the node. "/node/221"
       else if($count == 3 && $uri_parts[1] == "node") {
-        $node = \Drupal::entityTypeManager()->getStorage('node')->load($uri_parts[2]);
-        $node_status = $node->status->value;
-        $node_latest_revision = self::loadLatestRevision($uri_parts[2]);
+        $nid = $uri_parts[2];
+        $node_latest_revision = self::loadLatestRevision($nid);
+        $node_default_revision= \Drupal::entityTypeManager()->getStorage('node')->load($nid);
+
+        return self::buildRenderArray(
+          $node_latest_revision, 
+          $node_default_revision, // Curent revision is default revision
+          $node_default_revision
+        );
       }
-      
-      // Load the revision if it's specified in URL. "/node/221/revisions/3669/view"
+      // Viewing the revision. "/node/221/revisions/3669/view"
       else if ($count == 6 && $uri_parts[3] == "revisions" && $uri_parts[5] == "view") {
-        $node = \Drupal::entityTypeManager()->getStorage('node')->load($uri_parts[2]);
-        $node_status = $node->status->value;
+        $nid = $uri_parts[2];
+        $vid = $uri_parts[4];
+        $node_latest_revision = self::loadLatestRevision($nid);
+        $node_current_revision= \Drupal::entityTypeManager()->getStorage('node')->loadRevision($vid);
+        $node_default_revision= \Drupal::entityTypeManager()->getStorage('node')->load($nid);
 
-        $node = \Drupal::entityTypeManager()->getStorage('node')->loadRevision($uri_parts[4]);
-        //$node = \Drupal::service('entity.repository')->getTranslationFromContext($node);
-        $node_latest_revision = self::loadLatestRevision($uri_parts[2]);
-      }
-
-      // If the current node revision is not the latest. Show the block.
-      if($node && $node_latest_revision) {
-        // If this is the latest revision
-        if($node->vid->value == $node_latest_revision->vid->value) {
-          $revision_link = NULL;
-          $revision_description = NULL;
-          
-          return array(
-            '#theme' => 'portland_revision_block',
-            '#current_revision_state' => self::getModerationStateInString($node),
-            '#severity' => self::getSeverity($node_latest_revision),
-            '#revision_link' => $revision_link,
-            '#revision_description' => $revision_description,
-            '#revision_state_icon' => self::$severity_icon[self::getSeverity($node_latest_revision)]
-          );
-        }
-        else {
-          // If the node is published, show the link as View published version.
-          if ($node_status == 1) {
-            $revision_link = '/node/'.$uri_parts[2];
-            $revision_description = 'View published version';
-          }
-          else {
-            $revision_link = '/node/'.$uri_parts[2].'/revisions/'.$node_latest_revision->vid->value.'/view';
-            $revision_description = 'View latest version';
-          }
-          // The URL "/node/221/latest" is only valid when the node is Draft or Review
-          $latestUrlPart = ($node_latest_revision->status->value == 0) ? '/revisions/'.$node_latest_revision->vid->value.'/view' : '';
-          return array(
-            '#theme' => 'portland_revision_block',
-            '#current_revision_state' => self::getModerationStateInString($node),
-            '#description' => ' and new <strong>'. self::getModerationStateInString($node_latest_revision) . '</strong> revision exists.',
-            '#severity' => self::getSeverity($node),
-            '#revision_link' => $revision_link,
-            '#revision_description' => $revision_description,
-            '#revision_state_icon' => self::$severity_icon[self::getSeverity($node)]
-          );
-        }
+        // Curent revision is default revision
+        return self::buildRenderArray(
+          $node_latest_revision, 
+          $node_current_revision, 
+          $node_default_revision
+        );
       }
 
       return array(
         '#theme' => 'portland_revision_block',
-        '#description' => NULL
       );
+    }
+
+    public static function buildRenderArray($node_latest_revision, $node_current_revision, $node_default_revision) {
+      $nid = $node_current_revision->nid->value;
+      $node_latest_vid = $node_latest_revision->vid->value;
+      $node_latest_status = $node_latest_revision->status->value;
+      $node_current_vid = $node_current_revision->vid->value;
+      $node_current_status = $node_current_revision->status->value;
+      $node_current_is_archived = ($node_current_revision->moderation_state->value == 'archived');
+      $node_default_vid = $node_default_revision->vid->value;
+      $node_default_status = $node_default_revision->status->value;
+
+      // Set the default
+      $render_array = [
+        '#theme' => 'portland_revision_block',
+        '#alert_color' => self::getSeverity($node_current_revision),
+        '#alert_icon' => self::$severity_icon[self::getSeverity($node_current_revision)],
+        '#current_revision_state' => self::getModerationStateInString($node_current_revision),
+        '#latest_revision_state' => [
+          '#markup' => ' and new <strong>'. self::getModerationStateInString($node_latest_revision) . '</strong> revision exists.'],
+        '#revision_link' => "/node/$nid/revisions/$node_latest_vid/view",
+        '#revision_link_text' => 'View latest version',
+      ];
+      /*
+      latest == current > default
+      default is published
+        (current is archived) ? DANGER : WARN, current state, NULL, view published
+      default is archived
+        AS_IS, current state, NULL, NULL
+      */
+      if($node_latest_vid == $node_current_vid && $node_current_vid > $node_default_vid) {
+        if($node_default_status == 1) {
+          $render_array['#alert_color'] = ($node_current_is_archived) ? 'danger' : 'warning';
+          $render_array['#alert_icon'] = ($node_current_is_archived) ? 'ban' : 'exclamation-circle';
+          $render_array['#latest_revision_state'] = NULL;
+          $render_array['#revision_link'] = "/node/$nid";
+          $render_array['#revision_link_text'] = "View published version";
+        }
+        else {
+          $render_array['#latest_revision_state'] = NULL;
+          $render_array['#revision_link'] = NULL;
+          $render_array['#revision_link_text'] = NULL;
+        }
+      }
+      /*
+      latest > current >= default
+        (current is archived) ? DANGER : WARN, current state, latest state, view latest
+      */
+      else if($node_latest_vid > $node_current_vid && $node_current_vid >= $node_default_vid) {
+        $render_array['#alert_color'] = ($node_current_is_archived) ? 'danger' : 'warning';
+        $render_array['#alert_icon'] = ($node_current_is_archived) ? 'ban' : 'exclamation-circle';
+      }
+      /*
+      latest = current = default
+        default is published
+          INFO, current state
+        default is archived
+          DANGER, current state
+      */
+      else if($node_latest_vid == $node_current_vid && $node_current_vid == $node_default_vid) {
+        $render_array['#latest_revision_state'] = NULL;
+        $render_array['#revision_link'] = NULL;
+        $render_array['#revision_link_text'] = NULL;      
+      }
+      /*
+      latest = default > current
+        default is published
+          (current is archived) ? DANGER : WARN, current state, latest state, view published
+        default is archived
+          (current is archived) ? DANGER : WARN, current state, latest state, view latest
+      */
+      else if($node_latest_vid == $node_default_vid && $node_default_vid > $node_current_vid ) {
+        $render_array['#alert_color'] = ($node_current_is_archived) ? 'danger' : 'warning';
+        $render_array['#alert_icon'] = ($node_current_is_archived) ? 'ban' : 'exclamation-circle';
+        if($node_default_status == 1) {
+          $render_array['#revision_link'] = "/node/$nid";
+          $render_array['#revision_link_text'] = "View published version";
+        }
+      }
+      /*
+      latest > default > current
+        (current is archived) ? DANGER : WARN, current state, latest state, view latest
+      */
+      else if($node_latest_vid > $node_default_vid && $node_default_vid > $node_current_vid ) {
+        $render_array['#alert_color'] = ($node_current_is_archived) ? 'danger' : 'warning';
+        $render_array['#alert_icon'] = ($node_current_is_archived) ? 'ban' : 'exclamation-circle';
+      }
+
+      return $render_array;
     }
 
     public static function getSeverity($node) {
