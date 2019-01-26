@@ -8,26 +8,15 @@ Feature: Edit a service feature
     Given I am logged in as user "marty.member@portlandoregon.gov"
     And I am on "/node/52/edit"
 
-  Scenario: Access edit form
+  Scenario: Submit edit form
     Then I should see "Title"
 
-  Scenario: Submit edit form
-    When I fill in "edit-revision-log-0-value" with:
-      """
-      Test revision message
-      """
-    And I press "Save"
-    Then I should see "has been updated."
-
   Scenario: Archive a service
-    When I select "Archived" from "edit-moderation-state-0-state"
+    When I select "Draft" from "edit-moderation-state-0-state"
     And I fill in "edit-revision-log-0-value" with:
       """
       Test revision message
       """
     And I press "Save"
-    Then I should see "Archived"
-
-    When I select "Published" from "edit-new-state"
-    And I press "Apply"
-    Then I should see "The moderation state has been updated."
+    Then I should see "draft"
+    And I should see "has been updated."
