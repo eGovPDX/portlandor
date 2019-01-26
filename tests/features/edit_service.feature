@@ -10,13 +10,4 @@ Feature: Edit a service feature
 
   Scenario: Submit edit form
     Then I should see "Title"
-
-  Scenario: Archive a service
-    When I select "Draft" from "edit-moderation-state-0-state"
-    And I fill in "edit-revision-log-0-value" with:
-      """
-      Test revision message
-      """
-    And I press "Save"
-    Then I should see "draft"
-    And I should see "has been updated."
+    
