@@ -11,7 +11,7 @@ Feature: Demo feature
     And I should see "Bureaus and offices"
     And I should see "Alerts"
     And I should see "Pay online"
-    And I should see "Permit or license"
+    And I should see "Application, permit, license"
     And I should see "Report a problem"
     And I should see "File a claim"
     And I should see "Find information"
