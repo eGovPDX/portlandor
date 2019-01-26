@@ -115,13 +115,16 @@
     }
   };
 
-  $(window).on('dialog:aftercreate', function(e, dialog, $element, settings) {
-    $element
-      .closest('.ui-dialog')
-      .find('.ui-dialog-titlebar-close')
-      .once('fa-close-added')
-      .each(function() {
-        $(this).append('<i class="fa fa-window-close"></i>');
+  Drupal.behaviors.dialog_handler = {
+    attach: function(context, settings) {
+      $(window).on('dialogcreate', function(e, dialog) {
+        $('body')
+          .find('.ui-dialog-titlebar-close')
+          .once('fa-close-added')
+          .each(function() {
+            $(this).append('<i class="fa fa-window-close"></i>');
+          });
       });
-  });
+    }
+  };
 })(jQuery, Drupal);
