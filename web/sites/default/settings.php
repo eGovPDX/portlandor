@@ -75,12 +75,12 @@ switch ($env) {
     $config['config_split.config_split.config_dev']['status'] = FALSE;
     $config['config_split.config_split.config_prod']['status'] = TRUE;
     break;
-    case 'test':
+  case 'test':
     $config['config_split.config_split.config_dev']['status'] = FALSE;
     $config['config_split.config_split.config_prod']['status'] = FALSE;
     break;
-    case 'dev':
-    default:  // Everything else (i.e. various multidev environments)
+  case 'dev':
+  default:  // Everything else (i.e. various multidev environments)
     $config['config_split.config_split.config_dev']['status'] = TRUE;
     $config['config_split.config_split.config_prod']['status'] = FALSE;
     break;
