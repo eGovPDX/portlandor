@@ -11,7 +11,7 @@ Feature: Demo feature
     # Then print last response
     Then I should see "Portland, Oregon"
 
-  @api
+  @api @multidev @dev
   Scenario: Check site status
     Given I am logged in as user "superAdmin" 
     When I visit "/admin/reports/status"
