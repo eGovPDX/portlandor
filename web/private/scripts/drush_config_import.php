@@ -1,9 +1,17 @@
 <?php
 // Import all config changes.
-echo "Importing configuration from yml files...\n";
+echo "Start importing configuration from yml files...\n";
 passthru('drush config-import -y');
-echo "Import of configuration complete.\n";
+echo "Done importing of configuration.\n";
 //Clear all cache
-echo "Rebuilding cache.\n";
+echo "Start rebuilding cache...\n";
 passthru('drush cr');
-echo "Rebuilding cache complete.\n";
+echo "Done rebuilding cache.\n";
+// Apply pending entity schema updates.
+echo "Start applying pending entity schema updates...\n";
+passthru('drush entity:updates -y');
+echo "Done applying pending entity schema updates.\n";
+// Apply any database updates required.
+echo "Start applying any database updates required (as with running update.php)...\n";
+passthru('drush updatedb -y');
+echo "Done applying any database updates required.\n";
