@@ -7,10 +7,6 @@ echo "Done importing of configuration.\n";
 echo "Start rebuilding cache...\n";
 passthru('drush cr');
 echo "Done rebuilding cache.\n";
-// Apply pending entity schema updates.
-echo "Start applying pending entity schema updates...\n";
-passthru('drush entity:updates -y');
-echo "Done applying pending entity schema updates.\n";
 // Apply any database updates required.
 echo "Start applying any database updates required (as with running update.php)...\n";
 passthru('drush updatedb -y');
