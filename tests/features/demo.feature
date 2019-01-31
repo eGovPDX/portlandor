@@ -11,12 +11,17 @@ Feature: Demo feature
     # Then print last response
     Then I should see "Portland, Oregon"
 
-  @api @multidev @dev
+  @api @dev
   Scenario: Check site status
     Given I am logged in as user "superAdmin" 
     When I visit "/admin/reports/status"
     Then I should not see "Errors found"
-    And I should not see "The following changes were detected in the entity type and field definitions."
+
+  @api @multidev
+  Scenario: Check if we need to run "drush entup"
+    Given I am logged in as user "superAdmin" 
+    When I visit "/admin/reports/status"
+    Then I should not see "The following changes were detected in the entity type and field definitions."
 
   @api @dev
   Scenario: Check config import status
