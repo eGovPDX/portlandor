@@ -52,8 +52,8 @@ class PortlandController extends GroupContentController {
                 $bundle_desc = \Drupal::config('node.type.' . $bundle_id)->get('description');
                 $t_args = ['%node_type' => $bundle_label];
                 $description = $create_mode
-                ? $this->t('Create a node of type %node_type in the group...<br>' . $bundle_desc, $t_args)
-                : $this->t('Add an existing node of type %node_type to the group...<br>' . $bundle_desc, $t_args);
+                ? $this->t('' . $bundle_desc, $t_args)
+                : $this->t('Add existing %node_type to the group...<br>' . $bundle_desc, $t_args);
 
                 $build['#bundles'][$bundle_name]['label'] = $bundle_label;
                 $build['#bundles'][$bundle_name]['description'] = $description;
