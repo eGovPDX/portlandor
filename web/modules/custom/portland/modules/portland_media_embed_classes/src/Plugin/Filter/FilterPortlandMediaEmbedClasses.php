@@ -1,6 +1,6 @@
 <?php
 
-namespace Drupal\portland_media_embed_classes\Plugin\Filter;
+namespace Drupal\portland_media_embed_helper\Plugin\Filter;
 
 use Drupal\Component\Utility\Html;
 use Drupal\Component\Utility\Xss;
