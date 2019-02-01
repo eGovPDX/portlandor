@@ -10,13 +10,13 @@ use Drupal\filter\Render\FilteredMarkup;
 
 /**
  * @Filter(
- *   id = "filter_portland_embed_classes",
- *   title = @Translation("Portland Media Embed Classes"),
+ *   id = "portland_media_embed_helper_filter",
+ *   title = @Translation("Portland Media Embed Helper Classes Filter"),
  *   description = @Translation("Adds classes to entity embed containers that correspond to the selected media browser"),
  *   type = Drupal\filter\Plugin\FilterInterface::TYPE_MARKUP_LANGUAGE,
  * )
  */
-class FilterPortlandMediaEmbedClasses extends FilterBase {
+class PortlandMediaEmbedHelperClasses extends FilterBase {
 
   /**
    * Processes text in the following ways: 
