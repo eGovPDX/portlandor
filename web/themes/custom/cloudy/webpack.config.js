@@ -10,6 +10,7 @@ module.exports = (env, argv) => ({
       './scss/style.scss'
     ])
   },
+  devtool: 'source-map',
   mode: process.env.NODE_ENV,
   output: {
     path: path.resolve(__dirname),
@@ -23,10 +24,6 @@ module.exports = (env, argv) => ({
         use: {
           loader: 'babel-loader'
         }
-      },
-      {
-        test: /\.svg$/,
-        loader: 'file-loader'
       },
       {
         test: /\.scss$/,
