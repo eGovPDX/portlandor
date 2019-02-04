@@ -1,14 +1,10 @@
 const path = require('path');
 const globby = require('globby');
-const ExtractTextPlugin = require('extract-text-webpack-plugin');
+const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 
 module.exports = (env, argv) => ({
   entry: {
-    main: globby.sync([
-      './js/src/**/*.js',
-      './scss/bootstrap.scss',
-      './scss/style.scss'
-    ])
+    main: globby.sync(['./js/src/**/*.js', './scss/style.scss'])
   },
   devtool: 'source-map',
   mode: process.env.NODE_ENV,
@@ -16,6 +12,12 @@ module.exports = (env, argv) => ({
     path: path.resolve(__dirname),
     filename: 'js/[name].bundle.js'
   },
+  plugins: [
+    new MiniCssExtractPlugin({
+      filename: 'css/style.bundle.css',
+      chunkFilename: 'css/[id].bundle.css'
+    })
+  ],
   module: {
     rules: [
       {
@@ -26,37 +28,35 @@ module.exports = (env, argv) => ({
         }
       },
       {
-        test: /\.scss$/,
-        use: ExtractTextPlugin.extract({
-          fallback: 'style-loader',
-          use: [
-            {
-              loader: 'css-loader',
-              options: {
-                sourceMap: true,
-                url: false
-              }
-            },
-            {
-              loader: 'postcss-loader',
-              options: {
-                sourceMap: true,
-                config: {
-                  path: './postcss.config.js',
-                  ctx: {
-                    mode: argv.mode
-                  }
+        test: /\.(sa|sc)ss$/,
+        use: [
+          MiniCssExtractPlugin.loader,
+          {
+            loader: 'css-loader',
+            options: {
+              sourceMap: true,
+              url: false
+            }
+          },
+          {
+            loader: 'postcss-loader',
+            options: {
+              sourceMap: true,
+              config: {
+                path: './postcss.config.js',
+                ctx: {
+                  mode: argv.mode
                 }
               }
-            },
-            {
-              loader: 'sass-loader',
-              options: {
-                sourceMap: true
-              }
             }
-          ]
-        })
+          },
+          {
+            loader: 'sass-loader',
+            options: {
+              sourceMap: true
+            }
+          }
+        ]
       }
     ]
   },
@@ -68,10 +68,5 @@ module.exports = (env, argv) => ({
   },
   externals: {
     jquery: 'jQuery'
-  },
-  plugins: [
-    new ExtractTextPlugin({
-      filename: 'css/style.bundle.css'
-    })
-  ]
+  }
 });
