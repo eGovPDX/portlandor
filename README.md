@@ -151,9 +151,87 @@ Make modifications to the desired scss and javascript files in the theme. Never 
 1. Open a second Terminal/PowerShell/GitBash window or tab so this process can run in the background outside of your regular work in git and the filesystem for your local environment.
 1. In the root directory of the theme (i.e. /web/themes/custom/cloudy), run `npm run dev` to launch webpack, which watches for changes and rebuilds the CSS and JS whenever the source files are updated.
 
-#### Troubleshooting
+### Webpack output
 
-Solutions to some potential build problems:
+The following is a snippet of Webpack build output from a successful build:
+
+```
+Hash: 83d85b18cfd6b88c5e7e
+Version: webpack 4.29.0
+Time: 7680ms
+Built at: 02/05/2019 2:33:48 PM
+                   Asset     Size  Chunks             Chunk Names
+    css/style.bundle.css  196 KiB       0  [emitted]  main
+css/style.bundle.css.map  542 KiB       0  [emitted]  main
+       js/main.bundle.js   81 KiB       0  [emitted]  main
+   js/main.bundle.js.map  320 KiB       0  [emitted]  main
+Entrypoint main = css/style.bundle.css js/main.bundle.js css/style.bundle.css.map js/main.bundle.js.map
+[0] multi ./js/src/main.js ./scss/style.scss 40 bytes {0} [built]
+[1] ./js/src/main.js 3 KiB {0} [built]
+[4] (webpack)/buildin/global.js 472 bytes {0} [built]
+[5] external "jQuery" 42 bytes {0} [built]
+[6] ./scss/style.scss 39 bytes {0} [built]
+    + 4 hidden modules
+Child mini-css-extract-plugin node_modules/css-loader/index.js??ref--5-1!node_modules/postcss-loader/lib/index.js??ref--5-2!node_modules/sass-loader/lib/loader.js??ref--5-3!scss/style.scss:
+    Entrypoint mini-css-extract-plugin = *
+    [0] ./node_modules/css-loader??ref--5-1!./node_modules/postcss-loader/lib??ref--5-2!./node_modules/sass-loader/lib/loader.js??ref--5-3!./scss/style.scss 748 KiB {0} [built]
+        + 1 hidden module
+```
+
+The output lists some version information, followed by output information, and then debugging information for the path travelled by the webpack configuration. It's helpful to compare this output to the configuration file to understand the output. For this project we use an entrypoint to bundle our javascript and Sass files in the same entrypoint, main in this case. One important note for Javascript compiling is that we are relying on Drupal providing the jQuery window variable so we don't have a conflict where two instances exist. Our library depends on the core/jquery library so it should always be available.
+
+The CSS output from compiling our Sass files is then bundled together using the mini-css-extract-plugin. To complete that process, the Sass file is copiled, then run through PostCSS, then finally, the CSS is loaded and extracted.
+
+### Troubleshooting
+
+The following is an example of a Webpack build that fails:
+
+```
+Hash: 656b419f6eb4a2b6dec6
+Version: webpack 4.29.0
+Time: 3564ms
+Built at: 02/05/2019 2:57:30 PM
+ 2 assets
+Entrypoint main = js/main.bundle.js js/main.bundle.js.map
+[0] multi ./js/src/main.js ./scss/style.scss 40 bytes {0} [built]
+[1] ./js/src/main.js 3 KiB {0} [built]
+[4] (webpack)/buildin/global.js 472 bytes {0} [built]
+[5] external "jQuery" 42 bytes {0} [built]
+[6] ./scss/style.scss 1.31 KiB {0} [built] [failed] [1 error]
+    + 2 hidden modules
+
+ERROR in ./scss/style.scss
+Module build failed (from ./node_modules/mini-css-extract-plugin/dist/loader.js):
+ModuleBuildError: Module build failed (from ./node_modules/sass-loader/lib/loader.js):
+
+@import 'components/_fake';
+^
+      File to import not found or unreadable: components/_fake.
+      in /Users/michaelmcdonald/dev/portlandor/web/themes/custom/cloudy/scss/_components.scss (line 12, column 1)
+    at runLoaders (/Users/michaelmcdonald/dev/portlandor/web/themes/custom/cloudy/node_modules/webpack/lib/NormalModule.js:301:20)
+    at /Users/michaelmcdonald/dev/portlandor/web/themes/custom/cloudy/node_modules/loader-runner/lib/LoaderRunner.js:367:11
+    at /Users/michaelmcdonald/dev/portlandor/web/themes/custom/cloudy/node_modules/loader-runner/lib/LoaderRunner.js:233:18
+    at context.callback (/Users/michaelmcdonald/dev/portlandor/web/themes/custom/cloudy/node_modules/loader-runner/lib/LoaderRunner.js:111:13)
+    at Object.render [as callback] (/Users/michaelmcdonald/dev/portlandor/web/themes/custom/cloudy/node_modules/sass-loader/lib/loader.js:52:13)
+    at Object.done [as callback] (/Users/michaelmcdonald/dev/portlandor/web/themes/custom/cloudy/node_modules/neo-async/async.js:8077:18)
+    at options.error (/Users/michaelmcdonald/dev/portlandor/web/themes/custom/cloudy/node_modules/node-sass/lib/index.js:294:32)
+ @ multi ./js/src/main.js ./scss/style.scss main[1]
+Child mini-css-extract-plugin node_modules/css-loader/index.js??ref--5-1!node_modules/postcss-loader/lib/index.js??ref--5-2!node_modules/sass-loader/lib/loader.js??ref--5-3!scss/style.scss:
+    Entrypoint mini-css-extract-plugin = *
+    [0] ./node_modules/css-loader??ref--5-1!./node_modules/postcss-loader/lib??ref--5-2!./node_modules/sass-loader/lib/loader.js??ref--5-3!./scss/style.scss 302 bytes {0} [built] [failed] [1 error]
+
+    ERROR in ./scss/style.scss (./node_modules/css-loader??ref--5-1!./node_modules/postcss-loader/lib??ref--5-2!./node_modules/sass-loader/lib/loader.js??ref--5-3!./scss/style.scss)
+    Module build failed (from ./node_modules/sass-loader/lib/loader.js):
+
+    @import 'components/_fake';
+    ^
+          File to import not found or unreadable: components/_fake.
+          in /Users/michaelmcdonald/dev/portlandor/web/themes/custom/cloudy/scss/_components.scss (line 12, column 1)
+```
+
+Often the last few lines are the most important, and tell you where the error is found. Here, we can see that we had a bad import statement trying to import a non-existent file in \_components.scss.
+
+#### Solutions to some potential environment-specific build problems:
 
 1. Node.js was not added to the Windows Path. See: https://stackoverflow.com/questions/8768549/node-js-doesnt-recognize-system-path#8768567
 
