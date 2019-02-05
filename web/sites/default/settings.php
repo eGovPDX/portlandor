@@ -80,6 +80,8 @@ switch ($env) {
     $config['config_split.config_split.config_prod']['status'] = FALSE;
     break;
   case 'dev':
+    $config['config_split.config_split.config_dev']['status'] = FALSE;
+    $config['config_split.config_split.config_prod']['status'] = FALSE;
   default:  // Everything else (i.e. various multidev environments)
     $config['config_split.config_split.config_dev']['status'] = TRUE;
     $config['config_split.config_split.config_prod']['status'] = FALSE;
