@@ -79,3 +79,22 @@ function cloudy_preprocess_form(&$vars) {
     $form['search']['#title_display'] = "invisible";
   }
 } */
+
+function cloudy_form_alter(&$form, $form_state, $form_id)
+{
+  // POWR-699
+  // If address field is present, change organization label back to 'Organization'.
+  // This field is present in many bundles, so it will be easier to check for its
+  // presence than checking the form_id.
+  if (isset($form['field_address'])) {
+        // if adding a custom #process callback, you need to manually add back the processAddress callback below
+    $form['field_address']['widget'][0]['address']['#process'][] = ['Drupal\address\Element\Address', 'processAddress'];
+    $form['field_address']['widget'][0]['address']['#process'][] = 'cloudy_change_address_company_label';
+  }
+}
+
+function cloudy_change_address_company_label($element, $form_state, $complete_form)
+{
+  $element['organization']['#title'] = t('Organization');
+  return $element;
+}
