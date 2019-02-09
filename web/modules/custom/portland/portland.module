@@ -646,3 +646,25 @@ function portland_generate_extended_title_for_group_views($orig_title, $route_ma
     }
     return "$orig_title | $site_name";
 }
+
+/**
+ * Implements hook_form_alter
+ */
+function portland_address_field_form_alter(&$form, $form_state, $form_id)
+{
+    // POWR-699
+    // If address field is present, change organization label back to 'Organization'.
+    // This field is present in many bundles, so it will be easier to check for its
+    // presence than checking the form_id.
+    if (isset($form['field_address'])) {
+        // when adding a custom #process callback, we need to manually add back the processAddress callback below
+        $form['field_address']['widget'][0]['address']['#process'][] = ['Drupal\address\Element\Address', 'processAddress'];
+        $form['field_address']['widget'][0]['address']['#process'][] = 'portland_change_address_company_label';
+    }
+}
+
+function portland_change_address_company_label($element, $form_state, $complete_form)
+{
+    $element['organization']['#title'] = t('Organization');
+    return $element;
+}
