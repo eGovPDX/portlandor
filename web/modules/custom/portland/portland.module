@@ -36,14 +36,15 @@ const ALERTS_COUNTER_CACHE_KEY = 'portland.active.alerts';
 // Get the parent group IDs of an entity
 // https://drupal.stackexchange.com/questions/238755/how-to-get-group-ids-by-ids-of-elements-of-group-content
 function getGroupIdsByEntity($entity) {
-  $group_ids = [];
+    if($entity == NULL) return [];
+    $group_ids = [];
 
-  $group_contents = GroupContent::loadByEntity($entity);
-  foreach ($group_contents as $group_content) {
-    $group_ids[] = $group_content->getGroup()->id();
-  }
+    $group_contents = GroupContent::loadByEntity($entity);
+    foreach ($group_contents as $group_content) {
+        $group_ids[] = $group_content->getGroup()->id();
+    }
 
-  return $group_ids;
+    return $group_ids;
 }
 
 function createAliasForGroupContent($grp, $contentType, $lang) {
@@ -431,14 +432,16 @@ function portland_handle_group_update($form, $form_state) {
                     'image', 'audio', 'video', 'document'];
 
     if( in_array($entity->bundle(), $bundle_array) && $entity->hasField('field_group') ) {
-        $old_entity = \Drupal::entityTypeManager()->getStorage('node')->loadUnchanged($entity->id());
+        $old_entity = ($entity->isNew()) ? NULL : \Drupal::entityTypeManager()->getStorage('node')->loadUnchanged($entity->id());
 
         // The old "Parent Group" field may be empty even though the node is in a group.
-        $old_group_id = ($old_entity->field_group->entity == NULL) ? NULL : $old_entity->field_group->entity->id();
+        $old_group_id = ($old_entity == NULL || $old_entity->field_group->entity == NULL) ? NULL : $old_entity->field_group->entity->id();
 
         // Get the parent group ID from the group content table
-        $old_group_id_array = getGroupIdsByEntity($old_entity);
-        $old_group_id = (count($old_group_id_array) > 0) ? $old_group_id_array[0] : NULL;
+        if($old_entity != NULL) {
+            $old_group_id_array = getGroupIdsByEntity($old_entity);
+            $old_group_id = (count($old_group_id_array) > 0) ? $old_group_id_array[0] : NULL;
+        }
 
         // Special case: if the node's "Parent Group" field is empty BUT it belongs to a group, we need to add the node to the group to sync up the field value and the group content table.
         // if( $entity->original->field_group->entity == NULL && $old_group_id != NULL) {
@@ -656,8 +659,9 @@ function portland_preprocess_paragraph(&$vars) {
  */
 // Update Group aliases during bulk update
 function portland_pathauto_alias_alter(&$alias, array $context) {
-    if ($context['module'] == 'group' 
-    // && ($context['op'] == 'insert' || $context['op'] == 'update')
+    if ($context['module'] == 'group' && 
+        array_key_exists('group', $context['data'])
+        // && ($context['op'] == 'insert' || $context['op'] == 'update')
     ) {
         /** @var \Drupal\node\Entity\Node $node */
         updateGroupAliases($context['data']['group']);
