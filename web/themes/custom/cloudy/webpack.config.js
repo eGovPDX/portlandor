@@ -12,6 +12,9 @@ module.exports = (env, argv) => ({
     path: path.resolve(__dirname),
     filename: 'js/[name].bundle.js'
   },
+  watchOptions: {
+    ignored: ["images/**/*.*", "css/**/*.*", "templates/**/*.*", "node_modules"]
+  },
   plugins: [
     new MiniCssExtractPlugin({
       filename: 'css/style.bundle.css',
