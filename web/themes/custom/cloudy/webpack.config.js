@@ -1,6 +1,7 @@
 const path = require('path');
 const globby = require('globby');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
+const BrowserSyncPlugin = require('browser-sync-webpack-plugin');
 
 module.exports = (env, argv) => ({
   entry: {
@@ -13,13 +14,28 @@ module.exports = (env, argv) => ({
     filename: 'js/[name].bundle.js'
   },
   watchOptions: {
-    ignored: ["images/**/*.*", "css/**/*.*", "templates/**/*.*", "node_modules"]
+    ignored: ['images/**/*.*', 'css/**/*.*', 'templates/**/*.*', 'node_modules']
   },
   plugins: [
     new MiniCssExtractPlugin({
       filename: 'css/style.bundle.css',
       chunkFilename: 'css/[id].bundle.css'
-    })
+    }),
+    new BrowserSyncPlugin(
+      // BrowserSync options
+      {
+        // browse to http://localhost:3000/ during development
+        host: 'localhost',
+        port: 3000,
+        // proxy the Lando endpoint
+        // through BrowserSync
+        proxy: 'http://portlandor.lndo.site/',
+        // Open the proxied site
+        open: 'local'
+      },
+      // plugin options
+      {}
+    )
   ],
   module: {
     rules: [
