@@ -91,7 +91,7 @@ class RevisionBlock extends BlockBase {
     }
 
     public static function buildRenderArray($node_latest_revision, $node_current_revision, $node_default_revision) {
-      if($node_current_revision == NULL) return;
+      if($node_current_revision == NULL || $node_latest_revision == NULL || $node_default_revision == NULL) return;
       
       $nid = $node_current_revision->nid->value;
       $node_latest_vid = $node_latest_revision->vid->value;
