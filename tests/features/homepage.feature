@@ -1,4 +1,4 @@
-@api @javascript @multidev @dev
+@api @multidev @dev
 Feature: Demo feature
   In order to use portland.gov
   As an authenticated user
@@ -8,6 +8,7 @@ Feature: Demo feature
     Given I am logged in as user "oliver.outsider@portlandoregon.gov"
     When I visit "/"
     Then I should see "Services"
+    And I should see "Alerts"
     And I should see "Search"
 
   Scenario: Visit a taxonomy term page
