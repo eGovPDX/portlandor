@@ -7,6 +7,7 @@ use Drupal\group\Entity\GroupContentTypeInterface;
 use Drupal\pathauto\Form\PathautoBulkUpdateForm;
 use Drupal\Core\Render\BubbleableMetadata;
 use Drupal\group\Entity\GroupContent;
+use Drupal\Core\Form\FormStateInterface;
 
 // This file concerns itself with setting up tokens with hooks
 include 'portland.tokens.inc';
@@ -31,6 +32,20 @@ const GROUP_CONTENT_TYPE_PLURAL = [
 ];
 
 const ALERTS_COUNTER_CACHE_KEY = 'portland.active.alerts';
+
+// Get the parent group IDs of an entity
+// https://drupal.stackexchange.com/questions/238755/how-to-get-group-ids-by-ids-of-elements-of-group-content
+function getGroupIdsByEntity($entity) {
+    if($entity == NULL) return [];
+    $group_ids = [];
+
+    $group_contents = GroupContent::loadByEntity($entity);
+    foreach ($group_contents as $group_content) {
+        $group_ids[] = $group_content->getGroup()->id();
+    }
+
+    return $group_ids;
+}
 
 function createAliasForGroupContent($grp, $contentType, $lang) {
   // When a content type is not installed, $pluginType->getPluginDefinition()['entity_bundle'] returns false. Otherwise it's the string like "news".
@@ -347,6 +362,139 @@ function portland_form_views_exposed_form_alter(&$form, &$form_state) {
     }
   }
 
+/**
+ * Implements hook_form_alter().
+ */
+function portland_form_alter(&$form, &$form_state, $form_id) {
+    // Create new node or edit a node
+    $form_array_with_group_field = ['node_event_edit_form', 'node_event_form',
+        'node_notification_edit_form', 'node_notification_form',
+        'node_news_edit_form', 'node_news_form',
+        'node_city_service_edit_form', 'node_city_service_form',
+        'node_page_edit_form', 'node_page_form',
+        'media_image_edit_form', 'media_image_add_form',
+        'media_audio_edit_form', 'media_audio_add_form',
+        'media_video_edit_form', 'media_video_add_form',
+        'media_document_edit_form', 'media_document_add_form'];
+
+    if( in_array($form_id, $form_array_with_group_field) ) {
+        // Show all groups when the user is a site admin.
+        // Otherwise only show the groups the current user belongs to.
+        $user_roles = \Drupal::currentUser()->getRoles();
+        if( !in_array("administrator", $user_roles) ) {
+            // GroupMembership[]
+            $group_memberships = \Drupal::service('group.membership_loader')->loadByUser();
+            $options = [];
+            foreach( $group_memberships as $group_membership ) {
+                $group = $group_membership->getGroup();
+
+                // Only show bureau_office or program groups when creating or editing a service
+                if( $form_id == 'node_city_service_edit_form' || $form_id == 'node_city_service_form') {
+                    if($group->getGroupType()->id() != 'bureau_office' && $group->getGroupType()->id() != 'program')
+                        continue;
+                }
+
+                $options[$group->id->value] = $group->label->value;
+            }
+            $form["field_group"]["widget"]["#options"] = $options;
+        }
+
+        // Set the default value as the node's current group
+        $node = $form_state->getFormObject()->getEntity();
+
+        $group_id = NULL;
+        if($node->isNew()) {
+            if(array_key_exists('group', $form_state->getStorage()) && $form_state->getStorage()['group'] != NULL)
+                $group_id = $form_state->getStorage()['group']->id();
+        }
+        else {
+            $groupIDs = getGroupIdsByEntity($node);
+            $group_id = (count($groupIDs) > 0) ? $groupIDs[0] : NULL;
+        }
+
+        if( array_key_exists('field_group', $form) ) {
+            if( $group_id == NULL ) {
+                $form["field_group"]["widget"]['#default_value'] = '_none';
+            }
+            else {
+                $form["field_group"]["widget"]['#default_value'] = $group_id; // assume only one parent group
+            }
+        }
+
+        $form['actions']['submit']['#submit'][] = 'portland_handle_group_update';
+    }
+}
+
+function portland_handle_group_update($form, $form_state) {
+    $entity = $form_state->getFormObject()->getEntity();
+
+    $bundle_array = ['event', 'notification', 'news', 'city_service', 'page', 
+                    'image', 'audio', 'video', 'document'];
+
+    if( in_array($entity->bundle(), $bundle_array) && $entity->hasField('field_group') ) {
+        $old_entity = ($entity->isNew()) ? NULL : \Drupal::entityTypeManager()->getStorage('node')->loadUnchanged($entity->id());
+
+        // The old "Parent Group" field may be empty even though the node is in a group.
+        $old_group_id = ($old_entity != NULL && 
+                            $old_entity->hasField('field_group') && 
+                            $old_entity->field_group->entity != NULL) ? 
+            $old_entity->field_group->entity->id() : NULL;
+
+        // Get the parent group ID from the group content table.
+        // This is when the content is already in a group but field_group is not updated yet.
+        if($old_entity != NULL) {
+            $old_group_id_array = getGroupIdsByEntity($old_entity);
+            $old_group_id = (count($old_group_id_array) > 0) ? $old_group_id_array[0] : NULL;
+        }
+
+        // Get the new parent group ID from the "Parent Group" field
+        $new_group_id = ($entity->field_group->entity != NULL) ? $entity->field_group->entity->id() : NULL;
+
+        // Only execute if the new and old groups are different
+        if( $old_group_id != $new_group_id ) {
+            // Delete from the old group
+            if( $old_group_id != NULL ) {
+                $group_contents = \Drupal::entityTypeManager()
+                                ->getStorage('group_content')
+                                ->loadByProperties([ 
+                                    'entity_id' => $entity->id(),
+                                    'gid' => $old_group_id,
+                                ]);
+                
+                foreach ($group_contents as $item) {
+                    $item->delete();
+                }
+            }
+
+            // Add to the new group
+            if( $new_group_id != NULL ) {
+                /* 
+                This is the case when the user is adding a new enity under a group, 
+                but also changing the parent group in the dropdown group list before saving. 
+                The new entity has been added to the default group by Group module's submit 
+                handler so we have to remove it here. 
+                */
+                $groupIDs = getGroupIdsByEntity($entity);
+                if( count($groupIDs) > 0) {
+                    $old_group_id = $groupIDs[0];
+                    $group_contents = \Drupal::entityTypeManager()
+                        ->getStorage('group_content')
+                        ->loadByProperties([ 
+                            'entity_id' => $entity->id(),
+                            'gid' => $old_group_id,
+                    ]);
+    
+                    foreach ($group_contents as $item) {
+                        $item->delete();
+                    }                    
+                }
+
+                $entity->field_group->entity->addContent($entity, 'group_'.$entity->getEntityTypeId().':'.$entity->bundle());
+            }
+        }
+    }
+}
+
 /*
  * Implements hook_preprocess_HOOK().
  */
@@ -529,8 +677,9 @@ function portland_preprocess_paragraph(&$vars) {
  */
 // Update Group aliases during bulk update
 function portland_pathauto_alias_alter(&$alias, array $context) {
-    if ($context['module'] == 'group' 
-    // && ($context['op'] == 'insert' || $context['op'] == 'update')
+    if ($context['module'] == 'group' && 
+        array_key_exists('group', $context['data'])
+        // && ($context['op'] == 'insert' || $context['op'] == 'update')
     ) {
         /** @var \Drupal\node\Entity\Node $node */
         updateGroupAliases($context['data']['group']);
@@ -546,7 +695,6 @@ function portland_form_pathauto_bulk_update_form_alter(&$form, $form_state) {
 // When bulk generating aliases for taxonomy terms, we also generate aliases for "/taxonomy/term/CONTENT_TYPE" 
 // and "/taxonomy/term/GROUP_TYPE" 
 function portland_handle_bulk_generate($form, $form_state) {
-    $s = $form_state;
     // If taxonomy_term is selected
     if($form_state->getValues()['update']['canonical_entities:taxonomy_term'] === 'canonical_entities:taxonomy_term') {
         // Generate aliases for "term/content_type"
@@ -577,7 +725,7 @@ function portland_handle_bulk_generate($form, $form_state) {
         }
     }
     else if($form_state->getValues()['update']['canonical_entities:group'] === 'canonical_entities:group') {
-        $groupTypes = ['bureau_office', 'elected_official', 'projects', 'programs'];
+        $groupTypes = ['bureau_office', 'elected_official', 'project', 'program'];
         foreach ($groupTypes as $groupType) {
             // Get all groups of this type. E.g. bureau_office
             $grps = \Drupal::entityTypeManager()
