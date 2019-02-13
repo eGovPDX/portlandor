@@ -6,7 +6,7 @@
 
 ## Git setup for our Windows developers
 
-Windows handles line endings differently than *nix based systems (Unix, Linux, macOS). To make sure our code is interoperable with the Linux servers to which they are deployed and to the local Linux containers where you develop, you will need to make sure your git configuration is set to properly handle line endings.
+Windows handles line endings differently than \*nix based systems (Unix, Linux, macOS). To make sure our code is interoperable with the Linux servers to which they are deployed and to the local Linux containers where you develop, you will need to make sure your git configuration is set to properly handle line endings.
 
 We want the repo to correctly pull down symlinks for use in the Lando containers.git. To do this, we will enable symlinks as part of the cloning of the repo.
 
@@ -27,26 +27,26 @@ The .lando.yml file included in this repo will set you up to connect to the corr
 1. From within your project root directory, run `lando start` to initialize your containers.
 2. Log in to Pantheon and generate a machine token from My Dashboard > Account > Machine Tokens.
 3. Run `lando terminus auth:login --machine-token=[YOUR MACHINE TOKEN]`, this logs your Lando instance into our Pantheon account.
-4. To make sure you don't hit rate limits with composer, log into Github and generate a personal access token and add it to your lando instance by using `lando composer config --global --auth github-oauth.github.com "$COMPOSER_TOKEN"`. (You should replace $COMPOSER_TOKEN with your generated token.) There is a handy tutorial for this at https://coderwall.com/p/kz4egw/composer-install-github-rate-limiting-work-around
+4. To make sure you don't hit rate limits with composer, log into Github and generate a personal access token and add it to your lando instance by using `lando composer config --global --auth github-oauth.github.com "$COMPOSER_TOKEN"`. (You should replace \$COMPOSER_TOKEN with your generated token.) There is a handy tutorial for this at https://coderwall.com/p/kz4egw/composer-install-github-rate-limiting-work-around
 5. You have two options to get your database and files set up:
-    1. Lando quick start:
-        1. Run `lando pull` to get the DB and files from pantheon. This process takes a while. #grabsomecoffee
-    1. Manually import the database and files
-        1. Download the latest database and files backup from the Dev environment on Pantheon. (https://dashboard.pantheon.io/sites/5c6715db-abac-4633-ada8-1c9efe354629#dev/backups/backup-log)
-        2. Move your database export into a folder in your project root called `/artifacts`. (We added this to our .gitignore, so the directory won't be there until you create it.)
-        3. From the within the artifacts directory, run `lando db-import portlandor_dev_2018-04-12T00-00-00_UTC_database.sql.gz`. (This is just an example, you'll need to use the actual filename of the database dump you downloaded.) 
-        4. Move your files backup into `web/sites/default/files`
-7. Build your local environment to match master by running the following commands
-    1. `lando composer install` tells composer to build all of your dependencies that we don't keep in our repo. `vendor`, `web/modules/contrib`, `web/themes/contrib` are some examples of files that we pull from their sources rather than keep a really large git repo.
-    1. `lando drush cim` (or `lando drush config-import`) tells drush to import configuration changes that are in the codebase, but not in the development database you just pulled down.
-8. You should now be able to visit https://portlandor.lndo.site in your browser.
-9. When you are done with your development for the day, run `Lando stop` to shut off your development containers.
+   1. Lando quick start:
+      1. Run `lando pull` to get the DB and files from pantheon. This process takes a while. #grabsomecoffee
+   1. Manually import the database and files
+      1. Download the latest database and files backup from the Dev environment on Pantheon. (https://dashboard.pantheon.io/sites/5c6715db-abac-4633-ada8-1c9efe354629#dev/backups/backup-log)
+      2. Move your database export into a folder in your project root called `/artifacts`. (We added this to our .gitignore, so the directory won't be there until you create it.)
+      3. From the within the artifacts directory, run `lando db-import portlandor_dev_2018-04-12T00-00-00_UTC_database.sql.gz`. (This is just an example, you'll need to use the actual filename of the database dump you downloaded.)
+      4. Move your files backup into `web/sites/default/files`
+6. Build your local environment to match master by running the following commands
+   1. `lando composer install` tells composer to build all of your dependencies that we don't keep in our repo. `vendor`, `web/modules/contrib`, `web/themes/contrib` are some examples of files that we pull from their sources rather than keep a really large git repo.
+   1. `lando drush cim` (or `lando drush config-import`) tells drush to import configuration changes that are in the codebase, but not in the development database you just pulled down.
+7. You should now be able to visit https://portlandor.lndo.site in your browser.
+8. When you are done with your development for the day, run `Lando stop` to shut off your development containers.
 
 See other Lando with Pantheon commands at https://docs.devwithlando.io/tutorials/pantheon.html.
 
 ## Workflow for this repository
 
-We are using a modified version of GitHub Flow to keep things simple. While you don't need to fork the repo if you are on the eGov dev team, you will need to issue pull requests from a feature branch in order to get your code into `master`. Master is a protected branch. 
+We are using a modified version of GitHub Flow to keep things simple. While you don't need to fork the repo if you are on the eGov dev team, you will need to issue pull requests from a feature branch in order to get your code into `master`. Master is a protected branch.
 
 To best work with Pantheon Multidev, we are going to keep feature branch names simple and use the master branch as our integration point that builds to the Pantheon Dev environment.
 
@@ -56,13 +56,13 @@ To best work with Pantheon Multidev, we are going to keep feature branch names s
 1. On the master branch, run `git pull origin master`. This will make sure you have the latest changes from the remote master. Optionally, running `git pull -p origin` will prune any local branches not on the remote to help keep your local repo clean.
 1. Use the issue ID from Jira for a new feature branch name to start work: `git checkout -b powr-[ID]` to create and checkout a new branch. (We use lowercase for the branch name to help create Pantheon multidev environments correctly.) If the branch already exists, you may use `git checkout powr-[ID]` to switch to your branch.
 1. At the start of every sprint you should update your local database with a copy of the database from Dev.
-    1. Go to the Pantheon dashboard for portlandor
-    1. Got to Backups for the Dev environment
-    1. Download the latest database backup to the /artifacts directory of your local project
-    1. From within the artifacts directory, run `lando db-import portlandor_dev_2018-04-12T00-00-00_UTC_database.sql.gz`. (This is just an example, you'll need to use the actual filename of the database dump you downloaded.)
+   1. Go to the Pantheon dashboard for portlandor
+   1. Got to Backups for the Dev environment
+   1. Download the latest database backup to the /artifacts directory of your local project
+   1. From within the artifacts directory, run `lando db-import portlandor_dev_2018-04-12T00-00-00_UTC_database.sql.gz`. (This is just an example, you'll need to use the actual filename of the database dump you downloaded.)
 1. Build your local environment to match master by running the following commands
-    1. `lando composer install`
-    1. `lando drush cim` (or `lando drush config-import`)
+   1. `lando composer install`
+   1. `lando drush cim` (or `lando drush config-import`)
 1. You are now ready to develop on your feature branch.
 
 ### Commit code and push to Github
@@ -74,20 +74,22 @@ To best work with Pantheon Multidev, we are going to keep feature branch names s
 1. You can now run `git push -u origin powr-[ID]`. This will push your feature branch and set its remote to a branch of the same name on origin (GitHub).
 
 ### Create a pull request
+
 When your work is ready for code review and merge:
+
 - Create a Pull Request (PR) on GitHub for your working branch.
 - Make sure to include POWR-[ID] and a short description of the feature in your PR title so that Jira can relate that PR to the correct issue.
 
 ### Continuous integration on CircleCI
-   
+
 1. The PR creation triggers an automated CircleCI build, deployment, and test process that will:
-    - Check out code from your working branch on GitHub.
-    - Run `composer install`.
-    - Deploy the site to a multidev feature branch site on Pantheon. 
-    - Run `drush cim` to import config changes.
-    - Run `drush updb` to update the database.
-    - Run `drush cr` to rebuild the caches.
-    - Run smoke tests against the feature branch site to make sure the build was successful.
+   - Check out code from your working branch on GitHub.
+   - Run `composer install`.
+   - Deploy the site to a multidev feature branch site on Pantheon.
+   - Run `drush cim` to import config changes.
+   - Run `drush updb` to update the database.
+   - Run `drush cr` to rebuild the caches.
+   - Run smoke tests against the feature branch site to make sure the build was successful.
 1. If the build fails, you can go back to your local project and correct any issues and repeat the process of getting a clean commit pushed to GitHub. Once a PR exists, every commit to that branch will trigger a new CircleCI build. You only need to run `git push` from your branch if it is already connected to the remote, but you'll probably want to step through the rebase steps if the time between pushes is anything less than a couple of minutes.
 
 ### Pantheon MultiDev site
@@ -96,7 +98,7 @@ When your work is ready for code review and merge:
 1. In Jira, update the test plan of your issue including the URL to the feature branch. Move the issue to "QA" and assign the issue to the QA team.
 
 ### QA
- 
+
 1. Executes the test plan step by step. (As Rick likes to say, "try and break it! Be creative!")
 1. If defects are found, communicate with the developer and move the issue back to "Todo" in Jira and assign it back to the developer. Document what you find as comments on the issue and decide with the developer if you need to open bugs to address in the future or if you should address the issue now.
 1. If no defect is found, move the issue to "Merge and Accept" in Jira and assign it to the build master.
@@ -112,15 +114,16 @@ There are a few extra steps for the assigned build master. This person is the fi
 ### Merge on Github and deploy to Pantheon DEV site
 
 1. After a team member has provided an approval, which may be after responding to feedback and resolving review issues, the build master will be able to push the "Merge" button and commit the work to the master. Make sure the merge message is prepended with the Jira issue ID (e.g. "POWR-42 Adding the super duper feature")
-    - The merge triggers an automated CircleCI build, deployment, and test process on the Dev environment similar to the multidev deployment.
+   - The merge triggers an automated CircleCI build, deployment, and test process on the Dev environment similar to the multidev deployment.
 1. Test that everything still works Dev. This is just a sanity check since a QA has already been performed.
-    - Did all the config get imported?
-    - Can you confirm the expected code changes were deployed?
-    - Is the status report clean on Dev? Any database updates not trigger?
-    - Do permissions need to be rebuilt?
+   - Did all the config get imported?
+   - Can you confirm the expected code changes were deployed?
+   - Is the status report clean on Dev? Any database updates not trigger?
+   - Do permissions need to be rebuilt?
 1. If all work from the issue is merged and the issue has been moved to the done column on our Jira board, you may delete the feature branch from Github.
 
 ### Releases to test (or production)
+
 We are using the dev environment to integrate all the approved code from master and make sure things are solid. At least once per week, or more frequently as needed, our combined changes should be pushed to the test environment. This deployment essentially tells us if our code will be safe on production.
 
 1. Go to the Pantheon dashboard and navigate to the Test environment.
@@ -132,35 +135,111 @@ Once production is live, we should plan to deploy to production at least once pe
 
 ## Local build process for theme files
 
-There is a separate build process that is run in local development environments, to compile template files such as CSS and JS. The resulting files, in addition to the modified source files, are committed to the repo and deployed to upstream environments. They are always built locally, never as part of the main build process we've implemented with CircleCI.
+There is a separate build process that is run in local development environments, to compile asset files such as CSS and JS.
 
-### Install dependencies 
+### Install dependencies
 
 1. Install Node.js using the Mac or Windows installer available at https://nodejs.org.
 1. Open a Terminal/PowerShell/GitBash window or tab.
 1. Navigate to the project theme directory. (e.g. /web/themes/custom/cloudy)
-1. Install project dependencies by running `npm install` to install the theme dependencies in packages.json. (This will include gulp.)
+1. Install build dependencies by running `npm install` to install the development dependencies specified in package.json.
 
-### Using gulp.js to build CSS files
+### Building Cloudy's asset files
 
-Make modifications to the desired scss files in the theme. Never modify style.css directly. We build style.css as part of our CI, you should run gulp locally to compile your scss files into style.css.
+Make modifications to the desired scss and javascript files in the theme. Never modify css/style.bundle.css or js/main.bundle.js directly. We build style.bundle.css as part of our CI, you should run the development or build script locally to compile your scss files into style.bundle.css.
 
 1. Open a second Terminal/PowerShell/GitBash window or tab so this process can run in the background outside of your regular work in git and the filesystem for your local environment.
-1. In the root directory of the theme (i.e. /web/themes/custom/cloudy), run `npm run dev` to launch the gulp server, which watches for changes and rebuilds the CSS and JS whenever the source files are updated.
+1. In the root directory of the theme (i.e. /web/themes/custom/cloudy), run `npm run dev` to launch webpack, which watches for changes and rebuilds the CSS and JS whenever the source files are updated.
 
-#### Troubleshooting
+### Webpack output
 
-**ERROR (Windows): "The term 'gulp' is not recognized as the name of a cmdlet, function, script file, or operable program..."**
-This indicates one of two potential problems:
+The following is a snippet of Webpack build output from a successful build:
+
+```
+Hash: 83d85b18cfd6b88c5e7e
+Version: webpack 4.29.0
+Time: 7680ms
+Built at: 02/05/2019 2:33:48 PM
+                   Asset     Size  Chunks             Chunk Names
+    css/style.bundle.css  196 KiB       0  [emitted]  main
+css/style.bundle.css.map  542 KiB       0  [emitted]  main
+       js/main.bundle.js   81 KiB       0  [emitted]  main
+   js/main.bundle.js.map  320 KiB       0  [emitted]  main
+Entrypoint main = css/style.bundle.css js/main.bundle.js css/style.bundle.css.map js/main.bundle.js.map
+[0] multi ./js/src/main.js ./scss/style.scss 40 bytes {0} [built]
+[1] ./js/src/main.js 3 KiB {0} [built]
+[4] (webpack)/buildin/global.js 472 bytes {0} [built]
+[5] external "jQuery" 42 bytes {0} [built]
+[6] ./scss/style.scss 39 bytes {0} [built]
+    + 4 hidden modules
+Child mini-css-extract-plugin node_modules/css-loader/index.js??ref--5-1!node_modules/postcss-loader/lib/index.js??ref--5-2!node_modules/sass-loader/lib/loader.js??ref--5-3!scss/style.scss:
+    Entrypoint mini-css-extract-plugin = *
+    [0] ./node_modules/css-loader??ref--5-1!./node_modules/postcss-loader/lib??ref--5-2!./node_modules/sass-loader/lib/loader.js??ref--5-3!./scss/style.scss 748 KiB {0} [built]
+        + 1 hidden module
+```
+
+The output lists some version information, followed by output information, and then debugging information for the path travelled by the webpack configuration. It's helpful to compare this output to the configuration file to understand the output. For this project we use an entrypoint to bundle our javascript and Sass files in the same entrypoint, main in this case. One important note for Javascript compiling is that we are relying on Drupal providing the jQuery window variable so we don't have a conflict where two instances exist. Our library depends on the core/jquery library so it should always be available.
+
+The CSS output from compiling our Sass files is then bundled together using the mini-css-extract-plugin. To complete that process, the Sass file is copiled, then run through PostCSS, then finally, the CSS is loaded and extracted.
+
+### Troubleshooting
+
+The following is an example of a Webpack build that fails:
+
+```
+Hash: 656b419f6eb4a2b6dec6
+Version: webpack 4.29.0
+Time: 3564ms
+Built at: 02/05/2019 2:57:30 PM
+ 2 assets
+Entrypoint main = js/main.bundle.js js/main.bundle.js.map
+[0] multi ./js/src/main.js ./scss/style.scss 40 bytes {0} [built]
+[1] ./js/src/main.js 3 KiB {0} [built]
+[4] (webpack)/buildin/global.js 472 bytes {0} [built]
+[5] external "jQuery" 42 bytes {0} [built]
+[6] ./scss/style.scss 1.31 KiB {0} [built] [failed] [1 error]
+    + 2 hidden modules
+
+ERROR in ./scss/style.scss
+Module build failed (from ./node_modules/mini-css-extract-plugin/dist/loader.js):
+ModuleBuildError: Module build failed (from ./node_modules/sass-loader/lib/loader.js):
+
+@import 'components/_fake';
+^
+      File to import not found or unreadable: components/_fake.
+      in /Users/michaelmcdonald/dev/portlandor/web/themes/custom/cloudy/scss/_components.scss (line 12, column 1)
+    at runLoaders (/Users/michaelmcdonald/dev/portlandor/web/themes/custom/cloudy/node_modules/webpack/lib/NormalModule.js:301:20)
+    at /Users/michaelmcdonald/dev/portlandor/web/themes/custom/cloudy/node_modules/loader-runner/lib/LoaderRunner.js:367:11
+    at /Users/michaelmcdonald/dev/portlandor/web/themes/custom/cloudy/node_modules/loader-runner/lib/LoaderRunner.js:233:18
+    at context.callback (/Users/michaelmcdonald/dev/portlandor/web/themes/custom/cloudy/node_modules/loader-runner/lib/LoaderRunner.js:111:13)
+    at Object.render [as callback] (/Users/michaelmcdonald/dev/portlandor/web/themes/custom/cloudy/node_modules/sass-loader/lib/loader.js:52:13)
+    at Object.done [as callback] (/Users/michaelmcdonald/dev/portlandor/web/themes/custom/cloudy/node_modules/neo-async/async.js:8077:18)
+    at options.error (/Users/michaelmcdonald/dev/portlandor/web/themes/custom/cloudy/node_modules/node-sass/lib/index.js:294:32)
+ @ multi ./js/src/main.js ./scss/style.scss main[1]
+Child mini-css-extract-plugin node_modules/css-loader/index.js??ref--5-1!node_modules/postcss-loader/lib/index.js??ref--5-2!node_modules/sass-loader/lib/loader.js??ref--5-3!scss/style.scss:
+    Entrypoint mini-css-extract-plugin = *
+    [0] ./node_modules/css-loader??ref--5-1!./node_modules/postcss-loader/lib??ref--5-2!./node_modules/sass-loader/lib/loader.js??ref--5-3!./scss/style.scss 302 bytes {0} [built] [failed] [1 error]
+
+    ERROR in ./scss/style.scss (./node_modules/css-loader??ref--5-1!./node_modules/postcss-loader/lib??ref--5-2!./node_modules/sass-loader/lib/loader.js??ref--5-3!./scss/style.scss)
+    Module build failed (from ./node_modules/sass-loader/lib/loader.js):
+
+    @import 'components/_fake';
+    ^
+          File to import not found or unreadable: components/_fake.
+          in /Users/michaelmcdonald/dev/portlandor/web/themes/custom/cloudy/scss/_components.scss (line 12, column 1)
+```
+
+Often the last few lines are the most important, and tell you where the error is found. Here, we can see that we had a bad import statement trying to import a non-existent file in \_components.scss.
+
+#### Solutions to some potential environment-specific build problems:
+
 1. Node.js was not added to the Windows Path. See: https://stackoverflow.com/questions/8768549/node-js-doesnt-recognize-system-path#8768567
-1. There is a conflict between your normal and _adm profiles on your Windows workstation relating to where gulp.js files were installed. Even if you installed gulp while running PowerShell as administrator, you may need to launch a new PowerShell window without administrator rights to get gulp to run.
-
 
 ## Enable local Solr
 
 The Lando Pantheon recipe includes a Solr 3.6 instance. The service name is "index". The database exported from Pantheon contains settings for the hosted environment. In order to use your local Solr, you must push the Solr schema file to your local Solr instance and rebuild your index.
 
 1. Edit your Pantheon search server. Click on the save button without making any change:
-https://portlandor.lndo.site/admin/config/search/search-api/server/pantheon/edit?destination=/admin/config/search/search-api
+   https://portlandor.lndo.site/admin/config/search/search-api/server/pantheon/edit?destination=/admin/config/search/search-api
 2. View the search index under the Pantheon search server. Click on "Queue all item for indexing" and "Index Now" button. If you get an error, try to run "Index Now" again.
 3. After you push to the multi-dev environment, you will see an error message "The Solr server of Pantheon could not be reached." at Search API config page. You need to repeat the two steps above.
