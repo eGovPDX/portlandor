@@ -24,12 +24,12 @@ module.exports = (env, argv) => ({
     new BrowserSyncPlugin(
       // BrowserSync options
       {
-        // browse to http://localhost:3000/ during development
+        // browse to https://localhost:3000/ during development
         host: 'localhost',
         port: 3000,
         // proxy the Lando endpoint
         // through BrowserSync
-        proxy: 'http://portlandor.lndo.site/',
+        proxy: 'https://portlandor.lndo.site/',
         // Open the proxied site
         open: 'local'
       },
