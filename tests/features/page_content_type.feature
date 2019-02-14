@@ -20,7 +20,7 @@ Feature: Users can create content of type Page
     And I select "Biking" from "edit-field-topics"
     And I select "Visitors" from "edit-field-audience"
     And I fill in "edit-field-summary-0-value" with "This is the summary field"
-    And I fill in "edit-field-body-content-0-value" with "This is the body field"
+    And I fill in wysiwyg on field "edit-field-body-content-0-value" with "This is the body field"
     # Related content field
     And I fill in "edit-field-legacy-path-0-value" with "/legacy/path/1234"
     And I fill in "edit-revision-log-0-value" with "Test revision message"
