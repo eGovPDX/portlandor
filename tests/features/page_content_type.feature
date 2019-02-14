@@ -29,9 +29,9 @@ Feature: Users can create content of type Page
     And I should see "Information"
     And I should see "This is the summary field"
     And I should see "This is the body field"
-    # And I should see "Delete"
+    And I should see "Delete" link
 
-    When I click "Delete"
+    When I click "Delete" link
     Then I should see "Are you sure you want to delete the content Test page?"
     And I should see "Delete"
 
