@@ -4,7 +4,7 @@ Feature: Users can create content of type Page
   As a sitewide administrator
   I need to be set values in all Page fields
 
-  Scenario: Add content
+  Scenario: Add and delete a page of type Page
     Given I am logged in as user ""
     When I visit "/powr"
     Then I should see "+ Add Content"
@@ -29,5 +29,13 @@ Feature: Users can create content of type Page
     And I should see "Information"
     And I should see "This is the summary field"
     And I should see "This is the body field"
+    And I should see "Delete"
+
+    When I click "Delete"
+    Then I should see "Are you sure you want to delete the content Test page?"
+    And I should see "Delete"
+
+    When I press "Delete"
+    Then I should see "The Page Test page has been deleted."
 
 
