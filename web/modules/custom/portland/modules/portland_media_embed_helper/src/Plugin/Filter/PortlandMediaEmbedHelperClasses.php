@@ -20,7 +20,8 @@ class PortlandMediaEmbedHelperClasses extends FilterBase {
 
   /**
    * Processes text in the following ways: 
-   * - 
+   * - Checks the data-embed-button attribute to determine which type of media is being embedded
+   * - Inserts a class, so that separate styles can be applied to each type of embedded media.
    *
    * @param [type] $text
    * @param [type] $langcode
