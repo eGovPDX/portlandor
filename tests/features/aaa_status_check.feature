@@ -1,6 +1,6 @@
 @javascript
-Feature: Demo feature
-  In order to test Drupal
+Feature: Site status check
+  In order to test that Drupal is running
   As an anonymous user
   I need to be able to see the homepage
 
@@ -9,7 +9,8 @@ Feature: Demo feature
     Given I am an anonymous user
     When I visit "/"
     # Then print last response
-    Then I should see "Portland, Oregon"
+    Then I should see "Portland, Oregon" in the "footer_second" region
+    And I should see "Services" in the "primary_menu" region
 
   @api @dev
   Scenario: Check site status

@@ -10,7 +10,18 @@ use Behat\Behat\Context\SnippetAcceptingContext;
  */
 class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext {
 
-    /**
+  /**
+   * Initializes context.
+   *
+   * Every scenario gets its own context instance.
+   * You can also pass arbitrary arguments to the
+   * context constructor through behat.yml.
+   */
+  public function __construct()
+  {
+  }
+
+  /**
    * @Given I am logged in as user :name
    */
   public function iAmLoggedInAsUser($name) {
@@ -47,4 +58,6 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
     $this->getSession()
       ->executeScript("CKEDITOR.instances[\"$fieldId\"].setData(\"$value\");");
   }
+
+
 }
