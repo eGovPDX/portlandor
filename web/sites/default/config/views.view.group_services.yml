@@ -4,6 +4,9 @@ status: true
 dependencies:
   config:
     - core.entity_view_mode.node.teaser
+    - node.type.city_service
+    - node.type.page
+    - node.type.service_location
   module:
     - group
     - node
@@ -11,8 +14,8 @@ dependencies:
 id: group_services
 label: 'Group: Services'
 module: views
-description: 'A set of views to help show services that are related to a group.'
-tag: ''
+description: 'Shows services, service locations, and pages of all types (guide, information, etc.) for use with groups that have services.'
+tag: Group
 base_table: node_field_data
 base_field: nid
 core: 8.x
@@ -42,10 +45,10 @@ display:
         type: basic
         options:
           submit_button: Filter
-          reset_button: false
+          reset_button: true
           reset_button_label: Reset
           exposed_sorts_label: 'Sort by'
-          expose_sort_order: true
+          expose_sort_order: false
           sort_asc_label: Asc
           sort_desc_label: Desc
       pager:
@@ -140,6 +143,123 @@ display:
           expose:
             operator: ''
           group: 1
+        type:
+          id: type
+          table: node_field_data
+          field: type
+          relationship: none
+          group_type: group
+          admin_label: ''
+          operator: in
+          value:
+            page: page
+            city_service: city_service
+            service_location: service_location
+          group: 1
+          exposed: true
+          expose:
+            operator_id: type_op
+            label: 'Content type'
+            description: null
+            use_operator: false
+            operator: type_op
+            identifier: type
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+            reduce: false
+            argument: null
+          is_grouped: true
+          group_info:
+            label: Type
+            description: ''
+            identifier: type
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items:
+              1:
+                title: Services
+                operator: in
+                value:
+                  city_service: city_service
+                  all: '0'
+                  alert: '0'
+                  building: '0'
+                  event: '0'
+                  guide: '0'
+                  information: '0'
+                  news: '0'
+                  notification: '0'
+                  page: '0'
+                  service_location: '0'
+                  top_search: '0'
+              2:
+                title: 'Guides and information'
+                operator: in
+                value:
+                  page: page
+                  service_location: service_location
+                  all: '0'
+                  alert: '0'
+                  building: '0'
+                  event: '0'
+                  guide: '0'
+                  information: '0'
+                  news: '0'
+                  notification: '0'
+                  city_service: '0'
+                  top_search: '0'
+          entity_type: node
+          entity_field: type
+          plugin_id: bundle
+        title:
+          id: title
+          table: node_field_data
+          field: title
+          relationship: none
+          group_type: group
+          admin_label: ''
+          operator: contains
+          value: ''
+          group: 1
+          exposed: true
+          expose:
+            operator_id: title_op
+            label: 'Title contains'
+            description: ''
+            use_operator: false
+            operator: title_op
+            identifier: title
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+              anonymous: '0'
+              administrator: '0'
+              sitewide_editor: '0'
+            placeholder: ''
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
+          entity_type: node
+          entity_field: title
+          plugin_id: string
       sorts:
         field_popular_value:
           id: field_popular_value
@@ -167,7 +287,7 @@ display:
           entity_type: node
           entity_field: title
           plugin_id: standard
-      title: Services
+      title: 'Services, guides, and information'
       header: {  }
       footer: {  }
       empty: {  }
@@ -233,24 +353,7 @@ display:
           entity_field: gid
           plugin_id: group_id
       display_extenders: {  }
-    cache_metadata:
-      max-age: -1
-      contexts:
-        - 'languages:language_content'
-        - 'languages:language_interface'
-        - route
-        - url
-        - 'user.node_grants:view'
-        - user.permissions
-      tags: {  }
-  block_1:
-    display_plugin: block
-    id: block_1
-    display_title: Block
-    position: 1
-    display_options:
-      display_extenders: {  }
-      block_description: 'Group services'
+      use_ajax: true
     cache_metadata:
       max-age: -1
       contexts:
@@ -269,71 +372,13 @@ display:
     display_options:
       display_extenders: {  }
       path: group/%group/services
-      filters:
-        status:
-          value: '1'
-          table: node_field_data
-          field: status
-          plugin_id: boolean
-          entity_type: node
-          entity_field: status
-          id: status
-          expose:
-            operator: ''
-          group: 1
-        title:
-          id: title
-          table: node_field_data
-          field: title
-          relationship: none
-          group_type: group
-          admin_label: ''
-          operator: contains
-          value: ''
-          group: 1
-          exposed: true
-          expose:
-            operator_id: title_op
-            label: 'Title contains'
-            description: ''
-            use_operator: false
-            operator: title_op
-            identifier: title
-            required: false
-            remember: false
-            multiple: false
-            remember_roles:
-              authenticated: authenticated
-              anonymous: '0'
-              administrator: '0'
-              sitewide_editor: '0'
-            placeholder: ''
-          is_grouped: false
-          group_info:
-            label: ''
-            description: ''
-            identifier: ''
-            optional: true
-            widget: select
-            multiple: false
-            remember: false
-            default_group: All
-            default_group_multiple: {  }
-            group_items: {  }
-          entity_type: node
-          entity_field: title
-          plugin_id: string
       defaults:
-        filters: false
-        filter_groups: false
+        filters: true
+        filter_groups: true
         arguments: false
         style: false
         row: false
         header: false
-      filter_groups:
-        operator: AND
-        groups:
-          1: AND
       arguments:
         gid:
           id: gid
@@ -374,7 +419,7 @@ display:
       style:
         type: default
         options:
-          row_class: 'list-group-item mb-3'
+          row_class: ''
           default_row_class: false
           uses_fields: false
       row:
@@ -382,17 +427,7 @@ display:
         options:
           relationship: none
           view_mode: teaser
-      header:
-        result:
-          id: result
-          table: views
-          field: result
-          relationship: none
-          group_type: group
-          admin_label: ''
-          empty: false
-          content: '@total services found'
-          plugin_id: result
+      header: {  }
       menu:
         type: none
         title: Services
