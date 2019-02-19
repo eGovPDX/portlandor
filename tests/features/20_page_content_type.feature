@@ -25,7 +25,7 @@ Feature: Users can create content of type Page
     And I fill in "edit-field-legacy-path-0-value" with "/legacy/path/1234"
     And I fill in "edit-revision-log-0-value" with "Test revision message"
     And I press "Save"
-    And I wait for 7 seconds
+    And I wait for 1 second
     Then I should see "Page Test page has been created"
     And I should see "Information"
     And I should see "This is the summary field"

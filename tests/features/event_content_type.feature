@@ -11,11 +11,11 @@ Feature: Group members can create events
     Then I should see "Manage Technology Services Members" in the "content" region
     # And I shoud see the link "+ Add member" in the "content" region
 
-    When I click "+ Add member"
+    When I click "Add member"
     Then I should see "Create Bureau/office: Group membership" in the "content" region
     And I should see "Username"
     
-    When I fill in "edit-entity-id-0-target-id" with "Marty Member (63)"
+    When I fill in the autocomplete "edit-entity-id-0-target-id" with "Marty Member" and click "Marty Member"
     And I press "Save"
     Then I should see "Manage Technology Services Members"
     And I should see "Marty Member"
