@@ -1,11 +1,14 @@
 @api @javascript @multidev @dev
-Feature: Users can create content of type Page
-  In order to manage content on the site
-  As a sitewide administrator
-  I need to be set values in all Page fields
+Feature: Only members can create content of type Page
+  In order to manage group content on the site
+  As a group member
+  I need to be able to create and save content of type Page
 
-  Scenario: Add and delete a page of type Page
-    Given I am logged in as user ""
+  Scenario: Add a page of type Page
+
+  Scenario: Edit a page of type Page
+
+    Given I am logged in as user "marty.member@portlandoregon.gov"
     When I visit "/powr"
     Then I should see "+ Add Content"
 
