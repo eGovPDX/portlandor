@@ -94,4 +94,5 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
 
     $popup_element->click();
   }
+
 }
