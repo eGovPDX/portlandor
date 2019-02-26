@@ -368,7 +368,22 @@ function portland_form_views_exposed_form_alter(&$form, &$form_state) {
  */
 function portland_inline_entity_form_entity_form_alter(&$entity_form, &$form_state) {
     if ($entity_form['#entity_type'] == 'media') {
-        // Set the Group field to the correct default value
+        // Show all groups when the user is a site admin.
+        // Otherwise only show the groups the current user belongs to.
+        $user_roles = \Drupal::currentUser()->getRoles();
+        if( !in_array("administrator", $user_roles) ) {
+            // GroupMembership[]
+            $group_memberships = \Drupal::service('group.membership_loader')->loadByUser();
+            $options = [];
+            foreach( $group_memberships as $group_membership ) {
+                $group = $group_membership->getGroup();
+                $options[$group->id->value] = $group->label->value;
+            }
+            $entity_form["field_group"]["widget"]["#options"] = $options;
+        }
+
+        // Set the Group field to the correct default value. Have to use session because the 
+        // entity browser is in an iFrame.
         $session = \Drupal::request()->getSession();
         $entity_form["field_group"]["widget"]['#default_value'] = $session->get('parent_group_id');
     }
@@ -544,7 +559,9 @@ function portland_entity_insert($entity)
     }
 
     $media_bundles = ['document', 'audio', 'video', 'image'];
-    if ( in_array($entity->bundle(), $media_bundles) ) {
+    if ( in_array($entity->bundle(), $media_bundles) && 
+            $entity->hasField('field_group') &&  
+            $entity->field_group->entity != NULL) {
         $entity->field_group->entity->addContent($entity, 'group_'.$entity->getEntityTypeId().':'.$entity->bundle());
     }
 }
