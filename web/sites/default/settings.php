@@ -78,7 +78,7 @@ switch ($env) {
     $config['config_split.config_split.config_prod']['status'] = TRUE;
     break;
   default:  // Everything else (i.e. various multidev environments)
-    $config['config_split.config_split.config_dev']['status'] = TRUE;
-    $config['config_split.config_split.config_prod']['status'] = FALSE;
+    $config['config_split.config_split.config_dev']['status'] = FALSE;
+    $config['config_split.config_split.config_prod']['status'] = TRUE;
     break;
 }
