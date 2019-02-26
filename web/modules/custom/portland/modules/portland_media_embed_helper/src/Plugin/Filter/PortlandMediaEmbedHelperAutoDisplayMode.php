@@ -18,9 +18,6 @@ use Drupal\filter\Render\FilteredMarkup;
  */
 class PortlandMediaEmbedHelperAutoDisplayMode extends FilterBase {
 
-  const DISPLAY_MODE_RIGHT = "embedded_50";
-  const DISPLAY_MODE_FULL = "embedded_100";
-
   /**
    * Processes text in the following ways: 
    * - Checks the data-align attribute to determine whether it's Full or Right alignment, and changes the data-entity-embed-display
@@ -47,9 +44,9 @@ class PortlandMediaEmbedHelperAutoDisplayMode extends FilterBase {
 
         if ($embed_button == "image_browser") {
           if (!is_null($alignment) && $alignment == "right") {
-            $display = DISPLAY_MODE_RIGHT;
+            $display = "embedded_50";
           } else {
-            $display = DISPLAY_MODE_FULL;
+            $display = "embedded_100";
           }
           // change value of data-entity-embed-display="view_mode:media.embedded"
           $node->setAttribute("data-entity-embed-display", "view_mode:media." . $display);
