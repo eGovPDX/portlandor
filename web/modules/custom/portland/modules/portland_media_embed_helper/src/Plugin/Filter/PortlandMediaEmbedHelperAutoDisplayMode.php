@@ -60,7 +60,6 @@ class PortlandMediaEmbedHelperAutoDisplayMode extends FilterBase {
           ],
         ]);
     }
-
     return $result;
   }
 }
