@@ -12,7 +12,7 @@ use Drupal\filter\Render\FilteredMarkup;
  * @Filter(
  *   id = "portland_media_embed_helper_filter",
  *   title = @Translation("Portland Media Embed Helper Filter"),
- *   description = @Translation("Adds classes to entity embed containers and pre-selects image display mode based on alignment selections."),
+ *   description = @Translation("Adds classes to entity embed containers and pre-selects image display mode based on alignment selections. This filter must be executed before Align, Caption, or Display Embedded Entities."),
  *   type = Drupal\filter\Plugin\FilterInterface::TYPE_MARKUP_LANGUAGE,
  * )
  */
@@ -55,9 +55,15 @@ class PortlandMediaEmbedHelperClasses extends FilterBase {
           case "image_browser":
             $media_class = "embed-image";
             // for images, set the display mode based on alignment
-            $display = "embedded_100";
-            if (!is_null($alignment) && $alignment == "right") {
+            $display = "embedded";
+            if (!is_null($alignment) && $alignment == "responsive-right") {
               $display = "embedded_50";
+              $media_class .= " responsive-right";
+            } else if (!is_null($alignment) && $alignment == "responsive-full") {
+              $display = "embedded_100";
+              $media_class .= " responsive-full";
+            } else {
+              $media_class .= " embedded-right";
             }
             // change value of data-entity-embed-display="view_mode:media.embedded"
             $node->setAttribute("data-entity-embed-display", "view_mode:media." . $display);
