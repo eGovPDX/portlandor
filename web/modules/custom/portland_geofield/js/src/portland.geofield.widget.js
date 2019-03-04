@@ -1,8 +1,6 @@
 import Vue from "vue";
 import Widget from "./Widget";
 import store from "./store";
-// eslint-disable-next-line
-import config from "./config";
 
 (function($, Drupal) {
   Drupal.behaviors.esri = {
@@ -16,13 +14,9 @@ import config from "./config";
             var settings = drupalSettings["portland_geofield_map"][mapid];
             /* eslint-disable no-new */
             new Vue({
-              el: `#${mapid}`,
               store: store,
-              components: {
-                Widget
-              },
-              template: "<Widget/>"
-            });
+              render: h => h(Widget)
+            }).$mount(`#${mapid}`);
 
             store.state.settings = settings;
             store.state.widget = true;
