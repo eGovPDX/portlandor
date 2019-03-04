@@ -14,9 +14,10 @@ import { mapActions, mapState } from "vuex";
 const icons = {
   point: "esri-icon-blank-map-pin",
   multipoint: "esri-icon-handle-horizontal",
-  line: "",
   polyline: "esri-icon-polyline",
-  polygon: "esri-icon-polygon"
+  polygon: "esri-icon-polygon",
+  rectangle: "esri-icon-checkbox-unchecked",
+  circle: "esri-icon-radio-unchecked"
 };
 
 export default {
@@ -47,17 +48,17 @@ export default {
   background-color: transparent;
   border: 1px solid #d3d3d3;
   color: #6e6e6e;
-  padding: 0.75rem;
+  padding: 0.5rem;
   text-align: center;
   box-shadow: 0 0 1px rgba(0, 0, 0, 0.3);
 }
 .portland-geofield-map-app .topbar .action-button:hover,
 .portland-geofield-map-app .topbar .action-button:focus {
-  background: #0079c1;
-  color: #e4e4e4;
+  background: #154778;
+  color: #ffffff;
 }
 .portland-geofield-map-app .topbar .action-button.active {
-  background: #0079c1;
-  color: #e4e4e4;
+  background: #154778;
+  color: #ffffff;
 }
 </style>

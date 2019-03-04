@@ -4,6 +4,8 @@
     <DrawButton type="multipoint"/>
     <DrawButton type="polyline"/>
     <DrawButton type="polygon"/>
+    <DrawButton type="rectangle"/>
+    <DrawButton type="circle"/>
     <button
       name="reset"
       class="action-button esri-icon-trash reset"
@@ -28,29 +30,52 @@ export default {
   },
   created: function() {
     esriLoader
-      .loadModules(["esri/widgets/Sketch/SketchViewModel"])
-      .then(([SketchViewModel]) => {
+      .loadModules([
+        "esri/layers/GraphicsLayer",
+        "esri/widgets/Sketch/SketchViewModel"
+      ])
+      .then(([GraphicsLayer, SketchViewModel]) => {
         // create a new sketch view model
         const sketchViewModel = new SketchViewModel({
           view: this.mapView,
+          layer: new GraphicsLayer(),
           pointSymbol: symbols.point,
           polylineSymbol: symbols.polyline,
           polygonSymbol: symbols.polygon
         });
 
-        sketchViewModel.on("draw-complete", evt => {
-          this.clearMessages();
-          const geometry = evt.geometry;
-          this.addGeometry(geometry);
-          let { x, y } = geometry.extent ? geometry.extent.center : geometry;
-          this.setAddressField({ x, y });
-          esriLoader
-            .loadModules(["esri/geometry/support/webMercatorUtils"])
-            .then(([webMercatorUtils]) => {
-              this.setValueField(
-                webMercatorUtils.webMercatorToGeographic(geometry)
-              );
-            });
+        sketchViewModel.on("create", event => {
+          if (event.state === "complete") {
+            this.clearMessages();
+            const geometry = event.graphic.geometry;
+            this.addGeometry(geometry);
+            let { x, y } = geometry.extent ? geometry.extent.center : geometry;
+            this.setAddressField({ x, y });
+            esriLoader
+              .loadModules(["esri/geometry/support/webMercatorUtils"])
+              .then(([webMercatorUtils]) => {
+                this.setValueField(
+                  webMercatorUtils.webMercatorToGeographic(geometry)
+                );
+              });
+          }
+        });
+
+        sketchViewModel.on("update", event => {
+          if (event.state === "complete") {
+            this.clearMessages();
+            const geometry = event.graphic.geometry;
+            this.addGeometry(geometry);
+            let { x, y } = geometry.extent ? geometry.extent.center : geometry;
+            this.setAddressField({ x, y });
+            esriLoader
+              .loadModules(["esri/geometry/support/webMercatorUtils"])
+              .then(([webMercatorUtils]) => {
+                this.setValueField(
+                  webMercatorUtils.webMercatorToGeographic(geometry)
+                );
+              });
+          }
         });
 
         this.setSketchViewModel(sketchViewModel);
