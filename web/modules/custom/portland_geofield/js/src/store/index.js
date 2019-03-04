@@ -1,8 +1,5 @@
 import Vue from "vue";
 import Vuex from "vuex";
-import * as esriLoader from "esri-loader";
-
-import { PortlandMaps } from "../api/portlandmaps";
 
 import map from "./modules/map";
 import drawbar from "./modules/drawbar";
@@ -10,8 +7,6 @@ import search from "./modules/search";
 import field from "./modules/field";
 
 Vue.use(Vuex);
-
-const portlandmaps = new PortlandMaps("28D3F96A84990C0554495C07309117EF");
 
 // initial state
 // shape: [{ id, quantity }]

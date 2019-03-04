@@ -1,17 +1,7 @@
-import * as esriLoader from "esri-loader";
+import { loadModules } from "esri-loader";
 
 import symbols from "../../utilities/symbols";
 import converter from "../../utilities/converter";
-
-let PointConstuctor = {};
-let GraphicConstructor = {};
-
-esriLoader
-  .loadModules(["esri/geometry/Point", "esri/Graphic"])
-  .then(([Point, Graphic]) => {
-    PointConstuctor = Point;
-    GraphicConstructor = Graphic;
-  });
 
 const state = {
   mapView: {},
@@ -35,13 +25,15 @@ const actions = {
     dispatch("addGeometry", converter.toArcgis(wkt));
   },
   addGeometry({ commit, state }, geometry) {
-    const graphic = new GraphicConstructor({
-      geometry: geometry,
-      symbol: symbols[geometry.type]
-    });
+    loadModules(["esri/Graphic"]).then(([Graphic]) => {
+      const graphic = new Graphic({
+        geometry: geometry,
+        symbol: symbols[geometry.type]
+      });
 
-    state.mapView.when(() => {
-      commit("addGraphic", { graphic: graphic });
+      state.mapView.when(() => {
+        commit("addGraphic", { graphic: graphic });
+      });
     });
 
     commit("clearActiveButton");
@@ -56,14 +48,16 @@ const actions = {
       spatialReference
     }
   ) {
-    const point = new PointConstuctor({
-      x,
-      y,
-      spatialReference
-    });
+    loadModules(["esri/geometry/Point"]).then(([Point]) => {
+      const point = new Point({
+        x,
+        y,
+        spatialReference
+      });
 
-    commit("center", { point: point });
-    commit("focus");
+      commit("center", { point: point });
+      commit("focus");
+    });
   }
 };
 
