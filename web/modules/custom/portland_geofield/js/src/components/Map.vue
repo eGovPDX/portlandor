@@ -6,47 +6,49 @@
 
 <script>
 import { mapState, mapActions } from "vuex";
-import EsriMap from "esri/Map";
-import MapView from "esri/MapView";
-import Locate from "esri/widgets/Locate";
+import { loadModules } from "esri-loader";
 
 export default {
   name: "Map",
   components: {},
   created: function() {
-    const map = new EsriMap({
-      basemap: this.settings.basemap || "streets-vector"
-    });
+    loadModules(["esri/Map", "esri/views/MapView", "esri/widgets/Locate"]).then(
+      ([EsriMap, MapView, Locate]) => {
+        const map = new EsriMap({
+          basemap: this.settings.basemap || "streets-vector"
+        });
 
-    const mapView = new MapView({
-      container: this.settings.mapid,
-      map: map,
-      zoom: this.settings.zoom.start || 10,
-      center: [this.settings.center.lon, this.settings.center.lat]
-    });
+        const mapView = new MapView({
+          container: this.settings.mapid,
+          map: map,
+          zoom: this.settings.zoom.start || 10,
+          center: [this.settings.center.lon, this.settings.center.lat]
+        });
 
-    this.setMapView(mapView);
+        this.setMapView(mapView);
 
-    if (this.widget) {
-      var locateBtn = new Locate({
-        view: mapView
-      });
-      // Add the locate widget to the top left corner of the view
-      mapView.ui.add(locateBtn, {
-        position: "top-left"
-      });
-    }
+        if (this.widget) {
+          var locateBtn = new Locate({
+            view: mapView
+          });
+          // Add the locate widget to the top left corner of the view
+          mapView.ui.add(locateBtn, {
+            position: "top-left"
+          });
+        }
 
-    if (this.settings.value) {
-      //add a graphic for the values
-      for (const delta in this.settings.value) {
-        if (this.settings.value.hasOwnProperty(delta)) {
-          const element = this.settings.value[delta];
-          this.addWkt(element.wkt);
+        if (this.settings.value) {
+          //add a graphic for the values
+          for (const delta in this.settings.value) {
+            if (this.settings.value.hasOwnProperty(delta)) {
+              const element = this.settings.value[delta];
+              this.addWkt(element.wkt);
+            }
+          }
+          //disable scrolling
         }
       }
-      //disable scrolling
-    }
+    );
   },
   computed: {
     style: function() {
