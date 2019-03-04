@@ -47,16 +47,18 @@ behat_tests: &behat_tests
     - restore_cache:
         name: Restore Terminus cache
         keys:
-          - terminus_-{{ checksum "composer.lock" }}
+          - terminus_-20190304
     - run:
         name: Install Terminus
         command: |
           # if [ ! -f "/tmp/vendor/pantheon-systems/terminus/bin/terminus" ]; then
           cd /tmp && composer require pantheon-systems/terminus:2.0.0
+          mkdir -p ~/.terminus/plugins
+          composer create-project --no-dev -d ~/.terminus/plugins pantheon-systems/terminus-rsync-plugin:~1
           # fi
     - save_cache:
         name: Save Terminus cache
-        key: terminus_-{{ checksum "composer.lock" }}
+        key: terminus_-20190304
         paths:
           - "/tmp/vendor"
     - restore_cache:
@@ -168,12 +170,13 @@ behat_tests: &behat_tests
             terminus multidev:list --format=list --field=Name portlandor > ./env_list.txt
             if grep -Fxq "$CIRCLE_BRANCH" ./env_list.txt; then
               echo "Found multidev site"
-              # terminus multidev:delete --delete-branch portlandor.$CIRCLE_BRANCH -y
-              # Cloning files and DB from TEST environment to the multidev environment
-              # Do we need to clone DB/file every time for existing multidev?
-              # terminus env:clone-content portlandor.test "$CIRCLE_BRANCH" -y
             else
-              echo "Creating new multidev site. This may take a few seconds." && terminus multidev:create portlandor.test $CIRCLE_BRANCH
+              # Create new multidev site. Clone files and DB from TEST environment.
+              echo "Creating new multidev site. This may take a few seconds."
+              terminus multidev:create portlandor.test $CIRCLE_BRANCH
+              # Use environment varialbes to set the secrets and use terminus:rsync to copy the file.
+              echo $TEST_KEY > 'test.key'
+              terimnus rsync ./test.key $CIRCLE_PROJECT_REPONAME.$CIRCLE_BRANCH:files/private/
             fi
             # Set the connection type to GIT
             terminus connection:set portlandor.$CIRCLE_BRANCH git
