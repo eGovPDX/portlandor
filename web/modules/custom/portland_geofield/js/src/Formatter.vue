@@ -1,6 +1,6 @@
 <template>
   <div :id="mapid">
-    <Map/>
+    <Map />
   </div>
 </template>
 

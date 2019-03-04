@@ -1,11 +1,11 @@
-import converter from './converter';
+import converter from "./converter";
 
 export class ValueWrapper {
   constructor(valueField) {
     this.valueField = document.getElementById(valueField);
   }
 
-  set(geometry) { 
+  set(geometry) {
     this.valueField.value = converter.toWkt(geometry);
   }
 

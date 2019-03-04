@@ -1,41 +1,34 @@
-const COLOR = "#8A2BE2";
-const OUTLINE = "#FFFFFF";
+import tinycolor from "tinycolor2";
+
+const FILL = tinycolor("#8A2BE2")
+  .setAlpha(0.2)
+  .toRgb();
 
 export default {
   point: {
     type: "simple-marker", // autocasts as new SimpleMarkerSymbol()
-    color: COLOR,
+    color: [FILL.r, FILL.g, FILL.b, FILL.a],
     size: "14px",
     outline: {
       // autocasts as new SimpleLineSymbol()
-      color: OUTLINE,
-      width: 3 // points
-    }
-  },
-  multipoint: {
-    type: "simple-marker", // autocasts as new SimpleMarkerSymbol()
-    color: COLOR,
-    size: "14px",
-    outline: {
-      // autocasts as new SimpleLineSymbol()
-      color: OUTLINE,
-      width: 3 // points
+      color: [FILL.r, FILL.g, FILL.b],
+      width: 1 // points
     }
   },
   polyline: {
     // symbol used for polylines
     type: "simple-line", // autocasts as new SimpleLineSymbol()
-    color: COLOR,
-    width: 3
+    color: [FILL.r, FILL.g, FILL.b],
+    width: 2
   },
   polygon: {
     // symbol used for polygons
     type: "simple-fill", // autocasts as new SimpleFillSymbol()
-    color: OUTLINE,
+    color: [FILL.r, FILL.g, FILL.b, FILL.a],
     style: "solid",
     outline: {
-      color: COLOR,
-      width: 2
+      color: [FILL.r, FILL.g, FILL.b],
+      width: 1
     }
   }
 };

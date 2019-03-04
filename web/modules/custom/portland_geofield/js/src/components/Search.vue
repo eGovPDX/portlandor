@@ -1,52 +1,50 @@
 <template>
   <div id="addressSearchBar">
     <div class="input-group">
-      <input type="text"
+      <input
+        type="text"
         class="form-control"
         id="addressSearch"
         placeholder="Search for a location..."
         v-model="searchValue"
         @keypress.enter.prevent.stop="update"
-        @keyup.esc="cancelEdit" />
+        @keyup.esc="cancelEdit"
+      />
       <span class="input-group-btn">
-        <button class="btn btn-primary" type="button" @click="update">Search</button>
+        <button class="btn btn-primary" type="button" @click="update">
+          Search
+        </button>
       </span>
     </div>
   </div>
 </template>
 
 <script>
-import { mapState, mapActions } from 'vuex';
-var _ = require('lodash');
+import { mapState, mapActions } from "vuex";
+var _ = require("lodash");
 
 export default {
-  name: 'Search',
+  name: "Search",
   data: function() {
     return {
-      searchValue: '',
-    }
+      searchValue: ""
+    };
   },
   computed: {
-    ...mapState([
-      'error',
-    ])
+    ...mapState(["error"])
   },
   methods: {
-    update:
-      _.debounce(function(e) {
-        if(this.searchValue) {
-          this.suggest(this.searchValue);
-        }
-      }, 1000)
-    ,
-    cancelEdit (e) {
-      this.searchValue = '';
+    update: _.debounce(function(e) {
+      if (this.searchValue) {
+        this.suggest(this.searchValue);
+      }
+    }, 1000),
+    cancelEdit(e) {
+      this.searchValue = "";
     },
-    ...mapActions([
-      'suggest',
-    ]),
+    ...mapActions(["suggest"])
   }
-}
+};
 </script>
 
 <style>

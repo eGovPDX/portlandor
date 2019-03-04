@@ -1,6 +1,6 @@
 <template>
   <div :id="mapid">
-    <Messages/>
+    <Messages />
     <Map>
       <Drawbar></Drawbar>
       <Search></Search>
