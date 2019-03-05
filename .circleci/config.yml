@@ -53,8 +53,6 @@ behat_tests: &behat_tests
         command: |
           # if [ ! -f "/tmp/vendor/pantheon-systems/terminus/bin/terminus" ]; then
           cd /tmp && composer require pantheon-systems/terminus:2.0.0
-          mkdir -p ~/.terminus/plugins
-          composer create-project --no-dev -d ~/.terminus/plugins pantheon-systems/terminus-rsync-plugin:~1
           # fi
     - save_cache:
         name: Save Terminus cache
@@ -112,12 +110,12 @@ behat_tests: &behat_tests
           # Pantheon site will use the wrong DB if the local is kept
           git rm --cache  web/sites/default/settings.local.php --ignore-unmatch
           git rm -r --cache web/sites/default/files --ignore-unmatch
-          git commit -m "CircleCI deployment" --quiet
           # When commit on master, we deploy to DEV
           if [[ $CIRCLE_BRANCH = "master" ]]; then
             echo "Deploy to Pantheon DEV site"
             # Set the connection type to GIT
             terminus connection:set portlandor.dev git
+            git commit -m "CircleCI deployment" --quiet
             git push -f pantheon master
             # TODO: Sanitize DB here
             # terminus env:clone-content portlandor.test dev
@@ -174,33 +172,28 @@ behat_tests: &behat_tests
               # Create new multidev site. Clone files and DB from TEST environment.
               echo "Creating new multidev site. This may take a few seconds."
               terminus multidev:create portlandor.test $CIRCLE_BRANCH
-              # Use environment varialbes to set the secrets and use terminus:rsync to copy the file.
-              terminus connection:set $CIRCLE_PROJECT_REPONAME.$CIRCLE_BRANCH sftp
+              # Use environment varialbes to set the secrets and add to git.
               cd /var/www/html/private
               echo $SENDGRID_API_KEY > sendgrid_api.key
-              terminus rsync ./sendgrid_api.key $CIRCLE_PROJECT_REPONAME.$CIRCLE_BRANCH:code/private/
               echo $SOLR_CORE > ./solr-config/solr_core.key
               echo $SOLR_HOST > ./solr-config/solr_host.key
               echo $SOLR_CSOLR_PASSWORDORE > ./solr-config/solr_password.key
               echo $SOLR_USERNAME > ./solr-config/solr_username.key
-              terminus rsync ./solr-config $CIRCLE_PROJECT_REPONAME.$CIRCLE_BRANCH:code/private/
+              # Add more secret key files here
+              git add -f /var/www/html/private/\*.key
             fi
             # Set the connection type to GIT
             terminus connection:set portlandor.$CIRCLE_BRANCH git
             # Only do force push when the multidev site doesn't exist
             if grep -Fxq "$CIRCLE_BRANCH" ./env_list.txt;  then
               rm -rf ./env_list.txt
-              # Get the tree from Pantheon. Rebase the CircleCI local repo on top of Pantheon. Push the new branch to Pantheon.
-              # git fetch pantheon $CIRCLE_BRANCH
-              # git rebase -X theirs -X no-renames pantheon/$CIRCLE_BRANCH
-              # git push pantheon $CIRCLE_BRANCH
-              # Pantheon appears to need a short delay. Otherwise some files are not picked up by drush cim.
-              # sleep 20s
-              # This version wipes out the Pantheon tree.
+              # Force push to Pantheon.
+              git commit -m "CircleCI deployment" --quiet
               git push -f pantheon $CIRCLE_BRANCH
               terminus env:wake portlandor.$CIRCLE_BRANCH && sleep 60s
             else
               rm -rf ./env_list.txt
+              git commit -m "CircleCI deployment" --quiet
               git push -f pantheon $CIRCLE_BRANCH
               # Wake up the multidev site and wait 30s.
               # The following two drush commands will fail without wait for a few seconds
