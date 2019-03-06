@@ -7,9 +7,11 @@ dependencies:
     - field.field.node.news.field_body_content
     - field.field.node.news.field_feature_this_content
     - field.field.node.news.field_feature_until
+    - field.field.node.news.field_featured_media
     - field.field.node.news.field_group
     - field.field.node.news.field_legacy_path
     - field.field.node.news.field_published_on
+    - field.field.node.news.field_related_content
     - field.field.node.news.field_reviewer
     - field.field.node.news.field_summary
     - field.field.node.news.field_topics
@@ -17,10 +19,11 @@ dependencies:
   module:
     - allowed_formats
     - chosen_field
+    - conditional_fields
     - content_moderation
     - datetime
     - maxlength
-    - paragraphs
+    - media_library
     - path
     - text
 id: node.news.default
@@ -30,29 +33,10 @@ mode: default
 content:
   created:
     type: datetime_timestamp
-    weight: 11
+    weight: 10
     region: content
     settings: {  }
     third_party_settings: {  }
-  field_body:
-    weight: 7
-    settings:
-      title: paragraph
-      title_plural: paragraphs
-      edit_mode: open
-      closed_mode: summary
-      autocollapse: none
-      add_mode: dropdown
-      form_display_mode: default
-      default_paragraph_type: simple_text
-      features:
-        duplicate: duplicate
-        collapse_edit_all: collapse_edit_all
-        add_above: '0'
-      closed_mode_threshold: 0
-    third_party_settings: {  }
-    type: paragraphs
-    region: content
   field_body_content:
     type: text_textarea
     weight: 6
@@ -100,14 +84,37 @@ content:
           bundle: news
     type: datetime_default
     region: content
+  field_featured_media:
+    type: media_library_widget
+    weight: 5
+    settings: {  }
+    region: content
+    third_party_settings:
+      conditional_fields:
+        93956ceb-8302-4138-a4b9-06e357a1e1f9:
+          dependee: field_feature_this_content
+          settings:
+            state: visible
+            condition: checked
+            grouping: AND
+            values_set: 1
+            value: ''
+            values: {  }
+            value_form:
+              value: false
+            effect: show
+            effect_options: {  }
+            selector: ''
+          entity_type: node
+          bundle: news
   field_group:
-    weight: 8
+    weight: 14
     settings: {  }
     third_party_settings: {  }
     type: chosen_select
     region: content
   field_legacy_path:
-    weight: 9
+    weight: 8
     region: content
     type: string_textfield
     settings:
@@ -115,10 +122,19 @@ content:
       size: 60
     third_party_settings: {  }
   field_published_on:
-    weight: 14
+    weight: 13
     settings: {  }
     third_party_settings: {  }
     type: datetime_default
+    region: content
+  field_related_content:
+    weight: 7
+    settings:
+      match_operator: CONTAINS
+      size: 60
+      placeholder: ''
+    third_party_settings: {  }
+    type: entity_reference_autocomplete
     region: content
   field_reviewer:
     weight: 15
@@ -130,7 +146,7 @@ content:
     type: entity_reference_autocomplete
     region: content
   field_summary:
-    weight: 5
+    weight: 4
     settings:
       rows: 2
       placeholder: ''
@@ -143,7 +159,7 @@ content:
     type: string_textarea
     region: content
   field_topics:
-    weight: 4
+    weight: 3
     settings: {  }
     third_party_settings: {  }
     type: chosen_select
@@ -156,7 +172,7 @@ content:
     third_party_settings: {  }
   path:
     type: path
-    weight: 13
+    weight: 12
     region: content
     settings: {  }
     third_party_settings: {  }
@@ -170,7 +186,7 @@ content:
     third_party_settings: {  }
   uid:
     type: entity_reference_autocomplete
-    weight: 10
+    weight: 9
     region: content
     settings:
       match_operator: CONTAINS
@@ -178,11 +194,12 @@ content:
       placeholder: ''
     third_party_settings: {  }
   url_redirects:
-    weight: 12
+    weight: 11
     region: content
     settings: {  }
     third_party_settings: {  }
 hidden:
+  field_body: true
   promote: true
   status: true
   sticky: true
