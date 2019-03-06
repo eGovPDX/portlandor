@@ -53,6 +53,8 @@ behat_tests: &behat_tests
         command: |
           # if [ ! -f "/tmp/vendor/pantheon-systems/terminus/bin/terminus" ]; then
           cd /tmp && composer require pantheon-systems/terminus:2.0.0
+          mkdir -p ~/.terminus/plugins
+          composer create-project --no-dev -d ~/.terminus/plugins pantheon-systems/terminus-rsync-plugin:~1
           # fi
     - save_cache:
         name: Save Terminus cache
@@ -183,14 +185,7 @@ behat_tests: &behat_tests
             fi
             # Set the connection type to GIT
             terminus connection:set portlandor.$CIRCLE_BRANCH git
-            # Use environment varialbes to set the secrets and add to git.
-            echo $SENDGRID_API_KEY > private/sendgrid_api.key
-            echo $SOLR_CORE > private/solr-conf/solr_core.key
-            echo $SOLR_HOST > private/solr-conf/solr_host.key
-            echo $SOLR_PASSWORD > private/solr-conf/solr_password.key
-            echo $SOLR_USERNAME > private/solr-conf/solr_username.key
-            # Add more secret key files here
-            git add -f /var/www/html/private/\*.key
+            # git add -f /var/www/html/private/\*.key
             # Only do force push when the multidev site doesn't exist
             if grep -Fxq "$CIRCLE_BRANCH" ./env_list.txt;  then
               rm -rf ./env_list.txt
@@ -206,6 +201,18 @@ behat_tests: &behat_tests
               # The following two drush commands will fail without wait for a few seconds
               terminus env:wake portlandor.$CIRCLE_BRANCH && sleep 60s
             fi
+
+            terminus connection:set portlandor.$CIRCLE_BRANCH sftp
+            # Use environment varialbes to set the secrets and add to git.
+            echo $SENDGRID_API_KEY > private/sendgrid_api.key
+            terminus rsync private/sendgrid_api.key $CIRCLE_PROJECT_REPONAME.$CIRCLE_BRANCH:code/private/
+            echo $SOLR_CORE > private/solr-conf/solr_core.key
+            terminus rsync private/solr-conf/solr_core.key $CIRCLE_PROJECT_REPONAME.$CIRCLE_BRANCH:code/private/solr-conf/
+            echo $SOLR_HOST > private/solr-conf/solr_host.key
+            echo $SOLR_PASSWORD > private/solr-conf/solr_password.key
+            echo $SOLR_USERNAME > private/solr-conf/solr_username.key
+            # Add more secret key files here
+
             # Clear cache. Import config files
 
             # try to run drush cim
