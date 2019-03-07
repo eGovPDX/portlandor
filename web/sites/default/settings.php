@@ -70,15 +70,21 @@ else {
 }
 
 // Enable/disable config_split configurations based on the current environment
+$config['config_split.config_split.config_multidev']['status'] = FALSE;
+$config['config_split.config_split.config_dev']['status'] = FALSE;
+$config['config_split.config_split.config_test']['status'] = FALSE;
+$config['config_split.config_split.config_prod']['status'] = FALSE;
 switch ($env) {
   case 'live':
-  case 'test':
-  case 'dev':
-    $config['config_split.config_split.config_dev']['status'] = FALSE;
     $config['config_split.config_split.config_prod']['status'] = TRUE;
     break;
-  default:  // Everything else (i.e. various multidev environments)
+  case 'test':
+    $config['config_split.config_split.config_test']['status'] = TRUE;
+    break;
+  case 'dev':
     $config['config_split.config_split.config_dev']['status'] = TRUE;
-    $config['config_split.config_split.config_prod']['status'] = FALSE;
+    break;
+  default:  // Everything else (i.e. various multidev environments)
+    $config['config_split.config_split.config_multidev']['status'] = TRUE;
     break;
 }
