@@ -351,6 +351,32 @@ function portland_form_views_exposed_form_alter(&$form, &$form_state) {
   }
 
 /**
+ * Implements hook_inline_entity_form_entity_form_alter().
+ */
+function portland_inline_entity_form_entity_form_alter(&$entity_form, &$form_state) {
+    if ($entity_form['#entity_type'] == 'media') {
+        // Show all groups when the user is a site admin.
+        // Otherwise only show the groups the current user belongs to.
+        $user_roles = \Drupal::currentUser()->getRoles();
+        if( !in_array("administrator", $user_roles) ) {
+            // GroupMembership[]
+            $group_memberships = \Drupal::service('group.membership_loader')->loadByUser();
+            $options = [];
+            foreach( $group_memberships as $group_membership ) {
+                $group = $group_membership->getGroup();
+                $options[$group->id->value] = $group->label->value;
+            }
+            $entity_form["field_group"]["widget"]["#options"] = $options;
+        }
+
+        // Set the Group field to the correct default value. Have to use session because the 
+        // entity browser is in an iFrame.
+        $session = \Drupal::request()->getSession();
+        $entity_form["field_group"]["widget"]['#default_value'] = $session->get('parent_group_id');
+    }
+}
+
+/**
  * Implements hook_form_alter().
  */
 function portland_form_alter(&$form, &$form_state, $form_id) {
@@ -363,7 +389,8 @@ function portland_form_alter(&$form, &$form_state, $form_id) {
         'media_image_edit_form', 'media_image_add_form',
         'media_audio_edit_form', 'media_audio_add_form',
         'media_video_edit_form', 'media_video_add_form',
-        'media_document_edit_form', 'media_document_add_form'];
+        'media_document_edit_form', 'media_document_add_form'
+    ];
 
     if( in_array($form_id, $form_array_with_group_field) ) {
         // Show all groups when the user is a site admin.
@@ -387,7 +414,7 @@ function portland_form_alter(&$form, &$form_state, $form_id) {
             $form["field_group"]["widget"]["#options"] = $options;
         }
 
-        // Set the default value as the node's current group
+        // Set the default value as the node's current group       
         $node = $form_state->getFormObject()->getEntity();
 
         $group_id = NULL;
@@ -400,12 +427,15 @@ function portland_form_alter(&$form, &$form_state, $form_id) {
             $group_id = (count($groupIDs) > 0) ? $groupIDs[0] : NULL;
         }
 
+        $session = \Drupal::request()->getSession();
         if( array_key_exists('field_group', $form) ) {
             if( $group_id == NULL ) {
                 $form["field_group"]["widget"]['#default_value'] = '_none';
+                $session->set('parent_group_id', '_none');
             }
             else {
                 $form["field_group"]["widget"]['#default_value'] = $group_id; // assume only one parent group
+                $session->set('parent_group_id', $group_id);
             }
         }
 
@@ -513,6 +543,13 @@ function portland_entity_insert($entity)
     if ($entity->bundle() == 'alert') {
         // alert has been inserted, update alerts count in cache
         _portland_get_active_alerts_count(true);
+    }
+
+    $media_bundles = ['document', 'audio', 'video', 'image'];
+    if ( in_array($entity->bundle(), $media_bundles) && 
+            $entity->hasField('field_group') &&  
+            $entity->field_group->entity != NULL) {
+        $entity->field_group->entity->addContent($entity, 'group_'.$entity->getEntityTypeId().':'.$entity->bundle());
     }
 }
 
