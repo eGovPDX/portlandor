@@ -15,7 +15,7 @@ use Drupal\Core\Plugin\PluginFormInterface;
  *   id = "mark_for_review_action",
  *   label = @Translation("Mark for review"),
  *   type = "node",
- *   confirm = TRUE,
+ *   confirm = FALSE,
  * )
  */
 class MarkForReviewAction extends ViewsBulkOperationsActionBase {
@@ -26,28 +26,19 @@ class MarkForReviewAction extends ViewsBulkOperationsActionBase {
    * {@inheritdoc}
    */
   public function execute($entity = NULL) {
-    // Load the latest revision
-    $latestNode = \Drupal::entityTypeManager()->getStorage('node')->getQuery()
-                  ->latestRevision()
-                  ->condition('nid', $entity->id())
-                  ->execute();
-    reset($latestNode);
-    $latestRevisionId = key($latestNode);
-    $latestRev = \Drupal::entityTypeManager()->getStorage('node')->loadRevision($latestRevisionId);
+    // This is a required field in the form below. So it will not be NULL.
+    $reviewer_uid = $this->configuration['reviewer'];
+    $user_display_name = \Drupal\user\Entity\User::load($reviewer_uid)->getDisplayName();
 
-    $latestRev->set('status', 0);
-    $latestRev->set('moderation_state', 'review');
-    $latestRev->field_reviewer->entity = $this->configuration['reviewer'];
-
-    // Make this change a new revision
-    $latestRev->setNewRevision(TRUE);
-    $latestRev->revision_log = 'Mark for review';
-    $latestRev->setRevisionCreationTime(REQUEST_TIME);
-    $latestRev->setRevisionUserId(\Drupal::currentUser()->id());
-    $latestRev->save();
-
+    $entity->status->value = 0;
+    $entity->moderation_state->value = 'review';
+    $entity->field_reviewer->entity = $reviewer_uid;
+    $entity->setNewRevision(TRUE);
+    $entity->revision_log = 'Assigned to '. $user_display_name .' for review';
+    $entity->setRevisionCreationTime(REQUEST_TIME);
+    $entity->save();
     // Don't return anything for a default completion message, otherwise return translatable markup.
-    return $this->t('Marked for review');
+    return $this->t('Assigned to '. $user_display_name .' for review');
   }
 
   /**

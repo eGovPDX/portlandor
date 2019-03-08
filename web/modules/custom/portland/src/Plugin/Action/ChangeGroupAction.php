@@ -14,7 +14,7 @@ use Drupal\group\Entity\Group;
  *
  * @Action(
  *   id = "change_group_action",
- *   label = @Translation("Change parent group of Content"),
+ *   label = @Translation("Change parent group of Content (custom action)"),
  *   type = "",
  *   confirm = TRUE,
  * )
