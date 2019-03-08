@@ -76,12 +76,6 @@ class ChangeGroupAction extends ViewsBulkOperationsActionBase implements PluginF
    * {@inheritdoc}
    */
   public function buildConfigurationForm(array $form, FormStateInterface $form_state) {
-    // $form['new_group'] = [
-    //   '#title' => t('Please select the new group'),
-    //   '#type' => 'textfield',
-    //   '#default_value' => $form_state->getValue('new_group'),
-    // ];
-
     $options[0] = '- None -';
  
     // Load all group types
