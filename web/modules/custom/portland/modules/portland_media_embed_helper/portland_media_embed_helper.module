@@ -1,6 +1,8 @@
 <?php
 
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Url;
+use Symfony\Component\HttpFoundation\RedirectResponse;
 
 /**
  * Implements hook_form_alter().
@@ -47,5 +49,24 @@ function portland_media_embed_helper_form_alter(array &$form, FormStateInterface
 function portland_media_embed_helper_after_build($form, &$form_state) {
   $form['actions']['back']['#value'] = t("Select a different entity");
   return $form;
+}
+
+/**
+ * Implements hook_form_alter().
+ * Causes media form submit to redirect to the group media page, if media is created in the context of a group.
+ */
+function portland_media_embed_helper_form_media_form_alter(array &$form, FormStateInterface $form_state, $form_id) {
+  $route_match = \Drupal::service('current_route_match');
+  $group = $route_match->getParameter('group');
+  if (isset($group)) {
+    $form['actions']['submit']['#submit'][] = '_portland_media_embed_helper_redirect_to_group_media';
+  }
+}
+
+function _portland_media_embed_helper_redirect_to_group_media(array $form, FormStateInterface $form_state) {
+  $route_match = \Drupal::service('current_route_match');
+  $group = $route_match->getParameter('group');
+  $url = \Drupal::service('path.validator')->getUrlIfValid('/group/' . $group->id->value . '/media');
+  $form_state->setRedirectUrl($url);
 }
 
