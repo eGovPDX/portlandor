@@ -52,8 +52,7 @@ class RelativePathConstraintValidator extends ConstraintValidator {
         // in the error message.
         $is_unique_in_system = $this->validateUniquePathInSystem($path);
         if ($is_unique_in_system !== true) {
-          $message = $constraint->duplicate_redirect;
-          //$message = "The legacy path already exists in the system (<a href=\"$is_unique_in_system\">$is_unique_in_system</a>). A path cannot redirect to multiple pages.";;
+          $message = "The legacy path already exists in the system (at <a href=\"$is_unique_in_system\" target=\"_blank\">$is_unique_in_system</a>). A path cannot redirect to multiple pages.";;
           // NOTE: it might be helpful to show the user the node that contains the duplicate, but they then
           // might try to remove it from that node, which wouldn't delete the existing redirect so that the
           // new one could be recreated. this has the potential to cause confusion.

@@ -86,21 +86,6 @@ class RouteSubscriber extends RouteSubscriberBase {
         $route->setRequirement('_access', 'FALSE');
       }
     }
-
-    // Override the SearchApiPageRoutes dynamic routes with
-    // our static search routes
-    $searchApiPageRoutes = new SearchApiPageRoutes(
-      $this->entityTypeManager,
-      $this->languageManager
-    );
-
-    $searchApiRoutes = $searchApiPageRoutes->routes();
-
-    foreach (array_keys($searchApiRoutes) as $key) {
-      if($route = $collection->get($key)) {
-        $route->setDefault('_controller', 'Drupal\portland\Controller\PortlandSearchApiPageController::page');
-      }
-    }
   }
 
 }
