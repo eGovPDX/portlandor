@@ -13,8 +13,8 @@ use Drupal\Core\Plugin\PluginFormInterface;
  *
  * @Action(
  *   id = "mark_for_review_action",
- *   label = @Translation("Mark for review"),
- *   type = "node",
+ *   label = @Translation("Mark for review (custom action)"),
+ *   type = "",
  *   confirm = FALSE,
  * )
  */

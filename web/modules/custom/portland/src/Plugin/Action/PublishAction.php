@@ -13,7 +13,7 @@ use Drupal\Core\Form\FormStateInterface;
  * @Action(
  *   id = "portland_publish_action",
  *   label = @Translation("Publish content (custom action)"),
- *   type = "node",
+ *   type = "",
  *   confirm = FALSE,
  * )
  */
@@ -28,15 +28,18 @@ class PublishAction extends ViewsBulkOperationsActionBase {
     // Get current user's display name
     $user_display_name = \Drupal::currentUser()->getDisplayName();
 
+    if( $entity->status->value == 1)
+      return $this->t('Is already published.');
+
     $entity->status->value = 1;
-    $entity->moderation_state->value = '';
+    $entity->moderation_state->value = 'published';
     // Make this change a new revision
-    $entity->revision_log->value = 'Published by '. $user_display_name;
+    if($entity->hasField('revision_log')) 
+      $entity->revision_log = 'Published by '. $user_display_name;
     $entity->setNewRevision(TRUE);
     $entity->setRevisionCreationTime(REQUEST_TIME);
     $entity->save();
 
-    $entity->setPublished()->save();
     // Don't return anything for a default completion message, otherwise return translatable markup.
     return $this->t('Published by '. $user_display_name);
   }
@@ -45,7 +48,7 @@ class PublishAction extends ViewsBulkOperationsActionBase {
    * {@inheritdoc}
    */
   public function access($object, AccountInterface $account = NULL, $return_as_object = FALSE) {
-    if ($object->getEntityType() === 'node') {
+    if ($object->getEntityType() === 'node' || $object->getEntityType() === 'media') {
       $access = $object->access('update', $account, TRUE)
         ->andIf($object->status->access('edit', $account, TRUE));
       return $return_as_object ? $access : $access->isAllowed();

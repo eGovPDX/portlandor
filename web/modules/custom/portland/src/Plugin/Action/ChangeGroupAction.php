@@ -28,6 +28,13 @@ class ChangeGroupAction extends ViewsBulkOperationsActionBase implements PluginF
    * {@inheritdoc}
    */
   public function execute($entity = NULL) {
+    $content_lock_service = \Drupal::service('content_lock');
+    $isLocked = $content_lock_service->fetchLock($entity->id(), $entity->language(), NULL, $entity->getEntityTypeId());
+    // If the content is locked and the user does not want to break locks, skip and return
+    if( $isLocked !== FALSE && $this->configuration['break_lock'] == 0) {
+      return $this->t('Content is locked.');
+    } 
+
     /*
     The user intention is 
     1. Change the group the content belongs to. 
@@ -46,17 +53,17 @@ class ChangeGroupAction extends ViewsBulkOperationsActionBase implements PluginF
     $new_group_type = ($new_group == NULL) ? NULL : $new_group->getGroupType()->id();
     $old_group_id_array = self::getGroupIdsByEntity($entity);
     $old_group_id = (count($old_group_id_array) > 0) ? $old_group_id_array[0] : 0;
+    $old_group = ($old_group_id == 0) ? NULL : Group::load($old_group_id);
 
     // Services can only be added to Bureaus and Programs.
     if( $entity->bundle() == 'city_service' && 
       ($new_group_type != 'bureau_office' && $new_group_type != 'program') ) 
     {
-      // Make sure Group field is the same as old group
-      if( $entity->hasField('field_group') ) $entity->field_group->entity = $old_group;
-      $entity->save();
-      return $this->t('Service can only be in Bureaus/Offices or Programs.');
+      // The new group does not allow Service type. So the new_group is the same as the old_group.
+      return self::updateGroupField($entity, $content_lock_service, $old_group, $old_group, $this->configuration['break_lock']);
     }
 
+    // Update the group content table
     if($old_group_id != $new_group_id) {
       if($old_group_id != 0) {
         // Remove from all groups.
@@ -76,11 +83,7 @@ class ChangeGroupAction extends ViewsBulkOperationsActionBase implements PluginF
       }
     }
 
-    if( $entity->hasField('field_group') ) $entity->field_group->entity = $new_group;
-    $entity->save();
-
-    // Don't return anything for a default completion message, otherwise return translatable markup.
-    return $this->t('Group changed');
+    return self::updateGroupField($entity, $content_lock_service, $old_group, $new_group, $this->configuration['break_lock']);
   }
 
   /**
@@ -128,6 +131,11 @@ class ChangeGroupAction extends ViewsBulkOperationsActionBase implements PluginF
       '#description' => 'The selected items will be assigned to the new group. Choose "- None -" to remove the items from all groups.',
       '#options' => $options,
     );
+    $form['break_lock'] = array(
+      '#type' => 'checkbox',
+      '#title' => 'Break locks if the content is locked. Please notify the lock owner to reload the edit page after this operation.',
+      '#default_value' => 0,
+     );
     return $form;
   }
 
@@ -143,6 +151,7 @@ class ChangeGroupAction extends ViewsBulkOperationsActionBase implements PluginF
    */
   public function submitConfigurationForm(array &$form, FormStateInterface $form_state) {
     $this->configuration['new_group'] = $form_state->getValue('new_group');
+    $this->configuration['break_lock'] = $form_state->getValue('break_lock');
   }
 
   // Get the parent group IDs of an entity
@@ -157,5 +166,36 @@ class ChangeGroupAction extends ViewsBulkOperationsActionBase implements PluginF
     }
 
     return $group_ids;
+  }
+
+  public static function updateGroupField($entity, $content_lock_service, $old_group, $new_group, $break_lock_flag) {
+    if($entity == NULL || $content_lock_service == NULL) {
+      return t('Group field not updated.');
+    }
+    $isLocked = $content_lock_service->fetchLock($entity->id(), $entity->language(), NULL, $entity->getEntityTypeId());
+
+    if( !$entity->hasField('field_group') ) {
+      return t('Group field not found in ' . $entity->getEntityTypeId());
+    }
+    if( ($entity->field_group->entity == NULL && $new_group == NULL) ||
+    ($new_group != NULL && $entity->field_group->entity != NULL && $entity->field_group->entity->id() == $new_group->id() ) ) {
+      return t("Group field is up to date.");
+    }
+
+    // Make sure Group field is the same as old group
+    $entity->field_group->entity = $new_group;
+
+    // If the content is NOT locked, go ahead save
+    if( $isLocked === FALSE ) {
+      $entity->save();
+      return t('Group changed.');
+    }
+    // If the content is locked, only break lock and save if the user wants to
+    else if( $break_lock_flag == 1) {
+      $content_lock_service->release($entity->id(), $entity->language(), NULL, NULL, $entity->getEntityTypeId());
+
+      $entity->save();
+      return t('Group changed.');
+    }
   }
 }
