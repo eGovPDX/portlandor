@@ -11,8 +11,8 @@ use Drupal\filter\Render\FilteredMarkup;
 /**
  * @Filter(
  *   id = "portland_media_embed_helper_filter",
- *   title = @Translation("Portland Media Embed Helper Classes Filter"),
- *   description = @Translation("Adds classes to entity embed containers that correspond to the selected media browser"),
+ *   title = @Translation("Portland Media Embed Helper Filter"),
+ *   description = @Translation("Adds classes to entity embed containers and pre-selects image display mode based on alignment selections. This filter must be executed before Align, Caption, or Display Embedded Entities."),
  *   type = Drupal\filter\Plugin\FilterInterface::TYPE_MARKUP_LANGUAGE,
  * )
  */
@@ -20,7 +20,8 @@ class PortlandMediaEmbedHelperClasses extends FilterBase {
 
   /**
    * Processes text in the following ways: 
-   * - 
+   * - Adds classes to entity embed containers that correspond to the media type, so they can be styled
+   * - Pre-sets the display mode for images based on the alignment option selected in the embed dialog
    *
    * @param [type] $text
    * @param [type] $langcode
@@ -34,8 +35,12 @@ class PortlandMediaEmbedHelperClasses extends FilterBase {
       $dom = Html::load($text);
       $xpath = new \DOMXPath($dom);
       foreach ($xpath->query('//*[@data-embed-button]') as $node) {
-        // Read the data-caption attribute's value
+        // Read the data-caption attribute's value; this is used to determine media type
         $embed_button = Html::escape($node->getAttribute('data-embed-button'));
+
+        // alignment is used to determine image display mode
+        $alignment = Html::escape($node->getAttribute('data-align'));
+
         // the embed tag may be enclosed in a <figure> provided by the filter-caption template.
         // that is where we want to put the media type class.
         $node = ($node->parentNode->tagName === 'figure') ? $node->parentNode : $node;
@@ -49,6 +54,19 @@ class PortlandMediaEmbedHelperClasses extends FilterBase {
 
           case "image_browser":
             $media_class = "embed-image";
+            // for images, set the display mode based on alignment
+            $display = "embedded";
+            if (!is_null($alignment) && $alignment == "responsive-right") {
+              $display = "embedded_50";
+              $media_class .= " responsive-right";
+            } else if (!is_null($alignment) && $alignment == "responsive-full") {
+              $display = "embedded_100";
+              $media_class .= " responsive-full";
+            } else {
+              $media_class .= " embedded-right";
+            }
+            // change value of data-entity-embed-display="view_mode:media.embedded"
+            $node->setAttribute("data-entity-embed-display", "view_mode:media." . $display);
             break;
 
           case "audio_video_browser":
@@ -62,7 +80,6 @@ class PortlandMediaEmbedHelperClasses extends FilterBase {
         $classes = (strlen($classes) > 0) ? explode(' ', $classes) : [];
         $classes[] = $media_class;
         $node->setAttribute('class', implode(' ', $classes));
-
       }
 
       $result->setProcessedText(Html::serialize($dom))
