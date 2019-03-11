@@ -1,9 +1,11 @@
-uuid: 314e7772-2862-4322-b342-b5e68496e948
+uuid: 0aa8529c-5b13-446f-be52-0073f136aa5b
 langcode: en
 status: true
 dependencies:
   config:
+    - core.entity_view_mode.node.related
     - field.field.node.event.field_all_day
+    - field.field.node.event.field_body
     - field.field.node.event.field_body_content
     - field.field.node.event.field_end_date
     - field.field.node.event.field_end_time
@@ -19,10 +21,8 @@ dependencies:
   module:
     - datetime
     - ds
-    - entity_reference_revisions
     - field_group
     - panelizer
-    - text
     - time_field
     - user
 third_party_settings:
@@ -33,30 +33,53 @@ third_party_settings:
     default: default
   ds:
     layout:
-      id: layout_onecol
-      library: layout_discovery/onecol
+      id: cloudy_card
+      library: null
       disable_css: false
       entity_classes: all_classes
-      settings: {  }
+      settings:
+        wrappers:
+          first: div
+          second: div
+        outer_wrapper: div
+        attributes: ''
+        link_attribute: ''
+        link_custom: ''
+        classes:
+          layout_class: {  }
     regions:
-      content:
+      first:
+        - node_title
         - field_start_date
-        - field_end_date
         - group_date_and_time
+        - field_end_date
         - group_start_to_end_time
         - field_all_day
-        - field_event_location
         - field_start_time
-        - field_summary
         - field_end_time
-        - field_body_content
+    fields:
+      node_title:
+        plugin_id: node_title
+        weight: 0
+        label: hidden
+        formatter: default
+        settings:
+          link: true
+          wrapper: h3
+          class: ''
+        ft:
+          id: default
+          settings:
+            lb: ''
+            lb-col: false
+            classes: {  }
   field_group:
     group_date_and_time:
       children:
         - field_start_date
         - field_end_date
       parent_name: ''
-      weight: 2
+      weight: 1
       format_type: html_element
       format_settings:
         label: 'Start to end date'
@@ -69,14 +92,14 @@ third_party_settings:
         id: ''
         classes: 'event--date h4'
       label: 'Start to end date'
-      region: content
+      region: hidden
     group_start_to_end_time:
       children:
         - field_all_day
         - field_start_time
         - field_end_time
       parent_name: ''
-      weight: 3
+      weight: 2
       format_type: html_element
       format_settings:
         label: 'Start to end time'
@@ -89,16 +112,16 @@ third_party_settings:
         id: ''
         classes: 'event--time h4 mb-4'
       label: 'Start to end time'
-      region: content
-id: node.event.default
+      region: hidden
+id: node.event.related
 targetEntityType: node
 bundle: event
-mode: default
+mode: related
 content:
   field_all_day:
     type: boolean
     weight: 3
-    region: content
+    region: first
     label: hidden
     settings:
       format: custom
@@ -133,13 +156,6 @@ content:
             fis: false
             fis-def-at: false
             fi-def-at: false
-  field_body_content:
-    type: text_default
-    weight: 6
-    region: content
-    label: hidden
-    settings: {  }
-    third_party_settings: {  }
   field_end_date:
     weight: 1
     label: hidden
@@ -176,7 +192,7 @@ content:
             fis-def-at: false
             fi-def-at: false
     type: datetime_default
-    region: content
+    region: first
   field_end_time:
     weight: 5
     label: hidden
@@ -212,32 +228,7 @@ content:
             fis-def-at: false
             fi-def-at: false
     type: time_formatter
-    region: content
-  field_event_location:
-    type: entity_reference_revisions_entity_view
-    weight: 4
-    label: hidden
-    settings:
-      view_mode: default
-      link: ''
-    third_party_settings:
-      ds:
-        ds_limit: ''
-        ft:
-          id: default
-          settings:
-            lb: ''
-            lb-col: false
-            classes: {  }
-    region: content
-  field_related_content:
-    weight: 7
-    label: above
-    settings:
-      link: true
-    third_party_settings: {  }
-    type: entity_reference_label
-    region: content
+    region: first
   field_start_date:
     weight: 0
     label: hidden
@@ -274,7 +265,7 @@ content:
             fis-def-at: false
             fi-def-at: false
     type: datetime_default
-    region: content
+    region: first
   field_start_time:
     weight: 4
     label: hidden
@@ -310,46 +301,15 @@ content:
             fis-def-at: false
             fi-def-at: false
     type: time_formatter
-    region: content
-  field_summary:
-    weight: 5
-    label: hidden
-    settings:
-      link_to_entity: false
-    third_party_settings:
-      ds:
-        ft:
-          id: expert
-          settings:
-            lb: ''
-            prefix: ''
-            lbw-el: ''
-            lbw-cl: ''
-            lbw-at: ''
-            ow-el: ''
-            ow-cl: ''
-            ow-at: ''
-            fis: true
-            fis-el: p
-            fis-cl: lead
-            fis-at: ''
-            fi-el: ''
-            fi-cl: ''
-            fi-at: ''
-            suffix: ''
-            lbw: false
-            lb-col: false
-            ow: false
-            ow-def-at: false
-            ow-def-cl: false
-            fis-def-at: false
-            fi: false
-            fi-def-at: false
-    type: string
-    region: content
+    region: first
 hidden:
   content_moderation_control: true
+  field_body: true
+  field_body_content: true
+  field_event_location: true
   field_group: true
   field_legacy_path: true
+  field_related_content: true
   field_reviewer: true
+  field_summary: true
   links: true
