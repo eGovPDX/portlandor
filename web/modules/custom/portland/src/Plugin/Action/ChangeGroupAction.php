@@ -17,7 +17,7 @@ use Drupal\group\Entity\GroupContent;
  *   id = "change_group_action",
  *   label = @Translation("Change parent group of Content (custom action)"),
  *   type = "",
- *   confirm = FALSE,
+ *   confirm = TRUE,
  * )
  */
 class ChangeGroupAction extends ViewsBulkOperationsActionBase implements PluginFormInterface {
