@@ -27,8 +27,8 @@ class ArchiveAction extends ViewsBulkOperationsActionBase {
   public function execute($entity = NULL) {
 
     if( $entity->status->value == 0 ) {
-      if( ($entity->getEntityTypeId() == 'node' && $entity->moderation_state->value = 'archived') ||
-          ($entity->getEntityTypeId() == 'media' && $entity->moderation_state->value = 'unpublished_archived') ) {
+      if( ($entity->getEntityTypeId() == 'node' && $entity->moderation_state->value == 'archived') ||
+          ($entity->getEntityTypeId() == 'media' && $entity->moderation_state->value == 'unpublished_archived') ) {
         return $this->t('Is already archived.');
       }
     }
