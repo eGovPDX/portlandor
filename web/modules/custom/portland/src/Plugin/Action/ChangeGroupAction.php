@@ -184,6 +184,13 @@ class ChangeGroupAction extends ViewsBulkOperationsActionBase implements PluginF
 
     // Make sure Group field is the same as old group
     $entity->field_group->entity = $new_group;
+    $entity->setNewRevision(TRUE);
+    $entity->setRevisionCreationTime(REQUEST_TIME);
+    $entity->setRevisionUserId(\Drupal::currentUser()->id());
+    $old_group_name = ($old_group == NULL) ? "None" : $old_group->label();
+    $new_group_name = ($new_group == NULL) ? "None" : $new_group->label();
+    if($entity->hasField('revision_log'))
+      $entity->revision_log = "Group field updated from $old_group_name to $new_group_name.";
 
     // If the content is NOT locked, go ahead save
     if( $isLocked === FALSE ) {
