@@ -4,33 +4,15 @@ config:
   framework: drupal8
   site: portlandor
   id: 5c6715db-abac-4633-ada8-1c9efe354629
-framework: drupal8
 xdebug: true
+drush: composer
 services:
   appserver:
+    description: Add the City of Portland public certs to properly decrypt within the network
     run_as_root:
-      - cp /app/cop_ca_*.crt /usr/local/share/ca-certificates/
-      - update-ca-certificates
-      - chown -R www-data:www-data /var/www/.terminus
-    run:
-      - if [ ! -d "/var/www/.terminus/plugins/terminus-secrets-plugin" ]; then { mkdir -p /var/www/.terminus/plugins; composer create-project -d ~/.terminus/plugins pantheon-systems/terminus-secrets-plugin:~1; } fi
-    xdebug: true
-    config:
-      conf: xdebug.ini
-  index:
-    portforward: true
-    run_as_root:
-      - "cp -f /app/sites#self#environments#lando.xml /etc/tomcat7/Catalina/localhost/"
-  solr6:
-    type: solr:6.6
-    portforward: true
-    core: index
-    config:
-      conf: private/solr-conf
-drush: composer
+      - /bin/sh -c "cp /app/cop_ca_*.crt /usr/local/share/ca-certificates/"
+      - /bin/sh -c "update-ca-certificates"
 tooling:
   drush:
     service: appserver
-    cmd:
-      - "drush"
-      - "--root=/app/web"
+    cmd: drush --root=/app/web
