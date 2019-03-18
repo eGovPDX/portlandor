@@ -4,8 +4,10 @@ Feature: Add media feature
   As a group member
   I need to be able to add media
 
-  Scenario: Access audio creation page and create audio without error
+  Background: Login as Marty Member
     Given I am logged in as user "marty.member@portlandoregon.gov"
+
+  Scenario: Access audio creation page and create audio without error
     When I visit "/group/14/content/create/group_media%3Aaudio"
     And I fill in "Name" with "Test audio"
     And I fill in "Audio Url" with "https://www.youtube.com/watch?v=9bZkp7q19f0"
@@ -13,7 +15,6 @@ Feature: Add media feature
     And I should see "Audio Test audio has been created."
 
   Scenario: Access video creation page and create video without error
-    Given I am logged in as user "marty.member@portlandoregon.gov"
     When I visit "/group/14/content/create/group_media%3Avideo"
     And I fill in "Name" with "Test video"
     And I fill in "Video URL" with "https://www.youtube.com/watch?v=9bZkp7q19f0"

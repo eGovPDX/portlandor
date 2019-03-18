@@ -181,6 +181,14 @@ run_tests: &run_tests
           - "/tmp/vendor"
     - restore_cache: *restore_cache
     - run:
+        name: Composer install
+        command: |
+          # Run composer install with hirak/prestissimo for better performance
+          composer config --global --auth github-oauth.github.com "$COMPOSER_TOKEN"
+          composer global require hirak/prestissimo && composer install --no-suggest --no-interaction
+          # TODO: should only deploy non-dev packages
+          # --no-dev
+    - run:
         name: Run tests against Pantheon
         when: on_success
         command: |
@@ -213,6 +221,7 @@ jobs:
 # Declare a workflow that runs all of our jobs in parallel.
 workflows:
   version: 2
-  test_and_deploy:
+  deploy_and_test:
     jobs:
+      # Test will be started by QuickSilver after the sync_code event
       - deploy
