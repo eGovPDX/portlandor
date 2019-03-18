@@ -22,7 +22,7 @@ if( $_ENV['PANTHEON_ENVIRONMENT'] != 'live' && $_ENV['PANTHEON_ENVIRONMENT'] != 
   // needed at this point.
 
   // Specify the job to run
-  $payload['build_parameters[CIRCLE_JOB]'] = 'run_tests';
+  $payload['build_parameters[CIRCLE_JOB]'] = 'test';
   $payload['site_name'] = $_ENV['PANTHEON_SITE_NAME'];
   $payload = http_build_query($payload);
 
