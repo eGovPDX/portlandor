@@ -154,6 +154,31 @@ build_and_deploy: &build_and_deploy
 run_tests: &run_tests
   <<: *defaults
   steps:
+    - restore_cache:
+        name: Retore Git cache before checkout
+        keys:
+          - source
+    - checkout
+    - save_cache:
+        name: Save Git cache after checkout
+        key: source
+        paths:
+          - ".git"
+    - restore_cache:
+        name: Restore Terminus cache
+        keys:
+          - terminus_-{{ checksum "composer.lock" }}
+    - run:
+        name: Install Terminus
+        command: |
+          # if [ ! -f "/tmp/vendor/pantheon-systems/terminus/bin/terminus" ]; then
+          cd /tmp && composer require pantheon-systems/terminus:2.0.0
+          # fi
+    - save_cache:
+        name: Save Terminus cache
+        key: terminus_-{{ checksum "composer.lock" }}
+        paths:
+          - "/tmp/vendor"
     - run:
         name: Run tests against Pantheon
         when: on_success
