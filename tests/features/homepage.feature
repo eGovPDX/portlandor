@@ -1,4 +1,4 @@
-@api @multidev @dev
+@api @multidev @dev @homepage
 Feature: Demo feature
   In order to use portland.gov
   As an authenticated user

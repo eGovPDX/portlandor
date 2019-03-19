@@ -1,3 +1,4 @@
+@admin_members
 Feature: Administer group membership
 
   In order to manage my group

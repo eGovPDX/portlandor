@@ -1,4 +1,4 @@
-@api @javascript @multidev @dev
+@api @javascript @multidev @dev @add_media
 Feature: Add media feature
   In order to manage media
   As a group member

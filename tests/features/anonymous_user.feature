@@ -1,4 +1,4 @@
-@javascript
+@javascript @multidev @dev @anonymous_user
 Feature: Demo feature
   In order to test Drupal
   As an anonymous user
@@ -7,7 +7,6 @@ Feature: Demo feature
   Background: Visit as an anonymous user
     Given I am an anonymous user
 
-  @multidev @dev
   Scenario: Visit the homepage
     When I visit "/"
     # Then print last response
