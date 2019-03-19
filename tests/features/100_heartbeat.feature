@@ -6,7 +6,6 @@ Feature: Site is running
 
   @api @multidev @dev
   Scenario: Visit the homepage
-    Given I am an anonymous user
     When I visit "/"
     Then I should see "Portland, Oregon"
     And I should see "Services"
