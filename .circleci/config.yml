@@ -1,89 +1,98 @@
 # CircleCI integration with Drupal 8.
+version: 2.1
 
-## Defines images and working directory.
-defaults: &defaults
-  docker:
-    # - image: juampynr/drupal8ci:latest
-    # updated CI image
-    - image: kxwang/drupal-ci:circleci
-    - image: selenium/standalone-chrome-debug:3.7.1-beryllium
-  working_directory: /var/www/html
+executors:
+  ci-executor:
+    docker:
+      - image: kxwang/drupal-ci:circleci
+      - image: selenium/standalone-chrome-debug:3.7.1-beryllium
+    working_directory: /var/www/html
 
-## Defines the cache restoring mechanism.
-restore_cache: &restore_cache
-  # We use the composer.lock as a way to determine if we can cache our build.
-  keys:
-  - v1-dependencies-{{ checksum "composer.lock" }}
-  # fallback to using the latest cache if no exact match is found
-  - v1-dependencies-
+commands:
+  before-jobs:
+    description: "Common steps run before jobs."
+    steps:
+      - restore_cache:
+          name: Retore Git cache before checkout
+          keys:
+            - source
+      - checkout
+      - save_cache:
+          name: Save Git cache after checkout
+          key: source
+          paths:
+            - ".git"
+      - restore_cache:
+          name: Restore Terminus cache
+          keys:
+            - terminus_-{{ checksum "composer.lock" }}
+      - run:
+          name: Install Terminus
+          command: |
+            cd /tmp && composer require pantheon-systems/terminus:2.0.0
+      - save_cache:
+          name: Save Terminus cache
+          key: terminus_-{{ checksum "composer.lock" }}
+          paths:
+            - "/tmp/vendor"
+      - restore_cache:
+          name: Restore theme build asset cache
+          keys:
+            - cloudy_-{{ checksum "web/themes/custom/cloudy/package.json" }}
+      - run:
+          name: Install theme build tools
+          command: |
+            cd web/themes/custom/cloudy && npm install
+      - save_cache:
+          name: Save theme build asset cache
+          key: cloudy_-{{ checksum "web/themes/custom/cloudy/package.json" }}
+          paths:
+            - "web/themes/custom/cloudy/node_modules"
+      - restore_cache:
+          name: Restore files installed by Composer
+          # We use the composer.lock as a way to determine if we can cache our build.
+          keys:
+            - v1-dependencies-{{ checksum "composer.lock" }}
+            # fallback to using the latest cache if no exact match is found
+            - v1-dependencies-
+      - run:
+          name: Composer install
+          command: |
+            # Pantheon don't allow these folders but Composer needs them
+            rm -rf ./web/modules/contrib/facets
+            # Run composer install with hirak/prestissimo for better performance
+            composer config --global --auth github-oauth.github.com "$COMPOSER_TOKEN"
+            composer global require hirak/prestissimo && composer install --no-suggest --no-interaction
+            # TODO: should only deploy non-dev packages
+            # --no-dev
+  after-jobs:
+    description: "Common steps run after jobs."
+    steps:
+      - save_cache:
+          name: Save files installed by Composer 
+          paths:
+            - ./vendor
+            - ./web/core
+            - ./web/modules/contrib
+            - ./web/profiles/contrib
+            - ./web/themes/contrib
+            - ./web/libraries
+          key: v1-depe
+  save-results:
+    description: "Save resutls after tests."
+    steps:
+      - store_test_results:
+          path: /var/www/html/artifacts/behat
+      - store_artifacts:
+          path: /var/www/html/artifacts
 
-## Defines the cache saving mechanism.
-save_cache: &save_cache
-  paths:
-    - ./vendor
-    - ./web/core
-    - ./web/modules/contrib
-    - ./web/profiles/contrib
-    - ./web/themes/contrib
-    - ./web/libraries
-  key: v1-dependencies-{{ checksum "composer.lock" }}
 
-#Jobs
-
-## Job to run the update path and Behat tests.
-build_and_deploy: &build_and_deploy
-  <<: *defaults
-  steps:
-    - restore_cache:
-        name: Retore Git cache before checkout
-        keys:
-          - source
-    - checkout
-    - save_cache:
-        name: Save Git cache after checkout
-        key: source
-        paths:
-          - ".git"
-    - restore_cache:
-        name: Restore Terminus cache
-        keys:
-          - terminus_-{{ checksum "composer.lock" }}
-    - run:
-        name: Install Terminus
-        command: |
-          # if [ ! -f "/tmp/vendor/pantheon-systems/terminus/bin/terminus" ]; then
-          cd /tmp && composer require pantheon-systems/terminus:2.0.0
-          # fi
-    - save_cache:
-        name: Save Terminus cache
-        key: terminus_-{{ checksum "composer.lock" }}
-        paths:
-          - "/tmp/vendor"
-    - restore_cache:
-        name: Restore theme build asset cache
-        keys:
-          - cloudy_-{{ checksum "web/themes/custom/cloudy/package.json" }}
-    - run:
-        name: Install theme build tools
-        command: |
-          cd web/themes/custom/cloudy && npm install
-    - save_cache:
-        name: Save theme build asset cache
-        key: cloudy_-{{ checksum "web/themes/custom/cloudy/package.json" }}
-        paths:
-          - "web/themes/custom/cloudy/node_modules"
-    - restore_cache: *restore_cache
-    - run:
-        name: Composer install
-        command: |
-          # Pantheon don't allow these folders but Composer needs them
-          rm -rf ./web/modules/contrib/facets
-          # Run composer install with hirak/prestissimo for better performance
-          composer config --global --auth github-oauth.github.com "$COMPOSER_TOKEN"
-          composer global require hirak/prestissimo && composer install --no-suggest --no-interaction
-          # TODO: should only deploy non-dev packages
-          # --no-dev
-    - run:
+jobs:
+  build-and-deploy:
+    executor: ci-executor
+    steps:
+      - before-jobs
+      - run:
         name: Deploy to Pantheon
         when: on_success
         command: |
@@ -150,45 +159,12 @@ build_and_deploy: &build_and_deploy
             # Drush CIM, CR are handled by QuickSilver event handlers
             # echo 'node_access_rebuild();' | $(terminus drush portlandor.$CIRCLE_BRANCH -- php-script)
           fi
-
-run_tests: &run_tests
-  <<: *defaults
-  steps:
-    - restore_cache:
-        name: Retore Git cache before checkout
-        keys:
-          - source
-    - checkout
-    - save_cache:
-        name: Save Git cache after checkout
-        key: source
-        paths:
-          - ".git"
-    - restore_cache:
-        name: Restore Terminus cache
-        keys:
-          - terminus_-{{ checksum "composer.lock" }}
-    - run:
-        name: Install Terminus
-        command: |
-          # if [ ! -f "/tmp/vendor/pantheon-systems/terminus/bin/terminus" ]; then
-          cd /tmp && composer require pantheon-systems/terminus:2.0.0
-          # fi
-    - save_cache:
-        name: Save Terminus cache
-        key: terminus_-{{ checksum "composer.lock" }}
-        paths:
-          - "/tmp/vendor"
-    - restore_cache: *restore_cache
-    - run:
-        name: Composer install
-        command: |
-          # Run composer install with hirak/prestissimo for better performance
-          composer config --global --auth github-oauth.github.com "$COMPOSER_TOKEN"
-          composer global require hirak/prestissimo && composer install --no-suggest --no-interaction
-          # TODO: should only deploy non-dev packages
-          # --no-dev
-    - run:
+      - after-jobs
+  test:
+    executor: ci-executor
+    steps:
+      - before-jobs
+      - run:
         name: Run tests against Pantheon
         when: on_success
         command: |
@@ -204,19 +180,7 @@ run_tests: &run_tests
             echo 'export BEHAT_PARAMS="{\"extensions\" : {\"Behat\\\MinkExtension\" : {\"base_url\" : \"https://${CIRCLE_BRANCH}-portlandor.pantheonsite.io\"}, \"Drupal\\\DrupalExtension\" : {\"drush\" : { \"alias\": \"portlandor.${CIRCLE_BRANCH}\"}}}}"' >> $BASH_ENV && source $BASH_ENV
             behat -c tests/behat.yml --tags '@multidev'
           fi
-    - save_cache: *save_cache
-    - store_test_results:
-        path: /var/www/html/artifacts/behat
-    - store_artifacts:
-        path: /var/www/html/artifacts
-
-# Declare all of the jobs we should run.
-version: 2
-jobs:
-  deploy:
-     <<: *build_and_deploy
-  test:
-     <<: *run_tests
+      - after-jobs
 
 # Declare a workflow that runs all of our jobs in parallel.
 workflows:
