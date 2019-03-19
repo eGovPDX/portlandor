@@ -40,3 +40,4 @@ Feature: Create group and assign users
     And I press "Save"
     Then I should see "Manage A test group Members"
     And I should see "Mary Member"
+
