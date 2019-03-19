@@ -1,4 +1,5 @@
 <?php
+
 // Import all config changes.
 echo "Start importing configuration from yml files...\n";
 passthru('drush config-import -y');
