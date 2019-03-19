@@ -7,6 +7,8 @@
 //
 // Useful to have one webhook handle multiple events.
 
+echo "Start calling CircleCI webhook\n";
+
 // DO NOT run tests against Live or Test environment
 if( $_ENV['PANTHEON_ENVIRONMENT'] != 'live' && $_ENV['PANTHEON_ENVIRONMENT'] != 'test') {
   $git_repo_name = $_ENV['PANTHEON_SITE_NAME']; // portlandor
