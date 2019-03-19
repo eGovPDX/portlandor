@@ -1,4 +1,4 @@
-@api @multidev @dev
+@javascript
 Feature: Site is running
   In order to test that the site is up
   As an anonymous user

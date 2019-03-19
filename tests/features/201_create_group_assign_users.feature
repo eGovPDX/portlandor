@@ -4,7 +4,7 @@ Feature: Create group and assign users
   As a sitewide administrator
   I need to be able to create a group and assign users to it
 
-  @api @multidev
+  @api @multidev @dev
   Scenario: Create group
     Given I am logged in as "superAdmin"
     When I visit "/group/add/bureau_office"
@@ -22,13 +22,13 @@ Feature: Create group and assign users
 
     Then I should see "This is a test summary for the Test group"
 
-  @api @multidev
+  @api @multidev @dev
   Scenario: Assign users to group
     Given users: 
-    | name        | mail                           | roles |
-    | Adam Admin  | adam.admin@portlandoregon.gov  |       |
-    | Mary Member | mary.member@portlandoregon.gov |       |
-    And I am logged in as "superAdmin"
+    | name        | mail                           | roles              |
+    | Adam Admin  | adam.admin@portlandoregon.gov  | Administrator      |
+    | Mary Member | mary.member@portlandoregon.gov | Authenticated user |
+    And I am logged in as "Adam Admin"
     When I visit "/test"
     Then I should see "A test group"
 
@@ -39,10 +39,7 @@ Feature: Create group and assign users
     Then I should see "Create Bureau/office: Group membership" in the "content" region
     And I should see "Username"
 
-    When I fill in the autocomplete "edit-entity-id-0-target-id" with "Adam Admin" and click "Adam Admin"
+    When I fill in the autocomplete "edit-entity-id-0-target-id" with "Mary Member" and click "Mary Member"
     And I press "Save"
-    Then I should see "Manage Technology Services Members"
-    And I should see "Adam Admin"
-
-    When I say "goodbye"
-    Then I should see "Bye!"
+    Then I should see "Manage A test group Members"
+    And I should see "Mary Member"
