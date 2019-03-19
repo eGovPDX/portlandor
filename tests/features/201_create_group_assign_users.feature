@@ -40,3 +40,6 @@ Feature: Create group and assign users
     And I press "Save"
     Then I should see "Manage Technology Services Members"
     And I should see "Adam Admin"
+
+    When I say "goodbye"
+    Then I should see "Bye!"
