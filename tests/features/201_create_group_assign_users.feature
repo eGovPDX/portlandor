@@ -20,3 +20,23 @@ Feature: Create group and assign users
 
     Then I should see "This is a test summary for the Test group"
 
+  Scenario: Assign users to group
+    Given users: 
+    | name        | mail                           | roles |
+    | Adam Admin  | adam.admin@portlandoregon.gov  |       |
+    | Mary Member | mary.member@portlandoregon.gov |       |
+    And I am logged in as "superAdmin"
+    When I visit "/test"
+    Then I should see "A test group"
+
+    When I click "Members"
+    Then I should see "Add member"
+
+    When I click the link "Add member"
+    Then I should see "Create Bureau/office: Group membership" in the "content" region
+    And I should see "Username"
+
+    When I fill in the autocomplete "edit-entity-id-0-target-id" with "Adam Admin" and click "Adam Admin"
+    And I press "Save"
+    Then I should see "Manage Technology Services Members"
+    And I should see "Adam Admin"
