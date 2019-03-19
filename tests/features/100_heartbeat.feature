@@ -9,4 +9,4 @@ Feature: Site is running
     Given I am an anonymous user
     When I visit "/"
     Then I should see "Portland, Oregon"
-    And I should see the link "Services"
+    And I should see "Services"
