@@ -8,8 +8,6 @@
 //
 // Useful to have one webhook handle multiple events.
 
-echo "Start calling CircleCI webhook\n";
-
 // DO NOT run tests against Live or Test environment
 if( $_ENV['PANTHEON_ENVIRONMENT'] != 'live' && $_ENV['PANTHEON_ENVIRONMENT'] != 'test') {
   $git_repo_name = $_ENV['PANTHEON_SITE_NAME']; // portlandor
@@ -29,8 +27,8 @@ if( $_ENV['PANTHEON_ENVIRONMENT'] != 'live' && $_ENV['PANTHEON_ENVIRONMENT'] != 
   $payload['site_name'] = $_ENV['PANTHEON_SITE_NAME'];
   $payload = http_build_query($payload);
 
-  // Shell command:
-  // curl -u "API_TOKEN_HERE:" \
+  // Shell command: the colon at the end of api token is required.
+  // curl -u "{CIRCLECI_API_TOKEN}:" \
   //      -d build_parameters[CIRCLE_JOB]=test \
   //      https://circleci.com/api/v1.1/project/github/eGovPDX/REPO_NAME/tree/BRANCH_NAME
 
