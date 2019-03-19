@@ -6,7 +6,7 @@ Feature: Create group and assign users
 
   @api @multidev @dev
   Scenario: Create group
-    Given I am logged in as "superAdmin"
+    Given I am logged in as user "superAdmin"
     When I visit "/group/add/bureau_office"
     Then I should see "Add Bureau/office"
 
@@ -26,9 +26,8 @@ Feature: Create group and assign users
   Scenario: Assign users to group
     Given users: 
     | name        | mail                           | roles              |
-    | Adam Admin  | adam.admin@portlandoregon.gov  | Administrator      |
     | Mary Member | mary.member@portlandoregon.gov | Authenticated user |
-    And I am logged in as "superAdmin"
+    And I am logged in as user "superAdmin"
     When I visit "/test"
     And I click "Members"
     Then I should see "Add member"
