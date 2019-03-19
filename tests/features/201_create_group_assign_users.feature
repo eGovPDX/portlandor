@@ -33,7 +33,7 @@ Feature: Create group and assign users
     Then I should see "Add member"
 
     When I click "Add member"
-    Then I should see "Create Bureau/office: Group membership" in the "content" region
+    Then I should see "Create Bureau/office: Group membership"
     And I should see "Username"
 
     When I fill in the autocomplete "edit-entity-id-0-target-id" with "Mary Member" and click "Mary Member"
