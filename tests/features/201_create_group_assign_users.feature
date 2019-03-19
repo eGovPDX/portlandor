@@ -6,11 +6,7 @@ Feature: Create group and assign users
 
   @api @multidev @dev
   Scenario: Create group
-    Given users: 
-    | name        | mail                           | roles              |
-    | Adam Admin  | adam.admin@portlandoregon.gov  | Administrator      |
-    | Mary Member | mary.member@portlandoregon.gov | Authenticated user |
-    And I am logged in as "Adam Admin"
+    Given I am logged in as "superAdmin"
     When I visit "/group/add/bureau_office"
     Then I should see "Add Bureau/office"
 
@@ -28,12 +24,16 @@ Feature: Create group and assign users
 
   @api @multidev @dev
   Scenario: Assign users to group
-    Given I am logged in as "Adam Admin"
+    Given users: 
+    | name        | mail                           | roles              |
+    | Adam Admin  | adam.admin@portlandoregon.gov  | Administrator      |
+    | Mary Member | mary.member@portlandoregon.gov | Authenticated user |
+    And I am logged in as "superAdmin"
     When I visit "/test"
     And I click "Members"
     Then I should see "Add member"
 
-    When I click the link "Add member"
+    When I click "Add member"
     Then I should see "Create Bureau/office: Group membership" in the "content" region
     And I should see "Username"
 
