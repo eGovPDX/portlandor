@@ -1,8 +1,10 @@
+@javascript
 Feature: Create group and assign users
   In order to manage groups and users
   As a sitewide administrator
   I need to be able to create a group and assign users to it
 
+  @api @multidev
   Scenario: Create group
     Given I am logged in as "superAdmin"
     When I visit "/group/add/bureau_office"
@@ -20,6 +22,7 @@ Feature: Create group and assign users
 
     Then I should see "This is a test summary for the Test group"
 
+  @api @multidev
   Scenario: Assign users to group
     Given users: 
     | name        | mail                           | roles |
