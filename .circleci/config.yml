@@ -9,7 +9,7 @@ executors:
     working_directory: /var/www/html
 
 commands:
-  before-jobs:
+  shared-pre-job-steps:
     description: "Common steps run before jobs."
     steps:
       - restore_cache:
@@ -65,7 +65,7 @@ commands:
             composer global require hirak/prestissimo && composer install --no-suggest --no-interaction
             # TODO: should only deploy non-dev packages
             # --no-dev
-  after-jobs:
+  shared-post-job-steps:
     description: "Common steps run after jobs."
     steps:
       - save_cache:
@@ -91,7 +91,7 @@ jobs:
   build-and-deploy:
     executor: ci-executor
     steps:
-      - before-jobs
+      - shared-pre-job-steps
       - run:
           name: Deploy to Pantheon
           when: on_success
@@ -159,11 +159,11 @@ jobs:
               # Drush CIM, CR are handled by QuickSilver event handlers
               # echo 'node_access_rebuild();' | $(terminus drush portlandor.$CIRCLE_BRANCH -- php-script)
             fi
-      - after-jobs
+      - shared-post-job-steps
   test:
     executor: ci-executor
     steps:
-      - before-jobs
+      - shared-pre-job-steps
       - run:
           name: Run tests against Pantheon
           when: on_success
@@ -180,11 +180,10 @@ jobs:
               echo 'export BEHAT_PARAMS="{\"extensions\" : {\"Behat\\\MinkExtension\" : {\"base_url\" : \"https://${CIRCLE_BRANCH}-portlandor.pantheonsite.io\"}, \"Drupal\\\DrupalExtension\" : {\"drush\" : { \"alias\": \"portlandor.${CIRCLE_BRANCH}\"}}}}"' >> $BASH_ENV && source $BASH_ENV
               behat -c tests/behat.yml --tags '@multidev'
             fi
-      - after-jobs
+      - shared-post-job-steps
 
 # Declare a workflow that runs all of our jobs in parallel.
 workflows:
-  version: 2
   deploy_and_test:
     jobs:
       # Test will be started by QuickSilver after the sync_code event
