@@ -62,7 +62,7 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
     $el->keyUp(' ');
 
     // Sadly this grace of 1 second is needed here.
-    sleep(1);
+    sleep(5);
     $this->minkContext->iWaitForAjaxToFinish();
 
     // Drupal autocompletes have an id of autocomplete which is bad news
