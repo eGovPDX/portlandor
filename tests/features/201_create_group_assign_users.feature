@@ -6,6 +6,11 @@ Feature: Create group and assign users
 
   @api @multidev @dev
   Scenario: Create group
+    Given users: 
+    | name        | mail                           | roles              |
+    | Adam Admin  | adam.admin@portlandoregon.gov  | Administrator      |
+    | Mary Member | mary.member@portlandoregon.gov | Authenticated user |
+    And I am logged in as "Adam Admin"
     When I visit "/group/add/bureau_office"
     Then I should see "Add Bureau/office"
 
@@ -17,17 +22,13 @@ Feature: Create group and assign users
     And I select "OR" from "edit-field-address-0-address-administrative-area"
     And I fill in "edit-field-address-0-address-postal-code" with "97201"
     And I fill in "edit-field-summary-0-value" with "This is a test summary for the Test group"
-    And I press button  "Create Bureau/office"
+    And I press "Create Bureau/office"
 
     Then I should see "This is a test summary for the Test group"
 
   @api @multidev @dev
   Scenario: Assign users to group
-    Given users: 
-    | name        | mail                           | roles              |
-    | Adam Admin  | adam.admin@portlandoregon.gov  | Administrator      |
-    | Mary Member | mary.member@portlandoregon.gov | Authenticated user |
-    And I am logged in as "Adam Admin"
+    Given I am logged in as "Adam Admin"
     When I visit "/test"
     And I click "Members"
     Then I should see "Add member"
