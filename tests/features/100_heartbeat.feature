@@ -8,5 +8,5 @@ Feature: Site is running
   Scenario: Visit the homepage
     Given I am an anonymous user
     When I visit "/"
-    Then I should see "Portland, Oregon" in the "footer_second" region
-    And I should see the link "Services" in the "primary_menu" region
+    Then I should see "Portland, Oregon"
+    And I should see the link "Services"
