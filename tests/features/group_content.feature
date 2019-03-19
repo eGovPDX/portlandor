@@ -1,13 +1,11 @@
-@api @javascript @multidev @dev @group_content
+@api @javascript @multidev @dev
 Feature: Members can manage group content
   In order to manage content in my group
   As a group member
   I need to see and use group content links
 
-  Background: Login as Marty Member
-    Given I am logged in as user "marty.member@portlandoregon.gov"
-
   Scenario: Access tab to add content
+    Given I am logged in as user "marty.member@portlandoregon.gov"
     When I visit "/transportation"
     Then I should see "+ Add Content"
 
@@ -19,10 +17,12 @@ Feature: Members can manage group content
     # And I should see "Information"
 
   Scenario: Visit group content
+    Given I am logged in as user "marty.member@portlandoregon.gov"
     When I visit "/group/14/nodes"
     Then I should see "Manage Transportation Content"
 
   Scenario: See tab to add content
+    Given I am logged in as user "marty.member@portlandoregon.gov"
     When I visit "/transportation"
     Then I should see "+ Add Media"
 
@@ -33,5 +33,6 @@ Feature: Members can manage group content
     And I should see "Video"
 
   Scenario: Visit group media
+    Given I am logged in as user "marty.member@portlandoregon.gov"
     When I visit "/group/14/media"
     Then I should see "Transportation"
