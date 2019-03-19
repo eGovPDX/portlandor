@@ -93,93 +93,93 @@ jobs:
     steps:
       - before-jobs
       - run:
-        name: Deploy to Pantheon
-        when: on_success
-        command: |
-          export PATH=/tmp/vendor/bin:/var/www/html/vendor/bin:$PATH && cd /var/www/html
-          # Don't check the repo host key
-          export GIT_SSH_COMMAND="ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no"
-          # Don't check for host key for Pantheon sites
-          echo -e "host *.drush.in\n    StrictHostKeyChecking no" >> ~/.ssh/config
-          # Terminus log in with the user email that will be displayed as the commit user in Pantheon Git repo
-          terminus auth:login --machine-token="$eGov_Terminus" --email="$eGov_Email"
-          # Git operations
-          git remote add pantheon ssh://codeserver.dev.5c6715db-abac-4633-ada8-1c9efe354629@codeserver.dev.5c6715db-abac-4633-ada8-1c9efe354629.drush.in:2222/~/repository.git
-          git config --global user.email "$eGov_Email"
-          # Without these lines, push will fail with "please remote git submodules" error
-          rm -rf ./vendor/drupal/coder/.git && rm -rf ./web/modules/contrib/facets/.git && rm -rf ./web/modules/contrib/search_api_solr/.git
-          # Compile SCSS in our custom theme
-          cd web/themes/custom/cloudy && npm run build && cd /var/www/html
-          # Exclude dependencies
-          rm -rf web/themes/custom/cloudy/node_modules
-          # Force add all files to include those excluded by .gitignore
-          git add -f /var/www/html
-          # Pantheon site will use the wrong DB if the local is kept
-          git rm --cache  web/sites/default/settings.local.php --ignore-unmatch
-          git rm -r --cache web/sites/default/files --ignore-unmatch
-          git commit -m "CircleCI deployment" --quiet
-          # When commit on master, we deploy to DEV
-          if [[ $CIRCLE_BRANCH = "master" ]]; then
-            echo "Deploy to Pantheon DEV site"
-            # Set the connection type to GIT
-            terminus connection:set portlandor.dev git
-            git push -f pantheon master
-            # TODO: Sanitize DB here
-            # terminus env:clone-content portlandor.test dev
-            # After success deployment to DEV, remove the multidev site if this is a merge of a PR.
-            # Read the last Git log in the master branch. Get the branch name at the end of the log.
-            # Example: Merge pull request #35 from eGovPDX/powr-152
-            cd /var/www/html
-            # Must read the last commit message from Github. The last one in local repo is "CircleCI Deployment"
-            if [[ $(git log origin/master --pretty=format:%s -1) =~ (^Merge pull request #[0-9]* from eGovPDX\/)([^,]*) ]]; then
-              echo "Found a Pull Request Merge for branch: '${BASH_REMATCH[2]}'";
-              # Check if a multidev environment with the branch name exists or not
-              terminus multidev:list --format=list --field=Name portlandor > ./env_list.txt
-              if grep -Fxq "${BASH_REMATCH[2]}" ./env_list.txt; then
-                # Delete both the multidev site and branch
-                terminus multidev:delete --delete-branch portlandor.${BASH_REMATCH[2]} -y
+          name: Deploy to Pantheon
+          when: on_success
+          command: |
+            export PATH=/tmp/vendor/bin:/var/www/html/vendor/bin:$PATH && cd /var/www/html
+            # Don't check the repo host key
+            export GIT_SSH_COMMAND="ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no"
+            # Don't check for host key for Pantheon sites
+            echo -e "host *.drush.in\n    StrictHostKeyChecking no" >> ~/.ssh/config
+            # Terminus log in with the user email that will be displayed as the commit user in Pantheon Git repo
+            terminus auth:login --machine-token="$eGov_Terminus" --email="$eGov_Email"
+            # Git operations
+            git remote add pantheon ssh://codeserver.dev.5c6715db-abac-4633-ada8-1c9efe354629@codeserver.dev.5c6715db-abac-4633-ada8-1c9efe354629.drush.in:2222/~/repository.git
+            git config --global user.email "$eGov_Email"
+            # Without these lines, push will fail with "please remote git submodules" error
+            rm -rf ./vendor/drupal/coder/.git && rm -rf ./web/modules/contrib/facets/.git && rm -rf ./web/modules/contrib/search_api_solr/.git
+            # Compile SCSS in our custom theme
+            cd web/themes/custom/cloudy && npm run build && cd /var/www/html
+            # Exclude dependencies
+            rm -rf web/themes/custom/cloudy/node_modules
+            # Force add all files to include those excluded by .gitignore
+            git add -f /var/www/html
+            # Pantheon site will use the wrong DB if the local is kept
+            git rm --cache  web/sites/default/settings.local.php --ignore-unmatch
+            git rm -r --cache web/sites/default/files --ignore-unmatch
+            git commit -m "CircleCI deployment" --quiet
+            # When commit on master, we deploy to DEV
+            if [[ $CIRCLE_BRANCH = "master" ]]; then
+              echo "Deploy to Pantheon DEV site"
+              # Set the connection type to GIT
+              terminus connection:set portlandor.dev git
+              git push -f pantheon master
+              # TODO: Sanitize DB here
+              # terminus env:clone-content portlandor.test dev
+              # After success deployment to DEV, remove the multidev site if this is a merge of a PR.
+              # Read the last Git log in the master branch. Get the branch name at the end of the log.
+              # Example: Merge pull request #35 from eGovPDX/powr-152
+              cd /var/www/html
+              # Must read the last commit message from Github. The last one in local repo is "CircleCI Deployment"
+              if [[ $(git log origin/master --pretty=format:%s -1) =~ (^Merge pull request #[0-9]* from eGovPDX\/)([^,]*) ]]; then
+                echo "Found a Pull Request Merge for branch: '${BASH_REMATCH[2]}'";
+                # Check if a multidev environment with the branch name exists or not
+                terminus multidev:list --format=list --field=Name portlandor > ./env_list.txt
+                if grep -Fxq "${BASH_REMATCH[2]}" ./env_list.txt; then
+                  # Delete both the multidev site and branch
+                  terminus multidev:delete --delete-branch portlandor.${BASH_REMATCH[2]} -y
+                fi
               fi
-            fi
-          else
-            # Check if the multidev branch site exists. If not, create it
-            terminus multidev:list --format=list --field=Name portlandor > ./env_list.txt
-            if grep -Fxq "$CIRCLE_BRANCH" ./env_list.txt; then
-              echo "Found multidev site"
             else
-              # Create a new Multi-Dev with files and database from Test.
-              echo "Creating new multidev site. Please wait." && terminus multidev:create portlandor.test $CIRCLE_BRANCH
+              # Check if the multidev branch site exists. If not, create it
+              terminus multidev:list --format=list --field=Name portlandor > ./env_list.txt
+              if grep -Fxq "$CIRCLE_BRANCH" ./env_list.txt; then
+                echo "Found multidev site"
+              else
+                # Create a new Multi-Dev with files and database from Test.
+                echo "Creating new multidev site. Please wait." && terminus multidev:create portlandor.test $CIRCLE_BRANCH
+              fi
+              rm -rf ./env_list.txt
+              # Set the connection type to GIT
+              terminus connection:set portlandor.$CIRCLE_BRANCH git
+              # Only do force push when the multidev site doesn't exist
+              git push -f pantheon $CIRCLE_BRANCH
+              # Wake up the multidev site and wait 60s.
+              terminus env:wake portlandor.$CIRCLE_BRANCH
+              # Drush CIM, CR are handled by QuickSilver event handlers
+              # echo 'node_access_rebuild();' | $(terminus drush portlandor.$CIRCLE_BRANCH -- php-script)
             fi
-            rm -rf ./env_list.txt
-            # Set the connection type to GIT
-            terminus connection:set portlandor.$CIRCLE_BRANCH git
-            # Only do force push when the multidev site doesn't exist
-            git push -f pantheon $CIRCLE_BRANCH
-            # Wake up the multidev site and wait 60s.
-            terminus env:wake portlandor.$CIRCLE_BRANCH
-            # Drush CIM, CR are handled by QuickSilver event handlers
-            # echo 'node_access_rebuild();' | $(terminus drush portlandor.$CIRCLE_BRANCH -- php-script)
-          fi
       - after-jobs
   test:
     executor: ci-executor
     steps:
       - before-jobs
       - run:
-        name: Run tests against Pantheon
-        when: on_success
-        command: |
-          export PATH=/var/www/html/vendor/bin:/tmp/vendor/pantheon-systems/terminus/bin:$PATH
-          terminus auth:login --machine-token="$eGov_Terminus" --email="$eGov_Email" && terminus aliases
-          # TODO: revisit this when we only deploy non-dev packages.
-          # Install Behat and its dependencies.
-          # composer install
-          if [[ $CIRCLE_BRANCH = "master" ]]; then
-            echo 'export BEHAT_PARAMS="{\"extensions\" : {\"Behat\\\MinkExtension\" : {\"base_url\" : \"https://${HTTP_AUTH}@dev-portlandor.pantheonsite.io\"}, \"Drupal\\\DrupalExtension\" : {\"drush\" : { \"alias\": \"portlandor.dev\"}}}}"' >> $BASH_ENV && source $BASH_ENV
-            behat -c tests/behat.yml --tags '@dev'
-          else
-            echo 'export BEHAT_PARAMS="{\"extensions\" : {\"Behat\\\MinkExtension\" : {\"base_url\" : \"https://${CIRCLE_BRANCH}-portlandor.pantheonsite.io\"}, \"Drupal\\\DrupalExtension\" : {\"drush\" : { \"alias\": \"portlandor.${CIRCLE_BRANCH}\"}}}}"' >> $BASH_ENV && source $BASH_ENV
-            behat -c tests/behat.yml --tags '@multidev'
-          fi
+          name: Run tests against Pantheon
+          when: on_success
+          command: |
+            export PATH=/var/www/html/vendor/bin:/tmp/vendor/pantheon-systems/terminus/bin:$PATH
+            terminus auth:login --machine-token="$eGov_Terminus" --email="$eGov_Email" && terminus aliases
+            # TODO: revisit this when we only deploy non-dev packages.
+            # Install Behat and its dependencies.
+            # composer install
+            if [[ $CIRCLE_BRANCH = "master" ]]; then
+              echo 'export BEHAT_PARAMS="{\"extensions\" : {\"Behat\\\MinkExtension\" : {\"base_url\" : \"https://${HTTP_AUTH}@dev-portlandor.pantheonsite.io\"}, \"Drupal\\\DrupalExtension\" : {\"drush\" : { \"alias\": \"portlandor.dev\"}}}}"' >> $BASH_ENV && source $BASH_ENV
+              behat -c tests/behat.yml --tags '@dev'
+            else
+              echo 'export BEHAT_PARAMS="{\"extensions\" : {\"Behat\\\MinkExtension\" : {\"base_url\" : \"https://${CIRCLE_BRANCH}-portlandor.pantheonsite.io\"}, \"Drupal\\\DrupalExtension\" : {\"drush\" : { \"alias\": \"portlandor.${CIRCLE_BRANCH}\"}}}}"' >> $BASH_ENV && source $BASH_ENV
+              behat -c tests/behat.yml --tags '@multidev'
+            fi
       - after-jobs
 
 # Declare a workflow that runs all of our jobs in parallel.
