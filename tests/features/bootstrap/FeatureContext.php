@@ -62,20 +62,18 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
     $this->login($user);
 
     // check if user is member of group. if not, add them.
-    //$matches_group = \Drupal::entityQuery('group')->condition("title", $group)->execute();
+    $found_group = \Drupal::entityQuery('group')->condition("title", $group)->execute();
+    // \Drupal::entityTypeManager()->getStorage('group')->loadByProperties(['title' => $group]);
 
-    // get group
-    $found_group = \Drupal::entityTypeManager()->getStorage('group')->loadByProperties(['title' => $group]);
+    // if (!isset($found_group) || count($found_group) < 1) {
+    //   throw new Exception("Group \"$group\" does not exist.");
+    // }
 
-    if (!isset($found_group) || count($found_group) < 1) {
-      throw new Exception("Group \"$group\" does not exist.");
-    }
-
-    if (!$found_group->getMember($user)) {
-      // not a member of group, add user
-      $found_group->addMember($user);
-      $found_group->save();
-    }
+    // if (!$found_group->getMember($user)) {
+    //   // not a member of group, add user
+    //   $found_group->addMember($user);
+    //   $found_group->save();
+    // }
 
   }
 
