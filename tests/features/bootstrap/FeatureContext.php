@@ -2,6 +2,7 @@
 
 use Drupal\DrupalExtension\Context\RawDrupalContext;
 use Behat\Behat\Context\SnippetAcceptingContext;
+use Behat\Behat\Hook\Scope\BeforeScenarioScope;
 
 /**
  * Defines general application features used by other feature files.
@@ -11,12 +12,21 @@ use Behat\Behat\Context\SnippetAcceptingContext;
 class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext {
 
   /**
+   * @var \Drupal\DrupalExtension\Context\DrupalContext
+   */
+  protected $drupalContext;
+
+  /**
+   * @var \Drupal\DrupalExtension\Context\MinkContext
+   */
+  protected $minkContext;
+
+  /**
    * @BeforeScenario
    */
-  public function gatherContexts($scope)
-  {
-    $environment = $scope->getEnvironment();
-    $this->minkContext = $environment->getContext('Drupal\DrupalExtension\Context\MinkContext');
+  public function gatherContexts(BeforeScenarioScope $scope) {
+    $env = $scope->getEnvironment();
+    $this->minkContext = $env->getContext( 'Drupal\DrupalExtension\Context\MinkContext');
   }
 
   /**
@@ -44,7 +54,7 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
     $el = $this->getSession()->getPage()->findField($locator);
 
     if (empty($el)) {
-      throw new Exception('Could not find WYSIWYG with locator: ' . $locator, $this->getSession());
+      throw new ExpectationException('Could not find WYSIWYG with locator: ' . $locator, $this->getSession());
     }
 
     $fieldId = $el->getAttribute('id');
@@ -72,62 +82,25 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
 
     // Sadly this grace of 1 second is needed here.
     sleep(1);
-    // TODO: figure out correct way to reference this function from minkContext
-    $this->iWaitForAjaxOperationToFinish();
+    $this->minkContext->iWaitForAjaxToFinish();
 
     // Drupal autocompletes have an id of autocomplete which is bad news
     // if there are two on the page.
     $autocomplete = $this->getSession()->getPage()->findById('autocomplete');
 
     if (empty($autocomplete)) {
-      throw new Exception(t('Could not find the autocomplete popup box'), $this->getSession());
+      throw new ExpectationException(t('Could not find the autocomplete popup box'), $this->getSession());
     }
 
     $popup_element = $autocomplete->find('xpath', "//div[text() = '{$popup}']");
 
     if (empty($popup_element)) {
-      throw new Exception(t('Could not find autocomplete popup text @popup', array(
+      throw new ExpectationException(t('Could not find autocomplete popup text @popup', array(
         '@popup' => $popup
       )), $this->getSession());
     }
 
     $popup_element->click();
   }
-
-  // The following function was copied out of MinkContext.php
-  // TODO: figure out how to correctly reference it instead of copy it.
-  /**
-   * Wait for AJAX operation to finish.
-   *
-   * @see \Drupal\FunctionalJavascriptTests\JSWebAssert::assertWaitOnAjaxRequest()
-   *
-   * @Given I wait for AJAX operation to finish
-   */
-  public function iWaitForAjaxOperationToFinish()
-  {
-    $condition = <<<JS
-    (function() {
-      function isAjaxing(instance) {
-        return instance && instance.ajaxing === true;
-      }
-      var d7_not_ajaxing = true;
-      if (typeof Drupal !== 'undefined' && typeof Drupal.ajax !== 'undefined' && typeof Drupal.ajax.instances === 'undefined') {
-        for(var i in Drupal.ajax) { if (isAjaxing(Drupal.ajax[i])) { d7_not_ajaxing = false; } }
-      }
-      var d8_not_ajaxing = (typeof Drupal === 'undefined' || typeof Drupal.ajax === 'undefined' || typeof Drupal.ajax.instances === 'undefined' || !Drupal.ajax.instances.some(isAjaxing))
-      return (
-        // Assert no AJAX request is running (via jQuery or Drupal) and no
-        // animation is running.
-        (typeof jQuery === 'undefined' || (jQuery.active === 0 && jQuery(':animated').length === 0)) &&
-        d7_not_ajaxing && d8_not_ajaxing
-      );
-    }());
-JS;
-    $result = $this->getSession()->wait(5000, $condition);
-    if (!$result) {
-      throw new \RuntimeException('Unable to complete AJAX request.');
-    }
-  }
-
 
 }
