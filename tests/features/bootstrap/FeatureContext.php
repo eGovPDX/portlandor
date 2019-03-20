@@ -4,6 +4,17 @@ use Drupal\DrupalExtension\Context\RawDrupalContext;
 use Behat\Behat\Context\SnippetAcceptingContext;
 use Behat\Behat\Hook\Scope\BeforeScenarioScope;
 
+use Drupal\group\GroupMembershipLoaderInterface;
+use Drupal\group\Entity\GroupInterface;
+use Drupal\group\Entity\GroupTypeInterface;
+use Drupal\group\Entity\GroupContentTypeInterface;
+use Drupal\pathauto\Form\PathautoBulkUpdateForm;
+use Drupal\Core\Render\BubbleableMetadata;
+use Drupal\group\Entity\GroupContent;
+use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\CoreServiceProvider;
+
+
 /**
  * Defines general application features used by other feature files.
  *
@@ -62,8 +73,9 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
     $this->login($user);
 
     // check if user is member of group. if not, add them.
-    $found_group = \Drupal::entityQuery('group')->condition("title", $group)->execute();
-    // \Drupal::entityTypeManager()->getStorage('group')->loadByProperties(['title' => $group]);
+    $found_group = \Drupal::entityTypeManager()->getStorage('group')->loadByProperties(['title' => $group]);
+    //\Drupal::entityQuery('group')->condition("title", $group)->execute();
+
 
     // if (!isset($found_group) || count($found_group) < 1) {
     //   throw new Exception("Group \"$group\" does not exist.");
