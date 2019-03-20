@@ -54,7 +54,7 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
     $el = $this->getSession()->getPage()->findField($locator);
 
     if (empty($el)) {
-      throw new Exception('Could not find WYSIWYG with locator: ' . $locator, $this->getSession());
+      throw new Exception('Could not find WYSIWYG with locator: ' . $locator);
     }
 
     $fieldId = $el->getAttribute('id');
@@ -89,13 +89,13 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
     $autocomplete = $this->getSession()->getPage()->findById('autocomplete');
 
     if (empty($autocomplete)) {
-      throw new Exception('Could not find the autocomplete popup box', $this->getSession());
+      throw new Exception('Could not find the autocomplete popup box');
     }
 
     $popup_element = $autocomplete->find('xpath', "//div[text() = '{$popup}']");
 
     if (empty($popup_element)) {
-      throw new Exception('Could not find autocomplete popup text ' . $popup, $this->getSession());
+      throw new Exception('Could not find autocomplete popup text ' . $popup);
     }
 
     $popup_element->click();
