@@ -86,7 +86,7 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
 
     // Drupal autocompletes have an id of autocomplete which is bad news
     // if there are two on the page.
-    $autocomplete = $this->getSession()->getPage()->findById('autocomplete');
+    $autocomplete = $this->getSession()->getPage()->findById($autocomplete);
 
     if (empty($autocomplete)) {
       throw new Exception('Could not find the autocomplete popup box');
