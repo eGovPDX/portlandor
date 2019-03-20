@@ -40,6 +40,10 @@ class PortlandMediaEmbedHelperClasses extends FilterBase {
 
         // alignment is used to determine image display mode
         $alignment = Html::escape($node->getAttribute('data-align'));
+        // if empty, default is responsive-right/embedded_100
+        if (!$alignment) {
+          $alignment = "responsive-full";
+        }
 
         // the embed tag may be enclosed in a <figure> provided by the filter-caption template.
         // that is where we want to put the media type class.
@@ -55,7 +59,7 @@ class PortlandMediaEmbedHelperClasses extends FilterBase {
           case "image_browser":
             $media_class = "embed-image";
             // for images, set the display mode based on alignment
-            $display = "embedded";
+            $display = "embedded_100";
             if (!is_null($alignment) && $alignment == "responsive-right") {
               $display = "embedded_50";
               $media_class .= " responsive-right";
