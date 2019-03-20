@@ -38,3 +38,6 @@ Feature: Create group and assign users
     Then I should see "Manage A test group Members"
     And I should see "Marty Member"
 
+    # This is problematic. If Marty is already in this group, the test fails.
+    # We need to remove Marty at end of testing, or next build will fail.
+
