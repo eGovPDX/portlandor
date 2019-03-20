@@ -6,7 +6,10 @@ Feature: Members can manage group content
 
   @api @multidev @dev
   Scenario: Access tab to add content
-    Given I am logged in as user "Marty Member" and a member of group "A test group"
+    Given users: 
+    | name         | mail                            | roles              |
+    | Marty Member | marty.member@portlandoregon.gov | Authenticated user |
+    And I am logged in as user "Marty Member" and a member of group "A test group"
     When I visit "/test"
     Then I should see "+ Add Content"
 
