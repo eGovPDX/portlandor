@@ -71,8 +71,8 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
     $el->keyUp(' ');
 
     // Sadly this grace of 1 second is needed here.
-    sleep(5);
-    $this->minkContext->iWaitForAjaxToFinish();
+    sleep(1);
+    $this->iWaitForAjaxToFinish2();
 
     // Drupal autocompletes have an id of autocomplete which is bad news
     // if there are two on the page.
@@ -93,6 +93,8 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
     $popup_element->click();
   }
 
+  // The following function was copied out of MinkContext.php
+  // TODO: figure out how to correctly reference it instead of copy it.
   /**
    * Wait for AJAX to finish.
    *
@@ -100,7 +102,7 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
    *
    * @Given I wait for AJAX to finish
    */
-  public function iWaitForAjaxToFinish()
+  public function iWaitForAjaxToFinish2()
   {
     $condition = <<<JS
     (function() {
