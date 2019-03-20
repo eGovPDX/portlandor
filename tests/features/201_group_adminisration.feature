@@ -36,5 +36,5 @@ Feature: Create group and assign users
     When I fill in "edit-entity-id-0-target-id" with "Marty Member (63)"
     And I press "Save"
     Then I should see "Manage A test group Members"
-    And I should see "Mary Member"
+    And I should see "Marty Member"
 
