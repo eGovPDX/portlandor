@@ -33,7 +33,7 @@ Feature: Create group and assign users
     Then I should see "Create Bureau/office: Group membership"
     And I should see "Username"
 
-    When I fill in the autocomplete "edit-entity-id-0-target-id" with "Marty Member (63)" and click "Mary Member"
+    When I fill in "edit-entity-id-0-target-id" with "Marty Member (63)"
     And I press "Save"
     Then I should see "Manage A test group Members"
     And I should see "Mary Member"
