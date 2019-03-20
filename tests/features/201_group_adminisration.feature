@@ -24,10 +24,7 @@ Feature: Create group and assign users
 
   @api @multidev @dev
   Scenario: Assign users to group
-    Given users: 
-    | name        | mail                           | roles              |
-    | Mary Member | mary.member@portlandoregon.gov | Authenticated user |
-    And I am logged in as user "superAdmin"
+    Given I am logged in as user "superAdmin"
     When I visit "/test"
     And I click "Members"
     Then I should see "Add member"
@@ -36,7 +33,7 @@ Feature: Create group and assign users
     Then I should see "Create Bureau/office: Group membership"
     And I should see "Username"
 
-    When I fill in the autocomplete "edit-entity-id-0-target-id" with "Mary Member" and click "Mary Member"
+    When I fill in the autocomplete "edit-entity-id-0-target-id" with "Marty Member (63)" and click "Mary Member"
     And I press "Save"
     Then I should see "Manage A test group Members"
     And I should see "Mary Member"

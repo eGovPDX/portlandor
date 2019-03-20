@@ -6,10 +6,7 @@ Feature: Members can manage group content
 
   @api @multidev @dev
   Scenario: Access tab to add content
-    Given users: 
-    | name        | mail                           | roles              |
-    | Mary Member | mary.member@portlandoregon.gov | Authenticated user |
-    And I am logged in as user "mary.member@portlandoregon.gov"
+    Given I am logged in as user "marty.member@portlandoregon.gov"
     When I visit "/test"
     Then I should see "+ Add Content"
 
@@ -26,7 +23,7 @@ Feature: Members can manage group content
     # do we need to test actual page creation, or just ability to reach add/edit page?
 
   Scenario: Visit group content
-    Given I am logged in as user "mary.member@portlandoregon.gov"
+    Given I am logged in as user "marty.member@portlandoregon.gov"
     When I visit "/test"
     Then I should see "Content"
 
@@ -34,7 +31,7 @@ Feature: Members can manage group content
     Then I should see "Manage A test group Content"
 
   Scenario: See tab to add media
-    Given I am logged in as user "mary.member@portlandoregon.gov"
+    Given I am logged in as user "marty.member@portlandoregon.gov"
     When I visit "/test"
     Then I should see "+ Add Media"
 
