@@ -72,7 +72,8 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
 
     // Sadly this grace of 1 second is needed here.
     sleep(1);
-    $this->iWaitForAjaxToFinish2();
+    // TODO: figure out correct way to reference this function from minkContext
+    $this->iWaitForAjaxOperationToFinish();
 
     // Drupal autocompletes have an id of autocomplete which is bad news
     // if there are two on the page.
@@ -96,13 +97,13 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
   // The following function was copied out of MinkContext.php
   // TODO: figure out how to correctly reference it instead of copy it.
   /**
-   * Wait for AJAX to finish.
+   * Wait for AJAX operation to finish.
    *
    * @see \Drupal\FunctionalJavascriptTests\JSWebAssert::assertWaitOnAjaxRequest()
    *
-   * @Given I wait for AJAX to finish
+   * @Given I wait for AJAX operation to finish
    */
-  public function iWaitForAjaxToFinish2()
+  public function iWaitForAjaxOperationToFinish()
   {
     $condition = <<<JS
     (function() {
