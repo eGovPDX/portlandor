@@ -1,14 +1,18 @@
 <?php
 
-use Drupal\DrupalExtension\Context\RawDrupalContext;
-use Behat\Behat\Context\SnippetAcceptingContext;
+use Behat\Behat\Hook\Scope\BeforeScenarioScope;
+use Behat\Behat\Tester\Exception\PendingException;
+use Drupal\DrupalExtension\Context\DrupalSubContextBase;
+use Drupal\DrupalExtension\Context\DrupalSubContextInterface;
+use Drupal\group\Entity\GroupContent;
+use Drupal\DrupalDriverManager;
 
 /**
  * Defines general application features used by other feature files.
  *
  * @codingStandardsIgnoreStart
  */
-class GroupsContext extends RawDrupalContext implements SnippetAcceptingContext
+class GroupBehatContext extends DrupalSubContextBase implements DrupalSubContextInterface
 {
 
   /**
@@ -23,23 +27,26 @@ class GroupsContext extends RawDrupalContext implements SnippetAcceptingContext
   }
 
   /**
-   * @Given I am viewing a group of type :arg1 with the title :arg2
+   * @Given I am viewing a group of type :arg1 with the title :arg2 and the path :arg3
    *
    * Creates and takes users to a Group with title of group_type
    */
-  public function createNewGroup($group_type, $title)
+  public function createNewGroup($group_type, $title, $path)
   {
     $group = entity_create('group', array(
       'type' => $group_type,
       'label' => $title,
       'uid' => 1,
+      'path' => ['alias' => $path]
     ));
     $group->save();
 
     $this->current_group = $group;
     $this->groups[] = $group;
 
-    $this->getSession()->visit($this->locatePath('/group/' . $group->id()));
+    $group_alias = \Drupal::service('path.alias_manager')->getAliasByPath('/group/' . $group->id());
+
+    $this->getSession()->visit($this->locatePath($group_alias));
   }
 
   /**
