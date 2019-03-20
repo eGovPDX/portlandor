@@ -8,7 +8,7 @@ use Behat\Behat\Context\SnippetAcceptingContext;
  *
  * @codingStandardsIgnoreStart
  */
-class GroupsContextX extends RawDrupalContext implements SnippetAcceptingContext
+class GroupsContext extends RawDrupalContext implements SnippetAcceptingContext
 {
 
   /**
