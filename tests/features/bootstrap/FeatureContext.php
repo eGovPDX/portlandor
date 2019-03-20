@@ -10,7 +10,16 @@ use Behat\Behat\Context\SnippetAcceptingContext;
  */
 class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext {
 
-    /**
+  /**
+   * @BeforeScenario
+   */
+  public function gatherContexts(BeforeScenarioScope $scope)
+  {
+    $environment = $scope->getEnvironment();
+    $this->minkContext = $environment->getContext('Drupal\DrupalExtension\Context\MinkContext');
+  }
+
+  /**
    * @Given I am logged in as user :name
    */
   public function iAmLoggedInAsUser($name) {
