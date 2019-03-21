@@ -39,7 +39,7 @@ Feature: Create group
     And I should see "Username"
 
     When I fill in "edit-entity-id-0-target-id" with "Ally Admin (62)"
-    And I check the box "bureau_office-admin"
+    And I check the box "Admin"
     And I press "Save"
     Then I should see "Manage A test group Members"
     And I should see "Ally Admin"
