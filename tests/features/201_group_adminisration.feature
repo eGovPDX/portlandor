@@ -5,11 +5,12 @@ Feature: Create group and assign users
   I need to be able to create a group and assign users to it
 
   @api @multidev @dev
-  Scenario: Create group
+  Scenario: Create group and assign user
 
     Given I am logged in as user "marty.member@portlandoregon.gov"
     And I am viewing a group of type "bureau_office" with the title "A test group 2"
     Then I am a member of the current group
+    And I load the group with title "A test group 2"
 
     # Given I am logged in as user "superAdmin"
     # When I visit "/group/add/bureau_office"
