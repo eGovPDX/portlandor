@@ -23,6 +23,7 @@ workflows:
       - type: webphp
         description: Post deployment notification to Slack
         script: private/scripts/slack_deploy_notification.php
+  # The deployment event for Test and Live
   deploy:
     after:
       - type: webphp
@@ -31,8 +32,12 @@ workflows:
       - type: webphp
         description: Post deployment notification to Slack
         script: private/scripts/slack_deploy_notification.php
+  # The deployment event for DEV and Multi-DEV
   sync_code:
     after:
       - type: webphp
-        description: Post deployment notification to Slack
-        script: private/scripts/slack_deploy_notification.php
+        description: Import configuration from .yml files
+        script: private/scripts/drush_post_deploy.php
+      - type: webphp
+        description: Call CircleCI web hook to start tests
+        script: private/scripts/circleci_webhook.php
