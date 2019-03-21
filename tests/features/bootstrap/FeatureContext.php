@@ -55,6 +55,10 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
 
     // Log in.
     $this->getSession()->visit($uli);
+
+    // Get group alias.
+    $group_alias = \Drupal::service('path.alias_manager')->getAliasByPath('/group/38');
+
   }
 
   /**
