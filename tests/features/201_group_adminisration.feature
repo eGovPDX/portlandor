@@ -13,7 +13,6 @@ Feature: Create group and assign users
     # And I load the group with title "A test group 2"
 
     Given I am logged in as user "superAdmin"
-    And I am viewing a group of type "bureau_office" with the title "A test group" and the path "/test-99"
     When I visit "/group/add/bureau_office"
     Then I should see "Add Bureau/office"
 
@@ -32,8 +31,6 @@ Feature: Create group and assign users
   @api @multidev @dev
   Scenario: Assign users to group
 
-    Given "Marty Member" is a member of group "A test group"
-
     Given I am logged in as user "superAdmin"
     When I visit "/test"
     And I click "Members"
@@ -48,6 +45,5 @@ Feature: Create group and assign users
     Then I should see "Manage A test group Members"
     And I should see "Marty Member"
 
-    # This is problematic. If Marty is already in this group, the test fails.
-    # We need to remove Marty at end of testing, or next build will fail.
+    # NOTE: test group must be deleted at end of testing
 
