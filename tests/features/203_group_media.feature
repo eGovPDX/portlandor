@@ -28,6 +28,6 @@ Feature: Members can manage group media
     When I visit "/test"
     Then I should see "Media"
 
-    When I click "Media"
+    When I click "Media" in the "page_tabs" region
     Then I should see "Manage A test group Media"
 

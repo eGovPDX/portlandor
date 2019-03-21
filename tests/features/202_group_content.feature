@@ -2,7 +2,7 @@
 Feature: Members can manage group content
   In order to manage content in my group
   As a group member
-  I need to be able to create and edit group nodes
+  I need to be able to create and edit group content nodes
 
   Scenario: Access add content form
     Given I am logged in as user "Marty Member"
@@ -28,4 +28,4 @@ Feature: Members can manage group content
     Then I should see "Content"
 
     When I click "Content"
-    Then I should see "Manage A test group Content"
+    Then I should see "results found"
