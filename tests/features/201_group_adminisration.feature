@@ -8,7 +8,7 @@ Feature: Create group and assign users
   Scenario: Create group
 
     Given I am logged in as user "marty.member@portlandoregon.gov"
-    And I am viewing a group of type "bureau_office" with the title "A test group 2" and the path "/test"
+    And I am viewing a group of type "bureau_office" with the title "A test group 2"
     Then I am a member of the current group
 
     # Given I am logged in as user "superAdmin"
