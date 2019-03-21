@@ -13,6 +13,7 @@ Feature: Create group and assign users
     # And I load the group with title "A test group 2"
 
     Given I am logged in as user "superAdmin"
+    And I am viewing a group of type "bureau_office" with the title "A test group" and the path "/test-99"
     When I visit "/group/add/bureau_office"
     Then I should see "Add Bureau/office"
 

@@ -46,7 +46,7 @@ class GroupBehatContext extends RawDrupalContext implements SnippetAcceptingCont
     $this->current_group = $group;
     $this->groups[] = $group;
 
-    $group_alias = \Drupal::service('path.alias_manager')->getAliasByPath('/group/' . $group->id());
+    $group_alias = \Drupal::service('path.alias_manager')->getAliasByPath($path);
 
     $this->getSession()->visit($this->locatePath($group_alias));
   }
