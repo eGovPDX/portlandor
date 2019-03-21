@@ -12,8 +12,7 @@ use Drupal\DrupalDriverManager;
  *
  * @codingStandardsIgnoreStart
  */
-class GroupBehatContext extends DrupalSubContextBase implements DrupalSubContextInterface
-{
+class GroupBehatContext extends RawDrupalContext implements SnippetAcceptingContext {
 
   /**
    * Initializes context.
