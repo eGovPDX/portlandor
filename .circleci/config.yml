@@ -31,16 +31,16 @@ save_cache: &save_cache
 #Jobs
 
 ## Job to run the update path and Behat tests.
-behat_tests: &behat_tests
+build_and_deploy: &build_and_deploy
   <<: *defaults
   steps:
     - restore_cache:
-        name: Retore Git cache
+        name: Retore Git cache before checkout
         keys:
           - source
     - checkout
     - save_cache:
-        name: Save Git cache
+        name: Save Git cache after checkout
         key: source
         paths:
           - ".git"
@@ -77,12 +77,9 @@ behat_tests: &behat_tests
         name: Composer install
         command: |
           # Pantheon don't allow these folders but Composer needs them
-          #rm -rf ./vendor/drupal/coder
           rm -rf ./web/modules/contrib/facets
-          #rm -rf ./web/modules/contrib/search_api_solr
-          # Remove any remaining dependencies. Install all packages form package.json
+          # Run composer install with hirak/prestissimo for better performance
           composer config --global --auth github-oauth.github.com "$COMPOSER_TOKEN"
-          # rm -rf vendor web/core web/vendor web/modules/contrib web/themes/contrib
           composer global require hirak/prestissimo && composer install --no-suggest --no-interaction
           # TODO: should only deploy non-dev packages
           # --no-dev
@@ -95,7 +92,7 @@ behat_tests: &behat_tests
           export GIT_SSH_COMMAND="ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no"
           # Don't check for host key for Pantheon sites
           echo -e "host *.drush.in\n    StrictHostKeyChecking no" >> ~/.ssh/config
-          # Make sure to log in. Set the user email that will commit code into Pantheon repo
+          # Terminus log in with the user email that will be displayed as the commit user in Pantheon Git repo
           terminus auth:login --machine-token="$eGov_Terminus" --email="$eGov_Email"
           # Git operations
           git remote add pantheon ssh://codeserver.dev.5c6715db-abac-4633-ada8-1c9efe354629@codeserver.dev.5c6715db-abac-4633-ada8-1c9efe354629.drush.in:2222/~/repository.git
@@ -104,8 +101,9 @@ behat_tests: &behat_tests
           rm -rf ./vendor/drupal/coder/.git && rm -rf ./web/modules/contrib/facets/.git && rm -rf ./web/modules/contrib/search_api_solr/.git
           # Compile SCSS in our custom theme
           cd web/themes/custom/cloudy && npm run build && cd /var/www/html
-          # Add all files before pushing to Pantheon
+          # Exclude dependencies
           rm -rf web/themes/custom/cloudy/node_modules
+          # Force add all files to include those excluded by .gitignore
           git add -f /var/www/html
           # Pantheon site will use the wrong DB if the local is kept
           git rm --cache  web/sites/default/settings.local.php --ignore-unmatch
@@ -119,41 +117,11 @@ behat_tests: &behat_tests
             git push -f pantheon master
             # TODO: Sanitize DB here
             # terminus env:clone-content portlandor.test dev
-            # Don't need to wait for DEV because it's always up?
-            # Wake up the DEV site and must wait for 30s
-            terminus env:wake portlandor.dev && sleep 30s
-            # try to run drush cim
-            set +e
-            for i in {1..12};
-            do
-              if [ "$i" = "12" ]; then set -e; fi
-              terminus remote:drush portlandor.dev -- cim -y
-              if [ "$?" = "0" ]; then break; fi
-              sleep 10;
-            done
-            # try drush cr
-            for i in {1..12};
-            do
-              if [ "$i" = "12" ]; then set -e; fi
-              terminus remote:drush portlandor.dev -- cr
-              if [ "$?" = "0" ]; then break; fi
-              sleep 10;
-            done
-            # try drush updb
-            for i in {1..12};
-            do
-              if [ "$i" = "12" ]; then set -e; fi
-              terminus remote:drush portlandor.dev -- -y updb
-              if [ "$?" = "0" ]; then break; fi
-              sleep 10;
-            done
-            set -e
-            # echo 'node_access_rebuild();' | $(terminus remote:drush portlandor.dev -- php-script)
-            # After success deployment to DEV, remove the multidev site if this is a merge of a PR
+            # After success deployment to DEV, remove the multidev site if this is a merge of a PR.
             # Read the last Git log in the master branch. Get the branch name at the end of the log.
             # Example: Merge pull request #35 from eGovPDX/powr-152
             cd /var/www/html
-            # Must the last commit message from Github. The last one in local repo is "CircleCI Deployment"
+            # Must read the last commit message from Github. The last one in local repo is "CircleCI Deployment"
             if [[ $(git log origin/master --pretty=format:%s -1) =~ (^Merge pull request #[0-9]* from eGovPDX\/)([^,]*) ]]; then
               echo "Found a Pull Request Merge for branch: '${BASH_REMATCH[2]}'";
               # Check if a multidev environment with the branch name exists or not
@@ -168,72 +136,64 @@ behat_tests: &behat_tests
             terminus multidev:list --format=list --field=Name portlandor > ./env_list.txt
             if grep -Fxq "$CIRCLE_BRANCH" ./env_list.txt; then
               echo "Found multidev site"
-              # terminus multidev:delete --delete-branch portlandor.$CIRCLE_BRANCH -y
-              # Cloning files and DB from TEST environment to the multidev environment
-              # Do we need to clone DB/file every time for existing multidev?
-              # terminus env:clone-content portlandor.test "$CIRCLE_BRANCH" -y
             else
-              echo "Creating new multidev site. This may take a few seconds." && terminus multidev:create portlandor.test $CIRCLE_BRANCH
+              # Create a new Multi-Dev with files and database from Test.
+              echo "Creating new multidev site. Please wait." && terminus multidev:create portlandor.test $CIRCLE_BRANCH
             fi
+            rm -rf ./env_list.txt
             # Set the connection type to GIT
             terminus connection:set portlandor.$CIRCLE_BRANCH git
             # Only do force push when the multidev site doesn't exist
-            if grep -Fxq "$CIRCLE_BRANCH" ./env_list.txt;  then
-              rm -rf ./env_list.txt
-              # Get the tree from Pantheon. Rebase the CircleCI local repo on top of Pantheon. Push the new branch to Pantheon.
-              # git fetch pantheon $CIRCLE_BRANCH
-              # git rebase -X theirs -X no-renames pantheon/$CIRCLE_BRANCH
-              # git push pantheon $CIRCLE_BRANCH
-              # Pantheon appears to need a short delay. Otherwise some files are not picked up by drush cim.
-              # sleep 20s
-              # This version wipes out the Pantheon tree.
-              git push -f pantheon $CIRCLE_BRANCH
-              terminus env:wake portlandor.$CIRCLE_BRANCH && sleep 60s
-            else
-              rm -rf ./env_list.txt
-              git push -f pantheon $CIRCLE_BRANCH
-              # Wake up the multidev site and wait 30s.
-              # The following two drush commands will fail without wait for a few seconds
-              terminus env:wake portlandor.$CIRCLE_BRANCH && sleep 60s
-            fi
-            # Clear cache. Import config files
-
-            # try to run drush cim
-            # ignore errors only check error at the last try of drush commands
-            set +e
-            for i in {1..6};
-            do
-              if [ "$i" = "6" ]; then set -e; fi
-              terminus remote:drush portlandor.$CIRCLE_BRANCH -- cim -y
-              if [ "$?" = "0" ]; then break; fi
-              sleep 10;
-            done
-            # try drush cr
-            for i in {1..6};
-            do
-              if [ "$i" = "6" ]; then set -e; fi
-              terminus remote:drush portlandor.$CIRCLE_BRANCH -- cr
-              if [ "$?" = "0" ]; then break; fi
-              sleep 10;
-            done
-            # try drush updb
-            for i in {1..6};
-            do
-              if [ "$i" = "6" ]; then set -e; fi
-              terminus remote:drush portlandor.$CIRCLE_BRANCH -- -y updb
-              if [ "$?" = "0" ]; then break; fi
-              sleep 10;
-            done
-            set -e
+            git push -f pantheon $CIRCLE_BRANCH
+            # Wake up the multidev site and wait 60s.
+            terminus env:wake portlandor.$CIRCLE_BRANCH
+            # Drush CIM, CR are handled by QuickSilver event handlers
             # echo 'node_access_rebuild();' | $(terminus drush portlandor.$CIRCLE_BRANCH -- php-script)
           fi
+
+run_tests: &run_tests
+  <<: *defaults
+  steps:
+    - restore_cache:
+        name: Retore Git cache before checkout
+        keys:
+          - source
+    - checkout
+    - save_cache:
+        name: Save Git cache after checkout
+        key: source
+        paths:
+          - ".git"
+    - restore_cache:
+        name: Restore Terminus cache
+        keys:
+          - terminus_-{{ checksum "composer.lock" }}
+    - run:
+        name: Install Terminus
+        command: |
+          # if [ ! -f "/tmp/vendor/pantheon-systems/terminus/bin/terminus" ]; then
+          cd /tmp && composer require pantheon-systems/terminus:2.0.0
+          # fi
+    - save_cache:
+        name: Save Terminus cache
+        key: terminus_-{{ checksum "composer.lock" }}
+        paths:
+          - "/tmp/vendor"
+    - restore_cache: *restore_cache
+    - run:
+        name: Composer install
+        command: |
+          # Run composer install with hirak/prestissimo for better performance
+          composer config --global --auth github-oauth.github.com "$COMPOSER_TOKEN"
+          composer global require hirak/prestissimo && composer install --no-suggest --no-interaction
+          # TODO: should only deploy non-dev packages
+          # --no-dev
     - run:
         name: Run tests against Pantheon
         when: on_success
         command: |
           export PATH=/var/www/html/vendor/bin:/tmp/vendor/pantheon-systems/terminus/bin:$PATH
-          terminus auth:login --machine-token="$eGov_Terminus" --email="$eGov_Email"
-          terminus aliases
+          terminus auth:login --machine-token="$eGov_Terminus" --email="$eGov_Email" && terminus aliases
           # TODO: revisit this when we only deploy non-dev packages.
           # Install Behat and its dependencies.
           # composer install
@@ -244,7 +204,6 @@ behat_tests: &behat_tests
             echo 'export BEHAT_PARAMS="{\"extensions\" : {\"Behat\\\MinkExtension\" : {\"base_url\" : \"https://${CIRCLE_BRANCH}-portlandor.pantheonsite.io\"}, \"Drupal\\\DrupalExtension\" : {\"drush\" : { \"alias\": \"portlandor.${CIRCLE_BRANCH}\"}}}}"' >> $BASH_ENV && source $BASH_ENV
             behat -c tests/behat.yml --tags '@multidev'
           fi
-          echo $BEHAT_PARAMS
     - save_cache: *save_cache
     - store_test_results:
         path: /var/www/html/artifacts/behat
@@ -254,12 +213,15 @@ behat_tests: &behat_tests
 # Declare all of the jobs we should run.
 version: 2
 jobs:
-  run-behat-tests:
-     <<: *behat_tests
+  deploy:
+     <<: *build_and_deploy
+  test:
+     <<: *run_tests
 
 # Declare a workflow that runs all of our jobs in parallel.
 workflows:
   version: 2
-  test_and_deploy:
+  deploy_workflow:
     jobs:
-      - run-behat-tests
+      # Test will be started by QuickSilver after the sync_code event
+      - deploy
