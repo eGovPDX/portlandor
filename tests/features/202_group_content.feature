@@ -4,6 +4,7 @@ Feature: Members can manage group content
   As a group member
   I need to be able to create and edit group content nodes
 
+  @javascript
   Scenario: Add service content
     Given I am logged in as user "Marty Member"
     When I visit "/test"
@@ -39,9 +40,7 @@ Feature: Members can manage group content
   Scenario: Edit service
     Given I am logged in as user "Marty Member"
     When I visit "/test/services/test-service"
-    Then I should see "Unpublished draft"
-
-    When I click "Edit" in the "tabs" region
+    And I click "Edit" in the "tabs" region
     Then I should see "Title"
 
   Scenario: View group content
