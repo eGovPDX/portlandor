@@ -23,11 +23,21 @@ Feature: Members can manage group media
     And I press "Save"
     Then I should see "Video A test video has been created."
 
-  Scenario: Visit group media
+  Scenario: Delete media
     Given I am logged in as user "Marty Member"
     When I visit "/test"
     Then I should see "Media" in the "tabs" region
 
     When I click "Media" in the "tabs" region
     Then I should see "Manage A test group Media"
+
+    When I click "Test video"
+    Then I should see "Delete" in the "tabs" region
+
+    When I click "Delete" in the "tabs" region
+    Then I should see "This action cannot be undone."
+
+    When I press "Delete"
+    Than I should see "The media Test video has been deleted."
+
 
