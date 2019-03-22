@@ -6,16 +6,16 @@ Feature: Basic site operation and navigation
 
   Scenario: Visit the homepage as anonymous user
     When I visit "/"
-    Then I should see "Services"
-    And I should see "Alerts"
-    And I should see "Search"
+    Then I should see "Services" in the "header" region
+    And I should see "Alerts" in the "header" region
+    And I should see "Search" in the "header" region
 
   Scenario: Visit the homepage as authenticated user
     Given I am logged in as user "oliver.outsider@portlandoregon.gov"
     When I visit "/"
-    Then I should see "Services"
-    And I should see "Alerts"
-    And I should see "Search"
+    Then I should see "Services" in the "header" region
+    And I should see "Alerts" in the "header" region
+    And I should see "Search" in the "header" region
 
   Scenario: Visit a taxonomy term page
     Given I am logged in as user "oliver.outsider@portlandoregon.gov"
