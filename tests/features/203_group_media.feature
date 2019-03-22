@@ -24,7 +24,7 @@ Feature: Members can manage group media
     Then I should see "Video A test video has been created."
 
   Scenario: Visit group media
-    Given I am logged in as user "Marty Member"
+    #Given I am logged in as user "Marty Member"
     When I visit "/test"
     Then I should see "Media" in the "tabs" region
 
