@@ -4,7 +4,7 @@ Feature: Members can manage group content
   As a group member
   I need to be able to create and edit group content nodes
 
-  Scenario: Access add content form
+  Scenario: Add service content
     Given I am logged in as user "Marty Member"
     When I visit "/test"
     Then I should see "+ Add Content"
@@ -16,9 +16,33 @@ Feature: Members can manage group content
     And I should see "Group node (Notification)"
     And I should see "Group node (Service)"
 
-    When I click "Group node (Page)"
-    Then I should see "Create Bureau/office: Group node (Page)"
+    When I click "Group node (Service)"
     And I should see "Title"
+    And I should see "Step title"
+    And I should see "Step instruction"
+    And I should see "Related content"
+    And I should see "Legacy path"
+
+    When I press "Add step"
+    And I wait for AJAX to finish
+    Then I should see "Step"
+
+    When I fill in "Title" with "Test service"
+    And I select "Online" from "edit-field-service-mode-0-subform-field-service-modes"
+    And I fill in "edit-revision-log-0-value" with:
+      """
+      Test revision message
+      """
+    And I press "Save"
+    Then I should see "Service Test service has been created."
+
+  Scenario: Edit service
+    Given I am logged in as user "Marty Member"
+    When I visit "/test/services/test-service"
+    Then I should see "Unpublished draft"
+
+    When I click "Edit" in the "tabs" region
+    Then I should see "Title"
 
   Scenario: View group content
     Given I am logged in as user "Marty Member"
