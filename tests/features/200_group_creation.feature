@@ -43,4 +43,5 @@ Feature: Create group
     And I press "Save"
     Then I should see "Manage A test group Members"
     And I should see "Ally Admin"
+    Or I should see
     

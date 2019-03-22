@@ -8,7 +8,7 @@ use Behat\Behat\Context\SnippetAcceptingContext;
  *
  * @codingStandardsIgnoreStart
  */
-class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext {
+class FeatureContext extends DrupalContext implements SnippetAcceptingContext {
 
     /**
    * @Given I am logged in as user :name
