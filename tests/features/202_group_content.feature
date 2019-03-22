@@ -20,8 +20,6 @@ Feature: Members can manage group content
     Then I should see "Create Bureau/office: Group node (Page)"
     And I should see "Title"
 
-    # do we need to test actual page creation, or just ability to reach add/edit page?
-
   Scenario: View group content
     Given I am logged in as user "Marty Member"
     When I visit "/test"
