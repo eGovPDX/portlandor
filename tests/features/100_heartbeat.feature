@@ -12,7 +12,10 @@ Feature: Basic site operation and navigation
     And I should see "Portland, Oregon, USA" in the "footer_second" region
 
   Scenario: Visit the homepage as authenticated user
-    Given I am logged in as user "oliver.outsider@portlandoregon.gov"
+    Given users:
+    | name           | status | uid    | mail                              | roles              |
+    | Olive Outsider | 1      | 999997 | olive.outsider@portlandoregon.gov | Authenticated user |
+    And I am logged in as user "oliver.outsider@portlandoregon.gov"
     When I visit "/"
     And I should see "Bureaus and offices" in the "header" region
     And I should see "Alerts" in the "header" region
@@ -24,3 +27,10 @@ Feature: Basic site operation and navigation
     Then I should see "Resident"
     And I should see "services found"
     And I should see "Bureaus, offices, and programs"
+
+
+  # Given users:
+  # | name           | status | uid    | mail                              | roles              |
+  # | Olive Outsider | 1      | 999997 | olive.outsider@portlandoregon.gov | Authenticated user |
+  # | Adam Admin     | 1      | 999998 | adam.admin@portlandoregon.gov     | Authenticated user |
+  # | Mary Member    | 1      | 999999 | mary.member@portlandoregon.gov    | Authenticated user |
