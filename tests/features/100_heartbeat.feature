@@ -9,6 +9,7 @@ Feature: Basic site operation and navigation
     Then I should see "Services" in the "header" region
     And I should see "Alerts" in the "header" region
     And I should see "Search" in the "header" region
+    And I should see "Portland, Oregon, USA" in the "footer" region
 
   Scenario: Visit the homepage as authenticated user
     Given I am logged in as user "oliver.outsider@portlandoregon.gov"
