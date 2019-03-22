@@ -19,7 +19,7 @@ Feature: Basic site operation and navigation
     And I should see "Portland, Oregon, USA" in the "footer_second" region
 
   Scenario: Visit a taxonomy term page
-    #Given I am logged in as user "oliver.outsider@portlandoregon.gov"
+    Given I am logged in as user "oliver.outsider@portlandoregon.gov"
     When I visit "/residents-of-portland"
     Then I should see "Resident"
     And I should see "services found"

@@ -29,7 +29,7 @@ Feature: Create group
 
   Scenario: Assign admin to group
 
-    #Given I am logged in as user "superAdmin"
+    Given I am logged in as user "superAdmin"
     When I visit "/test"
     And I click "Members"
     Then I should see "Add member"

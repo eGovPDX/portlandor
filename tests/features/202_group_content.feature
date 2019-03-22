@@ -23,7 +23,7 @@ Feature: Members can manage group content
     # do we need to test actual page creation, or just ability to reach add/edit page?
 
   Scenario: View group content
-    #Given I am logged in as user "Marty Member"
+    Given I am logged in as user "Marty Member"
     When I visit "/test"
     Then I should see "Content" in the "tabs" region
 
