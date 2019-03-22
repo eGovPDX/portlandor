@@ -4,6 +4,8 @@ Feature: Site health check
   As a sitewide administrator
   I need to be able to check the site status
 
+  # NOTE: These tests use a real user against the real site/database.
+  # Login is handled using drush in FeatureContext.
   Scenario: Check site status
     Given I am logged in as user "superAdmin" 
     When I visit "/admin/reports/status"

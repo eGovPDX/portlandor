@@ -6,12 +6,14 @@ Feature: Create group
 
   Scenario: Create group
 
-    # Given I am logged in as user "marty.member@portlandoregon.gov"
-    # And I am viewing a group of type "bureau_office" with the title "A test group 2"
-    # Then I am a member of the current group
-    # And I load the group with title "A test group 2"
-
-    Given I am logged in as user "superAdmin"
+    # When we manipulate the UI to create a group, it persists through
+    # the rest of the tests. But can we assign temporary users to it??
+    
+    Given users:
+    | name           | status | uid    | mail                              | roles              |
+    | Adam Admin     | 1      | 999998 | adam.admin@portlandoregon.gov     | Authenticated user |
+    | Sam Superadmin | 1      | 999999 | sam.superadmin@portlandoregon.gov | Administrator      |
+    And I am logged in as user "Sam Superadmin"
     When I visit "/group/add/bureau_office"
     Then I should see "Add Bureau/office"
 
@@ -29,7 +31,11 @@ Feature: Create group
 
   Scenario: Assign admin to group
 
-    Given I am logged in as user "superAdmin"
+    Given users:
+    | name           | status | uid    | mail                              | roles              |
+    | Adam Admin     | 1      | 999998 | adam.admin@portlandoregon.gov     | Authenticated user |
+    | Sam Superadmin | 1      | 999999 | sam.superadmin@portlandoregon.gov | Administrator      |
+    And I am logged in as user "Sam Superadmin"
     When I visit "/test"
     And I click "Members"
     Then I should see "Add member"
@@ -38,9 +44,9 @@ Feature: Create group
     Then I should see "Create Bureau/office: Group membership"
     And I should see "Username"
 
-    When I fill in "edit-entity-id-0-target-id" with "Ally Admin (62)"
+    When I fill in "edit-entity-id-0-target-id" with "Adam Admin (999998)"
     And I check the box "Admin"
     And I press "Save"
     Then I should see "Manage A test group Members"
-    And I should see "Ally Admin"
+    And I should see "Adam Admin"
     

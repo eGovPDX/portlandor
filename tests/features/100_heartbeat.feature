@@ -22,15 +22,18 @@ Feature: Basic site operation and navigation
     And I should see "Portland, Oregon, USA" in the "footer_second" region
 
   Scenario: Visit a taxonomy term page
-    Given I am logged in as "Olive Outsider"
+    Given users:
+    | name           | status | uid    | mail                              | roles              |
+    | Olive Outsider | 1      | 999997 | olive.outsider@portlandoregon.gov | Authenticated user |
+    And I am logged in as "Olive Outsider"
     When I visit "/residents-of-portland"
     Then I should see "Resident"
     And I should see "services found"
     And I should see "Bureaus, offices, and programs"
 
-
-  # Given users:
-  # | name           | status | uid    | mail                              | roles              |
-  # | Olive Outsider | 1      | 999997 | olive.outsider@portlandoregon.gov | Authenticated user |
-  # | Adam Admin     | 1      | 999998 | adam.admin@portlandoregon.gov     | Authenticated user |
-  # | Mary Member    | 1      | 999999 | mary.member@portlandoregon.gov    | Authenticated user |
+    # Given users:
+    # | name           | status | uid    | mail                              | roles              |
+    # | Olive Outsider | 1      | 999996 | olive.outsider@portlandoregon.gov | Authenticated user |
+    # | Mary Member    | 1      | 999997 | mary.member@portlandoregon.gov    | Authenticated user |
+    # | Adam Admin     | 1      | 999998 | adam.admin@portlandoregon.gov     | Authenticated user |
+    # | Sam Superadmin | 1      | 999999 | sam.superadmin@portlandoregon.gov | Administrator      |
