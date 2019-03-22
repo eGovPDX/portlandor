@@ -4,7 +4,6 @@ Feature: Members can manage group content
   As a group member
   I need to be able to create and edit group content nodes
 
-  @javascript
   Scenario: Add service content
     Given I am logged in as user "Marty Member"
     When I visit "/test"
@@ -24,11 +23,7 @@ Feature: Members can manage group content
     And I should see "Related content"
     And I should see "Legacy path"
 
-    When I press "Add step"
-    And I wait for AJAX to finish
-    Then I should see "Step"
-
-    When I fill in "Title" with "Test service"
+    When I fill in "edit-title-0-value" with "Test service"
     And I select "Online" from "edit-field-service-mode-0-subform-field-service-modes"
     And I fill in "edit-revision-log-0-value" with:
       """
