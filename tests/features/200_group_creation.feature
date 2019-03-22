@@ -13,7 +13,7 @@ Feature: Create group
     | name           | status | uid    | mail                              | roles              |
     | Adam Admin     | 1      | 999998 | adam.admin@portlandoregon.gov     | Authenticated user |
     | Sam Superadmin | 1      | 999999 | sam.superadmin@portlandoregon.gov | Administrator      |
-    And I am logged in as user "Sam Superadmin"
+    And I am logged in as "Sam Superadmin"
     When I visit "/group/add/bureau_office"
     Then I should see "Add Bureau/office"
 
@@ -35,7 +35,7 @@ Feature: Create group
     | name           | status | uid    | mail                              | roles              |
     | Adam Admin     | 1      | 999998 | adam.admin@portlandoregon.gov     | Authenticated user |
     | Sam Superadmin | 1      | 999999 | sam.superadmin@portlandoregon.gov | Administrator      |
-    And I am logged in as user "Sam Superadmin"
+    And I am logged in as "Sam Superadmin"
     When I visit "/test"
     And I click "Members"
     Then I should see "Add member"
