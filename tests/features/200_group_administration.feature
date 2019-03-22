@@ -41,6 +41,7 @@ Feature: Create group
     When I fill in "edit-entity-id-0-target-id" with "Ally Admin (62)"
     And I check the box "Admin"
     And I press "Save"
+    # If the following step fails, it is likely becasue the user is already a member
     Then I should see "Manage A test group Members"
     And I should see "Ally Admin"
 
@@ -57,5 +58,5 @@ Feature: Create group
 
     When I fill in "edit-entity-id-0-target-id" with "Marty Member (63)"
     And I press "Save"
-    Then I should see "Manage A test group Members"
+    # If the following step fails, it is likely becasue the user is already a member    Then I should see "Manage A test group Members"
     And I should see "Marty Member"

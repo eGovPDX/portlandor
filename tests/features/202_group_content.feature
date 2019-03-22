@@ -43,11 +43,3 @@ Feature: Members can manage group content
 
     When I press "Delete"
     Then I should see "The Service Test service has been deleted."
-
-  Scenario: Delete service
-    Given I am logged in as user "Marty Member"
-    When I visit "/test"
-    Then I should see "Content" in the "tabs" region
-
-    When I click "Content" in the "tabs" region
-    Then I should see "results found"
