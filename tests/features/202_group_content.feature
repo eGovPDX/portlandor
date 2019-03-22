@@ -25,7 +25,7 @@ Feature: Members can manage group content
   Scenario: View group content
     Given I am logged in as user "Marty Member"
     When I visit "/test"
-    Then I should see "Content"
+    Then I should see "Content" in the "page_tabs" region
 
-    When I click "Content"
+    When I click "Content" in the "page_tabs" region
     Then I should see "results found"

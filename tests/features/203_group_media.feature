@@ -26,7 +26,7 @@ Feature: Members can manage group media
   Scenario: Visit group media
     Given I am logged in as user "Marty Member"
     When I visit "/test"
-    Then I should see "Media"
+    Then I should see "Media" in the "page_tabs" region
 
     When I click "Media" in the "page_tabs" region
     Then I should see "Manage A test group Media"
