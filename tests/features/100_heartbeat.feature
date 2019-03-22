@@ -15,14 +15,14 @@ Feature: Basic site operation and navigation
     Given users:
     | name           | status | uid    | mail                              | roles              |
     | Olive Outsider | 1      | 999997 | olive.outsider@portlandoregon.gov | Authenticated user |
-    And I am logged in as user "oliver.outsider@portlandoregon.gov"
+    And I am logged in as "Olive Outsider"
     When I visit "/"
     And I should see "Bureaus and offices" in the "header" region
     And I should see "Alerts" in the "header" region
     And I should see "Portland, Oregon, USA" in the "footer_second" region
 
   Scenario: Visit a taxonomy term page
-    Given I am logged in as user "oliver.outsider@portlandoregon.gov"
+    Given I am logged in as "Olive Outsider"
     When I visit "/residents-of-portland"
     Then I should see "Resident"
     And I should see "services found"
