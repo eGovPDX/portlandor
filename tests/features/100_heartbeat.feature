@@ -12,14 +12,14 @@ Feature: Basic site operation and navigation
     And I should see "Portland, Oregon, USA" in the "footer_second" region
 
   Scenario: Visit the homepage as authenticated user
-    Given I am logged in as "oliver.outsider@portlandoregon.gov"
+    Given I am logged in as user "oliver.outsider@portlandoregon.gov"
     When I visit "/"
     And I should see "Bureaus and offices" in the "header" region
     And I should see "Alerts" in the "header" region
     And I should see "Portland, Oregon, USA" in the "footer_second" region
 
   Scenario: Visit a taxonomy term page
-    Given I am logged in as "oliver.outsider@portlandoregon.gov"
+    Given I am logged in as user "oliver.outsider@portlandoregon.gov"
     When I visit "/residents-of-portland"
     Then I should see "Resident"
     And I should see "services found"
