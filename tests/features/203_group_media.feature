@@ -31,7 +31,7 @@ Feature: Members can manage group media
     When I click "Media" in the "tabs" region
     Then I should see "Manage A test group Media"
 
-    When I click "Test video"
+    When I click "A test video"
     Then I should see "Delete" in the "tabs" region
 
     When I click "Delete" in the "tabs" region
