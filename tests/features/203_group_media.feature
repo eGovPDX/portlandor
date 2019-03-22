@@ -38,6 +38,6 @@ Feature: Members can manage group media
     Then I should see "This action cannot be undone."
 
     When I press "Delete"
-    Then I should see "The media Test video has been deleted."
+    Then I should see "The media A test video has been deleted."
 
 
