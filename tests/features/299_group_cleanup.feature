@@ -1,10 +1,9 @@
-@javascript
+@api @multidev @dev
 Feature: Remove group and delete test user
   In order to manage groups and users
   As a sitewide administrator
   I need to be able to create a group and assign users to it
 
-  @api @multidev @dev
   Scenario: Create group and assign user
 
     # Given I am logged in as user "marty.member@portlandoregon.gov"

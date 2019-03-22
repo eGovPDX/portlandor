@@ -1,4 +1,4 @@
-@javascript @api @multidev @dev
+@api @multidev @dev
 Feature: Assign members to group
   In order to manage group members
   As a group administrator

@@ -1,4 +1,4 @@
-@javascript @api @multidev @dev
+@api @multidev @dev
 Feature: Create group
   In order to manage groups
   As a sitewide administrator
