@@ -2,7 +2,7 @@
 Feature: Create group
   In order to manage groups
   As a sitewide administrator
-  I need to be able to create a group and assign a user to it
+  I need to be able to create a group and assign users to it
 
   Scenario: Create group
 
@@ -43,4 +43,19 @@ Feature: Create group
     And I press "Save"
     Then I should see "Manage A test group Members"
     And I should see "Ally Admin"
-    
+
+  Scenario: Assign member to group
+
+    Given I am logged in as user "Ally Admin"
+    When I visit "/test"
+    And I click "Members"
+    Then I should see "Add member"
+
+    When I click "Add member"
+    Then I should see "Create Bureau/office: Group membership"
+    And I should see "Username"
+
+    When I fill in "edit-entity-id-0-target-id" with "Marty Member (63)"
+    And I press "Save"
+    Then I should see "Manage A test group Members"
+    And I should see "Marty Member"
