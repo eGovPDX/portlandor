@@ -25,6 +25,10 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
 
     // Log in.
     $this->getSession()->visit($uli);
+
+    $driver = $this->getDriver();
+    $manager = $this->getUserManager();
+
   }
 
 }
