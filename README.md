@@ -2,7 +2,7 @@
 
 ## Get the code
 
-`git clone git@github.com:eGovPDX/portlandor.git` will create a folder called `portlandor` whereever you run it and pull down the code from the repo.
+`git clone git@github.com:eGovPDX/portlandor.git` will create a folder called `portlandor` wherever you run it and pull down the code from the repo.
 
 ## Git setup for our Windows developers
 
@@ -57,7 +57,7 @@ To best work with Pantheon Multidev, we are going to keep feature branch names s
 1. Use the issue ID from Jira for a new feature branch name to start work: `git checkout -b powr-[ID]` to create and checkout a new branch. (We use lowercase for the branch name to help create Pantheon multidev environments correctly.) If the branch already exists, you may use `git checkout powr-[ID]` to switch to your branch.
 1. At the start of every sprint you should update your local database with a copy of the database from Dev.
    1. Go to the Pantheon dashboard for portlandor
-   1. Got to Backups for the Dev environment
+   1. Go to Backups for the Dev environment
    1. Download the latest database backup to the /artifacts directory of your local project
    1. From within the artifacts directory, run `lando db-import portlandor_dev_2018-04-12T00-00-00_UTC_database.sql.gz`. (This is just an example, you'll need to use the actual filename of the database dump you downloaded.)
 1. Build your local environment to match master by running the following commands
@@ -70,7 +70,7 @@ To best work with Pantheon Multidev, we are going to keep feature branch names s
 1. In addition to any custom modules or theming files you may have created, you need to export any configuraiton changes to the repo in order for those changes to be synchronized. Run `lando drush cex` (config-export) in your local envionrment to create/update/delete the necessary config files. You will need to commit these add to git.
 1. To commit your work, run `git add -A` to add all of the changes to your local repo. (If you prefer to be a little more precise, you can `git add [filename]` for each file or several files separated by a space.
 1. Then create a commit with a comment, such as `git commit -m "POWR-[ID] description of your change."`
-1. Just before you push to GitHub, you should rebase your feature branch on the latest in the remote master. To do this run `git fetch origin master` then `git rebase -i origin/master`. This lets you "interatively" replay your change on the tip of a current master branch. You'll need to pick, squash or drop your changes and resolve any conflicts to get a clean commit that can be pushed to master. You may need to `git rebase --continue` until all of your changes have been replayed and your branch is clean.
+1. Just before you push to GitHub, you should rebase your feature branch on the latest in the remote master. To do this run `git fetch origin master` then `git rebase -i origin/master`. This lets you "interactively" replay your change on the tip of a current master branch. You'll need to pick, squash or drop your changes and resolve any conflicts to get a clean commit that can be pushed to master. You may need to `git rebase --continue` until all of your changes have been replayed and your branch is clean.
 1. You can now run `git push -u origin powr-[ID]`. This will push your feature branch and set its remote to a branch of the same name on origin (GitHub).
 
 ### Create a pull request
