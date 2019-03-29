@@ -37,7 +37,7 @@ The .lando.yml file included in this repo will set you up to connect to the corr
       2. Move your database export into a folder in your project root called `/artifacts`. (We added this to our .gitignore, so the directory won't be there until you create it.)
       3. Run `lando db-import artifacts/portlandor_dev_2018-04-12T00-00-00_UTC_database.sql.gz`. (This is just an example, you'll need to use the actual filename of the database dump you downloaded.)
       4. Move your files backup into `web/sites/default/files`
-6. Run `lando refresh` to build your local environment to match master.
+6. Run `lando refresh` to build your local environment to match master. (This runs composer install, drush updb, drush cim, and drush cr.)
 7. You should now be able to visit https://portlandor.lndo.site in your browser.
 8. When you are done with your development for the day, run `lando stop` to shut off your development containers.
 
@@ -55,7 +55,7 @@ To best work with Pantheon Multidev, we are going to keep feature branch names s
 2. On the master branch, run `git pull origin master`. This will make sure you have the latest changes from the remote master. Optionally, running `git pull -p origin` will prune any local branches not on the remote to help keep your local repo clean.
 3. Use the issue ID from Jira for a new feature branch name to start work: `git checkout -b powr-[ID]` to create and checkout a new branch. (We use lowercase for the branch name to help create Pantheon multidev environments correctly.) If the branch already exists, you may use `git checkout powr-[ID]` to switch to your branch.
 4. Run `lando latest` at the start of every sprint to update your local database with a copy of the database from Dev.
-5. Run `lando refresh` to refresh your local environment to match master.
+5. Run `lando refresh` to refresh your local environment to match master. (This runs composer install, drush updb, drush cim, and drush cr.)
 6. You are now ready to develop on your feature branch.
 
 ### Commit code and push to Github
@@ -64,7 +64,7 @@ To best work with Pantheon Multidev, we are going to keep feature branch names s
 2. To commit your work, run `git add -A` to add all of the changes to your local repo. (If you prefer to be a little more precise, you can `git add [filename]` for each file or several files separated by a space.
 3. Then create a commit with a comment, such as `git commit -m "POWR-[ID] description of your change."`
 4. Just before you push to GitHub, you should rebase your feature branch on the latest in the remote master. To do this run `git fetch origin master` then `git rebase -i origin/master`. This lets you "interatively" replay your change on the tip of a current master branch. You'll need to pick, squash or drop your changes and resolve any conflicts to get a clean commit that can be pushed to master. You may need to `git rebase --continue` until all of your changes have been replayed and your branch is clean.
-5. Run `lando refresh` to refresh your local environment with any changes from master.
+5. Run `lando refresh` to refresh your local environment with any changes from master. (This runs composer install, drush updb, drush cim, and drush cr.)
 6. You can now run `git push -u origin powr-[ID]`. This will push your feature branch and set its remote to a branch of the same name on origin (GitHub).
 
 ### Create a pull request
