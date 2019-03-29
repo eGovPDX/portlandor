@@ -136,7 +136,7 @@ Make modifications to the desired SCSS and JavaScript files in the theme. Never 
 You have a couple of options for manually compiling the asset files:
 
 - Run `lando npm run dev` in a second terminal/shell window to launch webpack, watch for changes to the CSS and JS source files, and automatically compile them whenever they are updated.
-- Run `lando npm run devbuild` to launch webpack and compile the files. (It doesn't watch for future changes to the source files.)
+- Run `lando npm run build:dev` to launch webpack and compile the files. (It doesn't watch for future changes to the source files.)
 
 You can run `lando npm install` if you need to install/update your Node dependencies.
 
