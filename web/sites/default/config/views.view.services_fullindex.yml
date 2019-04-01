@@ -1,18 +1,18 @@
-uuid: 3ccd24ba-d9a4-4ffd-9f88-61f4c71bb1ba
+uuid: b8d64bde-036a-4b0e-a233-5d1d8626e668
 langcode: en
 status: true
 dependencies:
   config:
-    - search_api.index.bureaus
+    - search_api.index.full_index
     - system.menu.main
   module:
     - search_api
-id: bureaus_and_offices
-label: 'Bureaus and offices index'
+id: services_fullindex
+label: 'Sitewide: Services index'
 module: views
-description: ''
+description: 'List of all city services'
 tag: ''
-base_table: search_api_index_bureaus
+base_table: search_api_index_full_index
 base_field: search_api_id
 core: 8.x
 display:
@@ -26,17 +26,14 @@ display:
         type: none
         options: {  }
       cache:
-        type: search_api_time
-        options:
-          results_lifespan: 3600
-          results_lifespan_custom: 0
-          output_lifespan: 3600
-          output_lifespan_custom: 0
+        type: search_api_tag
+        options: {  }
       query:
         type: views_query
         options:
           bypass_access: false
           skip_access: false
+          preserve_facet_query_args: false
       exposed_form:
         type: basic
         options:
@@ -79,12 +76,29 @@ display:
         options:
           view_modes:
             'entity:group':
-              bureau_office: teaser
+              bureau_office: default
+              elected_official: default
+              program: default
+              project: default
+            'entity:node':
+              city_service: teaser
+              event: default
+              guide: default
+              information: default
+              news: default
+              page: default
+            'entity:taxonomy_term':
+              audience: default
+              community_actions: default
+              topics: default
       fields:
-        label:
-          id: label
-          table: search_api_datasource_bureaus_entity_group
-          field: label
+        aggregated_topic:
+          table: search_api_index_full_index
+          field: aggregated_topic
+          id: aggregated_topic
+          entity_type: null
+          entity_field: null
+          plugin_id: search_api
           relationship: none
           group_type: group
           admin_label: ''
@@ -121,7 +135,7 @@ display:
           element_class: ''
           element_label_type: ''
           element_label_class: ''
-          element_label_colon: false
+          element_label_colon: true
           element_wrapper_type: ''
           element_wrapper_class: ''
           element_default_classes: true
@@ -129,33 +143,53 @@ display:
           hide_empty: false
           empty_zero: false
           hide_alter_empty: true
-          click_sort_column: value
-          type: string
-          settings:
-            link_to_entity: true
-          group_column: value
-          group_columns: {  }
-          group_rows: true
-          delta_limit: 0
-          delta_offset: 0
-          delta_reversed: false
-          delta_first_last: false
+          link_to_item: false
+          use_highlighting: false
           multi_type: separator
-          separator: ', '
-          field_api_classes: false
-          field_rendering: true
-          fallback_handler: search_api
-          fallback_options:
-            link_to_item: false
-            use_highlighting: false
-            multi_type: separator
-            multi_separator: ', '
-          entity_type: group
-          plugin_id: search_api_field
+          multi_separator: ', '
       filters:
+        type_2:
+          id: type_2
+          table: search_api_index_full_index
+          field: type_2
+          relationship: none
+          group_type: group
+          admin_label: ''
+          operator: or
+          value:
+            city_service: city_service
+          group: 1
+          exposed: false
+          expose:
+            operator_id: ''
+            label: ''
+            description: ''
+            use_operator: false
+            operator: ''
+            identifier: ''
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+            reduce: false
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
+          reduce_duplicates: false
+          plugin_id: search_api_options
         search_api_fulltext:
           id: search_api_fulltext
-          table: search_api_index_bureaus
+          table: search_api_index_full_index
           field: search_api_fulltext
           relationship: none
           group_type: group
@@ -166,7 +200,7 @@ display:
           exposed: true
           expose:
             operator_id: search_api_fulltext_op
-            label: 'Search bureaus and offices'
+            label: 'Search city services'
             description: ''
             use_operator: false
             operator: search_api_fulltext_op
@@ -194,12 +228,50 @@ display:
             group_items: {  }
           parse_mode: terms
           min_length: null
-          fields: {  }
+          fields:
+            - rendered_item
+            - title
           plugin_id: search_api_fulltext
       sorts:
+        field_popular:
+          id: field_popular
+          table: search_api_index_full_index
+          field: field_popular
+          relationship: none
+          group_type: group
+          admin_label: ''
+          order: DESC
+          exposed: true
+          expose:
+            label: Popular
+          plugin_id: search_api
         title:
           id: title
-          table: search_api_index_bureaus
+          table: search_api_index_full_index
+          field: title
+          relationship: none
+          group_type: group
+          admin_label: ''
+          order: ASC
+          exposed: true
+          expose:
+            label: Title
+          plugin_id: search_api
+        search_api_relevance:
+          id: search_api_relevance
+          table: search_api_index_full_index
+          field: search_api_relevance
+          relationship: none
+          group_type: group
+          admin_label: ''
+          order: DESC
+          exposed: false
+          expose:
+            label: ''
+          plugin_id: search_api
+        title_1:
+          id: title_1
+          table: search_api_index_full_index
           field: title
           relationship: none
           group_type: group
@@ -209,7 +281,7 @@ display:
           expose:
             label: ''
           plugin_id: search_api
-      title: 'Bureaus and offices'
+      title: 'City services'
       header:
         result:
           id: result
@@ -219,21 +291,24 @@ display:
           group_type: group
           admin_label: ''
           empty: true
-          content: '@total bureaus and offices'
+          content: '@total services found'
           plugin_id: result
       footer: {  }
       empty: {  }
       relationships: {  }
       arguments: {  }
       display_extenders: {  }
-      use_ajax: false
+      filter_groups:
+        operator: AND
+        groups:
+          1: AND
     cache_metadata:
       max-age: -1
       contexts:
-        - 'languages:language_content'
         - 'languages:language_interface'
         - url
         - url.query_args
+        - 'url.query_args:sort_by'
       tags: {  }
   page_1:
     display_plugin: page
@@ -242,12 +317,16 @@ display:
     position: 1
     display_options:
       display_extenders: {  }
-      path: bureaus-offices
+      path: services
       menu:
         type: normal
-        title: 'Bureaus and offices'
+        title: Services
+        description: ''
+        expanded: false
+        parent: ''
+        weight: -50
+        context: '0'
         menu_name: main
-        weight: -49
       cache:
         type: none
       defaults:
@@ -255,8 +334,8 @@ display:
     cache_metadata:
       max-age: -1
       contexts:
-        - 'languages:language_content'
         - 'languages:language_interface'
         - url
         - url.query_args
+        - 'url.query_args:sort_by'
       tags: {  }
