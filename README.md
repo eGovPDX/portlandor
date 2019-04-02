@@ -234,3 +234,4 @@ Often the last few lines are the most important, and tell you where the error is
 #### Solutions to some potential environment-specific build problems:
 
 1. Node.js was not added to the Windows Path. See: https://stackoverflow.com/questions/8768549/node-js-doesnt-recognize-system-path#8768567
+
