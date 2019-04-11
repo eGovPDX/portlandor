@@ -59,7 +59,7 @@ class PortlandMediaEmbedHelperClasses extends FilterBase {
           case "image_browser":
             $media_class = "embed-image";
             // for images, set the display mode based on alignment
-            $display = "embedded_100";
+            $display = "embedded";
             if (!is_null($alignment) && $alignment == "responsive-right") {
               $display = "embedded_50";
               $media_class .= " responsive-right";
