@@ -29,6 +29,7 @@ Feature: Members can manage group content
       """
       Test revision message
       """
+    And I select "published" from "moderation_state[0][state]"
     And I press "Save"
     Then I should see "Service Test service has been created."
 
