@@ -35,6 +35,7 @@ Feature: Members can manage group content
 
   Scenario: Edit and delete service
     Given I am logged in as user "Marty Member"
+    And I wait for "10000"
     When I visit "/test/services/test-service"
     And I click "Edit" in the "tabs" region
     Then I should see "Title"
