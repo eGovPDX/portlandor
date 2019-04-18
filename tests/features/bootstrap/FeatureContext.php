@@ -31,4 +31,12 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
 
   }
 
+  /**
+   * @Given I wait for :arg1
+   */
+  public function iWaitFor($arg1)
+  {
+      sleep($arg1);
+  }
+
 }
