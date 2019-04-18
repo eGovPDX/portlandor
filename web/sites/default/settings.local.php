@@ -38,7 +38,7 @@ assert_options(ASSERT_ACTIVE, TRUE);
 /**
  * Enable local development services.
  */
-$settings['container_yamls'][] = DRUPAL_ROOT . '/sites/default/local.services.yml';
+# $settings['container_yamls'][] = DRUPAL_ROOT . '/sites/default/local.services.yml';
 
 /**
  * Show all error messages, with backtrace information.
@@ -51,8 +51,8 @@ $config['system.logging']['error_level'] = 'verbose';
 /**
  * Disable CSS and JS aggregation.
  */
-$config['system.performance']['css']['preprocess'] = FALSE;
-$config['system.performance']['js']['preprocess'] = FALSE;
+# $config['system.performance']['css']['preprocess'] = FALSE;
+# $config['system.performance']['js']['preprocess'] = FALSE;
 
 /**
  * Disable the render cache.
@@ -66,7 +66,7 @@ $config['system.performance']['js']['preprocess'] = FALSE;
  *
  * Only use this setting once the site has been installed.
  */
-$settings['cache']['bins']['render'] = 'cache.backend.null';
+# $settings['cache']['bins']['render'] = 'cache.backend.null';
 
 /**
  * Disable caching for migrations.
