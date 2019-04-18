@@ -42,7 +42,7 @@ Feature: Create group
     And I check the box "Admin"
     And I press "Save"
     # If the following step fails, it is likely becasue the user is already a member
-    Then I should see "Manage A test group Members"
+    Then I should see "Manage <em class="placeholder">A test group</em> Members"
     And I should see "Ally Admin"
 
   Scenario: Assign member to group
