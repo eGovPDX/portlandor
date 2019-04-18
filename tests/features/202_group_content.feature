@@ -10,11 +10,11 @@ Feature: Members can manage group content
     Then I should see "+ Add Content"
 
     When I click "+ Add Content"
-    Then I should see "Event"
-    And I should see "News"
-    And I should see "Page"
-    And I should see "Notification"
-    And I should see "Service"
+    Then I should see "Group Event"
+    And I should see "Group News"
+    And I should see "Group Page"
+    And I should see "Group Notification"
+    And I should see "Group Service"
 
     When I click "Service"
     And I should see "Title"
