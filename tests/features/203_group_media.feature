@@ -16,7 +16,7 @@ Feature: Members can manage group media
     And I should see "Group media (Document)"
 
     When I click "Group media (Video)"
-    Then I should see "Create Bureau/office: Group media (Video)"
+    Then I should see "Create Video in Test"
 
     When I fill in "Name" with "A test video"
     And I fill in "Video URL" with "https://www.youtube.com/watch?v=Deguep26G7M"
