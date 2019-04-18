@@ -24,6 +24,10 @@ Feature: Basic site operation and navigation
     Then I should see "Resident"
     And I should see "services found"
     And I should see "Bureaus, offices, and programs"
+    # Verify fix for POWR-889. Use "Given I am on" in order to allow non-200 response code
+    Given I am on "/taxonomy/term/100000"
+    Then the response status code should be 404
+    And I should see "Page not found"
 
     # Given users:
     # | name           | status | uid    | mail                              | roles              |

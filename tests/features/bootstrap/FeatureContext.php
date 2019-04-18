@@ -18,10 +18,13 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
     $site_name = (getenv('CIRCLE_BRANCH') == "master") ? "dev" : getenv('CIRCLE_BRANCH');
 
     // Generate the link to login. Ignore stderr output
-    $uli = shell_exec("terminus drush portlandor.$site_name uli $name");
+    $uli = shell_exec("terminus drush portlandor.$site_name uli \"$name\"");
 
     // Trim EOL characters.
     $uli = trim($uli);
+
+    $repo_name = getenv('CIRCLE_PROJECT_REPONAME');
+    $uli = str_replace("//default", "//$site_name-$repo_name.pantheonsite.io", $uli);
 
     // Log in.
     $this->getSession()->visit($uli);

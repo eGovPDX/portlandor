@@ -41,8 +41,11 @@ Feature: Create group
     When I fill in "edit-entity-id-0-target-id" with "Ally Admin (62)"
     And I check the box "Admin"
     And I press "Save"
+
     # If the following step fails, it is likely becasue the user is already a member
-    Then I should see "Manage A test group Members"
+    When I visit "/test"
+    And I click "Members"
+    Then I should see "Manage"
     And I should see "Ally Admin"
 
   Scenario: Assign member to group
