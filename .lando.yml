@@ -17,11 +17,31 @@ services:
     xdebug: true
     config:
       conf: xdebug.ini
+    overrides:
+      environment:
+        BEHAT_PARAMS: '{"extensions" : {"Behat\\MinkExtension" : {"base_url" : "https://portlandor.lndo.site"}, "Drupal\\DrupalExtension" : {"drush" :   {  "root":  "/app/web" }}}}'
+        MINK_DRIVER_ARGS: '["chrome", null, "http://chromedriver:4444/wd/hub"]'
+        MINK_DRIVER_ARGS_WEBDRIVER: '["chrome", null, "http://chromedriver:4444/wd/hub"]'
+        MINK_DRIVER_CLASS: 'Drupal\FunctionalJavascriptTests\DrupalSelenium2Driver'
+
   node:
     type: node
     build:
       - echo "Installing Node.js dependencies..."
       - npm -C web/themes/custom/cloudy install
+  chromedriver:
+    type: compose
+    services:
+      image: robcherry/docker-chromedriver:latest
+      expose:
+        - "4444"
+      environment:
+        CHROMEDRIVER_WHITELISTED_IPS: ""
+        CHROMEDRIVER_URL_BASE: "/wd/hub"
+      security_opt:
+        - seccomp:unconfined
+      command: ["/usr/local/bin/supervisord", "-c", "/etc/supervisord.conf"]
+
 events:
   post-start:
     - node: echo "Building theme asset files..."
@@ -63,3 +83,12 @@ tooling:
       - appserver: drush cr -y
       - appserver: echo "Building theme asset files..."
       - node: npm -C web/themes/custom/cloudy run build:dev
+  
+  behat:
+    service: appserver
+    description: "Run behat tests"
+    cmd:
+      - /app/vendor/bin/behat
+  chromedriver:
+    service: chromedriver
+    description: "Run chromedriver commands."
