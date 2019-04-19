@@ -15,7 +15,7 @@ Feature: Members can manage group media
     And I should see "Video"
     And I should see "Document"
 
-    When I click "Group Video"
+    When I click "Video"
     Then I should see "Create Video in A test group"
 
     When I fill in "Name" with "A test video"
