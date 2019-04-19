@@ -10,12 +10,12 @@ Feature: Members can manage group media
     Then I should see "+ Add Media"
 
     When I click "+ Add Media"
-    Then I should see "Group media (Audio)"
-    And I should see "Group media (Image)"
-    And I should see "Group media (Video)"
-    And I should see "Group media (Document)"
+    Then I should see "Group Audio"
+    And I should see "Group Image"
+    And I should see "Group Video"
+    And I should see "Group Document"
 
-    When I click "Group media (Video)"
+    When I click "Group Video"
     Then I should see "Create Video in A test group"
 
     When I fill in "Name" with "A test video"
