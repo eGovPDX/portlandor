@@ -35,9 +35,6 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
       $uli = str_replace("//default", "//$site_name-$repo_name.pantheonsite.io", $uli);
     }
 
-    $repo_name = getenv('CIRCLE_PROJECT_REPONAME');
-    $uli = str_replace("//default", "//$site_name-$repo_name.pantheonsite.io", $uli);
-
     // Log in.
     $this->getSession()->visit($uli);
 
