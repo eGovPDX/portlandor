@@ -1,28 +1,278 @@
+diff --git a/config/optional/views.view.group_media.yml b/config/optional/views.view.group_media.yml
+index 0c9bae9..863872e 100644
+--- a/config/optional/views.view.group_media.yml
++++ b/config/optional/views.view.group_media.yml
+@@ -3,7 +3,7 @@ status: true
+ dependencies:
+   module:
+     - group
+-    - media_entity
++    - media
+ id: group_media
+ label: 'Group Media'
+ module: views
+diff --git a/groupmedia.info.yml b/groupmedia.info.yml
+index 7f32af4..e5c09a4 100644
+--- a/groupmedia.info.yml
++++ b/groupmedia.info.yml
+@@ -1,9 +1,9 @@
+-name: 'Group Media Entity'
+-description: 'Enables Group functionality for the Media Entity module'
++name: 'Group Media'
++description: 'Enables Group functionality for the Media module'
+ package: 'Group'
+ type: 'module'
+-version: 1.0
++version: 2.0
+ core: '8.x'
+ dependencies:
+-  - 'media_entity'
++  - 'media'
+   - 'group'
+\ No newline at end of file
+diff --git a/groupmedia.module b/groupmedia.module
+index 7287551..0809c7c 100644
+--- a/groupmedia.module
++++ b/groupmedia.module
+@@ -1,16 +1,9 @@
+ <?php
+ 
+-use Drupal\Core\Access\AccessResult;
+-use Drupal\Core\Session\AccountInterface;
+-use Drupal\group\Entity\GroupContentType;
+-use Drupal\media_entity\MediaInterface;
+-use Drupal\media_entity\MediaBundleInterface;
+-
+-
+ /**
+  * Implements hook_ENTITY_TYPE_insert().
+  */
+-function groupmedia_media_bundle_insert(MediaBundleInterface $mediaBundle) {
++function groupmedia_media_type_insert(\Drupal\media\MediaTypeInterface $mediaType) {
+   \Drupal::service('plugin.manager.group_content_enabler')->clearCachedDefinitions();
+ }
+ 
+@@ -21,11 +14,11 @@ function groupmedia_media_bundle_insert(MediaBundleInterface $mediaBundle) {
+  * do so in only one group the media belongs to. If you wish to prevent any such
+  * action on your own terms, implement hook_media_access() in your module.
+  */
+-function groupmedia_media_access(MediaInterface $media, $op, AccountInterface $account) {
++function groupmedia_media_access(\Drupal\media\MediaInterface $media, $op, \Drupal\Core\Session\AccountInterface $account) {
+   // We do not care about create access as we have our own wizard for that. Any
+   // operation aside from 'view', 'update' and 'delete' is also unsupported.
+   if (!in_array($op, ['view', 'update', 'delete'])) {
+-    return AccessResult::neutral();
++    return \Drupal\Core\Access\AccessResult::neutral();
+   }
+ 
+   // Some modules, including the code in \Drupal\media_entity\MediaForm::access() may
+@@ -33,15 +26,15 @@ function groupmedia_media_access(MediaInterface $media, $op, AccountInterface $a
+   // that makes little sense. We need to account for it to avoid crashes because
+   // we would otherwise query the DB with a non-existent node ID.
+   if ($media->isNew()) {
+-    return AccessResult::neutral();
++    return \Drupal\Core\Access\AccessResult::neutral();
+   }
+ 
+   $plugin_id = 'group_media:' . $media->bundle();
+ 
+   // Only act if there are group content types for this node type.
+-  $group_content_types = GroupContentType::loadByContentPluginId($plugin_id);
++  $group_content_types = \Drupal\group\Entity\GroupContentType::loadByContentPluginId($plugin_id);
+   if (empty($group_content_types)) {
+-    return AccessResult::neutral();
++    return \Drupal\Core\Access\AccessResult::neutral();
+   }
+ 
+   // Load all the group content for this node.
+@@ -54,7 +47,7 @@ function groupmedia_media_access(MediaInterface $media, $op, AccountInterface $a
+ 
+   // If the media does not belong to any group, we have nothing to say.
+   if (empty($group_contents)) {
+-    return AccessResult::neutral();
++    return \Drupal\Core\Access\AccessResult::neutral();
+   }
+ 
+   /** @var \Drupal\group\Entity\GroupInterface[] $groups */
+@@ -73,11 +66,11 @@ function groupmedia_media_access(MediaInterface $media, $op, AccountInterface $a
+       foreach ($groups as $group) {
+         if ($media->isPublished()) {
+           if ($group->hasPermission("view $plugin_id entity", $account)) {
+-            return AccessResult::allowed();
++            return \Drupal\Core\Access\AccessResult::allowed();
+           }
+         }
+         elseif ($group->hasPermission("view unpublished $plugin_id entity", $account)) {
+-          return AccessResult::allowed();
++          return \Drupal\Core\Access\AccessResult::allowed();
+         }
+       }
+       break;
+@@ -86,14 +79,14 @@ function groupmedia_media_access(MediaInterface $media, $op, AccountInterface $a
+     case 'delete':
+       foreach ($groups as $group) {
+         if ($group->hasPermission("$op any $plugin_id entity", $account)) {
+-          return AccessResult::allowed();
++          return \Drupal\Core\Access\AccessResult::allowed();
+         }
+-        elseif ($account->id() == $media->getPublisherId() && $group->hasPermission("$op own $plugin_id entity", $account)) {
+-          return AccessResult::allowed();
++        elseif ($account->id() == $media->getOwnerId() && $group->hasPermission("$op own $plugin_id entity", $account)) {
++          return \Drupal\Core\Access\AccessResult::allowed();
+         }
+       }
+       break;
+   }
+ 
+-  return AccessResult::forbidden();
++  return \Drupal\Core\Access\AccessResult::forbidden();
+ }
 diff --git a/src/Controller/GroupMediaController.php b/src/Controller/GroupMediaController.php
-index 5fffbb6..77e87f4 100644
+index 667bb02..20f8513 100644
 --- a/src/Controller/GroupMediaController.php
 +++ b/src/Controller/GroupMediaController.php
-@@ -75,8 +75,8 @@ class GroupMediaController extends GroupContentController {
+@@ -10,6 +10,7 @@ use Drupal\group\Entity\GroupInterface;
+ use Drupal\group\Plugin\GroupContentEnablerManagerInterface;
+ use Drupal\user\PrivateTempStoreFactory;
+ use Symfony\Component\DependencyInjection\ContainerInterface;
++use Drupal\media\Entity\MediaType;
  
-         $t_args = ['%media_type' => $bundle_label];
-         $description = $create_mode
--          ? $this->t('Create a media of type %media_type in the group.', $t_args)
--          : $this->t('Add an existing media of type %media_type to the group.', $t_args);
-+          ? $this->t('Create media of type %media_type in the group.', $t_args)
-+          : $this->t('Add existing media of type %media_type to the group.', $t_args);
+ /**
+  * Returns responses for 'group_media' GroupContent routes.
+@@ -67,16 +68,15 @@ class GroupMediaController extends GroupContentController {
+     }
+ 
+     // Overwrite the label and description for all of the displayed bundles.
+-    $storage_handler = $this->entityTypeManager->getStorage('media_bundle');
++    $storage_handler = $this->entityTypeManager->getStorage('media_type');
++    $media_types = MediaType::loadMultiple();
+     foreach ($this->addPageBundles($group, $create_mode) as $plugin_id => $bundle_name) {
+       if (!empty($build['#bundles'][$bundle_name])) {
+         $plugin = $group->getGroupType()->getContentPlugin($plugin_id);
+         $bundle_label = $storage_handler->load($plugin->getEntityBundle())->label();
+-
+-        $t_args = ['%media_bundle' => $bundle_label];
+-        $description = $create_mode
+-          ? $this->t('Create a media of type %media_bundle in the group.', $t_args)
+-          : $this->t('Add an existing media of type %media_bundle to the group.', $t_args);
++    
++        $t_args = ['%media_type' => $bundle_label];
++        $description = $media_types[$plugin->getEntityBundle()]->getDescription();
  
          $build['#bundles'][$bundle_name]['label'] = $bundle_label;
          $build['#bundles'][$bundle_name]['description'] = $description;
+diff --git a/src/Plugin/GroupContentEnabler/GroupMedia.php b/src/Plugin/GroupContentEnabler/GroupMedia.php
+index 5a5444e..f93e061 100644
+--- a/src/Plugin/GroupContentEnabler/GroupMedia.php
++++ b/src/Plugin/GroupContentEnabler/GroupMedia.php
+@@ -6,7 +6,7 @@ use Drupal\Core\Session\AccountInterface;
+ use Drupal\group\Access\GroupAccessResult;
+ use Drupal\group\Entity\GroupInterface;
+ use Drupal\group\Plugin\GroupContentEnablerBase;
+-use Drupal\media_entity\Entity\MediaBundle;
++use Drupal\media\Entity\MediaType;
+ use Drupal\Core\Url;
+ use Drupal\Core\Form\FormStateInterface;
+ 
+@@ -27,13 +27,13 @@ use Drupal\Core\Form\FormStateInterface;
+ class GroupMedia extends GroupContentEnablerBase {
+ 
+   /**
+-   * Retrieves the media bundle this plugin supports.
++   * Retrieves the media type this plugin supports.
+    *
+-   * @return \Drupal\media_entity\MediaBundleInterface
+-   *   The media bundle this plugin supports.
++   * @return \Drupal\media\MediaTypeInterface
++   *   The media type this plugin supports.
+    */
+-  protected function getMediaBundle() {
+-    return MediaBundle::load($this->getEntityBundle());
++  protected function getMediaType() {
++    return MediaType::load($this->getEntityBundle());
+   }
+ 
+   /**
+@@ -48,7 +48,7 @@ class GroupMedia extends GroupContentEnablerBase {
+     if ($group->hasPermission("create $plugin_id entity", $account)) {
+       $route_params = ['group' => $group->id(), 'plugin_id' => $plugin_id];
+       $operations["groupmedia-create-$type"] = [
+-        'title' => $this->t('Create @type', ['@type' => $this->getMediaBundle()->label()]),
++        'title' => $this->t('Create @type', ['@type' => $this->getMediaType()->label()]),
+         'url' => new Url('entity.group_content.create_form', $route_params),
+         'weight' => 30,
+       ];
+@@ -103,7 +103,7 @@ class GroupMedia extends GroupContentEnablerBase {
+    */
+   public function calculateDependencies() {
+     $dependencies = parent::calculateDependencies();
+-    $dependencies['config'][] = 'media_entity.bundle.' . $this->getEntityBundle();
++    $dependencies['config'][] = 'media.type.' . $this->getEntityBundle();
+     return $dependencies;
+   }
+ 
 diff --git a/src/Plugin/GroupContentEnabler/GroupMediaDeriver.php b/src/Plugin/GroupContentEnabler/GroupMediaDeriver.php
-index 7d02f56..7b37d54 100644
+index ce55ae3..6f92885 100644
 --- a/src/Plugin/GroupContentEnabler/GroupMediaDeriver.php
 +++ b/src/Plugin/GroupContentEnabler/GroupMediaDeriver.php
-@@ -21,7 +21,7 @@ class GroupMediaDeriver extends DeriverBase {
+@@ -2,21 +2,26 @@
+ 
+ namespace Drupal\groupmedia\Plugin\GroupContentEnabler;
+ 
+-use Drupal\media_entity\Entity\MediaBundle;
++use Drupal\media\Entity\MediaType;
+ use Drupal\Component\Plugin\Derivative\DeriverBase;
+ 
++/**
++ * Class GroupMediaDeriver
++ *
++ * @package Drupal\groupmedia\Plugin\GroupContentEnabler
++ */
+ class GroupMediaDeriver extends DeriverBase {
+ 
+   /**
+    * {@inheritdoc}.
+    */
+   public function getDerivativeDefinitions($base_plugin_definition) {
+-    foreach (MediaBundle::loadMultiple() as $name => $media_bundle) {
+-      $label = $media_bundle->label();
++    foreach (MediaType::loadMultiple() as $name => $media_type) {
++      $label = $media_type->label();
  
        $this->derivatives[$name] = [
          'entity_bundle' => $name,
 -        'label' => t('Group media (@type)', ['@type' => $label]),
-+        'label' => t('Group @type', ['@type' => $label]),
++        'label' => t('@type', ['@type' => $label]),
          'description' => t('Adds %type content to groups both publicly and privately.', ['%type' => $label]),
        ] + $base_plugin_definition;
      }
+diff --git a/src/Routing/GroupMediaRouteProvider.php b/src/Routing/GroupMediaRouteProvider.php
+index be7fa4f..94a32e2 100644
+--- a/src/Routing/GroupMediaRouteProvider.php
++++ b/src/Routing/GroupMediaRouteProvider.php
+@@ -2,21 +2,21 @@
+ 
+ namespace Drupal\groupmedia\Routing;
+ 
+-use Drupal\media_entity\Entity\MediaBundle;
++use Drupal\media\Entity\MediaType;
+ use Symfony\Component\Routing\Route;
+ 
+ /**
+- * Provides routes for group_node group content.
++ * Provides routes for group_media group content.
+  */
+ class GroupMediaRouteProvider {
+ 
+   /**
+-   * Provides the shared collection route for group node plugins.
++   * Provides the shared collection route for group media plugins.
+    */
+   public function getRoutes() {
+     $routes = $plugin_ids = $permissions_add = $permissions_create = [];
+ 
+-    foreach (MediaBundle::loadMultiple() as $name => $media_bundle) {
++    foreach (MediaType::loadMultiple() as $name => $media_bundle) {
+       $plugin_id = "group_media:$name";
+ 
+       $plugin_ids[] = $plugin_id;
