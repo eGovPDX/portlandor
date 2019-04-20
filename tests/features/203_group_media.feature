@@ -10,13 +10,13 @@ Feature: Members can manage group media
     Then I should see "+ Add Media"
 
     When I click "+ Add Media"
-    Then I should see "Group media (Audio)"
-    And I should see "Group media (Image)"
-    And I should see "Group media (Video)"
-    And I should see "Group media (Document)"
+    Then I should see "Audio"
+    And I should see "Image"
+    And I should see "Video"
+    And I should see "Document"
 
-    When I click "Group media (Video)"
-    Then I should see "Create Bureau/office: Group media (Video)"
+    When I click "Video"
+    Then I should see "Create Video in A test group"
 
     When I fill in "Name" with "A test video"
     And I fill in "Video URL" with "https://www.youtube.com/watch?v=Deguep26G7M"

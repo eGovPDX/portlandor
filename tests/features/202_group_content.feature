@@ -10,13 +10,9 @@ Feature: Members can manage group content
     Then I should see "+ Add Content"
 
     When I click "+ Add Content"
-    And I should see "Group node (Event)"
-    And I should see "Group node (News)"
-    Then I should see "Group node (Page)"
-    And I should see "Group node (Notification)"
-    And I should see "Group node (Service)"
+    Then I should see "Service"
 
-    When I click "Group node (Service)"
+    When I click "Service"
     And I should see "Title"
     And I should see "Step title"
     And I should see "Step instruction"
