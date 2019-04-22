@@ -10,12 +10,9 @@ Feature: Members can manage group media
     Then I should see "+ Add Media"
 
     When I click "+ Add Media"
-    Then I should see "Audio"
-    And I should see "Image"
-    And I should see "Video"
-    And I should see "Document"
+    And I should see "Add Video"
 
-    When I click "Video"
+    When I click "Add Video"
     Then I should see "Create"
     And I should see "Name"
     And I should see "Video URL"
