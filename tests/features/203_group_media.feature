@@ -16,7 +16,9 @@ Feature: Members can manage group media
     And I should see "Document"
 
     When I click "Video"
-    Then I should see "Create Video in A test group"
+    Then I should see "Create"
+    And I should see "Name"
+    And I should see "Video URL"
 
     When I fill in "Name" with "A test video"
     And I fill in "Video URL" with "https://www.youtube.com/watch?v=Deguep26G7M"
