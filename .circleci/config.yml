@@ -97,14 +97,15 @@ build_and_deploy: &build_and_deploy
           # Git operations
           git remote add pantheon ssh://codeserver.dev.5c6715db-abac-4633-ada8-1c9efe354629@codeserver.dev.5c6715db-abac-4633-ada8-1c9efe354629.drush.in:2222/~/repository.git
           git config --global user.email "$eGov_Email"
-          # Without these lines, push will fail with "please remote git submodules" error
-          rm -rf ./vendor/drupal/coder/.git && rm -rf ./web/modules/contrib/facets/.git && rm -rf ./web/modules/contrib/search_api_solr/.git
           # Compile SCSS in our custom theme
           cd web/themes/custom/cloudy && npm run build && cd /var/www/html
           # Exclude dependencies
           rm -rf web/themes/custom/cloudy/node_modules
           # Force add all files to include those excluded by .gitignore
+          rm -rf ./web/modules/contrib/search_api_solr/.git
           git add -f /var/www/html
+          # Without these lines, push will fail with "please remote git submodules" error
+          git rm -r ./vendor/drupal/coder/.git && git rm -r ./web/modules/contrib/facets/.git
           # Pantheon site will use the wrong DB if the local is kept
           git rm --cache  web/sites/default/settings.local.php --ignore-unmatch
           git rm -r --cache web/sites/default/files --ignore-unmatch
