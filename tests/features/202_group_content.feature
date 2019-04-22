@@ -10,9 +10,9 @@ Feature: Members can manage group content
     Then I should see "+ Add Content"
 
     When I click "+ Add Content"
-    Then I should see the link "Add Service"
+    Then I should see "Add Service"
 
-    When I click the link "Add Service"
+    When I click "Add Service"
     And I should see "Title"
     And I should see "Step title"
     And I should see "Step instruction"
