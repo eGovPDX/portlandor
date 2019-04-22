@@ -162,3 +162,5 @@ $settings['trusted_host_patterns'] = array(
   '^'. preg_quote('portlandor.lndo.site') .'$',
   '^'. preg_quote('localhost') .'$'
 );
+
+$config['system.file']['path']['temporary'] = '/tmp';
