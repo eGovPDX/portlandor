@@ -16,7 +16,12 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
   public function iAmLoggedInAsUser($name) {
     $uli = '';
     if(getenv('PANTHEON_ENVIRONMENT') == 'lando') {
-      $uli = shell_exec("drush uli \"$name\"");
+      if(strpos($name, '@') === FALSE) {
+        $uli = shell_exec("drush uli --name \"$name\"");
+      }
+      else {
+        $uli = shell_exec("drush uli --mail \"$name\"");
+      }
       $uli = trim($uli);
       $lando_app_name = getenv('LANDO_APP_NAME');
       $uli = str_replace("//default", "//$lando_app_name.lndo.site", $uli);
@@ -26,14 +31,19 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
       $site_name = (getenv('CIRCLE_BRANCH') == "master") ? "dev" : getenv('CIRCLE_BRANCH');
 
       // Generate the link to login. Ignore stderr output
-      $uli = shell_exec("terminus drush portlandor.$site_name uli \"$name\"");
+      if(strpos($name, '@') === FALSE) {
+        $uli = shell_exec("terminus drush portlandor.$site_name uli --name \"$name\"");
+      }
+      else {
+        $uli = shell_exec("terminus drush portlandor.$site_name uli --mail \"$name\"");
+      }
 
       // Trim EOL characters.
       $uli = trim($uli);
-  
       $repo_name = getenv('CIRCLE_PROJECT_REPONAME');
       $uli = str_replace("//default", "//$site_name-$repo_name.pantheonsite.io", $uli);
     }
+    echo $uli;
 
     // Log in.
     $this->getSession()->visit($uli);
