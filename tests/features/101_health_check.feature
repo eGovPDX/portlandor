@@ -1,4 +1,4 @@
-@api @multidev @dev
+@api @multidev @dev @101
 Feature: Site health check
   In order to test that site is healthy and no imports are pending
   As a sitewide administrator

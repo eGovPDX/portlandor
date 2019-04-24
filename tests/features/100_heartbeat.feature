@@ -1,4 +1,4 @@
-@api @multidev @dev
+@api @multidev @dev @100
 Feature: Basic site operation and navigation
   In order to use portland.gov
   As an anonymous or authenticated user
