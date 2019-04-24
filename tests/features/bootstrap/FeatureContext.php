@@ -32,10 +32,10 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
 
       // Generate the link to login. Ignore stderr output
       if(strpos($name, '@') === FALSE) {
-        $uli = shell_exec("terminus drush portlandor.$site_name uli --name \"$name\"");
+        $uli = shell_exec("terminus drush portlandor.$site_name -- uli --name \"$name\"");
       }
       else {
-        $uli = shell_exec("terminus drush portlandor.$site_name uli --mail \"$name\"");
+        $uli = shell_exec("terminus drush portlandor.$site_name -- uli --mail \"$name\"");
       }
 
       // Trim EOL characters.
@@ -43,7 +43,6 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
       $repo_name = getenv('CIRCLE_PROJECT_REPONAME');
       $uli = str_replace("//default", "//$site_name-$repo_name.pantheonsite.io", $uli);
     }
-    echo $uli;
 
     // Log in.
     $this->getSession()->visit($uli);
@@ -52,5 +51,4 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
     $manager = $this->getUserManager();
 
   }
-
 }
