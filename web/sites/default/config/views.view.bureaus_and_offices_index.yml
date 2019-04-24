@@ -1,18 +1,18 @@
-uuid: 0e1adf7e-9dc1-4d81-8f93-032fa4a5b061
+uuid: bc2af439-e0bf-42b7-b51e-ef12c381c95c
 langcode: en
-status: false
+status: true
 dependencies:
   config:
-    - search_api.index.services
+    - search_api.index.full_index
     - system.menu.main
   module:
     - search_api
-id: services_index
-label: 'Services index'
+id: bureaus_and_offices_index
+label: 'Sitewide: Bureaus and offices index'
 module: views
-description: ''
+description: 'List of all bureaus, offices, elected officials, and programs'
 tag: ''
-base_table: search_api_index_services
+base_table: search_api_index_full_index
 base_field: search_api_id
 core: 8.x
 display:
@@ -26,18 +26,19 @@ display:
         type: none
         options: {  }
       cache:
-        type: tag
+        type: search_api_tag
         options: {  }
       query:
         type: views_query
         options:
           bypass_access: false
           skip_access: false
+          preserve_facet_query_args: false
       exposed_form:
         type: basic
         options:
           submit_button: Search
-          reset_button: false
+          reset_button: true
           reset_button_label: Reset
           exposed_sorts_label: 'Sort by'
           expose_sort_order: false
@@ -74,13 +75,30 @@ display:
         type: search_api
         options:
           view_modes:
+            'entity:group':
+              bureau_office: teaser
+              elected_official: teaser
+              program: teaser
+              project: teaser
             'entity:node':
-              city_service: teaser
+              city_service: default
+              event: default
+              guide: default
+              information: default
+              news: default
+              page: default
+            'entity:taxonomy_term':
+              audience: default
+              community_actions: default
+              topics: default
       fields:
-        title:
-          id: title
-          table: search_api_datasource_services_entity_node
-          field: title
+        aggregated_topic:
+          table: search_api_index_full_index
+          field: aggregated_topic
+          id: aggregated_topic
+          entity_type: null
+          entity_field: null
+          plugin_id: search_api
           relationship: none
           group_type: group
           admin_label: ''
@@ -117,7 +135,7 @@ display:
           element_class: ''
           element_label_type: ''
           element_label_class: ''
-          element_label_colon: false
+          element_label_colon: true
           element_wrapper_type: ''
           element_wrapper_class: ''
           element_default_classes: true
@@ -125,44 +143,109 @@ display:
           hide_empty: false
           empty_zero: false
           hide_alter_empty: true
-          click_sort_column: value
-          type: string
-          settings:
-            link_to_entity: true
-          group_column: value
-          group_columns: {  }
-          group_rows: true
-          delta_limit: 0
-          delta_offset: 0
-          delta_reversed: false
-          delta_first_last: false
+          link_to_item: false
+          use_highlighting: false
           multi_type: separator
-          separator: ', '
-          field_api_classes: false
-          field_rendering: true
-          fallback_handler: search_api
-          fallback_options:
-            link_to_item: false
-            use_highlighting: false
-            multi_type: separator
-            multi_separator: ', '
-          entity_type: node
-          plugin_id: search_api_field
+          multi_separator: ', '
       filters:
+        type_2:
+          id: type_2
+          table: search_api_index_full_index
+          field: type
+          relationship: none
+          group_type: group
+          admin_label: ''
+          operator: '='
+          value:
+            min: ''
+            max: ''
+            value: elected_official
+          group: 1
+          exposed: false
+          expose:
+            operator_id: ''
+            label: ''
+            description: ''
+            use_operator: false
+            operator: ''
+            identifier: ''
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+            placeholder: ''
+            min_placeholder: ''
+            max_placeholder: ''
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
+          plugin_id: search_api_string
+        type_1:
+          id: type_1
+          table: search_api_index_full_index
+          field: type
+          relationship: none
+          group_type: group
+          admin_label: ''
+          operator: '='
+          value:
+            min: ''
+            max: ''
+            value: bureau_office
+          group: 1
+          exposed: false
+          expose:
+            operator_id: ''
+            label: ''
+            description: ''
+            use_operator: false
+            operator: ''
+            identifier: ''
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+            placeholder: ''
+            min_placeholder: ''
+            max_placeholder: ''
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
+          plugin_id: search_api_string
         search_api_fulltext:
           id: search_api_fulltext
-          table: search_api_index_services
+          table: search_api_index_full_index
           field: search_api_fulltext
           relationship: none
           group_type: group
           admin_label: ''
           operator: and
           value: ''
-          group: 1
+          group: 2
           exposed: true
           expose:
             operator_id: search_api_fulltext_op
-            label: 'Search city services'
+            label: 'Search bureaus and offices'
             description: ''
             use_operator: false
             operator: search_api_fulltext_op
@@ -192,81 +275,34 @@ display:
           min_length: null
           fields:
             - rendered_item
+            - title
           plugin_id: search_api_fulltext
-        status:
-          id: status
-          table: search_api_index_services
-          field: status
-          relationship: none
-          group_type: group
-          admin_label: ''
-          operator: '='
-          value: '1'
-          group: 1
-          exposed: false
-          expose:
-            operator_id: ''
-            label: ''
-            description: ''
-            use_operator: false
-            operator: ''
-            identifier: ''
-            required: false
-            remember: false
-            multiple: false
-            remember_roles:
-              authenticated: authenticated
-          is_grouped: false
-          group_info:
-            label: ''
-            description: ''
-            identifier: ''
-            optional: true
-            widget: select
-            multiple: false
-            remember: false
-            default_group: All
-            default_group_multiple: {  }
-            group_items: {  }
-          plugin_id: search_api_boolean
       sorts:
-        field_popular:
-          id: field_popular
-          table: search_api_index_services
-          field: field_popular
+        search_api_relevance:
+          id: search_api_relevance
+          table: search_api_index_full_index
+          field: search_api_relevance
           relationship: none
           group_type: group
           admin_label: ''
           order: DESC
-          exposed: true
+          exposed: false
           expose:
-            label: Popular
+            label: ''
           plugin_id: search_api
-        title:
-          id: title
-          table: search_api_index_services
-          field: title
-          relationship: none
-          group_type: group
-          admin_label: ''
-          order: ASC
-          exposed: true
-          expose:
-            label: Title
-          plugin_id: search_api
-        title_1:
-          id: title_1
-          table: search_api_index_services
-          field: title
+        label:
+          id: label
+          table: search_api_index_full_index
+          field: label
           relationship: none
           group_type: group
           admin_label: ''
           order: ASC
           exposed: false
           expose:
-            label: ''
+            label: Title
           plugin_id: search_api
-      title: 'City services'
+      title: 'Bureaus and offices'
       header:
         result:
           id: result
@@ -276,22 +312,24 @@ display:
           group_type: group
           admin_label: ''
           empty: true
-          content: '@total services found'
+          content: '@total bureaus and offices'
           plugin_id: result
       footer: {  }
       empty: {  }
       relationships: {  }
       arguments: {  }
       display_extenders: {  }
-      use_ajax: false
+      filter_groups:
+        operator: AND
+        groups:
+          1: OR
+          2: AND
     cache_metadata:
       max-age: -1
       contexts:
-        - 'languages:language_content'
         - 'languages:language_interface'
         - url
         - url.query_args
-        - 'url.query_args:sort_by'
       tags: {  }
   page_1:
     display_plugin: page
@@ -300,28 +338,24 @@ display:
     position: 1
     display_options:
       display_extenders: {  }
-      path: services
+      path: bureaus-offices
       menu:
         type: normal
-        title: Services
+        title: 'Bureaus and offices'
         description: ''
         expanded: false
         parent: ''
-        weight: -50
+        weight: -49
         context: '0'
         menu_name: main
       cache:
-        type: search_api_tag
-        options: {  }
+        type: none
       defaults:
         cache: false
-      exposed_block: false
     cache_metadata:
       max-age: -1
       contexts:
-        - 'languages:language_content'
         - 'languages:language_interface'
         - url
         - url.query_args
-        - 'url.query_args:sort_by'
       tags: {  }
