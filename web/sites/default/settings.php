@@ -35,14 +35,19 @@ if (isset($_ENV['PANTHEON_ENVIRONMENT']) && php_sapi_name() != 'cli') {
     /** Replace www.example.com with your registered domain name */
     $primary_domain = 'test.portland.gov';
   }
+  elseif ($_ENV['PANTHEON_ENVIRONMENT'] === 'lando') {
+    /** Replace www.example.com with your registered domain name */
+    $primary_domain = 'portlandor.lndo.site';
+  }
   else {
     // Redirect to HTTPS on every Pantheon environment.
     $primary_domain = $_SERVER['HTTP_HOST'];
   }
 
-  if ($_SERVER['HTTP_HOST'] != $primary_domain
-      || !isset($_SERVER['HTTP_USER_AGENT_HTTPS'])
-      || $_SERVER['HTTP_USER_AGENT_HTTPS'] != 'ON' ) {
+  if ($_ENV['PANTHEON_ENVIRONMENT'] !== 'lando' && 
+      ($_SERVER['HTTP_HOST'] != $primary_domain
+        || !isset($_SERVER['HTTP_USER_AGENT_HTTPS'])
+        || $_SERVER['HTTP_USER_AGENT_HTTPS'] != 'ON' ) ) {
 
     # Name transaction "redirect" in New Relic for improved reporting (optional)
     if (extension_loaded('newrelic')) {
@@ -74,6 +79,7 @@ $config['config_split.config_split.config_multidev']['status'] = FALSE;
 $config['config_split.config_split.config_dev']['status'] = FALSE;
 $config['config_split.config_split.config_test']['status'] = FALSE;
 $config['config_split.config_split.config_prod']['status'] = FALSE;
+$config['config_split.config_split.config_local']['status'] = FALSE;
 switch ($env) {
   case 'live':
     $config['config_split.config_split.config_prod']['status'] = TRUE;
@@ -83,6 +89,9 @@ switch ($env) {
     break;
   case 'dev':
     $config['config_split.config_split.config_dev']['status'] = TRUE;
+    break;
+  case 'lando':
+    $config['config_split.config_split.config_local']['status'] = TRUE;
     break;
   default:  // Everything else (i.e. various multidev environments)
     $config['config_split.config_split.config_multidev']['status'] = TRUE;

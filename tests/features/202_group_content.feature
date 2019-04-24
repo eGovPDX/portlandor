@@ -1,4 +1,4 @@
-@api @multidev @dev @javascript
+@api @multidev @dev @202
 Feature: Members can manage group content
   In order to manage content in my group
   As a group member
