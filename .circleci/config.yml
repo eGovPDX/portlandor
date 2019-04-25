@@ -195,11 +195,29 @@ run_tests: &run_tests
           # TODO: should only deploy non-dev packages
           # --no-dev
     - run:
+        name: Run drush commands on Pantheon
+        command: |
+          export PATH=/var/www/html/vendor/bin:/tmp/vendor/pantheon-systems/terminus/bin:$PATH
+          terminus auth:login --machine-token="$eGov_Terminus" --email="$eGov_Email" && terminus aliases
+
+          sleep 20 # wait 20 seconds for file sync to finish
+
+          if [[ $CIRCLE_BRANCH = "master" ]]; then
+            terminus remote:drush portlandor.dev -- cim -y
+            terminus remote:drush portlandor.dev -- cr
+            terminus remote:drush portlandor.dev -- -y updb
+          else
+            terminus remote:drush portlandor.$CIRCLE_BRANCH -- cim -y
+            terminus remote:drush portlandor.$CIRCLE_BRANCH -- cr
+            terminus remote:drush portlandor.$CIRCLE_BRANCH -- -y updb
+          fi
+    - run:
         name: Run tests against Pantheon
         when: on_success
         command: |
           export PATH=/var/www/html/vendor/bin:/tmp/vendor/pantheon-systems/terminus/bin:$PATH
           terminus auth:login --machine-token="$eGov_Terminus" --email="$eGov_Email" && terminus aliases
+
           # TODO: revisit this when we only deploy non-dev packages.
           # Install Behat and its dependencies.
           # composer install
