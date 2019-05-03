@@ -13,16 +13,22 @@
  */
 #}
 {%
-  set classes = [
+  set media_classes = [
     'media',
     'media--type-' ~ media.bundle()|clean_class,
-    not media.isPublished() ? 'media--unpublished',
     view_mode ? 'media--view-mode-' ~ view_mode|clean_class,
   ]
 %}
-<article{{ attributes.addClass(classes) }}>
-  {{ title_suffix.contextual_links }}
-  {% if content %}
-    {{ content }}
-  {% endif %}
-</article>
+
+{% spaceless %}
+  <div{{attributes.addClass(media_classes)}}>
+    {% block status %}
+      {% if not media.isPublished() %}
+        <span class="badge badge-danger badge--unpublished">{{ "Unpublished" | t }}</span>
+      {% endif %}
+    {% endblock %}
+    {% block content %}
+      {{ content }}
+    {% endblock %}
+  </div>
+{% endspaceless %}
