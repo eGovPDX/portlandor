@@ -14,7 +14,7 @@ echo "Done importing of configuration.\n";
 // Run the cron.
 echo "Starting cron...\n";
 passthru('drush core:cron -y');
-echo "Done importing of configuration.\n";
+echo "Done with cron.\n";
 //Clear the cache again
 echo "Start rebuilding cache...\n";
 passthru('drush cr');
