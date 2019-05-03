@@ -52,7 +52,7 @@ build_and_deploy: &build_and_deploy
         name: Install Terminus
         command: |
           # if [ ! -f "/tmp/vendor/pantheon-systems/terminus/bin/terminus" ]; then
-          cd /tmp && composer require pantheon-systems/terminus:2.0.0
+          cd /tmp && composer require pantheon-systems/terminus:^2.0.0
           # fi
     - save_cache:
         name: Save Terminus cache
@@ -178,7 +178,7 @@ run_tests: &run_tests
         name: Install Terminus
         command: |
           # if [ ! -f "/tmp/vendor/pantheon-systems/terminus/bin/terminus" ]; then
-          cd /tmp && composer require pantheon-systems/terminus:2.0.0
+          cd /tmp && composer require pantheon-systems/terminus:^2.0.0
           # fi
     - save_cache:
         name: Save Terminus cache
@@ -202,14 +202,19 @@ run_tests: &run_tests
 
           sleep 20 # wait 20 seconds for file sync to finish
 
+          # Must clear cache to ensure config import from the right environment
           if [[ $CIRCLE_BRANCH = "master" ]]; then
-            terminus remote:drush portlandor.dev -- cim -y
             terminus remote:drush portlandor.dev -- cr
             terminus remote:drush portlandor.dev -- -y updb
-          else
-            terminus remote:drush portlandor.$CIRCLE_BRANCH -- cim -y
+            terminus remote:drush portlandor.dev -- cim -y
+            terminus remote:drush portlandor.dev -- core:cron -y
+            terminus remote:drush portlandor.dev -- cr
+          else            
             terminus remote:drush portlandor.$CIRCLE_BRANCH -- cr
             terminus remote:drush portlandor.$CIRCLE_BRANCH -- -y updb
+            terminus remote:drush portlandor.$CIRCLE_BRANCH -- cim -y
+            terminus remote:drush portlandor.dev -- core:cron -y
+            terminus remote:drush portlandor.dev -- cr
           fi
     - run:
         name: Run tests against Pantheon
