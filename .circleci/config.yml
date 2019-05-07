@@ -52,7 +52,7 @@ build_and_deploy: &build_and_deploy
         name: Install Terminus
         command: |
           # if [ ! -f "/tmp/vendor/pantheon-systems/terminus/bin/terminus" ]; then
-          cd /tmp && composer require pantheon-systems/terminus:2.0.0
+          cd /tmp && composer require pantheon-systems/terminus:^2.0.0
           # fi
     - save_cache:
         name: Save Terminus cache
@@ -97,14 +97,15 @@ build_and_deploy: &build_and_deploy
           # Git operations
           git remote add pantheon ssh://codeserver.dev.5c6715db-abac-4633-ada8-1c9efe354629@codeserver.dev.5c6715db-abac-4633-ada8-1c9efe354629.drush.in:2222/~/repository.git
           git config --global user.email "$eGov_Email"
-          # Without these lines, push will fail with "please remote git submodules" error
-          rm -rf ./vendor/drupal/coder/.git && rm -rf ./web/modules/contrib/facets/.git && rm -rf ./web/modules/contrib/search_api_solr/.git
           # Compile SCSS in our custom theme
           cd web/themes/custom/cloudy && npm run build && cd /var/www/html
           # Exclude dependencies
           rm -rf web/themes/custom/cloudy/node_modules
           # Force add all files to include those excluded by .gitignore
+          rm -rf ./web/modules/contrib/search_api_solr/.git
           git add -f /var/www/html
+          # Without these lines, push will fail with "please remote git submodules" error
+          git rm -r ./vendor/drupal/coder/.git && git rm -r ./web/modules/contrib/facets/.git
           # Pantheon site will use the wrong DB if the local is kept
           git rm --cache  web/sites/default/settings.local.php --ignore-unmatch
           git rm -r --cache web/sites/default/files --ignore-unmatch
@@ -177,7 +178,7 @@ run_tests: &run_tests
         name: Install Terminus
         command: |
           # if [ ! -f "/tmp/vendor/pantheon-systems/terminus/bin/terminus" ]; then
-          cd /tmp && composer require pantheon-systems/terminus:2.0.0
+          cd /tmp && composer require pantheon-systems/terminus:^2.0.0
           # fi
     - save_cache:
         name: Save Terminus cache
@@ -194,11 +195,34 @@ run_tests: &run_tests
           # TODO: should only deploy non-dev packages
           # --no-dev
     - run:
+        name: Run drush commands on Pantheon
+        command: |
+          export PATH=/var/www/html/vendor/bin:/tmp/vendor/pantheon-systems/terminus/bin:$PATH
+          terminus auth:login --machine-token="$eGov_Terminus" --email="$eGov_Email" && terminus aliases
+
+          sleep 20 # wait 20 seconds for file sync to finish
+
+          # Must clear cache to ensure config import from the right environment
+          if [[ $CIRCLE_BRANCH = "master" ]]; then
+            terminus remote:drush portlandor.dev -- cr
+            terminus remote:drush portlandor.dev -- -y updb
+            terminus remote:drush portlandor.dev -- cim -y
+            terminus remote:drush portlandor.dev -- core:cron -y
+            terminus remote:drush portlandor.dev -- cr
+          else            
+            terminus remote:drush portlandor.$CIRCLE_BRANCH -- cr
+            terminus remote:drush portlandor.$CIRCLE_BRANCH -- -y updb
+            terminus remote:drush portlandor.$CIRCLE_BRANCH -- cim -y
+            terminus remote:drush portlandor.dev -- core:cron -y
+            terminus remote:drush portlandor.dev -- cr
+          fi
+    - run:
         name: Run tests against Pantheon
         when: on_success
         command: |
           export PATH=/var/www/html/vendor/bin:/tmp/vendor/pantheon-systems/terminus/bin:$PATH
           terminus auth:login --machine-token="$eGov_Terminus" --email="$eGov_Email" && terminus aliases
+
           # TODO: revisit this when we only deploy non-dev packages.
           # Install Behat and its dependencies.
           # composer install

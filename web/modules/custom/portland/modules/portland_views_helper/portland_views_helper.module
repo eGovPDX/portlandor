@@ -1,0 +1,26 @@
+<?php
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function portland_views_helper_form_views_exposed_form_alter(&$form, &$form_state) {
+
+  // POWR-904 // display relative default dates as default absolute dates in exposed filters.
+  // TODO: this is a good candidate for a small contrib module, if it can be configurable
+  // on the views exposed filter criterion form.
+  if (array_key_exists('field_start_date_value', $form)) {
+    $min_rel_date = $form['field_start_date_value']['min']['#default_value'];
+    if ($min_rel_date) {
+      $min_date = new DateTime($min_rel_date);
+      $form['field_start_date_value']['min']['#default_value'] = date_format($min_date, 'm/d/Y');
+    }
+    $max_rel_date = $form['field_start_date_value']['max']['#default_value'];
+    if ($max_rel_date) {
+      $max_date = new DateTime($max_rel_date);
+      $form['field_start_date_value']['max']['#default_value'] = date_format($max_date, 'm/d/Y');
+    }
+  }
+  // END POWR-904
+
+}
+

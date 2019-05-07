@@ -11,13 +11,89 @@ services:
   appserver:
     build_as_root:
       - /bin/sh -c "cp /app/cop_ca_*.crt /usr/local/share/ca-certificates/"
-      - /bin/sh -c "update-ca-certificates"
+      - update-ca-certificates
     run_as_root:
       - /bin/sh -c "if [ ! -d /var/www/.terminus/plugins/terminus-secrets-plugin ]; then { mkdir -p /var/www/.terminus/plugins; composer create-project -d /var/www/.terminus/plugins pantheon-systems/terminus-secrets-plugin:~1; chown -R www-data:www-data /var/www/.terminus; } fi"
     xdebug: true
     config:
       conf: xdebug.ini
+    overrides:
+      environment:
+        BEHAT_PARAMS: '{"extensions" : {"Behat\\MinkExtension" : {"base_url" : "https://portlandor.lndo.site"}, "Drupal\\DrupalExtension" : {"drush" :   {  "root":  "/app/web" }}}}'
+        MINK_DRIVER_ARGS: '["chrome", null, "http://chromedriver:4444/wd/hub"]'
+        MINK_DRIVER_ARGS_WEBDRIVER: '["chrome", null, "http://chromedriver:4444/wd/hub"]'
+        MINK_DRIVER_CLASS: 'Drupal\FunctionalJavascriptTests\DrupalSelenium2Driver'
+
+  node:
+    type: node
+    run_as_root:
+      - /bin/sh -c "adduser www-data node"
+      - /bin/sh -c "chmod -R 775 /var/www"
+    build:
+      - echo "Installing Node.js dependencies..."
+      - npm -C web/themes/custom/cloudy install
+  chromedriver:
+    type: compose
+    services:
+      image: robcherry/docker-chromedriver:latest
+      expose:
+        - "4444"
+      environment:
+        CHROMEDRIVER_WHITELISTED_IPS: ""
+        CHROMEDRIVER_URL_BASE: "/wd/hub"
+      security_opt:
+        - seccomp:unconfined
+      command: ["/usr/local/bin/supervisord", "-c", "/etc/supervisord.conf"]
+
+events:
+  post-start:
+    - node: echo "Building theme asset files..."
+    - node: npm -C web/themes/custom/cloudy run build:dev
 tooling:
   drush:
+    description: Run drush commands
     service: appserver
     cmd: drush --root=/app/web
+  npm:
+    description: Run npm commands
+    service: node
+    cmd: npm -C web/themes/custom/cloudy
+  node:
+    description: Run node commands
+    service: node
+  latest:
+    description: Download and import the latest database from Dev
+    cmd:
+      - appserver: echo "Downloading latest database..."
+      - appserver: rm -f artifacts/database.tar.gz
+      - appserver: terminus backup:get portlandor.dev --element=database --to=artifacts/database.tar.gz
+      - appserver: echo "Importing database..."
+      - database: /helpers/sql-import.sh artifacts/database.tar.gz
+      - appserver: echo "Clearing cache..."
+      - appserver: drush cr -y
+  refresh:
+    description: Refresh branch by installing Composer dependencies and importing Drupal config, etc. Run after every merge from master.
+    cmd:
+      - appserver: echo "Installing Composer dependencies..."
+      - appserver: composer install
+      - appserver: echo "Clearing cache..."
+      - appserver: drush cr -y
+      - appserver: echo "Run database updates..."
+      - appserver: drush updb -y
+      - appserver: echo "Importing Drupal config..."
+      - appserver: drush cim -y
+      - appserver: echo "Running cron..."
+      - appserver: drush core:cron -y
+      - appserver: echo "Clearing cache..."
+      - appserver: drush cr -y
+      - appserver: echo "Building theme asset files..."
+      - node: npm -C web/themes/custom/cloudy run build:dev
+  
+  behat:
+    service: appserver
+    description: "Run behat tests"
+    cmd:
+      - /app/vendor/bin/behat -c /app/tests/behat.yml
+  chromedriver:
+    service: chromedriver
+    description: "Run chromedriver commands."

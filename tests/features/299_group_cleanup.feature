@@ -1,4 +1,4 @@
-@api @multidev @dev
+@api @multidev @dev @299
 Feature: Remove group and delete test user
   In order to manage groups and users
   As a sitewide administrator
@@ -15,10 +15,10 @@ Feature: Remove group and delete test user
     When I visit "/test"
     Then I should see "A test group"
 
-    When I click "Delete" in the "tabs" region
-    Then I should see "Are you sure you want to delete the group A test group?"
+    # When I click "Delete" in the "tabs" region
+    # Then I should see "Are you sure you want to delete the group A test group?"
 
-    When I press "Delete"
-    Then I should see "bureau_office A test group has been deleted"
+    # When I press "Delete"
+    # Then I should see "bureau_office A test group has been deleted"
 
 

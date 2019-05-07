@@ -1,4 +1,4 @@
-@api @multidev @dev
+@api @multidev @dev @203
 Feature: Members can manage group media
   In order to manage media in my group
   As a group member
@@ -10,13 +10,12 @@ Feature: Members can manage group media
     Then I should see "+ Add Media"
 
     When I click "+ Add Media"
-    Then I should see "Group media (Audio)"
-    And I should see "Group media (Image)"
-    And I should see "Group media (Video)"
-    And I should see "Group media (Document)"
+    And I should see "Add Video"
 
-    When I click "Group media (Video)"
-    Then I should see "Create Bureau/office: Group media (Video)"
+    When I click "Add Video"
+    Then I should see "Create"
+    And I should see "Name"
+    And I should see "Video URL"
 
     When I fill in "Name" with "A test video"
     And I fill in "Video URL" with "https://www.youtube.com/watch?v=Deguep26G7M"
