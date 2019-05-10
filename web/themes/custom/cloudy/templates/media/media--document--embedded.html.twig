@@ -6,27 +6,25 @@
  * Available variables:
  * - name: Name of the media.
  * - content: Media content.
- *
+ *embed
  * @see template_preprocess_media()
  *
  * @ingroup themeable
  */
 #}
-{%
-  set classes = [
-    'media',
-    'media--type-' ~ media.bundle()|clean_class,
-    not media.isPublished() ? 'media--unpublished',
-    view_mode ? 'media--view-mode-' ~ view_mode|clean_class,
-  ]
-%}
-<article{{ attributes.addClass(classes) }}>
-  {{ title_suffix.contextual_links }}
-  {% if content %}
-    {% if (media.isPublished() is same as(FALSE)) %}
-    <span class="badge badge-danger document-unpublished">Unpublished</span>
-    {% endif %}
-    <a href="{{ fileURL }}">{{ file_icon_markup(media.field_mime_type.0.value) }}{{ name }}</a>
-    {{ file_size_string(media.field_file_size.0.value) }}
-  {% endif %}
-</article>
+{% embed 'media.html.twig' with {
+  'margin' : '0'
+}%}
+  {% spaceless %}
+    {% block status %}
+      {% set badge_classes = badge_classes|merge(['d-inline-block', 'mr-2']) %}
+      {{ parent() }}
+    {% endblock %}
+    {% block content %}
+      {% set icon = file_icon_markup(media.field_mime_type.0.value) %}
+      {% set fileSize = file_size_string(media.field_file_size.0.value) %}
+      <a href="{{ fileURL }}">{{ icon|raw }}{{ name }}</a>
+      {{ fileSize }}
+    {% endblock %}
+  {% endspaceless %}
+{% endembed %}
