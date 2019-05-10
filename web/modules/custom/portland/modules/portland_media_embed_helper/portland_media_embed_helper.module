@@ -7,44 +7,55 @@ use Symfony\Component\HttpFoundation\RedirectResponse;
 /**
  * Implements hook_form_alter().
  */
-function portland_media_embed_helper_form_alter(array &$form, FormStateInterface $form_state, $form_id)
+function portland_media_embed_helper_form_entity_embed_dialog_alter(array &$form, FormStateInterface $form_state, $form_id)
 {
   // for embedded documents, images and videos using the entity_embed align and caption filters,
   // remove the filter fields from the embed form if the media item is a document.
-  if ($form_id == 'entity_embed_dialog') {
-    $hide_fields = true;
-    // there should only be 1 element in the entities array, but just in case there
-    // are more, don't hide the fields if one of them isn't a document.
-    $entities = $form_state->getValue("entity_browser")["entities"] ;
-    if (isset($entities)) {
-      foreach($form_state->getValue("entity_browser")["entities"] as $entity) {
-        if ($entity->bundle() != "document") {
-          $hide_fields = false;
-          break;
-        }
+  $hide_fields = true;
+  // there should only be 1 element in the entities array, but just in case there
+  // are more, don't hide the fields if one of them isn't a document.
+  $entities = $form_state->getValue("entity_browser")["entities"] ;
+  if (isset($entities)) {
+    foreach($form_state->getValue("entity_browser")["entities"] as $entity) {
+      if ($entity->bundle() != "document") {
+        $hide_fields = false;
+        break;
       }
     }
-    if ($hide_fields) {
-      if (isset($form['attributes']['data-caption'])) unset($form['attributes']['data-caption']);
-      if (isset($form['attributes']['data-align'])) unset($form['attributes']['data-align']);
-    }
-
-    // remove left and center alignment options; we only want to support full and right align
-    if (isset($form['attributes']['data-align'])) {
-      unset($form['attributes']['data-align']['#options']['left']);
-      unset($form['attributes']['data-align']['#options']['right']);
-      unset($form['attributes']['data-align']['#options']['center']);
-      unset($form['attributes']['data-align']['#options']['']);
-
-      $form['attributes']['data-align']['#title'] = "Alignment";
-      $form['attributes']['data-align']['#options']['responsive-full'] = "100% responsive";
-      $form['attributes']['data-align']['#default_value'] = "responsive-full";
-      $form['attributes']['data-align']['#options']['responsive-right'] = "50% responsive right";
-      $form['attributes']['data-align']['#options']['right'] = "50% right";
-    }
-
-    $form['#after_build'][] = 'portland_media_embed_helper_after_build';
   }
+  if ($hide_fields) {
+    if (isset($form['attributes']['data-caption'])) unset($form['attributes']['data-caption']);
+    if (isset($form['attributes']['data-align'])) unset($form['attributes']['data-align']);
+  }
+
+  if (isset($form['attributes']['data-align'])) {
+    $img_100 =            "<img src=\"/themes/custom/cloudy/images/icons/img-100.png\" alt=\"100% width\" />";
+    $img_50_right_fill =  "<img src=\"/themes/custom/cloudy/images/icons/img-50-fill.png\" alt=\"50% fill\" />";
+    $img_50_right_fit =   "<img src=\"/themes/custom/cloudy/images/icons/img-50-fit.png\" alt=\"50% fit\" />";
+    $embed_type = $form['attributes']['data-embed-button']['#value'];
+
+    // clear default alignment options
+    unset($form['attributes']['data-align']['#options']['left']);
+    unset($form['attributes']['data-align']['#options']['right']);
+    unset($form['attributes']['data-align']['#options']['center']);
+    unset($form['attributes']['data-align']['#options']['']);
+
+    $form['attributes']['data-align']['#title'] = "Alignment";
+    $form['attributes']['data-align']['#default_value'] = "responsive-full";
+
+    // full width applies to images and videos
+    $form['attributes']['data-align']['#options']['responsive-full'] = "Full width<br>$img_100";
+
+    // right fill and fit don't apply to videos
+    if ($embed_type != "audio_video_browser") {
+      $form['attributes']['data-align']['#options']['responsive-right'] = "50% fill<br>$img_50_right_fill";
+      $form['attributes']['data-align']['#options']['right'] = "50% fit<br>$img_50_right_fit";
+    } else {
+      $form['attributes']['data-align']['#options']['responsive-right'] = "50% right<br>$img_50_right_fill";
+    }
+  }
+
+  $form['#after_build'][] = 'portland_media_embed_helper_after_build';
 }
 
 function portland_media_embed_helper_after_build($form, &$form_state) {

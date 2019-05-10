@@ -13,12 +13,18 @@ We want the repo to correctly pull down symlinks for use in the Lando containers
 `git clone -c core.symlinks=true git@github.com:eGovPDX/portlandor.git`
 
 `git clone` and `git checkout` must be run as an administrator in order to create symbolic links
+(run either Command Prompt or Windows Powershell as administrator for this step)
 
 Run `git config core.autocrlf false` to make sure this repository does not try to convert line endings for your Windows machine.
 
 ## Installing Lando
 
 Follow the steps at https://docs.devwithlando.io/installation/installing.html
+
+## Uninstalling Lando
+
+Follow the steps at https://docs.devwithlando.io/installation/uninstalling.html
+To completely remove all traces of Lando, follow the "removing lingering Lando configuration" steps
 
 ## Using Lando
 

@@ -75,6 +75,9 @@ class PortlandMediaEmbedHelperClasses extends FilterBase {
 
           case "audio_video_browser":
             $media_class = "embed-video";
+            if (!is_null($alignment) && $alignment == "responsive-right") {
+              $media_class .= " responsive-right";
+            }
             break;
         }
 
