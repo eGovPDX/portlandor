@@ -12,17 +12,32 @@
  * @ingroup themeable
  */
 #}
+{% set margin = margin|default('2') %}
 {%
-  set classes = [
+  set classes = classes|default([
     'media',
     'media--type-' ~ media.bundle()|clean_class,
-    not media.isPublished() ? 'media--unpublished',
     view_mode ? 'media--view-mode-' ~ view_mode|clean_class,
-  ]
+  ])
 %}
-<article{{ attributes.addClass(classes) }}>
-  {{ title_suffix.contextual_links }}
-  {% if content %}
-    {{ content }}
-  {% endif %}
-</article>
+{%
+  set badge_classes = badge_classes|default([
+    'badge',
+    'badge-danger',
+    'mb-' ~ margin,
+  ])
+%}
+
+{% spaceless %}
+  <div{{ attributes.addClass(classes) }}>
+    {% block status %}
+      {% if not media.isPublished() %}
+        {% set published_attributes = create_attribute() %}
+        <span{{ published_attributes.addClass(badge_classes) }}>{{ 'unpublished'|t|capitalize }}</span>
+      {% endif %}
+    {% endblock %}
+    {% block content %}
+      {{ content }}
+    {% endblock %}
+  </div>
+{% endspaceless %}

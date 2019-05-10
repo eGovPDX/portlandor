@@ -13,6 +13,7 @@ dependencies:
     - field.storage.node.field_popular
     - field.storage.node.field_published_on
     - field.storage.group.field_shortname_or_acronym
+    - field.storage.node.field_search_keywords
     - field.storage.node.field_start_date
     - field.storage.node.field_start_time
     - field.storage.group.field_summary
@@ -72,14 +73,15 @@ field_settings:
     dependencies:
       module:
         - node
-  description:
-    label: Description
-    datasource_id: 'entity:taxonomy_term'
-    property_path: description
-    type: text
+  content_title:
+    label: Title
+    datasource_id: 'entity:node'
+    property_path: title
+    type: solr_text_ngram
+    boost: !!float 21
     dependencies:
       module:
-        - taxonomy
+        - node
   field_body:
     label: Body
     datasource_id: 'entity:node'
@@ -136,6 +138,15 @@ field_settings:
     dependencies:
       config:
         - field.storage.node.field_published_on
+  field_search_keywords:
+    label: 'Search keywords'
+    datasource_id: 'entity:node'
+    property_path: field_search_keywords
+    type: solr_text_ngram
+    boost: !!float 21
+    dependencies:
+      config:
+        - field.storage.node.field_search_keywords
   field_shortname_or_acronym:
     label: 'Shortname or acronym'
     datasource_id: 'entity:group'
@@ -195,6 +206,15 @@ field_settings:
     dependencies:
       module:
         - group
+  group_title:
+    label: Title
+    datasource_id: 'entity:group'
+    property_path: label
+    type: solr_text_ngram
+    boost: !!float 21
+    dependencies:
+      module:
+        - group
   group_topic_name:
     label: 'Topics » Taxonomy term » Name'
     datasource_id: 'entity:group'
@@ -205,50 +225,6 @@ field_settings:
         - field.storage.group.field_topics
       module:
         - taxonomy
-        - taxonomy
-  label:
-    label: Title
-    datasource_id: 'entity:group'
-    property_path: label
-    type: solr_text_ngram
-    boost: !!float 21
-    dependencies:
-      module:
-        - group
-  label_1:
-    label: 'Title (Phonetic)'
-    datasource_id: 'entity:group'
-    property_path: label
-    type: solr_text_phonetic
-    boost: !!float 13
-    dependencies:
-      module:
-        - group
-  name:
-    label: Name
-    datasource_id: 'entity:taxonomy_term'
-    property_path: name
-    type: solr_text_ngram
-    boost: !!float 21
-    dependencies:
-      module:
-        - taxonomy
-  name_1:
-    label: 'Name (Phonetic)'
-    datasource_id: 'entity:taxonomy_term'
-    property_path: name
-    type: solr_text_phonetic
-    boost: !!float 13
-    dependencies:
-      module:
-        - taxonomy
-  name_2:
-    label: 'Name (String)'
-    datasource_id: 'entity:taxonomy_term'
-    property_path: name
-    type: string
-    dependencies:
-      module:
         - taxonomy
   portland_group_title_field:
     label: 'Group title'
@@ -278,24 +254,31 @@ field_settings:
           audience: default
           community_actions: default
           topics: default
-  title:
-    label: Title
-    datasource_id: 'entity:node'
-    property_path: title
+  term_description:
+    label: Description
+    datasource_id: 'entity:taxonomy_term'
+    property_path: description
+    type: text
+    dependencies:
+      module:
+        - taxonomy
+  term_name:
+    label: Name
+    datasource_id: 'entity:taxonomy_term'
+    property_path: name
     type: solr_text_ngram
     boost: !!float 21
     dependencies:
       module:
-        - node
-  title_1:
-    label: 'Title (Phonetic)'
-    datasource_id: 'entity:node'
-    property_path: title
-    type: solr_text_phonetic
-    boost: !!float 13
+        - taxonomy
+  term_name_2:
+    label: 'Name (String)'
+    datasource_id: 'entity:taxonomy_term'
+    property_path: name
+    type: string
     dependencies:
       module:
-        - node
+        - taxonomy
   topic_name:
     label: 'Topics » Taxonomy term » Name'
     datasource_id: 'entity:node'
@@ -370,23 +353,21 @@ processor_settings:
     fields:
       - action_name
       - audience_name
-      - description
+      - content_title
       - field_official_organization_name
       - field_official_title
+      - field_search_keywords
       - field_shortname_or_acronym
       - field_summary
       - field_summary_1
       - group_audience_name
+      - group_title
       - group_topic_name
-      - label
-      - label_1
-      - name
-      - name_1
-      - name_2
       - portland_group_title_field
       - rendered_item
-      - title
-      - title_1
+      - term_description
+      - term_name
+      - term_name_2
       - topic_name
       - type
       - type_1
