@@ -2,6 +2,7 @@
 
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Url;
+use Drupal\media\Entity\Media;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 
 /**
@@ -28,6 +29,7 @@ function portland_media_embed_helper_form_entity_embed_dialog_alter(array &$form
     if (isset($form['attributes']['data-align'])) unset($form['attributes']['data-align']);
   }
 
+  // configure align options and add icons
   if (isset($form['attributes']['data-align'])) {
     $img_100 =            "<img src=\"/themes/custom/cloudy/images/icons/img-100.png\" alt=\"100% width\" />";
     $img_50_right_fill =  "<img src=\"/themes/custom/cloudy/images/icons/img-50-fill.png\" alt=\"50% fill\" />";
@@ -52,6 +54,21 @@ function portland_media_embed_helper_form_entity_embed_dialog_alter(array &$form
       $form['attributes']['data-align']['#options']['right'] = "50% fit<br>$img_50_right_fit";
     } else {
       $form['attributes']['data-align']['#options']['responsive-right'] = "50% right<br>$img_50_right_fill";
+    }
+  }
+
+  // load selected media entity and get Caption value to provide as default value
+  if (isset($form['attributes']['data-caption'])) {
+    $input = $form_state->getUserInput();
+    if (isset($input["entity_browser"]["entity_ids"])) {
+      $media_id = $input["entity_browser"]["entity_ids"];
+      $id = explode(":", $media_id);
+      if (count($id) == 2) {
+        $media = Media::load($id[1]);
+        if ($media->hasField("field_caption")) {
+          $form['attributes']['data-caption']["#default_value"] = $media->get("field_caption")->value;
+        }
+      }
     }
   }
 
