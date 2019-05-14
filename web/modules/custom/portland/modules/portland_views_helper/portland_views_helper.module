@@ -22,5 +22,49 @@ function portland_views_helper_form_views_exposed_form_alter(&$form, &$form_stat
   }
   // END POWR-904
 
+  // Create prev and next month links for events views using args from exposed filters
+  // ?field_start_date_value%5Bmin%5D=05%2F13%2F2019&field_start_date_value%5Bmax%5D=06%2F12%2F2019
+
+  if (isset($_GET['field_start_date_value'])) {
+    $min = $_GET['field_start_date_value']['min'];
+    $max = $_GET['field_start_date_value']['max'];
+    $prev_url = "";
+    $next_url = "";
+    $links = "";
+
+    if (isset($min) || isset($max)) {
+      if (isset($min)) {
+        $min_date = new DateTime($min);
+        date_modify($min_date,"-1 month");
+        $prev_date = date_format($min_date,"m/d/Y");
+        $min = urlencode($min);
+        $prev_date = urlencode($prev_date);
+        $prev_url = "?field_start_date_value%5Bmin%5D=$prev_date&field_start_date_value%5Bmax%5D=$min";
+      }
+
+      if (isset($max)) {
+        $max_date = new DateTime($max);
+        date_modify($max_date,"+1 month");
+        $next_date = date_format($max_date,"m/d/Y");
+        $max = urlencode($max);
+        $next_date = urlencode($next_date);
+        $next_url = "?field_start_date_value%5Bmin%5D=$max&field_start_date_value%5Bmax%5D=$next_date";
+      }
+    }
+
+    if (isset($prev_url) || isset($next_url)) {
+      if (isset($prev_url)) {
+        $links = "$links<span class=\"prev-link\"><a href=\"$prev_url\"><i class=\"fas fa-caret-left\"></i>Previous month</a></span>";
+      }
+      if (isset($next_url)) {
+        $links = "$links<span class=\"next-link\"><a href=\"$next_url\">Next month<i class=\"fas fa-caret-right\"></i></a></span>";
+      }
+      $links = "<div class=\"date-links\">$links</div>";
+      $form['text']['#markup'] = $links;
+      $form['text']['#weight'] = 1000;
+    }
+
+  }
+
 }
 
