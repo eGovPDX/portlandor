@@ -26,11 +26,9 @@ class InReviewAndHasReviwer extends RulesConditionBase {
    *
    * @param \Drupal\node\NodeInterface $node
    *   The node to check for a type.
-   * @param string[] $types
-   *   An array of type names as strings.
    *
    * @return bool
-   *   TRUE if the node type is in the array of types.
+   *   TRUE if the node is In Review and has a reviewer.
    */
   protected function doEvaluate(NodeInterface $node) {
     // Verify that
