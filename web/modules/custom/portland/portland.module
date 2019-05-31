@@ -867,3 +867,18 @@ function portland_diff_layout_builder_info_alter(array &$diff_layouts) {
     // instead of the one provided in the annotation.
     $diff_layouts['visual_inline']['label'] = t('Visual inline (slow)');
 }
+
+//https://atendesigngroup.com/blog/drupal-8-apache-solr-boost-search-term-relevance-publish-date
+/**
+ * Implements hook_search_api_solr_query_alter() boost based on recently published date
+ */
+function portland_search_api_solr_query_alter(\Solarium\QueryType\Select\Query\Query $solarium_query, \Drupal\search_api\Query\QueryInterface $query) {
+    $date_field_name = 'aggregated_sorting_date'; // 'created'; // This can be any UNIX timestamp field
+    $index = $query->getIndex();
+    $fields = $index->getServerInstance()->getBackend()->getSolrFieldNames($index);
+    $solr_field = !empty($fields[$date_field_name]) ? $fields[$date_field_name] : '';
+    // See the link above for the effect of magic numbers
+    if ($solr_field) {
+      $solarium_query->addParam('bf', "recip(abs(ms(NOW/HOUR,{$solr_field})),3.16e-11,.08,.05)^4");
+    }
+  }

@@ -16,10 +16,10 @@ index 0000000..770b058
 \ No newline at end of file
 diff --git a/modules/bootstrap_datepicker_exposed_filter/bootstrap_datepicker_exposed_filter.module b/modules/bootstrap_datepicker_exposed_filter/bootstrap_datepicker_exposed_filter.module
 new file mode 100644
-index 0000000..3c14426
+index 0000000..a4f8c72
 --- /dev/null
 +++ b/modules/bootstrap_datepicker_exposed_filter/bootstrap_datepicker_exposed_filter.module
-@@ -0,0 +1,74 @@
+@@ -0,0 +1,68 @@
 +<?php
 +
 +/**
@@ -37,51 +37,45 @@ index 0000000..3c14426
 + */
 +function bootstrap_datepicker_exposed_filter_form_views_exposed_form_alter(&$form, FormStateInterface $form_state, $form_id) {
 +
-+  /** @var \Drupal\views\ViewExecutable $view */
 +  $view = $form_state->getStorage()['view'];
 +
++  // do not enable datepicker on exposed filters if this is the view preview
 +  if ($view->preview === NULL) {
 +    $filters = $view->getHandlers('filter');
-+
-+    // Use default template from helper.
 +    $attributes = AttributeHelper::defaultWidget();
-+
 +    $active = FALSE;
 +
 +    foreach ($filters as $id => $filter) {
 +      // Only take filters which are exposed and date based.
-+      if (isset($filter['exposed']) && $filter['exposed'] && $filter['plugin_id'] === 'datetime') {
++      if (isset($filter['exposed']) && $filter['exposed'] && ($filter['plugin_id'] === 'datetime' || $filter['plugin_id'] === 'search_api_date')) {
 +        // Only handle date based value, no offset exposed dates.
 +        if ($filter['value']['type'] === 'date' || $filter['value']['type'] === 'offset') {
 +          $active = TRUE;
-+          $field_name = $filter['id'];
++          // if the field identifer (querystring arg name) is different than the field name,
++          // we need to use that name for the field the field.
++          $filter_name = isset($filter['expose']['identifier']) ? $filter['expose']['identifier'] : NULL;
++          //$filter_id = $filter['id'];
 +          $attributes['data-provide'] = 'datepicker';
 +
 +          // Based on selected filters attach attributes on proper place.
 +          switch ($filter['operator']) {
 +            case 'between':
 +            case 'not between':
-+              $form[$field_name]['min']['#attributes'] = $attributes;
-+              $form[$field_name]['max']['#attributes'] = $attributes;
-+
-+              // Adjust titles.
-+              $field_title_min = $form[$field_name]['min']['#title'];
-+              $field_title_max = $form[$field_name]['max']['#title'];
-+              $form[$field_name]['min']['#title'] = "Date range between";// $field_title_min;// . ' ( ' . t('From') . ' )';
-+              $form[$field_name]['max']['#title'] = "And"; //$field_title_max;// . ' ( ' . t('To') . ' )';
++              $form[$filter_name]['min']['#attributes'] = $attributes;
++              $form[$filter_name]['max']['#attributes'] = $attributes;
 +
 +              // On between filters when end value is empty, sometimes filters
 +              // are not working. So set end value.
 +              $input = $form_state->getUserInput();
-+              if (!empty($input[$field_name]['min']) && empty($input[$field_name]['max'])) {
-+                $timestamp = strtotime($input[$field_name]['min']) + 86400;
-+                $input[$field_name]['max'] = date('Y-m-d h:i:s', $timestamp);
++              if (!empty($input[$filter_name]['min']) && empty($input[$filter_name]['max'])) {
++                $timestamp = strtotime($input[$filter_name]['min']) + 86400;
++                $input[$filter_name]['max'] = date('Y-m-d h:i:s', $timestamp);
 +                $form_state->setUserInput($input);
 +              }
 +              break;
 +
 +            default:
-+              $form[$field_name]['#attributes'] = $attributes;
++              $form[$filter_name]['#attributes'] = $attributes;
 +          }
 +        }
 +      }

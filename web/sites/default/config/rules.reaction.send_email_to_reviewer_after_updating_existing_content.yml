@@ -1,0 +1,58 @@
+uuid: d769b4ec-e1e9-44cc-85cd-4564cccaa78e
+langcode: en
+status: true
+dependencies: {  }
+id: send_email_to_reviewer_after_updating_existing_content
+label: 'Send email to reviewer after updating existing content'
+events:
+  -
+    event_name: 'rules_entity_update:node'
+description: 'When a content node is saved, send an email to the assigned reviewer.'
+tags:
+  - ''
+config_version: '3'
+expression:
+  id: rules_rule
+  uuid: 91df92ba-3622-410f-bfa1-e1a67a3248fb
+  conditions:
+    id: rules_and
+    uuid: bd2349aa-f6c1-424a-bc95-e8348438f9d8
+    conditions:
+      -
+        id: rules_condition
+        uuid: fd393076-1b46-44a9-8e4b-ab82a02e346b
+        context_values: {  }
+        context_mapping:
+          node: node
+        context_processors: {  }
+        provides_mapping: {  }
+        condition_id: portland_in_review_and_has_reviewer
+        negate: false
+  actions:
+    id: rules_action_set
+    uuid: b3727bbe-fac3-4251-850b-abbbdbb71c14
+    actions:
+      -
+        id: rules_action
+        uuid: 44a05a12-4501-408b-8245-26a03a27a760
+        context_values:
+          to:
+            - '{{node.field_reviewer.entity.mail.value}}'
+          subject: 'Reviewer assignment'
+          message: "<div><a href=\"{{node.revision_uid.entity|entity_url}}\">{{node.revision_uid.entity.name.value}}</a> has assigned you to review <a href=\"{{node | entity_url }}\"> {{node.title.value}} </a></div>\r\n<p/>\r\n<div><h3>Revision log:</h3>\r\n{{node.revision_log.value}}</div>\r\n<p/>\r\n<div>Last updated: {{node.changed.value | format_date('custom', 'l Y/n/j g:i A')}} </div>"
+          reply: ''
+          language: ''
+        context_mapping: {  }
+        context_processors:
+          to:
+            rules_tokens: {  }
+          subject:
+            rules_tokens: {  }
+          message:
+            rules_tokens: {  }
+          reply:
+            rules_tokens: {  }
+          language:
+            rules_tokens: {  }
+        provides_mapping: {  }
+        action_id: rules_send_email
