@@ -1,16 +1,41 @@
-<div class="d-flex flex-column align-items-start mb-4">
-  <h3 class="order-2">
-    <a href="{{ url }}" rel="bookmark">
-      {{ label }}</a>
-  </h3>
-  {% if node.field_summary.value %}
-    <div class="order-3">
+{% spaceless %}
+<div class="row flex-column mb-4">
+  <div class="col-12 col-md-8">
+    {% block label %}
+      {% if node.type.entity.label %}
+        <p class="badge badge-pill badge-light mb-1 order-1 align-self-start">
+          <span class="sr-only">Type is</span>
+          {{ node.type.entity.label }}</p>
+      {% endif %}
+    {% endblock %}
+    {% block title %}
+      <h3>
+        <a href="{{ url }}" rel="bookmark">
+          {{ label }}</a>
+      </h3>
+    {% endblock %}
+    {% block time %}
+      {% set time_attribute = create_attribute() %}
+      {%
+        set time_classes = [
+          'event--time',
+          'small',
+          'mb-1',
+        ]
+      %}
+      <span{{ time_attribute.addClass(time_classes) }}>
+        {% if node.field_all_day.value %}
+          <span>{{ "All day"|t }}</span>
+        {% elseif node.field_start_time.value and node.field_end_time.value %}
+          <span>{{ node.field_start_time.value|date('g:i A', false) }}</span><span class="px-1">to</span><span>{{ node.field_end_time.value|date('g:i A', false) }}</span>
+        {% else %}
+          <span>{{ node.field_start_time.value|date('g:i A', false) }}</span>
+        {% endif %}
+      </span>
+    {% endblock time %}
+    {% block content %}
       <p>{{ node.field_summary.value }}</p>
-    </div>
-  {% endif %}
-  {% if node.type.entity.label %}
-    <span class="badge badge-pill badge-light mb-1 order-1 align-self-start">
-      <span class="sr-only">Type is</span>
-      {{ node.type.entity.label }}</span>
-  {% endif %}
+    {% endblock %}
+  </div>
 </div>
+{% endspaceless %}
