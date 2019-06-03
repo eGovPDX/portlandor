@@ -1,0 +1,42 @@
+id: category_documents
+label: 'Commissioner Eudaly News Import'
+migration_group: category_documents
+source:
+  plugin: csv
+  path: modules/custom/portland_migrations/sources/category_documents.csv
+  header_row_count: 1
+  keys:
+    - CONTENT_ID
+  constants:
+    migration_directory: public://migrations/
+    path_seperator: /
+process:
+  uid:
+    plugin: default_value
+    default_value: 1
+  title: CONTENT_NAME
+  bundle:
+    plugin: default_value
+    default_value: document
+  file_path:
+    plugin: concat
+    source:
+      - 'constants/migration_directory'
+      - CATEGORY_NAME
+      - constants/path_seperator
+      - CONTENT_NAME
+  field_document:
+    - plugin: skip_on_empty
+      method: process
+      source: URL
+    - plugin: file_copy
+      source:
+        - URL
+        - '@file_path'
+    - plugin: entity_generate
+      value_key: uri
+      bundle:
+      entity_type: file
+destination:
+  plugin: 'entity:media'
+  bundle: document
