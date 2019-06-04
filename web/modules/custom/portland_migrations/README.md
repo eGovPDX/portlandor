@@ -4,10 +4,12 @@ A module for managing migrations on portland.gov.
 
 ## Migrations
 
-This demo includes 2 migration configurations.
+This module includes 4 migration configurations.
 
 - eudaly_news - imports content from the included eudaly_news.csv source into the news entity
 - eudaly_news_group_content - creates group_content entities that associate the imported news nodes with Commissioner Eudaly's group
+- category_documents - imports content from the included category_documents.csv source into the document media entity
+- category_documents_group_content - creates group_content entities that associate the imported document media entities with Commissioner Eudaly's group
 
 ## Instructions
 
@@ -33,9 +35,18 @@ If you want to place the files in a different location, you need to update the p
 
 The Migrate Tools module provides drush commands to run the migrations. The order of commands is important!
 
+#### Eudaly news
+
 ```
 drush migrate:import eudaly_news
 drush migrate:import eudaly_news_group_content
+```
+
+#### DEMO: Category docuements
+
+```
+drush migrate:import category_documents
+drush migrate:import category_documents_group_content
 ```
 
 **Note:** The commands above work for Drush 9. In Drush 8 the command names and aliases are different. Execute `drush list --filter=migrate` to verify the proper commands for your version of Drush.
