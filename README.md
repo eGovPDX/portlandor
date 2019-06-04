@@ -227,3 +227,30 @@ Child mini-css-extract-plugin node_modules/css-loader/index.js??ref--5-1!node_mo
 
 
 Often the last few lines are the most important, and tell you where the error is found. Here, we can see that we had a bad import statement trying to import a non-existent file in \_components.scss.
+
+## Using Composer
+
+Composer is built into our Lando implementation for package management. We use it primarily to manage Drupal contrib modules and libraries.
+
+Here is a good guide to using Composer with Drupal 8: https://www.lullabot.com/articles/drupal-8-composer-best-practices
+
+Composer cheat sheet: https://devhints.io/composer
+
+### Installing contrib modules
+
+Use `lando composer require drupal/[module name]` to download contrib modules and add them to the composer.json file. This ensures they're installed in each environment where the site is built. Drupal modules that are added this way must also be enabled using the `lando drush pm:enable [module name]` command.
+
+### Updating contrib modules and lock file
+
+In general it's a good practice to keep dependencies updated to latest versions, but that introduces the risk of new bugs from upstream dependencies. Updating all dependencies should be done judiciously, and usually only at the beginning of a sprint, when there's adequate time to regression test and resolve issues. Individual packages can be updated as needed, without as much risk to the project.
+
+To update all dependencies, run `lando composer update`. To update a specific package, for example the Devel module, run `lando composer update --with-dependencies drupal/devel`. After updating, make sure to commit the updated composer.lock file.
+
+The composer.lock file contains a commit hash that identifies the exact commit version of the lock file and all dependencies' dependencies. You can think of it as a tag for the exact combination of dependencies being committed, and it's used to determine whether composer.lock is out of date. 
+
+When something changes in composer.json, but the lock hash has not been updated, you may receive the warning:
+...
+The lock file is not up to date with the latest changes in composer.json. You may be getting outdated dependencies. Run update to update them.
+...
+
+To resolve this, run `lando composer update --lock`, which will generate a new hash. If you encounter a conflict on the hash value when you merge or rebase, use the most recent (yours) version of the hash.
