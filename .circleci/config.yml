@@ -103,11 +103,11 @@ build_and_deploy: &build_and_deploy
           cd web/themes/custom/cloudy && npm run build && cd /var/www/html
           # Exclude dependencies
           rm -rf web/themes/custom/cloudy/node_modules
-          # Force add all files to include those excluded by .gitignore
-          rm -rf ./web/modules/contrib/search_api_solr/.git
-          git add -f /var/www/html
           # Without these lines, push will fail with "please remote git submodules" error
-          git rm -r ./vendor/drupal/coder/.git && git rm -r ./web/modules/contrib/facets/.git
+          find ./web/ -name ".git" -type d -exec rm -rf "{}" \;
+          find ./vendor/ -name ".git" -type d -exec rm -rf "{}" \;
+          # Force add all files to include those excluded by .gitignore
+          git add -f /var/www/html
           # Pantheon site will use the wrong DB if the local is kept
           git rm --cache  web/sites/default/settings.local.php --ignore-unmatch
           git rm -r --cache web/sites/default/files --ignore-unmatch
