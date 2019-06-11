@@ -1,52 +1,16 @@
-{% set margin = margin|default('1') %}
-{%
-  set datetime_classes = datetime_classes|default([
-    'small',
-    'mb-' ~ margin,
-  ])
-%}
-{% spaceless %}
-<div class="row flex-column mb-4">
-  <div class="col-12 col-md-8">
-    {% block label %}
-      {% if node.type.entity.label %}
-        <p class="badge badge-pill badge-light mb-1 order-1 align-self-start">
-          <span class="sr-only">Type is</span>
-          {{ node.type.entity.label }}</p>
-      {% endif %}
-    {% endblock %}
-    {% block title %}
-      <h3>
-        <a href="{{ url }}" rel="bookmark">
-          {{ label }}</a>
-      </h3>
-    {% endblock %}
-    {% block datetime %}
-      {% set start_date = node.field_start_date.value %}
-      {% set end_date = node.field_end_date.value %}
-      {% set all_day = node.field_all_day.value %}
-      {% set start_time = node.field_start_time.value %}
-      {% set end_time = node.field_end_time.value %}
-      {% if start_date and end_date %}
-        <div{{ attributes.addClass(datetime_classes, 'event--date').removeClass(remove_classes) }}><time>{{ start_date|date('U')|format_date('month_day_year') }}</time>
-        <span class="px-1">{{ "to"|t }}</span>
-        <time>{{ end_date|date('U')|format_date('month_day_year') }}</time></div>
-      {% elseif start_date %}
-        <div{{ attributes.addClass(datetime_classes, 'event--date').removeClass(remove_classes) }}><time>{{ start_date|date('U')|format_date('month_day_year') }}</time></div>
-      {% endif %}
-      {% if all_day %}
-        <div{{ attributes.addClass(datetime_classes, 'event--time').removeClass(remove_classes) }}><time>{{ "All day"|t }}</time></div>
-      {% elseif node.field_start_time.value and node.field_end_time.value %}
-        <div{{ attributes.addClass(datetime_classes, 'event--time').removeClass(remove_classes) }}><time>{{ node.field_start_time.value|date('g:i A', false) }}</time>
-        <span class="px-1">{{ "to"|t }}</span>
-        <time>{{ node.field_end_time.value|date('g:i A', false) }}</time></div>
-      {% else %}
-        <div{{ attributes.addClass(datetime_classes, 'event--time').removeClass(remove_classes) }}><time>{{ node.field_start_time.value|date('g:i A', false) }}</time></div>
-      {% endif %}
-    {% endblock %}
-    {% block content %}
-      <p>{{ node.field_summary.value }}</p>
-    {% endblock %}
-  </div>
-</div>
-{% endspaceless %}
+{% embed "@cloudy/components/card.html.twig" with {
+  'margin': 3,
+  'type': node.type.entity.label,
+  'description': content.field_summary,
+} %}
+  {% block meta %}
+    {% include "@cloudy/components/meta.html.twig" with {
+      'margin': 2,
+      'start_date': content.field_start_date.0,
+      'end_date': content.field_end_date.0,
+      'all_day': content.field_all_day['#title'],
+      'start_time': content.field_start_time.0,
+      'end_time': content.field_end_time.0,
+    } %}
+  {% endblock %}
+{% endembed %}
