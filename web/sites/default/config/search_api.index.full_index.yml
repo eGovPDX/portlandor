@@ -2,33 +2,70 @@ uuid: 0091e8e1-2015-43a3-9c23-4951e7bee821
 langcode: en
 status: true
 dependencies:
+  module:
+    - search_api_solr
+    - taxonomy
+    - node
+    - group
+    - search_api
+    - portland
   config:
-    - field.storage.group.field_audience
-    - field.storage.group.field_official_organization_name
-    - field.storage.group.field_official_title
-    - field.storage.group.field_search_keywords
-    - field.storage.group.field_shortname_or_acronym
-    - field.storage.group.field_summary
-    - field.storage.group.field_topics
-    - field.storage.node.field_audience
     - field.storage.node.field_community_actions
+    - field.storage.node.field_audience
     - field.storage.node.field_end_date
     - field.storage.node.field_end_time
+    - field.storage.group.field_official_organization_name
+    - field.storage.group.field_official_title
     - field.storage.node.field_popular
     - field.storage.node.field_published_on
     - field.storage.node.field_search_keywords
+    - field.storage.group.field_shortname_or_acronym
     - field.storage.node.field_start_date
     - field.storage.node.field_start_time
+    - field.storage.group.field_summary
     - field.storage.node.field_summary
+    - field.storage.group.field_audience
+    - field.storage.group.field_search_keywords
+    - field.storage.group.field_topics
     - field.storage.node.field_topics
     - search_api.server.searchstax
-  module:
-    - taxonomy
-    - group
-    - search_api_solr
-    - node
-    - search_api
-    - portland
+third_party_settings:
+  search_api_solr:
+    finalize: false
+    commit_before_finalize: false
+    commit_after_finalize: false
+    multilingual:
+      limit_to_content_language: false
+      include_language_independent: true
+    highlighter:
+      maxAnalyzedChars: 51200
+      fragmenter: gap
+      regex:
+        slop: 0.5
+        pattern: blank
+        maxAnalyzedChars: 10000
+      usePhraseHighlighter: true
+      highlightMultiTerm: true
+      preserveMulti: false
+      highlight:
+        mergeContiguous: false
+        requireFieldMatch: false
+        snippets: 3
+        fragsize: 0
+    mlt:
+      mintf: 1
+      mindf: 1
+      maxdf: 0
+      maxdfpct: 0
+      minwl: 0
+      maxwl: 0
+      maxqt: 100
+      maxntp: 2000
+      boost: false
+      interestingTerms: none
+    advanced:
+      index_prefix: ''
+      collection: ''
 id: full_index
 name: 'Full index'
 description: 'Full index of all content entities on Portland.gov'
@@ -95,7 +132,7 @@ field_settings:
     label: Title
     datasource_id: 'entity:node'
     property_path: title
-    type: solr_text_ngram
+    type: 'solr_text_custom:edge'
     dependencies:
       module:
         - node
@@ -151,7 +188,7 @@ field_settings:
     label: 'Search keywords'
     datasource_id: 'entity:node'
     property_path: field_search_keywords
-    type: solr_text_ngram
+    type: 'solr_text_custom:edge'
     boost: !!float 21
     dependencies:
       config:
@@ -211,7 +248,7 @@ field_settings:
     label: 'Search keywords'
     datasource_id: 'entity:group'
     property_path: field_search_keywords
-    type: solr_text_ngram
+    type: 'solr_text_custom:edge'
     boost: !!float 21
     dependencies:
       config:
@@ -228,7 +265,7 @@ field_settings:
     label: Title
     datasource_id: 'entity:group'
     property_path: label
-    type: solr_text_ngram
+    type: 'solr_text_custom:edge'
     boost: !!float 13
     dependencies:
       module:
@@ -284,7 +321,7 @@ field_settings:
     label: Name
     datasource_id: 'entity:taxonomy_term'
     property_path: name
-    type: solr_text_ngram
+    type: 'solr_text_custom:edge'
     boost: !!float 21
     dependencies:
       module:
@@ -405,6 +442,7 @@ processor_settings:
   portland_group_title_field: {  }
   portland_sorting_date_field: {  }
   rendered_item: {  }
+  solr_date_range: {  }
   type_boost:
     boosts:
       'entity:group':
