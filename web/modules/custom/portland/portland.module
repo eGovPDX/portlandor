@@ -507,23 +507,24 @@ function portland_handle_group_update($form, $form_state) {
                 The new entity has been added to the default group by Group module's submit 
                 handler so we have to remove it here. 
                 */
-                $groupIDs = getGroupIdsByEntity($entity);
-                if($entity->isNew()) $groupIDs = [];
-                if( count($groupIDs) > 0) {
-                    $old_group_id = $groupIDs[0];
-                    $group_contents = \Drupal::entityTypeManager()
-                        ->getStorage('group_content')
-                        ->loadByProperties([ 
-                            'entity_id' => $entity->id(),
-                            'gid' => $old_group_id,
-                    ]);
-    
-                    foreach ($group_contents as $item) {
-                        $item->delete();
-                    }                    
-                }
+                if(! $entity->isNew()) {
+                    $groupIDs = getGroupIdsByEntity($entity);
+                    if( count($groupIDs) > 0) {
+                        $old_group_id = $groupIDs[0];
+                        $group_contents = \Drupal::entityTypeManager()
+                            ->getStorage('group_content')
+                            ->loadByProperties([ 
+                                'entity_id' => $entity->id(),
+                                'gid' => $old_group_id,
+                        ]);
+        
+                        foreach ($group_contents as $item) {
+                            $item->delete();
+                        }
+                    }          
 
-                $entity->field_group->entity->addContent($entity, 'group_'.$entity->getEntityTypeId().':'.$entity->bundle());
+                    $entity->field_group->entity->addContent($entity, 'group_'.$entity->getEntityTypeId().':'.$entity->bundle());      
+                }
             }
         }
     }
