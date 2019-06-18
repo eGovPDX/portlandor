@@ -159,8 +159,7 @@ $settings['hash_salt'] = 'thisismysaltittasteslikesalt';
 $config['clamav.settings']['enabled'] = 0;
 
 $settings['trusted_host_patterns'] = array(
-  '^'. preg_quote('portlandor.lndo.site') .'$',
-  '^'. preg_quote('localhost') .'$'
+  '.*'   // Allow any hostname
 );
 
 $config['system.file']['path']['temporary'] = '/tmp';
