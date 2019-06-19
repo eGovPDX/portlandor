@@ -58,9 +58,9 @@ if (isset($_ENV['PANTHEON_ENVIRONMENT']) && php_sapi_name() != 'cli') {
     header('Location: https://'. $primary_domain . $_SERVER['REQUEST_URI']);
     exit();
   }
-  // Drupal 8 Trusted Host Settings
+  // Append $primary_domain to Drupal 8 Trusted Host settings array
   if (is_array($settings)) {
-    $settings['trusted_host_patterns'] = array('^'. preg_quote($primary_domain) .'$');
+    $settings['trusted_host_patterns'][] = '^'. preg_quote($primary_domain) .'$';
   }
 }
 

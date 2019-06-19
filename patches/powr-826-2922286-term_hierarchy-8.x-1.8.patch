@@ -1,0 +1,170 @@
+diff --git a/config/install/easy_breadcrumb.settings.yml b/config/install/easy_breadcrumb.settings.yml
+index 18bfcc3..7c7c9bc 100644
+--- a/config/install/easy_breadcrumb.settings.yml
++++ b/config/install/easy_breadcrumb.settings.yml
+@@ -5,5 +5,6 @@ include_title_segment: TRUE
+ language_path_prefix_as_segment: FALSE
+ use_menu_title_as_fallback: FALSE
+ remove_repeated_segments: TRUE
++term_hierarchy: FALSE
+ absolute_paths: FALSE
+ hide_single_home_item: FALSE
+diff --git a/config/schema/easy_breadcrumb.schema.yml b/config/schema/easy_breadcrumb.schema.yml
+index a195620..52e5ea3 100644
+--- a/config/schema/easy_breadcrumb.schema.yml
++++ b/config/schema/easy_breadcrumb.schema.yml
+@@ -39,6 +39,9 @@ easy_breadcrumb.settings:
+     remove_repeated_segments:
+       type: boolean
+       label: 'Remove repeated identical segments'
++    term_hierarchy:
++      type: boolean
++      label: 'Use term hierarchy'
+     language_path_prefix_as_segment:
+       type: boolean
+       label: 'Use language path prefix as segment'
+diff --git a/easy_breadcrumb.services.yml b/easy_breadcrumb.services.yml
+index abdb4fe..341161d 100644
+--- a/easy_breadcrumb.services.yml
++++ b/easy_breadcrumb.services.yml
+@@ -1,6 +1,6 @@
+ services:
+   easy_breadcrumb.breadcrumb:
+     class: Drupal\easy_breadcrumb\EasyBreadcrumbBuilder
+-    arguments: ['@router.request_context', '@access_manager', '@router', '@path_processor_manager', '@config.factory',  '@title_resolver', '@current_user', '@path.current', '@plugin.manager.menu.link']
++    arguments: ['@router.request_context', '@access_manager', '@router', '@path_processor_manager', '@config.factory',  '@title_resolver', '@current_user', '@path.current', '@plugin.manager.menu.link', '@entity_type.manager', '@entity.repository']
+     tags:
+       - { name: breadcrumb_builder, priority: 1003 }
+diff --git a/src/EasyBreadcrumbBuilder.php b/src/EasyBreadcrumbBuilder.php
+index 304d57e..715f040 100644
+--- a/src/EasyBreadcrumbBuilder.php
++++ b/src/EasyBreadcrumbBuilder.php
+@@ -28,6 +28,8 @@ use Symfony\Component\Routing\Exception\MethodNotAllowedException;
+ use Symfony\Component\Routing\Exception\ResourceNotFoundException;
+ use Symfony\Component\Routing\Matcher\RequestMatcherInterface;
+ use Drupal\Core\Menu\MenuLinkManager;
++use Drupal\Core\Entity\EntityTypeManagerInterface;
++use Drupal\Core\Entity\EntityRepositoryInterface;
+ 
+ /**
+  * Class to define the menu_link breadcrumb builder.
+@@ -98,6 +100,20 @@ class EasyBreadcrumbBuilder implements BreadcrumbBuilderInterface {
+    */
+   protected $menuLinkManager;
+ 
++   /**
++   * The entity type manager.
++   *
++   * @var \Drupal\Core\Entity\EntityTypeManagerInterface
++   */
++  protected $entityTypeManager;
++
++  /**
++   * The entity repository.
++   *
++   * @var \Drupal\Core\Entity\EntityRepositoryInterface
++   */
++  protected $entityRepository;
++
+   /**
+    * Constructs the PathBasedBreadcrumbBuilder.
+    *
+@@ -119,8 +135,12 @@ class EasyBreadcrumbBuilder implements BreadcrumbBuilderInterface {
+    *   The current path.
+    * @param \Drupal\Core\Menu\MenuLinkManager $menu_link_manager
+    *   The menu link manager.
++   * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
++   *   The entity type manager.
++   * @param \Drupal\Core\Entity\EntityRepositoryInterface $entity_repository
++   *   The entity repository.
+    */
+-  public function __construct(RequestContext $context, AccessManagerInterface $access_manager, RequestMatcherInterface $router, InboundPathProcessorInterface $path_processor, ConfigFactoryInterface $config_factory, TitleResolverInterface $title_resolver, AccountInterface $current_user, CurrentPathStack $current_path, MenuLinkManager $menu_link_manager) {
++  public function __construct(RequestContext $context, AccessManagerInterface $access_manager, RequestMatcherInterface $router, InboundPathProcessorInterface $path_processor, ConfigFactoryInterface $config_factory, TitleResolverInterface $title_resolver, AccountInterface $current_user, CurrentPathStack $current_path, MenuLinkManager $menu_link_manager, EntityTypeManagerInterface $entity_type_manager, EntityRepositoryInterface $entity_repository) {
+     $this->context = $context;
+     $this->accessManager = $access_manager;
+     $this->router = $router;
+@@ -131,6 +151,8 @@ class EasyBreadcrumbBuilder implements BreadcrumbBuilderInterface {
+     $this->currentUser = $current_user;
+     $this->currentPath = $current_path;
+     $this->menuLinkManager = $menu_link_manager;
++    $this->entityTypeManager = $entity_type_manager;
++    $this->entityRepository = $entity_repository;
+   }
+ 
+   /**
+@@ -279,6 +301,18 @@ class EasyBreadcrumbBuilder implements BreadcrumbBuilderInterface {
+             }
+             $links[] = new Link($title, $url);
+           }
++          // Add all term parents.
++          if ($i == 0
++              && $this->config->get(EasyBreadcrumbConstants::TERM_HIERARCHY)
++              && $term = $route_match->getParameter('taxonomy_term')) {
++            $parents = $this->entityTypeManager->getStorage('taxonomy_term')->loadAllParents($term->id());
++            // Unset current term.
++            array_shift($parents);
++            foreach ($parents as $parent) {
++              $parent = $this->entityRepository->getTranslationFromContext($parent);
++              $links[] = $parent->toLink();
++            }
++          }
+           unset($title);
+           $i++;
+         }
+diff --git a/src/EasyBreadcrumbConstants.php b/src/EasyBreadcrumbConstants.php
+index aac0637..745b1d6 100644
+--- a/src/EasyBreadcrumbConstants.php
++++ b/src/EasyBreadcrumbConstants.php
+@@ -87,6 +87,11 @@ class EasyBreadcrumbConstants {
+    */
+   const REMOVE_REPEATED_SEGMENTS = 'remove_repeated_segments';
+ 
++  /**
++   * Flag for using term hierarchy.
++   */
++  const TERM_HIERARCHY = 'term_hierarchy';
++  
+   /**
+    * Flag for storing absolute path settings.
+    */
+diff --git a/src/Form/EasyBreadcrumbGeneralSettingsForm.php b/src/Form/EasyBreadcrumbGeneralSettingsForm.php
+index 67c61a4..f5f972e 100644
+--- a/src/Form/EasyBreadcrumbGeneralSettingsForm.php
++++ b/src/Form/EasyBreadcrumbGeneralSettingsForm.php
+@@ -137,6 +137,13 @@ class EasyBreadcrumbGeneralSettingsForm extends ConfigFormBase {
+       '#default_value' => $config->get(EasyBreadcrumbConstants::REMOVE_REPEATED_SEGMENTS),
+     ];
+ 
++    $fieldset_general[EasyBreadcrumbConstants::TERM_HIERARCHY] = [
++      '#type' => 'checkbox',
++      '#title' => $this->t('Use term hierarchy.'),
++      '#description' => $this->t('Show in breadcrumb all parent for current term.'),
++      '#default_value' => $config->get(EasyBreadcrumbConstants::TERM_HIERARCHY),
++    ];
++
+     // Flag for storing whether or not absolute paths are used as link.
+     $fieldset_general[EasyBreadcrumbConstants::ABSOLUTE_PATHS] = [
+       '#type' => 'checkbox',
+@@ -180,6 +187,7 @@ class EasyBreadcrumbGeneralSettingsForm extends ConfigFormBase {
+       ->set(EasyBreadcrumbConstants::LANGUAGE_PATH_PREFIX_AS_SEGMENT, $form_state->getValue(EasyBreadcrumbConstants::LANGUAGE_PATH_PREFIX_AS_SEGMENT))
+       ->set(EasyBreadcrumbConstants::USE_MENU_TITLE_AS_FALLBACK, $form_state->getValue(EasyBreadcrumbConstants::USE_MENU_TITLE_AS_FALLBACK))
+       ->set(EasyBreadcrumbConstants::REMOVE_REPEATED_SEGMENTS, $form_state->getValue(EasyBreadcrumbConstants::REMOVE_REPEATED_SEGMENTS))
++      ->set(EasyBreadcrumbConstants::TERM_HIERARCHY, $form_state->getValue(EasyBreadcrumbConstants::TERM_HIERARCHY))
+       ->set(EasyBreadcrumbConstants::ABSOLUTE_PATHS, $form_state->getValue(EasyBreadcrumbConstants::ABSOLUTE_PATHS))
+       ->set(EasyBreadcrumbConstants::HIDE_SINGLE_HOME_ITEM, $form_state->getValue(EasyBreadcrumbConstants::HIDE_SINGLE_HOME_ITEM))
+       ->save();
+diff --git a/tests/src/Kernel/EasyBreadcrumbBuilderTest.php b/tests/src/Kernel/EasyBreadcrumbBuilderTest.php
+index 9d0f728..c7a1495 100644
+--- a/tests/src/Kernel/EasyBreadcrumbBuilderTest.php
++++ b/tests/src/Kernel/EasyBreadcrumbBuilderTest.php
+@@ -38,7 +38,9 @@ class EasyBreadcrumbBuilderTest extends KernelTestBase {
+       \Drupal::service('config.factory'),
+       \Drupal::service('title_resolver'), \Drupal::service('current_user'),
+       \Drupal::service('path.current'),
+-      \Drupal::service('plugin.manager.menu.link')
++      \Drupal::service('plugin.manager.menu.link'),
++      \Drupal::service('entity_type.manager'),
++      \Drupal::service('entity.repository')
+     );
+ 
+     $route_match = new RouteMatch('test_front', new Route('/front'));
