@@ -882,3 +882,21 @@ function portland_search_api_solr_query_alter(\Solarium\QueryType\Select\Query\Q
       $solarium_query->addParam('bf', "recip(abs(ms(NOW/HOUR,{$solr_field})),3.16e-11,.08,.05)^4");
     }
   }
+
+/**
+ * Implements hook_system_breadcrumb_alter().
+ */
+function portland_system_breadcrumb_alter(\Drupal\Core\Breadcrumb\Breadcrumb &$breadcrumb, \Drupal\Core\Routing\RouteMatchInterface $route_match, array $context) {
+    // For breadcrumb "policy/category1/category2" or "policy/category1",
+    // set the category name to taxonomy term name.
+    $links = $breadcrumb->getLinks();
+    if( count($links) > 1 && $links[0]->getUrl()->getInternalPath() == 'policy'){
+        // Loop must start at index 1, not 0. 0 is "policy".
+        for($i=1; $i<count($links); $i++) {
+            $tid = $links[$i]->getUrl()->getRouteParameters()['taxonomy_term'];
+            $term = \Drupal::entityTypeManager()->getStorage('taxonomy_term')->load($tid);
+            if($term == NULL) continue; // skip if we can't load by term ID
+            $links[$i]->setText($term->getName());
+        }
+    }
+}

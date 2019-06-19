@@ -48,6 +48,12 @@ drush migrate:import eudaly_news_group_content
 drush migrate:import category_documents
 drush migrate:import category_documents_group_content
 ```
+#### City charter
+```
+drush migrate:import city_charter_chapters
+drush migrate:import city_charter_articles
+drush migrate:import city_charter_sections
+```
 
 **Note:** The commands above work for Drush 9. In Drush 8 the command names and aliases are different. Execute `drush list --filter=migrate` to verify the proper commands for your version of Drush.
 
