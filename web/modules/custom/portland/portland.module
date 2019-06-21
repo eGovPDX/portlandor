@@ -13,12 +13,11 @@ use Drupal\Core\Form\FormStateInterface;
 include 'portland.tokens.inc';
 
 
-// The plural is used in the list page URL. E.g. "/bds/guides"
+// The plural is used in the list page URL. E.g. "/bds/services"
 // The group list view's path must match the plural form shown here.
 // If the group list view doesn't exist, visiting the alias will get a 404.
 const GROUP_CONTENT_TYPE_PLURAL = [
     "service" => ["services"],
-    "guide" => ["guides"],
     "building" => ["buildings"],
     "city_service" => ["services"],
     "service_location" => ["locations"],
@@ -738,7 +737,7 @@ function portland_handle_bulk_generate($form, $form_state) {
     // If taxonomy_term is selected
     if($form_state->getValues()['update']['canonical_entities:taxonomy_term'] === 'canonical_entities:taxonomy_term') {
         // Generate aliases for "term/content_type"
-        $contentTypes = ['guides', 'bureaus', 'programs', 'projects'];
+        $contentTypes = ['offices', 'programs', 'projects', 'advisory-groups', 'services', 'events', 'news', 'pages', 'documents'];
         $lang = \Drupal::languageManager()->getCurrentLanguage()->getId();
         $vid = 'topics';
         $terms =\Drupal::entityTypeManager()->getStorage('taxonomy_term')->loadTree($vid);
@@ -786,7 +785,7 @@ function portland_handle_bulk_generate($form, $form_state) {
 /**
  * If loaded page is one of the specified group views, get the group name and
  * add it to the html title by setting $vars['head_title']['title']. This prevents
- * duplicate page titles within groups for views such as Services, Guides, etc.
+ * duplicate page titles within groups for views such as Services, etc.
  * The title format is "[page title] | [group] | [site name]"
  *
  * @param [type] $vars
@@ -818,8 +817,6 @@ function portland_generate_extended_title_for_group_views($orig_title, $route_ma
         case "group_offices":
         case "group_projects":
         case "group_events":
-        case "group_guides":
-        case "group_information":
         case "group_media":
         case "group_news":
         case "group_services":
@@ -882,3 +879,21 @@ function portland_search_api_solr_query_alter(\Solarium\QueryType\Select\Query\Q
       $solarium_query->addParam('bf', "recip(abs(ms(NOW/HOUR,{$solr_field})),3.16e-11,.08,.05)^4");
     }
   }
+
+/**
+ * Implements hook_system_breadcrumb_alter().
+ */
+function portland_system_breadcrumb_alter(\Drupal\Core\Breadcrumb\Breadcrumb &$breadcrumb, \Drupal\Core\Routing\RouteMatchInterface $route_match, array $context) {
+    // For breadcrumb "policy/category1/category2" or "policy/category1",
+    // set the category name to taxonomy term name.
+    $links = $breadcrumb->getLinks();
+    if( count($links) > 1 && $links[0]->getUrl()->getInternalPath() == 'policy'){
+        // Loop must start at index 1, not 0. 0 is "policy".
+        for($i=1; $i<count($links); $i++) {
+            $tid = $links[$i]->getUrl()->getRouteParameters()['taxonomy_term'];
+            $term = \Drupal::entityTypeManager()->getStorage('taxonomy_term')->load($tid);
+            if($term == NULL) continue; // skip if we can't load by term ID
+            $links[$i]->setText($term->getName());
+        }
+    }
+}
