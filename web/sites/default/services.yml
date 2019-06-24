@@ -172,3 +172,27 @@ parameters:
     maxAge: false
     # Sets the Access-Control-Allow-Credentials header.
     supportsCredentials: false
+
+  monolog.channel_handlers:
+    # Log to the syslog by default.
+    default:
+      handlers: ['drupal.dblog', 'loggly', 'papertrail']
+      formatter: 'loggly'
+    # Send the php channel to web server's error log and the browser console:
+    php:
+      handlers: ['loggly']
+      formatter: 'loggly'
+    # Ignore log entries of "content" channel.
+    #content: ['null']
+
+services:
+  monolog.handler.loggly:
+    class: Monolog\Handler\LogglyHandler
+    arguments: ['58461ece-af01-4bcb-b3ab-d66a8b07dc55/tag/monolog']
+  monolog.handler.papertrail:
+    class: Monolog\Handler\SyslogUdpHandler
+    arguments: ['logs4.papertrailapp.com', 54872]
+  # monolog.handler.browser_console:
+  #   class: Monolog\Handler\BrowserConsoleHandler
+  #   # Set alert as the minimum level (ignores emergency) and disable bubbling for this Handler
+  #   arguments: ['1', false] 
