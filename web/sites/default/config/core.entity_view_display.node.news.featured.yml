@@ -13,11 +13,14 @@ dependencies:
     - field.field.node.news.field_published_on
     - field.field.node.news.field_related_content
     - field.field.node.news.field_reviewer
+    - field.field.node.news.field_search_keywords
     - field.field.node.news.field_summary
     - field.field.node.news.field_topics
     - node.type.news
   module:
+    - datetime
     - ds
+    - field_group
     - panelizer
     - user
 third_party_settings:
@@ -28,7 +31,7 @@ third_party_settings:
     default: default
   ds:
     layout:
-      id: cloudy_card--large
+      id: cloudy_card
       library: null
       disable_css: false
       entity_classes: all_classes
@@ -44,14 +47,16 @@ third_party_settings:
           layout_class: {  }
     regions:
       first:
-        - node_title
-        - field_summary
-      second:
         - field_featured_media
+      second:
+        - node_title
+        - group_date
+        - field_published_on
+        - field_summary
     fields:
       node_title:
         plugin_id: node_title
-        weight: 0
+        weight: 1
         label: hidden
         formatter: default
         settings:
@@ -64,6 +69,24 @@ third_party_settings:
             lb: ''
             lb-col: false
             classes: {  }
+  field_group:
+    group_date:
+      children:
+        - field_published_on
+      parent_name: ''
+      weight: 2
+      format_type: html_element
+      format_settings:
+        id: ''
+        classes: mb-2
+        element: div
+        show_label: false
+        label_element: h3
+        attributes: ''
+        effect: none
+        speed: fast
+      label: Date
+      region: hidden
 id: node.news.featured
 targetEntityType: node
 bundle: news
@@ -72,7 +95,7 @@ content:
   field_featured_media:
     type: entity_reference_entity_view
     weight: 0
-    region: second
+    region: first
     label: hidden
     settings:
       view_mode: featured
@@ -85,8 +108,45 @@ content:
             lb: ''
             lb-col: false
             classes: {  }
+  field_published_on:
+    type: datetime_default
+    weight: 3
+    region: second
+    label: hidden
+    settings:
+      timezone_override: ''
+      format_type: month_day_year
+    third_party_settings:
+      ds:
+        ft:
+          id: expert
+          settings:
+            lb: ''
+            prefix: 'Published on'
+            lbw-el: ''
+            lbw-cl: ''
+            lbw-at: ''
+            ow-el: ''
+            ow-cl: ''
+            ow-at: ''
+            fis-el: ''
+            fis-cl: ''
+            fis-at: ''
+            fi-el: ''
+            fi-cl: ''
+            fi-at: ''
+            suffix: ''
+            lbw: false
+            lb-col: false
+            ow: false
+            ow-def-at: false
+            ow-def-cl: false
+            fis: false
+            fis-def-at: false
+            fi: false
+            fi-def-at: false
   field_summary:
-    weight: 1
+    weight: 4
     label: hidden
     settings:
       link_to_entity: false
@@ -99,7 +159,7 @@ content:
             lb-col: false
             classes: {  }
     type: string
-    region: first
+    region: second
 hidden:
   content_moderation_control: true
   field_body_content: true
@@ -107,7 +167,6 @@ hidden:
   field_feature_until: true
   field_group: true
   field_legacy_path: true
-  field_published_on: true
   field_related_content: true
   field_reviewer: true
   field_search_keywords: true
