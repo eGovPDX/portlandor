@@ -14,6 +14,7 @@ dependencies:
     - field.field.node.event.field_legacy_path
     - field.field.node.event.field_related_content
     - field.field.node.event.field_reviewer
+    - field.field.node.event.field_search_keywords
     - field.field.node.event.field_start_date
     - field.field.node.event.field_start_time
     - field.field.node.event.field_summary
@@ -33,7 +34,7 @@ third_party_settings:
     default: default
   ds:
     layout:
-      id: cloudy_card--small
+      id: cloudy_card
       library: null
       disable_css: false
       entity_classes: all_classes
@@ -49,18 +50,21 @@ third_party_settings:
           layout_class: {  }
     regions:
       first:
+        - field_featured_media
+      second:
         - node_title
         - field_start_date
-        - group_date_and_time
-        - field_end_date
-        - group_start_to_end_time
+        - group_datetime
         - field_all_day
+        - field_end_date
+        - group_date_and_time
         - field_start_time
+        - group_start_to_end_time
         - field_end_time
     fields:
       node_title:
         plugin_id: node_title
-        weight: 0
+        weight: 1
         label: hidden
         formatter: default
         settings:
@@ -78,11 +82,11 @@ third_party_settings:
       children:
         - field_start_date
         - field_end_date
-      parent_name: ''
-      weight: 1
+      parent_name: group_datetime
+      weight: 3
       format_type: html_element
       format_settings:
-        label: 'Start to end date'
+        label: Date
         element: div
         show_label: false
         label_element: h3
@@ -90,19 +94,19 @@ third_party_settings:
         effect: none
         speed: fast
         id: ''
-        classes: 'event--date h4'
-      label: 'Start to end date'
+        classes: event--date
+      label: Date
       region: hidden
     group_start_to_end_time:
       children:
         - field_all_day
         - field_start_time
         - field_end_time
-      parent_name: ''
-      weight: 2
+      parent_name: group_datetime
+      weight: 4
       format_type: html_element
       format_settings:
-        label: 'Start to end time'
+        label: Time
         element: div
         show_label: false
         label_element: h3
@@ -110,8 +114,27 @@ third_party_settings:
         effect: none
         speed: fast
         id: ''
-        classes: 'event--time h4 mb-4'
-      label: 'Start to end time'
+        classes: event--time
+      label: Time
+      region: hidden
+    group_datetime:
+      children:
+        - group_date_and_time
+        - group_start_to_end_time
+      parent_name: ''
+      weight: 2
+      format_type: html_element
+      format_settings:
+        label: Datetime
+        element: div
+        show_label: false
+        label_element: h3
+        attributes: ''
+        effect: none
+        speed: fast
+        id: ''
+        classes: mb-2
+      label: Datetime
       region: hidden
 id: node.event.related
 targetEntityType: node
@@ -121,7 +144,7 @@ content:
   field_all_day:
     type: boolean
     weight: 3
-    region: first
+    region: second
     label: hidden
     settings:
       format: custom
@@ -133,7 +156,7 @@ content:
           id: expert
           settings:
             lb: ''
-            prefix: '<i class="fas fa-clock"></i> '
+            prefix: ''
             lbw-el: ''
             lbw-cl: ''
             lbw-at: ''
@@ -143,9 +166,8 @@ content:
             fis-el: ''
             fis-cl: ''
             fis-at: ''
-            fi: true
-            fi-el: span
-            fi-cl: all-day
+            fi-el: ''
+            fi-cl: ''
             fi-at: ''
             suffix: ''
             lbw: false
@@ -155,9 +177,10 @@ content:
             ow-def-cl: false
             fis: false
             fis-def-at: false
+            fi: false
             fi-def-at: false
   field_end_date:
-    weight: 1
+    weight: 3
     label: hidden
     settings:
       timezone_override: ''
@@ -178,9 +201,8 @@ content:
             fis-el: ''
             fis-cl: ''
             fis-at: ''
-            fi: true
-            fi-el: span
-            fi-cl: 'event--end-date pl-1'
+            fi-el: ''
+            fi-cl: ''
             fi-at: ''
             suffix: ''
             lbw: false
@@ -190,21 +212,22 @@ content:
             ow-def-cl: false
             fis: false
             fis-def-at: false
+            fi: false
             fi-def-at: false
     type: datetime_default
-    region: first
+    region: second
   field_end_time:
     weight: 5
     label: hidden
     settings:
-      time_format: '\t\o g:i A'
+      time_format: 'g:i a'
     third_party_settings:
       ds:
         ft:
           id: expert
           settings:
             lb: ''
-            prefix: ''
+            prefix: to
             lbw-el: ''
             lbw-cl: ''
             lbw-at: ''
@@ -214,9 +237,8 @@ content:
             fis-el: ''
             fis-cl: ''
             fis-at: ''
-            fi: true
-            fi-el: span
-            fi-cl: 'event--end-time pl-1'
+            fi-el: ''
+            fi-cl: ''
             fi-at: ''
             suffix: ''
             lbw: false
@@ -226,11 +248,28 @@ content:
             ow-def-cl: false
             fis: false
             fis-def-at: false
+            fi: false
             fi-def-at: false
     type: time_formatter
-    region: first
-  field_start_date:
+    region: second
+  field_featured_media:
+    type: entity_reference_entity_view
     weight: 0
+    region: first
+    label: hidden
+    settings:
+      view_mode: embedded_50
+      link: false
+    third_party_settings:
+      ds:
+        ft:
+          id: default
+          settings:
+            lb: ''
+            lb-col: false
+            classes: {  }
+  field_start_date:
+    weight: 2
     label: hidden
     settings:
       timezone_override: ''
@@ -241,7 +280,7 @@ content:
           id: expert
           settings:
             lb: ''
-            prefix: '<i class="fas fa-calendar"></i>'
+            prefix: ''
             lbw-el: ''
             lbw-cl: ''
             lbw-at: ''
@@ -251,9 +290,8 @@ content:
             fis-el: ''
             fis-cl: ''
             fis-at: ''
-            fi: true
-            fi-el: span
-            fi-cl: 'event--start-date pl-2'
+            fi-el: ''
+            fi-cl: ''
             fi-at: ''
             suffix: ''
             lbw: false
@@ -263,14 +301,15 @@ content:
             ow-def-cl: false
             fis: false
             fis-def-at: false
+            fi: false
             fi-def-at: false
     type: datetime_default
-    region: first
+    region: second
   field_start_time:
     weight: 4
     label: hidden
     settings:
-      time_format: 'g:i A'
+      time_format: 'g:i a'
     third_party_settings:
       ds:
         ft:
@@ -287,9 +326,8 @@ content:
             fis-el: ''
             fis-cl: ''
             fis-at: ''
-            fi: true
             fi-el: span
-            fi-cl: 'event--start-time pl-2'
+            fi-cl: ''
             fi-at: ''
             suffix: ''
             lbw: false
@@ -299,14 +337,14 @@ content:
             ow-def-cl: false
             fis: false
             fis-def-at: false
+            fi: false
             fi-def-at: false
     type: time_formatter
-    region: first
+    region: second
 hidden:
   content_moderation_control: true
   field_body_content: true
   field_event_location: true
-  field_featured_media: true
   field_group: true
   field_legacy_path: true
   field_related_content: true
