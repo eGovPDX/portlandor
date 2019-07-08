@@ -1,19 +1,17 @@
-uuid: 23b2bae0-7652-4daa-a883-e5f3e4cf7303
+uuid: d46b260a-87a4-44dd-9e53-a150178e4a75
 langcode: en
 status: true
 dependencies:
   config:
+    - core.entity_view_mode.group.teaser
     - field.storage.group.field_summary
-    - taxonomy.vocabulary.group_type
-  content:
-    - 'taxonomy_term:group_type:c406ffd3-818f-4cbd-b857-fea3b906a675'
+    - group.type.advisory_group
   module:
     - group
-    - taxonomy
 id: group_advisory_groups
-label: 'Group: Advisory groups'
+label: 'Group: Advisory Groups'
 module: views
-description: 'A list of all the programs that are a child to another group'
+description: 'A list of all the projects that are a child to another group'
 tag: Group
 base_table: groups_field_data
 base_field: id
@@ -50,9 +48,23 @@ display:
           sort_asc_label: Asc
           sort_desc_label: Desc
       pager:
-        type: none
+        type: mini
         options:
+          items_per_page: 20
           offset: 0
+          id: 0
+          total_pages: null
+          expose:
+            items_per_page: false
+            items_per_page_label: 'Items per page'
+            items_per_page_options: '5, 10, 25, 50'
+            items_per_page_options_all: false
+            items_per_page_options_all_label: '- All -'
+            offset: false
+            offset_label: Offset
+          tags:
+            previous: ‹‹
+            next: ››
       style:
         type: html_list
         options:
@@ -64,11 +76,6 @@ display:
           class: ''
       row:
         type: fields
-        options:
-          default_field_elements: true
-          inline: {  }
-          separator: ''
-          hide_empty: false
       fields:
         label:
           id: label
@@ -106,7 +113,7 @@ display:
             trim: false
             preserve_tags: ''
             html: false
-          element_type: h2
+          element_type: ''
           element_class: ''
           element_label_type: ''
           element_label_class: ''
@@ -171,7 +178,7 @@ display:
             trim: false
             preserve_tags: ''
             html: false
-          element_type: p
+          element_type: ''
           element_class: ''
           element_label_type: ''
           element_label_class: ''
@@ -199,17 +206,17 @@ display:
           field_api_classes: false
           plugin_id: field
       filters:
-        field_group_type_target_id:
-          id: field_group_type_target_id
-          table: group__field_group_type
-          field: field_group_type_target_id
+        type:
+          id: type
+          table: groups_field_data
+          field: type
           relationship: none
           group_type: group
           admin_label: ''
-          operator: or
+          operator: in
           value:
-            60: 60
-          group: 2
+            advisory_group: advisory_group
+          group: 1
           exposed: false
           expose:
             operator_id: ''
@@ -224,6 +231,7 @@ display:
             remember_roles:
               authenticated: authenticated
             reduce: false
+            argument: null
           is_grouped: false
           group_info:
             label: ''
@@ -236,13 +244,9 @@ display:
             default_group: All
             default_group_multiple: {  }
             group_items: {  }
-          reduce_duplicates: true
-          type: select
-          limit: true
-          vid: group_type
-          hierarchy: false
-          error_message: true
-          plugin_id: taxonomy_index_tid
+          entity_type: group
+          entity_field: type
+          plugin_id: bundle
       sorts:
         label:
           id: label
@@ -310,16 +314,6 @@ display:
           entity_field: id
           plugin_id: group_id
       display_extenders: {  }
-      use_more: false
-      use_more_always: false
-      use_more_text: 'View all programs'
-      link_url: ''
-      link_display: page_1
-      filter_groups:
-        operator: OR
-        groups:
-          1: AND
-          2: AND
     cache_metadata:
       max-age: -1
       contexts:
@@ -327,7 +321,7 @@ display:
         - 'languages:language_interface'
         - route
         - url
-        - user
+        - url.query_args
       tags:
         - 'config:field.storage.group.field_summary'
         - extensions
@@ -338,6 +332,18 @@ display:
     position: 2
     display_options:
       display_extenders: {  }
+      pager:
+        type: some
+        options:
+          items_per_page: 7
+          offset: 0
+      defaults:
+        pager: false
+        empty: false
+        fields: false
+        link_display: false
+        link_url: false
+      empty: {  }
       fields:
         label:
           id: label
@@ -404,11 +410,9 @@ display:
           entity_type: null
           entity_field: label
           plugin_id: field
-      defaults:
-        fields: false
-        empty: false
       block_hide_empty: true
-      empty: {  }
+      link_display: page_1
+      link_url: ''
     cache_metadata:
       max-age: -1
       contexts:
@@ -416,7 +420,6 @@ display:
         - 'languages:language_interface'
         - route
         - url
-        - user
       tags: {  }
   page_1:
     display_plugin: page
@@ -426,23 +429,24 @@ display:
     display_options:
       display_extenders: {  }
       path: group/%group/advisory-groups
+      pager:
+        type: none
+        options:
+          offset: 0
       defaults:
-        pager: true
+        pager: false
         style: false
         row: false
       style:
         type: default
         options:
           row_class: ''
-          default_row_class: false
+          default_row_class: true
           uses_fields: false
       row:
-        type: fields
+        type: 'entity:group'
         options:
-          default_field_elements: true
-          inline: {  }
-          separator: ''
-          hide_empty: false
+          view_mode: teaser
     cache_metadata:
       max-age: -1
       contexts:
@@ -450,7 +454,6 @@ display:
         - 'languages:language_interface'
         - route
         - url
-        - user
       tags:
         - 'config:field.storage.group.field_summary'
         - extensions
