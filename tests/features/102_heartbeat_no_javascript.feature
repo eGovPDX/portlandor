@@ -1,25 +1,19 @@
-@api @javascript @multidev @dev @100
+@api @multidev @dev @102
 Feature: Basic site operation and navigation
   In order to use portland.gov
   As an anonymous or authenticated user
   I need to be able to navigate from the homepage
 
-  Background:
-    Given I am using a 1440x900 browser window
-
-  Scenario: Visit the homepage as anonymous user
-    When I visit "/"
-    Then I should see "Services" in the "main_menu" region
-    And I should see "Bureaus and offices" in the "main_menu" region
-    And I should see "Alerts" in the "main_menu" region
-    And I should see "Portland, Oregon, USA" in the "footer_second" region
-
-  Scenario: Visit the homepage as authenticated user
+  Scenario: Visit a taxonomy term page
     Given I am logged in as user "oliver.outsider@portlandoregon.gov"
-    When I visit "/"
-    And I should see "Bureaus and offices" in the "main_menu" region
-    And I should see "Alerts" in the "main_menu" region
-    And I should see "Portland, Oregon, USA" in the "footer_second" region
+    When I visit "/residents-of-portland"
+    Then I should see "Resident"
+    And I should see "services found"
+    And I should see "Bureaus, offices, and programs"
+    # Verify fix for POWR-889. Use "Given I am on" in order to allow non-200 response code
+    Given I am on "/taxonomy/term/100000"
+    Then the response status code should be 404
+    And I should see "Page not found"
 
     # Given users:
     # | name           | status | uid    | mail                              | roles              |
