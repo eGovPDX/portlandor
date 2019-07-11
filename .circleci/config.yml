@@ -1,12 +1,20 @@
 # CircleCI integration with Drupal 8.
 
 ## Defines images and working directory.
-defaults: &defaults
+pre_deploy: &pre_deploy
+  docker:
+    # - image: juampynr/drupal8ci:latest
+    # updated CI image
+    - image: kxwang/drupal-ci:circleci
+  working_directory: /var/www/html
+
+pre_test: &pre_test
   docker:
     # - image: juampynr/drupal8ci:latest
     # updated CI image
     - image: kxwang/drupal-ci:circleci
     - image: selenium/standalone-chrome-debug:3.7.1-beryllium
+  parallelism: 5
   working_directory: /var/www/html
 
 ## Defines the cache restoring mechanism.
@@ -32,7 +40,7 @@ save_cache: &save_cache
 
 ## Job to run the update path and Behat tests.
 build_and_deploy: &build_and_deploy
-  <<: *defaults
+  <<: *pre_deploy
   steps:
     - restore_cache:
         name: Retore Git cache before checkout
@@ -51,9 +59,9 @@ build_and_deploy: &build_and_deploy
     - run:
         name: Install Terminus
         command: |
-          # if [ ! -f "/tmp/vendor/pantheon-systems/terminus/bin/terminus" ]; then
+          if [ ! -f "/tmp/vendor/pantheon-systems/terminus/bin/terminus" ]; then
           cd /tmp && composer require pantheon-systems/terminus:^2.0.0
-          # fi
+          fi
     - save_cache:
         name: Save Terminus cache
         key: terminus_-{{ checksum "composer.lock" }}
@@ -82,7 +90,7 @@ build_and_deploy: &build_and_deploy
           rm -rf ./web/modules/contrib/facets
           # Run composer install with hirak/prestissimo for better performance
           composer config --global --auth github-oauth.github.com "$COMPOSER_TOKEN"
-          composer global require hirak/prestissimo && composer install --no-suggest --no-interaction
+          composer install --no-suggest --no-interaction
           # TODO: should only deploy non-dev packages
           # --no-dev
     - run:
@@ -104,10 +112,8 @@ build_and_deploy: &build_and_deploy
           # Exclude dependencies
           rm -rf web/themes/custom/cloudy/node_modules
           # Force add all files to include those excluded by .gitignore
-          rm -rf ./web/modules/contrib/search_api_solr/.git
+          rm -rf ./web/modules/contrib/search_api_solr/.git && rm -rf ./vendor/drupal/coder/.git && rm -rf ./web/modules/contrib/facets/.git
           git add -f /var/www/html
-          # Without these lines, push will fail with "please remote git submodules" error
-          git rm -r ./vendor/drupal/coder/.git && git rm -r ./web/modules/contrib/facets/.git
           # Pantheon site will use the wrong DB if the local is kept
           git rm --cache  web/sites/default/settings.local.php --ignore-unmatch
           git rm -r --cache web/sites/default/files --ignore-unmatch
@@ -145,22 +151,18 @@ build_and_deploy: &build_and_deploy
             if grep -Fxq "$CIRCLE_BRANCH" ./env_list.txt; then
               echo "Found multidev site"
             else
-              # Create a new Multi-Dev with files and database from Test.
-              echo "Creating new multidev site. Please wait." && terminus multidev:create portlandor.test $CIRCLE_BRANCH
+              # Create a new Multi-Dev with files and database from Dev.
+              echo "Creating new multidev site. Please wait." && terminus multidev:create portlandor.dev $CIRCLE_BRANCH
             fi
             rm -rf ./env_list.txt
             # Set the connection type to GIT
             terminus connection:set portlandor.$CIRCLE_BRANCH git
-            # Only do force push when the multidev site doesn't exist
+            # Force push to Pantheon
             git push -f pantheon $CIRCLE_BRANCH
-            # Wake up the multidev site and wait 60s.
-            terminus env:wake portlandor.$CIRCLE_BRANCH
-            # Drush CIM, CR are handled by QuickSilver event handlers
-            # echo 'node_access_rebuild();' | $(terminus drush portlandor.$CIRCLE_BRANCH -- php-script)
           fi
 
 run_tests: &run_tests
-  <<: *defaults
+  <<: *pre_test
   steps:
     - restore_cache:
         name: Retore Git cache before checkout
@@ -179,65 +181,81 @@ run_tests: &run_tests
     - run:
         name: Install Terminus
         command: |
-          # if [ ! -f "/tmp/vendor/pantheon-systems/terminus/bin/terminus" ]; then
+          if [ ! -f "/tmp/vendor/pantheon-systems/terminus/bin/terminus" ]; then
           cd /tmp && composer require pantheon-systems/terminus:^2.0.0
-          # fi
+          fi
     - save_cache:
         name: Save Terminus cache
         key: terminus_-{{ checksum "composer.lock" }}
         paths:
           - "/tmp/vendor"
-    - restore_cache: *restore_cache
     - run:
-        name: Composer install
+        name: Show Drush commands result
         command: |
-          # hotfix - getting error on module but can't update due to lightning dependency, try removing and getting fresh
-          rm -rf ./web/modules/contrib/search_api_solr
-          # Run composer install with hirak/prestissimo for better performance
-          composer config --global --auth github-oauth.github.com "$COMPOSER_TOKEN"
-          composer global require hirak/prestissimo && composer install --no-suggest --no-interaction
-          # TODO: should only deploy non-dev packages
-          # --no-dev
-    - run:
-        name: Run drush commands on Pantheon
-        command: |
-          export PATH=/var/www/html/vendor/bin:/tmp/vendor/pantheon-systems/terminus/bin:$PATH
+          export PATH=/var/www/html/tests/vendor/bin:/tmp/vendor/pantheon-systems/terminus/bin:$PATH
           terminus auth:login --machine-token="$eGov_Terminus" --email="$eGov_Email" && terminus aliases
+          # Get all workflows
+          terminus workflow:list --format=csv --fields=id,env,workflow,user,status portlandor > workflows.csv
+          # Fine the latest "Sync Code" workflow for the current branch
+          WORKFLOW_ID="empty id"
+          while IFS=',' read id env message user status
+          do
+            if [ "$CIRCLE_BRANCH" = "master" ]; then
+              if [ "$env" == "dev" ] && [[ $message =~ ^\"Sync.*\"$ ]]; then
+                  WORKFLOW_ID=$id
+                  break
+              fi
+            else
+              if [ "$env" == "$CIRCLE_BRANCH" ] && [[ $message =~ ^\"Sync.*\"$ ]]; then
+                  WORKFLOW_ID=$id
+                  break
+              fi
+            fi
+          done < workflows.csv
 
-          sleep 20 # wait 20 seconds for file sync to finish
-
-          # Must clear cache to ensure config import from the right environment
-          if [[ $CIRCLE_BRANCH = "master" ]]; then
-            terminus remote:drush portlandor.dev -- cr
-            terminus remote:drush portlandor.dev -- -y updb
-            terminus remote:drush portlandor.dev -- cim -y
-            terminus remote:drush portlandor.dev -- core:cron -y
-            terminus remote:drush portlandor.dev -- cr
-          else            
-            terminus remote:drush portlandor.$CIRCLE_BRANCH -- cr
-            terminus remote:drush portlandor.$CIRCLE_BRANCH -- -y updb
-            terminus remote:drush portlandor.$CIRCLE_BRANCH -- cim -y
-            terminus remote:drush portlandor.$CIRCLE_BRANCH -- core:cron -y
-            terminus remote:drush portlandor.$CIRCLE_BRANCH -- cr
+          echo $WORKFLOW_ID
+          if [[ $WORKFLOW_ID = "empty id" ]]; then
+            echo "Cannot find any Sync Code workflow for branch $CIRCLE_BRANCH. Try terminus workflow:list portlandor."
+            exit 1
           fi
+          # Show the logs of the latest "Sync Code" workflow for the current branch
+          terminus workflow:info:logs portlandor --id=${WORKFLOW_ID}
+    - restore_cache:
+        name: Restore Behat cache
+        key: v1-behat-dependencies-{{ checksum "tests/composer.lock" }}
+    - run:
+        name: Composer install for Behat dependencies
+        command: |
+          cd tests
+          composer config --global --auth github-oauth.github.com "$COMPOSER_TOKEN"
+          composer install --no-suggest --no-interaction
     - run:
         name: Run tests against Pantheon
         when: on_success
         command: |
-          export PATH=/var/www/html/vendor/bin:/tmp/vendor/pantheon-systems/terminus/bin:$PATH
+          export PATH=/var/www/html/tests/vendor/bin:/tmp/vendor/pantheon-systems/terminus/bin:$PATH
+          # Log in via terminus first. Required for tests that require user login.
           terminus auth:login --machine-token="$eGov_Terminus" --email="$eGov_Email" && terminus aliases
-
-          # TODO: revisit this when we only deploy non-dev packages.
-          # Install Behat and its dependencies.
-          # composer install
+          cd tests
+          # Split feature files by timing data so all split test jobs will finish around the same time
+          TESTFILES=$(circleci tests glob "features/*.feature"  | circleci tests split --split-by=timings)
           if [[ $CIRCLE_BRANCH = "master" ]]; then
             echo 'export BEHAT_PARAMS="{\"extensions\" : {\"Behat\\\MinkExtension\" : {\"base_url\" : \"https://${HTTP_AUTH}@dev-portlandor.pantheonsite.io\"}, \"Drupal\\\DrupalExtension\" : {\"drush\" : { \"alias\": \"portlandor.dev\"}}}}"' >> $BASH_ENV && source $BASH_ENV
-            behat -c tests/behat.yml --tags '@dev'
+            for TESTFILE in $TESTFILES
+            do
+                behat -c behat.yml ${TESTFILE}
+            done
           else
             echo 'export BEHAT_PARAMS="{\"extensions\" : {\"Behat\\\MinkExtension\" : {\"base_url\" : \"https://${CIRCLE_BRANCH}-portlandor.pantheonsite.io\"}, \"Drupal\\\DrupalExtension\" : {\"drush\" : { \"alias\": \"portlandor.${CIRCLE_BRANCH}\"}}}}"' >> $BASH_ENV && source $BASH_ENV
-            behat -c tests/behat.yml --tags '@multidev'
+            for TESTFILE in $TESTFILES
+            do
+                behat -c behat.yml ${TESTFILE}
+            done
           fi
-    - save_cache: *save_cache
+    - save_cache:
+        paths:
+          - ./tests/vendor
+        key: v1-behat-dependencies-{{ checksum "tests/composer.lock" }}
     - store_test_results:
         path: /var/www/html/artifacts/behat
     - store_artifacts:
