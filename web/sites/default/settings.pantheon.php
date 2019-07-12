@@ -181,6 +181,15 @@ if (isset($_ENV['PANTHEON_ENVIRONMENT'])) {
 }
 
 /**
+ * "Trusted host settings" are not necessary on Pantheon; traffic will only
+ * be routed to your site if the host settings match a domain configured for
+ * your site in the dashboard.
+ */
+if (isset($_ENV['PANTHEON_ENVIRONMENT'])) {
+  $settings['trusted_host_patterns'][] = '.*';
+}
+
+/**
  * The default list of directories that will be ignored by Drupal's file API.
  *
  * By default ignore node_modules and bower_components folders to avoid issues
@@ -195,15 +204,4 @@ if (empty($settings['file_scan_ignore_directories'])) {
     'node_modules',
     'bower_components',
   ];
-}
-
-/**
- * Overwrite Google Analytics tracking code in 'live' production site. 
- * 
- * Set to tracking ID of Google Analytics property for 'production' site.
- */
-if (isset($_ENV['PANTHEON_ENVIRONMENT'])) {
-  if ($_ENV['PANTHEON_ENVIRONMENT'] === 'live') {
-    $config['google_analytics.settings']['account'] = 'UA-6858269-14';
-  }
 }
