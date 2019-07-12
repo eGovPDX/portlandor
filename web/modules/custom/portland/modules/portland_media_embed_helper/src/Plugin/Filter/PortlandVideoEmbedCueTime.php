@@ -43,6 +43,7 @@ class PortlandVideoEmbedCueTime extends FilterBase {
         parse_str($url['query'], $query);
         if (strpos($url['host'], 'youtube') !== false) {
           $query['start'] = $cue;
+          $url['query'] = http_build_query($query);
         } else if (strpos($url['host'], 'vimeo') !== false) {
           $url['path'] .= "#t=" . $cue . "s";
         }
