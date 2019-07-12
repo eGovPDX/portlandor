@@ -43,13 +43,9 @@ class PortlandVideoEmbedCueTime extends FilterBase {
         parse_str($url['query'], $query);
         if (strpos($url['host'], 'youtube') !== false) {
           $query['start'] = $cue;
-          $url['query'] = http_build_query($query);
+        } else if (strpos($url['host'], 'vimeo') !== false) {
+          $url['path'] .= "#t=" . $cue . "s";
         }
-        
-        // start time doesn't currently work for Vimeo. the URL used by the embedded player doesn't seem to support the querystring var.
-        // else if (strpos($url['host'], 'vimeo') !== false) {
-        //   $url['path'] .= "#" . $cue . "s";
-        // }
         // reassemble and set URL
         $src = $url['scheme'] . '://' . $url['host'] . $url['path'] . '?' . $url['query'];
         $frame->setAttribute('src', $src);
