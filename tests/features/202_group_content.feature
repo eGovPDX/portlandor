@@ -36,6 +36,7 @@ Feature: Members can manage group content
   Scenario: Edit and delete service
     Given I am logged in as user "Marty Member"
     When I visit "/powr/test-page"
+    Then I wait for the page to be loaded
     And I click "Edit" in the "tabs" region
     Then I should see "Title"
 
