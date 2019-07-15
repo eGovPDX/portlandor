@@ -70,6 +70,9 @@ module.exports = (env, argv) => ({
             }
           },
           {
+            loader: 'resolve-url-loader'
+          },
+          {
             loader: 'sass-loader',
             options: {
               sourceMap: true
@@ -80,7 +83,7 @@ module.exports = (env, argv) => ({
     ]
   },
   performance: {
-    assetFilter: function(assetFilename) {
+    assetFilter: function (assetFilename) {
       // only give warnings about size for javascript files
       return assetFilename.endsWith('.js');
     }
