@@ -31,7 +31,8 @@ Feature: Members can manage group content
       Test revision message
       """
     And I press "Save"
-    Then I should see "Page Test page has been created."
+    Then I wait for the page to be loaded
+    And I should see "Page Test page has been created."
 
   Scenario: Edit and delete service
     Given I am logged in as user "Marty Member"
