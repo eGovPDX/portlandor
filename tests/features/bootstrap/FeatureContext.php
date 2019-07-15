@@ -3,6 +3,9 @@
 use Drupal\DrupalExtension\Context\RawDrupalContext;
 use Behat\Behat\Context\SnippetAcceptingContext;
 
+// Workaround for https://github.com/Behat/Behat/issues/1076
+chdir(__DIR__ . '/../..');
+
 /**
  * Defines general application features used by other feature files.
  *
@@ -50,5 +53,40 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
     $driver = $this->getDriver();
     $manager = $this->getUserManager();
 
+  }
+
+
+  /**
+   * @When I fill in wysiwyg on field :locator with :value
+   */
+  public function iFillInWysiwygOnFieldWith($locator, $value) {
+    $el = $this->getSession()->getPage()->findField($locator);
+
+    if (empty($el)) {
+      throw new ExpectationException('Could not find WYSIWYG with locator: ' . $locator, $this->getSession());
+    }
+
+    $fieldId = $el->getAttribute('id');
+
+    if (empty($fieldId)) {
+      throw new Exception('Could not find an id for field with locator: ' . $locator);
+    }
+
+    $this->getSession()
+      ->executeScript("CKEDITOR.instances[\"$fieldId\"].setData(\"$value\");");
+  }
+
+  /**
+   * @Then I wait for the page to be loaded
+   */
+  public function waitForThePageToBeLoaded()
+  {
+      $this->getSession()->wait(10000, "document.readyState === 'complete'");
+  }
+
+  /** @Given I am using a 1440x900 browser window */
+  public function iAmUsingA1440x900BrowserWindow()
+  {
+    $this->getSession()->resizeWindow(1440, 900, 'current');
   }
 }

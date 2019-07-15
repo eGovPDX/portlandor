@@ -1,4 +1,4 @@
-# Put overrides to your pantheon.upstream.yml file here.
+# Put overrides to your pantheon.upstream.yml file here. 
 # For more information, see: https://pantheon.io/docs/pantheon-yml/
 api_version: 1
 
@@ -27,14 +27,41 @@ workflows:
   deploy:
     after:
       - type: webphp
+        description: Rebuild cache before config import
+        script: private/scripts/drush_post_deploy_cache_rebuild.php
+      - type: webphp
+        description: Update database
+        script: private/scripts/drush_post_deploy_updatedb.php
+      - type: webphp
         description: Import configuration from .yml files
-        script: private/scripts/drush_post_deploy.php
+        script: private/scripts/drush_post_deploy_config_import.php
+      - type: webphp
+        description: Run cron jobs
+        script: private/scripts/drush_post_deploy_cron.php
+      - type: webphp
+        description: Rebuild cache after config import
+        script: private/scripts/drush_post_deploy_cache_rebuild.php
       - type: webphp
         description: Post deployment notification to Slack
         script: private/scripts/slack_deploy_notification.php
-  # The deployment event for DEV and Multi-DEV
+  # The deployment event for DEV and Multi-DEV 
   sync_code:
     after:
+      - type: webphp
+        description: Rebuild cache before config import
+        script: private/scripts/drush_post_deploy_cache_rebuild.php
+      - type: webphp
+        description: Update database
+        script: private/scripts/drush_post_deploy_updatedb.php
+      - type: webphp
+        description: Import configuration from .yml files
+        script: private/scripts/drush_post_deploy_config_import.php
+      - type: webphp
+        description: Run cron jobs
+        script: private/scripts/drush_post_deploy_cron.php
+      - type: webphp
+        description: Rebuild cache after config import
+        script: private/scripts/drush_post_deploy_cache_rebuild.php
       - type: webphp
         description: Call CircleCI web hook to start tests
         script: private/scripts/circleci_webhook.php

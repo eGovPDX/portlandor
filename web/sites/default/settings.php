@@ -97,3 +97,14 @@ switch ($env) {
     $config['config_split.config_split.config_multidev']['status'] = TRUE;
     break;
 }
+
+/**
+ * Overwrite Google Analytics tracking code in 'live' production site. 
+ * 
+ * Set to tracking ID of Google Analytics property for 'production' site.
+ */
+if (isset($_ENV['PANTHEON_ENVIRONMENT'])) {
+  if ($_ENV['PANTHEON_ENVIRONMENT'] === 'live') {
+    $config['google_analytics.settings']['account'] = 'UA-6858269-14';
+  }
+}
