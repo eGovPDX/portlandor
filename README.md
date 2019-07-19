@@ -266,4 +266,3 @@ The site can be toggled between dev and prod modes locally using the drupal site
 lando drupal site:mode dev
 lando drupal site:mode prod
 ...
-
