@@ -254,3 +254,15 @@ The lock file is not up to date with the latest changes in composer.json. You ma
 ...
 
 To resolve this, run `lando composer update --lock`, which will generate a new hash. If you encounter a conflict on the hash value when you merge or rebase, use the most recent (yours) version of the hash.
+
+## Local Development Settings
+
+### Default local settings
+
+The site is configured to run in development mode when running locally. Development mode primarily disables caching and adjusts other configurations in a way that is useful for development purposes but reduces performance.
+
+The site can be toggled between dev and prod modes locally using the drupal site:mode command:
+...
+lando drupal site:mode dev
+lando drupal site:mode prod
+...
