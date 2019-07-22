@@ -16,11 +16,6 @@ function portland_media_embed_helper_form_entity_embed_dialog_alter(array &$form
   // there should only be 1 element in the entities array, but just in case there
   // are more, don't hide the fields if one of them isn't a document.
   $entities = $form_state->getValue("entity_browser")["entities"] ;
-  $embed_type = $input['editor_object']['data-embed-button'];
-  if (!$embed_type) {
-    $embed_type = $form['attributes']['data-embed-button']['#value'];
-  }
-
   if (isset($entities)) {
     foreach($form_state->getValue("entity_browser")["entities"] as $entity) {
       if ($entity->bundle() == "document") {
@@ -31,8 +26,8 @@ function portland_media_embed_helper_form_entity_embed_dialog_alter(array &$form
   } else {
     $input = $form_state->getUserInput();
     if (isset($input) && isset($input['editor_object']['data-embed-button'])) {
-      //$type = $input['editor_object']['data-embed-button'];
-      if ($embed_type == "document_browser") {
+      $type = $input['editor_object']['data-embed-button'];
+      if ($type == "document_browser") {
         $hide_fields = true;
       }
     }
@@ -47,7 +42,7 @@ function portland_media_embed_helper_form_entity_embed_dialog_alter(array &$form
     $img_100 =            "<img src=\"/themes/custom/cloudy/images/icons/img-100.png\" alt=\"100% width\" />";
     $img_50_right_fill =  "<img src=\"/themes/custom/cloudy/images/icons/img-50-fill.png\" alt=\"50% fill\" />";
     $img_50_right_fit =   "<img src=\"/themes/custom/cloudy/images/icons/img-50-fit.png\" alt=\"50% fit\" />";
-    //$embed_type = $form['attributes']['data-embed-button']['#value'];
+    $embed_type = $form['attributes']['data-embed-button']['#value'];
 
     // clear default alignment options
     unset($form['attributes']['data-align']['#options']['left']);
@@ -71,7 +66,7 @@ function portland_media_embed_helper_form_entity_embed_dialog_alter(array &$form
   }
 
   // if this is the video browser, and the caption field is set, then insert the start time field
-  if ($embed_type == "audio_video_browser") {
+  if (isset($form['attributes']['data-caption'])) {
     $form['attributes']['data-start-cue']['#type'] = "textfield";
     $form['attributes']['data-start-cue']['#title'] = "Video start cue time (optional)";
     $form['attributes']['data-start-cue']['#placeholder'] = "0";
