@@ -19,7 +19,7 @@ use Drupal\rules\Core\RulesConditionBase;
  *   }
  * )
  */
-class InReviewAndHasReviwer extends RulesConditionBase {
+class InReviewAndHasReviewer extends RulesConditionBase {
 
   /**
    * Check if a node is of a specific set of types.
