@@ -34,7 +34,7 @@ Feature: Create group
     Then I should see "Add member"
 
     When I click "Add member"
-    Then I should see "Create Bureau/office: Group membership"
+    Then I should see "Add Bureau/office: Group membership"
     And I should see "Username"
 
     When I fill in "edit-entity-id-0-target-id" with "Ally Admin (62)"
@@ -55,7 +55,7 @@ Feature: Create group
     Then I should see "Add member"
 
     When I click "Add member"
-    Then I should see "Create Bureau/office: Group membership"
+    Then I should see "Add Bureau/office: Group membership"
     And I should see "Username"
 
     When I fill in "edit-entity-id-0-target-id" with "Oliver Outsider (64)"
