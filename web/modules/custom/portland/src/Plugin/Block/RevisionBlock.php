@@ -214,6 +214,7 @@ class RevisionBlock extends BlockBase {
       $latestNode = \Drupal::entityTypeManager()->getStorage('node')->getQuery()
                   ->latestRevision()
                   ->condition('nid', $nid)
+                  ->accessCheck(FALSE)
                   ->execute();
       reset($latestNode);
       $latestRevisionId = key($latestNode);
