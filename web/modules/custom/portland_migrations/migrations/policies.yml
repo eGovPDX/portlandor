@@ -1,9 +1,14 @@
-id: city_code
-label: 'City Code Import'
-migration_group: city_code
+id: policies
+label: 'City Policies Import'
+class: null
+langcode: en
+dependencies:
+    enforced:
+        - portland_migrations
+migration_group: policies
 source:
   plugin: csv
-  path: modules/custom/portland_migrations/sources/city_code.csv
+  path: modules/custom/portland_migrations/sources/policies_test.csv
   header_row_count: 1
   keys:
     - CONTENT_ID
@@ -12,7 +17,9 @@ process:
     plugin: default_value
     default_value: 1
   title: CONTENT_NAME
-  field_body_content/value: TEXT
+  field_body_content/value:
+      plugin: migrate_linked_media
+      source: TEXT
   field_body_content/format:
     plugin: default_value
     default_value: simplified_editor_with_media_embed
@@ -23,6 +30,16 @@ process:
     source: URL
     search: https://www.portlandoregon.gov/
     replace: '/'
+  field_policy_type:
+    plugin: migration_lookup
+    migration: policies_types
+    no_stub: true
+    source: POLICY_TYPE
+  field_policy_catetory:
+    plugin: migration_lookup
+    migration: policies_categories
+    no_stub: true
+    source: CATEGORY_NAME
 destination:
   plugin: 'entity:node'
-  default_bundle: news
+  default_bundle: policy
