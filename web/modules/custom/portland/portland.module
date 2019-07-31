@@ -495,7 +495,9 @@ function portland_handle_group_update($form, $form_state) {
                                 ]);
                 
                 foreach ($group_contents as $item) {
-                    $item->delete();
+                    $item->delete();        
+                    \Drupal::logger('portland')->error('portland_handle_group_update()');
+                    \Drupal::logger('portland')->error("group node deleted. gid = $old_group_id");
                 }
             }
 
@@ -591,6 +593,12 @@ function portland_entity_delete($entity)
     if ($entity->bundle() == 'alert') {
         // alert has been deleted, update alerts count in cache
         _portland_get_active_alerts_count(true);
+    }
+    else if ($entity->getEntityTypeId() == 'group_content') {
+        $requestPath = \Drupal::request()->getRequestUri();
+        \Drupal::logger('portland')->error('portland_entity_delete()');
+        \Drupal::logger('portland')->error($requestPath);
+        // \Drupal::logger('portland')->error(debug_backtrace(FALSE, 40));
     }
 }
 
