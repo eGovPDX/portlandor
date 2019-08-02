@@ -39,6 +39,9 @@ For some of the content migrations, the exported data must be massaged to avoid 
 
 ##### Modifications to policies.csv
 
+* Create new column to the right of SUMMARY_TEXT. Copy the contents of SUMMARY_TEXT into the new empty column and change the header to POLICY_NUMBER.
+* Manually scan through the SUMMARY_TEXT column and delete any value that is not summary text.
+* Manually scan through the POLICY_NUMBER column and delete or clean up any value that is not in the policy number format: BCP-ADM-1.01 (there are a few cases where the authors felt the need to prefix the policy number with the bureau name).
 * Create 2 new columns to the right of SUMMARY_TEXT. In the top header row, add the headers POLICY_TYPE and POLICY_NUMBER.
 * In the POLICY_TYPE column, starting in row 5, add the formula ```=LEFT(I5, 3)``` and copy it down to the rest of the cells in the column. This splits out the policy type code for each row. This value is used as the key to link the policies to the policy type taxonomy entity references during migration.
 * In the POLICY_NUMBER column, starting in row 5, add the formula ```=I5``` and copy it down to the rest of the cells in the column. This simply copies the policy number value out of the Summary for each row. The first few rows aren't policy pages and contain actual summary text that shouldn't be copied into the policy number field, so we'll use the new derived field for migration.
