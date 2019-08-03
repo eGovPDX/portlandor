@@ -72,9 +72,21 @@ class MigrateLinkedMedia extends ProcessPluginBase {
         }
 
         // download and store raw file with whatever name was in the URL, or retrieve it if it already exists
+        $content_id = pathinfo(parse_url($url, PHP_URL_PATH), PATHINFO_FILENAME);
+        if (intval($content_id) < 1) {
+          $content_id = "";
+        } else {
+          $content_id = "-" . $content_id;
+        }
         $file_uri = $folder_uri . '/' . pathinfo(parse_url($url, PHP_URL_PATH), PATHINFO_FILENAME);
         if (!file_exists($file_uri)) {
-          $result = system_retrieve_file($url, $file_uri, TRUE);
+          try {
+            $result = system_retrieve_file($url, $file_uri, TRUE);
+          }
+          catch (Exception $e) {
+            $message = "Error occurred while trying to download URL target at " . $url . ". Exception: " . $e->getMessage();
+            \Drupal::logger('portland_migrations')->notice($message);
+          }
         } else {
           $result = \Drupal::entityTypeManager()->getStorage('file')->loadByProperties(['uri' => $file_uri]);
           if (is_array($result)) {
@@ -82,13 +94,27 @@ class MigrateLinkedMedia extends ProcessPluginBase {
           }
         }
 
+        if ($result === false) {
+          // the file could not be retrieved from the file system, which indicates it
+          // doesn't exist. the most likely reason is that the url was a 404.
+          $message = "Error occurred while trying to open file saved from " . $url . ". Most likely reason is a 404 error.";
+          \Drupal::logger('portland_migrations')->notice($message);
+          continue;
+        }
+
         // process the file: 
         // delete it if it's not a type we want, or rename it with a more descriptive filename
         // and appropriate extension. when we saved the raw file from POG, it was saved with
         // whatever name was in the URL (typically the content id).
 
-        $absolute_path = \Drupal::service("file_system")->realpath($file_uri);
-        $mime_type = mime_content_type($absolute_path);
+        try {
+          $absolute_path = \Drupal::service("file_system")->realpath($file_uri);
+          $mime_type = mime_content_type($absolute_path);
+        }
+        catch (Exception $e) {
+          $message = "Problem getting mime type for file (possible 404) " . $file_url . " at " . $absolute_path;
+          \Drupal::logger('portland_migrations')->notice($message);
+        }
 
         switch ($mime_type) {
           case "application/pdf":
@@ -122,11 +148,24 @@ class MigrateLinkedMedia extends ProcessPluginBase {
           $link->setAttribute("href", $url);
         }
 
-        // if ext is a type we have not defined, log it, delete the file, and continue the loop.
-        if (is_null($file_info[1])) {
+        // if ext is html, delete the downloaded file and continue the loop. We'll leave the link as it is.
+        if ($file_info[0] == "html") {
+          if (isset($result) && $result) {
+            $result->delete();
+          }
+          continue;
+        }
+
+        // if ext is a type we have not defined, log it, delete the file if it exists, and continue the loop.
+        if (is_null($file_info)) {
+          if (!isset($mime_type) || !$mime_type || $mime_type == "") {
+            $mime_type = "Undefined mime type";
+          }
           $message = "Undefined download encountered in migration: " . $mime_type . "<br>File path: " . $absolute_path . "<br>From URL: " . $url;
           \Drupal::logger('portland_migrations')->notice($message);
-          $result->delete();
+          if (isset($result) && $result) {
+            $result->delete();
+          }
           continue;
         }
 
@@ -137,19 +176,56 @@ class MigrateLinkedMedia extends ProcessPluginBase {
           $filename = transliterate_filenames_transliteration($link_text, $source_langcode);
         }
 
-        // rename file if renamed file doesn't alredy exist
+        // don't let filenames start with "link-" or "link-to-"
+        if (substr($filename, 0, 8) == "link-to-") {
+          $filename = substr($filename, 8, strlen($filename));
+        }
+        if (substr($filename, 0, 5) == "link-") {
+          $filename = substr($filename, 5, strlen($filename));
+        }
+
+        // TODO: It's possible that we could have two different files with the same name, since
+        // we're naming them based on the link text. There's no good way to determine the file
+        // name from the URL since most if the time it's just the content id. How big of a problem
+        // is this? Perhaps we should use incrememtal numbering in a test and reivew the duplicated
+        // files.
+
+        // rename file if renamed file doesn't alredy exist. append content id on end of filename
+        // to help differentiate between different files that might have the same link text.
         $file = \Drupal\file\Entity\File::load($result->fid->value);
-        $new_filename = $folder_name . "/" . $filename . "." . $file_info[0];
+        $new_filename = $folder_name . "/" . $filename . $content_id . "." . $file_info[0];
         $stream_wrapper = \Drupal::service('file_system')->uriScheme($file->getFileUri());
         $new_filename_uri = "{$stream_wrapper}://{$new_filename}";
         if (!file_exists($new_filename_uri)) {
           $move_result = file_move($file, $new_filename_uri);
         } else {
+          // // it exists, append to the filename to make it unique
+          // // first see if appended filename exists
+          // $exists = true;
+          // $try_filename = $new_filename_uri;
+          // $safety = 0;
+          // while ($exists == true) {
+          //   $try_filename = $try_filename . "-copy";
+          //   if (!file_exists($try_filename)) {
+          //     // if appended filename doesn't exist, create it
+          //     $move_result = file_move($file, $try_filename);
+          //     $exists = false;
+          //   }
+          //   $safety = $safety + 1;
+          //   if ($safety > 25) {
+          //     $exists = false;
+          //   }
+          // }
+
           // renamed file already exists. delete temp file, load existing renamed file, and 
           // reference that in the embed tag.
           $file->delete();
-          $existing_files = \Drupal::entityTypeManager()->getStorage('file')->loadByProperties(['uri' => $folder_uri . '/' . $filename . '.' . $file_info[0]]);
+          $existing_files = \Drupal::entityTypeManager()->getStorage('file')->loadByProperties(['uri' => $folder_uri . '/' . $filename . $content_id . '.' . $file_info[0]]);
           $file = reset($existing_files); // should only ever be 1 file returned
+        }
+
+        if ($file == false) {
+          $halt = true;
         }
 
         // create media entity for file (image or document)
