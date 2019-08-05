@@ -72,7 +72,22 @@ class MigrateBodyContentAndLinkedMedia extends ProcessPluginBase {
         }
 
         // download and store raw file with whatever name was in the URL, or retrieve it if it already exists
+        $parsed_url = parse_url($url);
+        $query = $parsed_url['query'];
         $content_id = pathinfo(parse_url($url, PHP_URL_PATH), PATHINFO_FILENAME);
+        if (strlen($query) > 0) {
+          parse_str($query, $parsed_query);
+        }
+        if ($content_id == "image") {
+          // handle case where url is like: /shared/cfm/image.cfm?id=138098
+          if (isset($parsed_query['id'])) {
+            $content_id = $parsed_query['id'];
+          }
+        } else if (isset($parsed_query['a'])) {
+          // handle case where url is like: /auditor/26882?a=307602
+          $content_id = $parsed_query['a'];
+        }
+
         if (intval($content_id) < 1) {
           $content_id = "";
         } else {
@@ -176,6 +191,11 @@ class MigrateBodyContentAndLinkedMedia extends ProcessPluginBase {
           $filename = transliterate_filenames_transliteration($link_text, $source_langcode);
         }
 
+        // if filename ends with hyphen, remove it
+        if (substr($filename, strlen($filename)-1, 1) == "-") {
+          $filename = substr($filename, 0, strlen($filename)-1);
+        }
+
         // don't let filenames start with "link-" or "link-to-"
         if (substr($filename, 0, 8) == "link-to-") {
           $filename = substr($filename, 8, strlen($filename));
@@ -183,12 +203,6 @@ class MigrateBodyContentAndLinkedMedia extends ProcessPluginBase {
         if (substr($filename, 0, 5) == "link-") {
           $filename = substr($filename, 5, strlen($filename));
         }
-
-        // TODO: It's possible that we could have two different files with the same name, since
-        // we're naming them based on the link text. There's no good way to determine the file
-        // name from the URL since most if the time it's just the content id. How big of a problem
-        // is this? Perhaps we should use incrememtal numbering in a test and reivew the duplicated
-        // files.
 
         // rename file if renamed file doesn't alredy exist. append content id on end of filename
         // to help differentiate between different files that might have the same link text.
@@ -200,23 +214,23 @@ class MigrateBodyContentAndLinkedMedia extends ProcessPluginBase {
         if (!file_exists($new_filename_uri)) {
           $move_result = file_move($file, $new_filename_uri);
         } else {
-          // it exists, append to the filename to make it unique
-          // first see if appended filename exists
-          $exists = true;
-          $try_filename = $new_filename_uri;
-          $safety = 0;
-          while ($exists == true) {
-            $try_filename = $try_filename . "-copy";
-            if (!file_exists($try_filename)) {
-              // if appended filename doesn't exist, create it
-              $move_result = file_move($file, $try_filename);
-              $exists = false;
-            }
-            $safety = $safety + 1;
-            if ($safety > 25) {
-              $exists = false;
-            }
-          }
+          // // it exists, append to the filename to make it unique
+          // // first see if appended filename exists
+          // $exists = true;
+          // $try_filename = $new_filename_uri;
+          // $safety = 0;
+          // while ($exists == true) {
+          //   $try_filename = $try_filename . "-copy";
+          //   if (!file_exists($try_filename)) {
+          //     // if appended filename doesn't exist, create it
+          //     $move_result = file_move($file, $try_filename);
+          //     $exists = false;
+          //   }
+          //   $safety = $safety + 1;
+          //   if ($safety > 25) {
+          //     $exists = false;
+          //   }
+          // }
 
           // renamed file already exists. delete temp file, load existing renamed file, and 
           // reference that in the embed tag.

@@ -23,7 +23,7 @@ use Drupal\media\Entity\Media;
  *   id = "migrate_policy_type"
  * )
  */
-class LinkPolicyType extends ProcessPluginBase {
+class MigratePolicyType extends ProcessPluginBase {
   /**
    * {@inheritdoc}
    */

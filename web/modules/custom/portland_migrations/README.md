@@ -31,6 +31,22 @@ Not having the source CSV files in the proper location would trigger and error s
 
 If you want to place the files in a different location, you need to update the path in the corresponding configuration files. That is the `source:path` setting in the migration files.
 
+### CSV file preparation
+
+In some cases, the CSV files need to be manually updated in order to avoid a large amount of custom processing.
+
+#### policies.csv
+
+The SUMMARY_TEXT column has been used to store the policy number value, but not in all cases. A separate POLICY_NUMBER column needs to be created and populated with only policy number values, while the SUMMARY_TEXT column should contain only true summary text.
+
+#### policies_types.csv
+
+Since there are only 4 policy types, the csv file has been manually created from scratch. It's highly unlikely these values will change before the final migration, so this file can be used as is in the repo.
+
+#### policies_categories.csv
+
+**TODO:** This file may need to be manually created based on a review of the hierarchy in POG. The data needed to discover the 2nd-level categories is not provided in the content export. (POWR-1282)
+
 ### Running the migrations
 
 The Migrate Tools module provides drush commands to run the migrations. The order of commands is important!
@@ -54,6 +70,14 @@ drush migrate:import city_charter_chapters
 drush migrate:import city_charter_articles
 drush migrate:import city_charter_sections
 ```
+
+#### City policies
+```
+drush migrate:import policies_types
+drush migrate:import policies
+```
+**TODO:** The policies_categories migration either needs to be run before policies, or it needs to be processed with
+a custom process plugin that gets called by the policies migration.
 
 **Note:** The commands above work for Drush 9. In Drush 8 the command names and aliases are different. Execute `drush list --filter=migrate` to verify the proper commands for your version of Drush.
 
