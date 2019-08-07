@@ -29,8 +29,10 @@ class PortlandMediaEmbedHtmlFilter extends FilterBase {
 
     $dom = Html::load($text);
     $xpath = new \DOMXPath($dom);
-    $elems = $xpath->query( "//*[text()=\"\xC2\xA0\"]");
+    $elems = $xpath->query( "//*[text()=\"\xC2\xA0\" and not(contains(@class,'cktemplate'))]");
     foreach ($elems as $elem) {
+      //$class = $elem->getAttribute('class');
+      //if ($class == "")
       $elem->parentNode->removeChild($elem);
     }
     
