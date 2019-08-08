@@ -23,11 +23,5 @@ CKEDITOR.addTemplates( 'default', {
 		image: 'template_spacer_lg.gif',
 		description: '',
 		html: '<div class="spacer-lg cktemplate"></div>'
-	},
-	{
-		title: 'Phone number',
-		image: 'template_phone.gif',
-		description: '',
-		html: '<a class="btn powr-btn-link" href="tel:"><i class="fas fa-phone"></i>000-000-0000</a>'
 	}]
 } );
