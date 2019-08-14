@@ -50,6 +50,10 @@ The .lando.yml file included in this repo will set you up to connect to the corr
 
 See other Lando with Pantheon commands at https://docs.devwithlando.io/tutorials/pantheon.html.
 
+## Local development mode
+
+By default the site runs in "production" mode locally, which means that caching is on, twig debugging is off, etc. To run the site in development mode (caching off, twig debugging on, etc.), make a copy of web/sites/default/local.services.dev.yml, and rename it local.servcies.yml. This new file should not be committed in Git or deployed and is included in gitignore.
+
 ## Workflow for this repository
 
 We are using a modified version of GitHub Flow to keep things simple. While you don't need to fork the repo if you are on the eGov dev team, you will need to issue pull requests from a feature branch in order to get your code into `master`. Master is a protected branch.
