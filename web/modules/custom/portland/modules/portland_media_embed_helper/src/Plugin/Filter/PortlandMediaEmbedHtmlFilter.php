@@ -31,19 +31,19 @@ class PortlandMediaEmbedHtmlFilter extends FilterBase {
     // it cleans up empty DOM elements, nested empty elements, elements with non-breaking spaces, etc.,
     // but ignores elements with legitimate content. it also leaves the following un-closed elements: img, br, hr, drupal-entity
     // HOWEVER, it also removes empty table cells, so we'll need to modify this if we ever decide to allow tables in content.
-    $query = "//*[not(normalize-space((translate(., '&#xA0;', ''))))
+    $query = "//*[not(normalize-space((translate(., '\xC2\xA0\', ''))))
                 and
                   not(descendant-or-self::*[self::img or self::input or self::br or self::hr or self::drupal-entity])
                   ]
                   [not(ancestor::*
-                          [count(.| //*[not(normalize-space((translate(., '&#xA0;', ''))))
+                          [count(.| //*[not(normalize-space((translate(., '\xC2\xA0\', ''))))
                                       and
                                         not(descendant-or-self::*
                                                 [self::img or self::input or self::br or self::hr or self::drupal-entity])
                                         ]
                                   )
                           =
-                            count(//*[not(normalize-space((translate(., '&#xA0;', ''))))
+                            count(//*[not(normalize-space((translate(., '\xC2\xA0\', ''))))
                                     and
                                       not(descendant-or-self::*
                                               [self::img or self::input or self::br or self::hr or self::drupal-entity])
