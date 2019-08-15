@@ -52,7 +52,7 @@ See other Lando with Pantheon commands at https://docs.devwithlando.io/tutorials
 
 ## Local development mode
 
-By default the site runs in "production" mode locally, which means that caching is on, twig debugging is off, etc. To run the site in development mode (caching off, twig debugging on, etc.), make a copy of web/sites/default/local.services.dev.yml, and rename it local.servcies.yml. This new file should not be committed in Git or deployed and is included in gitignore.
+By default the site runs in "development" mode locally, which means that caching is off and twig debugging is on, etc. These settings are managed in web/sites/default/local.services.yml. While it is possible to update these settings if the developer wishes to run the site with caching on and twig debug off, updates to this file should never be comitted in the repo, so that developers are always working in dev mode by default.
 
 ## Workflow for this repository
 
