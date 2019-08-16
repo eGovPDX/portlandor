@@ -118,11 +118,16 @@ build_and_deploy: &build_and_deploy
           git rm --cache  web/sites/default/settings.local.php --ignore-unmatch
           git rm -r --cache web/sites/default/files --ignore-unmatch
           
-          # Set the git commit user name so it's clear in Pantheon log who made the change
-          git config --global user.name $CIRCLE_USERNAME
+          # Set the git commit user name and email address so it's clear in Pantheon log who made the change
+          if [[ $CIRCLE_USERNAME = "" ]]; then
+            git config --global user.name Dependabot
+          else
+            git config --global user.name $CIRCLE_USERNAME
+          fi
           git config --global user.email $eGov_Email
 
           git commit -m "CircleCI deployment" --quiet
+
           # When commit on master, we deploy to DEV
           if [[ $CIRCLE_BRANCH = "master" ]]; then
             echo "Deploy to Pantheon DEV site"
@@ -146,19 +151,37 @@ build_and_deploy: &build_and_deploy
               fi
             fi
           else
+            # Set Pantheon environment name
+            if [[ $CIRCLE_BRANCH =~ ^dependabot\/ ]] && [[ $CIRCLE_PULL_REQUEST =~ \/pull\/([0-9]+)$ ]]; then
+              echo "export PANTHEON_ENV=bot-${BASH_REMATCH[1]}" >> $BASH_ENV && source $BASH_ENV
+            else
+              echo "export PANTHEON_ENV=$CIRCLE_BRANCH" >> $BASH_ENV && source $BASH_ENV
+            fi
+            echo "Pantheon environment name is $PANTHEON_ENV"
+
             # Check if the multidev branch site exists. If not, create it
             terminus multidev:list --format=list --field=Name portlandor > ./env_list.txt
-            if grep -Fxq "$CIRCLE_BRANCH" ./env_list.txt; then
+            if grep -Fxq "$PANTHEON_ENV" ./env_list.txt; then
               echo "Found multidev site"
             else
               # Create a new Multi-Dev with files and database from Dev.
-              echo "Creating new multidev site. Please wait." && terminus multidev:create portlandor.dev $CIRCLE_BRANCH
+              echo "Creating new multidev site. Please wait." && terminus multidev:create portlandor.dev $PANTHEON_ENV
             fi
             rm -rf ./env_list.txt
             # Set the connection type to GIT
-            terminus connection:set portlandor.$CIRCLE_BRANCH git
-            # Force push to Pantheon
-            git push -f pantheon $CIRCLE_BRANCH
+            terminus connection:set portlandor.$PANTHEON_ENV git
+            # Force push $CIRCLE_BRANCH to Pantheon as branch named $PANTHEON_ENV
+            git push -f pantheon $CIRCLE_BRANCH:$PANTHEON_ENV
+            
+            # Trigger "Test" job for Dependabot dependency updates
+            if [[ $CIRCLE_BRANCH =~ ^dependabot\/ ]]; then
+              echo "Triggering test job for Dependabot PR (after sleeping for 3 minutes)"
+              sleep 180 # allow time for code sync
+              curl --user ${CIRCLE_API_USER_TOKEN}: \
+                --data build_parameters[CIRCLE_JOB]=test \
+                --data revision=$CIRCLE_SHA1 \
+                https://circleci.com/api/v1.1/project/github/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME/tree/$CIRCLE_BRANCH
+            fi
           fi
 
 run_tests: &run_tests
@@ -194,19 +217,28 @@ run_tests: &run_tests
         command: |
           export PATH=/var/www/html/tests/vendor/bin:/tmp/vendor/pantheon-systems/terminus/bin:$PATH
           terminus auth:login --machine-token="$eGov_Terminus" --email="$eGov_Email" && terminus aliases
+
+          # Set Pantheon environment name
+          if [[ $CIRCLE_BRANCH =~ ^dependabot\/ ]] && [[ $CIRCLE_PULL_REQUEST =~ \/pull\/([0-9]+)$ ]]; then
+            echo "export PANTHEON_ENV=bot-${BASH_REMATCH[1]}" >> $BASH_ENV && source $BASH_ENV
+          else
+            echo "export PANTHEON_ENV=$CIRCLE_BRANCH" >> $BASH_ENV && source $BASH_ENV
+          fi
+          echo "Pantheon environment name is $PANTHEON_ENV"
+
           # Get all workflows
           terminus workflow:list --format=csv --fields=id,env,workflow,user,status portlandor > workflows.csv
-          # Fine the latest "Sync Code" workflow for the current branch
+          # Find the latest "Sync Code" workflow for the current branch
           WORKFLOW_ID="empty id"
           while IFS=',' read id env message user status
           do
-            if [ "$CIRCLE_BRANCH" = "master" ]; then
-              if [ "$env" == "dev" ] && [[ $message =~ ^\"Sync.*\"$ ]]; then
+            if [ "$PANTHEON_ENV" = "master" ]; then
+              if [ "$env" = "dev" ] && [[ $message =~ ^\"Sync.*\"$ ]]; then
                   WORKFLOW_ID=$id
                   break
               fi
             else
-              if [ "$env" == "$CIRCLE_BRANCH" ] && [[ $message =~ ^\"Sync.*\"$ ]]; then
+              if [ "$env" = "$PANTHEON_ENV" ] && [[ $message =~ ^\"Sync.*\"$ ]]; then
                   WORKFLOW_ID=$id
                   break
               fi
@@ -215,7 +247,7 @@ run_tests: &run_tests
 
           echo $WORKFLOW_ID
           if [[ $WORKFLOW_ID = "empty id" ]]; then
-            echo "Cannot find any Sync Code workflow for branch $CIRCLE_BRANCH. Try terminus workflow:list portlandor."
+            echo "Cannot find any Sync Code workflow for environment $PANTHEON_ENV. Try terminus workflow:list portlandor."
             exit 1
           fi
           # Show the logs of the latest "Sync Code" workflow for the current branch
@@ -239,14 +271,14 @@ run_tests: &run_tests
           cd tests
           # Split feature files by timing data so all split test jobs will finish around the same time
           TESTFILES=$(circleci tests glob "features/*.feature"  | circleci tests split --split-by=timings)
-          if [[ $CIRCLE_BRANCH = "master" ]]; then
+          if [[ $PANTHEON_ENV = "master" ]]; then
             echo 'export BEHAT_PARAMS="{\"extensions\" : {\"Behat\\\MinkExtension\" : {\"base_url\" : \"https://${HTTP_AUTH}@dev-portlandor.pantheonsite.io\"}, \"Drupal\\\DrupalExtension\" : {\"drush\" : { \"alias\": \"portlandor.dev\"}}}}"' >> $BASH_ENV && source $BASH_ENV
             for TESTFILE in $TESTFILES
             do
                 behat -c behat.yml ${TESTFILE}
             done
           else
-            echo 'export BEHAT_PARAMS="{\"extensions\" : {\"Behat\\\MinkExtension\" : {\"base_url\" : \"https://${CIRCLE_BRANCH}-portlandor.pantheonsite.io\"}, \"Drupal\\\DrupalExtension\" : {\"drush\" : { \"alias\": \"portlandor.${CIRCLE_BRANCH}\"}}}}"' >> $BASH_ENV && source $BASH_ENV
+            echo 'export BEHAT_PARAMS="{\"extensions\" : {\"Behat\\\MinkExtension\" : {\"base_url\" : \"https://${PANTHEON_ENV}-portlandor.pantheonsite.io\"}, \"Drupal\\\DrupalExtension\" : {\"drush\" : { \"alias\": \"portlandor.${PANTHEON_ENV}\"}}}}"' >> $BASH_ENV && source $BASH_ENV
             for TESTFILE in $TESTFILES
             do
                 behat -c behat.yml ${TESTFILE}
