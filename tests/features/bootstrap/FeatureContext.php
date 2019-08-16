@@ -31,7 +31,14 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
     }
     else {
       // Get the suffix for the site based on the environment
-      $site_name = (getenv('CIRCLE_BRANCH') == "master") ? "dev" : getenv('CIRCLE_BRANCH');
+      if (getenv('CIRCLE_BRANCH') == "master") {
+        $site_name = "dev";
+      } elseif ( preg_match("/^dependabot\//", getenv('CIRCLE_BRANCH')) )  {
+        preg_match("/\/pull\/([0-9]+)$/", getenv('CIRCLE_PULL_REQUEST'), $matches);
+        $site_name = "bot-$matches[1]";
+      } else {
+        $site_name = getenv('CIRCLE_BRANCH');
+      }
 
       // Generate the link to login. Ignore stderr output
       if(strpos($name, '@') === FALSE) {
