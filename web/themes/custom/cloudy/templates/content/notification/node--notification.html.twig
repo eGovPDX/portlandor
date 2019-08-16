@@ -7,7 +7,13 @@
     node.field_notification_severity.value == 30 ? 'alert-info',
     dismissable ? 'd-none',
 ]%}
-
+{%
+  set badge_classes = badge_classes|default([
+    'badge',
+    'badge-danger',
+    'mb-' ~ margin,
+  ])
+%}
 {% set dismiss_attribute = create_attribute() %}
 {% set dismiss_classes = [
 ] %}
@@ -25,6 +31,12 @@
       <label class="h5" {{ title_attributes.addClass('node__title') }}>
         {{ label }}
       </label>
+      {% block status %}
+        {% if not node.isPublished() %}
+          {% set published_attributes = create_attribute() %}
+          <span{{ published_attributes.addClass(badge_classes) }}>{{ 'unpublished'|t|capitalize }}</span>
+        {% endif %}
+      {% endblock %}
       {% if dismissable %}
       <span>
           <button type="button" class="close" data-dismiss="alert" aria-label="Dismiss notification">
