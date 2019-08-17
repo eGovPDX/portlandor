@@ -3,21 +3,6 @@
 use \Drupal\Core\Access\AccessResult;
 
 /**
- * Implements hook_preprocess_HOOK().
- * 
- * Used to add class 'form-required' to revision log message field label.
- *
- * @param [type] $variables
- * @return void
- */
-function portland_revision_helper_preprocess_form_element(&$variables) {
-  $id = array_key_exists('#id', $variables['element']) ? $variables['element']['#id'] : '';
-  if ($id == 'edit-revision-log-0-value') {
-    $variables['label']['#attributes'] = ['class' => ['form-required']];
-  }
-}
-
-/**
  * Implements hook_form_alter().
  * 
  * For all forms with revision_log field:
@@ -39,13 +24,6 @@ function portland_revision_helper_form_alter(&$form, $form_state, $form_id)
   if (array_key_exists('revision_log',$form) && array_key_exists('revision', $form)) {
     $form['revision']['#access'] = false;
     $form['revision_log']['#group'] = 'footer';
-    $form['actions']['submit']['#validate'][] = 'portland_revision_helper_validate_log_message';
-    $form['actions']['submit']['#validate'][] = '::validateForm';
-  }
-
-  // Put field_group in the footer section.
-  if (array_key_exists('field_group', $form) && strpos($form_id, 'node_') === 0) {
-    $form['field_group']['#group'] = 'footer';
   }
 
   // Group all the revision and review content together.
@@ -56,21 +34,6 @@ function portland_revision_helper_form_alter(&$form, $form_state, $form_id)
   // hide revision information fields for media, since there is currently no way to display it.
   if (substr($form_id, 0, 6) == "media_" && array_key_exists("revision_information", $form)) {
     $form['revision_information']['#access'] = false;
-  }
-}
-
-/**
- * Validation handler for any form with a revision_log field. Makes the revision log message required.
- *
- * @param [type] $form
- * @param [type] $form_state
- * @return void
- */
-function portland_revision_helper_validate_log_message(&$form, $form_state)
-{
-  $message = $form_state->getValue('revision_log')[0]['value'];
-  if (!$message) {
-    $form_state->setErrorByName('revision_log', 'The revision log message is requried');
   }
 }
 
