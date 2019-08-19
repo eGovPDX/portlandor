@@ -41,7 +41,7 @@ if( $_ENV['PANTHEON_ENVIRONMENT'] != 'live' && $_ENV['PANTHEON_ENVIRONMENT'] != 
   curl_setopt($ch, CURLOPT_TIMEOUT, 5);
   print("\n==== Posting to Webhook URL ====\n");
   $result = curl_exec($ch);
-  print("RESULT: $result");
+  // print("RESULT: $result");
   print("\n===== Post Complete! =====\n");
   curl_close($ch);
 }

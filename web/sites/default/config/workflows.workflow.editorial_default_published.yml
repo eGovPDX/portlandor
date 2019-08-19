@@ -1,0 +1,78 @@
+uuid: c36cc823-c84e-45cb-88cf-384e31c5870f
+langcode: en
+status: true
+dependencies:
+  config:
+    - node.type.location
+  module:
+    - content_moderation
+id: editorial_default_published
+label: 'Editorial default published'
+type: content_moderation
+type_settings:
+  states:
+    archived:
+      published: false
+      default_revision: true
+      label: Unpublished/Archived
+      weight: 3
+    draft:
+      label: Draft
+      published: false
+      default_revision: false
+      weight: 0
+    in_review:
+      published: false
+      default_revision: false
+      label: 'In review'
+      weight: 2
+    published:
+      label: Published
+      published: true
+      default_revision: true
+      weight: 1
+  transitions:
+    archive:
+      label: Archive
+      from:
+        - draft
+        - in_review
+        - published
+      to: archived
+      weight: 3
+    create_new_draft:
+      label: 'Create New Draft'
+      to: draft
+      weight: 0
+      from:
+        - archived
+        - draft
+        - in_review
+        - published
+    publish:
+      label: Publish
+      to: published
+      weight: 1
+      from:
+        - draft
+        - in_review
+        - published
+    restore:
+      label: Restore
+      from:
+        - archived
+      to: published
+      weight: 4
+    send_to_review:
+      label: 'Send to review'
+      from:
+        - archived
+        - draft
+        - in_review
+        - published
+      to: in_review
+      weight: 2
+  entity_types:
+    node:
+      - location
+  default_moderation_state: published

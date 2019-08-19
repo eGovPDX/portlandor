@@ -1,12 +1,16 @@
-@api @multidev @dev @203
+@api @javascript @dev @203
 Feature: Members can manage group media
   In order to manage media in my group
   As a group member
   I need to be able to create and edit media entities
 
+  Background:
+    Given I am using a 1440x900 browser window
+
+  # Assume Marty Member is a member of POWR
   Scenario: Add media
     Given I am logged in as user "Marty Member"
-    When I visit "/test"
+    When I visit "/powr"
     Then I should see "+ Add Media"
 
     When I click "+ Add Media"
@@ -24,11 +28,11 @@ Feature: Members can manage group media
 
   Scenario: Delete media
     Given I am logged in as user "Marty Member"
-    When I visit "/test"
+    When I visit "/powr"
     Then I should see "Media" in the "tabs" region
 
     When I click "Media" in the "tabs" region
-    Then I should see "Manage A test group Media"
+    Then I should see "Manage Portland Oregon Website Replacement Media"
 
     When I click "A test video"
     Then I should see "Delete" in the "tabs" region

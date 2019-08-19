@@ -1,8 +1,11 @@
-@api @multidev @dev @101
+@api @javascript @multidev @dev @101
 Feature: Site health check
   In order to test that site is healthy and no imports are pending
   As a sitewide administrator
   I need to be able to check the site status
+
+  Background:
+    Given I am using a 1440x900 browser window
 
   # NOTE: These tests use a real user against the real site/database.
   # Login is handled using drush in FeatureContext.
