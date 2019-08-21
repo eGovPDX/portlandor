@@ -6,7 +6,7 @@ use Drupal\node\NodeInterface;
 use Drupal\rules\Core\RulesConditionBase;
 
 /**
- * Provides a 'In Review And Has Reviwer' condition.
+ * Provides a 'In Review And Has Reviewer' condition.
  *
  * @Condition(
  *   id = "portland_in_review_and_has_reviewer",
