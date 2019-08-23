@@ -11,28 +11,28 @@ index 7122d6ec..142dedea 100644
      'allow_null' => 'allowNull',
      'assignment_restriction' => 'assignmentRestriction',
    ];
- 
+
 +  /**
 +     * Type of form element to be used.
 +     *
 +     * @var string
 +     */
 +  protected $formElement = 'textfield';
-+  
++
    /**
     * Whether the context value is allowed to be NULL or not.
     *
 @@ -117,4 +125,18 @@ class ContextDefinition extends ContextDefinitionCore implements ContextDefiniti
      return $this;
    }
- 
+
 +  /**
 +   * {@inheritdoc}
 +   */
 +  public function getFormElement() {
 +    return $this->formElement;
 +  }
-+  
++
 +  /**
 +   * {@inheritdoc}
 +   */
@@ -48,7 +48,7 @@ index 118627ca..c509570f 100644
 @@ -60,6 +60,26 @@ interface ContextDefinitionInterface extends ContextDefinitionInterfaceCore {
     */
    public function setAssignmentRestriction($restriction);
- 
+
 +  /**
 +   * Determines form element for the context type
 +   * e.g textarea.
@@ -77,13 +77,13 @@ index 65aeacc5..802e4049 100644
 --- a/src/Form/Expression/ContextFormTrait.php
 +++ b/src/Form/Expression/ContextFormTrait.php
 @@ -4,7 +4,7 @@ namespace Drupal\rules\Form\Expression;
- 
+
  use Drupal\Core\Form\FormStateInterface;
  use Drupal\rules\Context\ContextConfig;
 -use Drupal\Core\Plugin\Context\ContextDefinitionInterface;
 +use Drupal\rules\Context\ContextDefinitionInterface;
  use Drupal\rules\Context\DataProcessorManagerTrait;
- 
+
  /**
 @@ -52,7 +52,7 @@ trait ContextFormTrait {
        $default_value = $context_definition->getDefaultValue();
@@ -96,7 +96,7 @@ index 65aeacc5..802e4049 100644
        '#default_value' => $default_value,
 @@ -61,6 +61,8 @@ trait ContextFormTrait {
      $element = &$form['context'][$context_name]['setting'];
- 
+
      if ($mode == 'selector') {
 +      // Always use a textfield for selector mode.
 +      $element['#type'] = 'textfield';
@@ -110,7 +110,7 @@ index f0f6d9b1..ad1b2905 100644
 @@ -29,6 +29,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
   *     "message" = @ContextDefinition("string",
   *       label = @Translation("Message"),
-  *       description = @Translation("The email's message body."),
+  *       description = @Translation("The email's message body.")
 + *       form_element = "textarea",
   *     ),
   *     "reply" = @ContextDefinition("email",
