@@ -6,11 +6,11 @@ use Drupal\node\NodeInterface;
 use Drupal\rules\Core\RulesConditionBase;
 
 /**
- * Provides a 'In Review And Has Reviwer' condition.
+ * Provides a 'In Review And Has Reviewer' condition.
  *
  * @Condition(
  *   id = "portland_in_review_and_has_reviewer",
- *   label = @Translation("Portland: In Review And Has Reviwer"),
+ *   label = @Translation("Portland: In Review And Has Reviewer"),
  *   category = @Translation("Node"),
  *   context = {
  *     "node" = @ContextDefinition("entity:node",
