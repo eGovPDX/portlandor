@@ -142,6 +142,7 @@ for x in data_sections['url']:
 section = pd.DataFrame(sections)
 section.to_csv('city_code_sections.csv', index=False)
 
+
 # print(len(sections['id']))
 # print(len(sections['chapter']))
 # print(len(sections['number']))
