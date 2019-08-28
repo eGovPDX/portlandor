@@ -36,7 +36,7 @@ class LinkPolicyType extends ProcessPluginBase {
       $terms = \Drupal::entityTypeManager()->getStorage('taxonomy_term')->loadTree('policy_type');
       foreach ($terms as $term) {
         $term_obj = \Drupal::entityTypeManager()->getStorage('taxonomy_term')->load($term->tid);
-        $type_code = $term_obj->get('field_type_code')->value;
+        $type_code = $term_obj->get('field_policy_type_code')->value;
         $GLOBALS['policy_types'][$type_code] = $term_obj->get('tid')->value;
       }
     }
