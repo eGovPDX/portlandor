@@ -31,6 +31,27 @@ Not having the source CSV files in the proper location would trigger and error s
 
 If you want to place the files in a different location, you need to update the path in the corresponding configuration files. That is the `source:path` setting in the migration files.
 
+### CSV files manual modifications
+
+For some of the content migrations, the exported data must be massaged to avoid complex migration routines.
+
+#### City policies
+
+##### Modifications to policies.csv
+
+* Create new column to the right of SUMMARY_TEXT. Copy the contents of SUMMARY_TEXT into the new empty column and change the header to POLICY_NUMBER.
+* Manually scan through the SUMMARY_TEXT column and delete any value that is not summary text.
+* Manually scan through the POLICY_NUMBER column and delete or clean up any value that is not in the policy number format: BCP-ADM-1.01 (there are a few cases where the authors felt the need to prefix the policy number with the bureau name).
+
+##### Supplemental file: policies_categories.csv
+
+This is a simple list of categories in its own csv file. The list can be generated using the UNIQUE formula against the CATEGORY_NAME column in policies.csv.
+
+#### Supplemental file: policies_types.csv
+
+This file was manually generated. Unless a new policy type is implemented before final migration (highly unlikely), the file can be used as-is from the repository.
+It includes 3 columns: TYPE_NAME, TYPE_CODE, and DESCRIPTION.
+
 ### Running the migrations
 
 The Migrate Tools module provides drush commands to run the migrations. The order of commands is important!
@@ -54,12 +75,12 @@ drush migrate:import city_charter_chapters
 drush migrate:import city_charter_articles
 drush migrate:import city_charter_sections
 ```
-#### City Code
+#### City policies
 ```
-drush migrate:import city_code_titles
-drush migrate:import city_code_chapters
-drush migrate:import city_code_sections
-```
+drush migrate:import policies_catgegories
+drush migrate:import policies_types
+drush migrate:import policies
+
 
 **Note:** The commands above work for Drush 9. In Drush 8 the command names and aliases are different. Execute `drush list --filter=migrate` to verify the proper commands for your version of Drush.
 
