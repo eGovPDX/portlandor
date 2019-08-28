@@ -24,7 +24,7 @@ class MigratePolicyCategories extends ProcessPluginBase {
    * {@inheritdoc}
    */
   public function transform($value, MigrateExecutableInterface $migrate_executable, Row $row, $destination_property) {
- 
+
     // $value is an array
     // 0 - 3rd level category name
     // 1 - Policy Number, from which to parse the 2nd level category abbreviations
@@ -45,6 +45,10 @@ class MigratePolicyCategories extends ProcessPluginBase {
     // see if l3 category exists
     $term = $this->getTermByFieldValue($vocabulary, 'name', $l3_category);
     if ($term && count($term) == 1) {
+      // term exists, just return the tid to link it
+      if (!is_array($term)) {
+        $halt = true;
+      }
       return reset($term)->id();
     } else if (count($term) > 1) {
       // more than one matching category found, whoops! log error.
@@ -54,12 +58,12 @@ class MigratePolicyCategories extends ProcessPluginBase {
     }
 
     // l3 category doesn't exist, create it
-    $result = Term::create([
+    $term = Term::create([
       'name' => $l3_category, 
       'vid'  => $vocabulary,
-    ])->save();
-    $term = $this->getTermByFieldValue($vocabulary, 'name', $l3_category);
-    $term = reset($term);
+    ]);
+    //$term = $this->getTermByFieldValue($vocabulary, 'name', $l3_category);
+    //$term = reset($term);
 
     // get parent term by abbreviation and set it as the parent
     $parent_term = $this->getTermByFieldValue($vocabulary, 'field_category_abbreviation', $l2_category_code);
@@ -73,6 +77,9 @@ class MigratePolicyCategories extends ProcessPluginBase {
       $message = "Multiple matching parent categories with code " . $l2_category_code . " found in vocabulary " . $vocabulary . ". Cannot continue.";
       \Drupal::logger('portland_migrations')->notice($message);
       throw new MigrateException();      
+    }
+    if (!is_array($parent_term)) {
+      $halt = true;
     }
     $parent_term = reset($parent_term);
     $parent_term_id = $parent_term->id();
