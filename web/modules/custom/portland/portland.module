@@ -412,13 +412,14 @@ function portland_entity_update($entity)
     }
 }
 
+// Build the deletion log message of an entity
 function buildLogMessage($entity) {
     if(!$entity) return '';
     
     $parentGroupTitle = '';
     if($entity->getEntityTypeId() == 'group_content') {
         $parentGroupTitle = 'Parent Group='.$entity->getGroup()->label().',   ';
-        $titleText = 'Title='.$entity->label->value.',';
+        $titleText = 'Title='.$entity->label->value.','; // Group content didn't implement "label()"
     }
     else {
         $titleText = 'Title='.$entity->label().',';
@@ -454,8 +455,7 @@ function portland_entity_delete($entity)
             \Drupal::logger('Media')->notice(buildLogMessage($entity));
             break;
         default:
-            // We may not want to log all deletion events.
-            // \Drupal::logger('Entity')->notice(buildLogMessage($entity));
+            // Skip other deletion events: redirect, group, etc.
             break;
     }
 }
