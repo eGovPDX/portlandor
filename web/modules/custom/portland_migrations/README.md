@@ -45,7 +45,12 @@ For some of the content migrations, the exported data must be massaged to avoid 
 
 ##### Supplemental file: policies_categories.csv
 
-This is a simple list of categories in its own csv file. The list can be generated using the UNIQUE formula against the CATEGORY_NAME column in policies.csv.
+This is a simple list of 2nd level categories in its own csv file. The list was manually generated due to the relatively low number of items and the 
+difficulty in generating it dyanmically. The list is not expected to change prior to final migration. The 3rd level categories are inclueded in the
+main policies datafile, and are created as children of their parent 2nd level categories and linked to the content using a custom process plugin.
+
+WARNING: the Finance (FIN) category has been omitted from the list becasue it already exists in the live beta database and causes a duplicate entry
+when the migration is run.
 
 #### Supplemental file: policies_types.csv
 
@@ -76,10 +81,14 @@ drush migrate:import city_charter_articles
 drush migrate:import city_charter_sections
 ```
 #### City policies
+**WARNING: Make sure the Finance (FIN) parent category exists before running the policies migrations. It was created in the live beta
+site for unknown reasons. As a result, it was removed from the migration datafile to prevent duplicates. If it's not there, it must
+be created before migrating policies.**
 ```
 drush migrate:import policies_catgegories
 drush migrate:import policies_types
 drush migrate:import policies
+```
 
 
 **Note:** The commands above work for Drush 9. In Drush 8 the command names and aliases are different. Execute `drush list --filter=migrate` to verify the proper commands for your version of Drush.
