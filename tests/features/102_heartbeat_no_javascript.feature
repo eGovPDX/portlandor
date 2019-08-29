@@ -7,8 +7,7 @@ Feature: Basic site operation and navigation
   Scenario: Visit a taxonomy term page
     Given I am logged in as user "oliver.outsider@portlandoregon.gov"
     When I visit "/residents-of-portland"
-    Then I wait for the page to be loaded
-    And I should see "Resident"
+    Then I should see "Resident"
     And I should see "services found"
     And I should see "Bureaus, offices, and programs"
     # Verify fix for POWR-889. Use "Given I am on" in order to allow non-200 response code
