@@ -12,7 +12,8 @@ Feature: Create group
 
     Given I am logged in as user "superAdmin"
     When I visit "/group/add/bureau_office"
-    Then I should see "Add Bureau/office"
+    Then I wait for the page to be loaded
+    And I should see "Add Bureau/office"
 
     When I fill in "edit-label-0-value" with "Behat test group"
     And I fill in "edit-field-official-organization-name-0-value" with "Official name of Behat test group"
