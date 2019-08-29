@@ -30,19 +30,23 @@ Feature: Create group
 
     Given I am logged in as user "superAdmin"
     When I visit "/behat-test"
+    Then I wait for the page to be loaded
     And I click "Members"
     Then I should see "Add member"
 
     When I click "Add member"
-    Then I should see "Add Bureau/office: Group membership"
+    Then I wait for the page to be loaded
+    And I should see "Add Bureau/office: Group membership"
     And I should see "Username"
 
     When I fill in "edit-entity-id-0-target-id" with "Ally Admin (62)"
     And I check the box "Admin"
     And I press "Save"
+    Then I wait for the page to be loaded
 
     # If the following step fails, it is likely becasue the user is already a member
     When I visit "/behat-test"
+    Then I wait for the page to be loaded
     And I click "Members"
     Then I should see "Manage"
     And I should see "Ally Admin"
@@ -51,23 +55,28 @@ Feature: Create group
 
     Given I am logged in as user "Ally Admin"
     When I visit "/behat-test"
+    Then I wait for the page to be loaded
     And I click "Members" in the "tabs" region
     Then I should see "Add member"
 
     When I click "Add member"
-    Then I should see "Add Bureau/office: Group membership"
+    Then I wait for the page to be loaded
+    And I should see "Add Bureau/office: Group membership"
     And I should see "Username"
 
     When I fill in "edit-entity-id-0-target-id" with "Oliver Outsider (64)"
     And I press "Save"
     # If the following step fails, it is likely becasue the user is already a member    Then I should see "Manage A test group Members"
+    Then I wait for the page to be loaded
     And I should see "Oliver Outsider"
 
   Scenario: Delete group
 
     Given I am logged in as user "superAdmin"
     When I visit "/behat-test"
+    Then I wait for the page to be loaded
     And I click "Delete" in the "tabs" region
     And I should see "Are you sure"
     And I press "Delete"
-    Then I should see "has been deleted"
+    Then I wait for the page to be loaded
+    And I should see "has been deleted"
