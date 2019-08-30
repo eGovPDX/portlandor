@@ -65,6 +65,16 @@ lando terminus drush [environment] migrate:import [migration_id]
 '''
 For multidev environments, the environment id is formatted like this: portlandor.powr-1234.
 
+#### Timeouts
+
+Long migrations run through terminus may exceed the Pantheon timeout and be terminated with a message such as, "Connection to appserver.powr-1284.5c6715db-abac-4633-ada8-1c9efe354629.drush.in closed by remote host." There is no way to increase this timeout,
+but a workaround exists. The migration may be reset and restarted. It will pick up where it left off. This may need to be done multiple
+times for long migrations.
+```
+lando terminus drush [environment] mrs [migration_id]
+lando terminus drush [environment] migrate:import [migration_id]
+```
+
 #### Eudaly news
 
 ```

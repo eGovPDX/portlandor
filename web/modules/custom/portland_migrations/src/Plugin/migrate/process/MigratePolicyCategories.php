@@ -93,8 +93,6 @@ class MigratePolicyCategories extends ProcessPluginBase {
     $term->parent = $parent_term_id;
     $term->save();
 
-    // TODO: categories aren't getting correctly assigned.
-
     // return id of newly created term
     return $term->id();
   }
