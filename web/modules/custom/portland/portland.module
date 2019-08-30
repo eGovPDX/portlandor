@@ -412,6 +412,26 @@ function portland_entity_update($entity)
     }
 }
 
+// Build the deletion log message of an entity
+function buildLogMessage($entity) {
+    if(!$entity) return '';
+    
+    $parentGroupTitle = '';
+    if($entity->getEntityTypeId() == 'group_content') {
+        $parentGroupTitle = 'Parent Group='.$entity->getGroup()->label().',   ';
+        $titleText = 'Title='.$entity->label->value.','; // Group content didn't implement "label()"
+    }
+    else {
+        $titleText = 'Title='.$entity->label().',';
+    }
+
+    $idText = 'ID='.$entity->id().',';
+    $typeText = 'Type='.$entity->bundle().',';
+    $createdText = ($entity->created) ? ('Created='.date('r', $entity->created->value)) : '';
+
+    return "Deleted: $idText    \n$titleText    \n$typeText   \n$createdText    \n$parentGroupTitle";
+}
+
 /**
  * Implements hook_entity_delete().
  */
@@ -421,13 +441,22 @@ function portland_entity_delete($entity)
         // alert has been deleted, update alerts count in cache
         _portland_get_active_alerts_count(true);
     }
-    else if ($entity->getEntityTypeId() == 'group_content') {
-        $requestPath = \Drupal::request()->getRequestUri();
-        // $error_string = print_r((new Exception)->getTrace(), true);
 
-        $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 30);
-        $error_string = json_encode($trace, JSON_PRETTY_PRINT);
-        \Drupal::logger('portland')->error("portland_entity_delete(): $requestPath" . $error_string);
+    // Log entity deletion event
+    switch ($entity->getEntityTypeId()) {
+        case 'group_content':
+            \Drupal::logger('Group content')->notice(buildLogMessage($entity));
+            break;
+        case 'node':
+            \Drupal::logger('Content')->notice(buildLogMessage($entity));
+
+            break;
+        case 'media':
+            \Drupal::logger('Media')->notice(buildLogMessage($entity));
+            break;
+        default:
+            // Skip other deletion events: redirect, group, etc.
+            break;
     }
 }
 

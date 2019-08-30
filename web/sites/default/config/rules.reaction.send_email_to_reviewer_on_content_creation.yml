@@ -1,0 +1,68 @@
+uuid: 4af5ef2c-25b2-4ec9-be2c-d61077a5f630
+langcode: en
+status: true
+dependencies: {  }
+id: send_email_to_reviewer_on_content_creation
+label: 'Send email to reviewer on content creation'
+events:
+  -
+    event_name: 'rules_entity_insert:node'
+description: 'Send email to the reviewer if the new content is "In review" and has a reviewer assigned.'
+tags:
+  - ''
+config_version: '3'
+expression:
+  id: rules_rule
+  uuid: 628845c7-be51-42e2-b839-a72559e83098
+  conditions:
+    id: rules_and
+    uuid: 8384d6a4-43d4-4dc9-86c2-24cd8209ff6e
+    conditions:
+      -
+        id: rules_condition
+        uuid: 4b0bb469-b317-43e0-9c20-2a8c2aeb7c60
+        context_values: {  }
+        context_mapping:
+          node: node
+        context_processors: {  }
+        provides_mapping: {  }
+        condition_id: portland_in_review_and_has_reviewer
+        negate: false
+      -
+        id: rules_condition
+        uuid: 733a13c7-ff59-42ae-893f-e6ad72435cf5
+        context_values: {  }
+        context_mapping:
+          entity: node
+        context_processors: {  }
+        provides_mapping: {  }
+        condition_id: rules_entity_is_new
+        negate: false
+  actions:
+    id: rules_action_set
+    uuid: 00842519-e1b9-4549-a3a5-4ad9ae242833
+    actions:
+      -
+        id: rules_action
+        uuid: b1902cdc-7f37-4f64-9850-dabe59d3b675
+        context_values:
+          to:
+            - '{{node.field_reviewer.entity.mail.value}}'
+          subject: 'Portland.gov reviewer assignment'
+          message: "<div><a href=\"{{node.revision_uid.entity|entity_url}}\">{{node.revision_uid.entity.name.value}}</a> has assigned you to review <a href=\"{{node | entity_url }}\"> {{node.title.value}} </a></div>\r\n<p/>\r\n<div><h3>Revision log:</h3>\r\n{{node.revision_log.value}}</div>\r\n<p/>\r\n<div>Last updated: {{node.changed.value | format_date('custom', 'l Y/n/j g:i A')}} </div>"
+          reply: ''
+          language: ''
+        context_mapping: {  }
+        context_processors:
+          to:
+            rules_tokens: {  }
+          subject:
+            rules_tokens: {  }
+          message:
+            rules_tokens: {  }
+          reply:
+            rules_tokens: {  }
+          language:
+            rules_tokens: {  }
+        provides_mapping: {  }
+        action_id: rules_send_email

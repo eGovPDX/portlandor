@@ -54,6 +54,12 @@ drush migrate:import city_charter_chapters
 drush migrate:import city_charter_articles
 drush migrate:import city_charter_sections
 ```
+#### City Code
+```
+drush migrate:import city_code_titles
+drush migrate:import city_code_chapters
+drush migrate:import city_code_sections
+```
 
 **Note:** The commands above work for Drush 9. In Drush 8 the command names and aliases are different. Execute `drush list --filter=migrate` to verify the proper commands for your version of Drush.
 
