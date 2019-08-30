@@ -11,36 +11,45 @@ Feature: Members can manage group media
   Scenario: Add media
     Given I am logged in as user "Marty Member"
     When I visit "/powr"
-    Then I should see "+ Add Media"
+    Then I wait for the page to be loaded
+    And I should see "+ Add Media"
 
     When I click "+ Add Media"
+    Then I wait for the page to be loaded
     And I should see "Add Video"
 
     When I click "Add Video"
-    Then I should see "Create"
+    Then I wait for the page to be loaded
+    And I should see "Create"
     And I should see "Name"
     And I should see "Video URL"
 
     When I fill in "Name" with "A test video"
     And I fill in "Video URL" with "https://www.youtube.com/watch?v=Deguep26G7M"
     And I press "Save"
-    Then I should see "Video A test video has been created."
+    Then I wait for the page to be loaded
+    And I should see "Video A test video has been created."
 
   Scenario: Delete media
     Given I am logged in as user "Marty Member"
     When I visit "/powr"
-    Then I should see "Media" in the "tabs" region
+    Then I wait for the page to be loaded
+    And I should see "Media" in the "tabs" region
 
     When I click "Media" in the "tabs" region
-    Then I should see "Manage Portland Oregon Website Replacement Media"
+    Then I wait for the page to be loaded
+    And I should see "Manage Portland Oregon Website Replacement Media"
 
     When I click "A test video"
-    Then I should see "Delete" in the "tabs" region
+    Then I wait for the page to be loaded
+    And I should see "Delete" in the "tabs" region
 
     When I click "Delete" in the "tabs" region
-    Then I should see "This action cannot be undone."
+    Then I wait for the page to be loaded
+    And I should see "This action cannot be undone."
 
     When I press "Delete"
-    Then I should see "The media A test video has been deleted."
+    Then I wait for the page to be loaded
+    And I should see "The media A test video has been deleted."
 
 

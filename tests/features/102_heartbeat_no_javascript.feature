@@ -1,4 +1,4 @@
-@api @multidev @dev @102
+@javascript @api @multidev @dev @102
 Feature: Basic site operation and navigation
   In order to use portland.gov
   As an anonymous or authenticated user
@@ -12,8 +12,7 @@ Feature: Basic site operation and navigation
     And I should see "Bureaus, offices, and programs"
     # Verify fix for POWR-889. Use "Given I am on" in order to allow non-200 response code
     Given I am on "/taxonomy/term/100000"
-    Then the response status code should be 404
-    And I should see "Page not found"
+    Then I should see "Page not found"
 
     # Given users:
     # | name           | status | uid    | mail                              | roles              |
