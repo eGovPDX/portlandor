@@ -32,6 +32,9 @@ class MigrateBodyContentAndLinkedMedia extends ProcessPluginBase {
 
       $download_dir_uri = $this->prepareDownloadDirectory();
 
+      // reusable db connection
+      $dbConn = \Drupal::database();
+
       // look for links with an href and save the linked file
       foreach ($xpath->query('//a[@href]|//img[@src]') as $link) {
 
@@ -39,6 +42,11 @@ class MigrateBodyContentAndLinkedMedia extends ProcessPluginBase {
         $url = $link->getAttribute('href');
         if (is_null($url)) {
           $url = $link->getAttribute('src');
+        }
+
+        // troubleshooting
+        if (preg_match("/.*360710.*/", $url)) {
+          $halt = true;
         }
 
         // if url is empty or null, skip and continue
@@ -68,11 +76,28 @@ class MigrateBodyContentAndLinkedMedia extends ProcessPluginBase {
 
         $media_type = $this->getMediaType($filename);
 
-        // create managed file if it doesn't exist. if it does exist, load existing. this returns an array.
-        $downloaded_file = \Drupal::entityTypeManager()->getStorage('file')->loadByProperties(['uri' => $destination_uri]);
+        
+        // FIND OR CREATE MEDIA ENTITY ////////////////
+        // using the uri, see if the media entity already exists. if so, reference it. if not, create it.
+        // we need to make sure we're not creating duplicate files. need separate queries for images and
+        // documents based on $media_type
 
-        if (!is_array($downloaded_file) || count($downloaded_file) < 1) {
-          // managed file does not exist, add it; this returns a single object
+        if ($media_type == "document") {
+          $query = "SELECT entity_id FROM file_managed FM 
+                    INNER JOIN media__field_document FD on FM.fid = FD.field_document_target_id
+                    WHERE uri = '$destination_uri'";
+        } else {
+          $query = "SELECT entity_id FROM file_managed FM 
+                    INNER JOIN media__image IMG on FM.fid = IMG.image_target_id
+                    WHERE uri = '$destination_uri'";
+        }
+        $query = $dbConn->query($query);
+        $result = $query->fetchAll();
+
+        if (!isset($result) || !is_array($result) || count($result) < 1) {
+          // media entity doesn't exist yet; download file and create entity...
+
+          // download and save managed file
           try {
             $downloaded_file = system_retrieve_file($url, $destination_uri, TRUE);
           }
@@ -80,38 +105,41 @@ class MigrateBodyContentAndLinkedMedia extends ProcessPluginBase {
             $message = "Error occurred while trying to download URL target at " . $url . " and create managed file. Exception: " . $e->getMessage();
             \Drupal::logger('portland_migrations')->notice($message);
           }
+
+          // create media entity for file (image or document)
+          if ($media_type == "document") {
+            $media = Media::create([
+              'bundle' => 'document',
+              'uid' => 1,
+              'langcode' => \Drupal::languageManager()->getDefaultLanguage()->getId(),
+              'name' => $link_text,
+              'status' => 1,
+              'field_document' => [
+                'target_id' => $downloaded_file->id()
+              ],
+            ]);
+          } else if ($media_type == "image") {
+            $media = Media::create([
+              'bundle' => 'image',
+              'uid' => 1,
+              'langcode' => \Drupal::languageManager()->getDefaultLanguage()->getId(),
+              'name' => $link_text,
+              'status' => 1,
+              'image' => [
+                'target_id' => $downloaded_file->id()
+              ],
+            ]);
+          }
+          $media->save();
+          $media->setPublished(TRUE)
+                ->save();
         } else {
-          // managed file does exist, parse it out of the array
-          $downloaded_file = reset($downloaded_file);
+          // media entity does exist, get uuid
+          $entity_id = $result[0]->entity_id;
+          $media = Media::load($entity_id);
         }
 
-        // create media entity for file (image or document)
-        if ($media_type == "document") {
-          $media = Media::create([
-            'bundle' => 'document',
-            'uid' => 1,
-            'langcode' => \Drupal::languageManager()->getDefaultLanguage()->getId(),
-            'name' => $link_text,
-            'status' => 1,
-            'field_document' => [
-              'target_id' => $downloaded_file->id()
-            ],
-          ]);
-        } else if ($media_type == "image") {
-          $media = Media::create([
-            'bundle' => 'image',
-            'uid' => 1,
-            'langcode' => \Drupal::languageManager()->getDefaultLanguage()->getId(),
-            'name' => $link_text,
-            'status' => 1,
-            'image' => [
-              'target_id' => $downloaded_file->id()
-            ],
-          ]);
-        }
-        $media->save();
-        $media->setPublished(TRUE)
-              ->save();
+        // uuid is needed to create entity-embed tag
         $uuid = $media->uuid();
 
         // replace <a> or <img> with <entity-embed>
@@ -168,6 +196,11 @@ class MigrateBodyContentAndLinkedMedia extends ProcessPluginBase {
       if (isset($queries['a'])) {
         $content_id = $queries['a'];
       }
+    }
+
+    // troubleshooting
+    if ($content_id == "360710") {
+      $halt = true;
     }
 
     // get name from Content-Disposition header; if not there, that means this isn't
