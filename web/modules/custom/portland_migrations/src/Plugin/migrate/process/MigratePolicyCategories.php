@@ -37,10 +37,13 @@ class MigratePolicyCategories extends ProcessPluginBase {
       throw new MigrateSkipProcessException();      
     }
     $policy_number_array = preg_split("/-/", $policy_number);
+    // there are a few isolated cases where the policy number uses a space instead of hyphen,
+    // try to capture them.
+    if (count($policy_number_array) < 2) {
+      $policy_number_array = preg_split("/ /", $policy_number);
+    }
     $l2_category_code = $policy_number_array[1];
     $vocabulary = "policy_category";
-
-    // if policy number is empty
 
     // see if l3 category exists
     $term = $this->getTermByFieldValue($vocabulary, 'name', $l3_category);
@@ -72,12 +75,15 @@ class MigratePolicyCategories extends ProcessPluginBase {
       $message = "Parent term (" . $l2_category_code . ") not found for policies category term " . $l3_category . ". Cannot continue.";
       \Drupal::logger('portland_migrations')->notice($message);
       throw new MigrateException($message);
+      echo $message;
+      exit();
     } else if (count($parent_term) > 1) {
       // more than one parent category found with that code, throw error
       $message = "Multiple matching parent categories with code " . $l2_category_code . " found in vocabulary " . $vocabulary . ". Cannot continue.";
       \Drupal::logger('portland_migrations')->notice($message);
       throw new MigrateException();      
     }
+
     if (!is_array($parent_term)) {
       $halt = true;
     }
