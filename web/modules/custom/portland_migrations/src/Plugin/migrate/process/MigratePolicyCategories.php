@@ -38,9 +38,10 @@ class MigratePolicyCategories extends ProcessPluginBase {
     }
     $policy_number_array = preg_split("/-/", $policy_number);
     // there are a few isolated cases where the policy number uses a space instead of hyphen,
-    // try to capture them.
-    if (count($policy_number_array) < 2) {
-      $policy_number_array = preg_split("/ /", $policy_number);
+    // try to capture and correct them.
+    if (count($policy_number_array) < 3) {
+      $policy_number = preg_replace("/ /", "-", $policy_number);
+      $policy_number_array = preg_split("/-/", $policy_number);
     }
     $l2_category_code = $policy_number_array[1];
     $vocabulary = "policy_category";
