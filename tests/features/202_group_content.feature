@@ -11,10 +11,12 @@ Feature: Members can manage group content
   Scenario: Add page content
     Given I am logged in as user "Marty Member"
     When I visit "/powr"
-    Then I should see "+ Add Content"
+    Then I wait for the page to be loaded
+    And I should see "+ Add Content"
 
     When I click "+ Add Content"
-    Then I should see "Add Page"
+    Then I wait for the page to be loaded
+    And  I should see "Add Page"
 
     When I click "Add Page"
     And I should see "Title"
@@ -31,16 +33,21 @@ Feature: Members can manage group content
       Test revision message
       """
     And I press "Save"
-    Then I should see "Page Test page has been created."
+    Then I wait for the page to be loaded
+    And I should see "Page Test page has been created."
 
   Scenario: Edit and delete service
     Given I am logged in as user "Marty Member"
     When I visit "/powr/test-page"
+    Then I wait for the page to be loaded
     And I click "Edit" in the "tabs" region
-    Then I should see "Title"
+    Then I wait for the page to be loaded
+    And I should see "Title"
 
     When I click "Delete" in the "tabs" region
-    Then I should see "This action cannot be undone."
+    Then I wait for the page to be loaded
+    And I should see "This action cannot be undone."
 
     When I press "Delete"
-    Then I should see "has been deleted."
+    Then I wait for the page to be loaded
+    And I should see "has been deleted."
