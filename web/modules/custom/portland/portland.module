@@ -751,3 +751,57 @@ function portland_system_breadcrumb_alter(\Drupal\Core\Breadcrumb\Breadcrumb &$b
         }
     }
 }
+
+/**
+ * Implements hook_inline_entity_form_entity_form_alter().
+ */
+function portland_inline_entity_form_entity_form_alter(&$entity_form, &$form_state)
+{
+    if (
+        $entity_form['#entity_type'] == 'media' &&
+        array_key_exists('group_content', $entity_form)
+    ) {
+        // Set the Group field to the correct default value. Have to use session because the entity browser is in an iFrame.
+        $session = \Drupal::request()->getSession();
+        $entity_form["group_content"]['widget']['add_more']['add_relation']['#default_value'] = $session->get('parent_group_id');
+    }
+}
+
+/**
+ * Implements hook_form_alter().
+ */
+function portland_form_alter(&$form, &$form_state, $form_id) {
+    // Only set the default field for new Media items
+    $form_array_with_group_field = [
+        'media_image_add_form',
+        'media_audio_add_form',
+        'media_video_add_form',
+        'media_document_add_form'
+    ];
+
+    if( in_array($form_id, $form_array_with_group_field) ) {
+
+        // Set the default value as the node's current group       
+        $node = $form_state->getFormObject()->getEntity();
+
+        $group_id = NULL;
+        if($node->isNew()) {
+            if(array_key_exists('group', $form_state->getStorage()) && $form_state->getStorage()['group'] != NULL)
+                $group_id = $form_state->getStorage()['group']->id();
+        }
+        else {
+            $groupIDs = getGroupIdsByEntity($node);
+            $group_id = (count($groupIDs) > 0) ? $groupIDs[0] : NULL;
+        }
+
+
+        $session = \Drupal::request()->getSession();
+
+        if( array_key_exists('group_content', $form) ) {
+            if( $group_id != NULL ) {
+                // $form["field_group"]["widget"]['#default_value'] = $group_id; // assume only one parent group
+                $session->set('parent_group_id', $group_id);
+            }
+        }
+    }
+}
