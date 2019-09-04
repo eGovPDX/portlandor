@@ -9,6 +9,7 @@ use Drupal\migrate\Row;
 use Drupal\Component\Utility\Html;
 use Drupal\Component\Utility\Xss;
 use Drupal\media\Entity\Media;
+use Drupal\file\Entity\File;
 
 /**
  * The MigrateLinkedMedia plugin parses content and looks for images and links to documents.
@@ -134,19 +135,24 @@ class MigrateBodyContentAndLinkedMedia extends ProcessPluginBase {
           $media->setPublished(TRUE)
                 ->save();
         } else {
-          // media entity does exist, get uuid
+          // media entity already exists, get it
           $entity_id = $result[0]->entity_id;
           $media = Media::load($entity_id);
         }
 
-        // uuid is needed to create entity-embed tag
-        $uuid = $media->uuid();
+        $file_uri = $media->get('field_document')->entity->getFileUri();
+        $file_url = file_url_transform_relative(file_create_url($file_uri));
 
-        // replace <a> or <img> with <entity-embed>
-        $embed_tag_node = $dom->createElement("drupal-entity");
-        $newnode = $dom->appendChild($embed_tag_node);
-        $newnode = $this->buildEmbedTagNode($newnode, $embed_tag_node, $uuid, $media_type);
-        $link->parentNode->replaceChild($newnode, $link);
+        $link->setAttribute("href", $file_url);
+
+        // NOTE: Keep the original link tag but change the link href.
+        // // uuid is needed to create entity-embed tag
+        // $uuid = $media->uuid();
+        // // replace <a> or <img> with <entity-embed>
+        // $embed_tag_node = $dom->createElement("drupal-entity");
+        // $newnode = $dom->appendChild($embed_tag_node);
+        // $newnode = $this->buildEmbedTagNode($newnode, $embed_tag_node, $uuid, $media_type);
+        // $link->parentNode->replaceChild($newnode, $link);
       }
       $output = Html::serialize($dom);
       $value = $output;
