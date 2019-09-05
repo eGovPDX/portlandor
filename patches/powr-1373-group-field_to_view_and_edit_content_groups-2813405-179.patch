@@ -1,0 +1,2041 @@
+diff --git a/modules/gcontent_field/config/install/gcontent_field.settings.yml b/modules/gcontent_field/config/install/gcontent_field.settings.yml
+new file mode 100644
+index 0000000..967f963
+--- /dev/null
++++ b/modules/gcontent_field/config/install/gcontent_field.settings.yml
+@@ -0,0 +1,2 @@
++entity_field_label:
++  user: 'Group Memberships'
+diff --git a/modules/gcontent_field/css/gcontent-field.admin.css b/modules/gcontent_field/css/gcontent-field.admin.css
+new file mode 100644
+index 0000000..d149ca6
+--- /dev/null
++++ b/modules/gcontent_field/css/gcontent-field.admin.css
+@@ -0,0 +1,52 @@
++.field--widget-group-selector-widget .dropbutton-wrapper {
++  display: inline-flex;
++  padding-right: 0;
++  margin-right: 0;
++  /* Override 600px breakpoint from core. */
++  width: auto;
++}
++
++.field--widget-group-selector-widget .dropbutton-widget {
++  position: relative;
++}
++
++.field--widget-group-selector-widget .field-multiple-table {
++  margin-bottom: 10px;
++}
++
++.field--widget-group-selector-widget td {
++  padding: 10px 0;
++}
++
++.field--widget-group-selector-widget .field-multiple-drag {
++  vertical-align: top;
++}
++.field--widget-group-selector-widget .draggable .tabledrag-handle {
++  padding-right: 0;
++  margin-left: 0;
++}
++.field--widget-group-selector-widget .tabledrag-handle .handle {
++  margin-left: 0;
++  margin-right: 0;
++  padding-right: 0.2em;
++}
++.gcontent-type-top {
++  display: flex;
++  flex-wrap: nowrap;
++  justify-content: space-between;
++}
++.gcontent-type-title {
++  flex-basis: 25%;
++  min-width: 80px;
++
++  white-space: nowrap;
++  text-overflow: ellipsis;
++  overflow: hidden;
++}
++.field--widget-group-selector-widget .delta-order {
++  padding-right: 10px;
++  text-align: right;
++}
++.field--widget-group-selector-widget .dropbutton-action .ajax-progress {
++  left: -115px;
++}
+diff --git a/modules/gcontent_field/gcontent_field.info.yml b/modules/gcontent_field/gcontent_field.info.yml
+new file mode 100644
+index 0000000..aa07dc8
+--- /dev/null
++++ b/modules/gcontent_field/gcontent_field.info.yml
+@@ -0,0 +1,7 @@
++name: 'Group Content Field'
++description: 'Defines a field to view and edit the groups associated with content.'
++package: 'Group'
++type: 'module'
++core: '8.x'
++dependencies:
++  - 'group:group'
+diff --git a/modules/gcontent_field/gcontent_field.libraries.yml b/modules/gcontent_field/gcontent_field.libraries.yml
+new file mode 100644
+index 0000000..09b3b0d
+--- /dev/null
++++ b/modules/gcontent_field/gcontent_field.libraries.yml
+@@ -0,0 +1,12 @@
++gcontent_field.admin:
++  dependencies:
++      - core/jquery
++      - core/drupal
++      - core/drupalSettings
++      - core/jquery.once
++      - core/jquery.form
++      - core/drupal.ajax
++      - core/drupal.dropbutton
++  css:
++    theme:
++      css/gcontent-field.admin.css: {}
+diff --git a/modules/gcontent_field/gcontent_field.module b/modules/gcontent_field/gcontent_field.module
+new file mode 100644
+index 0000000..f9c96d1
+--- /dev/null
++++ b/modules/gcontent_field/gcontent_field.module
+@@ -0,0 +1,85 @@
++<?php
++
++/**
++ * @file
++ * Allows to add group content from entity form.
++ */
++
++use Drupal\Core\Entity\EntityTypeInterface;
++use Drupal\Core\Field\BaseFieldDefinition;
++use Drupal\Core\Field\FieldStorageDefinitionInterface;
++use Drupal\Core\Entity\FieldableEntityInterface;
++
++/**
++ * Implements hook_theme().
++ */
++function gcontent_field_theme() {
++  return [
++    'gc_field_dropbutton_wrapper' => [
++      'variables' => ['children' => NULL],
++    ],
++  ];
++}
++
++/**
++ * Implements hook_entity_base_field_info().
++ */
++function gcontent_field_entity_base_field_info(EntityTypeInterface $entity_type) {
++  $fields = [];
++  if ($entity_types = gcontent_field_get_entity_types()) {
++    // Adding field to entity types.
++    if (array_key_exists($entity_type->id(), $entity_types)) {
++      $entity_field_label = \Drupal::config('gcontent_field.settings')->get('entity_field_label');
++      $field_label = isset($entity_field_label[$entity_type->id()]) ? $entity_field_label[$entity_type->id()] : t('Groups');
++      $fields['group_content'] = BaseFieldDefinition::create('group_content')
++        ->setName('group_content')
++        ->setTargetEntityTypeId($entity_type->id())
++        ->setSetting('target_type', 'group_content')
++        ->setLabel($field_label)
++        ->setTranslatable(FALSE)
++        ->setComputed(TRUE)
++        ->setCustomStorage(TRUE)
++        ->setCardinality(FieldStorageDefinitionInterface::CARDINALITY_UNLIMITED)
++        ->setClass('\Drupal\gcontent_field\Field\GcontentFieldItemList')
++        ->setDisplayConfigurable('form', TRUE)
++        ->setDisplayOptions('form', [
++          'type' => 'hidden',
++          'weight' => 50,
++        ])
++        ->setDisplayConfigurable('view', TRUE)
++        ->setDisplayOptions('view', [
++          'label' => 'hidden',
++          'type' => 'hidden',
++          'weight' => 50,
++        ]);
++    }
++  }
++  return $fields;
++}
++
++/**
++ * Implements hook_field_formatter_info_alter().
++ */
++function gcontent_field_field_formatter_info_alter(array &$info) {
++  $info['entity_reference_entity_view']['field_types'][] = 'group_content';
++}
++
++/**
++ * Get entities that should have a group content field.
++ */
++function gcontent_field_get_entity_types() {
++  $entity_types = [];
++  $plugin_manager = \Drupal::service('plugin.manager.group_content_enabler');
++  foreach ($plugin_manager->getDefinitions() as $plugin_id => $plugin_definition) {
++    // If entity already added to list just continue with next plugin.
++    if (in_array($plugin_definition['entity_type_id'], $entity_types)) {
++      continue;
++    }
++    $entity_type_definition = \Drupal::entityTypeManager()->getDefinition($plugin_definition['entity_type_id']);
++    // Check if fields can be attached to the entity type.
++    if ($entity_type_definition->entityClassImplements(FieldableEntityInterface::class)) {
++      $entity_types[$plugin_definition['entity_type_id']] = (string) $entity_type_definition->getLabel();
++    }
++  }
++  return $entity_types;
++}
+diff --git a/modules/gcontent_field/gcontent_field.tokens.inc b/modules/gcontent_field/gcontent_field.tokens.inc
+new file mode 100644
+index 0000000..c62a145
+--- /dev/null
++++ b/modules/gcontent_field/gcontent_field.tokens.inc
+@@ -0,0 +1,63 @@
++<?php
++
++/**
++ * @file
++ * Gcontent field tokens.
++ */
++
++/**
++ * Implements hook_token_info().
++ */
++function gcontent_field_token_info() {
++  if ($entity_types = gcontent_field_get_entity_types()) {
++    $field_name = 'group_content';
++    $entity_types_ids = array_keys($entity_types);
++    foreach ($entity_types_ids as $entity_type_id) {
++      $token_type = $entity_type_id;
++      $field_token_name = $token_type . '-' . $field_name;
++      $info['tokens'][$token_type][$field_name] = [
++        'name' => 'Group content',
++        'description' => 'Entity reference field.',
++        'module' => 'token',
++        // For multivalue fields the field token is a list type.
++        'type' => "list<$field_token_name>",
++      ];
++
++      // Field token type.
++      $info['types'][$field_token_name] = [
++        'name' => 'Group content',
++        'description' => t('@label tokens.', ['@label' => 'Group content']),
++        'needs-data' => $field_token_name,
++        'nested' => TRUE,
++      ];
++      // Field list token type.
++      $info['types']["list<$field_token_name>"] = [
++        'name' => t('List of @type values', ['@type' => 'Group content']),
++        'description' => t('Tokens for lists of @type values.', ['@type' => 'Group content']),
++        'needs-data' => "list<$field_token_name>",
++        'nested' => TRUE,
++      ];
++
++      // Show a different token for each field delta.
++      for ($delta = 0; $delta < 3; $delta++) {
++        $info['tokens']["list<$field_token_name>"][$delta] = [
++          'name' => t('@type type with delta @delta', ['@type' => 'Group content', '@delta' => $delta]),
++          'module' => 'token',
++          'type' => $field_token_name,
++        ];
++      }
++
++      $info['tokens'][$field_token_name]['entity'] = [
++        'name' => 'Group content',
++        'description' => 'The referenced entity',
++        'module' => 'token',
++      ];
++      $info['tokens'][$field_token_name]['target_id'] = [
++        'name' => 'Group content ID',
++        'description' => 'The referenced entity ID',
++        'module' => 'token',
++      ];
++    }
++    return $info;
++  }
++}
+diff --git a/modules/gcontent_field/src/Element/GroupAutocomplete.php b/modules/gcontent_field/src/Element/GroupAutocomplete.php
+new file mode 100644
+index 0000000..a82db3e
+--- /dev/null
++++ b/modules/gcontent_field/src/Element/GroupAutocomplete.php
+@@ -0,0 +1,57 @@
++<?php
++
++namespace Drupal\gcontent_field\Element;
++
++use Drupal\Core\Entity\EntityReferenceSelection\SelectionInterface;
++use Drupal\Core\Form\FormStateInterface;
++use Drupal\Core\Entity\Element\EntityAutocomplete;
++
++/**
++ * Provides a group autocomplete form element.
++ *
++ * The #default_value accepted by this element is either an entity object or an
++ * array of entity objects.
++ *
++ * @FormElement("group_autocomplete")
++ */
++class GroupAutocomplete extends EntityAutocomplete {
++
++  /**
++   * {@inheritdoc}
++   */
++  protected static function matchEntityByTitle(SelectionInterface $handler, $input, array &$element, FormStateInterface $form_state, $strict) {
++    $groups_by_bundle = $handler->getReferenceableEntities($input, '=', 6);
++    $groups = array_reduce($groups_by_bundle, function ($flattened, $bundle_groups) {
++      return $flattened + $bundle_groups;
++    }, []);
++    $params = [
++      '%value' => $input,
++      '@value' => $input,
++    ];
++    if (empty($groups)) {
++      if ($strict) {
++        // Error if there are no groups available for a required field.
++        $form_state->setError($element, t('There are no groups called "%value".', $params));
++      }
++    }
++    elseif (count($groups) > 5) {
++      $params['@id'] = key($groups);
++      // Error if there are more than 5 matching groups.
++      $form_state->setError($element, t('Many groups are called %value. Pick one by appending the ID in parentheses, like "@value (@id)".', $params));
++    }
++    elseif (count($groups) > 1) {
++      // More helpful error if there are only a few matching groups.
++      $multiples = [];
++      foreach ($groups as $id => $name) {
++        $multiples[] = $name . ' (' . $id . ')';
++      }
++      $params['@id'] = $id;
++      $form_state->setError($element, t('Multiple groups match: "%multiple". Pick one by appending the ID in parentheses, like "@value (@id)".', ['%multiple' => implode('", "', $multiples)] + $params));
++    }
++    else {
++      // Take the one and only matching entity.
++      return key($groups);
++    }
++  }
++
++}
+diff --git a/modules/gcontent_field/src/Field/GcontentFieldItemList.php b/modules/gcontent_field/src/Field/GcontentFieldItemList.php
+new file mode 100644
+index 0000000..ecf97f6
+--- /dev/null
++++ b/modules/gcontent_field/src/Field/GcontentFieldItemList.php
+@@ -0,0 +1,109 @@
++<?php
++
++namespace Drupal\gcontent_field\Field;
++
++use Drupal\Core\Field\EntityReferenceFieldItemList;
++use Drupal\Core\TypedData\ComputedItemListTrait;
++use Drupal\Core\TypedData\DataDefinitionInterface;
++use Drupal\Core\TypedData\TypedDataInterface;
++use Drupal\Core\DependencyInjection\DependencySerializationTrait;
++use Drupal\group\Entity\GroupContent;
++
++/**
++ * A computed property for the related groups.
++ */
++class GcontentFieldItemList extends EntityReferenceFieldItemList {
++
++  // Support non-database views. Ex: Search API Solr.
++  use DependencySerializationTrait;
++  use ComputedItemListTrait;
++
++  /**
++   * The Group Content Plugin Manager.
++   *
++   * @var \Drupal\group\Plugin\GroupContentEnablerManagerInterface
++   */
++  protected $groupContentPluginManager;
++
++  /**
++   * Constructs a GcontentFieldItemList object.
++   *
++   * @param \Drupal\Core\TypedData\DataDefinitionInterface $definition
++   *   The data definition.
++   * @param string $name
++   *   (optional) The name of the created property, or NULL if it is the root
++   *   of a typed data tree. Defaults to NULL.
++   * @param \Drupal\Core\TypedData\TypedDataInterface $parent
++   *   (optional) The parent object of the data property, or NULL if it is the
++   *   root of a typed data tree. Defaults to NULL.
++   */
++  public function __construct(DataDefinitionInterface $definition, $name = NULL, TypedDataInterface $parent = NULL) {
++    parent::__construct($definition, $name, $parent);
++    $this->groupContentPluginManager = \Drupal::service('plugin.manager.group_content_enabler');
++  }
++
++  /**
++   * {@inheritdoc}
++   */
++  public function computeValue() {
++    $plugin_id = $this->groupContentPluginManager->getPluginIdByEntityType($this->getEntity()->getEntityTypeId(), $this->getEntity()->bundle());
++    if (!$plugin_id) {
++      return NULL;
++    }
++    // No value will exist if the entity has not been created so exit early.
++    if ($this->getEntity()->isNew()) {
++      return NULL;
++    }
++
++    $group_contents = GroupContent::loadByEntity($this->getEntity());
++    if (empty($group_contents)) {
++      return NULL;
++    }
++
++    $this->list = [];
++    if (!empty($group_contents)) {
++      foreach ($group_contents as $delta => $group_content) {
++        $this->list[] = $this->createItem($delta, [
++          'target_id' => $group_content->id(),
++        ]);
++      }
++    }
++  }
++
++  /**
++   * {@inheritdoc}
++   *
++   * We need to override the presave to avoid gcontent saving without
++   * host entity id generated.
++   */
++  public function preSave() {
++  }
++
++  /**
++   * {@inheritdoc}
++   */
++  public function postSave($update) {
++    if ($this->valueComputed) {
++      $host_entity = $this->getEntity();
++      $gcontent_ids = [];
++      foreach ($this->getIterator() as $delta => $item) {
++        $gcontent_entity = $item->entity;
++        $gcontent_entity->entity_id = $host_entity->id();
++        // Saving entities.
++        if (isset($item->needs_save)) {
++          $gcontent_entity->save();
++        }
++        $gcontent_ids[] = $gcontent_entity->id();
++      }
++      // Deleting entities.
++      $group_contents = GroupContent::loadByEntity($host_entity);
++      foreach ($group_contents as $gcontent_id => $gcontent_entity) {
++        if (!in_array($gcontent_id, $gcontent_ids)) {
++          $gcontent_entity->delete();
++        }
++      }
++    }
++    return parent::postSave($update);
++  }
++
++}
+diff --git a/modules/gcontent_field/src/Plugin/EntityReferenceSelection/GroupContentSelection.php b/modules/gcontent_field/src/Plugin/EntityReferenceSelection/GroupContentSelection.php
+new file mode 100644
+index 0000000..2782e59
+--- /dev/null
++++ b/modules/gcontent_field/src/Plugin/EntityReferenceSelection/GroupContentSelection.php
+@@ -0,0 +1,38 @@
++<?php
++
++namespace Drupal\gcontent_field\Plugin\EntityReferenceSelection;
++
++use Drupal\Core\Entity\Plugin\EntityReferenceSelection\DefaultSelection;
++
++/**
++ * Provides specific access control for the comment entity type.
++ *
++ * @EntityReferenceSelection(
++ *   id = "group:group_content",
++ *   label = @Translation("Groups to add content"),
++ *   entity_types = {"group"},
++ *   group = "group",
++ *   weight = 1
++ * )
++ */
++class GroupContentSelection extends DefaultSelection {
++
++  /**
++   * {@inheritdoc}
++   */
++  public function getReferenceableEntities($match = NULL, $match_operator = 'CONTAINS', $limit = 0) {
++    $allowed_groups = $this->getConfiguration()['allowed_groups'];
++    $options = [];
++
++    foreach ($allowed_groups as $bundle => $groups) {
++      foreach ($groups as $group_id => $group_name) {
++        if (preg_match('/' . $match . '/i', $group_name)) {
++          $options[$bundle][$group_id] = $group_name;
++        }
++      }
++    }
++
++    return $options;
++  }
++
++}
+diff --git a/modules/gcontent_field/src/Plugin/Field/FieldFormatter/ParentGroupEntityFormatter.php b/modules/gcontent_field/src/Plugin/Field/FieldFormatter/ParentGroupEntityFormatter.php
+new file mode 100644
+index 0000000..37086e4
+--- /dev/null
++++ b/modules/gcontent_field/src/Plugin/Field/FieldFormatter/ParentGroupEntityFormatter.php
+@@ -0,0 +1,39 @@
++<?php
++
++namespace Drupal\gcontent_field\Plugin\Field\FieldFormatter;
++
++use Drupal\Core\Field\Plugin\Field\FieldFormatter\EntityReferenceEntityFormatter;
++use Drupal\Core\Form\FormStateInterface;
++
++/**
++ * Plugin implementation of the 'parent_group_entity_formatter' formatter.
++ *
++ * @FieldFormatter(
++ *   id = "parent_group_entity_formatter",
++ *   label = @Translation("Parent group rendered entity"),
++ *   description = @Translation("Display the parent groups rendered by entity_view()."),
++ *   field_types = {
++ *     "group_content"
++ *   }
++ * )
++ */
++class ParentGroupEntityFormatter extends EntityReferenceEntityFormatter {
++
++  use ParentGroupFormatterTrait;
++
++  /**
++   * {@inheritdoc}
++   */
++  public function settingsForm(array $form, FormStateInterface $form_state) {
++    $elements['view_mode'] = [
++      '#type' => 'select',
++      '#options' => $this->entityDisplayRepository->getViewModeOptions('group'),
++      '#title' => t('View mode'),
++      '#default_value' => $this->getSetting('view_mode'),
++      '#required' => TRUE,
++    ];
++
++    return $elements;
++  }
++
++}
+diff --git a/modules/gcontent_field/src/Plugin/Field/FieldFormatter/ParentGroupFormatterTrait.php b/modules/gcontent_field/src/Plugin/Field/FieldFormatter/ParentGroupFormatterTrait.php
+new file mode 100644
+index 0000000..8b7d3d9
+--- /dev/null
++++ b/modules/gcontent_field/src/Plugin/Field/FieldFormatter/ParentGroupFormatterTrait.php
+@@ -0,0 +1,43 @@
++<?php
++
++namespace Drupal\gcontent_field\Plugin\Field\FieldFormatter;
++
++use Drupal\Core\Cache\CacheableMetadata;
++use Drupal\Core\Field\EntityReferenceFieldItemListInterface;
++use Drupal\Core\TypedData\TranslatableInterface;
++
++/**
++ * Helper methods shared among all parent group field formatters.
++ */
++trait ParentGroupFormatterTrait {
++
++  /**
++   * {@inheritdoc}
++   */
++  protected function getEntitiesToView(EntityReferenceFieldItemListInterface $items, $langcode) {
++    $entities = [];
++
++    foreach ($items as $delta => $item) {
++      // Ignore items where no entity could be loaded in prepareView().
++      if (!empty($item->_loaded)) {
++        $entity = $item->entity->getGroup();
++        // Set the entity in the correct language for display.
++        if ($entity instanceof TranslatableInterface) {
++          $entity = \Drupal::entityManager()->getTranslationFromContext($entity, $langcode);
++        }
++
++        $access = $this->checkAccess($entity);
++        // Add the access result's cacheability, ::view() needs it.
++        $item->_accessCacheability = CacheableMetadata::createFromObject($access);
++        if ($access->isAllowed()) {
++          // Add the referring item, in case the formatter needs it.
++          $entity->_referringItem = $items[$delta];
++          $entities[$delta] = $entity;
++        }
++      }
++    }
++
++    return $entities;
++  }
++
++}
+diff --git a/modules/gcontent_field/src/Plugin/Field/FieldFormatter/ParentGroupIdFormatter.php b/modules/gcontent_field/src/Plugin/Field/FieldFormatter/ParentGroupIdFormatter.php
+new file mode 100644
+index 0000000..c7b147b
+--- /dev/null
++++ b/modules/gcontent_field/src/Plugin/Field/FieldFormatter/ParentGroupIdFormatter.php
+@@ -0,0 +1,23 @@
++<?php
++
++namespace Drupal\gcontent_field\Plugin\Field\FieldFormatter;
++
++use Drupal\Core\Field\Plugin\Field\FieldFormatter\EntityReferenceIdFormatter;
++
++/**
++ * Plugin implementation of the 'parent_group_id_formatter' formatter.
++ *
++ * @FieldFormatter(
++ *   id = "parent_group_id_formatter",
++ *   label = @Translation("Parent group ID"),
++ *   description = @Translation("Display the ID of the parent groups."),
++ *   field_types = {
++ *     "group_content"
++ *   }
++ * )
++ */
++class ParentGroupIdFormatter extends EntityReferenceIdFormatter {
++
++  use ParentGroupFormatterTrait;
++
++}
+diff --git a/modules/gcontent_field/src/Plugin/Field/FieldFormatter/ParentGroupLabelFormatter.php b/modules/gcontent_field/src/Plugin/Field/FieldFormatter/ParentGroupLabelFormatter.php
+new file mode 100644
+index 0000000..7587046
+--- /dev/null
++++ b/modules/gcontent_field/src/Plugin/Field/FieldFormatter/ParentGroupLabelFormatter.php
+@@ -0,0 +1,23 @@
++<?php
++
++namespace Drupal\gcontent_field\Plugin\Field\FieldFormatter;
++
++use Drupal\Core\Field\Plugin\Field\FieldFormatter\EntityReferenceLabelFormatter;
++
++/**
++ * Plugin implementation of the 'parent_group_label_formatter' formatter.
++ *
++ * @FieldFormatter(
++ *   id = "parent_group_label_formatter",
++ *   label = @Translation("Parent group label"),
++ *   description = @Translation("Display the label of the parent groups."),
++ *   field_types = {
++ *     "group_content"
++ *   }
++ * )
++ */
++class ParentGroupLabelFormatter extends EntityReferenceLabelFormatter {
++
++  use ParentGroupFormatterTrait;
++
++}
+diff --git a/modules/gcontent_field/src/Plugin/Field/FieldType/GroupContentItem.php b/modules/gcontent_field/src/Plugin/Field/FieldType/GroupContentItem.php
+new file mode 100644
+index 0000000..7304f68
+--- /dev/null
++++ b/modules/gcontent_field/src/Plugin/Field/FieldType/GroupContentItem.php
+@@ -0,0 +1,21 @@
++<?php
++
++namespace Drupal\gcontent_field\Plugin\Field\FieldType;
++
++use Drupal\Core\Field\Plugin\Field\FieldType\EntityReferenceItem;
++
++/**
++ * Plugin implementation of the 'group_content' field type.
++ *
++ * @FieldType(
++ *   id = "group_content",
++ *   label = @Translation("Groups"),
++ *   description = @Translation("This is a computed field to relate content with groups"),
++ *   default_widget = "group_selector_widget",
++ *   default_formatter = "parent_group_entity_formatter",
++ *   list_class = "\Drupal\gcontent_field\Field\GcontentFieldItemList",
++ * )
++ */
++class GroupContentItem extends EntityReferenceItem {
++
++}
+diff --git a/modules/gcontent_field/src/Plugin/Field/FieldWidget/GroupSelectorWidget.php b/modules/gcontent_field/src/Plugin/Field/FieldWidget/GroupSelectorWidget.php
+new file mode 100644
+index 0000000..4e14afd
+--- /dev/null
++++ b/modules/gcontent_field/src/Plugin/Field/FieldWidget/GroupSelectorWidget.php
+@@ -0,0 +1,1192 @@
++<?php
++
++namespace Drupal\gcontent_field\Plugin\Field\FieldWidget;
++
++use Drupal\Component\Utility\NestedArray;
++use Drupal\Core\Field\FieldItemListInterface;
++use Drupal\Core\Field\WidgetBase;
++use Drupal\Core\Form\FormStateInterface;
++use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
++use Drupal\group\Plugin\GroupContentEnablerManagerInterface;
++use Drupal\Core\Field\FieldDefinitionInterface;
++use Symfony\Component\DependencyInjection\ContainerInterface;
++use Drupal\Core\Session\AccountProxyInterface;
++use Drupal\Component\Utility\Html;
++use Drupal\Core\Entity\EntityTypeManagerInterface;
++use Drupal\Core\Field\FieldStorageDefinitionInterface;
++use Drupal\Core\Entity\Entity\EntityFormDisplay;
++use Drupal\Core\Entity\EntityRepository;
++
++/**
++ * Plugin implementation of the 'group_selector_widget' widget.
++ *
++ * @FieldWidget(
++ *   id = "group_selector_widget",
++ *   label = @Translation("Group selector"),
++ *   field_types = {
++ *     "group_content"
++ *   }
++ * )
++ */
++class GroupSelectorWidget extends WidgetBase implements ContainerFactoryPluginInterface {
++
++  /**
++   * The Group Content Plugin Manager.
++   *
++   * @var \Drupal\group\Plugin\GroupContentEnablerManagerInterface
++   */
++  protected $groupContentPluginManager;
++
++  /**
++   * The current user.
++   *
++   * @var \Drupal\Core\Session\AccountProxyInterface
++   */
++  protected $currentUser;
++
++  /**
++   * The entity type manager.
++   *
++   * @var \Drupal\Core\Entity\EntityTypeManagerInterface
++   */
++  protected $entityTypeManager;
++
++  /**
++   * The entity repository.
++   *
++   * @var \Drupal\Core\Entity\EntityRepository
++   */
++  protected $entityRepository;
++
++  /**
++   * {@inheritdoc}
++   */
++  public function __construct($plugin_id, $plugin_definition, FieldDefinitionInterface $field_definition, array $settings, array $third_party_settings, GroupContentEnablerManagerInterface $group_content_plugin_manager, AccountProxyInterface $current_user, EntityTypeManagerInterface $entity_type_manager, EntityRepository $entity_repository) {
++    parent::__construct($plugin_id, $plugin_definition, $field_definition, $settings, $third_party_settings);
++    $this->groupContentPluginManager = $group_content_plugin_manager;
++    $this->currentUser = $current_user;
++    $this->entityTypeManager = $entity_type_manager;
++    $this->entityRepository = $entity_repository;
++  }
++
++  /**
++   * {@inheritdoc}
++   */
++  public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition) {
++    return new static(
++      $plugin_id,
++      $plugin_definition,
++      $configuration['field_definition'],
++      $configuration['settings'],
++      $configuration['third_party_settings'],
++      $container->get('plugin.manager.group_content_enabler'),
++      $container->get('current_user'),
++      $container->get('entity_type.manager'),
++      $container->get('entity.repository')
++    );
++  }
++
++  /**
++   * {@inheritdoc}
++   */
++  public static function defaultSettings() {
++    return [
++      'widget' => 'autocomplete',
++      'multiple' => TRUE,
++      'required' => FALSE,
++    ] + parent::defaultSettings();
++  }
++
++  /**
++   * {@inheritdoc}
++   */
++  public function settingsForm(array $form, FormStateInterface $form_state) {
++    $elements = [];
++
++    $elements['widget'] = [
++      '#type' => 'radios',
++      '#title' => t('Widget'),
++      '#default_value' => $this->getSetting('widget'),
++      '#options' => [
++        'select' => t('Select'),
++        'autocomplete' => t('Autocomplete'),
++      ],
++    ];
++    $elements['multiple'] = [
++      '#type' => 'checkbox',
++      '#title' => $this->t('Multiple'),
++      '#default_value' => $this->getSetting('multiple'),
++    ];
++    $elements['required'] = [
++      '#type' => 'checkbox',
++      '#title' => $this->t('Required'),
++      '#default_value' => $this->getSetting('required'),
++    ];
++
++    return $elements;
++  }
++
++  /**
++   * {@inheritdoc}
++   */
++  public function settingsSummary() {
++    $summary = [];
++    $summary[] = $this->t('Widget: @widget', ['@widget' => $this->getSetting('widget')]);
++    $summary[] = ($this->getSetting('multiple')) ? $this->t('Multiple: Yes') : $this->t('Multiple: No');
++    $summary[] = ($this->getSetting('required')) ? $this->t('Required: Yes') : $this->t('Required: No');
++    return $summary;
++  }
++
++  /**
++   * {@inheritdoc}
++   *
++   * @see \Drupal\content_translation\Controller\ContentTranslationController::prepareTranslation()
++   *   Uses a similar approach to populate a new translation.
++   */
++  public function formElement(FieldItemListInterface $items, $delta, array $element, array &$form, FormStateInterface $form_state) {
++    $account = $this->currentUser->getAccount();
++    $field_name = $this->fieldDefinition->getName();
++    $parents = $element['#field_parents'];
++    $info = [];
++
++    $gcontent_entity = NULL;
++    $host = $items->getEntity();
++    $widget_state = static::getWidgetState($parents, $field_name, $form_state);
++
++    $target_type = $this->getFieldSetting('target_type');
++
++    $item_mode = isset($widget_state['gcontent'][$delta]['mode']) ? $widget_state['gcontent'][$delta]['mode'] : 'edit';
++
++    $show_must_be_saved_warning = !empty($widget_state['gcontent'][$delta]['show_warning']);
++
++    if (isset($widget_state['gcontent'][$delta]['entity'])) {
++      $gcontent_entity = $widget_state['gcontent'][$delta]['entity'];
++    }
++    elseif (isset($items[$delta]->entity)) {
++      $gcontent_entity = $items[$delta]->entity;
++      // We don't have a widget state yet, get from selector settings.
++      $item_mode = isset($widget_state['gcontent'][$delta]['mode']) ? $widget_state['gcontent'][$delta]['mode'] : 'closed';
++    }
++    elseif (isset($widget_state['selected_bundle'])) {
++      $entity_type = $this->entityTypeManager->getDefinition($target_type);
++      $bundle_key = $entity_type->getKey('bundle');
++
++      $gcontent_entity = $this->entityTypeManager->getStorage($target_type)->create([
++        $bundle_key => $widget_state['selected_bundle'],
++        'gid' => $widget_state['selected_group'],
++      ]);
++      $item_mode = 'edit';
++    }
++
++    if ($item_mode == 'collapsed') {
++      $item_mode = 'closed';
++    }
++
++    if ($item_mode == 'closed') {
++      // Validate closed gcontent and expand if needed.
++      // @todo Consider recursion.
++      $violations = $gcontent_entity->validate();
++      $violations->filterByFieldAccess();
++      if (count($violations) > 0) {
++        $item_mode = 'edit';
++        $messages = [];
++        foreach ($violations as $violation) {
++          $messages[] = $violation->getMessage();
++        }
++        $info['validation_error'] = [
++          '#type' => 'container',
++          '#markup' => $this->t('@messages', ['@messages' => strip_tags(implode('\n', $messages))]),
++          '#attributes' => ['class' => ['messages', 'messages--warning']],
++        ];
++      }
++    }
++
++    if ($gcontent_entity) {
++      $group = $gcontent_entity->getGroup();
++      $entity_plugin_id = isset($widget_state['entity_plugin_id']) ? $widget_state['entity_plugin_id'] : $gcontent_entity->getContentPlugin()->getPluginId();
++      $element_parents = $parents;
++      $element_parents[] = $field_name;
++      $element_parents[] = $delta;
++      $element_parents[] = 'subform';
++
++      $id_prefix = implode('-', array_merge($parents, [$field_name, $delta]));
++      $wrapper_id = Html::getUniqueId($id_prefix . '-item-wrapper');
++
++      $element += [
++        '#type' => 'container',
++        '#element_validate' => [[$this, 'elementValidate']],
++        '#gcontent_type' => $gcontent_entity->bundle(),
++        'subform' => [
++          '#type' => 'container',
++          '#parents' => $element_parents,
++        ],
++      ];
++
++      // Setting label if field is not multiple.
++      if (!$this->getSetting('multiple')) {
++        $element['label'] = [
++          '#type' => 'label',
++          '#title' => $this->fieldDefinition->getLabel(),
++          '#weight' => -1000,
++        ];
++      }
++
++      $element['#prefix'] = '<div id="' . $wrapper_id . '">';
++      $element['#suffix'] = '</div>';
++
++      // Check permissions.
++      if ($entity_plugin_id == 'group_membership') {
++        if ($items->getEntity()->id() == $account->id()) {
++          $can_delete = $group->hasPermission("leave group", $account);
++          $can_edit = $group->hasPermission("update own group_membership content", $account);
++        }
++        else {
++          $can_delete = $group->hasPermission("administer members", $account);
++          $can_edit = $group->hasPermission("administer members", $account);
++        }
++      }
++      else {
++        $can_delete = $host->isNew() ? FALSE : $group->hasPermission("delete any $entity_plugin_id content", $account);
++        $can_edit = $group->hasPermission("update any $entity_plugin_id content", $account);
++      }
++      // Checking if can delete own.
++      if (!$can_delete && $entity_plugin_id == 'group_membership') {
++        if ($gcontent_entity->id() == $account->id()) {
++          $can_delete = $group->hasPermission("leave group", $account);
++        }
++      }
++      if (!$can_delete && $gcontent_entity->getOwnerId() == $account->id()) {
++        $can_delete = $group->hasPermission("delete own $entity_plugin_id content", $account);
++      }
++      // Checking if can update own.
++      if (!$can_edit) {
++        $group_content_owner = $gcontent_entity->getOwnerId();
++        // In case of membership the value to compare is the entity
++        // instead owner.
++        if ($entity_plugin_id == 'group_membership') {
++          $group_content_owner = $gcontent_entity->getEntity()->id();
++        }
++        if ($group_content_owner == $account->id()) {
++          $can_edit = $group->hasPermission("update own $entity_plugin_id content", $account);
++        }
++      }
++
++      $item_bundles = \Drupal::service('entity_type.bundle.info')->getBundleInfo($target_type);
++      if (isset($item_bundles[$gcontent_entity->bundle()])) {
++        $element['top'] = [
++          '#type' => 'container',
++          '#weight' => -500,
++          '#attributes' => [
++            'class' => [
++              'gcontent-type-top',
++            ],
++          ],
++        ];
++
++        $element['top']['gcontent_type_title'] = [
++          '#type' => 'container',
++          '#weight' => 0,
++          '#attributes' => [
++            'class' => [
++              'gcontent-type-title',
++            ],
++          ],
++        ];
++
++        $element['top']['gcontent_type_title']['info'] = [
++          '#markup' => $gcontent_entity->getGroup()->label(),
++        ];
++
++        $actions = [];
++        $links = [];
++
++        // Hide the button when translating.
++        if ($item_mode != 'remove') {
++          $links['remove_button'] = [
++            '#type' => 'submit',
++            '#value' => $this->t('Remove'),
++            '#name' => strtr($id_prefix, '-', '_') . '_remove',
++            '#weight' => 501,
++            '#submit' => [[get_class($this), 'gcontentItemSubmit']],
++            '#limit_validation_errors' => [
++              array_merge($parents, [$field_name, 'add_more']),
++            ],
++            '#delta' => $delta,
++            '#ajax' => [
++              'callback' => [get_class($this), 'itemAjax'],
++              'wrapper' => $widget_state['ajax_wrapper_id'],
++              'effect' => 'fade',
++            ],
++            '#access' => $can_delete,
++            '#prefix' => '<li class="remove">',
++            '#suffix' => '</li>',
++            '#gcontent_mode' => 'remove',
++          ];
++
++        }
++
++        if ($item_mode == 'edit') {
++
++          if (isset($items[$delta]->entity)) {
++            $links['collapse_button'] = [
++              '#type' => 'submit',
++              '#value' => $this->t('Collapse'),
++              '#name' => strtr($id_prefix, '-', '_') . '_collapse',
++              '#weight' => 499,
++              '#submit' => [[get_class($this), 'gcontentItemSubmit']],
++              '#delta' => $delta,
++              '#limit_validation_errors' => [
++                array_merge($parents, [$field_name, 'add_more']),
++              ],
++              '#ajax' => [
++                'callback' => [get_class($this), 'itemAjax'],
++                'wrapper' => $widget_state['ajax_wrapper_id'],
++                'effect' => 'fade',
++              ],
++              '#access' => $can_edit,
++              '#prefix' => '<li class="collapse">',
++              '#suffix' => '</li>',
++              '#gcontent_mode' => 'collapsed',
++              '#gcontent_show_warning' => TRUE,
++            ];
++          }
++
++          $info['remove_button_info'] = [
++            '#type' => 'container',
++            '#markup' => $this->t('You are not allowed to remove this item.'),
++            '#attributes' => ['class' => ['messages', 'messages--warning']],
++            '#access' => !$can_delete,
++          ];
++        }
++        elseif ($item_mode == 'closed') {
++          $links['edit_button'] = [
++            '#type' => 'submit',
++            '#value' => $this->t('Edit'),
++            '#name' => strtr($id_prefix, '-', '_') . '_edit',
++            '#weight' => 500,
++            '#submit' => [[get_class($this), 'gcontentItemSubmit']],
++            '#limit_validation_errors' => [
++              array_merge($parents, [$field_name, 'add_more']),
++            ],
++            '#delta' => $delta,
++            '#ajax' => [
++              'callback' => [get_class($this), 'itemAjax'],
++              'wrapper' => $widget_state['ajax_wrapper_id'],
++              'effect' => 'fade',
++            ],
++            '#access' => $can_edit,
++            '#prefix' => '<li class="edit">',
++            '#suffix' => '</li>',
++            '#gcontent_mode' => 'edit',
++          ];
++
++          if ($show_must_be_saved_warning) {
++            $info['must_be_saved_info'] = [
++              '#type' => 'container',
++              '#markup' => $this->t('You have unsaved changes on this item.'),
++              '#attributes' => ['class' => ['messages', 'messages--warning']],
++            ];
++          }
++
++          $info['edit_button_info'] = [
++            '#type' => 'container',
++            '#markup' => $this->t('You are not allowed to edit this item.'),
++            '#attributes' => ['class' => ['messages', 'messages--warning']],
++            '#access' => !$can_edit && $can_delete,
++          ];
++
++          $info['remove_button_info'] = [
++            '#type' => 'container',
++            '#markup' => $this->t('You are not allowed to remove this item.'),
++            '#attributes' => ['class' => ['messages', 'messages--warning']],
++            '#access' => !$can_delete && $can_edit,
++          ];
++
++          $info['edit_remove_button_info'] = [
++            '#type' => 'container',
++            '#markup' => $this->t('You are not allowed to edit or remove this item.'),
++            '#attributes' => ['class' => ['messages', 'messages--warning']],
++            '#access' => !$can_edit && !$can_delete,
++          ];
++        }
++        elseif ($item_mode == 'remove') {
++
++          $element['top']['gcontent_type_title']['info'] = [
++            '#markup' => $this->t('Deleted: %group relation', ['%group' => $gcontent_entity->getGroup()->label()]),
++          ];
++
++          $links['confirm_remove_button'] = [
++            '#type' => 'submit',
++            '#value' => $this->t('Confirm removal'),
++            '#name' => strtr($id_prefix, '-', '_') . '_confirm_remove',
++            '#weight' => 503,
++            '#submit' => [[get_class($this), 'gcontentItemSubmit']],
++            '#limit_validation_errors' => [
++              array_merge($parents, [$field_name, 'add_more']),
++            ],
++            '#delta' => $delta,
++            '#ajax' => [
++              'callback' => [get_class($this), 'itemAjax'],
++              'wrapper' => $widget_state['ajax_wrapper_id'],
++              'effect' => 'fade',
++            ],
++            '#prefix' => '<li class="confirm-remove">',
++            '#suffix' => '</li>',
++            '#gcontent_mode' => 'removed',
++          ];
++
++          $links['restore_button'] = [
++            '#type' => 'submit',
++            '#value' => $this->t('Restore'),
++            '#name' => strtr($id_prefix, '-', '_') . '_restore',
++            '#weight' => 504,
++            '#submit' => [[get_class($this), 'gcontentItemSubmit']],
++            '#limit_validation_errors' => [
++              array_merge($parents, [$field_name, 'add_more']),
++            ],
++            '#delta' => $delta,
++            '#ajax' => [
++              'callback' => [get_class($this), 'itemAjax'],
++              'wrapper' => $widget_state['ajax_wrapper_id'],
++              'effect' => 'fade',
++            ],
++            '#prefix' => '<li class="restore">',
++            '#suffix' => '</li>',
++            '#gcontent_mode' => 'edit',
++          ];
++        }
++        if (count($links)) {
++          $show_links = 0;
++          foreach ($links as $link_item) {
++            if (!isset($link_item['#access']) || $link_item['#access']) {
++              $show_links++;
++            }
++          }
++          if ($show_links > 0) {
++
++            $element['top']['links'] = $links;
++            if ($show_links > 1) {
++              $element['top']['links']['#theme_wrappers'] = ['dropbutton_wrapper', 'gc_field_dropbutton_wrapper'];
++              $element['top']['links']['prefix'] = [
++                '#markup' => '<ul class="dropbutton">',
++                '#weight' => -999,
++              ];
++              $element['top']['links']['suffix'] = [
++                '#markup' => '</li>',
++                '#weight' => 999,
++              ];
++            }
++            else {
++              $element['top']['links']['#theme_wrappers'] = ['gc_field_dropbutton_wrapper'];
++              foreach ($links as $key => $link_item) {
++                unset($element['top']['links'][$key]['#prefix']);
++                unset($element['top']['links'][$key]['#suffix']);
++              }
++            }
++            $element['top']['links']['#weight'] = 2;
++          }
++        }
++
++        if (count($info)) {
++          $show_info = FALSE;
++          foreach ($info as $info_item) {
++            if (!isset($info_item['#access']) || $info_item['#access']) {
++              $show_info = TRUE;
++              break;
++            }
++          }
++
++          if ($show_info) {
++            $element['info'] = $info;
++            $element['info']['#weight'] = 998;
++          }
++        }
++
++        if (count($actions)) {
++          $show_actions = FALSE;
++          foreach ($actions as $action_item) {
++            if (!isset($action_item['#access']) || $action_item['#access']) {
++              $show_actions = TRUE;
++              break;
++            }
++          }
++
++          if ($show_actions) {
++            $element['actions'] = $actions;
++            $element['actions']['#type'] = 'actions';
++            $element['actions']['#weight'] = 999;
++          }
++        }
++      }
++
++      $display = EntityFormDisplay::collectRenderDisplay($gcontent_entity, $this->getSetting('form_display_mode'));
++
++      if ($item_mode == 'edit') {
++        $display->buildForm($gcontent_entity, $element['subform'], $form_state);
++        // Fixing subform pathauto states.
++        if (isset($element['subform']['path']['widget'][0]['pathauto'])) {
++          $selector = sprintf('input[name="%s[%d][subform][path][0][%s]"]', $field_name, $element['#delta'], 'pathauto');
++          $element['subform']['path']['widget'][0]['alias']['#states'] = [
++            'disabled' => [
++              $selector => ['checked' => TRUE],
++            ],
++          ];
++        }
++      }
++      else {
++        $element['subform'] = [];
++      }
++      $element['subform']['entity_id']['#access'] = FALSE;
++      $element['subform']['#attributes']['class'][] = 'gcontent-subform';
++      $element['subform']['#access'] = $can_edit;
++
++      if ($item_mode == 'removed') {
++        $element['#access'] = FALSE;
++      }
++
++      $widget_state['gcontent'][$delta]['entity'] = $gcontent_entity;
++      $widget_state['gcontent'][$delta]['display'] = $display;
++      $widget_state['gcontent'][$delta]['mode'] = $item_mode;
++
++      static::setWidgetState($parents, $field_name, $form_state, $widget_state);
++    }
++    else {
++      $element['#access'] = FALSE;
++    }
++    return $element;
++  }
++
++  /**
++   * {@inheritdoc}
++   */
++  public function formMultipleElements(FieldItemListInterface $items, array &$form, FormStateInterface $form_state) {
++    if ($form_state->get('group_wizard_id')) {
++      return [];
++    }
++    $field_name = $this->fieldDefinition->getName();
++    $cardinality = ($this->getSetting('multiple')) ? FieldStorageDefinitionInterface::CARDINALITY_UNLIMITED : 1;
++    $is_required = $this->getSetting('required');
++    $this->fieldParents = $form['#parents'];
++    $field_state = static::getWidgetState($this->fieldParents, $field_name, $form_state);
++
++    $host = $items->getEntity();
++    $target_entity_type = $host->getEntityTypeId();
++    $target_bundle = $host->bundle();
++    $entity_plugin_id = $this->groupContentPluginManager->getPluginIdByEntityType($target_entity_type, $target_bundle);
++    $field_state = static::getWidgetState($this->fieldParents, $field_name, $form_state);
++    $field_state['entity_plugin_id'] = $entity_plugin_id;
++
++    // Set default group
++    $session = \Drupal::request()->getSession();
++    if($form['#op'] == 'add' && $session->get('parent_group_id') != null) {
++      $field_state['selected_group'] = $session->get('parent_group_id');
++      $field_state['selected_bundle'] = $session->get('parent_group_type').'-group_'.$form['#entity_type'].'-'.$form['#bundle'];
++      $field_state['items_count'] = 1;
++      $field_state['real_item_count'] = 1;
++    }
++
++    static::setWidgetState($this->fieldParents, $field_name, $form_state, $field_state);
++
++    $max = $field_state['items_count'];
++
++    $this->realItemCount = $max;
++    $is_multiple = $this->getSetting('multiple');
++
++    $title = $this->fieldDefinition->getLabel();
++    $description = $this->fieldDefinition->getDescription();
++
++    $elements = [];
++    $this->fieldIdPrefix = implode('-', array_merge($this->fieldParents, [$field_name]));
++    $this->fieldWrapperId = Html::getUniqueId($this->fieldIdPrefix . '-add-more-wrapper');
++    $elements['#prefix'] = '<div id="' . $this->fieldWrapperId . '">';
++    $elements['#suffix'] = '</div>';
++
++    $field_state = static::getWidgetState($this->fieldParents, $field_name, $form_state);
++    $field_state['ajax_wrapper_id'] = $this->fieldWrapperId;
++    // Persist the widget state so formElement() can access it.
++    static::setWidgetState($this->fieldParents, $field_name, $form_state, $field_state);
++
++    if ($max > 0) {
++      for ($delta = 0; $delta < $max; $delta++) {
++
++        // Add a new empty item if it doesn't exist yet at this delta.
++        if (!isset($items[$delta])) {
++          $items->appendItem();
++        }
++
++        // For multiple fields, title and description are handled by the
++        // wrapping table.
++        $element = [
++          '#title' => $is_multiple ? '' : $title,
++          '#description' => $is_multiple ? '' : $description,
++        ];
++        $element = $this->formSingleElement($items, $delta, $element, $form, $form_state);
++
++        if ($element) {
++          // Input field for the delta (drag-n-drop reordering).
++          if ($is_multiple) {
++            // We name the element '_weight' to avoid clashing with elements
++            // defined by widget.
++            $element['_weight'] = [
++              '#type' => 'weight',
++              '#title' => $this->t('Weight for row @number', ['@number' => $delta + 1]),
++              '#title_display' => 'invisible',
++              // This 'delta' is the FAPI #type 'weight' element's property.
++              '#delta' => $max,
++              '#default_value' => $items[$delta]->_weight ?: $delta,
++              '#weight' => 100,
++            ];
++          }
++
++          // Access for the top element is set to FALSE only when the gcontent
++          // was removed. A gcontent that a user can not edit has access on
++          // lower level.
++          if (isset($element['#access']) && !$element['#access']) {
++            $this->realItemCount--;
++          }
++          else {
++            $elements[$delta] = $element;
++          }
++        }
++      }
++    }
++
++    $field_state = static::getWidgetState($this->fieldParents, $field_name, $form_state);
++    $field_state['real_item_count'] = $this->realItemCount;
++    static::setWidgetState($this->fieldParents, $field_name, $form_state, $field_state);
++
++    $elements += [
++      '#element_validate' => [[$this, 'multipleElementValidate']],
++      '#required' => $is_required,
++      '#field_name' => $field_name,
++      '#cardinality' => $cardinality,
++      '#max_delta' => $max - 1,
++    ];
++
++    if ($this->realItemCount > 0) {
++      $elements += [
++        '#theme' => 'field_multiple_value_form',
++        '#cardinality_multiple' => $is_multiple,
++        '#title' => $title,
++        '#description' => $description,
++      ];
++    }
++    else {
++      $classes = $is_required ? ['form-required'] : [];
++      $elements += [
++        '#type' => 'container',
++        '#theme_wrappers' => ['container'],
++        '#cardinality_multiple' => TRUE,
++        'title' => [
++          '#type' => 'html_tag',
++          '#tag' => 'strong',
++          '#value' => $title,
++          '#attributes' => ['class' => $classes],
++        ],
++        'text' => [
++          '#type' => 'container',
++          'value' => [
++            '#markup' => $this->t('Not yet added to groups.'),
++            '#prefix' => '<em>',
++            '#suffix' => '</em>',
++          ],
++        ],
++      ];
++
++      if ($is_required) {
++        $elements['title']['#attributes']['class'][] = 'form-required';
++      }
++
++      if ($description) {
++        $elements['description'] = [
++          '#type' => 'container',
++          'value' => ['#markup' => $description],
++          '#attributes' => ['class' => ['description']],
++        ];
++      }
++    }
++
++    $groups = $this->getPluginGroups($entity_plugin_id);
++    // Getting groups cardinality.
++    if (!isset($field_state['groups_cardinality'])) {
++      $groups_cardinality = $this->getGroupsCardinality($groups, $entity_plugin_id);
++      $field_state = static::getWidgetState($this->fieldParents, $field_name, $form_state);
++      $field_state['groups_cardinality'] = $groups_cardinality;
++      static::setWidgetState($this->fieldParents, $field_name, $form_state, $field_state);
++    }
++    $existing_gcontent = isset($field_state['gcontent']) ? $field_state['gcontent'] : [];
++    $allowed_groups = $this->getAllowedGroups($groups, $entity_plugin_id, $existing_gcontent, $field_state['groups_cardinality']);
++
++    if (($this->realItemCount < $cardinality || $cardinality == FieldStorageDefinitionInterface::CARDINALITY_UNLIMITED) && !$form_state->isProgrammed()) {
++      $elements['add_more'] = $this->buildAddActions($allowed_groups, $entity_plugin_id);
++    }
++    $elements['#attached']['library'][] = 'gcontent_field/gcontent_field.admin';
++
++    return $elements;
++  }
++
++  /**
++   * {@inheritdoc}
++   */
++  public function elementValidate($element, FormStateInterface $form_state, $form) {
++    $field_name = $this->fieldDefinition->getName();
++    $widget_state = static::getWidgetState($element['#field_parents'], $field_name, $form_state);
++    $delta = $element['#delta'];
++
++    if (isset($widget_state['gcontent'][$delta]['entity'])) {
++      $entity = $widget_state['gcontent'][$delta]['entity'];
++
++      /** @var \Drupal\Core\Entity\Display\EntityFormDisplayInterface $display */
++      $display = $widget_state['gcontent'][$delta]['display'];
++
++      if ($widget_state['gcontent'][$delta]['mode'] == 'edit') {
++        // Extract the form values on submit for getting the current gcontent.
++        $display->extractFormValues($entity, $element['subform'], $form_state);
++        $display->validateFormValues($entity, $element['subform'], $form_state);
++      }
++    }
++
++    static::setWidgetState($element['#field_parents'], $field_name, $form_state, $widget_state);
++  }
++
++  /**
++   * Special handling to validate form elements with multiple values.
++   *
++   * @param array $elements
++   *   An associative array containing the substructure of the form to be
++   *   validated in this call.
++   * @param \Drupal\Core\Form\FormStateInterface $form_state
++   *   The current state of the form.
++   * @param array $form
++   *   The complete form array.
++   */
++  public function multipleElementValidate(array $elements, FormStateInterface $form_state, array $form) {
++    $field_name = $this->fieldDefinition->getName();
++    $widget_state = static::getWidgetState($elements['#field_parents'], $field_name, $form_state);
++
++    $remove_mode_item_count = $this->getNumberOfGcontentInMode($widget_state, 'remove');
++    $non_remove_mode_item_count = $widget_state['real_item_count'] - $remove_mode_item_count;
++
++    if ($elements['#required'] && $non_remove_mode_item_count < 1) {
++      $form_state->setError($elements, t('@name field is required.', ['@name' => $this->fieldDefinition->getLabel()]));
++    }
++
++    static::setWidgetState($elements['#field_parents'], $field_name, $form_state, $widget_state);
++  }
++
++  /**
++   * Add 'add more' button, if not working with a programmed form.
++   *
++   * @return array
++   *   The form element array.
++   */
++  protected function buildAddActions($allowed_groups, $entity_plugin_id) {
++    if (!$entity_plugin_id) {
++      $add_more_elements['info'] = [
++        '#type' => 'container',
++        '#markup' => $this->t('There is no Group content plugin available for this entity type.'),
++        '#attributes' => ['class' => ['messages', 'messages--warning']],
++      ];
++      return $add_more_elements;
++    }
++
++    // Warnings.
++    if ($allowed_groups['warnings']) {
++      foreach ($allowed_groups['warnings'] as $type => $message) {
++        $add_more_elements['info'] = [
++          '#type' => 'container',
++          '#markup' => $message,
++          '#attributes' => ['class' => ['messages', 'messages--warning']],
++        ];
++        return $add_more_elements;
++      }
++    }
++
++    if ($this->getSetting('widget') == 'autocomplete') {
++      return $this->buildAutocompleteAddMode($allowed_groups['autocomplete_allowed_groups']);
++    }
++
++    return $this->buildSelectAddMode($allowed_groups['select_allowed_groups']);
++  }
++
++  /**
++   * Builds autocomplete for adding new gcontent.
++   *
++   * @return array
++   *   The form element array.
++   */
++  protected function buildAutocompleteAddMode($allowed_groups) {
++    // If there are no available groups, don't build a form element.
++    if (empty($allowed_groups)) {
++      return [];
++    }
++
++    // Hide the button when translating.
++    $add_more_elements = [
++      '#type' => 'container',
++    ];
++    $field_name = $this->fieldDefinition->getName();
++    $title = $this->fieldDefinition->getLabel();
++
++    $add_more_elements['add_relation'] = [
++      '#title' => $this->t('Group Name'),
++      '#type' => 'group_autocomplete',
++      '#target_type' => 'group',
++      '#selection_handler' => 'group:group_content',
++      '#selection_settings' => ['allowed_groups' => $allowed_groups],
++    ];
++
++    $add_more_elements['add_more_button'] = [
++      '#type' => 'submit',
++      '#name' => strtr($this->fieldIdPrefix, '-', '_') . '_add_more',
++      '#value' => $this->t('Add to Group'),
++      '#attributes' => ['class' => ['field-add-more-submit']],
++      '#limit_validation_errors' => [
++        array_merge($this->fieldParents, [$field_name, 'add_more']),
++      ],
++      '#submit' => [[get_class($this), 'addMoreSubmit']],
++      '#validate' => [[get_class($this), 'addMoreValidate']],
++      '#ajax' => [
++        'callback' => [get_class($this), 'addMoreAjax'],
++        'wrapper' => $this->fieldWrapperId,
++        'effect' => 'fade',
++      ],
++    ];
++    return $add_more_elements;
++  }
++
++  /**
++   * Builds select for adding new gcontent.
++   *
++   * @return array
++   *   The form element array.
++   */
++  protected function buildSelectAddMode($allowed_groups) {
++    // If there are no available groups, don't build a form element.
++    if (empty($allowed_groups)) {
++      return [];
++    }
++
++    // Hide the button when translating.
++    $add_more_elements = [
++      '#type' => 'container',
++    ];
++    $field_name = $this->fieldDefinition->getName();
++
++    $add_more_elements['add_relation'] = [
++      '#title' => $this->t('Group'),
++      '#type' => 'select',
++      '#description' => $this->t('Select a group'),
++      '#options' => $allowed_groups,
++    ];
++
++    $add_more_elements['add_more_button'] = [
++      '#type' => 'submit',
++      '#name' => strtr($this->fieldIdPrefix, '-', '_') . '_add_more',
++      '#value' => $this->t('Add to Group'),
++      '#attributes' => ['class' => ['field-add-more-submit']],
++      '#limit_validation_errors' => [
++        array_merge($this->fieldParents, [$field_name, 'add_more']),
++      ],
++      '#submit' => [[get_class($this), 'addMoreSubmit']],
++      '#ajax' => [
++        'callback' => [get_class($this), 'addMoreAjax'],
++        'wrapper' => $this->fieldWrapperId,
++        'effect' => 'fade',
++      ],
++    ];
++
++    return $add_more_elements;
++  }
++
++  /**
++   * {@inheritdoc}
++   */
++  public static function addMoreAjax(array $form, FormStateInterface $form_state) {
++    $triggering_element = $form_state->getTriggeringElement();
++    // Go one level up in the form, to the widgets container.
++    $element = NestedArray::getValue($form, array_slice($triggering_element['#array_parents'], 0, -2));
++
++    // Add a DIV around the delta receiving the Ajax effect.
++    $delta = $element['#max_delta'];
++    $element[$delta]['#prefix'] = '<div class="ajax-new-content">' . (isset($element[$delta]['#prefix']) ? $element[$delta]['#prefix'] : '');
++    $element[$delta]['#suffix'] = (isset($element[$delta]['#suffix']) ? $element[$delta]['#suffix'] : '') . '</div>';
++
++    return $element;
++  }
++
++  /**
++   * Widget items ajax callback.
++   */
++  public static function itemAjax(array $form, FormStateInterface $form_state) {
++    $button = $form_state->getTriggeringElement();
++    // Go one level up in the form, to the widgets container.
++    $element = NestedArray::getValue($form, array_slice($button['#array_parents'], 0, -4));
++
++    $element['#prefix'] = '<div class="ajax-new-content">' . (isset($element['#prefix']) ? $element['#prefix'] : '');
++    $element['#suffix'] = (isset($element['#suffix']) ? $element['#suffix'] : '') . '</div>';
++
++    return $element;
++  }
++
++  /**
++   * {@inheritdoc}
++   */
++  public static function addMoreSubmit(array $form, FormStateInterface $form_state) {
++    $button = $form_state->getTriggeringElement();
++
++    // Go one level up in the form, to the widgets container.
++    $element = NestedArray::getValue($form, array_slice($button['#array_parents'], 0, -2));
++    $field_name = $element['#field_name'];
++    $parents = $element['#field_parents'];
++
++    // Increment the items count.
++    $widget_state = static::getWidgetState($parents, $field_name, $form_state);
++
++    if ($widget_state['real_item_count'] < $element['#cardinality'] || $element['#cardinality'] == FieldStorageDefinitionInterface::CARDINALITY_UNLIMITED) {
++      $widget_state['items_count']++;
++    }
++    $local_keys = [$field_name, 'add_more', 'add_relation'];
++    $parent_keys = array_merge($parents, $local_keys);
++    $selected_group = NestedArray::getValue($form_state->getValues(), $parent_keys);
++    $group = \Drupal::entityTypeManager()->getStorage('group')->load($selected_group);
++    $group_content_type_id = $group->getGroupType()->getContentPlugin($widget_state['entity_plugin_id'])->getContentTypeConfigId();
++    $widget_state['selected_group'] = $selected_group;
++    $widget_state['selected_bundle'] = $group_content_type_id;
++
++    // Clearing relation field.
++    $user_input = $form_state->getUserInput();
++    $user_input[$field_name]['add_more']['add_relation'] = '';
++    $form_state->setUserInput($user_input);
++
++    static::setWidgetState($parents, $field_name, $form_state, $widget_state);
++
++    $form_state->setRebuild();
++  }
++
++  /**
++   * Add to group autocomplete validation.
++   */
++  public static function addMoreValidate(array $form, FormStateInterface $form_state) {
++    $button = $form_state->getTriggeringElement();
++
++    // Go one level up in the form, to the widgets container.
++    $element = NestedArray::getValue($form, array_slice($button['#array_parents'], 0, -2));
++    $field_name = $element['#field_name'];
++
++    $select_group_element = NestedArray::getValue($element, [
++      'add_more',
++      'add_relation',
++    ]);
++    $selected_group = NestedArray::getValue($form_state->getValues(), [
++      $field_name,
++      'add_more',
++      'add_relation',
++    ]);
++    if (!$selected_group) {
++      $form_state->setError($select_group_element, t('@field_name should not be empty', ['@field_name' => (string) $select_group_element['#title']]));
++    }
++  }
++
++  /**
++   * Submit for item links.
++   */
++  public static function gcontentItemSubmit(array $form, FormStateInterface $form_state) {
++    $button = $form_state->getTriggeringElement();
++
++    // Go one level up in the form, to the widgets container.
++    $element = NestedArray::getValue($form, array_slice($button['#array_parents'], 0, -4));
++
++    $delta = array_slice($button['#array_parents'], -4, -3);
++    $delta = $delta[0];
++
++    $field_name = $element['#field_name'];
++    $parents = $element['#field_parents'];
++
++    $widget_state = static::getWidgetState($parents, $field_name, $form_state);
++
++    $widget_state['gcontent'][$delta]['mode'] = $button['#gcontent_mode'];
++
++    if (!empty($button['#gcontent_show_warning'])) {
++      $widget_state['gcontent'][$delta]['show_warning'] = $button['#gcontent_show_warning'];
++    }
++
++    static::setWidgetState($parents, $field_name, $form_state, $widget_state);
++
++    $form_state->setRebuild();
++  }
++
++  /**
++   * Counts the number of gcontent in a certain mode in a form substructure.
++   *
++   * @param array $widget_state
++   *   The widget state for the form substructure containing information about
++   *   the gcontent within.
++   * @param string $mode
++   *   The mode to look for.
++   *
++   * @return int
++   *   The number of gcontent is the given mode.
++   */
++  protected function getNumberOfGcontentInMode(array $widget_state, $mode) {
++    if (!isset($widget_state['gcontent'])) {
++      return 0;
++    }
++
++    $gcontent_count = 0;
++    foreach ($widget_state['gcontent'] as $gcontent) {
++      if ($gcontent['mode'] == $mode) {
++        $gcontent_count++;
++      }
++    }
++
++    return $gcontent_count;
++  }
++
++  /**
++   * {@inheritdoc}
++   */
++  public function massageFormValues(array $values, array $form, FormStateInterface $form_state) {
++    $field_name = $this->fieldDefinition->getName();
++    $widget_state = static::getWidgetState($form['#parents'], $field_name, $form_state);
++    $element = NestedArray::getValue($form_state->getCompleteForm(), $widget_state['array_parents']);
++    foreach ($values as $delta => &$item) {
++      $item['target_id'] = NULL;
++      if (isset($widget_state['gcontent'][$item['_original_delta']]['entity'])
++        && $widget_state['gcontent'][$item['_original_delta']]['mode'] != 'remove') {
++        $gcontent_entity = $widget_state['gcontent'][$item['_original_delta']]['entity'];
++
++        /** @var \Drupal\Core\Entity\Display\EntityFormDisplayInterface $display */
++        $display = $widget_state['gcontent'][$item['_original_delta']]['display'];
++        if ($widget_state['gcontent'][$item['_original_delta']]['mode'] == 'edit') {
++          $display->extractFormValues($gcontent_entity, $element[$item['_original_delta']]['subform'], $form_state);
++        }
++
++        $item['entity'] = $gcontent_entity;
++        if ($gcontent_entity->id()) {
++          $item['target_id'] = $gcontent_entity->id();
++        }
++        $item['needs_save'] = TRUE;
++        // If unchanged avoid group content saving.
++        if ($widget_state['gcontent'][$item['_original_delta']]['mode'] == 'closed' && !isset($widget_state['gcontent'][$item['_original_delta']]['show_warning'])) {
++          unset($item['needs_save']);
++        }
++      }
++    }
++    return $values;
++  }
++
++  /**
++   * Get a list of groups with an specific plugin installed.
++   *
++   * @param string $plugin_id
++   *   The plugin id to filter the groups.
++   *
++   * @return array
++   *   The list of group entities.
++   */
++  private function getPluginGroups($plugin_id) {
++    $groups = [];
++    $group_type_map = $this->groupContentPluginManager->getGroupTypePluginMap();
++    foreach ($group_type_map as $group_type_id => $group_plugins_enabled) {
++      foreach ($group_plugins_enabled as $group_plugin_id) {
++        if ($group_plugin_id == $plugin_id) {
++          $groups_using_plugin = $this->entityTypeManager->getStorage('group')->loadByProperties(['type' => $group_type_id]);
++          $groups = array_merge($groups, $groups_using_plugin);
++        }
++      }
++    }
++    return $groups;
++  }
++
++  /**
++   * Returns the groups entity cardinality.
++   *
++   * @param array $groups
++   *   The group allowed by current entity plugin id.
++   * @param string $plugin_id
++   *   The current entity plugin id.
++   *
++   * @return array
++   *   The groups entity cardinality array.
++   */
++  private function getGroupsCardinality(array $groups, $plugin_id) {
++    $groups_cardinality = [];
++    if ($groups) {
++      foreach ($groups as $group) {
++        $groups_cardinality[$group->id()] = $group->getGroupType()->getContentPlugin($plugin_id)->getEntityCardinality();
++      }
++    }
++    return $groups_cardinality;
++  }
++
++  /**
++   * Get useful lists for group options form elements.
++   *
++   * @param array $groups
++   *   The array of allowed groups.
++   * @param string $entity_plugin_id
++   *   The plugin id to get existing content.
++   * @param array $existing_gcontent
++   *   The existing group content.
++   * @param array $groups_cardinality
++   *   The groups entity cardinality array.
++   *
++   * @return array
++   *   The Lists.
++   */
++  private function getAllowedGroups(array $groups, $entity_plugin_id, array $existing_gcontent, array $groups_cardinality) {
++    $all_restricted = TRUE;
++    /** @var \Drupal\Core\Session\AccountInterface $account */
++    $account = $this->currentUser->getAccount();
++    $allowed_groups = [
++      'autocomplete_allowed_groups' => [],
++      'select_allowed_groups' => [],
++      'warnings' => [],
++    ];
++    // If empty group it means there are not groups with the plugin enabled.
++    if (empty($groups)) {
++      $allowed_groups['warnings']['empty_groups'] = $this->t('There are no groups or group types with the needed plugin enabled.');
++      return $allowed_groups;
++    }
++
++    // Checking cardinality.
++    $excluded_groups = [];
++    if ($existing_gcontent) {
++      $groups_ammounts = [];
++      foreach ($existing_gcontent as $gcontent) {
++        // Not count the content if was removed.
++        if ($gcontent['mode'] == 'removed') {
++          continue;
++        }
++        $gcontent_entity = isset($gcontent['entity']) ? $gcontent['entity'] : FALSE;
++        if ($gcontent_entity) {
++          $gid = $gcontent_entity->gid->getString();
++          $groups_ammounts[$gid] = isset($groups_ammounts[$gid]) ? $groups_ammounts[$gid] + 1 : 1;
++          if ($groups_ammounts[$gid] >= $groups_cardinality[$gid]) {
++            $excluded_groups[] = $gid;
++          }
++        }
++      }
++    }
++
++    /** @var \Drupal\group\Entity\Group $group */
++    foreach ($groups as $group) {
++      if (in_array($group->id(), $excluded_groups)) {
++        continue;
++      }
++      // Check creation permissions.
++      $can_create = FALSE;
++      if ($entity_plugin_id == 'group_membership') {
++        $can_create = $group->hasPermission("administer members", $account);
++      }
++      if (!$can_create) {
++        $can_create = $group->hasPermission("create $entity_plugin_id entity", $account);
++      }
++      if ($can_create) {
++        $all_restricted = FALSE;
++        $group_bundle = $group->bundle();
++        $group_bundle_label = $group->getGroupType()->label();
++        $allowed_groups['autocomplete_allowed_groups'][$group_bundle][$group->id()] = Html::escape($this->entityRepository->getTranslationFromContext($group)->label());
++        $allowed_groups['select_allowed_groups'][$group_bundle_label][$group->id()] = $this->entityRepository->getTranslationFromContext($group)->label();
++      }
++    }
++
++    // Add warning when all restricted.
++    if ($all_restricted && !$existing_gcontent && count($groups) != count($excluded_groups)) {
++      $allowed_groups['warnings']['restricted'] = $this->t("You don't have the needed permissions to edit this.");
++    }
++    return $allowed_groups;
++  }
++
++}
+diff --git a/modules/gcontent_field/templates/gc-field-dropbutton-wrapper.html.twig b/modules/gcontent_field/templates/gc-field-dropbutton-wrapper.html.twig
+new file mode 100644
+index 0000000..84a109b
+--- /dev/null
++++ b/modules/gcontent_field/templates/gc-field-dropbutton-wrapper.html.twig
+@@ -0,0 +1,21 @@
++{#
++/**
++ * @file
++ * Default theme implementation for a gcontent field dropbutton wrapper.
++ *
++ * Available variables:
++ * - children: Contains the child elements of the gcontent field dropbutton menu.
++ *
++ * @see template_preprocess()
++ * @see template_preprocess_gc_field_dropbutton_wrapper()
++ *
++ * @ingroup themeable
++ */
++#}
++{% if children %}
++  {% spaceless %}
++    <div class="gc-field-dropbutton-wrapper">
++      {{ children }}
++    </div>
++  {% endspaceless %}
++{% endif %}
+diff --git a/src/Form/GroupSettingsForm.php b/src/Form/GroupSettingsForm.php
+index 68e56fe..7a84803 100644
+--- a/src/Form/GroupSettingsForm.php
++++ b/src/Form/GroupSettingsForm.php
+@@ -4,12 +4,40 @@ namespace Drupal\group\Form;
+ 
+ use Drupal\Core\Form\ConfigFormBase;
+ use Drupal\Core\Form\FormStateInterface;
++use Drupal\Core\Extension\ModuleHandler;
++use Drupal\Core\Config\ConfigFactoryInterface;
++use Symfony\Component\DependencyInjection\ContainerInterface;
+ 
+ /**
+  * Class GroupSettingsForm.
+  */
+ class GroupSettingsForm extends ConfigFormBase {
+ 
++  /**
++   * The module handler.
++   *
++   * @var \Drupal\Core\Extension\ModuleHandler
++   */
++  protected $moduleHandler;
++
++  /**
++   * {@inheritdoc}
++   */
++  public function __construct(ConfigFactoryInterface $config_factory, ModuleHandler $module_handler) {
++    parent::__construct($config_factory);
++    $this->moduleHandler = $module_handler;
++  }
++
++  /**
++   * {@inheritdoc}
++   */
++  public static function create(ContainerInterface $container) {
++    return new static(
++      $container->get('config.factory'),
++      $container->get('module_handler')
++    );
++  }
++
+   /**
+    * {@inheritdoc}
+    */
+@@ -21,7 +49,11 @@ class GroupSettingsForm extends ConfigFormBase {
+    * {@inheritdoc}
+    */
+   protected function getEditableConfigNames() {
+-    return ['group.settings'];
++    $editables = ['group.settings'];
++    if ($this->moduleHandler->moduleExists('gcontent_field')) {
++      $editables[] = 'gcontent_field.settings';
++    }
++    return $editables;
+   }
+ 
+   /**
+@@ -38,6 +70,25 @@ class GroupSettingsForm extends ConfigFormBase {
+       '#default_value' => $config->get('use_admin_theme'),
+     ];
+ 
++    // Group content field options.
++    if ($this->moduleHandler->moduleExists('gcontent_field')) {
++      $gcontent_field_config = $this->config('gcontent_field.settings')->get('entity_field_label');
++      $form['gcontent_field'] = [
++        '#type' => 'details',
++        '#title' => $this->t('Group Content Field'),
++        '#tree' => TRUE,
++      ];
++      if ($entity_types = gcontent_field_get_entity_types()) {
++        foreach ($entity_types as $entity_type_id => $entity_type_name) {
++          $form['gcontent_field'][$entity_type_id] = [
++            '#type' => 'textfield',
++            '#title' => $this->t('Label for @entity_type', ['@entity_type' => $entity_type_name]),
++            '#default_value' => isset($gcontent_field_config[$entity_type_id]) ? $gcontent_field_config[$entity_type_id] : NULL,
++          ];
++        }
++      }
++    }
++
+     return $form;
+   }
+ 
+@@ -55,6 +106,12 @@ class GroupSettingsForm extends ConfigFormBase {
+       \Drupal::service('router.builder')->setRebuildNeeded();
+     }
+ 
++    // Setting gcontent_field settings.
++    if ($entity_field_label = $form_state->getValue('gcontent_field')) {
++      $gcontent_field_config = $this->config('gcontent_field.settings');
++      $gcontent_field_config->set('entity_field_label', $entity_field_label)->save();
++    }
++
+     parent::submitForm($form, $form_state);
+   }
+ 
+diff --git a/src/Plugin/GroupContentEnablerManager.php b/src/Plugin/GroupContentEnablerManager.php
+index ba53355..a4d6904 100644
+--- a/src/Plugin/GroupContentEnablerManager.php
++++ b/src/Plugin/GroupContentEnablerManager.php
+@@ -150,6 +150,22 @@ class GroupContentEnablerManager extends DefaultPluginManager implements GroupCo
+     return $this->allPlugins;
+   }
+ 
++  /**
++   * {@inheritdoc}
++   */
++  public function getPluginIdByEntityType($entity_type_id, $entity_bundle) {
++    foreach ($this->getDefinitions() as $plugin_id => $plugin_info) {
++      if ($plugin_info['entity_type_id'] == $entity_type_id) {
++        if ($plugin_info['entity_bundle'] && $plugin_info['entity_bundle'] == $entity_bundle) {
++          return $plugin_id;
++        }
++        elseif (!$plugin_info['entity_bundle']) {
++          return $plugin_id;
++        }
++      }
++    }
++  }
++
+   /**
+    * {@inheritdoc}
+    */
+diff --git a/src/Plugin/GroupContentEnablerManagerInterface.php b/src/Plugin/GroupContentEnablerManagerInterface.php
+index ffcfceb..75b0cb3 100644
+--- a/src/Plugin/GroupContentEnablerManagerInterface.php
++++ b/src/Plugin/GroupContentEnablerManagerInterface.php
+@@ -25,6 +25,19 @@ interface GroupContentEnablerManagerInterface extends PluginManagerInterface, Ca
+    */
+   public function getAll();
+ 
++  /**
++   * Returns a plugin id for a given entity_type_id and bundle.
++   *
++   * @param string $entity_type_id
++   *   The entity type id.
++   * @param string $entity_bundle
++   *   The entity bundle.
++   *
++   * @return string
++   *   A plugin id.
++   */
++  public function getPluginIdByEntityType($entity_type_id, $entity_bundle);
++
+   /**
+    * Returns a plugin collection of all installed content enablers.
+    *
