@@ -82,7 +82,7 @@ drush migrate:import eudaly_news
 drush migrate:import eudaly_news_group_content
 ```
 
-#### DEMO: Category docuements
+#### DEMO: Category documents
 
 ```
 drush migrate:import category_documents
@@ -94,10 +94,13 @@ drush migrate:import city_charter_chapters
 drush migrate:import city_charter_articles
 drush migrate:import city_charter_sections
 ```
+#### City Code
+```
+drush migrate:import city_code_titles
+drush migrate:import city_code_chapters
+drush migrate:import city_code_sections
+```
 #### City policies
-**WARNING: Make sure the Finance (FIN) parent category exists before running the policies migrations. It was created in the live beta
-site for unknown reasons. As a result, it was removed from the migration datafile to prevent duplicates. If it's not there, it must
-be created before migrating policies.**
 ```
 drush migrate:import policies_catgegories
 drush migrate:import policies_types
