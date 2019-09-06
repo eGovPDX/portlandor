@@ -45,8 +45,8 @@ The .lando.yml file included in this repo will set you up to connect to the corr
       4. Move your files backup into `web/sites/default/files`
 6. Run `lando refresh` to build your local environment to match master. (This runs composer install, drush updb, drush cim, and drush cr.)
 7. You should now be able to visit https://portlandor.lndo.site in your browser.
-8. When you are done with your development for the day, run `lando stop` to shut off your development containers.
-9. To set up XDebug, see https://docs.devwithlando.io/tutorials/php.html#toggling-xdebug and https://docs.devwithlando.io/guides/lando-with-vscode.html.
+8. To enable XDebug, run `lando xdebug-on`. Run `lando xdebug-off` to turn it off for increased performance.
+9. When you are done with your development for the day, run `lando stop` to shut off your development containers.
 
 See other Lando with Pantheon commands at https://docs.devwithlando.io/tutorials/pantheon.html.
 
