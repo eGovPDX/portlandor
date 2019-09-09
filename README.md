@@ -257,4 +257,4 @@ When something changes in composer.json, but the lock hash has not been updated,
 The lock file is not up to date with the latest changes in composer.json. You may be getting outdated dependencies. Run update to update them.
 ...
 
-To resolve this, run `lando composer update --lock`, which will generate a new hash. If you encounter a conflict on the hash value when you merge or rebase, use the most recent (yours) version of the hash.
+To resolve this, run `lando composer update --lock`, which will generate a new hash. If you encounter a conflict on the hash value when you merge or rebase, use the most recent (yours) version of the hash. 
