@@ -751,3 +751,53 @@ function portland_system_breadcrumb_alter(\Drupal\Core\Breadcrumb\Breadcrumb &$b
         }
     }
 }
+
+/**
+ * Implements hook_inline_entity_form_entity_form_alter().
+ */
+function portland_inline_entity_form_entity_form_alter(&$entity_form, &$form_state)
+{
+    if (
+        $entity_form['#entity_type'] == 'media' &&
+        array_key_exists('group_content', $entity_form) &&
+        array_key_exists('widget', $entity_form["group_content"])&&
+        array_key_exists('add_more', $entity_form["group_content"]['widget'])&&
+        array_key_exists('add_relation', $entity_form["group_content"]['widget']['add_more'])
+    ) {
+        // Set the Group field to the correct default value. Have to use session because the entity browser is in an iFrame.
+        $group_id = \Drupal::request()->getSession()->get('parent_group_id');
+        if($group_id != null) {
+            $entity_form["group_content"]['widget']['add_more']['add_relation']['#default_value'] = $group_id;
+        }
+    }
+}
+
+/**
+ * Implements hook_form_alter().
+ */
+function portland_form_alter(&$form, &$form_state, $form_id) {
+    // Only set the default field for new Media items
+    $form_array_with_group_field = [
+        'node_news_form',
+        'node_page_form',
+        'node_event_form',
+        'media_image_add_form',
+        'media_audio_add_form',
+        'media_video_add_form',
+        'media_document_add_form'
+    ];
+
+    if( in_array($form_id, $form_array_with_group_field) ) {
+        // Set the default value as the node's current group       
+        $node = $form_state->getFormObject()->getEntity();
+        $group_id = NULL;
+        if($node->isNew()) {
+            if(array_key_exists('group', $form_state->getStorage()) && $form_state->getStorage()['group'] != NULL) {
+                $group_id = $form_state->getStorage()['group']->id();
+                if( array_key_exists('group_content', $form) && $group_id != NULL ) {
+                    \Drupal::request()->getSession()->set('parent_group_id', $group_id);
+                }
+            }
+        }
+    }
+}
