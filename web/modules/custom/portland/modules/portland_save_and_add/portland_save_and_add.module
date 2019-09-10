@@ -1,0 +1,45 @@
+<?php
+
+
+use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Url;
+
+/**
+ * @file
+ * Creates a button on node form that allows to create a node and continue to create another node of that type.
+ */
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ *
+ * @param array $form
+ * @param $form_state
+ */
+function portland_save_and_add_form_node_form_alter(array &$form, FormStateInterface $form_state) {
+  $current_path = \Drupal::service('path.current')->getPath();
+
+  if (strpos($current_path, '/node/add/') !== FALSE) {
+    $form_state->setValue('portland_save_and_add_submit', $current_path);
+
+    $form['actions']['portland_save_and_add'] = $form['actions']['submit'];
+    $form['actions']['portland_save_and_add']['#value'] = t('Save and add another');
+    $form['actions']['portland_save_and_add']['#submit'][] = 'portland_save_and_add_submit';
+  }
+
+}
+
+/**
+ * Submit callback to set the redirect.
+ *
+ * @param array $form
+ * @param $form_state
+ */
+function portland_save_and_add_submit(array &$form, FormStateInterface $form_state) {
+  $trigger = $form_state->getTriggeringElement();
+
+  if (isset($trigger['#id']) && $trigger['#id'] == 'edit-portland_save_and_add_submit') {
+    $current_path = \Drupal::service('path.current')->getPath();
+    $form_state->setRedirectUrl(Url::fromUserInput($current_path));
+  }
+
+}
