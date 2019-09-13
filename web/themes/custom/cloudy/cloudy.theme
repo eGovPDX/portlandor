@@ -68,6 +68,7 @@ function cloudy_preprocess_form(&$vars) {
   if ($vars['element']['#form_id'] == 'search_api_page_block_form') {
     $vars['attributes']['role'] = 'search';
     $vars['attributes']['class'] = 'input-group form-inline d-flex justify-content-center';
+    $vars['attributes']['title'] = 'Search';
   }
 }
 
@@ -85,13 +86,22 @@ function cloudy_preprocess_input__textfield(&$vars) {
 }
 
 /**
- * Implements theme_preprocess_HOOK
+ * Implements hook_theme_suggestions_field_alter().
+ *
+ * Adds extra detail of view mode to field theme suggestions
  */
-function cloudy_preprocess_media(&$vars) {
-  // in the context of entity embeds, there was no apparent way to get a document URL or URI
-  // in the twig template media--document--embedded. the url() and getUri() functions don't
-  // seem to work in the template, so we're calling url() here and saving it in a variable.
-  if ($vars['media']->bundle() == 'document') {
-    $vars['fileURL'] = $vars['media']->field_document->entity->url();
-  }
+
+function cloudy_theme_suggestions_field_alter(array &$suggestions, array $variables) {
+
+  $entity_type = $variables['element']['#entity_type'];
+  $view_mode = $variables['element']['#view_mode'];
+  $field_type = $variables['element']['#field_type'];
+  $field_name = $variables['element']['#field_name'];
+
+  $suggestions[] = 'field__' . $view_mode;
+  $suggestions[] = 'field__' . $entity_type;
+  $suggestions[] = 'field__' . $entity_type . '__' . $view_mode;
+  $suggestions[] = 'field__' . $field_name;
+  $suggestions[] = 'field__' . $field_name  . '__' . $view_mode;
+  $suggestions[] = 'field__' . $entity_type . '__' . $view_mode . '__' . $field_name;
 }

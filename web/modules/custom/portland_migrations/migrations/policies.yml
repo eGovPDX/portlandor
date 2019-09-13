@@ -1,0 +1,48 @@
+id: policies
+label: 'City Policies Import'
+class: null
+langcode: en
+dependencies:
+    enforced:
+        - portland_migrations
+migration_group: policies
+source:
+  plugin: csv
+  path: modules/custom/portland_migrations/sources/policies.csv
+  header_row_count: 1
+  keys:
+    - CONTENT_ID
+process:
+  uid:
+    plugin: default_value
+    default_value: 1
+  title: CONTENT_NAME
+  field_body_content/value:
+    plugin: migrate_body_content_and_linked_media
+    source: TEXT
+  field_body_content/format:
+    plugin: default_value
+    default_value: full_html
+  field_documents:
+    plugin: migrate_documents
+    source: TEXT
+  field_policy_number:
+    plugin: migrate_policy_number
+    source: POLICY_NUMBER
+  field_legacy_path:
+    plugin: str_replace
+    case_insensitive: true
+    source: URL
+    search: https://www.portlandoregon.gov/
+    replace: '/'
+  field_policy_type:
+    plugin: link_policy_type
+    source: POLICY_NUMBER
+  field_policy_category:
+    plugin: migrate_policy_categories
+    source:
+      - CATEGORY_NAME
+      - POLICY_NUMBER
+destination:
+  plugin: 'entity:node'
+  default_bundle: policy

@@ -1,15 +1,33 @@
 <?php
 
+/*
+echo "Quicksilver Debuging Output";
+echo "\n\n";
+echo "\n========= START PAYLOAD ===========\n";
+print_r($_POST);
+echo "\n========== END PAYLOAD ============\n";
+
+echo "\n------- START ENVIRONMENT ---------\n";
+$env = $_ENV;
+foreach ($env as $key => $value) {
+  if (preg_match('#(PASSWORD|SALT|AUTH|SECURE|NONCE|LOGGED_IN)#', $key)) {
+    $env[$key] = '[REDACTED]';
+  }
+}
+print_r($env);
+echo "\n-------- END ENVIRONMENT ----------\n";
+*/
+
+// Do NOT run for Dependabot branches
+if (preg_match('/^bot-\d+/', $_ENV['PANTHEON_ENVIRONMENT'])) {
+  die('Dependabot branch detected. Aborting!');
+}
+
+
 // Original source from: https://github.com/pantheon-systems/quicksilver-examples/tree/master/webhook
 
-// Define the url the data should be sent to.
-// {wf_type} will be replaced with the workflow operation: 
-// clone_database, clear_cache, deploy, or sync_code.
-//
-// Useful to have one webhook handle multiple events.
-
-// DO NOT run tests against Live or Test environment
-if( $_ENV['PANTHEON_ENVIRONMENT'] != 'live' && $_ENV['PANTHEON_ENVIRONMENT'] != 'test') {
+// Do NOT run tests against Live or Test environment
+if ($_ENV['PANTHEON_ENVIRONMENT'] != 'live' && $_ENV['PANTHEON_ENVIRONMENT'] != 'test') {
   $git_repo_name = $_ENV['PANTHEON_SITE_NAME']; // portlandor
   $git_branch_name = ($_ENV['PANTHEON_ENVIRONMENT'] === 'dev') ? 'master' : $_ENV['PANTHEON_ENVIRONMENT']; // master or powr-123
   $url = "https://circleci.com/api/v1.1/project/github/eGovPDX/$git_repo_name/tree/$git_branch_name";
@@ -39,7 +57,7 @@ if( $_ENV['PANTHEON_ENVIRONMENT'] != 'live' && $_ENV['PANTHEON_ENVIRONMENT'] != 
   curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
   curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
   curl_setopt($ch, CURLOPT_TIMEOUT, 5);
-  print("\n==== Posting to Webhook URL ====\n");
+  print("\n==== Posting to Webhook URL $url ====\n");
   $result = curl_exec($ch);
   // print("RESULT: $result");
   print("\n===== Post Complete! =====\n");
@@ -51,8 +69,7 @@ if( $_ENV['PANTHEON_ENVIRONMENT'] != 'live' && $_ENV['PANTHEON_ENVIRONMENT'] != 
  *
  * @param array $requiredKeys  List of keys in secrets file that must exist.
  */
-function _get_secrets($requiredKeys, $defaults)
-{
+function _get_secrets($requiredKeys, $defaults) {
   $secretsFile = $_SERVER['HOME'] . '/files/private/secrets.json';
   if (!file_exists($secretsFile)) {
     die('No secrets file found. Aborting!');
