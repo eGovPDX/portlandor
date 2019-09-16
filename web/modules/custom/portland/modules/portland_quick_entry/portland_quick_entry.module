@@ -1,0 +1,50 @@
+<?php
+
+
+use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Url;
+
+/**
+ * @file
+ * Creates a button on node form that allows to create a node and continue to create another node of that type.
+ */
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ *
+ * @param array $form
+ * @param $form_state
+ */
+function portland_quick_entry_form_node_form_alter(array &$form, FormStateInterface $form_state) {
+  $current_path = \Drupal::service('path.current')->getPath();
+
+  if (strpos($current_path, 'group_node:calendar_item') !== FALSE) {
+    $form_state->setValue('portland_quick_entry', $current_path);
+
+    $form['actions']['portland_quick_entry'] = $form['actions']['submit'];
+    $form['actions']['portland_quick_entry']['#value'] = t('Save and add another');
+    $form['actions']['portland_quick_entry']['#submit'][] = 'portland_quick_entry_submit';
+
+    // attach js which will autofocus first field
+    $form['#attached']['library'][] = 'portland_quick_entry/javascript';
+
+    // hide vertical tabs to clean up form; they're not used in this context
+    hide($form['advanced']);
+  }
+}
+
+/**
+ * Submit callback to set the redirect.
+ *
+ * @param array $form
+ * @param $form_state
+ */
+function portland_quick_entry_submit(array &$form, FormStateInterface $form_state) {
+  $trigger = $form_state->getTriggeringElement();
+
+  if (isset($trigger['#id']) && $trigger['#id'] == 'edit-portland-quick-entry') {
+    $current_path = \Drupal::service('path.current')->getPath();
+    $form_state->setRedirectUrl(Url::fromUserInput($current_path . '?autofocus=true'));
+  }
+
+}
