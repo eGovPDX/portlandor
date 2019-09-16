@@ -1,0 +1,111 @@
+<?php
+/*
+ * @file
+ * "Portland Leaflet Maps" adds PortlandMaps layers to the Leaflet module.
+ *
+ * All maps support zoom levels 0..18, except where stated otherwise.
+ */
+
+use Drupal\Component\Utility\Unicode;
+
+const LEAFLET_MORE_MAPS_NO_CUSTOM_MAPS = 3;
+
+/**
+ * Implements hook_leaflet_map_info().
+ *
+ * All maps show at lat=31, long=-89, zoom=4
+ *
+ * @return array of map info (includes provider URL, attribution, map features)
+ */
+function portland_leaflet_maps_leaflet_map_info() {
+
+  $default_settings = array(
+    'attributionControl' => TRUE,
+    'closePopupOnClick'  => TRUE,
+    'doubleClickZoom'    => TRUE,
+    'dragging'           => TRUE,
+    'fadeAnimation'      => TRUE,
+    'layerControl'       => FALSE,
+    'maxZoom'            => 18,
+    'minZoom'            => 0,
+    'scrollWheelZoom'    => TRUE,
+    'touchZoom'          => TRUE,
+    'trackResize'        => TRUE,
+    // Don't specify zoom, if you want to use Auto-box.
+    // 'zoom'               =>  2,
+    'zoomAnimation'      => TRUE,
+    'zoomControl'        => TRUE,
+  );
+  $map_info = array();
+  _portland_leaflet_maps_assemble_default_map_info($map_info, $default_settings);
+
+  return $map_info;
+}
+
+/**
+ * Preprocess function for leaflet_more_maps.
+ */
+function portland_leaflet_maps_preprocess_leaflet_map(&$variables) {
+  $variables['#attached']['library'][] = 'portland_leaflet_maps/portland_leaflet_maps';
+}
+
+/**
+ * Implements hook_leaflet_map_info_alter().
+ */
+function portland_leaflet_maps_leaflet_map_info_alter(&$map_info) {
+  @ksort($map_info, SORT_NATURAL | SORT_FLAG_CASE);
+}
+
+/**
+ * Assemble default map info.
+ */
+function _portland_leaflet_maps_assemble_default_map_info(&$map_info, $default_settings = array()) {
+  // Use headless protocol rather than logic based on global $is_https;
+  $prot = '//';
+
+  // As used by most.
+  $zxy = '{z}/{x}/{y}.png';
+  // As used by Esri.
+  $zyx = '{z}/{y}/{x}.png';
+
+  // Used by PortlandMaps
+  $zyx_only = '{z}/{y}/{x}';
+
+  // portlandmaps https://portlandmaps.com
+  $attr_portlandmaps = 'Tiles by <a href="http://portlandmaps.com">portlandmaps.com</a>. ';
+
+
+  $map_info['portlandmaps_color'] = array(
+    'label' => 'PortlandMaps.com Basemap_Color_Complete (zoom 0..22)',
+    'description' => t('portlandmaps.com Basemap_Color_Complete Maps'),
+    'settings' =>  $default_settings + array('maxZoom' => 22),
+    'layers' => array(
+      'layer' => array(
+        'urlTemplate' => $prot . "www.portlandmaps.com/arcgis/rest/services/Public/Basemap_Color_Complete/MapServer/tile/$zyx_only",
+      ),
+    ),
+  );
+
+  $map_info['portlandmaps_park'] = array(
+    'label' => 'PortlandMaps.com Park_Amenities (zoom 0..22)',
+    'description' => t('portlandmaps.com Park_Amenities Maps'),
+    'settings' =>  $default_settings + array('maxZoom' => 22),
+    'layers' => array(
+      'layer #1' => array(
+        'urlTemplate' => $prot . "www.portlandmaps.com/arcgis/rest/services/Public/Basemap_Color_Complete/MapServer/tile/$zyx_only",
+      ),
+      'layer #2' => array(
+        'urlTemplate' => $prot . "www.portlandmaps.com/arcgis/rest/services/Public/Basemap_Color_Buildings/MapServer/tile/$zyx_only",
+      ),
+      'layer #3' => array(
+        'urlTemplate' => $prot . "www.portlandmaps.com/arcgis/rest/services/Public/Park_Amenities/MapServer/tile/$zyx_only",
+      ),
+      'park boundary' => array(
+        'urlTemplate' => $prot . "www.portlandmaps.com/arcgis/rest/services/Public/Basemap_Color/MapServer/2",
+        'layer_type' => 'overlay',
+        'esri_layer_type' => 'featureLayer',
+      ),
+    ),
+  );
+
+}
