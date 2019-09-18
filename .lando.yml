@@ -23,19 +23,22 @@ services:
         MINK_DRIVER_ARGS: '["chrome", null, "http://chromedriver:4444/wd/hub"]'
         MINK_DRIVER_ARGS_WEBDRIVER: '["chrome", null, "http://chromedriver:4444/wd/hub"]'
         MINK_DRIVER_CLASS: 'Drupal\FunctionalJavascriptTests\DrupalSelenium2Driver'
-        
   node:
     type: node
     overrides:
       environment:
-        LANDO_WEBROOT_USER: www-data
-        LANDO_WEBROOT_GROUP: www-data
+        # LANDO_WEBROOT_USER: www-data
+        # LANDO_WEBROOT_GROUP: node
+        NODE_EXTRA_CA_CERTS: /app/cop_ca.pem
     run_as_root:
       - /bin/sh -c "adduser www-data node"
+      - /bin/sh -c "adduser node dialout"
       - /bin/sh -c "chmod -R 775 /var/www"
-    build:
+    run:
+      - echo "Updating npm..."
+      - npm install -g npm
       - echo "Installing Node.js dependencies..."
-      - npm -C /app/web/themes/custom/cloudy install
+      - cd /app/web/themes/custom/cloudy && npm install
   chromedriver:
     type: compose
     services:
@@ -51,8 +54,10 @@ services:
 
 events:
   post-start:
+    - node: echo "Updating npm..."
+    - node: npm install -g npm
     - node: echo "Building theme asset files..."
-    - node: npm -C /app/web/themes/custom/cloudy run build:dev
+    - node: cd /app/web/themes/custom/cloudy && npm run build:dev
 tooling:
   drush:
     description: Run drush commands
@@ -61,7 +66,7 @@ tooling:
   npm:
     description: Run npm commands
     service: node
-    cmd: cd /app/web/themes/custom/cloudy && npm -C /app/web/themes/custom/cloudy
+    cmd: cd /app/web/themes/custom/cloudy && npm
   node:
     description: Run node commands
     service: node
@@ -72,7 +77,7 @@ tooling:
       - appserver: echo "Downloading latest database..."
       - appserver: rm -f /app/artifacts/database.tar.gz
       - appserver: terminus backup:get portlandor.dev --element=database --to=/app/artifacts/database.tar.gz
-      - appserver: echo "Importing database..."
+      - database: echo "Importing database..."
       - database: cd /app && /helpers/sql-import.sh artifacts/database.tar.gz
       - appserver: echo "Clearing cache..."
       - appserver: drush cr -y
@@ -91,8 +96,8 @@ tooling:
       - appserver: drush core:cron -y
       - appserver: echo "Clearing cache..."
       - appserver: drush cr -y
-      - appserver: echo "Building theme asset files..."
-      - node: npm -C /app/web/themes/custom/cloudy run build:dev
+      - node: echo "Building theme asset files..."
+      - node: cd /app/web/themes/custom/cloudy && npm run build:dev
   cupex:
     description: Composer update, database update, and config export to get a clean module or theme update
     cmd:
@@ -112,11 +117,18 @@ tooling:
     description: Disable xdebug for nginx.
     cmd: rm /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini && pkill -o -USR2 php-fpm && echo "Disabling xdebug"
     user: root
+  install-certs:
+    description: Installs City of Portland certificate authority certificates used for SSL decryption
+    service: appserver
+    cmd:
+      - /bin/sh -c "cp /app/cop_ca_*.crt /usr/local/share/ca-certificates/"
+      - update-ca-certificates
+    user: root
   behat:
     service: appserver
-    description: "Run behat tests"
+    description: Run behat tests
     cmd:
       - /app/vendor/bin/behat -c /app/tests/behat.yml
   chromedriver:
     service: chromedriver
-    description: "Run chromedriver commands."
+    description: Run chromedriver commands
