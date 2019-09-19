@@ -2,7 +2,7 @@
 
   Drupal.Leaflet.prototype._create_layer_orig = Drupal.Leaflet.prototype.create_layer;
 
-  Drupal.Leaflet.prototype.create_layer = function(layer, key) {
+  Drupal.Leaflet.prototype.create_layer = function (layer, key) {
     if (layer.esri_layer_type === 'featureLayer') {
       var mapLayer = new L.esri.featureLayer({
         url: layer.urlTemplate,
@@ -24,9 +24,41 @@
 
 })(jQuery);
 
+// Once the Leaflet Map is loaded with its features.
+jQuery(document).on('leaflet.map', function (e, settings, lMap, mapid) {
+
+  var features = L.esri.featureLayer({
+    url: drupalSettings.portlandmaps_layer,
+    where: 'PropertyID=' + drupalSettings.portlandmaps_id,
+    style: function (feature, layer) {
+      return {
+        color: '#00ffff',
+        weight: 2,
+        fillOpacity: 0,
+      }
+    },
+  }).addTo(lMap);
+
+  features.once('load', function (evt) {
+    // create a new empty Leaflet bounds object
+    var bounds = L.latLngBounds([]);
+    // loop through the features returned by the server
+    features.eachFeature(function (layer) {
+      // get the bounds of an individual feature
+      var layerBounds = layer.getBounds();
+      // extend the bounds of the collection to fit the bounds of the new feature
+      bounds.extend(layerBounds);
+    });
+
+    // once we've looped through all the features, zoom the map to the extent of the collection
+    lMap.fitBounds(bounds);
+  });
+
+});
+
 L.TileLayerQuad = L.TileLayer.extend({
 
-  getTileUrl: function(tilePoint) {
+  getTileUrl: function (tilePoint) {
     this._adjustTilePoint(tilePoint);
 
     return L.Util.template(this._url, L.extend({
@@ -41,7 +73,7 @@ L.TileLayerQuad = L.TileLayer.extend({
    *
    * Adapted from http://msdn.microsoft.com/en-us/library/bb259689.aspx
    */
-  _xyzToQuad: function(x, y, zoom) {
+  _xyzToQuad: function (x, y, zoom) {
     var quadKey = '', digit, mask;
     for (var z = zoom; z > 0; z--) {
       digit = 0;
