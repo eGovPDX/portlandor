@@ -100,12 +100,25 @@ function _portland_leaflet_maps_assemble_default_map_info(&$map_info, $default_s
       'layer #3' => array(
         'urlTemplate' => $prot . "www.portlandmaps.com/arcgis/rest/services/Public/Park_Amenities/MapServer/tile/$zyx_only",
       ),
-      'park boundary' => array(
-        'urlTemplate' => $prot . "www.portlandmaps.com/arcgis/rest/services/Public/Basemap_Color/MapServer/2",
-        'layer_type' => 'overlay',
-        'esri_layer_type' => 'featureLayer',
-      ),
+      // 'park boundary' => array(
+      //   'urlTemplate' => $prot . "www.portlandmaps.com/arcgis/rest/services/Public/Basemap_Color/MapServer/2",
+      //   'layer_type' => 'overlay',
+      //   'esri_layer_type' => 'featureLayer',
+      // ),
     ),
   );
 
+}
+
+function portland_leaflet_maps_preprocess_node(&$variables) {
+  if ($variables['node']->getType() == 'location') {
+    // If there is a PortlandMaps layer and ID, add it as an overlay to the map
+    // Drupal.Leaflet['leaflet-map-node-location-950-field-geolocation'].lMap
+    if( $variables['node']->hasField('field_portlandmaps_layer') && $variables['node']->hasField('field_portlandmaps_id')) {
+      $variables['#attached']['drupalSettings']['portlandmaps_layer'] = $variables['node']->field_portlandmaps_layer->value;
+      $variables['#attached']['drupalSettings']['portlandmaps_id'] = $variables['node']->field_portlandmaps_id->value;
+      $nid = $variables['node']->id();
+
+    }
+  }
 }
