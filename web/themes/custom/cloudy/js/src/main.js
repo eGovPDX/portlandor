@@ -5,6 +5,14 @@ import 'bootstrap';
 (function($, Drupal) {
   'use strict';
 
+  Drupal.behaviors.datepicker_test = {
+    attach: function(context, settings) {
+      $("#datepicker-test").once().datepicker().on("changeDate", function (e) {
+        alert(e);
+      });
+    }
+  };
+
   Drupal.behaviors.tab_handler = {
     attach: function(context, settings) {
       var urlHash = window.location.hash;
