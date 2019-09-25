@@ -14,6 +14,22 @@ function portland_views_helper_form_views_exposed_form_alter(&$form, &$form_stat
 
   // POWR-1017 // validate date range in exposed filter
   _portland_views_helper_validate_event_filter_date_range($form, $form_state);
+
+  // POWR-1088 // KLUDGE for events exposed filters block not using path alias for form action
+  _portland_views_helper_fix_group_events_exposed_filter_form_action($form, $form_state);
+}
+
+function _portland_views_helper_fix_group_events_exposed_filter_form_action(&$form, &$form_state) {
+  // when the events exposed filters are placed in a block in a different region, the form
+  // action is incorrectly picked up from the current path and throws an error if submitted. 
+  // for example, on /powr/events the submit form action is /group/all/events. presumably this
+  // is because it's not correctly reading the path alias. this simple kludge fixes the issue
+  // specifically for the group events page
+  if ($form['#form_id'] == 'views_exposed_form' && $form['#action'] == '/group/all/events') {
+    $current_path = \Drupal::service('path.current')->getPath();
+    $result = \Drupal::service('path.alias_manager')->getAliasByPath($current_path);
+    $form['#action'] = $result;
+  }
 }
 
 function _portland_views_helper_validate_event_filter_date_range(&$form, &$form_state) {
