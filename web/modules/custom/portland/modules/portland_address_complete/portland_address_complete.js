@@ -46,6 +46,12 @@
                     // Create a new <option> element.
                     var option = document.createElement('option');
                     option.value = item.address;
+                    // Set default when the data is incomplete
+                    var city = item.attributes.city ? item.attributes.city : 'Portland';
+                    var state = item.attributes.state ? item.attributes.state : 'Oregon';
+                    var zip_code = item.attributes.zip_code ? item.attributes.zip_code : '';
+                    // option.text = item.address + ', ' + city + ', ' + state;
+                    // if(zip_code) option.text += ', ' + item.attributes.zip_code;
                     option.setAttribute('data-city', city);
                     option.setAttribute('data-state', state);
                     option.setAttribute('data-zip', zip_code);
