@@ -35,14 +35,14 @@ class PublishAction extends ViewsBulkOperationsActionBase {
     $entity->moderation_state->value = 'published';
     // Make this change a new revision
     if($entity->hasField('revision_log'))
-      $entity->revision_log = 'Published by '. $user_display_name;
+      $entity->revision_log = 'Bulk operation: published by '. $user_display_name;
     $entity->setNewRevision(TRUE);
     $entity->setRevisionCreationTime(REQUEST_TIME);
     $entity->setRevisionUserId(\Drupal::currentUser()->id());
     $entity->save();
 
     // Don't return anything for a default completion message, otherwise return translatable markup.
-    return $this->t('Published by '. $user_display_name);
+    return $this->t('Bulk operation: published by '. $user_display_name);
   }
 
   /**
