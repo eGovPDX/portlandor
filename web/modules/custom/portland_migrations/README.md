@@ -45,7 +45,7 @@ For some of the content migrations, the exported data must be massaged to avoid 
 
 ##### Supplemental file: policies_categories.csv
 
-This is a simple list of 2nd level categories in its own csv file. The list was manually generated due to the relatively low number of items and the 
+This is a simple list of 2nd level categories in its own csv file. The list was manually generated due to the relatively low number of items and the
 difficulty in generating it dyanmically. The list is not expected to change prior to final migration. The 3rd level categories are inclueded in the
 main policies datafile, and are created as children of their parent 2nd level categories and linked to the content using a custom process plugin.
 
@@ -60,20 +60,17 @@ It includes 3 columns: TYPE_NAME, TYPE_CODE, and DESCRIPTION.
 ### Running the migrations
 
 The Migrate Tools module provides drush commands to run the migrations. The order of commands is important! When running the migrations on remove servers, such as multidev or Dev/Test/Live, use the terminus commands. Example:
+
 ```
 lando terminus drush [environment] migrate:import [migration_id]
-'''
+```
+
 For multidev environments, the environment id is formatted like this: portlandor.powr-1234.
 
 #### Timeouts
 
-Long migrations run through terminus may exceed the Pantheon timeout and be terminated with a message such as, "Connection to appserver.powr-1284.5c6715db-abac-4633-ada8-1c9efe354629.drush.in closed by remote host." There is no way to increase this timeout,
-but a workaround exists. The migration may be reset and restarted. It will pick up where it left off. This may need to be done multiple
-times for long migrations.
-```
-lando terminus drush [environment] mrs [migration_id]
-lando terminus drush [environment] migrate:import [migration_id]
-```
+Long migrations run through terminus may exceed the Pantheon timeout and be terminated with a message such as, "Connection to appserver.powr-1284.5c6715db-abac-4633-ada8-1c9efe354629.drush.in closed by remote host." There is no way to increase this timeout, but a workaround exists. The migration may be reset and restarted. It will pick up where it left off. This may need to be done multiple times for long migrations.
+
 
 #### Eudaly news
 
@@ -82,27 +79,33 @@ drush migrate:import eudaly_news
 drush migrate:import eudaly_news_group_content
 ```
 
-#### DEMO: Category documents
+#### Category documents for Eudaly news
 
 ```
 drush migrate:import category_documents
 drush migrate:import category_documents_group_content
 ```
+
 #### City charter
+
 ```
 drush migrate:import city_charter_chapters
 drush migrate:import city_charter_articles
 drush migrate:import city_charter_sections
 ```
+
 #### City Code
+
 ```
 drush migrate:import city_code_titles
 drush migrate:import city_code_chapters
 drush migrate:import city_code_sections
 ```
+
 #### City policies
+
 ```
-drush migrate:import policies_catgegories
+drush migrate:import policies_categories
 drush migrate:import policies_types
 drush migrate:import policies
 ```
