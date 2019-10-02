@@ -34,11 +34,12 @@ class MarkForReviewAction extends ViewsBulkOperationsActionBase {
     $entity->moderation_state->value = 'review';
     $entity->field_reviewer->entity = $reviewer_uid;
     $entity->setNewRevision(TRUE);
-    $entity->revision_log = 'Assigned to '. $user_display_name .' for review';
+    $entity->revision_log = 'Bulk operation: assigned to '. $user_display_name .' for review';
+    $entity->setRevisionUserId(\Drupal::currentUser()->id());
     $entity->setRevisionCreationTime(REQUEST_TIME);
     $entity->save();
     // Don't return anything for a default completion message, otherwise return translatable markup.
-    return $this->t('Assigned to '. $user_display_name .' for review');
+    return $this->t('Bulk operation: assigned to '. $user_display_name .' for review');
   }
 
   /**

@@ -1,0 +1,16 @@
+diff --git a/modules/geocoder_field/geocoder_field.module b/modules/geocoder_field/geocoder_field.module
+index fc8a45a..fb8de74 100644
+--- a/modules/geocoder_field/geocoder_field.module
++++ b/modules/geocoder_field/geocoder_field.module
+@@ -188,7 +188,10 @@ function geocoder_field_entity_presave(EntityInterface $entity) {
+       // remote value is null and the field value should be preserved
+       // geofield has value and remote field value has not changed.
+       if ((empty($remote_field->getValue()) && $geocoder['failure']['handling'] == 'preserve') ||
+-      (isset($original_field) && !$entity->get($field_name)->isEmpty() && $preprocessor_manager->sourceFieldIsSameOfOriginal($remote_field, $original_field))) {
++      (isset($original_field) && !$entity->get($field_name)->isEmpty() && $preprocessor_manager->sourceFieldIsSameOfOriginal($remote_field, $original_field)) 
++      // Patch code to skip geocoding when "address_line1" is empty
++      || ( ($remote_field->first() != NULL) && empty($remote_field->first()->address_line1) )
++      ) {
+         continue;
+       }
+ 
