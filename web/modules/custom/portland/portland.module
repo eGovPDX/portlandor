@@ -21,7 +21,7 @@ const GROUP_CONTENT_TYPE_PLURAL = [
     "building" => ["buildings"],
     "city_service" => ["services"],
     "service_location" => ["locations"],
-    "event" => ["events", "events/recent", "events/search"],
+    "event" => ["events", "events/past", "events/search"],
     "image" => ["images"],
     "document" => ["documents"],
     "video" => ["videos"],
@@ -98,7 +98,7 @@ function updateGroupAliases($group) {
             // save new or updated alias
             $path = \Drupal::service('path.alias_storage')->save($system_path, $alias, $lang);
         }
-    } 
+    }
 }
 
 /**
@@ -172,7 +172,7 @@ function portland_group_content_type_delete(GroupContentTypeInterface $groupCont
 /**
  * Implements hook_ENTITY_TYPE_presave().
  */
-// POWR-475 Changing short name of a group can cause the group URL to be different from 
+// POWR-475 Changing short name of a group can cause the group URL to be different from
 // the URLs in the sidebar menu. Root cause is that the group URL is set by PathAuto to be clean
 // and unique. But the URL in sidebar menu is formed by Twig code using the short name as is.
 // The solution is to update short name to ensure it's clean and unique when the group is updated.
@@ -211,7 +211,7 @@ function portland_group_insert(GroupInterface $group) {
     }
 
     updateGroupAliases($group);
-    
+
     // Workaround for Drupal bug: https://www.drupal.org/project/inline_entity_form/issues/2966933
     $group->path->pathauto = Drupal\pathauto\PathautoState::CREATE;
 
@@ -309,7 +309,7 @@ function portland_theme($existing, $type, $theme, $path) {
 
     'portland_revision_block' => [
         'variables' => [
-            'title' => NULL, 
+            'title' => NULL,
             'alert_color' => NULL,
             'alert_icon' => NULL,
             'current_revision_state' => NULL,
@@ -415,7 +415,7 @@ function portland_entity_update($entity)
 // Build the deletion log message of an entity
 function buildLogMessage($entity) {
     if(!$entity) return '';
-    
+
     $parentGroupTitle = '';
     if($entity->getEntityTypeId() == 'group_content') {
         $parentGroupTitle = 'Parent Group='.$entity->getGroup()->label().',   ';
@@ -482,9 +482,9 @@ function _portland_get_active_alerts_count($reset = false)
 }
 
 
-function portland_node_view(array &$build, 
-                            \Drupal\Core\Entity\EntityInterface $entity, 
-                            \Drupal\Core\Entity\Display\EntityViewDisplayInterface $display, 
+function portland_node_view(array &$build,
+                            \Drupal\Core\Entity\EntityInterface $entity,
+                            \Drupal\Core\Entity\Display\EntityViewDisplayInterface $display,
                             $view_mode) {
     $current_path = \Drupal::service('path.current')->getPath();
     $a = $build;
@@ -516,7 +516,7 @@ function portland_preprocess_paragraph(&$vars) {
             };
             $document = $vars['paragraph'];
 
-            if ($document->hasField("field_document") && 
+            if ($document->hasField("field_document") &&
                 $document->field_document->entity !== NULL) {
                 // Map mimetype to font awesome icon names. Sources:
                 // https://api.drupal.org/api/drupal/includes%21file.mimetypes.inc/function/file_default_mimetype_mapping/7.x
@@ -585,8 +585,8 @@ function portland_form_pathauto_bulk_update_form_alter(&$form, $form_state) {
     $form['actions']['submit']['#submit'][] = 'portland_handle_bulk_generate';
 }
 
-// When bulk generating aliases for taxonomy terms, we also generate aliases for "/taxonomy/term/CONTENT_TYPE" 
-// and "/taxonomy/term/GROUP_TYPE" 
+// When bulk generating aliases for taxonomy terms, we also generate aliases for "/taxonomy/term/CONTENT_TYPE"
+// and "/taxonomy/term/GROUP_TYPE"
 function portland_handle_bulk_generate($form, $form_state) {
     // If taxonomy_term is selected
     if($form_state->getValues()['update']['canonical_entities:taxonomy_term'] === 'canonical_entities:taxonomy_term') {
@@ -788,7 +788,7 @@ function portland_form_alter(&$form, &$form_state, $form_id) {
     ];
 
     if( in_array($form_id, $form_array_with_group_field) ) {
-        // Set the default value as the node's current group       
+        // Set the default value as the node's current group
         $node = $form_state->getFormObject()->getEntity();
         $group_id = NULL;
         if($node->isNew()) {
