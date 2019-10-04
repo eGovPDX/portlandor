@@ -1,8 +1,10 @@
 (function ($) {
   // Once the Leaflet Map is loaded with its features. Store a copy of map
   var map;
+  var pathOptions;
   $(document).on('leaflet.map', function (e, settings, lMap, mapid) {
     map = lMap;
+    pathOptions = JSON.parse(settings.settings.path);
   });
 
   Drupal.Leaflet.prototype._create_layer_orig = Drupal.Leaflet.prototype.create_layer;
@@ -63,6 +65,7 @@
           // Convert shapefile binary into geojson text
           shp(byteArray).then(function (geojson) {
             featureLayer.addData(geojson);
+            featureLayer.setStyle(pathOptions);
             map.fitBounds(featureLayer.getBounds());
           })
         };
@@ -97,7 +100,8 @@
         xhr.responseType = 'json';
         xhr.onload = function() {
             if (xhr.status !== 200) return
-            featureLayer.addData(xhr.response) //.addTo(map);
+            featureLayer.addData(xhr.response);
+            featureLayer.setStyle(pathOptions);
             map.fitBounds(featureLayer.getBounds());
         };
         xhr.send();
