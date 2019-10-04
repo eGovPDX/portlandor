@@ -24,7 +24,7 @@ use Drupal\Core\Utility\LinkGeneratorInterface;
  *
  * @FieldFormatter(
  *   id = "leaflet_formatter_default",
- *   label = @Translation("Leaflet Map"),
+ *   label = @Translation("Portland Leaflet Map"),
  *   field_types = {
  *     "file"
  *   }
@@ -334,11 +334,9 @@ class LeafletDefaultFormatter extends FormatterBase implements ContainerFactoryP
         $file_type = 'geojson'; // Default to GeoJSON
       }
 
-      $features[] = [
-        'feature_source' => 'file',
-        'file_url' => $file_url,
-        'file_type' => $file_type
-      ];
+      $feature['feature_source'] = 'file';
+      $feature['file_url'] = $file_url;
+      $feature['file_type'] = $file_type;
 
       // Eventually set the popup content.
       if ($settings['popup']) {
@@ -412,7 +410,7 @@ class LeafletDefaultFormatter extends FormatterBase implements ContainerFactoryP
       }
     }
     // Render the map, if we do have data or the hide option is unchecked.
-    elseif ( /*!empty($js_settings['features']) || */ empty($settings['hide_empty_map'])) {
+    elseif ( !empty($js_settings['features']) || empty($settings['hide_empty_map'])) {
       $results[] = $this->leafletService->leafletRenderMap($js_settings['map'], $js_settings['features'], $settings['height'] . 'px');
     }
 
