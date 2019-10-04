@@ -56,7 +56,8 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
 
     // Log in.
     $this->getSession()->visit($uli);
-    $this->getSession()->wait(10000, "document.readyState === 'complete'");
+    $this->getSession()->wait(20000, "jQuery('li.account').length >= 1");
+    // $this->getSession()->wait(10000, "document.readyState === 'complete'");
 
     $driver = $this->getDriver();
     $manager = $this->getUserManager();
