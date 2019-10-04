@@ -388,12 +388,6 @@ class LeafletDefaultFormatter extends FormatterBase implements ContainerFactoryP
       $features[] = $feature;
     }
 
-    // $features[] = [
-    //     'type' => 'point',
-    //     'lat' => 45.5236111,
-    //     'lon' => -122.675
-    // ];
-
     $js_settings = [
       'map' => $map,
       'features' => $features,
