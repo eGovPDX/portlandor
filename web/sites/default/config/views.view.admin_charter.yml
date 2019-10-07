@@ -1,14 +1,10 @@
-uuid: 53f2421f-87dc-4d10-9119-a2dece9baf36
+uuid: 764bd664-4c67-4fef-9c04-cf12db4ec016
 langcode: en
 status: true
 dependencies:
   config:
-    - node.type.charter_article
-    - node.type.charter_chapter
-    - node.type.charter_section
-    - node.type.code_chapter
-    - node.type.code_section
-    - node.type.code_title
+    - field.storage.node.field_charter_level
+    - node.type.city_charter
     - system.menu.editor-toolbar
     - user.role.administrator
     - user.role.code_editor
@@ -17,10 +13,11 @@ dependencies:
   module:
     - content_moderation
     - node
+    - options
     - user
     - views_bulk_operations
-id: admin_charter_code_policies
-label: 'Admin: Charter, Code, Policies'
+id: admin_charter
+label: 'Admin: Charter'
 module: views
 description: 'Administrative view to edit charter, code, and policies'
 tag: ''
@@ -94,11 +91,12 @@ display:
           columns:
             views_bulk_operations_bulk_form: views_bulk_operations_bulk_form
             title: title
-            type: type
+            field_charter_level: field_charter_level
             status: status
             moderation_state: moderation_state
             changed: changed
             operations: operations
+            field_legacy_path: field_legacy_path
           info:
             views_bulk_operations_bulk_form:
               align: ''
@@ -112,8 +110,8 @@ display:
               separator: ''
               empty_column: false
               responsive: ''
-            type:
-              sortable: true
+            field_charter_level:
+              sortable: false
               default_sort_order: asc
               align: ''
               separator: ''
@@ -141,6 +139,11 @@ display:
               empty_column: false
               responsive: ''
             operations:
+              align: ''
+              separator: ''
+              empty_column: false
+              responsive: ''
+            field_legacy_path:
               align: ''
               separator: ''
               empty_column: false
@@ -216,7 +219,7 @@ display:
             node_save_action: 0
             node_make_sticky_action: 0
             node_make_unsticky_action: 0
-            mark_for_review_action: mark_for_review_action
+            mark_for_review_action: 0
             portland_archive_action: portland_archive_action
             portland_publish_action: portland_publish_action
             views_bulk_operations_delete_entity: views_bulk_operations_delete_entity
@@ -228,8 +231,6 @@ display:
           preconfiguration:
             'entity:break_lock:node':
               label_override: ''
-            mark_for_review_action:
-              label_override: 'Mark for review'
             portland_archive_action:
               label_override: Unpublish/archive
             portland_publish_action:
@@ -284,14 +285,14 @@ display:
           multi_type: separator
           separator: ', '
           field_api_classes: false
-        type:
-          id: type
-          table: node_field_data
-          field: type
+        field_charter_level:
+          id: field_charter_level
+          table: node__field_charter_level
+          field: field_charter_level
           relationship: none
           group_type: group
           admin_label: ''
-          label: Type
+          label: Level
           exclude: false
           alter:
             alter_text: false
@@ -332,11 +333,10 @@ display:
           hide_empty: false
           empty_zero: false
           hide_alter_empty: true
-          click_sort_column: target_id
-          type: entity_reference_label
-          settings:
-            link: true
-          group_column: target_id
+          click_sort_column: value
+          type: list_default
+          settings: {  }
+          group_column: value
           group_columns: {  }
           group_rows: true
           delta_limit: 0
@@ -346,8 +346,6 @@ display:
           multi_type: separator
           separator: ', '
           field_api_classes: false
-          entity_type: node
-          entity_field: type
           plugin_id: field
         status:
           id: status
@@ -641,6 +639,51 @@ display:
           entity_type: node
           entity_field: title
           plugin_id: string
+        field_charter_level_value:
+          id: field_charter_level_value
+          table: node__field_charter_level
+          field: field_charter_level_value
+          relationship: none
+          group_type: group
+          admin_label: ''
+          operator: or
+          value: {  }
+          group: 1
+          exposed: true
+          expose:
+            operator_id: field_charter_level_value_op
+            label: Level
+            description: ''
+            use_operator: false
+            operator: field_charter_level_value_op
+            identifier: field_charter_level_value
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+              anonymous: '0'
+              administrator: '0'
+              sitewide_editor: '0'
+              code_editor: '0'
+              council_clerk: '0'
+              group_creator: '0'
+              park_editor: '0'
+            reduce: false
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
+          reduce_duplicates: false
+          plugin_id: list_field
         type_1:
           id: type_1
           table: node_field_data
@@ -650,14 +693,9 @@ display:
           admin_label: ''
           operator: in
           value:
-            charter_article: charter_article
-            charter_chapter: charter_chapter
-            charter_section: charter_section
-            code_chapter: code_chapter
-            code_section: code_section
-            code_title: code_title
+            city_charter: city_charter
           group: 1
-          exposed: true
+          exposed: false
           expose:
             operator_id: type_1_op
             label: Type
@@ -705,7 +743,7 @@ display:
           value:
             charter_code_policies-draft: charter_code_policies-draft
             charter_code_policies-published: charter_code_policies-published
-            charter_code_policies-unpublished: charter_code_policies-unpublished
+            charter_code_policies-archived: charter_code_policies-archived
           group: 1
           exposed: true
           expose:
@@ -785,7 +823,7 @@ display:
           entity_field: status
           plugin_id: boolean
       sorts: {  }
-      title: 'Admin: Charter/Code'
+      title: 'Admin: Charter'
       header:
         area_text_custom:
           id: area_text_custom
@@ -796,7 +834,7 @@ display:
           admin_label: ''
           empty: true
           tokenize: false
-          content: "<a href=\"/node/add\" class=\"button btn-cta\">Add content</a>\r\n<p class=\"muted\">Use this to add charter or code content.</p>"
+          content: '<a href="/node/add/city_charter" class="button btn-cta">Add charter</a>'
           plugin_id: text_custom
       footer: {  }
       empty: {  }
@@ -817,7 +855,9 @@ display:
         - 'user.node_grants:view'
         - user.roles
       tags:
+        - 'config:field.storage.node.field_charter_level'
         - 'config:workflow_list'
+        - extensions
   admin_code:
     display_plugin: page
     id: admin_code
@@ -825,10 +865,10 @@ display:
     position: 1
     display_options:
       display_extenders: {  }
-      path: code/admin
+      path: charter/admin
       menu:
         type: normal
-        title: 'Manage charter/code'
+        title: 'Manage charter'
         description: ''
         expanded: false
         parent: ''
@@ -845,4 +885,6 @@ display:
         - 'user.node_grants:view'
         - user.roles
       tags:
+        - 'config:field.storage.node.field_charter_level'
         - 'config:workflow_list'
+        - extensions
