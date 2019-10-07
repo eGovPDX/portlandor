@@ -42,7 +42,7 @@
           }
         }
 
-        Drupal.Leaflet.bounds.push(layer.getBounds());
+        // Drupal.Leaflet.bounds.push(layer.getBounds());
 
         if (feature.properties.style) {
           layer.setStyle(feature.properties.style);
