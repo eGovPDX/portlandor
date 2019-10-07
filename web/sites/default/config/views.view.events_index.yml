@@ -253,24 +253,17 @@ display:
           group: 1
           exposed: true
           expose:
-            operator_id: field_start_date_1_op
-            label: 'Date range between'
-            description: ''
             use_operator: false
             operator: field_start_date_1_op
-            identifier: start_date
-            required: false
+            identifier: field_start_date_1
+            label: 'Start date'
+            description: null
             remember: false
             multiple: false
-            remember_roles:
-              authenticated: authenticated
-              anonymous: '0'
-              administrator: '0'
-              sitewide_editor: '0'
-              code_editor: '0'
-            placeholder: ''
-            min_placeholder: ''
-            max_placeholder: ''
+            required: false
+            min_placeholder: null
+            max_placeholder: null
+            placeholder: null
           is_grouped: false
           group_info:
             label: ''
@@ -318,8 +311,8 @@ display:
           relationship: none
           group_type: group
           admin_label: ''
-          empty: true
-          content: '@total upcoming events'
+          empty: false
+          content: '@total events found'
           plugin_id: result
       footer: {  }
       empty:
@@ -350,42 +343,14 @@ display:
         - url
         - url.query_args
       tags: {  }
-  page_1:
+  events_past_index:
     display_plugin: page
-    id: page_1
-    display_title: Events
+    id: events_past_index
+    display_title: 'Past events'
     position: 1
     display_options:
       display_extenders: {  }
-      path: events
-      menu:
-        type: none
-        title: Events
-        description: ''
-        expanded: false
-        parent: ''
-        weight: -45
-        context: '0'
-        menu_name: main
-      display_description: ''
-      header: {  }
-      defaults:
-        header: false
-    cache_metadata:
-      max-age: -1
-      contexts:
-        - 'languages:language_interface'
-        - url
-        - url.query_args
-      tags: {  }
-  page_2:
-    display_plugin: page
-    id: page_2
-    display_title: 'Page: Past events'
-    position: 1
-    display_options:
-      display_extenders: {  }
-      path: events/archive
+      path: events/past
       menu:
         type: none
         title: 'Past Events'
@@ -486,51 +451,6 @@ display:
             default_group_multiple: {  }
             group_items: {  }
           plugin_id: search_api_date
-        search_api_fulltext:
-          id: search_api_fulltext
-          table: search_api_index_full_index
-          field: search_api_fulltext
-          relationship: none
-          group_type: group
-          admin_label: ''
-          operator: and
-          value: ''
-          group: 1
-          exposed: true
-          expose:
-            operator_id: ''
-            label: 'Search past events'
-            description: ''
-            use_operator: true
-            operator: search_api_fulltext_op
-            identifier: search
-            required: false
-            remember: false
-            multiple: false
-            remember_roles:
-              authenticated: authenticated
-              anonymous: '0'
-              administrator: '0'
-              sitewide_editor: '0'
-            placeholder: ''
-          is_grouped: false
-          group_info:
-            label: ''
-            description: ''
-            identifier: ''
-            optional: true
-            widget: select
-            multiple: false
-            remember: false
-            default_group: All
-            default_group_multiple: {  }
-            group_items: {  }
-          parse_mode: terms
-          min_length: null
-          fields:
-            - rendered_item
-            - title
-          plugin_id: search_api_fulltext
       filter_groups:
         operator: AND
         groups:
@@ -581,8 +501,24 @@ display:
           group_type: group
           admin_label: ''
           empty: true
-          content: '@total past events. '
+          content: 'Displaying @start - @end of @total past events. <a href="/events">View upcoming events</a>'
           plugin_id: result
+    cache_metadata:
+      max-age: -1
+      contexts:
+        - 'languages:language_interface'
+        - url.query_args
+      tags: {  }
+  events_search_index:
+    display_plugin: page
+    id: events_search_index
+    display_title: 'Search events'
+    position: 3
+    display_options:
+      display_extenders: {  }
+      path: events/search
+      exposed_block: true
+      empty:
         area:
           id: area
           table: views
@@ -590,16 +526,358 @@ display:
           relationship: none
           group_type: group
           admin_label: ''
-          empty: false
+          empty: true
           tokenize: false
           content:
-            value: '<a href="/events">View upcoming events</a>'
-            format: simple_editor
+            value: 'No events found in that date range.'
+            format: basic_style_editor
           plugin_id: text
+      defaults:
+        empty: false
+        title: false
+        filters: false
+        filter_groups: false
+        header: false
+        cache: false
+      title: 'Search events'
+      display_description: ''
+      filters:
+        type_2:
+          id: type_2
+          table: search_api_index_full_index
+          field: type_2
+          relationship: none
+          group_type: group
+          admin_label: ''
+          operator: or
+          value:
+            event: event
+          group: 1
+          exposed: false
+          expose:
+            operator_id: ''
+            label: ''
+            description: ''
+            use_operator: false
+            operator: ''
+            identifier: ''
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+            reduce: false
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
+          reduce_duplicates: false
+          plugin_id: search_api_options
+        search_api_fulltext:
+          id: search_api_fulltext
+          table: search_api_index_full_index
+          field: search_api_fulltext
+          relationship: none
+          group_type: group
+          admin_label: ''
+          operator: or
+          value: ''
+          group: 1
+          exposed: true
+          expose:
+            operator_id: ''
+            label: Keywords
+            description: ''
+            use_operator: true
+            operator: search_api_fulltext_op
+            identifier: search
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+              anonymous: '0'
+              administrator: '0'
+              sitewide_editor: '0'
+              code_editor: '0'
+              council_clerk: '0'
+              group_creator: '0'
+              park_editor: '0'
+            placeholder: ''
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
+          parse_mode: terms
+          min_length: null
+          fields:
+            - content_title
+            - field_search_keywords
+            - rendered_item
+          plugin_id: search_api_fulltext
+        field_start_date_1:
+          id: field_start_date_1
+          table: search_api_index_full_index
+          field: field_start_date
+          relationship: none
+          group_type: group
+          admin_label: ''
+          operator: between
+          value:
+            min: ''
+            max: ''
+            value: ''
+            type: date
+          group: 1
+          exposed: true
+          expose:
+            operator_id: field_start_date_1_op
+            label: 'Start date is between'
+            description: ''
+            use_operator: false
+            operator: field_start_date_1_op
+            identifier: starts
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+              anonymous: '0'
+              administrator: '0'
+              sitewide_editor: '0'
+              code_editor: '0'
+              council_clerk: '0'
+              group_creator: '0'
+              park_editor: '0'
+            placeholder: ''
+            min_placeholder: ''
+            max_placeholder: ''
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
+          plugin_id: search_api_date
+      filter_groups:
+        operator: AND
+        groups:
+          1: AND
+      header:
+        result:
+          id: result
+          table: views
+          field: result
+          relationship: none
+          group_type: group
+          admin_label: ''
+          empty: false
+          content: 'Displaying @start - @end of @total events that match your search. <a href="/events">View upcoming events</a>.  <a href="/events/past">View past events</a>.'
+          plugin_id: result
+      cache:
+        type: none
     cache_metadata:
       max-age: -1
       contexts:
         - 'languages:language_interface'
         - url
+        - url.query_args
+      tags: {  }
+  events_upcoming_index:
+    display_plugin: page
+    id: events_upcoming_index
+    display_title: 'Upcoming events'
+    position: 1
+    display_options:
+      display_extenders: {  }
+      path: events
+      menu:
+        type: none
+        title: Events
+        description: ''
+        expanded: false
+        parent: ''
+        weight: -45
+        context: '0'
+        menu_name: main
+      display_description: ''
+      header:
+        result:
+          id: result
+          table: views
+          field: result
+          relationship: none
+          group_type: group
+          admin_label: ''
+          empty: false
+          content: 'Displaying @start - @end of @total upcoming events. <a href="/events/past">View past events</a>'
+          plugin_id: result
+      defaults:
+        header: false
+        title: false
+        filters: false
+        filter_groups: false
+      title: 'Upcoming events'
+      filters:
+        type_2:
+          id: type_2
+          table: search_api_index_full_index
+          field: type_2
+          relationship: none
+          group_type: group
+          admin_label: ''
+          operator: or
+          value:
+            event: event
+          group: 1
+          exposed: false
+          expose:
+            operator_id: ''
+            label: ''
+            description: ''
+            use_operator: false
+            operator: ''
+            identifier: ''
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+            reduce: false
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
+          reduce_duplicates: false
+          plugin_id: search_api_options
+        field_start_date_1:
+          id: field_start_date_1
+          table: search_api_index_full_index
+          field: field_start_date
+          relationship: none
+          group_type: group
+          admin_label: ''
+          operator: '>='
+          value:
+            min: today
+            max: '+30 days'
+            value: today
+            type: offset
+          group: 2
+          exposed: false
+          expose:
+            operator_id: field_start_date_1_op
+            label: 'Date range between'
+            description: ''
+            use_operator: false
+            operator: field_start_date_1_op
+            identifier: start_date
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+              anonymous: '0'
+              administrator: '0'
+              sitewide_editor: '0'
+              code_editor: '0'
+            placeholder: ''
+            min_placeholder: ''
+            max_placeholder: ''
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
+          plugin_id: search_api_date
+        field_end_date:
+          id: field_end_date
+          table: search_api_index_full_index
+          field: field_end_date
+          relationship: none
+          group_type: group
+          admin_label: ''
+          operator: '>='
+          value:
+            min: ''
+            max: ''
+            value: today
+            type: offset
+          group: 2
+          exposed: false
+          expose:
+            operator_id: ''
+            label: ''
+            description: ''
+            use_operator: false
+            operator: ''
+            identifier: ''
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+            placeholder: ''
+            min_placeholder: ''
+            max_placeholder: ''
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
+          plugin_id: search_api_date
+      filter_groups:
+        operator: AND
+        groups:
+          1: AND
+          2: OR
+    cache_metadata:
+      max-age: -1
+      contexts:
+        - 'languages:language_interface'
         - url.query_args
       tags: {  }
