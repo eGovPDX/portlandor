@@ -32,35 +32,38 @@
 
   Drupal.Leaflet.prototype._create_feature_orig = Drupal.Leaflet.prototype.create_feature;
   Drupal.Leaflet.prototype.create_feature = function(feature) {
-    var featureLayer = L.geoJSON(null);
-
+    // Handle the custom geo file
     if( feature.feature_source == 'file') {
+      var featureLayer = L.geoJSON(null);
+      featureLayer.options.onEachFeature = function(feature, layer) {
+        for (var layer_id in layer._layers) {
+          for (var i in layer._layers[layer_id]._latlngs) {
+            Drupal.Leaflet.bounds.push(layer._layers[layer_id]._latlngs[i]);
+          }
+        }
+
+        Drupal.Leaflet.bounds.push(layer.getBounds());
+
+        if (feature.properties.style) {
+          layer.setStyle(feature.properties.style);
+        }
+        if (feature.properties.leaflet_id) {
+          layer._leaflet_id = feature.properties.leaflet_id;
+        }
+        if (feature.properties.popup) {
+          layer.bindPopup(feature.properties.popup);
+        }
+      };
+
+      var xhr = new XMLHttpRequest();
+      xhr.open("GET", feature.file_url, true);
       if( feature.file_type == 'shapefile') {
-        featureLayer.options.onEachFeature = function(feature, layer) {
-          for (var layer_id in layer._layers) {
-            for (var i in layer._layers[layer_id]._latlngs) {
-              Drupal.Leaflet.bounds.push(layer._layers[layer_id]._latlngs[i]);
-            }
-          }
-
-          // Drupal.Leaflet.bounds.push(layer.getBounds())
-
-          if (feature.properties.style) {
-            layer.setStyle(feature.properties.style);
-          }
-          if (feature.properties.leaflet_id) {
-            layer._leaflet_id = feature.properties.leaflet_id;
-          }
-          if (feature.properties.popup) {
-            layer.bindPopup(feature.properties.popup);
-          }
-        };
-
-        var xhr = new XMLHttpRequest();
-        xhr.open("GET", feature.file_url, true);
         xhr.responseType = "arraybuffer";
         xhr.onload = function (oEvent) {
-          if (xhr.status !== 200) return
+          if (xhr.status !== 200) {
+            console.error('Failed to load geo file: ' + feature.file_url);
+            return
+          }
           var byteArray = new Uint8Array(xhr.response);
           // Convert shapefile binary into geojson text
           shp(byteArray).then(function (geojson) {
@@ -69,47 +72,27 @@
             map.fitBounds(featureLayer.getBounds());
           })
         };
-        xhr.send();
       }
+      // Default file type is GeoJSON
       else {
-
-        featureLayer.options.onEachFeature = function(feature, layer) {
-          for (var layer_id in layer._layers) {
-            for (var i in layer._layers[layer_id]._latlngs) {
-              Drupal.Leaflet.bounds.push(layer._layers[layer_id]._latlngs[i]);
-            }
-          }
-
-          // Drupal.Leaflet.bounds.push(layer.getBounds())
-
-          if (feature.properties.style) {
-            layer.setStyle(feature.properties.style);
-          }
-          if (feature.properties.leaflet_id) {
-            layer._leaflet_id = feature.properties.leaflet_id;
-          }
-          if (feature.properties.popup) {
-            layer.bindPopup(feature.properties.popup);
-          }
-        };
-
         // Load Geo file from server and add it to the map
-        let xhr = new XMLHttpRequest();
-        xhr.open('GET', feature.file_url);
         xhr.setRequestHeader('Content-Type', 'application/json');
         xhr.responseType = 'json';
         xhr.onload = function() {
-            if (xhr.status !== 200) return
+            if (xhr.status !== 200) {
+              console.error('Failed to load geo file: ' + feature.file_url);
+              return
+            }
             featureLayer.addData(xhr.response);
             featureLayer.setStyle(pathOptions);
             map.fitBounds(featureLayer.getBounds());
         };
-        xhr.send();
       }
+      xhr.send();
       return featureLayer;
     }
     else {
-      // Default to the original code;
+      // Default to the original code
       return Drupal.Leaflet.prototype._create_feature_orig(feature);
     }
   }
@@ -118,19 +101,12 @@
 
 // Once the Leaflet Map is loaded with its features.
 jQuery(document).on('leaflet.map', function (e, settings, lMap, mapid) {
-
-  // lMap.setView(new L.LatLng(45.5236111, -122.675), 12);
-
   if( drupalSettings.portlandmaps_layer && drupalSettings.portlandmaps_id ) {
     var features = L.esri.featureLayer({
       url: drupalSettings.portlandmaps_layer,
       where: 'PropertyID=' + drupalSettings.portlandmaps_id,
       style: function (feature, layer) {
-        return {
-          color: '#00ffff',
-          weight: 2,
-          fillOpacity: 0,
-        }
+        return JSON.parse(settings.settings.path);
       },
     }).addTo(lMap);
 
