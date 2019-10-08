@@ -1,9 +1,9 @@
-uuid: 41ff4f1b-75aa-400d-8858-a71bb067a961
+uuid: c30f6beb-184e-4d55-8779-10d48703b235
 langcode: en
 status: true
 dependencies:
   config:
-    - core.entity_view_mode.node.teaser
+    - core.entity_view_mode.node.search_result
     - field.field.node.calendar_item.body
     - field.field.node.calendar_item.field_all_day
     - field.field.node.calendar_item.field_calendar_item_location
@@ -18,8 +18,15 @@ dependencies:
   module:
     - datetime
     - ds
+    - field_group
+    - time_field
     - user
 third_party_settings:
+  panelizer:
+    enable: false
+    custom: false
+    allow: false
+    default: default
   ds:
     layout:
       id: cloudy_card
@@ -38,20 +45,27 @@ third_party_settings:
           layout_class: {  }
     regions:
       second:
+        - 'bundle_field:node'
+        - field_calendar_item_type
+        - field_start_date
         - node_title
+        - field_end_date
         - group_event_date
         - field_all_day
         - group_event_time
         - field_start_time
         - group_date
         - field_end_time
-        - field_start_date
         - group_time
-        - field_end_date
     fields:
+      'bundle_field:node':
+        plugin_id: 'bundle_field:node'
+        weight: 0
+        label: hidden
+        formatter: default
       node_title:
         plugin_id: node_title
-        weight: 0
+        weight: 2
         label: hidden
         formatter: default
   field_group:
@@ -60,7 +74,7 @@ third_party_settings:
         - field_start_date
         - field_end_date
       parent_name: ''
-      weight: 3
+      weight: 5
       format_type: html_element
       format_settings:
         id: ''
@@ -80,7 +94,7 @@ third_party_settings:
         - field_start_time
         - field_end_time
       parent_name: ''
-      weight: 4
+      weight: 6
       format_type: html_element
       format_settings:
         id: ''
@@ -94,64 +108,32 @@ third_party_settings:
         speed: fast
       label: 'Event time'
       region: hidden
-id: node.calendar_item.teaser
+id: node.calendar_item.search_result
 targetEntityType: node
 bundle: calendar_item
-mode: teaser
+mode: search_result
 content:
   field_all_day:
-    type: boolean
-    weight: 1
-    region: second
-    label: above
-    settings:
-      format: custom
-      format_custom_true: 'All day'
-      format_custom_false: ''
-    third_party_settings:
-      ds:
-        ft:
-          id: default
-          settings:
-            lb: ''
-            lb-col: false
-            classes: {  }
-  field_end_date:
-    type: datetime_default
-    weight: 5
-    region: second
-    label: above
-    settings:
-      timezone_override: ''
-      format_type: month_day_year
-    third_party_settings:
-      ds:
-        ft:
-          id: default
-          settings:
-            lb: ''
-            lb-col: false
-            classes: {  }
-  field_end_time:
-    type: time_formatter
     weight: 3
-    region: second
-    label: above
+    label: hidden
     settings:
-      time_format: 'g:i a'
-    third_party_settings:
-      ds:
-        ft:
-          id: default
-          settings:
-            lb: ''
-            lb-col: false
-            classes: {  }
-  field_start_date:
-    type: datetime_default
-    weight: 4
+      format: default
+      format_custom_false: ''
+      format_custom_true: ''
+    third_party_settings: {  }
+    type: boolean
     region: second
-    label: above
+  field_calendar_item_type:
+    weight: 1
+    label: hidden
+    settings:
+      link: true
+    third_party_settings: {  }
+    type: entity_reference_label
+    region: second
+  field_end_date:
+    weight: 2
+    label: hidden
     settings:
       timezone_override: ''
       format_type: month_day_year
@@ -163,11 +145,11 @@ content:
             lb: ''
             lb-col: false
             classes: {  }
-  field_start_time:
-    type: time_formatter
-    weight: 2
+    type: datetime_default
     region: second
-    label: above
+  field_end_time:
+    weight: 5
+    label: hidden
     settings:
       time_format: 'g:i a'
     third_party_settings:
@@ -178,11 +160,43 @@ content:
             lb: ''
             lb-col: false
             classes: {  }
+    type: time_formatter
+    region: second
+  field_start_date:
+    weight: 1
+    label: hidden
+    settings:
+      timezone_override: ''
+      format_type: month_day_year
+    third_party_settings:
+      ds:
+        ft:
+          id: default
+          settings:
+            lb: ''
+            lb-col: false
+            classes: {  }
+    type: datetime_default
+    region: second
+  field_start_time:
+    weight: 4
+    label: hidden
+    settings:
+      time_format: 'g:i a'
+    third_party_settings:
+      ds:
+        ft:
+          id: default
+          settings:
+            lb: ''
+            lb-col: false
+            classes: {  }
+    type: time_formatter
+    region: second
 hidden:
   body: true
   content_moderation_control: true
   field_calendar_item_location: true
-  field_calendar_item_type: true
   field_participants: true
   field_reviewer: true
   group_content: true
