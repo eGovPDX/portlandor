@@ -3,6 +3,7 @@
   var map;
   var pathOptions;
   $(document).on('leaflet.map', function (e, settings, lMap, mapid) {
+    console.log('leaflet.map')
     map = lMap;
     pathOptions = JSON.parse(settings.settings.path);
   });
@@ -64,6 +65,7 @@
             console.error('Failed to load geo file: ' + feature.file_url);
             return
           }
+          console.log('shape file loaded')
           var byteArray = new Uint8Array(xhr.response);
           // Convert shapefile binary into geojson text
           shp(byteArray).then(function (geojson) {
