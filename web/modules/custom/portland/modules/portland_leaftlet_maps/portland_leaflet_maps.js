@@ -93,7 +93,7 @@
     }
     else {
       // Default to the original code
-      return Drupal.Leaflet.prototype._create_feature_orig(feature);
+      return this._create_feature_orig(feature);
     }
   }
 
