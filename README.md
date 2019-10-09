@@ -35,18 +35,17 @@ The .lando.yml file included in this repo will set you up to connect to the corr
 3. Run `lando terminus auth:login --machine-token=[YOUR MACHINE TOKEN]`, this logs your Lando instance into our Pantheon account.
 4. To make sure you don't hit rate limits with composer, log into Github and generate a personal access token and add it to your lando instance by using `lando composer config --global --auth github-oauth.github.com "$COMPOSER_TOKEN"`. (You should replace \$COMPOSER_TOKEN with your generated token.) There is a handy tutorial for this at https://coderwall.com/p/kz4egw/composer-install-github-rate-limiting-work-around
 5. You have three options to get your database and files set up:
-   1. Lando quick start:
-      1. Run `lando pull` to get the DB and files from pantheon. This process takes a while. #grabsomecoffee
-   2. Run `lando latest` to automaticaly download and import the latest DB from Dev.
-   3. Manually import the database and files
-      1. Download the latest database and files backup from the Dev environment on Pantheon. (https://dashboard.pantheon.io/sites/5c6715db-abac-4633-ada8-1c9efe354629#dev/backups/backup-log)
+   1. Run `lando latest` to automaticaly download and import the latest DB from Dev.
+   2. Manually import the database
+      1. Download the latest database from the Dev environment on Pantheon. (https://dashboard.pantheon.io/sites/5c6715db-abac-4633-ada8-1c9efe354629#dev/backups/backup-log)
       2. Move your database export into a folder in your project root called `/artifacts`. (We added this to our .gitignore, so the directory won't be there until you create it.)
       3. Run `lando db-import artifacts/portlandor_dev_2018-04-12T00-00-00_UTC_database.sql.gz`. (This is just an example, you'll need to use the actual filename of the database dump you downloaded.)
-      4. Move your files backup into `web/sites/default/files`
+    3. Download the latest files from the Dev environment on Pantheon. (https://dashboard.pantheon.io/sites/5c6715db-abac-4633-ada8-1c9efe354629#dev/backups/backup-log)
+        1. Move your files backup into `web/sites/default/files`
 6. Run `lando refresh` to build your local environment to match master. (This runs composer install, drush updb, drush cim, and drush cr.)
 7. You should now be able to visit https://portlandor.lndo.site in your browser.
 8. To enable XDebug, run `lando xdebug-on`. Run `lando xdebug-off` to turn it off for increased performance.
-9. When you are done with your development for the day, run `lando stop` to shut off your development containers.
+9. When you are done with your development for the day, run `lando stop` to shut off your development containers or `lando poweroff` if you want to stop all lando containers.
 
 See other Lando with Pantheon commands at https://docs.devwithlando.io/tutorials/pantheon.html.
 
@@ -250,7 +249,7 @@ In general it's a good practice to keep dependencies updated to latest versions,
 
 To update all dependencies, run `lando composer update`. To update a specific package, for example the Devel module, run `lando composer update --with-dependencies drupal/devel`. After updating, make sure to commit the updated composer.lock file.
 
-The composer.lock file contains a commit hash that identifies the exact commit version of the lock file and all dependencies' dependencies. You can think of it as a tag for the exact combination of dependencies being committed, and it's used to determine whether composer.lock is out of date. 
+The composer.lock file contains a commit hash that identifies the exact commit version of the lock file and all dependencies' dependencies. You can think of it as a tag for the exact combination of dependencies being committed, and it's used to determine whether composer.lock is out of date.
 
 When something changes in composer.json, but the lock hash has not been updated, you may receive the warning:
 ...
