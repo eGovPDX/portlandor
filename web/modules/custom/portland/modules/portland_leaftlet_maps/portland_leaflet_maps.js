@@ -83,7 +83,13 @@
               console.error('Failed to load geo file: ' + feature.file_url);
               return
             }
-            featureLayer.addData(xhr.response);
+            // In IE, xhr.response is still a string
+            if (typeof xhr.response === 'string' || xhr.response instanceof String) {
+              featureLayer.addData(JSON.parse(xhr.response));
+            }
+            else {
+              featureLayer.addData(xhr.response);
+            }
             featureLayer.setStyle(pathOptions);
             map.fitBounds(featureLayer.getBounds());
         };
