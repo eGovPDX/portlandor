@@ -119,6 +119,7 @@ class MigrateBodyContentAndLinkedMedia extends ProcessPluginBase {
                 'target_id' => $downloaded_file->id()
               ],
             ]);
+            $plugin_id = "group_media:document";
           } else if ($media_type == "image") {
             $media = Media::create([
               'bundle' => 'image',
@@ -130,10 +131,17 @@ class MigrateBodyContentAndLinkedMedia extends ProcessPluginBase {
                 'target_id' => $downloaded_file->id()
               ],
             ]);
+            $plugin_id = "group_media:image";
           }
           $media->save();
           $media->setPublished(TRUE)
                 ->save();
+
+          // now create group content entity to link this media item to a group.
+          // Charter, code, and policies group is 141.
+          $group = \Drupal\group\Entity\Group::load(141);
+          $group->addContent($media, $plugin_id);
+
         } else {
           // media entity already exists, get it
           $entity_id = $result[0]->entity_id;
