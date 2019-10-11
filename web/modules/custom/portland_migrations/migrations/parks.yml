@@ -1,0 +1,45 @@
+id: parks
+label: 'Park Finder Import'
+class: null
+langcode: en
+dependencies:
+    enforced:
+        - portland_migrations
+migration_group: parks
+source:
+  plugin: 'csv'
+  path: modules/custom/portland_migrations/sources/parks.csv
+  header_row_count: 1
+  constants:
+    legacy_path_prefix: 'https://www.portlandoregon.gov/parks/finder/index.cfm?action=ViewPark&PropertyID='
+  keys:
+    - PropertyID
+
+process:
+  uid:
+    plugin: default_value
+    default_value: 1
+  title: Property
+  # field_city_section: SubArea
+  field_facebook: Facebook
+  field_history/value: HistoricalInfo
+  field_history/format:
+    plugin: default_value
+    default_value: full_html
+  field_body_content/value: ProgramInfo
+  field_body_content/format:
+    plugin: default_value
+    default_value: full_html
+  # https://www.portlandoregon.gov/parks/finder/index.cfm?action=ViewPark&PropertyID=48
+  field_legacy_path:
+    plugin: concat
+    source:
+      - 'constants/legacy_path_prefix'
+      - PropertyID
+  field_hours_of_operation: SpecialInfo
+  field_property_id: PropertyID
+  field_size_in_acres: OwnedAcres
+  field_year_acquired: YearAcquired
+destination:
+  plugin: 'entity:node'
+  default_bundle: park_facility

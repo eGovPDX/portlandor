@@ -59,7 +59,7 @@ It includes 3 columns: TYPE_NAME, TYPE_CODE, and DESCRIPTION.
 
 ### Running the migrations
 
-The Migrate Tools module provides drush commands to run the migrations. The order of commands is important! When running the migrations on remove servers, such as multidev or Dev/Test/Live, use the terminus commands. Example:
+The Migrate Tools module provides drush commands to run the migrations. The order of commands is important! When running the migrations on remote servers, such as multidev or Dev/Test/Live, use the terminus commands. Example:
 
 ```
 lando terminus drush [environment] migrate:import [migration_id]
