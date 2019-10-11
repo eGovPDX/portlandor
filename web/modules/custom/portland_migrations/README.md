@@ -76,8 +76,8 @@ Long migrations run through terminus may exceed the Pantheon timeout and be term
 
 ##### Local
 ```
-drush migrate:import eudaly_news
-drush migrate:import eudaly_news_group_content
+lando drush migrate:import eudaly_news
+lando drush migrate:import eudaly_news_group_content
 ```
 ##### On Pantheon
 ```
@@ -89,8 +89,8 @@ lando terminus remote:drush portlandor.powr-[ID] -- migrate:import eudaly_news_g
 
 ##### Local
 ```
-drush migrate:import category_documents
-drush migrate:import category_documents_group_content
+lando drush migrate:import category_documents
+lando drush migrate:import category_documents_group_content
 ```
 ##### On Pantheon
 ```
@@ -102,9 +102,9 @@ lando terminus remote:drush portlandor.powr-[ID] -- migrate:import category_docu
 
 ##### Local
 ```
-drush migrate:import city_charter_chapters
-drush migrate:import city_charter_articles
-drush migrate:import city_charter_sections
+lando drush migrate:import city_charter_chapters
+lando drush migrate:import city_charter_articles
+lando drush migrate:import city_charter_sections
 ```
 ##### On Pantheon
 ```
@@ -117,9 +117,9 @@ lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_charter_
 
 ##### Local
 ```
-drush migrate:import city_code_titles
-drush migrate:import city_code_chapters
-drush migrate:import city_code_sections
+lando drush migrate:import city_code_titles
+lando drush migrate:import city_code_chapters
+lando drush migrate:import city_code_sections
 ```
 ##### On Pantheon
 ```
@@ -132,15 +132,17 @@ lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_code_sec
 
 ##### Local
 ```
-drush migrate:import policies_categories
-drush migrate:import policies_types
-drush migrate:import policies
+lando drush migrate:import policies_categories
+lando drush migrate:import policies_types
+lando drush migrate:import policies
+lando drush migrate:import policies_group_content
 ```
 ##### On Pantheon
 ```
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:import policies_categories
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:import policies_types
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:import policies
+lando terminus remote:drush portlandor.powr-[ID] -- migrate:import policies_group_content
 ```
 
 If the migration does not complete due to timeout on a Pantheon environment, you may need to reset the status of a migration to then continue the migration with a second command.
@@ -164,10 +166,10 @@ For this migration, if the eudaly_news is rolled back and later imported again, 
 To fix this, the dependent migration eudaly_news_group_content also needs to be rolled back and migrated again. This can be done via the UI or with the following drush commands:
 
 ```
-drush migrate:rollback eudaly_news_group_content
-drush migrate:rollback eudaly_news
-drush migrate:import eudaly_news
-drush migrate:import eudaly_news_group_content
+lando drush migrate:rollback eudaly_news_group_content
+lando drush migrate:rollback eudaly_news
+lando drush migrate:import eudaly_news
+lando drush migrate:import eudaly_news_group_content
 ```
 
 **Note:** The commands above work for Drush 9. In Drush 8 the command names and aliases are different. Execute `drush list --filter=migrate` to verify the proper commands for your version of Drush.
