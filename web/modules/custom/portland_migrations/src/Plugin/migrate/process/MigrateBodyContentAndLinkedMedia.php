@@ -101,6 +101,14 @@ class MigrateBodyContentAndLinkedMedia extends ProcessPluginBase {
           // download and save managed file
           try {
             $downloaded_file = system_retrieve_file($url, $destination_uri, TRUE);
+
+            // when running this in multidev, an error is trown:
+            // Error: Call to a member function id() on bool. Most likely occurring because $downloaded_file is false.
+            // check for that condition and report it.
+            if ($downloaded_file === FALSE) {
+              $message = "Error retrieving newly downloaded file, returning false. URL: $url. Destination: $destination_uri";
+              \Drupal::logger('portland_migrations')->notice($message);
+            }
           }
           catch (Exception $e) {
             $message = "Error occurred while trying to download URL target at " . $url . " and create managed file. Exception: " . $e->getMessage();
