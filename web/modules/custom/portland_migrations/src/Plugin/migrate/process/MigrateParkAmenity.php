@@ -29,15 +29,17 @@ class MigrateParkAmenity extends ProcessPluginBase {
   public function transform($value, MigrateExecutableInterface $migrate_executable, Row $row, $destination_property) {
     $this->loadVocabularies("park_amenities_activities");
 
-    $key = $this->processTermName($value);
-    if( !array_key_exists($key, $this->term_name_and_id)) {
-      echo 'Mismatch: CSV[', $value, ']';
-      return [];
+    // $value is a "|" separated string of all amenities
+    // "horseshoe pit|volleyball court|picnic table|paths - unpaved|playground|paths - paved|accessible play area|splash pad"
+    $array = explode ( "|", $value);
+    $result = [];
+    foreach($array as $term_name){
+      $result[] = $this->term_name_and_id[$this->processTermName($term_name)];
     }
-    // return id of newly created term
-    return [
-      'target_id' => $this->term_name_and_id[$this->processTermName($value)],
-    ];
+
+    if(count($result) == 0)
+      echo "Missing term: ".$value;
+    return $result;
   }
 
   protected function processTermName($term_name) {
