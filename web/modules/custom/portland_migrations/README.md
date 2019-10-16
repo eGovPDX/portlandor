@@ -120,6 +120,8 @@ lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_charter_
 
 #### Parks
 
+To roll back changes, please run "migrate:rollback" on these migrations in the reverse order of "migrate:import".
+
 ##### Local
 ```
 drush migrate:import parks
