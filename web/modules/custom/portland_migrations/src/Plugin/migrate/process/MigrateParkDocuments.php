@@ -79,6 +79,8 @@ class MigrateParkDocuments extends ProcessPluginBase {
     $media->moderation_state->value = 'published';
     $media->save();
 
+    $this->addEntityToGroup(20, $media); // 20 is the Park bureau group ID
+
     // Append the new Document to the Park's documents field
     $result = $parkNode->get('field_documents')->getValue();
     $result[] = [
@@ -86,6 +88,12 @@ class MigrateParkDocuments extends ProcessPluginBase {
     ];
 
     return $result;
+  }
+
+  protected function addEntityToGroup($group_id, $entity) {
+    $group = Drupal\group\Entity\Group::load($group_id);
+    if( $group == NULL ) return;
+    $group->addContent($entity, 'group_'.$entity->getEntityTypeId().':'.$entity->bundle());
   }
 
   protected function prepareDownloadDirectory() {

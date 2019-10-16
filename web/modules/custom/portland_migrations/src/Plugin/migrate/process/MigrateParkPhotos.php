@@ -78,6 +78,8 @@ class MigrateParkPhotos extends ProcessPluginBase {
     $media->moderation_state->value = 'published';
     $media->save();
 
+    $this->addEntityToGroup(20, $media); // 20 is the Park bureau group ID
+
     // Append the new Image to the Park's Images field
     $result = $parkNode->get('field_images')->getValue();
     $result[] = [
@@ -85,6 +87,12 @@ class MigrateParkPhotos extends ProcessPluginBase {
     ];
 
     return $result;
+  }
+
+  protected function addEntityToGroup($group_id, $entity) {
+    $group = Drupal\group\Entity\Group::load($group_id);
+    if( $group == NULL ) return;
+    $group->addContent($entity, 'group_'.$entity->getEntityTypeId().':'.$entity->bundle());
   }
 
   protected function prepareDownloadDirectory() {
