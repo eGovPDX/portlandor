@@ -51,7 +51,7 @@ if (isset($_ENV['PANTHEON_ENVIRONMENT']) && php_sapi_name() != 'cli') {
   elseif ($_ENV['PANTHEON_ENVIRONMENT'] === 'Dev') {
     /** Replace www.example.com with your registered domain name */
     $primary_domain = 'dev-portlandor.pantheonsite.io';
-    $config['environment_indicator.indicator']['bg_color'] = '#046a38';
+    $config['environment_indicator.indicator']['bg_color'] = '#3455eb';
     $config['environment_indicator.indicator']['fg_color'] = '#ffffff';
     $config['environment_indicator.indicator']['name'] = 'Dev';
   }
