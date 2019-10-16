@@ -6,9 +6,8 @@ use Drupal\migrate\MigrateException;
 use Drupal\migrate\MigrateExecutableInterface;
 use Drupal\migrate\ProcessPluginBase;
 use Drupal\migrate\Row;
-use Drupal\Component\Utility\Html;
-use Drupal\Component\Utility\Xss;
 use Drupal\media\Entity\Media;
+use Drupal\group\Entity\GroupInterface;
 
 /**
  * Download park images from URLs like:
@@ -90,7 +89,7 @@ class MigrateParkPhotos extends ProcessPluginBase {
   }
 
   protected function addEntityToGroup($group_id, $entity) {
-    $group = Drupal\group\Entity\Group::load($group_id);
+    $group = \Drupal\group\Entity\Group::load($group_id);
     if( $group == NULL ) return;
     $group->addContent($entity, 'group_'.$entity->getEntityTypeId().':'.$entity->bundle());
   }
