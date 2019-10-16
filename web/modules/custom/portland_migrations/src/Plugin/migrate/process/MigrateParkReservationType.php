@@ -34,11 +34,11 @@ class MigrateParkReservationType extends ProcessPluginBase {
     $array = explode ( "|", $value);
     $result = [];
     foreach($array as $term_name){
-      $result[] = $this->term_name_and_id[$this->processTermName($term_name)];
+      $processedTermName = $this->processTermName($term_name);
+      if( !array_key_exists($processedTermName, $this->term_name_and_id) ) continue;
+      $result[] = $this->term_name_and_id[$processedTermName];
     }
 
-    if(count($result) == 0)
-      echo "Missing term: ".$value;
     return $result;
   }
 
