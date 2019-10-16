@@ -4,12 +4,16 @@ A module for managing migrations on portland.gov.
 
 ## Migrations
 
-This module includes 4 migration configurations.
+This module includes these migration configurations.
 
 - eudaly_news - imports content from the included eudaly_news.csv source into the news entity
 - eudaly_news_group_content - creates group_content entities that associate the imported news nodes with Commissioner Eudaly's group
 - category_documents - imports content from the included category_documents.csv source into the document media entity
 - category_documents_group_content - creates group_content entities that associate the imported document media entities with Commissioner Eudaly's group
+- parks - imports parks.csv. Creates Park Facility content items that other parks migrations depend on.
+- park_amenities - import park amenities into three taxonomy vocabularies in POWR: Park Location Type, Park amenities/activities, Reservations Available.
+- park_photos - download images and associate them with the matching park.
+- park_documents - download documents and associate them with the matching park.
 
 ## Instructions
 
@@ -111,6 +115,23 @@ drush migrate:import city_charter_sections
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_charter_chapters
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_charter_articles
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_charter_sections
+```
+
+#### Parks
+
+##### Local
+```
+drush migrate:import parks
+drush migrate:import park_amenities
+drush migrate:import park_documents
+drush migrate:import park_photos
+```
+##### On Pantheon
+```
+lando terminus remote:drush portlandor.powr-[ID] -- migrate:import parks
+lando terminus remote:drush portlandor.powr-[ID] -- migrate:import park_amenities
+lando terminus remote:drush portlandor.powr-[ID] -- migrate:import park_documents
+lando terminus remote:drush portlandor.powr-[ID] -- migrate:import park_photos
 ```
 
 #### City Code
