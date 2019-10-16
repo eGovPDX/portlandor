@@ -135,14 +135,12 @@ lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_code_sec
 lando drush migrate:import policies_categories
 lando drush migrate:import policies_types
 lando drush migrate:import policies
-lando drush migrate:import policies_group_content
 ```
 ##### On Pantheon
 ```
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:import policies_categories
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:import policies_types
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:import policies
-lando terminus remote:drush portlandor.powr-[ID] -- migrate:import policies_group_content
 ```
 
 If the migration does not complete due to timeout on a Pantheon environment, you may need to reset the status of a migration to then continue the migration with a second command.
