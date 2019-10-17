@@ -3,6 +3,7 @@
 use Drupal\redirect\Entity\Redirect;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Field\BaseFieldDefinition;
+use Drupal\Core\Field\FieldStorageDefinitionInterface;
 
 /**
  * Implements hook_entity_bundle_field_info_alter().
@@ -33,14 +34,19 @@ function portland_legacy_redirects_entity_base_field_info($entity_type) {
     // outside the redirects UI.
     $fields['field_redirects'] = BaseFieldDefinition::create('string')
       ->setName('field_redirects')
-      ->setLabel(t('Legacy Paths NEW NEW NEW'))
+      ->setLabel(t('Legacy Path'))
       ->setComputed(TRUE)
       ->setClass('\Drupal\portland_legacy_redirects\Field\RedirectList')
-      ->setDisplayConfigurable('view', TRUE)
-      ->setDisplayOptions('view', [
-        'label' => 'hidden',
-        'weight' => -5,
-      ]);
+      ->setDisplayConfigurable('form', TRUE)
+      ->setDisplayOptions('form', [
+        'type' => 'text',
+        'weight' => 50,
+      ])
+      ->setDescription(t('This field is used to create redirects to this page from legacy pages in the old site. Multiple paths may be entered in case several pages have been combined during migration. Once these paths are created, they may only be modified or removed by an administrator. Paths must be relative and start with a slash. For example, the page "https://www.portlandoregon.gov/bts/39479" should be entered as "/bts/39479."'))
+      ->setCardinality(FieldStorageDefinitionInterface::CARDINALITY_UNLIMITED);
+
+      //      ->addConstraint('FeedTitle');
+
 
     return $fields;
   }
@@ -51,7 +57,7 @@ function portland_legacy_redirects_entity_base_field_info($entity_type) {
  */
 function portland_legacy_redirects_form_alter(&$form, FormStateInterface $form_state, $form_id)
 {
-  _sync_node_and_group_redirects($form, $form_state);
+  //_sync_node_and_group_redirects($form, $form_state);
 }
 
 /**
@@ -143,7 +149,7 @@ function _sync_node_and_group_redirects(&$form, $form_state) {
  * Implements hook_entity_update.
  */
 function portland_legacy_redirects_entity_update($entity) {
-  _portland_legacy_redirects_create_redirects($entity);
+  //_portland_legacy_redirects_create_redirects($entity);
 }
 
 /**
