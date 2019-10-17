@@ -2,6 +2,7 @@
 
 use Drupal\redirect\Entity\Redirect;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Field\BaseFieldDefinition;
 
 /**
  * Implements hook_entity_bundle_field_info_alter().
@@ -18,6 +19,30 @@ function portland_legacy_redirects_entity_bundle_field_info_alter(&$fields, \Dru
 function _add_field_legacy_path_validation_constraint_path_exists(&$fields, \Drupal\Core\Entity\EntityTypeInterface $entity_type, $bundle) {
   if (array_key_exists('field_legacy_path', $fields)) {
     $fields['field_legacy_path']->addConstraint('relative_path', []);
+  }
+}
+
+/**
+ * Implements hook_entity_base_field_info().
+ */
+function portland_legacy_redirects_entity_base_field_info($entity_type) {
+  if ($entity_type->id() === 'node' || $entity_type->id() === 'group') {
+    $fields = [];
+
+    // add a field that allows the page's redirects (labeled as Legacy Paths) to be modified
+    // outside the redirects UI.
+    $fields['field_redirects'] = BaseFieldDefinition::create('string')
+      ->setName('field_redirects')
+      ->setLabel(t('Legacy Paths NEW NEW NEW'))
+      ->setComputed(TRUE)
+      ->setClass('\Drupal\portland_legacy_redirects\Field\RedirectList')
+      ->setDisplayConfigurable('view', TRUE)
+      ->setDisplayOptions('view', [
+        'label' => 'hidden',
+        'weight' => -5,
+      ]);
+
+    return $fields;
   }
 }
 
