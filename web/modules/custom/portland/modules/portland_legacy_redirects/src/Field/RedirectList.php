@@ -54,8 +54,7 @@ class RedirectList extends FieldItemList implements FieldItemListInterface {
 
       // retrieve all existing redirects for this contnet; then delete them
       $type = $entity->getEntityTypeId();
-      $this_node = \Drupal::routeMatch()->getParameter($type);
-      $nid = $this_node->Id();
+      $nid = $entity->Id();
       $redirects = \Drupal::service('redirect.repository')->findByDestinationUri(["internal:/$type/$nid", "entity:$type/$nid"]);
       foreach($redirects as $key => $redirect) {
         $redirect->delete();
