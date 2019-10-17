@@ -93,7 +93,7 @@
     }
     else {
       // Default to the original code
-      return Drupal.Leaflet.prototype._create_feature_orig(feature);
+      return this._create_feature_orig(feature);
     }
   }
 
@@ -104,7 +104,7 @@ jQuery(document).on('leaflet.map', function (e, settings, lMap, mapid) {
   if( drupalSettings.portlandmaps_layer && drupalSettings.portlandmaps_id ) {
     var features = L.esri.featureLayer({
       url: drupalSettings.portlandmaps_layer,
-      where: 'PropertyID=' + drupalSettings.portlandmaps_id,
+      where: drupalSettings.portlandmaps_id, // 'PropertyID=' + drupalSettings.portlandmaps_id,
       style: function (feature, layer) {
         return JSON.parse(settings.settings.path);
       },

@@ -32,7 +32,7 @@ if (isset($_ENV['PANTHEON_ENVIRONMENT']) && php_sapi_name() != 'cli') {
     $primary_domain = 'beta.portland.gov';
     $config['environment_indicator.indicator']['bg_color'] = '#dc3545';
     $config['environment_indicator.indicator']['fg_color'] = '#ffffff';
-    $config['environment_indicator.indicator']['name'] = 'Live';
+    $config['environment_indicator.indicator']['name'] = 'Production';
   }
   elseif ($_ENV['PANTHEON_ENVIRONMENT'] === 'test') {
     /** Replace www.example.com with your registered domain name */
@@ -48,12 +48,19 @@ if (isset($_ENV['PANTHEON_ENVIRONMENT']) && php_sapi_name() != 'cli') {
     $config['environment_indicator.indicator']['fg_color'] = '#ffffff';
     $config['environment_indicator.indicator']['name'] = 'Local';
   }
+  elseif ($_ENV['PANTHEON_ENVIRONMENT'] === 'Dev') {
+    /** Replace www.example.com with your registered domain name */
+    $primary_domain = 'dev-portlandor.pantheonsite.io';
+    $config['environment_indicator.indicator']['bg_color'] = '#3455eb';
+    $config['environment_indicator.indicator']['fg_color'] = '#ffffff';
+    $config['environment_indicator.indicator']['name'] = 'Dev';
+  }
   else {
     // Redirect to HTTPS on every Pantheon environment.
     $primary_domain = $_SERVER['HTTP_HOST'];
-    $config['environment_indicator.indicator']['bg_color'] = '#046a38';
+    $config['environment_indicator.indicator']['bg_color'] = '#3455eb';
     $config['environment_indicator.indicator']['fg_color'] = '#ffffff';
-    $config['environment_indicator.indicator']['name'] = 'Dev';
+    $config['environment_indicator.indicator']['name'] = 'Multidev';
   }
 
   if ($_ENV['PANTHEON_ENVIRONMENT'] !== 'lando' && 
