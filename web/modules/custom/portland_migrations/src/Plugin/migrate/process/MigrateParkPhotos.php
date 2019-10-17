@@ -33,6 +33,7 @@ class MigrateParkPhotos extends ProcessPluginBase {
 
     $parkNode = $this->getParkNode($row->getSourceProperty('PropertyID'));
     if($parkNode == NULL) return [];
+    $result = $parkNode->get('field_images')->getValue();
 
     // Build the POG URL of the photo from photo ID. 
     // $value is the PolPhotosId column in CSV
@@ -58,6 +59,11 @@ class MigrateParkPhotos extends ProcessPluginBase {
       \Drupal::logger('portland_migrations')->notice($message);
     }
 
+    if( $downloaded_file == FALSE ) {
+      echo "Failed to download $pogImageUrl";
+      return $result;
+    }
+
     // Create the Media Image item
     $parkTitle = $parkNode->getTitle();
     $pogAltText = $row->getSourceProperty('AltTagText');
@@ -80,7 +86,6 @@ class MigrateParkPhotos extends ProcessPluginBase {
     $this->addEntityToGroup(20, $media); // 20 is the Park bureau group ID
 
     // Append the new Image to the Park's Images field
-    $result = $parkNode->get('field_images')->getValue();
     $result[] = [
       'target_id' => $media->id(),
     ];

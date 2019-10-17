@@ -34,6 +34,7 @@ class MigrateParkDocuments extends ProcessPluginBase {
     // Do nothing if the park is not imported
     $parkNode = $this->getParkNode($row->getSourceProperty('PropertyID'));
     if($parkNode == NULL) return [];
+    $result = $parkNode->get('field_documents')->getValue();
 
     // Build the POG URL of the photo from photo ID. 
     // $value is the PolPhotosId column in CSV
@@ -60,6 +61,11 @@ class MigrateParkDocuments extends ProcessPluginBase {
       \Drupal::logger('portland_migrations')->notice($message);
     }
 
+    if( $downloaded_file == FALSE ) {
+      echo "Failed to download $pogFileUrl";
+      return $result;
+    }
+
     // Create the Media Document item
     $pogAltText = $row->getSourceProperty('AltTagText');
     $media = Media::create([
@@ -81,7 +87,6 @@ class MigrateParkDocuments extends ProcessPluginBase {
     $this->addEntityToGroup(20, $media); // 20 is the Park bureau group ID
 
     // Append the new Document to the Park's documents field
-    $result = $parkNode->get('field_documents')->getValue();
     $result[] = [
       'target_id' => $media->id(),
     ];
