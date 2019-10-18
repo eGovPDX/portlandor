@@ -17,9 +17,12 @@ class RelativePathConstraintValidator extends ConstraintValidator {
   public function validate($field, Constraint $constraint) {
 
     // is it single value or FieldItemList?
-    if ($field instanceof FieldItemListInterface) {
+    if ($field instanceof FieldItemListInterface && $field->getName() == "field_redirects") {
       foreach($field as $delta => $value) {
         $path = $value->value;
+
+        $entity = $field->getEntity();
+        $original = $entity->original;
 
         // test if path is bare (no protocol)
         if (!$this->validateRelative($path)) {
@@ -51,8 +54,12 @@ class RelativePathConstraintValidator extends ConstraintValidator {
         // true if valid, or the path to the other duplicate so that it can be included
         // in the error message. if validation is working, there should only ever be
         // one value returned in the array on failure.
-        $is_unique_in_system = $this->validateUniquePathInSystem($path, $field);
-        if ($is_unique_in_system !== true) {
+        //$group_id = $entity->get('field_group')->getValue()[0]['target_id'];
+        $eid = $entity->Id();
+        $type = $entity->getEntityTypeId();
+
+        $is_unique_in_system = $this->validateUniquePathInSystem($path, $type, $eid);
+        if ($is_unique_in_system !== true && !is_null($is_unique_in_system)) {
           $keys = array_keys($is_unique_in_system);
           $duplicate = $is_unique_in_system[$keys[0]];
           $dup_path = "/" . $duplicate->get('redirect_source')->getValue()[0]['path'];
@@ -103,23 +110,41 @@ class RelativePathConstraintValidator extends ConstraintValidator {
     return true;
   }
 
-  function validateUniquePathInSystem($path, $field)
+  function validateUniquePathInSystem($path, $type, $eid)
   {
+    // all: valid if no source path matches found.
+    // new page (no $eid): invalid if any source path matches found.
+    // existing page: invalid if source path and redirect uri don't match (valid if both match).
+
     // strip leading slash from path
     $path = substr($path, 0, 1) == "/" ? substr($path, 1) : $path;
 
-    // search for any nodes that already use this path; might be a node or a group.
-    // need to query the redirect table.
-    $matches = \Drupal::service('redirect.repository')->findBySourcePath($path);
-    //$matches = \Drupal::entityQuery('redirect')->condition('redirect_source__path', $path)->execute();
+    // there are 2 possible URI formats the redirect might use; need to test for both
+    $uri1 = "entity:$type/$eid";
+    $uri2 = "internal:/$type/$eid";
 
-    // any response other than TRUE is treated as a validation failure, so return the found results
-    // array in case we want to use it in the validation message.
-    if ($matches && count($matches) > 0) {
+    // get redirects with matching source
+    $matches = \Drupal::service('redirect.repository')->findBySourcePath($path);
+    $invalid = [];
+
+    // return true immediately if no matches found; yay, valid!
+    if (!$matches || count($matches) < 1) {
+      return TRUE;
+    }
+
+    // spin through matches...
+    // if $eid is null (new page), then any matches are invalid
+    if (!$eid && count($matches)) {
       return $matches;
     }
 
-    // no matching redirects found, return true
-    return TRUE;
+    // $eid is not null; if redirect uri matches current, it's valid
+    foreach($matches as $key => $redirect) {
+      $existing_uri = $redirect->get('redirect_redirect')->getValue()[0]['uri'];
+      if ($existing_uri != $uri1 && $existing_uri != $uri2) {
+        $invalid[] = $redirect;
+      }
+    }
+    return count($invalid) > 0 ? $invalid : TRUE;
   }
 }

@@ -6,24 +6,6 @@ use Drupal\Core\Field\BaseFieldDefinition;
 use Drupal\Core\Field\FieldStorageDefinitionInterface;
 
 /**
- * Implements hook_entity_bundle_field_info_alter().
- */
-function portland_legacy_redirects_entity_bundle_field_info_alter(&$fields, \Drupal\Core\Entity\EntityTypeInterface $entity_type, $bundle)
-{
-  //_add_field_legacy_path_validation_constraint_path_exists($fields, $entity_type, $bundle);
-}
-
-/**
- * Add relative_path constraint to field_legacy_path if it exists in fields array for the given bundle.
- * Called by hook_entity_bundle_field_info_alter.
- */
-function _add_field_legacy_path_validation_constraint_path_exists(&$fields, \Drupal\Core\Entity\EntityTypeInterface $entity_type, $bundle) {
-  if (array_key_exists('field_redirects', $fields)) {
-    $fields['field_redirects']->addConstraint('relative_path', []);
-  }
-}
-
-/**
  * Implements hook_entity_base_field_info().
  */
 function portland_legacy_redirects_entity_base_field_info($entity_type) {
@@ -32,9 +14,15 @@ function portland_legacy_redirects_entity_base_field_info($entity_type) {
 
     // add a field that allows the page's redirects (labeled as Legacy Paths) to be modified
     // outside the redirects UI.
+    // TODO: this adds the field to EVERY node, even ones we don't want the Legacy Path for.
+    //       it's not harmful except that it adds extra processing. it basically runs through
+    //       the validation routines but does nothing if not valid on a form where the field
+    //       is disabled/hidden. the only way I can think of to prevent this is to create and 
+    //       maintain a list of content types that it applies to; or maybe there's a way to 
+    //       determine whether the field is enabled in form view?
     $fields['field_redirects'] = BaseFieldDefinition::create('string')
       ->setName('field_redirects')
-      ->setLabel(t('Legacy Path'))
+      ->setLabel(t('Legacy path'))
       ->setComputed(TRUE)
       ->setClass('\Drupal\portland_legacy_redirects\Field\RedirectList')
       ->setDisplayConfigurable('form', TRUE)
@@ -49,11 +37,3 @@ function portland_legacy_redirects_entity_base_field_info($entity_type) {
     return $fields;
   }
 }
-
-/**
- * Strips leading slash from a path.
- */
-function _portland_legacy_redirects_utility_strip_leading_slash($path) {
-  return substr($path, 0, 1) == "/" ? substr($path, 1) : $path;
-}
-

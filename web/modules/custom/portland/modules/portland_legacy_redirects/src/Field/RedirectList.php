@@ -43,6 +43,7 @@ class RedirectList extends FieldItemList implements FieldItemListInterface {
    */
   public function preSave() {
     $test = 1;
+    $test = $this;
   }
 
   /**
