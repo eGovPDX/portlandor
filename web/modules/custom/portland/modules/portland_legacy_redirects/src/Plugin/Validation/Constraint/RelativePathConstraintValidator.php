@@ -49,13 +49,19 @@ class RelativePathConstraintValidator extends ConstraintValidator {
 
         // test if this path already exists. this validation function returns either
         // true if valid, or the path to the other duplicate so that it can be included
-        // in the error message.
-        $is_unique_in_system = $this->validateUniquePathInSystem($path);
+        // in the error message. if validation is working, there should only ever be
+        // one value returned in the array on failure.
+        $is_unique_in_system = $this->validateUniquePathInSystem($path, $field);
         if ($is_unique_in_system !== true) {
-          $message = "The legacy path already exists in the system (at <a href=\"$is_unique_in_system\" target=\"_blank\">$is_unique_in_system</a>). A path cannot redirect to multiple pages.";;
-          // NOTE: it might be helpful to show the user the node that contains the duplicate, but they then
-          // might try to remove it from that node, which wouldn't delete the existing redirect so that the
-          // new one could be recreated. this has the potential to cause confusion.
+          $keys = array_keys($is_unique_in_system);
+          $duplicate = $is_unique_in_system[$keys[0]];
+          $dup_path = "/" . $duplicate->get('redirect_source')->getValue()[0]['path'];
+          
+          $path_link_message = "";
+          if (is_array($is_unique_in_system) && count($is_unique_in_system) > 0) {
+            $path_link_message = " (<a href=\"$dup_path\" target=\"_blank\">$dup_path</a>)";
+          }
+          $message = "The legacy path already exists in the system$path_link_message. A path cannot redirect to multiple pages.";;
           $this->setViolation($message, $delta);
         }
 
@@ -97,32 +103,23 @@ class RelativePathConstraintValidator extends ConstraintValidator {
     return true;
   }
 
-  function validateUniquePathInSystem($path)
+  function validateUniquePathInSystem($path, $field)
   {
-    // search for any nodes that already use this path; might be a node or a group
-    $type = 'node';
-    $this_node = \Drupal::routeMatch()->getParameter($type);
-    if (!$this_node) {
-      $type = 'group';
-      $this_node = \Drupal::routeMatch()->getParameter($type);
-    }
-    if (!method_exists($this_node, 'Id')) {
-      // if we can't get the id of the node, we can assume the condition is valid
-      return true;
-    }
-    $this_id = $this_node->Id();
+    // strip leading slash from path
+    $path = substr($path, 0, 1) == "/" ? substr($path, 1) : $path;
 
-    // find all field values from both nodes and groups that match the path being validated
-    $matches_node = \Drupal::entityQuery('node')->condition("field_legacy_path", $path)->execute();
-    $matches_group = \Drupal::entityQuery('group')->condition("field_legacy_path", $path)->execute();
-    $matches = array_merge($matches_node, $matches_group);
+    // search for any nodes that already use this path; might be a node or a group.
+    // need to query the redirect table.
+    $matches = \Drupal::service('redirect.repository')->findBySourcePath($path);
+    //$matches = \Drupal::entityQuery('redirect')->condition('redirect_source__path', $path)->execute();
 
-    foreach ($matches as $idx => $found_id) {
-      if ($found_id == $this_id) continue;
-      // we return the path to the duplicate instead of "false" in case we want to display it
-      // in a message to the user. only a return value === true signals validity.
-      return \Drupal::service('path.alias_manager')->getAliasByPath("/$type/" . $found_id);
+    // any response other than TRUE is treated as a validation failure, so return the found results
+    // array in case we want to use it in the validation message.
+    if ($matches && count($matches) > 0) {
+      return $matches;
     }
-    return true;
+
+    // no matching redirects found, return true
+    return TRUE;
   }
 }
