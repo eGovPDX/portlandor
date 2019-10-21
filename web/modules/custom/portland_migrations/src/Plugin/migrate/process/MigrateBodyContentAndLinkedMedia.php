@@ -107,43 +107,59 @@ class MigrateBodyContentAndLinkedMedia extends ProcessPluginBase {
             \Drupal::logger('portland_migrations')->notice($message);
           }
 
-          // create media entity for file (image or document)
-          if ($media_type == "document") {
-            $media = Media::create([
-              'bundle' => 'document',
-              'uid' => 1,
-              'langcode' => \Drupal::languageManager()->getDefaultLanguage()->getId(),
-              'name' => $link_text,
-              'status' => 1,
-              'field_document' => [
-                'target_id' => $downloaded_file->id()
-              ],
-            ]);
-          } else if ($media_type == "image") {
-            $media = Media::create([
-              'bundle' => 'image',
-              'uid' => 1,
-              'langcode' => \Drupal::languageManager()->getDefaultLanguage()->getId(),
-              'name' => $link_text,
-              'status' => 1,
-              'image' => [
-                'target_id' => $downloaded_file->id()
-              ],
-            ]);
+          // when running this in multidev, an error is trown:
+          // Error: Call to a member function id() on bool. Most likely occurring because $downloaded_file is false.
+          // check for that condition and report it.
+          if ($downloaded_file === FALSE) {
+            $message = "Error retrieving newly downloaded file, returning false. URL: $url. Destination: $destination_uri";
+            \Drupal::logger('portland_migrations')->notice($message);
+          } else {
+            // create media entity for file (image or document)
+            if ($media_type == "document") {
+              $media = Media::create([
+                'bundle' => 'document',
+                'uid' => 1,
+                'langcode' => \Drupal::languageManager()->getDefaultLanguage()->getId(),
+                'name' => $link_text,
+                'status' => 1,
+                'field_document' => [
+                  'target_id' => $downloaded_file->id()
+                ],
+              ]);
+              $plugin_id = "group_media:document";
+            } else if ($media_type == "image") {
+              $media = Media::create([
+                'bundle' => 'image',
+                'uid' => 1,
+                'langcode' => \Drupal::languageManager()->getDefaultLanguage()->getId(),
+                'name' => $link_text,
+                'status' => 1,
+                'image' => [
+                  'target_id' => $downloaded_file->id()
+                ],
+              ]);
+              $plugin_id = "group_media:image";
+            }
+            $media->save();
+            $media->setPublished(TRUE)
+                  ->save();
+
+            // now create group content entity to link this media item to a group.
+            // Charter, code, and policies group is 141.
+            $group = \Drupal\group\Entity\Group::load(141);
+            $group->addContent($media, $plugin_id);
           }
-          $media->save();
-          $media->setPublished(TRUE)
-                ->save();
         } else {
           // media entity already exists, get it
           $entity_id = $result[0]->entity_id;
           $media = Media::load($entity_id);
         }
 
-        $file_uri = $media->get('field_document')->entity->getFileUri();
-        $file_url = file_url_transform_relative(file_create_url($file_uri));
-
-        $link->setAttribute("href", $file_url);
+        if ($downloaded_file) {
+          $file_uri = $media->get('field_document')->entity->getFileUri();
+          $file_url = file_url_transform_relative(file_create_url($file_uri));
+          $link->setAttribute("href", $file_url);
+        }
 
         // NOTE: Keep the original link tag but change the link href.
         // // uuid is needed to create entity-embed tag
