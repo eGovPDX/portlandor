@@ -4,12 +4,17 @@ A module for managing migrations on portland.gov.
 
 ## Migrations
 
-This module includes 4 migration configurations.
+This module includes these migration configurations.
 
 - eudaly_news - imports content from the included eudaly_news.csv source into the news entity
 - eudaly_news_group_content - creates group_content entities that associate the imported news nodes with Commissioner Eudaly's group
 - category_documents - imports content from the included category_documents.csv source into the document media entity
 - category_documents_group_content - creates group_content entities that associate the imported document media entities with Commissioner Eudaly's group
+- parks - imports parks.csv. Creates Park Facility content items that other parks migrations depend on.
+- park_group_content - add the Park Facility item to the Park bureau group.
+- park_amenities - import park amenities into three taxonomy vocabularies in POWR: Park Location Type, Park amenities/activities, Reservations Available.
+- park_photos - download images and associate them with the matching park.
+- park_documents - download documents and associate them with the matching park.
 
 ## Instructions
 
@@ -59,7 +64,7 @@ It includes 3 columns: TYPE_NAME, TYPE_CODE, and DESCRIPTION.
 
 ### Running the migrations
 
-The Migrate Tools module provides drush commands to run the migrations. The order of commands is important! When running the migrations on remove servers, such as multidev or Dev/Test/Live, use the terminus commands. Example:
+The Migrate Tools module provides drush commands to run the migrations. The order of commands is important! When running the migrations on remote servers, such as multidev or Dev/Test/Live, use the terminus commands. Example:
 
 ```
 lando terminus drush [environment] migrate:import [migration_id]
@@ -76,8 +81,8 @@ Long migrations run through terminus may exceed the Pantheon timeout and be term
 
 ##### Local
 ```
-drush migrate:import eudaly_news
-drush migrate:import eudaly_news_group_content
+lando drush migrate:import eudaly_news
+lando drush migrate:import eudaly_news_group_content
 ```
 ##### On Pantheon
 ```
@@ -89,8 +94,8 @@ lando terminus remote:drush portlandor.powr-[ID] -- migrate:import eudaly_news_g
 
 ##### Local
 ```
-drush migrate:import category_documents
-drush migrate:import category_documents_group_content
+lando drush migrate:import category_documents
+lando drush migrate:import category_documents_group_content
 ```
 ##### On Pantheon
 ```
@@ -102,9 +107,9 @@ lando terminus remote:drush portlandor.powr-[ID] -- migrate:import category_docu
 
 ##### Local
 ```
-drush migrate:import city_charter_chapters
-drush migrate:import city_charter_articles
-drush migrate:import city_charter_sections
+lando drush migrate:import city_charter_chapters
+lando drush migrate:import city_charter_articles
+lando drush migrate:import city_charter_sections
 ```
 ##### On Pantheon
 ```
@@ -113,13 +118,34 @@ lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_charter_
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_charter_sections
 ```
 
+#### Parks
+
+To roll back changes, please run "migrate:rollback" on these migrations in the reverse order of "migrate:import".
+
+##### Local
+```
+drush migrate:import parks
+drush migrate:import park_group_content
+drush migrate:import park_amenities
+drush migrate:import park_documents
+drush migrate:import park_photos
+```
+##### On Pantheon
+```
+lando terminus remote:drush portlandor.powr-[ID] -- migrate:import parks
+lando terminus remote:drush portlandor.powr-[ID] -- migrate:import park_group_content
+lando terminus remote:drush portlandor.powr-[ID] -- migrate:import park_amenities
+lando terminus remote:drush portlandor.powr-[ID] -- migrate:import park_documents
+lando terminus remote:drush portlandor.powr-[ID] -- migrate:import park_photos
+```
+
 #### City Code
 
 ##### Local
 ```
-drush migrate:import city_code_titles
-drush migrate:import city_code_chapters
-drush migrate:import city_code_sections
+lando drush migrate:import city_code_titles
+lando drush migrate:import city_code_chapters
+lando drush migrate:import city_code_sections
 ```
 ##### On Pantheon
 ```
@@ -132,9 +158,9 @@ lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_code_sec
 
 ##### Local
 ```
-drush migrate:import policies_categories
-drush migrate:import policies_types
-drush migrate:import policies
+lando drush migrate:import policies_categories
+lando drush migrate:import policies_types
+lando drush migrate:import policies
 ```
 ##### On Pantheon
 ```
@@ -164,10 +190,10 @@ For this migration, if the eudaly_news is rolled back and later imported again, 
 To fix this, the dependent migration eudaly_news_group_content also needs to be rolled back and migrated again. This can be done via the UI or with the following drush commands:
 
 ```
-drush migrate:rollback eudaly_news_group_content
-drush migrate:rollback eudaly_news
-drush migrate:import eudaly_news
-drush migrate:import eudaly_news_group_content
+lando drush migrate:rollback eudaly_news_group_content
+lando drush migrate:rollback eudaly_news
+lando drush migrate:import eudaly_news
+lando drush migrate:import eudaly_news_group_content
 ```
 
 **Note:** The commands above work for Drush 9. In Drush 8 the command names and aliases are different. Execute `drush list --filter=migrate` to verify the proper commands for your version of Drush.

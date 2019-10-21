@@ -32,7 +32,7 @@ if (isset($_ENV['PANTHEON_ENVIRONMENT']) && php_sapi_name() != 'cli') {
     $primary_domain = 'beta.portland.gov';
     $config['environment_indicator.indicator']['bg_color'] = '#dc3545';
     $config['environment_indicator.indicator']['fg_color'] = '#ffffff';
-    $config['environment_indicator.indicator']['name'] = 'Live';
+    $config['environment_indicator.indicator']['name'] = 'Production';
   }
   elseif ($_ENV['PANTHEON_ENVIRONMENT'] === 'test') {
     /** Replace www.example.com with your registered domain name */
@@ -48,15 +48,22 @@ if (isset($_ENV['PANTHEON_ENVIRONMENT']) && php_sapi_name() != 'cli') {
     $config['environment_indicator.indicator']['fg_color'] = '#ffffff';
     $config['environment_indicator.indicator']['name'] = 'Local';
   }
-  else {
-    // Redirect to HTTPS on every Pantheon environment.
-    $primary_domain = $_SERVER['HTTP_HOST'];
-    $config['environment_indicator.indicator']['bg_color'] = '#046a38';
+  elseif ($_ENV['PANTHEON_ENVIRONMENT'] === 'dev') {
+    /** Replace www.example.com with your registered domain name */
+    $primary_domain = 'dev-portlandor.pantheonsite.io';
+    $config['environment_indicator.indicator']['bg_color'] = '#3455eb';
     $config['environment_indicator.indicator']['fg_color'] = '#ffffff';
     $config['environment_indicator.indicator']['name'] = 'Dev';
   }
+  else {
+    // Redirect to HTTPS on every Pantheon environment.
+    $primary_domain = $_SERVER['HTTP_HOST'];
+    $config['environment_indicator.indicator']['bg_color'] = '#3455eb';
+    $config['environment_indicator.indicator']['fg_color'] = '#ffffff';
+    $config['environment_indicator.indicator']['name'] = 'Multidev';
+  }
 
-  if ($_ENV['PANTHEON_ENVIRONMENT'] !== 'lando' && 
+  if ($_ENV['PANTHEON_ENVIRONMENT'] !== 'lando' &&
       ($_SERVER['HTTP_HOST'] != $primary_domain
         || !isset($_SERVER['HTTP_USER_AGENT_HTTPS'])
         || $_SERVER['HTTP_USER_AGENT_HTTPS'] != 'ON' ) ) {
@@ -111,8 +118,8 @@ switch ($env) {
 }
 
 /**
- * Overwrite Google Analytics tracking code in 'live' production site. 
- * 
+ * Overwrite Google Analytics tracking code in 'live' production site.
+ *
  * Set to tracking ID of Google Analytics property for 'production' site.
  */
 if (isset($_ENV['PANTHEON_ENVIRONMENT'])) {
