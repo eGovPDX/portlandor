@@ -132,14 +132,28 @@ To roll back changes, please run "migrate:rollback" on these migrations in the r
 
 ##### Local
 ```
+<<<<<<< HEAD
 drush migrate:import parks
 drush migrate:import park_amenities
 drush migrate:import park_documents
 drush migrate:import park_photos
+=======
+lando drush migrate:import parks
+lando drush migrate:import parks_redirects
+lando drush migrate:import park_group_content
+lando drush migrate:import park_amenities
+lando drush migrate:import park_documents
+lando drush migrate:import park_photos
+>>>>>>> POWR-1561 updated readme
 ```
 ##### On Pantheon
 ```
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:import parks
+<<<<<<< HEAD
+=======
+lando terminus remote:drush portlandor.powr-[ID] -- migrate:import parks_redirects
+lando terminus remote:drush portlandor.powr-[ID] -- migrate:import park_group_content
+>>>>>>> POWR-1561 updated readme
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:import park_amenities
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:import park_documents
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:import park_photos
