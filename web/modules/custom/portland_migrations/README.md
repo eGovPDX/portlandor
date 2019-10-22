@@ -108,14 +108,20 @@ lando terminus remote:drush portlandor.powr-[ID] -- migrate:import category_docu
 ##### Local
 ```
 lando drush migrate:import city_charter_chapters
+lando drush migrate:import city_charter_chapters_redirects
 lando drush migrate:import city_charter_articles
+lando drush migrate:import city_charter_articles_redirects
 lando drush migrate:import city_charter_sections
+lando drush migrate:import city_charter_sections_redirects
 ```
 ##### On Pantheon
 ```
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_charter_chapters
+lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_charter_chapters_redirects
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_charter_articles
+lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_charter_articles_redirects
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_charter_sections
+lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_charter_sections_redirects
 ```
 
 #### Parks
@@ -159,12 +165,14 @@ lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_code_sec
 lando drush migrate:import policies_categories
 lando drush migrate:import policies_types
 lando drush migrate:import policies
+lando drush migrate:import policies_redirects
 ```
 ##### On Pantheon
 ```
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:import policies_categories
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:import policies_types
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:import policies
+lando terminus remote:drush portlandor.powr-[ID] -- migrate:import policies_redirects
 ```
 
 If the migration does not complete due to timeout on a Pantheon environment, you may need to reset the status of a migration to then continue the migration with a second command.
