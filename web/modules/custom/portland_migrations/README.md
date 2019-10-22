@@ -83,11 +83,13 @@ Long migrations run through terminus may exceed the Pantheon timeout and be term
 ```
 lando drush migrate:import eudaly_news
 lando drush migrate:import eudaly_news_group_content
+lando drush migrate:import eudaly_news_redirect
 ```
 ##### On Pantheon
 ```
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:import eudaly_news
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:import eudaly_news_group_content
+lando terminus remote:drush portlandor.powr-[ID] -- migrate:import eudaly_news_redirect
 ```
 
 #### Category documents for Eudaly news
