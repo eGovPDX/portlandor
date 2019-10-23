@@ -83,7 +83,13 @@
               console.error('Failed to load geo file: ' + feature.file_url);
               return
             }
-            featureLayer.addData(xhr.response);
+            // In IE, xhr.response is still a string
+            if (typeof xhr.response === 'string' || xhr.response instanceof String) {
+              featureLayer.addData(JSON.parse(xhr.response));
+            }
+            else {
+              featureLayer.addData(xhr.response);
+            }
             featureLayer.setStyle(pathOptions);
             map.fitBounds(featureLayer.getBounds());
         };
@@ -93,7 +99,7 @@
     }
     else {
       // Default to the original code
-      return Drupal.Leaflet.prototype._create_feature_orig(feature);
+      return this._create_feature_orig(feature);
     }
   }
 
@@ -104,7 +110,7 @@ jQuery(document).on('leaflet.map', function (e, settings, lMap, mapid) {
   if( drupalSettings.portlandmaps_layer && drupalSettings.portlandmaps_id ) {
     var features = L.esri.featureLayer({
       url: drupalSettings.portlandmaps_layer,
-      where: 'PropertyID=' + drupalSettings.portlandmaps_id,
+      where: drupalSettings.portlandmaps_id, // 'PropertyID=' + drupalSettings.portlandmaps_id,
       style: function (feature, layer) {
         return JSON.parse(settings.settings.path);
       },
