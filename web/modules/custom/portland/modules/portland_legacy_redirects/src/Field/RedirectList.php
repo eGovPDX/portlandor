@@ -20,12 +20,10 @@ class RedirectList extends FieldItemList implements FieldItemListInterface {
    */
   protected function computeValue(){
     $entity = $this->getEntity();
+    $nid = $entity->Id();
     $type = $entity->getEntityTypeId();
-    $this_node = \Drupal::routeMatch()->getParameter($type);
 
-    // this_node will be null if this entity is new/unsaved. only look up redirects if previously saved.
-    if (!is_null($this_node)) {
-      $nid = $this_node->Id();
+    if ($nid && $type) {
       $redirects = \Drupal::service('redirect.repository')->findByDestinationUri(["internal:/$type/$nid", "entity:$type/$nid"]);
       $delta = 0;
       foreach($redirects as $key => $redirect) {
