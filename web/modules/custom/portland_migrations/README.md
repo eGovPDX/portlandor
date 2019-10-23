@@ -87,9 +87,9 @@ lando drush migrate:import eudaly_news_redirect
 ```
 ##### On Pantheon
 ```
-lando terminus remote:drush portlandor.powr-[ID] -- migrate:import eudaly_news
-lando terminus remote:drush portlandor.powr-[ID] -- migrate:import eudaly_news_group_content
-lando terminus remote:drush portlandor.powr-[ID] -- migrate:import eudaly_news_redirect
+lando terminus remote:drush portlandor.powr-1561 -- migrate:import eudaly_news
+lando terminus remote:drush portlandor.powr-1561 -- migrate:import eudaly_news_group_content
+lando terminus remote:drush portlandor.powr-1561 -- migrate:import eudaly_news_redirect
 ```
 
 #### Category documents for Eudaly news
@@ -101,8 +101,8 @@ lando drush migrate:import category_documents_group_content
 ```
 ##### On Pantheon
 ```
-lando terminus remote:drush portlandor.powr-[ID] -- migrate:import category_documents
-lando terminus remote:drush portlandor.powr-[ID] -- migrate:import category_documents_group_content
+lando terminus remote:drush portlandor.powr-1561 -- migrate:import category_documents
+lando terminus remote:drush portlandor.powr-1561 -- migrate:import category_documents_group_content
 ```
 
 #### City charter
@@ -118,12 +118,12 @@ lando drush migrate:import city_charter_sections_redirects
 ```
 ##### On Pantheon
 ```
-lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_charter_chapters
-lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_charter_chapters_redirects
-lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_charter_articles
-lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_charter_articles_redirects
-lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_charter_sections
-lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_charter_sections_redirects
+lando terminus remote:drush portlandor.powr-1561 -- migrate:import city_charter_chapters
+lando terminus remote:drush portlandor.powr-1561 -- migrate:import city_charter_chapters_redirects
+lando terminus remote:drush portlandor.powr-1561 -- migrate:import city_charter_articles
+lando terminus remote:drush portlandor.powr-1561 -- migrate:import city_charter_articles_redirects
+lando terminus remote:drush portlandor.powr-1561 -- migrate:import city_charter_sections
+lando terminus remote:drush portlandor.powr-1561 -- migrate:import city_charter_sections_redirects
 ```
 
 #### Parks
@@ -132,28 +132,18 @@ To roll back changes, please run "migrate:rollback" on these migrations in the r
 
 ##### Local
 ```
-<<<<<<< HEAD
-drush migrate:import parks
-drush migrate:import park_amenities
-drush migrate:import park_documents
-drush migrate:import park_photos
-=======
 lando drush migrate:import parks
 lando drush migrate:import parks_redirects
 lando drush migrate:import park_group_content
 lando drush migrate:import park_amenities
 lando drush migrate:import park_documents
 lando drush migrate:import park_photos
->>>>>>> POWR-1561 updated readme
 ```
 ##### On Pantheon
 ```
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:import parks
-<<<<<<< HEAD
-=======
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:import parks_redirects
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:import park_group_content
->>>>>>> POWR-1561 updated readme
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:import park_amenities
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:import park_documents
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:import park_photos
@@ -172,12 +162,12 @@ lando drush migrate:import city_code_sections_redirects
 ```
 ##### On Pantheon
 ```
-lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_code_titles
-lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_code_titles_redirects
-lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_code_chapters
-lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_code_chapters_redirects
-lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_code_sections
-lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_code_sections_redirects
+lando terminus remote:drush portlandor.powr-1561 -- migrate:import city_code_titles
+lando terminus remote:drush portlandor.powr-1561 -- migrate:import city_code_titles_redirects
+lando terminus remote:drush portlandor.powr-1561 -- migrate:import city_code_chapters
+lando terminus remote:drush portlandor.powr-1561 -- migrate:import city_code_chapters_redirects
+lando terminus remote:drush portlandor.powr-1561 -- migrate:import city_code_sections
+lando terminus remote:drush portlandor.powr-1561 -- migrate:import city_code_sections_redirects
 ```
 
 #### City policies
@@ -191,17 +181,17 @@ lando drush migrate:import policies_redirects
 ```
 ##### On Pantheon
 ```
-lando terminus remote:drush portlandor.powr-[ID] -- migrate:import policies_categories
-lando terminus remote:drush portlandor.powr-[ID] -- migrate:import policies_types
-lando terminus remote:drush portlandor.powr-[ID] -- migrate:import policies
-lando terminus remote:drush portlandor.powr-[ID] -- migrate:import policies_redirects
+lando terminus remote:drush portlandor.powr-1561 -- migrate:import policies_categories
+lando terminus remote:drush portlandor.powr-1561 -- migrate:import policies_types
+lando terminus remote:drush portlandor.powr-1561 -- migrate:import policies
+lando terminus remote:drush portlandor.powr-1561 -- migrate:import policies_redirects
 ```
 
 If the migration does not complete due to timeout on a Pantheon environment, you may need to reset the status of a migration to then continue the migration with a second command.
 
 ```
-lando terminus remote:drush portlandor.powr-[ID] -- migrate:status
-lando terminus remote:drush portlandor.powr-[ID] -- mrs policies
+lando terminus remote:drush portlandor.powr-1561 -- migrate:status
+lando terminus remote:drush portlandor.powr-1561 -- mrs policies
 ```
 "mrs" is shorthand for migrate:reset-status. You can do this for a specific migration or all active migrations.
 
