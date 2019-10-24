@@ -5,7 +5,8 @@ namespace Drupal\portland_legacy_redirects\Plugin\Validation\Constraint;
 use Symfony\Component\Validator\Constraint;
 
 /**
- * Make sure end date/time is after start date/time.
+ * Validates that the provided path is relative (no protocol or domain, starts with a slash),
+ * doesn't contain illegal path characters, and doesn't already exist in the form or system.
  *
  * @Constraint(
  *   id = "relative_path",
