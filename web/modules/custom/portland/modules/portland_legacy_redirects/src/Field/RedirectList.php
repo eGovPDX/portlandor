@@ -39,8 +39,6 @@ class RedirectList extends FieldItemList implements FieldItemListInterface {
    * host entity id generated.
    */
   public function preSave() {
-    $test = 1;
-    $test = $this;
   }
 
   /**
@@ -49,17 +47,14 @@ class RedirectList extends FieldItemList implements FieldItemListInterface {
   public function postSave($update) {
     if ($this->valueComputed) {
       $entity = $this->getEntity();
-      $eid = $entity->Id();
 
       // retrieve all existing redirects for this contnet; then delete them
       $type = $entity->getEntityTypeId();
       $nid = $entity->Id();
       $redirects = \Drupal::service('redirect.repository')->findByDestinationUri(["internal:/$type/$nid", "entity:$type/$nid"]);
-      // if (!$update) {
-        foreach($redirects as $key => $redirect) {
-          $redirect->delete();
-        }
-      // }
+      foreach($redirects as $key => $redirect) {
+        $redirect->delete();
+      }
 
       // recreate new redirects for this content
       $redirect_redirect = "entity:$type/" . $nid;
