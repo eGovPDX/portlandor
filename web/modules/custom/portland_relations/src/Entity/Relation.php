@@ -41,7 +41,6 @@ use Drupal\Core\Entity\EntityTypeInterface;
  *     "id" = "id",
  *     "bundle" = "type",
  *     "uuid" = "uuid",
- *     "langcode" = "langcode",
  *   },
  *   links = {
  *     "canonical" = "/admin/structure/relation/{relation}",
@@ -63,11 +62,31 @@ class Relation extends ContentEntityBase implements RelationInterface {
   /**
    * {@inheritdoc}
    */
+  public function getCreatedTime() {
+    return $this->get('created')->value;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setCreatedTime($timestamp) {
+    $this->set('created', $timestamp);
+    return $this;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
   public static function baseFieldDefinitions(EntityTypeInterface $entity_type) {
     $fields = parent::baseFieldDefinitions($entity_type);
 
-    // Add the published field.
-    $fields += static::publishedBaseFieldDefinitions($entity_type);
+    $fields['created'] = BaseFieldDefinition::create('created')
+      ->setLabel(t('Created'))
+      ->setDescription(t('The time that the entity was created.'));
+
+    $fields['changed'] = BaseFieldDefinition::create('changed')
+      ->setLabel(t('Changed'))
+      ->setDescription(t('The time that the entity was last edited.'));
 
     return $fields;
   }

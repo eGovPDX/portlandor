@@ -50,14 +50,8 @@ class RelationPermissions{
       "$type_id create entities" => [
         'title' => $this->t('Create new %type_name entities', $type_params),
       ],
-      "$type_id edit own entities" => [
-        'title' => $this->t('Edit own %type_name entities', $type_params),
-      ],
       "$type_id edit any entities" => [
         'title' => $this->t('Edit any %type_name entities', $type_params),
-      ],
-      "$type_id delete own entities" => [
-        'title' => $this->t('Delete own %type_name entities', $type_params),
       ],
       "$type_id delete any entities" => [
         'title' => $this->t('Delete any %type_name entities', $type_params),
