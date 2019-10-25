@@ -13,12 +13,34 @@
  */
 #}
 
-{% if content.field_geo_file %}
-  {% if isEdgeOrIE == 'true' %}
-    {{ attach_library('portland_leaflet_maps/portland_textencoder') }}
+{% if view_mode == 'full' or view_mode == 'embedded' %}
+  {# Preview image field should only be displayed for print maps. Remove it from the content array for the other map types. #}
+  {% if content.field_map_type['#items'].value != 'print' %}
+    {% set newContent = [] %}
+    {% for key,field in content %}
+      {% if key != 'image' %}
+        {% set newContent = newContent|merge({ (key) : field}) %}
+      {% endif %}
+    {% endfor %}
+    {% set content = newContent %}
   {% endif %}
-  {{ attach_library('portland_leaflet_maps/portland_leaflet_maps') }}
-  {{ content.field_geo_file }}
-{% else %}
-  {% include 'media.html.twig' %}
+
+  {# Attach libraries required to render Geo maps correctly #}
+  {% if content.field_map_type['#items'].value == 'geo' %}
+    {% if isEdgeOrIE == 'true' %}
+      {{ attach_library('portland_leaflet_maps/portland_textencoder') }}
+    {% endif %}
+    {{ attach_library('portland_leaflet_maps/portland_leaflet_maps') }}
+  {% endif %}
+
+  {# field_map_type is only included with the display fields to facilitate the conditional logic above. So remove it from the content array now. #}
+  {% set newContent = [] %}
+  {% for key,field in content %}
+    {% if key != 'field_map_type' %}
+      {% set newContent = newContent|merge({ (key) : field}) %}
+    {% endif %}
+  {% endfor %}
+  {% set content = newContent %}
 {% endif %}
+
+{% include 'media.html.twig' %}
