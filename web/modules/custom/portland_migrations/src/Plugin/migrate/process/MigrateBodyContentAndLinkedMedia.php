@@ -31,7 +31,7 @@ class MigrateBodyContentAndLinkedMedia extends ProcessPluginBase {
       $dom = Html::load($value);
       $xpath = new \DOMXPath($dom);
 
-      $download_dir_uri = $this->prepareDownloadDirectory();
+      $download_dir_uri = $this->generateDownloadDirectoryUri();
 
       // reusable db connection
       if (is_null($_SESSION['policies_dbConn'])) {
@@ -179,13 +179,10 @@ class MigrateBodyContentAndLinkedMedia extends ProcessPluginBase {
     return $value;
   }
 
-  protected function prepareDownloadDirectory() {
+  protected function generateDownloadDirectoryUri() {
     // prepare download directory
     $folder_name = date("Y-m") ;
     $folder_uri = file_build_uri($folder_name);
-    $public_path = \Drupal::service('file_system')->realpath(file_default_scheme() . "://");
-    $download_path = $public_path . "/" . $folder_name;
-    $dir = file_prepare_directory($download_path, FILE_CREATE_DIRECTORY);
     return $folder_uri;
   }
 
