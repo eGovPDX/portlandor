@@ -34,7 +34,9 @@ class MigrateBodyContentAndLinkedMedia extends ProcessPluginBase {
       $download_dir_uri = $this->prepareDownloadDirectory();
 
       // reusable db connection
-      $dbConn = \Drupal::database();
+      if (is_null($_SESSION['policies_dbConn'])) {
+        $_SESSION['policies_dbConn'] = \Drupal::database();
+      }
 
       // look for links with an href and save the linked file
       foreach ($xpath->query('//a[@href]|//img[@src]') as $link) {
@@ -92,7 +94,7 @@ class MigrateBodyContentAndLinkedMedia extends ProcessPluginBase {
                     INNER JOIN media__image IMG on FM.fid = IMG.image_target_id
                     WHERE uri = '$destination_uri'";
         }
-        $query = $dbConn->query($query);
+        $query = $_SESSION['policies_dbConn']->query($query);
         $result = $query->fetchAll();
 
         if (!isset($result) || !is_array($result) || count($result) < 1) {
