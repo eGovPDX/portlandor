@@ -95,6 +95,13 @@ import 'bootstrap';
     }
   };
 
+  Drupal.behaviors.sidebar_handler = {
+    attach: function(context, settings) {
+      $('#sidebarCollapse').unbind('click').click( function () {
+        $('.sidebar-wrapper').toggleClass('active');
+      });
+    }
+  };
 
   Drupal.behaviors.alert_handler = {
     attach: function (context, settings) {
