@@ -18,25 +18,6 @@ interface RelationInterface extends ContentEntityInterface, EntityChangedInterfa
    */
 
   /**
-   * Gets the Relation name.
-   *
-   * @return string
-   *   Name of the Relation.
-   */
-  public function getName();
-
-  /**
-   * Sets the Relation name.
-   *
-   * @param string $name
-   *   The Relation name.
-   *
-   * @return \Drupal\portland_relations\Entity\RelationInterface
-   *   The called Relation entity.
-   */
-  public function setName($name);
-
-  /**
    * Gets the Relation creation timestamp.
    *
    * @return int
