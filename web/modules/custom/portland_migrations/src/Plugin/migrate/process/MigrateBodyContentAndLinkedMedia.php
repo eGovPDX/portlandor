@@ -28,6 +28,11 @@ class MigrateBodyContentAndLinkedMedia extends ProcessPluginBase {
 
     preg_match_all('/<a [^>]+>|<img [^>]+>/i', $value, $downloaded_file);
     if (!empty($downloaded_file[0])) {
+
+      // migrated page title and POG URL, in case we need to report an error.
+      $page_title = $row->getSourceProperty('CONTENT_NAME');
+      $pog_url = $row->getSourceProperty('URL');
+
       $dom = Html::load($value);
       $xpath = new \DOMXPath($dom);
 
@@ -68,11 +73,14 @@ class MigrateBodyContentAndLinkedMedia extends ProcessPluginBase {
         if (!$internal_link) continue;
 
         // build filename/uri
-        $filename = $this->buildPogFilename($url);
+        $arr_filename = $this->buildPogFilename($url);
+        $filename = $arr_filename[0];
+        $content_id = $arr_filename[1];
+
         // if buildPogFilename returns false, that means either the URL didn't have a
         // Content-Disposition header (not a binary file), the URL returned 404, or it was
         // a link to the homepage/root.
-        if ($filename === false) {
+        if ($arr_filename === false) {
           continue;
         }
         $destination_uri = $download_dir_uri . "/" . $filename;
@@ -98,6 +106,26 @@ class MigrateBodyContentAndLinkedMedia extends ProcessPluginBase {
         $result = $query->fetchAll();
 
         if (!isset($result) || !is_array($result) || count($result) < 1) {
+          // before saving new file, search for possible duplicates.
+          // search criteria: same filename (sans POG contentid), same filesize
+          $realpath_dir = drupal_realpath($download_dir_uri);
+          $filename_search = str_replace($content_id, '*', $filename);
+
+          $test = true;
+          $files = glob($realpath_dir . '/' . $filename_search);
+
+          if ($files === false) {
+            // an error occurred searching for files
+            // do something?
+            $halt = true;
+          }
+
+          if (is_array($files) && count($files) > 0) {
+            // file may already exist, log it for review
+            $message = "Possible duplicate file from POG found--same filename with different content id.<br><br>File: $realpath_dir/$filename_search<br><br>Page: $page_title<br>POG URL: $pog_url";
+            \Drupal::logger('portland_migrations')->warning($message);
+          }
+
           // media entity doesn't exist yet; download file and create entity...
 
           // download and save managed file
@@ -105,16 +133,18 @@ class MigrateBodyContentAndLinkedMedia extends ProcessPluginBase {
             $downloaded_file = system_retrieve_file($url, $destination_uri, TRUE);
           }
           catch (Exception $e) {
-            $message = "Error occurred while trying to download URL target at " . $url . " and create managed file. Exception: " . $e->getMessage();
-            \Drupal::logger('portland_migrations')->notice($message);
+            $message = "Error occurred while trying to download URL target at " . $url . " and create managed file. Skipping file. Page: $page_title. Exception: " . $e->getMessage();
+            \Drupal::logger('portland_migrations')->error($message);
+            continue;
           }
 
           // when running this in multidev, an error is trown:
           // Error: Call to a member function id() on bool. Most likely occurring because $downloaded_file is false.
           // check for that condition and report it.
           if ($downloaded_file === FALSE) {
-            $message = "Error retrieving newly downloaded file, returning false. URL: $url. Destination: $destination_uri";
-            \Drupal::logger('portland_migrations')->notice($message);
+            $message = "Error retrieving newly downloaded file, likely 404.<br><br>Page: $page_title<br>URL: $pog_url";
+            \Drupal::logger('portland_migrations')->error($message);
+            continue;
           } else {
             // create media entity for file (image or document)
             if ($media_type == "document") {
@@ -198,6 +228,10 @@ class MigrateBodyContentAndLinkedMedia extends ProcessPluginBase {
     }
   }
 
+  protected function getContentId($url) {
+
+  }
+
   protected function buildPogFilename($url) {
     // get content id from URL, might be like /bts/38249 or /image.cfm?id=38249 or /shared/cfm/slb.cfm?id=38249 or /auditor/29194?a=256111
     // this is appended to filename to make sure it's unique.
@@ -217,11 +251,6 @@ class MigrateBodyContentAndLinkedMedia extends ProcessPluginBase {
       if (isset($queries['a'])) {
         $content_id = $queries['a'];
       }
-    }
-
-    // troubleshooting
-    if ($content_id == "360710") {
-      $halt = true;
     }
 
     // get name from Content-Disposition header; if not there, that means this isn't
@@ -252,7 +281,7 @@ class MigrateBodyContentAndLinkedMedia extends ProcessPluginBase {
       $final_filename = transliterate_filenames_transliteration($final_filename);
     }
 
-    return $final_filename;
+    return [$final_filename, $content_id];
   }
 
   protected function getMediaType($filename) {
