@@ -2,6 +2,9 @@
 
 use Drupal\DrupalExtension\Context\RawDrupalContext;
 use Behat\Behat\Context\SnippetAcceptingContext;
+use Behat\Behat\Hook\Scope\AfterStepScope;
+use Behat\Mink\Driver\Selenium2Driver;
+use Behat\MinkExtension\Context\RawMinkContext;
 
 // Workaround for https://github.com/Behat/Behat/issues/1076
 chdir(__DIR__ . '/../..');
@@ -13,7 +16,18 @@ chdir(__DIR__ . '/../..');
  */
 class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext {
 
-    /**
+  private $rawMinkContext;
+  
+  public function __construct() {
+    $this->rawMinkContext = new RawMinkContext;
+  }
+
+  // fake "extends RawMinkContext" using magic function
+  public function __call($method, $args) {
+    $this->rawMinkContext->$method($args[0]);
+  }
+
+  /**
    * @Given I am logged in as user :name
    */
   public function iAmLoggedInAsUser($name) {
@@ -56,7 +70,7 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
 
     // Log in.
     $this->getSession()->visit($uli);
-    $this->getSession()->wait(20000, "jQuery('li.account').length >= 1");
+    $this->getSession()->wait(30000, "jQuery('li.account').length >= 1");
     // $this->getSession()->wait(10000, "document.readyState === 'complete'");
 
     $driver = $this->getDriver();
@@ -90,12 +104,52 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
    */
   public function waitForThePageToBeLoaded()
   {
-      $this->getSession()->wait(10000, "document.readyState === 'complete'");
+    $this->getSession()->wait(30000, "document.readyState === 'complete'");
   }
 
   /** @Given I am using a 1440x900 browser window */
   public function iAmUsingA1440x900BrowserWindow()
   {
     $this->getSession()->resizeWindow(1440, 900, 'current');
+  }
+
+  /**
+   * @AfterStep
+   */
+  public function printLastResponseOnError(AfterStepScope $event) {
+    if (!$event->getTestResult()->isPassed()) {
+      $this->saveDebugScreenshot($event);
+    }
+  }
+
+  /**
+   * @Then /^save screenshot$/
+   */
+  public function saveDebugScreenshot(AfterStepScope $event) {
+    $driver = $this->getSession()->getDriver();
+    if (!$driver instanceof Selenium2Driver) {
+      return;
+    }
+
+    // Only save screenshots when running tests on CircleCI
+    if (!getenv('BEHAT_SCREENSHOTS')) {
+      return;
+    }
+
+    $path = "/var/www/html/artifacts/failedtests";
+    $testfilename = str_replace('/', '-', $event->getFeature()->getFile());   // Convert 'features/test_name.feature' into 'features-test_name.feature'
+    $filename = microtime(true).' '.$event->getFeature()->getTitle().' -- '.$event->getStep()->getText() 
+        .' ('.$testfilename.' line '.$event->getStep()->getLine().')';
+
+    if (!file_exists($path)) {
+      mkdir($path, 0777, true);
+    }
+
+    // Save screenshot of failing page
+    $this->saveScreenshot($filename.'.png', $path);
+
+    // Get and save failing page's HTML
+    $page = $this->getSession()->getPage()->getContent();
+    file_put_contents($path.'/'.$filename.'.html', $page);
   }
 }

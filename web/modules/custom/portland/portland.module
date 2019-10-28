@@ -31,6 +31,7 @@ const GROUP_CONTENT_TYPE_PLURAL = [
     "page" => ["pages"],
     "development_permit" => ["permits"],
     "location" => ["locations"],
+    "calendar_item" => ["calendar/archive"]
 ];
 
 const ALERTS_COUNTER_CACHE_KEY = 'portland.active.alerts';
@@ -379,7 +380,7 @@ function portland_preprocess_menu(&$vars)
                     unset($vars['items'][$key]);
                     return;
                 }
-                $item['title'] = Drupal\Core\Render\Markup::create('Alerts <span class="badge badge-dark">' . $alertCount . '<span>');
+                $item['title'] = Drupal\Core\Render\Markup::create('Alerts <span class="badge badge-dark">' . $alertCount . '</span>');
                 break;
             }
         }
@@ -479,15 +480,6 @@ function _portland_get_active_alerts_count($reset = false)
         \Drupal::cache()->set(ALERTS_COUNTER_CACHE_KEY, $alertCount);
     }
     return $alertCount;
-}
-
-
-function portland_node_view(array &$build,
-                            \Drupal\Core\Entity\EntityInterface $entity,
-                            \Drupal\Core\Entity\Display\EntityViewDisplayInterface $display,
-                            $view_mode) {
-    $current_path = \Drupal::service('path.current')->getPath();
-    $a = $build;
 }
 
 /**
@@ -591,7 +583,7 @@ function portland_handle_bulk_generate($form, $form_state) {
     // If taxonomy_term is selected
     if($form_state->getValues()['update']['canonical_entities:taxonomy_term'] === 'canonical_entities:taxonomy_term') {
         // Generate aliases for "term/content_type"
-        $contentTypes = ['offices', 'programs', 'projects', 'advisory-groups', 'services', 'events', 'news', 'pages', 'documents'];
+        $contentTypes = ['offices', 'programs', 'projects', 'advisory-groups', 'services', 'events', 'news', 'pages', 'documents', 'calendar-item'];
         $lang = \Drupal::languageManager()->getCurrentLanguage()->getId();
         $vid = 'topics';
         $terms =\Drupal::entityTypeManager()->getStorage('taxonomy_term')->loadTree($vid);
@@ -784,7 +776,8 @@ function portland_form_alter(&$form, &$form_state, $form_id) {
         'media_image_add_form',
         'media_audio_add_form',
         'media_video_add_form',
-        'media_document_add_form'
+        'media_document_add_form',
+        'media_map_add_form'
     ];
 
     if( in_array($form_id, $form_array_with_group_field) ) {

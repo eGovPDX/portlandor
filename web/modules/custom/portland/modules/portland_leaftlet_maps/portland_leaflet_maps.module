@@ -50,6 +50,23 @@ function portland_leaflet_maps_preprocess_leaflet_map(&$variables) {
 }
 
 /**
+ * Preprocess function for leaflet_more_maps.
+ */
+function portland_leaflet_maps_preprocess_media__map(&$variables) {
+  if( strpos($_SERVER['HTTP_USER_AGENT'], 'Trident') || strpos($_SERVER['HTTP_USER_AGENT'], 'Edge') )
+    $variables['isEdgeOrIE'] = 'true';
+  else
+    $variables['isEdgeOrIE'] = 'false';
+
+  if($variables['media']->field_map_type->value == 'geo') {
+    unset($variables["content"]["field_map_embed"]);
+  }
+  else {
+    unset($variables["content"]["field_geo_file"]);
+  }
+}
+
+/**
  * Implements hook_leaflet_map_info_alter().
  */
 function portland_leaflet_maps_leaflet_map_info_alter(&$map_info) {
@@ -110,12 +127,11 @@ function _portland_leaflet_maps_assemble_default_map_info(&$map_info, $default_s
 
 }
 
-function portland_leaflet_maps_preprocess_node(&$variables) {
-  // If there is a PortlandMaps layer and ID, add it as an overlay to the map
-  if( $variables['node']->hasField('field_portlandmaps_layer') && $variables['node']->hasField('field_portlandmaps_id')) {
-    $variables['#attached']['drupalSettings']['portlandmaps_layer'] = $variables['node']->field_portlandmaps_layer->value;
-    $variables['#attached']['drupalSettings']['portlandmaps_id'] = $variables['node']->field_portlandmaps_id->value;
-    $nid = $variables['node']->id();
-
+function portland_leaflet_maps_entity_view_alter(array &$build,
+                            \Drupal\Core\Entity\EntityInterface $entity,
+                            \Drupal\Core\Entity\Display\EntityViewDisplayInterface $display) {
+  if( $entity->hasField('field_portlandmaps_layer') && $entity->hasField('field_portlandmaps_id')) {
+    $build['#attached']['drupalSettings']['portlandmaps_layer'] = $entity->field_portlandmaps_layer->value;
+    $build['#attached']['drupalSettings']['portlandmaps_id'] = $entity->field_portlandmaps_id->value;
   }
 }
