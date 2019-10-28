@@ -122,7 +122,7 @@ class MigrateBodyContentAndLinkedMedia extends ProcessPluginBase {
 
           if (is_array($files) && count($files) > 0) {
             // file may already exist, log it for review
-            $message = "Possible duplicate file from POG found--same filename with different content id.<br><br>File: $realpath_dir/$filename_search<br><br>Page: $page_title<br>POG URL: $pog_url";
+            $message = "Possible duplicate file from POG found--same filename with different content id.<br><br>File: $realpath_dir/$filename_search<br>Page: $page_title<br>POG URL: $pog_url";
             \Drupal::logger('portland_migrations')->warning($message);
           }
 
