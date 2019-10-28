@@ -1,0 +1,37 @@
+id: parks_redirects
+label: 'Migrate legacy paths into Redirects table for Parks'
+langcode: en
+migration_group: parks
+source:
+  plugin: csv
+  path: modules/custom/portland_migrations/sources/parks.csv
+  header_row_count: 1
+  constants:
+    source_prefix: 'parks/finder/index.cfm?action=ViewPark&PropertyID='
+    redirect_prefix: 'internal:/node/'
+    uid_admin: 1
+    status_code: 301
+  keys:
+    - PropertyID
+destination:
+  plugin: 'entity:redirect'
+process:
+  uid: constants/uid_admin
+  status_code: constants/status_code
+  temp_nid:
+    plugin: migration_lookup
+    source: PropertyID
+    migration: parks
+  redirect_source:
+    -
+      plugin: concat
+      source:
+        - 'constants/source_prefix'
+        - PropertyID
+    -
+      plugin: urlencode
+  redirect_redirect:
+    plugin: concat
+    source:
+      - constants/redirect_prefix
+      - "@temp_nid"

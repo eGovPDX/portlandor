@@ -22,7 +22,6 @@ class RedirectList extends FieldItemList implements FieldItemListInterface {
     $entity = $this->getEntity();
     $nid = $entity->Id();
     $type = $entity->getEntityTypeId();
-
     if ($nid && $type) {
       $redirects = \Drupal::service('redirect.repository')->findByDestinationUri(["internal:/$type/$nid", "entity:$type/$nid"]);
       $delta = 0;
@@ -40,8 +39,6 @@ class RedirectList extends FieldItemList implements FieldItemListInterface {
    * host entity id generated.
    */
   public function preSave() {
-    $test = 1;
-    $test = $this;
   }
 
   /**
