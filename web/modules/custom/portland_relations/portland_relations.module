@@ -1,0 +1,58 @@
+<?php
+
+/**
+ * @file
+ * Contains portland_relations.module.
+ */
+
+use Drupal\Core\Routing\RouteMatchInterface;
+
+/**
+ * Implements hook_help().
+ */
+function portland_relations_help($route_name, RouteMatchInterface $route_match) {
+  switch ($route_name) {
+    // Main module help for the portland_relations module.
+    case 'help.page.portland_relations':
+      $output = '';
+      $output .= '<h3>' . t('About') . '</h3>';
+      $output .= '<p>' . t('Allows creation of simple relation entities for joining content types.') . '</p>';
+      return $output;
+
+    default:
+  }
+}
+
+/**
+ * Implements hook_theme().
+ */
+function portland_relations_theme() {
+  $theme = [];
+  $theme['relation'] = [
+    'render element' => 'elements',
+    'file' => 'relation.page.inc',
+    'template' => 'relation',
+  ];
+  $theme['relation_content_add_list'] = [
+    'render element' => 'content',
+    'variables' => ['content' => NULL],
+    'file' => 'relation.page.inc',
+  ];
+  return $theme;
+}
+
+/**
+ * Implements hook_theme_suggestions_HOOK().
+ */
+function portland_relations_theme_suggestions_relation(array $variables) {
+  $suggestions = [];
+  $entity = $variables['elements']['#relation'];
+  $sanitized_view_mode = strtr($variables['elements']['#view_mode'], '.', '_');
+
+  $suggestions[] = 'relation__' . $sanitized_view_mode;
+  $suggestions[] = 'relation__' . $entity->bundle();
+  $suggestions[] = 'relation__' . $entity->bundle() . '__' . $sanitized_view_mode;
+  $suggestions[] = 'relation__' . $entity->id();
+  $suggestions[] = 'relation__' . $entity->id() . '__' . $sanitized_view_mode;
+  return $suggestions;
+}
