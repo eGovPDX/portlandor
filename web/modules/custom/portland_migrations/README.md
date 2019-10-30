@@ -83,11 +83,13 @@ Long migrations run through terminus may exceed the Pantheon timeout and be term
 ```
 lando drush migrate:import eudaly_news
 lando drush migrate:import eudaly_news_group_content
+lando drush migrate:import eudaly_news_redirect
 ```
 ##### On Pantheon
 ```
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:import eudaly_news
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:import eudaly_news_group_content
+lando terminus remote:drush portlandor.powr-[ID] -- migrate:import eudaly_news_redirect
 ```
 
 #### Category documents for Eudaly news
@@ -108,14 +110,20 @@ lando terminus remote:drush portlandor.powr-[ID] -- migrate:import category_docu
 ##### Local
 ```
 lando drush migrate:import city_charter_chapters
+lando drush migrate:import city_charter_chapters_redirects
 lando drush migrate:import city_charter_articles
+lando drush migrate:import city_charter_articles_redirects
 lando drush migrate:import city_charter_sections
+lando drush migrate:import city_charter_sections_redirects
 ```
 ##### On Pantheon
 ```
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_charter_chapters
+lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_charter_chapters_redirects
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_charter_articles
+lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_charter_articles_redirects
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_charter_sections
+lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_charter_sections_redirects
 ```
 
 #### Parks
@@ -124,15 +132,17 @@ To roll back changes, please run "migrate:rollback" on these migrations in the r
 
 ##### Local
 ```
-drush migrate:import parks
-drush migrate:import park_group_content
-drush migrate:import park_amenities
-drush migrate:import park_documents
-drush migrate:import park_photos
+lando drush migrate:import parks
+lando drush migrate:import parks_redirects
+lando drush migrate:import park_group_content
+lando drush migrate:import park_amenities
+lando drush migrate:import park_documents
+lando drush migrate:import park_photos
 ```
 ##### On Pantheon
 ```
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:import parks
+lando terminus remote:drush portlandor.powr-[ID] -- migrate:import parks_redirects
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:import park_group_content
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:import park_amenities
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:import park_documents
@@ -144,14 +154,20 @@ lando terminus remote:drush portlandor.powr-[ID] -- migrate:import park_photos
 ##### Local
 ```
 lando drush migrate:import city_code_titles
+lando drush migrate:import city_code_titles_redirects
 lando drush migrate:import city_code_chapters
+lando drush migrate:import city_code_chapters_redirects
 lando drush migrate:import city_code_sections
+lando drush migrate:import city_code_sections_redirects
 ```
 ##### On Pantheon
 ```
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_code_titles
+lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_code_titles_redirects
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_code_chapters
+lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_code_chapters_redirects
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_code_sections
+lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_code_sections_redirects
 ```
 
 #### City policies
@@ -161,12 +177,14 @@ lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_code_sec
 lando drush migrate:import policies_categories
 lando drush migrate:import policies_types
 lando drush migrate:import policies
+lando drush migrate:import policies_redirects
 ```
 ##### On Pantheon
 ```
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:import policies_categories
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:import policies_types
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:import policies
+lando terminus remote:drush portlandor.powr-[ID] -- migrate:import policies_redirects
 ```
 
 If the migration does not complete due to timeout on a Pantheon environment, you may need to reset the status of a migration to then continue the migration with a second command.

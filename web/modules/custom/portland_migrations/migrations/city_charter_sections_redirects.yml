@@ -1,0 +1,32 @@
+id: city_charter_sections_redirects
+label: 'Migrate city charter sections legacy redirects'
+langcode: en
+migration_group: city_charter
+source:
+  plugin: csv
+  path: modules/custom/portland_migrations/sources/city_charter_sections.csv
+  header_row_count: 1
+  constants:
+    redirect_prefix: 'internal:/node/'
+    uid_admin: 1
+    status_code: 301
+  keys:
+    - id
+destination:
+  plugin: 'entity:redirect'
+process:
+  uid: constants/uid_admin
+  status_code: constants/status_code
+  temp_nid:
+    plugin: migration_lookup
+    source: id
+    migration: city_charter_sections
+  redirect_source:
+    plugin: substr
+    source: URL
+    start: 1
+  redirect_redirect:
+    plugin: concat
+    source:
+      - constants/redirect_prefix
+      - "@temp_nid"
