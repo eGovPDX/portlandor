@@ -138,6 +138,7 @@ lando drush migrate:import park_group_content
 lando drush migrate:import park_amenities
 lando drush migrate:import park_documents
 lando drush migrate:import park_photos
+lando drush migrate:import neighborhoods
 ```
 ##### On Pantheon
 ```
@@ -147,6 +148,7 @@ lando terminus remote:drush portlandor.powr-[ID] -- migrate:import park_group_co
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:import park_amenities
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:import park_documents
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:import park_photos
+lando terminus remote:drush portlandor.powr-[ID] -- migrate:import neighborhoods
 ```
 
 #### City Code
