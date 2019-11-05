@@ -29,7 +29,7 @@ class RelationListBuilder extends EntityListBuilder {
     /* @var \Drupal\portland_relations\Entity\Relation $entity */
     $row['id'] = $entity->id();
     $row['name'] = Link::createFromRoute(
-      $entity->label(),
+      $entity->id(),
       'entity.relation.edit_form',
       ['relation' => $entity->id()]
     );
