@@ -15,10 +15,23 @@
 
 {% if view_mode == 'full' or view_mode == 'embedded' %}
   {# Preview image field should only be displayed for print maps. Remove it from the content array for the other map types. #}
-  {% if content.field_map_type['#items'].value != 'print' %}
+  {% if content.field_map_type['#items'].value == 'embedded' %}
     {% set newContent = [] %}
     {% for key,field in content %}
       {% if key != 'image' %}
+        {% set newContent = newContent|merge({ (key) : field}) %}
+      {% endif %}
+    {% endfor %}
+    {% set content = newContent %}
+  {# For Geo File, we remove the geo file field if this is preview inside CKEditor. Remove the preview image if we are outside CKEditor #}
+  {% elseif content.field_map_type['#items'].value == 'geo' %}
+    {% set newContent = [] %}
+    {% set keyToRemove = 'image' %}
+    {% if map_embeded_in_ckeditor %}
+      {% set keyToRemove = 'field_geo_file' %}
+    {% endif %}
+    {% for key,field in content %}
+      {% if key != keyToRemove %}
         {% set newContent = newContent|merge({ (key) : field}) %}
       {% endif %}
     {% endfor %}
