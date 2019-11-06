@@ -37,52 +37,37 @@ class RevisionBlock extends BlockBase {
      */
     public function build() {
       $current_path = \Drupal::service('path.current')->getPath();
-      $uri_parts = explode('/', $current_path);
-      $count = count($uri_parts);
 
-      $nid = NULL;
-      $node_default_revision= NULL;
-      $node_latest_revision = NULL;
-      $node_current_revision = NULL;
+      $output_array = [];
 
-      // Viewing the latest URL, which is only valid when the latest revision is draft or review. " /node/221/latest"
-      if($count == 4 && $uri_parts[1] == "node" && $uri_parts[3] == "latest") {
-        $nid = $uri_parts[2];
-        $node_latest_revision = self::loadLatestRevision($nid);        $node_default_revision= \Drupal::entityTypeManager()->getStorage('node')->load($nid);
+      // matches /node/XXX/revisions|latest/XXX/view
+      preg_match('/\/node\/(\d+)\/*(\w+)*\/*(\d+)*\/*[(view)]*/', $current_path, $output_array);
 
-        return self::buildRenderArray(
-          $node_latest_revision, 
-          $node_latest_revision, // Curent revision is Latest revision
-          $node_default_revision
-        );
-      }
+      if(count($output_array) > 0) {
+        $nid = $output_array[1];
 
-      // Viewing the default revision of the node. "/node/221"
-      else if($count == 3 && $uri_parts[1] == "node") {
-        $nid = $uri_parts[2];
         $node_latest_revision = self::loadLatestRevision($nid);
         $node_default_revision= \Drupal::entityTypeManager()->getStorage('node')->load($nid);
+        $node_current_revision = NULL;
 
-        return self::buildRenderArray(
-          $node_latest_revision, 
-          $node_default_revision, // Curent revision is default revision
-          $node_default_revision
-        );
-      }
-      // Viewing the revision. "/node/221/revisions/3669/view"
-      else if ($count == 6 && $uri_parts[3] == "revisions" && $uri_parts[5] == "view") {
-        $nid = $uri_parts[2];
-        $vid = $uri_parts[4];
-        $node_latest_revision = self::loadLatestRevision($nid);
-        $node_current_revision= \Drupal::entityTypeManager()->getStorage('node')->loadRevision($vid);
-        $node_default_revision= \Drupal::entityTypeManager()->getStorage('node')->load($nid);
+        if(count($output_array) == 2) {
+          $node_current_revision = $node_default_revision;
+        }
+        elseif(count($output_array) == 3 && $output_array[2] == 'latest') {
+          $node_current_revision = $node_latest_revision;
+        }
+        elseif(count($output_array) == 4 && $output_array[2] == 'revisions') {
+          $vid = $output_array[3];
+          $node_current_revision= \Drupal::entityTypeManager()->getStorage('node')->loadRevision($vid);
+        }
 
-        // Curent revision is default revision
-        return self::buildRenderArray(
-          $node_latest_revision, 
-          $node_current_revision, 
-          $node_default_revision
-        );
+        if($node_current_revision != NULL) {
+          return self::buildRenderArray(
+            $node_latest_revision,
+            $node_current_revision,
+            $node_default_revision
+          );
+        }
       }
 
       return array(
@@ -92,7 +77,7 @@ class RevisionBlock extends BlockBase {
 
     public static function buildRenderArray($node_latest_revision, $node_current_revision, $node_default_revision) {
       if($node_current_revision == NULL || $node_latest_revision == NULL || $node_default_revision == NULL) return;
-      
+
       $nid = $node_current_revision->nid->value;
       $node_latest_vid = $node_latest_revision->vid->value;
       $node_latest_status = $node_latest_revision->status->value;
@@ -152,7 +137,7 @@ class RevisionBlock extends BlockBase {
       else if($node_latest_vid == $node_current_vid && $node_current_vid == $node_default_vid) {
         $render_array['#latest_revision_state'] = NULL;
         $render_array['#revision_link'] = NULL;
-        $render_array['#revision_link_text'] = NULL;      
+        $render_array['#revision_link_text'] = NULL;
       }
       /*
       latest = default > current
