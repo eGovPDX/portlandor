@@ -27,7 +27,18 @@
 
     // feature.entity_id is the map ID: "1371"
     var mapid = "leaflet-map-media-map-"+ feature.entity_id +"-field-geo-file";
-    var map = Drupal.Leaflet[mapid].lMap;
+    var map = null;
+
+    // All map using the same map file has similar ID. Find the first one that doesn't have feature loaded
+    for(var property in Drupal.Leaflet) {
+      if (Drupal.Leaflet.hasOwnProperty(property) && 
+        property.indexOf("leaflet-map-media-map-"+ feature.entity_id) === 0) {
+        map = Drupal.Leaflet[property].lMap;
+        if(map.featureAdded) continue;
+      }
+    }
+
+    if( !map ) return;
 
     // Handle the custom geo file
     if( feature.feature_source == 'file') {
@@ -67,6 +78,7 @@
             featureLayer.addData(geojson);
             featureLayer.setStyle(map.options.path);
             map.fitBounds(featureLayer.getBounds());
+            map.featureAdded = true;
           })
         };
       }
@@ -89,6 +101,7 @@
             }
             featureLayer.setStyle(map.options.path);
             map.fitBounds(featureLayer.getBounds());
+            map.featureAdded = true;
         };
       }
       xhr.send();
