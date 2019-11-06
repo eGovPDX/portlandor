@@ -1,0 +1,87 @@
+<?php
+
+use Drupal\group\Entity\GroupContent;
+use \Drupal\group\Entity\Group;
+
+/**
+ * Implements hook_form_alter().
+ */
+function portland_groups_form_alter(&$form, &$form_state, $form_id) {
+  if (array_key_exists('field_display_groups', $form) === TRUE && !is_null($form['field_display_groups'])) {
+    _portland_groups_populate_field_display_groups($form, $form_state);
+  }
+}
+
+/**
+ * Implements hook_inline_entity_form_entity_form_alter().
+ */
+function portland_groups_inline_entity_form_entity_form_alter(&$entity_form, &$form_state) {
+  if ($entity_form['#entity_type'] == 'media' && array_key_exists('field_display_groups', $entity_form)) {
+    _portland_groups_media_populate_field_display_groups($entity_form, $form_state);
+  }
+}
+
+/**
+ * Populates the field_display_groups select/chosen widget in a node form.
+ */
+function _portland_groups_populate_field_display_groups(&$form, &$form_state) {
+  // 1. set options for field_display_groups, which is a select/Chosen widget.
+  // options are limited by group membership. if $allowed is TRUE, that means 
+  // user is administrator, so don't pre-fill widget options. this will cause 
+  // it to be populated normally with all groups.
+  $allowed = _portland_groups_load_user_groups();
+  if ($allowed !== TRUE) {
+    $form["field_display_groups"]["widget"]["#options"] = $allowed;
+  }
+  // 2. if new page, prepopulate with parent group. also store parent group id
+  // in session in case we need it in an inline entity form.
+  $node = $form_state->getFormObject()->getEntity();
+  if($node->isNew()) {
+    if(array_key_exists('group', $form_state->getStorage()) && $form_state->getStorage()['group'] != NULL) {
+      $group = $form_state->getStorage()['group'];
+      $group_id = $group->id();
+      $form['field_display_groups']['widget']['#default_value'][] = $group_id;
+      \Drupal::request()->getSession()->set('parent_group_id', $group_id);
+    }
+  }
+}
+
+/**
+ * Populates the field_display_groups select/chosen widget in a media form.
+ */
+function _portland_groups_media_populate_field_display_groups(&$form, &$form_state) {
+  // 1. set options for field_display_groups, which is a select/Chosen widget.
+  // options are limited by group membership. if $allowed is TRUE, that means 
+  // user is administrator, so don't pre-fill widget options. this will cause 
+  // it to be populated normally with all groups.
+  $allowed = _portland_groups_load_user_groups();
+  if ($allowed !== TRUE) {
+    $form["field_display_groups"]["widget"]["#options"] = $allowed;
+  }
+  // 2. if new page, prepopulate with parent group, which is stored in a session var.
+  if($form['#entity']->isNew()) {
+    $session = \Drupal::request()->getSession();
+    $group_id = $session->get('parent_group_id');
+    $form['field_display_groups']['widget']['#default_value'][] = $group_id;
+  }
+}
+
+/**
+ * Generates an array of groups to which the user has rights to edit content.
+ * This array is suitable for passing to a select list. If administrator,
+ * return TRUE, which indicates that all groups are allowed.
+ */
+function _portland_groups_load_user_groups() {
+  $user_roles = \Drupal::currentUser()->getRoles();
+  if( !in_array("administrator", $user_roles) ) {
+    $group_memberships = \Drupal::service('group.membership_loader')->loadByUser();
+    $options = [];
+    foreach( $group_memberships as $group_membership ) {
+      $group = $group_membership->getGroup();
+      $options[$group->id->value] = $group->label->value;
+    }
+    return $options;
+  } else {
+    return TRUE;
+  }
+}
