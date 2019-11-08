@@ -150,6 +150,14 @@ You have a couple of options for manually compiling the asset files:
 
 You can run `lando npm install` if you need to install/update your Node dependencies.
 
+### Pattern Lab
+
+Pattern Lab is viewable here: 
+
+- On local: https://portlandor.lndo.site/themes/custom/cloudy/dist-pl/index.html
+- On Beta Site: https://beta.portland.gov/themes/custom/cloudy/dist-pl/index.html
+- On any other site go to: `/themes/custom/cloudy/dist-pl/index.html`
+
 ### Webpack output
 
 The following is a snippet of Webpack build output from a successful build:
