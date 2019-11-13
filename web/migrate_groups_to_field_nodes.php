@@ -36,10 +36,10 @@ foreach($nids as $key => $nid) {
     break;
   }
 
-  // limit to only nodes that have Greg as reviewer
-  if ($nid != 907 && $nid != 835 && $nid != 980 && $nid != 1041 && $nid != 1086 && $nid != 976 && $nid != 834 && $nid != 712) {
-    continue;
-  }
+  // // limit to only nodes that have Greg as reviewer
+  // if ($nid != 907 && $nid != 835 && $nid != 980 && $nid != 1041 && $nid != 1086 && $nid != 976 && $nid != 834 && $nid != 712) {
+  //   continue;
+  // }
 
   $ids = \Drupal::entityQuery('group_content')
     ->condition('entity_id', $nid)
@@ -74,14 +74,18 @@ foreach($nids as $key => $nid) {
       $skipped += 1;
       echo str_pad($added + $skipped + $errors, 8) . str_pad("Skip", 8) . str_pad($nid, 8) . str_pad("", 16) . str_pad(substr($node->type->entity->label(),0,15), 16) . substr($node->title->value, 0, 64) . "\n";
     }
+  } else {
+    $skipped += 1;
+    $node = \Drupal\node\Entity\Node::load($nid);
+    echo str_pad($added + $skipped + $errors, 8) . str_pad("Skip", 8) . str_pad($nid, 8) . str_pad("", 16) . str_pad(substr($node->type->entity->label(),0,15), 16) . substr($node->title->value, 0, 64) . "\n";
   }
 }
 
 echo "\nUpdated " . $added . " nodes.\n";
 echo "Skipped " . $skipped . " nodes.\n";
 echo $errors . " Errors.\n";
-echo "Re-enabling mail send.\n";
+// echo "Re-enabling mail send.\n";
 //exec('drush -y config-set system.mail interface.default php_mail');
 //exec('drush -y pm-uninstall devel');
-// echo "Operation complete.\n";
+echo "Operation complete.\n";
 exit();
