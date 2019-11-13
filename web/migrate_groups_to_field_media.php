@@ -1,6 +1,7 @@
 <?php
 
 // set max to a value over zero to limit the number of nodes to update for testng purposes.
+// set to zero to process all.
 $max = 0;
 
 echo "Starting group relationship migration.\n";
@@ -8,7 +9,7 @@ echo "Disabling mail send.\n";
 exec('drush -y pm-enable devel');
 exec('drush -y config-set system.mail interface.default devel_mail_log');
 
-$nids = \Drupal::entityQuery('node')
+$nids = \Drupal::entityQuery('media')
         ->accessCheck(FALSE)
         ->execute();
 ksort($nids);
@@ -20,6 +21,7 @@ echo "--------------------------------------------------------------------------
 
 $added = 0;
 $skipped = 0;
+$errors = 0;
 
 foreach($nids as $key => $nid) {
   if ($max > 0 && ($added + $skipped) > $max) {
@@ -28,6 +30,7 @@ foreach($nids as $key => $nid) {
 
   $ids = \Drupal::entityQuery('group_content')
     ->condition('entity_id', $nid)
+    ->condition('type', '%group_media%', 'LIKE')
     ->execute();
 
   if (count($ids) > 0) {
@@ -44,19 +47,28 @@ foreach($nids as $key => $nid) {
         $node->field_display_groups[] = $gid;
       }
 
-      $node->save();
-      $added += 1;
-      echo str_pad($added + $skipped, 8) . str_pad("Added", 8) . str_pad($nid, 8) . str_pad(implode("|", $gids), 16) . str_pad(substr($node->type->entity->label(),0,15), 16) . substr($node->title->value, 0, 64) . "\n";
+      try {
+        $node->save();
+        $added += 1;
+      } catch (Exception $e) {
+        $errors += 1;
+        echo str_pad($added + $skipped + $errors, 8) . str_pad("ERROR", 8) . str_pad($nid, 8) . str_pad("", 16) . str_pad(substr($node->type->entity->label(),0,15), 16) . substr($node->title->value, 0, 64) . "\n";
+        echo $e->getMessage();
+        continue;
+      }
+      echo str_pad($added + $skipped + $errors, 8) . str_pad("Update", 8) . str_pad($nid, 8) . str_pad(implode("|", $gids), 16) . str_pad(substr($node->type->entity->label(),0,15), 16) . substr($node->title->value, 0, 64) . "\n";
     } else {
       $skipped += 1;
-      echo str_pad($added + $skipped, 8) . str_pad("Skipped", 8) . str_pad($nid, 8) . str_pad("", 16) . str_pad(substr($node->type->entity->label(),0,15), 16) . substr($node->title->value, 0, 64) . "\n";
+      echo str_pad($added + $skipped + $errors, 8) . str_pad("Skip", 8) . str_pad($nid, 8) . str_pad("", 16) . str_pad(substr($node->type->entity->label(),0,15), 16) . substr($node->title->value, 0, 64) . "\n";
     }
   }
 }
 
 echo "\nUpdated " . $added . " nodes.\n";
 echo "Skipped " . $skipped . " nodes.\n";
+echo $errors . " Errors.\n";
 echo "Re-enabling mail send.\n";
-exec('drush -y config-set system.mail interface.default php_mail');
-exec('drush -y pm-uninstall devel');
+//exec('drush -y config-set system.mail interface.default php_mail');
+//exec('drush -y pm-uninstall devel');
 echo "Operation complete.\n";
+exit();
