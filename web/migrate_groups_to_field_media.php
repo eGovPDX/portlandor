@@ -2,7 +2,7 @@
 
 // set max to a value over zero to limit the number of nodes to update for testng purposes.
 // set to zero to process all.
-$max = 25;
+$max = 0;
 
 echo "\nStarting group relationship migration for MEDIA.\n";
 $nids = \Drupal::entityQuery('media')
