@@ -4,11 +4,19 @@
 // set to zero to process all.
 $max = 0;
 
-echo "Starting group relationship migration.\n";
-echo "Disabling mail send.\n";
-exec('drush -y pm-enable devel');
-exec('drush -y config-set system.mail interface.default devel_mail_log');
+echo "\n\nWARNING: YOU MUST DISABLE MAIL SENDING BEFORE EXECUTING THIS SCRIPT!\n";
+echo "If mail sending is still enabled, cancel this script and disable mail before re-running.\n\n";
+echo "Starting migration process in ";
+for ($i = 10; $i > -1; $i--) {
+  echo $i . "...";
+  sleep(1);
+}
 
+// echo "Disabling mail send.\n";
+// exec('drush -y pm-enable devel');
+// exec('drush -y config-set system.mail interface.default devel_mail_log');
+
+echo "\nStarting group relationship migration for NODES.\n";
 $nids = \Drupal::entityQuery('node')
         ->accessCheck(FALSE)
         ->execute();
@@ -26,6 +34,11 @@ $errors = 0;
 foreach($nids as $key => $nid) {
   if ($max > 0 && ($added + $skipped) > $max) {
     break;
+  }
+
+  // limit to only nodes that have Greg as reviewer
+  if ($nid != 907 && $nid != 835 && $nid != 980 && $nid != 1041 && $nid != 1086 && $nid != 976 && $nid != 834 && $nid != 712) {
+    continue;
   }
 
   $ids = \Drupal::entityQuery('group_content')
@@ -70,5 +83,5 @@ echo $errors . " Errors.\n";
 echo "Re-enabling mail send.\n";
 //exec('drush -y config-set system.mail interface.default php_mail');
 //exec('drush -y pm-uninstall devel');
-echo "Operation complete.\n";
+// echo "Operation complete.\n";
 exit();
