@@ -2,7 +2,7 @@
 
 // set max to a value over zero to limit the number of nodes to update for testng purposes.
 // set to zero to process all.
-$max = 25;
+$max = 0;
 
 echo "\n\nWARNING: YOU MUST DISABLE MAIL SENDING BEFORE EXECUTING THIS SCRIPT!\n";
 echo "If mail sending is still enabled, cancel this script and disable mail before re-running.\n\n";
