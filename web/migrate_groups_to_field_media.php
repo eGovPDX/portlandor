@@ -2,7 +2,7 @@
 
 // set max to a value over zero to limit the number of nodes to update for testng purposes.
 // set to zero to process all.
-$max = 0;
+$max = 25;
 
 echo "\nStarting group relationship migration for MEDIA.\n";
 $nids = \Drupal::entityQuery('media')
@@ -24,9 +24,10 @@ foreach($nids as $key => $nid) {
     break;
   }
 
+  $node = \Drupal\media\Entity\Media::load($nid);
   $ids = \Drupal::entityQuery('group_content')
     ->condition('entity_id', $nid)
-    ->condition('type', '%group_media%', 'LIKE')
+    ->accessCheck(FALSE)
     ->execute();
 
   if (count($ids) > 0) {
@@ -37,7 +38,6 @@ foreach($nids as $key => $nid) {
         $gids[] = $rel->getGroup()->id();
       }
     }
-    $node = \Drupal\media\Entity\Media::load($nid);
     if (!is_null($node->field_display_groups)) {
       foreach($gids as $gid) {
         $node->field_display_groups[] = $gid;
@@ -55,8 +55,12 @@ foreach($nids as $key => $nid) {
       echo str_pad($added + $skipped + $errors, 8) . str_pad("Update", 8) . str_pad($nid, 8) . str_pad(implode("|", $gids), 16) . str_pad(substr($node->bundle(),0,15), 16) . substr($node->name->value, 0, 64) . "\n";
     } else {
       $skipped += 1;
-      echo str_pad($added + $skipped + $errors, 8) . str_pad("Skip", 8) . str_pad($nid, 8) . str_pad("", 16) . str_pad(substr($node->bundle(),0,15), 16) . substr($node->name->value, 0, 64) . "\n";
+      echo str_pad($added + $skipped + $errors, 8) . str_pad("Skip", 8) . str_pad($nid, 8) . str_pad("No group field", 16) . str_pad(substr($node->bundle(),0,15), 16) . substr($node->name->value, 0, 64) . "\n";
     }
+  } else {
+    $skipped += 1;
+    $node = \Drupal\media\Entity\Media::load($nid);
+    echo str_pad($added + $skipped + $errors, 8) . str_pad("Skip", 8) . str_pad($nid, 8) . str_pad("None found", 16) . str_pad(substr($node->bundle(),0,15), 16) . substr($node->name->value, 0, 64) . "\n";
   }
 }
 
