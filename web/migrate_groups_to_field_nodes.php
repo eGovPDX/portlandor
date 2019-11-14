@@ -2,7 +2,7 @@
 
 // set max to a value over zero to limit the number of nodes to update for testng purposes.
 // set to zero to process all.
-$max = 0;
+$max = 25;
 
 echo "\n\nWARNING: YOU MUST DISABLE MAIL SENDING BEFORE EXECUTING THIS SCRIPT!\n";
 echo "If mail sending is still enabled, cancel this script and disable mail before re-running.\n\n";
@@ -43,7 +43,7 @@ foreach($nids as $key => $nid) {
 
   $ids = \Drupal::entityQuery('group_content')
     ->condition('entity_id', $nid)
-    ->condition('type', '%group_node%', 'LIKE')
+    ->accessCheck(FALSE)
     ->execute();
 
   if (count($ids) > 0) {
