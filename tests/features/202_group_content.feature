@@ -25,20 +25,20 @@ Feature: Members can manage group content
     And I should see "Body content"
     And I should see "Legacy path"
 
-    When I fill in "edit-title-0-value" with "Test page"
-    And I fill in "edit-field-summary-0-value" with "Summary for the test page"
-    And I fill in wysiwyg on field "edit-field-body-content-0-value" with "Body content for the test page"
+    When I fill in "edit-title-0-value" with "Check page"
+    And I fill in "edit-field-summary-0-value" with "Summary for the check page"
+    And I fill in wysiwyg on field "edit-field-body-content-0-value" with "Body content for the check page"
     And I fill in "edit-revision-log-0-value" with:
       """
-      Test revision message
+      Check revision message
       """
     And I press "Save"
     Then I wait for the page to be loaded
-    And I should see "Page Test page has been created."
+    And I should see "Page Check page has been created."
 
   Scenario: Edit and delete service
     Given I am logged in as user "Marty Member"
-    When I visit "/powr/test-page"
+    When I visit "/powr/check-page"
     Then I wait for the page to be loaded
     And I click "Edit" in the "tabs" region
     Then I wait for the page to be loaded
