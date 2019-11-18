@@ -1,12 +1,4 @@
 (function ($) {
-  // Once the Leaflet Map is loaded with its features. Store a copy of map
-  var map;
-  var pathOptions;
-  $(document).on('leaflet.map', function (e, settings, lMap, mapid) {
-    map = lMap;
-    pathOptions = JSON.parse(settings.settings.path);
-  });
-
   Drupal.Leaflet.prototype._create_layer_orig = Drupal.Leaflet.prototype.create_layer;
   Drupal.Leaflet.prototype.create_layer = function (layer, key) {
     // Load ESRI feature layers
@@ -32,75 +24,91 @@
 
   Drupal.Leaflet.prototype._create_feature_orig = Drupal.Leaflet.prototype.create_feature;
   Drupal.Leaflet.prototype.create_feature = function(feature) {
+    // If this is NOT a geo file, call original function to handle it
+    if( feature.feature_source != 'file')
+      return this._create_feature_orig(feature);
+
+    // feature.entity_id is the map ID: "1371"
+    var mapid = "leaflet-map-media-map-"+ feature.entity_id +"-field-geo-file";
+    var map = null;
+
+    for(var property in Drupal.Leaflet) {
+      if (Drupal.Leaflet.hasOwnProperty(property)) {
+        // All map using the same map file has similar ID. Find the first one that doesn't have feature loaded
+        if(property.indexOf("leaflet-map-media-map-"+ feature.entity_id) === 0) {
+          map = Drupal.Leaflet[property].lMap;
+          if(map.featureAdded) continue;
+        }
+      }
+    }
+
+    if( !map ) return;
+
     // Handle the custom geo file
-    if( feature.feature_source == 'file') {
-      var featureLayer = L.geoJSON(null);
-      featureLayer.options.onEachFeature = function(feature, layer) {
-        for (var layer_id in layer._layers) {
-          for (var i in layer._layers[layer_id]._latlngs) {
-            Drupal.Leaflet.bounds.push(layer._layers[layer_id]._latlngs[i]);
-          }
+    var featureLayer = L.geoJSON(null);
+    featureLayer.options.onEachFeature = function(feature, layer) {
+      for (var layer_id in layer._layers) {
+        for (var i in layer._layers[layer_id]._latlngs) {
+          Drupal.Leaflet.bounds.push(layer._layers[layer_id]._latlngs[i]);
         }
+      }
 
-        // Drupal.Leaflet.bounds.push(layer.getBounds());
+      // Drupal.Leaflet.bounds.push(layer.getBounds());
 
-        if (feature.properties.style) {
-          layer.setStyle(feature.properties.style);
+      if (feature.properties.style) {
+        layer.setStyle(feature.properties.style);
+      }
+      if (feature.properties.leaflet_id) {
+        layer._leaflet_id = feature.properties.leaflet_id;
+      }
+      if (feature.properties.popup) {
+        layer.bindPopup(feature.properties.popup);
+      }
+    };
+
+    var xhr = new XMLHttpRequest();
+    xhr.open("GET", feature.file_url, true);
+    if( feature.file_type == 'shapefile') {
+      xhr.responseType = "arraybuffer";
+      xhr.onload = function (oEvent) {
+        if (xhr.status !== 200) {
+          console.error('Failed to load geo file: ' + feature.file_url);
+          return
         }
-        if (feature.properties.leaflet_id) {
-          layer._leaflet_id = feature.properties.leaflet_id;
-        }
-        if (feature.properties.popup) {
-          layer.bindPopup(feature.properties.popup);
-        }
+        var byteArray = new Uint8Array(xhr.response);
+        // Convert shapefile binary into geojson text
+        shp(byteArray).then(function (geojson) {
+          featureLayer.addData(geojson);
+          featureLayer.setStyle(map.options.path);
+          map.fitBounds(featureLayer.getBounds());
+          map.featureAdded = true;
+        })
       };
-
-      var xhr = new XMLHttpRequest();
-      xhr.open("GET", feature.file_url, true);
-      if( feature.file_type == 'shapefile') {
-        xhr.responseType = "arraybuffer";
-        xhr.onload = function (oEvent) {
+    }
+    // Default file type is GeoJSON
+    else {
+      // Load Geo file from server and add it to the map
+      xhr.setRequestHeader('Content-Type', 'application/json');
+      xhr.responseType = 'json';
+      xhr.onload = function() {
           if (xhr.status !== 200) {
             console.error('Failed to load geo file: ' + feature.file_url);
             return
           }
-          var byteArray = new Uint8Array(xhr.response);
-          // Convert shapefile binary into geojson text
-          shp(byteArray).then(function (geojson) {
-            featureLayer.addData(geojson);
-            featureLayer.setStyle(pathOptions);
-            map.fitBounds(featureLayer.getBounds());
-          })
-        };
-      }
-      // Default file type is GeoJSON
-      else {
-        // Load Geo file from server and add it to the map
-        xhr.setRequestHeader('Content-Type', 'application/json');
-        xhr.responseType = 'json';
-        xhr.onload = function() {
-            if (xhr.status !== 200) {
-              console.error('Failed to load geo file: ' + feature.file_url);
-              return
-            }
-            // In IE, xhr.response is still a string
-            if (typeof xhr.response === 'string' || xhr.response instanceof String) {
-              featureLayer.addData(JSON.parse(xhr.response));
-            }
-            else {
-              featureLayer.addData(xhr.response);
-            }
-            featureLayer.setStyle(pathOptions);
-            map.fitBounds(featureLayer.getBounds());
-        };
-      }
-      xhr.send();
-      return featureLayer;
+          // In IE, xhr.response is still a string
+          if (typeof xhr.response === 'string' || xhr.response instanceof String) {
+            featureLayer.addData(JSON.parse(xhr.response));
+          }
+          else {
+            featureLayer.addData(xhr.response);
+          }
+          featureLayer.setStyle(map.options.path);
+          map.fitBounds(featureLayer.getBounds());
+          map.featureAdded = true;
+      };
     }
-    else {
-      // Default to the original code
-      return this._create_feature_orig(feature);
-    }
+    xhr.send();
+    return featureLayer;
   }
 
 })(jQuery);
