@@ -3,8 +3,10 @@ langcode: en
 status: true
 dependencies:
   config:
+    - core.entity_view_mode.relation.teaser
     - portland_relations.relation_type.council_agenda_item
   module:
+    - datetime
     - eva
     - node
     - portland_relations
@@ -55,31 +57,29 @@ display:
       style:
         type: default
         options:
-          grouping:
-            -
-              field: title
-              rendered: true
-              rendered_strip: false
+          grouping: {  }
           row_class: ''
           default_row_class: true
       row:
         type: fields
+        options:
+          default_field_elements: true
+          inline: {  }
+          separator: ''
+          hide_empty: false
       fields:
-        rendered_entity:
-          table: relation
-          field: rendered_entity
-          id: rendered_entity
-          entity_type: null
-          entity_field: null
-          plugin_id: rendered_entity
-          relationship: none
+        title:
+          id: title
+          table: node_field_data
+          field: title
+          relationship: reverse__node__field_agenda
           group_type: group
           admin_label: ''
           label: ''
           exclude: false
           alter:
-            alter_text: false
-            text: ''
+            alter_text: true
+            text: '<h3>{{ title }}</h3>'
             make_link: false
             path: ''
             absolute: false
@@ -108,24 +108,40 @@ display:
           element_class: ''
           element_label_type: ''
           element_label_class: ''
-          element_label_colon: true
+          element_label_colon: false
           element_wrapper_type: ''
           element_wrapper_class: ''
-          element_default_classes: true
+          element_default_classes: false
           empty: ''
           hide_empty: false
           empty_zero: false
           hide_alter_empty: true
-          view_mode: default
-        title:
-          id: title
-          table: node_field_data
-          field: title
-          relationship: reverse__node__field_agenda
+          click_sort_column: value
+          type: string
+          settings:
+            link_to_entity: true
+          group_column: value
+          group_columns: {  }
+          group_rows: true
+          delta_limit: 0
+          delta_offset: 0
+          delta_reversed: false
+          delta_first_last: false
+          multi_type: separator
+          separator: ', '
+          field_api_classes: false
+          entity_type: node
+          entity_field: title
+          plugin_id: field
+        rendered_entity:
+          id: rendered_entity
+          table: relation
+          field: rendered_entity
+          relationship: none
           group_type: group
           admin_label: ''
           label: ''
-          exclude: true
+          exclude: false
           alter:
             alter_text: false
             text: ''
@@ -165,23 +181,10 @@ display:
           hide_empty: false
           empty_zero: false
           hide_alter_empty: true
-          click_sort_column: value
-          type: string
-          settings:
-            link_to_entity: true
-          group_column: value
-          group_columns: {  }
-          group_rows: true
-          delta_limit: 0
-          delta_offset: 0
-          delta_reversed: false
-          delta_first_last: false
-          multi_type: separator
-          separator: ', '
-          field_api_classes: false
-          entity_type: node
-          entity_field: title
-          plugin_id: field
+          view_mode: teaser
+          entity_type: null
+          entity_field: null
+          plugin_id: rendered_entity
       filters:
         type:
           id: type
@@ -193,9 +196,35 @@ display:
           entity_field: type
           plugin_id: bundle
           group: 1
-      sorts: {  }
+      sorts:
+        field_start_date_value:
+          id: field_start_date_value
+          table: node__field_start_date
+          field: field_start_date_value
+          relationship: field_council_document
+          group_type: group
+          admin_label: ''
+          order: ASC
+          exposed: false
+          expose:
+            label: ''
+          granularity: second
+          plugin_id: datetime
       title: 'Agenda items on document'
-      header: {  }
+      header:
+        area:
+          id: area
+          table: views
+          field: area
+          relationship: none
+          group_type: group
+          admin_label: ''
+          empty: false
+          tokenize: false
+          content:
+            value: '<h2>Council meetings for this document</h2>'
+            format: full_html
+          plugin_id: text
       footer: {  }
       empty: {  }
       relationships:
@@ -269,6 +298,12 @@ display:
       tags:
         - 'config:core.entity_view_display.relation.council_agenda_item.default'
         - extensions
+        - 'config:core.entity_view_display.relation.council_agenda_item.teaser'
+        - extensions
+        - 'config:core.entity_view_display.relation.council_vote.default'
+        - extensions
+        - 'config:core.entity_view_display.relation.council_vote.ief_table'
+        - extensions
   entity_view_1:
     display_plugin: entity_view
     id: entity_view_1
@@ -281,7 +316,7 @@ display:
         - council_document
       argument_mode: id
       default_argument: null
-      show_title: true
+      show_title: false
       title: 'Council meetings'
     cache_metadata:
       max-age: -1
@@ -291,4 +326,10 @@ display:
         - url
       tags:
         - 'config:core.entity_view_display.relation.council_agenda_item.default'
+        - extensions
+        - 'config:core.entity_view_display.relation.council_agenda_item.teaser'
+        - extensions
+        - 'config:core.entity_view_display.relation.council_vote.default'
+        - extensions
+        - 'config:core.entity_view_display.relation.council_vote.ief_table'
         - extensions
