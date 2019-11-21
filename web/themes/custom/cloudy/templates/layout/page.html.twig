@@ -34,62 +34,87 @@
  *
  */
 #}
-{{ page.global_admin }}
-{{ page.pre_header }}
-<a href="#main" class="visually-hidden focusable skip-link">
-    {{ 'Skip to main content'|t }}
-</a>
-{# TODO: The skip to content here is a duplicate of the one in html.html.twig #}
-<header id="header" class="header" aria-label="{{ 'Site header'|t}}" role="banner">
-  <nav class="navbar navbar-light navbar-expand-xl" id="navbar-main">
-    <div class="container">
-      {{ page.header }}
-      {% if page.primary_menu or page.header_form %}
-        <button class="navbar-toggler navbar-toggler-right border-0" type="button" data-toggle="collapse" data-target="#CollapsingNavbar" aria-controls="CollapsingNavbar" aria-expanded="false" aria-label="{{ 'Toggle navigation'|t }}">{{ 'Menu'|t }}</button>
-        <div class="collapse navbar-collapse justify-content-end h-100" id="CollapsingNavbar">
-          {{ page.primary_menu }}
-          {% set header_form = page.header_form|render %}
-          {% if header_form %}
-            <div class="form-inline navbar-form">
-              {{ page.header_form }}
-            </div>
+{% block global_admin %}
+  {{ page.global_admin }}
+{% endblock %}
+
+{% block pre_header %}
+  {{ page.pre_header }}
+{% endblock %}
+
+{% block header %}
+  <header id="header" class="header" aria-label="{{ 'Site header'|t}}" role="banner">
+    <nav class="navbar navbar-light navbar-expand-xl" id="navbar-main">
+      <div class="container">
+        {{ page.header }}
+        {% if page.primary_menu or page.header_form %}
+          <button class="navbar-toggler navbar-toggler-right border-0" type="button" data-toggle="collapse" data-target="#CollapsingNavbar" aria-controls="CollapsingNavbar" aria-expanded="false" aria-label="{{ 'Toggle navigation'|t }}">{{ 'Menu'|t }}</button>
+          <div class="collapse navbar-collapse justify-content-end h-100" id="CollapsingNavbar">
+            {{ page.primary_menu }}
+            {% set header_form = page.header_form|render %}
+            {% if header_form %}
+              <div class="form-inline navbar-form">
+                {{ page.header_form }}
+              </div>
+            {% endif %}
+          </div>
+        {% endif %}
+      </div>
+    </nav>
+  </header>
+{% endblock %}
+
+{% block tabs %}
+  {{ page.tabs }}
+{% endblock %}
+
+{% block messages %}
+  {{ page.messages }}
+{% endblock %}
+
+{% block pre_content %}
+  {{ page.pre_content }}
+{% endblock %}
+
+<main id="main-content" role="main" tabindex="-1" data-swiftype-index="true">
+  <section>
+    {% block main_content %}
+      <div class="main-content {{ not is_front ? 'container' }}">
+        <div class="{{ not is_front ? 'row' }}">
+          {% if page.menu %}
+            <aside class="sidebar-left col-sm-12 col-lg-3">
+              {{ page.menu }}
+            </aside>
+          {% endif %}
+          <div class="page-content {{ page.tools ? 'col' }}">
+            {% block page_content %}
+              {{ page.content }}
+            {% endblock %}
+          </div>
+          {% if page.tools %}
+            <aside class="sidebar-right col-sm-12 col-lg-3">
+              {{ page.tools }}
+            </aside>
           {% endif %}
         </div>
-      {% endif %}
+      </div>
+    {% endblock %}
+  </section>
+</main>
+
+{% block footer %}
+  <footer class="site-footer text-dark">
+    <div class="container">
+      <div class="row">
+        {% if page.footer_first or page.footer_second %}
+          <div class="col-sm-6" id="footer_first">
+            {{ page.footer_first }}
+          </div>
+          <div class="col-sm-6" id="footer_second">
+            {{ page.footer_second }}
+          </div>
+        {% endif %}
+      </div>
     </div>
-  </nav>
-</header>
-{{ page.tabs }}
-{{ page.messages }}
-{{ page.pre_content }}
-{%
-  set container_classes = [
-    not is_front ? 'container',
-    not is_front ? 'mt-4'
-  ]
-%}
-<div {{ attributes.addClass(container_classes) }} data-swiftype-index="true">
-  <div class="row">
-    {{ page.content }}
-    {% if page.tools %}
-      {{ page.tools }}
-    {% endif %}
-    {% if page.menu %}
-      {{ page.menu }}
-    {% endif %}
-  </div>
-</div>
-<footer class="site-footer text-dark">
-  <div class="container">
-    <div class="row">
-      {% if page.footer_first or page.footer_second %}
-        <div class="col-sm-6" id="footer_first">
-          {{ page.footer_first }}
-        </div>
-        <div class="col-sm-6" id="footer_second">
-          {{ page.footer_second }}
-        </div>
-      {% endif %}
-    </div>
-  </div>
-</footer>
+  </footer>
+{% endblock %}
