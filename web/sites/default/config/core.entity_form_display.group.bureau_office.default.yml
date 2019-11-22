@@ -8,11 +8,11 @@ dependencies:
     - field.field.group.bureau_office.field_audience
     - field.field.group.bureau_office.field_building
     - field.field.group.bureau_office.field_email
+    - field.field.group.bureau_office.field_enable_advisory_menu_item
     - field.field.group.bureau_office.field_enable_documents_menu_item
     - field.field.group.bureau_office.field_enable_events_menu_item
-    - field.field.group.bureau_office.field_enable_guides_and_informat
     - field.field.group.bureau_office.field_enable_news_and_notices_me
-    - field.field.group.bureau_office.field_enable_offices_and_program
+    - field.field.group.bureau_office.field_enable_offices_menu_item
     - field.field.group.bureau_office.field_enable_programs_menu_item
     - field.field.group.bureau_office.field_enable_projects_menu_item
     - field.field.group.bureau_office.field_enable_services_and_inform
@@ -20,6 +20,7 @@ dependencies:
     - field.field.group.bureau_office.field_featured_content
     - field.field.group.bureau_office.field_featured_groups
     - field.field.group.bureau_office.field_featured_media
+    - field.field.group.bureau_office.field_group_menu_toggle
     - field.field.group.bureau_office.field_instagram
     - field.field.group.bureau_office.field_location
     - field.field.group.bureau_office.field_logo
@@ -36,7 +37,6 @@ dependencies:
     - image.style.thumbnail
   module:
     - address
-    - chosen_field
     - cleave
     - entity_browser
     - field_group
@@ -55,11 +55,11 @@ third_party_settings:
         - field_address
         - field_location
         - field_building
-      parent_name: ''
-      weight: 4
-      format_type: fieldset
+      parent_name: group_group_details
+      weight: 11
+      format_type: accordion_item
       format_settings:
-        description: 'City offices may provide mailing address, contact phone, and contact email information to the public by filling out these fields.'
+        formatter: closed
         id: contact-information
         classes: ''
         required_fields: false
@@ -67,23 +67,115 @@ third_party_settings:
       region: content
     group_group_menu:
       children:
+        - field_group_menu_toggle
         - field_enable_services_and_inform
-        - field_enable_guides_and_informat
         - field_enable_news_and_notices_me
         - field_enable_events_menu_item
         - field_enable_documents_menu_item
-        - field_enable_offices_and_program
+        - field_enable_offices_menu_item
         - field_enable_programs_menu_item
         - field_enable_projects_menu_item
+        - field_enable_advisory_menu_item
+      parent_name: group_group_details
+      weight: 12
+      format_type: accordion_item
+      format_settings:
+        formatter: closed
+        id: ''
+        classes: ''
+        required_fields: false
+      label: 'Group menu'
+      region: content
+    group_group_details:
+      children:
+        - group_parent_bureau_office
+        - group_logo_and_image
+        - group_contact_information
+        - group_group_menu
+        - group_categorization
+        - group_feature
+        - group_redirects
       parent_name: ''
-      weight: 13
-      format_type: fieldset
+      weight: 5
+      format_type: accordion
       format_settings:
         id: ''
         classes: ''
-        description: 'Turn on menu items for types of content in your site.'
-        required_fields: true
-      label: 'Site menu'
+        effect: none
+      label: 'Group details'
+      region: content
+    group_logo_and_image:
+      children:
+        - field_featured_media
+        - field_logo
+      parent_name: group_group_details
+      weight: 10
+      format_type: accordion_item
+      format_settings:
+        formatter: closed
+        id: ''
+        classes: ''
+        required_fields: false
+      label: 'Logo and image'
+      region: content
+    group_categorization:
+      children:
+        - field_audience
+        - field_topics
+      parent_name: group_group_details
+      weight: 13
+      format_type: accordion_item
+      format_settings:
+        id: ''
+        classes: ''
+        formatter: closed
+        required_fields: false
+        description: ''
+      label: 'Where should this office be listed?'
+      region: content
+    group_feature:
+      children:
+        - field_featured_content
+        - field_featured_groups
+      parent_name: group_group_details
+      weight: 14
+      format_type: accordion_item
+      format_settings:
+        description: 'Featuring content on your homepage can be an effective way to create navigation to find your most important content. You can feature static content (pages, services, permits) in the featured content field. You can feature groups (offices, programs, strategic projects) in the featured groups field. News can be featured from the "feature this news" field on each news item. Upcoming events are automatically featured.'
+        id: ''
+        classes: ''
+        required_fields: false
+        formatter: closed
+      label: 'What content do you want to show on your homepage?'
+      region: content
+    group_redirects:
+      children:
+        - field_redirects
+      parent_name: group_group_details
+      weight: 15
+      format_type: accordion_item
+      format_settings:
+        id: ''
+        classes: ''
+        formatter: closed
+        required_fields: false
+        description: ''
+      label: 'Legacy paths and redirects'
+      region: content
+    group_parent_bureau_office:
+      children:
+        - field_parent_group
+        - field_menu_link
+      parent_name: group_group_details
+      weight: 9
+      format_type: accordion_item
+      format_settings:
+        id: ''
+        classes: ''
+        formatter: closed
+        required_fields: false
+        description: ''
+      label: 'Parent bureau or office'
       region: content
 id: group.bureau_office.default
 targetEntityType: group
@@ -91,19 +183,19 @@ bundle: bureau_office
 mode: default
 content:
   field_address:
-    weight: 28
+    weight: 13
     settings: {  }
     third_party_settings: {  }
     type: address_default
     region: content
   field_audience:
-    weight: 6
+    weight: 5
     settings: {  }
     third_party_settings: {  }
-    type: chosen_select
+    type: options_buttons
     region: content
   field_building:
-    weight: 30
+    weight: 15
     settings:
       match_operator: CONTAINS
       size: 60
@@ -112,71 +204,208 @@ content:
     type: entity_reference_autocomplete
     region: content
   field_email:
-    weight: 23
+    weight: 8
     settings:
       size: 60
       placeholder: ''
     third_party_settings: {  }
     type: email_default
     region: content
-  field_enable_documents_menu_item:
-    weight: 29
+  field_enable_advisory_menu_item:
+    weight: 21
     settings:
       display_label: true
-    third_party_settings: {  }
+    third_party_settings:
+      conditional_fields:
+        6fb2ff6d-e43f-4526-9b20-fe80c1d9781d:
+          dependee: field_group_menu_toggle
+          settings:
+            state: visible
+            condition: checked
+            grouping: AND
+            values_set: 1
+            value: ''
+            values: {  }
+            value_form:
+              value: false
+            effect: show
+            effect_options: {  }
+            selector: ''
+            form_mode: default
+          entity_type: group
+          bundle: bureau_office
+    type: boolean_checkbox
+    region: content
+  field_enable_documents_menu_item:
+    weight: 17
+    settings:
+      display_label: true
+    third_party_settings:
+      conditional_fields:
+        eda7a036-85d3-4274-85d2-0a9205a92640:
+          dependee: field_group_menu_toggle
+          settings:
+            state: visible
+            condition: checked
+            grouping: AND
+            values_set: 1
+            value: ''
+            values: {  }
+            value_form: {  }
+            effect: show
+            effect_options: {  }
+            selector: ''
+            form_mode: default
+          entity_type: group
+          bundle: bureau_office
     type: boolean_checkbox
     region: content
   field_enable_events_menu_item:
-    weight: 28
+    weight: 16
     settings:
       display_label: true
-    third_party_settings: {  }
-    type: boolean_checkbox
-    region: content
-  field_enable_guides_and_informat:
-    weight: 26
-    settings:
-      display_label: true
-    third_party_settings: {  }
+    third_party_settings:
+      conditional_fields:
+        f836d91a-f981-4311-9c6a-b0d808659df0:
+          dependee: field_group_menu_toggle
+          settings:
+            state: visible
+            condition: checked
+            grouping: AND
+            values_set: 1
+            value: ''
+            values: {  }
+            value_form: {  }
+            effect: show
+            effect_options: {  }
+            selector: ''
+            form_mode: default
+          entity_type: group
+          bundle: bureau_office
     type: boolean_checkbox
     region: content
   field_enable_news_and_notices_me:
-    weight: 27
+    weight: 15
     settings:
       display_label: true
-    third_party_settings: {  }
+    third_party_settings:
+      conditional_fields:
+        d8613c85-1733-407a-bc44-ad2f4b77dd09:
+          dependee: field_group_menu_toggle
+          settings:
+            state: visible
+            condition: checked
+            grouping: AND
+            values_set: 1
+            value: ''
+            values: {  }
+            value_form: {  }
+            effect: show
+            effect_options: {  }
+            selector: ''
+            form_mode: default
+          entity_type: group
+          bundle: bureau_office
     type: boolean_checkbox
     region: content
-  field_enable_offices_and_program:
-    weight: 30
+  field_enable_offices_menu_item:
+    weight: 18
     settings:
       display_label: true
-    third_party_settings: {  }
+    third_party_settings:
+      conditional_fields:
+        8c70c038-5741-48bd-89da-e360276694c8:
+          dependee: field_group_menu_toggle
+          settings:
+            state: visible
+            condition: checked
+            grouping: AND
+            values_set: 1
+            value: ''
+            values: {  }
+            value_form: {  }
+            effect: show
+            effect_options: {  }
+            selector: ''
+            form_mode: default
+          entity_type: group
+          bundle: bureau_office
     type: boolean_checkbox
     region: content
   field_enable_programs_menu_item:
-    weight: 31
+    weight: 19
     settings:
       display_label: true
-    third_party_settings: {  }
+    third_party_settings:
+      conditional_fields:
+        06dae936-f557-4ba9-a474-116015d48ad8:
+          dependee: field_group_menu_toggle
+          settings:
+            state: visible
+            condition: checked
+            grouping: AND
+            values_set: 1
+            value: ''
+            values: {  }
+            value_form: {  }
+            effect: show
+            effect_options: {  }
+            selector: ''
+            form_mode: default
+          entity_type: group
+          bundle: bureau_office
     type: boolean_checkbox
     region: content
   field_enable_projects_menu_item:
-    weight: 32
+    weight: 20
     settings:
       display_label: true
-    third_party_settings: {  }
+    third_party_settings:
+      conditional_fields:
+        ef9ac2c5-5d21-4edd-8ea5-2e9ffab35b75:
+          dependee: field_group_menu_toggle
+          settings:
+            state: visible
+            condition: checked
+            grouping: AND
+            values_set: 1
+            value: ''
+            values: {  }
+            value_form: {  }
+            effect: show
+            effect_options: {  }
+            selector: ''
+            form_mode: default
+          entity_type: group
+          bundle: bureau_office
     type: boolean_checkbox
     region: content
   field_enable_services_and_inform:
-    weight: 25
+    weight: 14
     settings:
       display_label: true
-    third_party_settings: {  }
+    third_party_settings:
+      conditional_fields:
+        01b5da54-cc8b-4892-9d81-949e4b226dbc:
+          dependee: field_group_menu_toggle
+          settings:
+            state: visible
+            condition: checked
+            grouping: AND
+            values_set: 1
+            value: ''
+            values: {  }
+            value_form: {  }
+            effect: show
+            effect_options: {  }
+            selector: ''
+            form_mode: default
+          entity_type: group
+          bundle: bureau_office
     type: boolean_checkbox
     region: content
   field_facebook:
-    weight: 25
+    weight: 10
     settings:
       size: 60
       placeholder: ''
@@ -184,7 +413,7 @@ content:
     type: string_textfield
     region: content
   field_featured_content:
-    weight: 14
+    weight: 7
     settings:
       match_operator: CONTAINS
       size: 60
@@ -193,7 +422,7 @@ content:
     type: entity_reference_autocomplete
     region: content
   field_featured_groups:
-    weight: 15
+    weight: 8
     settings:
       match_operator: CONTAINS
       size: 60
@@ -216,8 +445,15 @@ content:
       open: false
     region: content
     third_party_settings: {  }
+  field_group_menu_toggle:
+    weight: 13
+    settings:
+      display_label: true
+    third_party_settings: {  }
+    type: boolean_checkbox
+    region: content
   field_instagram:
-    weight: 27
+    weight: 12
     settings:
       size: 60
       placeholder: ''
@@ -225,7 +461,7 @@ content:
     type: string_textfield
     region: content
   field_location:
-    weight: 29
+    weight: 14
     settings:
       entity_browser: locations_browser
       field_widget_display: rendered_entity
@@ -241,14 +477,14 @@ content:
     region: content
   field_logo:
     type: image_image
-    weight: 11
+    weight: 4
     settings:
       preview_image_style: thumbnail
       progress_indicator: throbber
     region: content
     third_party_settings: {  }
   field_menu_link:
-    weight: 17
+    weight: 19
     settings: {  }
     third_party_settings: {  }
     type: menu_link_default
@@ -262,7 +498,7 @@ content:
     type: string_textfield
     region: content
   field_parent_group:
-    weight: 5
+    weight: 18
     settings:
       match_operator: CONTAINS
       size: 60
@@ -271,7 +507,7 @@ content:
     type: entity_reference_autocomplete
     region: content
   field_phone:
-    weight: 24
+    weight: 9
     settings:
       placeholder: ''
       country: US
@@ -280,14 +516,14 @@ content:
     region: content
   field_redirects:
     type: string_textfield
-    weight: 18
+    weight: 9
     region: content
     settings:
       size: 60
       placeholder: ''
     third_party_settings: {  }
   field_search_keywords:
-    weight: 16
+    weight: 6
     settings:
       size: 60
       placeholder: ''
@@ -303,7 +539,7 @@ content:
     type: string_textfield
     region: content
   field_summary:
-    weight: 12
+    weight: 3
     settings:
       rows: 2
       placeholder: ''
@@ -319,10 +555,10 @@ content:
     weight: 7
     settings: {  }
     third_party_settings: {  }
-    type: chosen_select
+    type: options_buttons
     region: content
   field_twitter:
-    weight: 26
+    weight: 11
     settings:
       size: 60
       placeholder: ''
