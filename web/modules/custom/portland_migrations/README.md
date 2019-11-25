@@ -111,19 +111,25 @@ lando terminus remote:drush portlandor.powr-[ID] -- migrate:import category_docu
 ```
 lando drush migrate:import city_charter_chapters
 lando drush migrate:import city_charter_chapters_redirects
+lando drush migrate:import city_charter_chapters_group_content
 lando drush migrate:import city_charter_articles
 lando drush migrate:import city_charter_articles_redirects
+lando drush migrate:import city_charter_articles_group_content
 lando drush migrate:import city_charter_sections
 lando drush migrate:import city_charter_sections_redirects
+lando drush migrate:import city_charter_sections_group_content
 ```
 ##### On Pantheon
 ```
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_charter_chapters
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_charter_chapters_redirects
+lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_charter_chapters_group_content
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_charter_articles
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_charter_articles_redirects
+lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_charter_chapters_group_content
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_charter_sections
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_charter_sections_redirects
+lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_charter_chapters_group_content
 ```
 
 #### Parks
@@ -157,19 +163,25 @@ lando terminus remote:drush portlandor.powr-[ID] -- migrate:import neighborhoods
 ```
 lando drush migrate:import city_code_titles
 lando drush migrate:import city_code_titles_redirects
+lando drush migrate:import city_code_titles_group_content
 lando drush migrate:import city_code_chapters
 lando drush migrate:import city_code_chapters_redirects
+lando drush migrate:import city_code_chapters_group_content
 lando drush migrate:import city_code_sections
 lando drush migrate:import city_code_sections_redirects
+lando drush migrate:import city_code_sections_group_content
 ```
 ##### On Pantheon
 ```
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_code_titles
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_code_titles_redirects
+lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_code_titles_group_content
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_code_chapters
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_code_chapters_redirects
+lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_code_chapters_group_content
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_code_sections
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_code_sections_redirects
+lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_code_sections_group_content
 ```
 
 #### City policies
