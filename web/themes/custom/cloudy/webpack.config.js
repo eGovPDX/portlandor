@@ -5,21 +5,21 @@ const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 
 module.exports = (env, argv) => ({
   entry: {
-    main: globby.sync(['./js/**/*.js', './scss/style.scss'])
+    main: globby.sync(['./js/**/*.js', './src/style.scss'])
   },
   devtool: 'source-map',
   mode: process.env.NODE_ENV,
   output: {
     path: path.resolve(__dirname),
-    filename: 'dist-cloudy/js/[name].bundle.js'
+    filename: 'dist/[name].bundle.js'
   },
   watchOptions: {
     ignored: ['images/**/*.*', 'dist-cloudy/**/*.*', 'templates/**/*.*', 'node_modules']
   },
   plugins: [
     new MiniCssExtractPlugin({
-      filename: 'dist-cloudy/css/style.bundle.css',
-      chunkFilename: 'dist-cloudy/css/[id].bundle.css'
+      filename: 'dist/style.bundle.css',
+      chunkFilename: 'dist/[id].bundle.css'
     }),
     // new BrowserSyncPlugin(
     //   // BrowserSync options
