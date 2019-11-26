@@ -31,16 +31,17 @@ services:
         # LANDO_WEBROOT_GROUP: node
         NODE_EXTRA_CA_CERTS: /app/cop_ca.pem
     build_as_root:
-      - apt-get update -y  && apt-get upgrade -y
+      - apt-get update -y && apt-get upgrade -y
       - apt-get install php
+    build:
+      - echo "Updating npm..."
+      - npm install -g npm
     run_as_root:
       - /bin/sh -c "adduser www-data node"
       - /bin/sh -c "adduser www-data dialout"
       - /bin/sh -c "adduser node dialout"
       - /bin/sh -c "chmod -R 775 /var/www"
     run:
-      - echo "Updating npm..."
-      - npm install -g npm
       - echo "Installing Node.js dependencies..."
       - cd /app/web/themes/custom/cloudy && npm install
   chromedriver:
@@ -59,8 +60,6 @@ services:
 events:
   post-start:
     - node: /bin/sh -c "chmod -R 775 /var/www"
-    - node: echo "Updating npm..."
-    - node: npm install -g npm
     - node: echo "Building theme asset files..."
     - node: cd /app/web/themes/custom/cloudy && npm run build:dev
 tooling:
