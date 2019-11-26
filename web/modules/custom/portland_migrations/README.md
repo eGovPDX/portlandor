@@ -126,10 +126,10 @@ lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_charter_
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_charter_chapters_group_content
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_charter_articles
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_charter_articles_redirects
-lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_charter_chapters_group_content
+lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_charter_articles_group_content
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_charter_sections
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_charter_sections_redirects
-lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_charter_chapters_group_content
+lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_charter_articles_group_content
 ```
 
 #### Parks
