@@ -38,11 +38,15 @@ function cloudy_preprocess_html(&$variables) {
     // we are on something else and probably have the ID
     else {
       $group_entity = \Drupal::entityTypeManager()->getStorage('group')->load($group);
-      setGroupVariables($group_entity, $variables);
 
-      // some views pages have duplidate html titles, such as group Services, Guides, etc.
-      // this function call appends the group name to the title for SEO purposes.
-      portland_set_extended_title_for_group_views($variables);
+      // NOTE: this may get called in instances where there is no group, or group is "all",
+      // in which case the group entity will be null
+      if (!is_null($group_entity)) {
+        setGroupVariables($group_entity, $variables);
+        // some views pages have duplicate html titles, such as group Services, Guides, etc.
+        // this function call appends the group name to the title for SEO purposes.
+        portland_set_extended_title_for_group_views($variables);
+      }
     }
   }
 
@@ -57,7 +61,7 @@ function cloudy_preprocess_html(&$variables) {
     ]
   ];
   $variables['page']['#attached']['html_head'][] = [$swiftype_domain_identifier, 'swiftype_domain-identifier'];
-  
+
   $swiftype_site_priority = [
     '#tag' => 'meta',
     '#attributes' => [
