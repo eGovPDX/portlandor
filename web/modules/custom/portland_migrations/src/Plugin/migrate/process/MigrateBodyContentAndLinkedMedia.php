@@ -169,7 +169,7 @@ class MigrateBodyContentAndLinkedMedia extends ProcessPluginBase {
 
   protected function generateDownloadDirectoryUri() {
     // prepare download directory
-    $folder_name = 'policies';
+    $folder_name = date("Y-m");
     $folder_uri = file_build_uri($folder_name);
     return $folder_uri;
   }

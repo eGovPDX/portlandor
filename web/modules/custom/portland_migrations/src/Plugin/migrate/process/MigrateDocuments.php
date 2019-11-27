@@ -100,7 +100,7 @@ class MigrateDocuments extends ProcessPluginBase {
 
   protected function getDownloadDirectoryUri() {
     // prepare download directory
-    $folder_name = "policies";
+    $folder_name = date("Y-m");
     $folder_uri = file_build_uri($folder_name);
     return $folder_uri;
   }
