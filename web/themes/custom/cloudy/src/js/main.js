@@ -1,4 +1,3 @@
-// @todo determine what, if anything, the following imports are providing. These were brought in from the patter lab repo but it is unclear why and when they were added
 import './fitvids';
 
 // Import all of the bootstrap javascript components
