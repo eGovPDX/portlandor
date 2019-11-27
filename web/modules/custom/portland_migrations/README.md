@@ -183,10 +183,10 @@ lando drush migrate:import policies_redirects
 ```
 ##### On Pantheon
 ```
-lando terminus remote:drush portlandor.powr-1664 -- migrate:import policies_categories
-lando terminus remote:drush portlandor.powr-1664 -- migrate:import policies_types
-lando terminus remote:drush portlandor.powr-1664 -- migrate:import policies
-lando terminus remote:drush portlandor.powr-1664 -- migrate:import policies_redirects
+lando terminus remote:drush portlandor.powr-[ID] -- migrate:import policies_categories
+lando terminus remote:drush portlandor.powr-[ID] -- migrate:import policies_types
+lando terminus remote:drush portlandor.powr-[ID] -- migrate:import policies
+lando terminus remote:drush portlandor.powr-[ID] -- migrate:import policies_redirects
 ```
 
 If the migration does not complete due to timeout on a Pantheon environment, you may need to reset the status of a migration to then continue the migration with a second command.
