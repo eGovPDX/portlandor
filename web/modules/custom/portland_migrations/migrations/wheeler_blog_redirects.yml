@@ -1,0 +1,34 @@
+id: wheeler_blog_redirects
+label: 'Migrate Mayor Wheeler blog legacy paths into Redirects table'
+langcode: en
+migration_group: wheeler
+source:
+  plugin: csv
+  path: modules/custom/portland_migrations/sources/wheeler_blog.csv
+  header_row_count: 1
+  constants:
+    redirect_prefix: 'internal:/node/'
+    uid_admin: 1
+    status_code: 301
+  keys:
+    - URL
+destination:
+  plugin: 'entity:redirect'
+process:
+  uid: constants/uid_admin
+  status_code: constants/status_code
+  temp_nid:
+    plugin: migration_lookup
+    source: URL
+    migration: wheeler_blog
+  redirect_source:
+    plugin: str_replace
+    case_insensitivity: true
+    source: URL
+    search: https://www.portlandoregon.gov/
+    replace: ''
+  redirect_redirect:
+    plugin: concat
+    source:
+      - constants/redirect_prefix
+      - "@temp_nid"
