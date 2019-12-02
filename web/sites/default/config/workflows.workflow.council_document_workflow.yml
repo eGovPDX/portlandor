@@ -1,0 +1,114 @@
+uuid: a068947c-3826-47ad-9a30-2e3f812b18d0
+langcode: en
+status: true
+dependencies:
+  config:
+    - node.type.council_document
+  module:
+    - content_moderation
+id: council_document_workflow
+label: 'Council document workflow'
+type: content_moderation
+type_settings:
+  states:
+    attorney_review:
+      published: false
+      default_revision: false
+      label: 'Attorney review'
+      weight: -1
+    bureau_review:
+      published: false
+      default_revision: false
+      label: 'Bureau review'
+      weight: -2
+    draft:
+      label: Draft
+      published: false
+      default_revision: false
+      weight: -3
+    elected_review:
+      published: false
+      default_revision: false
+      label: 'Elected review'
+      weight: 0
+    published:
+      label: Published
+      published: true
+      default_revision: true
+      weight: 2
+    ready_for_council_clerk:
+      published: false
+      default_revision: false
+      label: 'Ready for council clerk'
+      weight: 1
+    unpublished:
+      published: false
+      default_revision: true
+      label: Unpublished
+      weight: 3
+  transitions:
+    create_new_draft:
+      label: 'Create New Draft'
+      to: draft
+      weight: -4
+      from:
+        - draft
+    mark_as_ready_for_council_clerk:
+      label: 'Mark as ready for council clerk'
+      from:
+        - elected_review
+      to: ready_for_council_clerk
+      weight: 1
+    move_to_attorney_review:
+      label: 'Move to attorney review'
+      from:
+        - attorney_review
+        - bureau_review
+        - draft
+        - elected_review
+      to: attorney_review
+      weight: -2
+    move_to_bureau_review:
+      label: 'Move to bureau review'
+      from:
+        - attorney_review
+        - bureau_review
+        - draft
+        - elected_review
+      to: bureau_review
+      weight: -3
+    move_to_elected_review:
+      label: 'Move to elected review'
+      from:
+        - attorney_review
+        - bureau_review
+        - draft
+        - elected_review
+      to: elected_review
+      weight: 0
+    move_to_unpublished:
+      label: 'Move to unpublished'
+      from:
+        - published
+      to: unpublished
+      weight: 3
+    publish:
+      label: Publish
+      to: published
+      weight: 2
+      from:
+        - published
+        - ready_for_council_clerk
+    send_back_to_draft:
+      label: 'Send back to draft'
+      from:
+        - attorney_review
+        - bureau_review
+        - elected_review
+        - ready_for_council_clerk
+      to: draft
+      weight: -1
+  entity_types:
+    node:
+      - council_document
+  default_moderation_state: draft
