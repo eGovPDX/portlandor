@@ -31,19 +31,19 @@ services:
         # LANDO_WEBROOT_GROUP: node
         NODE_EXTRA_CA_CERTS: /app/cop_ca.pem
     build_as_root:
+      - echo "Installing Php dependencies..."
       - apt-get update -y && apt-get upgrade -y
       - apt-get install php -y
     build:
       - echo "Updating npm..."
       - npm install -g npm
+      - echo "Installing Node.js dependencies for Cloudy theme..."
+      - cd /app/web/themes/custom/cloudy && npm install
     run_as_root:
       - /bin/sh -c "adduser www-data node"
       - /bin/sh -c "adduser www-data dialout"
       - /bin/sh -c "adduser node dialout"
       - /bin/sh -c "chmod -R 775 /var/www"
-    run:
-      - echo "Installing Node.js dependencies..."
-      - cd /app/web/themes/custom/cloudy && npm install
   chromedriver:
     type: compose
     services:
@@ -61,7 +61,7 @@ events:
   post-start:
     - node: /bin/sh -c "chmod -R 775 /var/www"
     - node: echo "Building theme asset files..."
-    - node: cd /app/web/themes/custom/cloudy && npm run build
+    - node: cd /app/web/themes/custom/cloudy && npm run build:wp
 tooling:
   drush:
     description: Run drush commands
