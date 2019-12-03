@@ -105,6 +105,43 @@ lando terminus remote:drush portlandor.powr-[ID] -- migrate:import category_docu
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:import category_documents_group_content
 ```
 
+#### Mayor Wheeler blog & press releases
+
+##### Local
+```
+lando terminus migrate:import wheeler_blog
+lando terminus migrate:import wheeler_blog_redirects
+lando terminus migrate:import wheeler_blog_group_content
+lando terminus migrate:import wheeler_press_releases
+lando terminus migrate:import wheeler_press_releases_redirects
+lando terminus migrate:import wheeler_press_releases_group_content
+```
+
+##### Pantheon
+```
+lando terminus remote:drush portlandor.powr-[ID] -- migrate:import wheeler_blog
+lando terminus remote:drush portlandor.powr-[ID] -- migrate:import wheeler_blog_redirects
+lando terminus remote:drush portlandor.powr-[ID] -- migrate:import wheeler_blog_group_content
+lando terminus remote:drush portlandor.powr-[ID] -- migrate:import wheeler_press_releases
+lando terminus remote:drush portlandor.powr-[ID] -- migrate:import wheeler_press_releases_redirects
+lando terminus remote:drush portlandor.powr-[ID] -- migrate:import wheeler_press_releases_group_content
+```
+
+##### Manual Wheeler press release migration
+
+A number of press releases being migrated from POG are in a binary format (mostly PDF). There are not
+enough to justify creating a custom migration for them, so they must be migrated manually. They can be
+easily identified in the data source CSV by checking the Content Type column and looking for "Binary".
+
+* Executive Order on Bureau Assignments - 8/8/2016
+* Mayor Wheeler and Chair Kafoury's open letter to landlords
+* Mayor Wheeler Joins 50 Mayors Nationwide Advocating for Net Neutrality
+* McCord ICAP Statement on Portland Ordinance
+* Portland, Multnomah County announce the opening of new seasonal shelter for homeless men inside downtown’s Mead Building
+* Smart City PDX Summary
+* Wednesday, February 28, 2018 at the Bureau of Developmental Services Building - UPDATED
+* Forum on Public Safety and the DOJ Settlement Agreement
+
 #### City charter
 
 ##### Local
