@@ -109,12 +109,12 @@ lando terminus remote:drush portlandor.powr-[ID] -- migrate:import category_docu
 
 ##### Local
 ```
-lando terminus migrate:import wheeler_blog
-lando terminus migrate:import wheeler_blog_redirects
-lando terminus migrate:import wheeler_blog_group_content
-lando terminus migrate:import wheeler_press_releases
-lando terminus migrate:import wheeler_press_releases_redirects
-lando terminus migrate:import wheeler_press_releases_group_content
+lando drush migrate:import wheeler_blog
+lando drush migrate:import wheeler_blog_redirects
+lando drush migrate:import wheeler_blog_group_content
+lando drush migrate:import wheeler_press_releases
+lando drush migrate:import wheeler_press_releases_redirects
+lando drush migrate:import wheeler_press_releases_group_content
 ```
 
 ##### Pantheon
