@@ -17,10 +17,10 @@ use Drupal\file\Entity\File;
  * link or image tag is converted to an entity-embed element.
  *
  * @MigrateProcessPlugin(
- *   id = "migrate_wheeler_blog_body"
+ *   id = "migrate_wheeler_body_content"
  * )
  */
-class MigrateWheelerBlogBody extends ProcessPluginBase {
+class MigrateWheelerBodyContent extends ProcessPluginBase {
   /**
    * {@inheritdoc}
    */
