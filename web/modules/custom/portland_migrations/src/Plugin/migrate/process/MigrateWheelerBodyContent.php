@@ -147,7 +147,7 @@ class MigrateWheelerBodyContent extends ProcessPluginBase {
                 'bundle' => 'document',
                 'uid' => 1,
                 'langcode' => \Drupal::languageManager()->getDefaultLanguage()->getId(),
-                'name' => $link_text,
+                'name' => $link->nodeValue,
                 'status' => 1,
                 'field_document' => [
                   'target_id' => $downloaded_file->id()
@@ -159,7 +159,7 @@ class MigrateWheelerBodyContent extends ProcessPluginBase {
                 'bundle' => 'image',
                 'uid' => 1,
                 'langcode' => \Drupal::languageManager()->getDefaultLanguage()->getId(),
-                'name' => $link_text,
+                'name' => $filename,
                 'status' => 1,
                 'image' => [
                   'target_id' => $downloaded_file->id()
