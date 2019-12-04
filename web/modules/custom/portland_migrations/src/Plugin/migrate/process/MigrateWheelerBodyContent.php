@@ -82,7 +82,6 @@ class MigrateWheelerBodyContent extends ProcessPluginBase {
 
         $media_type = $this->getMediaType($filename);
 
-        
         // FIND OR CREATE MEDIA ENTITY ////////////////
         // using the uri, see if the media entity already exists. if so, reference it. if not, create it.
         // we need to make sure we're not creating duplicate files. need separate queries for images and
@@ -106,7 +105,6 @@ class MigrateWheelerBodyContent extends ProcessPluginBase {
           $realpath_dir = drupal_realpath($download_dir_uri);
           $filename_search = str_replace($content_id, '*', $filename);
 
-          $test = true;
           $files = glob($realpath_dir . '/' . $filename_search);
 
           if ($files === false) {
