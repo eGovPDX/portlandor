@@ -2,7 +2,10 @@ uuid: 28e99539-38a4-4bdf-8c45-9022251a6b48
 langcode: en
 status: true
 dependencies:
+  config:
+    - core.entity_view_mode.user.group_memberships
   module:
+    - group
     - user
 _core:
   default_config_hash: wTJRNzsLVTenCALONNlVfgm_pBOlqucSPuVFLOD56ck
@@ -74,16 +77,19 @@ display:
           default_row_class: true
           override: true
           sticky: false
+          caption: ''
           summary: ''
+          description: ''
           columns:
             user_bulk_form: user_bulk_form
             name: name
             status: status
-            rid: rid
+            roles_target_id: roles_target_id
             created: created
             access: access
-            edit_node: edit_node
-            dropbutton: dropbutton
+            operations: operations
+            mail: mail
+            rendered_entity: rendered_entity
           info:
             user_bulk_form:
               align: ''
@@ -104,13 +110,13 @@ display:
               separator: ''
               empty_column: false
               responsive: priority-low
-            rid:
+            roles_target_id:
               sortable: false
               default_sort_order: asc
               align: ''
               separator: ''
               empty_column: false
-              responsive: priority-low
+              responsive: ''
             created:
               sortable: true
               default_sort_order: desc
@@ -125,12 +131,19 @@ display:
               separator: ''
               empty_column: false
               responsive: priority-low
-            edit_node:
+            operations:
               align: ''
               separator: ''
               empty_column: false
-              responsive: priority-low
-            dropbutton:
+              responsive: ''
+            mail:
+              sortable: false
+              default_sort_order: asc
+              align: ''
+              separator: ''
+              empty_column: false
+              responsive: ''
+            rendered_entity:
               sortable: false
               default_sort_order: asc
               align: ''
@@ -307,7 +320,7 @@ display:
           relationship: none
           group_type: group
           admin_label: ''
-          label: Roles
+          label: 'Sitewide Roles'
           exclude: false
           alter:
             alter_text: false
@@ -348,9 +361,60 @@ display:
           hide_empty: false
           empty_zero: false
           hide_alter_empty: true
-          type: ul
+          type: separator
           separator: ', '
           plugin_id: user_roles
+        rendered_entity:
+          id: rendered_entity
+          table: users
+          field: rendered_entity
+          relationship: none
+          group_type: group
+          admin_label: ''
+          label: 'Group memberships'
+          exclude: false
+          alter:
+            alter_text: false
+            text: ''
+            make_link: false
+            path: ''
+            absolute: false
+            external: false
+            replace_spaces: false
+            path_case: none
+            trim_whitespace: false
+            alt: ''
+            rel: ''
+            link_class: ''
+            prefix: ''
+            suffix: ''
+            target: ''
+            nl2br: false
+            max_length: 0
+            word_boundary: true
+            ellipsis: true
+            more_link: false
+            more_link_text: ''
+            more_link_path: ''
+            strip_tags: false
+            trim: false
+            preserve_tags: ''
+            html: false
+          element_type: ''
+          element_class: ''
+          element_label_type: ''
+          element_label_class: ''
+          element_label_colon: true
+          element_wrapper_type: ''
+          element_wrapper_class: ''
+          element_default_classes: true
+          empty: ''
+          hide_empty: false
+          empty_zero: false
+          hide_alter_empty: true
+          view_mode: group_memberships
+          entity_type: user
+          plugin_id: rendered_entity
         created:
           id: created
           table: users_field_data
@@ -886,6 +950,7 @@ display:
           empty: false
           content: 'Displaying @start - @end of @total people'
           plugin_id: result
+      relationships: {  }
     cache_metadata:
       contexts:
         - 'languages:language_content'
@@ -894,11 +959,80 @@ display:
         - url.query_args
         - user.permissions
       max-age: 0
-      tags: {  }
+      tags:
+        - 'config:core.entity_view_display.user.user.compact'
+        - extensions
+        - 'config:core.entity_view_display.user.user.default'
+        - extensions
+        - 'config:core.entity_view_display.user.user.full'
+        - extensions
+        - 'config:core.entity_view_display.user.user.group_memberships'
+        - extensions
+  admin_people_groups:
+    display_plugin: page
+    id: admin_people_groups
+    display_title: 'People with Groups'
+    position: 1
+    display_options:
+      path: admin/people/groups
+      show_admin_links: false
+      menu:
+        type: tab
+        title: 'People with Groups'
+        description: 'Find and manage people interacting with your site.'
+        expanded: false
+        parent: ''
+        weight: -10
+        context: '0'
+        menu_name: admin
+      tab_options:
+        type: none
+        title: People
+        description: 'Manage user accounts, roles, and permissions.'
+        weight: 0
+      defaults:
+        show_admin_links: false
+        title: false
+        relationships: false
+        group_by: false
+      display_extenders: {  }
+      title: 'People with Groups'
+      relationships:
+        group_content:
+          id: group_content
+          table: users_field_data
+          field: group_content
+          relationship: none
+          group_type: group
+          admin_label: 'User group content'
+          required: true
+          group_content_plugins:
+            group_membership: group_membership
+          entity_type: user
+          plugin_id: group_content_to_entity_reverse
+      group_by: true
+      display_description: ''
+    cache_metadata:
+      contexts:
+        - 'languages:language_content'
+        - 'languages:language_interface'
+        - url
+        - url.query_args
+        - user.permissions
+      max-age: 0
+      tags:
+        - 'config:core.entity_view_display.user.user.compact'
+        - extensions
+        - 'config:core.entity_view_display.user.user.default'
+        - extensions
+        - 'config:core.entity_view_display.user.user.full'
+        - extensions
+        - 'config:core.entity_view_display.user.user.group_memberships'
+        - extensions
   page_1:
     display_plugin: page
     id: page_1
-    display_title: Page
+    display_title: People
     position: 1
     display_options:
       path: admin/people/list
@@ -907,18 +1041,20 @@ display:
         type: 'default tab'
         title: List
         description: 'Find and manage people interacting with your site.'
-        menu_name: admin
+        expanded: false
+        parent: ''
         weight: -10
-        context: ''
+        context: '0'
+        menu_name: admin
       tab_options:
         type: normal
         title: People
         description: 'Manage user accounts, roles, and permissions.'
-        menu_name: admin
         weight: 0
       defaults:
         show_admin_links: false
       display_extenders: {  }
+      display_description: ''
     cache_metadata:
       contexts:
         - 'languages:language_content'
@@ -927,4 +1063,12 @@ display:
         - url.query_args
         - user.permissions
       max-age: 0
-      tags: {  }
+      tags:
+        - 'config:core.entity_view_display.user.user.compact'
+        - extensions
+        - 'config:core.entity_view_display.user.user.default'
+        - extensions
+        - 'config:core.entity_view_display.user.user.full'
+        - extensions
+        - 'config:core.entity_view_display.user.user.group_memberships'
+        - extensions
