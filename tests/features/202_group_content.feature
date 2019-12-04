@@ -23,6 +23,7 @@ Feature: Members can manage group content
     And I should see "Page type"
     And I should see "Summary"
     And I should see "Body content"
+    And I click "Legacy paths and redirects"
     And I should see "Legacy path"
 
     When I fill in "edit-title-0-value" with "Test page"

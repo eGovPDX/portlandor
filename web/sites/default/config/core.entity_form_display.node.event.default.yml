@@ -19,6 +19,7 @@ dependencies:
     - field.field.node.event.field_start_date
     - field.field.node.event.field_start_time
     - field.field.node.event.field_summary
+    - field.field.node.event.field_toggle_multiday
     - field.field.node.event.field_topics
     - node.type.event
     - workflows.workflow.editorial
@@ -28,9 +29,115 @@ dependencies:
     - conditional_fields
     - content_moderation
     - entity_browser
-    - paragraphs
+    - field_group
     - text
     - time_field
+third_party_settings:
+  field_group:
+    group_details:
+      children:
+        - group_banner_image
+        - group_location
+        - group_categorization
+        - group_parent_group
+        - group_related_content
+        - group_redirects
+      parent_name: ''
+      weight: 9
+      format_type: accordion
+      format_settings:
+        id: ''
+        classes: ''
+        description: ''
+        open: false
+        required_fields: false
+        effect: none
+      label: Details
+      region: content
+    group_banner_image:
+      children:
+        - field_featured_media
+      parent_name: group_details
+      weight: 25
+      format_type: accordion_item
+      format_settings:
+        id: ''
+        classes: ''
+        formatter: closed
+        required_fields: false
+        description: ''
+      label: 'Banner image'
+      region: content
+    group_categorization:
+      children:
+        - field_topics
+      parent_name: group_details
+      weight: 27
+      format_type: accordion_item
+      format_settings:
+        formatter: closed
+        id: ''
+        classes: ''
+        required_fields: false
+      label: 'Where should this event appear?'
+      region: content
+    group_location:
+      children:
+        - field_location
+        - field_neighborhood
+      parent_name: group_details
+      weight: 26
+      format_type: accordion_item
+      format_settings:
+        id: ''
+        classes: ''
+        formatter: closed
+        required_fields: false
+        description: ''
+      label: Location
+      region: content
+    group_parent_group:
+      children:
+        - field_display_groups
+      parent_name: group_details
+      weight: 28
+      format_type: accordion_item
+      format_settings:
+        id: ''
+        classes: ''
+        formatter: closed
+        required_fields: false
+        description: ''
+      label: 'Parent group'
+      region: content
+    group_related_content:
+      children:
+        - field_related_content
+      parent_name: group_details
+      weight: 29
+      format_type: accordion_item
+      format_settings:
+        id: ''
+        classes: ''
+        formatter: closed
+        required_fields: false
+        description: ''
+      label: 'Related content'
+      region: content
+    group_redirects:
+      children:
+        - field_redirects
+      parent_name: group_details
+      weight: 30
+      format_type: accordion_item
+      format_settings:
+        id: ''
+        classes: ''
+        formatter: closed
+        required_fields: false
+        description: ''
+      label: 'Legacy paths and redirects'
+      region: content
 id: node.event.default
 targetEntityType: node
 bundle: event
@@ -38,12 +145,12 @@ mode: default
 content:
   created:
     type: datetime_timestamp
-    weight: 7
+    weight: 14
     region: content
     settings: {  }
     third_party_settings: {  }
   field_all_day:
-    weight: 1
+    weight: 2
     settings:
       display_label: true
     third_party_settings: {  }
@@ -51,14 +158,14 @@ content:
     region: content
   field_body_content:
     type: text_textarea
-    weight: 14
+    weight: 8
     region: content
     settings:
       rows: 5
       placeholder: ''
     third_party_settings: {  }
   field_display_groups:
-    weight: 20
+    weight: 18
     settings:
       match_operator: CONTAINS
       size: 60
@@ -67,7 +174,7 @@ content:
     type: entity_reference_autocomplete
     region: content
   field_end_date:
-    weight: 4
+    weight: 6
     settings:
       title: ''
       format: mm/dd/yyyy
@@ -121,11 +228,29 @@ content:
       multidate_separator: ','
       rtl: 0
       today_highlight: 0
-    third_party_settings: {  }
+    third_party_settings:
+      conditional_fields:
+        58da9497-5da8-454e-9107-d67314ed8e16:
+          dependee: field_toggle_multiday
+          settings:
+            state: visible
+            condition: checked
+            grouping: AND
+            values_set: 1
+            value: ''
+            values: {  }
+            value_form:
+              value: false
+            effect: show
+            effect_options: {  }
+            selector: ''
+            form_mode: default
+          entity_type: node
+          bundle: event
     type: bootstrap_date_widget
     region: content
   field_end_time:
-    weight: 5
+    weight: 4
     settings:
       enabled: false
       step: 5
@@ -149,18 +274,6 @@ content:
           bundle: event
     type: time_widget
     region: content
-  field_event_location:
-    type: entity_reference_paragraphs
-    weight: 19
-    settings:
-      title: location
-      title_plural: locations
-      edit_mode: open
-      add_mode: dropdown
-      form_display_mode: default
-      default_paragraph_type: _none
-    third_party_settings: {  }
-    region: content
   field_featured_media:
     type: entity_browser_entity_reference
     weight: 13
@@ -177,7 +290,7 @@ content:
     region: content
     third_party_settings: {  }
   field_location:
-    weight: 12
+    weight: 13
     settings:
       entity_browser: locations_browser
       field_widget_display: rendered_entity
@@ -192,7 +305,7 @@ content:
     type: entity_browser_entity_reference
     region: content
   field_neighborhood:
-    weight: 22
+    weight: 15
     settings:
       match_operator: CONTAINS
       size: 60
@@ -218,7 +331,7 @@ content:
     type: entity_reference_autocomplete
     region: content
   field_reviewer:
-    weight: 21
+    weight: 11
     settings:
       match_operator: CONTAINS
       size: 60
@@ -227,7 +340,7 @@ content:
     type: entity_reference_autocomplete
     region: content
   field_search_keywords:
-    weight: 16
+    weight: 10
     settings:
       size: 60
       placeholder: ''
@@ -235,7 +348,7 @@ content:
     type: string_textfield
     region: content
   field_start_date:
-    weight: 2
+    weight: 1
     settings:
       title: ''
       format: mm/dd/yyyy
@@ -318,7 +431,7 @@ content:
     type: time_widget
     region: content
   field_summary:
-    weight: 10
+    weight: 7
     settings:
       rows: 2
       placeholder: ''
@@ -330,15 +443,22 @@ content:
         maxlength_js_truncate_html: true
     type: string_textarea
     region: content
+  field_toggle_multiday:
+    weight: 5
+    settings:
+      display_label: true
+    third_party_settings: {  }
+    type: boolean_checkbox
+    region: content
   field_topics:
-    weight: 11
+    weight: 12
     settings: {  }
     third_party_settings: {  }
     type: chosen_select
     region: content
   moderation_state:
     type: moderation_state_default
-    weight: 22
+    weight: 12
     settings: {  }
     region: content
     third_party_settings: {  }
@@ -346,14 +466,7 @@ content:
     type: boolean_checkbox
     settings:
       display_label: true
-    weight: 9
-    region: content
-    third_party_settings: {  }
-  sticky:
-    type: boolean_checkbox
-    settings:
-      display_label: true
-    weight: 8
+    weight: 15
     region: content
     third_party_settings: {  }
   title:
@@ -366,7 +479,7 @@ content:
     third_party_settings: {  }
   uid:
     type: entity_reference_autocomplete
-    weight: 6
+    weight: 13
     settings:
       match_operator: CONTAINS
       size: 60
@@ -374,7 +487,9 @@ content:
     region: content
     third_party_settings: {  }
 hidden:
+  field_event_location: true
   group_content: true
   path: true
   promote: true
+  sticky: true
   url_redirects: true
