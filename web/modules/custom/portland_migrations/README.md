@@ -105,56 +105,42 @@ lando terminus remote:drush portlandor.powr-[ID] -- migrate:import category_docu
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:import category_documents_group_content
 ```
 
+### Gotcha
+
+There is an issue when rolling back a migration that depends on another one that interacts with entity revisions. This affects group_content migrations.
+
+For this migration, if the eudaly_news is rolled back and later imported again, the group_content will not be associated with the nodes.
+
+To fix this, the dependent migration eudaly_news_group_content also needs to be rolled back and migrated again. This can be done via the UI or with the following drush commands:
+
+```
+lando drush migrate:rollback eudaly_news_group_content
+lando drush migrate:rollback eudaly_news
+lando drush migrate:import eudaly_news
+lando drush migrate:import eudaly_news_group_content
+```
+
+**Note:** The commands above work for Drush 9. In Drush 8 the command names and aliases are different. Execute `drush list --filter=migrate` to verify the proper commands for your version of Drush.
+
 #### City charter
 
 ##### Local
 ```
 lando drush migrate:import city_charter_chapters
 lando drush migrate:import city_charter_chapters_redirects
-lando drush migrate:import city_charter_chapters_group_content
 lando drush migrate:import city_charter_articles
 lando drush migrate:import city_charter_articles_redirects
-lando drush migrate:import city_charter_articles_group_content
 lando drush migrate:import city_charter_sections
 lando drush migrate:import city_charter_sections_redirects
-lando drush migrate:import city_charter_sections_group_content
 ```
 ##### On Pantheon
 ```
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_charter_chapters
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_charter_chapters_redirects
-lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_charter_chapters_group_content
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_charter_articles
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_charter_articles_redirects
-lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_charter_articles_group_content
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_charter_sections
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_charter_sections_redirects
-lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_charter_articles_group_content
-```
-
-#### Parks
-
-To roll back changes, please run "migrate:rollback" on these migrations in the reverse order of "migrate:import".
-
-##### Local
-```
-lando drush migrate:import parks
-lando drush migrate:import parks_redirects
-lando drush migrate:import park_group_content
-lando drush migrate:import park_amenities
-lando drush migrate:import park_documents
-lando drush migrate:import park_photos
-lando drush migrate:import neighborhoods
-```
-##### On Pantheon
-```
-lando terminus remote:drush portlandor.powr-[ID] -- migrate:import parks
-lando terminus remote:drush portlandor.powr-[ID] -- migrate:import parks_redirects
-lando terminus remote:drush portlandor.powr-[ID] -- migrate:import park_group_content
-lando terminus remote:drush portlandor.powr-[ID] -- migrate:import park_amenities
-lando terminus remote:drush portlandor.powr-[ID] -- migrate:import park_documents
-lando terminus remote:drush portlandor.powr-[ID] -- migrate:import park_photos
-lando terminus remote:drush portlandor.powr-[ID] -- migrate:import neighborhoods
 ```
 
 #### City Code
@@ -163,26 +149,33 @@ lando terminus remote:drush portlandor.powr-[ID] -- migrate:import neighborhoods
 ```
 lando drush migrate:import city_code_titles
 lando drush migrate:import city_code_titles_redirects
-lando drush migrate:import city_code_titles_group_content
 lando drush migrate:import city_code_chapters
 lando drush migrate:import city_code_chapters_redirects
-lando drush migrate:import city_code_chapters_group_content
 lando drush migrate:import city_code_sections
 lando drush migrate:import city_code_sections_redirects
-lando drush migrate:import city_code_sections_group_content
 ```
 ##### On Pantheon
 ```
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_code_titles
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_code_titles_redirects
-lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_code_titles_group_content
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_code_chapters
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_code_chapters_redirects
-lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_code_chapters_group_content
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_code_sections
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_code_sections_redirects
-lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_code_sections_group_content
 ```
+##### Manual migrations
+The following city code sections have images that need to be manually migrated. There are few enough
+that it's not worth creating the custom plugin to hande them.
+* 1.04.010 Description
+* 11.40.050 Private Tree Permit Standards and Review Factors
+* 11.60.030 Tree Protection Specifications
+* 11.80.020 Definitions and Measurements
+* 14A.50.030 Sidewalk Use
+* 24.55.210 Major Residential Alterations and Additions
+* 24.70.090 Setbacks (linked image)
+
+
+
 
 #### City policies
 
@@ -213,19 +206,28 @@ lando terminus remote:drush portlandor.powr-[ID] -- mrs policies
 
 After the migrations are run successfully, visit /admin/content to see the content that was imported.
 
-### Gotcha
+#### Parks
 
-There is an issue when rolling back a migration that depends on another one that interacts with entity revisions. This affects group_content migrations.
+To roll back changes, please run "migrate:rollback" on these migrations in the reverse order of "migrate:import".
 
-For this migration, if the eudaly_news is rolled back and later imported again, the group_content will not be associated with the nodes.
-
-To fix this, the dependent migration eudaly_news_group_content also needs to be rolled back and migrated again. This can be done via the UI or with the following drush commands:
-
+##### Local
 ```
-lando drush migrate:rollback eudaly_news_group_content
-lando drush migrate:rollback eudaly_news
-lando drush migrate:import eudaly_news
-lando drush migrate:import eudaly_news_group_content
+lando drush migrate:import parks
+lando drush migrate:import parks_redirects
+lando drush migrate:import park_group_content
+lando drush migrate:import park_amenities
+lando drush migrate:import park_documents
+lando drush migrate:import park_photos
+lando drush migrate:import neighborhoods
+```
+##### On Pantheon
+```
+lando terminus remote:drush portlandor.powr-[ID] -- migrate:import parks
+lando terminus remote:drush portlandor.powr-[ID] -- migrate:import parks_redirects
+lando terminus remote:drush portlandor.powr-[ID] -- migrate:import park_group_content
+lando terminus remote:drush portlandor.powr-[ID] -- migrate:import park_amenities
+lando terminus remote:drush portlandor.powr-[ID] -- migrate:import park_documents
+lando terminus remote:drush portlandor.powr-[ID] -- migrate:import park_photos
+lando terminus remote:drush portlandor.powr-[ID] -- migrate:import neighborhoods
 ```
 
-**Note:** The commands above work for Drush 9. In Drush 8 the command names and aliases are different. Execute `drush list --filter=migrate` to verify the proper commands for your version of Drush.
