@@ -75,7 +75,6 @@ class MigrateDocuments extends ProcessPluginBase {
         $download_dir_uri = $this->getDownloadDirectoryUri();
         $destination_uri = $download_dir_uri . "/" . $filename;
 
-        // get media enitity id by uri
         $query = "SELECT fid FROM file_managed WHERE uri = '$destination_uri'";
         $query = $_SESSION['policies_dbConn']->query($query);
         $result = $query->fetchAll();
