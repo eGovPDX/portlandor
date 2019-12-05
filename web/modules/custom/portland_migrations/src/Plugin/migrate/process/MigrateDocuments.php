@@ -32,6 +32,7 @@ class MigrateDocuments extends ProcessPluginBase {
     }
 
     $return_value = [];
+    $added_files = [];
 
     preg_match_all('/<a [^>]+>|<img [^>]+>/i', $value, $downloaded_file);
 
@@ -84,12 +85,13 @@ class MigrateDocuments extends ProcessPluginBase {
           \Drupal::logger('portland_migrations')->notice($message);
         }
         $fid = $result[0]->fid;
-        //$downloaded_file = \Drupal\file\Entity\File::load($fid);
 
-        //$entity_id = $result[0]->entity_id;
-
-        if (!in_array($fid, $return_value)) {
-          $return_value[] = $fid;
+        if (!in_array($fid, $added_files)) {
+          $return_value[] = [
+            'target_id' => $fid,
+            'description' => $link->nodeValue
+          ];
+          $added_files[] = $fid;
         }
       }
     }
