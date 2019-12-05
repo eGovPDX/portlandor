@@ -98,8 +98,8 @@ class PortlandMaps extends AbstractHttpProvider implements Provider
             // }
 
             $results[] = array_merge($this->getDefaults(), [
-                'latitude'     => $coordinates['y'],
-                'longitude'    => $coordinates['x'],
+                'latitude'     => $coordinates['x'],
+                'longitude'    => $coordinates['y'],
                 // 'streetNumber' => $streetNumber,
                 // 'streetName'   => $streetName,
                 'locality'     => $city,
