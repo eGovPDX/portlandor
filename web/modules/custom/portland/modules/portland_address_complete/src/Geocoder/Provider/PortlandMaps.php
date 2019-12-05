@@ -70,7 +70,7 @@ class PortlandMaps extends AbstractHttpProvider implements Provider
             throw new NoResult('Invalid address.');
         }
 
-        $portlandmaps_api_key = \Drupal::service('key.repository')->getKey('portlandmaps_api_server_side')->getKeyValue();
+        $portlandmaps_api_key = trim(\Drupal::service('key.repository')->getKey('portlandmaps_api_server_side')->getKeyValue());
         $query = sprintf(self::ENDPOINT_URL, $portlandmaps_api_key, urlencode($address));
         $json  = $this->executeQuery($query);
 
