@@ -14,7 +14,7 @@ module.exports = (env, argv) => ({
     filename: 'dist/[name].bundle.js'
   },
   watchOptions: {
-    ignored: ['images/**/*.*', 'dist-cloudy/**/*.*', 'templates/**/*.*', 'node_modules']
+    ignored: ['images/**/*.*', 'dist/**/*.*', 'templates/**/*.*', 'node_modules']
   },
   plugins: [
     new MiniCssExtractPlugin({
