@@ -1,5 +1,4 @@
 const path = require('path');
-const globby = require('globby');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 
 module.exports = (env, argv) => ({

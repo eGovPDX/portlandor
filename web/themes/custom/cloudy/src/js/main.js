@@ -124,8 +124,8 @@ import 'bootstrap';
         var alertElement = $(this).closest('.portland-alert')
         alertElement.addClass('d-none');
 
-        var nid;
-        if (nid = alertElement.data('nid')) {
+        var nid = alertElement.data('nid');
+        if (nid) {
           // Set cookie to the current key.
           $.cookie(
             COOKIE_PREFIX + nid,
