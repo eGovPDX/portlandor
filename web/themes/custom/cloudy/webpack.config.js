@@ -5,7 +5,8 @@ const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 
 module.exports = (env, argv) => ({
   entry: {
-    main: globby.sync(['./src/js/**/*.js', './src/css/style.scss'])
+    main: ['./src/js/main.js', './src/css/style.scss'],
+    'search-field': './src/js/search-field.js'
   },
   devtool: 'source-map',
   mode: process.env.NODE_ENV,
