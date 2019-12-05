@@ -14,9 +14,6 @@
       $("input.administrative-area option").each(function() {
         this.selected =  (this.text.toLowerCase() === option.data("state").toLowerCase());
       });
-
-      $('input.geofield-lat').val(option.data("latitude"));
-      $('input.geofield-lon').val(option.data("longitude"));
     }
   }
 
@@ -52,8 +49,6 @@
                 // When no candidates are found, clear input fields
                 if(response.candidates.length == 0) {
                   $('input.postal-code').val('');
-                  $('input.geofield-lat').val('');
-                  $('input.geofield-lon').val('');
                 }
 
                 response.candidates.forEach(function(item) {

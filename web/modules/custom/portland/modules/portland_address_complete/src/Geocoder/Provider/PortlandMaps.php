@@ -24,7 +24,7 @@ class PortlandMaps extends AbstractHttpProvider implements Provider
     /**
      * @var string
      */
-    const ENDPOINT_URL = 'https://www.portlandmaps.com/api/suggest/?alt_coords=1&api_key=%s&count=1&query=%s';
+    const ENDPOINT_URL = 'https://www.portlandmaps.com/api/suggest/?centerline=1&alt_coords=1&api_key=%s&count=1&query=%s';
 
     /**
      * @var string
@@ -60,49 +60,52 @@ class PortlandMaps extends AbstractHttpProvider implements Provider
     public function geocode($address)
     {
         if (filter_var($address, FILTER_VALIDATE_IP)) {
-            throw new UnsupportedOperation('The ArcGISOnline provider does not support IP addresses, only street addresses.');
+            throw new UnsupportedOperation('The PortlandMaps provider does not support IP addresses, only street addresses.');
         }
+
+        $address = explode(',', $address)[0];
 
         // Save a request if no valid address entered
         if (empty($address)) {
             throw new NoResult('Invalid address.');
         }
-        $portlandmaps_api_key = \Drupal::service('key.repository')->getKey('portlandmaps_api')->getKeyValue();
+
+        $portlandmaps_api_key = \Drupal::service('key.repository')->getKey('portlandmaps_api_server_side')->getKeyValue();
         $query = sprintf(self::ENDPOINT_URL, $portlandmaps_api_key, urlencode($address));
         $json  = $this->executeQuery($query);
 
         // no result
-        if (empty($json->locations)) {
+        if (empty($json->candidates)) {
             throw new NoResult(sprintf('No results found for query "%s".', $query));
         }
 
         $results = [];
-        foreach ($json->locations as $location) {
-            $data = $location->feature->attributes;
+        foreach ($json->candidates as $location) {
+            $data = $location->attributes;
 
-            $coordinates  = (array) $location->feature->geometry;
-            $streetName   = !empty($data->Match_addr) ? $data->Match_addr : null;
-            $streetNumber = !empty($data->AddNum) ? $data->AddNum : null;
-            $city         = !empty($data->City) ? $data->City : null;
-            $zipcode      = !empty($data->Postal) ? $data->Postal : null;
-            $countryCode  = !empty($data->Country) ? $data->Country : null;
+            $coordinates  = [
+                'x' => $data->lat,
+                'y' => $data->lon,
+            ];
+            $city         = !empty($data->jurisdiction) ? $data->jurisdiction : null;
+            $zipcode      = !empty($data->zip_code) ? $data->zip_code : null;
 
-            $adminLevels = [];
-            foreach (['Region', 'Subregion'] as $i => $property) {
-                if (! empty($data->{$property})) {
-                    $adminLevels[] = ['name' => $data->{$property}, 'level' => $i + 1];
-                }
-            }
+            // $adminLevels = [];
+            // foreach (['Region', 'Subregion'] as $i => $property) {
+            //     if (! empty($data->{$property})) {
+            //         $adminLevels[] = ['name' => $data->{$property}, 'level' => $i + 1];
+            //     }
+            // }
 
             $results[] = array_merge($this->getDefaults(), [
                 'latitude'     => $coordinates['y'],
                 'longitude'    => $coordinates['x'],
-                'streetNumber' => $streetNumber,
-                'streetName'   => $streetName,
+                // 'streetNumber' => $streetNumber,
+                // 'streetName'   => $streetName,
                 'locality'     => $city,
                 'postalCode'   => $zipcode,
-                'adminLevels'  => $adminLevels,
-                'countryCode'  => $countryCode,
+                // 'adminLevels'  => $adminLevels,
+                // 'countryCode'  => $countryCode,
             ]);
         }
 
@@ -114,34 +117,7 @@ class PortlandMaps extends AbstractHttpProvider implements Provider
      */
     public function reverse($latitude, $longitude)
     {
-        $query = sprintf(self::REVERSE_ENDPOINT_URL, $this->protocol, $longitude, $latitude);
-        $json  = $this->executeQuery($query);
-
-        if (property_exists($json, 'error')) {
-            throw new NoResult(sprintf('No results found for query "%s".', $query));
-        }
-
-        $data = $json->address;
-
-        $streetName   = !empty($data->Address) ? $data->Address : null;
-        $city         = !empty($data->City) ? $data->City : null;
-        $zipcode      = !empty($data->Postal) ? $data->Postal : null;
-        $region       = !empty($data->Region) ? $data->Region : null;
-        $county       = !empty($data->Subregion) ? $data->Subregion : null;
-        $countryCode  = !empty($data->CountryCode) ? $data->CountryCode : null;
-
-        return $this->returnResults([
-            array_merge($this->getDefaults(), [
-                'latitude'    => $latitude,
-                'longitude'   => $longitude,
-                'streetName'  => $streetName,
-                'locality'    => $city,
-                'postalCode'  => $zipcode,
-                'region'      => $region,
-                'countryCode' => $countryCode,
-                'county'      => $county,
-            ])
-        ]);
+        throw new NoResult('Not implemented');
     }
 
     /**
@@ -149,7 +125,7 @@ class PortlandMaps extends AbstractHttpProvider implements Provider
      */
     public function getName()
     {
-        return 'arcgis_online';
+        return 'portlandmaps';
     }
 
     /**
