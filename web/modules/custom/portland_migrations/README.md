@@ -1,28 +1,46 @@
 # Portland Migrations
 
-A module for managing migrations on portland.gov.
-
-## Migrations
-
-This module includes these migration configurations.
-
-- eudaly_news - imports content from the included eudaly_news.csv source into the news entity
-- eudaly_news_group_content - creates group_content entities that associate the imported news nodes with Commissioner Eudaly's group
-- category_documents - imports content from the included category_documents.csv source into the document media entity
-- category_documents_group_content - creates group_content entities that associate the imported document media entities with Commissioner Eudaly's group
-- parks - imports parks.csv. Creates Park Facility content items that other parks migrations depend on.
-- park_group_content - add the Park Facility item to the Park bureau group.
-- park_amenities - import park amenities into three taxonomy vocabularies in POWR: Park Location Type, Park amenities/activities, Reservations Available.
-- park_photos - download images and associate them with the matching park.
-- park_documents - download documents and associate them with the matching park.
+A module for migrating content from POG to portland.gov.
 
 ## Instructions
 
 - Verify that the CSV files are in the proper location. See instructions below.
 - Enable the Portland Migrations (`portland_migrations`) module.
-- Run migrations using drush. See instructions below.
+- Run migrations using drush. The commands for running each migration are listed below. In most cases it is imperative to run the migrations in the order listed due to interdependencies.
+- After running the migrations, visit /admin/content to view the imported content.
 
-## CSV files location
+### Running migrations
+
+The Migrate Tools module provides drush commands to run the migrations. The order of commands is important! When running the migrations on remote servers, such as multidev or Dev/Test/Live, use the terminus commands. For multidev environments, the environment id is formatted like this: portlandor.powr-1234. Example:
+
+```
+lando terminus drush [environment] migrate:import [migration_id]
+```
+
+### Rolling back migrations
+
+To roll back a migration, use the `migrate:rollback [migration_name]` command, and roll back migrations in the reverse order than they were originally rolled.
+
+Some migrations have interdependencies, such as eudaly_news and eudaly_news_group_content. Interdependent migrations must all be rolled back and all re-rolled together.
+
+### Timeouts
+
+Long migrations run through terminus may exceed the Pantheon timeout and be terminated with a message such as, "Connection to appserver.powr-1284.5c6715db-abac-4633-ada8-1c9efe354629.drush.in closed by remote host." There is no way to increase this timeout, but a workaround exists. The migration may be reset and restarted. It will pick up where it left off. This may need to be done multiple times for long migrations.
+
+For example, the policies migration is lengthy due to custom processing and regularly times out. Use the following commands to reset and restart the migration:
+
+```
+lando terminus remote:drush portlandor.powr-[ID] -- migrate:reset-status policies
+lando terminus remote:drush portlandor.powr-[ID] -- migrate:import policies
+```
+
+You can also check the status of the migration using the `migrate:status` command:
+
+```
+lando terminus remote:drush portlandor.powr-[ID] -- migrate:status
+```
+
+## CSV files 
 
 The `path` configuration for the CSV source plugin accepts an absolute path or relative path from the Drupal installation folder.
 
@@ -38,62 +56,49 @@ If you want to place the files in a different location, you need to update the p
 
 ### CSV files manual modifications
 
-For some of the content migrations, the exported data must be massaged to avoid complex migration routines.
+For some of the content migrations, the exported data may have been massaged to avoid complex migration routines. The necessary updates are described in the migrations sections below.
 
-#### City policies
+## Migrations
 
-##### Modifications to policies.csv
+In addition to the primary content migrations, there are two supplemental migrations that are run for some content types: redirects and group_content.
 
-* Create new column to the right of SUMMARY_TEXT. Copy the contents of SUMMARY_TEXT into the new empty column and change the header to POLICY_NUMBER.
-* Manually scan through the SUMMARY_TEXT column and delete any value that is not summary text.
-* Manually scan through the POLICY_NUMBER column and delete or clean up any value that is not in the policy number format: BCP-ADM-1.01 (there are a few cases where the authors felt the need to prefix the policy number with the bureau name).
+Redirects migrations write entities to the redirects table. This is used for creating the Portland.gov legacy paths functionality, where the path from POG is linked to the corresponding page in the new site. Redirects migrations are named with the suffix "_redirects." *Example: eudaly_news_redirects*
 
-##### Supplemental file: policies_categories.csv
+Group content migrations are used to add content to a group by creating a group content entity. These migrations are named with the suffix "_group_content." *Example: eudaly_news_group_content*
 
-This is a simple list of 2nd level categories in its own csv file. The list was manually generated due to the relatively low number of items and the
-difficulty in generating it dyanmically. The list is not expected to change prior to final migration. The 3rd level categories are inclueded in the
-main policies datafile, and are created as children of their parent 2nd level categories and linked to the content using a custom process plugin.
+### Migrations in this module
 
-WARNING: the Finance (FIN) category has been omitted from the list becasue it already exists in the live beta database and causes a duplicate entry
-when the migration is run.
-
-#### Supplemental file: policies_types.csv
-
-This file was manually generated. Unless a new policy type is implemented before final migration (highly unlikely), the file can be used as-is from the repository.
-It includes 3 columns: TYPE_NAME, TYPE_CODE, and DESCRIPTION.
-
-### Running the migrations
-
-The Migrate Tools module provides drush commands to run the migrations. The order of commands is important! When running the migrations on remote servers, such as multidev or Dev/Test/Live, use the terminus commands. Example:
-
-```
-lando terminus drush [environment] migrate:import [migration_id]
-```
-
-For multidev environments, the environment id is formatted like this: portlandor.powr-1234.
-
-#### Timeouts
-
-Long migrations run through terminus may exceed the Pantheon timeout and be terminated with a message such as, "Connection to appserver.powr-1284.5c6715db-abac-4633-ada8-1c9efe354629.drush.in closed by remote host." There is no way to increase this timeout, but a workaround exists. The migration may be reset and restarted. It will pick up where it left off. This may need to be done multiple times for long migrations.
-
+- eudaly_news - imports content from the included eudaly_news.csv source into the news entity
+- category_documents - imports content from the included category_documents.csv source into the document media entity for the Eudaly news migration
+- parks - imports parks.csv. Creates Park Facility content items that other parks migrations depend on.
+- park_amenities - import park amenities into three taxonomy vocabularies in POWR: Park Location Type, Park amenities/activities, Reservations Available.
+- park_photos - download images and associate them with the matching park.
+- park_documents - download documents and associate them with the matching park.
+- city_charter_chapters
+- city_charter_articles
+- city_charter_sections
+- city_code_titles
+- city_code_chapters
+- city_code_sections
+- policies_categories - imports taxonomy categories for city policies
+- policies_types - imports taxonomy policy types
+- policies
 
 #### Eudaly news
-
 ##### Local
 ```
 lando drush migrate:import eudaly_news
 lando drush migrate:import eudaly_news_group_content
-lando drush migrate:import eudaly_news_redirect
+lando drush migrate:import eudaly_news_redirects
 ```
 ##### On Pantheon
 ```
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:import eudaly_news
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:import eudaly_news_group_content
-lando terminus remote:drush portlandor.powr-[ID] -- migrate:import eudaly_news_redirect
+lando terminus remote:drush portlandor.powr-[ID] -- migrate:import eudaly_news_redirects
 ```
 
 #### Category documents for Eudaly news
-
 ##### Local
 ```
 lando drush migrate:import category_documents
@@ -105,31 +110,7 @@ lando terminus remote:drush portlandor.powr-[ID] -- migrate:import category_docu
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:import category_documents_group_content
 ```
 
-#### City charter
-
-##### Local
-```
-lando drush migrate:import city_charter_chapters
-lando drush migrate:import city_charter_chapters_redirects
-lando drush migrate:import city_charter_articles
-lando drush migrate:import city_charter_articles_redirects
-lando drush migrate:import city_charter_sections
-lando drush migrate:import city_charter_sections_redirects
-```
-##### On Pantheon
-```
-lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_charter_chapters
-lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_charter_chapters_redirects
-lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_charter_articles
-lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_charter_articles_redirects
-lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_charter_sections
-lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_charter_sections_redirects
-```
-
 #### Parks
-
-To roll back changes, please run "migrate:rollback" on these migrations in the reverse order of "migrate:import".
-
 ##### Local
 ```
 lando drush migrate:import parks
@@ -151,8 +132,27 @@ lando terminus remote:drush portlandor.powr-[ID] -- migrate:import park_photos
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:import neighborhoods
 ```
 
-#### City Code
+#### City charter
+##### Local
+```
+lando drush migrate:import city_charter_chapters
+lando drush migrate:import city_charter_chapters_redirects
+lando drush migrate:import city_charter_articles
+lando drush migrate:import city_charter_articles_redirects
+lando drush migrate:import city_charter_sections
+lando drush migrate:import city_charter_sections_redirects
+```
+##### On Pantheon
+```
+lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_charter_chapters
+lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_charter_chapters_redirects
+lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_charter_articles
+lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_charter_articles_redirects
+lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_charter_sections
+lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_charter_sections_redirects
+```
 
+#### City code
 ##### Local
 ```
 lando drush migrate:import city_code_titles
@@ -171,8 +171,30 @@ lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_code_cha
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_code_sections
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_code_sections_redirects
 ```
+##### Manual migrations for city code
+The following city code sections have images that need to be manually migrated. There are few enough that it's not worth creating the custom plugin to hande them.
+* 1.04.010 Description
+* 11.40.050 Private Tree Permit Standards and Review Factors
+* 11.60.030 Tree Protection Specifications
+* 11.80.020 Definitions and Measurements
+* 14A.50.030 Sidewalk Use
+* 24.55.210 Major Residential Alterations and Additions
+* 24.70.090 Setbacks (linked image)
 
 #### City policies
+
+##### Modifications to policies.csv
+* Create new column to the right of SUMMARY_TEXT. Copy the contents of SUMMARY_TEXT into the new empty column and change the header to POLICY_NUMBER.
+* Manually scan through the SUMMARY_TEXT column and delete any value that is not summary text.
+* Manually scan through the POLICY_NUMBER column and delete or clean up any value that is not in the policy number format: BCP-ADM-1.01 (there are a few cases where the authors felt the need to prefix the policy number with the bureau name).
+
+##### Supplemental file: policies_categories.csv
+This is a simple list of 2nd level categories in its own csv file. The list was manually generated due to the relatively low number of items and the difficulty in generating it dyanmically. The list is not expected to change prior to final migration. The 3rd level categories are inclueded in the main policies datafile, and are created as children of their parent 2nd level categories and linked to the content using a custom process plugin.
+
+WARNING: the Finance (FIN) category has been omitted from the list becasue it already exists in the live beta database and causes a duplicate entry when the migration is run.
+
+#### Supplemental file: policies_types.csv
+This file was manually generated. Unless a new policy type is implemented before final migration (highly unlikely), the file can be used as-is from the repository. It includes 3 columns: TYPE_NAME, TYPE_CODE, and DESCRIPTION.
 
 ##### Local
 ```
@@ -189,31 +211,3 @@ lando terminus remote:drush portlandor.powr-[ID] -- migrate:import policies
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:import policies_redirects
 ```
 
-If the migration does not complete due to timeout on a Pantheon environment, you may need to reset the status of a migration to then continue the migration with a second command.
-
-```
-lando terminus remote:drush portlandor.powr-[ID] -- migrate:status
-lando terminus remote:drush portlandor.powr-[ID] -- mrs policies
-```
-"mrs" is shorthand for migrate:reset-status. You can do this for a specific migration or all active migrations.
-
-**Note:** The commands above work for Drush 9. In Drush 8 the command names and aliases are different. Execute `drush list --filter=migrate` to verify the proper commands for your version of Drush.
-
-After the migrations are run successfully, visit /admin/content to see the content that was imported.
-
-### Gotcha
-
-There is an issue when rolling back a migration that depends on another one that interacts with entity revisions. This affects group_content migrations.
-
-For this migration, if the eudaly_news is rolled back and later imported again, the group_content will not be associated with the nodes.
-
-To fix this, the dependent migration eudaly_news_group_content also needs to be rolled back and migrated again. This can be done via the UI or with the following drush commands:
-
-```
-lando drush migrate:rollback eudaly_news_group_content
-lando drush migrate:rollback eudaly_news
-lando drush migrate:import eudaly_news
-lando drush migrate:import eudaly_news_group_content
-```
-
-**Note:** The commands above work for Drush 9. In Drush 8 the command names and aliases are different. Execute `drush list --filter=migrate` to verify the proper commands for your version of Drush.
