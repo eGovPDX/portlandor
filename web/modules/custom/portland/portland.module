@@ -8,6 +8,7 @@ use Drupal\pathauto\Form\PathautoBulkUpdateForm;
 use Drupal\Core\Render\BubbleableMetadata;
 use Drupal\group\Entity\GroupContent;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Cache\Cache;
 
 // This file concerns itself with setting up tokens with hooks
 include 'portland.tokens.inc';
@@ -35,6 +36,19 @@ const GROUP_CONTENT_TYPE_PLURAL = [
 ];
 
 const ALERTS_COUNTER_CACHE_KEY = 'portland.active.alerts';
+
+// these are the views which need to have cache tags invalidated if the shortname changes.
+const GROUP_VIEWS = [
+    "group_calendar_archive",
+    "group_child_groups",
+    "group_documents",
+    "group_events",
+    "group_news",
+    "group_notifications",
+    "group_pages",
+    "group_permits",
+    "group_services"
+];
 
 // Get the parent group IDs of an entity
 // https://drupal.stackexchange.com/questions/238755/how-to-get-group-ids-by-ids-of-elements-of-group-content
@@ -100,6 +114,16 @@ function updateGroupAliases($group) {
             $path = \Drupal::service('path.alias_storage')->save($system_path, $alias, $lang);
         }
     }
+
+    // spin through group views, gather cache tags, and invalidate them
+    $cache_tags = [];
+    foreach (GROUP_VIEWS as $view_name) {
+        $view = \Drupal\views\Views::getView($view_name);
+        $tags = $view->getCacheTags();
+        $cache_tags = array_merge($cache_tags, $tags);
+    }
+
+    Cache::invalidateTags($cache_tags);
 }
 
 /**
