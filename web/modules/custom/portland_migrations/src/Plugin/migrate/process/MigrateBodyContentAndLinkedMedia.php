@@ -116,6 +116,12 @@ class MigrateBodyContentAndLinkedMedia extends ProcessPluginBase {
               $message = "Duplicate media entities found for $destination_uri. Using first one found, but consider removing duplicates.";
               \Drupal::logger('portland_migrations')->notice($message);
             }
+            if (count($result) < 1) {
+              // TODO: Need to handle this, create file?
+              $message = "File exists in the file system but not in the database, SKIPPING. $files[0]";
+              \Drupal::logger('portland_migrations')->notice($message);
+              continue;
+            }
             $fid = $result[0]->fid;
             $downloaded_file = \Drupal\file\Entity\File::load($fid);
         
