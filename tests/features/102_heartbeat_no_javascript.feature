@@ -6,10 +6,8 @@ Feature: Basic site operation and navigation
 
   Scenario: Visit a taxonomy term page
     Given I am logged in as user "oliver.outsider@portlandoregon.gov"
-    When I visit "/residents-of-portland"
-    Then I should see "Resident"
-    And I should see "services found"
-    And I should see "Bureaus, offices, and programs"
+    When I visit "/pay"
+    Then I should see "Pay"
     # Verify fix for POWR-889. Use "Given I am on" in order to allow non-200 response code
     Given I am on "/taxonomy/term/100000"
     Then I should see "Page not found"
