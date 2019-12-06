@@ -1,41 +1,42 @@
 const path = require('path');
 const globby = require('globby');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
-const BrowserSyncPlugin = require('browser-sync-webpack-plugin');
+// const BrowserSyncPlugin = require('browser-sync-webpack-plugin');
 
 module.exports = (env, argv) => ({
   entry: {
-    main: globby.sync(['./js/src/**/*.js', './scss/style.scss'])
+    main: ['./src/js/main.js', './src/css/style.scss'],
+    'search-field': './src/js/search-field.js'
   },
   devtool: 'source-map',
   mode: process.env.NODE_ENV,
   output: {
     path: path.resolve(__dirname),
-    filename: 'js/[name].bundle.js'
+    filename: 'dist/[name].bundle.js'
   },
   watchOptions: {
-    ignored: ['images/**/*.*', 'css/**/*.*', 'templates/**/*.*', 'node_modules']
+    ignored: ['images/**/*.*', 'dist/**/*.*', 'templates/**/*.*', 'node_modules']
   },
   plugins: [
     new MiniCssExtractPlugin({
-      filename: 'css/style.bundle.css',
-      chunkFilename: 'css/[id].bundle.css'
+      filename: 'dist/style.bundle.css',
+      chunkFilename: 'dist/[id].bundle.css'
     }),
-    new BrowserSyncPlugin(
-      // BrowserSync options
-      {
-        // browse to https://localhost:3000/ during development
-        host: 'localhost',
-        port: 3000,
-        // proxy the Lando endpoint
-        // through BrowserSync
-        proxy: 'https://portlandor.lndo.site/',
-        // Open the proxied site
-        open: 'local'
-      },
-      // plugin options
-      {}
-    )
+    // new BrowserSyncPlugin(
+    //   // BrowserSync options
+    //   {
+    //     // browse to https://localhost:3000/ during development
+    //     host: 'localhost',
+    //     port: 3000,
+    //     // proxy the Lando endpoint
+    //     // through BrowserSync
+    //     proxy: 'https://portlandor.lndo.site/',
+    //     // Open the proxied site
+    //     open: 'local'
+    //   },
+    //   // plugin options
+    //   {}
+    // )
   ],
   module: {
     rules: [
