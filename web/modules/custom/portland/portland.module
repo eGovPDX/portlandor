@@ -674,6 +674,7 @@ function portland_generate_extended_title_for_group_views($orig_title, $route_ma
     $view_id = $route_match->getParameter('view_id');
     $taxonomy_term = $route_match->getParameter('taxonomy_term');
     $site_name = \Drupal::config('system.site')->get('name');
+    $display_id = $route_match->getParameter('display_id');
 
     if (!isset($view_id) && isset($taxonomy_term)) {
         // it's a taxonomy term page, use the term name in the title to prevent duplicates
@@ -698,6 +699,25 @@ function portland_generate_extended_title_for_group_views($orig_title, $route_ma
                 $page_title = $orig_title;
                 $group_title = $group_entity->label();
                 return "$page_title | $group_title | $site_name";
+            }
+            break;
+        case "content_at_location":
+            // Get location title
+            $location_nid = $route_match->getParameter('arg_0');
+            if($location_nid == null) break;
+            $location_node = \Drupal\node\Entity\Node::load($location_nid);
+            if($location_node == null) break;
+            $location_title = $location_node->getTitle();
+            switch ($display_id) {
+                case "page_past_events_at_location":
+                    return "Past events | $location_title | $site_name";
+                    break;
+                case "page_upcoming_events_at_location":
+                    return "Upcoming events | $location_title | $site_name";
+                    break;
+                case "page_news_at_location":
+                    return "News | $location_title | $site_name";
+                    break;
             }
             break;
     }
