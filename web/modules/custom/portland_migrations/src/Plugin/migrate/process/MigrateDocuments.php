@@ -12,11 +12,9 @@ use Drupal\media\Entity\Media;
 
 /**
  * Using the same data source column as migrate_body_content_and_linked_media, 
- * this plugin scrapes the content in the TEXT column for the content id of each
- * linked media entity, then searches the downloads directory for matching files.
- * Each file was saved with the unique content id in the filename. The media 
- * entities are then linked in field_documents. This allows a directory of documents
- * related to each policy to appear at the bottom of the page.
+ * this plugin scrapes the content in the TEXT column for documents. Each one
+ * has already been saved as a managed file. We need to load each one and return
+ * them as an array for insertion into the files field.
  * 
  * @MigrateProcessPlugin(
  *   id = "migrate_documents"
@@ -29,9 +27,12 @@ class MigrateDocuments extends ProcessPluginBase {
   public function transform($value, MigrateExecutableInterface $migrate_executable, Row $row, $destination_property) {
 
     // reusable db connection
-    $dbConn = \Drupal::database();
+    if (is_null($_SESSION['policies_dbConn'])) {
+      $_SESSION['policies_dbConn'] = \Drupal::database();
+    }
 
     $return_value = [];
+    $added_files = [];
 
     preg_match_all('/<a [^>]+>|<img [^>]+>/i', $value, $downloaded_file);
 
@@ -75,29 +76,24 @@ class MigrateDocuments extends ProcessPluginBase {
         $download_dir_uri = $this->getDownloadDirectoryUri();
         $destination_uri = $download_dir_uri . "/" . $filename;
 
-        // get media enitity id by uri
-        $query = "SELECT entity_id FROM file_managed FM 
-                  INNER JOIN media__field_document FD on FM.fid = FD.field_document_target_id
-                  WHERE uri = '$destination_uri'";
-        $query = $dbConn->query($query);
+        $query = "SELECT fid FROM file_managed WHERE uri = '$destination_uri'";
+        $query = $_SESSION['policies_dbConn']->query($query);
         $result = $query->fetchAll();
-
         if (is_array($result) && count($result) > 1) {
           // duplicate document media entities exist! log it, but then use the first one found.
           $message = "Duplicate media entities found for $destination_uri. Using first one found, but consider removing duplicates.";
           \Drupal::logger('portland_migrations')->notice($message);
         }
+        $fid = $result[0]->fid;
 
-        $entity_id = $result[0]->entity_id;
-
-        if (!in_array($entity_id, $return_value)) {
-          $return_value[] = $entity_id;
+        if (!in_array($fid, $added_files)) {
+          $return_value[] = [
+            'target_id' => $fid,
+            'description' => $link->nodeValue
+          ];
+          $added_files[] = $fid;
         }
       }
-    }
-
-    if (count($return_value) > 1) {
-      $halt = true;
     }
 
     return $return_value;
@@ -105,11 +101,8 @@ class MigrateDocuments extends ProcessPluginBase {
 
   protected function getDownloadDirectoryUri() {
     // prepare download directory
-    $folder_name = date("Y-m") ;
+    $folder_name = date("Y-m");
     $folder_uri = file_build_uri($folder_name);
-    //$public_path = \Drupal::service('file_system')->realpath(file_default_scheme() . "://");
-    //$download_path = $public_path . "/" . $folder_name;
-    //$dir = file_prepare_directory($download_path, FILE_CREATE_DIRECTORY);
     return $folder_uri;
   }
 
