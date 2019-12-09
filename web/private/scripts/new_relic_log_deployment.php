@@ -10,6 +10,7 @@ $headers = array(
   'X-Api-Key: '.$secrets['new_relic_api_key'],
 );
 $pantheon_env = $_ENV['PANTHEON_ENVIRONMENT'];
+$pantheon_env = "portlandor ($pantheon_env)";
 $payload = "filter[name]=$pantheon_env&exclude_links=true";
 
 $ch = curl_init();
