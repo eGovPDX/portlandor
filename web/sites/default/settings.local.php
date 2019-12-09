@@ -162,4 +162,4 @@ $settings['trusted_host_patterns'] = array(
   '.*'   // Allow any hostname
 );
 
-$settings['system.file']['path']['temporary'] = '/tmp';
+$settings['file_temp_path'] = '/tmp';
