@@ -138,5 +138,22 @@ import 'bootstrap';
         }
       });
     }
+
+  };
+
+  Drupal.behaviors.sidebar_handler = {
+    attach: function(context, settings) {
+      $(document).on('click', '[data-toggle="class"]', function(e) {
+        const $target = $($(this).data('target'));
+        const classes = $(this).data('classes');
+
+        e.preventDefault();
+        e.stopPropagation();
+
+        // Toggle .is-active class on target elements
+        $target.toggleClass(classes);
+        return false;
+      });
+    }
   };
 })(jQuery, Drupal);
