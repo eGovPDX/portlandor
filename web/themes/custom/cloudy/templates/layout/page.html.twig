@@ -76,34 +76,61 @@
   {{ page.pre_content }}
 {% endblock %}
 
-{% set content_wrapper_attribute = create_attribute() %}
-{% set content_wrapper_classes = [
-    page.tools or page.menu ? 'row'
-  ]
-%}
-
-{% set content_attribute = create_attribute() %}
-{% set content_classes = [
-    'page-content',
-    page.tools or page.menu ? 'col',
-    page.menu ? 'order-lg-2'
-  ]
-%}
-
 <main id="main-content" role="main" tabindex="-1" data-swiftype-index="true">
-  {% block main_content %}
-    <div class="main-content {{ not is_front ? 'container pt-4' }}">
-      <div {{ content_wrapper_attribute.addClass(content_wrapper_classes) }}>
-        {{ page.menu }}
-        <div {{ content_attribute.addClass(content_classes)}}>
-          {% block page_content %}
-            {{ page.content }}
-          {% endblock %}
+  <div class="{{ not is_front ? 'container' }}">
+
+    <div class="page-header">
+      {% if page.tools %}
+        <div class="toolbar-filters d-flex justify-content-end mb-2 d-lg-none">
+          <button
+            role="button"
+            id="btn-open"
+            class="btn btn-lg"
+            data-toggle="class"
+            data-target="#sidebar-right, .overlay"
+            data-classes="is-active"
+            aria-controls="sidebar-right"
+            aria-pressed="false"
+            aria-expanded="false"
+            aria-label="{{ 'Open filters'|t }}">
+            <i class="fas fa-sliders-h fa-sm"></i>
+            <span>{{ 'Filters'|t }}</span>
+          </button>
         </div>
-        {{ page.tools }}
-      </div>
+      {% endif %}
+      {% if not is_front %}
+        {% set page_title = page['#title'] %}
+        {% trans %}
+          <h1 class="display-4">{{ page_title }}</h1>
+        {% endtrans %}
+      {% endif %}
     </div>
-  {% endblock %}
+
+    {% block main_content %}
+      <section class="main-content">
+        <div class="row">
+          {{ page.menu }}
+          {% block page_content %}
+            {% set content_wrapper_attribute =  create_attribute() %}
+            {% if not is_front and page.menu|render|striptags|trim is not empty %}
+              {% set content_wrapper_attribute = content_wrapper_attribute.addClass('content-wrapper col-12 col-lg-9') %}
+            {% elseif not is_front %}
+              {% set content_wrapper_attribute = content_wrapper_attribute.addClass('col') %}
+            {% else %}
+              {% set content_wrapper_attribute = content_wrapper_attribute.addClass('col-lg-12') %}
+            {% endif %}
+            <div {{ content_wrapper_attribute }}>
+              {{ page.content }}
+            </div>
+          {% endblock %}
+          {{ page.tools }}
+        </div>
+      </section>
+    {% endblock %}
+
+
+  </div>
+
 </main>
 
 {% block footer %}
