@@ -141,18 +141,21 @@ import 'bootstrap';
 
   };
 
-  Drupal.behaviors.sidebar_handler = {
-    attach: function(context, settings) {
-      $(document).on('click', '[data-toggle="class"]', function(e) {
-        const $target = $($(this).data('target'));
+  Drupal.behaviors.sidebarHandler = {
+    attach: function (context) {
+
+      // Global call only triggered once
+      $(document, context).once('sidebarHandler').on('click', '[data-toggle="class"]', function (e) {
+
+        // Defining Variables
+        const $target = ($(this).data('target'));
         const classes = $(this).data('classes');
 
-        e.preventDefault();
-        e.stopPropagation();
+        // Toggle sidebar and overlay
+        $($target).toggleClass(classes);
 
-        // Toggle .is-active class on target elements
-        $target.toggleClass(classes);
-        return false;
+        event.preventDefault();
+        event.stopPropagation();
       });
     }
   };
