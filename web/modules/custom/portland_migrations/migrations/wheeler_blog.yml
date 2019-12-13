@@ -1,0 +1,35 @@
+id: wheeler_blog
+label: 'Mayor Wheeler blog import'
+migration_group: wheeler
+source:
+  plugin: csv
+  path: modules/custom/portland_migrations/sources/wheeler_blog.csv
+  header_row_count: 1
+  keys:
+    - CONTENT_ID
+process:
+  uid:
+    plugin: default_value
+    default_value: 1
+  title: CONTENT_NAME
+  field_summary: SUMMARY_TEXT
+  field_body_content/value:
+    plugin: migrate_wheeler_body_content
+    source: TEXT
+  field_body_content/format:
+    plugin: default_value
+    default_value: simplified_editor_with_media_embed
+  field_news_type:
+    plugin: default_value
+    default_value: 46
+  field_published_on:
+    plugin: format_date
+    from_format: 'Y-m-d H:i:s T'
+    to_format: 'Y-m-d\TH:i:s'
+    source: PUBLISH_DATE
+  field_display_groups:
+    plugin: default_value
+    default_value: 71
+destination:
+  plugin: 'entity:node'
+  default_bundle: news
