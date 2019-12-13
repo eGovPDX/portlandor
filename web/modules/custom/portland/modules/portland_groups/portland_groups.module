@@ -53,6 +53,40 @@ function _portland_groups_inline_entity_populate_field_display_groups(&$form, &$
   }
 }
 
+/**
+ * Implements hook_media_insert
+ */
+function portland_groups_media_insert($entity) {
+  _portland_groups_assign_media_to_group($entity);
+}
+
+/**
+ * Manually assigns a media entity to a group as group content.
+ * The group is identified by the first delta in the media's field_display_groups.
+ * This should only happen in the context of an inline entity form.
+ */
+function _portland_groups_assign_media_to_group($entity) {
+
+  // only do this for inline entity brower
+  $current_path = \Drupal::service('path.current')->getPath();
+  if (substr($current_path, 0, 23) != "/entity-browser/iframe/") {
+    return;
+  }
+
+  // get group identified in first delta in field_display_groups
+  $group_id = $entity->get('field_display_groups')->getValue()[0]['target_id'];
+  if (!is_null($group_id)) {
+    $group = \Drupal\group\Entity\Group::load($group_id);
+
+    $media_group = \Drupal\group\Entity\GroupContent::create([
+      'gid' => $group_id,
+      'entity_id' => $entity->id(),
+      'type' => $group->getGroupType()->id() . '-group_' . $entity->getEntityTypeId() . '-' . $entity->bundle(),
+    ]);
+    $media_group->save();
+  }
+}
+
 // NOTE: at this time we're not filtering Display in Groups autocomplete optiopns
 // based on group membership, but we might want to in the near future. This function
 // creates an array of options that's suitable for passing to a select list.
