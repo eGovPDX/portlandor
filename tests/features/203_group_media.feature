@@ -50,6 +50,6 @@ Feature: Members can manage group media
 
     When I press "Delete"
     Then I wait for the page to be loaded
-    And I should see "The media A test video has been deleted."
+    And I should see "The media item A test video has been deleted."
 
 
