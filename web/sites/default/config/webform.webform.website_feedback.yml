@@ -4,6 +4,7 @@ status: open
 dependencies:
   module:
     - honeypot
+    - zendesk_webform
 third_party_settings:
   honeypot:
     honeypot: true
@@ -18,7 +19,7 @@ id: website_feedback
 title: 'Website feedback'
 description: 'This webform is used to gather website feedback from users and editors.'
 category: ''
-elements: "page_you_last_viewed:\n  '#type': textfield\n  '#title': 'Page you last viewed'\n  '#description': 'You can change this address if you would rather comment on a different page.'\n  '#autocomplete': 'off'\n  '#default_value': '[server:HTTP_REFERER]'\nfeedback:\n  '#type': textarea\n  '#title': 'How can we improve?'\n  '#description': 'Be specific so we can make the site better.'\n  '#required': true\nemail_address:\n  '#type': email\n  '#title': 'Your email'\n  '#description': 'If you would like us to follow up with you, please enter your email address. (optional)'\nip_address:\n  '#type': hidden\n  '#title': 'IP Address'\n  '#default_value': '[current-user:ip-address]'\nactions:\n  '#type': webform_actions\n  '#title': 'Submit button(s)'\n  '#attributes':\n    class:\n      - 'd-flex justify-content-around'\n  '#submit__attributes':\n    class:\n      - w-50"
+elements: "page_you_last_viewed:\n  '#type': textfield\n  '#title': 'Page you last viewed'\n  '#description': 'You can change this address if you would rather comment on a different page.'\n  '#autocomplete': 'off'\n  '#default_value': '[server:HTTP_REFERER]'\nsubject:\n  '#type': webform_select_other\n  '#title': 'Type of feedback'\n  '#options':\n    'Website problem': 'Website problem'\n    'Feature request': 'Feature request'\n    'Content request': 'Content request'\n  '#empty_option': '-- Select --'\nfeedback:\n  '#type': textarea\n  '#title': 'How can we improve?'\n  '#description': 'Be specific so we can make the site better.'\n  '#required': true\nname:\n  '#type': webform_name\n  '#title': 'Your name'\nemail_address:\n  '#type': email\n  '#title': 'Your email'\n  '#description': 'If you would like us to follow up with you, please enter your email address. (optional)'\nip_address:\n  '#type': hidden\n  '#title': 'IP Address'\n  '#default_value': '[current-user:ip-address]'\nzendesk_ticket_id:\n  '#type': hidden\n  '#title': 'Zendesk ticket id'\nactions:\n  '#type': webform_actions\n  '#title': 'Submit button(s)'\n  '#attributes':\n    class:\n      - 'd-flex justify-content-around'\n  '#submit__attributes':\n    class:\n      - w-50"
 css: 'd-flex justify-content-around'
 javascript: ''
 settings:
@@ -129,7 +130,7 @@ settings:
   entity_limit_user_interval: null
   purge: none
   purge_days: null
-  results_disabled: false
+  results_disabled: true
   results_disabled_ignore: false
   token_update: false
 access:
@@ -187,7 +188,7 @@ handlers:
     id: email
     label: '[server:HTTP_REFERER]Send email after receiving feedback form submission[server:HTTP_REFERER]'
     handler_id: email
-    status: true
+    status: false
     conditions: {  }
     weight: 0
     settings:
@@ -218,3 +219,23 @@ handlers:
       sender_mail: ''
       sender_name: ''
       theme_name: cloudy
+  zendesk:
+    id: zendesk
+    label: 'Zendesk test'
+    handler_id: zendesk
+    status: true
+    conditions: {  }
+    weight: 0
+    settings:
+      requester_name: name
+      requester_email: email_address
+      subject: '[webform_submission:value:subject]'
+      comment: '[webform_submission:values]'
+      tags: 'drupal webform'
+      priority: normal
+      status: open
+      assignee_id: '399139549813'
+      type: question
+      collaborators: gregory.clapp@portlandoregon.gov
+      custom_fields: ''
+      ticket_id_field: zendesk_ticket_id
