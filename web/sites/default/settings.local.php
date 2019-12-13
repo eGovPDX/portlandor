@@ -151,8 +151,8 @@ $settings['hash_salt'] = 'thisismysaltittasteslikesalt';
 
 /**
  * Disable ClamAV integration.
- * 
- * Our local Lando dev environments do not have the ClamAV service so this 
+ *
+ * Our local Lando dev environments do not have the ClamAV service so this
  * module needs to be disabled in order to allow file uploads.
  */
 
@@ -162,4 +162,4 @@ $settings['trusted_host_patterns'] = array(
   '.*'   // Allow any hostname
 );
 
-$config['system.file']['path']['temporary'] = '/tmp';
+$settings['file_temp_path'] = '/tmp';
