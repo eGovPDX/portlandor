@@ -138,24 +138,33 @@ import 'bootstrap';
         }
       });
     }
-
   };
 
-  Drupal.behaviors.sidebarHandler = {
+  Drupal.behaviors.cloudySidebarHandler = {
     attach: function (context) {
-
       // Global call only triggered once
-      $(document, context).once('sidebarHandler').on('click', '[data-toggle="class"]', function (e) {
-
-        // Defining Variables
-        const $target = ($(this).data('target'));
-        const classes = $(this).data('classes');
-
-        // Toggle sidebar and overlay
-        $($target).toggleClass(classes);
-
+      $(document, context).once('cloudySidebarHandler').on('click', '[data-toggle="class"]', function(event) {
         event.preventDefault();
         event.stopPropagation();
+
+        // Defining Variables
+        const target = $(this).data('target');
+        const classes = $(this).data('classes');
+        const sidebarRight = $('.cloudy-sidebar');
+        const isOutside = !sidebarRight.is(event.target) && sidebarRight.has(event.target).length === 0;
+
+        // If user clicks outside the sidebar, hide it!
+        $(document).on('click', event => {
+          event.preventDefault();
+          event.stopPropagation();
+
+          if(isOutside) {
+            $(target).removeClass('is-active');
+          }
+        })
+
+        // Toggle active class on body, sidebar, and overlay
+        $(target).toggleClass(classes);
       });
     }
   };
