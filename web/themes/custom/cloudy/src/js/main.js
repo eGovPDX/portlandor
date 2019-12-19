@@ -140,20 +140,20 @@ import 'bootstrap';
     }
   };
 
-  Drupal.behaviors.cloudySidebarHandler = {
+  Drupal.behaviors.cloudyTrayHandler = {
     attach: function (context) {
       // Global call only triggered once
-      $(document, context).once('cloudySidebarHandler').on('click', '[data-toggle="class"]', function(event) {
+      $(document, context).once('cloudyTrayHandler').on('click', '[data-toggle="class"]', function(event) {
         event.preventDefault();
         event.stopPropagation();
 
         // Defining Variables
         const target = $(this).data('target');
         const classes = $(this).data('classes');
-        const sidebarRight = $('.cloudy-sidebar');
-        const isOutside = !sidebarRight.is(event.target) && sidebarRight.has(event.target).length === 0;
+        const trayRight = $('.cloudy-tray');
+        const isOutside = !trayRight.is(event.target) && trayRight.has(event.target).length === 0;
 
-        // If user clicks outside the sidebar, hide it!
+        // If user clicks outside the tray, hide it!
         $(document).on('click', event => {
           event.preventDefault();
           event.stopPropagation();
@@ -163,7 +163,7 @@ import 'bootstrap';
           }
         })
 
-        // Toggle active class on body, sidebar, and overlay
+        // Toggle active class on body, tray, and overlay
         $(target).toggleClass(classes);
       });
     }
