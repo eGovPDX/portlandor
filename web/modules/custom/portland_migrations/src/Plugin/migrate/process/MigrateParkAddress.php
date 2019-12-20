@@ -26,6 +26,8 @@ class MigrateParkAddress extends ProcessPluginBase {
 
     $zip = $row->getSourceProperty('Zip');
     $title = $row->getSourceProperty('Property');
+    $lat = $row->getSourceProperty('latitude');
+    $long = $row->getSourceProperty('longitude');
 
     // Create the Location
     $location = Node::create([
@@ -42,6 +44,7 @@ class MigrateParkAddress extends ProcessPluginBase {
         'administrative_area' => 'OR',
         'postal_code' => ( (strlen($zip) == 5) ? $zip : '' ),
       ],
+      'field_geolocation' => "POINT($long $lat)", // The magic format to import longitude and latitude
     ]);
     $location->save();
     $location->status->value = 1;
