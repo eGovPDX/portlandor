@@ -11,13 +11,11 @@ Drupal.behaviors.cloudyTrayHandler = {
       // Defining Variables
       const target = $(this).data('target');
       const classes = $(this).data('classes');
-      const trayRight = $('.cloudy-tray');
-      const isOutside = !trayRight.is(event.target) && trayRight.has(event.target).length === 0;
+      const tray = $('.cloudy-tray');
 
       // If user clicks outside the tray, hide it!
-      $(document).on('click', event => {
-        event.preventDefault();
-        event.stopPropagation();
+      $(document).on('click', function(event) {
+        const isOutside = !tray.is(event.target) && tray.has(event.target).length === 0 && $(event.target).closest(tray).length == 0;
 
         if(isOutside) {
           $(target).removeClass('is-active');
