@@ -23,7 +23,7 @@ Drupal.behaviors.alert_handler = {
     });
 
     // Set the cookie value when dismiss button is clicked.
-    $('.portland-alert .close').click(function (e) {
+    $('.portland-alert .cloudy-alert__close').click(function (e) {
       // Do not perform default action.
       e.preventDefault();
 
