@@ -15,30 +15,24 @@
 
 {% set text = file_display_name|default(file.filename.value) %}
 
-{% set icon %}
-  {% include '@elements/icons/file-icon.twig' with {
-      'mime_type': file.filemime.value
-    } only
-  %}
-{% endset %}
+{% set icon_map = {
+  'application/pdf': 'fa-file-pdf',
+  'application/msword': 'fa-file-word',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'fa-file-word',
+  'application/vnd.ms-excel': 'fa-file-excel',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'fa-file-excel',
+  'application/vnd.ms-powerpoint': 'fa-file-powerpoint',
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation': 'fa-file-powerpoint',
+} %}
+
+{% set icon_name = icon_map[mime_type] ?? 'fa-file-alt' %}
 
 <div class="flex flex-wrap items-baseline">
-  {% include '@components/links/_icon-link.twig' with {
-    'icon': icon,
-    'text': text,
-    'url': url,
-    inner_classes: [
-      'flex',
-      'items-center',
-    ],
-    icon_classes: [
-      'flex',
-      'items-center',
-    ],
-    "wrapper_class_markup": true,
-    "wrapper_classes": [
-      "flex"
-    ]
-  } only %}
+  <a href="{{ url }}">
+    {% include '@elements/icon/fa.twig' with {
+      name: icon_name,
+    } only %}
+    {{ text }}
+  </a>
   <span class="ml-2">{{ file_size_string(file.filesize.value) }}</span>
 </div>
