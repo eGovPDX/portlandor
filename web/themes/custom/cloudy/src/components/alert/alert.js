@@ -22,7 +22,7 @@ Drupal.behaviors.alert_handler = {
         // Only show the alert if dismiss button has not been clicked. The
         // element is hidden by default in order to prevent it from momentarily
         // flickering onscreen.
-        $(this).addClass('cloudy-alert--active-dismissiable');
+        $(this).addClass('cloudy-alert--active-dismissable');
 
         // @todo remove the line below when the PL version of this component is implemented in drupal
         $(this).removeClass('d-none');
