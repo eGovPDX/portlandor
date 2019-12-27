@@ -34,7 +34,8 @@ Drupal.behaviors.alert_handler = {
     // @todo remove the '.portland-alert .close' selector below when the PL version of this component is implemented in drupal
     $('.cloudy-alert .cloudy-alert__close, .portland-alert .close').click(function (event) {
       event.preventDefault();
-      const alertElement = $(this).closest('.portland-alert');
+      // @todo remove the '.portland-alert' selector below when the PL version of this component is implemented in drupal
+      const alertElement = $(this).closest('.portland-alert, .cloudy-alert');
 
       // Hide the alert
       alertElement.removeClass('cloudy-alert--active-dismissiable');
@@ -44,7 +45,7 @@ Drupal.behaviors.alert_handler = {
       // Set an alert cookie
       const nid = alertElement.data('nid');
       const lastChangedTimestamp = alertElement.data('changed');
-      const path = drupalSettings.path.baseUrl || '/';
+      const path = (drupalSettings && drupalSettings.path && drupalSettings.path.baseUrl) || '/';
       $.cookie(
         COOKIE_PREFIX + nid,
         lastChangedTimestamp,
