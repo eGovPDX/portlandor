@@ -11,7 +11,8 @@ Drupal.behaviors.alert_handler = {
   attach(context, settings) {
     // Compare each server side alert changed time with browser cookie values.
     // If the changed time doesn't match for that alert, display the alert.
-    $('.portland-alert').once('alert-processed').each(function() {
+    // @todo remove the '.portland-alert' selector below when the PL version of this component is implemented in drupal
+    $('.portland-alert, .cloudy-alert').once('alert-processed').each(function() {
       // If this alert has no nid it is not dismissable and did not set a cookie
       if (!$(this).data('nid')) return;
 
@@ -31,7 +32,7 @@ Drupal.behaviors.alert_handler = {
 
     // Set the cookie value when dismiss button is clicked.
     // @todo remove the '.portland-alert .close' selector below when the PL version of this component is implemented in drupal
-    $('.portland-alert .cloudy-alert__close, .portland-alert .close').click(function (event) {
+    $('.cloudy-alert .cloudy-alert__close, .portland-alert .close').click(function (event) {
       event.preventDefault();
       const alertElement = $(this).closest('.portland-alert');
 
