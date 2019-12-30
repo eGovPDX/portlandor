@@ -8,8 +8,8 @@
 - `isDraft`: boolean - If set to true, adds the `unpublished` badge
 - `showTimestamp`: boolean - If set to true, adds the last updated timestamp to the alert
 - `dismissible`: boolean - Whether or not the alert should appear as pre-header content and given a dismiss button
-- `id`: string - If dismissable is true, this is a unique identifier for the alert, used for managing cookies
-- `changed`: string - If dismissable is true, this is a timestamp of when the alert with the given nid was last updated. Changed against the cookie value to see if user need to be alerted again.
+- `id`: string - If dismissible is true, this is a unique identifier for the alert, used for managing cookies
+- `changed`: string - If dismissible is true, this is a timestamp of when the alert with the given nid was last updated. Changed against the cookie value to see if user need to be alerted again.
 
 ## Usage
 
