@@ -113,8 +113,110 @@
 
 })(jQuery);
 
+
+function queryPortlandMaps(resultsHandler) {
+  if(!resultsHandler) return;
+  var query = L.esri.query({
+    url: 'https://www.portlandmaps.com/arcgis/rest/services/Public/Basemap_Color/MapServer/2'
+  });
+
+  query.intersects(drupalSettings.map.getBounds());
+
+  var results;
+  query.run(function (error, featureCollection, response) {
+    if (error) {
+      console.error(error);
+      return;
+    }
+    console.log('Found ' + featureCollection.features.length + ' features');
+    results = featureCollection;
+    if(resultsHandler) resultsHandler(results);
+  });
+}
+
+function mapZoomedOrMoved() {
+  jQuery('.leaflet-control-search').removeClass('d-none');
+}
+
 // Once the Leaflet Map is loaded with its features.
+var mapLoaded = false;
 jQuery(document).on('leaflet.map', function (e, settings, lMap, mapid) {
+  // Prevent double loading
+  if(mapLoaded) return; mapLoaded = true;
+
+  drupalSettings.map = lMap;
+
+  var satelliteView = L.esri.tiledMapLayer({
+    url: 'https://www.portlandmaps.com/arcgis/rest/services/Public/Basemap_Color_Complete_Aerial/MapServer'
+  });
+
+  jQuery('div.leaflet-top.leaflet-left')
+    .after('<div class="leaflet-control-search leaflet-bar leaflet-control d-none"><a class="leaflet-control-search-button leaflet-bar-part" href="#" title="Search in map" style="width:100%;font-size:1.1em;">Redo search in map</a></div>');
+  jQuery('.leaflet-control-search-button').on('click', function(e) {
+
+    // Query PortlandMaps to get Property IDs
+    queryPortlandMaps(function(results) {
+      // Load park finder with a list of Property IDs
+      var propertyIDs = results.features.map(function(feature){
+        return feature.properties.PropertyID;
+      }).join('+');
+
+      document.location = window.location.origin + '/parks/finder/' + propertyIDs + window.location.search;
+    });
+
+    jQuery('.leaflet-control-search').addClass('d-none');
+    e.preventDefault();
+  })
+
+  lMap.on('zoomend', mapZoomedOrMoved).on('moveend', mapZoomedOrMoved);
+
+  jQuery('div.leaflet-top.leaflet-right')
+    .append('<div class="leaflet-control-satellite leaflet-bar leaflet-control"><a class="leaflet-control-satellite-button leaflet-bar-part" href="#" title="Toggle View"><i class="fas fa-globe"></i></a></div>');
+
+  jQuery('.leaflet-control-satellite-button').on('click', function(e) {
+    var mapIcon = jQuery(this).find('i.fas');
+    if(mapIcon) {
+      if(jQuery(mapIcon).hasClass('fa-globe')) {
+        lMap.addLayer(satelliteView);
+        jQuery(mapIcon).removeClass('fa-globe');
+        jQuery(mapIcon).addClass('fa-map-marked-alt');
+      }
+      else if(jQuery(mapIcon).hasClass('fa-map-marked-alt')) {
+        lMap.removeLayer(satelliteView);
+        jQuery(mapIcon).removeClass('fa-map-marked-alt');
+        jQuery(mapIcon).addClass('fa-globe');
+      }
+      e.preventDefault();
+    }
+  })
+  
+  jQuery(window).on('scroll', function() { 
+    var allCards = jQuery('div.node--type-park-facility.card');
+    var allMarkers = jQuery('div.park-marker');
+    var allMarkerTitles = jQuery('.park-marker-title');
+    for(var i=0; i<allCards.length; i++) {
+      if( 
+          ( i == allCards.length - 1  && (jQuery(window).scrollTop() + 400 + 80 > jQuery(allCards[i]).offset().top) )
+          ||
+          ( 
+            (jQuery(window).scrollTop() + 400 + 80 > jQuery(allCards[i]).offset().top) && 
+            (jQuery(window).scrollTop() + 400 + 80 <= jQuery(allCards[i+1]).offset().top) 
+          ) 
+        ) {
+        allMarkers.each(function() {
+          jQuery(this).removeClass( "park-marker-lg" ).addClass( "park-marker-sm" );
+        });
+        jQuery('div[data-id="' + jQuery(allCards[i]).attr('data-card-id') +'"]').removeClass( "park-marker-sm" ).addClass( "park-marker-lg" );
+        allMarkerTitles.each(function() {
+          jQuery(this).addClass( "d-none" );
+        });
+        jQuery('div[data-id="' + jQuery(allCards[i]).attr('data-card-id') +'"] > .park-marker-title').removeClass( "d-none" );
+        break;
+      }
+    }
+  });
+
+
   if( drupalSettings.portlandmaps_layer && drupalSettings.portlandmaps_id ) {
     var features = L.esri.featureLayer({
       url: drupalSettings.portlandmaps_layer,

@@ -13,8 +13,6 @@ const LEAFLET_MORE_MAPS_NO_CUSTOM_MAPS = 3;
 /**
  * Implements hook_leaflet_map_info().
  *
- * All maps show at lat=31, long=-89, zoom=4
- *
  * @return array of map info (includes provider URL, attribution, map features)
  */
 function portland_leaflet_maps_leaflet_map_info() {
@@ -84,13 +82,11 @@ function _portland_leaflet_maps_assemble_default_map_info(&$map_info, $default_s
   $zxy = '{z}/{x}/{y}.png';
   // As used by Esri.
   $zyx = '{z}/{y}/{x}.png';
-
   // Used by PortlandMaps
   $zyx_only = '{z}/{y}/{x}';
 
   // portlandmaps https://portlandmaps.com
   $attr_portlandmaps = 'Tiles by <a href="http://portlandmaps.com">portlandmaps.com</a>. ';
-
 
   $map_info['portlandmaps_color'] = array(
     'label' => 'PortlandMaps.com Basemap_Color_Complete (zoom 0..22)',
@@ -107,6 +103,7 @@ function _portland_leaflet_maps_assemble_default_map_info(&$map_info, $default_s
     'label' => 'PortlandMaps.com Park_Amenities (zoom 0..22)',
     'description' => t('portlandmaps.com Park_Amenities Maps'),
     'settings' =>  $default_settings + array('maxZoom' => 22),
+    // The order is important. From bottom to top: color basemap, building outlines, park amenities (only available at a few zoom levels)
     'layers' => array(
       'layer #1' => array(
         'urlTemplate' => $prot . "www.portlandmaps.com/arcgis/rest/services/Public/Basemap_Color_Complete/MapServer/tile/$zyx_only",
@@ -117,11 +114,6 @@ function _portland_leaflet_maps_assemble_default_map_info(&$map_info, $default_s
       'layer #3' => array(
         'urlTemplate' => $prot . "www.portlandmaps.com/arcgis/rest/services/Public/Park_Amenities/MapServer/tile/$zyx_only",
       ),
-      // 'park boundary' => array(
-      //   'urlTemplate' => $prot . "www.portlandmaps.com/arcgis/rest/services/Public/Basemap_Color/MapServer/2",
-      //   'layer_type' => 'overlay',
-      //   'esri_layer_type' => 'featureLayer',
-      // ),
     ),
   );
 
@@ -131,7 +123,30 @@ function portland_leaflet_maps_entity_view_alter(array &$build,
                             \Drupal\Core\Entity\EntityInterface $entity,
                             \Drupal\Core\Entity\Display\EntityViewDisplayInterface $display) {
   if( $entity->hasField('field_portlandmaps_layer') && $entity->hasField('field_portlandmaps_id')) {
-    $build['#attached']['drupalSettings']['portlandmaps_layer'] = $entity->field_portlandmaps_layer->value;
-    $build['#attached']['drupalSettings']['portlandmaps_id'] = $entity->field_portlandmaps_id->value;
+    // $build['#attached']['drupalSettings']['portlandmaps_layer'] = $entity->field_portlandmaps_layer->value;
+    // $build['#attached']['drupalSettings']['portlandmaps_id'] = $entity->field_portlandmaps_id->value;
+  }
+}
+
+// https://www.drupal.org/project/facets/issues/2826650#comment-11985765
+/**
+ * Implements hook_search_api_query_alter.
+ *
+ * @param \Drupal\search_api\Query\QueryInterface $query
+ */
+function portland_leaflet_maps_search_api_query_alter(\Drupal\search_api\Query\QueryInterface &$query) {
+  if ($query->getIndex()->getServerInstance()->supportsFeature('search_api_facets')) {
+    /** @var \Drupal\facets\FacetManager\DefaultFacetManager $facet_manager */
+    $facet_manager = \Drupal::service('facets.manager');
+
+    $search_id = $query->getSearchId();
+
+    // If we find an attachment view query, we use the same query alter as the page because they belong together
+    if(strpos($search_id, 'views_attachment:park_finder__attachment_1') === 0) {
+      $search_id = 'search_api:views_page__park_finder__page_1';
+
+      // Add the active filters.
+      $facet_manager->alterQuery($query, $search_id);
+    }
   }
 }
