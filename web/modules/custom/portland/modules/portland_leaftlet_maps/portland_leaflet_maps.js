@@ -113,31 +113,6 @@
 
 })(jQuery);
 
-
-function queryPortlandMaps(resultsHandler) {
-  if(!resultsHandler) return;
-  var query = L.esri.query({
-    url: 'https://www.portlandmaps.com/arcgis/rest/services/Public/Basemap_Color/MapServer/2'
-  });
-
-  query.intersects(drupalSettings.map.getBounds());
-
-  var results;
-  query.run(function (error, featureCollection, response) {
-    if (error) {
-      console.error(error);
-      return;
-    }
-    console.log('Found ' + featureCollection.features.length + ' features');
-    results = featureCollection;
-    if(resultsHandler) resultsHandler(results);
-  });
-}
-
-function mapZoomedOrMoved() {
-  jQuery('.leaflet-control-search').removeClass('d-none');
-}
-
 // Once the Leaflet Map is loaded with its features.
 var mapLoaded = false;
 jQuery(document).on('leaflet.map', function (e, settings, lMap, mapid) {
@@ -150,25 +125,6 @@ jQuery(document).on('leaflet.map', function (e, settings, lMap, mapid) {
     url: 'https://www.portlandmaps.com/arcgis/rest/services/Public/Basemap_Color_Complete_Aerial/MapServer'
   });
 
-  jQuery('div.leaflet-top.leaflet-left')
-    .after('<div class="leaflet-control-search leaflet-bar leaflet-control d-none"><a class="leaflet-control-search-button leaflet-bar-part" href="#" title="Search in map" style="width:100%;font-size:1.1em;">Redo search in map</a></div>');
-  jQuery('.leaflet-control-search-button').on('click', function(e) {
-
-    // Query PortlandMaps to get Property IDs
-    queryPortlandMaps(function(results) {
-      // Load park finder with a list of Property IDs
-      var propertyIDs = results.features.map(function(feature){
-        return feature.properties.PropertyID;
-      }).join('+');
-
-      document.location = window.location.origin + '/parks/finder/' + propertyIDs + window.location.search;
-    });
-
-    jQuery('.leaflet-control-search').addClass('d-none');
-    e.preventDefault();
-  })
-
-  lMap.on('zoomend', mapZoomedOrMoved).on('moveend', mapZoomedOrMoved);
 
   jQuery('div.leaflet-top.leaflet-right')
     .append('<div class="leaflet-control-satellite leaflet-bar leaflet-control"><a class="leaflet-control-satellite-button leaflet-bar-part" href="#" title="Toggle View"><i class="fas fa-globe"></i></a></div>');
