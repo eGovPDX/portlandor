@@ -113,6 +113,11 @@
 
 })(jQuery);
 
+// Show the redo search button when the map is moved or panned
+function mapZoomedOrMoved() {
+  jQuery('.leaflet-control-search').removeClass('d-none');
+}
+
 // Once the Leaflet Map is loaded with its features.
 var mapLoaded = false;
 jQuery(document).on('leaflet.map', function (e, settings, lMap, mapid) {
@@ -125,6 +130,23 @@ jQuery(document).on('leaflet.map', function (e, settings, lMap, mapid) {
     url: 'https://www.portlandmaps.com/arcgis/rest/services/Public/Basemap_Color_Complete_Aerial/MapServer'
   });
 
+  // Add a button to redo search in map
+  jQuery('div.leaflet-top.leaflet-left')
+    .after('<div class="leaflet-control-search leaflet-bar leaflet-control d-none"><a class="leaflet-control-search-button leaflet-bar-part" href="#" title="Search in map" style="width:100%;font-size:1.1em;">Redo search in map</a></div>');
+  jQuery('.leaflet-control-search-button').on('click', function(e) {
+    var bounds = drupalSettings.map.getBounds();
+    var bottomLeftTopRight = bounds.getSouth() + ',' + bounds.getWest() + ',' + bounds.getNorth() + ',' + bounds.getEast();
+    if( window.location.href.indexOf('?') === -1) {
+      document.location = window.location.href + '?bbox=' + bottomLeftTopRight;
+    }
+    else {
+      document.location = window.location.href + '&bbox=' + bottomLeftTopRight;
+    }
+    jQuery('.leaflet-control-search').addClass('d-none');
+    e.preventDefault();
+  })
+
+  lMap.on('zoomend', mapZoomedOrMoved).on('moveend', mapZoomedOrMoved);
 
   jQuery('div.leaflet-top.leaflet-right')
     .append('<div class="leaflet-control-satellite leaflet-bar leaflet-control"><a class="leaflet-control-satellite-button leaflet-bar-part" href="#" title="Toggle View"><i class="fas fa-globe"></i></a></div>');

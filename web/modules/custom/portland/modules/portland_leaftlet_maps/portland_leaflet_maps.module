@@ -132,6 +132,17 @@ if( strpos($current_path, '/parks/finder') === 0) return;
   }
 }
 
+// Alter the Solr query to add filter query for bounding box if it's in the query string
+function portland_leaflet_maps_search_api_solr_query_alter(\Solarium\Core\Query\QueryInterface $solarium_query, \Drupal\search_api\Query\QueryInterface $query) {
+  // If the bounding box (bbox) is in the query string
+  if (isset($_GET['bbox'])) {
+    // Get the left, top, right and bottom from the url.
+    list($bottom, $left, $top, $right) = explode(',', $_GET['bbox']);
+    // Add it to the query.
+    $solarium_query->addParam('fq', "locs_field_geolocation:[$bottom,$left TO $top,$right]");
+  }
+}
+
 // https://www.drupal.org/project/facets/issues/2826650#comment-11985765
 /**
  * Implements hook_search_api_query_alter.
