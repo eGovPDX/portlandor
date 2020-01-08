@@ -114,15 +114,38 @@
 })(jQuery);
 
 // Show the redo search button when the map is moved or panned
-function mapZoomedOrMoved() {
+function mapZoomedOrMovedByUser(e) {
   jQuery('.leaflet-control-search').removeClass('d-none');
 }
 
 // Once the Leaflet Map is loaded with its features.
 var mapLoaded = false;
 jQuery(document).on('leaflet.map', function (e, settings, lMap, mapid) {
+  // Add the satellite view button
+  if( jQuery('div.leaflet-control-satellite').length === 0 ) {
+    jQuery('div.leaflet-top.leaflet-right')
+      .append('<div class="leaflet-control-satellite leaflet-bar leaflet-control"><a class="leaflet-control-satellite-button leaflet-bar-part" href="#" title="Toggle View"><i class="fas fa-globe"></i></a></div>');
+  
+    jQuery('.leaflet-control-satellite-button').on('click', function(e) {
+      var mapIcon = jQuery(this).find('i.fas');
+      if(mapIcon) {
+        if(jQuery(mapIcon).hasClass('fa-globe')) {
+          lMap.addLayer(satelliteView);
+          jQuery(mapIcon).removeClass('fa-globe');
+          jQuery(mapIcon).addClass('fa-map-marked-alt');
+        }
+        else if(jQuery(mapIcon).hasClass('fa-map-marked-alt')) {
+          lMap.removeLayer(satelliteView);
+          jQuery(mapIcon).removeClass('fa-map-marked-alt');
+          jQuery(mapIcon).addClass('fa-globe');
+        }
+        e.preventDefault();
+      }
+    })  
+  }
+
   // Prevent double loading
-  if(mapLoaded) return; mapLoaded = true;
+  // if(mapLoaded) return; mapLoaded = true;
 
   drupalSettings.map = lMap;
 
@@ -131,43 +154,48 @@ jQuery(document).on('leaflet.map', function (e, settings, lMap, mapid) {
   });
 
   // Add a button to redo search in map
-  jQuery('div.leaflet-top.leaflet-left')
-    .after('<div class="leaflet-control-search leaflet-bar leaflet-control d-none"><a class="leaflet-control-search-button leaflet-bar-part" href="#" title="Search in map" style="width:100%;font-size:1.1em;">Redo search in map</a></div>');
-  jQuery('.leaflet-control-search-button').on('click', function(e) {
-    var bounds = drupalSettings.map.getBounds();
-    var bottomLeftTopRight = bounds.getSouth() + ',' + bounds.getWest() + ',' + bounds.getNorth() + ',' + bounds.getEast();
-    if( window.location.href.indexOf('?') === -1) {
-      document.location = window.location.href + '?bbox=' + bottomLeftTopRight;
-    }
-    else {
-      document.location = window.location.href + '&bbox=' + bottomLeftTopRight;
-    }
-    jQuery('.leaflet-control-search').addClass('d-none');
-    e.preventDefault();
-  })
-
-  lMap.on('zoomend', mapZoomedOrMoved).on('moveend', mapZoomedOrMoved);
-
-  jQuery('div.leaflet-top.leaflet-right')
-    .append('<div class="leaflet-control-satellite leaflet-bar leaflet-control"><a class="leaflet-control-satellite-button leaflet-bar-part" href="#" title="Toggle View"><i class="fas fa-globe"></i></a></div>');
-
-  jQuery('.leaflet-control-satellite-button').on('click', function(e) {
-    var mapIcon = jQuery(this).find('i.fas');
-    if(mapIcon) {
-      if(jQuery(mapIcon).hasClass('fa-globe')) {
-        lMap.addLayer(satelliteView);
-        jQuery(mapIcon).removeClass('fa-globe');
-        jQuery(mapIcon).addClass('fa-map-marked-alt');
+  if( window.location.pathname === '/parks/finder' && jQuery('div.leaflet-control-search').length === 0 ) {
+    jQuery('div.leaflet-top.leaflet-left')
+      .after('<div class="leaflet-control-search leaflet-bar leaflet-control d-none"><a class="leaflet-control-search-button leaflet-bar-part" href="#" title="Search in map" style="width:100%;font-size:1.1em;">Redo search in map</a></div>');
+    jQuery('.leaflet-control-search-button').on('click', function(e) {
+      var bounds = drupalSettings.map.getBounds();
+      var bottomLeftTopRight = encodeURIComponent(bounds.getSouth().toFixed(5) + ',' + bounds.getWest().toFixed(5) + ',' + bounds.getNorth().toFixed(5) + ',' + bounds.getEast().toFixed(5));
+      // If there is no query string, simply append ours
+      if( window.location.href.indexOf('?') === -1) {
+        document.location = window.location.href + '?bbox=' + bottomLeftTopRight;
       }
-      else if(jQuery(mapIcon).hasClass('fa-map-marked-alt')) {
-        lMap.removeLayer(satelliteView);
-        jQuery(mapIcon).removeClass('fa-map-marked-alt');
-        jQuery(mapIcon).addClass('fa-globe');
+      else {
+        // When there is already a bbox value in original query string, replace it
+        // Find the "bbox="
+        var bboxIndex = window.location.href.indexOf('bbox=');
+        // If there is no "bbox" value, append ours to the end
+        if(bboxIndex === -1) {
+          document.location = window.location.href + '&bbox=' + bottomLeftTopRight;
+        }
+        // Otherwise, replace existing one
+        else {
+          // If there is no & after bbox
+          var ampIndex = window.location.href.indexOf('&', bboxIndex);
+          if( ampIndex === -1) {
+            document.location = window.location.href.substring(0, bboxIndex) + 'bbox=' + bottomLeftTopRight;
+          }
+          else {
+            document.location = window.location.href.substring(0, bboxIndex) + 'bbox=' + bottomLeftTopRight + window.location.href.substring(ampIndex);
+          }
+        }
       }
+      jQuery('.leaflet-control-search').addClass('d-none');
       e.preventDefault();
-    }
-  })
-  
+    })
+  }
+
+  // A workaround to detect user triggered zoom or move.
+  // There is a pending PR for Leaflet
+  // https://github.com/Leaflet/Leaflet/pull/6929/files/0aff3cd1712f54abfd7370c90b6afa0f49024f51
+  lMap.on('dragend', mapZoomedOrMovedByUser).on('dblclick', mapZoomedOrMovedByUser);
+  jQuery('div.leaflet-control-zoom > a').on('click', mapZoomedOrMovedByUser);
+
+  // Highlight the park in map when it's scrolled just under the map
   jQuery(window).on('scroll', function() { 
     var allCards = jQuery('div.node--type-park-facility.card');
     var allMarkers = jQuery('div.park-marker');
