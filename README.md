@@ -153,13 +153,19 @@ Here are some additional commands you may find useful.
 
 Pattern Lab is tool used to document the design choices and `.twig` templates that make up the Cloudy theme.
 
-To get started with Pattern Lab, 
+To get started with Pattern Lab,
 
 Here are some useful commands when working with Pattern Lab:
 
 - Run `lando npm run build:pl` to build the Pattern Lab site.
 - Run `lando npm run watch:pl` to build the Pattern Lab site, watch for changes and trigger rebuilds.
 - Run `lando npm run clean:pl` to delete the Pattern Lab site.
+
+#### *Note*
+
+There is a known issue with PL v3 builds erroneously reporting missing template files if they exist outside of the `pattern-lab` directory. However, these are false positives. Pattern Lab is finding the file and rendering the pattern.
+
+For more information, see: [Pattern Lab Github Issue #1116](https://github.com/pattern-lab/patternlab-node/issues/1116)
 
 ### Cloudy's asset files
 
