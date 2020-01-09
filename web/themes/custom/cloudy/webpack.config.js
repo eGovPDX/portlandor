@@ -2,25 +2,44 @@ const path = require('path');
 const globby = require('globby');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 // const BrowserSyncPlugin = require('browser-sync-webpack-plugin');
+const babelConfig = require('./babel.config');
+
+const isProd = process.env.NODE_ENV === 'production';
 
 module.exports = (env, argv) => ({
   entry: {
-    main: ['./src/js/main.js', './src/css/style.scss'],
-    'search-field': './src/js/search-field.js'
+    cloudy: [
+      './src/cloudy.js',
+      './src/cloudy.scss',
+    ],
+    'search-field': './src/js/search-field.js',
+    'bootstrap': './src/js/bootstrap.js',
+  },
+  output: {
+    path: path.resolve(__dirname, './dist'),
+    publicPath: '/themes/custom/cloudy/dist/',
+    filename: '[name].bundle.js',
+  },
+  /**
+   * The externals configuration option provides a way of excluding dependencies from the output bundles.
+   * Instead, the created bundle relies on that dependency to be present in the consumer's environment.
+   * So basically we expect these to be present on the `window` ahead of time.
+   * @link https://webpack.js.org/configuration/externals/
+   */
+  externals: {
+    jquery: 'jQuery',
+    Drupal: 'Drupal',
+    drupal: 'Drupal',
   },
   devtool: 'source-map',
-  mode: process.env.NODE_ENV,
-  output: {
-    path: path.resolve(__dirname),
-    filename: 'dist/[name].bundle.js'
-  },
+  mode: isProd ? 'production' : 'development',
   watchOptions: {
     ignored: ['images/**/*.*', 'dist/**/*.*', 'templates/**/*.*', 'node_modules']
   },
   plugins: [
     new MiniCssExtractPlugin({
-      filename: 'dist/style.bundle.css',
-      chunkFilename: 'dist/[id].bundle.css'
+      filename: '[name].css',
+      chunkFilename: '[id].css'
     }),
     // new BrowserSyncPlugin(
     //   // BrowserSync options
@@ -44,7 +63,8 @@ module.exports = (env, argv) => ({
         test: /\.js$/,
         exclude: /node_modules/,
         use: {
-          loader: 'babel-loader'
+          loader: 'babel-loader',
+          options: babelConfig,
         }
       },
       {
@@ -89,7 +109,4 @@ module.exports = (env, argv) => ({
       return assetFilename.endsWith('.js');
     }
   },
-  externals: {
-    jquery: 'jQuery'
-  }
 });
