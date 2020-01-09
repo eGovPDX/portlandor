@@ -40,7 +40,7 @@ You can also check the status of the migration using the `migrate:status` comman
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:status
 ```
 
-## CSV files 
+## CSV files
 
 The `path` configuration for the CSV source plugin accepts an absolute path or relative path from the Drupal installation folder.
 
