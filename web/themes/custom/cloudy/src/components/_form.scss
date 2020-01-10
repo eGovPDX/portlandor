@@ -1,0 +1,536 @@
+/**
+ * @file
+ * Make Bootstrap forms more compatible with Drupal out of the box
+ */
+
+ // stylelint-disable selector-no-qualifying-type
+
+//
+// Textual form controls
+//
+
+.form-control {
+  display: block;
+  //width: 100%; remove width as it plays havoc on Drupal fields
+  height: $input-height;
+  padding: $cloudy-space-1 $cloudy-space-3;
+  font-family: $input-font-family;
+  @include font-size($input-font-size);
+  font-weight: $input-font-weight;
+  line-height: $input-line-height;
+  color: $cloudy-gray-700;
+  background-color: $cloudy-white-base;
+  background-clip: padding-box;
+  border: $input-border-width solid $cloudy-gray-400;
+
+  // Note: This has no effect on <select>s in some browsers, due to the limited stylability of `<select>`s in CSS.
+  @include border-radius($input-border-radius, 0);
+
+  @include box-shadow($input-box-shadow);
+  @include transition($input-transition);
+
+  // Unstyle the caret on `<select>`s in IE10+.
+  &::-ms-expand {
+    background-color: transparent;
+    border: 0;
+  }
+
+  // Customize the `:focus` state to imitate native WebKit styles.
+  @include form-control-focus();
+
+  // Placeholder
+  &::placeholder {
+    color: $cloudy-gray-600;
+    // Override Firefox's unusual default opacity; see https://github.com/twbs/bootstrap/pull/11526.
+    opacity: 1;
+  }
+
+  // Disabled and read-only inputs
+  //
+  // HTML5 says that controls under a fieldset > legend:first-child won't be
+  // disabled if the fieldset is disabled. Due to implementation difficulty, we
+  // don't honor that edge case; we style them as disabled anyway.
+  &:disabled,
+  &[readonly] {
+    background-color: $cloudy-gray-200;
+    // iOS fix for unreadable disabled content; see https://github.com/twbs/bootstrap/issues/11655.
+    opacity: 1;
+  }
+}
+
+select.form-control {
+  &:focus::-ms-value {
+    // Suppress the nested default white text on blue background highlight given to
+    // the selected option text when the (still closed) <select> receives focus
+    // in IE and (under certain conditions) Edge, as it looks bad and cannot be made to
+    // match the appearance of the native widget.
+    // See https://github.com/twbs/bootstrap/issues/19398.
+    color: $cloudy-gray-700;
+    background-color: $cloudy-white-base;
+  }
+}
+
+// Make file inputs better match text inputs by forcing them to new lines.
+.form-control-file,
+.form-control-range {
+  display: block;
+  //width: 100%; remove width
+}
+
+
+//
+// Labels
+//
+
+// For use with horizontal and inline forms, when you need the label (or legend)
+// text to align with the form controls.
+.col-form-label {
+  padding-top: calc(#{$cloudy-space-1} + #{$input-border-width});
+  padding-bottom: calc(#{$cloudy-space-1} + #{$input-border-width});
+  margin-bottom: 0; // Override the `<label>/<legend>` default
+  @include font-size(inherit); // Override the `<legend>` default
+  line-height: $input-line-height;
+}
+
+.col-form-label-lg {
+  padding-top: calc(#{$cloudy-space-2} + #{$input-border-width});
+  padding-bottom: calc(#{$cloudy-space-2} + #{$input-border-width});
+  @include font-size($input-font-size-lg);
+  line-height: $input-line-height-lg;
+}
+
+.col-form-label-sm {
+  padding-top: calc(#{$cloudy-space-1} + #{$input-border-width});
+  padding-bottom: calc(#{$cloudy-space-1} + #{$input-border-width});
+  @include font-size($input-font-size-sm);
+  line-height: $input-line-height-sm;
+}
+
+
+// Readonly controls as plain text
+//
+// Apply class to a readonly input to make it appear like regular plain
+// text (without any border, background color, focus indicator)
+
+.form-control-plaintext {
+  display: block;
+  //width: 100%; remove width
+  padding-top: $cloudy-space-1;
+  padding-bottom: $cloudy-space-1;
+  margin-bottom: 0; // match inputs if this class comes on inputs with default margins
+  line-height: $input-line-height;
+  color: $cloudy-gray-900;
+  background-color: transparent;
+  border: solid transparent;
+  border-width: $input-border-width 0;
+
+  &.form-control-sm,
+  &.form-control-lg {
+    padding-right: 0;
+    padding-left: 0;
+  }
+}
+
+
+// Form control sizing
+//
+// Build on `.form-control` with modifier classes to decrease or increase the
+// height and font-size of form controls.
+//
+// Repeated in `_input_group.scss` to avoid Sass extend issues.
+
+.form-control-sm {
+  height: $input-height-sm;
+  padding: $cloudy-space-1 $cloudy-space-2;
+  @include font-size($input-font-size-sm);
+  line-height: $input-line-height-sm;
+  @include border-radius($input-border-radius-sm);
+}
+
+.form-control-lg {
+  height: $input-height-lg;
+  padding: $cloudy-space-2 $cloudy-space-3;
+  @include font-size($input-font-size-lg);
+  line-height: $input-line-height-lg;
+  @include border-radius($input-border-radius-lg);
+}
+
+// stylelint-disable-next-line no-duplicate-selectors
+select.form-control {
+  &[size],
+  &[multiple] {
+    height: auto;
+  }
+}
+
+textarea.form-control {
+  height: auto;
+}
+
+// Form groups
+//
+// Designed to help with the organization and spacing of vertical forms. For
+// horizontal forms, use the predefined grid classes.
+
+.form-group {
+  margin-bottom: $cloudy-space-4;
+}
+
+.form-text {
+  display: block;
+  margin-top: $cloudy-space-1;
+}
+
+
+// Form grid
+//
+// Special replacement for our grid system's `.row` for tighter form layouts.
+
+.form-row {
+  display: flex;
+  flex-wrap: wrap;
+  margin-right: -$form-grid-gutter-width / 2;
+  margin-left: -$form-grid-gutter-width / 2;
+
+  > .col,
+  > [class*="col-"] {
+    padding-right: $form-grid-gutter-width / 2;
+    padding-left: $form-grid-gutter-width / 2;
+  }
+}
+
+
+// Checkboxes and radios
+//
+// Indent the labels to position radios/checkboxes as hanging controls.
+
+.form-check {
+  position: relative;
+  display: block;
+  padding-left: $form-check-input-gutter;
+}
+
+.form-check-input {
+  position: absolute;
+  margin-top: $cloudy-space-1;
+  margin-left: -$form-check-input-gutter;
+
+  &:disabled ~ .form-check-label {
+    color: $cloudy-gray-600;
+  }
+}
+
+.form-check-label {
+  margin-bottom: 0; // Override default `<label>` bottom margin
+}
+
+.form-check-inline {
+  display: inline-flex;
+  align-items: center;
+  padding-left: 0; // Override base .form-check
+  margin-right: $cloudy-space-3;
+
+  // Undo .form-check-input defaults and add some `margin-right`.
+  .form-check-input {
+    position: static;
+    margin-top: 0;
+    margin-right: $form-check-inline-input-margin-x;
+    margin-left: 0;
+  }
+}
+
+
+// Form validation
+//
+// Provide feedback to users when form field values are valid or invalid. Works
+// primarily for client-side validation via scoped `:invalid` and `:valid`
+// pseudo-classes but also includes `.is-invalid` and `.is-valid` classes for
+// server side validation.
+
+@each $state, $data in $form-validation-states {
+  @include form-validation-state($state, map-get($data, color), map-get($data, icon));
+}
+
+// Inline forms
+//
+// Make forms appear inline(-block) by adding the `.form-inline` class. Inline
+// forms begin stacked on extra small (mobile) devices and then go inline when
+// viewports reach <768px.
+//
+// Requires wrapping inputs and labels with `.form-group` for proper display of
+// default HTML form controls and our custom form controls (e.g., input groups).
+
+.form-inline {
+  display: flex;
+  flex-flow: row wrap;
+  align-items: center; // Prevent shorter elements from growing to same height as others (e.g., small buttons growing to normal sized button height)
+
+  // Because we use flex, the initial sizing of checkboxes is collapsed and
+  // doesn't occupy the full-width (which is what we want for xs grid tier),
+  // so we force that here.
+  .form-check {
+    width: 100%;
+  }
+
+  // Kick in the inline
+  @include media-breakpoint-up(sm) {
+    label {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 0;
+    }
+
+    // Inline-block all the things for "inline"
+    .form-group {
+      display: flex;
+      flex: 0 0 auto;
+      flex-flow: row wrap;
+      align-items: center;
+      margin-bottom: 0;
+    }
+
+    // Allow folks to *not* use `.form-group`
+    .form-control {
+      display: inline-block;
+      // width: auto; // Prevent labels from stacking above inputs in `.form-group`
+      vertical-align: middle;
+    }
+
+    // Make static controls behave like regular ones
+    .form-control-plaintext {
+      display: inline-block;
+    }
+
+    .input-group,
+    .custom-select {
+      width: auto;
+    }
+
+    // Remove default margin on radios/checkboxes that were used for stacking, and
+    // then undo the floating of radios and checkboxes to match.
+    .form-check {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: auto;
+      padding-left: 0;
+    }
+    .form-check-input {
+      position: relative;
+      flex-shrink: 0;
+      margin-top: 0;
+      margin-right: $cloudy-space-1;
+      margin-left: 0;
+    }
+
+    .custom-control {
+      align-items: center;
+      justify-content: center;
+    }
+    .custom-control-label {
+      margin-bottom: 0;
+    }
+  }
+}
+
+ // START Cloudy-specific components
+
+ input {
+  &[type='text'],
+  &[type='search'] {
+    -webkit-appearance: none;
+  }
+}
+
+.form-inline label {
+  justify-content: left;
+}
+
+.form-inline .form-group {
+  margin-right: $cloudy-space-4;
+}
+
+.form-inline .form-actions,
+.container-inline .form-actions {
+  align-items: bottom !important;
+}
+
+select.form-select {
+  @extend .form-control;
+  margin-top: $cloudy-space-1;
+  border-radius: .125rem;
+}
+
+.views-exposed-form form {
+  margin-bottom: $cloudy-space-8;
+}
+
+.views-exposed-form .form-actions {
+  @extend .align-self-end;
+}
+
+form .description,
+form .counter {
+  display: block;
+  margin-bottom: $cloudy-space-4;
+  font-size: $font-size-sm;
+}
+
+label {
+  display: table;
+  font-weight: $font-weight-semibold;
+}
+
+.entity-content-form-footer {
+  border: $border-width solid $cloudy-gray-300;
+  padding: ($cloudy-space-4 * 1.5);
+  margin-bottom: ($cloudy-space-4 * 2) !important;
+  background-color: $cloudy-gray-100;
+}
+
+/* fix for superfluous label colons in entity embed alignment form, bad alignment and mismatched label bolding */
+.form-item-attributes-data-align label:after, .form-item-attributes-data-align .label:after {
+  content: none !important;
+}
+.form-item-attributes-data-align label {
+  margin-right: 10px;
+}
+.form-item-attributes-data-caption label {
+  font-weight: bold;
+}
+
+/* put a little padding in styled CKEditor body */
+.cke_editable {
+  margin: 10px;
+}
+
+// Form control
+.form--inline .form-item {
+  margin-right: $cloudy-space-2;
+}
+.form-control {
+  border-radius: .125rem;
+}
+
+.invalid-feedback {
+  display: inherit;
+}
+
+// entity embed dialog
+
+.entity-embed-dialog-step--embed .form-element-container {
+  width: 150px;
+  float: left;
+  display: block;
+}
+.entity-embed-dialog-step--embed .container-inline div {
+  display: block;
+}
+
+// exposed filter forms
+
+div.date-links {
+  flex-basis: 100%;
+  margin-bottom: 30px;
+}
+span.prev-link {
+  margin-right: 30px;
+}
+span.next-link .fas {
+  margin: 0 0 0 $cloudy-space-2;
+}
+
+/* admin content/media view tables */
+.view-admin-group-content .form-check,
+.view-my-content .form-check,
+.view-my-media .form-check,
+.views-table .form-check {
+  padding-left: 0;
+  margin-top: 0;
+}
+.view-admin-group-content .dropbutton-multiple,
+.view-my-content .dropbutton-multiple,
+.view-my-media .dropbutton-multiple,
+.views-table .dropbutton-multiple {
+  margin-right: 2em !important;
+  padding-right: 3em !important;
+}
+.view-admin-group-content table .form-item,
+.view-my-content table .form-item,
+.view-my-media table .form-item
+.views-table table .form-item {
+  margin-top: 0;
+}
+
+// Chosen form overrides
+.chosen-container-single {
+  .chosen-single {
+    padding-left: $cloudy-space-4 * .75;
+  }
+}
+
+.chosen-container-multi {
+  .chosen-choices{
+    padding: ($cloudy-space-4 * .375) ($cloudy-space-4 * .75);
+    li.search-choice {
+      padding: ($cloudy-space-4 * .375) ($cloudy-space-4 * 1.5) ($cloudy-space-4 * .375) ($cloudy-space-4 * .75);
+      display: flex;
+      align-items: center;
+      .search-choice-close {
+        top: $cloudy-space-4 * .5;
+        right: $cloudy-space-4 * .25;
+      }
+    }
+  }
+}
+
+/* Calendar Item content type node form; compact class set in the form display container element. */
+div.compact > div {
+  width: 49.5%;
+  display: inline-block;
+}
+
+// Facets
+.facets-widget {
+  &-checkbox {
+    padding: $cloudy-space-4;
+    background: $cloudy-blue-lighter;
+    ul {
+      list-style: none;
+      margin-bottom: 0;
+      padding: 0;
+    }
+  }
+}
+
+.facet-item {
+  @extend .form-check;
+}
+
+.facet-item label {
+  margin: 0;
+  font-weight: normal;
+}
+
+.facet-item input.facets-checkbox {
+  position: absolute;
+  margin-top: .3rem;
+  margin-left: -$cloudy-space-5;
+}
+
+.form-wrapper {
+  margin: 0 0 $cloudy-space-4;
+}
+
+.field-group-accordion-wrapper {
+  margin: 0 0 $cloudy-space-8;
+}
+
+.region-tools .form-text,
+.region-tools .form-select {
+  max-width: 255px;
+}
+
+// End Cloudy-specific components
+

@@ -74,8 +74,21 @@ class PortlandMediaEmbedHelperClasses extends FilterBase {
             break;
 
           case "audio_video_browser":
-          case "map_browser":
             $media_class = "embed-video";
+            if (!is_null($alignment) && $alignment == "responsive-right") {
+              $media_class .= " responsive-right";
+            }
+            break;
+
+          case "map_browser":
+            $media_class = "embed-map";
+            if (!is_null($alignment) && $alignment == "responsive-right") {
+              $media_class .= " responsive-right";
+            }
+            break;
+
+          case "chart_browser":
+            $media_class = "embed-chart";
             if (!is_null($alignment) && $alignment == "responsive-right") {
               $media_class .= " responsive-right";
             }

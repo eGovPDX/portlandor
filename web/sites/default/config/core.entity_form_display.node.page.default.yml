@@ -6,8 +6,8 @@ dependencies:
     - entity_browser.browser.locations_browser
     - field.field.node.page.field_audience
     - field.field.node.page.field_body_content
+    - field.field.node.page.field_display_groups
     - field.field.node.page.field_featured_media
-    - field.field.node.page.field_group
     - field.field.node.page.field_include_in_menu
     - field.field.node.page.field_location
     - field.field.node.page.field_menu_link_text
@@ -20,15 +20,122 @@ dependencies:
     - field.field.node.page.field_summary
     - field.field.node.page.field_topics
     - node.type.page
-    - workflows.workflow.editorial
   module:
     - chosen_field
     - content_moderation
     - entity_browser
-    - gcontent_field
+    - field_group
     - maxlength
     - path
     - text
+third_party_settings:
+  field_group:
+    group_details:
+      children:
+        - group_banner_image
+        - group_categorization
+        - group_location
+        - group_parent_and_menu
+        - group_redirects
+        - group_related
+      parent_name: ''
+      weight: 4
+      format_type: accordion
+      format_settings:
+        id: ''
+        classes: ''
+        effect: none
+      label: Details
+      region: content
+    group_categorization:
+      children:
+        - field_popular
+        - field_topics
+        - field_audience
+      parent_name: group_details
+      weight: 8
+      format_type: accordion_item
+      format_settings:
+        id: ''
+        classes: ''
+        formatter: closed
+        required_fields: false
+        description: ''
+      label: 'Where should this page appear?'
+      region: content
+    group_banner_image:
+      children:
+        - field_featured_media
+      parent_name: group_details
+      weight: 7
+      format_type: accordion_item
+      format_settings:
+        id: ''
+        classes: ''
+        formatter: closed
+        required_fields: false
+        description: ''
+      label: 'Banner image'
+      region: content
+    group_redirects:
+      children:
+        - field_redirects
+      parent_name: group_details
+      weight: 11
+      format_type: accordion_item
+      format_settings:
+        id: ''
+        classes: ''
+        formatter: closed
+        required_fields: false
+        description: ''
+      label: 'Legacy paths and redirects'
+      region: content
+    group_parent_and_menu:
+      children:
+        - field_display_groups
+        - field_include_in_menu
+        - field_menu_parent
+        - field_menu_link_text
+      parent_name: group_details
+      weight: 10
+      format_type: accordion_item
+      format_settings:
+        id: ''
+        classes: ''
+        formatter: closed
+        required_fields: false
+        description: ''
+      label: 'Parent group and menu'
+      region: content
+    group_related:
+      children:
+        - field_related_content
+      parent_name: group_details
+      weight: 12
+      format_type: accordion_item
+      format_settings:
+        id: ''
+        classes: ''
+        formatter: closed
+        required_fields: false
+        description: ''
+      label: 'Related content'
+      region: content
+    group_location:
+      children:
+        - field_location
+      parent_name: group_details
+      weight: 9
+      format_type: accordion_item
+      format_settings:
+        id: ''
+        classes: ''
+        formatter: closed
+        required_fields: false
+        description: ''
+      label: 'Associate a location to your content'
+      region: content
 id: node.page.default
 targetEntityType: node
 bundle: page
@@ -36,23 +143,33 @@ mode: default
 content:
   created:
     type: datetime_timestamp
-    weight: 15
+    weight: 10
     region: content
     settings: {  }
     third_party_settings: {  }
   field_audience:
-    weight: 5
+    weight: 7
     settings: {  }
     third_party_settings: {  }
     type: chosen_select
     region: content
   field_body_content:
-    weight: 8
+    weight: 3
     settings:
       rows: 5
       placeholder: ''
     third_party_settings: {  }
     type: text_textarea
+    region: content
+  field_display_groups:
+    weight: 11
+    settings:
+      match_operator: CONTAINS
+      size: 60
+      placeholder: ''
+      match_limit: 10
+    third_party_settings: {  }
+    type: entity_reference_autocomplete
     region: content
   field_featured_media:
     type: entity_browser_entity_reference
@@ -70,14 +187,14 @@ content:
     region: content
     third_party_settings: {  }
   field_include_in_menu:
-    weight: 16
+    weight: 12
     settings:
       display_label: true
     third_party_settings: {  }
     type: boolean_checkbox
     region: content
   field_location:
-    weight: 9
+    weight: 8
     settings:
       entity_browser: locations_browser
       field_widget_display: rendered_entity
@@ -92,7 +209,7 @@ content:
     type: entity_browser_entity_reference
     region: content
   field_menu_link_text:
-    weight: 18
+    weight: 14
     settings:
       size: 60
       placeholder: ''
@@ -126,12 +243,13 @@ content:
     region: content
   field_menu_parent:
     type: entity_reference_autocomplete
-    weight: 17
+    weight: 13
     region: content
     settings:
       match_operator: CONTAINS
       size: 60
       placeholder: ''
+      match_limit: 10
     third_party_settings:
       conditional_fields:
         f8932a24-33a5-4730-949c-28586c396c54:
@@ -156,13 +274,13 @@ content:
           entity_type: node
           bundle: page
   field_page_type:
-    weight: 2
+    weight: 1
     settings: {  }
     third_party_settings: {  }
     type: options_select
     region: content
   field_popular:
-    weight: 1
+    weight: 5
     settings:
       display_label: true
     third_party_settings: {  }
@@ -170,32 +288,34 @@ content:
     region: content
   field_redirects:
     type: string_textfield
-    weight: 11
+    weight: 9
     region: content
     settings:
       size: 60
       placeholder: ''
     third_party_settings: {  }
   field_related_content:
-    weight: 10
+    weight: 6
     settings:
       match_operator: CONTAINS
       size: 60
       placeholder: ''
+      match_limit: 10
     third_party_settings: {  }
     type: entity_reference_autocomplete
     region: content
   field_reviewer:
-    weight: 20
+    weight: 12
     settings:
       match_operator: CONTAINS
       size: 60
       placeholder: ''
+      match_limit: 10
     third_party_settings: {  }
     type: entity_reference_autocomplete
     region: content
   field_search_keywords:
-    weight: 19
+    weight: 11
     settings:
       size: 60
       placeholder: ''
@@ -203,7 +323,7 @@ content:
     type: string_textfield
     region: content
   field_summary:
-    weight: 7
+    weight: 2
     settings:
       rows: 2
       placeholder: ''
@@ -216,29 +336,20 @@ content:
     type: string_textarea
     region: content
   field_topics:
-    weight: 4
+    weight: 6
     settings: {  }
     third_party_settings: {  }
     type: chosen_select
     region: content
-  group_content:
-    type: group_selector_widget
-    weight: 3
-    region: content
-    settings:
-      widget: select
-      required: '1'
-      multiple: 0
-    third_party_settings: {  }
   moderation_state:
     type: moderation_state_default
-    weight: 21
+    weight: 13
     settings: {  }
     region: content
     third_party_settings: {  }
   path:
     type: path
-    weight: 12
+    weight: 7
     region: content
     settings: {  }
     third_party_settings: {  }
@@ -255,20 +366,20 @@ content:
         maxlength_js_label: 'Google will display search results at about 78 characters max for titles. Content limited to @limit characters, remaining: <strong>@remaining</strong>'
   uid:
     type: entity_reference_autocomplete
-    weight: 14
+    weight: 9
     region: content
     settings:
       match_operator: CONTAINS
       size: 60
       placeholder: ''
+      match_limit: 10
     third_party_settings: {  }
   url_redirects:
-    weight: 13
+    weight: 8
     region: content
     settings: {  }
     third_party_settings: {  }
 hidden:
-  field_group: true
   promote: true
   status: true
   sticky: true

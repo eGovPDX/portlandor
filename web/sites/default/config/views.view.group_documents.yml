@@ -22,11 +22,10 @@ dependencies:
 id: group_documents
 label: 'Group: Documents'
 module: views
-description: 'List view for documents and videos.'
+description: 'List view for documents, filterable by title or document type (taxonomy)'
 tag: ''
 base_table: media_field_data
 base_field: mid
-core: 8.x
 display:
   default:
     display_plugin: default
@@ -908,6 +907,8 @@ display:
               administrator: '0'
               sitewide_editor: '0'
             placeholder: ''
+            operator_limit_selection: false
+            operator_list: {  }
           is_grouped: false
           group_info:
             label: ''
@@ -956,6 +957,8 @@ display:
               sitewide_editor: '0'
             reduce: false
             argument: ''
+            operator_limit_selection: false
+            operator_list: {  }
           is_grouped: false
           group_info:
             label: ''
@@ -994,6 +997,8 @@ display:
             multiple: false
             remember_roles:
               authenticated: authenticated
+            operator_limit_selection: false
+            operator_list: {  }
           is_grouped: true
           group_info:
             label: Published
@@ -1146,16 +1151,16 @@ display:
         groups:
           1: AND
     cache_metadata:
-      max-age: -1
+      max-age: 0
       contexts:
-        1: 'languages:language_content'
-        2: 'languages:language_interface'
-        3: route
-        4: url
-        5: url.query_args
-        6: 'url.query_args:sort_by'
-        7: route.group
-        8: user.group_permissions
+        - 'languages:language_content'
+        - 'languages:language_interface'
+        - route
+        - route.group
+        - url
+        - url.query_args
+        - 'url.query_args:sort_by'
+        - user.group_permissions
       tags: {  }
   page_2:
     display_plugin: page
@@ -1167,20 +1172,6 @@ display:
       path: group/%group/documents
       display_description: ''
       relationships:
-        group_content:
-          id: group_content
-          table: media_field_data
-          field: group_content
-          relationship: none
-          group_type: group
-          admin_label: 'Media group content'
-          required: true
-          group_content_plugins:
-            'group_media:document': 'group_media:document'
-            'group_media:image': '0'
-            'group_media:video': '0'
-          entity_type: media
-          plugin_id: group_content_to_entity_reverse
         field_document_target_id:
           id: field_document_target_id
           table: media__field_document
@@ -1188,7 +1179,7 @@ display:
           relationship: none
           group_type: group
           admin_label: 'file from field_document'
-          required: true
+          required: false
           plugin_id: standard
       defaults:
         relationships: false
@@ -1228,6 +1219,8 @@ display:
               administrator: '0'
               sitewide_editor: '0'
             placeholder: ''
+            operator_limit_selection: false
+            operator_list: {  }
           is_grouped: false
           group_info:
             label: ''
@@ -1266,6 +1259,8 @@ display:
             multiple: false
             remember_roles:
               authenticated: authenticated
+            operator_limit_selection: false
+            operator_list: {  }
           is_grouped: false
           group_info:
             label: ''
@@ -1308,6 +1303,8 @@ display:
               administrator: '0'
               sitewide_editor: '0'
             reduce: false
+            operator_limit_selection: false
+            operator_list: {  }
           is_grouped: false
           group_info:
             label: ''
@@ -1327,6 +1324,49 @@ display:
           hierarchy: false
           error_message: true
           plugin_id: taxonomy_index_tid
+        bundle:
+          id: bundle
+          table: media_field_data
+          field: bundle
+          relationship: none
+          group_type: group
+          admin_label: ''
+          operator: in
+          value:
+            document: document
+          group: 1
+          exposed: false
+          expose:
+            operator_id: ''
+            label: ''
+            description: ''
+            use_operator: false
+            operator: ''
+            identifier: ''
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+            reduce: false
+            argument: null
+            operator_limit_selection: false
+            operator_list: {  }
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
+          entity_type: media
+          entity_field: bundle
+          plugin_id: bundle
       filter_groups:
         operator: AND
         groups:
@@ -1849,11 +1889,11 @@ display:
           plugin_id: field
       title: Documents
       arguments:
-        gid:
-          id: gid
-          table: group_content_field_data
-          field: gid
-          relationship: group_content
+        field_display_groups_target_id:
+          id: field_display_groups_target_id
+          table: media__field_display_groups
+          field: field_display_groups_target_id
+          relationship: none
           group_type: group
           admin_label: ''
           default_action: default
@@ -1882,9 +1922,7 @@ display:
           validate_options: {  }
           break_phrase: false
           not: false
-          entity_type: group_content
-          entity_field: gid
-          plugin_id: group_id
+          plugin_id: numeric
       access:
         type: perm
         options:
