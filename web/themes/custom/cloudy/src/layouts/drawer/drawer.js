@@ -34,7 +34,7 @@ Drupal.behaviors.drawer = {
       event.preventDefault();
       event.stopPropagation();
 
-      $('drawer').removeClass('is-active');
+      $('.drawer').removeClass('is-active');
     });
   }
 };
