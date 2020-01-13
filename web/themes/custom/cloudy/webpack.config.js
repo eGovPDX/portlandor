@@ -1,7 +1,5 @@
 const path = require('path');
-const globby = require('globby');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
-// const BrowserSyncPlugin = require('browser-sync-webpack-plugin');
 const babelConfig = require('./babel.config');
 
 const isProd = process.env.NODE_ENV === 'production';
@@ -41,21 +39,6 @@ module.exports = (env, argv) => ({
       filename: '[name].css',
       chunkFilename: '[id].css'
     }),
-    // new BrowserSyncPlugin(
-    //   // BrowserSync options
-    //   {
-    //     // browse to https://localhost:3000/ during development
-    //     host: 'localhost',
-    //     port: 3000,
-    //     // proxy the Lando endpoint
-    //     // through BrowserSync
-    //     proxy: 'https://portlandor.lndo.site/',
-    //     // Open the proxied site
-    //     open: 'local'
-    //   },
-    //   // plugin options
-    //   {}
-    // )
   ],
   module: {
     rules: [
