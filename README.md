@@ -135,18 +135,47 @@ We are using the Dev environment to integrate all the approved code from master 
 
 Once a deployment to Test has been tested and passes, the same set of changes should be deployed to Production by following the same basic procedure above.
 
-## Local build process for theme asset files
+## Theme
 
-There is a separate build process that can be run to compile asset files such as CSS and JS. It's automatically triggered everytime your Lando containers start up and whenever you run `lando refresh` so you should only need to manually run it if you're editing the .scss or .js source files.
+Note: The theme build process is automatically triggered everytime your Lando containers start up and whenever you run `lando refresh` so you should only need to manually run it if you're editing the .scss or .js source files.
 
-### Manually building Cloudy's asset files
+### Quick Start
 
-Make modifications to the desired SCSS and JavaScript files in the theme. Never modify css/style.bundle.css or js/main.bundle.js directly. We build style.bundle.css as part of our CI, you should run the development or build script locally to compile your scss files into style.bundle.css.
+1. Run `lando npm start`
+2. Go to `https://portlandor.lndo.site/pattern-lab`
+
+Here are some additional commands you may find useful.
+
+- Run `lando npm run build` to build both the theme assets and Pattern Lab.
+- Run `lando npm run watch` to build both the thme assets and  Pattern Lab, watch for changes and trigger rebuilds for both.
+
+### Pattern Lab
+
+Pattern Lab is tool used to document the design choices and `.twig` templates that make up the Cloudy theme.
+
+To get started with Pattern Lab,
+
+Here are some useful commands when working with Pattern Lab:
+
+- Run `lando npm run build:pl` to build the Pattern Lab site.
+- Run `lando npm run watch:pl` to build the Pattern Lab site, watch for changes and trigger rebuilds.
+- Run `lando npm run clean:pl` to delete the Pattern Lab site.
+
+#### *Note*
+
+There is a known issue with PL v3 builds erroneously reporting missing template files if they exist outside of the `pattern-lab` directory. However, these are false positives. Pattern Lab is finding the file and rendering the pattern.
+
+For more information, see: [Pattern Lab Github Issue #1116](https://github.com/pattern-lab/patternlab-node/issues/1116)
+
+### Cloudy's asset files
+
+Note: Make modifications to the desired SCSS and JavaScript files in the theme. Never modify `style.bundle.css`, `main.bundle.js`, or anything in the `dist` direction directly. We build `style.bundle.css` as part of our CI, you should run the development or build script locally to compile your scss files into style.bundle.css.
 
 You have a couple of options for manually compiling the asset files:
 
-- Run `lando npm run dev` in a second terminal/shell window to launch webpack, watch for changes to the CSS and JS source files, and automatically compile them whenever they are updated.
-- Run `lando npm run build:dev` to launch webpack and compile the files. (It doesn't watch for future changes to the source files.)
+- Run `lando npm run build:wp` to build the Pattern Lab site.
+- Run `lando npm run watch:wp` to build the Pattern Lab site, watch for changes and trigger rebuilds.
+- Run `lando npm run clean:wp` to delete the Pattern Lab site.
 
 You can run `lando npm install` if you need to install/update your Node dependencies.
 

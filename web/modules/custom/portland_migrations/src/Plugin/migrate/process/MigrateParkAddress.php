@@ -26,13 +26,15 @@ class MigrateParkAddress extends ProcessPluginBase {
 
     $zip = $row->getSourceProperty('Zip');
     $title = $row->getSourceProperty('Property');
+    $lat = $row->getSourceProperty('latitude');
+    $long = $row->getSourceProperty('longitude');
 
     // Create the Location
     $location = Node::create([
       'type' => 'location',
       'uid' => 1,
       'langcode' => \Drupal::languageManager()->getDefaultLanguage()->getId(),
-      'title' => $title.' main address',
+      'title' => $title.' main entrance',
       'status' => 1,
       // 'field_summary' => $title.' main address',
       'field_address_or_entrance' => [
@@ -42,6 +44,7 @@ class MigrateParkAddress extends ProcessPluginBase {
         'administrative_area' => 'OR',
         'postal_code' => ( (strlen($zip) == 5) ? $zip : '' ),
       ],
+      'field_geolocation' => "POINT($long $lat)", // The magic format to import longitude and latitude
     ]);
     $location->save();
     $location->status->value = 1;

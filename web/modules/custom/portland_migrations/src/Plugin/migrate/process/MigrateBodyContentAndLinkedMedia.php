@@ -87,48 +87,63 @@ class MigrateBodyContentAndLinkedMedia extends ProcessPluginBase {
 
         $media_type = $this->getMediaType($filename);
 
-        
-        // FIND OR CREATE MEDIA ENTITY ////////////////
-        // using the uri, see if the media entity already exists. if so, reference it. if not, create it.
-        // we need to make sure we're not creating duplicate files. need separate queries for images and
-        // documents based on $media_type
+        // Search for possible duplicates using filename sans POG content id
+        $realpath_dir = drupal_realpath($download_dir_uri);
+        $filename_search = str_replace($content_id, '*', $filename);
+        $files = glob($realpath_dir . '/' . $filename_search);
 
-        if ($media_type == "document") {
-          $query = "SELECT entity_id FROM file_managed FM 
-                    INNER JOIN media__field_document FD on FM.fid = FD.field_document_target_id
-                    WHERE uri = '$destination_uri'";
-        } else {
-          $query = "SELECT entity_id FROM file_managed FM 
-                    INNER JOIN media__image IMG on FM.fid = IMG.image_target_id
-                    WHERE uri = '$destination_uri'";
+        // if file exists with same content id, grab existing file and use it for link.
+        // if file exists with different content id, treat it as new but add a note to the log.
+        unset($downloaded_file);
+      
+        if ($files === false) {
+          // return false means an error occurred searching for files. is it even worth the effort to handle it?
         }
-        $query = $_SESSION['policies_dbConn']->query($query);
-        $result = $query->fetchAll();
 
-        if (!isset($result) || !is_array($result) || count($result) < 1) {
-          // before saving new file, search for possible duplicates.
-          // search criteria: same filename (sans POG contentid), same filesize
-          $realpath_dir = drupal_realpath($download_dir_uri);
-          $filename_search = str_replace($content_id, '*', $filename);
+        if (is_array($files) && count($files) > 0) {
+          // a matching filename pattern was found...
+          // if the content ids match, link to existing file.
+          // if the ids don't match, treat it as new file and log possible duplicate.
 
-          $test = true;
-          $files = glob($realpath_dir . '/' . $filename_search);
-
-          if ($files === false) {
-            // an error occurred searching for files
-            // do something?
-            $halt = true;
-          }
-
-          if (is_array($files) && count($files) > 0) {
-            // file may already exist, log it for review
+          // ids match?
+          if (strpos($files[0], $content_id) !== FALSE) {
+            // use existing file. glob only returns path; we need to get fid and load file entity.
+            $query = "SELECT fid FROM file_managed FM where uri = '" . $destination_uri . "'";
+            $query = $_SESSION['policies_dbConn']->query($query);
+            $result = $query->fetchAll();
+            if (is_array($result) && count($result) > 1) {
+              // duplicate document media entities exist! log it, but then use the first one found.
+              $message = "Duplicate media entities found for $destination_uri. Using first one found, but consider removing duplicates.";
+              \Drupal::logger('portland_migrations')->notice($message);
+            }
+            if (count($result) < 1) {
+              // TODO: Need to handle this, create file?
+              $message = "File exists in the file system but not in the database, SKIPPING. $files[0]";
+              \Drupal::logger('portland_migrations')->notice($message);
+              continue;
+            }
+            $fid = $result[0]->fid;
+            $downloaded_file = \Drupal\file\Entity\File::load($fid);
+        
+          } else {
+            // file may already exist, log it for review but use it.
+            // all potential duplicates are downloaded and saved as individual files; they
+            // must be manually cleaned up later, so this logging is important.
             $message = "Possible duplicate file from POG found--same filename with different content id.<br><br>File: $realpath_dir/$filename_search<br>Page: $page_title<br>POG URL: $pog_url";
             \Drupal::logger('portland_migrations')->warning($message);
+
+            // download and save managed file if it's not a dupe
+            try {
+              $downloaded_file = system_retrieve_file($url, $destination_uri, TRUE);
+            }
+            catch (Exception $e) {
+              $message = "Error occurred while trying to download URL target at " . $url . " and create managed file. Skipping file. Page: $page_title. Exception: " . $e->getMessage();
+              \Drupal::logger('portland_migrations')->error($message);
+              continue;
+            }
           }
-
-          // media entity doesn't exist yet; download file and create entity...
-
-          // download and save managed file
+        } else {
+          // download and save managed file if it's not a dupe
           try {
             $downloaded_file = system_retrieve_file($url, $destination_uri, TRUE);
           }
@@ -137,70 +152,19 @@ class MigrateBodyContentAndLinkedMedia extends ProcessPluginBase {
             \Drupal::logger('portland_migrations')->error($message);
             continue;
           }
-
-          // when running this in multidev, an error is trown:
-          // Error: Call to a member function id() on bool. Most likely occurring because $downloaded_file is false.
-          // check for that condition and report it.
-          if ($downloaded_file === FALSE) {
-            $message = "Error retrieving newly downloaded file, likely 404.<br><br>Page: $page_title<br>URL: $pog_url";
-            \Drupal::logger('portland_migrations')->error($message);
-            continue;
-          } else {
-            // create media entity for file (image or document)
-            if ($media_type == "document") {
-              $media = Media::create([
-                'bundle' => 'document',
-                'uid' => 1,
-                'langcode' => \Drupal::languageManager()->getDefaultLanguage()->getId(),
-                'name' => $link_text,
-                'status' => 1,
-                'field_document' => [
-                  'target_id' => $downloaded_file->id()
-                ],
-              ]);
-              $plugin_id = "group_media:document";
-            } else if ($media_type == "image") {
-              $media = Media::create([
-                'bundle' => 'image',
-                'uid' => 1,
-                'langcode' => \Drupal::languageManager()->getDefaultLanguage()->getId(),
-                'name' => $link_text,
-                'status' => 1,
-                'image' => [
-                  'target_id' => $downloaded_file->id()
-                ],
-              ]);
-              $plugin_id = "group_media:image";
-            }
-            $media->save();
-            $media->setPublished(TRUE)
-                  ->save();
-
-            // now create group content entity to link this media item to a group.
-            // Charter, code, and policies group is 141.
-            $group = \Drupal\group\Entity\Group::load(141);
-            $group->addContent($media, $plugin_id);
-          }
-        } else {
-          // media entity already exists, get it
-          $entity_id = $result[0]->entity_id;
-          $media = Media::load($entity_id);
         }
 
-        if ($downloaded_file) {
-          $file_uri = $media->get('field_document')->entity->getFileUri();
-          $file_url = file_url_transform_relative(file_create_url($file_uri));
-          $link->setAttribute("href", $file_url);
+        if ($downloaded_file === FALSE || is_null($downloaded_file)) {
+          $message = "Error retrieving file, possible 404 or temp dir can't be written to.<br><br>Page: $page_title<br>URL: $pog_url";
+          \Drupal::logger('portland_migrations')->error($message);
+          continue;
         }
 
-        // NOTE: Keep the original link tag but change the link href.
-        // // uuid is needed to create entity-embed tag
-        // $uuid = $media->uuid();
-        // // replace <a> or <img> with <entity-embed>
-        // $embed_tag_node = $dom->createElement("drupal-entity");
-        // $newnode = $dom->appendChild($embed_tag_node);
-        // $newnode = $this->buildEmbedTagNode($newnode, $embed_tag_node, $uuid, $media_type);
-        // $link->parentNode->replaceChild($newnode, $link);
+        // modify link to use file URL
+        $file_uri = $downloaded_file->getFileUri();
+        $file_url = file_url_transform_relative(file_create_url($file_uri));
+        $link->setAttribute("href", $file_url);
+
       }
       $output = Html::serialize($dom);
       $value = $output;
@@ -211,7 +175,7 @@ class MigrateBodyContentAndLinkedMedia extends ProcessPluginBase {
 
   protected function generateDownloadDirectoryUri() {
     // prepare download directory
-    $folder_name = date("Y-m") ;
+    $folder_name = date("Y-m");
     $folder_uri = file_build_uri($folder_name);
     return $folder_uri;
   }
@@ -226,10 +190,6 @@ class MigrateBodyContentAndLinkedMedia extends ProcessPluginBase {
     } else {
       return true;
     }
-  }
-
-  protected function getContentId($url) {
-
   }
 
   protected function buildPogFilename($url) {
@@ -302,18 +262,4 @@ class MigrateBodyContentAndLinkedMedia extends ProcessPluginBase {
     }
   }
 
-  protected function buildEmbedTagNode($newnode, $embed_tag_node, $uuid, $media_type) {
-    $newnode->setAttribute("data-entity-type", "media");
-    $newnode->setAttribute("data-entity-uuid", $uuid);
-    $newnode->setAttribute("data-langcode", "en");
-    if ($media_type == "document") {
-      $newnode->setAttribute("data-embed-button", "document_browser");
-      $newnode->setAttribute("data-entity-embed-display", "view_mode:media.embedded");
-    } else {
-      $newnode->setAttribute("data-embed-button", "image_browser");
-      $newnode->setAttribute("data-entity-embed-display", "media_image");
-      $newndoe->setAttribute("data-align", "right");
-    }
-    return $newnode;
-  }
 }
