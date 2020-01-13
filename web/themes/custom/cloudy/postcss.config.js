@@ -13,6 +13,7 @@ const tailwind = require('tailwindcss');
 //   defaultExtractor: content => content.match(/[A-Za-z0-9-_:/]+/g) || []
 // });
 
+/* eslint-disable-next-line no-unused-vars */
 module.exports = ({ file, options, env }) => {
   return {
     plugins: [
