@@ -10,6 +10,7 @@
 - `date`: string - date when tile was published
 - `overline`: string: Overline text
 - `isColor`: boolean default(true): Is there background color
+- `is_not_published`: boolean - If set to true, search result gets a "Unpublished" danger badge
 
 ## Usage
 
