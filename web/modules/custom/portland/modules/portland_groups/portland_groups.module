@@ -74,16 +74,12 @@ function _portland_groups_assign_media_to_group($entity) {
   }
 
   // get group identified in first delta in field_display_groups
+  // and assign entity to group.
   $group_id = $entity->get('field_display_groups')->getValue()[0]['target_id'];
   if (!is_null($group_id)) {
     $group = \Drupal\group\Entity\Group::load($group_id);
-
-    $media_group = \Drupal\group\Entity\GroupContent::create([
-      'gid' => $group_id,
-      'entity_id' => $entity->id(),
-      'type' => $group->getGroupType()->id() . '-group_' . $entity->getEntityTypeId() . '-' . $entity->bundle(),
-    ]);
-    $media_group->save();
+    $plugin_id = "group_" . $group->getGroupType()->id() . ":" . $entity->bundle();
+    $group->addContent($entity, $plugin_id);
   }
 }
 
