@@ -1,8 +1,13 @@
+uuid: 3a7da01d-48a2-41b6-835f-18f745481403
 langcode: en
 status: open
 dependencies:
   module:
     - honeypot
+third_party_settings:
+  honeypot:
+    honeypot: true
+    time_restriction: true
 open: null
 close: null
 weight: 0
@@ -13,7 +18,7 @@ id: website_feedback
 title: 'Website feedback'
 description: 'This webform is used to gather website feedback from users and editors.'
 category: ''
-elements: "page_you_last_viewed:\n  '#type': textfield\n  '#title': 'Page you last viewed'\n  '#description': 'You can change this address if you would rather comment on a different page.'\n  '#autocomplete': 'off'\n  '#default_value': '[server:HTTP_REFERER]'\nfeedback:\n  '#type': textarea\n  '#title': 'How can we improve?'\n  '#description': 'Be specific so we can make the site better.'\n  '#required': true\nemail_address:\n  '#type': email\n  '#title': 'Your email'\n  '#description': 'If you would like us to follow up with you, please enter your email address. (optional)'\nip_address:\n  '#type': hidden\n  '#title': 'IP Address'\n  '#default_value': '[current-user:ip-address]'\nactions:\n  '#type': webform_actions\n  '#title': 'Submit button(s)'\n  '#attributes':\n    class:\n      - 'd-flex justify-content-around'\n  '#submit__attributes':\n    class:\n      - w-50"
+elements: "subject:\n  '#type': select\n  '#title': 'Type of feedback'\n  '#options':\n    'General feedback': 'General website feedback'\n    'Website problem': 'Report a website problem'\n    'Feature request': 'Request a new feature'\n    'Info request': 'Request more information'\n    Other: Other\n  '#empty_option': '-- Select --'\n  '#other__maxlength': '500'\n  '#required': true\nfeedback:\n  '#type': textarea\n  '#title': 'How can we improve?'\n  '#description': 'Please be specific, so we can better assist you.'\n  '#required': true\nyour_name:\n  '#type': textfield\n  '#title': 'Your name'\n  '#maxlength': '100'\nemail_address:\n  '#type': email\n  '#title': 'Your email'\n  '#description': 'If you would like us to follow up with you, please provide your email address.'\n  '#default_value': '[current-user:mail]'\npage_you_last_viewed:\n  '#type': textfield\n  '#title': 'Page you last viewed'\n  '#description': 'You can change this address if you would rather comment on a different page.'\n  '#autocomplete': 'off'\n  '#default_value': '[server:HTTP_REFERER]'\nip_address:\n  '#type': hidden\n  '#title': 'IP Address'\n  '#default_value': '[current-user:ip-address]'\nzendesk_ticket_id:\n  '#type': hidden\n  '#title': 'Zendesk ticket id'\ncomputed_email_address:\n  '#type': webform_computed_twig\n  '#title': 'Computed email address'\n  '#display_on': none\n  '#mode': text\n  '#template': '{% if data.email_address %}{{ data.email_address }}{% else %}anonymous@portlandoregon.gov{% endif %}'\n  '#whitespace': trim\n  '#store': true\n  '#ajax': true\nactions:\n  '#type': webform_actions\n  '#title': 'Submit button(s)'\n  '#attributes':\n    class:\n      - 'd-flex justify-content-around'\n  '#submit__attributes':\n    class:\n      - w-50"
 css: 'd-flex justify-content-around'
 javascript: ''
 settings:
@@ -58,7 +63,9 @@ settings:
   submission_label: ''
   submission_log: false
   submission_views: {  }
-  submission_views_replace: {  }
+  submission_views_replace:
+    webform_routes: {  }
+    node_routes: {  }
   submission_user_columns: {  }
   submission_user_duplicate: false
   submission_access_denied: default
@@ -123,8 +130,8 @@ settings:
   entity_limit_total_interval: null
   entity_limit_user: null
   entity_limit_user_interval: null
-  purge: none
-  purge_days: null
+  purge: all
+  purge_days: 14
   results_disabled: false
   results_disabled_ignore: false
   token_view: false
@@ -182,7 +189,7 @@ access:
 handlers:
   email:
     id: email
-    label: '[server:HTTP_REFERER]Send email after receiving feedback form submission[server:HTTP_REFERER]'
+    label: 'Send email after receiving feedback form submission'
     handler_id: email
     status: true
     conditions: {  }
@@ -196,13 +203,12 @@ handlers:
       cc_options: {  }
       bcc_mail: ''
       bcc_options: {  }
-      from_mail: '[site:mail]'
+      from_mail: '[webform_submission:values:computed_email_address]'
       from_options: {  }
-      from_name: '[site:name]'
-      subject: 'Portland.gov feedback form submission'
-      body: "<p><strong>Submitted on</strong>: [webform_submission:created]</p>\r\n\r\n<p><strong>Submitted by</strong>: [webform_submission:user]</p>\r\n\r\n<p><strong>User Agent</strong>: [server:HTTP_USER_AGENT]</p>\r\n[webform_submission:values]"
-      excluded_elements:
-        ip_address: ip_address
+      from_name: '[webform_submission:values:your_name:raw]'
+      subject: '[webform_submission:values:subject:raw] - [webform_submission:values:feedback]'
+      body: "<p>[webform_submission:values]</p>\r\n\r\n<p><strong>Submitted on</strong>: [webform_submission:created]</p>\r\n\r\n<p><strong>User Agent</strong>: [server:HTTP_USER_AGENT]</p>"
+      excluded_elements: {  }
       ignore_access: false
       exclude_empty: true
       exclude_empty_checkbox: false
@@ -216,8 +222,4 @@ handlers:
       sender_name: ''
       theme_name: cloudy
       parameters: {  }
-uuid: 3a7da01d-48a2-41b6-835f-18f745481403
-third_party_settings:
-  honeypot:
-    honeypot: true
-    time_restriction: true
+
