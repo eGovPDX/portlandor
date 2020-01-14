@@ -10,7 +10,7 @@
 - `date_end`: string - An end date for the event. Requires the inclusion of a start date
 - `time_start`: string - A start time for the event. Can be used without an end time
 - `time_end`: string - An end time for the event. Requires the inclusion of a start time
-- `is_not_published`: boolean - If set to true, search result gets a "Unpublished" danger badge
+- `is_draft`: boolean - If set to true, search result gets a "Unpublished" danger badge
 
 ## Usage
 

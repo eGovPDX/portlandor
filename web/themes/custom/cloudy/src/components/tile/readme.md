@@ -10,14 +10,14 @@
 - `date`: string - date when tile was published
 - `overline`: string: Overline text
 - `isColor`: boolean default(true): Is there background color
-- `is_not_published`: boolean - If set to true, search result gets a "Unpublished" danger badge
+- `is_draft`: boolean - If set to true, search result gets a "Unpublished" danger badge
 
 ## Usage
 
 ```twig
 {% include "@components/tile/tile.twig" with {
   "text": "This Is An Example Of Text",
-  "img": 
+  "img":
     {
     "src": "/image/source",
     "alt": "alt text",
