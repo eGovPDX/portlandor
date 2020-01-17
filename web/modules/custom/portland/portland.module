@@ -224,6 +224,29 @@ function portland_group_presave(GroupInterface $group) {
     }
 }
 
+// Support "/" as part of shortname
+function _clean_group_shortname(&$group_shortname) {
+    // Check if the shortname contains "/"
+    if (strpos($group_shortname, '/') !== false) {
+        // Split the string and clean each part
+        $original_parts = explode("/", $group_shortname);
+        $parts = [];
+        foreach($original_parts as $original_part){
+            // Skip empty string
+            if($original_part == "") continue;
+            $parts[] = \Drupal::service("pathauto.alias_cleaner")->cleanString($original_part);
+        }
+        // The string only contains "/"
+        if(count($parts) == 0) return false;
+        // Put everything back again
+        $group_shortname = implode("/", $parts);
+    }
+    // Check if the alias already taken, return false if it's taken
+    $pathStorage = \Drupal::entityTypeManager()->getStorage('path_alias');
+    $aliases = $pathStorage->loadByProperties(['alias' => '/'.$group_shortname]);
+    if(count($aliases) > 0) return false;
+    return true;
+}
 
 /**
  * Implements hook_ENTITY_TYPE_insert().
@@ -826,6 +849,8 @@ function portland_form_alter(&$form, &$form_state, $form_id) {
         'media_map_add_form'
     ];
 
+    $group_form_prefix = 'group_';
+
     if( in_array($form_id, $form_array_with_group_field) ) {
         // Set the default value as the node's current group
         $node = $form_state->getFormObject()->getEntity();
@@ -838,5 +863,18 @@ function portland_form_alter(&$form, &$form_state, $form_id) {
                 }
             }
         }
+    }
+    else if(substr_compare($form_id, $group_form_prefix, 0, strlen($group_form_prefix)) === 0) {
+            $form['#validate'][] = '_validate_group_shortname';
+    }
+}
+
+function _validate_group_shortname(&$form, \Drupal\Core\Form\FormStateInterface $form_state) {
+    if ($form_state->hasValue('field_shortname_or_acronym')) {
+       $group_shortname = $form_state->getValue('field_shortname_or_acronym');
+  
+       if (!_clean_group_shortname($group_shortname[0]['value'])) {
+          $form_state->setErrorByName('field_shortname_or_acronym', t('Invalid group shortname'));
+       }
     }
 }
