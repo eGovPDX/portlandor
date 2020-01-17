@@ -4,14 +4,15 @@ import Drupal from 'Drupal';
 Drupal.behaviors.tab_handler = {
   attach(context, settings) {
     var urlHash = window.location.hash;
-    var selectedTabIndex = 0;
+    var selectedTabId = 0;
     var selectedTab;
     var focusedTab;
 
     // on initial load, check for tab navigation fragment in URL and activate indicated tab
-    if (urlHash.indexOf('#pane-') > -1) {
-      selectedTabIndex = getSelectedTabIndex(urlHash);
-      selectedTab = $('#tab-' + selectedTabIndex);
+    // hash no longer starts with #pane-
+    if (urlHash.indexOf('#') == 0) {
+      selectedTabId = urlHash.substr(1);
+      selectedTab = $('#tab-' + selectedTabId);
       selectedTab.tab('show');
       selectTab(urlHash, selectedTab);
     }
