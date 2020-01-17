@@ -109,7 +109,7 @@ build_and_deploy: &build_and_deploy
           git remote add pantheon ssh://codeserver.dev.5c6715db-abac-4633-ada8-1c9efe354629@codeserver.dev.5c6715db-abac-4633-ada8-1c9efe354629.drush.in:2222/~/repository.git
           git config --global user.email "$eGov_Email"
           # Compile SCSS in our custom theme
-          cd web/themes/custom/cloudy && npm run build && cd /var/www/html
+          cd web/themes/custom/cloudy && npm run build:ci && cd /var/www/html
           # Exclude dependencies
           rm -rf web/themes/custom/cloudy/node_modules
           # Force add all files to include those excluded by .gitignore
@@ -118,7 +118,7 @@ build_and_deploy: &build_and_deploy
           # Pantheon site will use the wrong DB if the local is kept
           git rm --cache  web/sites/default/settings.local.php --ignore-unmatch
           git rm -r --cache web/sites/default/files --ignore-unmatch
-          
+
           # Set the git commit user name and email address so it's clear in Pantheon log who made the change
           if [[ $CIRCLE_USERNAME = "" ]]; then
             git config --global user.name Dependabot
@@ -174,10 +174,10 @@ build_and_deploy: &build_and_deploy
             terminus connection:set portlandor.$PANTHEON_ENV git
             # Force push $CIRCLE_BRANCH to Pantheon as branch named $PANTHEON_ENV
             git push -f pantheon $CIRCLE_BRANCH:$PANTHEON_ENV
-            
+
             if [[ $CIRCLE_BRANCH =~ ^dependabot\/ ]]; then
               echo "Dependabot branch detected..."
-              
+
               # Set the connection type to SFTP
               terminus connection:set portlandor.$PANTHEON_ENV sftp
 
@@ -288,7 +288,7 @@ run_tests: &run_tests
           # Log in via terminus first. Required for tests that require user login.
           terminus auth:login --machine-token="$eGov_Terminus" --email="$eGov_Email" && terminus aliases
           cd tests
-          
+
           # Split feature files by timing data so all split test jobs will finish around the same time
           TESTFILES=$(circleci tests glob "features/*.feature"  | circleci tests split --split-by=timings)
           if [[ $PANTHEON_ENV = "master" ]]; then
