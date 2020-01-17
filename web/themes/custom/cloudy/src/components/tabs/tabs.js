@@ -11,7 +11,7 @@ Drupal.behaviors.tab_handler = {
     // on initial load, check for tab navigation fragment in URL and activate indicated tab
     // hash no longer starts with #pane-
     if (urlHash.indexOf('#') == 0) {
-      selectedTabId = urlHash.substr(1);
+      selectedTabId = urlHash.substr(1); // remove the pound sign
       selectedTab = $('#tab-' + selectedTabId);
       selectedTab.tab('show');
       selectTab(urlHash, selectedTab);
@@ -69,7 +69,7 @@ Drupal.behaviors.tab_handler = {
 
       // aria-hidden should be true for all but visible pane; bootstrap doesn't handle this
       $('#serviceModesContent .tab-pane').attr('aria-hidden', 'true');
-      var panel = $(linkHash);
+      var panel = $("#pane-" + linkHash.substr(1));
       panel.attr('aria-hidden', false);
 
       // focus the active tab; necessary in the case of page reload or direct navigation
