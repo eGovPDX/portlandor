@@ -1,0 +1,51 @@
+{% set isDismissible = isDismissible|default(FALSE) %}
+{% set type = type|default('info') %}
+{% set id = id|default('pl-demo-alert') %}
+{% set changed = changed|default(random(1262332800, 1577865600)) %} {# random timestamp between 2010 and 2020 #}
+
+{% set classes= [
+    'cloudy-alert',
+	  'cloudy-alert--' ~ type,
+    isDismissible ? 'cloudy-alert--dismissible',
+]%}
+
+<div class="{{ classes|join(' ') }}"
+     data-nid="{{ id }}"
+     data-changed="{{ changed }}"
+     {% if isDismissible is same as(true) %}
+        role="alert"
+        aria-live="polite"
+    {% endif %}>
+  <div>
+    <h5 class="cloudy-alert__title">
+      {{ title }}
+      {% if is_draft %}
+        {% include "@components/badge/badge.twig" with {
+          "text": "Unpublished",
+          "type": "danger",
+        } only %}
+      {% endif %}
+    </h5>
+    <div class="cloudy-alert__body">
+      {{ content }}
+    </div>
+    {% if showTimestamp %}
+      <span class="small">
+        Last updated: {{ changed|date('g:i a M j, Y') }}
+      </span>
+    {% endif %}
+  </div>
+  {% if isDismissible %}
+    <button type="button"
+            class="cloudy-alert__close"
+            data-dismiss="alert"
+            aria-label="Dismiss notification">
+      <span aria-hidden="true" class="cloudy-alert__close-contents">
+        {% include "@elements/icon/fa.twig" with {
+          name: 'window-close',
+        } only %}
+        Dismiss
+      </span>
+    </button>
+  {% endif %}
+</div>
