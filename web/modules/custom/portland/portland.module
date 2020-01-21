@@ -904,12 +904,25 @@ function _validate_group_shortname(&$form, \Drupal\Core\Form\FormStateInterface 
        $form_state->setValue('field_shortname_or_acronym', ['0' => ['value' => $group_shortname,], ]);
   
        if ($is_valid_shortname) {
-        // Check if the alias already taken
+        $group_id = $form_state->getformObject()->getEntity()->id();
         $pathStorage = \Drupal::entityTypeManager()->getStorage('path_alias');
         $aliases = $pathStorage->loadByProperties(['alias' => '/'.$group_shortname]);
-        if(count($aliases) > 0) {
-            $existing_alias = array_values($aliases)[0]->alias->value;
-            $form_state->setErrorByName('field_shortname_or_acronym', t('Group shortname already taken: <a href="'.$existing_alias.'">'.$existing_alias.'</a>'));
+        // If this is a new group, $group_id will be null.
+        if($group_id == null){
+            // Check if the alias already taken by any entity
+            if(count($aliases) > 0) {
+                $existing_alias = array_values($aliases)[0]->alias->value;
+                $form_state->setErrorByName('field_shortname_or_acronym', t('The alias is already taken: <a href="'.$existing_alias.'">'.$existing_alias.'</a>'));
+            }
+        }
+        else {
+            // If this is an existing group, check if the alias is already taken by anything OTHER THAN the current group
+            foreach($aliases as $alias) {
+                if($alias->path->value != "/group/$group_id") {
+                    $form_state->setErrorByName('field_shortname_or_acronym', t('The alias is already taken: <a href="'.$alias.'">'.$alias.'</a>'));
+                    break;
+                }
+            }
         }
        }
        else {
