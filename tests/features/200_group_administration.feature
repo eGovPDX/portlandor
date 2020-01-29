@@ -17,14 +17,14 @@ Feature: Create group
 
     When I fill in "edit-label-0-value" with "Behat test group"
     And I fill in "edit-field-official-organization-name-0-value" with "Official name of Behat test group"
-    And I fill in "edit-field-shortname-or-acronym-0-value" with "behat-test"
-    And I fill in "edit-field-group-path-0-value" with "behat-test"
-    And I click "Contact Information"
+    And I fill in "edit-field-summary-0-value" with "This is a test summary for the Behat Test group"
+    And I click "Group Details"
     And I fill in "edit-field-address-0-address-address-line1" with "123 Fake St"
     And I fill in "edit-field-address-0-address-locality" with "Portland"
     And I select "OR" from "edit-field-address-0-address-administrative-area"
     And I fill in "edit-field-address-0-address-postal-code" with "97201"
-    And I fill in "edit-field-summary-0-value" with "This is a test summary for the Behat Test group"
+    And I click "Administrative Fields (Site Admins Only)"
+    And I fill in "edit-field-group-path-0-value" with "behat-test"
     And I press "Create Bureau/office"
 
     Then I should see "This is a test summary for the Behat Test group"
