@@ -5,8 +5,12 @@ dependencies:
   config:
     - core.entity_view_mode.user.group_memberships
   module:
+    - csv_serialization
     - group
+    - rest
+    - serialization
     - user
+    - views_data_export
 _core:
   default_config_hash: wTJRNzsLVTenCALONNlVfgm_pBOlqucSPuVFLOD56ck
 id: user_admin_people
@@ -50,7 +54,7 @@ display:
       pager:
         type: full
         options:
-          items_per_page: 50
+          items_per_page: 25
           offset: 0
           id: 0
           total_pages: 0
@@ -256,6 +260,70 @@ display:
           type: user_name
           entity_type: user
           entity_field: name
+        mail:
+          id: mail
+          table: users_field_data
+          field: mail
+          relationship: none
+          group_type: group
+          admin_label: ''
+          label: ''
+          exclude: false
+          alter:
+            alter_text: false
+            text: ''
+            make_link: false
+            path: ''
+            absolute: false
+            external: false
+            replace_spaces: false
+            path_case: none
+            trim_whitespace: false
+            alt: ''
+            rel: ''
+            link_class: ''
+            prefix: ''
+            suffix: ''
+            target: ''
+            nl2br: false
+            max_length: 0
+            word_boundary: true
+            ellipsis: true
+            more_link: false
+            more_link_text: ''
+            more_link_path: ''
+            strip_tags: false
+            trim: false
+            preserve_tags: ''
+            html: false
+          element_type: ''
+          element_class: ''
+          element_label_type: ''
+          element_label_class: ''
+          element_label_colon: false
+          element_wrapper_type: ''
+          element_wrapper_class: ''
+          element_default_classes: true
+          empty: ''
+          hide_empty: false
+          empty_zero: false
+          hide_alter_empty: true
+          click_sort_column: value
+          type: basic_string
+          settings: {  }
+          group_column: value
+          group_columns: {  }
+          group_rows: true
+          delta_limit: 0
+          delta_offset: 0
+          delta_reversed: false
+          delta_first_last: false
+          multi_type: separator
+          separator: ', '
+          field_api_classes: false
+          plugin_id: field
+          entity_type: user
+          entity_field: mail
         status:
           id: status
           table: users_field_data
@@ -577,70 +645,6 @@ display:
           destination: true
           entity_type: user
           plugin_id: entity_operations
-        mail:
-          id: mail
-          table: users_field_data
-          field: mail
-          relationship: none
-          group_type: group
-          admin_label: ''
-          label: ''
-          exclude: true
-          alter:
-            alter_text: false
-            text: ''
-            make_link: false
-            path: ''
-            absolute: false
-            external: false
-            replace_spaces: false
-            path_case: none
-            trim_whitespace: false
-            alt: ''
-            rel: ''
-            link_class: ''
-            prefix: ''
-            suffix: ''
-            target: ''
-            nl2br: false
-            max_length: 0
-            word_boundary: true
-            ellipsis: true
-            more_link: false
-            more_link_text: ''
-            more_link_path: ''
-            strip_tags: false
-            trim: false
-            preserve_tags: ''
-            html: false
-          element_type: ''
-          element_class: ''
-          element_label_type: ''
-          element_label_class: ''
-          element_label_colon: false
-          element_wrapper_type: ''
-          element_wrapper_class: ''
-          element_default_classes: true
-          empty: ''
-          hide_empty: false
-          empty_zero: false
-          hide_alter_empty: true
-          click_sort_column: value
-          type: basic_string
-          settings: {  }
-          group_column: value
-          group_columns: {  }
-          group_rows: true
-          delta_limit: 0
-          delta_offset: 0
-          delta_reversed: false
-          delta_first_last: false
-          multi_type: separator
-          separator: ', '
-          field_api_classes: false
-          plugin_id: field
-          entity_type: user
-          entity_field: mail
       filters:
         combine:
           id: combine
@@ -753,6 +757,8 @@ display:
             description: ''
             use_operator: false
             operator: roles_target_id_op
+            operator_limit_selection: false
+            operator_list: {  }
             identifier: role
             required: false
             remember: false
@@ -760,22 +766,33 @@ display:
             remember_roles:
               authenticated: authenticated
               anonymous: '0'
+              publisher: '0'
+              policy_author: '0'
+              policy_editor: '0'
+              council_author: '0'
+              council_clerk: '0'
+              park_editor: '0'
+              code_editor: '0'
+              group_creator: '0'
+              alert_editor: '0'
+              sitewide_editor: '0'
               administrator: '0'
             reduce: false
-            operator_limit_selection: false
-            operator_list: {  }
           is_grouped: false
           group_info:
-            label: ''
-            description: ''
-            identifier: ''
+            label: Roles
+            description: null
+            identifier: roles_target_id
             optional: true
             widget: select
             multiple: false
             remember: false
             default_group: All
             default_group_multiple: {  }
-            group_items: {  }
+            group_items:
+              1: {  }
+              2: {  }
+              3: {  }
           reduce_duplicates: false
           plugin_id: user_roles
         permission:
@@ -972,13 +989,9 @@ display:
       max-age: 0
       tags:
         - 'config:core.entity_view_display.user.user.compact'
-        - extensions
         - 'config:core.entity_view_display.user.user.default'
-        - extensions
         - 'config:core.entity_view_display.user.user.full'
-        - extensions
         - 'config:core.entity_view_display.user.user.group_memberships'
-        - extensions
   admin_people_groups:
     display_plugin: page
     id: admin_people_groups
@@ -1006,7 +1019,8 @@ display:
         title: false
         relationships: false
         group_by: false
-      display_extenders: {  }
+      display_extenders:
+        metatag_display_extender: {  }
       title: 'People with Groups'
       relationships:
         group_content:
@@ -1033,13 +1047,55 @@ display:
       max-age: 0
       tags:
         - 'config:core.entity_view_display.user.user.compact'
-        - extensions
         - 'config:core.entity_view_display.user.user.default'
-        - extensions
         - 'config:core.entity_view_display.user.user.full'
-        - extensions
         - 'config:core.entity_view_display.user.user.group_memberships'
-        - extensions
+  data_export_1:
+    display_plugin: data_export
+    id: data_export_1
+    display_title: 'Data export'
+    position: 3
+    display_options:
+      display_extenders:
+        metatag_display_extender: {  }
+      path: admin/people/download
+      filename: 'people-[date:html_datetime].csv'
+      auth:
+        - cookie
+      displays:
+        page_1: page_1
+        default: '0'
+        admin_people_groups: '0'
+      style:
+        type: data_export
+        options:
+          formats:
+            csv: csv
+          csv_settings:
+            delimiter: ','
+            enclosure: '"'
+            escape_char: \
+            strip_tags: true
+            trim: true
+            encoding: utf8
+            utf8_bom: '0'
+      pager:
+        type: none
+        options:
+          offset: 0
+    cache_metadata:
+      max-age: 0
+      contexts:
+        - 'languages:language_content'
+        - 'languages:language_interface'
+        - request_format
+        - url
+        - user.permissions
+      tags:
+        - 'config:core.entity_view_display.user.user.compact'
+        - 'config:core.entity_view_display.user.user.default'
+        - 'config:core.entity_view_display.user.user.full'
+        - 'config:core.entity_view_display.user.user.group_memberships'
   page_1:
     display_plugin: page
     id: page_1
@@ -1076,10 +1132,6 @@ display:
       max-age: 0
       tags:
         - 'config:core.entity_view_display.user.user.compact'
-        - extensions
         - 'config:core.entity_view_display.user.user.default'
-        - extensions
         - 'config:core.entity_view_display.user.user.full'
-        - extensions
         - 'config:core.entity_view_display.user.user.group_memberships'
-        - extensions
