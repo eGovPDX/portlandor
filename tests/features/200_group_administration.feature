@@ -18,7 +18,7 @@ Feature: Create group
     When I fill in "edit-label-0-value" with "Behat test group"
     And I fill in "edit-field-official-organization-name-0-value" with "Official name of Behat test group"
     And I fill in "edit-field-summary-0-value" with "This is a test summary for the Behat Test group"
-    And I click the "edit-group-group-details" element
+    And I click the "#edit-group-group-details" element
     And I fill in "edit-field-address-0-address-address-line1" with "123 Fake St"
     And I fill in "edit-field-address-0-address-locality" with "Portland"
     And I select "OR" from "edit-field-address-0-address-administrative-area"
