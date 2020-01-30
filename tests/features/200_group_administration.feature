@@ -23,7 +23,7 @@ Feature: Create group
     And I fill in "edit-field-address-0-address-locality" with "Portland"
     And I select "OR" from "edit-field-address-0-address-administrative-area"
     And I fill in "edit-field-address-0-address-postal-code" with "97201"
-    And I click "Administrative Fields (Site Admins Only)"
+    And I click the "#edit-group-administrative-fields" element
     And I fill in "edit-field-group-path-0-value" with "behat-test"
     And I press "Create Bureau/office"
 
