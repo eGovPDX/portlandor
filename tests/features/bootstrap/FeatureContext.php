@@ -17,7 +17,7 @@ chdir(__DIR__ . '/../..');
 class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext {
 
   private $rawMinkContext;
-  
+
   public function __construct() {
     $this->rawMinkContext = new RawMinkContext;
   }
@@ -114,6 +114,24 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
   }
 
   /**
+   * Click any element.
+   *
+   * @Given I click the :selector element
+   *
+   * @see https://stackoverflow.com/a/33672497/1023773
+   */
+  public function iClickTheElement($selector) {
+    $page = $this->getSession()->getPage();
+    $element = $page->find('css', $selector);
+
+    if (empty($element)) {
+      throw new Exception("No html element found for selector '{$selector}'");
+    }
+
+    $element->click();
+  }
+
+  /**
    * @AfterStep
    */
   public function printLastResponseOnError(AfterStepScope $event) {
@@ -138,7 +156,7 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
 
     $path = "/var/www/html/artifacts/failedtests";
     $testfilename = str_replace('/', '-', $event->getFeature()->getFile());   // Convert 'features/test_name.feature' into 'features-test_name.feature'
-    $filename = microtime(true).' '.$event->getFeature()->getTitle().' -- '.$event->getStep()->getText() 
+    $filename = microtime(true).' '.$event->getFeature()->getTitle().' -- '.$event->getStep()->getText()
         .' ('.$testfilename.' line '.$event->getStep()->getLine().')';
 
     if (!file_exists($path)) {
