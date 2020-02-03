@@ -947,3 +947,25 @@ function _validate_group_group_path(&$form, \Drupal\Core\Form\FormStateInterface
        }
     }
 }
+
+/**
+ * Implements hook_views_post_render().
+ * 
+ * A core bug prevents us from using twig in Global Text Are to set the no 
+ * result text for view attachment conditionally. Use a hook to set the text.
+ * See https://www.drupal.org/project/drupal/issues/2665766
+ */
+function portland_views_post_render($view, &$output) {
+    if ( ($view->id() == 'events_on_content' || $view->id() == 'news_on_content')
+        && (substr_compare($view->current_display, 'page', 0, strlen('page')) === 0) ) {
+        $total_result = 0;
+        foreach($view->attachment_before as $attached) {
+            $total_result += count($attached["#view"]->result);
+        }
+        if( $total_result == 0) 
+            $output = [
+                '#type' => 'markup',
+                '#markup' => 'No related content found.',
+            ];
+    }
+}
