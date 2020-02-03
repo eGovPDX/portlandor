@@ -3,19 +3,27 @@
 ## Props
 
 - `number`: integer - Numeric value for each item
-- `type`: string
-- `status`: string
+- `type`: string - Communications, Time Certain, Consent Agenda, Regular Agenda, Four-Fifths Agenda, Suspension of the Rules, Executive Order
+- `status`: string - adopted, passed, failed to pass, rescheduled, referred
 - `note`: string - text to provide detail about the item
-- `disposition`: string
+- `disposition`: string - a text description of the disposition taken
 - `time_certain`: time - the time the agenda item will be held
-- `time_requested`: string
-- `council_document`: reference to document entity short title, includes link
-- `votes`: vote component
+- `time_requested`: string - the amount of time requested, typically in minutes
+- `council_document`: reference - document entity short title, includes link
+- `votes`: reference - vote entity that includes array of electeds and their vote
 
 ## Usage
 
 ```twig
 {% include "@components/council-agenda-item/council-agenda-item.twig" with {
-  "text": "Hello World!",
+  "number": "747",
+  "type": "Regular Agenda",
+  "status": "Passed",
+  "note": "Second reading of agenda item 677",
+  "disposition": "Referred to the Mayor's office",
+  "time_certain": "9:15 AM",
+  "time_requested": "15 minutes",
+  "council_document": council_document,
+  "votes": votes,
 } only %}
 ```
