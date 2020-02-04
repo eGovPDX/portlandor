@@ -947,33 +947,3 @@ function _validate_group_group_path(&$form, \Drupal\Core\Form\FormStateInterface
        }
     }
 }
-
-/**
- * Implements hook_views_post_render().
- * 
- * A core bug prevents us from using twig in Global Text Are to set the no 
- * result text for view attachment conditionally. Use a hook to set the text.
- * See https://www.drupal.org/project/drupal/issues/2665766
- */
-function portland_views_post_render($view, &$output) {
-    if ( ($view->id() == 'events_on_content' || $view->id() == 'news_on_content')
-        && (substr_compare($view->current_display, 'attachment', 0, strlen('attachment')) === 0) ) {
-
-        // Find the current node's bundle
-        $nid = $view->args[0];
-        $content_type = \Drupal\node\Entity\Node::load($nid)->bundle();
-
-        // If the current node is Location, hide the Content attachment
-        if( (strpos($content_type, 'location') !== false && 
-            strpos($view->current_display, 'location') !== false) ||
-            (strpos($content_type, 'location') === false && 
-            strpos($view->current_display, 'location') === false) ) {
-                if( count($view->result) === 0 ) {
-                    $output = [
-                        '#type' => 'markup',
-                        '#markup' => 'No related content found.',
-                    ]; 
-                }
-            }
-    }
-}
