@@ -2,9 +2,9 @@
 
 ## Props
 
-- `type`*: string - the "content type" bundle that this search results belongs to, ie. `News`, `Event`, etc
-- `title`*: string - the main title of the content being linked out to
-- `url`*: string - the url for the node of content
+- `type`: string - the "content type" bundle that this search results belongs to, ie. `News`, `Event`, etc
+- `title`: string - the main title of the content being linked out to
+- `url`: string - the url for the node of content
 - `posted_on`: string - A date that the node was posted on
 - `date_start`: string - A start date for the event. Can be used without an end date
 - `date_end`: string - An end date for the event. Requires the inclusion of a start date
