@@ -3,7 +3,7 @@ langcode: en
 status: true
 dependencies:
   config:
-    - entity_browser.browser.media_browser
+    - entity_browser.browser.locations_browser
     - field.field.node.construction_project.field_address
     - field.field.node.construction_project.field_audience
     - field.field.node.construction_project.field_body_content
@@ -19,6 +19,8 @@ dependencies:
     - field.field.node.construction_project.field_neighborhood
     - field.field.node.construction_project.field_phone
     - field.field.node.construction_project.field_project_status
+    - field.field.node.construction_project.field_related_content
+    - field.field.node.construction_project.field_reviewer
     - field.field.node.construction_project.field_start_date
     - field.field.node.construction_project.field_summary
     - field.field.node.construction_project.field_topics
@@ -36,63 +38,61 @@ dependencies:
     - text
 third_party_settings:
   field_group:
-    group_categories_accordion:
+    group_details:
       children:
-        - group_categorized_in
-      parent_name: ''
-      weight: 8
-      format_type: accordion
-      format_settings:
-        id: ''
-        classes: ''
-        effect: bounceslide
-      label: 'Categories Accordion'
-      region: content
-    group_categorized_in:
-      children:
-        - field_city_section
-        - field_neighborhood
-        - field_topics
-        - field_audience
-      parent_name: group_categories_accordion
-      weight: 28
-      format_type: accordion_item
-      format_settings:
-        id: ''
-        classes: ''
-        formatter: closed
-        required_fields: true
-        description: ''
-      label: 'Categorized in'
-      region: content
-    group_contact_accordion:
-      children:
-        - group_contact_information
-      parent_name: ''
-      weight: 9
-      format_type: accordion
-      format_settings:
-        id: ''
-        classes: ''
-        effect: bounceslide
-      label: 'Contact accordion'
-      region: content
-    group_contact_information:
-      children:
+        - field_featured_media
+        - field_display_groups
         - field_address
         - field_phone
         - field_email
-      parent_name: group_contact_accordion
-      weight: 25
-      format_type: accordion_item
+        - field_location
+        - field_map
+        - field_body_content
+      parent_name: ''
+      weight: 7
+      format_type: details
+      region: content
       format_settings:
         id: ''
         classes: ''
-        formatter: closed
-        required_fields: false
         description: ''
-      label: 'Contact information'
+        open: false
+        required_fields: false
+        direction: vertical
+      label: 'Construction Project Details'
+    group_paths_and_redirects:
+      children:
+        - field_redirects
+      parent_name: ''
+      weight: 8
+      format_type: details
       region: content
+      format_settings:
+        id: ''
+        classes: ''
+        description: ''
+        open: false
+        required_fields: false
+        direction: vertical
+      label: 'Paths and redirects'
+    group_dates:
+      children:
+        - field_start_date
+        - field_end_date
+        - field_display_date_toggle
+        - field_display_date
+      parent_name: ''
+      weight: 6
+      format_type: details
+      region: content
+      format_settings:
+        id: ''
+        classes: ''
+        description: ''
+        open: false
+        required_fields: false
+        direction: vertical
+      label: 'Project Dates'
 id: node.construction_project.default
 targetEntityType: node
 bundle: construction_project
@@ -100,24 +100,18 @@ mode: default
 content:
   created:
     type: datetime_timestamp
-    weight: 15
+    weight: 10
     region: content
     settings: {  }
     third_party_settings: {  }
   field_address:
-    weight: 15
+    weight: 26
     settings: {  }
     third_party_settings: {  }
     type: address_default
     region: content
-  field_audience:
-    weight: 17
-    settings: {  }
-    third_party_settings: {  }
-    type: chosen_select
-    region: content
   field_body_content:
-    weight: 12
+    weight: 31
     settings:
       rows: 5
       placeholder: ''
@@ -125,7 +119,7 @@ content:
     type: text_textarea
     region: content
   field_city_section:
-    weight: 14
+    weight: 3
     settings: {  }
     third_party_settings: {  }
     type: chosen_select
@@ -133,8 +127,8 @@ content:
   field_display_date:
     weight: 7
     settings:
-      size: 60
       placeholder: ''
+      size: 60
     third_party_settings:
       conditional_fields:
         7e3b232f-726b-48ad-8720-86a0f4ae9804:
@@ -168,17 +162,17 @@ content:
     type: boolean_checkbox
     region: content
   field_display_groups:
-    weight: 14
+    weight: 25
     settings:
       match_operator: CONTAINS
+      match_limit: 10
       size: 60
       placeholder: ''
-      match_limit: 10
     third_party_settings: {  }
     type: entity_reference_autocomplete
     region: content
   field_email:
-    weight: 17
+    weight: 28
     settings:
       size: 60
       placeholder: ''
@@ -193,21 +187,21 @@ content:
     region: content
   field_featured_media:
     type: entity_browser_entity_reference
-    weight: 2
+    weight: 24
     settings:
-      entity_browser: media_browser
+      entity_browser: image_browser_embed
       field_widget_display: rendered_entity
+      field_widget_display_settings:
+        view_mode: banner
       field_widget_edit: true
       field_widget_remove: true
       selection_mode: selection_append
-      field_widget_display_settings:
-        view_mode: thumbnail
       field_widget_replace: false
       open: false
     region: content
     third_party_settings: {  }
   field_location:
-    weight: 10
+    weight: 29
     settings:
       entity_browser: locations_browser
       field_widget_display: rendered_entity
@@ -222,47 +216,58 @@ content:
     type: entity_browser_entity_reference
     region: content
   field_map:
-    type: entity_browser_entity_reference
-    weight: 11
-    settings:
-      entity_browser: media_browser
-      field_widget_display: rendered_entity
-      field_widget_edit: true
-      field_widget_remove: true
-      selection_mode: selection_append
-      field_widget_display_settings:
-        view_mode: thumbnail
-      field_widget_replace: false
-      open: false
+    type: options_select
+    weight: 30
+    settings: {  }
     region: content
     third_party_settings: {  }
   field_neighborhood:
-    weight: 15
+    weight: 4
     settings: {  }
     third_party_settings: {  }
     type: chosen_select
     region: content
   field_phone:
-    weight: 16
+    weight: 27
     settings:
       placeholder: ''
     third_party_settings: {  }
     type: telephone_default
     region: content
   field_project_status:
-    weight: 3
+    weight: 1
     settings: {  }
     third_party_settings: {  }
-    type: chosen_select
+    type: options_select
     region: content
   field_redirects:
     type: string_textfield
-    weight: 13
+    weight: 14
     region: content
     settings:
       placeholder: ''
       size: 60
     third_party_settings: {  }
+  field_related_content:
+    weight: 9
+    settings:
+      match_operator: CONTAINS
+      match_limit: 10
+      size: 60
+      placeholder: ''
+    third_party_settings: {  }
+    type: entity_reference_autocomplete
+    region: content
+  field_reviewer:
+    weight: 14
+    settings:
+      match_operator: CONTAINS
+      match_limit: 10
+      size: 60
+      placeholder: ''
+    third_party_settings: {  }
+    type: entity_reference_autocomplete
+    region: content
   field_start_date:
     weight: 4
     settings: {  }
@@ -270,7 +275,7 @@ content:
     type: datetime_default
     region: content
   field_summary:
-    weight: 1
+    weight: 2
     settings:
       rows: 2
       placeholder: ''
@@ -283,20 +288,20 @@ content:
     type: string_textarea
     region: content
   field_topics:
-    weight: 16
+    weight: 5
     settings: {  }
     third_party_settings: {  }
     type: chosen_select
     region: content
   moderation_state:
     type: moderation_state_default
-    weight: 17
-    settings: {  }
+    weight: 15
     region: content
+    settings: {  }
     third_party_settings: {  }
   path:
     type: path
-    weight: 18
+    weight: 12
     region: content
     settings: {  }
     third_party_settings: {  }
@@ -310,20 +315,21 @@ content:
     third_party_settings: {  }
   uid:
     type: entity_reference_autocomplete
-    weight: 16
+    weight: 11
     settings:
       match_operator: CONTAINS
+      match_limit: 10
       size: 60
       placeholder: ''
-      match_limit: 10
     region: content
     third_party_settings: {  }
   url_redirects:
-    weight: 19
+    weight: 13
     region: content
     settings: {  }
     third_party_settings: {  }
 hidden:
+  field_audience: true
   group_content: true
   promote: true
   status: true
