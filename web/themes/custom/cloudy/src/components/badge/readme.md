@@ -9,15 +9,15 @@
 ## Props
 
 - `text`: string - text that is placed inside
-- `type`: default, info, win, warn, whoops, new
-- `isBold`: boolean - set true for bold emphasis
+- `type`: default, info, success, warning, danger
+- `isBold`: boolean - set to true for bold emphasis
 
 ## Usage
 
 ```twig
 {% include "@components/badge/badge.twig" with {
-  "text": "news",
-  "type": "default",
+  "text": "information",
+  "type": "info",
   "isBold": false,
 } only %}
 ```
