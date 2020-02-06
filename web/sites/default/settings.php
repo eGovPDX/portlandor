@@ -118,8 +118,8 @@ switch ($env) {
 }
 
 // Set the core to "Demo" on the Demo multidev
-if($env == 'powr-1852' || $env == 'demo') {
-  $config['search_api.server.searchstax']['backend_config']['connector_config']['core'] = 'Demo-1852';
+if($env == 'demo') {
+  $config['search_api.server.searchstax']['backend_config']['connector_config']['core'] = 'Demo';
 }
 
 /**
