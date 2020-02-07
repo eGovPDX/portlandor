@@ -1,8 +1,8 @@
-# Search Result
+# Morsel
 
 ## Props
 
-- `type`*: string - the "content type" bundle that this search results belongs to, ie. `News`, `Event`, etc
+- `type`*: string - the "content type" bundle that this morsel belongs to, ie. `News`, `Event`, etc
 - `title`*: string - the main title of the content being linked out to
 - `url`*: string - the url for the node of content
 - `posted_on`: string - A date that the node was posted on
@@ -10,12 +10,12 @@
 - `date_end`: string - An end date for the event. Requires the inclusion of a start date
 - `time_start`: string - A start time for the event. Can be used without an end time
 - `time_end`: string - An end time for the event. Requires the inclusion of a start time
-- `is_draft`: boolean - If set to true, search result gets a "Unpublished" danger badge
+- `is_draft`: boolean - If set to true, morsel gets a "Unpublished" danger badge
 
 ## Usage
 
 ```twig
-{% include "@components/search-result/search-result.twig" with {
+{% include "@components/morsel/morsel.twig" with {
   type: "News ",
   title: "Have you recieved a City of Portland notice in the mail about your single-family home?",
   url: 'https://www.google.com',
