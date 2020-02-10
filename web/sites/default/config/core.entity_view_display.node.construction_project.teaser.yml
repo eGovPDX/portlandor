@@ -1,4 +1,4 @@
-uuid: a7b4d4f8-e726-45ef-b727-f8d540d37338
+uuid: 6184bf68-c54e-4e56-99b7-10e60919936b
 langcode: en
 status: true
 dependencies:
@@ -20,6 +20,7 @@ dependencies:
     - field.field.node.construction_project.field_phone
     - field.field.node.construction_project.field_project_status
     - field.field.node.construction_project.field_related_content
+    - field.field.node.construction_project.field_reviewer
     - field.field.node.construction_project.field_start_date
     - field.field.node.construction_project.field_summary
     - field.field.node.construction_project.field_topics
@@ -34,11 +35,12 @@ third_party_settings:
   field_group:
     group_project_date:
       children:
+        - field_display_date_toggle
         - field_display_date
         - field_start_date
         - field_end_date
       parent_name: ''
-      weight: 2
+      weight: 4
       format_type: html_element
       format_settings:
         id: ''
@@ -51,30 +53,122 @@ third_party_settings:
         effect: none
         speed: fast
       label: 'Project date'
-      region: content
+      region: second
   layout_builder:
     allow_custom: false
     enabled: false
+  ds:
+    layout:
+      id: cloudy_card
+      library: null
+      disable_css: false
+      entity_classes: all_classes
+      settings:
+        label: ''
+        wrappers:
+          first: div
+          second: div
+        outer_wrapper: div
+        attributes: ''
+        link_attribute: ''
+        link_custom: ''
+        classes:
+          layout_class: {  }
+          first: {  }
+          second: {  }
+    regions:
+      first:
+        - field_featured_media
+      second:
+        - field_display_date_toggle
+        - 'bundle_field:node'
+        - field_display_date
+        - field_start_date
+        - node_title
+        - field_end_date
+        - field_project_status
+        - group_project_date
+        - field_summary
+    fields:
+      'bundle_field:node':
+        plugin_id: 'bundle_field:node'
+        weight: 1
+        label: hidden
+        formatter: default
+        ft:
+          id: expert
+          settings:
+            lb: ''
+            prefix: ''
+            lbw-el: ''
+            lbw-cl: ''
+            lbw-at: ''
+            ow-el: ''
+            ow-cl: ''
+            ow-at: ''
+            fis-el: ''
+            fis-cl: ''
+            fis-at: ''
+            fi: true
+            fi-el: div
+            fi-cl: 'badge badge-pill badge-light'
+            fi-at: ''
+            suffix: ''
+            lbw: false
+            lb-col: false
+            ow: false
+            ow-def-at: false
+            ow-def-cl: false
+            fis: false
+            fis-def-at: false
+            fi-def-at: false
+      node_title:
+        plugin_id: node_title
+        weight: 2
+        label: hidden
+        formatter: default
+        settings:
+          link: true
+          wrapper: h2
+          class: ''
+        ft:
+          id: default
+          settings:
+            lb: ''
+            lb-col: false
+            classes: {  }
 id: node.construction_project.teaser
 targetEntityType: node
 bundle: construction_project
 mode: teaser
 content:
-  content_moderation_control:
-    weight: 0
-    region: content
-    settings: {  }
-    third_party_settings: {  }
   field_display_date:
-    weight: 7
+    type: string
+    weight: 1
+    region: second
     label: hidden
     settings:
       link_to_entity: false
     third_party_settings: {  }
-    type: string
-    region: content
+  field_display_date_toggle:
+    type: boolean
+    weight: 0
+    region: second
+    label: hidden
+    settings:
+      format: boolean
+      format_custom_true: ''
+      format_custom_false: ''
+    third_party_settings:
+      ds:
+        ft:
+          id: default
+          settings:
+            lb: ''
+            lb-col: false
+            classes: {  }
   field_end_date:
-    weight: 9
+    weight: 3
     label: visually_hidden
     settings:
       timezone_override: ''
@@ -88,12 +182,14 @@ content:
             lb-col: false
             classes: {  }
     type: datetime_default
-    region: content
+    region: second
   field_featured_media:
-    weight: 1
+    type: entity_reference_entity_view
+    weight: 0
+    region: first
     label: hidden
     settings:
-      view_mode: featured
+      view_mode: featured_large
       link: false
     third_party_settings:
       ds:
@@ -103,10 +199,23 @@ content:
             lb: ''
             lb-col: false
             classes: {  }
-    type: entity_reference_entity_view
-    region: content
+  field_project_status:
+    type: entity_reference_label
+    weight: 3
+    region: second
+    label: hidden
+    settings:
+      link: false
+    third_party_settings:
+      ds:
+        ft:
+          id: default
+          settings:
+            lb: ''
+            lb-col: false
+            classes: {  }
   field_start_date:
-    weight: 8
+    weight: 2
     label: visually_hidden
     settings:
       timezone_override: ''
@@ -120,29 +229,29 @@ content:
             lb-col: false
             classes: {  }
     type: datetime_default
-    region: content
+    region: second
   field_summary:
-    weight: 3
+    weight: 5
     label: hidden
     settings:
       link_to_entity: false
     third_party_settings: {  }
     type: string
-    region: content
+    region: second
 hidden:
+  content_moderation_control: true
   field_address: true
   field_audience: true
   field_body_content: true
   field_city_section: true
-  field_display_date_toggle: true
   field_display_groups: true
   field_email: true
   field_location: true
   field_map: true
   field_neighborhood: true
   field_phone: true
-  field_project_status: true
   field_related_content: true
+  field_reviewer: true
   field_topics: true
   group_content: true
   links: true

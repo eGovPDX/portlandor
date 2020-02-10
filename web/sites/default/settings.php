@@ -117,6 +117,11 @@ switch ($env) {
     break;
 }
 
+// Set the core to "Demo" on the Demo multidev
+if($env == 'demo') {
+  $config['search_api.server.searchstax']['backend_config']['connector_config']['core'] = 'Demo';
+}
+
 /**
  * Overwrite Google Analytics tracking code in 'live' production site.
  *
