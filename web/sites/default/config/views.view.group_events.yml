@@ -4,7 +4,8 @@ status: true
 dependencies:
   config:
     - core.entity_view_mode.node.featured
-    - core.entity_view_mode.node.search_result
+    - core.entity_view_mode.node.teaser
+    - field.storage.group.field_enable_past_meetings
     - field.storage.node.field_all_day
     - field.storage.node.field_body_content
     - field.storage.node.field_end_date
@@ -25,6 +26,7 @@ dependencies:
     - 'taxonomy_term:event_type:a5842689-13f2-4d9a-99b1-76090aa6afd2'
   module:
     - datetime
+    - group
     - node
     - options
     - taxonomy
@@ -94,18 +96,16 @@ display:
       style:
         type: default
         options:
-          grouping:
-            -
-              field: field_start_date
-              rendered: true
-              rendered_strip: false
-          row_class: mb-2
+          grouping: {  }
+          row_class: ''
           default_row_class: false
       row:
-        type: 'entity:node'
+        type: fields
         options:
-          relationship: none
-          view_mode: search_result
+          default_field_elements: true
+          inline: {  }
+          separator: ''
+          hide_empty: false
       fields:
         status:
           id: status
@@ -629,7 +629,7 @@ display:
           group_type: group
           admin_label: 'Event summary with layout'
           label: ''
-          exclude: false
+          exclude: true
           alter:
             alter_text: true
             text: "<div class=\"event--summary\">\r\n  <div class=\"row\">\r\n    <div class=\"col-8\">\r\n      <h4>{{ title }}{{ status }}</h4>\r\n      <p>{{ field_summary }}</p>\r\n    </div>\r\n    <div class=\"col-4\">\r\n      {{ field_all_day }}{{ field_start_time }}\r\n    </div>\r\n  </div>\r\n</div>"
@@ -795,6 +795,122 @@ display:
           separator: ', '
           field_api_classes: false
           plugin_id: field
+        field_enable_past_meetings:
+          id: field_enable_past_meetings
+          table: group__field_enable_past_meetings
+          field: field_enable_past_meetings
+          relationship: field_display_groups
+          group_type: group
+          admin_label: ''
+          label: ''
+          exclude: true
+          alter:
+            alter_text: true
+            text: "<li class=\"nav-item\"><a href=\"/group/{{ raw_arguments.field_display_groups_target_id }}/events/meetings\" class=\"nav-link{% if path('<current>') matches '[events/meetings$]' %} active{% endif %}\">Past Meetings and Hearings</a></li>\r\n"
+            make_link: false
+            path: ''
+            absolute: false
+            external: false
+            replace_spaces: false
+            path_case: none
+            trim_whitespace: false
+            alt: ''
+            rel: ''
+            link_class: ''
+            prefix: ''
+            suffix: ''
+            target: ''
+            nl2br: false
+            max_length: 0
+            word_boundary: true
+            ellipsis: true
+            more_link: false
+            more_link_text: ''
+            more_link_path: ''
+            strip_tags: false
+            trim: false
+            preserve_tags: ''
+            html: false
+          element_type: ''
+          element_class: ''
+          element_label_type: ''
+          element_label_class: ''
+          element_label_colon: false
+          element_wrapper_type: ''
+          element_wrapper_class: ''
+          element_default_classes: false
+          empty: ''
+          hide_empty: true
+          empty_zero: true
+          hide_alter_empty: true
+          click_sort_column: value
+          type: boolean
+          settings:
+            format: boolean
+            format_custom_true: ''
+            format_custom_false: ''
+          group_column: value
+          group_columns: {  }
+          group_rows: true
+          delta_limit: 0
+          delta_offset: 0
+          delta_reversed: false
+          delta_first_last: false
+          multi_type: separator
+          separator: ', '
+          field_api_classes: false
+          plugin_id: field
+        rendered_entity:
+          id: rendered_entity
+          table: node
+          field: rendered_entity
+          relationship: none
+          group_type: group
+          admin_label: ''
+          label: ''
+          exclude: false
+          alter:
+            alter_text: false
+            text: ''
+            make_link: false
+            path: ''
+            absolute: false
+            external: false
+            replace_spaces: false
+            path_case: none
+            trim_whitespace: false
+            alt: ''
+            rel: ''
+            link_class: ''
+            prefix: ''
+            suffix: ''
+            target: ''
+            nl2br: false
+            max_length: 0
+            word_boundary: true
+            ellipsis: true
+            more_link: false
+            more_link_text: ''
+            more_link_path: ''
+            strip_tags: false
+            trim: false
+            preserve_tags: ''
+            html: false
+          element_type: ''
+          element_class: ''
+          element_label_type: ''
+          element_label_class: ''
+          element_label_colon: false
+          element_wrapper_type: ''
+          element_wrapper_class: ''
+          element_default_classes: true
+          empty: ''
+          hide_empty: false
+          empty_zero: false
+          hide_alter_empty: true
+          view_mode: teaser
+          entity_type: node
+          plugin_id: rendered_entity
       filters:
         field_start_date_value:
           id: field_start_date_value
@@ -975,7 +1091,7 @@ display:
           empty: true
           tokenize: true
           content:
-            value: "<ul class=\"nav nav-group-menu\">\r\n<li class=\"nav-item\"><a href=\"/group/{{ raw_arguments.field_display_groups_target_id }}/events\" class=\"nav-link{% if path('<current>') matches '[events$]' %} active{% endif %}\">All Upcoming Events</a></li>\r\n<li class=\"nav-item\"><a href=\"/group/{{ raw_arguments.field_display_groups_target_id }}/events/search\" class=\"nav-link{% if path('<current>') matches '[events/search$]' %} active{% endif %}\">Search Events</a></li>\r\n<li class=\"nav-item\"><a href=\"/group/{{ raw_arguments.field_display_groups_target_id }}/events/past\" class=\"nav-link{% if path('<current>') matches '[events/past$]' %} active{% endif %}\">Past Events</a></li>\r\n<li class=\"nav-item\"><a href=\"/group/{{ raw_arguments.field_display_groups_target_id }}/events/meetings\" class=\"nav-link{% if path('<current>') matches '[events/meetings$]' %} active{% endif %}\">Past Meetings and Hearings</a></li>\r\n</ul>\r\n"
+            value: "<ul class=\"nav nav-group-menu\">\r\n<li class=\"nav-item\"><a href=\"/group/{{ raw_arguments.field_display_groups_target_id }}/events\" class=\"nav-link{% if path('<current>') matches '[events$]' %} active{% endif %}\">All Upcoming Events</a></li>\r\n<li class=\"nav-item\"><a href=\"/group/{{ raw_arguments.field_display_groups_target_id }}/events/search\" class=\"nav-link{% if path('<current>') matches '[events/search$]' %} active{% endif %}\">Search Events</a></li>\r\n<li class=\"nav-item\"><a href=\"/group/{{ raw_arguments.field_display_groups_target_id }}/events/past\" class=\"nav-link{% if path('<current>') matches '[events/past$]' %} active{% endif %}\">Past Events</a></li>\r\n{{ field_enable_past_meetings }}\r\n</ul>\r\n"
             format: full_html
           plugin_id: text
         result:
@@ -998,7 +1114,16 @@ display:
             value: "<p>No events found in this date range.</p>\r\n<p><a href=\"/events/search\" class=\"btn-cta\">Search all events on Portland.gov</a></p>"
             format: simplified_editor_with_media_embed
           plugin_id: text
-      relationships: {  }
+      relationships:
+        field_display_groups:
+          id: field_display_groups
+          table: node__field_display_groups
+          field: field_display_groups
+          relationship: none
+          group_type: group
+          admin_label: 'field_display_groups: Group'
+          required: true
+          plugin_id: standard
       arguments:
         field_display_groups_target_id:
           id: field_display_groups_target_id
@@ -1054,6 +1179,86 @@ display:
         - 'user.node_grants:view'
         - user.permissions
       tags:
+        - 'config:core.entity_view_display.node.alert.default'
+        - 'config:core.entity_view_display.node.alert.featured'
+        - 'config:core.entity_view_display.node.alert.teaser'
+        - 'config:core.entity_view_display.node.calendar_item.default'
+        - 'config:core.entity_view_display.node.calendar_item.related'
+        - 'config:core.entity_view_display.node.calendar_item.search_result'
+        - 'config:core.entity_view_display.node.calendar_item.teaser'
+        - 'config:core.entity_view_display.node.city_charter.default'
+        - 'config:core.entity_view_display.node.city_charter.search_result'
+        - 'config:core.entity_view_display.node.city_charter.teaser'
+        - 'config:core.entity_view_display.node.city_code.default'
+        - 'config:core.entity_view_display.node.city_code.search_result'
+        - 'config:core.entity_view_display.node.city_code.teaser'
+        - 'config:core.entity_view_display.node.city_service.default'
+        - 'config:core.entity_view_display.node.city_service.featured'
+        - 'config:core.entity_view_display.node.city_service.related'
+        - 'config:core.entity_view_display.node.city_service.search_result'
+        - 'config:core.entity_view_display.node.city_service.teaser'
+        - 'config:core.entity_view_display.node.construction_project.default'
+        - 'config:core.entity_view_display.node.construction_project.featured'
+        - 'config:core.entity_view_display.node.construction_project.related'
+        - 'config:core.entity_view_display.node.construction_project.search_result'
+        - 'config:core.entity_view_display.node.construction_project.teaser'
+        - 'config:core.entity_view_display.node.contact.default'
+        - 'config:core.entity_view_display.node.contact.teaser'
+        - 'config:core.entity_view_display.node.council_agenda.default'
+        - 'config:core.entity_view_display.node.council_agenda.teaser'
+        - 'config:core.entity_view_display.node.council_document.default'
+        - 'config:core.entity_view_display.node.council_document.teaser'
+        - 'config:core.entity_view_display.node.data_table.default'
+        - 'config:core.entity_view_display.node.data_table.embedded'
+        - 'config:core.entity_view_display.node.data_table.teaser'
+        - 'config:core.entity_view_display.node.development_permit.default'
+        - 'config:core.entity_view_display.node.development_permit.featured'
+        - 'config:core.entity_view_display.node.development_permit.related'
+        - 'config:core.entity_view_display.node.development_permit.search_result'
+        - 'config:core.entity_view_display.node.development_permit.teaser'
+        - 'config:core.entity_view_display.node.event.default'
+        - 'config:core.entity_view_display.node.event.featured'
+        - 'config:core.entity_view_display.node.event.related'
+        - 'config:core.entity_view_display.node.event.search_result'
+        - 'config:core.entity_view_display.node.event.teaser'
+        - 'config:core.entity_view_display.node.external_resource.default'
+        - 'config:core.entity_view_display.node.external_resource.featured'
+        - 'config:core.entity_view_display.node.external_resource.related'
+        - 'config:core.entity_view_display.node.external_resource.search_result'
+        - 'config:core.entity_view_display.node.external_resource.teaser'
+        - 'config:core.entity_view_display.node.location.default'
+        - 'config:core.entity_view_display.node.location.embedded'
+        - 'config:core.entity_view_display.node.location.search_result'
+        - 'config:core.entity_view_display.node.location.teaser'
+        - 'config:core.entity_view_display.node.news.default'
+        - 'config:core.entity_view_display.node.news.featured'
+        - 'config:core.entity_view_display.node.news.related'
+        - 'config:core.entity_view_display.node.news.search_result'
+        - 'config:core.entity_view_display.node.news.teaser'
+        - 'config:core.entity_view_display.node.notification.default'
+        - 'config:core.entity_view_display.node.notification.featured'
+        - 'config:core.entity_view_display.node.notification.teaser'
+        - 'config:core.entity_view_display.node.page.default'
+        - 'config:core.entity_view_display.node.page.featured'
+        - 'config:core.entity_view_display.node.page.related'
+        - 'config:core.entity_view_display.node.page.search_result'
+        - 'config:core.entity_view_display.node.page.teaser'
+        - 'config:core.entity_view_display.node.park_facility.default'
+        - 'config:core.entity_view_display.node.park_facility.featured'
+        - 'config:core.entity_view_display.node.park_facility.related'
+        - 'config:core.entity_view_display.node.park_facility.search_result'
+        - 'config:core.entity_view_display.node.park_facility.teaser'
+        - 'config:core.entity_view_display.node.policy.default'
+        - 'config:core.entity_view_display.node.policy.related'
+        - 'config:core.entity_view_display.node.policy.search_result'
+        - 'config:core.entity_view_display.node.policy.teaser'
+        - 'config:core.entity_view_display.node.service_location.default'
+        - 'config:core.entity_view_display.node.service_location.related'
+        - 'config:core.entity_view_display.node.service_location.search_result'
+        - 'config:core.entity_view_display.node.service_location.teaser'
+        - 'config:core.entity_view_display.node.top_search.default'
+        - 'config:core.entity_view_display.node.top_search.teaser'
+        - 'config:field.storage.group.field_enable_past_meetings'
         - 'config:field.storage.node.field_all_day'
         - 'config:field.storage.node.field_body_content'
         - 'config:field.storage.node.field_end_date'
@@ -1280,6 +1485,86 @@ display:
         - 'user.node_grants:view'
         - user.permissions
       tags:
+        - 'config:core.entity_view_display.node.alert.default'
+        - 'config:core.entity_view_display.node.alert.featured'
+        - 'config:core.entity_view_display.node.alert.teaser'
+        - 'config:core.entity_view_display.node.calendar_item.default'
+        - 'config:core.entity_view_display.node.calendar_item.related'
+        - 'config:core.entity_view_display.node.calendar_item.search_result'
+        - 'config:core.entity_view_display.node.calendar_item.teaser'
+        - 'config:core.entity_view_display.node.city_charter.default'
+        - 'config:core.entity_view_display.node.city_charter.search_result'
+        - 'config:core.entity_view_display.node.city_charter.teaser'
+        - 'config:core.entity_view_display.node.city_code.default'
+        - 'config:core.entity_view_display.node.city_code.search_result'
+        - 'config:core.entity_view_display.node.city_code.teaser'
+        - 'config:core.entity_view_display.node.city_service.default'
+        - 'config:core.entity_view_display.node.city_service.featured'
+        - 'config:core.entity_view_display.node.city_service.related'
+        - 'config:core.entity_view_display.node.city_service.search_result'
+        - 'config:core.entity_view_display.node.city_service.teaser'
+        - 'config:core.entity_view_display.node.construction_project.default'
+        - 'config:core.entity_view_display.node.construction_project.featured'
+        - 'config:core.entity_view_display.node.construction_project.related'
+        - 'config:core.entity_view_display.node.construction_project.search_result'
+        - 'config:core.entity_view_display.node.construction_project.teaser'
+        - 'config:core.entity_view_display.node.contact.default'
+        - 'config:core.entity_view_display.node.contact.teaser'
+        - 'config:core.entity_view_display.node.council_agenda.default'
+        - 'config:core.entity_view_display.node.council_agenda.teaser'
+        - 'config:core.entity_view_display.node.council_document.default'
+        - 'config:core.entity_view_display.node.council_document.teaser'
+        - 'config:core.entity_view_display.node.data_table.default'
+        - 'config:core.entity_view_display.node.data_table.embedded'
+        - 'config:core.entity_view_display.node.data_table.teaser'
+        - 'config:core.entity_view_display.node.development_permit.default'
+        - 'config:core.entity_view_display.node.development_permit.featured'
+        - 'config:core.entity_view_display.node.development_permit.related'
+        - 'config:core.entity_view_display.node.development_permit.search_result'
+        - 'config:core.entity_view_display.node.development_permit.teaser'
+        - 'config:core.entity_view_display.node.event.default'
+        - 'config:core.entity_view_display.node.event.featured'
+        - 'config:core.entity_view_display.node.event.related'
+        - 'config:core.entity_view_display.node.event.search_result'
+        - 'config:core.entity_view_display.node.event.teaser'
+        - 'config:core.entity_view_display.node.external_resource.default'
+        - 'config:core.entity_view_display.node.external_resource.featured'
+        - 'config:core.entity_view_display.node.external_resource.related'
+        - 'config:core.entity_view_display.node.external_resource.search_result'
+        - 'config:core.entity_view_display.node.external_resource.teaser'
+        - 'config:core.entity_view_display.node.location.default'
+        - 'config:core.entity_view_display.node.location.embedded'
+        - 'config:core.entity_view_display.node.location.search_result'
+        - 'config:core.entity_view_display.node.location.teaser'
+        - 'config:core.entity_view_display.node.news.default'
+        - 'config:core.entity_view_display.node.news.featured'
+        - 'config:core.entity_view_display.node.news.related'
+        - 'config:core.entity_view_display.node.news.search_result'
+        - 'config:core.entity_view_display.node.news.teaser'
+        - 'config:core.entity_view_display.node.notification.default'
+        - 'config:core.entity_view_display.node.notification.featured'
+        - 'config:core.entity_view_display.node.notification.teaser'
+        - 'config:core.entity_view_display.node.page.default'
+        - 'config:core.entity_view_display.node.page.featured'
+        - 'config:core.entity_view_display.node.page.related'
+        - 'config:core.entity_view_display.node.page.search_result'
+        - 'config:core.entity_view_display.node.page.teaser'
+        - 'config:core.entity_view_display.node.park_facility.default'
+        - 'config:core.entity_view_display.node.park_facility.featured'
+        - 'config:core.entity_view_display.node.park_facility.related'
+        - 'config:core.entity_view_display.node.park_facility.search_result'
+        - 'config:core.entity_view_display.node.park_facility.teaser'
+        - 'config:core.entity_view_display.node.policy.default'
+        - 'config:core.entity_view_display.node.policy.related'
+        - 'config:core.entity_view_display.node.policy.search_result'
+        - 'config:core.entity_view_display.node.policy.teaser'
+        - 'config:core.entity_view_display.node.service_location.default'
+        - 'config:core.entity_view_display.node.service_location.related'
+        - 'config:core.entity_view_display.node.service_location.search_result'
+        - 'config:core.entity_view_display.node.service_location.teaser'
+        - 'config:core.entity_view_display.node.top_search.default'
+        - 'config:core.entity_view_display.node.top_search.teaser'
+        - 'config:field.storage.group.field_enable_past_meetings'
         - 'config:field.storage.node.field_all_day'
         - 'config:field.storage.node.field_body_content'
         - 'config:field.storage.node.field_end_date'
@@ -2603,6 +2888,86 @@ display:
         - 'user.node_grants:view'
         - user.permissions
       tags:
+        - 'config:core.entity_view_display.node.alert.default'
+        - 'config:core.entity_view_display.node.alert.featured'
+        - 'config:core.entity_view_display.node.alert.teaser'
+        - 'config:core.entity_view_display.node.calendar_item.default'
+        - 'config:core.entity_view_display.node.calendar_item.related'
+        - 'config:core.entity_view_display.node.calendar_item.search_result'
+        - 'config:core.entity_view_display.node.calendar_item.teaser'
+        - 'config:core.entity_view_display.node.city_charter.default'
+        - 'config:core.entity_view_display.node.city_charter.search_result'
+        - 'config:core.entity_view_display.node.city_charter.teaser'
+        - 'config:core.entity_view_display.node.city_code.default'
+        - 'config:core.entity_view_display.node.city_code.search_result'
+        - 'config:core.entity_view_display.node.city_code.teaser'
+        - 'config:core.entity_view_display.node.city_service.default'
+        - 'config:core.entity_view_display.node.city_service.featured'
+        - 'config:core.entity_view_display.node.city_service.related'
+        - 'config:core.entity_view_display.node.city_service.search_result'
+        - 'config:core.entity_view_display.node.city_service.teaser'
+        - 'config:core.entity_view_display.node.construction_project.default'
+        - 'config:core.entity_view_display.node.construction_project.featured'
+        - 'config:core.entity_view_display.node.construction_project.related'
+        - 'config:core.entity_view_display.node.construction_project.search_result'
+        - 'config:core.entity_view_display.node.construction_project.teaser'
+        - 'config:core.entity_view_display.node.contact.default'
+        - 'config:core.entity_view_display.node.contact.teaser'
+        - 'config:core.entity_view_display.node.council_agenda.default'
+        - 'config:core.entity_view_display.node.council_agenda.teaser'
+        - 'config:core.entity_view_display.node.council_document.default'
+        - 'config:core.entity_view_display.node.council_document.teaser'
+        - 'config:core.entity_view_display.node.data_table.default'
+        - 'config:core.entity_view_display.node.data_table.embedded'
+        - 'config:core.entity_view_display.node.data_table.teaser'
+        - 'config:core.entity_view_display.node.development_permit.default'
+        - 'config:core.entity_view_display.node.development_permit.featured'
+        - 'config:core.entity_view_display.node.development_permit.related'
+        - 'config:core.entity_view_display.node.development_permit.search_result'
+        - 'config:core.entity_view_display.node.development_permit.teaser'
+        - 'config:core.entity_view_display.node.event.default'
+        - 'config:core.entity_view_display.node.event.featured'
+        - 'config:core.entity_view_display.node.event.related'
+        - 'config:core.entity_view_display.node.event.search_result'
+        - 'config:core.entity_view_display.node.event.teaser'
+        - 'config:core.entity_view_display.node.external_resource.default'
+        - 'config:core.entity_view_display.node.external_resource.featured'
+        - 'config:core.entity_view_display.node.external_resource.related'
+        - 'config:core.entity_view_display.node.external_resource.search_result'
+        - 'config:core.entity_view_display.node.external_resource.teaser'
+        - 'config:core.entity_view_display.node.location.default'
+        - 'config:core.entity_view_display.node.location.embedded'
+        - 'config:core.entity_view_display.node.location.search_result'
+        - 'config:core.entity_view_display.node.location.teaser'
+        - 'config:core.entity_view_display.node.news.default'
+        - 'config:core.entity_view_display.node.news.featured'
+        - 'config:core.entity_view_display.node.news.related'
+        - 'config:core.entity_view_display.node.news.search_result'
+        - 'config:core.entity_view_display.node.news.teaser'
+        - 'config:core.entity_view_display.node.notification.default'
+        - 'config:core.entity_view_display.node.notification.featured'
+        - 'config:core.entity_view_display.node.notification.teaser'
+        - 'config:core.entity_view_display.node.page.default'
+        - 'config:core.entity_view_display.node.page.featured'
+        - 'config:core.entity_view_display.node.page.related'
+        - 'config:core.entity_view_display.node.page.search_result'
+        - 'config:core.entity_view_display.node.page.teaser'
+        - 'config:core.entity_view_display.node.park_facility.default'
+        - 'config:core.entity_view_display.node.park_facility.featured'
+        - 'config:core.entity_view_display.node.park_facility.related'
+        - 'config:core.entity_view_display.node.park_facility.search_result'
+        - 'config:core.entity_view_display.node.park_facility.teaser'
+        - 'config:core.entity_view_display.node.policy.default'
+        - 'config:core.entity_view_display.node.policy.related'
+        - 'config:core.entity_view_display.node.policy.search_result'
+        - 'config:core.entity_view_display.node.policy.teaser'
+        - 'config:core.entity_view_display.node.service_location.default'
+        - 'config:core.entity_view_display.node.service_location.related'
+        - 'config:core.entity_view_display.node.service_location.search_result'
+        - 'config:core.entity_view_display.node.service_location.teaser'
+        - 'config:core.entity_view_display.node.top_search.default'
+        - 'config:core.entity_view_display.node.top_search.teaser'
+        - 'config:field.storage.group.field_enable_past_meetings'
         - 'config:field.storage.node.field_all_day'
         - 'config:field.storage.node.field_body_content'
         - 'config:field.storage.node.field_end_date'
@@ -2888,6 +3253,86 @@ display:
         - 'user.node_grants:view'
         - user.permissions
       tags:
+        - 'config:core.entity_view_display.node.alert.default'
+        - 'config:core.entity_view_display.node.alert.featured'
+        - 'config:core.entity_view_display.node.alert.teaser'
+        - 'config:core.entity_view_display.node.calendar_item.default'
+        - 'config:core.entity_view_display.node.calendar_item.related'
+        - 'config:core.entity_view_display.node.calendar_item.search_result'
+        - 'config:core.entity_view_display.node.calendar_item.teaser'
+        - 'config:core.entity_view_display.node.city_charter.default'
+        - 'config:core.entity_view_display.node.city_charter.search_result'
+        - 'config:core.entity_view_display.node.city_charter.teaser'
+        - 'config:core.entity_view_display.node.city_code.default'
+        - 'config:core.entity_view_display.node.city_code.search_result'
+        - 'config:core.entity_view_display.node.city_code.teaser'
+        - 'config:core.entity_view_display.node.city_service.default'
+        - 'config:core.entity_view_display.node.city_service.featured'
+        - 'config:core.entity_view_display.node.city_service.related'
+        - 'config:core.entity_view_display.node.city_service.search_result'
+        - 'config:core.entity_view_display.node.city_service.teaser'
+        - 'config:core.entity_view_display.node.construction_project.default'
+        - 'config:core.entity_view_display.node.construction_project.featured'
+        - 'config:core.entity_view_display.node.construction_project.related'
+        - 'config:core.entity_view_display.node.construction_project.search_result'
+        - 'config:core.entity_view_display.node.construction_project.teaser'
+        - 'config:core.entity_view_display.node.contact.default'
+        - 'config:core.entity_view_display.node.contact.teaser'
+        - 'config:core.entity_view_display.node.council_agenda.default'
+        - 'config:core.entity_view_display.node.council_agenda.teaser'
+        - 'config:core.entity_view_display.node.council_document.default'
+        - 'config:core.entity_view_display.node.council_document.teaser'
+        - 'config:core.entity_view_display.node.data_table.default'
+        - 'config:core.entity_view_display.node.data_table.embedded'
+        - 'config:core.entity_view_display.node.data_table.teaser'
+        - 'config:core.entity_view_display.node.development_permit.default'
+        - 'config:core.entity_view_display.node.development_permit.featured'
+        - 'config:core.entity_view_display.node.development_permit.related'
+        - 'config:core.entity_view_display.node.development_permit.search_result'
+        - 'config:core.entity_view_display.node.development_permit.teaser'
+        - 'config:core.entity_view_display.node.event.default'
+        - 'config:core.entity_view_display.node.event.featured'
+        - 'config:core.entity_view_display.node.event.related'
+        - 'config:core.entity_view_display.node.event.search_result'
+        - 'config:core.entity_view_display.node.event.teaser'
+        - 'config:core.entity_view_display.node.external_resource.default'
+        - 'config:core.entity_view_display.node.external_resource.featured'
+        - 'config:core.entity_view_display.node.external_resource.related'
+        - 'config:core.entity_view_display.node.external_resource.search_result'
+        - 'config:core.entity_view_display.node.external_resource.teaser'
+        - 'config:core.entity_view_display.node.location.default'
+        - 'config:core.entity_view_display.node.location.embedded'
+        - 'config:core.entity_view_display.node.location.search_result'
+        - 'config:core.entity_view_display.node.location.teaser'
+        - 'config:core.entity_view_display.node.news.default'
+        - 'config:core.entity_view_display.node.news.featured'
+        - 'config:core.entity_view_display.node.news.related'
+        - 'config:core.entity_view_display.node.news.search_result'
+        - 'config:core.entity_view_display.node.news.teaser'
+        - 'config:core.entity_view_display.node.notification.default'
+        - 'config:core.entity_view_display.node.notification.featured'
+        - 'config:core.entity_view_display.node.notification.teaser'
+        - 'config:core.entity_view_display.node.page.default'
+        - 'config:core.entity_view_display.node.page.featured'
+        - 'config:core.entity_view_display.node.page.related'
+        - 'config:core.entity_view_display.node.page.search_result'
+        - 'config:core.entity_view_display.node.page.teaser'
+        - 'config:core.entity_view_display.node.park_facility.default'
+        - 'config:core.entity_view_display.node.park_facility.featured'
+        - 'config:core.entity_view_display.node.park_facility.related'
+        - 'config:core.entity_view_display.node.park_facility.search_result'
+        - 'config:core.entity_view_display.node.park_facility.teaser'
+        - 'config:core.entity_view_display.node.policy.default'
+        - 'config:core.entity_view_display.node.policy.related'
+        - 'config:core.entity_view_display.node.policy.search_result'
+        - 'config:core.entity_view_display.node.policy.teaser'
+        - 'config:core.entity_view_display.node.service_location.default'
+        - 'config:core.entity_view_display.node.service_location.related'
+        - 'config:core.entity_view_display.node.service_location.search_result'
+        - 'config:core.entity_view_display.node.service_location.teaser'
+        - 'config:core.entity_view_display.node.top_search.default'
+        - 'config:core.entity_view_display.node.top_search.teaser'
+        - 'config:field.storage.group.field_enable_past_meetings'
         - 'config:field.storage.node.field_all_day'
         - 'config:field.storage.node.field_body_content'
         - 'config:field.storage.node.field_end_date'
@@ -2929,6 +3374,86 @@ display:
         - 'user.node_grants:view'
         - user.permissions
       tags:
+        - 'config:core.entity_view_display.node.alert.default'
+        - 'config:core.entity_view_display.node.alert.featured'
+        - 'config:core.entity_view_display.node.alert.teaser'
+        - 'config:core.entity_view_display.node.calendar_item.default'
+        - 'config:core.entity_view_display.node.calendar_item.related'
+        - 'config:core.entity_view_display.node.calendar_item.search_result'
+        - 'config:core.entity_view_display.node.calendar_item.teaser'
+        - 'config:core.entity_view_display.node.city_charter.default'
+        - 'config:core.entity_view_display.node.city_charter.search_result'
+        - 'config:core.entity_view_display.node.city_charter.teaser'
+        - 'config:core.entity_view_display.node.city_code.default'
+        - 'config:core.entity_view_display.node.city_code.search_result'
+        - 'config:core.entity_view_display.node.city_code.teaser'
+        - 'config:core.entity_view_display.node.city_service.default'
+        - 'config:core.entity_view_display.node.city_service.featured'
+        - 'config:core.entity_view_display.node.city_service.related'
+        - 'config:core.entity_view_display.node.city_service.search_result'
+        - 'config:core.entity_view_display.node.city_service.teaser'
+        - 'config:core.entity_view_display.node.construction_project.default'
+        - 'config:core.entity_view_display.node.construction_project.featured'
+        - 'config:core.entity_view_display.node.construction_project.related'
+        - 'config:core.entity_view_display.node.construction_project.search_result'
+        - 'config:core.entity_view_display.node.construction_project.teaser'
+        - 'config:core.entity_view_display.node.contact.default'
+        - 'config:core.entity_view_display.node.contact.teaser'
+        - 'config:core.entity_view_display.node.council_agenda.default'
+        - 'config:core.entity_view_display.node.council_agenda.teaser'
+        - 'config:core.entity_view_display.node.council_document.default'
+        - 'config:core.entity_view_display.node.council_document.teaser'
+        - 'config:core.entity_view_display.node.data_table.default'
+        - 'config:core.entity_view_display.node.data_table.embedded'
+        - 'config:core.entity_view_display.node.data_table.teaser'
+        - 'config:core.entity_view_display.node.development_permit.default'
+        - 'config:core.entity_view_display.node.development_permit.featured'
+        - 'config:core.entity_view_display.node.development_permit.related'
+        - 'config:core.entity_view_display.node.development_permit.search_result'
+        - 'config:core.entity_view_display.node.development_permit.teaser'
+        - 'config:core.entity_view_display.node.event.default'
+        - 'config:core.entity_view_display.node.event.featured'
+        - 'config:core.entity_view_display.node.event.related'
+        - 'config:core.entity_view_display.node.event.search_result'
+        - 'config:core.entity_view_display.node.event.teaser'
+        - 'config:core.entity_view_display.node.external_resource.default'
+        - 'config:core.entity_view_display.node.external_resource.featured'
+        - 'config:core.entity_view_display.node.external_resource.related'
+        - 'config:core.entity_view_display.node.external_resource.search_result'
+        - 'config:core.entity_view_display.node.external_resource.teaser'
+        - 'config:core.entity_view_display.node.location.default'
+        - 'config:core.entity_view_display.node.location.embedded'
+        - 'config:core.entity_view_display.node.location.search_result'
+        - 'config:core.entity_view_display.node.location.teaser'
+        - 'config:core.entity_view_display.node.news.default'
+        - 'config:core.entity_view_display.node.news.featured'
+        - 'config:core.entity_view_display.node.news.related'
+        - 'config:core.entity_view_display.node.news.search_result'
+        - 'config:core.entity_view_display.node.news.teaser'
+        - 'config:core.entity_view_display.node.notification.default'
+        - 'config:core.entity_view_display.node.notification.featured'
+        - 'config:core.entity_view_display.node.notification.teaser'
+        - 'config:core.entity_view_display.node.page.default'
+        - 'config:core.entity_view_display.node.page.featured'
+        - 'config:core.entity_view_display.node.page.related'
+        - 'config:core.entity_view_display.node.page.search_result'
+        - 'config:core.entity_view_display.node.page.teaser'
+        - 'config:core.entity_view_display.node.park_facility.default'
+        - 'config:core.entity_view_display.node.park_facility.featured'
+        - 'config:core.entity_view_display.node.park_facility.related'
+        - 'config:core.entity_view_display.node.park_facility.search_result'
+        - 'config:core.entity_view_display.node.park_facility.teaser'
+        - 'config:core.entity_view_display.node.policy.default'
+        - 'config:core.entity_view_display.node.policy.related'
+        - 'config:core.entity_view_display.node.policy.search_result'
+        - 'config:core.entity_view_display.node.policy.teaser'
+        - 'config:core.entity_view_display.node.service_location.default'
+        - 'config:core.entity_view_display.node.service_location.related'
+        - 'config:core.entity_view_display.node.service_location.search_result'
+        - 'config:core.entity_view_display.node.service_location.teaser'
+        - 'config:core.entity_view_display.node.top_search.default'
+        - 'config:core.entity_view_display.node.top_search.teaser'
+        - 'config:field.storage.group.field_enable_past_meetings'
         - 'config:field.storage.node.field_all_day'
         - 'config:field.storage.node.field_body_content'
         - 'config:field.storage.node.field_end_date'
@@ -4118,6 +4643,71 @@ display:
           separator: ', '
           field_api_classes: false
           plugin_id: field
+        field_enable_past_meetings:
+          id: field_enable_past_meetings
+          table: group__field_enable_past_meetings
+          field: field_enable_past_meetings
+          relationship: field_display_groups
+          group_type: group
+          admin_label: ''
+          label: ''
+          exclude: true
+          alter:
+            alter_text: true
+            text: '<li class="nav-item"><a href="/group/{{ raw_arguments.field_display_groups_target_id }}/events/meetings" class="nav-link{% if path(''<current>'') matches ''[events/meetings$]'' %} active{% endif %}">Past Meetings and Hearings</a></li>'
+            make_link: false
+            path: ''
+            absolute: false
+            external: false
+            replace_spaces: false
+            path_case: none
+            trim_whitespace: false
+            alt: ''
+            rel: ''
+            link_class: ''
+            prefix: ''
+            suffix: ''
+            target: ''
+            nl2br: false
+            max_length: 0
+            word_boundary: true
+            ellipsis: true
+            more_link: false
+            more_link_text: ''
+            more_link_path: ''
+            strip_tags: false
+            trim: false
+            preserve_tags: ''
+            html: false
+          element_type: ''
+          element_class: ''
+          element_label_type: ''
+          element_label_class: ''
+          element_label_colon: false
+          element_wrapper_type: ''
+          element_wrapper_class: ''
+          element_default_classes: false
+          empty: ''
+          hide_empty: true
+          empty_zero: true
+          hide_alter_empty: true
+          click_sort_column: value
+          type: boolean
+          settings:
+            format: boolean
+            format_custom_true: ''
+            format_custom_false: ''
+          group_column: value
+          group_columns: {  }
+          group_rows: true
+          delta_limit: 0
+          delta_offset: 0
+          delta_reversed: false
+          delta_first_last: false
+          multi_type: separator
+          separator: ', '
+          field_api_classes: false
+          plugin_id: field
       empty:
         area:
           id: area
@@ -4144,6 +4734,7 @@ display:
         - 'user.node_grants:view'
         - user.permissions
       tags:
+        - 'config:field.storage.group.field_enable_past_meetings'
         - 'config:field.storage.node.field_all_day'
         - 'config:field.storage.node.field_body_content'
         - 'config:field.storage.node.field_end_date'
