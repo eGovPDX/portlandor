@@ -2,7 +2,7 @@
 
 ## Props
 
-- `name`*: string - machine name of icon
+- `name`: string - machine name of icon
 
 ## Usage
 
