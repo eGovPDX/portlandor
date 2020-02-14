@@ -6,6 +6,7 @@ dependencies:
     - entity_browser.browser.locations_browser
     - field.field.node.event.field_all_day
     - field.field.node.event.field_body_content
+    - field.field.node.event.field_contact
     - field.field.node.event.field_display_groups
     - field.field.node.event.field_end_date
     - field.field.node.event.field_end_time
@@ -31,114 +32,73 @@ dependencies:
     - content_moderation
     - entity_browser
     - field_group
+    - path
     - text
     - time_field
 third_party_settings:
   field_group:
-    group_details:
+    group_featured_media:
       children:
-        - group_banner_image
-        - group_location
-        - group_categorization
-        - group_parent_group
-        - group_related_content
-        - group_redirects
+        - field_featured_media
       parent_name: ''
-      weight: 11
-      format_type: accordion
+      weight: 13
+      format_type: details
+      region: content
       format_settings:
         id: ''
         classes: ''
         description: ''
         open: false
         required_fields: false
-        effect: none
-      label: Details
-      region: content
-    group_banner_image:
-      children:
-        - field_featured_media
-      parent_name: group_details
-      weight: 25
-      format_type: accordion_item
-      format_settings:
-        id: ''
-        classes: ''
-        formatter: closed
-        required_fields: false
-        description: ''
-      label: 'Banner image'
-      region: content
-    group_categorization:
-      children:
-        - field_topics
-      parent_name: group_details
-      weight: 27
-      format_type: accordion_item
-      format_settings:
-        formatter: closed
-        id: ''
-        classes: ''
-        required_fields: false
-      label: 'Where should this event appear?'
-      region: content
-    group_location:
+      label: 'Featured media'
+    group_details:
       children:
         - field_location
-        - field_neighborhood
-      parent_name: group_details
-      weight: 26
-      format_type: accordion_item
-      format_settings:
-        id: ''
-        classes: ''
-        formatter: closed
-        required_fields: false
-        description: ''
-      label: Location
-      region: content
-    group_parent_group:
-      children:
         - field_display_groups
-      parent_name: group_details
-      weight: 28
-      format_type: accordion_item
+        - field_contact
+      parent_name: ''
+      weight: 14
+      format_type: details
+      region: content
       format_settings:
         id: ''
         classes: ''
-        formatter: closed
-        required_fields: false
         description: ''
-      label: 'Parent group'
-      region: content
-    group_related_content:
-      children:
-        - field_related_content
-      parent_name: group_details
-      weight: 29
-      format_type: accordion_item
-      format_settings:
-        id: ''
-        classes: ''
-        formatter: closed
+        open: false
         required_fields: false
-        description: ''
-      label: 'Related content'
-      region: content
-    group_redirects:
+      label: Details
+    group_paths_and_redirects:
       children:
         - field_redirects
-      parent_name: group_details
-      weight: 30
-      format_type: accordion_item
+      parent_name: ''
+      weight: 15
+      format_type: details
+      region: content
       format_settings:
         id: ''
         classes: ''
-        formatter: closed
-        required_fields: false
         description: ''
-      label: 'Legacy paths and redirects'
+        open: false
+        required_fields: false
+      label: 'Paths and Redirects'
+    group_administrative_fields:
+      children:
+        - uid
+        - created
+        - url_redirects
+        - path
+        - field_search_keywords
+      parent_name: ''
+      weight: 16
+      format_type: details
       region: content
+      format_settings:
+        id: ''
+        classes: 'border border-danger'
+        description: ''
+        open: false
+        required_fields: false
+      label: 'Administrative Fields (Site Admins Only)'
 id: node.event.default
 targetEntityType: node
 bundle: event
@@ -146,12 +106,12 @@ mode: default
 content:
   created:
     type: datetime_timestamp
-    weight: 16
+    weight: 22
     region: content
     settings: {  }
     third_party_settings: {  }
   field_all_day:
-    weight: 4
+    weight: 5
     settings:
       display_label: true
     third_party_settings: {  }
@@ -165,8 +125,18 @@ content:
       rows: 5
       placeholder: ''
     third_party_settings: {  }
+  field_contact:
+    weight: 17
+    settings:
+      match_operator: CONTAINS
+      match_limit: 10
+      size: 60
+      placeholder: ''
+    third_party_settings: {  }
+    type: entity_reference_autocomplete
+    region: content
   field_display_groups:
-    weight: 18
+    weight: 16
     settings:
       match_operator: CONTAINS
       size: 60
@@ -176,7 +146,7 @@ content:
     type: entity_reference_autocomplete
     region: content
   field_end_date:
-    weight: 8
+    weight: 9
     settings:
       title: ''
       format: mm/dd/yyyy
@@ -252,7 +222,7 @@ content:
     type: bootstrap_date_widget
     region: content
   field_end_time:
-    weight: 6
+    weight: 7
     settings:
       enabled: false
       step: 5
@@ -304,29 +274,25 @@ content:
     region: content
     third_party_settings: {  }
   field_location:
-    weight: 13
+    weight: 15
     settings:
       entity_browser: locations_browser
       field_widget_display: rendered_entity
+      field_widget_display_settings:
+        view_mode: teaser
       field_widget_edit: true
       field_widget_remove: true
       field_widget_replace: true
       open: true
       selection_mode: selection_append
-      field_widget_display_settings:
-        view_mode: teaser
     third_party_settings: {  }
     type: entity_browser_entity_reference
     region: content
   field_neighborhood:
-    weight: 15
-    settings:
-      match_operator: CONTAINS
-      size: 60
-      placeholder: ''
-      match_limit: 10
+    weight: 11
+    settings: {  }
     third_party_settings: {  }
-    type: entity_reference_autocomplete
+    type: chosen_select
     region: content
   field_redirects:
     type: string_textfield
@@ -337,7 +303,7 @@ content:
       placeholder: ''
     third_party_settings: {  }
   field_related_content:
-    weight: 15
+    weight: 17
     settings:
       match_operator: CONTAINS
       size: 60
@@ -347,7 +313,7 @@ content:
     type: entity_reference_autocomplete
     region: content
   field_reviewer:
-    weight: 13
+    weight: 19
     settings:
       match_operator: CONTAINS
       size: 60
@@ -357,7 +323,7 @@ content:
     type: entity_reference_autocomplete
     region: content
   field_search_keywords:
-    weight: 12
+    weight: 25
     settings:
       size: 60
       placeholder: ''
@@ -365,7 +331,7 @@ content:
     type: string_textfield
     region: content
   field_start_date:
-    weight: 3
+    weight: 4
     settings:
       title: ''
       format: mm/dd/yyyy
@@ -423,7 +389,7 @@ content:
     type: bootstrap_date_widget
     region: content
   field_start_time:
-    weight: 5
+    weight: 6
     settings:
       enabled: false
       step: 5
@@ -448,7 +414,7 @@ content:
     type: time_widget
     region: content
   field_summary:
-    weight: 9
+    weight: 3
     settings:
       rows: 2
       placeholder: ''
@@ -461,7 +427,7 @@ content:
     type: string_textarea
     region: content
   field_toggle_multiday:
-    weight: 7
+    weight: 8
     settings:
       display_label: true
     third_party_settings: {  }
@@ -475,16 +441,22 @@ content:
     region: content
   moderation_state:
     type: moderation_state_default
-    weight: 14
+    weight: 20
     settings: {  }
     region: content
     third_party_settings: {  }
+  path:
+    type: path
+    weight: 24
+    region: content
+    settings: {  }
+    third_party_settings: {  }
   status:
     type: boolean_checkbox
+    weight: 21
+    region: content
     settings:
       display_label: true
-    weight: 17
-    region: content
     third_party_settings: {  }
   title:
     type: string_textfield
@@ -496,7 +468,7 @@ content:
     third_party_settings: {  }
   uid:
     type: entity_reference_autocomplete
-    weight: 15
+    weight: 21
     settings:
       match_operator: CONTAINS
       size: 60
@@ -504,10 +476,13 @@ content:
       match_limit: 10
     region: content
     third_party_settings: {  }
+  url_redirects:
+    weight: 23
+    region: content
+    settings: {  }
+    third_party_settings: {  }
 hidden:
   field_event_location: true
   group_content: true
-  path: true
   promote: true
   sticky: true
-  url_redirects: true
