@@ -62,7 +62,7 @@ switch($_POST['wf_type']) {
     $text = 'Deploy to the '. $env_with_link;
     $text .= ' environment of '. $_ENV['PANTHEON_SITE_NAME'] .' by '. $_POST['user_email'] .' complete!';
     $text .= ' <https://dashboard.pantheon.io/sites/'. PANTHEON_SITE .'#'. PANTHEON_ENVIRONMENT .'/deploys|View Dashboard>';
-    $text .= "\nDeploy note: $deploy_message";
+    $text .= "\n$deploy_message";
     // Build an array of fields to be rendered with Slack Attachments as a table
     // attachment-style formatting:
     // https://api.slack.com/docs/attachments
@@ -75,7 +75,7 @@ switch($_POST['wf_type']) {
       'title' => 'Deploy Note',
       'value' => $deploy_message,
       'short' => 'false'
-    );  
+    );
     break;
 
   case 'sync_code': // Code is pushed via Git or SFTP
