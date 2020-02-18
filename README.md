@@ -64,7 +64,7 @@ To best work with Pantheon Multidev, we are going to keep feature branch names s
 ### Start new work in your local environment
 
 ```bash
-git checkout maste
+git checkout master
 git pull origin master
 lando latest
 lando refresh
