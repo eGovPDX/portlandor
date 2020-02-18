@@ -1,3 +1,5 @@
+[![CircleCI](https://circleci.com/gh/eGovPDX/portlandor.svg?style=svg)](https://circleci.com/gh/eGovPDX/portlandor)
+
 # Portland Oregon Drupal 8 Site
 
 ## Get the code
