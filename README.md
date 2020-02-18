@@ -61,12 +61,24 @@ To best work with Pantheon Multidev, we are going to keep feature branch names s
 
 ### Start new work in your local environment
 
+```bash
+git checkout maste
+git pull origin master
+lando latest
+lando refresh
+# Next run `git checkout -b powr-[ID]`
+```
+
+<details>
+
 1. Verify you are on the master branch with `git checkout master`.
 2. On the master branch, run `git pull origin master`. This will make sure you have the latest changes from the remote master. Optionally, running `git pull -p origin` will prune any local branches not on the remote to help keep your local repo clean.
 3. Use the issue ID from Jira for a new feature branch name to start work: `git checkout -b powr-[ID]` to create and checkout a new branch. (We use lowercase for the branch name to help create Pantheon multidev environments correctly.) If the branch already exists, you may use `git checkout powr-[ID]` to switch to your branch.
 4. Run `lando latest` at the start of every sprint to update your local database with a copy of the database from Dev.
 5. Run `lando refresh` to refresh your local environment to match master. (This runs composer install, drush updb, drush cim, and drush cr.)
 6. You are now ready to develop on your feature branch.
+
+</details>
 
 ### Commit code and push to Github
 
