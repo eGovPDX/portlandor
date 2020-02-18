@@ -22,6 +22,7 @@ soup = BeautifulSoup(page, features="html.parser")
 titles = {
     'number': [],
     'title': [],
+    'name': [],
     'url': [],
 }
 
@@ -33,8 +34,9 @@ count = 1
 for title in soup.find_all('h2')[2:34]:
     url = title.find('a')['href'] #collects the url from all the h2's after the first 3 because they are not part of city code
     titles['url'].append('/citycode/' + url) #collects the url of the titles
-    titles['title'].append(title.text) #collects the name of titles
+    titles['name'].append(title.text) #collects the name of titles
     titles['number'].append(format(count, '02')) #add padding zero to make it two digit
+    titles['title'].append(count)
     count += 1
 print('({})Titles printed'.format(len(titles['number'])))
 
@@ -51,6 +53,7 @@ chapters = {
     'number': [],
     'documents': [],
     'url': [],
+    'path_part': []
 }
 
 for link in data['url']:
@@ -65,18 +68,22 @@ for link in data['url']:
             continue
         chapter = re.findall(r"(?<=\.)[0-9]*", name_trimmed)[count]
         title = re.findall(r"[0-9]*[A-Z]?(?=\.)", name_trimmed)[count]
-        print(heading.text, ', title=', title, ', chapter=', chapter)
         name = name_trimmed
         #Make sure title of single digit has leading zero
         chapters['id'].append(title.zfill(2) + '-' + chapter)
         #When title starts with 14, it could be 14[ABCD], need to set the title to '14'
         if title.startswith('14'):
             chapters['title'].append('14')
+            # Make chapter path as "A10"
+            chapters['path_part'].append(title[-1:] + chapter)
+            # Set alphanumeric sorting order
+            chapters['number'].append(title[-1:] + '-' + chapter.zfill(3))
         else:
             chapters['title'].append(title)
+            chapters['path_part'].append(chapter)
+            #Make sure chapter number has leading zero
+            chapters['number'].append(chapter.zfill(3))
         chapters['name'].append(name)
-        #Make sure chapter number has leading zero
-        chapters['number'].append(chapter.zfill(3))
         chapters['documents'].append(' ')
         url = heading.find('a')['href']
         chapters['url'].append('/citycode/'+ url)
@@ -96,7 +103,7 @@ sections = {
     'number': [],
     'text': [],
     'name': [],
-    'url': []
+    'url': [],
 }
 # documents = []
 
