@@ -23,7 +23,7 @@ Feature: Members can manage group content
     And I should see "Page type"
     And I should see "Summary"
     And I should see "Body content"
-    And I click "Paths and redirects"
+    And I click the "#edit-group-paths-and-redirects" element
     And I should see "Legacy path"
 
     When I fill in "edit-title-0-value" with "Test page"
@@ -37,7 +37,7 @@ Feature: Members can manage group content
     Then I wait for the page to be loaded
     And I should see "Page Test page has been created."
 
-  Scenario: Edit and delete service
+  Scenario: Edit and delete page
     Given I am logged in as user "Marty Member"
     When I visit "/powr/test-page"
     Then I wait for the page to be loaded
