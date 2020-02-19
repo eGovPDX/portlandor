@@ -37,7 +37,7 @@ display:
       exposed_form:
         type: basic
         options:
-          submit_button: 'Search policies'
+          submit_button: Search
           reset_button: false
           reset_button_label: Reset
           exposed_sorts_label: 'Sort by'
@@ -79,19 +79,16 @@ display:
               project: default
             'entity:node':
               calendar_item: default
-              charter_article: default
-              charter_chapter: default
-              charter_section: default
+              city_charter: search_result
+              city_code: search_result
               city_service: default
-              code_chapter: default
-              code_section: default
-              code_title: default
+              construction_project: default
               council_document: default
               council_meeting: default
+              data_table: default
               development_permit: default
               event: default
               external_resource: default
-              location: default
               news: default
               page: default
               park_facility: default
@@ -171,47 +168,6 @@ display:
           entity_type: node
           plugin_id: search_api_field
       filters:
-        type_2:
-          id: type_2
-          table: search_api_index_full_index
-          field: type_2
-          relationship: none
-          group_type: group
-          admin_label: ''
-          operator: or
-          value:
-            policy: policy
-          group: 1
-          exposed: false
-          expose:
-            operator_id: ''
-            label: ''
-            description: ''
-            use_operator: false
-            operator: ''
-            identifier: ''
-            required: false
-            remember: false
-            multiple: false
-            remember_roles:
-              authenticated: authenticated
-            reduce: false
-            operator_limit_selection: false
-            operator_list: {  }
-          is_grouped: false
-          group_info:
-            label: ''
-            description: ''
-            identifier: ''
-            optional: true
-            widget: select
-            multiple: false
-            remember: false
-            default_group: All
-            default_group_multiple: {  }
-            group_items: {  }
-          reduce_duplicates: false
-          plugin_id: search_api_options
         search_api_fulltext:
           id: search_api_fulltext
           table: search_api_index_full_index
@@ -225,10 +181,12 @@ display:
           exposed: true
           expose:
             operator_id: search_api_fulltext_op
-            label: 'Search Portland Policy Documents'
+            label: 'Search Charter, Code, or Policy'
             description: ''
             use_operator: false
             operator: search_api_fulltext_op
+            operator_limit_selection: false
+            operator_list: {  }
             identifier: search
             required: false
             remember: false
@@ -236,15 +194,18 @@ display:
             remember_roles:
               authenticated: authenticated
               anonymous: '0'
-              administrator: '0'
-              sitewide_editor: '0'
-              code_editor: '0'
+              publisher: '0'
+              policy_author: '0'
+              policy_editor: '0'
+              council_author: '0'
               council_clerk: '0'
-              group_creator: '0'
               park_editor: '0'
+              code_editor: '0'
+              group_creator: '0'
+              alert_editor: '0'
+              sitewide_editor: '0'
+              administrator: '0'
             placeholder: ''
-            operator_limit_selection: false
-            operator_list: {  }
           is_grouped: false
           group_info:
             label: ''
@@ -265,6 +226,49 @@ display:
             - field_search_keywords
             - rendered_item
           plugin_id: search_api_fulltext
+        content_type:
+          id: content_type
+          table: search_api_index_full_index
+          field: content_type
+          relationship: none
+          group_type: group
+          admin_label: ''
+          operator: or
+          value:
+            city_charter: city_charter
+            city_code: city_code
+            policy: policy
+          group: 1
+          exposed: false
+          expose:
+            operator_id: ''
+            label: ''
+            description: ''
+            use_operator: false
+            operator: ''
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: ''
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+            reduce: false
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
+          reduce_duplicates: false
+          plugin_id: search_api_options
       sorts:
         search_api_relevance:
           id: search_api_relevance
@@ -273,10 +277,10 @@ display:
           relationship: none
           group_type: group
           admin_label: ''
-          order: ASC
-          exposed: false
+          order: DESC
+          exposed: true
           expose:
-            label: ''
+            label: Relevance
           plugin_id: search_api
         content_title:
           id: content_title
@@ -286,11 +290,23 @@ display:
           group_type: group
           admin_label: ''
           order: ASC
-          exposed: false
+          exposed: true
           expose:
-            label: ''
+            label: Title
           plugin_id: search_api
-      title: 'Portland Policy Search'
+        changed:
+          id: changed
+          table: search_api_index_full_index
+          field: changed
+          relationship: none
+          group_type: group
+          admin_label: ''
+          order: DESC
+          exposed: true
+          expose:
+            label: 'Last updated'
+          plugin_id: search_api
+      title: 'Search Code, Charter, Policy'
       header:
         result:
           id: result
@@ -320,6 +336,10 @@ display:
       relationships: {  }
       arguments: {  }
       display_extenders: {  }
+      filter_groups:
+        operator: AND
+        groups:
+          1: AND
     cache_metadata:
       max-age: -1
       contexts:
@@ -327,6 +347,7 @@ display:
         - 'languages:language_interface'
         - url
         - url.query_args
+        - 'url.query_args:sort_by'
         - user.permissions
       tags: {  }
   page_1:
@@ -335,11 +356,30 @@ display:
     display_title: Page
     position: 2
     display_options:
-      display_extenders: {  }
-      path: policies/search
+      display_extenders:
+        metatag_display_extender:
+          metatags:
+            robots: noindex
+      path: charter-code-policy/search
       exposed_block: true
       defaults:
-        cache: true
+        cache: false
+      menu:
+        type: none
+        title: Policies
+        description: ''
+        expanded: false
+        parent: ''
+        weight: 0
+        context: '0'
+        menu_name: main
+      tab_options:
+        type: none
+        title: ''
+        description: ''
+        weight: 0
+      cache:
+        type: none
     cache_metadata:
       max-age: -1
       contexts:
@@ -347,5 +387,6 @@ display:
         - 'languages:language_interface'
         - url
         - url.query_args
+        - 'url.query_args:sort_by'
         - user.permissions
       tags: {  }

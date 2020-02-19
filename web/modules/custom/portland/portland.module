@@ -13,17 +13,19 @@ use Drupal\Core\Cache\Cache;
 // This file concerns itself with setting up tokens with hooks
 include 'portland.tokens.inc';
 
-
-// The plural is used in the list page URL. E.g. "/bds/services"
-// The group list view's path must match the plural form shown here.
-// If the group list view doesn't exist, visiting the alias will get a 404.
+/**
+ * The plural is used in the list page URL. E.g. "/bds/services". The group
+ * list view's path must match the plural form shown here. If the group list
+ * view doesn't exist, visiting the alias will get a 404.
+ */
 const GROUP_CONTENT_TYPE_PLURAL = [
     "service" => ["services"],
     "building" => ["buildings"],
     "city_service" => ["services"],
     "service_location" => ["locations"],
-    "event" => ["events", "events/past", "events/search"],
+    "event" => ["events", "events/past", "events/meetings"],
     "image" => ["images"],
+    "news" => ["news", "news/blog", "news/press-releases", "news/notices"],
     "document" => ["documents"],
     "video" => ["videos"],
     "audio" => ["audios"],
@@ -38,7 +40,10 @@ const GROUP_CONTENT_TYPE_PLURAL = [
 
 const ALERTS_COUNTER_CACHE_KEY = 'portland.active.alerts';
 
-// these are the views which need to have cache tags invalidated if the shortname changes.
+/**
+ * these are the views which need to have cache tags invalidated if the
+ * group_path changes.
+ */
 const GROUP_VIEWS = [
     "group_calendar_archive",
     "group_child_groups",
@@ -52,8 +57,10 @@ const GROUP_VIEWS = [
     "group_construction_projects"
 ];
 
-// Get the parent group IDs of an entity
-// https://drupal.stackexchange.com/questions/238755/how-to-get-group-ids-by-ids-of-elements-of-group-content
+/**
+ * Get the parent group IDs of an entity.
+ * See https://drupal.stackexchange.com/questions/238755/how-to-get-group-ids-by-ids-of-elements-of-group-content
+ */
 function getGroupIdsByEntity($entity) {
     if($entity == NULL) return [];
     $group_ids = [];
@@ -66,18 +73,27 @@ function getGroupIdsByEntity($entity) {
     return $group_ids;
 }
 
-function createAliasForGroupContent($grp, $contentType, $lang) {
+/**
+ * A helper function to create aliases like "/powr/news".
+ * Called in three scenarios.
+ * 1. when a new group is created.
+ * 2. when a content type is installed in a group.
+ * 3. During bulk alias generation.
+ */
+function _create_alias_for_group_content($grp, $contentType, $lang) {
   // When a content type is not installed, $pluginType->getPluginDefinition()['entity_bundle'] returns false. Otherwise it's the string like "news".
   if($contentType === false) return;
 
   $contentTypePluralArray = (isset(GROUP_CONTENT_TYPE_PLURAL[$contentType]) ? GROUP_CONTENT_TYPE_PLURAL[$contentType] : [$contentType]);
 
-  foreach( $contentTypePluralArray as $contentTypePlural ) {
-    // Clean up shortname as it's from the editor
-    $shortname = \Drupal::service("pathauto.alias_cleaner")
-                ->cleanString($grp->get('field_shortname_or_acronym')->value);
-    $alias = "/$shortname/$contentTypePlural";
+    // The group_path should have been cleaned by group form validation
+    $group_path = $grp->get('field_group_path')->value;
     $gid = $grp->id();
+    // Create the alias for the group
+    $path = \Drupal::service('path.alias_storage')->save("/group/$gid", "/$group_path", $lang);
+
+  foreach( $contentTypePluralArray as $contentTypePlural ) {
+    $alias = "/$group_path/$contentTypePlural";
     $system_path = "/group/$gid/$contentTypePlural";
 
     // If there is already an alias, skip it.
@@ -88,11 +104,17 @@ function createAliasForGroupContent($grp, $contentType, $lang) {
 
     $path = \Drupal::service('path.alias_storage')->save($system_path, $alias, $lang);
   }
+
   return true;
 }
 
-function updateGroupAliases($group) {
-    $shortname = \Drupal::service("pathauto.alias_cleaner")->cleanString($group->get('field_shortname_or_acronym')->value);
+/**
+ * A helper function to update aliases like "/bps/programs" when the
+ * group_path "bps" is updated. Called when a new group is added or an
+ * existing group is updated.
+ */
+function _update_group_aliases($group) {
+    $group_path = $group->get('field_group_path')->value;
     $gid = $group->id();
     $lang = \Drupal::languageManager()->getCurrentLanguage()->getId();
 
@@ -101,7 +123,7 @@ function updateGroupAliases($group) {
         $childGroups = ['projects', 'programs','advisory-groups','offices'];
         foreach($childGroups as $childGroup) {
             $system_path = "/group/$gid/$childGroup";
-            $alias = "/$shortname/$childGroup";
+            $alias = "/$group_path/$childGroup";
 
             $existing_alias = \Drupal::service('path.alias_storage')->lookupPathAlias($system_path, $lang);
             // if it already exists and matches, do nothing
@@ -130,8 +152,9 @@ function updateGroupAliases($group) {
 
 /**
  * Implements hook_ENTITY_TYPE_create().
+ * When a content type is installed to a group type, create the alias
+ * "/group_path/content-plural" for all groups with that group type.
  */
-// When a content type is installed to a group type, create the alias for all groups with that group type.
 function portland_group_content_type_create(GroupContentTypeInterface $groupContentType) {
   // Get all groups of this type. E.g. bureau_office
   $properties = ['type' => $groupContentType->getGroupTypeId()];
@@ -150,16 +173,17 @@ function portland_group_content_type_create(GroupContentTypeInterface $groupCont
     return;
   }
 
-  // For each group, generate a new URL alias "group.field_shortname_or_acronym/contents"
+  // For each group, generate a new URL alias "group.field_group_path/contents"
   $lang = \Drupal::languageManager()->getCurrentLanguage()->getId();
   foreach ($grps as $grp) {
-    createAliasForGroupContent($grp, $contentType, $lang);
+    _create_alias_for_group_content($grp, $contentType, $lang);
   }
 }
 /**
  * Implements hook_ENTITY_TYPE_delete().
+ * When a content type is uninstaled from a group type, delete the alias
+ * added during creation time.
  */
-// When a content type is uninstaled from a group type, delete the alias added during creation time.
 function portland_group_content_type_delete(GroupContentTypeInterface $groupContentType) {
     // Get all groups of this type
     $properties = ['type' => $groupContentType->getGroupTypeId()];
@@ -177,7 +201,7 @@ function portland_group_content_type_delete(GroupContentTypeInterface $groupCont
         return;
     }
 
-    // For each group, delete the URL alias "/group.field_shortname_or_acronym/contents". E.g. "/bds/news"
+    // For each group, delete the URL alias "/group.field_group_path/contents". E.g. "/bds/news"
     $contentTypePluralArray = isset(GROUP_CONTENT_TYPE_PLURAL[$contentType]) ? GROUP_CONTENT_TYPE_PLURAL[$contentType] : [$contentType];
 
     foreach( $contentTypePluralArray as $contentTypePlural ) {
@@ -198,35 +222,68 @@ function portland_group_content_type_delete(GroupContentTypeInterface $groupCont
 
 /**
  * Implements hook_ENTITY_TYPE_presave().
+ * POWR-475 Changing short name of a group can cause the group URL to be
+ * different from the URLs in the group menu. Root cause is that the group
+ * URL is set by PathAuto to be clean and unique. But the URL in sidebar
+ * menu is formed by Twig code using the short name as is. The solution is
+ * to update short name to ensure it's clean and unique when the group is
+ * updated.
  */
-// POWR-475 Changing short name of a group can cause the group URL to be different from
-// the URLs in the sidebar menu. Root cause is that the group URL is set by PathAuto to be clean
-// and unique. But the URL in sidebar menu is formed by Twig code using the short name as is.
-// The solution is to update short name to ensure it's clean and unique when the group is updated.
 function portland_group_presave(GroupInterface $group) {
-    $newShortname = $group->get('field_shortname_or_acronym')->value;
+    $newgroup_path = $group->get('field_group_path')->value;
     if ($group->original === null) {
-        $originalShortname = ''; // new group
+        $originalgroup_path = ''; // new group
     }
     else {
-        $originalShortname = $group->original->get('field_shortname_or_acronym')->value;
+        $originalgroup_path = $group->original->get('field_group_path')->value;
     }
-    // Check if this is a new group or an existing group whose shortname has been modified
-    if( $originalShortname !== $newShortname) {
-        $cleanShortname = \Drupal::service("pathauto.alias_cleaner")->cleanString($newShortname);
-        if( $cleanShortname === '') $cleanShortname = 'invalid-short-name';
-        $alias = "/$cleanShortname";
+    // Check if this is a new group or an existing group whose group_path has been modified
+    if( $originalgroup_path !== $newgroup_path) {
+        $cleangroup_path = $newgroup_path;
+        if( $cleangroup_path === '') $cleangroup_path = 'invalid-short-name';
+        $alias = "/$cleangroup_path";
         $gid = $group->id();
         $lang = \Drupal::languageManager()->getCurrentLanguage()->getId();
-        // Update the group shortname when we have alias conflict
+        // Update the group path when we have alias conflict
         \Drupal::service("pathauto.alias_uniquifier")->uniquify($alias, "/group/$gid", $lang);
-        $group->set('field_shortname_or_acronym', substr($alias, 1)); // Remove the first character "/"
+        $group->set('field_group_path', substr($alias, 1)); // Remove the first character "/"
     }
 }
 
+/**
+ * A helper function to clean up group path.
+ * Support "/" as part of group_path. Called by group form validation.
+ * @param string $group_group_path Will be modified as a clean string by Path
+ * @return boolean Flase if the input is invalid.
+ */
+function _clean_group_group_path(&$group_group_path) {
+    if(empty($group_group_path)) return false;
+
+    // If the group_path contains "/", we have to clean each part and put it back again.
+    if (strpos($group_group_path, '/') !== false) {
+        // Split the string and clean each part
+        $original_parts = explode("/", $group_group_path);
+        $parts = [];
+        foreach($original_parts as $original_part){
+            // Skip empty string
+            if($original_part == "") continue;
+            $parts[] = \Drupal::service("pathauto.alias_cleaner")->cleanString($original_part);
+        }
+        // The string only contains "/"
+        if(count($parts) == 0) return false;
+        // Put everything back again
+        $group_group_path = implode("/", $parts);
+    }
+    else {
+        $group_group_path = \Drupal::service("pathauto.alias_cleaner")->cleanString($group_group_path);
+        if(empty($group_group_path)) return false;
+    }
+    return true;
+}
 
 /**
  * Implements hook_ENTITY_TYPE_insert().
+ * Add and update group aliases like "/powr/news" when a group is added.
  */
 function portland_group_insert(GroupInterface $group) {
     // Find all installed content types on this group type and generate alias if it's missing.
@@ -234,29 +291,28 @@ function portland_group_insert(GroupInterface $group) {
     $lang = \Drupal::languageManager()->getCurrentLanguage()->getId();
     foreach ($installedContentTypes as $pluginType) {
         $contentType = $pluginType->getPluginDefinition()['entity_bundle'];
-        createAliasForGroupContent($group, $contentType, $lang);
+        _create_alias_for_group_content($group, $contentType, $lang);
     }
 
-    updateGroupAliases($group);
+    _update_group_aliases($group);
 
     // Workaround for Drupal bug: https://www.drupal.org/project/inline_entity_form/issues/2966933
     $group->path->pathauto = Drupal\pathauto\PathautoState::CREATE;
 
-    // <TODO:>LOW PRIORITY: Generate URL aliases for group action links using group shortname (ie. /bds/content, /bds/members)</TODO:>
+    // <TODO:>LOW PRIORITY: Generate URL aliases for group action links using group path (ie. /bds/content, /bds/members)</TODO:>
 }
 
 /**
  * Implements hook_ENTITY_TYPE_update().
+ * Add and update group aliases like "/powr/news" when a group is updated.
  */
 function portland_group_update(GroupInterface $group) {
+    // get group path
+    $group_path = $group->get('field_group_path')->value;
+    $orig_group_path = $group->original->get('field_group_path')->value;
 
-    // get group shortname
-    $shortname = \Drupal::service("pathauto.alias_cleaner")->cleanString($group->get('field_shortname_or_acronym')->value);
-    $orig_shortname = \Drupal::service("pathauto.alias_cleaner")->cleanString($group->original->get('field_shortname_or_acronym')->value);
-
-    // only update URL aliases if shortname changes
-    if ($shortname != $orig_shortname) {
-
+    // only update URL aliases if group_path changes
+    if ($group_path != $orig_group_path) {
         // 4.2. Bulk regenerate URL aliases for content by running pathauto batch processing
         $batch = array(
             'title' => t('Bulk updating URL aliases'),
@@ -276,16 +332,16 @@ function portland_group_update(GroupInterface $group) {
 
         // TODO: manually regenerate URL alias for main group page; pathauto bulk update isn't getting it sometimes
         $existing_alias = \Drupal::service('path.alias_storage')->lookupPathAlias("/group/$gid", $lang);
-        $alias = "/$shortname";
+        $alias = "/$group_path";
         // if it exists and doesn't match current alias, delete and re-save
         if ($existing_alias && $existing_alias != $alias) {
             \Drupal::service('path.alias_storage')->delete(['alias' => $existing_alias, 'langcode' => $lang]);
             $path = \Drupal::service('path.alias_storage')->save("/group/$gid", $alias, $lang);
         }
 
-        updateGroupAliases($group);
+        _update_group_aliases($group);
 
-        // POWR-142: Regenerate URL aliases for content type subpages using group shortname (ie. /bds/services)
+        // POWR-142: Regenerate URL aliases for content type subpages using group path (ie. /bds/services)
         // reference: https://api.drupal.org/api/drupal/core%21lib%21Drupal%21Core%21Path%21AliasStorage.php/class/AliasStorage/8.6.x
         // Find all installed content types on this group type and generate alias if it's missing.
         $installedContentTypes = $group->getGroupType()->getInstalledContentPlugins();
@@ -297,7 +353,7 @@ function portland_group_update(GroupInterface $group) {
 
             foreach( $contentTypePluralArray as $contentTypePlural ) {
                 $system_path = "/group/$gid/$contentTypePlural";
-                $alias = "/$shortname/$contentTypePlural";
+                $alias = "/$group_path/$contentTypePlural";
 
                 $existing_alias = \Drupal::service('path.alias_storage')->lookupPathAlias($system_path, $lang);
 
@@ -315,9 +371,12 @@ function portland_group_update(GroupInterface $group) {
         }
     }
 
-    // <TODO:>LOW PRIORITY: rEGenerate URL aliases for group action links using group shortname (ie. /bds/content, /bds/members)</TODO:>
+    // <TODO:>LOW PRIORITY: rEGenerate URL aliases for group action links using group path (ie. /bds/content, /bds/members)</TODO:>
 }
 
+/**
+ * Implements hook_theme().
+ */
 function portland_theme($existing, $type, $theme, $path) {
   return [
     'portland_alert' => [
@@ -350,7 +409,7 @@ function portland_theme($existing, $type, $theme, $path) {
   ];
 }
 
-/*
+/**
  * Implements hook_entity_type_alter().
  */
 function portland_entity_type_alter(array &$entity_types) {
@@ -358,7 +417,7 @@ function portland_entity_type_alter(array &$entity_types) {
     $node->addConstraint('EventDateTime', []);
 }
 
-/*
+/**
  * Implements hook_node_presave().
  */
 function portland_node_presave($node) {
@@ -377,13 +436,11 @@ function portland_node_presave($node) {
 }
 
 /**
- * Implements hook_form_alter().
+ * Implements hook_form_FORM_ID_alter().
+ * Idea borrowed from https://julian.pustkuchen.com/node/659
  */
-//Idea borrowed from https://julian.pustkuchen.com/node/659
 function portland_form_views_exposed_form_alter(&$form, &$form_state) {
-    // ------------------------------------------------------------
-    // Add an own reset button to all views exposed forms. The reason behind is,
-    // that the default Drupal reset button doesn't play nice with AJAX
+    // Add an own reset button to all views exposed forms. The reason behind is that the default Drupal reset button doesn't play nice with AJAX
     $submit_btn_id = $form['actions']['submit']['#id'];
     if (!empty($submit_btn_id) && !empty($form['actions']['reset'])) {
       // Add own reset button
@@ -391,7 +448,7 @@ function portland_form_views_exposed_form_alter(&$form, &$form_state) {
     }
   }
 
-/*
+/**
  * Implements hook_preprocess_HOOK().
  */
 function portland_preprocess_menu(&$vars)
@@ -401,7 +458,7 @@ function portland_preprocess_menu(&$vars)
     if (array_key_exists('menu_name', $vars) && $vars['menu_name'] == 'main') {
         foreach ($vars['items'] as $key => &$item) {
             if ($item['title'] == 'Alerts') {
-                $alertCount = _portland_get_active_alerts_count();
+                $alertCount = _get_active_alerts_count();
                 if ($alertCount < 1) {
                     unset($vars['items'][$key]);
                     return;
@@ -420,7 +477,7 @@ function portland_entity_insert($entity)
 {
     if ($entity->bundle() == 'alert') {
         // alert has been inserted, update alerts count in cache
-        _portland_get_active_alerts_count(true);
+        _get_active_alerts_count(true);
     }
 }
 
@@ -434,13 +491,16 @@ function portland_entity_update($entity)
         $origstate = $entity->original->get('moderation_state')->getString();
         $newstate = $entity->get('moderation_state')->getString();
         if ($origstate != $newstate) {
-            _portland_get_active_alerts_count(true);
+            _get_active_alerts_count(true);
         }
     }
 }
 
-// Build the deletion log message of an entity
-function buildLogMessage($entity) {
+/**
+ * A helper function to build the deletion log message of an entity.
+ * Called by portland_entity_delete().
+ */
+function _build_log_message($entity) {
     if(!$entity) return '';
 
     $parentGroupTitle = '';
@@ -466,20 +526,20 @@ function portland_entity_delete($entity)
 {
     if ($entity->bundle() == 'alert') {
         // alert has been deleted, update alerts count in cache
-        _portland_get_active_alerts_count(true);
+        _get_active_alerts_count(true);
     }
 
     // Log entity deletion event
     switch ($entity->getEntityTypeId()) {
         case 'group_content':
-            \Drupal::logger('Group content')->notice(buildLogMessage($entity));
+            \Drupal::logger('Group content')->notice(_build_log_message($entity));
             break;
         case 'node':
-            \Drupal::logger('Content')->notice(buildLogMessage($entity));
+            \Drupal::logger('Content')->notice(_build_log_message($entity));
 
             break;
         case 'media':
-            \Drupal::logger('Media')->notice(buildLogMessage($entity));
+            \Drupal::logger('Media')->notice(_build_log_message($entity));
             break;
         default:
             // Skip other deletion events: redirect, group, etc.
@@ -487,10 +547,10 @@ function portland_entity_delete($entity)
     }
 }
 
-/*
+/**
  * Retrieves the number of active alerts. Uses caching.
  */
-function _portland_get_active_alerts_count($reset = false)
+function _get_active_alerts_count($reset = false)
 {
     $alertCount = 0;
     if (!$reset && $cache = \Drupal::cache()->get(ALERTS_COUNTER_CACHE_KEY)) {
@@ -597,15 +657,19 @@ function portland_preprocess_paragraph(&$vars) {
 }
 
 /**
- * Implements hook_form_alter
+ * Implements hook_form_FORM_ID_alter.
+ * Add custom bulk generate action to the bulk generate button.
  */
 function portland_form_pathauto_bulk_update_form_alter(&$form, $form_state) {
-    $form['actions']['submit']['#submit'][] = 'portland_handle_bulk_generate';
+    $form['actions']['submit']['#submit'][] = '_handle_bulk_generate';
 }
 
-// When bulk generating aliases for taxonomy terms, we also generate aliases for "/taxonomy/term/CONTENT_TYPE"
-// and "/taxonomy/term/GROUP_TYPE"
-function portland_handle_bulk_generate($form, $form_state) {
+/**
+ * The submit handler for the bulk generate button. When bulk generating
+ * aliases for taxonomy terms, we also generate aliases for
+ * "/taxonomy/term/CONTENT_TYPE" and "/taxonomy/term/GROUP_TYPE"
+ */
+function _handle_bulk_generate($form, $form_state) {
     // If taxonomy_term is selected
     if($form_state->getValues()['update']['canonical_entities:taxonomy_term'] === 'canonical_entities:taxonomy_term') {
         // Generate aliases for "term/content_type"
@@ -647,7 +711,7 @@ function portland_handle_bulk_generate($form, $form_state) {
                 $lang = \Drupal::languageManager()->getCurrentLanguage()->getId();
                 foreach ($installedContentTypes as $pluginType) {
                     $contentType = $pluginType->getPluginDefinition()['entity_bundle'];
-                    createAliasForGroupContent($group, $contentType, $lang);
+                    _create_alias_for_group_content($group, $contentType, $lang);
                 }
             }
         }
@@ -656,9 +720,10 @@ function portland_handle_bulk_generate($form, $form_state) {
 
 /**
  * If loaded page is one of the specified group views, get the group name and
- * add it to the html title by setting $vars['head_title']['title']. This prevents
- * duplicate page titles within groups for views such as Services, etc.
- * The title format is "[page title] | [group] | [site name]"
+ * add it to the html title by setting $vars['head_title']['title']. This
+ * prevents duplicate page titles within groups for views such as Services,
+ * etc. The title format is "[page title] | [group] | [site name]".
+ * Called by cloudy_preprocess_html() in cloudy.theme.
  *
  * @param [type] $vars
  * @return void
@@ -757,9 +822,10 @@ function portland_diff_layout_builder_info_alter(array &$diff_layouts) {
     $diff_layouts['visual_inline']['label'] = t('Visual inline (slow)');
 }
 
-//https://atendesigngroup.com/blog/drupal-8-apache-solr-boost-search-term-relevance-publish-date
 /**
- * Implements hook_search_api_solr_query_alter() boost based on recently published date
+ * Implements hook_search_api_solr_query_alter() boost based on recently
+ * published date.
+ * See https://atendesigngroup.com/blog/drupal-8-apache-solr-boost-search-term-relevance-publish-date
  */
 function portland_search_api_solr_query_alter(\Solarium\QueryType\Select\Query\Query $solarium_query, \Drupal\search_api\Query\QueryInterface $query) {
     $date_field_name = 'aggregated_sorting_date'; // 'created'; // This can be any UNIX timestamp field
@@ -826,6 +892,8 @@ function portland_form_alter(&$form, &$form_state, $form_id) {
         'media_map_add_form'
     ];
 
+    $group_form_prefix = 'group_';
+
     if( in_array($form_id, $form_array_with_group_field) ) {
         // Set the default value as the node's current group
         $node = $form_state->getFormObject()->getEntity();
@@ -838,5 +906,45 @@ function portland_form_alter(&$form, &$form_state, $form_id) {
                 }
             }
         }
+    }
+    else if(substr_compare($form_id, $group_form_prefix, 0, strlen($group_form_prefix)) === 0) {
+            $form['#validate'][] = '_validate_group_group_path';
+    }
+}
+
+/**
+ * A helper function to validate group path.
+ */
+function _validate_group_group_path(&$form, \Drupal\Core\Form\FormStateInterface $form_state) {
+    if ($form_state->hasValue('field_group_path')) {
+       $group_group_path = $form_state->getValue('field_group_path')[0]['value'];
+       $is_valid_group_path = _clean_group_group_path($group_group_path);
+       $form_state->setValue('field_group_path', ['0' => ['value' => $group_group_path,], ]);
+
+       if ($is_valid_group_path) {
+        $group_id = $form_state->getformObject()->getEntity()->id();
+        $pathStorage = \Drupal::entityTypeManager()->getStorage('path_alias');
+        $aliases = $pathStorage->loadByProperties(['alias' => '/'.$group_group_path]);
+        // If this is a new group, $group_id will be null.
+        if($group_id == null){
+            // Check if the alias already taken by any entity
+            if(count($aliases) > 0) {
+                $existing_alias = array_values($aliases)[0]->alias->value;
+                $form_state->setErrorByName('field_group_path', t('The alias is already taken: <a href="'.$existing_alias.'">'.$existing_alias.'</a>'));
+            }
+        }
+        else {
+            // If this is an existing group, check if the alias is already taken by anything OTHER THAN the current group
+            foreach($aliases as $alias) {
+                if($alias->path->value != "/group/$group_id") {
+                    $form_state->setErrorByName('field_group_path', t('The alias is already taken: <a href="'.$alias.'">'.$alias.'</a>'));
+                    break;
+                }
+            }
+        }
+       }
+       else {
+        $form_state->setErrorByName('field_group_path', t('Invalid group path'));
+       }
     }
 }

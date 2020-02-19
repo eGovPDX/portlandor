@@ -23,6 +23,10 @@ class ArcGISOnline extends ProviderPluginBase {
     if (isset($matches['id'])) {
       return md5($matches['id']);
     }
+    preg_match('/^<iframe [^>]+ src="https:\/\/arcg.is\/(?<id>[^"]+)".+<\/iframe>$/', trim($input), $matches);
+    if (isset($matches['id'])) {
+      return $matches['id'];
+    }
     
     // Provided input didn't match any allowed format so reject it
     return FALSE;
@@ -40,6 +44,10 @@ class ArcGISOnline extends ProviderPluginBase {
   public static function getUrlFromInput($input) {
     // Extract map URL from iframe embed code
     preg_match('/^(<style>\.embed-container [^>]+<\/style><div class="embed-container">)?<iframe [^>]+ src="(?<url>\/\/[^\/]+\.maps\.arcgis\.com\/apps\/Embed\/index.html\?webmap=[^"]+)".+<\/iframe>(<\/div>)?$/', trim($input), $matches);
+    if (isset($matches['url'])) {
+      return $matches['url'];
+    }
+    preg_match('/^<iframe [^>]+ src="(?<url>https:\/\/arcg.is\/[^"]+)".+<\/iframe>$/', trim($input), $matches);
     if (isset($matches['url'])) {
       return $matches['url'];
     }
