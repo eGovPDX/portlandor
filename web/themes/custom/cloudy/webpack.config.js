@@ -7,15 +7,15 @@ const isProd = process.env.NODE_ENV === 'production';
 module.exports = (env, argv) => ({
   entry: {
     cloudy: [
-      './src/cloudy.js',
+      './src/foobar.js',
       './src/cloudy.scss',
     ],
     'search-field': './src/js/search-field.js',
     'bootstrap': './src/js/bootstrap.js',
   },
   output: {
-    path: path.resolve(__dirname, './dist'),
-    publicPath: '/themes/custom/cloudy/dist/',
+    path: path.resolve(__dirname, './foobar'),
+    publicPath: '/themes/custom/cloudy/foobar/',
     filename: '[name].bundle.js',
   },
   /**
