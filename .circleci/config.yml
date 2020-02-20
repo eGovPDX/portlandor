@@ -94,6 +94,14 @@ build_and_deploy: &build_and_deploy
           # TODO: should only deploy non-dev packages
           # --no-dev
     - run:
+        name: Build Theme and Pattern Lab
+        when: on_success
+        command: |
+          # Compile the theme and build PL
+          cd web/themes/custom/cloudy && npm run build:ci && cd /var/www/html
+          # Exclude dependencies
+          rm -rf web/themes/custom/cloudy/node_modules
+    - run:
         name: Deploy to Pantheon
         when: on_success
         no_output_timeout: 15m # allow 15 minutes instead of 10 minute default for script to complete
@@ -108,12 +116,8 @@ build_and_deploy: &build_and_deploy
           # Git operations
           git remote add pantheon ssh://codeserver.dev.5c6715db-abac-4633-ada8-1c9efe354629@codeserver.dev.5c6715db-abac-4633-ada8-1c9efe354629.drush.in:2222/~/repository.git
           git config --global user.email "$eGov_Email"
-          # Compile SCSS in our custom theme
-          cd web/themes/custom/cloudy && npm run build:ci && cd /var/www/html
-          # Exclude dependencies
-          rm -rf web/themes/custom/cloudy/node_modules
           # Force add all files to include those excluded by .gitignore
-          rm -rf ./web/modules/contrib/search_api_solr/.git && rm -rf ./vendor/drupal/coder/.git && rm -rf ./web/modules/contrib/facets/.git
+          cd /var/www/html rm -rf ./web/modules/contrib/search_api_solr/.git && rm -rf ./vendor/drupal/coder/.git && rm -rf ./web/modules/contrib/facets/.git
           git add -f /var/www/html
           # Pantheon site will use the wrong DB if the local is kept
           git rm --cache  web/sites/default/settings.local.php --ignore-unmatch
