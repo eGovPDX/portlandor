@@ -17,25 +17,6 @@ pre_test: &pre_test
   parallelism: 5
   working_directory: /var/www/html
 
-## Defines the cache restoring mechanism.
-restore_cache: &restore_cache
-  # We use the composer.lock as a way to determine if we can cache our build.
-  keys:
-  - v1-dependencies-{{ checksum "composer.lock" }}
-  # fallback to using the latest cache if no exact match is found
-  - v1-dependencies-
-
-## Defines the cache saving mechanism.
-save_cache: &save_cache
-  paths:
-    - ./vendor
-    - ./web/core
-    - ./web/modules/contrib
-    - ./web/profiles/contrib
-    - ./web/themes/contrib
-    - ./web/libraries
-  key: v1-dependencies-{{ checksum "composer.lock" }}
-
 #Jobs
 
 ## Job to run the update path and Behat tests.
@@ -68,19 +49,24 @@ build_and_deploy: &build_and_deploy
         paths:
           - "/tmp/vendor"
     - restore_cache:
-        name: Restore theme build asset cache
+        name: Restore theme dependencies cache
         keys:
           - cloudy_-{{ checksum "web/themes/custom/cloudy/package.json" }}
     - run:
-        name: Install theme build tools
+        name: Install theme dependencies
         command: |
-          cd web/themes/custom/cloudy && npm install
+          cd web/themes/custom/cloudy && npm ci
     - save_cache:
-        name: Save theme build asset cache
+        name: Save theme dependencies cache
         key: cloudy_-{{ checksum "web/themes/custom/cloudy/package.json" }}
         paths:
           - "web/themes/custom/cloudy/node_modules"
-    - restore_cache: *restore_cache
+    - restore_cache:
+        name: Restore Composer Cache
+        keys:
+          - v1-dependencies-{{ checksum "composer.lock" }}
+          # fallback to using the latest cache if no exact match is found
+          - v1-dependencies-
     - run:
         name: Composer install
         command: |
@@ -93,6 +79,16 @@ build_and_deploy: &build_and_deploy
           composer install --no-suggest --no-interaction
           # TODO: should only deploy non-dev packages
           # --no-dev
+    - save_cache:
+        name: Save Composer Cache
+        key: v1-dependencies-{{ checksum "composer.lock" }}
+        paths:
+          - ./vendor
+          - ./web/core
+          - ./web/modules/contrib
+          - ./web/profiles/contrib
+          - ./web/themes/contrib
+          - ./web/libraries
     - run:
         name: Deploy to Pantheon
         when: on_success
