@@ -104,6 +104,47 @@ function portland_group_insert(GroupInterface $group) {
 }
 
 /**
+ * Implements hook_ENTITY_TYPE_update().
+ * Add and update group aliases like "/powr/news" when a group is updated.
+ */
+function portland_group_update(GroupInterface $group) {
+    // get group path
+    $group_path = $group->get('field_group_path')->value;
+    $orig_group_path = $group->original->get('field_group_path')->value;
+
+    // only update URL aliases if group_path changes
+    if ($group_path != $orig_group_path) {
+        // 4.2. Bulk regenerate URL aliases for content by running pathauto batch processing
+        $batch = array(
+            'title' => t('Bulk updating URL aliases'),
+            'operations' => array(
+            array('Drupal\pathauto\Form\PathautoBulkUpdateForm::batchStart', array()),
+            ),
+            'finished' => 'Drupal\pathauto\Form\PathautoBulkUpdateForm::batchFinished',
+        );
+        $batch['operations'][] = array('Drupal\pathauto\Form\PathautoBulkUpdateForm::batchProcess', ["canonical_entities:node", "update"]);
+        $batch['operations'][] = array('Drupal\pathauto\Form\PathautoBulkUpdateForm::batchProcess', ["canonical_entities:group", "update"]);
+        $batch['operations'][] = array('Drupal\pathauto\Form\PathautoBulkUpdateForm::batchProcess', ["canonical_entities:group_content", "update"]);
+        $batch['operations'][] = array('Drupal\pathauto\Form\PathautoBulkUpdateForm::batchProcess', ["canonical_entities:media", "update"]);
+        batch_set($batch);
+
+        $gid = $group->id();
+        $lang = \Drupal::languageManager()->getCurrentLanguage()->getId();
+
+        // TODO: manually regenerate URL alias for main group page; pathauto bulk update isn't getting it sometimes
+        $existing_alias = \Drupal::service('path.alias_storage')->lookupPathAlias("/group/$gid", $lang);
+        $alias = "/$group_path";
+        // if it exists and doesn't match current alias, delete and re-save
+        if ($existing_alias && $existing_alias != $alias) {
+            \Drupal::service('path.alias_storage')->delete(['alias' => $existing_alias, 'langcode' => $lang]);
+            $path = \Drupal::service('path.alias_storage')->save("/group/$gid", $alias, $lang);
+        }
+    }
+
+    // <TODO:>LOW PRIORITY: rEGenerate URL aliases for group action links using group path (ie. /bds/content, /bds/members)</TODO:>
+}
+
+/**
  * Implements hook_theme().
  */
 function portland_theme($existing, $type, $theme, $path) {
