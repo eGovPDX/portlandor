@@ -6,6 +6,7 @@ dependencies:
     - search_api.index.full_index
     - taxonomy.vocabulary.news_type
   content:
+    - 'taxonomy_term:news_type:9e9bea1c-3219-4531-8b2c-6148e4e3fc9b'
     - 'taxonomy_term:news_type:e25d8a7f-c85c-411a-b4cb-e748bd90763b'
     - 'taxonomy_term:news_type:e67dc5b8-82c0-473c-b3e9-8eeb27fc5c9d'
     - 'taxonomy_term:news_type:f99eee70-aec6-443e-a6ed-27bf6bcd642c'
@@ -252,109 +253,52 @@ display:
             group_items: {  }
           reduce_duplicates: false
           plugin_id: search_api_options
-      sorts:
-        field_published_on:
-          id: field_published_on
+        field_news_type:
+          id: field_news_type
           table: search_api_index_full_index
-          field: field_published_on
+          field: field_news_type
           relationship: none
           group_type: group
           admin_label: ''
-          order: DESC
+          operator: or
+          value:
+            43: 43
+          group: 1
           exposed: false
           expose:
+            operator_id: ''
             label: ''
-          plugin_id: search_api
-      title: News
-      header:
-        area_text_custom:
-          id: area_text_custom
-          table: views
-          field: area_text_custom
-          relationship: none
-          group_type: group
-          admin_label: ''
-          empty: true
-          tokenize: true
-          content: "<div class=\"sr-only\">{{ portland_content_type_name_field }} Menu</div>\r\n<ul class=\"nav nav-group-menu nav-group-menu\">\r\n<li class=\"nav-item\"><a href=\"/news\" class=\"nav-link{% if path('<current>') matches '[news$]' %} active{% endif %}\">All News</a></li>\r\n<li class=\"nav-item\"><a href=\"/news/search\" class=\"nav-link{% if path('<current>') matches '[news/search$]' %} active{% endif %}\">Search News</a></li>\r\n<li class=\"nav-item\"><a href=\"/news/blog\" class=\"nav-link{% if path('<current>') matches '[news/blog$]' %} active{% endif %}\">Blog Posts</a></li>\r\n<li class=\"nav-item\"><a href=\"/news/press-releases\" class=\"nav-link{% if path('<current>') matches '[news/press-releases$]' %} active{% endif %}\">Press Releases</a></li>\r\n<li class=\"nav-item\"><a href=\"/news/notices\" class=\"nav-link{% if path('<current>') matches '[news/notices$]' %} active{% endif %}\">Public Notices</a></li>\r\n</ul>\r\n"
-          plugin_id: text_custom
-        result:
-          id: result
-          table: views
-          field: result
-          relationship: none
-          group_type: group
-          admin_label: ''
-          empty: false
-          content: 'Displaying @start - @end of @total'
-          plugin_id: result
-      footer: {  }
-      empty: {  }
-      relationships: {  }
-      arguments: {  }
-      display_extenders: {  }
-      filter_groups:
-        operator: AND
-        groups:
-          1: AND
-      use_ajax: true
-    cache_metadata:
-      max-age: -1
-      contexts:
-        - 'languages:language_interface'
-        - url.query_args
-      tags: {  }
-  news_index:
-    display_plugin: page
-    id: news_index
-    display_title: 'Page: News'
-    position: 1
-    display_options:
-      display_extenders:
-        metatag_display_extender:
-          metatags:
-            robots: noindex
-      path: news
-      menu:
-        type: none
-        title: News
-        description: ''
-        expanded: false
-        parent: ''
-        weight: -45
-        context: '0'
-        menu_name: main
-      exposed_block: false
-      display_description: ''
-    cache_metadata:
-      max-age: -1
-      contexts:
-        - 'languages:language_interface'
-        - url.query_args
-      tags: {  }
-  news_search_page:
-    display_plugin: page
-    id: news_search_page
-    display_title: 'Page: News search'
-    position: 1
-    display_options:
-      display_extenders:
-        metatag_display_extender:
-          metatags:
-            robots: noindex
-      path: news/search
-      menu:
-        type: none
-        title: News
-        description: ''
-        expanded: false
-        parent: ''
-        weight: -45
-        context: '0'
-        menu_name: main
-      exposed_block: true
-      display_description: ''
-      filters:
+            description: ''
+            use_operator: false
+            operator: ''
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: ''
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+            reduce: false
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
+          reduce_duplicates: false
+          type: select
+          limit: true
+          vid: news_type
+          hierarchy: false
+          error_message: true
+          plugin_id: search_api_term
         search_api_fulltext:
           id: search_api_fulltext
           table: search_api_index_full_index
@@ -374,7 +318,7 @@ display:
             operator: search_api_fulltext_op
             operator_limit_selection: false
             operator_list: {  }
-            identifier: search_api_fulltext
+            identifier: search
             required: false
             remember: false
             multiple: false
@@ -409,28 +353,33 @@ display:
           min_length: null
           fields:
             - content_title
+            - field_search_keywords
             - rendered_item
           plugin_id: search_api_fulltext
-        field_news_type:
-          id: field_news_type
+        field_published_on:
+          id: field_published_on
           table: search_api_index_full_index
-          field: field_news_type
+          field: field_published_on
           relationship: none
           group_type: group
           admin_label: ''
-          operator: or
-          value: {  }
+          operator: between
+          value:
+            min: '-90 days'
+            max: today
+            value: ''
+            type: offset
           group: 1
           exposed: true
           expose:
-            operator_id: field_news_type_op
-            label: Type
+            operator_id: field_published_on_op
+            label: 'Published between'
             description: ''
             use_operator: false
-            operator: field_news_type_op
+            operator: field_published_on_op
             operator_limit_selection: false
             operator_list: {  }
-            identifier: news_type
+            identifier: published_on
             required: false
             remember: false
             multiple: false
@@ -448,7 +397,9 @@ display:
               alert_editor: '0'
               sitewide_editor: '0'
               administrator: '0'
-            reduce: false
+            placeholder: ''
+            min_placeholder: ''
+            max_placeholder: ''
           is_grouped: false
           group_info:
             label: ''
@@ -461,34 +412,53 @@ display:
             default_group: All
             default_group_multiple: {  }
             group_items: {  }
-          reduce_duplicates: false
-          type: select
-          limit: true
-          vid: news_type
-          hierarchy: false
-          error_message: true
-          plugin_id: search_api_term
-      defaults:
-        filters: false
-        filter_groups: false
-        exposed_form: false
-        title: false
-        header: true
+          plugin_id: search_api_date
+      sorts:
+        field_published_on:
+          id: field_published_on
+          table: search_api_index_full_index
+          field: field_published_on
+          relationship: none
+          group_type: group
+          admin_label: ''
+          order: DESC
+          exposed: false
+          expose:
+            label: ''
+          plugin_id: search_api
+      title: News
+      header:
+        area_text_custom:
+          id: area_text_custom
+          table: views
+          field: area_text_custom
+          relationship: none
+          group_type: group
+          admin_label: ''
+          empty: true
+          tokenize: true
+          content: "<div class=\"sr-only\">{{ portland_content_type_name_field }} Menu</div>\r\n<ul class=\"nav nav-group-menu nav-group-menu\">\r\n<li class=\"nav-item\"><a href=\"/news\" class=\"nav-link{% if path('<current>') matches '[news$]' %} active{% endif %}\">News</a></li>\r\n<li class=\"nav-item\"><a href=\"/news/blog\" class=\"nav-link{% if path('<current>') matches '[news/blog$]' %} active{% endif %}\">Blog Posts</a></li>\r\n<li class=\"nav-item\"><a href=\"/news/press-releases\" class=\"nav-link{% if path('<current>') matches '[news/press-releases$]' %} active{% endif %}\">Press Releases</a></li>\r\n<li class=\"nav-item\"><a href=\"/news/notices\" class=\"nav-link{% if path('<current>') matches '[news/notices$]' %} active{% endif %}\">Public Notices</a></li>\r\n</ul>\r\n"
+          plugin_id: text_custom
+        result:
+          id: result
+          table: views
+          field: result
+          relationship: none
+          group_type: group
+          admin_label: ''
+          empty: false
+          content: 'Displaying @start - @end of @total'
+          plugin_id: result
+      footer: {  }
+      empty: {  }
+      relationships: {  }
+      arguments: {  }
+      display_extenders: {  }
       filter_groups:
         operator: AND
         groups:
           1: AND
-      exposed_form:
-        type: basic
-        options:
-          submit_button: Search
-          reset_button: true
-          reset_button_label: Reset
-          exposed_sorts_label: 'Sort by'
-          expose_sort_order: false
-          sort_asc_label: Asc
-          sort_desc_label: Desc
-      title: 'Search News'
+      use_ajax: true
     cache_metadata:
       max-age: -1
       contexts:
@@ -497,11 +467,11 @@ display:
         - url.query_args
         - user
       tags: {  }
-  sitewide_news_blog:
+  page_blog:
     display_plugin: page
-    id: sitewide_news_blog
+    id: page_blog
     display_title: 'Page: Blogs'
-    position: 1
+    position: 2
     display_options:
       display_extenders:
         metatag_display_extender:
@@ -517,7 +487,7 @@ display:
         weight: -45
         context: '0'
         menu_name: main
-      exposed_block: false
+      exposed_block: true
       display_description: ''
       title: Blogs
       defaults:
@@ -612,6 +582,120 @@ display:
           hierarchy: false
           error_message: true
           plugin_id: search_api_term
+        search_api_fulltext:
+          id: search_api_fulltext
+          table: search_api_index_full_index
+          field: search_api_fulltext
+          relationship: none
+          group_type: group
+          admin_label: ''
+          operator: and
+          value: ''
+          group: 1
+          exposed: true
+          expose:
+            operator_id: search_api_fulltext_op
+            label: Keywords
+            description: ''
+            use_operator: false
+            operator: search_api_fulltext_op
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: search
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+              anonymous: '0'
+              publisher: '0'
+              policy_author: '0'
+              policy_editor: '0'
+              council_author: '0'
+              council_clerk: '0'
+              park_editor: '0'
+              code_editor: '0'
+              group_creator: '0'
+              alert_editor: '0'
+              sitewide_editor: '0'
+              administrator: '0'
+            placeholder: ''
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
+          parse_mode: terms
+          min_length: null
+          fields:
+            - content_title
+            - field_search_keywords
+            - rendered_item
+          plugin_id: search_api_fulltext
+        field_published_on:
+          id: field_published_on
+          table: search_api_index_full_index
+          field: field_published_on
+          relationship: none
+          group_type: group
+          admin_label: ''
+          operator: between
+          value:
+            min: '-90 days'
+            max: today
+            value: ''
+            type: offset
+          group: 1
+          exposed: true
+          expose:
+            operator_id: field_published_on_op
+            label: 'Published between'
+            description: ''
+            use_operator: false
+            operator: field_published_on_op
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: published_on
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+              anonymous: '0'
+              publisher: '0'
+              policy_author: '0'
+              policy_editor: '0'
+              council_author: '0'
+              council_clerk: '0'
+              park_editor: '0'
+              code_editor: '0'
+              group_creator: '0'
+              alert_editor: '0'
+              sitewide_editor: '0'
+              administrator: '0'
+            placeholder: ''
+            min_placeholder: ''
+            max_placeholder: ''
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
+          plugin_id: search_api_date
       filter_groups:
         operator: AND
         groups:
@@ -620,14 +704,48 @@ display:
       max-age: -1
       contexts:
         - 'languages:language_interface'
+        - url
         - url.query_args
         - user
       tags: {  }
-  sitewide_news_notices:
+  page_news:
     display_plugin: page
-    id: sitewide_news_notices
-    display_title: 'Page: Public Notices'
+    id: page_news
+    display_title: 'Page: News'
     position: 1
+    display_options:
+      display_extenders:
+        metatag_display_extender:
+          metatags:
+            robots: noindex
+      path: news
+      menu:
+        type: none
+        title: News
+        description: ''
+        expanded: false
+        parent: ''
+        weight: -45
+        context: '0'
+        menu_name: main
+      exposed_block: true
+      display_description: ''
+      defaults:
+        filters: true
+        filter_groups: true
+    cache_metadata:
+      max-age: -1
+      contexts:
+        - 'languages:language_interface'
+        - url
+        - url.query_args
+        - user
+      tags: {  }
+  page_notices:
+    display_plugin: page
+    id: page_notices
+    display_title: 'Page: Public Notices'
+    position: 3
     display_options:
       display_extenders:
         metatag_display_extender:
@@ -643,7 +761,7 @@ display:
         weight: -45
         context: '0'
         menu_name: main
-      exposed_block: false
+      exposed_block: true
       display_description: ''
       title: 'Public Notices'
       defaults:
@@ -738,6 +856,120 @@ display:
           hierarchy: false
           error_message: true
           plugin_id: search_api_term
+        search_api_fulltext:
+          id: search_api_fulltext
+          table: search_api_index_full_index
+          field: search_api_fulltext
+          relationship: none
+          group_type: group
+          admin_label: ''
+          operator: and
+          value: ''
+          group: 1
+          exposed: true
+          expose:
+            operator_id: search_api_fulltext_op
+            label: Keywords
+            description: ''
+            use_operator: false
+            operator: search_api_fulltext_op
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: search
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+              anonymous: '0'
+              publisher: '0'
+              policy_author: '0'
+              policy_editor: '0'
+              council_author: '0'
+              council_clerk: '0'
+              park_editor: '0'
+              code_editor: '0'
+              group_creator: '0'
+              alert_editor: '0'
+              sitewide_editor: '0'
+              administrator: '0'
+            placeholder: ''
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
+          parse_mode: terms
+          min_length: null
+          fields:
+            - content_title
+            - field_search_keywords
+            - rendered_item
+          plugin_id: search_api_fulltext
+        field_published_on:
+          id: field_published_on
+          table: search_api_index_full_index
+          field: field_published_on
+          relationship: none
+          group_type: group
+          admin_label: ''
+          operator: between
+          value:
+            min: '-90 days'
+            max: today
+            value: ''
+            type: offset
+          group: 1
+          exposed: true
+          expose:
+            operator_id: field_published_on_op
+            label: 'Published between'
+            description: ''
+            use_operator: false
+            operator: field_published_on_op
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: published_on
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+              anonymous: '0'
+              publisher: '0'
+              policy_author: '0'
+              policy_editor: '0'
+              council_author: '0'
+              council_clerk: '0'
+              park_editor: '0'
+              code_editor: '0'
+              group_creator: '0'
+              alert_editor: '0'
+              sitewide_editor: '0'
+              administrator: '0'
+            placeholder: ''
+            min_placeholder: ''
+            max_placeholder: ''
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
+          plugin_id: search_api_date
       filter_groups:
         operator: AND
         groups:
@@ -746,14 +978,15 @@ display:
       max-age: -1
       contexts:
         - 'languages:language_interface'
+        - url
         - url.query_args
         - user
       tags: {  }
-  sitewide_news_press_releases:
+  page_press_releases:
     display_plugin: page
-    id: sitewide_news_press_releases
+    id: page_press_releases
     display_title: 'Page: Press Releases'
-    position: 1
+    position: 4
     display_options:
       display_extenders:
         metatag_display_extender:
@@ -769,7 +1002,7 @@ display:
         weight: -45
         context: '0'
         menu_name: main
-      exposed_block: false
+      exposed_block: true
       display_description: ''
       title: 'Press Releases'
       defaults:
@@ -864,6 +1097,120 @@ display:
           hierarchy: false
           error_message: true
           plugin_id: search_api_term
+        search_api_fulltext:
+          id: search_api_fulltext
+          table: search_api_index_full_index
+          field: search_api_fulltext
+          relationship: none
+          group_type: group
+          admin_label: ''
+          operator: and
+          value: ''
+          group: 1
+          exposed: true
+          expose:
+            operator_id: search_api_fulltext_op
+            label: Keywords
+            description: ''
+            use_operator: false
+            operator: search_api_fulltext_op
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: search
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+              anonymous: '0'
+              publisher: '0'
+              policy_author: '0'
+              policy_editor: '0'
+              council_author: '0'
+              council_clerk: '0'
+              park_editor: '0'
+              code_editor: '0'
+              group_creator: '0'
+              alert_editor: '0'
+              sitewide_editor: '0'
+              administrator: '0'
+            placeholder: ''
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
+          parse_mode: terms
+          min_length: null
+          fields:
+            - content_title
+            - field_search_keywords
+            - rendered_item
+          plugin_id: search_api_fulltext
+        field_published_on:
+          id: field_published_on
+          table: search_api_index_full_index
+          field: field_published_on
+          relationship: none
+          group_type: group
+          admin_label: ''
+          operator: between
+          value:
+            min: '-90 days'
+            max: today
+            value: ''
+            type: offset
+          group: 1
+          exposed: true
+          expose:
+            operator_id: field_published_on_op
+            label: 'Published between'
+            description: ''
+            use_operator: false
+            operator: field_published_on_op
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: published_on
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+              anonymous: '0'
+              publisher: '0'
+              policy_author: '0'
+              policy_editor: '0'
+              council_author: '0'
+              council_clerk: '0'
+              park_editor: '0'
+              code_editor: '0'
+              group_creator: '0'
+              alert_editor: '0'
+              sitewide_editor: '0'
+              administrator: '0'
+            placeholder: ''
+            min_placeholder: ''
+            max_placeholder: ''
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
+          plugin_id: search_api_date
       filter_groups:
         operator: AND
         groups:
@@ -872,6 +1219,7 @@ display:
       max-age: -1
       contexts:
         - 'languages:language_interface'
+        - url
         - url.query_args
         - user
       tags: {  }
