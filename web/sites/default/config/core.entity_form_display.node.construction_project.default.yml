@@ -3,11 +3,12 @@ langcode: en
 status: true
 dependencies:
   config:
-    - entity_browser.browser.locations_browser
+    - entity_browser.browser.map_browser_embed
     - field.field.node.construction_project.field_address
     - field.field.node.construction_project.field_audience
     - field.field.node.construction_project.field_body_content
     - field.field.node.construction_project.field_city_section
+    - field.field.node.construction_project.field_contact
     - field.field.node.construction_project.field_display_date
     - field.field.node.construction_project.field_display_date_toggle
     - field.field.node.construction_project.field_display_groups
@@ -27,44 +28,20 @@ dependencies:
     - node.type.construction_project
     - workflows.workflow.editorial
   module:
-    - address
     - chosen_field
     - content_moderation
     - datetime
     - entity_browser
     - field_group
     - path
-    - telephone
     - text
 third_party_settings:
   field_group:
-    group_details:
-      children:
-        - field_featured_media
-        - field_display_groups
-        - field_address
-        - field_phone
-        - field_email
-        - field_location
-        - field_map
-        - field_body_content
-      parent_name: ''
-      weight: 7
-      format_type: details
-      region: content
-      format_settings:
-        id: ''
-        classes: ''
-        description: ''
-        open: false
-        required_fields: false
-        direction: vertical
-      label: 'Construction Project Details'
     group_paths_and_redirects:
       children:
         - field_redirects
       parent_name: ''
-      weight: 8
+      weight: 15
       format_type: details
       region: content
       format_settings:
@@ -82,7 +59,7 @@ third_party_settings:
         - field_display_date_toggle
         - field_display_date
       parent_name: ''
-      weight: 6
+      weight: 11
       format_type: details
       region: content
       format_settings:
@@ -93,6 +70,51 @@ third_party_settings:
         required_fields: false
         direction: vertical
       label: 'Project Dates'
+    group_administrative_fields:
+      children:
+        - created
+        - uid
+        - path
+        - url_redirects
+      parent_name: ''
+      weight: 16
+      format_type: details
+      region: content
+      format_settings:
+        id: ''
+        classes: 'border border-danger'
+        description: ''
+        open: false
+        required_fields: false
+      label: 'Administrative Fields  (Site Admins Only)'
+    group_groups:
+      children:
+        - field_display_groups
+      parent_name: ''
+      weight: 14
+      format_type: details
+      region: content
+      format_settings:
+        id: ''
+        classes: ''
+        description: ''
+        open: false
+        required_fields: false
+      label: Groups
+    group_contacts:
+      children:
+        - field_contact
+      parent_name: ''
+      weight: 12
+      format_type: details
+      region: content
+      format_settings:
+        id: ''
+        classes: ''
+        description: ''
+        open: false
+        required_fields: false
+      label: Contacts
 id: node.construction_project.default
 targetEntityType: node
 bundle: construction_project
@@ -100,18 +122,12 @@ mode: default
 content:
   created:
     type: datetime_timestamp
-    weight: 10
+    weight: 11
     region: content
     settings: {  }
     third_party_settings: {  }
-  field_address:
-    weight: 26
-    settings: {  }
-    third_party_settings: {  }
-    type: address_default
-    region: content
   field_body_content:
-    weight: 31
+    weight: 3
     settings:
       rows: 5
       placeholder: ''
@@ -119,10 +135,20 @@ content:
     type: text_textarea
     region: content
   field_city_section:
-    weight: 3
+    weight: 4
     settings: {  }
     third_party_settings: {  }
     type: chosen_select
+    region: content
+  field_contact:
+    weight: 7
+    settings:
+      match_operator: CONTAINS
+      match_limit: 10
+      size: 60
+      placeholder: ''
+    third_party_settings: {  }
+    type: entity_reference_autocomplete
     region: content
   field_display_date:
     weight: 7
@@ -171,14 +197,6 @@ content:
     third_party_settings: {  }
     type: entity_reference_autocomplete
     region: content
-  field_email:
-    weight: 28
-    settings:
-      size: 60
-      placeholder: ''
-    third_party_settings: {  }
-    type: email_default
-    region: content
   field_end_date:
     weight: 5
     settings: {  }
@@ -187,7 +205,7 @@ content:
     region: content
   field_featured_media:
     type: entity_browser_entity_reference
-    weight: 24
+    weight: 8
     settings:
       entity_browser: image_browser_embed
       field_widget_display: rendered_entity
@@ -201,7 +219,7 @@ content:
     region: content
     third_party_settings: {  }
   field_location:
-    weight: 29
+    weight: 9
     settings:
       entity_browser: locations_browser
       field_widget_display: rendered_entity
@@ -216,23 +234,24 @@ content:
     type: entity_browser_entity_reference
     region: content
   field_map:
-    type: options_select
-    weight: 30
-    settings: {  }
+    type: entity_browser_entity_reference
+    weight: 10
+    settings:
+      entity_browser: map_browser_embed
+      field_widget_display: label
+      field_widget_edit: true
+      field_widget_remove: true
+      field_widget_replace: true
+      selection_mode: selection_append
+      open: false
+      field_widget_display_settings: {  }
     region: content
     third_party_settings: {  }
   field_neighborhood:
-    weight: 4
+    weight: 5
     settings: {  }
     third_party_settings: {  }
     type: chosen_select
-    region: content
-  field_phone:
-    weight: 27
-    settings:
-      placeholder: ''
-    third_party_settings: {  }
-    type: telephone_default
     region: content
   field_project_status:
     weight: 1
@@ -249,7 +268,7 @@ content:
       size: 60
     third_party_settings: {  }
   field_related_content:
-    weight: 9
+    weight: 17
     settings:
       match_operator: CONTAINS
       match_limit: 10
@@ -259,7 +278,7 @@ content:
     type: entity_reference_autocomplete
     region: content
   field_reviewer:
-    weight: 14
+    weight: 18
     settings:
       match_operator: CONTAINS
       match_limit: 10
@@ -288,20 +307,20 @@ content:
     type: string_textarea
     region: content
   field_topics:
-    weight: 5
+    weight: 6
     settings: {  }
     third_party_settings: {  }
     type: chosen_select
     region: content
   moderation_state:
     type: moderation_state_default
-    weight: 15
+    weight: 19
     region: content
     settings: {  }
     third_party_settings: {  }
   path:
     type: path
-    weight: 12
+    weight: 13
     region: content
     settings: {  }
     third_party_settings: {  }
@@ -315,7 +334,7 @@ content:
     third_party_settings: {  }
   uid:
     type: entity_reference_autocomplete
-    weight: 11
+    weight: 12
     settings:
       match_operator: CONTAINS
       match_limit: 10
@@ -324,12 +343,15 @@ content:
     region: content
     third_party_settings: {  }
   url_redirects:
-    weight: 13
+    weight: 14
     region: content
     settings: {  }
     third_party_settings: {  }
 hidden:
+  field_address: true
   field_audience: true
+  field_email: true
+  field_phone: true
   group_content: true
   promote: true
   status: true
