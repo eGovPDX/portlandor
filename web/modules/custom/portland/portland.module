@@ -14,8 +14,8 @@ use Drupal\Core\Cache\Cache;
 include 'portland.tokens.inc';
 
 /**
- * The plural is used in the list page URL. E.g. "/bds/services". The group 
- * list view's path must match the plural form shown here. If the group list 
+ * The plural is used in the list page URL. E.g. "/bds/services". The group
+ * list view's path must match the plural form shown here. If the group list
  * view doesn't exist, visiting the alias will get a 404.
  */
 const GROUP_CONTENT_TYPE_PLURAL = [
@@ -23,8 +23,9 @@ const GROUP_CONTENT_TYPE_PLURAL = [
     "building" => ["buildings"],
     "city_service" => ["services"],
     "service_location" => ["locations"],
-    "event" => ["events", "events/past", "events/search"],
+    "event" => ["events", "events/past", "events/meetings"],
     "image" => ["images"],
+    "news" => ["news", "news/blog", "news/press-releases", "news/notices"],
     "document" => ["documents"],
     "video" => ["videos"],
     "audio" => ["audios"],
@@ -40,7 +41,7 @@ const GROUP_CONTENT_TYPE_PLURAL = [
 const ALERTS_COUNTER_CACHE_KEY = 'portland.active.alerts';
 
 /**
- * these are the views which need to have cache tags invalidated if the 
+ * these are the views which need to have cache tags invalidated if the
  * group_path changes.
  */
 const GROUP_VIEWS = [
@@ -57,7 +58,7 @@ const GROUP_VIEWS = [
 ];
 
 /**
- * Get the parent group IDs of an entity. 
+ * Get the parent group IDs of an entity.
  * See https://drupal.stackexchange.com/questions/238755/how-to-get-group-ids-by-ids-of-elements-of-group-content
  */
 function getGroupIdsByEntity($entity) {
@@ -74,8 +75,8 @@ function getGroupIdsByEntity($entity) {
 
 /**
  * A helper function to create aliases like "/powr/news".
- * Called in three scenarios. 
- * 1. when a new group is created. 
+ * Called in three scenarios.
+ * 1. when a new group is created.
  * 2. when a content type is installed in a group.
  * 3. During bulk alias generation.
  */
@@ -108,8 +109,8 @@ function _create_alias_for_group_content($grp, $contentType, $lang) {
 }
 
 /**
- * A helper function to update aliases like "/powr/news" when the  
- * group_path "powr" is updated. Called when a new group is added or an 
+ * A helper function to update aliases like "/bps/programs" when the
+ * group_path "bps" is updated. Called when a new group is added or an
  * existing group is updated.
  */
 function _update_group_aliases($group) {
@@ -151,7 +152,7 @@ function _update_group_aliases($group) {
 
 /**
  * Implements hook_ENTITY_TYPE_create().
- * When a content type is installed to a group type, create the alias 
+ * When a content type is installed to a group type, create the alias
  * "/group_path/content-plural" for all groups with that group type.
  */
 function portland_group_content_type_create(GroupContentTypeInterface $groupContentType) {
@@ -180,7 +181,7 @@ function portland_group_content_type_create(GroupContentTypeInterface $groupCont
 }
 /**
  * Implements hook_ENTITY_TYPE_delete().
- * When a content type is uninstaled from a group type, delete the alias 
+ * When a content type is uninstaled from a group type, delete the alias
  * added during creation time.
  */
 function portland_group_content_type_delete(GroupContentTypeInterface $groupContentType) {
@@ -221,11 +222,11 @@ function portland_group_content_type_delete(GroupContentTypeInterface $groupCont
 
 /**
  * Implements hook_ENTITY_TYPE_presave().
- * POWR-475 Changing short name of a group can cause the group URL to be 
- * different from the URLs in the group menu. Root cause is that the group 
- * URL is set by PathAuto to be clean and unique. But the URL in sidebar 
- * menu is formed by Twig code using the short name as is. The solution is 
- * to update short name to ensure it's clean and unique when the group is 
+ * POWR-475 Changing short name of a group can cause the group URL to be
+ * different from the URLs in the group menu. Root cause is that the group
+ * URL is set by PathAuto to be clean and unique. But the URL in sidebar
+ * menu is formed by Twig code using the short name as is. The solution is
+ * to update short name to ensure it's clean and unique when the group is
  * updated.
  */
 function portland_group_presave(GroupInterface $group) {
@@ -496,7 +497,7 @@ function portland_entity_update($entity)
 }
 
 /**
- * A helper function to build the deletion log message of an entity. 
+ * A helper function to build the deletion log message of an entity.
  * Called by portland_entity_delete().
  */
 function _build_log_message($entity) {
@@ -664,8 +665,8 @@ function portland_form_pathauto_bulk_update_form_alter(&$form, $form_state) {
 }
 
 /**
- * The submit handler for the bulk generate button. When bulk generating 
- * aliases for taxonomy terms, we also generate aliases for 
+ * The submit handler for the bulk generate button. When bulk generating
+ * aliases for taxonomy terms, we also generate aliases for
  * "/taxonomy/term/CONTENT_TYPE" and "/taxonomy/term/GROUP_TYPE"
  */
 function _handle_bulk_generate($form, $form_state) {
@@ -719,8 +720,8 @@ function _handle_bulk_generate($form, $form_state) {
 
 /**
  * If loaded page is one of the specified group views, get the group name and
- * add it to the html title by setting $vars['head_title']['title']. This 
- * prevents duplicate page titles within groups for views such as Services, 
+ * add it to the html title by setting $vars['head_title']['title']. This
+ * prevents duplicate page titles within groups for views such as Services,
  * etc. The title format is "[page title] | [group] | [site name]".
  * Called by cloudy_preprocess_html() in cloudy.theme.
  *
@@ -822,7 +823,7 @@ function portland_diff_layout_builder_info_alter(array &$diff_layouts) {
 }
 
 /**
- * Implements hook_search_api_solr_query_alter() boost based on recently 
+ * Implements hook_search_api_solr_query_alter() boost based on recently
  * published date.
  * See https://atendesigngroup.com/blog/drupal-8-apache-solr-boost-search-term-relevance-publish-date
  */
@@ -919,7 +920,7 @@ function _validate_group_group_path(&$form, \Drupal\Core\Form\FormStateInterface
        $group_group_path = $form_state->getValue('field_group_path')[0]['value'];
        $is_valid_group_path = _clean_group_group_path($group_group_path);
        $form_state->setValue('field_group_path', ['0' => ['value' => $group_group_path,], ]);
-  
+
        if ($is_valid_group_path) {
         $group_id = $form_state->getformObject()->getEntity()->id();
         $pathStorage = \Drupal::entityTypeManager()->getStorage('path_alias');
