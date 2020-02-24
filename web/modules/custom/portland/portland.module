@@ -13,49 +13,7 @@ use Drupal\Core\Cache\Cache;
 // This file concerns itself with setting up tokens with hooks
 include 'portland.tokens.inc';
 
-/**
- * The plural is used in the list page URL. E.g. "/bds/services". The group
- * list view's path must match the plural form shown here. If the group list
- * view doesn't exist, visiting the alias will get a 404.
- */
-const GROUP_CONTENT_TYPE_PLURAL = [
-    "service" => ["services"],
-    "building" => ["buildings"],
-    "city_service" => ["services"],
-    "service_location" => ["locations"],
-    "event" => ["events", "events/past", "events/meetings"],
-    "image" => ["images"],
-    "news" => ["news", "news/blog", "news/press-releases", "news/notices"],
-    "document" => ["documents"],
-    "video" => ["videos"],
-    "audio" => ["audios"],
-    "media" => ["media"],
-    "notification" => ["notifications"],
-    "page" => ["pages"],
-    "development_permit" => ["permits"],
-    "location" => ["locations"],
-    "calendar_item" => ["calendar/archive"],
-    "construction_project" => ["construction"]
-];
-
 const ALERTS_COUNTER_CACHE_KEY = 'portland.active.alerts';
-
-/**
- * these are the views which need to have cache tags invalidated if the
- * group_path changes.
- */
-const GROUP_VIEWS = [
-    "group_calendar_archive",
-    "group_child_groups",
-    "group_documents",
-    "group_events",
-    "group_news",
-    "group_notifications",
-    "group_pages",
-    "group_permits",
-    "group_services",
-    "group_construction_projects"
-];
 
 /**
  * Get the parent group IDs of an entity.
@@ -71,153 +29,6 @@ function getGroupIdsByEntity($entity) {
     }
 
     return $group_ids;
-}
-
-/**
- * A helper function to create aliases like "/powr/news".
- * Called in three scenarios.
- * 1. when a new group is created.
- * 2. when a content type is installed in a group.
- * 3. During bulk alias generation.
- */
-function _create_alias_for_group_content($grp, $contentType, $lang) {
-  // When a content type is not installed, $pluginType->getPluginDefinition()['entity_bundle'] returns false. Otherwise it's the string like "news".
-  if($contentType === false) return;
-
-  $contentTypePluralArray = (isset(GROUP_CONTENT_TYPE_PLURAL[$contentType]) ? GROUP_CONTENT_TYPE_PLURAL[$contentType] : [$contentType]);
-
-    // The group_path should have been cleaned by group form validation
-    $group_path = $grp->get('field_group_path')->value;
-    $gid = $grp->id();
-    // Create the alias for the group
-    $path = \Drupal::service('path.alias_storage')->save("/group/$gid", "/$group_path", $lang);
-
-  foreach( $contentTypePluralArray as $contentTypePlural ) {
-    $alias = "/$group_path/$contentTypePlural";
-    $system_path = "/group/$gid/$contentTypePlural";
-
-    // If there is already an alias, skip it.
-    $existing_alias = \Drupal::service('path.alias_storage')->lookupPathAlias($system_path, $lang);
-    if ($existing_alias && $existing_alias == $alias) {
-        return false;
-    }
-
-    $path = \Drupal::service('path.alias_storage')->save($system_path, $alias, $lang);
-  }
-
-  return true;
-}
-
-/**
- * A helper function to update aliases like "/bps/programs" when the
- * group_path "bps" is updated. Called when a new group is added or an
- * existing group is updated.
- */
-function _update_group_aliases($group) {
-    $group_path = $group->get('field_group_path')->value;
-    $gid = $group->id();
-    $lang = \Drupal::languageManager()->getCurrentLanguage()->getId();
-
-    // POWR-438 Regenerate aliases for /bts/projects and /bts/programs
-    if($group->bundle() === 'bureau_office' || $group->bundle() === 'elected_official' || $group->bundle() === 'project' || $group->bundle() === 'program') {
-        $childGroups = ['projects', 'programs','advisory-groups','offices'];
-        foreach($childGroups as $childGroup) {
-            $system_path = "/group/$gid/$childGroup";
-            $alias = "/$group_path/$childGroup";
-
-            $existing_alias = \Drupal::service('path.alias_storage')->lookupPathAlias($system_path, $lang);
-            // if it already exists and matches, do nothing
-            if ($existing_alias && $existing_alias == $alias) continue;
-
-            // if it exists and doesn't match current alias, delete in preparation for re-save
-            if ($existing_alias && $existing_alias != $alias) {
-                \Drupal::service('path.alias_storage')->delete(['alias' => $existing_alias, 'langcode' => $lang]);
-            }
-
-            // save new or updated alias
-            $path = \Drupal::service('path.alias_storage')->save($system_path, $alias, $lang);
-        }
-    }
-
-    // spin through group views, gather cache tags, and invalidate them
-    $cache_tags = [];
-    foreach (GROUP_VIEWS as $view_name) {
-        $view = \Drupal\views\Views::getView($view_name);
-        $tags = $view->getCacheTags();
-        $cache_tags = array_merge($cache_tags, $tags);
-    }
-
-    Cache::invalidateTags($cache_tags);
-}
-
-/**
- * Implements hook_ENTITY_TYPE_create().
- * When a content type is installed to a group type, create the alias
- * "/group_path/content-plural" for all groups with that group type.
- */
-function portland_group_content_type_create(GroupContentTypeInterface $groupContentType) {
-  // Get all groups of this type. E.g. bureau_office
-  $properties = ['type' => $groupContentType->getGroupTypeId()];
-  $grps = \Drupal::entityTypeManager()
-    ->getStorage('group')
-    ->loadByProperties($properties);
-
-  // Get the content type from content_plugin ID. E.g. "group_node:news"
-  $contentTypePlugin = $groupContentType->getContentPluginId();
-
-  if(strpos($contentTypePlugin, 'group_node:') === 0) {
-    $contentType = substr($contentTypePlugin, strlen('group_node:'));
-  } else if( strpos($contentTypePlugin, 'group_media:') === 0) {
-    $contentType = substr($contentTypePlugin, strlen('group_media:'));
-  } else {
-    return;
-  }
-
-  // For each group, generate a new URL alias "group.field_group_path/contents"
-  $lang = \Drupal::languageManager()->getCurrentLanguage()->getId();
-  foreach ($grps as $grp) {
-    _create_alias_for_group_content($grp, $contentType, $lang);
-  }
-}
-/**
- * Implements hook_ENTITY_TYPE_delete().
- * When a content type is uninstaled from a group type, delete the alias
- * added during creation time.
- */
-function portland_group_content_type_delete(GroupContentTypeInterface $groupContentType) {
-    // Get all groups of this type
-    $properties = ['type' => $groupContentType->getGroupTypeId()];
-    $grps = \Drupal::entityTypeManager()
-        ->getStorage('group')
-        ->loadByProperties($properties);
-    $lang = \Drupal::languageManager()->getCurrentLanguage()->getId();
-    // content_plugin:"group_node:news"
-    $contentTypePlugin = $groupContentType->getContentPluginId();
-    if(strpos($contentTypePlugin, 'group_node:') === 0) {
-        $contentType = substr($contentTypePlugin, strlen('group_node:'));
-    } else if( strpos($contentTypePlugin, 'group_media:') === 0) {
-        $contentType = substr($contentTypePlugin, strlen('group_media:'));
-    } else {
-        return;
-    }
-
-    // For each group, delete the URL alias "/group.field_group_path/contents". E.g. "/bds/news"
-    $contentTypePluralArray = isset(GROUP_CONTENT_TYPE_PLURAL[$contentType]) ? GROUP_CONTENT_TYPE_PLURAL[$contentType] : [$contentType];
-
-    foreach( $contentTypePluralArray as $contentTypePlural ) {
-        foreach ($grps as $grp) {
-            $gid = $grp->id();
-            $system_path = "/group/$gid/$contentTypePlural";
-
-            // If found an alias, delete it.
-            $existing_alias = \Drupal::service('path.alias_storage')
-                ->lookupPathAlias($system_path, $lang);
-            if($existing_alias) {
-                $path = \Drupal::service('path.alias_storage')
-                    ->delete(['alias' => $existing_alias, 'langcode' => $lang]);
-            }
-        }
-    }
 }
 
 /**
@@ -286,16 +97,6 @@ function _clean_group_group_path(&$group_group_path) {
  * Add and update group aliases like "/powr/news" when a group is added.
  */
 function portland_group_insert(GroupInterface $group) {
-    // Find all installed content types on this group type and generate alias if it's missing.
-    $installedContentTypes = $group->getGroupType()->getInstalledContentPlugins();
-    $lang = \Drupal::languageManager()->getCurrentLanguage()->getId();
-    foreach ($installedContentTypes as $pluginType) {
-        $contentType = $pluginType->getPluginDefinition()['entity_bundle'];
-        _create_alias_for_group_content($group, $contentType, $lang);
-    }
-
-    _update_group_aliases($group);
-
     // Workaround for Drupal bug: https://www.drupal.org/project/inline_entity_form/issues/2966933
     $group->path->pathauto = Drupal\pathauto\PathautoState::CREATE;
 
@@ -337,37 +138,6 @@ function portland_group_update(GroupInterface $group) {
         if ($existing_alias && $existing_alias != $alias) {
             \Drupal::service('path.alias_storage')->delete(['alias' => $existing_alias, 'langcode' => $lang]);
             $path = \Drupal::service('path.alias_storage')->save("/group/$gid", $alias, $lang);
-        }
-
-        _update_group_aliases($group);
-
-        // POWR-142: Regenerate URL aliases for content type subpages using group path (ie. /bds/services)
-        // reference: https://api.drupal.org/api/drupal/core%21lib%21Drupal%21Core%21Path%21AliasStorage.php/class/AliasStorage/8.6.x
-        // Find all installed content types on this group type and generate alias if it's missing.
-        $installedContentTypes = $group->getGroupType()->getInstalledContentPlugins();
-        foreach ($installedContentTypes as $pluginType) {
-            $contentType = $pluginType->getPluginDefinition()['entity_bundle'];
-            // Skip if the content type is not installed with the group type.
-            if($contentType === false) continue;
-            $contentTypePluralArray = isset(GROUP_CONTENT_TYPE_PLURAL[$contentType]) ? GROUP_CONTENT_TYPE_PLURAL[$contentType] : [$contentType];
-
-            foreach( $contentTypePluralArray as $contentTypePlural ) {
-                $system_path = "/group/$gid/$contentTypePlural";
-                $alias = "/$group_path/$contentTypePlural";
-
-                $existing_alias = \Drupal::service('path.alias_storage')->lookupPathAlias($system_path, $lang);
-
-                // if it already exists and matches, do nothing
-                if ($existing_alias && $existing_alias == $alias) continue;
-
-                // if it exists and doesn't match current alias, delete in preparation for re-save
-                if ($existing_alias && $existing_alias != $alias) {
-                    \Drupal::service('path.alias_storage')->delete(['alias' => $existing_alias, 'langcode' => $lang]);
-                }
-
-                // save new or updated alias
-                $path = \Drupal::service('path.alias_storage')->save($system_path, $alias, $lang);
-            }
         }
     }
 
@@ -696,23 +466,6 @@ function _handle_bulk_generate($form, $form_state) {
 
                 // // save new or updated alias
                 $path = \Drupal::service('path.alias_storage')->save($system_path, $new_content_alias, $lang);
-            }
-        }
-    }
-    else if($form_state->getValues()['update']['canonical_entities:group'] === 'canonical_entities:group') {
-        $groupTypes = ['bureau_office', 'elected_official', 'project', 'program', 'advisory_group'];
-        foreach ($groupTypes as $groupType) {
-            // Get all groups of this type. E.g. bureau_office
-            $grps = \Drupal::entityTypeManager()
-                ->getStorage('group')
-                ->loadByProperties(['type' => $groupType]);
-            foreach($grps as $group) {
-                $installedContentTypes = $group->getGroupType()->getInstalledContentPlugins();
-                $lang = \Drupal::languageManager()->getCurrentLanguage()->getId();
-                foreach ($installedContentTypes as $pluginType) {
-                    $contentType = $pluginType->getPluginDefinition()['entity_bundle'];
-                    _create_alias_for_group_content($group, $contentType, $lang);
-                }
             }
         }
     }
