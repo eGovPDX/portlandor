@@ -7,7 +7,7 @@
 ```html
 <div class="table-responsive">
   <table class="table table-bordered table-hover">
-    <caption>Comparison Between Different Types of Coffee Drinks.</caption>
+    <caption>Comparison between different types of coffee drinks.</caption>
     <thead class="thead-dark">
       <tr>
         <th scope="col">Coffee Types</th>
