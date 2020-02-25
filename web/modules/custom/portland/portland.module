@@ -589,7 +589,21 @@ function portland_search_api_solr_query_alter(\Solarium\QueryType\Select\Query\Q
     if ($solr_field) {
       $solarium_query->addParam('bf', "recip(abs(ms(NOW/HOUR,{$solr_field})),3.16e-11,.08,.05)^4");
     }
-  }
+
+    // Search the whole phrase in additional of individual words 
+    $original_keys = $query->getKeys();
+    $query->keys("\"$original_keys\"^100 $original_keys");
+}
+
+/**
+ * Get the solr field name from the index field's machine name. 
+ * Return '' if not found
+ */
+function _get_solr_field_name($query, $index_field_name) {
+    $index = $query->getIndex();
+    $fields = $index->getServerInstance()->getBackend()->getSolrFieldNames($index);
+    return !empty($fields[$index_field_name]) ? $fields[$index_field_name] : '';
+}
 
 /**
  * Implements hook_system_breadcrumb_alter().
