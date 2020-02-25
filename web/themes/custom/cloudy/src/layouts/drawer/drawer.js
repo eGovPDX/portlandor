@@ -44,6 +44,9 @@ Drupal.behaviors.drawer = {
 
       const target = $(this).data('target');
 
+      $(openButton).attr('aria-pressed', 'false');
+      $(openButton).attr('aria-expanded', 'false');
+      $(closeButton).attr('aria-pressed', 'true');
       $(target).removeClass('is-active');
     });
   }
