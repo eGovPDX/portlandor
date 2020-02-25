@@ -1,58 +1,68 @@
 {% set position = position|default('left') %}
-{% set trigger_text = trigger_text|default('Menu') %}
+{# Drawer open button text and aria-label #}
+{% set open_text = open_text|default('Menu') %}
+{% set open_info = open_info|default('Expand side filters') %}
+{# Drawer close button text and aria-label #}
+{% set close_text = close_text|default('Close') %}
+{% set close_info = close_info|default('Collapse side filters') %}
 {#Sets a random id for the drawer, prevents js handler clashes when two drawers are on the same page#}
 {% set drawer_id = 'drawer--' ~ random() %}
 
-{% set classes = [
+{% set drawer_classes = [
+  drawer_id,
   'drawer',
   'drawer--position-' ~ position,
-  drawer_id,
   'col-lg-3',
 ] %}
 
-{% set trigger_classes = [
-  'drawer__trigger',
-  'drawer__trigger--position-' ~ position,
-  "btn btn-lg"
+{% set open_classes = [
+  'drawer__open',
+  'drawer__open--position-' ~ position,
+  'btn btn-lg',
+] %}
+
+{% set close_classes = [
+  'drawer__close',
+  'drawer__close--position-' ~ position,
+  'btn btn-sm',
 ] %}
 
 {% spaceless %}
-  <button role="button"
-          id="btn-open"
-          class="{{ trigger_classes|join(' ') }}"
-          data-toggle="class"
-          data-target=".{{ drawer_id }}"
-          data-classes="is-active"
-          aria-controls="cloudy-tray"
-          aria-pressed="false"
-          aria-expanded="false"
-          aria-label="{{ 'More'|t }}"
+  <button
+    role="button"
+    class="{{ open_classes|join(' ') }}"
+    data-target=".{{ drawer_id }}"
+    aria-label="{{ open_info|t }}"
+    aria-pressed="false"
+    aria-expanded="false"
   >
     {% include "@elements/icon/fa.twig" with {
       name: "sliders-h",
     } only %}
-    <span>{{ trigger_text|t }}</span>
+    <span>{{ open_text|t }}</span>
   </button>
-  <div class="{{ classes|join(' ') }}" aria-labelledby="btn-open">
+  <div
+    class="{{ drawer_classes|join(' ') }}"
+    aria-labelledby="drawer__open"
+  >
     <div class="drawer__head">
       <button
         role="button"
-        id="btn-close"
-        class="btn btn-sm btn-close align-self-end text-dark text-uppercase drawer__close"
-        data-toggle="class"
+        class="{{ close_classes|join(' ') }}"
         data-target=".{{ drawer_id }}"
-        data-classes="is-active"
-        aria-controls="cloudy-tray"
         aria-pressed="false"
-        aria-expanded="false"
-        aria-label="{{ 'Close filters'|t }}">
+        aria-label="{{ close_info|t }}">
         {% include "@elements/icon/fa.twig" with {
-          name: "times",
+          name: 'times',
         } only %}
-        <span>{{ 'Close'|t }}</span>
+        <span>{{ close_text|t }}</span>
       </button>
     </div>
     {{ content }}
   </div>
-  <div class="drawer__overlay"></div>
+  <div
+    class="drawer__overlay"
+    data-target=".{{ drawer_id }}"
+  >
+  </div>
 {% endspaceless %}

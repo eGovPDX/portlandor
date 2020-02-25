@@ -7,14 +7,20 @@ Drupal.behaviors.drawer = {
    * @param {Object} settings - Drupal settings
    */
   attach(context, settings) {
+    // Global Variables
+    const openButton = $('.drawer__open');
+    const closeButton = $('.drawer__close');
+
     // Add open to drawers
-    $(document, context).once('drawerOpenHandlers').on('click', '.drawer__trigger', function(event) {
+    $(document, context).once('drawerOpenHandlers').on('click', '.drawer__open', function(event) {
       event.preventDefault();
       event.stopPropagation();
 
-      // Defining Variables
       const target = $(this).data('target');
 
+      $(openButton).attr('aria-pressed', 'true');
+      $(openButton).attr('aria-expanded', 'true');
+      $(closeButton).attr('aria-pressed', 'false');
       $(target).addClass('is-active');
     });
 
@@ -23,9 +29,11 @@ Drupal.behaviors.drawer = {
       event.preventDefault();
       event.stopPropagation();
 
-      // Defining Variables
       const target = $(this).data('target');
 
+      $(openButton).attr('aria-pressed', 'false');
+      $(openButton).attr('aria-expanded', 'false');
+      $(closeButton).attr('aria-pressed', 'true');
       $(target).removeClass('is-active');
     });
 
@@ -34,7 +42,9 @@ Drupal.behaviors.drawer = {
       event.preventDefault();
       event.stopPropagation();
 
-      $('.drawer').removeClass('is-active');
+      const target = $(this).data('target');
+
+      $(target).removeClass('is-active');
     });
   }
 };
