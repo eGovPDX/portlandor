@@ -4,12 +4,13 @@
   "description": "Simple Boostrap theme with SASS",
   "main": "index.js",
   "scripts": {
-    "build": "npm-run-all --serial --print-label build:icon-data build:pl build:font-awesome build:wp ",
-    "build:ci": "npm-run-all --serial --print-label build:icon-data build:pl:ci build:font-awesome build:wp ",
+    "build": "npm run prep && npm-run-all --parallel --print-label build:pl build:wp",
+    "build:ci": "npm run prep && npm-run-all --parallel --print-label build:pl:ci build:wp",
     "build:icon-data": "node ./scripts/build-icon-list.js",
     "build:pl": "patternlab build --config patternlab-config.json",
     "build:pl:full": "npm run clean:pl && npm run build:pl",
     "build:pl:ci": "timeout 50s npm run build:pl || timeout 50s npm run build:pl || timeout 50s npm run build:pl || exit 1",
+    "build:tokens": "style-dictionary build --config ./style-dictionary.config.js",
     "build:wp": "NODE_ENV=production webpack --no-progress",
     "build:font-awesome": "mkdir -p dist/font-awesome && cp -r node_modules/@fortawesome/fontawesome-free/css node_modules/@fortawesome/fontawesome-free/webfonts dist/font-awesome",
     "clean": "npm-run-all --parallel --print-label clean:*",
@@ -23,10 +24,12 @@
     "lint:js": "eslint ./src --config ./.eslintrc.json",
     "lint:js:fix": "eslint ./src --config ./.eslintrc.json --fix",
     "new": "plop --plopfile ./scripts/plopfile.js --cwd ./scripts",
-    "start": "npm run build:icon-data && npm-run-all --parallel --print-label watch:*",
+    "prep": "npm-run-all --parallel --print-label build:tokens build:icon-data build:font-awesome",
+    "start": "npm run prep && npm-run-all --parallel --print-label watch:*",
     "test": "echo \"Error: no test specified\" && exit 1",
     "watch": "npm-run-all --parallel --print-label watch:*",
     "watch:pl": "nodemon --ext twig,json --watch pattern-lab --watch src --exec 'npm run build:pl:full' ",
+    "watch:tokens": "nodemon --watch ./src/design-tokens/*.js --exec 'npm run build:tokens'",
     "watch:wp": "webpack-cli --config ./webpack.config.js --watch --hide-modules --display minimal"
   },
   "keywords": [
@@ -40,11 +43,12 @@
     "@fortawesome/fontawesome-free": "^5.12.0",
     "@pattern-lab/cli": "^5.4.0",
     "@pattern-lab/core": "^5.4.0",
-    "@pattern-lab/engine-twig-php": "^5.5.0",
+    "@pattern-lab/engine-twig-php": "^5.7.1",
     "@pattern-lab/starterkit-twig-demo": "^5.0.0",
     "@pattern-lab/uikit-workshop": "^5.5.0",
     "bootstrap4-chosen": "^1.0.0-alpha.1",
-    "js-yaml": "^3.13.1"
+    "js-yaml": "^3.13.1",
+    "style-dictionary": "^2.8.3"
   },
   "devDependencies": {
     "@babel/core": "^7.7.5",

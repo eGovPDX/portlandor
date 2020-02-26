@@ -17,25 +17,6 @@ pre_test: &pre_test
   parallelism: 5
   working_directory: /var/www/html
 
-## Defines the cache restoring mechanism.
-restore_cache: &restore_cache
-  # We use the composer.lock as a way to determine if we can cache our build.
-  keys:
-  - v1-dependencies-{{ checksum "composer.lock" }}
-  # fallback to using the latest cache if no exact match is found
-  - v1-dependencies-
-
-## Defines the cache saving mechanism.
-save_cache: &save_cache
-  paths:
-    - ./vendor
-    - ./web/core
-    - ./web/modules/contrib
-    - ./web/profiles/contrib
-    - ./web/themes/contrib
-    - ./web/libraries
-  key: v1-dependencies-{{ checksum "composer.lock" }}
-
 #Jobs
 
 ## Job to run the update path and Behat tests.
@@ -68,19 +49,24 @@ build_and_deploy: &build_and_deploy
         paths:
           - "/tmp/vendor"
     - restore_cache:
-        name: Restore theme build asset cache
+        name: Restore theme dependencies cache
         keys:
           - cloudy_-{{ checksum "web/themes/custom/cloudy/package.json" }}
     - run:
-        name: Install theme build tools
+        name: Install theme dependencies
         command: |
-          cd web/themes/custom/cloudy && npm install
+          cd web/themes/custom/cloudy && npm install --no-package-lock
     - save_cache:
-        name: Save theme build asset cache
+        name: Save theme dependencies cache
         key: cloudy_-{{ checksum "web/themes/custom/cloudy/package.json" }}
         paths:
           - "web/themes/custom/cloudy/node_modules"
-    - restore_cache: *restore_cache
+    - restore_cache:
+        name: Restore Composer Cache
+        keys:
+          - v1-dependencies-{{ checksum "composer.lock" }}
+          # fallback to using the latest cache if no exact match is found
+          - v1-dependencies-
     - run:
         name: Composer install
         command: |
@@ -93,6 +79,22 @@ build_and_deploy: &build_and_deploy
           composer install --no-suggest --no-interaction
           # TODO: should only deploy non-dev packages
           # --no-dev
+    - save_cache:
+        name: Save Composer Cache
+        key: v1-dependencies-{{ checksum "composer.lock" }}
+        paths:
+          - ./vendor
+          - ./web/core
+          - ./web/modules/contrib
+          - ./web/profiles/contrib
+          - ./web/themes/contrib
+          - ./web/libraries
+    - run:
+        name: Build Theme and Pattern Lab
+        command: cd web/themes/custom/cloudy && npm run build:ci
+    - run:
+        name: Remove Node Modules post build to lighten upload to Pantheon
+        command: cd /var/www/html && rm -rf web/themes/custom/cloudy/node_modules
     - run:
         name: Deploy to Pantheon
         when: on_success
@@ -108,12 +110,8 @@ build_and_deploy: &build_and_deploy
           # Git operations
           git remote add pantheon ssh://codeserver.dev.5c6715db-abac-4633-ada8-1c9efe354629@codeserver.dev.5c6715db-abac-4633-ada8-1c9efe354629.drush.in:2222/~/repository.git
           git config --global user.email "$eGov_Email"
-          # Compile SCSS in our custom theme
-          cd web/themes/custom/cloudy && npm run build:ci && cd /var/www/html
-          # Exclude dependencies
-          rm -rf web/themes/custom/cloudy/node_modules
           # Force add all files to include those excluded by .gitignore
-          rm -rf ./web/modules/contrib/search_api_solr/.git && rm -rf ./vendor/drupal/coder/.git && rm -rf ./web/modules/contrib/facets/.git
+          cd /var/www/html && find ./web/modules -name .git -type d -prune -exec rm -rf "{}" \;
           git add -f /var/www/html
           # Pantheon site will use the wrong DB if the local is kept
           git rm --cache  web/sites/default/settings.local.php --ignore-unmatch
