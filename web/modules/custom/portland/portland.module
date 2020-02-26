@@ -581,6 +581,10 @@ function portland_diff_layout_builder_info_alter(array &$diff_layouts) {
  * See https://atendesigngroup.com/blog/drupal-8-apache-solr-boost-search-term-relevance-publish-date
  */
 function portland_search_api_solr_query_alter(\Solarium\QueryType\Select\Query\Query $solarium_query, \Drupal\search_api\Query\QueryInterface $query) {
+    // Do not modify the query for autocomplete
+    $search_id = $query->getSearchId();
+    if(strpos($search_id, 'search_api_autocomplete:') === 0) return;
+
     $date_field_name = 'aggregated_sorting_date'; // 'created'; // This can be any UNIX timestamp field
     $index = $query->getIndex();
     $fields = $index->getServerInstance()->getBackend()->getSolrFieldNames($index);
@@ -592,7 +596,13 @@ function portland_search_api_solr_query_alter(\Solarium\QueryType\Select\Query\Q
 
     // Search the whole phrase in additional of individual words 
     $original_keys = $query->getKeys();
-    $query->keys("\"$original_keys\"^100 $original_keys");
+    if($original_keys) { // Do not modify empty query
+        // Three things are happening here:
+        // 1. Add phrase search for the entire search string. 
+        // 2. Set proximity to 2 
+        // 3. Boost the score by 50
+        $query->keys("(\"$original_keys\"~2)^50 $original_keys");
+    }
 }
 
 /**
