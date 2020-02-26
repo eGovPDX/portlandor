@@ -5,8 +5,6 @@ use Drupal\Core\Url;
 function template_preprocess_views_portland_alerts(array &$variables) {
   $variables['element'] = [];
 
-  $variables['element']['#attached']['library'][] = 'portland/portland-alerts';
-
   foreach ($variables['rows'] as $delta => $row) {
     $variables['element'][$delta]['#theme'] = 'portland_alert';
     $variables['element'][$delta]['#dismissible'] = $variables['options']['dismissible'];
