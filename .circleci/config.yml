@@ -51,14 +51,14 @@ build_and_deploy: &build_and_deploy
     - restore_cache:
         name: Restore theme dependencies cache
         keys:
-          - cloudy_-{{ checksum "web/themes/custom/cloudy/package.json" }}
+          - cloudy_-{{ checksum "web/themes/custom/cloudy/yarn.lock" }}
     - run:
         name: Install theme dependencies
         command: |
-          cd web/themes/custom/cloudy && npm install --no-package-lock
+          cd web/themes/custom/cloudy && yarn install --production
     - save_cache:
         name: Save theme dependencies cache
-        key: cloudy_-{{ checksum "web/themes/custom/cloudy/package.json" }}
+        key: cloudy_-{{ checksum "web/themes/custom/cloudy/yarn.lock" }}
         paths:
           - "web/themes/custom/cloudy/node_modules"
     - restore_cache:
@@ -91,18 +91,14 @@ build_and_deploy: &build_and_deploy
           - ./web/libraries
     - run:
         name: Build Theme and Pattern Lab
-        command: cd web/themes/custom/cloudy && npm run build:ci
+        command: cd web/themes/custom/cloudy && yarn run build:ci
     - run:
         name: Remove Node Modules post build to lighten upload to Pantheon
         command: cd /var/www/html && rm -rf web/themes/custom/cloudy/node_modules
     - run:
-        name: Build Theme and Pattern Lab
-        when: on_success
-        command: |
-          # Compile the theme and build PL
-          cd web/themes/custom/cloudy && npm run build:ci && cd /var/www/html
-          # Exclude dependencies
-          rm -rf web/themes/custom/cloudy/node_modules
+        # Unlike npm, security audit is not automatically included in install
+        name: Security Audit of Node dependencies
+        command: cd web/themes/custom/cloudy && yarn audit
     - run:
         name: Deploy to Pantheon
         when: on_success
