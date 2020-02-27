@@ -1,0 +1,179 @@
+uuid: b64d3674-daa6-400b-96ae-be6ee9732715
+langcode: en
+status: open
+dependencies: {  }
+open: null
+close: null
+weight: 0
+uid: 60
+template: false
+archive: false
+id: water_bill_discount_calculator
+title: 'Water Bill Discount Calculator'
+description: ''
+category: 'Static Apps'
+elements: "intro:\n  '#type': webform_markup\n  '#markup': 'Please use this calculator to see if you might qualify for our bill discount program.'\nnumber_in_household:\n  '#type': select\n  '#title': 'Number of people in household'\n  '#options':\n    1: '1'\n    2: '2'\n    3: '3'\n    4: '4'\n    5: '5'\n    6: '6'\n    7: '7'\n    8: '8'\n    9: '9'\n    10: '10'\n    11: '11'\n    12: '12'\n    13: '13'\n    14: '14'\n    15: '15'\n  '#empty_option': Select...\n  '#empty_value': '0'\n  '#required': true\nmonthly_income:\n  '#type': number\n  '#title': 'Gross monthly household income'\n  '#description': 'The amount of money before taxes or deductions.'\n  '#description_display': after\n  '#field_prefix': $\n  '#required': true\nis_eligible:\n  '#type': webform_computed_twig\n  '#title': 'Is Eligible?'\n  '#wrapper_attributes':\n    style: 'display: none'\n  '#mode': text\n  '#template': |\n    {% set cutoffLevels = [\n        3080,\n        3520,\n        3960,\n        4395,\n        4750,\n        5100,\n        5450,\n        5805,\n        6160,\n        6515,\n        6870,\n        7225,\n        7580,\n        7935,\n        8290\n    ] %}\n    \n    {% if data.number_in_household and data.monthly_income %}\n      {% if data.monthly_income <= cutoffLevels[(data.number_in_household|number_format)-1] %}\n        Yes\n      {% else %}\n        No\n      {% endif %}\n    {% else %}\n    Null\n    {% endif %}\n    \n  '#whitespace': spaceless\n  '#store': true\n  '#ajax': true\nmsg_eligible:\n  '#type': processed_text\n  '#states':\n    visible:\n      ':input[name=\"is_eligible\"]':\n        value: 'Yes'\n      ':input[name=\"number_in_household\"]':\n        '!value': '0'\n  '#text': |\n    <div style=\"background-color: Green; color: White; padding: 10px;\">Based on your household size and gross income, you do not qualify for our bill discount program. Call Customer Service at <strong>503-823-7770</strong> for other possible options.</div>\n    \n  '#format': full_html\nmessage_ineligible:\n  '#type': processed_text\n  '#states':\n    visible:\n      ':input[name=\"is_eligible\"]':\n        value: 'No'\n      ':input[name=\"number_in_household\"]':\n        '!value': '0'\n  '#text': |\n    <div style=\"background-color: Red; color: White; padding: 10px;\">Based on your household size and gross income, you do not qualify for our bill discount program. Call Customer Service at <strong>503-823-7770</strong> for other possible options.</div>\n    \n  '#format': full_html\nreset_button:\n  '#type': processed_text\n  '#states':\n    visible:\n      ':input[name=\"is_eligible\"]':\n        filled: true\n  '#text': |\n    <p><input class=\"button button--primary\" type=\"reset\" value=\"Start over\" /></p>\n    \n  '#format': full_html\nactions:\n  '#type': webform_actions\n  '#title': 'Submit button(s)'\n  '#submit_hide': true"
+css: ".hidden { position: absolute; left: -5000px; transition: left 2s; }\r\n#DiscountCalculator { border: 1px solid black; padding: 1em; font-size: 1.3em; margin-bottom: 1em; width: 50%; margin-left: 15px; float: right; }\r\n#DiscountCalculator h3 { margin-top: 0; margin-bottom: 0.5em; }\r\n#DiscountCalculator p.fine { margin-bottom: 0; font-size: 0.8em; }\r\n.form-field { clear: both; padding-top: 1em; }\r\n.form-field .left { width: 45%; margin-right: 10%; float: left; }\r\n.form-field .right { width: 45%; float: right; }\r\n.form-field select, .form-field input { font-size: 1.2em; width: 100% }\r\n.form-field button { font-size: 1.2em; width: 50%; }\r\n.form-field.submit { padding-top: 0; text-align: center; }\r\n.qualify-message, .qualify-message a { color: White;}\r\n.qualify-message a { font-weight: bold; }\r\n.qualify-message { padding: 10px; margin-top: 1.0em; }\r\n#QualifyYesMessage { background-color: darkgreen; }\r\n#QualifyNoMessage { background-color: brown; }\r\n.validationMessages { clear: both; padding-top: 1em; color: Red; }\r\n.validationMessage { margin-bottom: 0.5em; }\r\n@media (max-width: 680px) { \r\n  #DiscountCalculator { width: auto; margin-left: 0; float: none; } \r\n}"
+javascript: "var cutoffLevels = {\r\n    1: 3080,\r\n    2: 3520,\r\n    3: 3960,\r\n    4: 4395,\r\n    5: 4750,\r\n    6: 5100,\r\n    7: 5450,\r\n    8: 5805,\r\n    9: 6160,\r\n    10: 6515,\r\n    11: 6870,\r\n    12: 7225,\r\n    13: 7580,\r\n    14: 7935,\r\n    15: 8290\r\n};\r\nvar peopleSelect = document.getElementById('numberPeople');\r\nvar incomeInput = document.getElementById('monthlyIncome');\r\nvar submitButton = document.getElementById('submit');\r\nvar numberPeopleInvalid = document.getElementById('NumberPeopleInvalid');\r\nvar monthlyIncomeInvalid = document.getElementById('MonthlyIncomeInvalid');\r\nvar qualifyYesMsg = document.getElementById('QualifyYesMessage');\r\nvar qualifyNoMsg = document.getElementById('QualifyNoMessage');\r\nvar calculatorForm = document.getElementById('CalculatorForm');\r\n\r\nincomeInput.addEventListener(\"keypress\", function(event) {\r\n    if (event.keyCode == 13) {\r\n        submitButton.click();\r\n    }\r\n})\r\nfunction calculate() {\r\n    var peopleSelect = document.getElementById('numberPeople');\r\n    var incomeInput = document.getElementById('monthlyIncome');\r\n    var submitButton = document.getElementById('submit');\r\n    var people = peopleSelect.options[peopleSelect.selectedIndex].value;\r\n    var income = processIncomeInput(incomeInput.value);\r\n    var valid1 = validatePeople(people);\r\n    var valid2 = validateIncome(income);\r\n    if (!valid1 || !valid2) return;\r\n\r\n    var cutoff = cutoffLevels[people];\r\n    var qualify = income <= cutoff;\r\n\r\n    addClass(calculatorForm, 'hidden');\r\n    if (qualify) { removeClass(qualifyYesMsg, 'hidden'); addClass(qualifyNoMsg, 'hidden') } \r\n    else { addClass(qualifyYesMsg, 'hidden'); removeClass(qualifyNoMsg, 'hidden') }\r\n}\r\nfunction reset() {\r\n    removeClass(calculatorForm, 'hidden');\r\n    addClass(qualifyNoMsg, 'hidden');\r\n    addClass(qualifyYesMsg, 'hidden');\r\n    peopleSelect.selectedIndex = 0;\r\n    incomeInput.value = '';\r\n}\r\nfunction processIncomeInput(income) {\r\n    // strips out non-number characters and converts to float.\r\n    // may return NaN, but validation will catch that as an error.\r\n    // if field is empty, immediately return as zero.\r\n    filteredIncome = income.replace(/[^\\d.-]/g, '');\r\n    return parseFloat(filteredIncome);\r\n}\r\nfunction validatePeople(people) {\r\n    if (!people) { removeClass(numberPeopleInvalid, 'hidden'); } else { addClass(numberPeopleInvalid, 'hidden') }\r\n    return people > 0;\r\n}\r\nfunction validateIncome(income) {\r\n    if (isNaN(income)) {\r\n        removeClass(monthlyIncomeInvalid, 'hidden');\r\n        return false;\r\n    }\r\n    addClass(monthlyIncomeInvalid, 'hidden');\r\n    return true;\r\n}\r\nfunction hasClass(el, className)\r\n{\r\n    if (el.classList)\r\n        return el.classList.contains(className);\r\n    return !!el.className.match(new RegExp('(\\\\s|^)' + className + '(\\\\s|$)'));\r\n}\r\nfunction addClass(el, className)\r\n{\r\n    if (el.classList)\r\n        el.classList.add(className)\r\n    else if (!hasClass(el, className))\r\n        el.className += \" \" + className;\r\n}\r\nfunction removeClass(el, className)\r\n{\r\n    if (el.classList)\r\n        el.classList.remove(className)\r\n    else if (hasClass(el, className))\r\n    {\r\n        var reg = new RegExp('(\\\\s|^)' + className + '(\\\\s|$)');\r\n        el.className = el.className.replace(reg, ' ');\r\n    }\r\n}\r\ndocument.write('<style type=\"text/css\">');\r\ndocument.write('.hidden { position: absolute; left: -5000px; transition: left 2s; }');\r\ndocument.write('#DiscountCalculator { border: 1px solid black; padding: 1em; font-size: 1.3em; margin-bottom: 1em; width: 50%; margin-left: 15px; float: right; }');\r\ndocument.write('#DiscountCalculator h3 { margin-top: 0; margin-bottom: 0.5em; }');\r\ndocument.write('#DiscountCalculator p.fine { margin-bottom: 0; font-size: 0.8em; }');\r\ndocument.write('.form-field { clear: both; padding-top: 1em; }');\r\ndocument.write('.form-field .left { width: 45%; margin-right: 10%; float: left; }');\r\ndocument.write('.form-field .right { width: 45%; float: right; }');\r\ndocument.write('.form-field select, .form-field input { font-size: 1.2em; width: 100% }');\r\ndocument.write('.form-field button { font-size: 1.2em; width: 50%; }');\r\ndocument.write('.form-field.submit { padding-top: 0; text-align: center; }');\r\ndocument.write('.qualify-message, .qualify-message a { color: White;}');\r\ndocument.write('.qualify-message a { font-weight: bold; }');\r\ndocument.write('.qualify-message { padding: 10px; margin-top: 1.0em; }');\r\ndocument.write('#QualifyYesMessage { background-color: darkgreen; }');\r\ndocument.write('#QualifyNoMessage { background-color: brown; }');\r\ndocument.write('.validationMessages { clear: both; padding-top: 1em; color: Red; }');\r\ndocument.write('.validationMessage { margin-bottom: 0.5em; }');\r\ndocument.write('@media (max-width: 680px) { #DiscountCalculator { width: auto; margin-left: 0; float: none; } }');\r\ndocument.write('</style>');\r\n"
+settings:
+  ajax: true
+  ajax_scroll_top: ''
+  ajax_progress_type: ''
+  ajax_effect: ''
+  ajax_speed: null
+  page: true
+  page_submit_path: ''
+  page_confirm_path: ''
+  page_admin_theme: false
+  form_title: both
+  form_submit_once: false
+  form_exception_message: ''
+  form_open_message: ''
+  form_close_message: ''
+  form_previous_submissions: true
+  form_confidential: false
+  form_confidential_message: ''
+  form_remote_addr: true
+  form_convert_anonymous: false
+  form_prepopulate: false
+  form_prepopulate_source_entity: false
+  form_prepopulate_source_entity_required: false
+  form_prepopulate_source_entity_type: ''
+  form_reset: false
+  form_disable_autocomplete: false
+  form_novalidate: false
+  form_disable_inline_errors: false
+  form_required: false
+  form_unsaved: false
+  form_disable_back: false
+  form_submit_back: false
+  form_autofocus: false
+  form_details_toggle: false
+  form_access_denied: default
+  form_access_denied_title: ''
+  form_access_denied_message: ''
+  form_access_denied_attributes: {  }
+  form_file_limit: ''
+  submission_label: ''
+  submission_log: false
+  submission_views: {  }
+  submission_views_replace: {  }
+  submission_user_columns: {  }
+  submission_user_duplicate: false
+  submission_access_denied: default
+  submission_access_denied_title: ''
+  submission_access_denied_message: ''
+  submission_access_denied_attributes: {  }
+  submission_exception_message: ''
+  submission_locked_message: ''
+  submission_excluded_elements: {  }
+  submission_exclude_empty: false
+  submission_exclude_empty_checkbox: false
+  previous_submission_message: ''
+  previous_submissions_message: ''
+  autofill: false
+  autofill_message: ''
+  autofill_excluded_elements: {  }
+  wizard_progress_bar: true
+  wizard_progress_pages: false
+  wizard_progress_percentage: false
+  wizard_progress_link: false
+  wizard_progress_states: false
+  wizard_start_label: ''
+  wizard_preview_link: false
+  wizard_confirmation: true
+  wizard_confirmation_label: ''
+  wizard_track: ''
+  preview: 0
+  preview_label: ''
+  preview_title: ''
+  preview_message: ''
+  preview_attributes: {  }
+  preview_excluded_elements: {  }
+  preview_exclude_empty: true
+  preview_exclude_empty_checkbox: false
+  draft: none
+  draft_multiple: false
+  draft_auto_save: false
+  draft_saved_message: ''
+  draft_loaded_message: ''
+  draft_pending_single_message: ''
+  draft_pending_multiple_message: ''
+  confirmation_type: page
+  confirmation_title: ''
+  confirmation_message: ''
+  confirmation_url: ''
+  confirmation_attributes: {  }
+  confirmation_back: true
+  confirmation_back_label: ''
+  confirmation_back_attributes: {  }
+  confirmation_exclude_query: false
+  confirmation_exclude_token: false
+  confirmation_update: false
+  limit_total: null
+  limit_total_interval: null
+  limit_total_message: ''
+  limit_total_unique: false
+  limit_user: null
+  limit_user_interval: null
+  limit_user_message: ''
+  limit_user_unique: false
+  entity_limit_total: null
+  entity_limit_total_interval: null
+  entity_limit_user: null
+  entity_limit_user_interval: null
+  purge: none
+  purge_days: null
+  results_disabled: false
+  results_disabled_ignore: false
+  token_view: false
+  token_update: false
+access:
+  create:
+    roles:
+      - anonymous
+      - authenticated
+    users: {  }
+    permissions: {  }
+  view_any:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  update_any:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  delete_any:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  purge_any:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  view_own:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  update_own:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  delete_own:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  administer:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  test:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  configuration:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+handlers: {  }
+variants: {  }
