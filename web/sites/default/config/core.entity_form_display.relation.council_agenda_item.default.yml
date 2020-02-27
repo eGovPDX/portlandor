@@ -3,17 +3,19 @@ langcode: en
 status: true
 dependencies:
   config:
+    - field.field.relation.council_agenda_item.field_agenda_item_disposition
     - field.field.relation.council_agenda_item.field_agenda_item_note
     - field.field.relation.council_agenda_item.field_agenda_item_number
-    - field.field.relation.council_agenda_item.field_agenda_item_status
     - field.field.relation.council_agenda_item.field_agenda_item_type
     - field.field.relation.council_agenda_item.field_council_document
     - field.field.relation.council_agenda_item.field_disposition_of_agenda_item
+    - field.field.relation.council_agenda_item.field_emergency
     - field.field.relation.council_agenda_item.field_time_certain
     - field.field.relation.council_agenda_item.field_time_requested
     - field.field.relation.council_agenda_item.field_votes
     - portland_relations.relation_type.council_agenda_item
   module:
+    - conditional_fields
     - entity_browser_entity_form
     - field_group
     - ief_table_view_mode
@@ -25,7 +27,6 @@ third_party_settings:
       children:
         - group_number
         - group_type
-        - group_status
       parent_name: ''
       weight: 0
       format_type: html_element
@@ -80,107 +81,24 @@ third_party_settings:
         effect: none
         speed: fast
       label: Type
-    group_status:
-      children:
-        - field_agenda_item_status
-      parent_name: group_number_type_status
-      weight: 22
-      format_type: html_element
-      region: content
-      format_settings:
-        id: ''
-        classes: col
-        element: div
-        show_label: false
-        label_element: h3
-        label_element_classes: ''
-        required_fields: false
-        attributes: ''
-        effect: none
-        speed: fast
-      label: Status
-    group_time:
-      children:
-        - group_time_certain
-        - group_time_r
-      parent_name: ''
-      weight: 3
-      format_type: html_element
-      region: hidden
-      format_settings:
-        element: div
-        show_label: false
-        label_element: h3
-        label_element_classes: ''
-        attributes: ''
-        effect: none
-        speed: fast
-        id: ''
-        classes: row
-        required_fields: false
-      label: Time
-    group_time_certain:
-      children: {  }
-      parent_name: group_time
-      weight: 8
-      format_type: html_element
-      region: hidden
-      format_settings:
-        element: div
-        show_label: false
-        label_element: h3
-        label_element_classes: ''
-        attributes: ''
-        effect: none
-        speed: fast
-        id: ''
-        classes: col
-        required_fields: false
-      label: 'Time Certain'
-    group_time_r:
-      children: {  }
-      parent_name: group_time
-      weight: 9
-      format_type: html_element
-      region: hidden
-      format_settings:
-        element: div
-        show_label: false
-        label_element: h3
-        label_element_classes: ''
-        attributes: ''
-        effect: none
-        speed: fast
-        id: ''
-        classes: col
-        required_fields: false
-      label: 'Time Requested'
-    group_details:
-      children:
-        - field_time_certain
-        - field_time_requested
-        - field_agenda_item_note
-        - field_disposition_of_agenda_item
-        - field_votes
-      parent_name: ''
-      weight: 2
-      format_type: details
-      region: content
-      format_settings:
-        description: ''
-        id: ''
-        classes: ''
-        open: false
-        required_fields: false
-      label: 'Time Certain, Notes, Disposition, and Votes'
 id: relation.council_agenda_item.default
 targetEntityType: relation
 bundle: council_agenda_item
 mode: default
 content:
+  field_agenda_item_disposition:
+    weight: 6
+    settings:
+      match_operator: CONTAINS
+      match_limit: 10
+      size: 60
+      placeholder: ''
+    third_party_settings: {  }
+    type: entity_reference_autocomplete
+    region: content
   field_agenda_item_note:
     type: string_textarea
-    weight: 4
+    weight: 5
     region: content
     settings:
       rows: 2
@@ -198,12 +116,6 @@ content:
     third_party_settings: {  }
     type: number
     region: content
-  field_agenda_item_status:
-    type: options_select
-    weight: 3
-    region: content
-    settings: {  }
-    third_party_settings: {  }
   field_agenda_item_type:
     type: options_select
     weight: 2
@@ -212,7 +124,7 @@ content:
     third_party_settings: {  }
   field_council_document:
     type: entity_reference_autocomplete
-    weight: 1
+    weight: 2
     region: content
     settings:
       match_operator: CONTAINS
@@ -222,7 +134,7 @@ content:
     third_party_settings: {  }
   field_disposition_of_agenda_item:
     type: string_textarea
-    weight: 5
+    weight: 7
     region: content
     settings:
       rows: 2
@@ -233,25 +145,70 @@ content:
         maxlength_js_label: 'Content limited to @limit characters, remaining: <strong>@remaining</strong>'
         maxlength_js_enforce: false
         maxlength_js_truncate_html: false
+  field_emergency:
+    weight: 1
+    settings:
+      display_label: true
+    third_party_settings: {  }
+    type: boolean_checkbox
+    region: content
   field_time_certain:
     type: time_widget
-    weight: 2
+    weight: 3
     region: content
     settings:
       enabled: false
       step: 5
-    third_party_settings: {  }
+    third_party_settings:
+      conditional_fields:
+        a6bf7666-eeeb-4ff4-93ea-f2438c9a7c76:
+          dependee: field_agenda_item_type
+          settings:
+            state: visible
+            condition: value
+            grouping: AND
+            values_set: 1
+            value: ''
+            values: {  }
+            value_form:
+              -
+                value: time-certain
+            effect: show
+            effect_options: {  }
+            selector: ''
+            form_mode: default
+          entity_type: relation
+          bundle: council_agenda_item
   field_time_requested:
     type: string_textfield
-    weight: 3
+    weight: 4
     region: content
     settings:
       size: 60
       placeholder: ''
-    third_party_settings: {  }
+    third_party_settings:
+      conditional_fields:
+        7e082b38-fcb1-4971-b745-4fcb55a8f932:
+          dependee: field_agenda_item_type
+          settings:
+            state: visible
+            condition: value
+            grouping: AND
+            values_set: 1
+            value: ''
+            values: {  }
+            value_form:
+              -
+                value: time-certain
+            effect: show
+            effect_options: {  }
+            selector: ''
+            form_mode: default
+          entity_type: relation
+          bundle: council_agenda_item
   field_votes:
     type: inline_entity_form_complex_table_view_mode
-    weight: 6
+    weight: 8
     region: content
     settings:
       form_mode: default
