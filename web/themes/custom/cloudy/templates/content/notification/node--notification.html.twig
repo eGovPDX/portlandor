@@ -1,57 +1,18 @@
-{% set dismissible = dismissible|default(FALSE) %}
+{% if node.field_notification_severity.value == 20 %}
+  {% set alertType = 'warning' %}
+{% else %}
+  {% set alertType = 'info' %}
+{% endif %}
 
-{% set classes= [
-    'portland-alert',
-    'alert',
-    node.field_notification_severity.value == 20 ? 'alert-warning',
-    node.field_notification_severity.value == 30 ? 'alert-info',
-    dismissible ? 'd-none',
-]%}
-{%
-  set badge_classes = badge_classes|default([
-    'badge',
-    'badge-danger',
-    'mb-' ~ margin,
-  ])
-%}
-{% set dismiss_attribute = create_attribute() %}
-{% set dismiss_classes = [
-] %}
+{% set dismissible = dismissible|default(false) %}
 
-{% set dismiss_icon_attribute = create_attribute() %}
-{% set dismiss_icon_classes = [
-  'fa',
-  'fa-window-close',
-  'mr-2',
-] %}
-
-<article{{ attributes.addClass(classes) }} data-nid="{{ node.nid.value }}" data-changed="{{ node.revision_timestamp.value }}" role="alert" aria-live="polite">
-  <header>
-    {{ title_prefix }}
-      <label class="h5" {{ title_attributes.addClass('node__title') }}>
-        {{ label }}
-      </label>
-      {% block status %}
-        {% if not node.isPublished() %}
-          {% set published_attributes = create_attribute() %}
-          <span{{ published_attributes.addClass(badge_classes) }}>{{ 'unpublished'|t|capitalize }}</span>
-        {% endif %}
-      {% endblock %}
-      {% if dismissible %}
-      <span>
-          <button type="button" class="close" data-dismiss="alert" aria-label="Dismiss notification">
-            <span{{ dismiss_attribute.addClass(dismiss_classes) }} aria-hidden="true">
-              <i{{ dismiss_icon_attribute.addClass(dismiss_icon_classes) }}></i>
-              Dismiss
-            </span>
-          </button>
-        </span>
-      {% endif %}
-  </header>
-  <div{{ content_attributes.addClass('node__content', 'clearfix') }}>
-    {{ content }}
-    {% block time %}
-      <span class="small">Last updated: </span><span class="small">{{ node.revision_timestamp.value|date('g:i a M j, Y') }}</span>
-    {% endblock %}
-  </div>
-</article>
+{% include "@components/alert/alert.twig" with {
+  id: node.nid ? node.nid.value : '',
+  type: alertType,
+  is_draft: node.isPublished() ? false : true,
+  title: label,
+  content: content,
+  isDismissible: dismissible,
+  showTimestamp: showTimestamp,
+  changed: node.revision_timestamp ? node.revision_timestamp.value : '',
+} only %}
