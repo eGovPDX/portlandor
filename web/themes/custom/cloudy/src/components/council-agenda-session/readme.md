@@ -11,7 +11,7 @@
 
 ```twig
 {% include "@components/council-agenda-session/council-agenda-session.twig" with {
-  "title": "Hello World!",
+  "title": "Wednesday Morning",
   "datetime": "February 5, 9:30 AM",
   "status": "Recessed",
   "agendaItems": agendaItems,
