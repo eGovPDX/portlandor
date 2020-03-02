@@ -3,29 +3,161 @@ langcode: en
 status: true
 dependencies:
   config:
+    - field.field.node.location.field_accessibility_notes
     - field.field.node.location.field_address_or_entrance
+    - field.field.node.location.field_display_groups
     - field.field.node.location.field_geolocation
     - field.field.node.location.field_summary
     - node.type.location
   module:
     - address
+    - allowed_formats
+    - conditional_fields
     - content_moderation
+    - field_group
     - geofield
     - maxlength
     - path
+    - text
+third_party_settings:
+  field_group:
+    group_administrative_fields:
+      children:
+        - path
+        - url_redirects
+        - uid
+        - created
+      parent_name: ''
+      weight: 10
+      format_type: details
+      region: content
+      format_settings:
+        description: ''
+        id: ''
+        classes: 'border border-danger'
+        open: false
+        required_fields: false
+      label: 'Administrative Fields (Site Admins Only)'
+    group_paths_and_redirects:
+      children:
+        - field_redirects
+      parent_name: ''
+      weight: 9
+      format_type: details
+      region: content
+      format_settings:
+        id: ''
+        classes: ''
+        description: ''
+        open: false
+        required_fields: false
+      label: 'Paths and Redirects'
+    group_parent_group:
+      children:
+        - field_display_groups
+      parent_name: ''
+      weight: 8
+      format_type: details
+      region: content
+      format_settings:
+        id: ''
+        classes: ''
+        description: ''
+        open: false
+        required_fields: false
+      label: 'Parent Group(s)'
+    group_accessibility_notes:
+      children:
+        - field_accessibility_notes
+      parent_name: ''
+      weight: 7
+      format_type: details
+      region: content
+      format_settings:
+        id: ''
+        classes: ''
+        description: ''
+        open: false
+        required_fields: false
+      label: 'Accessibility Notes'
+    group_map_information:
+      children:
+        - field_geolocation
+      parent_name: ''
+      weight: 5
+      format_type: details
+      region: content
+      format_settings:
+        id: ''
+        classes: ''
+        description: ''
+        open: false
+        required_fields: false
+      label: 'Map Information'
 id: node.location.default
 targetEntityType: node
 bundle: location
 mode: default
 content:
-  field_address_or_entrance:
-    weight: 1
+  created:
+    type: datetime_timestamp
+    weight: 7
+    region: content
     settings: {  }
     third_party_settings: {  }
+  field_accessibility_notes:
+    weight: 6
+    settings:
+      rows: 2
+      placeholder: ''
+    third_party_settings:
+      maxlength:
+        maxlength_js: null
+        maxlength_js_label: 'Content limited to @limit characters, remaining: <strong>@remaining</strong>'
+        maxlength_js_enforce: false
+        maxlength_js_truncate_html: false
+      allowed_formats:
+        hide_help: '0'
+        hide_guidelines: '0'
+    type: text_textarea
+    region: content
+  field_address_or_entrance:
+    weight: 3
+    settings: {  }
+    third_party_settings:
+      conditional_fields:
+        14a4df70-c54c-4e00-86a9-5bc1c1256285:
+          dependee: field_location_type
+          settings:
+            state: visible
+            condition: value
+            grouping: AND
+            values_set: 3
+            value: ''
+            values: "Building\r\nEntrance"
+            value_form:
+              -
+                value: Building
+            effect: show
+            effect_options: {  }
+            selector: ''
+            form_mode: default
+          entity_type: node
+          bundle: location
     type: address_default
     region: content
+  field_display_groups:
+    weight: 5
+    settings:
+      match_operator: CONTAINS
+      match_limit: 10
+      size: 60
+      placeholder: ''
+    third_party_settings: {  }
+    type: entity_reference_autocomplete
+    region: content
   field_geolocation:
-    weight: 2
+    weight: 4
     settings:
       html5_geolocation: false
     third_party_settings: {  }
@@ -40,7 +172,7 @@ content:
       placeholder: ''
     third_party_settings: {  }
   field_summary:
-    weight: 3
+    weight: 1
     settings:
       rows: 2
       placeholder: ''
@@ -61,13 +193,13 @@ content:
     third_party_settings: {  }
   moderation_state:
     type: moderation_state_default
-    weight: 8
+    weight: 11
     settings: {  }
     region: content
     third_party_settings: {  }
   path:
     type: path
-    weight: 6
+    weight: 4
     region: content
     settings: {  }
     third_party_settings: {  }
@@ -82,15 +214,23 @@ content:
       maxlength:
         maxlength_js: 78
         maxlength_js_label: 'Google will display search results at about 78 characters max for titles. Content limited to @limit characters, remaining: <strong>@remaining</strong>'
+  uid:
+    type: entity_reference_autocomplete
+    weight: 6
+    region: content
+    settings:
+      match_operator: CONTAINS
+      match_limit: 10
+      size: 60
+      placeholder: ''
+    third_party_settings: {  }
   url_redirects:
-    weight: 7
+    weight: 5
     region: content
     settings: {  }
     third_party_settings: {  }
 hidden:
-  created: true
   group_content: true
   promote: true
   status: true
   sticky: true
-  uid: true
