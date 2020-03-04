@@ -8,10 +8,11 @@ use Drupal\migrate\ProcessPluginBase;
 use Drupal\migrate\Row;
 use Drupal\media\Entity\Media;
 use Drupal\group\Entity\GroupInterface;
+use Drupal\file\Entity\File;
 
 /**
- * Download park images from URLs like:
- * https://www.portlandoregon.gov/parks/finder/index.cfm?action=ViewFile&PolPhotosID=678
+ * Link an existing file from folder date("Y-m")/filename.
+ * Assume the file has been uploaded to the server.
  * Create a media item. Add the media item to the park.
  * 
  * CSV rows: PropertyID,PolPhotosId,Description,AltTagText,FileName
@@ -21,9 +22,6 @@ use Drupal\group\Entity\GroupInterface;
  * )
  */
 class MigrateParkPhotos extends ProcessPluginBase {
-
-  private $fileUrlPrefix = 'https://www.portlandoregon.gov/parks/finder/index.cfm?action=ViewFile&PolPhotosID=';
-  
   /**
    * {@inheritdoc}
    */
@@ -35,34 +33,18 @@ class MigrateParkPhotos extends ProcessPluginBase {
     if($parkNode == NULL) return [];
     $result = $parkNode->get('field_images')->getValue();
 
-    // Build the POG URL of the photo from photo ID. 
-    // $value is the PolPhotosId column in CSV
-    $pogImageUrl = $this->fileUrlPrefix.$value;
-
     $fileName = $row->getSourceProperty('FileName');
-    // replace underscores with hypens
-    $fileName = preg_replace('/_/', '-', $fileName);
-    // transliterate filename to remove spaces, punctuation, illegal characters
-    if (function_exists("transliterate_filenames_transliteration")) {
-      $fileName = transliterate_filenames_transliteration($fileName);
-    }
-
     $download_dir_uri = $this->prepareDownloadDirectory();
     $destination_uri = $download_dir_uri . "/" . $fileName;
 
-    // download and save managed file
-    try {
-      $downloaded_file = system_retrieve_file($pogImageUrl, $destination_uri, TRUE);
-    }
-    catch (Exception $e) {
-      $message = "Error occurred while trying to download URL target at " . $pogImageUrl . " and create managed file. Exception: " . $e->getMessage();
-      \Drupal::logger('portland_migrations')->notice($message);
-    }
-
-    if( $downloaded_file == FALSE ) {
-      echo "Failed to download $pogImageUrl";
-      return $result;
-    }
+    // Create a file entity.
+    $file = File::create([
+      'uri' => $destination_uri,
+      'uid' => \Drupal::currentUser()->id(),
+      'status' => 1, //FILE_STATUS_PERMANENT,
+    ]);
+    $file->setFilename(\Drupal::service('file_system')->basename($destination_uri));
+    $file->save();
 
     // Create the Media Image item
     $parkTitle = $parkNode->getTitle();
@@ -75,7 +57,7 @@ class MigrateParkPhotos extends ProcessPluginBase {
       'name' => $imageTitle,
       'status' => 1,
       'image' => [
-        'target_id' => $downloaded_file->id()
+        'target_id' => $file->id()
       ],
     ]);
     $media->save();
