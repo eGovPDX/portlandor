@@ -13,63 +13,66 @@ label: Locations
 type: content_moderation
 type_settings:
   states:
+    archived:
+      published: false
+      default_revision: true
+      label: Unpublished
+      weight: 1
     draft:
       label: Draft
       published: false
       default_revision: false
-      weight: -1
+      weight: -2
     published:
       label: Published
       published: true
       default_revision: true
       weight: 0
-    submitted_for_review:
+    review:
       published: false
       default_revision: false
-      label: 'Submitted for review'
-      weight: -2
-    unpublished:
-      published: false
-      default_revision: false
-      label: Unpublished
-      weight: 1
+      label: 'In review'
+      weight: -1
   transitions:
     create_new_draft:
       label: 'Create New Draft'
       to: draft
       weight: -1
       from:
+        - archived
         - draft
         - published
-        - unpublished
+        - review
     publish:
       label: Publish
       to: published
       weight: 0
       from:
+        - archived
         - draft
         - published
-        - unpublished
-    submit_for_review:
-      label: 'Submit for review'
+        - review
+    send_to_review:
+      label: 'Send to review'
       from:
+        - archived
         - draft
         - published
-        - submitted_for_review
-        - unpublished
-      to: submitted_for_review
-      weight: -2
+        - review
+      to: review
+      weight: 1
     unpublish:
       label: Unpublish
       from:
+        - archived
         - draft
         - published
-        - unpublished
-      to: unpublished
-      weight: 1
+        - review
+      to: archived
+      weight: 2
   entity_types:
     node:
       - location
       - room
       - service_location
-  default_moderation_state: submitted_for_review
+  default_moderation_state: review
