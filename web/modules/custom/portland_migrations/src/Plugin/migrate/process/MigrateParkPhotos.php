@@ -57,7 +57,8 @@ class MigrateParkPhotos extends ProcessPluginBase {
       'name' => $imageTitle,
       'status' => 1,
       'image' => [
-        'target_id' => $file->id()
+        'target_id' => $file->id(),
+        'alt' => $pogAltText,
       ],
     ]);
     $media->save();
