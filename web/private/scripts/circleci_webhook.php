@@ -1,5 +1,7 @@
 <?php
 
+// Obsolete now that we've migrated to CircleCI v2.1 and a unified deploy_and_test workflow
+
 /*
 echo "Quicksilver Debuging Output";
 echo "\n\n";
