@@ -25,7 +25,7 @@ module.exports = {
       },
       yellow: {
         '800': { value: '#B38600' },// text
-        '600': { value: '#F2B90D' },
+        '500': { value: '#F2B90D' },
         '300': { value: '#FCDE83' },
         '100': { value: '#FEF9E7' },
       },
