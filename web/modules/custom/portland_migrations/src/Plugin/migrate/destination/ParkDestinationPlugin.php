@@ -12,7 +12,7 @@ use Drupal\node\Entity\Node;
 
 /**
  * Delete the associated location when roll back parks migration.
- *  
+ *
  * @MigrateDestination(
  *   id = "park_destination_plugin"
  * )
@@ -37,7 +37,7 @@ class ParkDestinationPlugin extends EntityContentBase {
     $entity = $this->storage->load($entity_id);
     // Delete attached files on Working Papers.
     if ($entity && $entity->bundle() === 'park_facility') {
-      $address = $entity->get('field_park_address_or_entrance')->entity;
+      $address = $entity->get('field_location')->entity;
       if( $address != NULL ) $address->delete();
       echo 'address deleted';
 
@@ -52,7 +52,7 @@ class ParkDestinationPlugin extends EntityContentBase {
         $image->get('image')->entity->delete();
         echo 'image deleted';
       }
-    }  
+    }
     // Execute the normal rollback from here.
     parent::rollback($destination_identifier);
   }
