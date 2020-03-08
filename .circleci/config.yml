@@ -1,27 +1,14 @@
 # CircleCI integration with Drupal 8.
 
-## Defines images and working directory.
-pre_deploy: &pre_deploy
-  docker:
-    # - image: juampynr/drupal8ci:latest
-    # updated CI image
-    - image: kxwang/drupal-ci:circleci
-  working_directory: /var/www/html
-
-pre_test: &pre_test
-  docker:
-    # - image: juampynr/drupal8ci:latest
-    # updated CI image
-    - image: kxwang/drupal-ci:circleci
-    - image: selenium/standalone-chrome-debug:3.7.1-beryllium
-  parallelism: 5
-  working_directory: /var/www/html
-
 #Jobs
 
 ## Job to run the update path and Behat tests.
 build_and_deploy: &build_and_deploy
-  <<: *pre_deploy
+  docker:
+    # - image: juampynr/drupal8ci:latest
+    # updated CI image
+    - image: kxwang/drupal-ci:ci-php7.2.28-node12.16.1-yarn1.22.0
+  working_directory: /var/www/html
   steps:
     - restore_cache:
         name: Retore Git cache before checkout
@@ -51,14 +38,14 @@ build_and_deploy: &build_and_deploy
     - restore_cache:
         name: Restore theme dependencies cache
         keys:
-          - cloudy_-{{ checksum "web/themes/custom/cloudy/package.json" }}
+          - cloudy_-{{ checksum "web/themes/custom/cloudy/yarn.lock" }}
     - run:
         name: Install theme dependencies
         command: |
-          cd web/themes/custom/cloudy && npm install --no-package-lock
+          cd web/themes/custom/cloudy && yarn install
     - save_cache:
         name: Save theme dependencies cache
-        key: cloudy_-{{ checksum "web/themes/custom/cloudy/package.json" }}
+        key: cloudy_-{{ checksum "web/themes/custom/cloudy/yarn.lock" }}
         paths:
           - "web/themes/custom/cloudy/node_modules"
     - restore_cache:
@@ -91,18 +78,16 @@ build_and_deploy: &build_and_deploy
           - ./web/libraries
     - run:
         name: Build Theme and Pattern Lab
-        command: cd web/themes/custom/cloudy && npm run build:ci
+        command: cd web/themes/custom/cloudy && yarn run build:ci
     - run:
         name: Remove Node Modules post build to lighten upload to Pantheon
         command: cd /var/www/html && rm -rf web/themes/custom/cloudy/node_modules
     - run:
-        name: Build Theme and Pattern Lab
-        when: on_success
-        command: |
-          # Compile the theme and build PL
-          cd web/themes/custom/cloudy && npm run build:ci && cd /var/www/html
-          # Exclude dependencies
-          rm -rf web/themes/custom/cloudy/node_modules
+        # Unlike npm, security audit is not automatically included in install
+        name: Security Audit of Node dependencies
+        # Once POWR-2023 is resolved and yarn updated, we can bring this back. However this command is not yet available in yarn 1.6
+        # command: cd web/themes/custom/cloudy && yarn audit
+        command: cd web/themes/custom/cloudy && yarn audit || echo 'it appears that yarn audit found some security issues in your node dependencies, consider running a yarn upgrade'
     - run:
         name: Deploy to Pantheon
         when: on_success
@@ -119,7 +104,7 @@ build_and_deploy: &build_and_deploy
           git remote add pantheon ssh://codeserver.dev.5c6715db-abac-4633-ada8-1c9efe354629@codeserver.dev.5c6715db-abac-4633-ada8-1c9efe354629.drush.in:2222/~/repository.git
           git config --global user.email "$eGov_Email"
           # Force add all files to include those excluded by .gitignore
-          cd /var/www/html && rm -rf ./web/modules/contrib/search_api_solr/.git && rm -rf ./vendor/drupal/coder/.git && rm -rf ./web/modules/contrib/facets/.git
+          cd /var/www/html && find ./web/modules -name .git -type d -prune -exec rm -rf "{}" \;
           git add -f /var/www/html
           # Pantheon site will use the wrong DB if the local is kept
           git rm --cache  web/sites/default/settings.local.php --ignore-unmatch
@@ -139,6 +124,8 @@ build_and_deploy: &build_and_deploy
           # When commit on master, we deploy to DEV
           if [[ $CIRCLE_BRANCH = "master" ]]; then
             echo "Deploy to Pantheon DEV site"
+            # Set Pantheon environment name
+            echo "export PANTHEON_ENV=dev" >> $BASH_ENV && source $BASH_ENV
             # Set the connection type to GIT
             terminus connection:set portlandor.dev git
             git push -f pantheon master
@@ -158,6 +145,20 @@ build_and_deploy: &build_and_deploy
                 terminus multidev:delete --delete-branch portlandor.${BASH_REMATCH[2]} -y
               fi
             fi
+            echo "Waiting for sync code workflow to finish..."
+            until [ $(terminus workflow:list --fields status,env --format string -- portlandor | egrep -i $PANTHEON_ENV -m 1 | egrep -i -o "^\w+") == succeeded ]; do
+              sleep 30
+            done
+            echo "Rebuilding cache..."
+            terminus drush portlandor.$PANTHEON_ENV -- cr
+            echo "Running database updates..."
+            terminus drush portlandor.$PANTHEON_ENV -- updb -y
+            echo "Importing config..."
+            terminus drush portlandor.$PANTHEON_ENV -- cim -y
+            echo "Running cron..."
+            terminus drush portlandor.$PANTHEON_ENV -- core:cron -y
+            echo "Rebuilding cache..."
+            terminus drush portlandor.$PANTHEON_ENV -- cr
           else  # All other commits deploy to a multidev
             # Set Pantheon environment name
             if [[ $CIRCLE_BRANCH =~ ^dependabot\/ ]] && [[ $CIRCLE_PULL_REQUEST =~ \/pull\/([0-9]+)$ ]]; then
@@ -181,6 +182,21 @@ build_and_deploy: &build_and_deploy
             # Force push $CIRCLE_BRANCH to Pantheon as branch named $PANTHEON_ENV
             git push -f pantheon $CIRCLE_BRANCH:$PANTHEON_ENV
 
+            echo "Waiting for sync code workflow to finish..."
+            until [ $(terminus workflow:list --fields status,env --format string -- portlandor | egrep -i $PANTHEON_ENV -m 1 | egrep -i -o "^\w+") == succeeded ]; do
+              sleep 30
+            done
+            echo "Rebuilding cache..."
+            terminus drush portlandor.$PANTHEON_ENV -- cr
+            echo "Running database updates..."
+            terminus drush portlandor.$PANTHEON_ENV -- updb -y
+            echo "Importing config..."
+            terminus drush portlandor.$PANTHEON_ENV -- cim -y
+            echo "Running cron..."
+            terminus drush portlandor.$PANTHEON_ENV -- core:cron -y
+            echo "Rebuilding cache..."
+            terminus drush portlandor.$PANTHEON_ENV -- cr
+
             if [[ $CIRCLE_BRANCH =~ ^dependabot\/ ]]; then
               echo "Dependabot branch detected..."
 
@@ -188,8 +204,8 @@ build_and_deploy: &build_and_deploy
               terminus connection:set portlandor.$PANTHEON_ENV sftp
 
               # Clone database from DEV
-              # This is necessary if the build gets re-run because the drush cim in the sync_code event can
-              # interfere with the drush cex below
+              # This is necessary if the build gets re-run because the drush cim above can
+              # interfere with the drush cex below (by importing what was previously exported)
               terminus env:clone-content portlandor.dev $PANTHEON_ENV --db-only --cc -y
               terminus drush portlandor.$PANTHEON_ENV -- cim -y
 
@@ -198,19 +214,17 @@ build_and_deploy: &build_and_deploy
               echo "IMPORTANT: If there's a configuation change, download this branch and manually update the dependency"
               terminus drush portlandor.$PANTHEON_ENV -- updb -y
               terminus drush portlandor.$PANTHEON_ENV -- cex --no   # this will return failure code if there's config to export
-
-              # Trigger "Test" job for Dependabot dependency updates because it's not run via circleci_webhook.php for these branches
-              echo "Triggering test job for Dependabot PR"
-              #sleep 180 # allow time for sync_code event -- no longer necessary due to time required for database cloning
-              curl --user ${CIRCLE_API_USER_TOKEN}: \
-                --data build_parameters[CIRCLE_JOB]=test \
-                --data revision=$CIRCLE_SHA1 \
-                https://circleci.com/api/v1.1/project/github/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME/tree/$CIRCLE_BRANCH
             fi
           fi
 
 run_tests: &run_tests
-  <<: *pre_test
+  docker:
+    # - image: juampynr/drupal8ci:latest
+    # updated CI image
+    - image: kxwang/drupal-ci:ci-php7.2.28-node12.16.1-yarn1.22.0
+    - image: selenium/standalone-chrome-debug:3.7.1-beryllium
+  parallelism: 5
+  working_directory: /var/www/html
   steps:
     - restore_cache:
         name: Retore Git cache before checkout
@@ -238,7 +252,7 @@ run_tests: &run_tests
         paths:
           - "/tmp/vendor"
     - run:
-        name: Show Drush commands result
+        name: Show output of Sync Code workflow commands
         command: |
           export PATH=/var/www/html/tests/vendor/bin:/tmp/vendor/pantheon-systems/terminus/bin:$PATH
           terminus auth:login --machine-token="$eGov_Terminus" --email="$eGov_Email" && terminus aliases
@@ -321,7 +335,7 @@ run_tests: &run_tests
         destination: /
 
 # Declare all of the jobs we should run.
-version: 2
+version: 2.1
 jobs:
   deploy:
      <<: *build_and_deploy
@@ -331,7 +345,9 @@ jobs:
 # Declare a workflow that runs all of our jobs in parallel.
 workflows:
   version: 2
-  deploy_workflow:
+  deploy_and_test:
     jobs:
-      # Test will be started by QuickSilver after the sync_code event
       - deploy
+      - test:
+          requires:
+            - deploy

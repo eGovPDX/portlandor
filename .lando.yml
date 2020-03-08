@@ -24,7 +24,9 @@ services:
         MINK_DRIVER_ARGS_WEBDRIVER: '["chrome", null, "http://chromedriver:4444/wd/hub"]'
         MINK_DRIVER_CLASS: 'Drupal\FunctionalJavascriptTests\DrupalSelenium2Driver'
   node:
-    type: node
+    type: node:11
+    globals:
+      yarn: latest
     overrides:
       environment:
         # LANDO_WEBROOT_USER: www-data
@@ -33,17 +35,14 @@ services:
     build_as_root:
       - apt-get update -y && apt-get upgrade -y
       - apt-get install php -y
-    build:
-      - echo "Updating npm..."
-      - npm install -g npm
     run_as_root:
       - /bin/sh -c "adduser www-data node"
       - /bin/sh -c "adduser www-data dialout"
       - /bin/sh -c "adduser node dialout"
-      - /bin/sh -c "chmod -R 775 /var/www"
+      - /bin/sh -c "chmod -R 777 /var/www"
     run:
       - echo "Installing Node.js dependencies..."
-      - cd /app/web/themes/custom/cloudy && npm install
+      - cd /app/web/themes/custom/cloudy && yarn install --ignore-engines
   chromedriver:
     type: compose
     services:
@@ -61,21 +60,26 @@ events:
   post-start:
     - node: /bin/sh -c "chmod -R 775 /var/www"
     - node: echo "Building theme asset files..."
-    - node: cd /app/web/themes/custom/cloudy && npm run build
+    - node: cd /app/web/themes/custom/cloudy && yarn run build
 tooling:
   drush:
-    description: Run drush commands
+    description: CUSTOM Run drush commands
     service: appserver
     cmd: drush --root=/app/web
   npm:
-    description: Run npm commands
+    # Although this now runs yarn, I have left it as legacy support for users who are use to running `lando npm etc etc`
+    description: CUSTOM Run yarn commands
     service: node
-    cmd: cd /app/web/themes/custom/cloudy && npm
+    cmd: cd /app/web/themes/custom/cloudy && yarn
+  yarn:
+    description: CUSTOM Run yarn commands
+    service: node
+    cmd: cd /app/web/themes/custom/cloudy && yarn
   node:
-    description: Run node commands
+    description: CUSTOM Run node commands
     service: node
   latest:
-    description: Download and import the latest database from Dev
+    description: CUSTOM Download and import the latest database from Dev
     cmd:
       - appserver: mkdir -p /app/artifacts
       - appserver: echo "Downloading latest database..."
@@ -86,7 +90,7 @@ tooling:
       - appserver: echo "Clearing cache..."
       - appserver: drush cr -y
   demo:
-    description: Download and import the latest test content from a demo backup
+    description: CUSTOM Download and import the latest test content from a demo backup
     cmd:
       - appserver: mkdir -p /app/artifacts
       - appserver: echo "Downloading latest database..."
@@ -97,7 +101,7 @@ tooling:
       - appserver: echo "Clearing cache..."
       - appserver: drush cr -y
   refresh:
-    description: Refresh branch by installing Composer dependencies and importing Drupal config, etc. Run after every merge from master.
+    description: CUSTOM Refresh branch by installing Composer dependencies and importing Drupal config, etc. Run after every merge from master.
     cmd:
       - appserver: echo "Installing Composer dependencies..."
       - appserver: composer install -d /app
@@ -112,9 +116,9 @@ tooling:
       - appserver: echo "Clearing cache..."
       - appserver: drush cr -y
       - node: echo "Building theme asset files..."
-      - node: cd /app/web/themes/custom/cloudy && npm run build:wp
+      - node: cd /app/web/themes/custom/cloudy && yarn run build
   cupex:
-    description: Composer update, database update, and config export to get a clean module or theme update
+    description: CUSTOM Composer update, database update, and config export to get a clean module or theme update
     cmd:
       - appserver: echo "Updating Composer dependencies..."
       - appserver: composer update
@@ -124,16 +128,16 @@ tooling:
       - appserver: drush cex -y
   xdebug-on:
     service: appserver
-    description: Enable xdebug for nginx.
+    description: CUSTOM Enable xdebug for nginx.
     cmd: docker-php-ext-enable xdebug && pkill -o -USR2 php-fpm && echo "Enabling xdebug"
     user: root
   xdebug-off:
     service: appserver
-    description: Disable xdebug for nginx.
+    description: CUSTOM Disable xdebug for nginx.
     cmd: rm /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini && pkill -o -USR2 php-fpm && echo "Disabling xdebug"
     user: root
   install-certs:
-    description: Installs City of Portland certificate authority certificates used for SSL decryption
+    description: CUSTOM Installs City of Portland certificate authority certificates used for SSL decryption
     service: appserver
     cmd:
       - /bin/sh -c "cp /app/cop_ca_*.crt /usr/local/share/ca-certificates/"
@@ -141,9 +145,9 @@ tooling:
     user: root
   behat:
     service: appserver
-    description: Run behat tests
+    description: CUSTOM Run behat tests
     cmd:
       - /app/vendor/bin/behat -c /app/tests/behat.yml
   chromedriver:
     service: chromedriver
-    description: Run chromedriver commands
+    description: CUSTOM Run chromedriver commands
