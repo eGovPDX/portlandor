@@ -33,8 +33,12 @@ services:
         # LANDO_WEBROOT_GROUP: node
         NODE_EXTRA_CA_CERTS: /app/cop_ca.pem
     build_as_root:
+      - echo "=====Timestamp===== Adding Php Cli to Node Container"
+      - date +"%T"
       - apt-get update -y && apt-get upgrade -y
       - apt-get install php -y
+      - echo "=====Timestamp===== Finished Adding Php Cli to Node Container"
+      - date +"%T"
     run_as_root:
       - /bin/sh -c "adduser www-data node"
       - /bin/sh -c "adduser www-data dialout"
@@ -56,11 +60,6 @@ services:
         - seccomp:unconfined
       command: ["/usr/local/bin/supervisord", "-c", "/etc/supervisord.conf"]
 
-events:
-  post-start:
-    - node: /bin/sh -c "chmod -R 775 /var/www"
-    - node: echo "Building theme asset files..."
-    - node: cd /app/web/themes/custom/cloudy && yarn run build
 tooling:
   drush:
     description: CUSTOM Run drush commands
