@@ -17,6 +17,8 @@ The Migrate Tools module provides drush commands to run the migrations. The orde
 lando terminus drush [environment] migrate:import [migration_id]
 ```
 
+After editing an existing migration, you need to run `lando drush cr` before it will pick up the changes.
+
 ### Rolling back migrations
 
 To roll back a migration, use the `migrate:rollback [migration_name]` command, and roll back migrations in the reverse order than they were originally rolled.
