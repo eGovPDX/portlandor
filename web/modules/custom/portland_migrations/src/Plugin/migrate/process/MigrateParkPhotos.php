@@ -48,8 +48,10 @@ class MigrateParkPhotos extends ProcessPluginBase {
 
     // Create the Media Image item
     $parkTitle = $parkNode->getTitle();
-    $pogAltText = $row->getSourceProperty('AltTagText');
-    $imageTitle = ( empty($pogAltText) ) ? $parkTitle : ($parkTitle.' - '.$pogAltText);
+
+    // Parse the file name to get image title and alter text
+    $imageTitle = ucwords(str_replace('-', ' ', str_replace('.jpg', '', $row->getSourceProperty('FileName'))));
+
     $media = Media::create([
       'bundle' => 'image',
       'uid' => 1,
@@ -58,7 +60,7 @@ class MigrateParkPhotos extends ProcessPluginBase {
       'status' => 1,
       'image' => [
         'target_id' => $file->id(),
-        'alt' => $pogAltText,
+        'alt' => $imageTitle,
       ],
     ]);
     $media->save();
