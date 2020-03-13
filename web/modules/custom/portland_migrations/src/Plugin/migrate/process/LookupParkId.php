@@ -26,7 +26,7 @@ class LookupParkId extends ProcessPluginBase {
   public function transform($value, MigrateExecutableInterface $migrate_executable, Row $row, $destination_property) {
     $nodes = \Drupal::entityTypeManager()
       ->getStorage('node')
-      ->loadByProperties(['field_property_id' => $value, 'type' => 'park_facility']);
+      ->loadByProperties(['field_pog_property_id' => $value, 'type' => 'park_facility']);
 
     if(count($nodes) === 0) return NULL;
     // Only expect one result. The key of the first array element is the park's NID in POWR.
