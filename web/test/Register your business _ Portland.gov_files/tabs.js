@@ -68,6 +68,10 @@ $(function() {
     var panel = $("#pane-" + linkHash.substr(1));
     panel.attr('aria-hidden', false);
 
+    // manually hide/show panes; simply changing focus doesn't work in legacy Edge
+    $('.tab-pane').hide();
+    panel.show();
+
     // focus the active tab; necessary in the case of page reload or direct navigation
     tab.focus();
     focusedTab = tab;
