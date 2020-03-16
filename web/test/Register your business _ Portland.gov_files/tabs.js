@@ -70,7 +70,11 @@ $(function() {
 
     // manually hide/show panes; simply changing focus doesn't work in legacy Edge
     $('.tab-pane').hide();
+    $('.tab-pane').removeClass('show');
     panel.show();
+    panel.addClass('show');
+    $('#serviceModes a.nav-link').removeClass('active');
+    tab.addClass('active');
 
     // focus the active tab; necessary in the case of page reload or direct navigation
     tab.focus();
