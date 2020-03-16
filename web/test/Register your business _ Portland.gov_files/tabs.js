@@ -65,7 +65,7 @@ $(function() {
 
     // aria-hidden should be true for all but visible pane; bootstrap doesn't handle this
     $('#serviceModesContent .tab-pane').attr('aria-hidden', 'true');
-    var panel = $("#pane-" + linkHash.substr(1));
+    var panel = $("#" + linkHash.substr(1));
     panel.attr('aria-hidden', false);
 
     // manually hide/show panes; simply changing focus doesn't work in legacy Edge
