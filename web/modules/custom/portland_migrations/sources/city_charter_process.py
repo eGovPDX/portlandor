@@ -1,3 +1,9 @@
+#!/usr/bin/env python3
+
+# Install pandas and bs4 before running this script
+# pip3 install pandas
+# pip3 install bs4
+
 # standard modules
 import re
 
