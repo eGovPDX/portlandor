@@ -1,4 +1,19 @@
-{% include 'node--alert.html.twig' with {
-  dismissible: true,
-  timestamp: false,
-} %}
+{% if node.field_notification_severity.value == 20 %}
+  {% set alertType = 'warning' %}
+{% else %}
+  {% set alertType = 'info' %}
+{% endif %}
+
+{% set dismissible = dismissible is null ? false : dismissible %}
+{% set timestamp = timestamp is null ? true : timestamp %}
+
+{% include "@components/alert/alert.twig" with {
+  id: node.nid ? node.nid.value : '',
+  type: alertType,
+  is_draft: node.isPublished() ? false : true,
+  title: label,
+  content: content,
+  isDismissible: true,
+  showTimestamp: false,
+  changed: node.revision_timestamp ? node.revision_timestamp.value : '',
+} only %}
