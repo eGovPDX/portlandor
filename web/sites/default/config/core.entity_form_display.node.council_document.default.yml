@@ -5,18 +5,30 @@ dependencies:
   config:
     - field.field.node.council_document.field_body_content
     - field.field.node.council_document.field_bureau
-    - field.field.node.council_document.field_council_doc_amends_budget
+    - field.field.node.council_document.field_code_charter_policy_effect
+    - field.field.node.council_document.field_collaboration_storage_link
     - field.field.node.council_document.field_council_document_status
     - field.field.node.council_document.field_council_document_type
     - field.field.node.council_document.field_date_prepared
     - field.field.node.council_document.field_documents_and_exhibits
+    - field.field.node.council_document.field_effective_date
+    - field.field.node.council_document.field_effective_date_notes
     - field.field.node.council_document.field_efiles_link
     - field.field.node.council_document.field_file_impact_statement
     - field.field.node.council_document.field_full_document_title
     - field.field.node.council_document.field_introduced_by
+    - field.field.node.council_document.field_is_administrative_rule
+    - field.field.node.council_document.field_is_amends_budget
+    - field.field.node.council_document.field_is_emergency_ordinance
+    - field.field.node.council_document.field_is_iga
+    - field.field.node.council_document.field_is_portland_policy
+    - field.field.node.council_document.field_is_procurement
     - field.field.node.council_document.field_prepared_by
+    - field.field.node.council_document.field_requested_council_date
+    - field.field.node.council_document.field_reviewed_by_city_attorney
     - field.field.node.council_document.field_reviewer
     - node.type.council_document
+    - workflows.workflow.council_document_workflow
   module:
     - chosen_field
     - conditional_fields
@@ -29,25 +41,11 @@ dependencies:
     - text
 third_party_settings:
   field_group:
-    group_impact_statement:
-      children:
-        - field_file_impact_statement
-      parent_name: ''
-      weight: 10
-      format_type: details
-      region: content
-      format_settings:
-        id: ''
-        classes: ''
-        description: ''
-        open: false
-        required_fields: false
-      label: 'Impact Statement'
     group_efiles:
       children:
         - field_efiles_link
       parent_name: ''
-      weight: 13
+      weight: 20
       format_type: details
       region: content
       format_settings:
@@ -57,6 +55,36 @@ third_party_settings:
         open: false
         required_fields: false
       label: Efiles
+    group_effected:
+      children:
+        - field_effective_date
+        - field_effective_date_notes
+        - field_code_charter_policy_effect
+      parent_name: ''
+      weight: 19
+      format_type: details
+      region: content
+      format_settings:
+        id: ''
+        classes: ''
+        description: ''
+        open: false
+        required_fields: false
+      label: 'Code, Charter, Policy Effected'
+    group_collaboration:
+      children:
+        - field_collaboration_storage_link
+      parent_name: ''
+      weight: 18
+      format_type: details
+      region: content
+      format_settings:
+        id: ''
+        classes: ''
+        description: ''
+        open: false
+        required_fields: false
+      label: Collaboration
 id: node.council_document.default
 targetEntityType: node
 bundle: council_document
@@ -64,12 +92,12 @@ mode: default
 content:
   created:
     type: datetime_timestamp
-    weight: 15
+    weight: 23
     region: content
     settings: {  }
     third_party_settings: {  }
   field_body_content:
-    weight: 9
+    weight: 16
     settings:
       rows: 5
       placeholder: ''
@@ -77,18 +105,47 @@ content:
     type: text_textarea
     region: content
   field_bureau:
-    weight: 8
+    weight: 15
     settings: {  }
-    third_party_settings: {  }
+    third_party_settings:
+      conditional_fields:
+        49fd3d49-2ea2-4448-a3c7-f3be76ec77ce:
+          dependee: field_council_document_type
+          settings:
+            state: '!visible'
+            condition: value
+            grouping: OR
+            values_set: 1
+            value: ''
+            values: {  }
+            value_form:
+              -
+                target_id: '326'
+            effect: show
+            effect_options: {  }
+            selector: ''
+            form_mode: default
+          entity_type: node
+          bundle: council_document
     type: chosen_select
     region: content
-  field_council_doc_amends_budget:
-    weight: 4
+  field_code_charter_policy_effect:
+    weight: 21
     settings:
-      display_label: true
-    third_party_settings:
-      conditional_fields: {  }
-    type: boolean_checkbox
+      match_operator: CONTAINS
+      match_limit: 10
+      size: 60
+      placeholder: ''
+    third_party_settings: {  }
+    type: entity_reference_autocomplete
+    region: content
+  field_collaboration_storage_link:
+    weight: 17
+    settings:
+      placeholder_url: ''
+      placeholder_title: ''
+    third_party_settings: {  }
+    type: link_default
     region: content
   field_council_document_status:
     weight: 2
@@ -103,17 +160,50 @@ content:
     type: options_select
     region: content
   field_date_prepared:
-    weight: 6
+    weight: 5
     settings: {  }
-    third_party_settings: {  }
+    third_party_settings:
+      conditional_fields:
+        4880c107-8e72-45e0-bea8-add933c54fe8:
+          dependee: field_council_document_type
+          settings:
+            state: '!visible'
+            condition: value
+            grouping: OR
+            values_set: 1
+            value: ''
+            values: {  }
+            value_form:
+              -
+                target_id: '326'
+            effect: show
+            effect_options: {  }
+            selector: ''
+            form_mode: default
+          entity_type: node
+          bundle: council_document
     type: datetime_default
     region: content
   field_documents_and_exhibits:
-    weight: 12
+    weight: 21
     settings:
       progress_indicator: throbber
     third_party_settings: {  }
     type: file_generic
+    region: content
+  field_effective_date:
+    weight: 19
+    settings: {  }
+    third_party_settings: {  }
+    type: datetime_default
+    region: content
+  field_effective_date_notes:
+    weight: 20
+    settings:
+      rows: 5
+      placeholder: ''
+    third_party_settings: {  }
+    type: text_textarea
     region: content
   field_efiles_link:
     weight: 11
@@ -124,15 +214,69 @@ content:
     type: link_default
     region: content
   field_file_impact_statement:
-    weight: 10
+    weight: 17
     settings:
       progress_indicator: throbber
     third_party_settings:
-      conditional_fields: {  }
+      conditional_fields:
+        6f8bde7b-cc6a-41ec-a9e8-f27e55d4e4a6:
+          dependee: field_council_document_type
+          settings:
+            state: visible
+            condition: value
+            grouping: OR
+            values_set: 1
+            value: ''
+            values: {  }
+            value_form:
+              -
+                target_id: '73'
+            effect: show
+            effect_options: {  }
+            selector: ''
+            form_mode: default
+          entity_type: node
+          bundle: council_document
+        3ad37061-f145-49d6-95c6-4d3a55702c0e:
+          dependee: field_council_document_type
+          settings:
+            state: visible
+            condition: value
+            grouping: OR
+            values_set: 1
+            value: ''
+            values: {  }
+            value_form:
+              -
+                target_id: '72'
+            effect: show
+            effect_options: {  }
+            selector: ''
+            form_mode: default
+          entity_type: node
+          bundle: council_document
+        cd8a0f36-88bb-425e-acf8-cdc490f367d3:
+          dependee: field_council_document_type
+          settings:
+            state: visible
+            condition: value
+            grouping: OR
+            values_set: 1
+            value: ''
+            values: {  }
+            value_form:
+              -
+                target_id: '74'
+            effect: show
+            effect_options: {  }
+            selector: ''
+            form_mode: default
+          entity_type: node
+          bundle: council_document
     type: file_generic
     region: content
   field_full_document_title:
-    weight: 1
+    weight: 0
     settings:
       rows: 2
       placeholder: ''
@@ -145,21 +289,278 @@ content:
     type: string_textarea
     region: content
   field_introduced_by:
-    weight: 7
+    weight: 14
     settings: {  }
-    third_party_settings: {  }
+    third_party_settings:
+      conditional_fields:
+        d409d7a9-6843-4df7-a60e-b31676084464:
+          dependee: field_council_document_type
+          settings:
+            state: '!visible'
+            condition: value
+            grouping: OR
+            values_set: 1
+            value: ''
+            values: {  }
+            value_form:
+              -
+                target_id: '326'
+            effect: show
+            effect_options: {  }
+            selector: ''
+            form_mode: default
+          entity_type: node
+          bundle: council_document
     type: chosen_select
     region: content
+  field_is_administrative_rule:
+    weight: 11
+    settings:
+      display_label: true
+    third_party_settings: {  }
+    type: boolean_checkbox
+    region: content
+  field_is_amends_budget:
+    weight: 7
+    settings:
+      display_label: true
+    third_party_settings:
+      conditional_fields:
+        d7aa092e-8eda-4910-81b5-f8911126fea6:
+          dependee: field_council_document_type
+          settings:
+            state: visible
+            condition: value
+            grouping: OR
+            values_set: 1
+            value: ''
+            values: {  }
+            value_form:
+              -
+                target_id: '73'
+            effect: show
+            effect_options: {  }
+            selector: ''
+            form_mode: default
+          entity_type: node
+          bundle: council_document
+        17d5d8a7-4307-47e5-9b09-1344a8cf9d19:
+          dependee: field_council_document_type
+          settings:
+            state: visible
+            condition: value
+            grouping: OR
+            values_set: 1
+            value: ''
+            values: {  }
+            value_form:
+              -
+                target_id: '72'
+            effect: show
+            effect_options: {  }
+            selector: ''
+            form_mode: default
+          entity_type: node
+          bundle: council_document
+    type: boolean_checkbox
+    region: content
+  field_is_emergency_ordinance:
+    weight: 12
+    settings:
+      display_label: true
+    third_party_settings:
+      conditional_fields:
+        238a6be3-2b1f-4591-bf6c-723107bb0f7d:
+          dependee: field_council_document_type
+          settings:
+            state: visible
+            condition: value
+            grouping: OR
+            values_set: 1
+            value: ''
+            values: {  }
+            value_form:
+              -
+                target_id: '73'
+            effect: show
+            effect_options: {  }
+            selector: ''
+            form_mode: default
+          entity_type: node
+          bundle: council_document
+    type: boolean_checkbox
+    region: content
+  field_is_iga:
+    weight: 9
+    settings:
+      display_label: true
+    third_party_settings: {  }
+    type: boolean_checkbox
+    region: content
+  field_is_portland_policy:
+    weight: 10
+    settings:
+      display_label: true
+    third_party_settings: {  }
+    type: boolean_checkbox
+    region: content
+  field_is_procurement:
+    weight: 8
+    settings:
+      display_label: true
+    third_party_settings: {  }
+    type: boolean_checkbox
+    region: content
   field_prepared_by:
-    weight: 5
+    weight: 4
     settings:
       size: 60
       placeholder: ''
-    third_party_settings: {  }
+    third_party_settings:
+      conditional_fields:
+        92deba0c-8cbc-48df-95f3-138d73ce8ed7:
+          dependee: field_council_document_type
+          settings:
+            state: '!visible'
+            condition: value
+            grouping: OR
+            values_set: 1
+            value: ''
+            values: {  }
+            value_form:
+              -
+                target_id: '326'
+            effect: show
+            effect_options: {  }
+            selector: ''
+            form_mode: default
+          entity_type: node
+          bundle: council_document
     type: string_textfield
     region: content
+  field_requested_council_date:
+    weight: 6
+    settings: {  }
+    third_party_settings: {  }
+    type: datetime_default
+    region: content
+  field_reviewed_by_city_attorney:
+    weight: 13
+    settings:
+      match_operator: CONTAINS
+      match_limit: 10
+      size: 60
+      placeholder: ''
+    third_party_settings:
+      conditional_fields:
+        4c62f9f6-7d35-4f58-8d73-64b18365bc60:
+          dependee: field_council_document_type
+          settings:
+            state: visible
+            condition: value
+            grouping: OR
+            values_set: 1
+            value: ''
+            values: {  }
+            value_form:
+              -
+                target_id: '72'
+            effect: show
+            effect_options: {  }
+            selector: ''
+            form_mode: default
+          entity_type: node
+          bundle: council_document
+        d441d36e-b73f-4d23-85f0-3bb46a3bbbb3:
+          dependee: field_is_administrative_rule
+          settings:
+            state: visible
+            condition: checked
+            grouping: OR
+            values_set: 1
+            value: ''
+            values: {  }
+            value_form:
+              value: false
+            effect: show
+            effect_options: {  }
+            selector: ''
+            form_mode: default
+          entity_type: node
+          bundle: council_document
+        f56adf54-4d81-406a-be23-db6269772952:
+          dependee: field_is_procurement
+          settings:
+            state: visible
+            condition: checked
+            grouping: OR
+            values_set: 1
+            value: ''
+            values: {  }
+            value_form:
+              value: false
+            effect: show
+            effect_options: {  }
+            selector: ''
+            form_mode: default
+          entity_type: node
+          bundle: council_document
+        301f340c-c969-4988-9b82-d2fff0dd0023:
+          dependee: field_is_iga
+          settings:
+            state: visible
+            condition: checked
+            grouping: OR
+            values_set: 1
+            value: ''
+            values: {  }
+            value_form:
+              value: false
+            effect: show
+            effect_options: {  }
+            selector: ''
+            form_mode: default
+          entity_type: node
+          bundle: council_document
+        b91cd908-3815-4679-96a3-dfa876d58cc7:
+          dependee: field_is_portland_policy
+          settings:
+            state: visible
+            condition: checked
+            grouping: OR
+            values_set: 1
+            value: ''
+            values: {  }
+            value_form:
+              value: false
+            effect: show
+            effect_options: {  }
+            selector: ''
+            form_mode: default
+          entity_type: node
+          bundle: council_document
+        a5a6e190-88ea-4920-9f25-200083b5235f:
+          dependee: field_council_document_type
+          settings:
+            state: visible
+            condition: value
+            grouping: OR
+            values_set: 1
+            value: ''
+            values: {  }
+            value_form:
+              -
+                target_id: '73'
+            effect: show
+            effect_options: {  }
+            selector: ''
+            form_mode: default
+          entity_type: node
+          bundle: council_document
+    type: entity_reference_autocomplete
+    region: content
   field_reviewer:
-    weight: 18
+    weight: 26
     settings:
       match_operator: CONTAINS
       size: 60
@@ -168,35 +569,21 @@ content:
     third_party_settings: {  }
     type: entity_reference_autocomplete
     region: content
-  langcode:
-    type: language_select
-    weight: 2
-    region: content
-    settings:
-      include_locked: true
-    third_party_settings: {  }
   moderation_state:
     type: moderation_state_default
-    weight: 19
+    weight: 27
     settings: {  }
     region: content
     third_party_settings: {  }
   path:
     type: path
-    weight: 16
+    weight: 24
     region: content
     settings: {  }
     third_party_settings: {  }
-  status:
-    type: boolean_checkbox
-    settings:
-      display_label: true
-    weight: 20
-    region: content
-    third_party_settings: {  }
   title:
     type: string_textfield
-    weight: 0
+    weight: 1
     region: content
     settings:
       size: 60
@@ -204,7 +591,7 @@ content:
     third_party_settings: {  }
   uid:
     type: entity_reference_autocomplete
-    weight: 14
+    weight: 22
     settings:
       match_operator: CONTAINS
       size: 60
@@ -213,12 +600,14 @@ content:
     region: content
     third_party_settings: {  }
   url_redirects:
-    weight: 17
+    weight: 25
     region: content
     settings: {  }
     third_party_settings: {  }
 hidden:
   field_redirects: true
   group_content: true
+  langcode: true
   promote: true
+  status: true
   sticky: true
