@@ -8,7 +8,7 @@ Drupal.behaviors.tab_handler = {
     var selectedTab;
     var focusedTab;
 
-    alert('Hello world');
+    console.log('Hello world');
   
     // on initial load, check for tab navigation fragment in URL and activate indicated tab
     // hash no longer starts with #pane-
