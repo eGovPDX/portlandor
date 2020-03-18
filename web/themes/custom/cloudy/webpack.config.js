@@ -32,7 +32,9 @@ module.exports = (env, argv) => ({
   devtool: 'source-map',
   mode: isProd ? 'production' : 'development',
   watchOptions: {
-    ignored: ['images/**/*.*', 'dist/**/*.*', 'templates/**/*.*', 'node_modules']
+    ignored: ['images/**/*.*', 'dist/**/*.*', 'templates/**/*.*', 'node_modules'],
+    poll: 100,
+    aggregateTimeout: 100
   },
   plugins: [
     new MiniCssExtractPlugin({
