@@ -13,11 +13,14 @@ build_and_deploy: &build_and_deploy
     - restore_cache:
         name: Retore Git cache before checkout
         keys:
-          - source
+          - source-v1-{{ .Branch }}-{{ .Revision }}
+          - source-v1-{{ .Branch }}-
+          - source-v1-
     - checkout
+    - run: git gc
     - save_cache:
         name: Save Git cache after checkout
-        key: source
+        key: source-v1-{{ .Branch }}-{{ .Revision }}
         paths:
           - ".git"
     - restore_cache:
@@ -42,7 +45,7 @@ build_and_deploy: &build_and_deploy
     - run:
         name: Install theme dependencies
         command: |
-          cd web/themes/custom/cloudy && yarn install
+          cd web/themes/custom/cloudy && yarn install --frozen-lockfile
     - save_cache:
         name: Save theme dependencies cache
         key: cloudy_-{{ checksum "web/themes/custom/cloudy/yarn.lock" }}
@@ -229,11 +232,14 @@ run_tests: &run_tests
     - restore_cache:
         name: Retore Git cache before checkout
         keys:
-          - source
+          - source-v1-{{ .Branch }}-{{ .Revision }}
+          - source-v1-{{ .Branch }}-
+          - source-v1-
     - checkout
+    - run: git gc
     - save_cache:
         name: Save Git cache after checkout
-        key: source
+        key: source-v1-{{ .Branch }}-{{ .Revision }}
         paths:
           - ".git"
     - restore_cache:
@@ -251,46 +257,6 @@ run_tests: &run_tests
         key: terminus_-{{ checksum "composer.lock" }}
         paths:
           - "/tmp/vendor"
-    - run:
-        name: Show output of Sync Code workflow commands
-        command: |
-          export PATH=/var/www/html/tests/vendor/bin:/tmp/vendor/pantheon-systems/terminus/bin:$PATH
-          terminus auth:login --machine-token="$eGov_Terminus" --email="$eGov_Email" && terminus aliases
-
-          # Set Pantheon environment name
-          if [[ $CIRCLE_BRANCH =~ ^dependabot\/ ]] && [[ $CIRCLE_PULL_REQUEST =~ \/pull\/([0-9]+)$ ]]; then
-            echo "export PANTHEON_ENV=bot-${BASH_REMATCH[1]}" >> $BASH_ENV && source $BASH_ENV
-          else
-            echo "export PANTHEON_ENV=$CIRCLE_BRANCH" >> $BASH_ENV && source $BASH_ENV
-          fi
-          echo "Pantheon environment name is $PANTHEON_ENV"
-
-          # Get all workflows
-          terminus workflow:list --format=csv --fields=id,env,workflow,user,status portlandor > workflows.csv
-          # Find the latest "Sync Code" workflow for the current branch
-          WORKFLOW_ID="empty id"
-          while IFS=',' read id env message user status
-          do
-            if [ "$PANTHEON_ENV" = "master" ]; then
-              if [ "$env" = "dev" ] && [[ $message =~ ^\"Sync.*\"$ ]]; then
-                  WORKFLOW_ID=$id
-                  break
-              fi
-            else
-              if [ "$env" = "$PANTHEON_ENV" ] && [[ $message =~ ^\"Sync.*\"$ ]]; then
-                  WORKFLOW_ID=$id
-                  break
-              fi
-            fi
-          done < workflows.csv
-
-          echo $WORKFLOW_ID
-          if [[ $WORKFLOW_ID = "empty id" ]]; then
-            echo "Cannot find any Sync Code workflow for environment $PANTHEON_ENV. Try terminus workflow:list portlandor."
-            exit 1
-          fi
-          # Show the logs of the latest "Sync Code" workflow for the current branch
-          terminus workflow:info:logs portlandor --id=${WORKFLOW_ID}
     - restore_cache:
         name: Restore Behat cache
         key: v1-behat-dependencies-{{ checksum "tests/composer.lock" }}
@@ -307,7 +273,16 @@ run_tests: &run_tests
           export PATH=/var/www/html/tests/vendor/bin:/tmp/vendor/pantheon-systems/terminus/bin:$PATH
           # Log in via terminus first. Required for tests that require user login.
           terminus auth:login --machine-token="$eGov_Terminus" --email="$eGov_Email" && terminus aliases
+          mkdir -p tests/test-results/behat/features
           cd tests
+
+          # Set Pantheon environment name
+          if [[ $CIRCLE_BRANCH =~ ^dependabot\/ ]] && [[ $CIRCLE_PULL_REQUEST =~ \/pull\/([0-9]+)$ ]]; then
+            echo "export PANTHEON_ENV=bot-${BASH_REMATCH[1]}" >> $BASH_ENV && source $BASH_ENV
+          else
+            echo "export PANTHEON_ENV=$CIRCLE_BRANCH" >> $BASH_ENV && source $BASH_ENV
+          fi
+          echo "Pantheon environment name is $PANTHEON_ENV"
 
           # Split feature files by timing data so all split test jobs will finish around the same time
           TESTFILES=$(circleci tests glob "features/*.feature"  | circleci tests split --split-by=timings)
@@ -315,13 +290,15 @@ run_tests: &run_tests
             echo 'export BEHAT_PARAMS="{\"extensions\" : {\"Behat\\\MinkExtension\" : {\"base_url\" : \"https://dev-portlandor.pantheonsite.io\"}, \"Drupal\\\DrupalExtension\" : {\"drush\" : { \"alias\": \"portlandor.dev\"}}}}"' >> $BASH_ENV && source $BASH_ENV
             for TESTFILE in $TESTFILES
             do
-                behat -c behat.yml ${TESTFILE}
+                behat -c behat.yml -f pretty -o std -f junit -o test-results/behat ${TESTFILE}
+                mv test-results/behat/default.xml test-results/behat/${TESTFILE}.xml
             done
           else
             echo 'export BEHAT_PARAMS="{\"extensions\" : {\"Behat\\\MinkExtension\" : {\"base_url\" : \"https://${PANTHEON_ENV}-portlandor.pantheonsite.io\"}, \"Drupal\\\DrupalExtension\" : {\"drush\" : { \"alias\": \"portlandor.${PANTHEON_ENV}\"}}}}"' >> $BASH_ENV && source $BASH_ENV
             for TESTFILE in $TESTFILES
             do
-                behat -c behat.yml ${TESTFILE}
+                behat -c behat.yml -f pretty -o std -f junit -o test-results/behat ${TESTFILE}
+                mv test-results/behat/default.xml test-results/behat/${TESTFILE}.xml
             done
           fi
     - save_cache:
@@ -329,7 +306,7 @@ run_tests: &run_tests
           - ./tests/vendor
         key: v1-behat-dependencies-{{ checksum "tests/composer.lock" }}
     - store_test_results:
-        path: /var/www/html/artifacts/behat
+        path: /var/www/html/tests/test-results
     - store_artifacts:
         path: /var/www/html/artifacts
         destination: /

@@ -70,7 +70,7 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
 
     // Log in.
     $this->getSession()->visit($uli);
-    $this->getSession()->wait(30000, "jQuery('li.account').length >= 1");
+    $this->getSession()->wait(60000, "jQuery('li.account').length >= 1");
     // $this->getSession()->wait(10000, "document.readyState === 'complete'");
 
     $driver = $this->getDriver();
@@ -104,7 +104,7 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
    */
   public function waitForThePageToBeLoaded()
   {
-    $this->getSession()->wait(30000, "document.readyState === 'complete'");
+    $this->getSession()->wait(60000, "document.readyState === 'complete'");
   }
 
   /** @Given I am using a 1440x900 browser window */
