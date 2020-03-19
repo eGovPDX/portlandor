@@ -1,94 +1,130 @@
 module.exports = {
-  // QUESTION: How do we want to handle font weight?
-  "headerFontFamily": {
-    "value": "'Open Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif"
-  },
-  "prototypeFontFamily": {
-    "value": "'Rubik', 'Helvetica Neue', Helvetica, Arial, sans-serif"
-  },
-  "heading": {
-    "1": {
-      "sm": {
-        "size": { "value": "2.286rem" },
-        "lineHeight": { "value": "1.25" }
-      },
-      "lg": {
-        "size": { "value": "2.5rem" },
-        "lineHeight": { "value": "1.3" }
-      }
+  "fontFamily": {
+    "display": {
+      "value": "'Open Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif"
     },
-    "2": {
-      "sm": {
-        "size": { "value": "1.714rem" },
-        "lineHeight": { "value": "1.166666667" }
-      },
-      "lg": {
-        "size": { "value": "2rem" },
-        "lineHeight": { "value": "1.3125" }
-      }
-    },
-    "3": {
-      "sm": {
-        "size": { "value": "1.286rem" },
-        "lineHeight": { "value": "1.777777778" }
-      },
-      "lg": {
-        "size": { "value": "1.5rem" },
-        "lineHeight": { "value": "1.333333333" }
-      }
-    },
-    "4": {
-      "sm": {
-        "size": { "value": "1.143rem" },
-        "lineHeight": { "value": "1.5" }
-      },
-      "lg": {
-        "size": { "value": "1.125rem" },
-        "lineHeight": { "value": "1.333333333" }
-      }
-    },
-    "5": {
-      "sm": {
-        "size": { "value": "1rem" },
-        "lineHeight": { "value": "1.714285714" }
-      },
-      "lg": {
-        "size": { "value": "1rem" },
-        "lineHeight": { "value": "1.5" }
-      }
-    },
-    "6": {
-      "sm": {
-        "size": { "value": "0.857rem" },
-        "lineHeight": { "value": "2" }
-      },
-      "lg": {
-        "size": { "value": "0.875rem" },
-        "lineHeight": { "value": "1.714285714" }
-      }
+    "prototype": {
+      "value": "'Rubik', 'Helvetica Neue', Helvetica, Arial, sans-serif"
     }
   },
-  "body": {
-    "1": {
-      "sm": {
-        "size": { "value": "1rem", },
-        "lineHeight": { "value": "1.428571429" }
-      },
-      "lg": {
-        "size": { "value": "1rem", },
-        "lineHeight": { "value": "1.5" }
+  "type": {
+    "base": {
+      "fontSize": { "value": "16px" },
+      "md": {
+        "fontSize": { "value": "18px" }
       }
     },
-    "2": {
-      "sm": {
-        "size": { "value": "0.857142857rem", },
-        "lineHeight": { "value": "1.333333333" }
-      },
-      "lg": {
-        "size": { "value": "0.875rem", },
-        "lineHeight": { "value": "1.428571429" }
+    "heading-01": {
+      "fontSize": { "value": "32px" },
+      "lineHeight": { "value": "40px" },
+      "md": {
+        "fontSize": { "value": "44px" },
+        "lineHeight": { "value": "52px" }
       }
+    },
+    "heading-02": {
+      "fontSize": { "value": "24px" },
+      "lineHeight": { "value": "32px" },
+      "md": {
+        "fontSize": { "value": "36px" },
+        "lineHeight": { "value": "40px" }
+      }
+    },
+    "heading-03": {
+      "fontSize": { "value": "18px" },
+      "lineHeight": { "value": "26px" },
+      "md": {
+        "fontSize": { "value": "28px" },
+        "lineHeight": { "value": "32px" }
+      }
+    },
+    "heading-04": {
+      "fontSize": { "value": "16px" },
+      "lineHeight": { "value": "24px" },
+      "md": {
+        "fontSize": { "value": "24px" },
+        "lineHeight": { "value": "28px" }
+      }
+    },
+    "heading-05": {
+      "fontSize": { "value": "14px" },
+      "lineHeight": { "value": "22px" },
+      "md": {
+        "fontSize": { "value": "18px" },
+        "lineHeight": { "value": "24px" }
+      }
+    },
+    "heading-06": {
+      "fontSize": { "value": "14px" },
+      "lineHeight": { "value": "24px" },
+      "md": {
+        "fontSize": { "value": "16px" },
+        "lineHeight": { "value": "22px" }
+      }
+    },
+    "body": {
+      "fontSize": { "value": "{ type.base.fontSize.value }" },
+      "lineHeight": { "value": "22px" },
+      "md": {
+        "fontSize": { "value": "{ type.base.md.fontSize.value }" },
+        "lineHeight": { "value": "24px" }
+      }
+    },
+  },
+  "lead": {
+    "fontSize": { "value": "18px" },
+    "lineHeight": { "value": "24px" },
+    "md": {
+      "fontSize": { "value": "20px" },
+      "lineHeight": { "value": "24px" }
+    }
+  },
+  "subtitle": {
+    "fontSize": { "value": "16px" },
+    "lineHeight": { "value": "24px" },
+    "md": {
+      "fontSize": { "value": "18px" },
+      "lineHeight": { "value": "24px" }
+    }
+  },
+  "link-text": {
+    "fontSize": { "value": "{ type.body.fontSize.value }" },
+    "lineHeight": { "value": "{ type.body.lineHeight.value }" },
+    "md": {
+      "fontSize": { "value": "{ type.body.md.fontSize.value }" },
+      "lineHeight": { "value": "{ type.body.md.lineHeight.value }" }
+    }
+  },
+  "helper-text": {
+    "fontSize": { "value": "14px" },
+    "lineHeight": { "value": "16px" },
+    "md": {
+      "fontSize": { "value": "16px" },
+      "lineHeight": { "value": "18px" }
+    }
+  },
+  "ui-text": {
+    "fontSize": { "value": "{ type.body.fontSize.value }" },
+    "lineHeight": { "value": "{ type.body.fontSize.value }" },
+    "md": {
+      "fontSize": { "value": "{ type.body.md.fontSize.value }" },
+      "lineHeight": { "value": "{ type.body.md.fontSize.value }" }
+    }
+  },
+  "permalink-text": {
+    "fontSize": { "value": "16px" },
+    "lineHeight": { "value": "24px" },
+    "md": {
+      "fontSize": { "value": "18px" },
+      "lineHeight": { "value": "24px" }
+    }
+  },
+  "time-text": {
+    "fontSize": { "value": "16px" },
+    "lineHeight": { "value": "24px" },
+    "md": {
+      "fontSize": { "value": "24px" },
+      "lineHeight": { "value": "28px" }
     }
   }
-  // TODO: Add Cloudy UI font style
 }
