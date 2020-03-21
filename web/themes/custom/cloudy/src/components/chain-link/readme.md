@@ -1,3 +1,6 @@
+
+**Chain Link** is a singular representation of featured or relational content. Primarily used as an aside (not within main content).
+
 ## Props
 - `title`: string - The heading text
 - `url`: string - The click through url

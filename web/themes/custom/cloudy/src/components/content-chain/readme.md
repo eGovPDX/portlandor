@@ -1,3 +1,6 @@
+
+The **Content Chain** is a collection of **Chain Link** components. The component will receive an array of data that will render out.
+
 ## Props
 - `items`: array of objects
     - `title`: string - The heading text
