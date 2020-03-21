@@ -1,7 +1,7 @@
 ## Props
 - `title`: string - The heading text
 - `url`: string - The click through url
-- `src`: string - 1 (default)
+- `img`: string - Image src path
 
 ## Usage
 
