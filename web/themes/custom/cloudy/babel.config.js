@@ -6,5 +6,8 @@ module.exports = {
         "useBuiltIns": false,
       }
     ]
+  ],
+  "plugins": [
+      "@babel/plugin-proposal-object-rest-spread"
   ]
 };
