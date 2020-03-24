@@ -3,9 +3,9 @@ module.exports = {
     "display": {
       "value": "'Open Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif"
     },
-    "prototype": {
-      "value": "'Rubik', 'Helvetica Neue', Helvetica, Arial, sans-serif"
-    }
+    // "prototype": {
+    //   "value": "'Rubik', 'Helvetica Neue', Helvetica, Arial, sans-serif"
+    // }
   },
   "type": {
     "base": {
