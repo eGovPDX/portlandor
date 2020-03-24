@@ -121,6 +121,13 @@ switch ($env) {
 if($env == 'demo') {
   $config['search_api.server.searchstax']['backend_config']['connector_config']['core'] = 'Demo';
 }
+else if($env == 'live') {
+  $config['search_api.server.searchstax']['backend_config']['connector_config']['core'] = 'Production';
+}
+else {
+  $config['search_api.server.searchstax']['backend_config']['connector_config']['core'] = 'Test';
+}
+
 
 /**
  * Overwrite Google Analytics tracking code in 'live' production site.
