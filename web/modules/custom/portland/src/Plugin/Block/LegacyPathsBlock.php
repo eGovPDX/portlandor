@@ -36,7 +36,6 @@ class LegacyPathsBlock extends BlockBase {
      */
     public function build() {
       // if this is a node or group, get the entity object
-      //$current_path = \Drupal::service('path.current')->getPath();
       $entity = \Drupal::routeMatch()->getParameter('node');
       if (!isset($entity)) {
         $entity = \Drupal::routeMatch()->getParameter('group');
@@ -64,10 +63,8 @@ class LegacyPathsBlock extends BlockBase {
         return $render_array;
       }
 
-      // not a node or group, return default render array
-      return [
-        '#theme' => 'portland_legacy_paths_block',
-      ];
+      // not a node or group
+      return null;
     }
 
 }
