@@ -1,3 +1,6 @@
+
+An opinionated **Link** with emphasis. 
+
 ## Props
 
 - `background`: boolean - false (default)
