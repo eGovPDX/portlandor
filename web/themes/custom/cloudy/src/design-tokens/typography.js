@@ -2,9 +2,6 @@ module.exports = {
   "fontFamily": {
     "display": {
       "value": "'Open Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif"
-    },
-    "prototype": {
-      "value": "'Rubik', 'Helvetica Neue', Helvetica, Arial, sans-serif"
     }
   },
   "type": {
@@ -61,7 +58,7 @@ module.exports = {
       "md": {
         "lineHeight": { "value": "24px" }
       }
-    },
+    }
   },
   "lead": {
     "fontSize": { "value": "18px" },
