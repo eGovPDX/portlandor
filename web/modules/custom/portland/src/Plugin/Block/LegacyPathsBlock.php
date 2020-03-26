@@ -20,7 +20,7 @@ use Drupal\Core\Cache\Cache;
  */
 class LegacyPathsBlock extends BlockBase {
     private static $pog_base_url = "https://www.portlandoregon.gov/";
-    private static $help_text = "The content above replaces the following pages on the old portlandoregon.gov website. When activated, requests for these paths on the old site will redirect here on the new site.";
+    private static $help_text = "The content above replaces the following pages on the old portlandoregon.gov website. When activated, requests for these paths on the old site will redirect here on the new site. Use the links below to test that the legacy paths are correct.";
 
     /**
      * {@inheritdoc}
