@@ -22,12 +22,12 @@ class LegacyPathsBlock extends BlockBase {
     private static $pog_base_url = "https://www.portlandoregon.gov";
     private static $help_text = "The content above replaces the following pages on the old portlandoregon.gov website. Users on the old site will be redirected here when they hit these URLs. Use the links below to test that the legacy paths are correct.";
 
-    // /**
-    //  * {@inheritdoc}
-    //  */
-    // public function getCacheMaxAge() {
-    //   return 0;
-    // }
+    /**
+     * {@inheritdoc}
+     */
+    public function getCacheMaxAge() {
+      return 0;
+    }
 
     /**
      * {@inheritdoc}
