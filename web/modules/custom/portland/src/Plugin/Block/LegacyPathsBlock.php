@@ -19,15 +19,15 @@ use Drupal\Core\Cache\Cache;
  * )
  */
 class LegacyPathsBlock extends BlockBase {
-    private static $pog_base_url = "https://www.portlandoregon.gov/";
-    private static $help_text = "The content above replaces the following pages on the old portlandoregon.gov website. When activated, requests for these paths on the old site will redirect here on the new site. Use the links below to test that the legacy paths are correct.";
+    private static $pog_base_url = "https://www.portlandoregon.gov";
+    private static $help_text = "The content above replaces the following pages on the old portlandoregon.gov website. Users on the old site will be redirected here when they hit these URLs. Use the links below to test that the legacy paths are correct.";
 
-    /**
-     * {@inheritdoc}
-     */
-    public function getCacheMaxAge() {
-      return 0;
-    }
+    // /**
+    //  * {@inheritdoc}
+    //  */
+    // public function getCacheMaxAge() {
+    //   return 0;
+    // }
 
     /**
      * {@inheritdoc}
@@ -43,14 +43,17 @@ class LegacyPathsBlock extends BlockBase {
 
       // if node or group, look up any legacy paths/redirects and pass to template.
       if (isset($entity)) {
-        $nid = $entity->Id();
-        $type = $entity->getEntityTypeId();
-        if ($nid && $type) {
-          $redirects = \Drupal::service('redirect.repository')->findByDestinationUri(["internal:/$type/$nid", "entity:$type/$nid"]);
-        }
+        // $nid = $entity->Id();
+        // $type = $entity->getEntityTypeId();
+        // if ($nid && $type) {
+        //   $redirects = \Drupal::service('redirect.repository')->findByDestinationUri(["internal:/$type/$nid", "entity:$type/$nid"]);
+        // }
         $legacy_paths = [];
-        foreach ($redirects as $redirect) {
-          $legacy_paths[] = $redirect->getSource()['path'];
+        foreach ($entity->field_redirects as $redirect) {
+          $value = $redirect->value;
+          if (isset($value)) {
+            $legacy_paths[] = $value;
+          }
         }
 
         $render_array = [
