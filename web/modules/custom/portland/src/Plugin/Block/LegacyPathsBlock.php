@@ -8,6 +8,7 @@ namespace Drupal\portland\Plugin\Block;
 
 use Drupal\Core\Block\BlockBase;
 use Drupal\Core\Cache\Cache;
+use Drupal\group\Entity\GroupContent;
 
 /**
  * Provides a Portland legacy paths block.
@@ -32,42 +33,59 @@ class LegacyPathsBlock extends BlockBase {
     /**
      * {@inheritdoc}
      * 
-     * This block only ever gets displayed in edit mode, due to block placement settings.
+     * This block only ever gets displayed in view mode, due to block placement settings,
+     * and is only viewable by specific roles. If the current route is a node or group, and
+     * the group's field_legacy_paths_test is true, then the block is populated and displayed.
+     * Otherwise, the build function returns empty array, which deactivates the block.
      */
     public function build() {
-      // if this is a node or group, get the entity object
+
       $entity = \Drupal::routeMatch()->getParameter('node');
-      if (!isset($entity)) {
-        $entity = \Drupal::routeMatch()->getParameter('group');
-      }
+      $group = null;
+      $enabled = false;
 
-      // if node or group, look up any legacy paths/redirects and pass to template.
       if (isset($entity)) {
-        // $nid = $entity->Id();
-        // $type = $entity->getEntityTypeId();
-        // if ($nid && $type) {
-        //   $redirects = \Drupal::service('redirect.repository')->findByDestinationUri(["internal:/$type/$nid", "entity:$type/$nid"]);
-        // }
-        $legacy_paths = [];
-        foreach ($entity->field_redirects as $redirect) {
-          $value = $redirect->value;
-          if (isset($value)) {
-            $legacy_paths[] = $value;
-          }
+        // it's a node, so retrieve its parent group
+        $groups = [];
+        $group_contents = GroupContent::loadByEntity($entity);
+        foreach ($group_contents as $group_content) {
+          $groups[] = $group_content->getGroup();
         }
+        // assume only one group, first index
+        $group = $groups[0];
 
-        $render_array = [
-          '#theme' => 'portland_legacy_paths_block',
-          '#pog_base_url' => self::$pog_base_url,
-          '#legacy_paths' => $legacy_paths,
-          '#help_text' => t(self::$help_text),
-        ];
-
-        return $render_array;
+      } else {
+        // it's not a node, so see if it's a group.
+        $group = \Drupal::routeMatch()->getParameter('group');
+        if (!isset($group)) {
+          // it's not a group, so return false to disable the block.
+          return [];
+        }
+        $entity = $group;
       }
 
-      // not a node or group
-      return null;
-    }
+      // at this point $entity is either we should have a populated group and can check whether the test links are enabled.
+      // if they are not, return empty array to disable the block.
+      if (!isset($group->field_legacy_paths_test) || !$group->field_legacy_paths_test->value) {
+        return [];
+      }
 
+      // if there is a node, get the legacy paths from there. otherwise, get them from the group.
+      $legacy_paths = [];
+      foreach ($entity->field_redirects as $redirect) {
+        $value = $redirect->value;
+        if (isset($value)) {
+          $legacy_paths[] = $value;
+        }
+      }
+
+      $render_array = [
+        '#theme' => 'portland_legacy_paths_block',
+        '#pog_base_url' => self::$pog_base_url,
+        '#legacy_paths' => $legacy_paths,
+        '#help_text' => t(self::$help_text),
+      ];
+
+      return $render_array;
+    }
 }
