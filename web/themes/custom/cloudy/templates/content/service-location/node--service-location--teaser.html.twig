@@ -10,28 +10,31 @@
   ]
 %}
 {{ attach_library('classy/node') }}
-<div{{ attributes.addClass(classes) }}>
+{% spaceless %}
+  <address{{ attributes.addClass(classes) }}></address>
   <div class="location--title font-weight-bold">{{ label }}</div>
-  {% spaceless %}
     {% if node.field_location[0].entity.field_address_or_entrance.address_line1 %}
       {{ node.field_location[0].entity.field_address_or_entrance.address_line1 }}
+      <br>
+    {% endif %}
+    {% if node.field_floor %}
+      {{ node.field_floor.value }}
+      <br>
     {% endif %}
     {% if node.field_location[0].entity.field_address_or_entrance.locality %}
       {{ node.field_location[0].entity.field_address_or_entrance.locality }}{% if node.field_location[0].entity.field_address_or_entrance.administrative_area %}, {{ node.field_location[0].entity.field_address_or_entrance.administrative_area }}{% endif %}{% if node.field_location[0].entity.field_address_or_entrance.postal_code %} {{ node.field_location[0].entity.field_address_or_entrance.postal_code }}{% endif %}
     {% endif %}
-  {% endspaceless %}
-  {% if node.field_floor %}
-    <div class="location--floor">{{ node.field_floor.value }}</div>
-  {% endif %}
-  {% if node.field_emergency_closure.value == 1 %}
-    <div class="location--closure"><span class="badge badge-danger">Emergency Closure</span> <a href="/emergency-closures">More information about this emergency closure</a></div>
+  </address>
+ {% endspaceless %}
+{% if node.field_emergency_closure.value == 1 %}
+  <div class="location--closure"><span class="badge badge-danger">Emergency Closure</span> <a href="/emergency-closures">More information about this emergency closure</a></div>
+{% else %}
+  {% if node.field_location[0].entity.field_geolocation is empty %}
+    <div class="get-directions-link"><a href="https://www.google.com/maps/dir/{{ node.field_location[0].entity.field_address_or_entrance.address_line1 }} {{ node.field_location[0].entity.field_address_or_entrance.address_line2 }} {{ node.field_location[0].entity.field_address_or_entrance.locality }} {{ node.field_location[0].entity.field_address_or_entrance.administrative_area }} {{ node.field_location[0].entity.field_address_or_entrance.postal_code }}" target="_blank">Get Directions</a></div>
   {% else %}
-    {% if node.field_location[0].entity.field_geolocation is empty %}
-      <div class="get-directions-link"><a href="https://www.google.com/maps/dir/{{ node.field_location[0].entity.field_address_or_entrance.address_line1 }} {{ node.field_location[0].entity.field_address_or_entrance.address_line2 }} {{ node.field_location[0].entity.field_address_or_entrance.locality }} {{ node.field_location[0].entity.field_address_or_entrance.administrative_area }} {{ node.field_location[0].entity.field_address_or_entrance.postal_code }}" target="_blank">Get Directions</a></div>
-    {% else %}
-      <div class="get-directions-link"><a href="https://www.google.com/maps/dir/{{ node.field_location[0].entity.field_geolocation.lat }},{{ node.field_location[0].entity.field_geolocation.lon }}" target="_blank">Get Directions</a></div>
-    {% endif %}
-    {{ content|without('field_location','field_floor','field_emergency_closure') }}
-    <div class="more-information"><a href="{{ url }}" rel="bookmark">More about this location</a></div>
+    <div class="get-directions-link"><a href="https://www.google.com/maps/dir/{{ node.field_location[0].entity.field_geolocation.lat }},{{ node.field_location[0].entity.field_geolocation.lon }}" target="_blank">Get Directions</a></div>
   {% endif %}
-</div>
+  {{ content|without('field_location','field_floor','field_emergency_closure') }}
+  <div class="more-information"><a href="{{ url }}" rel="bookmark">More about this location</a></div>
+{% endif %}
+
