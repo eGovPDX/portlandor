@@ -427,51 +427,6 @@ function portland_preprocess_paragraph(&$vars) {
 }
 
 /**
- * Implements hook_form_FORM_ID_alter.
- * Add custom bulk generate action to the bulk generate button.
- */
-function portland_form_pathauto_bulk_update_form_alter(&$form, $form_state) {
-    $form['actions']['submit']['#submit'][] = '_handle_bulk_generate';
-}
-
-/**
- * The submit handler for the bulk generate button. When bulk generating
- * aliases for taxonomy terms, we also generate aliases for
- * "/taxonomy/term/CONTENT_TYPE" and "/taxonomy/term/GROUP_TYPE"
- */
-function _handle_bulk_generate($form, $form_state) {
-    // If taxonomy_term is selected
-    if($form_state->getValues()['update']['canonical_entities:taxonomy_term'] === 'canonical_entities:taxonomy_term') {
-        // Generate aliases for "term/content_type"
-        $contentTypes = ['offices', 'programs', 'projects', 'advisory-groups', 'services', 'events', 'news', 'pages', 'documents', 'calendar-item'];
-        $lang = \Drupal::languageManager()->getCurrentLanguage()->getId();
-        $vid = 'topics';
-        $terms =\Drupal::entityTypeManager()->getStorage('taxonomy_term')->loadTree($vid);
-        foreach ($terms as $term) {
-            $tid = $term->tid;
-            // Check the term's alias
-            $existing_alias = \Drupal::service('path.alias_storage')->lookupPathAlias("/taxonomy/term/$tid", $lang);
-            if( !$existing_alias ) continue;
-            foreach($contentTypes as $contentType) {
-                $system_path = "/taxonomy/term/$tid/$contentType";
-
-                $existing_content_alias =  \Drupal::service('path.alias_storage')->lookupPathAlias("/taxonomy/term/$tid/$contentType", $lang);
-                $new_content_alias = "$existing_alias/$contentType";
-
-                if( $new_content_alias && $new_content_alias == $existing_content_alias) continue;
-
-                if ($existing_content_alias && $existing_content_alias != $new_content_alias) {
-                    \Drupal::service('path.alias_storage')->delete(['alias' => $existing_content_alias, 'langcode' => $lang]);
-                }
-
-                // // save new or updated alias
-                $path = \Drupal::service('path.alias_storage')->save($system_path, $new_content_alias, $lang);
-            }
-        }
-    }
-}
-
-/**
  * If loaded page is one of the specified group views, get the group name and
  * add it to the html title by setting $vars['head_title']['title']. This
  * prevents duplicate page titles within groups for views such as Services,
