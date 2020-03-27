@@ -12,6 +12,14 @@ use Drupal\group\Entity\GroupContent;
 
 /**
  * Provides a Portland legacy paths block.
+ * 
+ * This is intended as a throwaway feature. Once all content has been migrated from the
+ * legacy site, it will be removed. To remove it, the following need to be deleted:
+ *   - This file, src/Plugin/Block/LegacyPathsBlock.php
+ *   - templates/block--portland-legacy-paths-block.html.twig
+ *   - In portland.module > portland_theme, remove the portland_legacy_paths_block element
+ *   - In group type config, remove field_legacy_paths_test from all grop types
+ *   - Remove Portland Legacy Paths Block from block layout
  *
  * @Block(
  *   id = "portland_legacy_paths_block",
