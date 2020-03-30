@@ -196,31 +196,31 @@ jQuery(document).on('leaflet.map', function (e, settings, lMap, mapid) {
   jQuery('div.leaflet-control-zoom > a').on('click', mapZoomedOrMovedByUser);
 
   // Highlight the park in map when it's scrolled just under the map
-  jQuery(window).on('scroll', function() { 
-    var allCards = jQuery('div.node--type-park-facility.card');
-    var allMarkers = jQuery('div.park-marker');
-    var allMarkerTitles = jQuery('.park-marker-title');
-    for(var i=0; i<allCards.length; i++) {
-      if( 
-          ( i == allCards.length - 1  && (jQuery(window).scrollTop() + 400 + 80 > jQuery(allCards[i]).offset().top) )
-          ||
-          ( 
-            (jQuery(window).scrollTop() + 400 + 80 > jQuery(allCards[i]).offset().top) && 
-            (jQuery(window).scrollTop() + 400 + 80 <= jQuery(allCards[i+1]).offset().top) 
-          ) 
-        ) {
-        allMarkers.each(function() {
-          jQuery(this).removeClass( "park-marker-lg" ).addClass( "park-marker-sm" );
-        });
-        jQuery('div[data-id="' + jQuery(allCards[i]).attr('data-card-id') +'"]').removeClass( "park-marker-sm" ).addClass( "park-marker-lg" );
-        allMarkerTitles.each(function() {
-          jQuery(this).addClass( "d-none" );
-        });
-        jQuery('div[data-id="' + jQuery(allCards[i]).attr('data-card-id') +'"] > .park-marker-title').removeClass( "d-none" );
-        break;
-      }
-    }
-  });
+  // jQuery(window).on('scroll', function() { 
+  //   var allCards = jQuery('div.node--type-park-facility.card');
+  //   var allMarkers = jQuery('div.park-marker');
+  //   var allMarkerTitles = jQuery('.park-marker-title');
+  //   for(var i=0; i<allCards.length; i++) {
+  //     if( 
+  //         ( i == allCards.length - 1  && (jQuery(window).scrollTop() + 400 + 80 > jQuery(allCards[i]).offset().top) )
+  //         ||
+  //         ( 
+  //           (jQuery(window).scrollTop() + 400 + 80 > jQuery(allCards[i]).offset().top) && 
+  //           (jQuery(window).scrollTop() + 400 + 80 <= jQuery(allCards[i+1]).offset().top) 
+  //         ) 
+  //       ) {
+  //       allMarkers.each(function() {
+  //         jQuery(this).removeClass( "park-marker-lg" ).addClass( "park-marker-sm" );
+  //       });
+  //       jQuery('div[data-id="' + jQuery(allCards[i]).attr('data-card-id') +'"]').removeClass( "park-marker-sm" ).addClass( "park-marker-lg" );
+  //       allMarkerTitles.each(function() {
+  //         jQuery(this).addClass( "d-none" );
+  //       });
+  //       jQuery('div[data-id="' + jQuery(allCards[i]).attr('data-card-id') +'"] > .park-marker-title').removeClass( "d-none" );
+  //       break;
+  //     }
+  //   }
+  // });
 
 
   if( drupalSettings.portlandmaps_layer && drupalSettings.portlandmaps_id ) {

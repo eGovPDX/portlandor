@@ -35,6 +35,8 @@ class MigrateParkLocationType extends ProcessPluginBase {
     $result = [];
     foreach($array as $term_name){
       $processedTermName = $this->processTermName($term_name);
+      if( strtolower($processedTermName) == 'communitycenter') 
+        $processedTermName = 'communityandartscenter';
       if( !array_key_exists($processedTermName, $this->term_name_and_id) ) continue;
       $result[] = $this->term_name_and_id[$processedTermName];
     }
