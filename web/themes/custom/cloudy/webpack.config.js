@@ -46,7 +46,6 @@ module.exports = (env, argv) => ({
     rules: [
       {
         test: /\.js$/,
-        exclude: /node_modules/,
         use: {
           loader: 'babel-loader',
           options: babelConfig,
