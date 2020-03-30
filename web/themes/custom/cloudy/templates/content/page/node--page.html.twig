@@ -1,0 +1,67 @@
+<div class="row">
+  <div class="col-lg-8 col-md-12">
+    <article{{ attributes }}>
+      <header>
+        {{ title_prefix }}
+        {% if not page %}
+          <h2{{ title_attributes.addClass('node__title') }}>
+            <a href="{{ url }}" rel="bookmark">{{ label }}</a>
+          </h2>
+        {% endif %}
+        {{ title_suffix }}
+        {% if display_submitted %}
+          <div class="node__meta">
+            {{ author_picture }}
+            {% block submitted %}
+              <span{{ author_attributes }}>
+                {% trans %}Submitted by {{ author_name }} on {{ date }}{% endtrans %}
+              </span>
+            {% endblock %}
+            {{ metadata }}
+          </div>
+        {% endif %}
+      </header>
+      <div{{ content_attributes.addClass('node__content', 'clearfix') }}>
+        {{ content|without('field_contact','field_location','field_related_content','field_topics') }}
+      </div>
+    </article>
+  </div>
+  <div class="col-lg-4 col-md-12">
+    {% set view_parent = drupal_view_result('page_menu','block_parent_to_pages_menu')|length %}
+    {% if view_parent > 0 %}
+      {{ drupal_view('page_menu','block_parent_to_pages_menu') }}
+    {% endif %}
+    {% set view_page = drupal_view_result('page_menu','block_siblings_to_parent_menu')|length %}
+    {% if view_page > 0 %}
+      {{ drupal_view('page_menu','block_siblings_to_parent_menu') }}
+    {% endif %}
+    {% if content.field_contact|render|striptags %}
+      <div class="mb-4">
+        <h2>Contact</h2>
+        {{ content.field_contact }}
+      </div>
+    {% endif %}
+    {% if content.field_location|render|striptags %}
+      <div class="mb-4">
+        <h2>Location</h2>
+        {{ content.field_location }}
+      </div>
+    {% endif %}
+    {% if content.field_related_content|render|striptags %}
+      <div class="mb-4">
+        <h2>Related</h2>
+        {{ content.field_related_content }}
+      </div>
+    {% endif %}
+    {% if content.field_topics|render|striptags %}
+      <div class="mb-4">
+        <h2>Topics</h2>
+        {{ content.field_topics }}
+      </div>
+    {% endif %}
+    {% set view_news = drupal_block('views_block:news_on_content-block_2')|length %}
+    {% if view_news > 0 %}
+      {{ drupal_block('views_block:news_on_content-block_2') }}
+    {% endif %}
+  </div>
+</div>
