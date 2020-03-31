@@ -2,8 +2,9 @@ module.exports = {
   color: {
     neutral: {
       '900': { value: '#040506' }, // text
-      '700': { value: '#434F60' }, // text
-      '500': { value: '#74839A' }, // text
+      '800': { value: '#2A313C' }, // text
+      '700': { value: '#495669' }, // text
+      '500': { value: '#7A899F' }, // text
       '300': { value: '#B3BDCC' },
       '100': { value: '#EFF1F5' },
       '0': {
