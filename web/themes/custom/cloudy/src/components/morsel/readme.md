@@ -1,20 +1,18 @@
 # Morsel
 
 <ul>
-  <li>can contain Badge, featured image, Overline, a heading, text, contact information, and links</li>
+  <li>can contain Badge, featured image, a heading, text, contact information, and links</li>
 </ul>
 
 ## Props
 
-- `overline`: string - the content or group overline
+- `is_draft`: boolean - If set to true, morsel gets a "Unpublished" danger badge
 - `heading`: string - the main title of the content being linked out to
 - `url`: string - the url for the node of content
 - `posted_on`: string - A date that the node was posted on
-- `date_start`: string - A start date for the event. Can be used without an end date
-- `date_end`: string - An end date for the event. Requires the inclusion of a start date
-- `time_start`: string - A start time for the event. Can be used without an end time
-- `time_end`: string - An end time for the event. Requires the inclusion of a start time
-- `is_draft`: boolean - If set to true, morsel gets a "Unpublished" danger badge
+- `updated_on`: string - An updated date that supersedes the posted_on value
+- `image`: string - Pass in the rendered entity from Drupal
+- `text`: string - The content summary
 
 ## Usage
 
