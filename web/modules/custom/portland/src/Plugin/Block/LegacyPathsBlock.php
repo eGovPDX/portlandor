@@ -18,7 +18,7 @@ use Drupal\group\Entity\GroupContent;
  *   - This file, src/Plugin/Block/LegacyPathsBlock.php
  *   - templates/block--portland-legacy-paths-block.html.twig
  *   - In portland.module > portland_theme, remove the portland_legacy_paths_block element
- *   - In group type config, remove field_disable_legacy_paths_test from all grop types
+ *   - In group type config, remove field_disable_legacy_paths_block from all grop types
  *   - Remove Portland Legacy Paths Block from block layout
  *
  * @Block(
@@ -43,7 +43,7 @@ class LegacyPathsBlock extends BlockBase {
      * 
      * This block only ever gets displayed in view mode, due to block placement settings,
      * and is only viewable by specific roles. If the current route is a node or group, and
-     * the group's field_disable_legacy_paths_test is false, then the block is populated and displayed.
+     * the group's field_disable_legacy_paths_block is false, then the block is populated and displayed.
      * Otherwise, the build function returns empty array, which deactivates the block.
      */
     public function build() {
@@ -77,7 +77,7 @@ class LegacyPathsBlock extends BlockBase {
 
       // at this point $entity is either we should have a populated group and can check whether the test links are enabled.
       // if they are not, return empty array to disable the block.
-      if (isset($group->field_disable_legacy_paths_test) && $group->field_disable_legacy_paths_test->value) {
+      if (isset($group->field_disable_legacy_paths_block) && $group->field_disable_legacy_paths_block->value) {
         return [];
       }
 
