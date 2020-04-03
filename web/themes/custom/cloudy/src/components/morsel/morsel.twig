@@ -1,4 +1,21 @@
-<div class="morsel">
+{# DEFAULTS #}
+{% set headingLevel = heading.level|default(3) %}
+{# CLASSES #}
+{% set classes = [
+  'morsel',
+  is_draft ? 'morsel--is-draft',
+  image ? 'morsel--image-featured',
+  updated_on ? 'morsel--updated',
+] %}
+{# TWIG #}
+<div class="{{ classes|join(' ')|trim }}">
+  {% if image %}
+    <div class="morsel__image">
+      <div class="morsel__image-inner">
+        {{ image }}
+      </div>
+    </div>
+  {% endif %}
   <div class="morsel__body">
     {% if is_draft %}
       {% include "@components/badge/badge.twig" with {
@@ -7,44 +24,23 @@
         classes: ['mb-2'],
       } only %}
     {% endif %}
-    {% if overline %}
-      {% include "@components/overline/overline.twig" with {
-        text: overline,
+    {% if updated_on %}
+      <div class="morsel__date">
+        {% if type %}<span class="morsel__type">{{ type }}</span>{% endif %} Updated {{ updated_on }}
+      </div>
+    {% elseif posted_on %}
+      <div class="morsel__date">
+        {% if type %}<span class="morsel__type">{{ type }}</span>{% endif %} <span class="sr-only">Posted on</span>{{ posted_on }}
+      </div>
+    {% endif %}
+    <div class="morsel__heading">
+      {% include "@components/heading/heading.twig" with {
+        url: url,
+        level: headingLevel,
+        style: heading.style_override,
+        text: heading.text
       } only %}
-    {% endif %}
-    <h2><a href="{{ url }}">{{ heading }}</a></h2>
-    {% if posted_on %}
-      <div class="morsel__posted-on">
-        <div class="sr-only">Posted on</div>
-        <time datetime="{{ posted_on }}">{{ posted_on }}</time>
-      </div>
-    {% endif %}
-    {% if date_start %}
-      <div class="morsel__dates">
-        {% include '@elements/icon/icon.twig' with {
-          name: 'date',
-          size:'xs'
-        } only %}
-        <time datetime="{{ date_start }}">{{ date_start }}</time>
-        {% if date_end %}
-          <span aria-label="through"> – </span>
-          <time datetime="{{ date_end }}">{{ date_end }}</time>
-        {% endif %}
-      </div>
-    {% endif %}
-    {% if time_start %}
-      <div class="morsel__times">
-        {% include '@elements/icon/icon.twig' with {
-          name: 'time',
-          size:'xs'
-        } only %}
-        <time datetime="{{ time_start }}">{{ time_start }}</time>
-        {% if time_end %}
-          <span aria-label="through"> – </span>
-          <time datetime="{{ time_end }}">{{ time_end }}</time>
-        {% endif %}
-      </div>
-    {% endif %}
+    </div>
     {% if text %}
       <p class="morsel__text">{{ text }}</p>
     {% endif %}
