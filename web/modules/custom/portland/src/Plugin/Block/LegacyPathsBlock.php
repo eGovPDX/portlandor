@@ -29,7 +29,7 @@ use Drupal\group\Entity\GroupContent;
  */
 class LegacyPathsBlock extends BlockBase {
     private static $pog_base_url = "https://www.portlandoregon.gov";
-    private static $help_text = "This content page replaces the following pages on the old portlandoregon.gov website. Users on the old site will be redirected here when they hit these URLs. Use the links below to test that the legacy paths are correct. <em>This block is only visible to members of the Publishers and Sitewide Editors roles.</em>";
+    private static $help_text = "This content page replaces the following pages on the old portlandoregon.gov website. Users on the old site will be redirected here when they hit these URLs. Use the links below to test that the legacy paths are correct. <em>This block is only visible to members of the Publishers role.</em>";
 
     /**
      * {@inheritdoc}
