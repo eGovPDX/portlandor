@@ -1,0 +1,23 @@
+parameters:
+  monolog.channel_handlers:
+    php:
+      handlers: ['error_log', 'loggly']
+      formatter: 'loggly'
+    # Ignore log entries of "content" channel.
+    #content: ['null']
+    default:
+      handlers: ['drupal.dblog', 'loggly']
+      formatter: 'loggly'
+  monolog.processors: ['message_placeholder', 'current_user', 'request_uri', 'ip', 'referer', 'filter_backtrace', 'hostname']
+
+services:
+  monolog.handler.loggly:
+    class: Monolog\Handler\LogglyHandler
+    arguments: ['58461ece-af01-4bcb-b3ab-d66a8b07dc55/tag/drupal']
+  monolog.handler.browser_console:
+    class: Monolog\Handler\BrowserConsoleHandler
+    # Set alert as the minimum level (ignores emergency) and disable bubbling for this Handler
+    arguments: ['1', false]
+  monolog.processor.hostname:
+    class: Drupal\portland\Logger\Processor\HostnameProcessor
+    arguments: ['@request_stack']
