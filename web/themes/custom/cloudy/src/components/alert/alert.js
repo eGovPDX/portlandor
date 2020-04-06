@@ -12,7 +12,8 @@ Drupal.behaviors.alert_handler = {
     // Compare each server side alert changed time with browser cookie values.
     // If the changed time doesn't match for that alert, display the alert.
     // @todo remove the '.portland-alert' selector below when the PL version of this component is implemented in drupal
-    $('.portland-alert, .alert').once('alert-processed').each(function() {
+    // @todo when updating notifications, see below:
+    $('.portland-alert, .cloudy-notifications').once('alert-processed').each(function() {
       // If this alert has no nid it is not dismissible and did not set a cookie
       if (!$(this).data('nid')) return;
 
