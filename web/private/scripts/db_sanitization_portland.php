@@ -9,17 +9,17 @@ if (defined('PANTHEON_ENVIRONMENT') && (PANTHEON_ENVIRONMENT !== 'live')) {
 
 	// Run custom query to sanitize user data.
 	echo "Sanitizing the user data...\n";
-	passthru('drush sql-query ' . $sanitize_query);
+	passthru('drush sql-query "' . $sanitize_query . '"');
 	echo "Data sanitization complete.\n";
 
 	// Delete webform submission data
 	echo "Deleting webform submissions...\n";
-	passthru('drush sql-query ' . $webform_query);
+	passthru('drush sql-query "' . $webform_query . '"');
 	echo "Webform submission deletion complete.\n";
 
 	// Delete cache data
 	echo "Deleting webform submissions...\n";
-	passthru('drush sql-query ' . $cache_query);
+	passthru('drush sql-query "' . $cache_query . '"');
 	echo "Webform submission deletion complete.\n";
 
 }
