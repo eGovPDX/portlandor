@@ -1,4 +1,17 @@
-{% include 'node--alert.html.twig' with {
-  dismissible: true,
-  timestamp: false,
-} %}
+{% if node.field_severity.value == 10 %}
+  {% set alertType = 'warning' %}{# ToDo: remove this when the field options are removed from Drupal #}
+{% elseif node.field_severity.value == 20 %}
+  {% set alertType = 'warning' %}
+{% else %}
+  {% set alertType = 'info' %}
+{% endif %}
+
+{% include "@components/alert/alert.twig" with {
+  id: node.nid ? node.nid.value : '',
+  type: alertType,
+  is_draft: node.isPublished() ? false : true,
+  title: label,
+  content: content,
+  showTimestamp: false,
+  changed: node.revision_timestamp ? node.revision_timestamp.value : '',
+} only %}
