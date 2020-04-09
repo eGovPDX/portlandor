@@ -1,52 +1,41 @@
-{% set isDismissible = isDismissible|default(FALSE) %}
+{# DEFAULTS #}
 {% set type = type|default('info') %}
 {% set id = id|default('pl-demo-alert') %}
-
+{% set alertIcon %}
+  {% include "@elements/icon/icon.twig" with {
+    name: type == 'info' ? 'information' : (type == 'warning' ? 'warning' : 'information'),
+    size: "s",
+  } only %}
+{% endset %}
+{# CLASSES #}
 {% set classes= [
     'alert',
 	  'alert--' ~ type,
-    isDismissible ? 'alert--dismissible',
 ]%}
-
-<div class="{{ classes|join(' ') }}"
-     data-nid="{{ id }}"
-     {% if changed %}
-        data-changed="{{ changed }}"
-     {% endif %}
-     {% if isDismissible is same as(true) %}
-        role="alert"
-        aria-live="polite"
-    {% endif %}>
-  <div class="alert__wrapper">
-    <h5 class="alert__title">
-      {{ title }}
-      {% if is_draft %}
-        {% include "@components/badge/badge.twig" with {
-          "text": "Unpublished",
-          "type": "danger",
-        } only %}
-      {% endif %}
-    </h5>
-    <div class="alert__body">
-      {{ content }}
-    </div>
-    {% if showTimestamp and changed %}
-      <span class="small">
-        Last updated: {{ changed|date('g:i a F j, Y') }}
-      </span>
+{# TWIG #}
+<div class="{{ classes|join(' ')|trim }}"
+   data-nid="{{ id }}"
+   {% if changed %}
+      data-changed="{{ changed }}"
+   {% endif %}
+   >
+  <div class="container">
+    {% if is_draft %}
+      {% include "@components/badge/badge.twig" with {
+        "text": "Unpublished",
+        "type": "danger",
+      } only %}
     {% endif %}
+    <div class="alert__wrapper">
+      {{ alertIcon }}
+      <div class="alert__wrapper-inner">
+        <div class="alert__title font-weight-bold">{{ title }}</div><div class="alert__body">{{ content }}</div>
+        {% if showTimestamp and changed %}
+          <span class="small">
+          Last updated: {{ changed|date('g:i a F j, Y') }}
+        </span>
+        {% endif %}
+      </div>
+    </div>
   </div>
-  {% if isDismissible %}
-    <button type="button"
-            class="alert__close"
-            data-dismiss="alert"
-            aria-label="Dismiss notification">
-      <span aria-hidden="true" class="alert__close-contents">
-        {% include "@elements/icon/fa.twig" with {
-          name: 'window-close',
-        } only %}
-        Dismiss
-      </span>
-    </button>
-  {% endif %}
 </div>

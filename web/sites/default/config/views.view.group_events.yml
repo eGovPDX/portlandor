@@ -6,6 +6,7 @@ dependencies:
     - core.entity_view_mode.node.featured
     - core.entity_view_mode.node.teaser
     - field.storage.group.field_enable_past_meetings
+    - field.storage.group.field_group_path
     - field.storage.node.field_all_day
     - field.storage.node.field_body_content
     - field.storage.node.field_end_date
@@ -107,6 +108,69 @@ display:
           separator: ''
           hide_empty: false
       fields:
+        field_group_path:
+          id: field_group_path
+          table: group__field_group_path
+          field: field_group_path
+          relationship: field_display_groups
+          group_type: group
+          admin_label: ''
+          label: ''
+          exclude: true
+          alter:
+            alter_text: false
+            text: ''
+            make_link: false
+            path: ''
+            absolute: false
+            external: false
+            replace_spaces: false
+            path_case: none
+            trim_whitespace: false
+            alt: ''
+            rel: ''
+            link_class: ''
+            prefix: ''
+            suffix: ''
+            target: ''
+            nl2br: false
+            max_length: 0
+            word_boundary: true
+            ellipsis: true
+            more_link: false
+            more_link_text: ''
+            more_link_path: ''
+            strip_tags: false
+            trim: false
+            preserve_tags: ''
+            html: false
+          element_type: ''
+          element_class: ''
+          element_label_type: ''
+          element_label_class: ''
+          element_label_colon: false
+          element_wrapper_type: ''
+          element_wrapper_class: ''
+          element_default_classes: true
+          empty: ''
+          hide_empty: false
+          empty_zero: false
+          hide_alter_empty: true
+          click_sort_column: value
+          type: string
+          settings:
+            link_to_entity: false
+          group_column: value
+          group_columns: {  }
+          group_rows: true
+          delta_limit: 0
+          delta_offset: 0
+          delta_reversed: false
+          delta_first_last: false
+          multi_type: separator
+          separator: ', '
+          field_api_classes: false
+          plugin_id: field
         status:
           id: status
           table: node_field_data
@@ -806,7 +870,7 @@ display:
           exclude: true
           alter:
             alter_text: true
-            text: "<li class=\"nav-item\"><a href=\"/group/{{ raw_arguments.field_display_groups_target_id }}/events/meetings\" class=\"nav-link{% if path('<current>') matches '[events/meetings$]' %} active{% endif %}\">Past Meetings and Hearings</a></li>\r\n"
+            text: "<li class=\"nav-item\"><a href=\"/{{ field_group_path|render|striptags|trim }}/events/meetings\" class=\"nav-link{% if path('<current>') matches '[events/meetings$]' %} active{% endif %}\">Past Meetings and Hearings</a></li>\r\n"
             make_link: false
             path: ''
             absolute: false
@@ -985,24 +1049,39 @@ display:
           value:
             min: today
             max: '+30 days'
-            value: today
+            value: now
             type: offset
           group: 2
-          exposed: true
+          exposed: false
           expose:
+            operator_id: field_start_date_value_op
+            label: 'Start date (field_start_date)'
+            description: ''
             use_operator: false
             operator: field_start_date_value_op
             operator_limit_selection: false
             operator_list: {  }
             identifier: field_start_date_value
-            label: 'Start date (field_start_date)'
-            description: null
+            required: false
             remember: false
             multiple: false
-            required: false
-            min_placeholder: null
-            max_placeholder: null
-            placeholder: null
+            remember_roles:
+              authenticated: authenticated
+              anonymous: '0'
+              publisher: '0'
+              policy_author: '0'
+              policy_editor: '0'
+              council_author: '0'
+              council_clerk: '0'
+              park_editor: '0'
+              code_editor: '0'
+              group_creator: '0'
+              alert_editor: '0'
+              sitewide_editor: '0'
+              administrator: '0'
+            placeholder: ''
+            min_placeholder: ''
+            max_placeholder: ''
           is_grouped: false
           group_info:
             label: ''
@@ -1027,7 +1106,7 @@ display:
           value:
             min: ''
             max: ''
-            value: today
+            value: now
             type: offset
           group: 2
           exposed: false
@@ -1037,6 +1116,8 @@ display:
             description: ''
             use_operator: false
             operator: ''
+            operator_limit_selection: false
+            operator_list: {  }
             identifier: ''
             required: false
             remember: false
@@ -1046,8 +1127,6 @@ display:
             placeholder: ''
             min_placeholder: ''
             max_placeholder: ''
-            operator_limit_selection: false
-            operator_list: {  }
           is_grouped: false
           group_info:
             label: ''
@@ -1143,7 +1222,7 @@ display:
           empty: true
           tokenize: true
           content:
-            value: "<ul class=\"nav nav-group-menu\">\r\n<li class=\"nav-item\"><a href=\"/group/{{ raw_arguments.field_display_groups_target_id }}/events\" class=\"nav-link{% if path('<current>') matches '[events$]' %} active{% endif %}\">All Upcoming Events</a></li>\r\n<li class=\"nav-item\"><a href=\"/group/{{ raw_arguments.field_display_groups_target_id }}/events/past\" class=\"nav-link{% if path('<current>') matches '[events/past$]' %} active{% endif %}\">Past Events</a></li>\r\n{{ field_enable_past_meetings }}\r\n</ul>\r\n"
+            value: "{% set group_path = \"group/\" ~ raw_arguments.field_display_groups_target_id %}\r\n{% if field_group_path %}\r\n{% set group_path = field_group_path %}\r\n{% endif %}\r\n<ul class=\"nav nav-group-menu\">\r\n<li class=\"nav-item\"><a href=\"/{{ group_path|render|striptags|trim }}/events\" class=\"nav-link{% if path('<current>') matches '[events$]' %} active{% endif %}\">All Upcoming Events</a></li>\r\n<li class=\"nav-item\"><a href=\"/{{ group_path|render|striptags|trim }}/events/past\" class=\"nav-link{% if path('<current>') matches '[events/past$]' %} active{% endif %}\">Past Events</a></li>\r\n{{ field_enable_past_meetings }}\r\n</ul>\r\n"
             format: full_html
           plugin_id: text
         result:
@@ -1256,6 +1335,7 @@ display:
         - 'config:core.entity_view_display.node.contact.default'
         - 'config:core.entity_view_display.node.contact.teaser'
         - 'config:core.entity_view_display.node.council_agenda.default'
+        - 'config:core.entity_view_display.node.council_agenda.ief_table'
         - 'config:core.entity_view_display.node.council_agenda.teaser'
         - 'config:core.entity_view_display.node.council_document.default'
         - 'config:core.entity_view_display.node.council_document.teaser'
@@ -1279,6 +1359,7 @@ display:
         - 'config:core.entity_view_display.node.external_resource.teaser'
         - 'config:core.entity_view_display.node.location.default'
         - 'config:core.entity_view_display.node.location.embedded'
+        - 'config:core.entity_view_display.node.location.ief_table'
         - 'config:core.entity_view_display.node.location.search_result'
         - 'config:core.entity_view_display.node.location.teaser'
         - 'config:core.entity_view_display.node.news.default'
@@ -1303,6 +1384,8 @@ display:
         - 'config:core.entity_view_display.node.policy.related'
         - 'config:core.entity_view_display.node.policy.search_result'
         - 'config:core.entity_view_display.node.policy.teaser'
+        - 'config:core.entity_view_display.node.room.default'
+        - 'config:core.entity_view_display.node.room.teaser'
         - 'config:core.entity_view_display.node.service_location.default'
         - 'config:core.entity_view_display.node.service_location.related'
         - 'config:core.entity_view_display.node.service_location.search_result'
@@ -1310,6 +1393,7 @@ display:
         - 'config:core.entity_view_display.node.top_search.default'
         - 'config:core.entity_view_display.node.top_search.teaser'
         - 'config:field.storage.group.field_enable_past_meetings'
+        - 'config:field.storage.group.field_group_path'
         - 'config:field.storage.node.field_all_day'
         - 'config:field.storage.node.field_body_content'
         - 'config:field.storage.node.field_end_date'
@@ -1366,7 +1450,7 @@ display:
           value:
             min: today
             max: '+30 days'
-            value: today
+            value: now
             type: offset
           group: 1
           exposed: false
@@ -1376,6 +1460,8 @@ display:
             description: ''
             use_operator: false
             operator: field_start_date_value_op
+            operator_limit_selection: false
+            operator_list: {  }
             identifier: start_date
             required: false
             remember: false
@@ -1389,8 +1475,6 @@ display:
             placeholder: ''
             min_placeholder: ''
             max_placeholder: ''
-            operator_limit_selection: false
-            operator_list: {  }
           is_grouped: false
           group_info:
             label: ''
@@ -1415,7 +1499,7 @@ display:
           value:
             min: ''
             max: ''
-            value: today
+            value: now
             type: offset
           group: 1
           exposed: false
@@ -1425,6 +1509,8 @@ display:
             description: ''
             use_operator: false
             operator: ''
+            operator_limit_selection: false
+            operator_list: {  }
             identifier: ''
             required: false
             remember: false
@@ -1434,8 +1520,6 @@ display:
             placeholder: ''
             min_placeholder: ''
             max_placeholder: ''
-            operator_limit_selection: false
-            operator_list: {  }
           is_grouped: false
           group_info:
             label: ''
@@ -1564,6 +1648,7 @@ display:
         - 'config:core.entity_view_display.node.contact.default'
         - 'config:core.entity_view_display.node.contact.teaser'
         - 'config:core.entity_view_display.node.council_agenda.default'
+        - 'config:core.entity_view_display.node.council_agenda.ief_table'
         - 'config:core.entity_view_display.node.council_agenda.teaser'
         - 'config:core.entity_view_display.node.council_document.default'
         - 'config:core.entity_view_display.node.council_document.teaser'
@@ -1587,6 +1672,7 @@ display:
         - 'config:core.entity_view_display.node.external_resource.teaser'
         - 'config:core.entity_view_display.node.location.default'
         - 'config:core.entity_view_display.node.location.embedded'
+        - 'config:core.entity_view_display.node.location.ief_table'
         - 'config:core.entity_view_display.node.location.search_result'
         - 'config:core.entity_view_display.node.location.teaser'
         - 'config:core.entity_view_display.node.news.default'
@@ -1611,6 +1697,8 @@ display:
         - 'config:core.entity_view_display.node.policy.related'
         - 'config:core.entity_view_display.node.policy.search_result'
         - 'config:core.entity_view_display.node.policy.teaser'
+        - 'config:core.entity_view_display.node.room.default'
+        - 'config:core.entity_view_display.node.room.teaser'
         - 'config:core.entity_view_display.node.service_location.default'
         - 'config:core.entity_view_display.node.service_location.related'
         - 'config:core.entity_view_display.node.service_location.search_result'
@@ -1618,6 +1706,7 @@ display:
         - 'config:core.entity_view_display.node.top_search.default'
         - 'config:core.entity_view_display.node.top_search.teaser'
         - 'config:field.storage.group.field_enable_past_meetings'
+        - 'config:field.storage.group.field_group_path'
         - 'config:field.storage.node.field_all_day'
         - 'config:field.storage.node.field_body_content'
         - 'config:field.storage.node.field_end_date'
@@ -1675,7 +1764,7 @@ display:
           value:
             min: today
             max: '+30 days'
-            value: today
+            value: now
             type: offset
           group: 1
           exposed: false
@@ -2965,7 +3054,7 @@ display:
           value:
             min: ''
             max: ''
-            value: today
+            value: now
             type: offset
           group: 2
           exposed: false
@@ -2975,6 +3064,8 @@ display:
             description: ''
             use_operator: false
             operator: ''
+            operator_limit_selection: false
+            operator_list: {  }
             identifier: ''
             required: false
             remember: false
@@ -2984,8 +3075,6 @@ display:
             placeholder: ''
             min_placeholder: ''
             max_placeholder: ''
-            operator_limit_selection: false
-            operator_list: {  }
           is_grouped: false
           group_info:
             label: ''
@@ -3010,7 +3099,7 @@ display:
           value:
             min: ''
             max: ''
-            value: today
+            value: now
             type: offset
           group: 2
           exposed: false
@@ -3020,6 +3109,8 @@ display:
             description: ''
             use_operator: false
             operator: ''
+            operator_limit_selection: false
+            operator_list: {  }
             identifier: ''
             required: false
             remember: false
@@ -3029,8 +3120,6 @@ display:
             placeholder: ''
             min_placeholder: ''
             max_placeholder: ''
-            operator_limit_selection: false
-            operator_list: {  }
           is_grouped: false
           group_info:
             label: ''
@@ -3902,6 +3991,69 @@ display:
           separator: ', '
           field_api_classes: false
           plugin_id: field
+        field_group_path:
+          id: field_group_path
+          table: group__field_group_path
+          field: field_group_path
+          relationship: field_display_groups
+          group_type: group
+          admin_label: ''
+          label: ''
+          exclude: true
+          alter:
+            alter_text: false
+            text: ''
+            make_link: false
+            path: ''
+            absolute: false
+            external: false
+            replace_spaces: false
+            path_case: none
+            trim_whitespace: false
+            alt: ''
+            rel: ''
+            link_class: ''
+            prefix: ''
+            suffix: ''
+            target: ''
+            nl2br: false
+            max_length: 0
+            word_boundary: true
+            ellipsis: true
+            more_link: false
+            more_link_text: ''
+            more_link_path: ''
+            strip_tags: false
+            trim: false
+            preserve_tags: ''
+            html: false
+          element_type: ''
+          element_class: ''
+          element_label_type: ''
+          element_label_class: ''
+          element_label_colon: false
+          element_wrapper_type: ''
+          element_wrapper_class: ''
+          element_default_classes: true
+          empty: ''
+          hide_empty: false
+          empty_zero: false
+          hide_alter_empty: true
+          click_sort_column: value
+          type: string
+          settings:
+            link_to_entity: false
+          group_column: value
+          group_columns: {  }
+          group_rows: true
+          delta_limit: 0
+          delta_offset: 0
+          delta_reversed: false
+          delta_first_last: false
+          multi_type: separator
+          separator: ', '
+          field_api_classes: false
+          plugin_id: field
         field_enable_past_meetings:
           id: field_enable_past_meetings
           table: group__field_enable_past_meetings
@@ -3913,7 +4065,7 @@ display:
           exclude: true
           alter:
             alter_text: true
-            text: '<li class="nav-item"><a href="/group/{{ raw_arguments.field_display_groups_target_id }}/events/meetings" class="nav-link{% if path(''<current>'') matches ''[events/meetings$]'' %} active{% endif %}">Past Meetings and Hearings</a></li>'
+            text: '<li class="nav-item"><a href="/{{ field_group_path|render|striptags|trim }}/events/meetings" class="nav-link{% if path(''<current>'') matches ''[events/meetings$]'' %} active{% endif %}">Past Meetings and Hearings</a></li>'
             make_link: false
             path: ''
             absolute: false
@@ -4043,6 +4195,7 @@ display:
         - user.permissions
       tags:
         - 'config:field.storage.group.field_enable_past_meetings'
+        - 'config:field.storage.group.field_group_path'
         - 'config:field.storage.node.field_all_day'
         - 'config:field.storage.node.field_body_content'
         - 'config:field.storage.node.field_end_date'
@@ -4152,7 +4305,7 @@ display:
           value:
             min: ''
             max: ''
-            value: today
+            value: now
             type: offset
           group: 2
           exposed: false
@@ -4162,6 +4315,8 @@ display:
             description: ''
             use_operator: false
             operator: ''
+            operator_limit_selection: false
+            operator_list: {  }
             identifier: ''
             required: false
             remember: false
@@ -4171,8 +4326,6 @@ display:
             placeholder: ''
             min_placeholder: ''
             max_placeholder: ''
-            operator_limit_selection: false
-            operator_list: {  }
           is_grouped: false
           group_info:
             label: ''
@@ -4197,27 +4350,39 @@ display:
           value:
             min: ''
             max: ''
-            value: today
+            value: now
             type: offset
           group: 2
           exposed: false
           expose:
-            operator_id: ''
-            label: ''
+            operator_id: field_end_date_value_op
+            label: 'End date (field_end_date)'
             description: ''
             use_operator: false
-            operator: ''
-            identifier: ''
+            operator: field_end_date_value_op
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: field_end_date_value
             required: false
             remember: false
             multiple: false
             remember_roles:
               authenticated: authenticated
+              anonymous: '0'
+              publisher: '0'
+              policy_author: '0'
+              policy_editor: '0'
+              council_author: '0'
+              council_clerk: '0'
+              park_editor: '0'
+              code_editor: '0'
+              group_creator: '0'
+              alert_editor: '0'
+              sitewide_editor: '0'
+              administrator: '0'
             placeholder: ''
             min_placeholder: ''
             max_placeholder: ''
-            operator_limit_selection: false
-            operator_list: {  }
           is_grouped: false
           group_info:
             label: ''
@@ -4428,6 +4593,7 @@ display:
         - 'config:core.entity_view_display.node.contact.default'
         - 'config:core.entity_view_display.node.contact.teaser'
         - 'config:core.entity_view_display.node.council_agenda.default'
+        - 'config:core.entity_view_display.node.council_agenda.ief_table'
         - 'config:core.entity_view_display.node.council_agenda.teaser'
         - 'config:core.entity_view_display.node.council_document.default'
         - 'config:core.entity_view_display.node.council_document.teaser'
@@ -4451,6 +4617,7 @@ display:
         - 'config:core.entity_view_display.node.external_resource.teaser'
         - 'config:core.entity_view_display.node.location.default'
         - 'config:core.entity_view_display.node.location.embedded'
+        - 'config:core.entity_view_display.node.location.ief_table'
         - 'config:core.entity_view_display.node.location.search_result'
         - 'config:core.entity_view_display.node.location.teaser'
         - 'config:core.entity_view_display.node.news.default'
@@ -4475,6 +4642,8 @@ display:
         - 'config:core.entity_view_display.node.policy.related'
         - 'config:core.entity_view_display.node.policy.search_result'
         - 'config:core.entity_view_display.node.policy.teaser'
+        - 'config:core.entity_view_display.node.room.default'
+        - 'config:core.entity_view_display.node.room.teaser'
         - 'config:core.entity_view_display.node.service_location.default'
         - 'config:core.entity_view_display.node.service_location.related'
         - 'config:core.entity_view_display.node.service_location.search_result'
@@ -4482,6 +4651,7 @@ display:
         - 'config:core.entity_view_display.node.top_search.default'
         - 'config:core.entity_view_display.node.top_search.teaser'
         - 'config:field.storage.group.field_enable_past_meetings'
+        - 'config:field.storage.group.field_group_path'
         - 'config:field.storage.node.field_all_day'
         - 'config:field.storage.node.field_body_content'
         - 'config:field.storage.node.field_end_date'
@@ -4528,19 +4698,19 @@ display:
           value:
             min: today
             max: '+30 days'
-            value: today
+            value: now
             type: offset
           group: 2
           exposed: false
           expose:
             operator_id: field_start_date_value_op
-            label: 'Start date is greater than or equal to'
+            label: 'Start date (field_start_date)'
             description: ''
             use_operator: false
             operator: field_start_date_value_op
             operator_limit_selection: false
             operator_list: {  }
-            identifier: start_date
+            identifier: field_start_date_value
             required: false
             remember: false
             multiple: false
@@ -4585,7 +4755,7 @@ display:
           value:
             min: ''
             max: ''
-            value: today
+            value: now
             type: offset
           group: 2
           exposed: false
@@ -4828,6 +4998,7 @@ display:
         - 'config:core.entity_view_display.node.contact.default'
         - 'config:core.entity_view_display.node.contact.teaser'
         - 'config:core.entity_view_display.node.council_agenda.default'
+        - 'config:core.entity_view_display.node.council_agenda.ief_table'
         - 'config:core.entity_view_display.node.council_agenda.teaser'
         - 'config:core.entity_view_display.node.council_document.default'
         - 'config:core.entity_view_display.node.council_document.teaser'
@@ -4851,6 +5022,7 @@ display:
         - 'config:core.entity_view_display.node.external_resource.teaser'
         - 'config:core.entity_view_display.node.location.default'
         - 'config:core.entity_view_display.node.location.embedded'
+        - 'config:core.entity_view_display.node.location.ief_table'
         - 'config:core.entity_view_display.node.location.search_result'
         - 'config:core.entity_view_display.node.location.teaser'
         - 'config:core.entity_view_display.node.news.default'
@@ -4875,6 +5047,8 @@ display:
         - 'config:core.entity_view_display.node.policy.related'
         - 'config:core.entity_view_display.node.policy.search_result'
         - 'config:core.entity_view_display.node.policy.teaser'
+        - 'config:core.entity_view_display.node.room.default'
+        - 'config:core.entity_view_display.node.room.teaser'
         - 'config:core.entity_view_display.node.service_location.default'
         - 'config:core.entity_view_display.node.service_location.related'
         - 'config:core.entity_view_display.node.service_location.search_result'
@@ -4882,6 +5056,7 @@ display:
         - 'config:core.entity_view_display.node.top_search.default'
         - 'config:core.entity_view_display.node.top_search.teaser'
         - 'config:field.storage.group.field_enable_past_meetings'
+        - 'config:field.storage.group.field_group_path'
         - 'config:field.storage.node.field_all_day'
         - 'config:field.storage.node.field_body_content'
         - 'config:field.storage.node.field_end_date'
