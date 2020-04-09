@@ -6,6 +6,7 @@ module.exports = {
       '700': { value: '#495669' }, // text
       '500': { value: '#7A899F' }, // text
       '300': { value: '#B3BDCC' },
+      '200': { value: '#D1D7E0' },
       '100': { value: '#EFF1F5' },
       '0': {
         value: '#FFFFFF',
@@ -49,10 +50,10 @@ module.exports = {
       '100': { value: '#EFEFF5' },
     },
     teal: {
-      '800': { value: '#206060' },
-      '500': { value: '#22A0A0' },// text
-      '300': { value: '#8CD9D9' },
-      '100': { value: '#EDF7F7' },
+      '800': { value: '#205860' },
+      '500': { value: '#077D8D' },// text
+      '300': { value: '#8CD0D9' },
+      '100': { value: '#EDF6F7' },
     }
   }
 };
