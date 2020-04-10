@@ -706,13 +706,24 @@ function _validate_group_group_path(&$form, \Drupal\Core\Form\FormStateInterface
  * Retrieve a view and send it to powr@portlandoregon.gov
  */
 function portland_cron(){
-    if( true || date('G') == 12 ){ // At noon
+    // Run once a day at noon. The minute is between 0 and 59.
+    // Cron job runs on Live every 5 minutes, we only check if there is 
+    // fresh updates once a day between 12:00 and 12:05
+    $hour = (int)(date('G')); // 0 to 23
+    $minute = (int)(date('i')); // 0 to 59
+    if( $hour == 12 && $minute < 5 ){ 
         // Get the view machine id.
         $view = \Drupal\views\Views::getView('location_updated_recently');
         // Set the display machine id.
         $view->setDisplay('block_1');
         $view->preExecute();
         $view->execute();
+
+        // If the view is empty, do not send the email
+        if(count($view->result) == 0) {
+            return;
+        }
+
         // Render the view
         $rendered = $view->render('block_1');
         $result = \Drupal::service('renderer')->render($rendered);
@@ -721,7 +732,8 @@ function portland_cron(){
         $mailManager = \Drupal::service('plugin.manager.mail');
         $module = 'portland';
         $key = 'portland_daily_mail'; // Replace with Your key
-        $to = 'xinju.wang@portlandoregon.gov'; //\Drupal::currentUser()->getEmail();
+        $to = 'powr@portlandoregon.gov';
+        // $to = 'xinju.wang@portlandoregon.gov'; // For debugging only
         $params['message'] = 'Location, Service location, Room updated in the last 24 hours<p/>' . $result;
         $params['title'] = 'Portland.gov daily updates';
         $langcode = \Drupal::currentUser()->getPreferredLangcode();
