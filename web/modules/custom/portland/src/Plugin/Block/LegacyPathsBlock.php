@@ -77,7 +77,7 @@ class LegacyPathsBlock extends BlockBase {
 
       // at this point $entity is either we should have a populated group and can check whether the test links are enabled.
       // if they are not, return empty array to disable the block.
-      if (!isset($group) || (isset($group->field_disable_legacy_paths_block) && $group->field_disable_legacy_paths_block->value)) {
+      if (!isset($group) || (isset($group->field_disable_legacy_paths_block) && $group->field_disable_legacy_paths_block->value) || !isset($entity->field_redirects)) {
         return [];
       }
 
