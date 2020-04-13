@@ -27,11 +27,11 @@ function portland_edit_forms_form_node_form_alter(&$form, $form_state, $form_id)
 
     $form['content_back_reference'] = [
       '#type' => 'container',
-      '#attributes' => ['class' => ['alert', 'alert-info', 'border', 'border-info']],
+      '#attributes' => ['class' => ['message']],
     ];
     $form['content_back_reference']['title'] = [
       '#type' => 'inline_template',
-      '#template' => '<label>{{ title|t }}</label>',
+      '#template' => '<p class="message__heading">{{ title|t }}</p>',
       '#context' => [
         'title' => $view->getTitle(),
       ],
