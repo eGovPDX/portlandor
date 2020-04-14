@@ -155,9 +155,11 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
     }
 
     $path = "/var/www/html/artifacts/failedtests";
-    $testfilename = str_replace('/', '-', $event->getFeature()->getFile());   // Convert 'features/test_name.feature' into 'features-test_name.feature'
-    $filename = microtime(true).' '.$event->getFeature()->getTitle().' -- '.$event->getStep()->getText()
-        .' ('.$testfilename.' line '.$event->getStep()->getLine().')';
+    // Replace special characters not allowed in filenames
+    $testfilename = preg_replace('/[\/<>|&:]/', '-', $event->getFeature()->getFile());   // Convert 'features/test_name.feature' into 'features-test_name.feature'
+    $title = preg_replace('/[\/<>|&:]/', '-', $event->getFeature()->getTitle());
+    $text = preg_replace('/[\/<>|&:]/', '-', $event->getStep()->getText());
+    $filename = microtime(true).' '.$title.' -- '.$text.' ('.$testfilename.' line '.$event->getStep()->getLine().')';
 
     if (!file_exists($path)) {
       mkdir($path, 0777, true);
