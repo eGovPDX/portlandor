@@ -72,13 +72,6 @@ module.exports = {
     "fontSize": { "value": "16px" },
     "lineHeight": { "value": "24px" },
   },
-  "link-text": {
-    "fontSize": { "value": "{ type.body.fontSize.value }" },
-    "lineHeight": { "value": "{ type.body.lineHeight.value }" },
-    "md": {
-      "lineHeight": { "value": "{ type.body.md.lineHeight.value }" }
-    }
-  },
   "helper-text": {
     "fontSize": { "value": "14px" },
     "lineHeight": { "value": "16px" },
