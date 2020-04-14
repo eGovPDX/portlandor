@@ -1,33 +1,59 @@
 <div class="row">
   <div class="col-lg-8 col-md-12">
     <article{{ attributes }}>
+      {{ content.field_construction_type }}
+      {{ content.field_project_status }}
       <p class="lead">
         {{ content.field_summary.0 }}
       </p>
+      {{ content.field_featured_media }}
+      <div class="row">
+        <div class="col">
+          <div class="event__date">
+            <span class="flex items-center">
+            {% if content.field_display_date|render|striptags|trim is not empty %}
+              {{ content.field_display_date }}
+            {% else %}
+              {% if content.field_end_date|render|striptags|trim is not empty %}
+                {{ content.field_start_date }}
+                <span class="datetime mx-1" aria-label="{{ 'through'|t }}">&ndash;</span>
+                {{ content.field_end_date }}
+              {% else %}
+                {{ content.field_start_date }}
+              {% endif %}
+            {% endif %}
+            </span>
+          </div>
+          <div class="event_time">
+            <span class="flex items-center">
+              {% if content.field_all_day|render|striptags|trim is not empty %}
+                {{ content.all_day }}
+              {% elseif content.field_end_time|render|striptags|trim is not empty %}
+                {{ content.field_start_time }}
+                <span class="datetime mx-1" aria-label="{{ 'to'|t }}">&ndash;</span>
+                {{ content.field_end_time }}
+              {% else %}
+                {{ content.field_start_time }}
+              {% endif %}
+            </span>
+          </div>
+        </div>
+        {% if content.field_location %}
+        <div class="col-md-6 col-sm-12">
+          {{ content.field_location }}
+        </div>
+        {% endif %}
+      </div>
       <div{{ content_attributes.addClass('node__content', 'clearfix') }}>
-        {{ content|without('field_summary','field_contact','field_location','field_related_content','field_topics') }}
+        {{ content|without('field_summary','field_construction_type','field_project_status','field_featured_media','field_start_date','field_end_date','field_all_day','field_display_date','field_start_time','field_end_time','field_location','field_contact','field_related_content','field_topics','field_display_groups','field_neighborhood') }}
       </div>
     </article>
   </div>
   <div class="col-lg-4 col-md-12">
-    {% set view_parent = drupal_view_result('page_menu','block_parent_to_pages_menu')|length %}
-    {% if view_parent > 0 %}
-      {{ drupal_view('page_menu','block_parent_to_pages_menu') }}
-    {% endif %}
-    {% set view_page = drupal_view_result('page_menu','block_siblings_to_parent_menu')|length %}
-    {% if view_page > 0 %}
-      {{ drupal_view('page_menu','block_siblings_to_parent_menu') }}
-    {% endif %}
     {% if content.field_contact|render|striptags %}
       <div class="mb-4">
         <h2 class="h4">Contact</h2>
         {{ content.field_contact }}
-      </div>
-    {% endif %}
-    {% if content.field_location|render|striptags %}
-      <div class="mb-4">
-        <h2 class="h4">Location</h2>
-        {{ content.field_location }}
       </div>
     {% endif %}
     {% if content.field_related_content|render|striptags %}
@@ -46,6 +72,12 @@
       <div class="mb-4">
         <h2 class="h4">Topics</h2>
         {{ content.field_topics }}
+      </div>
+    {% endif %}
+    {% if content.field_neighborhood|render|striptags %}
+      <div class="mb-4">
+        <h2 class="h4">Neighborhoods</h2>
+        {{ content.field_neighborhood }}
       </div>
     {% endif %}
     {% set view_news = drupal_block('views_block:news_on_content-block_2')|length %}
