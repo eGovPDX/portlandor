@@ -13,22 +13,15 @@
 
 ```twig
 {% include "@components/location/location.twig" with {
-  placename: 'Willamette Park',
-  address: '6500 SW Macadam Ave, Portland, OR 97219',
+  placename: 'Industrial St Police Warehouse',
+  address: '2619 NW Industrial St<br /> Portland, OR',
   links: [
     {
       icon: {
         name: 'map-pin',
       },
       text: 'Get Directions',
-      url: '/get-directions',
-    },
-    {
-      icon: {
-        name: 'information',
-      },
-      text: 'More about this location',
-      url: '/more-about-location',
+      url: '#get-directions',
     },
   ]
 } only %}
