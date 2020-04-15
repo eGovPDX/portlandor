@@ -78,7 +78,7 @@ if (defined('PANTHEON_ENVIRONMENT') && (PANTHEON_ENVIRONMENT !== 'live')) {
 
 	// Delete log data
 	echo "Deleting node revisions older than 30 days...\n";
-	passthru('drush sql-query "' . $watchdog_query . '"');
+	passthru('drush sql-query "' . $node_revision_query . '"');
 	echo "Node revision deletion complete.\n";
 
 }
