@@ -9,6 +9,9 @@ use Drupal\Core\Render\BubbleableMetadata;
 use Drupal\group\Entity\GroupContent;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Cache\Cache;
+use Drupal\Core\Mail\MailManagerInterface;
+use Drupal\Component\Utility\SafeMarkup;
+use Drupal\Component\Utility\Html;
 
 // This file concerns itself with setting up tokens with hooks
 include 'portland.tokens.inc';
@@ -697,3 +700,74 @@ function _validate_group_group_path(&$form, \Drupal\Core\Form\FormStateInterface
        }
     }
 }
+
+/**
+ * Implement hook_cron()
+ * Retrieve a view and send it to powr@portlandoregon.gov
+ */
+function portland_cron(){
+    // Run once a day at noon. The minute is between 0 and 59.
+    // Cron job runs on Live every 5 minutes, we only check if there is 
+    // fresh updates once a day between 12:00 and 12:05
+    $hour = (int)(date('G')); // 0 to 23
+    $minute = (int)(date('i')); // 0 to 59
+    if( $hour == 12 && $minute < 5 ){ 
+        // Get the view machine id.
+        $view = \Drupal\views\Views::getView('location_updated_recently');
+        // Set the display machine id.
+        $view->setDisplay('block_1');
+        $view->preExecute();
+        $view->execute();
+
+        // If the view is empty, do not send the email
+        if(count($view->result) == 0) {
+            return;
+        }
+
+        // Render the view
+        $rendered = $view->render('block_1');
+        $result = \Drupal::service('renderer')->render($rendered);
+
+        // send email
+        $mailManager = \Drupal::service('plugin.manager.mail');
+        $module = 'portland';
+        $key = 'portland_daily_mail'; // Replace with Your key
+        $to = 'powr@portlandoregon.gov';
+        // $to = 'xinju.wang@portlandoregon.gov'; // For debugging only
+        $params['message'] = 'Location, Service location, Room updated in the last 24 hours<p/>' . $result;
+        $params['title'] = 'Portland.gov daily location updates';
+        $langcode = \Drupal::currentUser()->getPreferredLangcode();
+        $send = true;
+
+        $result = $mailManager->mail($module, $key, $to, $langcode, $params, 'powr@portlandoregon.gov', $send);
+        if ($result['result'] != true) {
+            $message = t('There was a problem sending your email notification to @email.', array('@email' => $to));
+            drupal_set_message($message, 'error');
+            \Drupal::logger('mail-log')->error($message);
+            return;
+        }
+
+        $message = t('An email notification has been sent to @email ', array('@email' => $to));
+        drupal_set_message($message);
+        \Drupal::logger('mail-log')->notice($message);
+    }
+  }
+
+
+/**
+ * Implements hook_mail().
+ */
+function portland_mail($key, &$message, $params) {
+    $options = array(
+      'langcode' => $message['langcode'],
+    );
+    switch ($key) {
+      case 'portland_daily_mail':
+        $message['from'] = \Drupal::config('system.site')->get('mail');
+        $message['subject'] = t('@title', array('@title' => $params['title']), $options);
+        $message['body'][] = $params['message'];
+        $message['headers']['Content-Type'] = 'text/html; charset=UTF-8; format=flowed; delsp=yes';
+        break;
+    }
+  }
+  
