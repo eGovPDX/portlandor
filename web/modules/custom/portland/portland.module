@@ -771,3 +771,73 @@ function portland_mail($key, &$message, $params) {
     }
   }
   
+
+/**
+ * Implements hook_preprocess_node().
+ */
+function portland_preprocess_node(&$variables) {
+  switch ($variables['node']->getType()) {
+      case "event":
+        $variables['title'] = $variables['node']->label();
+
+        $is_all_day = $variables['node']->field_all_day->value;
+        $variables['is_all_day'] = $is_all_day;
+
+        // Ignore time if it's all day
+        $start_date_time = new DateTime();
+        $end_date_time = new DateTime();
+        if($is_all_day) {
+          $start_date_time->setTimestamp(strtotime($variables['node']->field_start_date->value));
+  
+          // If has no End Date, assume it's the same as Start Date + 1 day
+          if ($variables['node']->field_end_date->value == null) {
+            $end_date_time->setTimestamp(strtotime($variables['node']->field_start_date->value));
+            date_add($end_date_time, date_interval_create_from_date_string('1 day'));
+          }
+          else {
+            $end_date_time->setTimestamp(strtotime($variables['node']->field_end_date->value));
+          }
+        }
+        else {
+          $start_date_time->setTimestamp(strtotime($variables['node']->field_start_date->value) 
+          + (int)$variables['node']->field_start_time->value);
+  
+          // If has no End Date, assume it's the same as Start Date
+          if ($variables['node']->field_end_date->value == null) {
+            // If there is no End Time, assume it's the same as Start Time
+            if($variables['node']->field_end_time->value == null ) {
+              $end_date_time->setTimestamp(strtotime($variables['node']->field_start_date->value) 
+              + (int)$variables['node']->field_start_time->value);
+            }
+            else {
+              $end_date_time->setTimestamp(strtotime($variables['node']->field_start_date->value) 
+              + (int)$variables['node']->field_end_time->value);
+            }
+          }
+          else {
+            $end_date_time->setTimestamp(strtotime($variables['node']->field_end_date->value) 
+            + (int)$variables['node']->field_end_time->value);
+          }
+        }
+        $variables['start_date_time'] = $start_date_time;
+        $variables['end_date_time'] = $end_date_time;
+        
+        $address = $variables['node']->field_location->entity->field_address_or_entrance;
+        $variables['address'] = $address->address_line1 . ', ' . 
+                                $address->locality . ', ' . $address->administrative_area;
+        if($address->postal_code)
+          $variables['address'] .= ', ' . $address->postal_code;
+
+
+        $options = ['absolute' => TRUE];
+        $url = \Drupal\Core\Url::fromRoute('entity.node.canonical', 
+          ['node' => $variables['node']->id()], $options);
+        $url = $url->toString();
+
+        $variables['summary'] = $variables['node']->field_summary->value . 
+          '<br/><a href="' . $url . '">More info</a>';
+        
+
+        break;
+  }
+}
