@@ -4,6 +4,8 @@
 ## Props
 
 - `placename`: string - Display name of the location
+- `heading_level`: number - Effects the heading level used to display the `placename` - Default 3
+- `heading_override`: number - Overrides the heading styling while maintaining the heading level
 - `address`: string - The address of the location
 - `address2`: string - The suite name, room number, etc
 - `hours`: string - Hours of operation
