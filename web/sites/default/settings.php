@@ -4,6 +4,7 @@
  * Load services definition file.
  */
 $settings['container_yamls'][] = __DIR__ . '/services.yml';
+$settings['container_yamls'][] = __DIR__ . '/monolog.services.yml';
 
 /**
  * Include the Pantheon-specific settings file.
@@ -138,4 +139,10 @@ if (isset($_ENV['PANTHEON_ENVIRONMENT'])) {
   if ($_ENV['PANTHEON_ENVIRONMENT'] === 'live') {
     $config['google_analytics.settings']['account'] = 'UA-6858269-14';
   }
+}
+
+// Pantheon workaround for New Relic segmentation fault issue (https://discuss.newrelic.com/t/segmentation-fault-in-9-7-0-258/94830/20)
+// Disables New Relic for CLI context to prevent CircleCI build failures
+if (function_exists('newrelic_ignore_transaction') && php_sapi_name() === 'cli') { 
+  newrelic_ignore_transaction(); 
 }

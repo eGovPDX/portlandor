@@ -1,0 +1,2290 @@
+diff --git a/ief_removed_references_2875716-31.patch.txt b/ief_removed_references_2875716-31.patch.txt
+new file mode 100644
+index 0000000..0ebf6cf
+--- /dev/null
++++ b/ief_removed_references_2875716-31.patch.txt
+@@ -0,0 +1,844 @@
++From c18d57d1fd66e96738e4da34187f2284c5e351f9 Mon Sep 17 00:00:00 2001
++From: Omar Alahmed <ofma99@gmail.com>
++Date: Mon, 20 May 2019 15:22:12 +0300
++Subject: [PATCH] Issue #2875716: Widget settings to control removing &
++ deleting existing references
++
++---
++ config/schema/inline_entity_form.schema.yml   |   6 +
++ .../FieldWidget/InlineEntityFormBase.php      |  63 +++++-
++ .../FieldWidget/InlineEntityFormComplex.php   | 174 +++++++++++----
++ src/Tests/ComplexWidgetWebTest.php            | 203 +++++++++++++++---
++ ...isplay.node.ief_complex_simple.default.yml |   1 +
++ 5 files changed, 376 insertions(+), 71 deletions(-)
++
++diff --git a/config/schema/inline_entity_form.schema.yml b/config/schema/inline_entity_form.schema.yml
++index aef7d46..9939b90 100644
++--- a/config/schema/inline_entity_form.schema.yml
+++++ b/config/schema/inline_entity_form.schema.yml
++@@ -31,6 +31,9 @@ field.widget.settings.inline_entity_form_simple:
++     collapsed:
++       type: boolean
++       label: "Collapsed by default"
+++    removed_reference:
+++      type: string
+++      label: "Keep or delete unreferenced items"
++ 
++ field.widget.settings.inline_entity_form_complex:
++   type: mapping
++@@ -66,3 +69,6 @@ field.widget.settings.inline_entity_form_complex:
++     collapsed:
++       type: boolean
++       label: "Collapsed by default"
+++    removed_reference:
+++      type: string
+++      label: "Keep or delete unreferenced items"
++diff --git a/src/Plugin/Field/FieldWidget/InlineEntityFormBase.php b/src/Plugin/Field/FieldWidget/InlineEntityFormBase.php
++index 5598be4..c034222 100644
++--- a/src/Plugin/Field/FieldWidget/InlineEntityFormBase.php
+++++ b/src/Plugin/Field/FieldWidget/InlineEntityFormBase.php
++@@ -145,6 +145,50 @@ abstract class InlineEntityFormBase extends WidgetBase implements ContainerFacto
++     return $this->iefId;
++   }
++ 
+++  /**
+++   * Returns the ID of the entity type the field is attached to.
+++   *
+++   * @return string
+++   *   The entity type ID.
+++   */
+++  protected function getParentEntityType() {
+++    return $this->fieldDefinition->getTargetEntityTypeId();
+++  }
+++
+++  /**
+++   * Gets the bundle the field is attached to.
+++   *
+++   * @return string|null
+++   *   The bundle the field is defined for, or NULL if it is a base field; i.e., it is not bundle-specific.
+++   */
+++  protected function getParentBundle() {
+++    return $this->fieldDefinition->getTargetBundle();
+++  }
+++
+++  /**
+++   * Gets the human-readable names of the entity type.
+++   *
+++   * @todo Remove workaround as soon as #2765065 landed.
+++   *
+++   * @return array
+++   *   Array of labels with the keys 'singular' and 'plural'.
+++   */
+++  protected function getParentBundleLabels() {
+++    if ($bundle = $this->getParentBundle()) {
+++      $definition = $this->entityTypeManager->getDefinition($this->getParentEntityType());
+++      return [
+++        'singular' => $definition->getLabel(),
+++        'plural' => $definition->getLabel() . 'entities'
+++      ];
+++    } else {
+++      $definition = $this->entityTypeManager->getDefinition($this->getParentEntityType());
+++      return [
+++        'singular' => $definition->getSingularLabel(),
+++        'plural' => $definition->getPluralLabel(),
+++      ];
+++    }
+++  }
+++
++   /**
++    * Gets the target bundles for the current field.
++    *
++@@ -184,6 +228,23 @@ abstract class InlineEntityFormBase extends WidgetBase implements ContainerFacto
++     return $create_bundles;
++   }
++ 
+++  /**
+++   * Gets all referenceable entities for this form.
+++   *
+++   * @return string[]
+++   *   Array of labels of all referenceable entity labels keyed by entity ID.
+++   */
+++  protected function getReferenceableEntities() {
+++    $bundles = \Drupal::service('plugin.manager.entity_reference_selection')->getSelectionHandler($this->fieldDefinition)->getReferenceableEntities();
+++    $entities = [];
+++    foreach ($bundles as $bundle) {
+++      foreach ($bundle as $id => $label) {
+++        $entities[$id] = $label;
+++      }
+++    }
+++    return $entities;
+++  }
+++
++   /**
++    * {@inheritdoc}
++    */
++@@ -472,7 +533,7 @@ abstract class InlineEntityFormBase extends WidgetBase implements ContainerFacto
++    * Note that at this point the entity is not yet saved, since the user might
++    * still decide to cancel the parent form.
++    *
++-   * @param $entity_form
+++   * @param array $entity_form
++    *   The form of the entity being managed inline.
++    * @param \Drupal\Core\Form\FormStateInterface $form_state
++    *   The form state of the parent form.
++diff --git a/src/Plugin/Field/FieldWidget/InlineEntityFormComplex.php b/src/Plugin/Field/FieldWidget/InlineEntityFormComplex.php
++index 6d00451..e59be1d 100644
++--- a/src/Plugin/Field/FieldWidget/InlineEntityFormComplex.php
+++++ b/src/Plugin/Field/FieldWidget/InlineEntityFormComplex.php
++@@ -32,6 +32,21 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
++  */
++ class InlineEntityFormComplex extends InlineEntityFormBase implements ContainerFactoryPluginInterface {
++ 
+++  /**
+++   * Always keep referenced entity when the reference is removed.
+++   */
+++  const REMOVED_KEEP = 'keep';
+++
+++  /**
+++   * Allow users to choose whether to delete an entity upon removing reference.
+++   */
+++  const REMOVED_OPTIONAL = 'optional';
+++
+++  /**
+++   * Always delete referenced entity when the reference is removed.
+++   */
+++  const REMOVED_DELETE = 'delete';
+++
++   /**
++    * Module handler service.
++    *
++@@ -53,19 +68,19 @@ class InlineEntityFormComplex extends InlineEntityFormBase implements ContainerF
++    *   The plugin_id for the widget.
++    * @param mixed $plugin_definition
++    *   The plugin implementation definition.
++-   * @param \Drupal\Core\Field\FieldDefinitionInterface $field_definition
+++   * @param FieldDefinitionInterface $field_definition
++    *   The definition of the field to which the widget is associated.
++    * @param array $settings
++    *   The widget settings.
++    * @param array $third_party_settings
++    *   Any third party settings.
++-   * @param \Drupal\Core\Entity\EntityTypeBundleInfoInterface $entity_type_bundle_info
+++   * @param EntityTypeBundleInfoInterface $entity_type_bundle_info
++    *   The entity type bundle info.
++-   * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
+++   * @param EntityTypeManagerInterface $entity_type_manager
++    *   The entity type manager.
++-   * @param \Drupal\Core\Entity\EntityDisplayRepositoryInterface $entity_display_repository
+++   * @param EntityDisplayRepositoryInterface $entity_display_repository
++    *   The entity display repository.
++-   * @param \Drupal\Core\Extension\ModuleHandlerInterface $module_handler
+++   * @param ModuleHandlerInterface $module_handler
++    *   Module handler service.
++    * @param \Drupal\Core\Entity\EntityReferenceSelection\SelectionPluginManagerInterface $selection_manager
++    *   The selection plugin manager.
++@@ -102,6 +117,7 @@ class InlineEntityFormComplex extends InlineEntityFormBase implements ContainerF
++     $defaults += [
++       'allow_new' => TRUE,
++       'allow_existing' => FALSE,
+++      'removed_reference' => self::REMOVED_OPTIONAL,
++       'match_operator' => 'CONTAINS',
++       'allow_duplicate' => FALSE,
++     ];
++@@ -115,16 +131,16 @@ class InlineEntityFormComplex extends InlineEntityFormBase implements ContainerF
++   public function settingsForm(array $form, FormStateInterface $form_state) {
++     $element = parent::settingsForm($form, $form_state);
++ 
++-    $labels = $this->getEntityTypeLabels();
+++    $child_labels = $this->getEntityTypeLabels();
++     $states_prefix = 'fields[' . $this->fieldDefinition->getName() . '][settings_edit_form][settings]';
++     $element['allow_new'] = [
++       '#type' => 'checkbox',
++-      '#title' => $this->t('Allow users to add new @label.', ['@label' => $labels['plural']]),
+++        '#title' => $this->t('Allow users to add new @label.', ['@label' => $child_labels['plural']]),
++       '#default_value' => $this->getSetting('allow_new'),
++     ];
++     $element['allow_existing'] = [
++       '#type' => 'checkbox',
++-      '#title' => $this->t('Allow users to add existing @label.', ['@label' => $labels['plural']]),
+++        '#title' => $this->t('Allow users to add existing @label.', ['@label' => $child_labels['plural']]),
++       '#default_value' => $this->getSetting('allow_existing'),
++     ];
++     $element['match_operator'] = [
++@@ -141,10 +157,24 @@ class InlineEntityFormComplex extends InlineEntityFormBase implements ContainerF
++     ];
++     $element['allow_duplicate'] = [
++       '#type' => 'checkbox',
++-      '#title' => $this->t('Allow users to duplicate @label.', ['@label' => $labels['plural']]),
+++        '#title' => $this->t('Allow users to duplicate @label.', ['@label' => $child_labels['plural']]),
++       '#default_value' => $this->getSetting('allow_duplicate'),
++     ];
++ 
+++    $description = $this->t('Select whether a @child should be deleted altogether if removed as a reference here.<br />
+++<em>Keep always</em> is recommended whenever a @child may be referenced by another @parent, too.<br />
+++<em>Delete always</em> is recommended whenever a referenced @child is exclusively owned by the @parent.', [
+++      '@child' => $child_labels['singular'],
+++      '@parent' => $this->getParentBundleLabels()['singular'],
+++    ]);
+++    $element['removed_reference'] = [
+++      '#type' => 'select',
+++        '#title' => $this->t('Keep or delete unreferenced @label', ['@label' => $child_labels['plural']]),
+++      '#default_value' => $this->getSetting('removed_reference'),
+++      '#options' => $this->getRemovedReferenceOptions(),
+++      '#description' => $description,
+++    ];
+++
++     return $element;
++   }
++ 
++@@ -180,6 +210,18 @@ class InlineEntityFormComplex extends InlineEntityFormBase implements ContainerF
++       $summary[] = $this->t('@label can not be duplicated.', ['@label' => $labels['plural']]);
++     }
++ 
+++    switch ($this->getSetting('removed_reference')) {
+++      case self::REMOVED_KEEP:
+++        $summary[] = $this->t('Always keep unreferenced @label.', ['@label' => $labels['plural']]);
+++        break;
+++      case self::REMOVED_OPTIONAL:
+++        $summary[] = $this->t('Let users decide whether to keep or delete unreferenced @label.', ['@label' => $labels['plural']]);
+++        break;
+++      case self::REMOVED_DELETE:
+++        $summary[] = $this->t('Always delete unreferenced @label.', ['@label' => $labels['plural']]);
+++        break;
+++    }
+++
++     return $summary;
++   }
++ 
++@@ -196,11 +238,24 @@ class InlineEntityFormComplex extends InlineEntityFormBase implements ContainerF
++     ];
++   }
++ 
+++  /**
+++   * Returns the options for removing references.
+++   *
+++   * @return array
+++   *   List of options.
+++   */
+++  protected function getRemovedReferenceOptions() {
+++    return [
+++      self::REMOVED_KEEP => $this->t('Keep always'),
+++      self::REMOVED_OPTIONAL => $this->t('Let the user decide'),
+++      self::REMOVED_DELETE => $this->t('Delete always'),
+++    ];
+++  }
+++
++   /**
++    * {@inheritdoc}
++    */
++   public function formElement(FieldItemListInterface $items, $delta, array $element, array &$form, FormStateInterface $form_state) {
++-    $settings = $this->getSettings();
++     $target_type = $this->getFieldSetting('target_type');
++     // Get the entity type labels for the UI strings.
++     $labels = $this->getEntityTypeLabels();
++@@ -243,12 +298,32 @@ class InlineEntityFormComplex extends InlineEntityFormBase implements ContainerF
++     $element['#attached']['library'][] = 'inline_entity_form/widget';
++ 
++     $this->prepareFormState($form_state, $items, $element['#translating']);
+++
+++    // Collect all referenceable and all currently referenced entities.
+++    $all_entities = $this->getReferenceableEntities();
+++    $referenceable_entities = $all_entities;
+++
++     $entities = $form_state->get(['inline_entity_form', $this->getIefId(), 'entities']);
+++    $entities_count = count($entities);
+++    foreach ($entities as $value) {
+++      /** @var EntityInterface $entity */
+++      $entity = $value['entity'];
+++      $id = $entity->id();
+++      if (in_array($id, array_keys($referenceable_entities))) {
+++        unset($referenceable_entities[$id]);
+++      }
+++    }
+++
+++    // Prepare information about which operations may be available to the user.
+++    $settings = $this->getSettings();
+++    $allow_existing = $settings['allow_existing'];
+++    $allow_duplicate = $settings['allow_duplicate'] && $this->canAddNew();
+++    $allow_new = $settings['allow_new'] && $this->canAddNew();
++ 
++     // Prepare cardinality information.
++-    $entities_count = count($entities);
++-    $cardinality = $this->fieldDefinition->getFieldStorageDefinition()->getCardinality();
++-    $cardinality_reached = ($cardinality > 0 && $entities_count == $cardinality);
+++    $field_storage_def = $this->fieldDefinition->getFieldStorageDefinition();
+++    $cardinality = $field_storage_def->getCardinality();
+++    $cardinality_reached = ($cardinality !== $field_storage_def::CARDINALITY_UNLIMITED && $entities_count == $cardinality);
++ 
++     // Build the "Multiple value" widget.
++     // TODO - does this belong in #element_validate?
++@@ -351,8 +426,8 @@ class InlineEntityFormComplex extends InlineEntityFormBase implements ContainerF
++         ];
++ 
++         // Make sure entity_access is not checked for unsaved entities.
++-        $entity_id = $entity->id();
++-        if (empty($entity_id) || $entity->access('update')) {
+++        $unsaved = empty($entity->id());
+++        if ($unsaved || $entity->access('update')) {
++           $row['actions']['ief_entity_edit'] = [
++             '#type' => 'submit',
++             '#value' => $this->t('Edit'),
++@@ -369,7 +444,7 @@ class InlineEntityFormComplex extends InlineEntityFormBase implements ContainerF
++         }
++ 
++         // Add the duplicate button, if allowed.
++-        if ($settings['allow_duplicate'] && !$cardinality_reached && $entity->access('create')) {
+++        if ($allow_duplicate && !$cardinality_reached) {
++           $row['actions']['ief_entity_duplicate'] = [
++             '#type' => 'submit',
++             '#value' => $this->t('Duplicate'),
++@@ -385,10 +460,14 @@ class InlineEntityFormComplex extends InlineEntityFormBase implements ContainerF
++           ];
++         }
++ 
++-        // If 'allow_existing' is on, the default removal operation is unlink
++-        // and the access check for deleting happens inside the controller
++-        // removeForm() method.
++-        if (empty($entity_id) || $settings['allow_existing'] || $entity->access('delete')) {
+++        // Check if reference may be removed. If yes, show "Remove" button.
+++        // The default removal operation is unlink and the access check for
+++        // deleting happens inside the controller buildRemoveForm() method.
+++        $always_delete = $settings['removed_reference'] !== self::REMOVED_DELETE;
+++        $may_remove = !$always_delete || $entity->access('delete');
+++        $may_add_existing = $allow_existing && count($referenceable_entities) > 1;
+++        $is_not_required = !$element['#required'] || $entities_count > 1 || $allow_new || $may_add_existing;
+++        if ($unsaved || ($may_remove && $is_not_required)) {
++           $row['actions']['ief_entity_remove'] = [
++             '#type' => 'submit',
++             '#value' => $this->t('Remove'),
++@@ -434,16 +513,19 @@ class InlineEntityFormComplex extends InlineEntityFormBase implements ContainerF
++     }
++ 
++     $create_bundles = $this->getCreateBundles();
++-    $create_bundles_count = count($create_bundles);
++-    $allow_new = $settings['allow_new'] && !empty($create_bundles);
++     $hide_cancel = FALSE;
++     // If the field is required and empty try to open one of the forms.
++     if (empty($entities) && $this->fieldDefinition->isRequired()) {
++-      if ($settings['allow_existing'] && !$allow_new) {
+++      $may_add_existing = $allow_existing && !empty($referenceable_entities);
+++      // Open an autocomplete widget if the user may only reference existing
+++      // entities and there are some.
+++      if ($may_add_existing && !$allow_new) {
++         $form_state->set(['inline_entity_form', $this->getIefId(), 'form'], 'ief_add_existing');
++         $hide_cancel = TRUE;
++       }
++-      elseif ($create_bundles_count == 1 && $allow_new && !$settings['allow_existing']) {
+++      // Open an entity form if the user may only create new entities and there
+++      // is only one bundle to choose from.
+++      elseif ($allow_new && count($create_bundles) == 1 && !$may_add_existing) {
++         $bundle = reset($target_bundles);
++ 
++         // The parent entity type and bundle must not be the same as the inline
++@@ -473,7 +555,7 @@ class InlineEntityFormComplex extends InlineEntityFormBase implements ContainerF
++       // The user is allowed to create an entity of at least one bundle.
++       if ($allow_new) {
++         // Let the user select the bundle, if multiple are available.
++-        if ($create_bundles_count > 1) {
+++        if (count($create_bundles) > 1) {
++           $bundles = [];
++           foreach ($this->entityTypeBundleInfo->getBundleInfo($target_type) as $bundle_name => $bundle_info) {
++             if (in_array($bundle_name, $create_bundles)) {
++@@ -508,7 +590,7 @@ class InlineEntityFormComplex extends InlineEntityFormBase implements ContainerF
++         ];
++       }
++ 
++-      if ($settings['allow_existing']) {
+++      if ($allow_existing && !empty($referenceable_entities)) {
++         $element['actions']['ief_add_existing'] = [
++           '#type' => 'submit',
++           '#value' => $this->t('Add existing @type_singular', ['@type_singular' => $labels['singular']]),
++@@ -799,7 +881,7 @@ class InlineEntityFormComplex extends InlineEntityFormBase implements ContainerF
++       '#markup' => $message,
++     ];
++ 
++-    if (!empty($entity_id) && $this->getSetting('allow_existing') && $entity->access('delete')) {
+++    if (!empty($entity_id) && $this->getSetting('removed_reference') === self::REMOVED_OPTIONAL && $entity->access('delete')) {
++       $form['delete'] = [
++         '#type' => 'checkbox',
++         '#title' => $this->t('Delete this @type_singular from the system.', ['@type_singular' => $labels['singular']]),
++@@ -823,7 +905,7 @@ class InlineEntityFormComplex extends InlineEntityFormBase implements ContainerF
++         'callback' => 'inline_entity_form_get_element',
++         'wrapper' => 'inline-entity-form-' . $form['#ief_id'],
++       ],
++-      '#allow_existing' => $this->getSetting('allow_existing'),
+++      '#removed_reference' => $this->getSetting('removed_reference'),
++       '#submit' => [[get_class($this), 'submitConfirmRemove']],
++       '#ief_row_delta' => $form['#ief_row_delta'],
++     ];
++@@ -844,9 +926,9 @@ class InlineEntityFormComplex extends InlineEntityFormBase implements ContainerF
++   /**
++    * Button #submit callback: Closes a row form in the IEF widget.
++    *
++-   * @param $form
+++   * @param array $form
++    *   The complete parent form.
++-   * @param $form_state
+++   * @param FormStateInterface $form_state
++    *   The form state of the parent form.
++    *
++    * @see inline_entity_form_open_row_form()
++@@ -869,9 +951,9 @@ class InlineEntityFormComplex extends InlineEntityFormBase implements ContainerF
++    * This isn't an #element_validate callback to avoid processing the
++    * remove form when the main form is submitted.
++    *
++-   * @param $form
+++   * @param array $form
++    *   The complete parent form.
++-   * @param $form_state
+++   * @param FormStateInterface $form_state
++    *   The form state of the parent form.
++    */
++   public static function submitConfirmRemove($form, FormStateInterface $form_state) {
++@@ -890,21 +972,25 @@ class InlineEntityFormComplex extends InlineEntityFormBase implements ContainerF
++     $form_state->setRebuild();
++ 
++     $widget_state = $form_state->get(['inline_entity_form', $element['#ief_id']]);
++-    // This entity hasn't been saved yet, we can just unlink it.
++-    if (empty($entity_id) || ($remove_button['#allow_existing'] && empty($form_values['delete']))) {
++-      unset($widget_state['entities'][$delta]);
++-    }
++-    else {
++-      $widget_state['delete'][] = $entity;
++-      unset($widget_state['entities'][$delta]);
+++
+++    // Entity hasn't been saved yet or we may not remove it, so unreference it.
+++    unset($widget_state['entities'][$delta]);
+++
+++    // Delete entity if configured so or if the user chose to.
+++    if ($entity_id) {
+++      $removed_reference = $remove_button['#removed_reference'];
+++      if ($removed_reference === self::REMOVED_DELETE || ($removed_reference === self::REMOVED_OPTIONAL && $form_values['delete'] === 1)) {
+++        $widget_state['delete'][] = $entity;
+++      }
++     }
+++
++     $form_state->set(['inline_entity_form', $element['#ief_id']], $widget_state);
++   }
++ 
++   /**
++    * Determines bundle to be used when creating entity.
++    *
++-   * @param \Drupal\Core\Form\FormStateInterface $form_state
+++   * @param FormStateInterface $form_state
++    *   Current form state.
++    *
++    * @return string
++@@ -961,9 +1047,9 @@ class InlineEntityFormComplex extends InlineEntityFormBase implements ContainerF
++   /**
++    * Button #submit callback: Closes a form in the IEF widget.
++    *
++-   * @param $form
+++   * @param array $form
++    *   The complete parent form.
++-   * @param $form_state
+++   * @param FormStateInterface $form_state
++    *   The form state of the parent form.
++    *
++    * @see inline_entity_form_open_form()
++@@ -995,9 +1081,9 @@ class InlineEntityFormComplex extends InlineEntityFormBase implements ContainerF
++    * Used to ensure that forms in nested IEF widgets are properly closed
++    * when a parent IEF's form gets submitted or cancelled.
++    *
++-   * @param $form
+++   * @param array $form
++    *   The IEF Form element.
++-   * @param \Drupal\Core\Form\FormStateInterface $form_state
+++   * @param FormStateInterface $form_state
++    *   The form state of the parent form.
++    */
++   public static function closeChildForms($form, FormStateInterface &$form_state) {
++diff --git a/src/Tests/ComplexWidgetWebTest.php b/src/Tests/ComplexWidgetWebTest.php
++index 6811a91..90c8391 100644
++--- a/src/Tests/ComplexWidgetWebTest.php
+++++ b/src/Tests/ComplexWidgetWebTest.php
++@@ -2,7 +2,7 @@
++ 
++ namespace Drupal\inline_entity_form\Tests;
++ 
++-use Drupal\node\Entity\Node;
+++use Drupal\node\NodeInterface;
++ 
++ /**
++  * IEF complex field widget tests.
++@@ -74,17 +74,33 @@ class ComplexWidgetWebTest extends InlineEntityFormTestBase {
++     $this->assertFieldByName('multi[form][inline_entity_form][last_name][0][value]', NULL, 'Last name field on inline form exists.');
++     $this->assertFieldByXpath('//input[@type="submit" and @value="Create node"]', NULL, 'Found "Create node" submit button');
++ 
++-    // Allow addition of existing nodes.
+++    // Now allow addition of existing nodes. However there are currently no
+++    // referenceable nodes. Therefore show the same simple inline form.
++     $this->updateSetting('allow_existing', TRUE);
++     $this->drupalGet($this->formContentAddUrl);
++ 
+++    $this->assertFieldByName('multi[form][inline_entity_form][title][0][value]', NULL, 'Title field on inline form exists.');
+++    $this->assertFieldByName('multi[form][inline_entity_form][first_name][0][value]', NULL, 'First name field on inline form exists.');
+++    $this->assertFieldByName('multi[form][inline_entity_form][last_name][0][value]', NULL, 'Last name field on inline form exists.');
+++    $this->assertFieldByXpath('//input[@type="submit" and @value="Create node"]', NULL, 'Found "Create node" submit button');
+++
+++    // So create a referenceable node now and try again. We should now get both
+++    // buttons: "Add new node" and "Add existing node."
+++    $referenceNodes = $this->createReferenceContent(1);
+++    $this->drupalCreateNode([
+++        'type' => 'ief_test_complex',
+++        'title' => 'Some title',
+++        'multi' => array_values($referenceNodes),
+++    ]);
+++    $this->drupalGet($this->formContentAddUrl);
+++
++     $this->assertNoFieldByName('multi[form][inline_entity_form][title][0][value]', NULL, 'Title field does not appear.');
++     $this->assertNoFieldByName('multi[form][inline_entity_form][first_name][0][value]', NULL, 'First name field does not appear.');
++     $this->assertNoFieldByName('multi[form][inline_entity_form][last_name][0][value]', NULL, 'Last name field does not appear.');
++-    $this->assertFieldByXpath('//input[@type="submit" and @value="Add new node"]', NULL, 'Found "Add new node" submit button');
++-    $this->assertFieldByXpath('//input[@type="submit" and @value="Add existing node"]', NULL, 'Found "Add existing node" submit button');
+++    $this->assertFieldByXpath('//input[@id="edit-multi-actions-ief-add"]', NULL, 'Found "Add new node" submit button');
+++    $this->assertFieldByXpath('//input[@id="edit-multi-actions-ief-add-existing"]', NULL, 'Found "Add existing node" submit button');
++ 
++-    // Now submit 'Add new node' button.
+++    // Now submit 'Add new node' button. The inline form should appear now.
++     $this->drupalPostAjaxForm(NULL, [], $this->getButtonName('//input[@type="submit" and @value="Add new node" and @data-drupal-selector="edit-multi-actions-ief-add"]'));
++ 
++     $this->assertFieldByName('multi[form][inline_entity_form][title][0][value]', NULL, 'Title field on inline form exists.');
++@@ -93,34 +109,51 @@ class ComplexWidgetWebTest extends InlineEntityFormTestBase {
++     $this->assertFieldByXpath('//input[@type="submit" and @value="Create node"]', NULL, 'Found "Create node" submit button');
++     $this->assertFieldByXpath('//input[@type="submit" and @value="Cancel"]', NULL, 'Found "Cancel" submit button');
++ 
++-    // Now submit 'Add Existing node' button.
+++    // Reload and instead submit 'Add existing node' button. An autocomplete
+++    // field should appear.
++     $this->drupalGet($this->formContentAddUrl);
++     $this->drupalPostAjaxForm(NULL, [], $this->getButtonName('//input[@type="submit" and @value="Add existing node" and @data-drupal-selector="edit-multi-actions-ief-add-existing"]'));
++ 
++     $this->assertFieldByName('multi[form][entity_id]', NULL, 'Existing entity reference autocomplete field found.');
++     $this->assertFieldByXpath('//input[@type="submit" and @value="Add node"]', NULL, 'Found "Add node" submit button');
++     $this->assertFieldByXpath('//input[@type="submit" and @value="Cancel"]', NULL, 'Found "Cancel" submit button');
+++
+++    // Finally disallow creation of new nodes and reload to see only an
+++    // autocomplete field.
+++    $this->updateSetting('allow_new', FALSE);
+++    $this->drupalGet($this->formContentAddUrl);
+++
+++    $this->assertFieldByName('multi[form][entity_id]', NULL, 'Existing entity reference autocomplete field found.');
+++    $this->assertNoFieldByXpath('//input[@id="edit-multi-actions-ief-add"]', NULL, '"Add new node" submit button does not appear');
+++    $this->assertNoFieldByXpath('//input[@id="edit-multi-actions-ief-add-existing"]', NULL, '"Add existing node" submit button does not appear');
++   }
++ 
++   /**
++    * Tests creation of entities.
++    */
++   public function testEntityCreation() {
++-    // Allow addition of existing nodes.
+++    // Allow addition of existing nodes. However there are currently no
+++    // referenceable nodes. Therefore show the same simple inline form.
++     $this->updateSetting('allow_existing', TRUE);
++     $this->drupalGet($this->formContentAddUrl);
++ 
++-    $this->drupalPostAjaxForm(NULL, [], $this->getButtonName('//input[@type="submit" and @value="Add new node" and @data-drupal-selector="edit-multi-actions-ief-add"]'));
++-    $this->assertResponse(200, 'Opening new inline form was successful.');
++-
++     $this->drupalPostAjaxForm(NULL, [], $this->getButtonName('//input[@type="submit" and @value="Create node" and @data-drupal-selector="edit-multi-form-inline-entity-form-actions-ief-add-save"]'));
++     $this->assertResponse(200, 'Submitting empty form was successful.');
++     $this->assertText('First name field is required.', 'Validation failed for empty "First name" field.');
++     $this->assertText('Last name field is required.', 'Validation failed for empty "Last name" field.');
++     $this->assertText('Title field is required.', 'Validation failed for empty "Title" field.');
++ 
++-    // Create ief_reference_type node in IEF.
+++    // Create an ief_reference_type node, so we get an "Add new node" button.
+++    $referenceNodes = $this->createReferenceContent(1);
+++    $this->drupalCreateNode([
+++        'type' => 'ief_test_complex',
+++        'title' => 'Sample',
+++        'multi' => array_values($referenceNodes),
+++    ]);
++     $this->drupalGet($this->formContentAddUrl);
+++    $this->assertFieldByXpath('//input[@id="edit-multi-actions-ief-add"]', NULL, 'Found "Add new node" submit button');
+++
+++    // Now create another node using the IEF.
++     $this->drupalPostAjaxForm(NULL, [], $this->getButtonName('//input[@type="submit" and @value="Add new node" and @data-drupal-selector="edit-multi-actions-ief-add"]'));
++     $this->assertResponse(200, 'Opening new inline form was successful.');
++ 
++@@ -162,12 +195,12 @@ class ComplexWidgetWebTest extends InlineEntityFormTestBase {
++     // Checks values of created entities.
++     $node = $this->drupalGetNodeByTitle('Some changed reference');
++     $this->assertTrue($node, 'Created ief_reference_type node ' . $node->label());
++-    $this->assertTrue($node->get('first_name')->value == 'John', 'First name in reference node set to John');
++-    $this->assertTrue($node->get('last_name')->value == 'Doe', 'Last name in reference node set to Doe');
+++    $this->assertEqual($node->get('first_name')->value, 'John', 'First name in reference node set to John');
+++    $this->assertEqual($node->get('last_name')->value, 'Doe', 'Last name in reference node set to Doe');
++ 
++     $parent_node = $this->drupalGetNodeByTitle('Some title');
++     $this->assertTrue($parent_node, 'Created ief_test_complex node ' . $parent_node->label());
++-    $this->assertTrue($parent_node->multi->target_id == $node->id(), 'Refererence node id set to ' . $node->id());
+++    $this->assertEqual($parent_node->multi->target_id, $node->id(), 'Refererence node id set to ' . $node->id());
++   }
++ 
++   /**
++@@ -211,16 +244,16 @@ class ComplexWidgetWebTest extends InlineEntityFormTestBase {
++   /**
++    * Checks that nested IEF entity references can be edit and saved.
++    *
++-   * @param \Drupal\node\Entity\Node $node
+++   * @param NodeInterface $node
++    *   Top level node of type ief_test_nested1 to check.
++    * @param bool $ajax_submit
++    *   Whether IEF form widgets should be submitted via AJAX or left open.
++    */
++-  protected function checkNestedEntityEditing(Node $node, $ajax_submit = TRUE) {
+++  protected function checkNestedEntityEditing(NodeInterface $node, $ajax_submit = TRUE) {
++     $this->drupalGet("node/{$node->id()}/edit");
++-    /** @var \Drupal\node\Entity\Node $level_1_node */
+++    /** @var NodeInterface $level_1_node */
++     $level_1_node = $node->test_ref_nested1->entity;
++-    /** @var \Drupal\node\Entity\Node $level_2_node */
+++    /** @var NodeInterface $level_2_node */
++     $level_2_node = $node->test_ref_nested1->entity->test_ref_nested2->entity;
++     $level_2_node_update_title = $level_2_node->getTitle() . ' - updated';
++     // edit-test-ref-nested1-entities-0-actions-ief-entity-edit
++@@ -277,6 +310,7 @@ class ComplexWidgetWebTest extends InlineEntityFormTestBase {
++   public function testEntityEditingAndRemoving() {
++     // Allow addition of existing nodes.
++     $this->updateSetting('allow_existing', TRUE);
+++    $this->updateSetting('removed_reference', 'optional');
++ 
++     // Create three ief_reference_type entities.
++     $referenceNodes = $this->createReferenceContent(3);
++@@ -285,7 +319,7 @@ class ComplexWidgetWebTest extends InlineEntityFormTestBase {
++       'title' => 'Some title',
++       'multi' => array_values($referenceNodes),
++     ]);
++-    /** @var \Drupal\node\NodeInterface $node */
+++    /** @var NodeInterface $node */
++     $parent_node = $this->drupalGetNodeByTitle('Some title');
++ 
++     // Edit the second entity.
++@@ -362,6 +396,114 @@ class ComplexWidgetWebTest extends InlineEntityFormTestBase {
++     $this->assertTrue($node, 'Reference node not deleted');
++   }
++ 
+++  /**
+++   * Tests deletion on child entities upon unreferencing ("removal").
+++   */
+++  public function testRemoveReference() {
+++    // Allow the user to choose whether referenced entities are deleted or not.
+++    $this->updateSetting('removed_reference', 'optional');
+++
+++    // Create five ief_reference_type entities.
+++    $referenceNodes = $this->createReferenceContent(5);
+++    $this->drupalCreateNode([
+++        'type' => 'ief_test_complex',
+++        'title' => 'Some title',
+++        'multi' => array_values($referenceNodes),
+++    ]);
+++    /** @var NodeInterface $node */
+++    $parent_node = $this->drupalGetNodeByTitle('Some title');
+++
+++    // Unreference the first child entity without deleting it in the system.
+++    $this->drupalGet('node/' . $parent_node->id() . '/edit');
+++    $cell = $this->xpath('//table[@id="ief-entity-table-edit-multi-entities"]/tbody/tr[1]/td[@class="inline-entity-form-node-label"]');
+++    $title1 = (string) $cell[0];
+++    $this->drupalPostAjaxForm(NULL, [], $this->getButtonName('//input[@type="submit" and @id="edit-multi-entities-0-actions-ief-entity-remove"]'));
+++    $this->assertText('Delete this', 'Delete from system checkbox is present.');
+++    $this->drupalPostAjaxForm(NULL, ['multi[form][entities][0][form][delete]' => FALSE], $this->getButtonName('//input[@type="submit" and @data-drupal-selector="edit-multi-form-entities-0-form-actions-ief-remove-confirm"]'));
+++    $this->assertNoText($title1, 'First inline entity is no longer present on the page.');
+++
+++    // Now unreference the second entity, also deleting it on the system.
+++    // Note that this time the inline entity table is rebuild without saving
+++    // the parent form, so all IDs get an appendix appended. We therefore need
+++    // to use the data-drupal-selector or "starts-with(@id, needle)".
+++    $cell = $this->xpath('//table[starts-with(@id,"ief-entity-table-edit-multi-entities")]/tbody/tr[1]/td[@class="inline-entity-form-node-label"]');
+++    $title2 = (string) $cell[0];
+++    $this->drupalPostAjaxForm(NULL, [], $this->getButtonName('//input[@type="submit" and @data-drupal-selector="edit-multi-entities-1-actions-ief-entity-remove"]'));
+++    $this->assertText('Delete this', 'Delete from system checkbox is present.');
+++    $this->drupalPostAjaxForm(NULL, ['multi[form][entities][1][form][delete]' => TRUE], $this->getButtonName('//input[@type="submit" and @data-drupal-selector="edit-multi-form-entities-1-form-actions-ief-remove-confirm"]'));
+++    $this->assertNoText($title2, 'Second inline entity is no longer present on the page.');
+++
+++    // Now save the parent node and check if both are still gone.
+++    $this->drupalPostForm(NULL, [], t('Save'));
+++    $this->assertResponse(200, 'Page was reloaded.');
+++    $this->assertNoText('field is required.', 'Saving parent node was successful.');
+++    $this->assertNoText($title1, 'First inline entity is still not on the page.');
+++    $this->assertNoText($title2, 'Second inline entity is still not on the page.');
+++
+++    // Change setting to 'keep always' and reload page.
+++    $this->updateSetting('removed_reference', 'keep');
+++    $this->drupalGet('node/' . $parent_node->id() . '/edit');
+++
+++    // Now unreference the third entity and check if it disappeared.
+++    $cell = $this->xpath('//table[@id="ief-entity-table-edit-multi-entities"]/tbody/tr[1]/td[@class="inline-entity-form-node-label"]');
+++    $title3 = (string) $cell[0];
+++    $this->drupalPostAjaxForm(NULL, [], $this->getButtonName('//input[@type="submit" and @id="edit-multi-entities-0-actions-ief-entity-remove"]'));
+++    $this->assertNoText('Delete this', 'Delete from system checkbox is not present.');
+++    $this->drupalPostAjaxForm(NULL, [], $this->getButtonName('//input[@type="submit" and @data-drupal-selector="edit-multi-form-entities-0-form-actions-ief-remove-confirm"]'));
+++    $this->assertNoText($title3, 'Third inline entity is no longer present on the page.');
+++
+++    // Save the parent node again and check if the third one is still gone.
+++    $this->drupalPostForm(NULL, [], t('Save'));
+++    $this->assertResponse(200, 'Page was reloaded.');
+++    $this->assertNoText('field is required.', 'Saving parent node was successful.');
+++    $this->assertNoText($title3, 'Third inline entity is still not on the page.');
+++
+++    // Change setting to 'delete always' and reload page.
+++    $this->updateSetting('removed_reference', 'delete');
+++    $this->drupalGet('node/' . $parent_node->id() . '/edit');
+++
+++    // Now unreference the fourth entity and check if it disappeared.
+++    $cell = $this->xpath('//table[@id="ief-entity-table-edit-multi-entities"]/tbody/tr[1]/td[@class="inline-entity-form-node-label"]');
+++    $title4 = (string) $cell[0];
+++    $this->drupalPostAjaxForm(NULL, [], $this->getButtonName('//input[@type="submit" and @id="edit-multi-entities-0-actions-ief-entity-remove"]'));
+++    $this->assertNoText('Delete this', 'Delete from system checkbox is not present.');
+++    $this->drupalPostAjaxForm(NULL, [], $this->getButtonName('//input[@type="submit" and @data-drupal-selector="edit-multi-form-entities-0-form-actions-ief-remove-confirm"]'));
+++    $this->assertNoText($title4, 'Fourth inline entity is no longer present on the page.');
+++
+++    // Save the parent node again and check if the fourth one is still gone.
+++    $this->drupalPostForm(NULL, [], t('Save'));
+++    $this->assertResponse(200, 'Page was reloaded.');
+++    $this->assertNoText('field is required.', 'Saving parent node was successful.');
+++    $this->assertNoText($title4, 'Fourth inline entity is still not on the page.');
+++
+++    // Reload page.
+++    $this->drupalGet('node/' . $parent_node->id() . '/edit');
+++
+++    // Now unreference the fifth entity and check if it disappeared.
+++    $cell = $this->xpath('//table[@id="ief-entity-table-edit-multi-entities"]/tbody/tr[1]/td[@class="inline-entity-form-node-label"]');
+++    $title5 = (string) $cell[0];
+++    $this->drupalPostAjaxForm(NULL, [], $this->getButtonName('//input[@type="submit" and @id="edit-multi-entities-0-actions-ief-entity-remove"]'));
+++    $this->assertNoText('Delete this', 'Delete from system checkbox is not present.');
+++    $this->drupalPostAjaxForm(NULL, [], $this->getButtonName('//input[@type="submit" and @data-drupal-selector="edit-multi-form-entities-0-form-actions-ief-remove-confirm"]'));
+++    $this->assertNoText($title5, 'Fifth inline entity is no longer present on the page.');
+++
+++    // Save the parent node again and check if deleting the fifth child entity
+++    // failed because the node couldn't be saved with empty required fields.
+++    $this->drupalPostForm(NULL, [], t('Save'));
+++    $this->assertResponse(200, 'Page was reloaded.');
+++    $this->assertText('field is required.', 'Saving parent node however failed because of empty required fields.');
+++    $this->assertNoText($title5, "Fourth inline entity however still isn't on the page.");
+++
+++    // Finally check if the second and fourth child entity are completely gone
+++    // and the first and third one are still there as expected, while the fifth
+++    // one is still there as saving the parent node failed.
+++    $this->assertTrue($this->drupalGetNodeByTitle($title1) instanceof NodeInterface, 'First inline entity still exists.');
+++    $this->assertTrue(empty($this->drupalGetNodeByTitle($title2)), 'Second inline entity was deleted from the site.');
+++    $this->assertTrue($this->drupalGetNodeByTitle($title3) instanceof NodeInterface, 'Third inline entity still exists.');
+++    $this->assertTrue(empty($this->drupalGetNodeByTitle($title4)), 'Fourth inline entity was deleted from the site.');
+++    $this->assertTrue($this->drupalGetNodeByTitle($title5) instanceof NodeInterface, "Fifth inline entity still exists.");
+++  }
+++
++   /**
++    * Tests if referencing existing entities work.
++    */
++@@ -472,6 +614,15 @@ class ComplexWidgetWebTest extends InlineEntityFormTestBase {
++    */
++   public function testReferenceExistingValidation() {
++     $this->updateSetting('allow_existing', TRUE);
+++    $this->updateSetting('allow_new', TRUE);
+++    // Create a referenceable node, so there's something to reference.
+++    $referenceNodes = $this->createReferenceContent(1);
+++    $this->drupalCreateNode([
+++        'type' => 'ief_test_complex',
+++        'title' => 'Some title',
+++        'multi' => array_values($referenceNodes),
+++    ]);
+++    $this->drupalGet($this->formContentAddUrl);
++ 
++     $this->drupalGet('node/add/ief_test_complex');
++     $this->checkExistingValidationExpectation('', 'Node field is required.');
++@@ -511,7 +662,7 @@ class ComplexWidgetWebTest extends InlineEntityFormTestBase {
++       'title' => 'Some title',
++       'multi' => array_values($referenceNodes),
++     ]);
++-    /** @var \Drupal\node\NodeInterface $node */
+++    /** @var NodeInterface $node */
++     $parent_node = $this->drupalGetNodeByTitle('Some title');
++ 
++     $this->drupalGet('node/' . $parent_node->id() . '/edit');
++@@ -532,7 +683,7 @@ class ComplexWidgetWebTest extends InlineEntityFormTestBase {
++     $this->assertResponse(200, 'Saving parent entity was successful.');
++ 
++     // Confirm a duplicate was made.
++-    $duplicate = Node::load(4);
+++    $duplicate = $this->nodeStorage->load(4);
++     $this->assertEqual($duplicate->label(), 'Duplicate!');
++     $this->assertEqual($duplicate->first_name->value, 'Bojan');
++   }
++@@ -726,9 +877,9 @@ class ComplexWidgetWebTest extends InlineEntityFormTestBase {
++   /**
++    * Checks that an invalid value for an existing node will be display the expected error.
++    *
++-   * @param $existing_node_text
+++   * @param string $existing_node_text
++    *   The text to enter into the existing node text field.
++-   * @param $expected_error
+++   * @param string $expected_error
++    *   The error message that is expected to be shown.
++    */
++   protected function checkExistingValidationExpectation($existing_node_text, $expected_error) {
++@@ -788,11 +939,11 @@ class ComplexWidgetWebTest extends InlineEntityFormTestBase {
++   /**
++    * Checks if nested nodes for ief_test_nested1 content were created correctly.
++    *
++-   * @param $nested1_title
+++   * @param string $nested1_title
++    *   Expected title of top level node of the type ief_test_nested1
++-   * @param $nested2_title
+++   * @param string $nested2_title
++    *   Expected title of second level node
++-   * @param $nested3_title
+++   * @param string $nested3_title
++    *   Expected title of third level node
++    */
++   protected function checkNestedNodes($nested1_title, $nested2_title, $nested3_title) {
++diff --git a/tests/modules/inline_entity_form_test/config/install/core.entity_form_display.node.ief_complex_simple.default.yml b/tests/modules/inline_entity_form_test/config/install/core.entity_form_display.node.ief_complex_simple.default.yml
++index a82aa29..cf7b1a5 100644
++--- a/tests/modules/inline_entity_form_test/config/install/core.entity_form_display.node.ief_complex_simple.default.yml
+++++ b/tests/modules/inline_entity_form_test/config/install/core.entity_form_display.node.ief_complex_simple.default.yml
++@@ -26,6 +26,7 @@ content:
++       label_plural: ''
++       allow_new: true
++       allow_existing: false
+++      removed_reference: optional
++     third_party_settings: {  }
++     type: inline_entity_form_complex
++   langcode:
++-- 
++2.19.1
++
+diff --git a/src/Plugin/Field/FieldWidget/InlineEntityFormBase.php b/src/Plugin/Field/FieldWidget/InlineEntityFormBase.php
+index fc55971..cdc172a 100644
+--- a/src/Plugin/Field/FieldWidget/InlineEntityFormBase.php
++++ b/src/Plugin/Field/FieldWidget/InlineEntityFormBase.php
+@@ -145,6 +145,50 @@ abstract class InlineEntityFormBase extends WidgetBase implements ContainerFacto
+     return $this->iefId;
+   }
+ 
++  /**
++   * Returns the ID of the entity type the field is attached to.
++   *
++   * @return string
++   *   The entity type ID.
++   */
++  protected function getParentEntityType() {
++    return $this->fieldDefinition->getTargetEntityTypeId();
++  }
++
++  /**
++   * Gets the bundle the field is attached to.
++   *
++   * @return string|null
++   *   The bundle the field is defined for, or NULL if it is a base field; i.e., it is not bundle-specific.
++   */
++  protected function getParentBundle() {
++    return $this->fieldDefinition->getTargetBundle();
++  }
++
++  /**
++   * Gets the human-readable names of the entity type.
++   *
++   * @todo Remove workaround as soon as #2765065 landed.
++   *
++   * @return array
++   *   Array of labels with the keys 'singular' and 'plural'.
++   */
++  protected function getParentBundleLabels() {
++    if ($bundle = $this->getParentBundle()) {
++      $definition = $this->entityTypeManager->getDefinition($this->getParentEntityType());
++      return [
++        'singular' => $definition->getLabel(),
++        'plural' => $definition->getLabel() . 'entities'
++      ];
++    } else {
++      $definition = $this->entityTypeManager->getDefinition($this->getParentEntityType());
++      return [
++        'singular' => $definition->getSingularLabel(),
++        'plural' => $definition->getPluralLabel(),
++      ];
++    }
++  }
++
+   /**
+    * Gets the target bundles for the current field.
+    *
+@@ -184,6 +228,23 @@ abstract class InlineEntityFormBase extends WidgetBase implements ContainerFacto
+     return $create_bundles;
+   }
+ 
++  /**
++   * Gets all referenceable entities for this form.
++   *
++   * @return string[]
++   *   Array of labels of all referenceable entity labels keyed by entity ID.
++   */
++  protected function getReferenceableEntities() {
++    $bundles = \Drupal::service('plugin.manager.entity_reference_selection')->getSelectionHandler($this->fieldDefinition)->getReferenceableEntities();
++    $entities = [];
++    foreach ($bundles as $bundle) {
++      foreach ($bundle as $id => $label) {
++        $entities[$id] = $label;
++      }
++    }
++    return $entities;
++  }
++
+   /**
+    * {@inheritdoc}
+    */
+@@ -483,7 +544,7 @@ abstract class InlineEntityFormBase extends WidgetBase implements ContainerFacto
+    * Note that at this point the entity is not yet saved, since the user might
+    * still decide to cancel the parent form.
+    *
+-   * @param $entity_form
++   * @param array $entity_form
+    *   The form of the entity being managed inline.
+    * @param \Drupal\Core\Form\FormStateInterface $form_state
+    *   The form state of the parent form.
+diff --git a/src/Plugin/Field/FieldWidget/InlineEntityFormComplex.php b/src/Plugin/Field/FieldWidget/InlineEntityFormComplex.php
+index 24b38e8..23464f6 100644
+--- a/src/Plugin/Field/FieldWidget/InlineEntityFormComplex.php
++++ b/src/Plugin/Field/FieldWidget/InlineEntityFormComplex.php
+@@ -34,6 +34,21 @@ use Drupal\Component\Utility\Crypt;
+  */
+ class InlineEntityFormComplex extends InlineEntityFormBase implements ContainerFactoryPluginInterface {
+ 
++  /**
++   * Always keep referenced entity when the reference is removed.
++   */
++  const REMOVED_KEEP = 'keep';
++
++  /**
++   * Allow users to choose whether to delete an entity upon removing reference.
++   */
++  const REMOVED_OPTIONAL = 'optional';
++
++  /**
++   * Always delete referenced entity when the reference is removed.
++   */
++  const REMOVED_DELETE = 'delete';
++
+   /**
+    * Module handler service.
+    *
+@@ -55,19 +70,19 @@ class InlineEntityFormComplex extends InlineEntityFormBase implements ContainerF
+    *   The plugin_id for the widget.
+    * @param mixed $plugin_definition
+    *   The plugin implementation definition.
+-   * @param \Drupal\Core\Field\FieldDefinitionInterface $field_definition
++   * @param FieldDefinitionInterface $field_definition
+    *   The definition of the field to which the widget is associated.
+    * @param array $settings
+    *   The widget settings.
+    * @param array $third_party_settings
+    *   Any third party settings.
+-   * @param \Drupal\Core\Entity\EntityTypeBundleInfoInterface $entity_type_bundle_info
++   * @param EntityTypeBundleInfoInterface $entity_type_bundle_info
+    *   The entity type bundle info.
+-   * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
++   * @param EntityTypeManagerInterface $entity_type_manager
+    *   The entity type manager.
+-   * @param \Drupal\Core\Entity\EntityDisplayRepositoryInterface $entity_display_repository
++   * @param EntityDisplayRepositoryInterface $entity_display_repository
+    *   The entity display repository.
+-   * @param \Drupal\Core\Extension\ModuleHandlerInterface $module_handler
++   * @param ModuleHandlerInterface $module_handler
+    *   Module handler service.
+    * @param \Drupal\Core\Entity\EntityReferenceSelection\SelectionPluginManagerInterface $selection_manager
+    *   The selection plugin manager.
+@@ -104,6 +119,7 @@ class InlineEntityFormComplex extends InlineEntityFormBase implements ContainerF
+     $defaults += [
+       'allow_new' => TRUE,
+       'allow_existing' => FALSE,
++      'removed_reference' => self::REMOVED_OPTIONAL,
+       'match_operator' => 'CONTAINS',
+       'allow_duplicate' => FALSE,
+     ];
+@@ -117,16 +133,16 @@ class InlineEntityFormComplex extends InlineEntityFormBase implements ContainerF
+   public function settingsForm(array $form, FormStateInterface $form_state) {
+     $element = parent::settingsForm($form, $form_state);
+ 
+-    $labels = $this->getEntityTypeLabels();
++    $child_labels = $this->getEntityTypeLabels();
+     $states_prefix = 'fields[' . $this->fieldDefinition->getName() . '][settings_edit_form][settings]';
+     $element['allow_new'] = [
+       '#type' => 'checkbox',
+-      '#title' => $this->t('Allow users to add new @label.', ['@label' => $labels['plural']]),
++        '#title' => $this->t('Allow users to add new @label.', ['@label' => $child_labels['plural']]),
+       '#default_value' => $this->getSetting('allow_new'),
+     ];
+     $element['allow_existing'] = [
+       '#type' => 'checkbox',
+-      '#title' => $this->t('Allow users to add existing @label.', ['@label' => $labels['plural']]),
++        '#title' => $this->t('Allow users to add existing @label.', ['@label' => $child_labels['plural']]),
+       '#default_value' => $this->getSetting('allow_existing'),
+     ];
+     $element['match_operator'] = [
+@@ -143,10 +159,24 @@ class InlineEntityFormComplex extends InlineEntityFormBase implements ContainerF
+     ];
+     $element['allow_duplicate'] = [
+       '#type' => 'checkbox',
+-      '#title' => $this->t('Allow users to duplicate @label.', ['@label' => $labels['plural']]),
++        '#title' => $this->t('Allow users to duplicate @label.', ['@label' => $child_labels['plural']]),
+       '#default_value' => $this->getSetting('allow_duplicate'),
+     ];
+ 
++    $description = $this->t('Select whether a @child should be deleted altogether if removed as a reference here.<br />
++<em>Keep always</em> is recommended whenever a @child may be referenced by another @parent, too.<br />
++<em>Delete always</em> is recommended whenever a referenced @child is exclusively owned by the @parent.', [
++      '@child' => $child_labels['singular'],
++      '@parent' => $this->getParentBundleLabels()['singular'],
++    ]);
++    $element['removed_reference'] = [
++      '#type' => 'select',
++        '#title' => $this->t('Keep or delete unreferenced @label', ['@label' => $child_labels['plural']]),
++      '#default_value' => $this->getSetting('removed_reference'),
++      '#options' => $this->getRemovedReferenceOptions(),
++      '#description' => $description,
++    ];
++
+     return $element;
+   }
+ 
+@@ -182,6 +212,18 @@ class InlineEntityFormComplex extends InlineEntityFormBase implements ContainerF
+       $summary[] = $this->t('@label can not be duplicated.', ['@label' => $labels['plural']]);
+     }
+ 
++    switch ($this->getSetting('removed_reference')) {
++      case self::REMOVED_KEEP:
++        $summary[] = $this->t('Always keep unreferenced @label.', ['@label' => $labels['plural']]);
++        break;
++      case self::REMOVED_OPTIONAL:
++        $summary[] = $this->t('Let users decide whether to keep or delete unreferenced @label.', ['@label' => $labels['plural']]);
++        break;
++      case self::REMOVED_DELETE:
++        $summary[] = $this->t('Always delete unreferenced @label.', ['@label' => $labels['plural']]);
++        break;
++    }
++
+     return $summary;
+   }
+ 
+@@ -198,11 +240,24 @@ class InlineEntityFormComplex extends InlineEntityFormBase implements ContainerF
+     ];
+   }
+ 
++  /**
++   * Returns the options for removing references.
++   *
++   * @return array
++   *   List of options.
++   */
++  protected function getRemovedReferenceOptions() {
++    return [
++      self::REMOVED_KEEP => $this->t('Keep always'),
++      self::REMOVED_OPTIONAL => $this->t('Let the user decide'),
++      self::REMOVED_DELETE => $this->t('Delete always'),
++    ];
++  }
++
+   /**
+    * {@inheritdoc}
+    */
+   public function formElement(FieldItemListInterface $items, $delta, array $element, array &$form, FormStateInterface $form_state) {
+-    $settings = $this->getSettings();
+     $target_type = $this->getFieldSetting('target_type');
+     // Get the entity type labels for the UI strings.
+     $labels = $this->getEntityTypeLabels();
+@@ -245,12 +300,32 @@ class InlineEntityFormComplex extends InlineEntityFormBase implements ContainerF
+     $element['#attached']['library'][] = 'inline_entity_form/widget';
+ 
+     $this->prepareFormState($form_state, $items, $element['#translating']);
++
++    // Collect all referenceable and all currently referenced entities.
++    $all_entities = $this->getReferenceableEntities();
++    $referenceable_entities = $all_entities;
++
+     $entities = $form_state->get(['inline_entity_form', $this->getIefId(), 'entities']);
++    $entities_count = count($entities);
++    foreach ($entities as $value) {
++      /** @var EntityInterface $entity */
++      $entity = $value['entity'];
++      $id = $entity->id();
++      if (in_array($id, array_keys($referenceable_entities))) {
++        unset($referenceable_entities[$id]);
++      }
++    }
++
++    // Prepare information about which operations may be available to the user.
++    $settings = $this->getSettings();
++    $allow_existing = $settings['allow_existing'];
++    $allow_duplicate = $settings['allow_duplicate'] && $this->canAddNew();
++    $allow_new = $settings['allow_new'] && $this->canAddNew();
+ 
+     // Prepare cardinality information.
+-    $entities_count = count($entities);
+-    $cardinality = $this->fieldDefinition->getFieldStorageDefinition()->getCardinality();
+-    $cardinality_reached = ($cardinality > 0 && $entities_count == $cardinality);
++    $field_storage_def = $this->fieldDefinition->getFieldStorageDefinition();
++    $cardinality = $field_storage_def->getCardinality();
++    $cardinality_reached = ($cardinality !== $field_storage_def::CARDINALITY_UNLIMITED && $entities_count == $cardinality);
+ 
+     // Build the "Multiple value" widget.
+     // TODO - does this belong in #element_validate?
+@@ -353,8 +428,8 @@ class InlineEntityFormComplex extends InlineEntityFormBase implements ContainerF
+         ];
+ 
+         // Make sure entity_access is not checked for unsaved entities.
+-        $entity_id = $entity->id();
+-        if (empty($entity_id) || $entity->access('update')) {
++        $unsaved = empty($entity->id());
++        if ($unsaved || $entity->access('update')) {
+           $row['actions']['ief_entity_edit'] = [
+             '#type' => 'submit',
+             '#value' => $this->t('Edit'),
+@@ -371,7 +446,7 @@ class InlineEntityFormComplex extends InlineEntityFormBase implements ContainerF
+         }
+ 
+         // Add the duplicate button, if allowed.
+-        if ($settings['allow_duplicate'] && !$cardinality_reached && $entity->access('create')) {
++        if ($allow_duplicate && !$cardinality_reached) {
+           $row['actions']['ief_entity_duplicate'] = [
+             '#type' => 'submit',
+             '#value' => $this->t('Duplicate'),
+@@ -387,10 +462,14 @@ class InlineEntityFormComplex extends InlineEntityFormBase implements ContainerF
+           ];
+         }
+ 
+-        // If 'allow_existing' is on, the default removal operation is unlink
+-        // and the access check for deleting happens inside the controller
+-        // removeForm() method.
+-        if (empty($entity_id) || $settings['allow_existing'] || $entity->access('delete')) {
++        // Check if reference may be removed. If yes, show "Remove" button.
++        // The default removal operation is unlink and the access check for
++        // deleting happens inside the controller buildRemoveForm() method.
++        $always_delete = $settings['removed_reference'] !== self::REMOVED_DELETE;
++        $may_remove = !$always_delete || $entity->access('delete');
++        $may_add_existing = $allow_existing && count($referenceable_entities) > 1;
++        $is_not_required = !$element['#required'] || $entities_count > 1 || $allow_new || $may_add_existing;
++        if ($unsaved || ($may_remove && $is_not_required)) {
+           $row['actions']['ief_entity_remove'] = [
+             '#type' => 'submit',
+             '#value' => $this->t('Remove'),
+@@ -436,16 +515,19 @@ class InlineEntityFormComplex extends InlineEntityFormBase implements ContainerF
+     }
+ 
+     $create_bundles = $this->getCreateBundles();
+-    $create_bundles_count = count($create_bundles);
+-    $allow_new = $settings['allow_new'] && !empty($create_bundles);
+     $hide_cancel = FALSE;
+     // If the field is required and empty try to open one of the forms.
+     if (empty($entities) && $this->fieldDefinition->isRequired()) {
+-      if ($settings['allow_existing'] && !$allow_new) {
++      $may_add_existing = $allow_existing && !empty($referenceable_entities);
++      // Open an autocomplete widget if the user may only reference existing
++      // entities and there are some.
++      if ($may_add_existing && !$allow_new) {
+         $form_state->set(['inline_entity_form', $this->getIefId(), 'form'], 'ief_add_existing');
+         $hide_cancel = TRUE;
+       }
+-      elseif ($create_bundles_count == 1 && $allow_new && !$settings['allow_existing']) {
++      // Open an entity form if the user may only create new entities and there
++      // is only one bundle to choose from.
++      elseif ($allow_new && count($create_bundles) == 1 && !$may_add_existing) {
+         $bundle = reset($target_bundles);
+ 
+         // The parent entity type and bundle must not be the same as the inline
+@@ -475,7 +557,7 @@ class InlineEntityFormComplex extends InlineEntityFormBase implements ContainerF
+       // The user is allowed to create an entity of at least one bundle.
+       if ($allow_new) {
+         // Let the user select the bundle, if multiple are available.
+-        if ($create_bundles_count > 1) {
++        if (count($create_bundles) > 1) {
+           $bundles = [];
+           foreach ($this->entityTypeBundleInfo->getBundleInfo($target_type) as $bundle_name => $bundle_info) {
+             if (in_array($bundle_name, $create_bundles)) {
+@@ -510,7 +592,7 @@ class InlineEntityFormComplex extends InlineEntityFormBase implements ContainerF
+         ];
+       }
+ 
+-      if ($settings['allow_existing']) {
++      if ($allow_existing && !empty($referenceable_entities)) {
+         $element['actions']['ief_add_existing'] = [
+           '#type' => 'submit',
+           '#value' => $this->t('Add existing @type_singular', ['@type_singular' => $labels['singular']]),
+@@ -801,7 +883,7 @@ class InlineEntityFormComplex extends InlineEntityFormBase implements ContainerF
+       '#markup' => $message,
+     ];
+ 
+-    if (!empty($entity_id) && $this->getSetting('allow_existing') && $entity->access('delete')) {
++    if (!empty($entity_id) && $this->getSetting('removed_reference') === self::REMOVED_OPTIONAL && $entity->access('delete')) {
+       $form['delete'] = [
+         '#type' => 'checkbox',
+         '#title' => $this->t('Delete this @type_singular from the system.', ['@type_singular' => $labels['singular']]),
+@@ -825,7 +907,7 @@ class InlineEntityFormComplex extends InlineEntityFormBase implements ContainerF
+         'callback' => 'inline_entity_form_get_element',
+         'wrapper' => 'inline-entity-form-' . $form['#ief_id'],
+       ],
+-      '#allow_existing' => $this->getSetting('allow_existing'),
++      '#removed_reference' => $this->getSetting('removed_reference'),
+       '#submit' => [[get_class($this), 'submitConfirmRemove']],
+       '#ief_row_delta' => $form['#ief_row_delta'],
+     ];
+@@ -846,9 +928,9 @@ class InlineEntityFormComplex extends InlineEntityFormBase implements ContainerF
+   /**
+    * Button #submit callback: Closes a row form in the IEF widget.
+    *
+-   * @param $form
++   * @param array $form
+    *   The complete parent form.
+-   * @param $form_state
++   * @param FormStateInterface $form_state
+    *   The form state of the parent form.
+    *
+    * @see inline_entity_form_open_row_form()
+@@ -871,9 +953,9 @@ class InlineEntityFormComplex extends InlineEntityFormBase implements ContainerF
+    * This isn't an #element_validate callback to avoid processing the
+    * remove form when the main form is submitted.
+    *
+-   * @param $form
++   * @param array $form
+    *   The complete parent form.
+-   * @param $form_state
++   * @param FormStateInterface $form_state
+    *   The form state of the parent form.
+    */
+   public static function submitConfirmRemove($form, FormStateInterface $form_state) {
+@@ -889,21 +971,25 @@ class InlineEntityFormComplex extends InlineEntityFormBase implements ContainerF
+     $form_state->setRebuild();
+ 
+     $widget_state = $form_state->get(['inline_entity_form', $element['#ief_id']]);
+-    // This entity hasn't been saved yet, we can just unlink it.
+-    if (empty($entity_id) || ($remove_button['#allow_existing'] && empty($form_values['delete']))) {
+-      unset($widget_state['entities'][$delta]);
+-    }
+-    else {
+-      $widget_state['delete'][] = $entity;
+-      unset($widget_state['entities'][$delta]);
++
++    // Entity hasn't been saved yet or we may not remove it, so unreference it.
++    unset($widget_state['entities'][$delta]);
++
++    // Delete entity if configured so or if the user chose to.
++    if ($entity_id) {
++      $removed_reference = $remove_button['#removed_reference'];
++      if ($removed_reference === self::REMOVED_DELETE || ($removed_reference === self::REMOVED_OPTIONAL && $form_values['delete'] === 1)) {
++        $widget_state['delete'][] = $entity;
++      }
+     }
++
+     $form_state->set(['inline_entity_form', $element['#ief_id']], $widget_state);
+   }
+ 
+   /**
+    * Determines bundle to be used when creating entity.
+    *
+-   * @param \Drupal\Core\Form\FormStateInterface $form_state
++   * @param FormStateInterface $form_state
+    *   Current form state.
+    *
+    * @return string
+@@ -960,9 +1046,9 @@ class InlineEntityFormComplex extends InlineEntityFormBase implements ContainerF
+   /**
+    * Button #submit callback: Closes a form in the IEF widget.
+    *
+-   * @param $form
++   * @param array $form
+    *   The complete parent form.
+-   * @param $form_state
++   * @param FormStateInterface $form_state
+    *   The form state of the parent form.
+    *
+    * @see inline_entity_form_open_form()
+@@ -994,9 +1080,9 @@ class InlineEntityFormComplex extends InlineEntityFormBase implements ContainerF
+    * Used to ensure that forms in nested IEF widgets are properly closed
+    * when a parent IEF's form gets submitted or cancelled.
+    *
+-   * @param $form
++   * @param array $form
+    *   The IEF Form element.
+-   * @param \Drupal\Core\Form\FormStateInterface $form_state
++   * @param FormStateInterface $form_state
+    *   The form state of the parent form.
+    */
+   public static function closeChildForms($form, FormStateInterface &$form_state) {
+diff --git a/src/Tests/ComplexWidgetWebTest.php b/src/Tests/ComplexWidgetWebTest.php
+new file mode 100644
+index 0000000..90c8391
+--- /dev/null
++++ b/src/Tests/ComplexWidgetWebTest.php
+@@ -0,0 +1,967 @@
++<?php
++
++namespace Drupal\inline_entity_form\Tests;
++
++use Drupal\node\NodeInterface;
++
++/**
++ * IEF complex field widget tests.
++ *
++ * @group inline_entity_form
++ */
++class ComplexWidgetWebTest extends InlineEntityFormTestBase {
++
++  /**
++   * Modules to enable.
++   *
++   * @var array
++   */
++  public static $modules = [
++    'inline_entity_form_test',
++    'field',
++    'field_ui',
++  ];
++
++  /**
++   * URL to add new content.
++   *
++   * @var string
++   */
++  protected $formContentAddUrl;
++
++  /**
++   * Entity form display storage.
++   *
++   * @var \Drupal\Core\Config\Entity\ConfigEntityStorageInterface
++   */
++  protected $entityFormDisplayStorage;
++
++  /**
++   * Prepares environment for
++   */
++  protected function setUp() {
++    parent::setUp();
++
++    $this->user = $this->createUser([
++      'create ief_reference_type content',
++      'edit any ief_reference_type content',
++      'delete any ief_reference_type content',
++      'create ief_test_complex content',
++      'edit any ief_test_complex content',
++      'delete any ief_test_complex content',
++      'edit any ief_test_nested1 content',
++      'edit any ief_test_nested2 content',
++      'edit any ief_test_nested3 content',
++      'view own unpublished content',
++      'administer content types',
++    ]);
++    $this->drupalLogin($this->user);
++
++    $this->formContentAddUrl = 'node/add/ief_test_complex';
++    $this->entityFormDisplayStorage = $this->container->get('entity_type.manager')->getStorage('entity_form_display');
++  }
++
++  /**
++   * Tests if form behaves correctly when field is empty.
++   */
++  public function testEmptyFieldIEF() {
++    // Don't allow addition of existing nodes.
++    $this->updateSetting('allow_existing', FALSE);
++    $this->drupalGet($this->formContentAddUrl);
++
++    $this->assertFieldByName('multi[form][inline_entity_form][title][0][value]', NULL, 'Title field on inline form exists.');
++    $this->assertFieldByName('multi[form][inline_entity_form][first_name][0][value]', NULL, 'First name field on inline form exists.');
++    $this->assertFieldByName('multi[form][inline_entity_form][last_name][0][value]', NULL, 'Last name field on inline form exists.');
++    $this->assertFieldByXpath('//input[@type="submit" and @value="Create node"]', NULL, 'Found "Create node" submit button');
++
++    // Now allow addition of existing nodes. However there are currently no
++    // referenceable nodes. Therefore show the same simple inline form.
++    $this->updateSetting('allow_existing', TRUE);
++    $this->drupalGet($this->formContentAddUrl);
++
++    $this->assertFieldByName('multi[form][inline_entity_form][title][0][value]', NULL, 'Title field on inline form exists.');
++    $this->assertFieldByName('multi[form][inline_entity_form][first_name][0][value]', NULL, 'First name field on inline form exists.');
++    $this->assertFieldByName('multi[form][inline_entity_form][last_name][0][value]', NULL, 'Last name field on inline form exists.');
++    $this->assertFieldByXpath('//input[@type="submit" and @value="Create node"]', NULL, 'Found "Create node" submit button');
++
++    // So create a referenceable node now and try again. We should now get both
++    // buttons: "Add new node" and "Add existing node."
++    $referenceNodes = $this->createReferenceContent(1);
++    $this->drupalCreateNode([
++        'type' => 'ief_test_complex',
++        'title' => 'Some title',
++        'multi' => array_values($referenceNodes),
++    ]);
++    $this->drupalGet($this->formContentAddUrl);
++
++    $this->assertNoFieldByName('multi[form][inline_entity_form][title][0][value]', NULL, 'Title field does not appear.');
++    $this->assertNoFieldByName('multi[form][inline_entity_form][first_name][0][value]', NULL, 'First name field does not appear.');
++    $this->assertNoFieldByName('multi[form][inline_entity_form][last_name][0][value]', NULL, 'Last name field does not appear.');
++    $this->assertFieldByXpath('//input[@id="edit-multi-actions-ief-add"]', NULL, 'Found "Add new node" submit button');
++    $this->assertFieldByXpath('//input[@id="edit-multi-actions-ief-add-existing"]', NULL, 'Found "Add existing node" submit button');
++
++    // Now submit 'Add new node' button. The inline form should appear now.
++    $this->drupalPostAjaxForm(NULL, [], $this->getButtonName('//input[@type="submit" and @value="Add new node" and @data-drupal-selector="edit-multi-actions-ief-add"]'));
++
++    $this->assertFieldByName('multi[form][inline_entity_form][title][0][value]', NULL, 'Title field on inline form exists.');
++    $this->assertFieldByName('multi[form][inline_entity_form][first_name][0][value]', NULL, 'First name field on inline form exists.');
++    $this->assertFieldByName('multi[form][inline_entity_form][last_name][0][value]', NULL, 'Second name field on inline form exists.');
++    $this->assertFieldByXpath('//input[@type="submit" and @value="Create node"]', NULL, 'Found "Create node" submit button');
++    $this->assertFieldByXpath('//input[@type="submit" and @value="Cancel"]', NULL, 'Found "Cancel" submit button');
++
++    // Reload and instead submit 'Add existing node' button. An autocomplete
++    // field should appear.
++    $this->drupalGet($this->formContentAddUrl);
++    $this->drupalPostAjaxForm(NULL, [], $this->getButtonName('//input[@type="submit" and @value="Add existing node" and @data-drupal-selector="edit-multi-actions-ief-add-existing"]'));
++
++    $this->assertFieldByName('multi[form][entity_id]', NULL, 'Existing entity reference autocomplete field found.');
++    $this->assertFieldByXpath('//input[@type="submit" and @value="Add node"]', NULL, 'Found "Add node" submit button');
++    $this->assertFieldByXpath('//input[@type="submit" and @value="Cancel"]', NULL, 'Found "Cancel" submit button');
++
++    // Finally disallow creation of new nodes and reload to see only an
++    // autocomplete field.
++    $this->updateSetting('allow_new', FALSE);
++    $this->drupalGet($this->formContentAddUrl);
++
++    $this->assertFieldByName('multi[form][entity_id]', NULL, 'Existing entity reference autocomplete field found.');
++    $this->assertNoFieldByXpath('//input[@id="edit-multi-actions-ief-add"]', NULL, '"Add new node" submit button does not appear');
++    $this->assertNoFieldByXpath('//input[@id="edit-multi-actions-ief-add-existing"]', NULL, '"Add existing node" submit button does not appear');
++  }
++
++  /**
++   * Tests creation of entities.
++   */
++  public function testEntityCreation() {
++    // Allow addition of existing nodes. However there are currently no
++    // referenceable nodes. Therefore show the same simple inline form.
++    $this->updateSetting('allow_existing', TRUE);
++    $this->drupalGet($this->formContentAddUrl);
++
++    $this->drupalPostAjaxForm(NULL, [], $this->getButtonName('//input[@type="submit" and @value="Create node" and @data-drupal-selector="edit-multi-form-inline-entity-form-actions-ief-add-save"]'));
++    $this->assertResponse(200, 'Submitting empty form was successful.');
++    $this->assertText('First name field is required.', 'Validation failed for empty "First name" field.');
++    $this->assertText('Last name field is required.', 'Validation failed for empty "Last name" field.');
++    $this->assertText('Title field is required.', 'Validation failed for empty "Title" field.');
++
++    // Create an ief_reference_type node, so we get an "Add new node" button.
++    $referenceNodes = $this->createReferenceContent(1);
++    $this->drupalCreateNode([
++        'type' => 'ief_test_complex',
++        'title' => 'Sample',
++        'multi' => array_values($referenceNodes),
++    ]);
++    $this->drupalGet($this->formContentAddUrl);
++    $this->assertFieldByXpath('//input[@id="edit-multi-actions-ief-add"]', NULL, 'Found "Add new node" submit button');
++
++    // Now create another node using the IEF.
++    $this->drupalPostAjaxForm(NULL, [], $this->getButtonName('//input[@type="submit" and @value="Add new node" and @data-drupal-selector="edit-multi-actions-ief-add"]'));
++    $this->assertResponse(200, 'Opening new inline form was successful.');
++
++    $edit = [
++      'multi[form][inline_entity_form][title][0][value]' => 'Some reference',
++      'multi[form][inline_entity_form][first_name][0][value]' => 'John',
++      'multi[form][inline_entity_form][last_name][0][value]' => 'Doe',
++    ];
++    $this->drupalPostAjaxForm(NULL, $edit, $this->getButtonName('//input[@type="submit" and @value="Create node" and @data-drupal-selector="edit-multi-form-inline-entity-form-actions-ief-add-save"]'));
++    $this->assertResponse(200, 'Creating node via inline form was successful.');
++
++    // Tests if correct fields appear in the table.
++    $this->assertTrue((bool) $this->xpath('//td[@class="inline-entity-form-node-label" and contains(.,"Some reference")]'), 'Node title field appears in the table');
++    $this->assertTrue((bool) $this->xpath('//td[@class="inline-entity-form-node-status" and ./div[contains(.,"Published")]]'), 'Node status field appears in the table');
++
++    // Tests if edit and remove buttons appear.
++    $this->assertTrue((bool) $this->xpath('//input[@type="submit" and @value="Edit"]'), 'Edit button appears in the table.');
++    $this->assertTrue((bool) $this->xpath('//input[@type="submit" and @value="Remove"]'), 'Remove button appears in the table.');
++
++    // Test edit functionality.
++    $this->drupalPostAjaxForm(NULL, [], $this->getButtonName('//input[@type="submit" and @value="Edit"]'));
++    $edit = [
++      'multi[form][inline_entity_form][entities][0][form][title][0][value]' => 'Some changed reference',
++    ];
++    $this->drupalPostAjaxForm(NULL, $edit, $this->getButtonName('//input[@type="submit" and @value="Update node"]'));
++    $this->assertTrue((bool) $this->xpath('//td[@class="inline-entity-form-node-label" and contains(.,"Some changed reference")]'), 'Node title field appears in the table');
++    $this->assertTrue((bool) $this->xpath('//td[@class="inline-entity-form-node-status" and ./div[contains(.,"Published")]]'), 'Node status field appears in the table');
++
++    // Make sure unrelated AJAX submit doesn't save the referenced entity.
++    $this->drupalPostAjaxForm(NULL, [], $this->getButtonName('//input[@type="submit" and @value="Upload"]'));
++    $node = $this->drupalGetNodeByTitle('Some changed reference');
++    $this->assertFalse($node, 'Referenced node was not saved during unrelated AJAX submit.');
++
++    // Create ief_test_complex node.
++    $edit = ['title[0][value]' => 'Some title'];
++    $this->drupalPostForm(NULL, $edit, t('Save'));
++    $this->assertResponse(200, 'Saving parent entity was successful.');
++
++    // Checks values of created entities.
++    $node = $this->drupalGetNodeByTitle('Some changed reference');
++    $this->assertTrue($node, 'Created ief_reference_type node ' . $node->label());
++    $this->assertEqual($node->get('first_name')->value, 'John', 'First name in reference node set to John');
++    $this->assertEqual($node->get('last_name')->value, 'Doe', 'Last name in reference node set to Doe');
++
++    $parent_node = $this->drupalGetNodeByTitle('Some title');
++    $this->assertTrue($parent_node, 'Created ief_test_complex node ' . $parent_node->label());
++    $this->assertEqual($parent_node->multi->target_id, $node->id(), 'Refererence node id set to ' . $node->id());
++  }
++
++  /**
++   * Tests the entity creation with different bundles nested in each other.
++   *
++   * ief_test_nested1 -> ief_test_nested2 -> ief_test_nested3
++   */
++  public function testNestedEntityCreationWithDifferentBundlesAjaxSubmit() {
++    $required_possibilities = [
++      FALSE,
++      TRUE,
++    ];
++    foreach ($required_possibilities as $required) {
++      $this->setupNestedComplexForm($required);
++
++      $nested3_title = 'nested3 title steps ' . ($required ? 'required' : 'not required');
++      $nested2_title = 'nested2 title steps ' . ($required ? 'required' : 'not required');
++      $nested1_title = 'nested1 title steps ' . ($required ? 'required' : 'not required');
++      $edit = [
++        'test_ref_nested1[form][inline_entity_form][test_ref_nested2][form][inline_entity_form][title][0][value]' => $nested3_title,
++      ];
++      $this->drupalPostAjaxForm(NULL, $edit, $this->getButtonName('//input[@type="submit" and @value="Create node 3"]'));
++      $this->assertText($nested3_title, 'Title of second nested node found.');
++      $this->assertNoNodeByTitle($nested3_title, 'Second nested entity is not saved yet.');
++
++      $edit = [
++        'test_ref_nested1[form][inline_entity_form][title][0][value]' => $nested2_title,
++      ];
++      $this->drupalPostAjaxForm(NULL, $edit, $this->getButtonName('//input[@type="submit" and @value="Create node 2"]'));
++      $this->assertText($nested2_title, 'Title of first nested node found.');
++      $this->assertNoNodeByTitle($nested2_title, 'First nested entity is not saved yet.');
++
++      $edit = [
++        'title[0][value]' => $nested1_title,
++      ];
++      $this->drupalPostForm(NULL, $edit, t('Save'));
++      $this->checkNestedNodes($nested1_title, $nested2_title, $nested3_title);
++    }
++  }
++
++  /**
++   * Checks that nested IEF entity references can be edit and saved.
++   *
++   * @param NodeInterface $node
++   *   Top level node of type ief_test_nested1 to check.
++   * @param bool $ajax_submit
++   *   Whether IEF form widgets should be submitted via AJAX or left open.
++   */
++  protected function checkNestedEntityEditing(NodeInterface $node, $ajax_submit = TRUE) {
++    $this->drupalGet("node/{$node->id()}/edit");
++    /** @var NodeInterface $level_1_node */
++    $level_1_node = $node->test_ref_nested1->entity;
++    /** @var NodeInterface $level_2_node */
++    $level_2_node = $node->test_ref_nested1->entity->test_ref_nested2->entity;
++    $level_2_node_update_title = $level_2_node->getTitle() . ' - updated';
++    // edit-test-ref-nested1-entities-0-actions-ief-entity-edit
++    $this->drupalPostAjaxForm(NULL, [], $this->getButtonName('//input[@type="submit" and @data-drupal-selector="edit-test-ref-nested1-entities-0-actions-ief-entity-edit"]'));
++    // edit-test-ref-nested1-form-inline-entity-form-entities-0-form-test-ref-nested2-entities-0-actions-ief-entity-edit
++    $this->drupalPostAjaxForm(NULL, [], $this->getButtonName('//input[@type="submit" and @data-drupal-selector="edit-test-ref-nested1-form-inline-entity-form-entities-0-form-test-ref-nested2-entities-0-actions-ief-entity-edit"]'));
++    $edit['test_ref_nested1[form][inline_entity_form][entities][0][form][test_ref_nested2][form][inline_entity_form][entities][0][form][title][0][value]'] = $level_2_node_update_title;
++    if ($ajax_submit) {
++      // Close IEF Forms with AJAX posts
++      // edit-test-ref-nested1-form-inline-entity-form-entities-0-form-test-ref-nested2-form-inline-entity-form-entities-0-form-actions-ief-edit-save
++      $this->drupalPostAjaxForm(NULL, $edit, $this->getButtonName('//input[@type="submit" and @data-drupal-selector="edit-test-ref-nested1-form-inline-entity-form-entities-0-form-test-ref-nested2-form-inline-entity-form-entities-0-form-actions-ief-edit-save"]'));
++      $this->drupalPostAjaxForm(NULL, [], $this->getButtonName('//input[@type="submit" and @data-drupal-selector="edit-test-ref-nested1-form-inline-entity-form-entities-0-form-actions-ief-edit-save"]'));
++      $this->drupalPostForm(NULL, [], t('Save'));
++    }
++    else {
++      $this->drupalPostForm(NULL, $edit, t('Save'));
++    }
++    $this->nodeStorage->resetCache([$level_2_node->id()]);
++    $level_2_node = $this->nodeStorage->load($level_2_node->id());
++    $this->assertEqual($level_2_node_update_title, $level_2_node->getTitle());
++  }
++
++  /**
++   * Tests the entity creation with different bundles nested in each other.
++   *
++   * ief_test_nested1 -> ief_test_nested2 -> ief_test_nested3
++   */
++  public function testNestedEntityCreationWithDifferentBundlesNoAjaxSubmit() {
++    $required_possibilities = [
++      FALSE,
++      TRUE,
++    ];
++
++    foreach ($required_possibilities as $required) {
++      $this->setupNestedComplexForm($required);
++
++      $nested3_title = 'nested3 title single ' . ($required ? 'required' : 'not required');
++      $nested2_title = 'nested2 title single ' . ($required ? 'required' : 'not required');
++      $nested1_title = 'nested1 title single ' . ($required ? 'required' : 'not required');
++
++      $edit = [
++        'title[0][value]' => $nested1_title,
++        'test_ref_nested1[form][inline_entity_form][title][0][value]' => $nested2_title,
++        'test_ref_nested1[form][inline_entity_form][test_ref_nested2][form][inline_entity_form][title][0][value]' => $nested3_title,
++      ];
++      $this->drupalPostForm(NULL, $edit, t('Save'));
++      $this->checkNestedNodes($nested1_title, $nested2_title, $nested3_title);
++    }
++  }
++
++  /**
++   * Tests if editing and removing entities work.
++   */
++  public function testEntityEditingAndRemoving() {
++    // Allow addition of existing nodes.
++    $this->updateSetting('allow_existing', TRUE);
++    $this->updateSetting('removed_reference', 'optional');
++
++    // Create three ief_reference_type entities.
++    $referenceNodes = $this->createReferenceContent(3);
++    $this->drupalCreateNode([
++      'type' => 'ief_test_complex',
++      'title' => 'Some title',
++      'multi' => array_values($referenceNodes),
++    ]);
++    /** @var NodeInterface $node */
++    $parent_node = $this->drupalGetNodeByTitle('Some title');
++
++    // Edit the second entity.
++    $this->drupalGet('node/' . $parent_node->id() . '/edit');
++    $cell = $this->xpath('//table[@id="ief-entity-table-edit-multi-entities"]/tbody/tr[@class="ief-row-entity draggable even"]/td[@class="inline-entity-form-node-label"]');
++    $title = (string) $cell[0];
++
++    $this->drupalPostAjaxForm(NULL, [], $this->getButtonName('//input[@type="submit" and @id="edit-multi-entities-1-actions-ief-entity-edit"]'));
++    $this->assertResponse(200, 'Opening inline edit form was successful.');
++
++    $edit = [
++      'multi[form][inline_entity_form][entities][1][form][first_name][0][value]' => 'John',
++      'multi[form][inline_entity_form][entities][1][form][last_name][0][value]' => 'Doe',
++    ];
++    $this->drupalPostAjaxForm(NULL, $edit, $this->getButtonName('//input[@type="submit" and @data-drupal-selector="edit-multi-form-inline-entity-form-entities-1-form-actions-ief-edit-save"]'));
++    $this->assertResponse(200, 'Saving inline edit form was successful.');
++
++    // Save the ief_test_complex node.
++    $this->drupalPostForm(NULL, [], t('Save'));
++    $this->assertResponse(200, 'Saving parent entity was successful.');
++
++    // Checks values of changed entities.
++    $node = $this->drupalGetNodeByTitle($title, TRUE);
++    $this->assertTrue($node->first_name->value == 'John', 'First name in reference node changed to John');
++    $this->assertTrue($node->last_name->value == 'Doe', 'Last name in reference node changed to Doe');
++
++    // Delete the second entity.
++    $this->drupalGet('node/' . $parent_node->id() . '/edit');
++    $cell = $this->xpath('//table[@id="ief-entity-table-edit-multi-entities"]/tbody/tr[@class="ief-row-entity draggable even"]/td[@class="inline-entity-form-node-label"]');
++    $title = (string) $cell[0];
++
++    $this->drupalPostAjaxForm(NULL, [], $this->getButtonName('//input[@type="submit" and @id="edit-multi-entities-1-actions-ief-entity-remove"]'));
++    $this->assertResponse(200, 'Opening inline remove confirm form was successful.');
++    $this->assertText('Are you sure you want to remove', 'Remove warning message is displayed.');
++
++    $this->drupalPostAjaxForm(NULL, ['multi[form][entities][1][form][delete]' => TRUE], $this->getButtonName('//input[@type="submit" and @data-drupal-selector="edit-multi-form-entities-1-form-actions-ief-remove-confirm"]'));
++    $this->assertResponse(200, 'Removing inline entity was successful.');
++    $this->assertNoText($title, 'Deleted inline entity is not present on the page.');
++
++    // Save the ief_test_complex node.
++    $this->drupalPostForm(NULL, [], t('Save'));
++    $this->assertResponse(200, 'Saving parent node was successful.');
++
++    $deleted_node = $this->drupalGetNodeByTitle($title);
++    $this->assertTrue(empty($deleted_node), 'The inline entity was deleted from the site.');
++
++    // Checks that entity does nor appear in IEF.
++    $this->drupalGet('node/' . $parent_node->id() . '/edit');
++    $this->assertNoText($title, 'Deleted inline entity is not present on the page after saving parent.');
++
++    // Delete the third entity reference only, don't delete the node. The third
++    // entity now is second referenced entity because the second one was deleted
++    // in previous step.
++    $this->drupalGet('node/' . $parent_node->id() . '/edit');
++    $cell = $this->xpath('//table[@id="ief-entity-table-edit-multi-entities"]/tbody/tr[@class="ief-row-entity draggable even"]/td[@class="inline-entity-form-node-label"]');
++    $title = (string) $cell[0];
++
++    $this->drupalPostAjaxForm(NULL, [], $this->getButtonName('//input[@type="submit" and @id="edit-multi-entities-1-actions-ief-entity-remove"]'));
++    $this->assertResponse(200, 'Opening inline remove confirm form was successful.');
++
++    $this->drupalPostAjaxForm(NULL, [], $this->getButtonName('//input[@type="submit" and @data-drupal-selector="edit-multi-form-entities-1-form-actions-ief-remove-confirm"]'));
++    $this->assertResponse(200, 'Removing inline entity was successful.');
++
++    // Save the ief_test_complex node.
++    $this->drupalPostForm(NULL, [], t('Save'));
++    $this->assertResponse(200, 'Saving parent node was successful.');
++
++    // Checks that entity does nor appear in IEF.
++    $this->drupalGet('node/' . $parent_node->id() . '/edit');
++    $this->assertNoText($title, 'Deleted inline entity is not present on the page after saving parent.');
++
++    // Checks that entity is not deleted.
++    $node = $this->drupalGetNodeByTitle($title, TRUE);
++    $this->assertTrue($node, 'Reference node not deleted');
++  }
++
++  /**
++   * Tests deletion on child entities upon unreferencing ("removal").
++   */
++  public function testRemoveReference() {
++    // Allow the user to choose whether referenced entities are deleted or not.
++    $this->updateSetting('removed_reference', 'optional');
++
++    // Create five ief_reference_type entities.
++    $referenceNodes = $this->createReferenceContent(5);
++    $this->drupalCreateNode([
++        'type' => 'ief_test_complex',
++        'title' => 'Some title',
++        'multi' => array_values($referenceNodes),
++    ]);
++    /** @var NodeInterface $node */
++    $parent_node = $this->drupalGetNodeByTitle('Some title');
++
++    // Unreference the first child entity without deleting it in the system.
++    $this->drupalGet('node/' . $parent_node->id() . '/edit');
++    $cell = $this->xpath('//table[@id="ief-entity-table-edit-multi-entities"]/tbody/tr[1]/td[@class="inline-entity-form-node-label"]');
++    $title1 = (string) $cell[0];
++    $this->drupalPostAjaxForm(NULL, [], $this->getButtonName('//input[@type="submit" and @id="edit-multi-entities-0-actions-ief-entity-remove"]'));
++    $this->assertText('Delete this', 'Delete from system checkbox is present.');
++    $this->drupalPostAjaxForm(NULL, ['multi[form][entities][0][form][delete]' => FALSE], $this->getButtonName('//input[@type="submit" and @data-drupal-selector="edit-multi-form-entities-0-form-actions-ief-remove-confirm"]'));
++    $this->assertNoText($title1, 'First inline entity is no longer present on the page.');
++
++    // Now unreference the second entity, also deleting it on the system.
++    // Note that this time the inline entity table is rebuild without saving
++    // the parent form, so all IDs get an appendix appended. We therefore need
++    // to use the data-drupal-selector or "starts-with(@id, needle)".
++    $cell = $this->xpath('//table[starts-with(@id,"ief-entity-table-edit-multi-entities")]/tbody/tr[1]/td[@class="inline-entity-form-node-label"]');
++    $title2 = (string) $cell[0];
++    $this->drupalPostAjaxForm(NULL, [], $this->getButtonName('//input[@type="submit" and @data-drupal-selector="edit-multi-entities-1-actions-ief-entity-remove"]'));
++    $this->assertText('Delete this', 'Delete from system checkbox is present.');
++    $this->drupalPostAjaxForm(NULL, ['multi[form][entities][1][form][delete]' => TRUE], $this->getButtonName('//input[@type="submit" and @data-drupal-selector="edit-multi-form-entities-1-form-actions-ief-remove-confirm"]'));
++    $this->assertNoText($title2, 'Second inline entity is no longer present on the page.');
++
++    // Now save the parent node and check if both are still gone.
++    $this->drupalPostForm(NULL, [], t('Save'));
++    $this->assertResponse(200, 'Page was reloaded.');
++    $this->assertNoText('field is required.', 'Saving parent node was successful.');
++    $this->assertNoText($title1, 'First inline entity is still not on the page.');
++    $this->assertNoText($title2, 'Second inline entity is still not on the page.');
++
++    // Change setting to 'keep always' and reload page.
++    $this->updateSetting('removed_reference', 'keep');
++    $this->drupalGet('node/' . $parent_node->id() . '/edit');
++
++    // Now unreference the third entity and check if it disappeared.
++    $cell = $this->xpath('//table[@id="ief-entity-table-edit-multi-entities"]/tbody/tr[1]/td[@class="inline-entity-form-node-label"]');
++    $title3 = (string) $cell[0];
++    $this->drupalPostAjaxForm(NULL, [], $this->getButtonName('//input[@type="submit" and @id="edit-multi-entities-0-actions-ief-entity-remove"]'));
++    $this->assertNoText('Delete this', 'Delete from system checkbox is not present.');
++    $this->drupalPostAjaxForm(NULL, [], $this->getButtonName('//input[@type="submit" and @data-drupal-selector="edit-multi-form-entities-0-form-actions-ief-remove-confirm"]'));
++    $this->assertNoText($title3, 'Third inline entity is no longer present on the page.');
++
++    // Save the parent node again and check if the third one is still gone.
++    $this->drupalPostForm(NULL, [], t('Save'));
++    $this->assertResponse(200, 'Page was reloaded.');
++    $this->assertNoText('field is required.', 'Saving parent node was successful.');
++    $this->assertNoText($title3, 'Third inline entity is still not on the page.');
++
++    // Change setting to 'delete always' and reload page.
++    $this->updateSetting('removed_reference', 'delete');
++    $this->drupalGet('node/' . $parent_node->id() . '/edit');
++
++    // Now unreference the fourth entity and check if it disappeared.
++    $cell = $this->xpath('//table[@id="ief-entity-table-edit-multi-entities"]/tbody/tr[1]/td[@class="inline-entity-form-node-label"]');
++    $title4 = (string) $cell[0];
++    $this->drupalPostAjaxForm(NULL, [], $this->getButtonName('//input[@type="submit" and @id="edit-multi-entities-0-actions-ief-entity-remove"]'));
++    $this->assertNoText('Delete this', 'Delete from system checkbox is not present.');
++    $this->drupalPostAjaxForm(NULL, [], $this->getButtonName('//input[@type="submit" and @data-drupal-selector="edit-multi-form-entities-0-form-actions-ief-remove-confirm"]'));
++    $this->assertNoText($title4, 'Fourth inline entity is no longer present on the page.');
++
++    // Save the parent node again and check if the fourth one is still gone.
++    $this->drupalPostForm(NULL, [], t('Save'));
++    $this->assertResponse(200, 'Page was reloaded.');
++    $this->assertNoText('field is required.', 'Saving parent node was successful.');
++    $this->assertNoText($title4, 'Fourth inline entity is still not on the page.');
++
++    // Reload page.
++    $this->drupalGet('node/' . $parent_node->id() . '/edit');
++
++    // Now unreference the fifth entity and check if it disappeared.
++    $cell = $this->xpath('//table[@id="ief-entity-table-edit-multi-entities"]/tbody/tr[1]/td[@class="inline-entity-form-node-label"]');
++    $title5 = (string) $cell[0];
++    $this->drupalPostAjaxForm(NULL, [], $this->getButtonName('//input[@type="submit" and @id="edit-multi-entities-0-actions-ief-entity-remove"]'));
++    $this->assertNoText('Delete this', 'Delete from system checkbox is not present.');
++    $this->drupalPostAjaxForm(NULL, [], $this->getButtonName('//input[@type="submit" and @data-drupal-selector="edit-multi-form-entities-0-form-actions-ief-remove-confirm"]'));
++    $this->assertNoText($title5, 'Fifth inline entity is no longer present on the page.');
++
++    // Save the parent node again and check if deleting the fifth child entity
++    // failed because the node couldn't be saved with empty required fields.
++    $this->drupalPostForm(NULL, [], t('Save'));
++    $this->assertResponse(200, 'Page was reloaded.');
++    $this->assertText('field is required.', 'Saving parent node however failed because of empty required fields.');
++    $this->assertNoText($title5, "Fourth inline entity however still isn't on the page.");
++
++    // Finally check if the second and fourth child entity are completely gone
++    // and the first and third one are still there as expected, while the fifth
++    // one is still there as saving the parent node failed.
++    $this->assertTrue($this->drupalGetNodeByTitle($title1) instanceof NodeInterface, 'First inline entity still exists.');
++    $this->assertTrue(empty($this->drupalGetNodeByTitle($title2)), 'Second inline entity was deleted from the site.');
++    $this->assertTrue($this->drupalGetNodeByTitle($title3) instanceof NodeInterface, 'Third inline entity still exists.');
++    $this->assertTrue(empty($this->drupalGetNodeByTitle($title4)), 'Fourth inline entity was deleted from the site.');
++    $this->assertTrue($this->drupalGetNodeByTitle($title5) instanceof NodeInterface, "Fifth inline entity still exists.");
++  }
++
++  /**
++   * Tests if referencing existing entities work.
++   */
++  public function testReferencingExistingEntities() {
++    // Allow addition of existing nodes.
++    $this->updateSetting('allow_existing', TRUE);
++
++    // Create three ief_reference_type entities.
++    $referenceNodes = $this->createReferenceContent(3);
++
++    // Create a node for every bundle available.
++    $bundle_nodes = $this->createNodeForEveryBundle();
++
++    // Create ief_test_complex node with first ief_reference_type node and first
++    // node from bundle nodes.
++    $this->drupalCreateNode([
++      'type' => 'ief_test_complex',
++      'title' => 'Some title',
++      'multi' => [1],
++      'all_bundles' => key($bundle_nodes),
++    ]);
++    // Remove first node since we already added it.
++    unset($bundle_nodes[key($bundle_nodes)]);
++
++    $parent_node = $this->drupalGetNodeByTitle('Some title', TRUE);
++
++    // Add remaining existing reference nodes.
++    $this->drupalGet('node/' . $parent_node->id() . '/edit');
++    for ($i = 2; $i <= 3; $i++) {
++      $this->drupalPostAjaxForm(NULL, [], $this->getButtonName('//input[@type="submit" and @value="Add existing node" and @data-drupal-selector="edit-multi-actions-ief-add-existing"]'));
++      $this->assertResponse(200, 'Opening reference form was successful.');
++      $title = 'Some reference ' . $i;
++      $edit = [
++        'multi[form][entity_id]' => $title . ' (' . $referenceNodes[$title] . ')',
++      ];
++      $this->drupalPostAjaxForm(NULL, $edit, $this->getButtonName('//input[@type="submit" and @data-drupal-selector="edit-multi-form-actions-ief-reference-save"]'));
++      $this->assertResponse(200, 'Adding new referenced entity was successful.');
++    }
++    // Add all remaining nodes from all bundles.
++    foreach ($bundle_nodes as $id => $title) {
++      $this->drupalPostAjaxForm(NULL, [], $this->getButtonName('//input[@type="submit" and @value="Add existing node" and @data-drupal-selector="edit-all-bundles-actions-ief-add-existing"]'));
++      $this->assertResponse(200, 'Opening reference form was successful.');
++      $edit = [
++        'all_bundles[form][entity_id]' => $title . ' (' . $id . ')',
++      ];
++      $this->drupalPostAjaxForm(NULL, $edit, $this->getButtonName('//input[@type="submit" and @data-drupal-selector="edit-all-bundles-form-actions-ief-reference-save"]'));
++      $this->assertResponse(200, 'Adding new referenced entity was successful.');
++    }
++    // Save the node.
++    $this->drupalPostForm(NULL, [], t('Save'));
++    $this->assertResponse(200, 'Saving parent for was successful.');
++
++    // Check if entities are referenced.
++    $this->drupalGet('node/' . $parent_node->id() . '/edit');
++    for ($i = 2; $i <= 3; $i++) {
++      $cell = $this->xpath('//table[@id="ief-entity-table-edit-multi-entities"]/tbody/tr[' . $i . ']/td[@class="inline-entity-form-node-label"]');
++      $this->assertTrue($cell[0] == 'Some reference ' . $i, 'Found reference node title "Some reference ' . $i . '" in the IEF table.');
++    }
++    // Check if all remaining nodes from all bundles are referenced.
++    $count = 2;
++    foreach ($bundle_nodes as $id => $title) {
++      $cell = $this->xpath('//table[@id="ief-entity-table-edit-all-bundles-entities"]/tbody/tr[' . $count . ']/td[@class="inline-entity-form-node-label"]');
++      $this->assertTrue($cell[0] == $title, 'Found reference node title "' . $title . '" in the IEF table.');
++      $count++;
++    }
++  }
++
++  /**
++   * Tests if referencing an existing entity works without submitting the form.
++   */
++  public function testReferencingExistingEntitiesNoSubmit() {
++    // Allow addition of existing nodes.
++    $this->updateSetting('allow_existing', TRUE);
++    $title = $this->randomMachineName();
++
++    $this->drupalCreateNode([
++      'type' => 'ief_reference_type',
++      'title' => $title,
++      'first_name' => $this->randomMachineName(),
++      'last_name' => $this->randomMachineName(),
++    ]);
++    $node = $this->drupalGetNodeByTitle($title);
++    $this->assertTrue($node, 'Created ief_reference_type node "' . $node->label() . '"');;
++
++    $this->drupalGet($this->formContentAddUrl);
++    $this->drupalPostAjaxForm(NULL, [], $this->getButtonName('//input[@type="submit" and @value="Add existing node" and @data-drupal-selector="edit-multi-actions-ief-add-existing"]'));
++    $this->assertResponse(200, 'Opening inline form for existing entity was successful.');
++
++    $parent_title = $this->randomMachineName();
++    $edit = [
++      'multi[form][entity_id]' => $node->getTitle() . ' (' . $node->id() . ')',
++      'title[0][value]' => $parent_title,
++    ];
++
++    // Create ief_test_complex node.
++    $this->assertFieldByName('multi[form][entity_id]', NULL, 'Existing entity reference autocomplete field found.');
++    $this->drupalPostForm(NULL, $edit, t('Save'));
++    $this->assertResponse(200, 'Submission of parent entity was successful.');
++    $this->assertNoText(t("This value should not be null."), "The error message 'This value should not be null.' was not found in the page.");
++    $node = $this->drupalGetNodeByTitle($parent_title);
++    $this->assertTrue($node, 'Created ief_reference_type node.');
++  }
++
++  /**
++   * Test if invalid values get correct validation messages in reference existing entity form.
++   *
++   * Also checks if existing entity reference form can be canceled.
++   */
++  public function testReferenceExistingValidation() {
++    $this->updateSetting('allow_existing', TRUE);
++    $this->updateSetting('allow_new', TRUE);
++    // Create a referenceable node, so there's something to reference.
++    $referenceNodes = $this->createReferenceContent(1);
++    $this->drupalCreateNode([
++        'type' => 'ief_test_complex',
++        'title' => 'Some title',
++        'multi' => array_values($referenceNodes),
++    ]);
++    $this->drupalGet($this->formContentAddUrl);
++
++    $this->drupalGet('node/add/ief_test_complex');
++    $this->checkExistingValidationExpectation('', 'Node field is required.');
++    $this->checkExistingValidationExpectation('Fake Title', "There are no entities matching \"Fake Title\"");
++    // Check adding nodes that cannot be referenced by this field.
++    $bundle_nodes = $this->createNodeForEveryBundle();
++    foreach ($bundle_nodes as $id => $title) {
++      $node = $this->nodeStorage->load($id);
++      if ($node->bundle() != 'ief_reference_type') {
++        $this->checkExistingValidationExpectation("$title ($id)", "The referenced entity (node: $id) does not exist.");
++      }
++    }
++
++    $nodes = $this->createReferenceContent(2);
++    foreach ($nodes as $title => $id) {
++      $this->openMultiExistingForm();
++      $edit = [
++        'multi[form][entity_id]' => "$title ($id)",
++      ];
++      // Add a node successfully.
++      $this->drupalPostAjaxForm(NULL, $edit, $this->getButtonName('//input[@type="submit" and @data-drupal-selector="edit-multi-form-actions-ief-reference-save"]'));
++      $this->assertNoFieldByName('multi[form][entity_id]', NULL, 'Existing entity reference autocomplete field removed.');
++      // Try to add the same node again.
++      $this->checkExistingValidationExpectation("$title ($id)", 'The selected node has already been added.');
++    }
++  }
++
++  /**
++   * Tests if duplicating entities works.
++   */
++  public function testDuplicatingEntities() {
++    $this->updateSetting('allow_duplicate', TRUE);
++
++    $referenceNodes = $this->createReferenceContent(2);
++    $this->drupalCreateNode([
++      'type' => 'ief_test_complex',
++      'title' => 'Some title',
++      'multi' => array_values($referenceNodes),
++    ]);
++    /** @var NodeInterface $node */
++    $parent_node = $this->drupalGetNodeByTitle('Some title');
++
++    $this->drupalGet('node/' . $parent_node->id() . '/edit');
++    $this->drupalPostAjaxForm(NULL, [], $this->getButtonName('//input[@type="submit" and @id="edit-multi-entities-0-actions-ief-entity-duplicate"]'));
++    $this->assertResponse(200, 'Opening inline duplicate form was successful.');
++
++    $edit = [
++      'multi[form][inline_entity_form][entities][0][form][title][0][value]' => 'Duplicate!',
++      'multi[form][inline_entity_form][entities][0][form][first_name][0][value]' => 'Bojan',
++    ];
++    $this->drupalPostAjaxForm(NULL, $edit, $this->getButtonName('//input[@type="submit" and @data-drupal-selector="edit-multi-form-inline-entity-form-entities-0-form-actions-ief-duplicate-save"]'));
++    $this->assertResponse(200, 'Saving inline duplicate form was successful.');
++
++    $this->assertText('Some reference 1');
++    $this->assertText('Some reference 2');
++    $this->assertText('Duplicate!');
++    $this->drupalPostForm(NULL, [], t('Save'));
++    $this->assertResponse(200, 'Saving parent entity was successful.');
++
++    // Confirm a duplicate was made.
++    $duplicate = $this->nodeStorage->load(4);
++    $this->assertEqual($duplicate->label(), 'Duplicate!');
++    $this->assertEqual($duplicate->first_name->value, 'Bojan');
++  }
++
++  /**
++   * Tests if a referenced content can be edited while the referenced content is
++   * newer than the referencing parent node.
++   */
++  public function testEditedInlineEntityValidation() {
++    $this->updateSetting('allow_existing', TRUE);
++
++    // Create referenced content.
++    $referenced_nodes = $this->createReferenceContent(1);
++
++    // Create first referencing node.
++    $this->drupalCreateNode([
++      'type' => 'ief_test_complex',
++      'title' => 'First referencing node',
++      'multi' => array_values($referenced_nodes),
++    ]);
++    $first_node = $this->drupalGetNodeByTitle('First referencing node');
++
++    // Create second referencing node.
++    $this->drupalCreateNode([
++      'type' => 'ief_test_complex',
++      'title' => 'Second referencing node',
++      'multi' => array_values($referenced_nodes),
++    ]);
++    $second_node = $this->drupalGetNodeByTitle('Second referencing node');
++
++    // Edit referenced content in first node.
++    $this->drupalGet('node/' . $first_node->id() . '/edit');
++
++    // Edit referenced node.
++    $this->drupalPostAjaxForm(NULL, [], $this->getButtonName('//input[@type="submit" and @value="Edit" and @data-drupal-selector="edit-multi-entities-0-actions-ief-entity-edit"]'));
++    $edit = [
++      'multi[form][inline_entity_form][entities][0][form][title][0][value]' => 'Some reference updated',
++    ];
++    $this->drupalPostAjaxForm(NULL, $edit, $this->getButtonName('//input[@type="submit" and @value="Update node" and @data-drupal-selector="edit-multi-form-inline-entity-form-entities-0-form-actions-ief-edit-save"]'));
++
++    // Save the first node after editing the reference.
++    $edit = ['title[0][value]' => 'First node updated'];
++    $this->drupalPostForm(NULL, $edit, t('Save'));
++
++    // The changed value of the referenced content is now newer than the
++    // changed value of the second node.
++
++    // Edit referenced content in second node.
++    $this->drupalGet('node/' . $second_node->id() . '/edit');
++
++    // Edit referenced node.
++    $this->drupalPostAjaxForm(NULL, [], $this->getButtonName('//input[@type="submit" and @value="Edit" and @data-drupal-selector="edit-multi-entities-0-actions-ief-entity-edit"]'));
++    $edit = [
++      'multi[form][inline_entity_form][entities][0][form][title][0][value]' => 'Some reference updated the second time',
++    ];
++    $this->drupalPostAjaxForm(NULL, $edit, $this->getButtonName('//input[@type="submit" and @value="Update node" and @data-drupal-selector="edit-multi-form-inline-entity-form-entities-0-form-actions-ief-edit-save"]'));
++
++    // Save the second node after editing the reference.
++    $edit = ['title[0][value]' => 'Second node updated'];
++    $this->drupalPostForm(NULL, $edit, t('Save'));
++
++    // Check if the referenced content could be edited.
++    $this->assertNoText('The content has either been modified by another user, or you have already submitted modifications. As a result, your changes cannot be saved.', 'The referenced content could be edited.');
++  }
++
++  /**
++   * Creates ief_reference_type nodes which shall serve as reference nodes.
++   *
++   * @param int $numNodes
++   *   The number of nodes to create
++   * @return array
++   *   Array of created node ids keyed by labels.
++   */
++  protected function createReferenceContent($numNodes = 3) {
++    $retval = [];
++    for ($i = 1; $i <= $numNodes; $i++) {
++      $this->drupalCreateNode([
++        'type' => 'ief_reference_type',
++        'title' => 'Some reference ' . $i,
++        'first_name' => 'First Name ' . $i,
++        'last_name' => 'Last Name ' . $i,
++      ]);
++      $node = $this->drupalGetNodeByTitle('Some reference ' . $i);
++      $this->assertTrue($node, 'Created ief_reference_type node "' . $node->label() . '"');
++      $retval[$node->label()] = $node->id();
++    }
++    return $retval;
++  }
++
++  /**
++   * Updates an IEF setting and saves the underlying entity display.
++   *
++   * @param string $name
++   *   The name of the setting.
++   * @param mixed $value
++   *   The value to set.
++   */
++  protected function updateSetting($name, $value) {
++    /** @var \Drupal\Core\Entity\Display\EntityFormDisplayInterface $display */
++    $display = $this->entityFormDisplayStorage->load('node.ief_test_complex.default');
++    $component = $display->getComponent('multi');
++    $component['settings'][$name] = $value;
++    $display->setComponent('multi', $component)->save();
++  }
++
++  /**
++   * Creates a node for every node bundle.
++   *
++   * @return array
++   *   Array of node titles keyed by ids.
++   */
++  protected function createNodeForEveryBundle() {
++    $retval = [];
++    $bundles = $this->container->get('entity.manager')->getBundleInfo('node');
++    foreach ($bundles as $id => $value) {
++      $this->drupalCreateNode(['type' => $id, 'title' => $value['label']]);
++      $node = $this->drupalGetNodeByTitle($value['label']);
++      $this->assertTrue($node, 'Created node "' . $node->label() . '"');
++      $retval[$node->id()] = $value['label'];
++    }
++    return $retval;
++  }
++
++  /**
++   * Set up the ief_test_nested1 node add form.
++   *
++   * Sets the nested fields' required settings.
++   * Gets the form.
++   * Opens the inline entity forms if they are not required.
++   *
++   * @param bool $required
++   *   Whether the fields are required.
++   * @param array $permissions
++   *   (optional) Permissions to sign testing user in with. You may pass in an
++   *   empty array (default) to use the all the permissions necessary create and
++   *   edit nodes on the form.
++   */
++  protected function setupNestedComplexForm($required, $permissions = []) {
++    /** @var \Drupal\Core\Field\FieldConfigInterface $ief_test_nested1 */
++    $ief_test_nested1 = $this->fieldConfigStorage->load('node.ief_test_nested1.test_ref_nested1');
++    $ief_test_nested1->setRequired($required);
++    $ief_test_nested1->save();
++    /** @var \Drupal\Core\Field\FieldConfigInterface $ief_test_nested2 */
++    $ief_test_nested2 = $this->fieldConfigStorage->load('node.ief_test_nested2.test_ref_nested2');
++    $ief_test_nested2->setRequired($required);
++    $ief_test_nested2->save();
++
++    if (!$permissions) {
++      $permissions = [
++        'create ief_test_nested1 content',
++        'create ief_test_nested2 content',
++        'create ief_test_nested3 content',
++        'edit any ief_test_nested1 content',
++        'edit any ief_test_nested2 content',
++        'edit any ief_test_nested3 content',
++      ];
++    }
++    $this->user = $this->createUser($permissions);
++    $this->drupalLogin($this->user);
++
++    $this->drupalGet('node/add/ief_test_nested1');
++
++    if (!$required) {
++      // Open inline forms if not required.
++      if (in_array('create ief_test_nested2 content', $permissions)) {
++        $this->drupalPostAjaxForm(NULL, [], $this->getButtonName('//input[@type="submit" and @value="Add new node 2"]'));
++      }
++      if (in_array('create ief_test_nested3 content', $permissions)) {
++        $this->drupalPostAjaxForm(NULL, [], $this->getButtonName('//input[@type="submit" and @value="Add new node 3"]'));
++      }
++    }
++  }
++
++  /**
++   * Closes the existing node form on the "multi" field.
++   */
++  protected function cancelExistingMultiForm($edit) {
++    $this->drupalPostAjaxForm(NULL, $edit, $this->getButtonName('//input[@type="submit" and @data-drupal-selector="edit-multi-form-actions-ief-reference-cancel"]'));
++    $this->assertNoFieldByName('multi[form][entity_id]', NULL, 'Existing entity reference autocomplete field removed.');
++  }
++
++  /**
++   * Opens the existing node form on the "multi" field.
++   */
++  protected function openMultiExistingForm() {
++    $this->drupalPostAjaxForm(NULL, [], $this->getButtonName('//input[@type="submit" and @value="Add existing node" and @data-drupal-selector="edit-multi-actions-ief-add-existing"]'));
++    $this->assertResponse(200, 'Opening reference form was successful.');
++    $this->assertFieldByName('multi[form][entity_id]', NULL, 'Existing entity reference autocomplete field found.');
++  }
++
++  /**
++   * Checks that an invalid value for an existing node will be display the expected error.
++   *
++   * @param string $existing_node_text
++   *   The text to enter into the existing node text field.
++   * @param string $expected_error
++   *   The error message that is expected to be shown.
++   */
++  protected function checkExistingValidationExpectation($existing_node_text, $expected_error) {
++    $edit = [
++      'multi[form][entity_id]' => $existing_node_text,
++    ];
++    $this->openMultiExistingForm();
++
++    $this->drupalPostAjaxForm(NULL, $edit, $this->getButtonName('//input[@type="submit" and @data-drupal-selector="edit-multi-form-actions-ief-reference-save"]'));
++    $this->assertText($expected_error);
++    $this->cancelExistingMultiForm($edit);
++  }
++
++  /**
++   * Tests entity create access is correct on nested IEF forms.
++   */
++  public function testNestedEntityCreateAccess() {
++    $permissions = [
++      'create ief_test_nested1 content',
++      'create ief_test_nested2 content',
++    ];
++    $this->setupNestedComplexForm(TRUE, $permissions);
++    $this->assertFieldByName('title[0][value]');
++    $this->assertFieldByName('test_ref_nested1[form][inline_entity_form][title][0][value]');
++    $this->assertNoFieldByName('test_ref_nested1[form][inline_entity_form][test_ref_nested2][form][inline_entity_form][title][0][value]', NULL);
++
++    $this->setupNestedComplexForm(FALSE, $permissions);
++    $this->assertNoFieldByXPath('//input[@type="submit" and @value="Add new node 3"]');
++  }
++
++  /**
++   * Tests create access on IEF Complex content type.
++   */
++  public function testComplexEntityCreate() {
++    $user = $this->createUser([
++      'create ief_test_complex content',
++    ]);
++    $this->drupalLogin($user);
++
++    $this->drupalGet('node/add/ief_test_complex');
++    $this->assertNoFieldByName('all_bundles[actions][bundle]', NULL, 'Bundle select is not shown when only one bundle is available.');
++    $this->assertNoFieldByName('multi[form][inline_entity_form][title][0][value]', NULL);
++
++    $user = $this->createUser([
++      'create ief_test_complex content',
++      'create ief_reference_type content'
++    ]);
++    $this->drupalLogin($user);
++
++    $this->drupalGet('node/add/ief_test_complex');
++    $this->assertFieldByName('all_bundles[actions][bundle]', NULL, 'Bundle select is shown when more than one bundle is available.');
++    $this->assertOption('edit-all-bundles-actions-bundle', 'ief_reference_type');
++    $this->assertOption('edit-all-bundles-actions-bundle', 'ief_test_complex');
++    $this->assertFieldByName('multi[form][inline_entity_form][title][0][value]');
++  }
++
++  /**
++   * Checks if nested nodes for ief_test_nested1 content were created correctly.
++   *
++   * @param string $nested1_title
++   *   Expected title of top level node of the type ief_test_nested1
++   * @param string $nested2_title
++   *   Expected title of second level node
++   * @param string $nested3_title
++   *   Expected title of third level node
++   */
++  protected function checkNestedNodes($nested1_title, $nested2_title, $nested3_title) {
++    $nested1_node = $this->drupalGetNodeByTitle($nested1_title);
++    $this->assertEqual($nested1_title, $nested1_node->label(), "First node's title looks correct.");
++    $this->assertEqual('ief_test_nested1', $nested1_node->bundle(), "First node's type looks correct.");
++    if ($this->assertNotNull($nested1_node->test_ref_nested1->entity, 'Second node was created.')) {
++      $this->assertEqual($nested1_node->test_ref_nested1->count(), 1, 'Only 1 node created at first level.');
++      $this->assertEqual($nested2_title, $nested1_node->test_ref_nested1->entity->label(), "Second node's title looks correct.");
++      $this->assertEqual('ief_test_nested2', $nested1_node->test_ref_nested1->entity->bundle(), "Second node's type looks correct.");
++      if ($this->assertNotNull($nested1_node->test_ref_nested1->entity->test_ref_nested2->entity, 'Third node was created')) {
++        $this->assertEqual($nested1_node->test_ref_nested1->entity->test_ref_nested2->count(), 1, 'Only 1 node created at second level.');
++        $this->assertEqual($nested3_title, $nested1_node->test_ref_nested1->entity->test_ref_nested2->entity->label(), "Third node's title looks correct.");
++        $this->assertEqual('ief_test_nested3', $nested1_node->test_ref_nested1->entity->test_ref_nested2->entity->bundle(), "Third node's type looks correct.");
++
++        $this->checkNestedEntityEditing($nested1_node, TRUE);
++      }
++    }
++  }
++
++}
+diff --git a/tests/modules/inline_entity_form_test/config/install/core.entity_form_display.node.ief_complex_simple.default.yml b/tests/modules/inline_entity_form_test/config/install/core.entity_form_display.node.ief_complex_simple.default.yml
+index e81fe9a..f1b4983 100644
+--- a/tests/modules/inline_entity_form_test/config/install/core.entity_form_display.node.ief_complex_simple.default.yml
++++ b/tests/modules/inline_entity_form_test/config/install/core.entity_form_display.node.ief_complex_simple.default.yml
+@@ -26,6 +26,7 @@ content:
+       label_plural: ''
+       allow_new: true
+       allow_existing: false
++      removed_reference: optional
+     third_party_settings: {  }
+     type: inline_entity_form_complex
+   langcode:

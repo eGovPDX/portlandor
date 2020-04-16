@@ -1,0 +1,45 @@
+{# DEFAULTS #}
+{% set isDismissible = isDismissible|default(TRUE) %}
+{% set is_draft = is_draft|default(FALSE) %}
+{# CLASSES #}
+{% set classes= [
+  'cloudy-notification',
+  isDismissible ? 'cloudy-notification--dismissible',
+  is_draft ? 'cloudy-notification--is_draft',
+]%}
+{# TWIG #}
+<div class="{{ classes|join(' ')|trim }}"
+   data-nid="{{ id }}"
+  {% if changed %}
+    data-changed="{{ changed }}"
+  {% endif %}
+  {% if isDismissible is same as(true) %}
+    role="alert"
+    aria-live="polite"
+  {% endif %}>
+  <div class="cloudy-notification__inner-wrapper">
+    <div class="cloudy-notification__inner">
+      {% if is_draft %}
+        {% include "@components/badge/badge.twig" with {
+          "text": "Unpublished",
+          "type": "danger",
+        } only %}
+      {% endif %}
+      <div class="cloudy-notification__title">{{ title }}</div><div class="cloudy-notification__content">{{ content }}</div>
+    </div>
+    {% if isDismissible %}
+      <button type="button"
+              class="cloudy-notification__close"
+              data-dismiss="alert"
+              aria-label="Dismiss notification">
+        <span aria-hidden="true" class="alert__close-contents">
+          {% include "@elements/icon/icon.twig" with {
+            name: 'close',
+            size: 'xs',
+          } only %}
+          <span class="sr-only">Dismiss</span>
+        </span>
+      </button>
+    {% endif %}
+  </div>
+</div>

@@ -21,8 +21,8 @@ use Drupal\Core\Cache\Cache;
 class RevisionBlock extends BlockBase {
     private static $severity_icon = [
       'danger' => 'ban',
-      'warning' => 'exclamation-circle',
-      'success' => 'info-circle'
+      'warning' => 'exclamation-triangle',
+      'success' => 'check'
     ];
 
     /**
@@ -108,7 +108,7 @@ class RevisionBlock extends BlockBase {
       if($node_latest_vid == $node_current_vid && $node_current_vid > $node_default_vid) {
         if($node_default_status == 1) {
           $render_array['#alert_color'] = ($node_current_is_archived) ? 'danger' : 'warning';
-          $render_array['#alert_icon'] = ($node_current_is_archived) ? 'ban' : 'exclamation-circle';
+          $render_array['#alert_icon'] = ($node_current_is_archived) ? 'ban' : 'exclamation-triangle';
           $render_array['#latest_revision_state'] = NULL;
           $render_array['#revision_link'] = "/node/$nid";
           $render_array['#revision_link_text'] = "View published version";
@@ -125,7 +125,7 @@ class RevisionBlock extends BlockBase {
       */
       else if($node_latest_vid > $node_current_vid && $node_current_vid >= $node_default_vid) {
         $render_array['#alert_color'] = ($node_current_is_archived) ? 'danger' : 'warning';
-        $render_array['#alert_icon'] = ($node_current_is_archived) ? 'ban' : 'exclamation-circle';
+        $render_array['#alert_icon'] = ($node_current_is_archived) ? 'ban' : 'exclamation-triangle';
       }
       /*
       latest = current = default
@@ -148,7 +148,7 @@ class RevisionBlock extends BlockBase {
       */
       else if($node_latest_vid == $node_default_vid && $node_default_vid > $node_current_vid ) {
         $render_array['#alert_color'] = ($node_current_is_archived) ? 'danger' : 'warning';
-        $render_array['#alert_icon'] = ($node_current_is_archived) ? 'ban' : 'exclamation-circle';
+        $render_array['#alert_icon'] = ($node_current_is_archived) ? 'ban' : 'exclamation-triangle';
         if($node_default_status == 1) {
           $render_array['#revision_link'] = "/node/$nid";
           $render_array['#revision_link_text'] = "View published version";
@@ -160,7 +160,7 @@ class RevisionBlock extends BlockBase {
       */
       else if($node_latest_vid > $node_default_vid && $node_default_vid > $node_current_vid ) {
         $render_array['#alert_color'] = ($node_current_is_archived) ? 'danger' : 'warning';
-        $render_array['#alert_icon'] = ($node_current_is_archived) ? 'ban' : 'exclamation-circle';
+        $render_array['#alert_icon'] = ($node_current_is_archived) ? 'ban' : 'exclamation-triangle';
       }
 
       return $render_array;

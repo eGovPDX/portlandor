@@ -2,6 +2,7 @@
 
 ## Props
 
+- `url`: string - The heading link
 - `level`: string - 1 (default)
 - `text`: string - The heading text
 
@@ -9,6 +10,7 @@
 
 ```twig
 {% include "@components/heading/heading.twig" with {
+    url: 'http://google.com',
     level: 2,
     text: 'Lorem ipsum dolor sit'
 } only %}
