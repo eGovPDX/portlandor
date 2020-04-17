@@ -823,10 +823,14 @@ function portland_preprocess_node(&$variables) {
         $variables['end_date_time'] = $end_date_time;
         
         // Display address
-        $address = $variables['node']->field_location->entity->field_address_or_entrance;
-        $variables['address'] = ($address->address_line1 ? ($address->address_line1 . ', ') : '' ) . 
-                                ($address->locality ? ($address->locality  . ', ') : '') . $address->administrative_area .
-                                ($address->postal_code ? (', ' . $address->postal_code) : '');
+        if($variables['node']->field_location->entity != null) {
+          $address = $variables['node']->field_location->entity->field_address_or_entrance;
+          $variables['address'] = ($address->address_line1 ? ($address->address_line1 . ', ') : '' ) . 
+                                  ($address->locality ? ($address->locality  . ', ') : '') . $address->administrative_area .
+                                  ($address->postal_code ? (', ' . $address->postal_code) : '');
+        }
+
+        $variables['is_cancelled'] = ( $variables['node']->field_event_status->value == 'Cancelled' );
 
         // Link to the event page
         $options = ['absolute' => TRUE];
@@ -837,7 +841,6 @@ function portland_preprocess_node(&$variables) {
         $variables['summary'] = $variables['node']->field_summary->value . 
           '<br/><a href="' . $url . '">More info</a>';
         
-
         break;
   }
 }
