@@ -37,18 +37,28 @@ class ContentCompletionBlock extends BlockBase {
    */
   public function build() {
 
+    // if we're on a group page, get the id and filter completion report for just that group
+    $group = \Drupal::routeMatch()->getParameter('group');
+    $where_clause = "";
+
+    if (isset($group)) {
+      $gid = $group->id();
+      $where_clause = "WHERE FD.id = $gid";
+    }
+    
     $dbConn = \Drupal::database();
-    $query = "SELECT * FROM (SELECT distinct label,
-                (SELECT count(NFD.status)
+    $query = "SELECT * FROM (SELECT distinct FD.id, label,
+                (SELECT COUNT(NFD.status)
                 FROM group_content_field_data CFD 
                 INNER JOIN node_field_data NFD ON CFD.entity_id = NFD.nid
                 WHERE CFD.gid = FD.id) AS 'Total',
-                (SELECT count(NFD.status)
+                (SELECT COUNT(NFD.status)
                 FROM group_content_field_data CFD 
                 INNER JOIN node_field_data NFD ON CFD.entity_id = NFD.nid
                 WHERE CFD.gid = FD.id and NFD.status = 1) AS 'Published',
-                concat(round((SELECT Published) / (SELECT Total) * 100, 2), '%') AS '% Complete'
+                ROUND((SELECT Published) / (SELECT Total) * 100, 2) AS 'Complete'
               FROM groups_field_data FD
+              $where_clause
               ORDER BY label) a";
     $query = $dbConn->query($query);
     $result = $query->fetchAll();
