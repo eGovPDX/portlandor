@@ -1,6 +1,6 @@
 <?php
 
-namespace Drupal\portland\Plugin\Block;
+namespace Drupal\portland_content_completion\Plugin\Block;
 
 use Drupal\Core\Block\BlockBase;
 use Drupal\Core\Cache\Cache;
@@ -16,13 +16,13 @@ use Drupal\group\Entity\GroupContent;
  * such as filtering, sorting and exporting.
  * 
  * @Block(
- *   id = "portland_content_completion_block",
+ *   id = "portland_content_completion_block2",
  *   admin_label = @Translation("Portland Content Competion Block"),
  *
  * )
  */
-class ContentCompletionBlock extends BlockBase {
-  private static $help_text = "[Help text for Content Completion Block]";
+class PortlandContentCompletionBlock extends BlockBase {
+  // private static $help_text = "[Help text for Content Completion Block]";
 
   /**
    * {@inheritdoc}
@@ -56,7 +56,7 @@ class ContentCompletionBlock extends BlockBase {
                 FROM group_content_field_data CFD 
                 INNER JOIN node_field_data NFD ON CFD.entity_id = NFD.nid
                 WHERE CFD.gid = FD.id and NFD.status = 1) AS 'Published',
-                ROUND((SELECT Published) / (SELECT Total) * 100, 2) AS 'Complete'
+                ROUND((SELECT Published) / (SELECT Total) * 100) AS 'Complete'
               FROM groups_field_data FD
               $where_clause
               ORDER BY label) a";
@@ -64,10 +64,8 @@ class ContentCompletionBlock extends BlockBase {
     $result = $query->fetchAll();
 
     $render_array = [
-      '#theme' => 'portland_content_completion_block',
-      '#completion_table' => $result,
-      '#test_var' => '#####',
-      '#help_text' => t(self::$help_text),
+      '#theme' => 'portland_content_completion_block2',
+      '#completion_table' => $result
     ];
 
     return $render_array;
