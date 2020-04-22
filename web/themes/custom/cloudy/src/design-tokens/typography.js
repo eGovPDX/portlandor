@@ -70,10 +70,7 @@ module.exports = {
   },
   "helper-text": {
     "fontSize": { "value": "14px" },
-    "lineHeight": { "value": "16px" },
-    "md": {
-      "lineHeight": { "value": "24px" },
-    }
+    "lineHeight": { "value": "24px" },
   },
   "ui-text": {
     "fontSize": { "value": "{ type.body.fontSize.value }" },
