@@ -17,9 +17,9 @@ The *Contact Item* is a component that displays a contact entity.
   name: 'Contact name',
   title: 'Contact title',
   email: 'contact.name@domain.com',
-  phone: '000-000-0000',
+  phone: '+1-000-000-0000',
   phone_help: 'Helper text to go here',
-  tty: '000-000-0000',
+  tty: '+1-000-000-0000',
   oregon_relay: true,
   fax: '000-000-0000',
 } only %}
