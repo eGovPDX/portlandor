@@ -13,7 +13,7 @@
 ## Props
 
 - `text`: string - text that is placed inside
-- `type`: default, info, success, warning, danger
+- `type`: default, inform, calm, warn, danger, highlight, charm, cool
 - `is_bold`: boolean - set to true for bold emphasis
 
 ## Usage
@@ -21,6 +21,6 @@
 ```twig
 {% include "@components/badge/badge.twig" with {
   text: "information",
-  type: "info",
+  type: "inform",
 } only %}
 ```
