@@ -3,7 +3,8 @@
 ## Props
 
 - `url`: string - The heading link
-- `level`: string - 1 (default)
+- `level`: number - 1 (default)
+- `style`: number - Overrides the styling of the heading while maintaining the level
 - `text`: string - The heading text
 
 ## Usage

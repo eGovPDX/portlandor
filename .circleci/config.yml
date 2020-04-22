@@ -284,23 +284,20 @@ run_tests: &run_tests
           fi
           echo "Pantheon environment name is $PANTHEON_ENV"
 
-          # Split feature files by timing data so all split test jobs will finish around the same time
-          TESTFILES=$(circleci tests glob "features/*.feature"  | circleci tests split --split-by=timings)
+          # Split feature files so all split test jobs will finish around the same time
+          TESTFILES=$(circleci tests glob "features/*.feature" | circleci tests split)
           if [[ $PANTHEON_ENV = "master" ]]; then
             echo 'export BEHAT_PARAMS="{\"extensions\" : {\"Behat\\\MinkExtension\" : {\"base_url\" : \"https://dev-portlandor.pantheonsite.io\"}, \"Drupal\\\DrupalExtension\" : {\"drush\" : { \"alias\": \"portlandor.dev\"}}}}"' >> $BASH_ENV && source $BASH_ENV
-            for TESTFILE in $TESTFILES
-            do
-                behat -c behat.yml -f pretty -o std -f junit -o test-results/behat ${TESTFILE}
-                mv test-results/behat/default.xml test-results/behat/${TESTFILE}.xml
-            done
           else
             echo 'export BEHAT_PARAMS="{\"extensions\" : {\"Behat\\\MinkExtension\" : {\"base_url\" : \"https://${PANTHEON_ENV}-portlandor.pantheonsite.io\"}, \"Drupal\\\DrupalExtension\" : {\"drush\" : { \"alias\": \"portlandor.${PANTHEON_ENV}\"}}}}"' >> $BASH_ENV && source $BASH_ENV
-            for TESTFILE in $TESTFILES
-            do
-                behat -c behat.yml -f pretty -o std -f junit -o test-results/behat ${TESTFILE}
-                mv test-results/behat/default.xml test-results/behat/${TESTFILE}.xml
-            done
           fi
+          for TESTFILE in $TESTFILES
+          do
+            public_ip_address=$(wget -qO- http://checkip.amazonaws.com)
+            echo "This container's public ip address is $public_ip_address"
+            behat -c behat.yml -f pretty -o std -f junit -o test-results/behat ${TESTFILE} || behat -c behat.yml -f pretty -o std -f junit -o test-results/behat ${TESTFILE}
+            mv test-results/behat/default.xml test-results/behat/${TESTFILE}.xml
+          done
     - save_cache:
         paths:
           - ./tests/vendor
