@@ -5,6 +5,7 @@ namespace Drupal\portland_content_completion\Plugin\Block;
 use Drupal\Core\Block\BlockBase;
 use Drupal\Core\Cache\Cache;
 use Drupal\group\Entity\GroupContent;
+use Drupal\portland_content_completion\Controller\PortlandContentCompletionController;
 
 /**
  * Provides a Portland content completion block. This block displays a table of groups
@@ -22,7 +23,6 @@ use Drupal\group\Entity\GroupContent;
  * )
  */
 class PortlandContentCompletionBlock extends BlockBase {
-  // private static $help_text = "[Help text for Content Completion Block]";
 
   /**
    * {@inheritdoc}
@@ -39,27 +39,15 @@ class PortlandContentCompletionBlock extends BlockBase {
 
     // if we're on a group page, get the id and filter completion report for just that group
     $group = \Drupal::routeMatch()->getParameter('group');
-    $where_clause = "";
+    $gid = NULL;
 
     if (isset($group)) {
       $gid = $group->id();
-      $where_clause = "WHERE FD.id = $gid";
     }
     
     $dbConn = \Drupal::database();
-    $query = "SELECT * FROM (SELECT distinct FD.id, label,
-                (SELECT COUNT(NFD.status)
-                FROM group_content_field_data CFD 
-                INNER JOIN node_field_data NFD ON CFD.entity_id = NFD.nid
-                WHERE CFD.gid = FD.id) AS 'Total',
-                (SELECT COUNT(NFD.status)
-                FROM group_content_field_data CFD 
-                INNER JOIN node_field_data NFD ON CFD.entity_id = NFD.nid
-                WHERE CFD.gid = FD.id and NFD.status = 1) AS 'Published',
-                ROUND((SELECT Published) / (SELECT Total) * 100) AS 'Complete'
-              FROM groups_field_data FD
-              $where_clause
-              ORDER BY label) a";
+    $query = PortlandContentCompletionController::completionQuery($gid);
+
     $query = $dbConn->query($query);
     $result = $query->fetchAll();
 
