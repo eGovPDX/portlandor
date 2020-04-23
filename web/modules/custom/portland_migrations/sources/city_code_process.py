@@ -107,9 +107,7 @@ sections = {
 }
 # documents = []
 
-title_regex = re.compile(r'^[^.]+')
-chapter_regex = re.compile(r'(?<=\.)(.*?)(?=\.)')
-section_regex = re.compile(r'\d\d\d')
+number_regex = re.compile(r'^(\w+)\.(\d+)\.(\d+)(?:\s+|\.)')
 document_count = 1
 
 for link in data['url']:
@@ -130,12 +128,17 @@ for link in data['url']:
                 # document_count += 1
                 continue
             else:
-                title = re.findall(title_regex, heading.text)[0]
-                chapter = re.findall(chapter_regex, heading.text)[0]
-                section = re.findall(section_regex, heading.text)[0]
+                results = re.findall(number_regex, heading.text)
+                if(len(results)==0):
+                  print("ERROR:"+heading.text)
+                  continue;
+                title = results[0][0]
+                chapter = results[0][1]
+                section = results[0][2]
                 title = title.zfill(2)
                 section = section.zfill(3)
                 id_number = str(title) + '-' + str(chapter) + '-' + str(section)
+                print(id_number)
                 chapter_id = str(title) + '-' + str(chapter)
                 sections['id'].append(id_number)
                 sections['chapter_id'].append(chapter_id)
