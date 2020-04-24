@@ -1,8 +1,4 @@
 <?php
-/**
- * @file
- * Contains \portland\Plugin\Block\SearchBlock
- */
 
 namespace Drupal\portland\Plugin\Block;
 
