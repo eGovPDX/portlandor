@@ -36,17 +36,18 @@
  * @see template_preprocess_field()
  */
 #}
-{% set margin = margin|default('2') %}
-
 {% set classes = classes|default([]) %}
 
+{# TODO: Remove mb/mr classes as patterns are implemented on each field template #}
 {%
   set field_classes = [
     'field',
     'field--name-' ~ field_name|clean_class,
     'field--type-' ~ field_type|clean_class,
     'field--label-' ~ label_display,
-    'mb-' ~ margin,
+    margin == '2' ? 'mb-2',
+    margin == '3' ? 'mb-3',
+    margin == '4' ? 'mb-4',
     label_display == 'inline' ? 'd-flex'
   ]
 %}
@@ -55,7 +56,7 @@
   set title_classes = title_classes|default([
     label_display == 'visually_hidden' ? 'sr-only',
     label_display == 'inline' ? 'mr-1',
-    'field-label'
+    'field__label'
   ])
 %}
 
@@ -69,8 +70,10 @@
   {% block field %}
   <div{{ attributes.addClass(field_classes).addClass(classes) }}>
     {% block label %}
-      {%- if not label_hidden -%}
-        <div{{ title_attributes.addClass(title_classes) }}>{{ label|render }}</div>
+      {% if label_display == "above" %}
+        <h2{{ title_attributes.addClass(title_classes) }}>{{ label }}</h2>
+      {% elseif not label_hidden %}
+        <div{{ title_attributes.addClass(title_classes) }}>{{ label }}</div>
       {%- endif -%}
     {% endblock %}
     {% block content %}
