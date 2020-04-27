@@ -214,20 +214,28 @@ lando terminus remote:drush portlandor.powr-[ID] -- migrate:import policies_redi
 #### Wheeler blog
 NOTE: A duplicate entry SQL error is thrown on wheeler_press_releases_redirects due to one of the content items having been manually migrated to the live site for demo purposes. The page is titled, "City and County leaders pledge to move to 100 percent renewable energy." The error is a known issue, but make sure the page isn't duplicated after migration, and that the redirect exists.
 ##### Local
+```
 lando drush migrate:import wheeler_blog
 lando drush migrate:import wheeler_blog_redirects
 lando drush migrate:import wheeler_blog_group_content
+```
 ##### On Pantheon
+```
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:import wheeler_blog
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:import wheeler_blog_redirects
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:import wheeler_blog_group_content
+```
 
 #### Wheeler press releeases
 ##### Local
+```
 lando drush migrate:import wheeler_press_releases
 lando drush migrate:import wheeler_press_releases_redirects
 lando drush migrate:import wheeler_press_releases_group_content
+```
 ##### On Pantheon
+```
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:import wheeler_press_releases
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:import wheeler_press_releases_redirects
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:import wheeler_press_releases_group_content
+```

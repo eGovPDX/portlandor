@@ -193,7 +193,6 @@ function portland_theme($existing, $type, $theme, $path) {
             'markup' => NULL
         ]
     ]
-
   ];
 }
 
@@ -263,10 +262,34 @@ function portland_preprocess_menu(&$vars)
  */
 function portland_entity_insert($entity)
 {
-    if ($entity->bundle() == 'alert') {
-        // alert has been inserted, update alerts count in cache
-        _get_active_alerts_count(true);
-    }
+  switch ($entity->bundle()) {
+    case 'alert':
+      // alert has been inserted, update alerts count in cache
+      _get_active_alerts_count(true);
+      break;
+    case 'park_facility':
+      // Add this new Park Facility node to the Parks menu
+      $menu_link_service = \Drupal::service('plugin.manager.menu.link');
+      // Get the parent menu
+      $park_finder_menu = $menu_link_service->loadLinksByRoute(
+        'view.park_finder.page_1', [], 'site-map');
+      if( count($park_finder_menu) ) {
+        $menu_link_service->addDefinition( 'park-'. $entity->id(), [
+          'menu_name' => 'site-map',
+          'route_name' => 'entity.node.canonical',
+          'route_parameters' => [ 'node' => $entity->id() ],
+          'title' => $entity->label(),
+          'parent' => key($park_finder_menu), // Get the plugin ID of Park Finder link
+          'expanded' => FALSE,
+          'enabled' => TRUE,
+          'weight' => 0,
+        ] );
+      }
+
+      break;
+    default:
+      break;
+  }
 }
 
 /**
@@ -274,14 +297,14 @@ function portland_entity_insert($entity)
  */
 function portland_entity_update($entity)
 {
-    if ($entity->bundle() == 'alert') {
-        // if moderation state has changed, update alerts count in cache
-        $origstate = $entity->original->get('moderation_state')->getString();
-        $newstate = $entity->get('moderation_state')->getString();
-        if ($origstate != $newstate) {
-            _get_active_alerts_count(true);
-        }
-    }
+  if ($entity->bundle() == 'alert') {
+      // if moderation state has changed, update alerts count in cache
+      $origstate = $entity->original->get('moderation_state')->getString();
+      $newstate = $entity->get('moderation_state')->getString();
+      if ($origstate != $newstate) {
+          _get_active_alerts_count(true);
+      }
+  }
 }
 
 /**
@@ -312,27 +335,33 @@ function _build_log_message($entity) {
  */
 function portland_entity_delete($entity)
 {
-    if ($entity->bundle() == 'alert') {
-        // alert has been deleted, update alerts count in cache
-        _get_active_alerts_count(true);
-    }
+  switch ($entity->bundle()) {
+    case 'alert':
+      _get_active_alerts_count(true);
+      break;
+    case 'park_facility':
+      // Delete the menu link for this park
+      \Drupal::service('menu.tree_storage')->delete('park-'. $entity->id());
+      break;
+    default:
+      break;
+  }
 
-    // Log entity deletion event
-    switch ($entity->getEntityTypeId()) {
-        case 'group_content':
-            \Drupal::logger('Group content')->notice(_build_log_message($entity));
-            break;
-        case 'node':
-            \Drupal::logger('Content')->notice(_build_log_message($entity));
-
-            break;
-        case 'media':
-            \Drupal::logger('Media')->notice(_build_log_message($entity));
-            break;
-        default:
-            // Skip other deletion events: redirect, group, etc.
-            break;
-    }
+  // Log entity deletion event
+  switch ($entity->getEntityTypeId()) {
+    case 'group_content':
+      \Drupal::logger('Group content')->notice(_build_log_message($entity));
+      break;
+    case 'node':
+      \Drupal::logger('Content')->notice(_build_log_message($entity));
+      break;
+    case 'media':
+      \Drupal::logger('Media')->notice(_build_log_message($entity));
+      break;
+    default:
+      // Skip other deletion events: redirect, group, etc.
+      break;
+  }
 }
 
 /**

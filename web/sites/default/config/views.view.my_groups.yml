@@ -4,7 +4,10 @@ status: true
 dependencies:
   config:
     - field.storage.group_content.group_roles
-    - system.menu.editor-toolbar
+    - group.type.advisory_group
+    - group.type.bureau_office
+    - group.type.program
+    - group.type.project
     - user.role.authenticated
   module:
     - group
@@ -43,16 +46,33 @@ display:
         type: basic
         options:
           submit_button: Apply
-          reset_button: false
+          reset_button: true
           reset_button_label: Reset
           exposed_sorts_label: 'Sort by'
           expose_sort_order: true
           sort_asc_label: Asc
           sort_desc_label: Desc
       pager:
-        type: none
+        type: full
         options:
+          items_per_page: 20
           offset: 0
+          id: 0
+          total_pages: null
+          tags:
+            previous: '‹ Previous'
+            next: 'Next ›'
+            first: '« First'
+            last: 'Last »'
+          expose:
+            items_per_page: false
+            items_per_page_label: 'Items per page'
+            items_per_page_options: '5, 10, 25, 50'
+            items_per_page_options_all: false
+            items_per_page_options_all_label: '- All -'
+            offset: false
+            offset_label: Offset
+          quantity: 9
       style:
         type: table
         options:
@@ -75,7 +95,7 @@ display:
             nothing_1: nothing_1
           info:
             id:
-              sortable: false
+              sortable: true
               default_sort_order: asc
               align: ''
               separator: ''
@@ -140,8 +160,8 @@ display:
           relationship: gid
           group_type: group
           admin_label: ''
-          label: ''
-          exclude: true
+          label: GID
+          exclude: false
           alter:
             alter_text: false
             text: ''
@@ -608,10 +628,158 @@ display:
           empty_zero: false
           hide_alter_empty: false
           plugin_id: custom
-      filters: {  }
-      sorts: {  }
+      filters:
+        label:
+          id: label
+          table: groups_field_data
+          field: label
+          relationship: gid
+          group_type: group
+          admin_label: ''
+          operator: contains
+          value: ''
+          group: 1
+          exposed: true
+          expose:
+            operator_id: label_op
+            label: Title
+            description: ''
+            use_operator: false
+            operator: label_op
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: label
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+              anonymous: '0'
+              publisher: '0'
+              policy_author: '0'
+              policy_editor: '0'
+              attorney: '0'
+              council_author: '0'
+              council_clerk: '0'
+              park_editor: '0'
+              code_editor: '0'
+              group_creator: '0'
+              alert_editor: '0'
+              sitewide_editor: '0'
+              administrator: '0'
+            placeholder: ''
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
+          entity_type: group
+          entity_field: label
+          plugin_id: string
+        type:
+          id: type
+          table: groups_field_data
+          field: type
+          relationship: gid
+          group_type: group
+          admin_label: ''
+          operator: in
+          value: {  }
+          group: 1
+          exposed: true
+          expose:
+            operator_id: type_op
+            label: 'Group type'
+            description: ''
+            use_operator: false
+            operator: type_op
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: type
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+              anonymous: '0'
+              publisher: '0'
+              policy_author: '0'
+              policy_editor: '0'
+              attorney: '0'
+              council_author: '0'
+              council_clerk: '0'
+              park_editor: '0'
+              code_editor: '0'
+              group_creator: '0'
+              alert_editor: '0'
+              sitewide_editor: '0'
+              administrator: '0'
+            reduce: false
+            argument: ''
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
+          entity_type: group
+          entity_field: type
+          plugin_id: bundle
+      sorts:
+        changed:
+          id: changed
+          table: groups_field_data
+          field: changed
+          relationship: gid
+          group_type: group
+          admin_label: ''
+          order: DESC
+          exposed: false
+          expose:
+            label: 'Last updated'
+          granularity: minute
+          entity_type: group
+          entity_field: changed
+          plugin_id: date
+        label:
+          id: label
+          table: groups_field_data
+          field: label
+          relationship: gid
+          group_type: group
+          admin_label: ''
+          order: ASC
+          exposed: false
+          expose:
+            label: Title
+          entity_type: group
+          entity_field: label
+          plugin_id: standard
       title: 'My groups'
-      header: {  }
+      header:
+        result:
+          id: result
+          table: views
+          field: result
+          relationship: none
+          group_type: group
+          admin_label: ''
+          empty: false
+          content: 'Displaying @start - @end of @total'
+          plugin_id: result
       footer: {  }
       empty:
         area:
@@ -624,7 +792,7 @@ display:
           empty: true
           tokenize: false
           content:
-            value: 'You are not assigned to any groups.'
+            value: '<p>You are not assigned to any groups. If you need to be added to a groups as an reviewer, editor or admin, contact your bureau''s website lead or the eGov team at <a href="mailto:website@portlandoregon.gov">website@portlandoregon.gov</a>.</p>'
             format: simple_editor
           plugin_id: text
       relationships:
@@ -705,9 +873,10 @@ display:
     display_plugin: block
     id: block_1
     display_title: Block
-    position: 2
+    position: 4
     display_options:
-      display_extenders: {  }
+      display_extenders:
+        metatag_display_extender: {  }
       title: 'Assigned groups'
       defaults:
         title: false
@@ -752,6 +921,7 @@ display:
           entity_field: uid
           plugin_id: user_uid
       block_description: 'Assigned groups'
+      block_hide_empty: false
     cache_metadata:
       max-age: -1
       contexts:
@@ -765,22 +935,694 @@ display:
   page_1:
     display_plugin: page
     id: page_1
-    display_title: Page
+    display_title: 'My groups'
     position: 1
     display_options:
-      display_extenders: {  }
+      display_extenders:
+        metatag_display_extender: {  }
       path: my-groups
       menu:
-        type: normal
+        type: 'default tab'
         title: 'My groups'
         description: ''
         expanded: false
         parent: ''
-        weight: -47
+        weight: 0
         context: '0'
         menu_name: editor-toolbar
       defaults:
         fields: true
+        empty: true
+      tab_options:
+        type: none
+        title: ''
+        description: ''
+        weight: 0
+      display_description: ''
+    cache_metadata:
+      max-age: -1
+      contexts:
+        - 'languages:language_content'
+        - 'languages:language_interface'
+        - url
+        - url.query_args
+        - user
+        - user.roles
+      tags:
+        - 'config:field.storage.group_content.group_roles'
+  page_2:
+    display_plugin: page
+    id: page_2
+    display_title: Programs
+    position: 3
+    display_options:
+      display_extenders:
+        metatag_display_extender: {  }
+      path: my-groups/programs
+      menu:
+        type: tab
+        title: Programs
+        description: ''
+        expanded: false
+        parent: ''
+        weight: 20
+        context: '0'
+        menu_name: editor-toolbar
+      defaults:
+        fields: true
+        filters: false
+        filter_groups: false
+        title: false
+        empty: false
+      display_description: ''
+      filters:
+        label:
+          id: label
+          table: groups_field_data
+          field: label
+          relationship: gid
+          group_type: group
+          admin_label: ''
+          operator: contains
+          value: ''
+          group: 1
+          exposed: true
+          expose:
+            operator_id: label_op
+            label: Title
+            description: ''
+            use_operator: false
+            operator: label_op
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: label
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+              anonymous: '0'
+              publisher: '0'
+              policy_author: '0'
+              policy_editor: '0'
+              attorney: '0'
+              council_author: '0'
+              council_clerk: '0'
+              park_editor: '0'
+              code_editor: '0'
+              group_creator: '0'
+              alert_editor: '0'
+              sitewide_editor: '0'
+              administrator: '0'
+            placeholder: ''
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
+          entity_type: group
+          entity_field: label
+          plugin_id: string
+        type:
+          id: type
+          table: groups_field_data
+          field: type
+          relationship: gid
+          group_type: group
+          admin_label: ''
+          operator: in
+          value:
+            program: program
+          group: 1
+          exposed: false
+          expose:
+            operator_id: type_op
+            label: 'Group type'
+            description: ''
+            use_operator: false
+            operator: type_op
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: type
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+              anonymous: '0'
+              publisher: '0'
+              policy_author: '0'
+              policy_editor: '0'
+              attorney: '0'
+              council_author: '0'
+              council_clerk: '0'
+              park_editor: '0'
+              code_editor: '0'
+              group_creator: '0'
+              alert_editor: '0'
+              sitewide_editor: '0'
+              administrator: '0'
+            reduce: false
+            argument: ''
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
+          entity_type: group
+          entity_field: type
+          plugin_id: bundle
+      filter_groups:
+        operator: AND
+        groups:
+          1: AND
+      title: Programs
+      empty:
+        area:
+          id: area
+          table: views
+          field: area
+          relationship: none
+          group_type: group
+          admin_label: ''
+          empty: true
+          tokenize: false
+          content:
+            value: '<p>You are not assigned to any programs. If you need to be added to a program as an reviewer, editor or admin, contact your bureau''s website lead or the eGov team at <a href="mailto:website@portlandoregon.gov">website@portlandoregon.gov</a>.</p>'
+            format: simple_editor
+          plugin_id: text
+    cache_metadata:
+      max-age: -1
+      contexts:
+        - 'languages:language_content'
+        - 'languages:language_interface'
+        - url
+        - url.query_args
+        - user
+        - user.roles
+      tags:
+        - 'config:field.storage.group_content.group_roles'
+  page_3:
+    display_plugin: page
+    id: page_3
+    display_title: 'Bureaus & offices'
+    position: 2
+    display_options:
+      display_extenders:
+        metatag_display_extender: {  }
+      path: my-groups/bureaus-offices
+      menu:
+        type: tab
+        title: 'Bureaus & offices'
+        description: ''
+        expanded: false
+        parent: ''
+        weight: 10
+        context: '0'
+        menu_name: editor-toolbar
+      defaults:
+        fields: true
+        filters: false
+        filter_groups: false
+        title: false
+        empty: false
+      display_description: ''
+      filters:
+        label:
+          id: label
+          table: groups_field_data
+          field: label
+          relationship: gid
+          group_type: group
+          admin_label: ''
+          operator: contains
+          value: ''
+          group: 1
+          exposed: true
+          expose:
+            operator_id: label_op
+            label: Title
+            description: ''
+            use_operator: false
+            operator: label_op
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: label
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+              anonymous: '0'
+              publisher: '0'
+              policy_author: '0'
+              policy_editor: '0'
+              attorney: '0'
+              council_author: '0'
+              council_clerk: '0'
+              park_editor: '0'
+              code_editor: '0'
+              group_creator: '0'
+              alert_editor: '0'
+              sitewide_editor: '0'
+              administrator: '0'
+            placeholder: ''
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
+          entity_type: group
+          entity_field: label
+          plugin_id: string
+        type:
+          id: type
+          table: groups_field_data
+          field: type
+          relationship: gid
+          group_type: group
+          admin_label: ''
+          operator: in
+          value:
+            bureau_office: bureau_office
+          group: 1
+          exposed: false
+          expose:
+            operator_id: type_op
+            label: 'Group type'
+            description: ''
+            use_operator: false
+            operator: type_op
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: type
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+              anonymous: '0'
+              publisher: '0'
+              policy_author: '0'
+              policy_editor: '0'
+              attorney: '0'
+              council_author: '0'
+              council_clerk: '0'
+              park_editor: '0'
+              code_editor: '0'
+              group_creator: '0'
+              alert_editor: '0'
+              sitewide_editor: '0'
+              administrator: '0'
+            reduce: false
+            argument: ''
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
+          entity_type: group
+          entity_field: type
+          plugin_id: bundle
+      filter_groups:
+        operator: AND
+        groups:
+          1: AND
+      title: 'Bureaus & offices'
+      empty:
+        area:
+          id: area
+          table: views
+          field: area
+          relationship: none
+          group_type: group
+          admin_label: ''
+          empty: true
+          tokenize: false
+          content:
+            value: '<p>You are not assigned to any bureau/offices. If you need to be added to a bureau/office as a reviewer, editor or admin, contact your bureau''s website lead or the eGov team at <a href="mailto:website@portlandoregon.gov">website@portlandoregon.gov</a>.</p>'
+            format: simple_editor
+          plugin_id: text
+    cache_metadata:
+      max-age: -1
+      contexts:
+        - 'languages:language_content'
+        - 'languages:language_interface'
+        - url
+        - url.query_args
+        - user
+        - user.roles
+      tags:
+        - 'config:field.storage.group_content.group_roles'
+  page_4:
+    display_plugin: page
+    id: page_4
+    display_title: Projects
+    position: 3
+    display_options:
+      display_extenders:
+        metatag_display_extender: {  }
+      path: my-groups/projects
+      menu:
+        type: tab
+        title: Projects
+        description: ''
+        expanded: false
+        parent: ''
+        weight: 30
+        context: '0'
+        menu_name: editor-toolbar
+      defaults:
+        fields: true
+        filters: false
+        filter_groups: false
+        title: false
+        empty: false
+      display_description: ''
+      filters:
+        label:
+          id: label
+          table: groups_field_data
+          field: label
+          relationship: gid
+          group_type: group
+          admin_label: ''
+          operator: contains
+          value: ''
+          group: 1
+          exposed: true
+          expose:
+            operator_id: label_op
+            label: Title
+            description: ''
+            use_operator: false
+            operator: label_op
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: label
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+              anonymous: '0'
+              publisher: '0'
+              policy_author: '0'
+              policy_editor: '0'
+              attorney: '0'
+              council_author: '0'
+              council_clerk: '0'
+              park_editor: '0'
+              code_editor: '0'
+              group_creator: '0'
+              alert_editor: '0'
+              sitewide_editor: '0'
+              administrator: '0'
+            placeholder: ''
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
+          entity_type: group
+          entity_field: label
+          plugin_id: string
+        type:
+          id: type
+          table: groups_field_data
+          field: type
+          relationship: gid
+          group_type: group
+          admin_label: ''
+          operator: in
+          value:
+            project: project
+          group: 1
+          exposed: false
+          expose:
+            operator_id: type_op
+            label: 'Group type'
+            description: ''
+            use_operator: false
+            operator: type_op
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: type
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+              anonymous: '0'
+              publisher: '0'
+              policy_author: '0'
+              policy_editor: '0'
+              attorney: '0'
+              council_author: '0'
+              council_clerk: '0'
+              park_editor: '0'
+              code_editor: '0'
+              group_creator: '0'
+              alert_editor: '0'
+              sitewide_editor: '0'
+              administrator: '0'
+            reduce: false
+            argument: ''
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
+          entity_type: group
+          entity_field: type
+          plugin_id: bundle
+      filter_groups:
+        operator: AND
+        groups:
+          1: AND
+      title: Projects
+      empty:
+        area:
+          id: area
+          table: views
+          field: area
+          relationship: none
+          group_type: group
+          admin_label: ''
+          empty: true
+          tokenize: false
+          content:
+            value: '<p>You are not assigned to any projects. If you need to be added to a project as an reviewer, editor or admin, contact your bureau''s website lead or the eGov team at <a href="mailto:website@portlandoregon.gov">website@portlandoregon.gov</a>.</p>'
+            format: simple_editor
+          plugin_id: text
+    cache_metadata:
+      max-age: -1
+      contexts:
+        - 'languages:language_content'
+        - 'languages:language_interface'
+        - url
+        - url.query_args
+        - user
+        - user.roles
+      tags:
+        - 'config:field.storage.group_content.group_roles'
+  page_5:
+    display_plugin: page
+    id: page_5
+    display_title: 'Advisory groups'
+    position: 3
+    display_options:
+      display_extenders:
+        metatag_display_extender: {  }
+      path: my-groups/advisory
+      menu:
+        type: tab
+        title: 'Advisory groups'
+        description: ''
+        expanded: false
+        parent: ''
+        weight: 40
+        context: '0'
+        menu_name: editor-toolbar
+      defaults:
+        fields: true
+        filters: false
+        filter_groups: false
+        title: false
+        empty: false
+      display_description: ''
+      filters:
+        label:
+          id: label
+          table: groups_field_data
+          field: label
+          relationship: gid
+          group_type: group
+          admin_label: ''
+          operator: contains
+          value: ''
+          group: 1
+          exposed: true
+          expose:
+            operator_id: label_op
+            label: Title
+            description: ''
+            use_operator: false
+            operator: label_op
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: label
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+              anonymous: '0'
+              publisher: '0'
+              policy_author: '0'
+              policy_editor: '0'
+              attorney: '0'
+              council_author: '0'
+              council_clerk: '0'
+              park_editor: '0'
+              code_editor: '0'
+              group_creator: '0'
+              alert_editor: '0'
+              sitewide_editor: '0'
+              administrator: '0'
+            placeholder: ''
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
+          entity_type: group
+          entity_field: label
+          plugin_id: string
+        type:
+          id: type
+          table: groups_field_data
+          field: type
+          relationship: gid
+          group_type: group
+          admin_label: ''
+          operator: in
+          value:
+            advisory_group: advisory_group
+          group: 1
+          exposed: false
+          expose:
+            operator_id: type_op
+            label: 'Group type'
+            description: ''
+            use_operator: false
+            operator: type_op
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: type
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+              anonymous: '0'
+              publisher: '0'
+              policy_author: '0'
+              policy_editor: '0'
+              attorney: '0'
+              council_author: '0'
+              council_clerk: '0'
+              park_editor: '0'
+              code_editor: '0'
+              group_creator: '0'
+              alert_editor: '0'
+              sitewide_editor: '0'
+              administrator: '0'
+            reduce: false
+            argument: ''
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
+          entity_type: group
+          entity_field: type
+          plugin_id: bundle
+      filter_groups:
+        operator: AND
+        groups:
+          1: AND
+      title: 'Advisory groups'
+      empty:
+        area:
+          id: area
+          table: views
+          field: area
+          relationship: none
+          group_type: group
+          admin_label: ''
+          empty: true
+          tokenize: false
+          content:
+            value: '<p>You are not assigned to any advisory groups. If you need to be added to an advisory group as an reviewer, editor or admin, contact your bureau''s website lead or the eGov team at <a href="mailto:website@portlandoregon.gov">website@portlandoregon.gov</a>.</p>'
+            format: simple_editor
+          plugin_id: text
     cache_metadata:
       max-age: -1
       contexts:
