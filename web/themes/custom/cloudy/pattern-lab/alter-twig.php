@@ -8,4 +8,7 @@ function addCustomExtension(\Twig_Environment &$env, $config) {
   $env->addFilter( new \Twig\TwigFilter('t', function ($string) {
     return $string;
   }));
+  $env->addFilter( new \Twig\TwigFilter('render', function ($string) {
+    return $string;
+  }));
 }
