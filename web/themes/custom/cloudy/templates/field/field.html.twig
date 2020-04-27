@@ -33,52 +33,57 @@
  * - field_type: The type of the field.
  * - label_display: The display settings for the label.
  *
- *
  * @see template_preprocess_field()
  */
 #}
+{% set classes = classes|default([]) %}
+
+{# TODO: Remove mb/mr classes as patterns are implemented on each field template #}
 {%
-  set classes = [
+  set field_classes = [
     'field',
     'field--name-' ~ field_name|clean_class,
     'field--type-' ~ field_type|clean_class,
     'field--label-' ~ label_display,
-  ]
-%}
-{%
-  set title_classes = [
-    'field__label',
-    label_display == 'visually_hidden' ? 'visually-hidden',
+    margin == '2' ? 'mb-2',
+    margin == '3' ? 'mb-3',
+    margin == '4' ? 'mb-4',
+    label_display == 'inline' ? 'd-flex'
   ]
 %}
 
-{% if label_hidden %}
-  {% if multiple %}
-    <div{{ attributes.addClass(classes, 'field__items') }}>
-      {% for item in items %}
-        <div{{ item.attributes.addClass('field__item') }}>{{ item.content }}</div>
-      {% endfor %}
-    </div>
-  {% else %}
-    {% for item in items %}
-      <div{{ attributes.addClass(classes, 'field__item') }}>{{ item.content }}</div>
-    {% endfor %}
-  {% endif %}
-{% else %}
-  <div{{ attributes.addClass(classes) }}>
-    {% if label_display == "inline" %}
-      <div{{ title_attributes.addClass(title_classes) }}>{{ label }}</div>
-    {% else %}
-      <h2{{ title_attributes.addClass(title_classes) }}>{{ label }}</h2>
-    {% endif %}
-    {% if multiple %}
-      <div class="field__items">
-    {% endif %}
-    {% for item in items %}
-      <div{{ item.attributes.addClass('field__item') }}>{{ item.content }}</div>
-    {% endfor %}
-    {% if multiple %}
-      </div>
-    {% endif %}
+{%
+  set title_classes = title_classes|default([
+    label_display == 'visually_hidden' ? 'sr-only',
+    label_display == 'inline' ? 'mr-1',
+    'field__label'
+  ])
+%}
+
+{%
+  set item_classes = item_classes|default([
+    label_display == 'inline' ? 'mr-1',
+  ])
+%}
+
+{% spaceless %}
+  {% block field %}
+  <div{{ attributes.addClass(field_classes).addClass(classes) }}>
+    {% block label %}
+      {% if label_display == "above" %}
+        <h2{{ title_attributes.addClass(title_classes) }}>{{ label }}</h2>
+      {% elseif not label_hidden %}
+        <div{{ title_attributes.addClass(title_classes) }}>{{ label }}</div>
+      {%- endif -%}
+    {% endblock %}
+    {% block content %}
+      {%- for item in items -%}
+        <div{{ item.attributes.addClass(item_classes) }}>
+          {{ icon }}
+          {{ item.content }}
+        </div>
+      {%- endfor -%}
+    {% endblock %}
   </div>
-{% endif %}
+  {% endblock %}
+{% endspaceless %}
