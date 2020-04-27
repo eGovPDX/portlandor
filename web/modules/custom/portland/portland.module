@@ -291,6 +291,8 @@ function portland_entity_insert($entity)
     default:
       break;
   }
+
+  _notify_reviewer($entity, 'created');
 }
 
 /**
@@ -306,6 +308,7 @@ function portland_entity_update($entity)
           _get_active_alerts_count(true);
       }
   }
+  _notify_reviewer($entity, 'updated');
 }
 
 /**
@@ -791,6 +794,82 @@ function portland_cron(){
 
 
 /**
+ * Helper function to notify reviewers on content updates
+ * 
+ * @param $entity
+ *   The entity being created, updated, or deleted
+ * @param $entity_event_type
+ *   "created", "updated", or "deleted"
+ */
+function _notify_reviewer($entity, $entity_event_type) {
+  // Only notify on nodes that has Moderation State and has the Reviewer field
+  if($entity->getEntityTypeId() != 'node' || 
+  ! $entity->hasField('moderation_state') ||
+  ! $entity->hasField('field_reviewer')) 
+    return;
+  $node = $entity;
+  $status_message = $entity_event_type;
+
+  $reviewers = NULL;
+  $latest_and_previous_revs = _load_latest_revision($node);
+  $latest_rev = $latest_and_previous_revs['latest'];
+  // When a node is published, the reviewer has been removed by 
+  // portland_moderation_helper.module. Load the previous rev
+  if( $node->moderation_state->value == "published") {
+    $status_message = "published";
+    $previous_rev = $latest_and_previous_revs['previous'];
+    if( $previous_rev == NULL ) return;
+    $reviewers = $previous_rev->field_reviewer;
+  }
+  else {
+    $reviewers = $node->field_reviewer;
+  }
+
+  $revision_log_output = $node->revision_log->value ? 
+      "<div><h3>Revision log:</h3>\r\n".$node->revision_log->value."</div>\r\n<p/>\r\n<div>" : '';
+
+  // send email
+  $mailManager = \Drupal::service('plugin.manager.mail');
+  $module = 'portland';
+  $key = 'portland_notify_reviewers';
+  $to = 'xinju.wang@portlandoregon.gov'; // For debugging only
+  $params['message'] = "<div><a href=\"/node/".$node->id().
+    "/revisions/".$node->vid->value."/view\"> ".$latest_rev->label().
+    "</a> has been ".$status_message.".</div>\r\n<p/>\r\n".$revision_log_output.
+    "Last updated by <a href=\"".$node->revision_uid->entity->url()."\">".$node->revision_uid->entity->label().
+    "</a> at ".\Drupal::service('date.formatter')->format($node->changed->value, 'custom', 'l Y/n/j g:i A')."</div>";
+  $params['title'] = 'Portland.gov reviewer update';
+  $langcode = \Drupal::currentUser()->getPreferredLangcode();
+  $send = true;
+
+  if($reviewers == NULL) return;
+  foreach ($reviewers->referencedEntities() as $reviewer) {
+    $reviewer_email = $reviewer->mail->value;
+
+    $result = $mailManager->mail($module, $key, $reviewer_email, $langcode, $params, 'powr@portlandoregon.gov', $send);
+    if ($result['result'] != true) {
+        \Drupal::logger('mail-log')->error(t('Error sending to @email.', array('@email' => $to)));
+    }
+    else {
+      // drupal_set_message($message);
+      \Drupal::logger('mail-log')->notice(t('Email sent sent to @email ', array('@email' => $to)));
+    }
+  }
+}
+
+/**
+ * Helper function to get the latest revision
+ */
+function _load_latest_revision($node) {
+  $vids = \Drupal::entityTypeManager()->getStorage('node')->revisionIds($node);
+  $latest_vid = end($vids);
+  $previous_vid = prev($vids);
+  return [
+    "latest" => \Drupal::entityTypeManager()->getStorage('node')->loadRevision($latest_vid),
+    "previous" =>  $previous_vid ? \Drupal::entityTypeManager()->getStorage('node')->loadRevision($previous_vid) : NULL,
+  ];
+}
+/**
  * Implements hook_mail().
  */
 function portland_mail($key, &$message, $params) {
@@ -799,6 +878,7 @@ function portland_mail($key, &$message, $params) {
     );
     switch ($key) {
       case 'portland_daily_mail':
+      case 'portland_notify_reviewers':
         $message['from'] = \Drupal::config('system.site')->get('mail');
         $message['subject'] = t('@title', array('@title' => $params['title']), $options);
         $message['body'][] = $params['message'];
