@@ -1,14 +1,14 @@
 const cssnano = require('cssnano');
 const autoprefixer = require('autoprefixer');
 
-/* eslint-disable-next-line no-unused-vars */
-module.exports = ({ file, options, env }) => {
-  return {
-    plugins: [
-      autoprefixer,
+const isProd = process.env.NODE_ENV === 'production';
+
+module.exports = {
+  plugins: [
+    autoprefixer,
+    isProd &&
       cssnano({
-        preset: 'default'
-      })
-    ]
-  };
+        preset: 'default',
+      }),
+  ].filter(Boolean),
 };
