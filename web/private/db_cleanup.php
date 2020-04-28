@@ -71,3 +71,4 @@ DROP TEMPORARY TABLE IF EXISTS expired_revisions;";
 	echo "Revision deletion complete.\n";
 
 }
+
