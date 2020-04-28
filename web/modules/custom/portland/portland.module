@@ -809,6 +809,13 @@ function _notify_reviewer($entity, $entity_event_type) {
   $node = $entity;
   $status_message = $entity_event_type;
 
+  // Group module would save the node twice when creating a new node.
+  // We only want to send out email once.
+  if( $entity->hasField('field_display_groups') && $node->field_display_groups->count() > 0) {
+    $vids = \Drupal::entityTypeManager()->getStorage('node')->revisionIds($node);
+    if( count(vids) ==  2) return;
+  }
+
   $reviewers = NULL;
   $latest_and_previous_revs = _load_latest_revision($node);
   $latest_rev = $latest_and_previous_revs['latest'];
