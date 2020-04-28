@@ -11,8 +11,7 @@ if (defined('PANTHEON_ENVIRONMENT') && (PANTHEON_ENVIRONMENT !== 'live')) {
 	echo "Webform submission deletion complete.\n";
 
 	// Delete node revisions older than 30 days
-	$revisions_query = "
-DROP TEMPORARY TABLE IF EXISTS expired_revisions;
+	$revisions_query = "DROP TEMPORARY TABLE IF EXISTS expired_revisions;
 CREATE TEMPORARY TABLE expired_revisions
 SELECT t.vid AS vid
 FROM
