@@ -66,9 +66,10 @@ FROM node_revision R
 INNER JOIN expired_revisions REV ON R.vid = REV.vid;
 
 DROP TEMPORARY TABLE IF EXISTS expired_revisions;";
-	echo "Deleting revision data older than 30 days...\n";
-	passthru('drush sql-query "' . $revisions_query . '"');
-	echo "Revision deletion complete.\n";
+
+	// echo "Deleting revision data older than 30 days...\n";
+	// passthru('drush sql-query "' . $revisions_query . '"');
+	// echo "Revision deletion complete.\n";
 
 }
 
