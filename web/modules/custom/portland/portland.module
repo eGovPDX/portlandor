@@ -593,7 +593,15 @@ function portland_search_api_solr_query_alter(\Solarium\QueryType\Select\Query\Q
     $solr_field = !empty($fields[$date_field_name]) ? $fields[$date_field_name] : '';
     // See the link above for the effect of magic numbers
     if ($solr_field) {
-      $solarium_query->addParam('bf', "recip(abs(ms(NOW/HOUR,{$solr_field})),3.16e-11,.08,.05)^4");
+      // 1. Calculate the difference between NOW and the Date field in milliseconds
+      //    Two weeks 8.27e-10, One week 1.65e-9, Two days 5.79e-9, One day 1.157e-8
+      // 2. Use the reciprocal function y = a / (m * x + b)
+      //    a. m = 8.27e-10: Convert the time difference into 2 weeks
+      //    b. a = 0.15 and b = 0.1: Adjust how quickly the curve decline
+      //    c. Can plot the function at https://www.desmos.com/calculator
+      // 3. Add the result to query($q) which is the original Solr score.
+      // https://stackoverflow.com/questions/22017616/stronger-boosting-by-date-in-solr
+      $solarium_query->addParam('sort', 'product(query($q), recip(abs(ms(NOW/DAY,ds_aggregated_sorting_date)),1.157e-8,2,1)) desc');
     }
 
     // Search the whole phrase in additional of individual words 
@@ -601,9 +609,9 @@ function portland_search_api_solr_query_alter(\Solarium\QueryType\Select\Query\Q
     if(is_string($original_keys) && $original_keys) { // Do not modify empty query
         // Three things are happening here:
         // 1. Add phrase search for the entire search string. 
-        // 2. Set proximity to 2 
-        // 3. Boost the score by 50la
-        $query->keys("(\"$original_keys\"~3)^50 $original_keys");
+        // 2. Set proximity to 3 
+        // 3. Boost the score by 5
+        $query->keys("(\"$original_keys\"~3)^5 $original_keys");
     }
 }
 
