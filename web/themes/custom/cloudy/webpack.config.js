@@ -7,7 +7,8 @@ const isProd = process.env.NODE_ENV === 'production';
 
 const config = {
   entry: {
-    cloudy: ['./src/cloudy.js', './src/cloudy.scss'],
+    cloudy: './src/cloudy.scss',
+    cloudyJs: './src/cloudy.js',
     'search-field': './src/js/search-field.js',
     bootstrap: './src/js/bootstrap.js',
   },
