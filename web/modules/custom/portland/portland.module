@@ -601,7 +601,8 @@ function portland_search_api_solr_query_alter(\Solarium\QueryType\Select\Query\Q
       //    c. Can plot the function at https://www.desmos.com/calculator
       // 3. Add the result to query($q) which is the original Solr score.
       // https://stackoverflow.com/questions/22017616/stronger-boosting-by-date-in-solr
-      $solarium_query->addParam('sort', 'product(query($q), recip(abs(ms(NOW/HOUR,ds_aggregated_sorting_date)),1.157e-8,2,1)) desc');
+      $solarium_query->addParam('sort', 
+        'product(query($q), recip(abs(ms(NOW/HOUR,ds_aggregated_sorting_date)),1.157e-8,1.2,0.5)) desc');
     }
 
     // Search the whole phrase in additional of individual words 
@@ -801,16 +802,32 @@ function portland_cron(){
  * Implements hook_mail().
  */
 function portland_mail($key, &$message, $params) {
-    $options = array(
-      'langcode' => $message['langcode'],
-    );
-    switch ($key) {
-      case 'portland_daily_mail':
-        $message['from'] = \Drupal::config('system.site')->get('mail');
-        $message['subject'] = t('@title', array('@title' => $params['title']), $options);
-        $message['body'][] = $params['message'];
-        $message['headers']['Content-Type'] = 'text/html; charset=UTF-8; format=flowed; delsp=yes';
-        break;
+  $options = array(
+    'langcode' => $message['langcode'],
+  );
+  switch ($key) {
+    case 'portland_daily_mail':
+      $message['from'] = \Drupal::config('system.site')->get('mail');
+      $message['subject'] = t('@title', array('@title' => $params['title']), $options);
+      $message['body'][] = $params['message'];
+      $message['headers']['Content-Type'] = 'text/html; charset=UTF-8; format=flowed; delsp=yes';
+      break;
+  }
+}
+
+/**
+ * Implements hook_search_api_solr_documents_alter().
+ */
+function portland_search_api_solr_documents_alter(array &$documents, \Drupal\search_api\IndexInterface $index, array $items) {
+  foreach ($documents as $document) {
+    if($document->ss_content_type == 'news') {
+      // When editor did not specify an Updated On date, use Published On date
+      if($document->ds_field_updated_on == null) {
+        $document->ds_aggregated_sorting_date = $document->ds_field_published_on;
+      }
+      else {
+        $document->ds_aggregated_sorting_date = $document->ds_field_updated_on;
+      }
     }
   }
-  
+}
