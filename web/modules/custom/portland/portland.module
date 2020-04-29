@@ -854,7 +854,7 @@ function _notify_reviewer($entity, $entity_event_type) {
   // send email
   $mailManager = \Drupal::service('plugin.manager.mail');
   $module = 'portland';
-  $key = 'portland_notify_reviewers';
+  $key = 'notify_reviewers';
   $params['message'] = "You have been assigned to review <a href=\"/node/".$node->id().
     "/revisions/".$node->vid->value."/view\"> ".$latest_rev->label().
     "</a> . You will be notified of all changes to this content.<p/>". 
@@ -905,6 +905,7 @@ function portland_mail($key, &$message, $params) {
   );
   switch ($key) {
     case 'portland_daily_mail':
+    case 'portland_notify_reviewers':
       $message['from'] = \Drupal::config('system.site')->get('mail');
       $message['subject'] = t('@title', array('@title' => $params['title']), $options);
       $message['body'][] = $params['message'];
@@ -917,7 +918,7 @@ function portland_mail($key, &$message, $params) {
  * Implements hook_mail_alter().
  */
 function portland_mail_alter(&$message) {
-  if($message['id'] == "portland_portland_notify_reviewers") {
+  if($message['id'] == "portland_notify_reviewers") {
     $user = \Drupal::currentUser()->getAccount();
     $user_name = $user->name;
     $user_email = $user->getEmail();
