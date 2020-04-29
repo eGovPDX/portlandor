@@ -835,16 +835,26 @@ function _notify_reviewer($entity, $entity_event_type) {
   $revision_log_output = $node->revision_log->value ? 
       "<div><h3>Revision log:</h3>\r\n".$node->revision_log->value."</div>\r\n<p/>\r\n<div>" : '';
 
+  $moderation_state_message = [
+    'review' => 'In review',
+    'draft' => 'Draft',
+    'archived' => 'Unpublished/Archived',
+    'published' => 'Published',
+  ];
+
   // send email
   $mailManager = \Drupal::service('plugin.manager.mail');
   $module = 'portland';
   $key = 'portland_notify_reviewers';
   $to = 'xinju.wang@portlandoregon.gov'; // For debugging only
-  $params['message'] = "<div><a href=\"/node/".$node->id().
+  $params['message'] = "You have been assigned to review <a href=\"/node/".$node->id().
     "/revisions/".$node->vid->value."/view\"> ".$latest_rev->label().
-    "</a> has been ".$status_message.".</div>\r\n<p/>\r\n".$revision_log_output.
-    "Last updated by <a href=\"".$node->revision_uid->entity->url()."\">".$node->revision_uid->entity->label().
-    "</a> at ".\Drupal::service('date.formatter')->format($node->changed->value, 'custom', 'l Y/n/j g:i A')."</div>";
+    "</a> . You will be notified of all changes to this content.<p/>". 
+    "<a href=\"".$node->revision_uid->entity->url()."\">".$node->revision_uid->entity->label().
+    "</a> ".$status_message." a new <strong>".$moderation_state_message[$latest_rev->moderation_state->value].
+    "</strong> revision at ".
+    \Drupal::service('date.formatter')->format($node->changed->value, 'custom', 'l Y/n/j g:i A').
+    ".<p/>".$revision_log_output;
   $params['title'] = 'Portland.gov reviewer update';
   $langcode = \Drupal::currentUser()->getPreferredLangcode();
   $send = true;
