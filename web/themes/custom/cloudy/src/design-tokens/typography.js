@@ -26,7 +26,11 @@ module.exports = {
   },
   "ui-text": {
     "fontSize": { "value": "{ type.base.fontSize.value }" },
-    "lineHeight": { "value": "24px" },
+    "lineHeight": { "value": "20px" },
+    "md": {
+      "fontSize": { "value": "{ type.base.md.fontSize.value }" },
+      "line-height": { "value": "27px" },
+    }
   },
   "permalink-text": {
     "fontSize": { "value": "{ type.base.fontSize.value }" },
