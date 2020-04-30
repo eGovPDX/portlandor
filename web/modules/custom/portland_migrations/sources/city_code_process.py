@@ -38,7 +38,7 @@ for title in soup.find_all('h2')[2:34]:
     titles['number'].append(format(count, '02')) #add padding zero to make it two digit
     titles['title'].append(count)
     count += 1
-print('({})Titles printed'.format(len(titles['number'])))
+# print('({})Titles printed'.format(len(titles['number'])))
 
 #Saves Titles dictionary list to csv
 titles = pd.DataFrame(titles)
@@ -64,7 +64,7 @@ for link in data['url']:
         count = 0
         name_trimmed = heading.text.strip()
         if not name_trimmed.startswith('Chapter'):
-            print('Skip: ', name_trimmed)
+            # print('Skip: ', name_trimmed)
             continue
         chapter = re.findall(r"(?<=\.)[0-9]*", name_trimmed)[count]
         title = re.findall(r"[0-9]*[A-Z]?(?=\.)", name_trimmed)[count]
@@ -88,8 +88,8 @@ for link in data['url']:
         url = heading.find('a')['href']
         chapters['url'].append('/citycode/'+ url)
         count += 1
-    print('adding {} to chapters'.format(link))
-print('({}) Chapters Added'.format(len(chapters['number'])))
+    # print('adding {} to chapters'.format(link))
+# print('({}) Chapters Added'.format(len(chapters['number'])))
 # Generate a csv Code Chapters
 chapter = pd.DataFrame(chapters)
 chapter.to_csv('city_code_chapters.csv', index=False)
@@ -107,21 +107,21 @@ sections = {
 }
 # documents = []
 
-title_regex = re.compile(r'^[^.]+')
-chapter_regex = re.compile(r'(?<=\.)(.*?)(?=\.)')
-section_regex = re.compile(r'\d\d\d')
+number_regex = re.compile(r'^(\w+)\.(\d+)\.(\d+)(?:\s+|\.)')
 document_count = 1
 
 for link in data['url']:
-    print('URL: https://www.portlandoregon.gov{}'.format(link))
+    # print('URL: https://www.portlandoregon.gov{}'.format(link))
     page = request.urlopen('https://www.portlandoregon.gov{}'.format(link)).read()
     soup = BeautifulSoup(page, features="html.parser")
     # print(data['url'][0])
+    print(data['name'])
     for heading in soup.find_all('h2')[2:]:
         try:
             #if the start of the a heading is -Notes it is not a chapter
             if heading.text.startswith('-'):
                 # sections['Note'].append(heading.find('a')['href'])
+                print(heading.text)
                 continue
             #if the start of the heading is Figure it is not a sections
             elif heading.text.startswith('Figure'):
@@ -130,12 +130,17 @@ for link in data['url']:
                 # document_count += 1
                 continue
             else:
-                title = re.findall(title_regex, heading.text)[0]
-                chapter = re.findall(chapter_regex, heading.text)[0]
-                section = re.findall(section_regex, heading.text)[0]
+                results = re.findall(number_regex, heading.text)
+                if(len(results)==0):
+                  # print("ERROR:"+heading.text)
+                  continue;
+                title = results[0][0]
+                chapter = results[0][1]
+                section = results[0][2]
                 title = title.zfill(2)
                 section = section.zfill(3)
                 id_number = str(title) + '-' + str(chapter) + '-' + str(section)
+                # print(id_number)
                 chapter_id = str(title) + '-' + str(chapter)
                 sections['id'].append(id_number)
                 sections['chapter_id'].append(chapter_id)
@@ -149,25 +154,25 @@ for link in data['url']:
         except IndexError:
             continue
 
-    print('loading {}'.format(id_number))
+    # print('loading {}'.format(id_number))
 
 
 
-link_count = 1
-data_sections = pd.read_csv('city_code_sections.csv')
-data_raw_index = pd.Index(data_raw['URL'])
-data_index = pd.Index(data_sections['url'])
-#After finding the urls for all of the sections match those urls with the urls provided in the raw data export
-#If the url matches replace the empty string with information in the TEXT field based on the index of the elements found
-for x in data_sections['url']:
-    for y in data_raw['URL']:
-        sections_url = 'https://www.portlandoregon.gov/citycode' + x
-        if sections_url == y:
-            print('found {} at {}'.format(x, data_raw_index.get_loc('{}'.format(y))))
-            sections['text'][data_index.get_loc(x)] = data_raw['TEXT'][data_raw_index.get_loc(y)]
+# link_count = 1
+# data_sections = pd.read_csv('city_code_sections.csv')
+# data_raw_index = pd.Index(data_raw['URL'])
+# data_index = pd.Index(data_sections['url'])
+# #After finding the urls for all of the sections match those urls with the urls provided in the raw data export
+# #If the url matches replace the empty string with information in the TEXT field based on the index of the elements found
+# for x in data_sections['url']:
+#     for y in data_raw['URL']:
+#         sections_url = 'https://www.portlandoregon.gov/citycode' + x
+#         if sections_url == y:
+#             print('found {} at {}'.format(x, data_raw_index.get_loc('{}'.format(y))))
+#             sections['text'][data_index.get_loc(x)] = data_raw['TEXT'][data_raw_index.get_loc(y)]
 
-section = pd.DataFrame(sections)
-section.to_csv('city_code_sections.csv', index=False)
+# section = pd.DataFrame(sections)
+# section.to_csv('city_code_sections.csv', index=False)
 
 
 # print(len(sections['id']))
