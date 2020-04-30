@@ -581,6 +581,23 @@ function portland_diff_layout_builder_info_alter(array &$diff_layouts) {
 }
 
 /**
+ * Implements hook_search_api_solr_documents_alter().
+ */
+function portland_search_api_solr_documents_alter(array &$documents, \Drupal\search_api\IndexInterface $index, array $items) {
+  foreach ($documents as $document) {
+    if($document->ss_content_type == 'news') {
+      // When editor did not specify an Updated On date, use Published On date
+      if($document->ds_field_updated_on == null) {
+        $document->ds_aggregated_sorting_date = $document->ds_field_published_on;
+      }
+      else {
+        $document->ds_aggregated_sorting_date = $document->ds_field_updated_on;
+      }
+    }
+  }
+}
+
+/**
  * Implements hook_search_api_solr_query_alter() boost based on recently
  * published date.
  * See https://atendesigngroup.com/blog/drupal-8-apache-solr-boost-search-term-relevance-publish-date
@@ -776,27 +793,13 @@ function portland_cron(){
         $result = \Drupal::service('renderer')->render($rendered);
 
         // send email
-        $mailManager = \Drupal::service('plugin.manager.mail');
-        $module = 'portland';
         $key = 'portland_daily_mail'; // Replace with Your key
         $to = 'powr@portlandoregon.gov';
-        // $to = 'xinju.wang@portlandoregon.gov'; // For debugging only
         $params['message'] = 'Location, Service location, Room updated in the last 24 hours<p/>' . $result;
         $params['title'] = 'Portland.gov daily location updates';
         $langcode = \Drupal::currentUser()->getPreferredLangcode();
-        $send = true;
 
-        $result = $mailManager->mail($module, $key, $to, $langcode, $params, 'powr@portlandoregon.gov', $send);
-        if ($result['result'] != true) {
-            $message = t('There was a problem sending your email notification to @email.', array('@email' => $to));
-            drupal_set_message($message, 'error');
-            \Drupal::logger('mail-log')->error($message);
-            return;
-        }
-
-        $message = t('An email notification has been sent to @email ', array('@email' => $to));
-        drupal_set_message($message);
-        \Drupal::logger('mail-log')->notice($message);
+        _send_email($key, $to, $langcode, $params, 'powr@portlandoregon.gov');
     }
   }
 
@@ -852,9 +855,9 @@ function _notify_reviewer($entity, $entity_event_type) {
   ];
 
   // send email
-  $mailManager = \Drupal::service('plugin.manager.mail');
-  $module = 'portland';
   $key = 'portland_notify_reviewers';
+  $params['title'] = 'Portland.gov reviewer update';
+  $langcode = \Drupal::currentUser()->getPreferredLangcode();
   $params['message'] = "You have been assigned to review <a href=\"/node/".$node->id().
     "/revisions/".$node->vid->value."/view\"> ".$latest_rev->label().
     "</a> . You will be notified of all changes to this content.<p/>". 
@@ -863,26 +866,29 @@ function _notify_reviewer($entity, $entity_event_type) {
     "</strong> revision at ".
     \Drupal::service('date.formatter')->format($node->changed->value, 'custom', 'l Y/n/j g:i A').
     ".<p/>".$revision_log_output;
-  $params['title'] = 'Portland.gov reviewer update';
-  $langcode = \Drupal::currentUser()->getPreferredLangcode();
-  $send = true;
 
   if($reviewers == NULL) return;
   $current_user_email = \Drupal::currentUser()->getAccount()->getEmail();
   foreach ($reviewers->referencedEntities() as $reviewer) {
     $reviewer_email = $reviewer->mail->value;
-
-    $result = $mailManager->mail($module, $key, $reviewer_email, $langcode, $params, $current_user_email, $send);
-    if ($result['result'] != true) {
-        \Drupal::logger('mail-log')->error(t('Error sending to @email.', array('@email' => $reviewer_email)));
-    }
-    else {
-      // drupal_set_message($message);
-      \Drupal::logger('mail-log')->notice(t('Email sent to @email ', array('@email' => $reviewer_email)));
-    }
+    _send_email($key, $reviewer_email, $langcode, $params, $current_user_email);
   }
 }
 
+/**
+ * Helpder function to send email
+ */
+function _send_email($key, $to, $langcode, $params, $from) {
+  $result = $mailManager = \Drupal::service('plugin.manager.mail')->
+    mail('portland', $key, $to, $langcode, $params, $from, true);
+  if ($result['result'] != true) {
+      \Drupal::logger('mail-log')->error(t('Error sending to @email.', array('@email' => $to)));
+  }
+  else {
+    // drupal_set_message($message);
+    \Drupal::logger('mail-log')->notice(t('Email sent to @email ', array('@email' => $to)));
+  }
+}
 /**
  * Helper function to get the latest revision
  */
@@ -920,6 +926,7 @@ function portland_mail($key, &$message, $params) {
 function portland_mail_alter(&$message) {
   // id = module + key
   if($message['id'] == "portland_portland_notify_reviewers") {
+    // Make the email appear to be from the current Editor
     $user = \Drupal::currentUser()->getAccount();
     $user_name = $user->name;
     $user_email = $user->getEmail();
@@ -927,22 +934,5 @@ function portland_mail_alter(&$message) {
     $message['headers']['From'] = "\"$user_name\" <$user_email>";
     $message['headers']['Sender'] = $user_email;
     $message['headers']['Return-Path'] = $user_email;
-  }
-}
-
-/**
- * Implements hook_search_api_solr_documents_alter().
- */
-function portland_search_api_solr_documents_alter(array &$documents, \Drupal\search_api\IndexInterface $index, array $items) {
-  foreach ($documents as $document) {
-    if($document->ss_content_type == 'news') {
-      // When editor did not specify an Updated On date, use Published On date
-      if($document->ds_field_updated_on == null) {
-        $document->ds_aggregated_sorting_date = $document->ds_field_published_on;
-      }
-      else {
-        $document->ds_aggregated_sorting_date = $document->ds_field_updated_on;
-      }
-    }
   }
 }
