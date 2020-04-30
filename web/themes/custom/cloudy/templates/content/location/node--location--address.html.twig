@@ -1,0 +1,34 @@
+{%
+  set classes = [
+  'node',
+  'node--type-' ~ node.bundle|clean_class,
+  node.isPromoted() ? 'node--promoted',
+  node.isSticky() ? 'node--sticky',
+  not node.isPublished() ? 'node--unpublished',
+  view_mode ? 'node--view-mode-' ~ view_mode|clean_class,
+  'mb-3',
+]
+%}
+{{ attach_library('classy/node') }}
+<address{{ attributes.addClass(classes) }} translate="no">
+  {{ label }}
+  <br>
+  {% spaceless %}
+    {% if node.field_address_or_entrance.address_line1 %}
+      {{ node.field_address_or_entrance.address_line1 }}
+      <br>
+    {% endif %}
+    {% if node.field_address_or_entrance.address_line2 %}
+      {{ node.field_address_or_entrance.address_line2 }}
+      <br>
+    {% endif %}
+    {% if node.field_address_or_entrance.locality %}{{ node.field_address_or_entrance.locality }}{% if node.field_address_or_entrance.administrative_area %}, {{ node.field_address_or_entrance.administrative_area }}{% endif %}{% if node.field_address_or_entrance.postal_code %} {{ node.field_address_or_entrance.postal_code }}{% endif %}
+    {% endif %}
+  {% endspaceless %}
+</address>
+{% if node.field_geolocation is empty %}
+  <div class="get-directions-link"><a href="https://www.google.com/maps/dir/{{ node.field_address_or_entrance.address_line1 }} {{ node.field_address_or_entrance.address_line2 }} {{ node.field_address_or_entrance.locality }} {{ node.field_address_or_entrance.administrative_area }} {{ node.field_address_or_entrance.postal_code }}" target="_blank">Get Directions</a></div>
+{% else %}
+  <div class="get-directions-link"><a href="https://www.google.com/maps/dir/{{ node.field_geolocation.lat }},{{ node.field_geolocation.lon }}" target="_blank">Get Directions</a></div>
+{% endif %}
+
