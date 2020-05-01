@@ -172,7 +172,7 @@ lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_code_sec
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_code_sections_redirects
 ```
 ##### Manual migrations for city code
-The following city code sections have images that need to be manually migrated. There are few enough that it's not worth creating the custom plugin to hande them.
+The following city code sections have images that need to be manually migrated. There are few enough that it's not worth creating the custom plugin to handle them.
 * 1.04.010 Description
 * 11.40.050 Private Tree Permit Standards and Review Factors
 * 11.60.030 Tree Protection Specifications
@@ -189,16 +189,17 @@ The following city code sections have images that need to be manually migrated. 
 * Manually scan through the POLICY_NUMBER column and delete or clean up any value that is not in the policy number format: BCP-ADM-1.01 (there are a few cases where the authors felt the need to prefix the policy number with the bureau name).
 
 ##### Supplemental file: policies_categories.csv
-This is a simple list of 2nd level categories in its own csv file. The list was manually generated due to the relatively low number of items and the difficulty in generating it dyanmically. The list is not expected to change prior to final migration. The 3rd level categories are inclueded in the main policies datafile, and are created as children of their parent 2nd level categories and linked to the content using a custom process plugin.
+This is a simple list of 2nd level categories in its own csv file. The list was manually generated due to the relatively low number of items and the difficulty in generating it dynamically. The list is not expected to change prior to final migration. The 3rd level categories are included in the main policies datafile and are created as children of their parent 2nd level categories and linked to the content using a custom process plugin.
 
-WARNING: the Finance (FIN) category has been omitted from the list becasue it already exists in the live beta database and causes a duplicate entry when the migration is run.
+WARNING: The Finance (FIN) category has been omitted from the list because it already exists in the live beta database and causes a duplicate entry when the migration is run.
 
-#### Supplemental file: policies_types.csv
+##### Supplemental file: policies_types.csv
 This file was manually generated. Unless a new policy type is implemented before final migration (highly unlikely), the file can be used as-is from the repository. It includes 3 columns: TYPE_NAME, TYPE_CODE, and DESCRIPTION.
 
 ##### Local
 ```
 lando drush migrate:import policies_categories
+lando drush migrate:import policies_categories_redirects
 lando drush migrate:import policies_types
 lando drush migrate:import policies
 lando drush migrate:import policies_redirects
@@ -206,6 +207,7 @@ lando drush migrate:import policies_redirects
 ##### On Pantheon
 ```
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:import policies_categories
+lando terminus remote:drush portlandor.powr-[ID] -- migrate:import policies_categories_redirects
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:import policies_types
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:import policies
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:import policies_redirects
@@ -226,7 +228,7 @@ lando terminus remote:drush portlandor.powr-[ID] -- migrate:import wheeler_blog_
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:import wheeler_blog_group_content
 ```
 
-#### Wheeler press releeases
+#### Wheeler press releases
 ##### Local
 ```
 lando drush migrate:import wheeler_press_releases
