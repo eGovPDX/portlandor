@@ -87,6 +87,21 @@ Group content migrations are used to add content to a group by creating a group 
 - policies
 - wheeler_blog - Mayor Wheeler blog migration
 - wheeler_press_releases - Mayor Wheeler press releases migration
+- parks_news
+
+#### Eudaly news
+##### Local
+```
+lando drush migrate:import eudaly_news
+lando drush migrate:import eudaly_news_group_content
+lando drush migrate:import eudaly_news_redirects
+```
+##### On Pantheon
+```
+lando terminus remote:drush portlandor.powr-[ID] -- migrate:import eudaly_news
+lando terminus remote:drush portlandor.powr-[ID] -- migrate:import eudaly_news_group_content
+lando terminus remote:drush portlandor.powr-[ID] -- migrate:import eudaly_news_redirects
+```
 
 #### Category documents for Eudaly news
 ##### Local
@@ -240,8 +255,8 @@ lando drush migrate:import parks_news_redirects
 ```
 ##### On Pantheon
 ```
-lando terminus remote:drush portlandor.powr-[ID] -- migrate:import parks_news
-lando terminus remote:drush portlandor.powr-[ID] -- migrate:import parks_news_group_content
-lando terminus remote:drush portlandor.powr-[ID] -- migrate:import parks_news_redirects
+lando terminus remote:drush portlandor.powr-2270 -- migrate:import parks_news
+lando terminus remote:drush portlandor.powr-2270 -- migrate:import parks_news_group_content
+lando terminus remote:drush portlandor.powr-2270 -- migrate:import parks_news_redirects
 ```
 
