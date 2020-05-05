@@ -290,6 +290,8 @@ function portland_entity_insert($entity)
     default:
       break;
   }
+
+  _notify_reviewer($entity, 'created');
 }
 
 /**
@@ -305,6 +307,7 @@ function portland_entity_update($entity)
           _get_active_alerts_count(true);
       }
   }
+  _notify_reviewer($entity, 'updated');
 }
 
 /**
@@ -578,6 +581,23 @@ function portland_diff_layout_builder_info_alter(array &$diff_layouts) {
 }
 
 /**
+ * Implements hook_search_api_solr_documents_alter().
+ */
+function portland_search_api_solr_documents_alter(array &$documents, \Drupal\search_api\IndexInterface $index, array $items) {
+  foreach ($documents as $document) {
+    if($document->ss_content_type == 'news') {
+      // When editor did not specify an Updated On date, use Published On date
+      if($document->ds_field_updated_on == null) {
+        $document->ds_aggregated_sorting_date = $document->ds_field_published_on;
+      }
+      else {
+        $document->ds_aggregated_sorting_date = $document->ds_field_updated_on;
+      }
+    }
+  }
+}
+
+/**
  * Implements hook_search_api_solr_query_alter() boost based on recently
  * published date.
  * See https://atendesigngroup.com/blog/drupal-8-apache-solr-boost-search-term-relevance-publish-date
@@ -773,30 +793,114 @@ function portland_cron(){
         $result = \Drupal::service('renderer')->render($rendered);
 
         // send email
-        $mailManager = \Drupal::service('plugin.manager.mail');
-        $module = 'portland';
         $key = 'portland_daily_mail'; // Replace with Your key
         $to = 'powr@portlandoregon.gov';
-        // $to = 'xinju.wang@portlandoregon.gov'; // For debugging only
         $params['message'] = 'Location, Service location, Room updated in the last 24 hours<p/>' . $result;
         $params['title'] = 'Portland.gov daily location updates';
         $langcode = \Drupal::currentUser()->getPreferredLangcode();
-        $send = true;
 
-        $result = $mailManager->mail($module, $key, $to, $langcode, $params, 'powr@portlandoregon.gov', $send);
-        if ($result['result'] != true) {
-            $message = t('There was a problem sending your email notification to @email.', array('@email' => $to));
-            drupal_set_message($message, 'error');
-            \Drupal::logger('mail-log')->error($message);
-            return;
-        }
-
-        $message = t('An email notification has been sent to @email ', array('@email' => $to));
-        drupal_set_message($message);
-        \Drupal::logger('mail-log')->notice($message);
+        _send_email($key, $to, $langcode, $params, 'powr@portlandoregon.gov');
     }
   }
 
+
+/**
+ * Helper function to notify reviewers on content updates
+ * 
+ * @param $entity
+ *   The entity being created, updated, or deleted
+ * @param $entity_event_type
+ *   "created", "updated", or "deleted"
+ */
+function _notify_reviewer($entity, $entity_event_type) {
+  // Only notify on nodes that has Moderation State and has the Reviewer field
+  if($entity->getEntityTypeId() != 'node' || 
+  ! $entity->hasField('moderation_state') ||
+  ! $entity->hasField('field_reviewer')) 
+    return;
+  $node = $entity;
+  $status_message = $entity_event_type;
+
+  // Group module would save the node twice when creating a new node.
+  // We only want to send out email once.
+  if( $entity->hasField('field_display_groups') && $node->field_display_groups->count() > 0) {
+    $vids = \Drupal::entityTypeManager()->getStorage('node')->revisionIds($node);
+    if( count($vids) ==  1 && $entity_event_type == 'created') return;
+    if( count($vids) ==  2 && $entity_event_type == 'updated') $status_message = 'created';
+  }
+
+  $reviewers = NULL;
+  $latest_and_previous_revs = _load_latest_revision($node);
+  $latest_rev = $latest_and_previous_revs['latest'];
+  // When a node is published, the reviewer has been removed by 
+  // portland_moderation_helper.module. Load the previous rev
+  if( $node->moderation_state->value == "published") {
+    $status_message = "published";
+    $previous_rev = $latest_and_previous_revs['previous'];
+    if( $previous_rev == NULL ) return;
+    $reviewers = $previous_rev->field_reviewer;
+  }
+  else {
+    $reviewers = $node->field_reviewer;
+  }
+
+  $revision_log_output = $node->revision_log->value ? 
+      "<div><h3>Revision log:</h3>\r\n".$node->revision_log->value."</div>\r\n<p/>\r\n<div>" : '';
+
+  $moderation_state_message = [
+    'review' => 'In review',
+    'draft' => 'Draft',
+    'archived' => 'Unpublished/Archived',
+    'published' => 'Published',
+  ];
+
+  // send email
+  $key = 'portland_notify_reviewers';
+  $params['title'] = 'Portland.gov reviewer update';
+  $langcode = \Drupal::currentUser()->getPreferredLangcode();
+  $params['message'] = "You have been assigned to review <a href=\"/node/".$node->id().
+    "/revisions/".$node->vid->value."/view\"> ".$latest_rev->label().
+    "</a> . You will be notified of all changes to this content.<p/>". 
+    "<a href=\"".$node->revision_uid->entity->url()."\">".$node->revision_uid->entity->label().
+    "</a> ".$status_message." a new <strong>".$moderation_state_message[$latest_rev->moderation_state->value].
+    "</strong> revision at ".
+    \Drupal::service('date.formatter')->format($node->changed->value, 'custom', 'l Y/n/j g:i A').
+    ".<p/>".$revision_log_output;
+
+  if($reviewers == NULL) return;
+  $current_user_email = \Drupal::currentUser()->getAccount()->getEmail();
+  foreach ($reviewers->referencedEntities() as $reviewer) {
+    $reviewer_email = $reviewer->mail->value;
+    _send_email($key, $reviewer_email, $langcode, $params, $current_user_email);
+  }
+}
+
+/**
+ * Helpder function to send email
+ */
+function _send_email($key, $to, $langcode, $params, $from) {
+  $result = $mailManager = \Drupal::service('plugin.manager.mail')->
+    mail('portland', $key, $to, $langcode, $params, $from, true);
+  if ($result['result'] != true) {
+      \Drupal::logger('mail-log')->error(t('Error sending to @email.', array('@email' => $to)));
+  }
+  else {
+    // drupal_set_message($message);
+    \Drupal::logger('mail-log')->notice(t('Email sent to @email ', array('@email' => $to)));
+  }
+}
+/**
+ * Helper function to get the latest revision
+ */
+function _load_latest_revision($node) {
+  $vids = \Drupal::entityTypeManager()->getStorage('node')->revisionIds($node);
+  $latest_vid = end($vids);
+  $previous_vid = prev($vids);
+  return [
+    "latest" => \Drupal::entityTypeManager()->getStorage('node')->loadRevision($latest_vid),
+    "previous" =>  $previous_vid ? \Drupal::entityTypeManager()->getStorage('node')->loadRevision($previous_vid) : NULL,
+  ];
+}
 
 /**
  * Implements hook_mail().
@@ -807,6 +911,7 @@ function portland_mail($key, &$message, $params) {
   );
   switch ($key) {
     case 'portland_daily_mail':
+    case 'portland_notify_reviewers':
       $message['from'] = \Drupal::config('system.site')->get('mail');
       $message['subject'] = t('@title', array('@title' => $params['title']), $options);
       $message['body'][] = $params['message'];
@@ -816,18 +921,15 @@ function portland_mail($key, &$message, $params) {
 }
 
 /**
- * Implements hook_search_api_solr_documents_alter().
+ * Implements hook_mail_alter().
  */
-function portland_search_api_solr_documents_alter(array &$documents, \Drupal\search_api\IndexInterface $index, array $items) {
-  foreach ($documents as $document) {
-    if($document->ss_content_type == 'news') {
-      // When editor did not specify an Updated On date, use Published On date
-      if($document->ds_field_updated_on == null) {
-        $document->ds_aggregated_sorting_date = $document->ds_field_published_on;
-      }
-      else {
-        $document->ds_aggregated_sorting_date = $document->ds_field_updated_on;
-      }
-    }
+function portland_mail_alter(&$message) {
+  // id = module + key
+  if($message['id'] == "portland_portland_notify_reviewers") {
+    // Make the email appear to be from the current Editor
+    $user = \Drupal::currentUser()->getAccount();
+    $user_name = $user->name;
+    $user_email = $user->getEmail();
+    $message['headers']['Reply-To'] = "\"$user_name\" <$user_email>";
   }
 }
