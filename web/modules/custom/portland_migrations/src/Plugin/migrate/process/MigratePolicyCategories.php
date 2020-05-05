@@ -46,8 +46,30 @@ class MigratePolicyCategories extends ProcessPluginBase {
     $l2_category_code = $policy_number_array[1];
     $vocabulary = "policy_category";
 
-    // see if l3 category exists
-    $term = $this->getTermByFieldValue($vocabulary, 'name', $l3_category);
+    // get parent term by abbreviation
+    $parent_term = $this->getTermByFieldValue($vocabulary, 'field_category_abbreviation', $l2_category_code);
+    if ($parent_term === false || count($parent_term) < 1) {
+      // parent not found, throw error
+      $message = "Parent term (" . $l2_category_code . ") not found for policies category term " . $l3_category . ". Cannot continue.";
+      \Drupal::logger('portland_migrations')->notice($message);
+      throw new MigrateException($message);
+      echo $message;
+      exit();
+    } else if (count($parent_term) > 1) {
+      // more than one parent category found with that code, throw error
+      $message = "Multiple matching parent categories with code " . $l2_category_code . " found in vocabulary " . $vocabulary . ". Cannot continue.";
+      \Drupal::logger('portland_migrations')->notice($message);
+      throw new MigrateException();      
+    }
+    
+    if (!is_array($parent_term)) {
+      $halt = true;
+    }
+    $parent_term = reset($parent_term);
+    $parent_term_id = $parent_term->id();
+
+    // see if l3 category exists within parent (l2) category
+    $term = $this->getTermByFieldValue($vocabulary, 'name', $l3_category, $parent_term_id);
     if ($term && count($term) == 1) {
       // term exists, just return the tid to link it
       if (!is_array($term)) {
@@ -66,30 +88,6 @@ class MigratePolicyCategories extends ProcessPluginBase {
       'name' => $l3_category, 
       'vid'  => $vocabulary,
     ]);
-    //$term = $this->getTermByFieldValue($vocabulary, 'name', $l3_category);
-    //$term = reset($term);
-
-    // get parent term by abbreviation and set it as the parent
-    $parent_term = $this->getTermByFieldValue($vocabulary, 'field_category_abbreviation', $l2_category_code);
-    if ($parent_term === false || count($parent_term) < 1) {
-      // parent not found, throw error
-      $message = "Parent term (" . $l2_category_code . ") not found for policies category term " . $l3_category . ". Cannot continue.";
-      \Drupal::logger('portland_migrations')->notice($message);
-      throw new MigrateException($message);
-      echo $message;
-      exit();
-    } else if (count($parent_term) > 1) {
-      // more than one parent category found with that code, throw error
-      $message = "Multiple matching parent categories with code " . $l2_category_code . " found in vocabulary " . $vocabulary . ". Cannot continue.";
-      \Drupal::logger('portland_migrations')->notice($message);
-      throw new MigrateException();      
-    }
-
-    if (!is_array($parent_term)) {
-      $halt = true;
-    }
-    $parent_term = reset($parent_term);
-    $parent_term_id = $parent_term->id();
     $term->parent = $parent_term_id;
     $term->save();
 
@@ -100,10 +98,13 @@ class MigratePolicyCategories extends ProcessPluginBase {
   /**
    * Load term by field value.
    */
-  protected function getTermByFieldValue($vid, $field_name, $value) {
+  protected function getTermByFieldValue($vid, $field_name, $value, $parent_term_id = null) {
     $properties = [];
     $properties['vid'] = $vid;
     $properties[$field_name] = $value;
+    if ($parent_term_id != null) {
+      $properties['parent.target_id'] = $parent_term_id;
+    }
     $terms = \Drupal::entityManager()->getStorage('taxonomy_term')->loadByProperties($properties);
     return $terms;
   }

@@ -19,6 +19,8 @@ lando terminus drush [environment] migrate:import [migration_id]
 
 After editing an existing migration, you need to run `lando drush cr` before it will pick up the changes.
 
+If the migration reports that any items failed, you can see what the failed items were with `lando drush mmsg`
+
 ### Rolling back migrations
 
 To roll back a migration, use the `migrate:rollback [migration_name]` command, and roll back migrations in the reverse order than they were originally rolled.
@@ -59,6 +61,13 @@ If you want to place the files in a different location, you need to update the p
 ### CSV files manual modifications
 
 For some of the content migrations, the exported data may have been massaged to avoid complex migration routines. The necessary updates are described in the migrations sections below.
+
+Windows users: When manually editing CSV files beware of file encodings. UTF-8 is the standard encoding, but Excel exports a CSV with the encoding "UTF-8 with BOM" which can cause errors during the import such as:
+
+```
+In Condition.php line 105:
+Query condition 'taxonomy_term_field_data.name IN ()' cannot be empty.
+```
 
 ## Migrations
 
@@ -185,13 +194,14 @@ The following city code sections have images that need to be manually migrated. 
 
 ##### Modifications to policies.csv
 * Create new column to the right of SUMMARY_TEXT. Copy the contents of SUMMARY_TEXT into the new empty column and change the header to POLICY_NUMBER.
-* Manually scan through the SUMMARY_TEXT column and delete any value that is not summary text.
-* Manually scan through the POLICY_NUMBER column and delete or clean up any value that is not in the policy number format: BCP-ADM-1.01 (there are a few cases where the authors felt the need to prefix the policy number with the bureau name).
+  * Manually scan through the SUMMARY_TEXT column and delete any value that is not summary text.
+  * Manually scan through the POLICY_NUMBER column and delete or clean up any value that is not in the policy number format: BCP-ADM-1.01 (there are a few cases where the authors felt the need to prefix the policy number with the bureau name).
+* Create a new column to the right of POLICY_NUMBER named numeric_order.
+  * Fill this colum with the numeric part of the POLICY_NUMBER. You can use this formula in a spreadsheet to get that value: `=IF(LEN(J2), ABS(VALUE(REPLACE(J2, 1, 8, ""))), "")`
+* Windows users: Make sure the CSV file uses UTF-8 encoding (not UTF-8 with BOM) as described in the "CSV files manual modifications" section.
 
 ##### Supplemental file: policies_categories.csv
 This is a simple list of 2nd level categories in its own csv file. The list was manually generated due to the relatively low number of items and the difficulty in generating it dynamically. The list is not expected to change prior to final migration. The 3rd level categories are included in the main policies datafile and are created as children of their parent 2nd level categories and linked to the content using a custom process plugin.
-
-WARNING: The Finance (FIN) category has been omitted from the list because it already exists in the live beta database and causes a duplicate entry when the migration is run.
 
 ##### Supplemental file: policies_types.csv
 This file was manually generated. Unless a new policy type is implemented before final migration (highly unlikely), the file can be used as-is from the repository. It includes 3 columns: TYPE_NAME, TYPE_CODE, and DESCRIPTION.
