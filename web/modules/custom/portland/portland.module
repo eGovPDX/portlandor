@@ -933,3 +933,67 @@ function portland_mail_alter(&$message) {
     $message['headers']['Reply-To'] = "\"$user_name\" <$user_email>";
   }
 }
+
+function _portland_truncate_revision_data() {
+
+	// Delete webform submission data
+	echo "Deleting webform submissions...\n";
+    $database = \Drupal::database();
+    $webform_query = "truncate table webform_submission";
+    $database->query($webform_query);
+    $webform_query = "truncate table webform_submission_data";
+    $database->query($webform_query);
+    $webform_query = "truncate table webform_submission_log";
+    $database->query($webform_query);
+	echo "Webform submission deletion complete.\n";
+
+    // delete node revision data
+
+    // this is string array of database table names
+    $fields_query = "SELECT table_name
+FROM information_schema.TABLES
+WHERE table_schema = 'pantheon' and table_name like 'node_revision__%'
+ORDER BY (data_length + index_length) DESC";
+    $database->query($fields);
+    $fields = $database->fetchAll();
+    // $fields = [];
+
+    $revisions_query = "DROP TEMPORARY TABLE IF EXISTS expired_revisions";
+    $database->query($revisions_query);
+
+    $revisions_query = "CREATE TEMPORARY TABLE expired_revisions
+        SELECT t.vid AS vid
+        FROM
+            (SELECT r.vid AS vid, r.revision_timestamp AS revision_timestamp
+            FROM
+            node_field_data n
+                INNER JOIN node_revision r ON r.nid = n.nid
+            WHERE (changed < (CURRENT_DATE - INTERVAL 30 DAY)) AND ((n.vid <> r.vid))
+            GROUP BY n.nid, r.vid, r.revision_timestamp
+            ORDER BY revision_timestamp DESC
+            LIMIT 9223372036854775807 OFFSET 0) t
+        WHERE revision_timestamp < (CURRENT_DATE - INTERVAL 30 DAY)";
+    $database->query($revisions_query);
+
+    // spin through fields array and add section to query
+    foreach($fields as $field) {
+        $fieldname = $field;
+        $field_queries += "DELETE C
+            FROM $fieldname C
+            INNER JOIN expired_revisions REV ON C.revision_id = REV.vid";
+        $database->query($revisions_query);
+    }
+
+    $revisions_query = "DELETE R
+        FROM node_revision R
+        INNER JOIN expired_revisions REV ON R.vid = REV.vid";
+    $database->query($revisions_query);
+
+    $revisions_query = "DROP TEMPORARY TABLE IF EXISTS expired_revisions;";
+    $database->query($revisions_query);
+
+	echo "Deleting revision data older than 30 days...\n";
+    $database = \Drupal::database();
+    $database->query($revisions_query);
+	echo "Revision deletion complete.\n";
+}
