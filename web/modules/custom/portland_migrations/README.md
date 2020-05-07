@@ -185,8 +185,11 @@ The following city code sections have images that need to be manually migrated. 
 
 ##### Modifications to policies.csv
 * Create new column to the right of SUMMARY_TEXT. Copy the contents of SUMMARY_TEXT into the new empty column and change the header to POLICY_NUMBER.
-* Manually scan through the SUMMARY_TEXT column and delete any value that is not summary text.
-* Manually scan through the POLICY_NUMBER column and delete or clean up any value that is not in the policy number format: BCP-ADM-1.01 (there are a few cases where the authors felt the need to prefix the policy number with the bureau name).
+  * Manually scan through the SUMMARY_TEXT column and delete any value that is not summary text.
+  * Manually scan through the POLICY_NUMBER column and delete or clean up any value that is not in the policy number format: BCP-ADM-1.01 (there are a few cases where the authors felt the need to prefix the policy number with the bureau name).
+* Create a new column to the right of POLICY_NUMBER named NUMERIC_ORDER.
+  * Fill this colum with the numeric part of the POLICY_NUMBER. You can use this formula in a spreadsheet to get that value: `=IF(LEN(K2), ABS(VALUE(REPLACE(K2, 1, 8, ""))), "")` (That formula won't work with some HRAR policies with non-standard policy numbers like "ARB-HRAR-6.07 (A)" so you'll need to manually convert those into a numeric value such as 6.071.)
+* Windows users: Make sure the CSV file uses UTF-8 encoding (not UTF-8 with BOM) as described in the "CSV files manual modifications" section.
 
 ##### Supplemental file: policies_categories.csv
 This is a simple list of 2nd level categories in its own csv file. The list was manually generated due to the relatively low number of items and the difficulty in generating it dyanmically. The list is not expected to change prior to final migration. The 3rd level categories are inclueded in the main policies datafile, and are created as children of their parent 2nd level categories and linked to the content using a custom process plugin.
