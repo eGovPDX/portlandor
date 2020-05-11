@@ -25,6 +25,11 @@ class MigrateBodyContentAndLinkedMedia extends ProcessPluginBase {
    * {@inheritdoc}
    */
   public function transform($value, MigrateExecutableInterface $migrate_executable, Row $row, $destination_property) {
+    // Some policies are PDF files, need to download the file, create a media document, embed the document in body
+    // The CONTENT_TYPE column is "B" for binary content
+    if($row->getSourceProperty('CONTENT_TYPE') == 'B') {
+      $value = $this->processPolicyInPdf($value, $migrate_executable, $row, $destination_property);
+    }
 
     preg_match_all('/<a [^>]+>|<img [^>]+>/i', $value, $downloaded_file);
     if (!empty($downloaded_file[0])) {
@@ -173,12 +178,94 @@ class MigrateBodyContentAndLinkedMedia extends ProcessPluginBase {
     return $value;
   }
 
+  protected function processPolicyInPdf($value, 
+    MigrateExecutableInterface $migrate_executable, Row $row, $destination_property) {
+    // Get file meta data
+    $pogFileUrl = $row->getSourceProperty('URL');
+    $pogDescription = $row->getSourceProperty('CONTENT_NAME');
+
+    // Get file name from the URL
+    $headers = get_headers($pogFileUrl, 1);
+    if (!isset($headers['Content-Disposition'])) return;
+    // Content-Disposition: inline; filename="ARA 1.01 adopted 113018.pdf"
+    $matches = [];
+    preg_match('/filename="(.*)"/', $headers['Content-Disposition'], $matches);
+    if(count($matches) < 2) return;
+    $pogFileName = $matches[1];
+
+    // replace underscores with hypens
+    $fileName = preg_replace('/_/', '-', $pogFileName);
+    // transliterate filename to remove spaces, punctuation, illegal characters
+    if (function_exists("transliterate_filenames_transliteration")) {
+      $fileName = transliterate_filenames_transliteration($fileName);
+    }
+
+    // Prepare destination uri
+    $download_dir_uri = $this->prepareDownloadDirectory();
+    $destination_uri = $download_dir_uri . "/" . $fileName;
+
+    // download and save managed file
+    try {
+      $downloaded_file = system_retrieve_file($pogFileUrl, $destination_uri, TRUE);
+    }
+    catch (Exception $e) {
+      $message = "Error occurred while trying to download URL target at " . $pogFileUrl . " and create managed file. Exception: " . $e->getMessage();
+      \Drupal::logger('portland_migrations')->notice($message);
+    }
+    if( $downloaded_file == FALSE ) {
+      echo "Failed to download $pogFileUrl";
+      return $result;
+    }
+
+    // Create the Media Document item
+    $media = Media::create([
+      'bundle' => 'document',
+      'uid' => 1,
+      'langcode' => \Drupal::languageManager()->getDefaultLanguage()->getId(),
+      'name' => $pogDescription,
+      'status' => 1,
+      'field_document' => [
+        'target_id' => $downloaded_file->id()
+      ],
+      'field_summary' => $pogDescription,
+    ]);
+    $media->save();
+    $media->status->value = 1;
+    $media->moderation_state->value = 'published';
+    $media->save();
+
+    // Embed the document in body
+    $media_uuid = $media->uuid();
+    return "<drupal-entity data-embed-button=\"document_browser\" data-entity-embed-display=\"view_mode:media.embedded\" data-entity-type=\"media\" data-entity-uuid=\"$media_uuid\" data-langcode=\"en\"></drupal-entity>";
+  }
+
+  protected function prepareDownloadDirectory() {
+    // prepare download directory
+    $folder_name = date("Y-m") ;
+    $folder_uri = file_build_uri($folder_name);
+    $public_path = \Drupal::service('file_system')->realpath(file_default_scheme() . "://");
+    $download_path = $public_path . "/" . $folder_name;
+    $dir = file_prepare_directory($download_path, FILE_CREATE_DIRECTORY);
+    return $folder_uri;
+  }
+
   protected function generateDownloadDirectoryUri() {
     // prepare download directory
     $folder_name = date("Y-m");
     $folder_uri = file_build_uri($folder_name);
     return $folder_uri;
   }
+
+  protected function formatBytes($bytes, $precision = 2) { 
+    $units = array('B', 'KB', 'MB', 'GB', 'TB'); 
+
+    $bytes = max($bytes, 0); 
+    $pow = floor(($bytes ? log($bytes) : 0) / log(1024)); 
+    $pow = min($pow, count($units) - 1); 
+    $bytes /= (1 << (10 * $pow)); 
+
+    return round($bytes, $precision) . ' ' . $units[$pow]; 
+} 
 
   protected function isInternalLink($url) {
     $url_host = parse_url($url, PHP_URL_HOST);
