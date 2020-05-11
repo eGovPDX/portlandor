@@ -1,17 +1,16 @@
+const sass = require('sass');
 const path = require('path');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const babelConfig = require('./babel.config');
 
 const isProd = process.env.NODE_ENV === 'production';
 
-module.exports = (env, argv) => ({
+const config = {
   entry: {
-    cloudy: [
-      './src/cloudy.js',
-      './src/cloudy.scss',
-    ],
+    cloudy: './src/cloudy.scss',
+    cloudyJs: './src/cloudy.js',
     'search-field': './src/js/search-field.js',
-    'bootstrap': './src/js/bootstrap.js',
+    bootstrap: './src/js/bootstrap.js',
   },
   output: {
     path: path.resolve(__dirname, './dist'),
@@ -29,19 +28,28 @@ module.exports = (env, argv) => ({
     Drupal: 'Drupal',
     drupal: 'Drupal',
   },
-  devtool: 'source-map',
+  devtool: isProd ? 'source-map' : 'cheap-module-source-map',
   mode: isProd ? 'production' : 'development',
   watchOptions: {
-    ignored: ['images/**/*.*', 'dist/**/*.*', 'templates/**/*.*', 'node_modules'],
+    ignored: [
+      'images/**/*.*',
+      'dist/**/*.*',
+      'templates/**/*.*',
+      'node_modules',
+    ],
     poll: 100,
-    aggregateTimeout: 100
+    aggregateTimeout: 100,
   },
   plugins: [
     new MiniCssExtractPlugin({
       filename: '[name].css',
-      chunkFilename: '[id].css'
+      chunkFilename: '[id].css',
     }),
   ],
+  stats: {
+    // removes needless `mini-css-extract-plugin` noisy output
+    children: false,
+  },
   module: {
     rules: [
       {
@@ -49,7 +57,7 @@ module.exports = (env, argv) => ({
         use: {
           loader: 'babel-loader',
           options: babelConfig,
-        }
+        },
       },
       {
         test: /\.(sa|sc)ss$/,
@@ -59,38 +67,47 @@ module.exports = (env, argv) => ({
             loader: 'css-loader',
             options: {
               sourceMap: true,
-              url: false
-            }
+              url: false,
+            },
           },
           {
             loader: 'postcss-loader',
             options: {
               sourceMap: true,
-              config: {
-                path: './postcss.config.js',
-                ctx: {
-                  mode: argv.mode
-                }
-              }
-            }
+            },
           },
           {
-            loader: 'resolve-url-loader'
+            loader: 'resolve-url-loader',
           },
           {
             loader: 'sass-loader',
             options: {
-              sourceMap: true
-            }
-          }
-        ]
-      }
-    ]
+              sourceMap: true,
+              implementation: sass,
+              sassOptions: {
+                fiber: false,
+              },
+            },
+          },
+        ],
+      },
+    ],
   },
-  performance: {
-    assetFilter: function (assetFilename) {
-      // only give warnings about size for javascript files
-      return assetFilename.endsWith('.js');
-    }
-  },
-});
+};
+
+if (isProd) {
+  config.performance = {
+    maxAssetSize: 250000,
+    assetFilter(assetFilename) {
+      // don't warn about Source Maps
+      if (assetFilename.endsWith('.map')) return false;
+      return true;
+    },
+  };
+
+  config.optimization = {
+    minimize: true,
+  };
+}
+
+module.exports = config;
