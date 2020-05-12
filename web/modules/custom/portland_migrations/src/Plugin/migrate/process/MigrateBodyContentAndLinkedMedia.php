@@ -31,8 +31,11 @@ class MigrateBodyContentAndLinkedMedia extends ProcessPluginBase {
       $value = $this->processPolicyInPdf($value, $migrate_executable, $row, $destination_property);
     }
 
+    // Find all A and IMG tags in body text
     preg_match_all('/<a [^>]+>|<img [^>]+>/i', $value, $downloaded_file);
     if (!empty($downloaded_file[0])) {
+
+      $is_code_section = ! is_null($row->getSourceProperty('chapter_id'));
 
       // migrated page title and POG URL, in case we need to report an error.
       $page_title = $row->getSourceProperty('CONTENT_NAME');
@@ -53,7 +56,7 @@ class MigrateBodyContentAndLinkedMedia extends ProcessPluginBase {
 
         // parse url from link; it will be in an href or src attribute.
         $url = $link->getAttribute('href');
-        if (is_null($url)) {
+        if (empty($url)) {
           $url = $link->getAttribute('src');
         }
 
@@ -74,8 +77,10 @@ class MigrateBodyContentAndLinkedMedia extends ProcessPluginBase {
         }
 
         // skip external links and leave the link tag alone
-        $internal_link = $this->isInternalLink($url);
-        if (!$internal_link) continue;
+        if(substr($url, 0, strlen("http://www.portlandonline.com/")) !== "http://www.portlandonline.com/") {
+          $internal_link = $this->isInternalLink($url);
+          if (!$internal_link) continue;
+        }
 
         // build filename/uri
         $arr_filename = $this->buildPogFilename($url);
@@ -165,17 +170,59 @@ class MigrateBodyContentAndLinkedMedia extends ProcessPluginBase {
           continue;
         }
 
-        // modify link to use file URL
-        $file_uri = $downloaded_file->getFileUri();
-        $file_url = file_url_transform_relative(file_create_url($file_uri));
-        $link->setAttribute("href", $file_url);
-
+        if($is_code_section) {
+          $this->processCodeImage($link, $filename, $downloaded_file, $dom);
+        }
+        else {
+          // modify link to use file URL
+          $file_uri = $downloaded_file->getFileUri();
+          $file_url = file_url_transform_relative(file_create_url($file_uri));
+          $link->setAttribute("href", $file_url);
+        }
       }
       $output = Html::serialize($dom);
       $value = $output;
     }
 
     return $value;
+  }
+
+  /**
+   * Code sections have images embedded inside the body text. 
+   * Create a Media node and replace the HTML.
+   */
+  protected function processCodeImage($link, $filename, 
+    $downloaded_file, $dom) {
+    $url = $link->getAttribute('src');
+    if (is_null($url)) return;
+
+    // Use alt text as the media name if available
+    $media_name = $link->getAttribute('alt') ? $link->getAttribute('alt') : $filename;
+
+    // Create the Media Document item
+    $media = Media::create([
+      'bundle' => 'image',
+      'uid' => 1,
+      'langcode' => \Drupal::languageManager()->getDefaultLanguage()->getId(),
+      'name' => $media_name,
+      'field_title' => $media_name,
+      'status' => 1,
+      'image' => [
+        'target_id' => $downloaded_file->id()
+      ],
+      'field_summary' => $media_name,
+      'field_media_in_library' => 1,
+    ]);
+    $media->save();
+    $media->status->value = 1;
+    $media->moderation_state->value = 'published';
+    $media->save();
+
+    // Replace the old link with a embedded image
+    $media_uuid = $media->uuid();
+    $newNode = $dom->createDocumentFragment();
+    $newNode->appendXML("<drupal-entity data-align=\"responsive-full\" data-embed-button=\"image_browser\" data-entity-embed-display=\"media_image\" data-entity-type=\"media\" data-entity-uuid=\"$media_uuid\" data-langcode=\"en\"></drupal-entity>");
+    $link->parentNode->replaceChild($newNode, $link);
   }
 
   protected function processPolicyInPdf($value, 
@@ -255,17 +302,6 @@ class MigrateBodyContentAndLinkedMedia extends ProcessPluginBase {
     $folder_uri = file_build_uri($folder_name);
     return $folder_uri;
   }
-
-  protected function formatBytes($bytes, $precision = 2) { 
-    $units = array('B', 'KB', 'MB', 'GB', 'TB'); 
-
-    $bytes = max($bytes, 0); 
-    $pow = floor(($bytes ? log($bytes) : 0) / log(1024)); 
-    $pow = min($pow, count($units) - 1); 
-    $bytes /= (1 << (10 * $pow)); 
-
-    return round($bytes, $precision) . ' ' . $units[$pow]; 
-} 
 
   protected function isInternalLink($url) {
     $url_host = parse_url($url, PHP_URL_HOST);
