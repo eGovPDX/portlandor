@@ -1,0 +1,32 @@
+id: policies_categories_redirects
+label: 'Migrate legacy paths into Redirects table'
+langcode: en
+migration_group: policies
+source:
+  plugin: csv
+  path: modules/custom/portland_migrations/sources/policies_categories.csv
+  header_row_count: 1
+  constants:
+    redirect_prefix: 'internal:/taxonomy/term/'
+    uid_admin: 1
+    status_code: 301
+  keys:
+    - CATEGORY
+destination:
+  plugin: 'entity:redirect'
+process:
+  uid: constants/uid_admin
+  status_code: constants/status_code
+  temp_nid:
+    plugin: migration_lookup
+    source: CATEGORY
+    migration: policies_categories
+  redirect_source:
+    plugin: substr
+    source: URL
+    start: 1
+  redirect_redirect:
+    plugin: concat
+    source:
+      - constants/redirect_prefix
+      - "@temp_nid"

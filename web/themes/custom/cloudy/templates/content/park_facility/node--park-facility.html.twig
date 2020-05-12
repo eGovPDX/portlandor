@@ -1,17 +1,26 @@
 <div class="row">
-  <div class="col-lg-8 col-md-12">
+  <div class="cloudy-main col-lg-8 col-md-12">
     <article{{ attributes.addClass(classes) }}>
       <div{{ content_attributes.addClass('node__content', 'clearfix') }}>
-        {{ content|without('field_location','field_neighborhood','field_city_section','field_hours_of_operation','field_park_amenities_activities') }}
+        <div class="cloudy-badge cloudy-badge--info mb-2">{{ content.field_park_location_type.0 }}</div>
+        {{ content.field_featured_media }}
+        <p class="cloudy-lead-text">
+          {{ content.field_summary.0 }}
+        </p>
+        {{ content|without('field_park_location_type','field_summary','field_featured_media','field_location','field_located_within','field_contact','field_neighborhood','field_city_section','field_hours_of_operation','field_park_amenities_activities') }}
       </div>
     </article>
   </div>
   <div class="cloudy-side col-lg-4 col-md-12">
-    {{ content.field_location }}
-    {{ content.field_neighborhood }}
-    {{ content.field_city_section }}
-    {{ content.field_hours_of_operation }}
-    {{ content.field_park_amenities_activities }}
+    {{ content.field_located_within }}
+    {% set view_also_within = drupal_block('views_block:within_park_facility-block_park_siblings')|length %}
+    {% if view_also_within > 0 %}
+      {{ drupal_block('views_block:within_park_facility-block_park_siblings') }}
+    {% endif %}
+    {% set view_within = drupal_block('views_block:within_park_facility-block_park_children')|length %}
+    {% if view_within > 0 %}
+      {{ drupal_block('views_block:within_park_facility-block_park_children') }}
+    {% endif %}
     {% set view_services = drupal_block('views_block:services_and_pages_on_location-block_services_at_location')|length %}
     {% if view_services > 0 %}
       {{ drupal_block('views_block:services_and_pages_on_location-block_services_at_location') }}
@@ -20,6 +29,12 @@
     {% if view_related > 0 %}
       {{ drupal_block('views_block:services_and_pages_on_location-block_pages_on_location') }}
     {% endif %}
+    {{ content.field_location }}
+    {{ content.field_contact }}
+    {{ content.field_neighborhood }}
+    {{ content.field_city_section }}
+    {{ content.field_hours_of_operation }}
+    {{ content.field_park_amenities_activities }}
     {% set view_news = drupal_block('views_block:news_on_content-block_1')|length %}
     {% if view_news > 0 %}
       {{ drupal_block('views_block:news_on_content-block_1') }}
