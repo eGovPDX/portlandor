@@ -150,7 +150,7 @@ for link in data['url']:
                 sections['name'].append(heading.text)
                 sections['text'].append(' ')
                 url = heading.find('a')['href']
-                sections['url'].append('/' + str(url))
+                sections['url'].append('/citycode/' + str(url))
         except IndexError:
             continue
 
@@ -166,7 +166,7 @@ for link in data['url']:
 # #If the url matches replace the empty string with information in the TEXT field based on the index of the elements found
 # for x in data_sections['url']:
 #     for y in data_raw['URL']:
-#         sections_url = 'https://www.portlandoregon.gov/citycode' + x
+#         sections_url = 'https://www.portlandoregon.gov' + x
 #         if sections_url == y:
 #             print('found {} at {}'.format(x, data_raw_index.get_loc('{}'.format(y))))
 #             sections['text'][data_index.get_loc(x)] = data_raw['TEXT'][data_raw_index.get_loc(y)]
