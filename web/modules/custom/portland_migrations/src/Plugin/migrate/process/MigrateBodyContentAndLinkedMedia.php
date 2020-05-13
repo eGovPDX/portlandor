@@ -198,21 +198,37 @@ class MigrateBodyContentAndLinkedMedia extends ProcessPluginBase {
 
     // Use alt text as the media name if available
     $media_name = $link->getAttribute('alt') ? $link->getAttribute('alt') : $filename;
-
+    $media_type = $this->getMediaType($filename);
     // Create the Media Document item
-    $media = Media::create([
-      'bundle' => 'image',
-      'uid' => 1,
-      'langcode' => \Drupal::languageManager()->getDefaultLanguage()->getId(),
-      'name' => $media_name,
-      'field_title' => $media_name,
-      'status' => 1,
-      'image' => [
-        'target_id' => $downloaded_file->id()
-      ],
-      'field_summary' => $media_name,
-      'field_media_in_library' => 1,
-    ]);
+
+    if( $media_type == 'image' ) {
+      $media = Media::create([
+        'bundle' => 'image',
+        'uid' => 1,
+        'langcode' => \Drupal::languageManager()->getDefaultLanguage()->getId(),
+        'name' => $media_name,
+        'field_title' => $media_name,
+        'status' => 1,
+        'image' => [
+          'target_id' => $downloaded_file->id()
+        ],
+        'field_summary' => $media_name,
+        'field_media_in_library' => 1,
+      ]);
+    }
+    else { // Document
+      $media = Media::create([
+        'bundle' => 'document',
+        'uid' => 1,
+        'langcode' => \Drupal::languageManager()->getDefaultLanguage()->getId(),
+        'name' => $media_name,
+        'status' => 1,
+        'field_document' => [
+          'target_id' => $downloaded_file->id()
+        ],
+        'field_summary' => $media_name,
+      ]);
+    }
     $media->save();
     $media->status->value = 1;
     $media->moderation_state->value = 'published';
@@ -221,7 +237,12 @@ class MigrateBodyContentAndLinkedMedia extends ProcessPluginBase {
     // Replace the old link with a embedded image
     $media_uuid = $media->uuid();
     $newNode = $dom->createDocumentFragment();
-    $newNode->appendXML("<drupal-entity data-align=\"responsive-full\" data-embed-button=\"image_browser\" data-entity-embed-display=\"media_image\" data-entity-type=\"media\" data-entity-uuid=\"$media_uuid\" data-langcode=\"en\"></drupal-entity>");
+    if( $media_type == 'image' ) {
+      $newNode->appendXML("<drupal-entity data-align=\"responsive-full\" data-embed-button=\"image_browser\" data-entity-embed-display=\"media_image\" data-entity-type=\"media\" data-entity-uuid=\"$media_uuid\" data-langcode=\"en\"></drupal-entity>");
+    }
+    else {
+      $newNode->appendXML("<drupal-entity data-embed-button=\"document_browser\" data-entity-embed-display=\"view_mode:media.embedded\" data-entity-type=\"media\" data-entity-uuid=\"$media_uuid\" data-langcode=\"en\"></drupal-entity>");
+    }
     $link->parentNode->replaceChild($newNode, $link);
   }
 
