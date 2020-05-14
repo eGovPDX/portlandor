@@ -12,57 +12,58 @@ module.exports = {
       "fontSize": { "value": "28px" },
       "lineHeight": { "value": "34px" },
       "md": {
-        "fontSize": { "value": "32px" },
-        "lineHeight": { "value": "40px" },
+        "fontSize": { "value": "36px" },
+        "lineHeight": { "value": "44px" },
       }
     },
     "heading-02": {
       "fontSize": { "value": "24px" },
       "lineHeight": { "value": "30px" },
       "md": {
-        "fontSize": { "value": "28px" },
-        "lineHeight": { "value": "36px" },
+        "fontSize": { "value": "32px" },
+        "lineHeight": { "value": "40px" },
       }
     },
     "heading-03": {
       "fontSize": { "value": "22px" },
       "lineHeight": { "value": "28px" },
       "md": {
-        "fontSize": { "value": "24px" },
-        "lineHeight": { "value": "32px" },
+        "fontSize": { "value": "28px" },
+        "lineHeight": { "value": "36px" },
       }
     },
     "heading-04": {
       "fontSize": { "value": "20px" },
       "lineHeight": { "value": "26px" },
       "md": {
-        "fontSize": { "value": "20px" },
-        "lineHeight": { "value": "34px" },
+        "fontSize": { "value": "24px" },
+        "lineHeight": { "value": "32px" },
       }
     },
     "heading-05": {
-      "fontSize": { "value": "16px" },
+      "fontSize": { "value": "18px" },
       "lineHeight": { "value": "24px" },
       "md": {
-        "fontSize": { "value": "16px" },
+        "fontSize": { "value": "20px" },
         "lineHeight": { "value": "24px" },
       }
     },
     "heading-06": {
-      "fontSize": { "value": "14" },
-      "lineHeight": { "value": "20px" },
+      "fontSize": { "value": "16" },
+      "lineHeight": { "value": "24px" },
     },
     "body": {
       "fontSize": { "value": "{ type.base.fontSize.value }" },
       "lineHeight": { "value": "24px" },
-      "md": {
-        "lineHeight": { "value": "24px" },
-      }
     }
   },
   "lead": {
     "fontSize": { "value": "18px" },
-    "lineHeight": { "value": "26px" },
+    "lineHeight": { "value": "24px" },
+    "md": {
+      "fontSize": { "value": "20px" },
+      "lineHeight": { "value": "28px" },
+    }
   },
   "subtitle": {
     "fontSize": { "value": "{ type.base.fontSize.value }" },
