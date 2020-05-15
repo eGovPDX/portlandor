@@ -634,13 +634,13 @@ function portland_search_api_solr_documents_alter(array &$documents, \Drupal\sea
  */
 function portland_search_api_solr_query_alter(\Solarium\QueryType\Select\Query\Query $solarium_query, \Drupal\search_api\Query\QueryInterface $query)
 {
-    // Do not modify the query for autocomplete
+    // Only modify the query for site search
     $search_id = $query->getSearchId();
-    if (strpos($search_id, 'search_api_autocomplete:') === 0) {
+    if (strpos($search_id, "search_api_page:search_portland_gov") !== 0) {
         return;
     }
 
-    $date_field_name = 'aggregated_sorting_date'; // 'created'; // This can be any UNIX timestamp field
+    $date_field_name = 'aggregated_sorting_date'; // This can be any UNIX timestamp field
     $index = $query->getIndex();
     $fields = $index->getServerInstance()->getBackend()->getSolrFieldNames($index);
     $solr_field = !empty($fields[$date_field_name]) ? $fields[$date_field_name] : '';
@@ -654,7 +654,10 @@ function portland_search_api_solr_query_alter(\Solarium\QueryType\Select\Query\Q
         //    c. Can plot the function at https://www.desmos.com/calculator
         // 3. Add the result to query($q) which is the original Solr score.
         // https://stackoverflow.com/questions/22017616/stronger-boosting-by-date-in-solr
-        $solarium_query->addParam('sort', 'product(query($q), recip(abs(ms(NOW/HOUR,ds_aggregated_sorting_date)),1.157e-8,1.2,0.5)) desc');
+
+        // When Start Date of Event is in the future or News since the last month, give a large boost.
+        // Otherwise, give small boost based on start date or updated date.
+        $solarium_query->addParam('sort', 'if(or(and(eq(ss_content_type, "event"),gte(ms(ds_aggregated_sorting_date,NOW/DAY), 0)),and(eq(ss_content_type, "news"),gte(ms(ds_aggregated_sorting_date,NOW-1MONTH/DAY),0))),product(query($q), recip(abs(ms(NOW/DAY,ds_aggregated_sorting_date)),1.157e-8,50,0.5)),if(or(eq(ss_content_type, "event"),eq(ss_content_type, "news")),product(query($q), recip(abs(ms(NOW/DAY,ds_aggregated_sorting_date)),1.157e-8,2,0.5)),query($q))) desc');
     }
 
     // Search the whole phrase in additional of individual words
