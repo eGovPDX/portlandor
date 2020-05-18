@@ -4,7 +4,7 @@
 if (defined('PANTHEON_ENVIRONMENT') && (PANTHEON_ENVIRONMENT !== 'live')) {
 
 	echo "Deleting revision data older than 30 days...\n";
-	passthru('drush php-eval "_portland_truncate_revision_data"');
+	passthru('drush php-eval "_portland_truncate_revision_data()"');
 	echo "Revision deletion complete.\n";
 
 }
