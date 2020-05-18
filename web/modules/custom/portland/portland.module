@@ -966,128 +966,6 @@ function portland_mail($key, &$message, $params)
 /**
  * Implements hook_mail_alter().
  */
-function portland_mail_alter(&$message) {
-  // id = module + key
-  if($message['id'] == "portland_portland_notify_reviewers") {
-    // Make the email appear to be from the current Editor
-    $user = \Drupal::currentUser()->getAccount();
-    $user_name = $user->name;
-    $user_email = $user->getEmail();
-    $message['headers']['Reply-To'] = "\"$user_name\" <$user_email>";
-  }
-}
-
-function _portland_truncate_revision_datax() {
-    $dbConn = \Drupal::database();
-
-	// Delete webform submission data
-	echo "Deleting webform submissions...\n";
-    $webform_query = "truncate table webform_submission";
-    $dbConn->query($webform_query);
-    $webform_query = "truncate table webform_submission_data";
-    $dbConn->query($webform_query);
-    $webform_query = "truncate table webform_submission_log";
-    $dbConn->query($webform_query);
-	echo "Webform submission deletion complete.\n";
-
-    // delete node revision data
-
-    // this is string array of database table names
-    $fields_query = "SELECT table_name
-FROM information_schema.TABLES
-WHERE table_schema = 'pantheon' and table_name like 'node_revision__%'
-ORDER BY (data_length + index_length) DESC";
-    $result = $dbConn->query($fields_query);
-    $fields = $result->fetchAll();
-
-    $revisions_query = "DROP TEMPORARY TABLE IF EXISTS expired_revisions";
-    $dbConn->query($revisions_query);
-
-    $revisions_query = "DROP TEMPORARY TABLE IF EXISTS expired_revisions; CREATE TEMPORARY TABLE expired_revisions
-        SELECT t.vid AS vid
-        FROM
-            (SELECT r.vid AS vid
-            FROM
-            node_field_data n
-                INNER JOIN node_revision r ON r.nid = n.nid
-            WHERE (n.vid <> r.vid)
-            GROUP BY n.nid, r.vid, r.revision_timestamp
-            ORDER BY revision_timestamp DESC
-            LIMIT 9223372036854775807 OFFSET 0) t";
-    $dbConn->query($revisions_query);
-
-    // spin through fields array and add section to query
-    foreach($fields as $field) {
-        $fieldname = $field->table_name;
-        $field_queries += "DELETE C
-            FROM $fieldname C
-            INNER JOIN expired_revisions REV ON C.revision_id = REV.vid";
-        $dbConn->query($revisions_query);
-    }
-
-    $revisions_query = "DELETE R
-        FROM node_revision R
-        INNER JOIN expired_revisions REV ON R.vid = REV.vid";
-    $dbConn->query($revisions_query);
-
-    $revisions_query = "DROP TEMPORARY TABLE IF EXISTS expired_revisions;";
-    $dbConn->query($revisions_query);
-
-	echo "Deleting revision data older than 30 days...\n";
-    $dbConn->query($revisions_query);
-	echo "Revision deletion complete.\n";
-}
-
-function _portland_truncate_revision_data() {
-    $dbConn = \Drupal::database();
-
-	// Delete webform submission data
-	echo "Deleting webform submissions...\n";
-    $webform_query = "truncate table webform_submission; truncate table webform_submission_data; truncate table webform_submission_log;";
-    passthru('drush sql-query "' . $webform_query . '"');
-	echo "Webform submission deletion complete.\n";
-
-    // delete node revision data
-
-    $fields_query = "SELECT table_name
-FROM information_schema.TABLES
-WHERE table_schema = 'pantheon' and table_name like 'node_revision__%'
-ORDER BY (data_length + index_length) DESC";
-    $result = $dbConn->query($fields_query);
-    $fields = $result->fetchAll();
-
-    $revisions_query = "DROP TEMPORARY TABLE IF EXISTS expired_revisions; CREATE TEMPORARY TABLE expired_revisions
-        SELECT t.vid AS vid
-        FROM
-            (SELECT r.vid AS vid
-            FROM
-            node_field_data n
-                INNER JOIN node_revision r ON r.nid = n.nid
-            WHERE (n.vid <> r.vid)
-            GROUP BY n.nid, r.vid, r.revision_timestamp
-            ORDER BY revision_timestamp DESC
-            LIMIT 9223372036854775807 OFFSET 0) t; ";
-
-    // spin through fields array and add section to query
-    foreach($fields as $field) {
-        $fieldname = $field->table_name;
-        $field_queries .= "DELETE C
-            FROM $fieldname C
-            INNER JOIN expired_revisions REV ON C.revision_id = REV.vid; ";
-    }
-    $revisions_query .= $field_queries;
-
-    $revisions_query .= "DELETE R
-        FROM node_revision R
-        INNER JOIN expired_revisions REV ON R.vid = REV.vid; ";
-
-    $revisions_query .= "DROP TEMPORARY TABLE IF EXISTS expired_revisions;";
-
-    echo "Deleting revision data older than 30 days...\n";
-    //echo $revisions_query;
-    passthru('drush sql-query "' . $revisions_query . '"');
-	echo "Revision deletion complete.\n";
-}
 function portland_mail_alter(&$message)
 {
     // id = module + key
@@ -1099,3 +977,35 @@ function portland_mail_alter(&$message)
         $message['headers']['Reply-To'] = "\"$user_name\" <$user_email>";
     }
 }
+
+function _portland_truncate_revision_data() {
+	// Delete webform submission data
+	echo "Deleting webform submissions...\n";
+    $webform_query = "truncate table webform_submission; truncate table webform_submission_data; truncate table webform_submission_log;";
+    passthru('drush sql-query "' . $webform_query . '"');
+	echo "Webform submission deletion complete.\n";
+
+    // delete node revision data
+
+    // get list of all fields so we can dynamically generate the deletion query
+    $dbConn = \Drupal::database();
+    $fields_query = "SELECT table_name FROM information_schema.TABLES WHERE table_schema = 'pantheon' and table_name like 'node_revision__%' ORDER BY (data_length + index_length) DESC";
+    $result = $dbConn->query($fields_query);
+    $fields = $result->fetchAll();
+
+    $revisions_query = "DROP TEMPORARY TABLE IF EXISTS expired_revisions; CREATE TEMPORARY TABLE expired_revisions SELECT t.vid AS vid FROM (SELECT r.vid AS vid FROM node_field_data n INNER JOIN node_revision r ON r.nid = n.nid WHERE (n.vid <> r.vid) GROUP BY n.nid, r.vid, r.revision_timestamp ORDER BY revision_timestamp DESC LIMIT 9223372036854775807 OFFSET 0) t; ";
+    // spin through fields array and add section to query
+    foreach($fields as $field) {
+        $fieldname = $field->table_name;
+        $field_queries .= "DELETE C FROM $fieldname C INNER JOIN expired_revisions REV ON C.revision_id = REV.vid; ";
+    }
+    $revisions_query .= $field_queries;
+    $revisions_query .= "DELETE R FROM node_revision R INNER JOIN expired_revisions REV ON R.vid = REV.vid; ";
+    $revisions_query .= "DROP TEMPORARY TABLE IF EXISTS expired_revisions;";
+
+    echo "Deleting revision data older than 30 days...\n";
+    //echo $revisions_query;
+    passthru('drush sql-query "' . $revisions_query . '"');
+	echo "Revision deletion complete.\n";
+}
+
