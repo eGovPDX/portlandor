@@ -818,20 +818,23 @@ function portland_cron()
     $minute = (int)(date('i')); // 0 to 59
     if ($hour == 12 && $minute < 5) { 
         $results = '';
-        $view_ids[] = 'location_updated_recently';
-        $view_ids[] = 'media_updated_recently';
-        
-        foreach ($view_ids as $view_id) {
-            // Get the view by machine id
-            $view = \Drupal\views\Views::getView($view_id);
-            // Set the display machine id
-            $view->setDisplay('block_1');
-            $view->preExecute();
-            $view->execute();
 
-            if (count($view->result)) {
+        // Define a list of views that will be included in the email
+        $views[] = ['view_id' => 'locations_updated_recently', 'block_id' => 'block_1'];  // Locations
+        $views[] = ['view_id' => 'content_updated_recently', 'block_id' => 'block_2'];  // Tables
+        $views[] = ['view_id' => 'media_updated_recently', 'block_id' => 'block_1'];    // Media
+        
+        foreach ($views as $view) {
+            // Get the view by machine id
+            $theview = \Drupal\views\Views::getView($view['view_id']);
+            // Set the display machine id
+            $theview->setDisplay($view['block_id']);
+            $theview->preExecute();
+            $theview->execute();
+
+            if (count($theview->result)) {
                 // Render the view and append to results
-                $rendered = $view->render('block_1');
+                $rendered = $theview->render($view['block_id']);
                 $results .= \Drupal::service('renderer')->render($rendered);
             }
         }
@@ -844,9 +847,9 @@ function portland_cron()
         // Send email
         $key = 'portland_daily_mail'; // Replace with Your key
         $to = 'powr@portlandoregon.gov';
-        $params['message'] = '<p>The following list of items was updated in the last 24 hours and should 
-            be reviewed for accuracy, duplication, and accessibility compliance.<p/>' . $results;
-        $params['title'] = 'Portland.gov daily content update';
+        $params['message'] = '<p>These Portland.gov items were updated in the last 24 hours and should 
+            be reviewed according to the specific instructions below.<p/>' . $results;
+        $params['title'] = 'Portland.gov list of content to review';
         $langcode = \Drupal::currentUser()->getPreferredLangcode();
 
         _send_email($key, $to, $langcode, $params, 'powr@portlandoregon.gov');
