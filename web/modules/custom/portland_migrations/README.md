@@ -267,7 +267,8 @@ lando drush migrate:import parks_news_redirects
 ```
 ##### On Pantheon
 ```
-lando terminus remote:drush portlandor.powr-2270 -- migrate:import parks_news
-lando terminus remote:drush portlandor.powr-2270 -- migrate:import parks_news_group_content
-lando terminus remote:drush portlandor.powr-2270 -- migrate:import parks_news_redirects
+lando terminus remote:drush portlandor.powr-[ID] -- migrate:import parks_news
+lando terminus remote:drush portlandor.powr-[ID] -- migrate:import parks_news_group_content
+lando terminus remote:drush portlandor.powr-[ID] -- migrate:import parks_news_redirects
 ```
+
