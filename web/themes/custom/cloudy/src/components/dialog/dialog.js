@@ -10,6 +10,9 @@ Drupal.behaviors.dialog_handler = {
         .each(function() {
           $(this).append('<i class="fa fa-window-close"></i>');
         });
+
+        // Allow Linkit autocomplete selections to overflow outside of dialog window
+        $('.ui-dialog .ui-dialog-content').has('.linkit-ui-autocomplete').css('overflow', 'inherit');
     });
   }
 };
