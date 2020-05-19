@@ -25,9 +25,17 @@ class MigrateBodyContentAndLinkedMedia extends ProcessPluginBase {
    * {@inheritdoc}
    */
   public function transform($value, MigrateExecutableInterface $migrate_executable, Row $row, $destination_property) {
+    // Some policies are PDF files, need to download the file, create a media document, embed the document in body
+    // The CONTENT_TYPE column is "B" for binary content
+    if($row->getSourceProperty('CONTENT_TYPE') == 'B') {
+      $value = $this->processPolicyInPdf($value, $migrate_executable, $row, $destination_property);
+    }
 
+    // Find all A and IMG tags in body text
     preg_match_all('/<a [^>]+>|<img [^>]+>/i', $value, $downloaded_file);
     if (!empty($downloaded_file[0])) {
+
+      $is_code_section = ! is_null($row->getSourceProperty('chapter_id'));
 
       // migrated page title and POG URL, in case we need to report an error.
       $page_title = $row->getSourceProperty('CONTENT_NAME');
@@ -48,7 +56,7 @@ class MigrateBodyContentAndLinkedMedia extends ProcessPluginBase {
 
         // parse url from link; it will be in an href or src attribute.
         $url = $link->getAttribute('href');
-        if (is_null($url)) {
+        if (empty($url)) {
           $url = $link->getAttribute('src');
         }
 
@@ -69,8 +77,10 @@ class MigrateBodyContentAndLinkedMedia extends ProcessPluginBase {
         }
 
         // skip external links and leave the link tag alone
-        $internal_link = $this->isInternalLink($url);
-        if (!$internal_link) continue;
+        if(substr($url, 0, strlen("http://www.portlandonline.com/")) !== "http://www.portlandonline.com/") {
+          $internal_link = $this->isInternalLink($url);
+          if (!$internal_link) continue;
+        }
 
         // build filename/uri
         $arr_filename = $this->buildPogFilename($url);
@@ -160,17 +170,151 @@ class MigrateBodyContentAndLinkedMedia extends ProcessPluginBase {
           continue;
         }
 
-        // modify link to use file URL
-        $file_uri = $downloaded_file->getFileUri();
-        $file_url = file_url_transform_relative(file_create_url($file_uri));
-        $link->setAttribute("href", $file_url);
-
+        if($is_code_section) {
+          $this->processCodeImage($link, $filename, $downloaded_file, $dom);
+        }
+        else {
+          // modify link to use file URL
+          $file_uri = $downloaded_file->getFileUri();
+          $file_url = file_url_transform_relative(file_create_url($file_uri));
+          $link->setAttribute("href", $file_url);
+        }
       }
       $output = Html::serialize($dom);
       $value = $output;
     }
 
     return $value;
+  }
+
+  /**
+   * Code sections have images embedded inside the body text. 
+   * Create a Media node and replace the HTML.
+   */
+  protected function processCodeImage($link, $filename, 
+    $downloaded_file, $dom) {
+    $url = $link->getAttribute('src');
+    if (is_null($url)) return;
+
+    // Use alt text as the media name if available
+    $media_name = $link->getAttribute('alt') ? $link->getAttribute('alt') : $filename;
+    $media_type = $this->getMediaType($filename);
+    // Create the Media Document item
+
+    if( $media_type == 'image' ) {
+      $media = Media::create([
+        'bundle' => 'image',
+        'uid' => 1,
+        'langcode' => \Drupal::languageManager()->getDefaultLanguage()->getId(),
+        'name' => $media_name,
+        'field_title' => $media_name,
+        'status' => 1,
+        'image' => [
+          'target_id' => $downloaded_file->id()
+        ],
+        'field_summary' => $media_name,
+        'field_media_in_library' => 1,
+      ]);
+    }
+    else { // Document
+      $media = Media::create([
+        'bundle' => 'document',
+        'uid' => 1,
+        'langcode' => \Drupal::languageManager()->getDefaultLanguage()->getId(),
+        'name' => $media_name,
+        'status' => 1,
+        'field_document' => [
+          'target_id' => $downloaded_file->id()
+        ],
+        'field_summary' => $media_name,
+      ]);
+    }
+    $media->save();
+    $media->status->value = 1;
+    $media->moderation_state->value = 'published';
+    $media->save();
+
+    // Replace the old link with a embedded image
+    $media_uuid = $media->uuid();
+    $newNode = $dom->createDocumentFragment();
+    if( $media_type == 'image' ) {
+      $newNode->appendXML("<drupal-entity data-align=\"responsive-full\" data-embed-button=\"image_browser\" data-entity-embed-display=\"media_image\" data-entity-type=\"media\" data-entity-uuid=\"$media_uuid\" data-langcode=\"en\"></drupal-entity>");
+    }
+    else {
+      $newNode->appendXML("<drupal-entity data-embed-button=\"document_browser\" data-entity-embed-display=\"view_mode:media.embedded\" data-entity-type=\"media\" data-entity-uuid=\"$media_uuid\" data-langcode=\"en\"></drupal-entity>");
+    }
+    $link->parentNode->replaceChild($newNode, $link);
+  }
+
+  protected function processPolicyInPdf($value, 
+    MigrateExecutableInterface $migrate_executable, Row $row, $destination_property) {
+    // Get file meta data
+    $pogFileUrl = $row->getSourceProperty('URL');
+    $pogDescription = $row->getSourceProperty('CONTENT_NAME');
+
+    // Get file name from the URL
+    $headers = get_headers($pogFileUrl, 1);
+    if (!isset($headers['Content-Disposition'])) return;
+    // Content-Disposition: inline; filename="ARA 1.01 adopted 113018.pdf"
+    $matches = [];
+    preg_match('/filename="(.*)"/', $headers['Content-Disposition'], $matches);
+    if(count($matches) < 2) return;
+    $pogFileName = $matches[1];
+
+    // replace underscores with hypens
+    $fileName = preg_replace('/_/', '-', $pogFileName);
+    // transliterate filename to remove spaces, punctuation, illegal characters
+    if (function_exists("transliterate_filenames_transliteration")) {
+      $fileName = transliterate_filenames_transliteration($fileName);
+    }
+
+    // Prepare destination uri
+    $download_dir_uri = $this->prepareDownloadDirectory();
+    $destination_uri = $download_dir_uri . "/" . $fileName;
+
+    // download and save managed file
+    try {
+      $downloaded_file = system_retrieve_file($pogFileUrl, $destination_uri, TRUE);
+    }
+    catch (Exception $e) {
+      $message = "Error occurred while trying to download URL target at " . $pogFileUrl . " and create managed file. Exception: " . $e->getMessage();
+      \Drupal::logger('portland_migrations')->notice($message);
+    }
+    if( $downloaded_file == FALSE ) {
+      echo "Failed to download $pogFileUrl";
+      return $result;
+    }
+
+    // Create the Media Document item
+    $media = Media::create([
+      'bundle' => 'document',
+      'uid' => 1,
+      'langcode' => \Drupal::languageManager()->getDefaultLanguage()->getId(),
+      'name' => $pogDescription,
+      'status' => 1,
+      'field_document' => [
+        'target_id' => $downloaded_file->id()
+      ],
+      'field_summary' => $pogDescription,
+    ]);
+    $media->save();
+    $media->status->value = 1;
+    $media->moderation_state->value = 'published';
+    $media->save();
+
+    // Embed the document in body
+    $media_uuid = $media->uuid();
+    return "<drupal-entity data-embed-button=\"document_browser\" data-entity-embed-display=\"view_mode:media.embedded\" data-entity-type=\"media\" data-entity-uuid=\"$media_uuid\" data-langcode=\"en\"></drupal-entity>";
+  }
+
+  protected function prepareDownloadDirectory() {
+    // prepare download directory
+    $folder_name = date("Y-m") ;
+    $folder_uri = file_build_uri($folder_name);
+    $public_path = \Drupal::service('file_system')->realpath(file_default_scheme() . "://");
+    $download_path = $public_path . "/" . $folder_name;
+    $dir = file_prepare_directory($download_path, FILE_CREATE_DIRECTORY);
+    return $folder_uri;
   }
 
   protected function generateDownloadDirectoryUri() {
