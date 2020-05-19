@@ -4,6 +4,7 @@ status: true
 dependencies:
   config:
     - field.storage.node.field_page_type
+    - field.storage.node.field_reviewer
     - workflows.workflow.editorial
   module:
     - content_lock
@@ -72,6 +73,7 @@ display:
             status: status
             name: name
             revision_uid: revision_uid
+            field_reviewer: field_reviewer
             moderation_state: moderation_state
             changed: changed
             operations: operations
@@ -133,6 +135,11 @@ display:
             revision_uid:
               sortable: false
               default_sort_order: asc
+              align: ''
+              separator: ''
+              empty_column: false
+              responsive: ''
+            field_reviewer:
               align: ''
               separator: ''
               empty_column: false
@@ -758,6 +765,133 @@ display:
           entity_type: node
           entity_field: revision_uid
           plugin_id: field
+        field_reviewer:
+          id: field_reviewer
+          table: node__field_reviewer
+          field: field_reviewer
+          relationship: none
+          group_type: group
+          admin_label: ''
+          label: 'Notify reviewers'
+          exclude: true
+          alter:
+            alter_text: false
+            text: ''
+            make_link: false
+            path: ''
+            absolute: false
+            external: false
+            replace_spaces: false
+            path_case: none
+            trim_whitespace: false
+            alt: ''
+            rel: ''
+            link_class: ''
+            prefix: ''
+            suffix: ''
+            target: ''
+            nl2br: false
+            max_length: 0
+            word_boundary: true
+            ellipsis: true
+            more_link: false
+            more_link_text: ''
+            more_link_path: ''
+            strip_tags: false
+            trim: false
+            preserve_tags: ''
+            html: false
+          element_type: ''
+          element_class: ''
+          element_label_type: ''
+          element_label_class: ''
+          element_label_colon: true
+          element_wrapper_type: ''
+          element_wrapper_class: ''
+          element_default_classes: true
+          empty: ''
+          hide_empty: false
+          empty_zero: false
+          hide_alter_empty: true
+          click_sort_column: target_id
+          type: entity_reference_label
+          settings:
+            link: true
+          group_column: target_id
+          group_columns: {  }
+          group_rows: true
+          delta_limit: 0
+          delta_offset: 0
+          delta_reversed: false
+          delta_first_last: false
+          multi_type: separator
+          separator: ', '
+          field_api_classes: false
+          plugin_id: field
+        revision_log:
+          id: revision_log
+          table: node_revision
+          field: revision_log
+          relationship: none
+          group_type: group
+          admin_label: ''
+          label: 'Revision log message'
+          exclude: true
+          alter:
+            alter_text: false
+            text: ''
+            make_link: false
+            path: ''
+            absolute: false
+            external: false
+            replace_spaces: false
+            path_case: none
+            trim_whitespace: false
+            alt: ''
+            rel: ''
+            link_class: ''
+            prefix: ''
+            suffix: ''
+            target: ''
+            nl2br: false
+            max_length: 0
+            word_boundary: true
+            ellipsis: true
+            more_link: false
+            more_link_text: ''
+            more_link_path: ''
+            strip_tags: true
+            trim: false
+            preserve_tags: ''
+            html: false
+          element_type: ''
+          element_class: ''
+          element_label_type: ''
+          element_label_class: ''
+          element_label_colon: true
+          element_wrapper_type: ''
+          element_wrapper_class: ''
+          element_default_classes: true
+          empty: ''
+          hide_empty: false
+          empty_zero: false
+          hide_alter_empty: true
+          click_sort_column: value
+          type: basic_string
+          settings: {  }
+          group_column: value
+          group_columns: {  }
+          group_rows: true
+          delta_limit: 0
+          delta_offset: 0
+          delta_reversed: false
+          delta_first_last: false
+          multi_type: separator
+          separator: ', '
+          field_api_classes: false
+          entity_type: node
+          entity_field: revision_log
+          plugin_id: field
         moderation_state:
           id: moderation_state
           table: node_field_data
@@ -765,11 +899,11 @@ display:
           relationship: none
           group_type: group
           admin_label: ''
-          label: ''
-          exclude: true
+          label: Status/Reviewers
+          exclude: false
           alter:
-            alter_text: false
-            text: ''
+            alter_text: true
+            text: "<span title=\"{{ revision_log }}\">\r\n{% if status == moderation_state %}{{ status }}{% else %}\r\n{% if status %}{{ status }} {% endif %} {{ moderation_state }}\r\n{% endif %}\r\n</span>\r\n{% if field_reviewer %}\r\n<br>{{ field_reviewer }}\r\n{% endif %}"
             make_link: false
             path: ''
             absolute: false
@@ -832,7 +966,7 @@ display:
           exclude: false
           alter:
             alter_text: true
-            text: "{% if status or moderation_state %}{{ status }} {{ moderation_state }} by {{ revision_uid }} on {{ changed }}<br>{% endif %}\r\nAuthored by {{ name }}"
+            text: "{{ revision_uid }} on {{ changed }}<br>\r\nAuthored by {{ name }}"
             make_link: false
             path: ''
             absolute: false
@@ -1337,6 +1471,71 @@ display:
           entity_type: node
           entity_field: uid
           plugin_id: user_name
+        field_reviewer_target_id:
+          id: field_reviewer_target_id
+          table: node__field_reviewer
+          field: field_reviewer_target_id
+          relationship: none
+          group_type: group
+          admin_label: ''
+          operator: '='
+          value:
+            min: ''
+            max: ''
+            value: ''
+          group: 1
+          exposed: true
+          expose:
+            operator_id: field_reviewer_target_id_op
+            label: 'Notify reviewers (field_reviewer)'
+            description: null
+            use_operator: false
+            operator: field_reviewer_target_id_op
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: field_reviewer_target_id
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+            placeholder: null
+            min_placeholder: null
+            max_placeholder: null
+          is_grouped: true
+          group_info:
+            label: 'Has reviewer'
+            description: ''
+            identifier: field_reviewer_target_id
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items:
+              1:
+                title: 'Yes'
+                operator: 'not empty'
+                value:
+                  value: ''
+                  min: ''
+                  max: ''
+              2:
+                title: 'No'
+                operator: empty
+                value:
+                  value: ''
+                  min: ''
+                  max: ''
+              3:
+                title: ''
+                operator: '='
+                value:
+                  value: ''
+                  min: ''
+                  max: ''
+          plugin_id: numeric
       sorts: {  }
       title: Content
       empty:
@@ -1403,7 +1602,8 @@ display:
         operator: AND
         groups:
           1: AND
-      display_extenders: {  }
+      display_extenders:
+        metatag_display_extender: {  }
       header:
         result:
           id: result
@@ -1430,6 +1630,7 @@ display:
       max-age: 0
       tags:
         - 'config:field.storage.node.field_page_type'
+        - 'config:field.storage.node.field_reviewer'
         - 'config:workflow_list'
   page_1:
     display_options:
@@ -1464,4 +1665,5 @@ display:
       max-age: 0
       tags:
         - 'config:field.storage.node.field_page_type'
+        - 'config:field.storage.node.field_reviewer'
         - 'config:workflow_list'

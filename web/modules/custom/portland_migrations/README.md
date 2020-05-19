@@ -96,6 +96,7 @@ Group content migrations are used to add content to a group by creating a group 
 - policies
 - wheeler_blog - Mayor Wheeler blog migration
 - wheeler_press_releases - Mayor Wheeler press releases migration
+- parks_news
 
 #### Eudaly news
 ##### Local
@@ -251,3 +252,23 @@ lando terminus remote:drush portlandor.powr-[ID] -- migrate:import wheeler_press
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:import wheeler_press_releases_redirects
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:import wheeler_press_releases_group_content
 ```
+#### Parks news
+WARNING: There are 3 rows in the parks_news.csv datafile that cause the import to break. The body content
+of these 3 items has been deleted and will need to be migrated manually:
+* 2018	687408	https://www.portlandoregon.gov/parks/article/687408	Gabriel Park playground to become PP&R's newest inclusive play area
+* 2018	686668	https://www.portlandoregon.gov/parks/article/686668	PP&R, partners, celebrate start of Couch Park playground construction
+* 2017	645700	https://www.portlandoregon.gov/parks/article/645700 PP&R, Comcast, present the 2017 Summer Free For All Field Day Celebration Kickoff
+
+##### Local
+```
+lando drush migrate:import parks_news
+lando drush migrate:import parks_news_group_content
+lando drush migrate:import parks_news_redirects
+```
+##### On Pantheon
+```
+lando terminus remote:drush portlandor.powr-2270 -- migrate:import parks_news
+lando terminus remote:drush portlandor.powr-2270 -- migrate:import parks_news_group_content
+lando terminus remote:drush portlandor.powr-2270 -- migrate:import parks_news_redirects
+```
+
