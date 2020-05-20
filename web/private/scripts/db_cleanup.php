@@ -6,7 +6,7 @@ if (defined('PANTHEON_ENVIRONMENT') && (PANTHEON_ENVIRONMENT !== 'live')) {
 		// Delete webform submission data
 		$webform_query = "truncate table webform_submission; truncate table webform_submission_data; truncate table webform_submission_log;";
 		echo "Deleting webform submissions...\n";
-		passthru('drush sql-query "' . $webform_query . '"');
+		passthru('drush sql-query "truncate table webform_submission; truncate table webform_submission_data; truncate table webform_submission_log;"');
 		echo "Webform submission deletion complete.\n";
 
 }
