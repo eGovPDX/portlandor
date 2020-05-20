@@ -3,10 +3,10 @@
 // destroy the canonical version of the data.
 if (defined('PANTHEON_ENVIRONMENT') && (PANTHEON_ENVIRONMENT !== 'live')) {
 
-	echo "Deleting revision data older than 30 days...\n";
-	passthru('drush sql-query "delete from watchdog;"');
-	// passthru('drush php-eval "_portland_test_log()"');
-	// passthru('drush php-eval "_portland_truncate_revision_data()"');
-	echo "Revision deletion complete.\n";
+		// Delete webform submission data
+		$webform_query = "truncate table webform_submission; truncate table webform_submission_data; truncate table webform_submission_log;";
+		echo "Deleting webform submissions...\n";
+		passthru('drush sql-query "' . $webform_query . '"');
+		echo "Webform submission deletion complete.\n";
 
 }
