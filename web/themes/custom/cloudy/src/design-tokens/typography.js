@@ -60,6 +60,10 @@ module.exports = {
   "lead": {
     "fontSize": { "value": "18px" },
     "lineHeight": { "value": "26px" },
+    "md": {
+      "fontSize": { "value": "20px" },
+      "lineHeight": { "value": "28px" },
+    }
   },
   "subtitle": {
     "fontSize": { "value": "{ type.base.fontSize.value }" },
