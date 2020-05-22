@@ -3,7 +3,6 @@
 namespace Drupal\portland\EventSubscriber;
 
 use Drupal\feeds\Event\EntityEvent;
-use Drupal\feeds\Event\FeedsEvents;
 use Drupal\group\Entity\Group;
 use Drupal\Component\Utility\Html;
 use Drupal\Component\Utility\Xss;
@@ -26,8 +25,8 @@ class FeedsEventsSubscriber implements EventSubscriberInterface {
    */
   public static function getSubscribedEvents() {
     return [
-      FeedsEvents::PROCESS_ENTITY_PRESAVE => 'presave',
-      FeedsEvents::PROCESS_ENTITY_POSTSAVE => 'postsave',
+      \Drupal\feeds\Event\FeedsEvents::PROCESS_ENTITY_PRESAVE => 'presave',
+      \Drupal\feeds\Event\FeedsEvents::PROCESS_ENTITY_POSTSAVE => 'postsave',
     ];
   }
 
