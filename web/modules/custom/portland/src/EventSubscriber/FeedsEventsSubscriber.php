@@ -26,8 +26,8 @@ class FeedsEventsSubscriber implements EventSubscriberInterface {
    */
   public static function getSubscribedEvents() {
     return [
-      FeedsEvents::PROCESS_ENTITY_PRESAVE => 'presave',
-      FeedsEvents::PROCESS_ENTITY_POSTSAVE => 'postsave',
+      'feeds.process_entity_presave' => 'presave',
+      'feeds.process_entity_postsave' => 'postsave',
     ];
   }
 
