@@ -53,63 +53,69 @@ class FeedsEventsSubscriber implements EventSubscriberInterface {
           $node->status->value = 1;
         }
       }
-    }
 
-    $enclosures = $item->get('enclosures');
-    if( $enclosures && count($enclosures) > 0 ) {
-      $images_html = '';
-      foreach($enclosures as $enclosure) {
-        // Build unique file name ($fileName) from URL ($enclosure)
-        // URL = "https://www.flashalertnewswire.net/images/news/2020-05/3056/134593/banks.jpg"
-        // file name = "134593-banks.jpg"
-        $parts = explode('/', $enclosure);
-        if(count($parts) < 2) continue;
-        $fileName = implode('-', array_slice($parts, count($parts)-2 ));
-        $download_dir_uri = $this->prepareDownloadDirectory();
-        $destination_uri = $download_dir_uri . "/" . $fileName;
-
-        // download and save managed file
-        try {
-          $downloaded_file = system_retrieve_file($enclosure, $destination_uri, TRUE);
-        }
-        catch (Exception $e) {
-          $message = "Error occurred while trying to download URL target at " . $pogFileUrl . " and create managed file. Exception: " . $e->getMessage();
-          \Drupal::logger('portland_migrations')->notice($message);
-        }
-
-        if( $downloaded_file == FALSE ) {
-          echo "Failed to download $enclosure";
-          continue;
-        }
-
-        // Create the Media Document item
-        $media = Media::create([
-          'bundle' => 'image',
-          'uid' => 1,
-          'langcode' => \Drupal::languageManager()->getDefaultLanguage()->getId(),
-          'name' => $fileName,
-          'status' => 1,
-          'image' => [
-            'target_id' => $downloaded_file->id(),
-            'alt' => $fileName,
-          ],
-        ]);
-        $media->save();
-        $media->status->value = 1;
-        $media->moderation_state->value = 'published';
-        $media->save();
-
-        if( $feed->hasField('field_parent_group') && count($feed->field_parent_group) > 0 ) {
-          $this->add_entity_to_group($media, $feed->field_parent_group[0]->target_id);
-        }
-
-        // Build HTML
-        $media_uuid = $media->uuid();
-        $images_html .= "<drupal-entity data-align=\"responsive-right\" data-embed-button=\"image_browser\" data-entity-embed-display=\"media_image\" data-entity-type=\"media\" data-entity-uuid=\"$media_uuid\" data-langcode=\"en\"></drupal-entity>";
+      foreach($feed->get('field_default_topics')->referencedEntities() as $term) {
+        $node->field_topics[] = $term->tid->value;
       }
 
-      $node->field_body_content->value = $images_html . $node->field_body_content->value;
+      // Download images in Enclosures tag
+      $enclosures = $item->get('enclosures');
+      if( $enclosures && count($enclosures) > 0 ) {
+        $images_html = '';
+        foreach($enclosures as $enclosure) {
+          // Build unique file name ($fileName) from URL ($enclosure)
+          // URL = "https://www.flashalertnewswire.net/images/news/2020-05/3056/134593/banks.jpg"
+          // file name = "134593-banks.jpg"
+          $parts = explode('/', $enclosure);
+          if(count($parts) < 2) continue;
+          $fileName = implode('-', array_slice($parts, count($parts)-2 ));
+          $download_dir_uri = $this->prepareDownloadDirectory();
+          $destination_uri = $download_dir_uri . "/" . $fileName;
+
+          // download and save managed file
+          try {
+            $downloaded_file = system_retrieve_file($enclosure, $destination_uri, TRUE);
+          }
+          catch (Exception $e) {
+            $message = "Error occurred while trying to download URL target at " . $pogFileUrl . " and create managed file. Exception: " . $e->getMessage();
+            \Drupal::logger('portland_migrations')->notice($message);
+          }
+
+          if( $downloaded_file == FALSE ) {
+            echo "Failed to download $enclosure";
+            continue;
+          }
+
+          // Create the Media Document item
+          $media = Media::create([
+            'bundle' => 'image',
+            'uid' => 1,
+            'langcode' => \Drupal::languageManager()->getDefaultLanguage()->getId(),
+            'name' => $fileName,
+            'status' => 1,
+            'image' => [
+              'target_id' => $downloaded_file->id(),
+              'alt' => $fileName,
+            ],
+          ]);
+          $media->save();
+          $media->status->value = 1;
+          $media->moderation_state->value = 'published';
+          $media->save();
+
+          if( $feed->hasField('field_parent_group') && count($feed->field_parent_group) > 0 ) {
+            $this->add_entity_to_group($media, $feed->field_parent_group[0]->target_id);
+          }
+
+          // Build HTML
+          $media_uuid = $media->uuid();
+          $images_html .= "<drupal-entity data-align=\"responsive-right\" data-embed-button=\"image_browser\" data-entity-embed-display=\"media_image\" data-entity-type=\"media\" data-entity-uuid=\"$media_uuid\" data-langcode=\"en\"></drupal-entity>";
+        }
+
+        $node->field_body_content->value = $images_html . $node->field_body_content->value;
+      }
     }
+
   }
 
   /**
