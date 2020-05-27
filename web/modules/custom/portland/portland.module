@@ -657,12 +657,12 @@ function portland_search_api_solr_query_alter(\Solarium\QueryType\Select\Query\Q
 
         // When Start Date of Event is in the future or News since the last month, give a large boost.
         // Otherwise, give small boost based on start date or updated date.
-        $solarium_query->addParam('sort', 'if(or(and(eq(ss_content_type, "event"),gte(ms(ds_aggregated_sorting_date,NOW/DAY), 0)),and(eq(ss_content_type, "news"),gte(ms(ds_aggregated_sorting_date,NOW-1MONTH/DAY),0))),product(query($q), recip(abs(ms(NOW/DAY,ds_aggregated_sorting_date)),1.157e-8,50,0.5)),if(or(eq(ss_content_type, "event"),eq(ss_content_type, "news")),product(query($q), recip(abs(ms(NOW/DAY,ds_aggregated_sorting_date)),1.157e-8,2,0.5)),query($q))) desc');
+        $solarium_query->addParam('sort', 'if(or(and(eq(ss_content_type, "event"),gte(ms(ds_aggregated_sorting_date,NOW/DAY), 0)),and(eq(ss_content_type, "news"),gte(ms(ds_aggregated_sorting_date,NOW-1MONTH/DAY),0))),product(query($q), recip(abs(ms(NOW/DAY,ds_aggregated_sorting_date)),1.157e-8,6.5,0.5)),if(or(eq(ss_content_type, "event"),eq(ss_content_type, "news")),product(query($q), recip(abs(ms(NOW/DAY,ds_aggregated_sorting_date)),1.157e-8,2,0.5)),query($q))) desc');
     }
 
     // Search the whole phrase in additional of individual words
-    $original_keys = $query->getKeys();
-    if (is_string($original_keys) && $original_keys) { // Do not modify empty query
+    $original_keys = trim($query->getKeys());
+    if (is_string($original_keys) && $original_keys && strpos($original_keys, ' ') !== false) { // Do not modify empty query
         // Three things are happening here:
         // 1. Add phrase search for the entire search string.
         // 2. Set proximity to 3
