@@ -1,6 +1,16 @@
 import $ from 'jquery';
 import Drupal from 'Drupal';
 
+function closeSearchResults() {
+  // Hide the search drawer when mobile menu toggle is clicked
+  const $searchToggle = $('.navbar-toggle-group .search-toggle');
+  if ($searchToggle.attr('aria-expanded') === 'true') {
+    $searchToggle.attr('aria-expanded', 'false');
+    $('.navbar-mobile-search-drawer').removeClass('show');
+    $(this).parent().parent('.navbar').removeClass('search-is-active');
+  }
+}
+
 Drupal.behaviors.search_toggle = {
   attach: function() {
     $(document).on('click', '.navbar-toggle-group .search-toggle', function(event) {
@@ -26,14 +36,15 @@ Drupal.behaviors.mobile_menu_toggle_search_close = {
     $(document).on('click', '.navbar-toggle-group .navbar-toggler', function(event) {
       event.preventDefault();
       event.stopPropagation();
+      closeSearchResults();
+    });
+  }
+};
 
-      // Hide the search drawer when mobile menu toggle is clicked
-      const $searchToggle = $('.navbar-toggle-group .search-toggle');
-      if ($searchToggle.attr('aria-expanded') === 'true') {
-        $searchToggle.attr('aria-expanded', 'false');
-        $('.navbar-mobile-search-drawer').removeClass('show');
-        $(this).parent().parent('.navbar').removeClass('search-is-active');
-      }
+Drupal.behaviors.close_search_results = {
+  attach: function() {
+    $(document).on('click', '.navbar-mobile-search-drawer .icon', function(event) {
+      closeSearchResults();
     });
   }
 };
