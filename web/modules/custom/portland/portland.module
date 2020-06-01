@@ -991,3 +991,66 @@ function portland_mail_alter(&$message)
         $message['headers']['Reply-To'] = "\"$user_name\" <$user_email>";
     }
 }
+
+ /**
+ * Implements hook_flush_caches().
+ * https://drupal.stackexchange.com/a/168066
+ */
+function portland_cache_flush() {
+  // After caches are cleared we will run mymodule_cache_rebuild()
+  register_shutdown_function('portland_rebuild_cache');
+
+  // We don't want to add any custom cache-tables, so just return an empty array
+  return array();
+}
+
+/**
+* Helper function to rebuild cache.
+* TODO: may need to consider the Warmer module: https://www.drupal.org/project/warmer
+*/
+function portland_rebuild_cache() {
+  switch($_ENV['PANTHEON_ENVIRONMENT']) {
+    case 'lando':
+      return; // Do not rebuild on local
+    case 'live':
+      $host = 'https://beta.portland.gov';
+      break;
+    case 'test':
+      $host = 'https://test.portland.gov';
+      break;
+    case 'dev':
+      $host = 'https://dev-portlandor.pantheonsite.io';
+      break;
+    default:
+      $host = 'https://' . $_SERVER['HTTP_HOST']; // Multi-dev sites
+      break;
+  }
+  $client = \Drupal::httpClient();
+  $search_keywords = [
+    'parking',
+    'curfew',
+    'contact',
+    'recycling',
+    'fpdr',
+    'jobs',
+    'bps',
+    'sunday parkways',
+    'permit',
+    'permits',
+    'green',
+    'trash',
+    'tax',
+    'business'
+  ];
+  foreach($search_keywords as $search_keyword) {
+    // ignore search keywords shorter than 2 characters
+    $len = strlen($search_keyword);
+    if( $len < 3 ) continue;
+    // Emulate user keyboard input
+    for($i = 2; $i < $len; $i++) {
+      $keyword = substr($search_keyword, 0, $i + 1);
+      $request = $client->get("$host/search/$keyword");
+    }
+  }
+  \Drupal::logger('system')->notice('Cache rebuilt on ' . $host);
+}
