@@ -304,11 +304,11 @@ function portland_entity_insert($entity)
                 ]);
             }
             break;
-        
+
         default:
             break;
     }
-        
+
     _notify_reviewer($entity, 'created');
 }
 
@@ -778,7 +778,7 @@ function _validate_group_group_path(&$form, \Drupal\Core\Form\FormStateInterface
         $group_group_path = $form_state->getValue('field_group_path')[0]['value'];
         $is_valid_group_path = _clean_group_group_path($group_group_path);
         $form_state->setValue('field_group_path', ['0' => ['value' => $group_group_path,], ]);
-        
+
         if ($is_valid_group_path) {
             $group_id = $form_state->getformObject()->getEntity()->id();
             $pathStorage = \Drupal::entityTypeManager()->getStorage('path_alias');
@@ -816,14 +816,14 @@ function portland_cron()
     // fresh updates once a day between 12:00 and 12:05
     $hour = (int)(date('G')); // 0 to 23
     $minute = (int)(date('i')); // 0 to 59
-    if ($hour == 12 && $minute < 5) { 
+    if ($hour == 12 && $minute < 5) {
         $results = '';
 
         // Define a list of views that will be included in the email
         $views[] = ['view_id' => 'locations_updated_recently', 'block_id' => 'block_1'];  // Locations
         $views[] = ['view_id' => 'content_updated_recently', 'block_id' => 'block_2'];  // Tables
         $views[] = ['view_id' => 'media_updated_recently', 'block_id' => 'block_1'];    // Media
-        
+
         foreach ($views as $view) {
             // Get the view by machine id
             $theview = \Drupal\views\Views::getView($view['view_id']);
@@ -838,7 +838,7 @@ function portland_cron()
                 $results .= \Drupal::service('renderer')->render($rendered);
             }
         }
-        
+
         // If all views are empty, do not send the email
         if (!strlen($results)) {
             return;
@@ -847,7 +847,7 @@ function portland_cron()
         // Send email
         $key = 'portland_daily_mail'; // Replace with Your key
         $to = 'powr@portlandoregon.gov';
-        $params['message'] = '<p>These Portland.gov items were updated in the last 24 hours and should 
+        $params['message'] = '<p>These Portland.gov items were updated in the last 24 hours and should
             be reviewed according to the specific instructions below.<p/>' . $results;
         $params['title'] = 'Portland.gov list of content to review';
         $langcode = \Drupal::currentUser()->getPreferredLangcode();
@@ -875,7 +875,7 @@ function _notify_reviewer($entity, $entity_event_type)
     }
     $node = $entity;
     $status_message = $entity_event_type;
-    
+
     // Group module would save the node twice when creating a new node.
     // We only want to send out email once.
     if ($entity->hasField('field_display_groups') && $node->field_display_groups->count() > 0) {
@@ -887,22 +887,22 @@ function _notify_reviewer($entity, $entity_event_type)
             $status_message = 'created';
         }
     }
-    
+
     $reviewers = null;
     $latest_and_previous_revs = _load_latest_revision($node);
     $latest_rev = $latest_and_previous_revs['latest'];
     $reviewers = $node->field_reviewer;
-    
+
     $revision_log_output = $node->revision_log->value ?
         "<div><h3>Revision log:</h3>\r\n".$node->revision_log->value."</div>\r\n<p/>\r\n<div>" : '';
-    
+
     $moderation_state_message = [
         'review' => 'In review',
         'draft' => 'Draft',
         'archived' => 'Unpublished/Archived',
         'published' => 'Published',
     ];
-    
+
     // send email for any moderation state except draft
     if ($latest_rev->moderation_state->value != 'draft') {
         $key = 'portland_notify_reviewers';
@@ -916,7 +916,7 @@ function _notify_reviewer($entity, $entity_event_type)
             "</strong> revision at ".
             \Drupal::service('date.formatter')->format($node->changed->value, 'custom', 'l Y/n/j g:i A').
             ".<p/>".$revision_log_output;
-        
+
         if ($reviewers == null) {
             return;
         }
@@ -990,4 +990,67 @@ function portland_mail_alter(&$message)
         $user_email = $user->getEmail();
         $message['headers']['Reply-To'] = "\"$user_name\" <$user_email>";
     }
+}
+
+ /**
+ * Implements hook_flush_caches().
+ * https://drupal.stackexchange.com/a/168066
+ */
+function portland_cache_flush() {
+  // After caches are cleared we will run mymodule_cache_rebuild()
+  register_shutdown_function('portland_rebuild_cache');
+
+  // We don't want to add any custom cache-tables, so just return an empty array
+  return array();
+}
+
+/**
+* Helper function to rebuild cache.
+* TODO: may need to consider the Warmer module: https://www.drupal.org/project/warmer
+*/
+function portland_rebuild_cache() {
+  switch($_ENV['PANTHEON_ENVIRONMENT']) {
+    case 'lando':
+      return; // Do not rebuild on local
+    case 'live':
+      $host = 'https://beta.portland.gov';
+      break;
+    case 'test':
+      $host = 'https://test.portland.gov';
+      break;
+    case 'dev':
+      $host = 'https://dev-portlandor.pantheonsite.io';
+      break;
+    default:
+      $host = 'https://' . $_ENV['PANTHEON_ENVIRONMENT'] . '-portlandor.pantheonsite.io'; // Multi-dev sites
+      break;
+  }
+  $client = \Drupal::httpClient();
+  $search_keywords = [
+    'parking',
+    'curfew',
+    'contact',
+    'recycling',
+    'fpdr',
+    'jobs',
+    'bps',
+    'sunday parkways',
+    'permit',
+    'permits',
+    'green',
+    'trash',
+    'tax',
+    'business'
+  ];
+  foreach($search_keywords as $search_keyword) {
+    // ignore search keywords shorter than 2 characters
+    $len = strlen($search_keyword);
+    if( $len < 3 ) continue;
+    // Emulate user keyboard input
+    for($i = 2; $i < $len; $i++) {
+      $keyword = substr($search_keyword, 0, $i + 1);
+      $request = $client->get("$host/search/$keyword");
+    }
+  }
+  \Drupal::logger('system')->notice('Cache rebuilt on ' . $host);
 }
