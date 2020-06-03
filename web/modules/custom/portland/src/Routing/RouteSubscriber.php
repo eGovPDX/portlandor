@@ -86,6 +86,12 @@ class RouteSubscriber extends RouteSubscriberBase {
         $route->setRequirement('_access', 'FALSE');
       }
     }
+
+    // override the routing setting in contrib module quick_node_clone that forces the
+    // node clone form to use the admin theme.
+    if ($route = $collection->get('quick_node_clone.node.quick_clone')) {
+      $route->setOption('_admin_route', FALSE);
+    }
   }
 
 }
