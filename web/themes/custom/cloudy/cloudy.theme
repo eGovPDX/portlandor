@@ -157,3 +157,20 @@ function cloudy_preprocess_time(&$variables) {
   }
 }
 
+/**
+ * Implements theme_preprocess_block().
+ *
+ * Adds the "is_front" variable to the feedback block template
+ */
+function cloudy_preprocess_block(&$variables) {
+  if ($variables['plugin_id'] == 'block_content:7dc74839-c339-461f-9344-87a6db099602') {
+    try {
+      $variables['is_front'] = \Drupal::service('path.matcher')->isFrontPage();
+    }
+    catch (Exception $e) {
+      $variables['is_front'] = FALSE;
+    }
+    // Ensure the cache varies correctly (new in Drupal 8.3).
+    $variables['#cache']['contexts'][] = 'url.path.is_front';
+  }
+}
