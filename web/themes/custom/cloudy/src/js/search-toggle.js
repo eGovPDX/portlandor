@@ -12,8 +12,8 @@ function closeSearchResults() {
 }
 
 Drupal.behaviors.search_toggle = {
-  attach: function() {
-    $(document).on('click', '.navbar-toggle-group .search-toggle', function(event) {
+  attach: function(context, settings) {
+    $(document, context).once('drawerOpenHandler').on('click', '.navbar-toggle-group .search-toggle', function(event) {
       event.preventDefault();
       event.stopPropagation();
 
@@ -32,8 +32,8 @@ Drupal.behaviors.search_toggle = {
 };
 
 Drupal.behaviors.mobile_menu_toggle_search_close = {
-  attach: function() {
-    $(document).on('click', '.navbar-toggle-group .navbar-toggler', function(event) {
+  attach: function(context, settings) {
+    $(document, context).once('drawerCloseHandler').on('click', '.navbar-toggle-group .navbar-toggler', function(event) {
       event.preventDefault();
       event.stopPropagation();
       closeSearchResults();
@@ -42,8 +42,8 @@ Drupal.behaviors.mobile_menu_toggle_search_close = {
 };
 
 Drupal.behaviors.close_search_results = {
-  attach: function() {
-    $(document).on('click', '.navbar-mobile-search-drawer .icon', function(event) {
+  attach: function(context, settings) {
+    $(document, context).once('drawerCloseResultsHandler').on('click', '.navbar-mobile-search-drawer .icon', function(event) {
       closeSearchResults();
     });
   }
