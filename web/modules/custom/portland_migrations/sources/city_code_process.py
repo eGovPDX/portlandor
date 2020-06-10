@@ -169,7 +169,10 @@ for x in data_sections['url']:
         sections_url = 'https://www.portlandoregon.gov' + x
         if sections_url == y:
             print('found {} at {}'.format(x, data_raw_index.get_loc('{}'.format(y))))
-            sections['text'][data_index.get_loc(x)] = data_raw['TEXT'][data_raw_index.get_loc(y)]
+            try:
+              sections['text'][data_index.get_loc(x)] = data_raw['TEXT'][data_raw_index.get_loc(y)]
+            except IndexError as e:
+              print('IndexError for URL:', sections_url)
 
 section = pd.DataFrame(sections)
 section.to_csv('city_code_sections.csv', index=False)
