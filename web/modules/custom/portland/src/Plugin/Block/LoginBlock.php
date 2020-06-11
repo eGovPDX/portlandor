@@ -30,9 +30,16 @@ class LoginBlock extends BlockBase {
      * Simple block that outputs a login link decorated with a return url.
      */
     public function build() {
+      $logged_in = \Drupal::currentUser()->isAuthenticated();
       $destination = \Drupal::request()->getRequestUri();
+      $markup = "";
+      if ($logged_in) {
+        $markup = '<a href="/user/logout?destination=' . $destination . '">Editor log out</a>';
+      } else {
+        $markup = '<a href="/user/login?destination=' . $destination . '">Editor log in</a>';
+      }
       $render_array = [
-        '#markup' => '<a href="/user/login?destination=' . $destination . '">Editor log in</a>'
+        '#markup' => $markup
       ];
       return $render_array;
     }
