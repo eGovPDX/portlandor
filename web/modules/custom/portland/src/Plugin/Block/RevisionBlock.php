@@ -25,6 +25,14 @@ class RevisionBlock extends BlockBase {
       'success' => 'check'
     ];
 
+    private static $rh_action = [
+      'bundle_default' => '',
+      'access_denied' => '\'access denied\'',
+      'display_page' => '\'display page\'',
+      'page_not_found' => '\'page not found\'',
+      'page_redirect' => 'URL'
+    ];
+
     /**
      * {@inheritdoc}
      */
@@ -86,6 +94,8 @@ class RevisionBlock extends BlockBase {
       $node_current_is_archived = ($node_current_revision->moderation_state->value == 'archived');
       $node_default_vid = $node_default_revision->vid->value;
       $node_default_status = $node_default_revision->status->value;
+      $node_rh_action = count($node_current_revision->rh_action) ? $node_current_revision->rh_action[0]->value : 'bundle_default';
+      $node_rh_redirect = count($node_current_revision->rh_redirect) ? $node_current_revision->rh_redirect[0]->value : '';
 
       // Set the default
       $render_array = [
@@ -97,6 +107,8 @@ class RevisionBlock extends BlockBase {
           '#markup' => ' and new <strong>'. self::getModerationStateInString($node_latest_revision) . '</strong> revision exists.'],
         '#revision_link' => "/node/$nid/revisions/$node_latest_vid/view",
         '#revision_link_text' => 'View latest version',
+        '#rabbithole_action' => self::$rh_action[$node_rh_action],
+        '#rabbithole_redirect' => $node_rh_redirect,
       ];
       /*
       latest == current > default
