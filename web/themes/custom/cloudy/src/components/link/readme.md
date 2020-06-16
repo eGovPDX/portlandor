@@ -5,7 +5,7 @@ An opinionated **Link** with emphasis.
 
 - `background`: boolean - false (default)
 - `standalone`: boolean - false (default)
-- `icon`: object { name: string, size: string }
+- `icon`: object { name: string, size: string, fontAwesome: boolean, brand: boolean }
 - `text`: string - The link text
 - `url`: string - The link url
 
