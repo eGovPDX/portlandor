@@ -69,6 +69,23 @@ In Condition.php line 105:
 Query condition 'taxonomy_term_field_data.name IN ()' cannot be empty.
 ```
 
+### Python processing
+
+Some migrations, such as the city charter and city code migrations, have Python scripts that perform post processing on the raw CSV exported from POG to generate the actual CSV used by the migration script.
+
+#### Instructions to install and run Python in Lando
+
+```
+lando ssh -u root
+apt update
+apt install python3
+apt install python3-pip
+pip3 install pandas
+pip3 install bs4
+cd web/modules/custom/portland_migrations/sources/
+python3 [script_name.py]
+```
+
 ## Migrations
 
 In addition to the primary content migrations, there are two supplemental migrations that are run for some content types: redirects and group_content.
