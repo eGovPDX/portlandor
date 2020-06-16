@@ -158,21 +158,24 @@ for link in data['url']:
 
 
 
-# link_count = 1
-# data_sections = pd.read_csv('city_code_sections.csv')
-# data_raw_index = pd.Index(data_raw['URL'])
-# data_index = pd.Index(data_sections['url'])
-# #After finding the urls for all of the sections match those urls with the urls provided in the raw data export
-# #If the url matches replace the empty string with information in the TEXT field based on the index of the elements found
-# for x in data_sections['url']:
-#     for y in data_raw['URL']:
-#         sections_url = 'https://www.portlandoregon.gov' + x
-#         if sections_url == y:
-#             print('found {} at {}'.format(x, data_raw_index.get_loc('{}'.format(y))))
-#             sections['text'][data_index.get_loc(x)] = data_raw['TEXT'][data_raw_index.get_loc(y)]
+link_count = 1
+data_sections = pd.read_csv('city_code_sections.csv')
+data_raw_index = pd.Index(data_raw['URL'])
+data_index = pd.Index(data_sections['url'])
+#After finding the urls for all of the sections match those urls with the urls provided in the raw data export
+#If the url matches replace the empty string with information in the TEXT field based on the index of the elements found
+for x in data_sections['url']:
+    for y in data_raw['URL']:
+        sections_url = 'https://www.portlandoregon.gov' + x
+        if sections_url == y:
+            print('found {} at {}'.format(x, data_raw_index.get_loc('{}'.format(y))))
+            try:
+              sections['text'][data_index.get_loc(x)] = data_raw['TEXT'][data_raw_index.get_loc(y)]
+            except IndexError as e:
+              print('IndexError for URL:', sections_url)
 
-# section = pd.DataFrame(sections)
-# section.to_csv('city_code_sections.csv', index=False)
+section = pd.DataFrame(sections)
+section.to_csv('city_code_sections.csv', index=False)
 
 
 # print(len(sections['id']))
