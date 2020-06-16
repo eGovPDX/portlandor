@@ -17,10 +17,20 @@
     {{ content.portrait }}
   </div>
   <div class="elected--meta col-lg-5 col-md-8 col-sm-12">
-    {{ content.meta }}
+    {% set contact_entity = content.portrait.field_contact|render|trim %}
+    {% if contact_entity is not empty %}{# We have a related contact entity, therfore do not show deprecated social media fields  #}
+      {{ content.meta|without('field_facebook', 'field_twitter', 'field_instagram') }}
+    {% else %}
+      {{ content.meta }}{# In this case, we do not have a related contact entity reference — show deprecated social media fields #}
+    {% endif %}
   </div>
   <div class="elected--contact col-lg-4 col-md-12 col-sm-12">
-    {{ content.contact }}
+    {% if contact_entity is not empty %}{# We have a related contact entity, therfore do not show fields that are rendered there (phone and email) #}
+      {{ content.contact|without('field_phone', 'field_email') }}
+    {% else %}
+      {{ content.contact }}{# In this case, we do not have a related contact entity reference — show phone and email #}
+    {% endif %}
+  </div>
   </div>
 </div>
 <div class="row">
