@@ -125,6 +125,9 @@ if($env == 'demo') {
 else if($env == 'live') {
   $config['search_api.server.searchstax']['backend_config']['connector_config']['core'] = 'Production';
 }
+else if($env == 'lando') {
+  $config['search_api.server.searchstax']['backend_config']['connector_config']['core'] = 'index';
+}
 else {
   $config['search_api.server.searchstax']['backend_config']['connector_config']['core'] = 'Test';
 }
