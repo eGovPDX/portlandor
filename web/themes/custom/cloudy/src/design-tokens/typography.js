@@ -49,7 +49,7 @@ module.exports = {
       }
     },
     "heading-06": {
-      "fontSize": { "value": "16" },
+      "fontSize": { "value": "16px" },
       "lineHeight": { "value": "24px" },
     },
     "body": {
