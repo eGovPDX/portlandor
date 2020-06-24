@@ -25,10 +25,10 @@ class MigrateBodyContentAndLinkedMedia extends ProcessPluginBase {
    * {@inheritdoc}
    */
   public function transform($value, MigrateExecutableInterface $migrate_executable, Row $row, $destination_property) {
-    // Some policies are PDF files, need to download the file, create a media document, embed the document in body
+    // Some articles can be PDF files. Need to download the file, create a media document, embed the document in body
     // The CONTENT_TYPE column is "B" for binary content
-    if($row->getSourceProperty('CONTENT_TYPE') == 'B') {
-      $value = $this->processPolicyInPdf($value, $migrate_executable, $row, $destination_property);
+    if ($row->getSourceProperty('CONTENT_TYPE') == 'B') {
+      $value = $this->processArticlePdf($value, $migrate_executable, $row, $destination_property);
     }
 
     // Find all A and IMG tags in body text
@@ -44,11 +44,12 @@ class MigrateBodyContentAndLinkedMedia extends ProcessPluginBase {
       $dom = Html::load($value);
       $xpath = new \DOMXPath($dom);
 
-      $download_dir_uri = $this->generateDownloadDirectoryUri();
+      // Prepare destination uri
+      $download_dir_uri = $this->prepareDownloadDirectory();
 
       // reusable db connection
-      if (is_null($_SESSION['policies_dbConn'])) {
-        $_SESSION['policies_dbConn'] = \Drupal::database();
+      if (is_null($_SESSION['drupal_dbConn'])) {
+        $_SESSION['drupal_dbConn'] = \Drupal::database();
       }
 
       // look for links with an href and save the linked file
@@ -61,7 +62,7 @@ class MigrateBodyContentAndLinkedMedia extends ProcessPluginBase {
         }
 
         // troubleshooting
-        if (preg_match("/.*360710.*/", $url)) {
+        if (preg_match("/.*568942.*/", $url)) {
           $halt = true;
         }
 
@@ -77,7 +78,7 @@ class MigrateBodyContentAndLinkedMedia extends ProcessPluginBase {
         }
 
         // skip external links and leave the link tag alone
-        if(substr($url, 0, strlen("http://www.portlandonline.com/")) !== "http://www.portlandonline.com/") {
+        if (substr($url, 0, strlen("http://www.portlandonline.com/")) !== "http://www.portlandonline.com/") {
           $internal_link = $this->isInternalLink($url);
           if (!$internal_link) continue;
         }
@@ -101,25 +102,25 @@ class MigrateBodyContentAndLinkedMedia extends ProcessPluginBase {
         $realpath_dir = drupal_realpath($download_dir_uri);
         $filename_search = str_replace($content_id, '*', $filename);
         $files = glob($realpath_dir . '/' . $filename_search);
-
-        // if file exists with same content id, grab existing file and use it for link.
-        // if file exists with different content id, treat it as new but add a note to the log.
         unset($downloaded_file);
-      
+        
         if ($files === false) {
           // return false means an error occurred searching for files. is it even worth the effort to handle it?
         }
-
+        
+        // if file exists with same content id, grab existing file and use it for link.
+        // if file exists with different content id, treat it as new but add a note to the log.
         if (is_array($files) && count($files) > 0) {
           // a matching filename pattern was found...
           // if the content ids match, link to existing file.
           // if the ids don't match, treat it as new file and log possible duplicate.
 
-          // ids match?
-          if (strpos($files[0], $content_id) !== FALSE) {
+          // ids match? Look through all matching filenames for an exact match (filename and content id)
+          $key = array_search($realpath_dir . '/' . $filename, $files);
+          if ($key !== false) {
             // use existing file. glob only returns path; we need to get fid and load file entity.
             $query = "SELECT fid FROM file_managed FM where uri = '" . $destination_uri . "'";
-            $query = $_SESSION['policies_dbConn']->query($query);
+            $query = $_SESSION['drupal_dbConn']->query($query);
             $result = $query->fetchAll();
             if (is_array($result) && count($result) > 1) {
               // duplicate document media entities exist! log it, but then use the first one found.
@@ -128,13 +129,12 @@ class MigrateBodyContentAndLinkedMedia extends ProcessPluginBase {
             }
             if (count($result) < 1) {
               // TODO: Need to handle this, create file?
-              $message = "File exists in the file system but not in the database, SKIPPING. $files[0]";
+              $message = "File exists in the file system but not in the database, SKIPPING. $files[$key]";
               \Drupal::logger('portland_migrations')->notice($message);
               continue;
             }
             $fid = $result[0]->fid;
             $downloaded_file = \Drupal\file\Entity\File::load($fid);
-        
           } else {
             // file may already exist, log it for review but use it.
             // all potential duplicates are downloaded and saved as individual files; they
@@ -170,14 +170,18 @@ class MigrateBodyContentAndLinkedMedia extends ProcessPluginBase {
           continue;
         }
 
-        if($is_code_section) {
-          $this->processCodeImage($link, $filename, $downloaded_file, $dom);
-        }
-        else {
+        if ($is_code_section || empty($link->getAttribute('href'))) {
+          // Replace images embedded in body with media nodes
+          $this->processEmbeddedImage($link, $filename, $downloaded_file, $dom);
+        } else {
           // modify link to use file URL
           $file_uri = $downloaded_file->getFileUri();
           $file_url = file_url_transform_relative(file_create_url($file_uri));
-          $link->setAttribute("href", $file_url);
+          if (!empty($link->getAttribute('href'))) {
+            $link->setAttribute("href", $file_url);
+          } else {
+            $link->setAttribute("src", $file_url);
+          }
         }
       }
       $output = Html::serialize($dom);
@@ -187,67 +191,75 @@ class MigrateBodyContentAndLinkedMedia extends ProcessPluginBase {
     return $value;
   }
 
+
   /**
-   * Code sections have images embedded inside the body text. 
+   * Process HTML with images embedded inside the body text. 
    * Create a Media node and replace the HTML.
    */
-  protected function processCodeImage($link, $filename, 
-    $downloaded_file, $dom) {
+  protected function processEmbeddedImage($link, $filename, $downloaded_file, $dom) {
     $url = $link->getAttribute('src');
     if (is_null($url)) return;
 
     // Use alt text as the media name if available
     $media_name = $link->getAttribute('alt') ? $link->getAttribute('alt') : $filename;
     $media_type = $this->getMediaType($filename);
-    // Create the Media Document item
 
-    if( $media_type == 'image' ) {
-      $media = Media::create([
-        'bundle' => 'image',
-        'uid' => 1,
-        'langcode' => \Drupal::languageManager()->getDefaultLanguage()->getId(),
-        'name' => $media_name,
-        'field_title' => $media_name,
-        'status' => 1,
-        'image' => [
-          'target_id' => $downloaded_file->id()
-        ],
-        'field_summary' => $media_name,
-        'field_media_in_library' => 1,
-      ]);
+    // Check if a media entity already exists with the file
+    $fileusage = \Drupal::service('file.usage')->listUsage($downloaded_file);
+    if ( $fileusage != null && count($fileusage['file']['media']) ) {
+      // Load the existing media item
+      $media = Media::load( array_keys($fileusage['file']['media'])[0] );
+    } else {
+      // Create a new media item
+      // TODO: Set the 'display in groups' field to assign media to a group
+      if ( $media_type == 'image' ) {
+        $media = Media::create([
+          'bundle' => 'image',
+          'uid' => 1,
+          'langcode' => \Drupal::languageManager()->getDefaultLanguage()->getId(),
+          'name' => $media_name,
+          'field_title' => $media_name,
+          'status' => 1,
+          'image' => [
+            'alt' => $media_name,
+            'target_id' => $downloaded_file->id()
+          ],
+          'field_summary' => $media_name,
+          'field_media_in_library' => 1,
+        ]);
+      } else { // Document
+        $media = Media::create([
+          'bundle' => 'document',
+          'uid' => 1,
+          'langcode' => \Drupal::languageManager()->getDefaultLanguage()->getId(),
+          'name' => $media_name,
+          'status' => 1,
+          'field_document' => [
+            'target_id' => $downloaded_file->id()
+          ],
+          'field_summary' => $media_name,
+        ]);
+      }
+      $media->save();
+      $media->status->value = 1;
+      $media->moderation_state->value = 'published';
+      $media->save();
     }
-    else { // Document
-      $media = Media::create([
-        'bundle' => 'document',
-        'uid' => 1,
-        'langcode' => \Drupal::languageManager()->getDefaultLanguage()->getId(),
-        'name' => $media_name,
-        'status' => 1,
-        'field_document' => [
-          'target_id' => $downloaded_file->id()
-        ],
-        'field_summary' => $media_name,
-      ]);
-    }
-    $media->save();
-    $media->status->value = 1;
-    $media->moderation_state->value = 'published';
-    $media->save();
-
+    
     // Replace the old link with a embedded image
     $media_uuid = $media->uuid();
     $newNode = $dom->createDocumentFragment();
-    if( $media_type == 'image' ) {
+    if ( $media_type == 'image' ) {
       $newNode->appendXML("<drupal-entity data-align=\"responsive-full\" data-embed-button=\"image_browser\" data-entity-embed-display=\"media_image\" data-entity-type=\"media\" data-entity-uuid=\"$media_uuid\" data-langcode=\"en\"></drupal-entity>");
-    }
-    else {
+    } else {
       $newNode->appendXML("<drupal-entity data-embed-button=\"document_browser\" data-entity-embed-display=\"view_mode:media.embedded\" data-entity-type=\"media\" data-entity-uuid=\"$media_uuid\" data-langcode=\"en\"></drupal-entity>");
     }
     $link->parentNode->replaceChild($newNode, $link);
   }
 
-  protected function processPolicyInPdf($value, 
-    MigrateExecutableInterface $migrate_executable, Row $row, $destination_property) {
+
+  protected function processArticlePdf($value, MigrateExecutableInterface $migrate_executable, 
+    Row $row, $destination_property) {
     // Get file meta data
     $pogFileUrl = $row->getSourceProperty('URL');
     $pogDescription = $row->getSourceProperty('CONTENT_NAME');
@@ -258,7 +270,7 @@ class MigrateBodyContentAndLinkedMedia extends ProcessPluginBase {
     // Content-Disposition: inline; filename="ARA 1.01 adopted 113018.pdf"
     $matches = [];
     preg_match('/filename="(.*)"/', $headers['Content-Disposition'], $matches);
-    if(count($matches) < 2) return;
+    if (count($matches) < 2) return;
     $pogFileName = $matches[1];
 
     // replace underscores with hypens
@@ -280,7 +292,7 @@ class MigrateBodyContentAndLinkedMedia extends ProcessPluginBase {
       $message = "Error occurred while trying to download URL target at " . $pogFileUrl . " and create managed file. Exception: " . $e->getMessage();
       \Drupal::logger('portland_migrations')->notice($message);
     }
-    if( $downloaded_file == FALSE ) {
+    if ( $downloaded_file == FALSE ) {
       echo "Failed to download $pogFileUrl";
       return $result;
     }
@@ -307,9 +319,10 @@ class MigrateBodyContentAndLinkedMedia extends ProcessPluginBase {
     return "<drupal-entity data-embed-button=\"document_browser\" data-entity-embed-display=\"view_mode:media.embedded\" data-entity-type=\"media\" data-entity-uuid=\"$media_uuid\" data-langcode=\"en\"></drupal-entity>";
   }
 
+
   protected function prepareDownloadDirectory() {
     // prepare download directory
-    $folder_name = date("Y-m") ;
+    $folder_name = date("Y-m");
     $folder_uri = file_build_uri($folder_name);
     $public_path = \Drupal::service('file_system')->realpath(file_default_scheme() . "://");
     $download_path = $public_path . "/" . $folder_name;
@@ -317,12 +330,6 @@ class MigrateBodyContentAndLinkedMedia extends ProcessPluginBase {
     return $folder_uri;
   }
 
-  protected function generateDownloadDirectoryUri() {
-    // prepare download directory
-    $folder_name = date("Y-m");
-    $folder_uri = file_build_uri($folder_name);
-    return $folder_uri;
-  }
 
   protected function isInternalLink($url) {
     $url_host = parse_url($url, PHP_URL_HOST);
@@ -336,13 +343,14 @@ class MigrateBodyContentAndLinkedMedia extends ProcessPluginBase {
     }
   }
 
+
   protected function buildPogFilename($url) {
     // get content id from URL, might be like /bts/38249 or /image.cfm?id=38249 or /shared/cfm/slb.cfm?id=38249 or /auditor/29194?a=256111
     // this is appended to filename to make sure it's unique.
     $content_id = pathinfo(parse_url($url, PHP_URL_PATH), PATHINFO_FILENAME);
     // return immediately if no content_id; that means no filename/invalid URL
     if (!$content_id) return false;
-
+    
     if (strtolower($content_id) == "image" || strtolower($content_id == "slb")) {
       $querystr = parse_url($url, PHP_URL_QUERY);
       $queries = array();
@@ -387,6 +395,7 @@ class MigrateBodyContentAndLinkedMedia extends ProcessPluginBase {
 
     return [$final_filename, $content_id];
   }
+
 
   protected function getMediaType($filename) {
     $ext = pathinfo($filename, PATHINFO_EXTENSION);
