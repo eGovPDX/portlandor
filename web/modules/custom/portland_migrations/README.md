@@ -126,6 +126,7 @@ Group content migrations are used to add content to a group by creating a group 
 - parks_news
 - bds_news
 - bds_service_updates
+- bds_pages
 
 #### Eudaly news
 ##### Local
@@ -328,4 +329,18 @@ lando drush migrate:import bds_service_updates_redirects
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:import bds_service_updates
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:import bds_service_updates_group_content
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:import bds_service_updates_redirects
+```
+
+#### BDS Pages
+##### Local
+```
+lando drush migrate:import bds_pages
+lando drush migrate:import bds_pages_group_content
+lando drush migrate:import bds_pages_redirects
+```
+##### On Pantheon
+```
+lando terminus remote:drush portlandor.powr-[ID] -- migrate:import bds_pages
+lando terminus remote:drush portlandor.powr-[ID] -- migrate:import bds_pages_group_content
+lando terminus remote:drush portlandor.powr-[ID] -- migrate:import bds_pages_redirects
 ```

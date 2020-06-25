@@ -1,0 +1,38 @@
+id: bds_pages
+label: 'BDS Pages Import'
+migration_group: bds_pages
+source:
+  plugin: csv
+  path: modules/custom/portland_migrations/sources/bds_pages.csv
+  header_row_count: 1
+  keys:
+    - CONTENT_ID
+process:
+  uid:
+    plugin: default_value
+    default_value: 1
+  title: CONTENT_NAME
+  field_body_content/value:
+    plugin: migrate_body_content_and_linked_media
+    source: TEXT
+  field_body_content/format:
+    plugin: default_value
+    default_value: simplified_editor_with_media_embed
+  field_page_type:
+    plugin: default_value
+    default_value: 85
+  created:
+    plugin: format_date
+    from_format: 'Y-m-d H:i:s T'
+    to_format: 'U'
+    source: PUBLISH_DATE
+  field_summary: 
+    plugin: substr
+    source: SUMMARY_TEXT
+    length: 300
+  field_display_groups:
+      plugin: default_value
+      default_value: 1
+destination:
+  plugin: 'entity:node'
+  default_bundle: page
