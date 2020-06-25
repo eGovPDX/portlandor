@@ -722,15 +722,14 @@ function portland_inline_entity_form_entity_form_alter(&$entity_form, &$form_sta
 {
     if (
         $entity_form['#entity_type'] == 'media' &&
-        array_key_exists('group_content', $entity_form) &&
-        array_key_exists('widget', $entity_form["group_content"])&&
-        array_key_exists('add_more', $entity_form["group_content"]['widget'])&&
-        array_key_exists('add_relation', $entity_form["group_content"]['widget']['add_more'])
+        array_key_exists('field_display_groups', $entity_form) &&
+        array_key_exists('widget', $entity_form["field_display_groups"])&&
+        array_key_exists('add_more', $entity_form["field_display_groups"]['widget'])
     ) {
         // Set the Group field to the correct default value. Have to use session because the entity browser is in an iFrame.
         $group_id = \Drupal::request()->getSession()->get('parent_group_id');
         if ($group_id != null) {
-            $entity_form["group_content"]['widget']['add_more']['add_relation']['#default_value'] = $group_id;
+          $entity_form["field_display_groups"]['widget'][0]['target_id']['#default_value'] = $group_id;
         }
     }
 }
@@ -743,8 +742,15 @@ function portland_form_alter(&$form, &$form_state, $form_id)
     // Only set the default field for new Media items
     $form_array_with_group_field = [
         'node_news_form',
+        'node_news_edit_form',
         'node_page_form',
+        'node_page_edit_form',
         'node_event_form',
+        'node_event_edit_form',
+        'node_construction_project_form',
+        'node_construction_project_edit_form',
+        'node_development_permit_form',
+        'node_development_permit_edit_form',
         'media_image_add_form',
         'media_audio_add_form',
         'media_video_add_form',
@@ -758,6 +764,8 @@ function portland_form_alter(&$form, &$form_state, $form_id)
         // Set the default value as the node's current group
         $node = $form_state->getFormObject()->getEntity();
         $group_id = null;
+        // The value is used in portland_inline_entity_form_entity_form_alter()
+        // When creating a node, get the group from form state.
         if ($node->isNew()) {
             if (array_key_exists('group', $form_state->getStorage()) && $form_state->getStorage()['group'] != null) {
                 $group_id = $form_state->getStorage()['group']->id();
@@ -765,6 +773,16 @@ function portland_form_alter(&$form, &$form_state, $form_id)
                     \Drupal::request()->getSession()->set('parent_group_id', $group_id);
                 }
             }
+        }
+        // POWR-2493 Set the default group in "field_display_groups" in entity browser form
+        // When editing a node, get the node's parent group
+        else {
+          $group_ids = getGroupIdsByEntity($node);
+          if(count($group_ids) > 0) {
+            // Assume each node only belongs to one group. 
+            // When there are multiple parent groups, use the first one.
+            \Drupal::request()->getSession()->set('parent_group_id', $group_ids[0]);
+          }
         }
     } elseif (substr_compare($form_id, $group_form_prefix, 0, strlen($group_form_prefix)) === 0) {
         $form['#validate'][] = '_validate_group_group_path';
