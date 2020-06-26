@@ -126,8 +126,7 @@ else if($env == 'live') {
   $config['search_api.server.searchstax']['backend_config']['connector_config']['core'] = 'Production';
 }
 else if($env == 'lando') {
-  $config['search_api.server.searchstax']['backend_config']['connector_config']['host'] = 'solr';
-  $config['search_api.server.searchstax']['backend_config']['connector_config']['core'] = 'index';
+  $config['search_api.server.searchstax']['backend_config']['connector_config']['core'] = 'Local';
 }
 else {
   $config['search_api.server.searchstax']['backend_config']['connector_config']['core'] = 'Test';
