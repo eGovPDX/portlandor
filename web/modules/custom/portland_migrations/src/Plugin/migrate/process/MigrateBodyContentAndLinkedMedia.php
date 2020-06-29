@@ -62,7 +62,7 @@ class MigrateBodyContentAndLinkedMedia extends ProcessPluginBase {
         }
 
         // troubleshooting
-        if (preg_match("/.*568942.*/", $url)) {
+        if (preg_match("/.*404679.*/", $url)) {
           $halt = true;
         }
 
@@ -100,6 +100,7 @@ class MigrateBodyContentAndLinkedMedia extends ProcessPluginBase {
 
         // Search for possible duplicates using filename sans POG content id
         $realpath_dir = drupal_realpath($download_dir_uri);
+        $realpath_filename = $realpath_dir . '/' . $filename;
         $filename_search = str_replace($content_id, '*', $filename);
         $files = glob($realpath_dir . '/' . $filename_search);
         unset($downloaded_file);
@@ -116,7 +117,7 @@ class MigrateBodyContentAndLinkedMedia extends ProcessPluginBase {
           // if the ids don't match, treat it as new file and log possible duplicate.
 
           // ids match? Look through all matching filenames for an exact match (filename and content id)
-          $key = array_search($realpath_dir . '/' . $filename, $files);
+          $key = array_search($realpath_filename, $files);
           if ($key !== false) {
             // use existing file. glob only returns path; we need to get fid and load file entity.
             $query = "SELECT fid FROM file_managed FM where uri = '" . $destination_uri . "'";
@@ -127,14 +128,22 @@ class MigrateBodyContentAndLinkedMedia extends ProcessPluginBase {
               $message = "Duplicate media entities found for $destination_uri. Using first one found, but consider removing duplicates.";
               \Drupal::logger('portland_migrations')->notice($message);
             }
-            if (count($result) < 1) {
-              // TODO: Need to handle this, create file?
-              $message = "File exists in the file system but not in the database, SKIPPING. $files[$key]";
-              \Drupal::logger('portland_migrations')->notice($message);
-              continue;
+            if (count($result) > 0) {
+              $fid = $result[0]->fid;
+              $downloaded_file = \Drupal\file\Entity\File::load($fid);
+            } else {
+              // File exists in the file system but not in the database, so delete file then
+              // redownload and save managed file
+              try {
+                unlink($realpath_filename);
+                $downloaded_file = system_retrieve_file($url, $destination_uri, TRUE);
+              }
+              catch (Exception $e) {
+                $message = "Error occurred while trying to redownload URL target at " . $url . " and create managed file. Skipping file. Page: $page_title. Exception: " . $e->getMessage();
+                \Drupal::logger('portland_migrations')->error($message);
+                continue;
+              }
             }
-            $fid = $result[0]->fid;
-            $downloaded_file = \Drupal\file\Entity\File::load($fid);
           } else {
             // file may already exist, log it for review but use it.
             // all potential duplicates are downloaded and saved as individual files; they
