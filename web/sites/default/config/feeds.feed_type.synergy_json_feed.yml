@@ -1,0 +1,147 @@
+uuid: 2a44c2be-a1e6-437f-bb67-c8893efc4832
+langcode: en
+status: true
+dependencies:
+  config:
+    - field.field.node.event.field_body_content
+    - field.field.node.event.field_end_date
+    - field.field.node.event.field_event_status
+    - field.field.node.event.field_feeds_guid
+    - field.field.node.event.field_start_date
+    - field.field.node.event.field_summary
+    - node.type.event
+  module:
+    - feeds_ex
+    - node
+id: synergy_json_feed
+label: 'Synergy JSON Feed'
+description: ''
+help: ''
+import_period: 86400
+fetcher: http
+fetcher_configuration:
+  auto_detect_feeds: false
+  use_pubsubhubbub: false
+  fallback_hub: ''
+  request_timeout: 30
+parser: jsonpath
+parser_configuration:
+  context:
+    value: '$.listOfEvents.*'
+  sources:
+    eventstartdatetime:
+      label: eventStartDateTime
+      value: eventStartDateTime
+    attendees:
+      label: attendees
+      value: attendees
+    eventenddatetime:
+      label: eventEndDateTime
+      value: eventEndDateTime
+    eventcasenumber:
+      label: eventCaseNumber
+      value: eventCaseNumber
+    recordstatus:
+      label: recordStatus
+      value: recordStatus
+    casetype:
+      label: caseType
+      value: caseType
+    hearinglocation:
+      label: hearingLocation
+      value: hearingLocation
+  display_errors: false
+  source_encoding:
+    - auto
+  debug_mode: false
+  line_limit: 100
+processor: 'entity:node'
+processor_configuration:
+  langcode: en
+  update_existing: 2
+  update_non_existent: _keep
+  expire: -1
+  owner_feed_author: false
+  owner_id: 1
+  authorize: true
+  skip_hash_check: false
+  values:
+    type: event
+custom_sources:
+  eventstartdatetime:
+    label: eventStartDateTime
+    value: eventStartDateTime
+    machine_name: eventstartdatetime
+  hearinglocation:
+    label: hearingLocation
+    value: hearingLocation
+    machine_name: hearinglocation
+  attendees:
+    label: attendees
+    value: attendees
+    machine_name: attendees
+  eventenddatetime:
+    label: eventEndDateTime
+    value: eventEndDateTime
+    machine_name: eventenddatetime
+  eventcasenumber:
+    label: eventCaseNumber
+    value: eventCaseNumber
+    machine_name: eventcasenumber
+  casetype:
+    label: caseType
+    value: caseType
+    machine_name: casetype
+  recordstatus:
+    label: recordStatus
+    value: recordStatus
+    machine_name: recordstatus
+mappings:
+  -
+    target: field_start_date
+    map:
+      value: eventstartdatetime
+    settings:
+      language: null
+      timezone: UTC
+  -
+    target: title
+    map:
+      value: attendees
+    unique: {  }
+    settings:
+      language: null
+  -
+    target: field_end_date
+    map:
+      value: eventenddatetime
+    settings:
+      language: null
+      timezone: UTC
+  -
+    target: field_feeds_guid
+    map:
+      value: eventcasenumber
+    unique: {  }
+    settings:
+      language: null
+  -
+    target: field_event_status
+    map:
+      value: recordstatus
+    settings:
+      language: null
+  -
+    target: field_body_content
+    map:
+      value: casetype
+    settings:
+      language: ''
+      format: simplified_editor_with_media_embed
+  -
+    target: field_summary
+    map:
+      value: hearinglocation
+    unique: {  }
+    settings:
+      language: null

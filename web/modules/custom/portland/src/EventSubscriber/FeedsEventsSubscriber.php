@@ -26,9 +26,37 @@ class FeedsEventsSubscriber implements EventSubscriberInterface {
    */
   public static function getSubscribedEvents() {
     return [
+      'feeds.process_entity_prevalidate' => 'prevalidate',
       'feeds.process_entity_presave' => 'presave',
       'feeds.process_entity_postsave' => 'postsave',
     ];
+  }
+
+  /**
+   * Convert fields before validation.
+   * @param Drupal\feeds\Event\EntityEvent $event
+   *
+   * @return Drupal\feeds\Event\EntityEvent $event
+   */
+  public function prevalidate(EntityEvent $event) {
+    $node = $event->getEntity();
+    $item = $event->getItem();
+    $feed = $event->getFeed();
+
+    if ($item->get('eventcasenumber') && $item->get('hearinglocation')) {
+      $node->field_location->target_id = '1135'; // Node ID of 1900 Building
+
+      $recordStatus = $item->get('recordstatus');
+      if($recordStatus == 'Modified') {
+        $node->field_event_status->value = 'Rescheduled';
+      }
+      else if($recordStatus == 'Deleted') {
+        $node->field_event_status->value = 'Cancelled';
+      }
+      else {
+        $node->field_event_status->value = null;
+      }
+    }
   }
 
   /**
@@ -62,11 +90,35 @@ class FeedsEventsSubscriber implements EventSubscriberInterface {
         }
       }
 
-      foreach($feed->get('field_default_topics')->referencedEntities() as $term) {
-        $node->field_topics[] = $term->tid->value;
+      // Get the default event type from configured feed and set the event type for imported events
+      if ($node->hasField('field_event_type') && $feed->hasField('field_event_type')) {
+        if ($feed->field_event_type->target_id) {
+          $node->field_event_type->target_id = $feed->field_event_type->target_id;
+        }
       }
 
-      // Download images in Enclosures tag
+      if( $feed->hasField('field_news_type') ) {
+        foreach($feed->get('field_default_topics')->referencedEntities() as $term) {
+          $node->field_topics[] = $term->tid->value;
+        }
+      }
+
+      // Combine some fields in Synergy JSON into the body text
+      // May need the patch https://www.drupal.org/project/feeds/issues/2850888
+      if ($item->get('eventcasenumber') && $item->get('hearinglocation')) {
+        $eventCaseNumber = $item->get('eventcasenumber');
+        $caseType = $item->get('casetype');
+        $hearingLocation = $item->get('hearinglocation');
+        $attendees = $item->get('attendees');
+        $recordStatus = $item->get('recordstatus');
+        $node->field_summary->value = '';
+        $node->field_body_content->value = "<strong>Case number:</strong> $eventCaseNumber<br/><strong>Case type:</strong> $caseType<br/><strong>Hearing location:</strong> $hearingLocation<br/><strong>Attendees:</strong> $attendees";
+
+        $node->field_start_time->value = $this->getTimeFromDate($item->get('eventstartdatetime'));
+        $node->field_end_time->value = $this->getTimeFromDate($item->get('eventenddatetime'));
+      }
+
+      // Download images in Enclosures tag in FlashAlerts RSS
       $enclosures = $item->get('enclosures');
       if( $enclosures && count($enclosures) > 0 ) {
         $images_html = '';
@@ -140,6 +192,14 @@ class FeedsEventsSubscriber implements EventSubscriberInterface {
     }
   }
 
+/**
+ * Convert the datetime string to number of seconds since midnight as required by time_field
+ */
+  protected function getTimeFromDate($dateTimeString) {
+    // Input is ISO string "2020-06-20T14:25-07:00"
+    $parts = explode('T', $dateTimeString);
+    return strtotime($dateTimeString) - strtotime($parts[0]);
+  }
   /**
    * Helper funciton to add a node to a group by Group ID
    */
