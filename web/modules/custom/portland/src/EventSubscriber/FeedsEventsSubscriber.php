@@ -105,6 +105,7 @@ class FeedsEventsSubscriber implements EventSubscriberInterface {
 
       // Combine some fields in Synergy JSON into the body text
       // May need the patch https://www.drupal.org/project/feeds/issues/2850888
+      // More info https://www.mediacurrent.com/blog/drupal-8-feeds-import-external-json-api/
       if ($item->get('eventcasenumber') && $item->get('hearinglocation')) {
         $eventCaseNumber = $item->get('eventcasenumber');
         $caseType = $item->get('casetype');
