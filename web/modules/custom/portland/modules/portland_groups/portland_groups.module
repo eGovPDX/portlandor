@@ -105,3 +105,53 @@ function _portland_groups_assign_media_to_group($entity) {
 //     return TRUE;
 //   }
 // }
+
+
+/**
+ * Implements hook_entity_update
+ * 
+ * Runs whenever an entity is updated. 
+ * If the entity has field_display_groups, call a function to synchronize group ownership based on the
+ * first group in the field.
+ */
+function portland_groups_entity_update($entity) {
+  if ($entity->hasField('field_display_groups')) {
+    _portland_groups_synchronize_entity_group_ownership($entity);
+  }
+}
+
+function portland_groups_entity_insert($entity) {
+  if ($entity->hasField('field_display_groups')) {
+    _portland_groups_synchronize_entity_group_ownership($entity);
+  }
+}
+
+function _portland_groups_synchronize_entity_group_ownershilandop($entity) {
+  $orig_entity = $entity->original;
+
+  if (!$orig_entity) {
+    // this is a newly created entity; assign it to a group
+
+  } else {
+    // this is an existing entity; if the group has changed, remove it from the old group
+    // and assign to the new group.
+    $new_owner_group = $entity->get('field_display_groups')->getValue()[0];
+    $orig_owner_group = $orig_entity->get('field_display_groups')->getValue()[0];
+
+    if ($orig_owner_group != $new_owner_group) {
+      // remove from old group
+
+      // assign to new group
+
+      $group_id = $entity->get('field_display_groups')->getValue()[0]['target_id'];
+      if (!is_null($group_id)) {
+        $group = \Drupal\group\Entity\Group::load($group_id);
+        $plugin_id = "group_media:" . $entity->bundle();
+        $group->addContent($entity, $plugin_id);
+      }
+
+
+    }
+  }
+  }
+
