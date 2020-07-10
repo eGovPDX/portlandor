@@ -123,13 +123,12 @@ function portland_groups_entity_update($entity) {
 /**
  * Implements hook_entity_insert
  * 
- * Runs whenever an entity is inserted. We are hooking both insert and update separately
- * because update doesn't run on its own when inserting an entity. Logic is in place to
- * avoid saving the content to group multiple times if the synchronize function is called
- * repeatedly.
+ * We only want this to run on insert when we're not in a group context.
+ * When we are in group context, the group module will take care of creating
+ * the group content entity.
  */
 function portland_groups_entity_insert($entity) {
-  if ($entity && $entity->hasField('field_display_groups')) {
+  if ($entity && $entity->hasField('field_display_groups') && \Drupal::routeMatch()->getParameter('group') == null) {
     _portland_groups_synchronize_entity_group_ownership($entity);
   }
 }
@@ -177,6 +176,11 @@ function _portland_groups_synchronize_entity_group_ownership($entity) {
 }
 
 function _portland_groups_add_entity_to_group($entity, $group_id, $plugin_id) {
+  // make sure entity isn't already in group; the entity may already be assigned to
+  // the group by virtue of having been created in that context.
   $group = \Drupal\group\Entity\Group::load($group_id);
-  $group->addContent($entity, $plugin_id);
+  $current_node = $group->getContent($plugin_id, ['entity_id' => $entity->id()]);
+  if (!$current_node || count($current_node) < 1) {
+    $group->addContent($entity, $plugin_id);
+  }
 }
