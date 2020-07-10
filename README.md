@@ -36,7 +36,8 @@ The .lando.yml file included in this repo will set you up to connect to the corr
 2. Log in to Pantheon and generate a machine token from My Dashboard > Account > Machine Tokens.
 3. Run `lando terminus auth:login --machine-token=[YOUR MACHINE TOKEN]`, this logs your Lando instance into our Pantheon account.
 4. To make sure you don't hit rate limits with composer, log into Github and generate a personal access token and add it to your lando instance by using `lando composer config --global --auth github-oauth.github.com "$COMPOSER_TOKEN"`. (You should replace \$COMPOSER_TOKEN with your generated token.) There is a handy tutorial for this at https://coderwall.com/p/kz4egw/composer-install-github-rate-limiting-work-around
-5. You have three options to get your database and files set up:
+5. If this is a new clone of this repo before continuing to the next steps you must run `lando composer install` and `lando yarn install` to generate the appropriate dependencies.
+6. You have three options to get your database and files set up:
    1. Run `lando latest` to automaticaly download and import the latest DB from Dev.
    2. Manually import the database
       1. Download the latest database from the Dev environment on Pantheon. (https://dashboard.pantheon.io/sites/5c6715db-abac-4633-ada8-1c9efe354629#dev/backups/backup-log)
@@ -44,10 +45,10 @@ The .lando.yml file included in this repo will set you up to connect to the corr
       3. Run `lando db-import artifacts/portlandor_dev_2018-04-12T00-00-00_UTC_database.sql.gz`. (This is just an example, you'll need to use the actual filename of the database dump you downloaded.)
     3. Download the latest files from the Dev environment on Pantheon. (https://dashboard.pantheon.io/sites/5c6715db-abac-4633-ada8-1c9efe354629#dev/backups/backup-log)
         1. Move your files backup into `web/sites/default/files`
-6. Run `lando refresh` to build your local environment to match master. (This runs composer install, drush updb, drush cim, and drush cr.)
-7. You should now be able to visit https://portlandor.lndo.site in your browser.
-8. To enable XDebug, run `lando xdebug-on`. Run `lando xdebug-off` to turn it off for increased performance.
-9. When you are done with your development for the day, run `lando stop` to shut off your development containers or `lando poweroff` if you want to stop all lando containers.
+7. Run `lando refresh` to build your local environment to match master. (This runs composer install, drush updb, drush cim, and drush cr.)
+8. You should now be able to visit https://portlandor.lndo.site in your browser.
+9. To enable XDebug, run `lando xdebug-on`. Run `lando xdebug-off` to turn it off for increased performance.
+10. When you are done with your development for the day, run `lando stop` to shut off your development containers or `lando poweroff` if you want to stop all lando containers.
 
 See other Lando with Pantheon commands at https://docs.devwithlando.io/tutorials/pantheon.html.
 
