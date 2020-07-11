@@ -9,5 +9,6 @@
 - Captions should be sentence case.
 
 ## Variations
+
 - Base
 - Small (compact)
