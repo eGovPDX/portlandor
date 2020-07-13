@@ -109,8 +109,16 @@ function _portland_groups_synchronize_entity_group_ownership($entity) {
   } else {
     // this is an existing entity; if the group has changed, remove it from the old group
     // and assign to the new group.
-    $new_owner_group = $entity->get('field_display_groups')->getValue()[0]['target_id'];
-
+    $field_value = $entity->get('field_display_groups')->getValue();
+    if (count($field_value) > 0) {
+      $new_owner_group = $field_value[0]['target_id'];
+    } else {
+      // all groups have been removed from field_display_groups.
+      // don't do anything; this is most likely a mistake. if not, administrators
+      // can fix it.
+      return;
+    }
+    
     // there may not be an original owner group to remove, if the entity was originally created outside of group context.
     $field_value = $orig_entity->get('field_display_groups')->getValue();
     $orig_owner_group = null;
