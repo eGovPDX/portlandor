@@ -36,7 +36,7 @@ The .lando.yml file included in this repo will set you up to connect to the corr
 2. Log in to Pantheon and generate a machine token from My Dashboard > Account > Machine Tokens.
 3. Run `lando terminus auth:login --machine-token=[YOUR MACHINE TOKEN]`, this logs your Lando instance into our Pantheon account.
 4. To make sure you don't hit rate limits with composer, log into Github and generate a personal access token and add it to your lando instance by using `lando composer config --global --auth github-oauth.github.com "$COMPOSER_TOKEN"`. (You should replace \$COMPOSER_TOKEN with your generated token.) There is a handy tutorial for this at https://coderwall.com/p/kz4egw/composer-install-github-rate-limiting-work-around
-5. If this is a new clone of this repo before continuing to the next steps you must run `lando composer install` and `lando yarn install` to generate the appropriate dependencies.
+5. **If this is a new clone of the repo:** before continuing to the next steps you must run `lando composer install` and `lando yarn install` to install the appropriate dependencies.
 6. You have three options to get your database and files set up:
    1. Run `lando latest` to automaticaly download and import the latest DB from Dev.
    2. Manually import the database
