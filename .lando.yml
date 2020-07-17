@@ -15,6 +15,8 @@ services:
       - update-ca-certificates -f -v
     run_as_root:
       - /bin/sh -c "if [ ! -d /var/www/.terminus/plugins/terminus-secrets-plugin ]; then { mkdir -p /var/www/.terminus/plugins; composer create-project -d /var/www/.terminus/plugins pantheon-systems/terminus-secrets-plugin:~1; chown -R www-data:www-data /var/www/.terminus; } fi"
+    build:
+      - "/app/vendor/bin/phpcs --config-set installed_paths /app/vendor/drupal/coder/coder_sniffer"
     xdebug: false
     config:
       conf: xdebug.ini
@@ -65,6 +67,11 @@ tooling:
     description: CUSTOM Run drush commands
     service: appserver
     cmd: drush --root=/app/web
+  phpcs:
+    service: appserver
+    cmd: "/app/vendor/bin/phpcs --standard=Drupal,DrupalPractice"
+    options:
+    description: Run phpcs for given folder or file.
   npm:
     # Although this now runs yarn, I have left it as legacy support for users who are use to running `lando npm etc etc`
     description: CUSTOM Run yarn commands
