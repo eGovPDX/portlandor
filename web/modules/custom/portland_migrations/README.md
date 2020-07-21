@@ -17,6 +17,12 @@ The Migrate Tools module provides drush commands to run the migrations. The orde
 lando terminus drush [environment] migrate:import [migration_id]
 ```
 
+Some migrations have interdependencies, such as eudaly_news, eudaly_news_group_content, and eudaly_news_redirects. You can automatically run all migrations in a group with:
+
+```
+lando terminus drush [environment] migrate:import --group=[migration_group]
+```
+
 After editing an existing migration, you need to run `lando drush cr` before it will pick up the changes.
 
 If the migration reports that any items failed, you can see what the failed items were with `lando drush mmsg`
@@ -25,7 +31,11 @@ If the migration reports that any items failed, you can see what the failed item
 
 To roll back a migration, use the `migrate:rollback [migration_name]` command, and roll back migrations in the reverse order than they were originally rolled.
 
-Some migrations have interdependencies, such as eudaly_news and eudaly_news_group_content. Interdependent migrations must all be rolled back and all re-rolled together.
+Some migrations have interdependencies, such as eudaly_news, eudaly_news_group_content, and eudaly_news_redirects. Interdependent migrations must all be rolled back together. This can be done automatically with:
+
+```
+lando terminus drush [environment] migrate:rollback --group=[migration_group]
+```
 
 ### Timeouts
 
@@ -69,6 +79,23 @@ In Condition.php line 105:
 Query condition 'taxonomy_term_field_data.name IN ()' cannot be empty.
 ```
 
+### Python processing
+
+Some migrations, such as the city charter and city code migrations, have Python scripts that perform post processing on the raw CSV exported from POG to generate the actual CSV used by the migration script.
+
+#### Instructions to install and run Python in Lando
+
+```
+lando ssh -u root
+apt update
+apt install python3
+apt install python3-pip
+pip3 install pandas
+pip3 install bs4
+cd web/modules/custom/portland_migrations/sources/
+python3 [script_name.py]
+```
+
 ## Migrations
 
 In addition to the primary content migrations, there are two supplemental migrations that are run for some content types: redirects and group_content.
@@ -97,6 +124,8 @@ Group content migrations are used to add content to a group by creating a group 
 - wheeler_blog - Mayor Wheeler blog migration
 - wheeler_press_releases - Mayor Wheeler press releases migration
 - parks_news
+- bds_news
+- bds_service_updates
 
 #### Eudaly news
 ##### Local
@@ -252,6 +281,7 @@ lando terminus remote:drush portlandor.powr-[ID] -- migrate:import wheeler_press
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:import wheeler_press_releases_redirects
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:import wheeler_press_releases_group_content
 ```
+
 #### Parks news
 WARNING: There are 3 rows in the parks_news.csv datafile that cause the import to break. The body content
 of these 3 items has been deleted and will need to be migrated manually:
@@ -267,8 +297,35 @@ lando drush migrate:import parks_news_redirects
 ```
 ##### On Pantheon
 ```
-lando terminus remote:drush portlandor.powr-2270 -- migrate:import parks_news
-lando terminus remote:drush portlandor.powr-2270 -- migrate:import parks_news_group_content
-lando terminus remote:drush portlandor.powr-2270 -- migrate:import parks_news_redirects
+lando terminus remote:drush portlandor.powr-[ID] -- migrate:import parks_news
+lando terminus remote:drush portlandor.powr-[ID] -- migrate:import parks_news_group_content
+lando terminus remote:drush portlandor.powr-[ID] -- migrate:import parks_news_redirects
 ```
 
+#### BDS News
+##### Local
+```
+lando drush migrate:import bds_news
+lando drush migrate:import bds_news_group_content
+lando drush migrate:import bds_news_redirects
+```
+##### On Pantheon
+```
+lando terminus remote:drush portlandor.powr-[ID] -- migrate:import bds_news
+lando terminus remote:drush portlandor.powr-[ID] -- migrate:import bds_news_group_content
+lando terminus remote:drush portlandor.powr-[ID] -- migrate:import bds_news_redirects
+```
+
+#### BDS Service Updates
+##### Local
+```
+lando drush migrate:import bds_service_updates
+lando drush migrate:import bds_service_updates_group_content
+lando drush migrate:import bds_service_updates_redirects
+```
+##### On Pantheon
+```
+lando terminus remote:drush portlandor.powr-[ID] -- migrate:import bds_service_updates
+lando terminus remote:drush portlandor.powr-[ID] -- migrate:import bds_service_updates_group_content
+lando terminus remote:drush portlandor.powr-[ID] -- migrate:import bds_service_updates_redirects
+```

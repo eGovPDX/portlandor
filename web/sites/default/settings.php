@@ -30,7 +30,7 @@ if (isset($_ENV['PANTHEON_ENVIRONMENT']) && php_sapi_name() != 'cli') {
   // Redirect to https://$primary_domain in the Live environment
   if ($_ENV['PANTHEON_ENVIRONMENT'] === 'live') {
     /** Replace www.example.com with your registered domain name */
-    $primary_domain = 'beta.portland.gov';
+    $primary_domain = 'www.portland.gov';
     $config['environment_indicator.indicator']['bg_color'] = '#dc3545';
     $config['environment_indicator.indicator']['fg_color'] = '#ffffff';
     $config['environment_indicator.indicator']['name'] = 'Production';
@@ -143,6 +143,6 @@ if (isset($_ENV['PANTHEON_ENVIRONMENT'])) {
 
 // Pantheon workaround for New Relic segmentation fault issue (https://discuss.newrelic.com/t/segmentation-fault-in-9-7-0-258/94830/20)
 // Disables New Relic for CLI context to prevent CircleCI build failures
-if (function_exists('newrelic_ignore_transaction') && php_sapi_name() === 'cli') { 
-  newrelic_ignore_transaction(); 
+if (function_exists('newrelic_ignore_transaction') && php_sapi_name() === 'cli') {
+  newrelic_ignore_transaction();
 }

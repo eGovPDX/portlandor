@@ -7,6 +7,7 @@ dependencies:
     - field.storage.node.field_event_type
     - field.storage.node.field_start_date
     - search_api.index.full_index
+    - system.menu.main
     - taxonomy.vocabulary.event_type
   content:
     - 'taxonomy_term:event_type:0258c2c6-008f-4c55-9211-a99c9c456d10'
@@ -392,7 +393,7 @@ display:
           admin_label: ''
           empty: false
           tokenize: true
-          content: "<div class=\"sr-only\">{{ portland_content_type_name_field }} Menu</div>\r\n<ul class=\"nav nav-group-menu nav-group-menu\">\r\n<li class=\"nav-item\"><a href=\"/events\" class=\"nav-link{% if path('<current>') matches '[events$]' %} active{% endif %}\">All Upcoming Events</a></li>\r\n<li class=\"nav-item\"><a href=\"/events/past\" class=\"nav-link{% if path('<current>') matches '[events/past$]' %} active{% endif %}\">Past Events</a></li>\r\n<li class=\"nav-item\"><a href=\"/events/meetings\" class=\"nav-link{% if path('<current>') matches '[events/meetings$]' %} active{% endif %}\">Past Meetings and Hearings</a></li>\r\n</ul>\r\n"
+          content: "<div class=\"sr-only\">{{ portland_content_type_name_field }} Menu</div>\r\n<ul class=\"nav nav-group-menu nav-group-menu\">\r\n<li class=\"nav-item\"><a href=\"/events\" class=\"nav-link{% if path('<current>') matches '[events$]' %} active{% endif %}\">Upcoming Events</a></li>\r\n<li class=\"nav-item\"><a href=\"/events/past\" class=\"nav-link{% if path('<current>') matches '[events/past$]' %} active{% endif %}\">Past Events</a></li>\r\n<li class=\"nav-item\"><a href=\"/events/meetings\" class=\"nav-link{% if path('<current>') matches '[events/meetings$]' %} active{% endif %}\">Past Meetings and Hearings</a></li>\r\n</ul>\r\n"
           plugin_id: text_custom
         result:
           id: result
@@ -417,7 +418,7 @@ display:
           tokenize: false
           content:
             value: 'No events found in that date range.'
-            format: basic_style_editor
+            format: simplified_editor_with_media_embed
           plugin_id: text
       relationships: {  }
       arguments: {  }
@@ -432,7 +433,9 @@ display:
         - 'languages:language_interface'
         - url
         - url.query_args
-      tags: {  }
+        - 'user.node_grants:view'
+      tags:
+        - 'config:search_api.index.full_index'
   events_past_index:
     display_plugin: page
     id: events_past_index
@@ -461,6 +464,7 @@ display:
         filter_groups: false
         sorts: false
         header: true
+        cache: false
       sorts:
         field_start_date:
           id: field_start_date
@@ -585,20 +589,81 @@ display:
             group_items: {  }
           reduce_duplicates: false
           plugin_id: search_api_options
+        search_api_fulltext:
+          id: search_api_fulltext
+          table: search_api_index_full_index
+          field: search_api_fulltext
+          relationship: none
+          group_type: group
+          admin_label: ''
+          operator: and
+          value: ''
+          group: 1
+          exposed: true
+          expose:
+            operator_id: search_api_fulltext_op
+            label: 'Search by Keyword'
+            description: ''
+            use_operator: false
+            operator: search_api_fulltext_op
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: search_api_fulltext
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+              anonymous: '0'
+              publisher: '0'
+              policy_author: '0'
+              policy_editor: '0'
+              attorney: '0'
+              council_author: '0'
+              council_clerk: '0'
+              budget: '0'
+              park_editor: '0'
+              code_editor: '0'
+              group_creator: '0'
+              alert_editor: '0'
+              sitewide_editor: '0'
+              administrator: '0'
+            placeholder: ''
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
+          parse_mode: terms
+          min_length: null
+          fields: {  }
+          plugin_id: search_api_fulltext
       filter_groups:
         operator: AND
         groups:
           1: AND
+      cache:
+        type: none
     cache_metadata:
       max-age: -1
       contexts:
         - 'languages:language_interface'
+        - url
         - url.query_args
-      tags: {  }
+        - 'user.node_grants:view'
+      tags:
+        - 'config:search_api.index.full_index'
   events_past_meetings:
     display_plugin: page
     id: events_past_meetings
-    display_title: 'Page: Past meetings and hearings'
+    display_title: 'Past meetings and hearings'
     position: 1
     display_options:
       display_extenders:
@@ -626,6 +691,7 @@ display:
         fields: false
         style: false
         row: false
+        cache: false
       sorts:
         field_start_date:
           id: field_start_date
@@ -799,6 +865,62 @@ display:
           hierarchy: false
           error_message: true
           plugin_id: search_api_term
+        search_api_fulltext:
+          id: search_api_fulltext
+          table: search_api_index_full_index
+          field: search_api_fulltext
+          relationship: none
+          group_type: group
+          admin_label: ''
+          operator: and
+          value: ''
+          group: 1
+          exposed: true
+          expose:
+            operator_id: search_api_fulltext_op
+            label: 'Search by Keyword'
+            description: ''
+            use_operator: false
+            operator: search_api_fulltext_op
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: search_api_fulltext
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+              anonymous: '0'
+              publisher: '0'
+              policy_author: '0'
+              policy_editor: '0'
+              attorney: '0'
+              council_author: '0'
+              council_clerk: '0'
+              budget: '0'
+              park_editor: '0'
+              code_editor: '0'
+              group_creator: '0'
+              alert_editor: '0'
+              sitewide_editor: '0'
+              administrator: '0'
+            placeholder: ''
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
+          parse_mode: terms
+          min_length: null
+          fields: {  }
+          plugin_id: search_api_fulltext
       filter_groups:
         operator: AND
         groups:
@@ -1346,21 +1468,26 @@ display:
           inline: {  }
           separator: ''
           hide_empty: false
+      cache:
+        type: none
     cache_metadata:
       max-age: -1
       contexts:
         - 'languages:language_content'
         - 'languages:language_interface'
+        - url
         - url.query_args
         - user
+        - 'user.node_grants:view'
       tags:
         - 'config:field.storage.node.field_event_status'
         - 'config:field.storage.node.field_event_type'
         - 'config:field.storage.node.field_start_date'
+        - 'config:search_api.index.full_index'
   events_search_index:
     display_plugin: page
     id: events_search_index
-    display_title: 'Search events'
+    display_title: 'Search All Events'
     position: 3
     display_options:
       display_extenders:
@@ -1368,7 +1495,7 @@ display:
           metatags:
             robots: noindex
       path: events/search
-      exposed_block: true
+      exposed_block: false
       empty:
         area:
           id: area
@@ -1381,15 +1508,16 @@ display:
           tokenize: false
           content:
             value: 'No events found with your filter choices.'
-            format: basic_style_editor
+            format: simplified_editor_with_media_embed
           plugin_id: text
       defaults:
         empty: false
         title: false
         filters: false
         filter_groups: false
-        header: true
+        header: false
         cache: false
+        sorts: false
       title: Events
       display_description: ''
       cache:
@@ -1449,7 +1577,7 @@ display:
           exposed: true
           expose:
             operator_id: ''
-            label: Keywords
+            label: 'Search by Keyword'
             description: ''
             use_operator: true
             operator: search_api_fulltext_op
@@ -1465,8 +1593,10 @@ display:
               publisher: '0'
               policy_author: '0'
               policy_editor: '0'
+              attorney: '0'
               council_author: '0'
               council_clerk: '0'
+              budget: '0'
               park_editor: '0'
               code_editor: '0'
               group_creator: '0'
@@ -1492,132 +1622,55 @@ display:
             - content_title
             - rendered_item
           plugin_id: search_api_fulltext
-        field_start_date_1:
-          id: field_start_date_1
+      filter_groups:
+        operator: AND
+        groups:
+          1: AND
+      sorts:
+        field_start_date:
+          id: field_start_date
           table: search_api_index_full_index
           field: field_start_date
           relationship: none
           group_type: group
           admin_label: ''
-          operator: between
-          value:
-            min: now
-            max: '+30 days'
-            value: ''
-            type: offset
-          group: 1
-          exposed: true
+          order: DESC
+          exposed: false
           expose:
-            operator_id: field_start_date_1_op
-            label: 'and start date is between'
-            description: ''
-            use_operator: false
-            operator: field_start_date_1_op
-            operator_limit_selection: false
-            operator_list: {  }
-            identifier: field_start_date_1
-            required: false
-            remember: false
-            multiple: false
-            remember_roles:
-              authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              council_author: '0'
-              council_clerk: '0'
-              park_editor: '0'
-              code_editor: '0'
-              group_creator: '0'
-              alert_editor: '0'
-              sitewide_editor: '0'
-              administrator: '0'
-            placeholder: ''
-            min_placeholder: ''
-            max_placeholder: ''
-          is_grouped: false
-          group_info:
             label: ''
-            description: ''
-            identifier: ''
-            optional: true
-            widget: select
-            multiple: false
-            remember: false
-            default_group: All
-            default_group_multiple: {  }
-            group_items: {  }
-          plugin_id: search_api_date
-        field_event_type:
-          id: field_event_type
+          plugin_id: search_api
+        field_start_time:
+          id: field_start_time
           table: search_api_index_full_index
-          field: field_event_type
+          field: field_start_time
           relationship: none
           group_type: group
           admin_label: ''
-          operator: or
-          value: {  }
-          group: 1
-          exposed: true
+          order: DESC
+          exposed: false
           expose:
-            operator_id: field_event_type_op
-            label: Type
-            description: ''
-            use_operator: false
-            operator: field_event_type_op
-            operator_limit_selection: false
-            operator_list: {  }
-            identifier: event_type
-            required: false
-            remember: false
-            multiple: false
-            remember_roles:
-              authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              council_author: '0'
-              council_clerk: '0'
-              park_editor: '0'
-              code_editor: '0'
-              group_creator: '0'
-              alert_editor: '0'
-              sitewide_editor: '0'
-              administrator: '0'
-            reduce: false
-          is_grouped: false
-          group_info:
             label: ''
-            description: ''
-            identifier: ''
-            optional: true
-            widget: select
-            multiple: false
-            remember: false
-            default_group: All
-            default_group_multiple: {  }
-            group_items: {  }
-          reduce_duplicates: false
-          type: select
-          limit: true
-          vid: event_type
-          hierarchy: false
-          error_message: true
-          plugin_id: search_api_term
-      filter_groups:
-        operator: AND
-        groups:
-          1: AND
+          plugin_id: search_api
+      header:
+        result:
+          id: result
+          table: views
+          field: result
+          relationship: none
+          group_type: group
+          admin_label: ''
+          empty: true
+          content: 'Displaying @start - @end of @total'
+          plugin_id: result
     cache_metadata:
       max-age: -1
       contexts:
         - 'languages:language_interface'
         - url
         - url.query_args
-        - user
-      tags: {  }
+        - 'user.node_grants:view'
+      tags:
+        - 'config:search_api.index.full_index'
   events_upcoming_index:
     display_plugin: page
     id: events_upcoming_index
@@ -1630,12 +1683,12 @@ display:
             robots: noindex
       path: events
       menu:
-        type: none
+        type: normal
         title: Events
         description: ''
         expanded: false
         parent: ''
-        weight: -45
+        weight: -49
         context: '0'
         menu_name: main
       display_description: ''
@@ -1644,6 +1697,7 @@ display:
         title: false
         filters: false
         filter_groups: false
+        cache: false
       title: Events
       filters:
         field_start_date_1:
@@ -1744,13 +1798,74 @@ display:
             group_items: {  }
           reduce_duplicates: false
           plugin_id: search_api_options
+        search_api_fulltext:
+          id: search_api_fulltext
+          table: search_api_index_full_index
+          field: search_api_fulltext
+          relationship: none
+          group_type: group
+          admin_label: ''
+          operator: and
+          value: ''
+          group: 1
+          exposed: true
+          expose:
+            operator_id: search_api_fulltext_op
+            label: 'Search by Keyword'
+            description: ''
+            use_operator: false
+            operator: search_api_fulltext_op
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: search_api_fulltext
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+              anonymous: '0'
+              publisher: '0'
+              policy_author: '0'
+              policy_editor: '0'
+              attorney: '0'
+              council_author: '0'
+              council_clerk: '0'
+              budget: '0'
+              park_editor: '0'
+              code_editor: '0'
+              group_creator: '0'
+              alert_editor: '0'
+              sitewide_editor: '0'
+              administrator: '0'
+            placeholder: ''
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
+          parse_mode: terms
+          min_length: null
+          fields: {  }
+          plugin_id: search_api_fulltext
       filter_groups:
         operator: AND
         groups:
           1: AND
+      cache:
+        type: none
     cache_metadata:
       max-age: -1
       contexts:
         - 'languages:language_interface'
+        - url
         - url.query_args
-      tags: {  }
+        - 'user.node_grants:view'
+      tags:
+        - 'config:search_api.index.full_index'

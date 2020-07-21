@@ -191,8 +191,18 @@ function portland_theme($existing, $type, $theme, $path)
                 'latest_revision_state' => null,
                 'revision_link' => null,
                 'revision_link_text' => null,
+                'rabbithole_action' => null,
+                'rabbithole_redirect' => null,
             ],
             'template' => 'block--portland-revision-block',
+        ],
+
+        'portland_group_rabbithole_block' => [
+            'variables' => [
+                'rabbithole_action' => null,
+                'rabbithole_redirect' => null,
+            ],
+            'template' => 'block--portland-group-rabbithole-block',
         ],
 
         'portland_legacy_paths_block' => [
@@ -304,11 +314,11 @@ function portland_entity_insert($entity)
                 ]);
             }
             break;
-        
+
         default:
             break;
     }
-        
+
     _notify_reviewer($entity, 'created');
 }
 
@@ -657,12 +667,12 @@ function portland_search_api_solr_query_alter(\Solarium\QueryType\Select\Query\Q
 
         // When Start Date of Event is in the future or News since the last month, give a large boost.
         // Otherwise, give small boost based on start date or updated date.
-        $solarium_query->addParam('sort', 'if(or(and(eq(ss_content_type, "event"),gte(ms(ds_aggregated_sorting_date,NOW/DAY), 0)),and(eq(ss_content_type, "news"),gte(ms(ds_aggregated_sorting_date,NOW-1MONTH/DAY),0))),product(query($q), recip(abs(ms(NOW/DAY,ds_aggregated_sorting_date)),1.157e-8,50,0.5)),if(or(eq(ss_content_type, "event"),eq(ss_content_type, "news")),product(query($q), recip(abs(ms(NOW/DAY,ds_aggregated_sorting_date)),1.157e-8,2,0.5)),query($q))) desc');
+        $solarium_query->addParam('sort', 'if(or(and(eq(ss_content_type, "event"),gte(ms(ds_aggregated_sorting_date,NOW/DAY), 0)),and(eq(ss_content_type, "news"),gte(ms(ds_aggregated_sorting_date,NOW-1MONTH/DAY),0))),product(query($q), recip(abs(ms(NOW/DAY,ds_aggregated_sorting_date)),1.157e-8,6.5,0.5)),if(or(eq(ss_content_type, "event"),eq(ss_content_type, "news")),product(query($q), recip(abs(ms(NOW/DAY,ds_aggregated_sorting_date)),1.157e-8,2,0.5)),query($q))) desc');
     }
 
     // Search the whole phrase in additional of individual words
-    $original_keys = $query->getKeys();
-    if (is_string($original_keys) && $original_keys) { // Do not modify empty query
+    $original_keys = trim($query->getKeys());
+    if (is_string($original_keys) && $original_keys && strpos($original_keys, ' ') !== false) { // Do not modify empty query
         // Three things are happening here:
         // 1. Add phrase search for the entire search string.
         // 2. Set proximity to 3
@@ -712,15 +722,14 @@ function portland_inline_entity_form_entity_form_alter(&$entity_form, &$form_sta
 {
     if (
         $entity_form['#entity_type'] == 'media' &&
-        array_key_exists('group_content', $entity_form) &&
-        array_key_exists('widget', $entity_form["group_content"])&&
-        array_key_exists('add_more', $entity_form["group_content"]['widget'])&&
-        array_key_exists('add_relation', $entity_form["group_content"]['widget']['add_more'])
+        array_key_exists('field_display_groups', $entity_form) &&
+        array_key_exists('widget', $entity_form["field_display_groups"])&&
+        array_key_exists('add_more', $entity_form["field_display_groups"]['widget'])
     ) {
         // Set the Group field to the correct default value. Have to use session because the entity browser is in an iFrame.
         $group_id = \Drupal::request()->getSession()->get('parent_group_id');
         if ($group_id != null) {
-            $entity_form["group_content"]['widget']['add_more']['add_relation']['#default_value'] = $group_id;
+          $entity_form["field_display_groups"]['widget'][0]['target_id']['#default_value'] = $group_id;
         }
     }
 }
@@ -733,8 +742,19 @@ function portland_form_alter(&$form, &$form_state, $form_id)
     // Only set the default field for new Media items
     $form_array_with_group_field = [
         'node_news_form',
+        'node_news_edit_form',
         'node_page_form',
+        'node_page_edit_form',
         'node_event_form',
+        'node_event_edit_form',
+        'node_construction_project_form',
+        'node_construction_project_edit_form',
+        'node_development_permit_form',
+        'node_development_permit_edit_form',
+        'node_city_service_form',
+        'node_city_service_edit_form',
+        'node_service_location_form',
+        'node_service_location_edit_form',
         'media_image_add_form',
         'media_audio_add_form',
         'media_video_add_form',
@@ -748,6 +768,8 @@ function portland_form_alter(&$form, &$form_state, $form_id)
         // Set the default value as the node's current group
         $node = $form_state->getFormObject()->getEntity();
         $group_id = null;
+        // The value is used in portland_inline_entity_form_entity_form_alter()
+        // When creating a node, get the group from form state.
         if ($node->isNew()) {
             if (array_key_exists('group', $form_state->getStorage()) && $form_state->getStorage()['group'] != null) {
                 $group_id = $form_state->getStorage()['group']->id();
@@ -755,6 +777,16 @@ function portland_form_alter(&$form, &$form_state, $form_id)
                     \Drupal::request()->getSession()->set('parent_group_id', $group_id);
                 }
             }
+        }
+        // POWR-2493 Set the default group in "field_display_groups" in entity browser form
+        // When editing a node, get the node's parent group
+        else {
+          $group_ids = getGroupIdsByEntity($node);
+          if(count($group_ids) > 0) {
+            // Assume each node only belongs to one group. 
+            // When there are multiple parent groups, use the first one.
+            \Drupal::request()->getSession()->set('parent_group_id', $group_ids[0]);
+          }
         }
     } elseif (substr_compare($form_id, $group_form_prefix, 0, strlen($group_form_prefix)) === 0) {
         $form['#validate'][] = '_validate_group_group_path';
@@ -778,7 +810,7 @@ function _validate_group_group_path(&$form, \Drupal\Core\Form\FormStateInterface
         $group_group_path = $form_state->getValue('field_group_path')[0]['value'];
         $is_valid_group_path = _clean_group_group_path($group_group_path);
         $form_state->setValue('field_group_path', ['0' => ['value' => $group_group_path,], ]);
-        
+
         if ($is_valid_group_path) {
             $group_id = $form_state->getformObject()->getEntity()->id();
             $pathStorage = \Drupal::entityTypeManager()->getStorage('path_alias');
@@ -817,27 +849,39 @@ function portland_cron()
     $hour = (int)(date('G')); // 0 to 23
     $minute = (int)(date('i')); // 0 to 59
     if ($hour == 12 && $minute < 5) {
-        // Get the view machine id.
-        $view = \Drupal\views\Views::getView('location_updated_recently');
-        // Set the display machine id.
-        $view->setDisplay('block_1');
-        $view->preExecute();
-        $view->execute();
+        $results = '';
 
-        // If the view is empty, do not send the email
-        if (count($view->result) == 0) {
+        // Define a list of views that will be included in the email
+        $views[] = ['view_id' => 'locations_updated_recently', 'block_id' => 'block_1'];  // Locations
+        $views[] = ['view_id' => 'content_updated_recently', 'block_id' => 'block_2'];  // Tables
+        $views[] = ['view_id' => 'media_updated_recently', 'block_id' => 'block_1'];    // Media
+
+        foreach ($views as $view) {
+            // Get the view by machine id
+            $theview = \Drupal\views\Views::getView($view['view_id']);
+            // Set the display machine id
+            $theview->setDisplay($view['block_id']);
+            $theview->preExecute();
+            $theview->execute();
+
+            if (count($theview->result)) {
+                // Render the view and append to results
+                $rendered = $theview->render($view['block_id']);
+                $results .= \Drupal::service('renderer')->render($rendered);
+            }
+        }
+
+        // If all views are empty, do not send the email
+        if (!strlen($results)) {
             return;
         }
 
-        // Render the view
-        $rendered = $view->render('block_1');
-        $result = \Drupal::service('renderer')->render($rendered);
-
-        // send email
+        // Send email
         $key = 'portland_daily_mail'; // Replace with Your key
         $to = 'powr@portlandoregon.gov';
-        $params['message'] = 'Location, Service location, Room updated in the last 24 hours<p/>' . $result;
-        $params['title'] = 'Portland.gov daily location updates';
+        $params['message'] = '<p>These Portland.gov items were updated in the last 24 hours and should
+            be reviewed according to the specific instructions below.<p/>' . $results;
+        $params['title'] = 'Portland.gov list of content to review';
         $langcode = \Drupal::currentUser()->getPreferredLangcode();
 
         _send_email($key, $to, $langcode, $params, 'powr@portlandoregon.gov');
@@ -863,7 +907,7 @@ function _notify_reviewer($entity, $entity_event_type)
     }
     $node = $entity;
     $status_message = $entity_event_type;
-    
+
     // Group module would save the node twice when creating a new node.
     // We only want to send out email once.
     if ($entity->hasField('field_display_groups') && $node->field_display_groups->count() > 0) {
@@ -875,22 +919,22 @@ function _notify_reviewer($entity, $entity_event_type)
             $status_message = 'created';
         }
     }
-    
+
     $reviewers = null;
     $latest_and_previous_revs = _load_latest_revision($node);
     $latest_rev = $latest_and_previous_revs['latest'];
     $reviewers = $node->field_reviewer;
-    
+
     $revision_log_output = $node->revision_log->value ?
         "<div><h3>Revision log:</h3>\r\n".$node->revision_log->value."</div>\r\n<p/>\r\n<div>" : '';
-    
+
     $moderation_state_message = [
         'review' => 'In review',
         'draft' => 'Draft',
         'archived' => 'Unpublished/Archived',
         'published' => 'Published',
     ];
-    
+
     // send email for any moderation state except draft
     if ($latest_rev->moderation_state->value != 'draft') {
         $key = 'portland_notify_reviewers';
@@ -904,7 +948,7 @@ function _notify_reviewer($entity, $entity_event_type)
             "</strong> revision at ".
             \Drupal::service('date.formatter')->format($node->changed->value, 'custom', 'l Y/n/j g:i A').
             ".<p/>".$revision_log_output;
-        
+
         if ($reviewers == null) {
             return;
         }

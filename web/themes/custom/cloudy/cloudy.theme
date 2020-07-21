@@ -16,6 +16,7 @@ function setGroupVariables($group, &$variables) {
   $variables['attributes']['class'][] = strtolower($shortname_or_acronym);
 }
 
+// TODO: Do we really need this preprocess anymore?
 function cloudy_preprocess_html(&$variables) {
   $route_match = \Drupal::service('current_route_match');
   // if this is a node
@@ -94,7 +95,7 @@ function cloudy_preprocess_form(&$vars) {
   // add role="search" to site search form
   if ($vars['element']['#form_id'] == 'search_api_page_block_form') {
     $vars['attributes']['role'] = 'search';
-    $vars['attributes']['class'] = 'input-group form-inline d-flex justify-content-center';
+    $vars['attributes']['class'] = 'input-group form-inline d-flex justify-content-center form-inline--search-block';
     $vars['attributes']['title'] = 'Search';
   }
 }
@@ -106,8 +107,13 @@ function cloudy_preprocess_input__textfield(&$vars) {
         $vars["attributes"]['class'] = ['form-search', 'form-autocomplete'];
     }
     // The search input at top-right corner
-    else if($vars["attributes"]['id'] === 'edit-keys--2') {
+    else if(
+      $vars["attributes"]['id'] === 'edit-keys--2' ||
+      $vars["attributes"]['id'] === 'edit-keys--3' ||
+      $vars["attributes"]['id'] === 'edit-keys--4'
+    ) {
         $vars["attributes"]['type'] = 'search';
+        $vars["attributes"]['placeholder'] = 'Search Portland.gov';
         $vars["attributes"]['size'] = '21';
     }
 }
@@ -135,7 +141,7 @@ function cloudy_theme_suggestions_field_alter(array &$suggestions, array $variab
 
 /**
  * Implements template_preprocess_time()
- * 
+ *
  * Prepares variables for time templates.
  *
  * Default template: time.html.twig.
@@ -148,7 +154,7 @@ function cloudy_theme_suggestions_field_alter(array &$suggestions, array $variab
  */
 function cloudy_preprocess_time(&$variables) {
   $date_formatter = \Drupal::service('date.formatter');
-  
+
   // If timestamp is just a date (i.e. no time component), format datetime attribute as a date
   if (preg_match('/\d+, \d{4}$/', $variables['text'])) {
     $timestamp = strtotime($variables['text']);
@@ -156,3 +162,20 @@ function cloudy_preprocess_time(&$variables) {
   }
 }
 
+/**
+ * Implements theme_preprocess_block().
+ *
+ * Adds the "is_front" variable to the feedback block template
+ */
+function cloudy_preprocess_block(&$variables) {
+  if ($variables['plugin_id'] == 'block_content:7dc74839-c339-461f-9344-87a6db099602') {
+    try {
+      $variables['is_front'] = \Drupal::service('path.matcher')->isFrontPage();
+    }
+    catch (Exception $e) {
+      $variables['is_front'] = FALSE;
+    }
+    // Ensure the cache varies correctly (new in Drupal 8.3).
+    $variables['#cache']['contexts'][] = 'url.path.is_front';
+  }
+}
