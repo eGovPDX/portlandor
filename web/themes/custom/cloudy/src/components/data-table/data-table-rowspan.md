@@ -2,13 +2,13 @@
 
 - Use `rowspan` to specify the number of rows a cell should span.
 
-## Usage
+### Usage
 
 ```html
 <div class="table-responsive">
   <table class="table table-bordered table-hover">
     <caption>
-      Caption here.
+      Caption text goes here.
     </caption>
     <thead class="thead-dark">
       <tr>

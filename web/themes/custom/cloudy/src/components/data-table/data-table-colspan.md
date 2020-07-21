@@ -2,13 +2,13 @@
 
 - Use `colspan` to specify the number of columns a cell should span.
 
-## Usage
+### Usage
 
 ```html
 <div class="table-responsive">
   <table class="table table-bordered table-hover">
     <caption>
-      Caption here.
+      Caption text goes here.
     </caption>
     <thead class="thead-dark">
       <tr>
@@ -18,10 +18,8 @@
       </tr>
       <tr></tr>
     </thead>
-
     <tbody>
       <tr>
-        <td>data</td>
         <td>data</td>
         <td>data</td>
         <td>data</td>

@@ -1,9 +1,10 @@
-## Data Table Small
+## Dense table
 
 - Use when you need a more compact table containing a lot of data.
+- Include the `table-sm` to create a dense style table.
 - Copy the table template code below and update to match your data.
 
-## Usage
+### Usage
 
 ```html
 <div class="table-responsive">
