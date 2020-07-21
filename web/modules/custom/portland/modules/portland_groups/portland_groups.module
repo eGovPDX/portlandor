@@ -53,55 +53,99 @@ function _portland_groups_inline_entity_populate_field_display_groups(&$form, &$
   }
 }
 
+
 /**
- * Implements hook_media_insert
+ * Implements hook_entity_update
+ * 
+ * Runs whenever an entity is updated. 
+ * If the entity has field_display_groups, call a function to synchronize group ownership based on the
+ * first group in the field.
  */
-function portland_groups_media_insert($entity) {
-  _portland_groups_assign_media_to_group($entity);
+function portland_groups_entity_update($entity) {
+  if ($entity && method_exists($entity, 'hasField') && $entity->hasField('field_display_groups')) {
+    _portland_groups_synchronize_entity_group_ownership($entity);
+  }
 }
 
 /**
- * Manually assigns a media entity to a group as group content.
- * The group is identified by the first delta in the media's field_display_groups.
- * This should only happen in the context of an inline entity form.
+ * Implements hook_entity_insert
+ * 
+ * We only want this to run on insert when we're not in a group context.
+ * When we are in group context, the group module will take care of creating
+ * the group content entity.
  */
-function _portland_groups_assign_media_to_group($entity) {
+function portland_groups_entity_insert($entity) {
+  if ($entity && method_exists($entity, 'hasField') && $entity->hasField('field_display_groups') && \Drupal::routeMatch()->getParameter('group') == null) {
+    _portland_groups_synchronize_entity_group_ownership($entity);
+  }
+}
 
-  // only do this for inline entity brower
-  $current_path = \Drupal::service('path.current')->getPath();
-  if (substr($current_path, 0, 23) != "/entity-browser/iframe/") {
+function _portland_groups_synchronize_entity_group_ownership($entity) {
+
+  // start building entity type id; we only support node and media entity types
+  // if other, return immediately and avoid unnecessary processing.
+  $plugin_id = ":";
+  $entity_type = $entity->getEntityTypeId();
+  if ($entity_type == "node") {
+    $plugin_id = "group_node" . $plugin_id . $entity->bundle();
+  } else if ($entity_type == "media") {
+    $plugin_id = "group_media" . $plugin_id . $entity->bundle();
+  } else {
     return;
   }
 
-  // get group identified in first delta in field_display_groups
-  // and assign entity to group.
-  $group_id = $entity->get('field_display_groups')->getValue()[0]['target_id'];
-  if (!is_null($group_id)) {
-    $group = \Drupal\group\Entity\Group::load($group_id);
-    $plugin_id = "group_media:" . $entity->bundle();
-    $group->addContent($entity, $plugin_id);
+  $orig_entity = $entity->original;
+  $eid = $entity->id();
+
+  if (!$orig_entity) {
+    // this is a newly created entity; assign it to a group
+    $field_value = $entity->get('field_display_groups')->getValue();
+    if (count($field_value) > 0) {
+      $group_id = $field_value[0]['target_id'];
+      _portland_groups_add_entity_to_group($entity, $group_id, $plugin_id);
+    }
+    return;
+
+  } else {
+    // this is an existing entity; if the group has changed, remove it from the old group
+    // and assign to the new group.
+    $field_value = $entity->get('field_display_groups')->getValue();
+    if (count($field_value) > 0) {
+      $new_owner_group = $field_value[0]['target_id'];
+    } else {
+      // all groups have been removed from field_display_groups.
+      // don't do anything; this is most likely a mistake. if not, administrators
+      // can fix it.
+      return;
+    }
+    
+    // there may not be an original owner group to remove, if the entity was originally created outside of group context.
+    $field_value = $orig_entity->get('field_display_groups')->getValue();
+    $orig_owner_group = null;
+    if (count($field_value) > 0) {
+      $orig_owner_group = $field_value[0]['target_id'];
+    }
+
+    if ($orig_owner_group != $new_owner_group) {
+      if ($orig_owner_group) {
+        // remove from old group
+        $old_group = \Drupal\group\Entity\Group::load($orig_owner_group);
+        $current_node = $old_group->getContent($plugin_id, ['entity_id' => $eid]);
+        $content = array_values($current_node)[0];
+        $content->delete();
+      }
+      // assign to new group
+      _portland_groups_add_entity_to_group($entity, $new_owner_group, $plugin_id);
+    }
   }
 }
 
-// NOTE: at this time we're not filtering Display in Groups autocomplete optiopns
-// based on group membership, but we might want to in the near future. This function
-// creates an array of options that's suitable for passing to a select list.
-// /**
-//  * Generates an array of groups to which the user has rights to edit content.
-//  * This array is suitable for passing to a select list. If administrator,
-//  * return TRUE, which indicates that all groups are allowed.
-//  */
-// function _portland_groups_load_user_groups() {
-//   $user_roles = \Drupal::currentUser()->getRoles();
-//   if( !in_array("administrator", $user_roles) ) {
-//     $group_memberships = \Drupal::service('group.membership_loader')->loadByUser();
-//     $options = [];
-//     foreach( $group_memberships as $group_membership ) {
-//       $group = $group_membership->getGroup();
-//       $options[$group->id->value] = $group->label->value;
-//     }
-//     return $options;
-//   } else {
-//     return TRUE;
-//   }
-// }
+function _portland_groups_add_entity_to_group($entity, $group_id, $plugin_id) {
+  // make sure entity isn't already in group; the entity may already be assigned to
+  // the group by virtue of having been created in that context.
+  $group = \Drupal\group\Entity\Group::load($group_id);
+  // $current_node = $group->getContent($plugin_id, ['entity_id' => $entity->id()]);
+  // if (!$current_node || count($current_node) < 1) {
+    $group->addContent($entity, $plugin_id);
+  // }
+}
