@@ -1,0 +1,33 @@
+{% import _self as menus %}
+
+{{ menus.main_menu(items, 0) }}
+
+{% macro main_menu(items, menu_level) %}
+  {% import _self as menus %}
+  {% if items %}
+    {% if menu_level == 0 %}
+      <nav>
+        <ul class="cloudy-global-menu">
+    {% elseif menu_level == 1 %}
+      <ul class="cloudy-global-menu__submenu">
+    {% else %}
+      <ul class="cloudy-global-menu__submenu--list">
+    {% endif %}
+    {% for item in items %}
+      <li class="cloudy-global-menu__item cloudy-global-menu__item--level-{{ menu_level }}
+        {{- item.below ? ' cloudy-global-menu__item--has-submenu' -}}
+        {{- item.in_active_trail ? 'cloudy-global-menu__item--active-trail' -}}">
+          <a class="cloudy-global-menu__link" href="{{ item.url }}">
+            {{ item.title }}
+          </a>
+        {% if item.below %}
+            {{ menus.main_menu(item.below, menu_level + 1) }}
+        {% endif %}
+      </li>
+    {% endfor %}
+      </ul>
+    {% if menu_level == 0 %}
+      </nav>
+    {% endif %}
+  {% endif %}
+{% endmacro %}
