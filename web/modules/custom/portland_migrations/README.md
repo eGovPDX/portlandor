@@ -335,12 +335,10 @@ lando terminus remote:drush portlandor.powr-[ID] -- migrate:import bds_service_u
 ##### Local
 ```
 lando drush migrate:import bds_plans_examiner
-lando drush migrate:import bds_plans_examiner_group_content
 lando drush migrate:import bds_plans_examiner_redirects
 ```
 ##### On Pantheon
 ```
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:import bds_plans_examiner
-lando terminus remote:drush portlandor.powr-[ID] -- migrate:import bds_plans_examiner_group_content
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:import bds_plans_examiner_redirects
 ```
