@@ -1,0 +1,57 @@
+diff --git a/src/Plugin/OpenIDConnectClient/WindowsAad.php b/src/Plugin/OpenIDConnectClient/WindowsAad.php
+index a84ef30..e0ae1f8 100644
+--- a/src/Plugin/OpenIDConnectClient/WindowsAad.php
++++ b/src/Plugin/OpenIDConnectClient/WindowsAad.php
+@@ -137,6 +137,18 @@ class WindowsAad extends OpenIDConnectClientBase {
+       '#description' => $this->t('By default, when email address is not found, a message will appear on the screen. This option hides that message (as it might be confusing for end users).'),
+     ];
+ 
++    $form['override_name'] = [
++      '#title' => $this->t('Override default name'),
++      '#type' => 'radios',
++      '#options' => [
++        0 => $this->t('Use default name'),
++        1 => $this->t('Use combination of givenName and surname'),
++        2 => $this->t('Use combination of surname and givenName')
++      ],
++      '#default_value' => !empty($this->configuration['override_name']) ? $this->configuration['override_name'] : 0,
++      '#description' => $this->t('By default, the user name will be assigned according to the "name" value. As an alternative, it is possible to concatenate "givenName" and "surname" values.'),
++    ];
++
+     return $form;
+   }
+ 
+@@ -191,13 +203,12 @@ class WindowsAad extends OpenIDConnectClientBase {
+     ];
+ 
+     // Add a Graph API as resource if an option is selected.
++    // "scope" replaced "resource" parameter in Azure AD v2
++    // https://joonasw.net/view/azure-ad-v2-and-msal-from-dev-pov
+     switch ($this->configuration['userinfo_graph_api_wa']) {
+       case 1:
+-        $request_options['form_params']['resource'] = 'https://graph.windows.net';
+-        break;
+-
+       case 2:
+-        $request_options['form_params']['resource'] = 'https://graph.microsoft.com';
++        $request_options['form_params']['scope'] = 'User.Read';
+         break;
+     }
+ 
+@@ -268,6 +279,16 @@ class WindowsAad extends OpenIDConnectClientBase {
+       $userinfo['groups'] = $this->retrieveGroupInfo($access_token);
+     }
+ 
++    // Optionally, override the default name and use a combination of first and last name.
++    switch ($this->configuration['override_name']) {
++      case 1:
++          $userinfo['name'] = $userinfo['givenName'] . ' ' . $userinfo['surname'];
++          break;
++      case 2:
++          $userinfo['name'] = $userinfo['surname'] . ' ' . $userinfo['givenName'];
++          break;
++    }
++    
+     // Check to see if we have changed email data, O365_connect doesn't
+     // give us the possibility to add a mapping for it, so we do the change
+     // now, first checking if this is wanted by checking the setting for it.
