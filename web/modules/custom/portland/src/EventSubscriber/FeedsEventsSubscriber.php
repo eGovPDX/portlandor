@@ -43,7 +43,7 @@ class FeedsEventsSubscriber implements EventSubscriberInterface {
     $item = $event->getItem();
     $feed = $event->getFeed();
 
-    if ($item->get('eventcasenumber') && $item->get('hearinglocation')) {
+    if ($feed->type->entity->id() == 'synergy_json_feed') {
       $node->field_location->target_id = '1135'; // Node ID of 1900 Building
 
       $recordStatus = $item->get('recordstatus');
@@ -55,6 +55,12 @@ class FeedsEventsSubscriber implements EventSubscriberInterface {
       }
       else {
         $node->field_event_status->value = null;
+      }
+
+      // Get the default group from configured feed and set the parent group for imported news
+      if( $node->hasField('field_display_groups') && $feed->hasField('field_parent_group') && 
+        count($feed->field_parent_group) > 0 ) {
+        $node->field_display_groups->target_id = $feed->field_parent_group[0]->target_id;
       }
     }
   }
@@ -71,11 +77,6 @@ class FeedsEventsSubscriber implements EventSubscriberInterface {
     $feed = $event->getFeed();
 
     if ($node->isNew()) {
-      // Get the default group from configured feed and set the parent group for imported news
-      if( $node->hasField('field_display_groups') && $feed->hasField('field_parent_group') && 
-        count($feed->field_parent_group) > 0 ) {
-        $node->field_display_groups->target_id = $feed->field_parent_group[0]->target_id;
-      }
       // Get the default published status from configured feed and set the published status for imported news
       if ($node->hasField('moderation_state') && $feed->hasField('field_publish_new_item')) {
         if ($feed->field_publish_new_item->value) {
@@ -106,14 +107,22 @@ class FeedsEventsSubscriber implements EventSubscriberInterface {
       // Combine some fields in Synergy JSON into the body text
       // May need the patch https://www.drupal.org/project/feeds/issues/2850888
       // More info https://www.mediacurrent.com/blog/drupal-8-feeds-import-external-json-api/
-      if ($item->get('eventcasenumber') && $item->get('hearinglocation')) {
+      if ($feed->type->entity->id() == 'synergy_json_feed') {
         $eventCaseNumber = $item->get('eventcasenumber');
         $caseType = $item->get('casetype');
-        $hearingLocation = $item->get('hearinglocation');
+        // $hearingLocation = $item->get('hearinglocation');
         $attendees = $item->get('attendees');
         $recordStatus = $item->get('recordstatus');
+        // Used to store case number
         $node->field_summary->value = '';
-        $node->field_body_content->value = "<strong>Case number:</strong> $eventCaseNumber<br/><strong>Case type:</strong> $caseType<br/><strong>Hearing location:</strong> $hearingLocation<br/><strong>Attendees:</strong> $attendees";
+        // Used to store case type
+        $node->field_search_keywords->value = '';
+        $description = $item->get('description');
+        if ($description == null) $description = '\n';
+        $node->field_body_content->value = "<p><strong>Case number:</strong> $eventCaseNumber<br/><strong>Case type:</strong> $caseType<br/><strong>Attendees:</strong> $attendees</p>" . str_replace('\n', '<br/>', $description);
+        $node->field_body_content->format = 'simplified_editor_with_media_embed';
+
+        //<strong>Hearing location:</strong> $hearingLocation<br/>
 
         $node->field_start_time->value = $this->getTimeFromDate($item->get('eventstartdatetime'));
         $node->field_end_time->value = $this->getTimeFromDate($item->get('eventenddatetime'));
