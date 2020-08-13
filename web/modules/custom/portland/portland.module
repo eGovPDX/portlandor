@@ -1023,3 +1023,48 @@ function portland_mail_alter(&$message)
         $message['headers']['Reply-To'] = "\"$user_name\" <$user_email>";
     }
 }
+
+/**
+ * Implements hook_entity_prepare_view()
+ */
+function portland_entity_prepare_view($entity_type_id, array $entities, array $displays, $view_mode)
+{
+  if($entities == null) return;
+  $node = $entities[0];
+  if( $node != null && _should_overwrite_council_document_title($node)) {
+    // Display the Full Document Title as Title
+    $node->title->value = $node->field_full_document_title->value;
+    $node->field_full_document_title->value = '';
+  }
+}
+
+/**
+ * Helper function that checks if the node should have its title overwritten
+ */
+function _should_overwrite_council_document_title($node) {
+  if ($node != null && $node->bundle() == 'council_document') {
+    $document_status_entity = $node->field_council_document_status->entity;
+    $document_status = ($document_status_entity == null) ? '' : $document_status_entity->name->value;
+    
+    $document_type_entity = $node->field_council_document_type->entity;
+    $document_type = ($document_type_entity == null) ? '' : $document_type_entity->name->value;
+
+    if ( ($document_type == 'Ordinance' || $document_type == 'Resolution') && 
+      ($document_status == 'Passed' || $document_status == 'Adopted')) {
+      return false;
+    }
+    else {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function portland_form_openid_connect_login_form_alter(&$form, &$form_state)
+{
+  // Override the default label of the submit button
+  $form["openid_connect_client_windows_aad_login"]["#value"] = t('Log in with City of Portland network account');
+}

@@ -64,29 +64,6 @@ class RouteSubscriber extends RouteSubscriberBase {
         ->warning('@message', $variables);
     }
 
-    // custom overrides on test and live environments
-    if(
-      isset($_ENV['PANTHEON_ENVIRONMENT']) &&
-      in_array($_ENV['PANTHEON_ENVIRONMENT'], ['powr-919', 'powr-1221', 'demo', 'dev', 'test', 'live'])
-    ) {
-      // only log in with an OpenID provider
-      if ($route = $collection->get('user.login')) {
-        $route->setDefault('_form', 'Drupal\openid_connect\Form\LoginForm');
-      }
-      // don't accept POSTs to a login route
-      if ($route = $collection->get('user.login.http')) {
-        $route->setRequirement('_access', 'FALSE');
-      }
-      // don't allow password resets via Drupal
-      if($route = $collection->get('user.pass')) {
-        $route->setRequirement('_access', 'FALSE');
-      }
-      // don't accept POSTs to a password reset form
-      if($route = $collection->get('user.pass.http')) {
-        $route->setRequirement('_access', 'FALSE');
-      }
-    }
-
     // override the routing setting in contrib module quick_node_clone that forces the
     // node clone form to use the admin theme.
     if ($route = $collection->get('quick_node_clone.node.quick_clone')) {
