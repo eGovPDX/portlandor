@@ -1,6 +1,7 @@
-## Span multiple rows
+## Table with single row
 
-- Use `rowspan` to specify the number of rows a cell should span.
+- Use when there is a single row of data
+- Also consider using **table with header cells in the first column only** which may be a better alternative depending on how you wish to present your tabular data
 
 ### Usage
 
@@ -18,14 +19,9 @@
       </tr>
       <tr></tr>
     </thead>
-
     <tbody>
       <tr>
-        <th scope="row" rowspan="2">data</th>
-        <td>data</td>
-        <td>data</td>
-      </tr>
-      <tr>
+        <th>data</th>
         <td>data</td>
         <td>data</td>
       </tr>
