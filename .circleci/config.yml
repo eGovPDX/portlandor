@@ -224,9 +224,10 @@ build_and_deploy: &build_and_deploy
             fi
           fi
     - run: exit 0
-    - slack/notify:
+    - slack/status:
         webhook: '${SLACK_WEBHOOK}'
-        message: 'Finished ${CIRCLE_USERNAME} job <a href="${CIRCLE_BUILD_URL}">${CIRCLE_BUILD_NUM}</a> in ${CIRCLE_PROJECT_REPONAME} (${CIRCLE_BRANCH}) <br/> new line test.'
+        success_message: ':white_check_mark: Job "${CIRCLE_JOB}" on branch ${CIRCLE_BRANCH} by ${CIRCLE_USERNAME} succeeded!'
+        failure_message: ':red_circle: Job "${CIRCLE_JOB}" on branch ${CIRCLE_BRANCH} by ${CIRCLE_USERNAME} failed!'
 
 
 run_tests: &run_tests
@@ -317,8 +318,6 @@ run_tests: &run_tests
         path: /var/www/html/artifacts
         destination: /
     - run: exit 0
-    - slack/notify:
-        webhook: '${SLACK_WEBHOOK}'
 
 # Declare all of the jobs we should run.
 version: 2.1
@@ -337,3 +336,9 @@ workflows:
       - test:
           requires:
             - deploy
+          post-steps:
+            - slack/status:
+                webhook: '${SLACK_WEBHOOK}'
+                success_message: ':white_check_mark: Job "${CIRCLE_JOB}" on branch ${CIRCLE_BRANCH} by ${CIRCLE_USERNAME} succeeded!'
+                failure_message: ':red_circle: Job "${CIRCLE_JOB}" on branch ${CIRCLE_BRANCH} by ${CIRCLE_USERNAME} failed!'
+
