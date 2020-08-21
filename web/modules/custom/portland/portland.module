@@ -1068,3 +1068,23 @@ function portland_form_openid_connect_login_form_alter(&$form, &$form_state)
   // Override the default label of the submit button
   $form["openid_connect_client_windows_aad_login"]["#value"] = t('Log in with City of Portland network account');
 }
+
+/**
+ * Implements hook_views_pre_render().
+ */
+function portland_views_pre_render(\Drupal\views\ViewExecutable $view) {
+  if ($view->id() == 'admin_content_with_legacy_path') {
+    // Have to call redirect.repository service to find which row has redirects
+    foreach ($view->result as $key => $value) {
+      $entity = $value->_entity;
+      $nid = $entity->Id();
+      $type = $entity->getEntityTypeId();
+      if ($nid && $type) {
+          $redirects = \Drupal::service('redirect.repository')->findByDestinationUri(["internal:/$type/$nid", "entity:$type/$nid"]);
+          if (empty($redirects)) {
+            unset ($view->result[$key]); // Remove rows without legacy path
+          }
+      }
+    }
+  }
+}
