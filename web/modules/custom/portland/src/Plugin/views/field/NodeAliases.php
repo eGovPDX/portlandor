@@ -79,5 +79,4 @@ class NodeAliases extends FieldPluginBase {
       ->execute()
       ->fetchAll();
   }
-
 }
