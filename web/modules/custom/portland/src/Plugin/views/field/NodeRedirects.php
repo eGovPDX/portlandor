@@ -54,7 +54,7 @@ class NodeRedirects extends FieldPluginBase {
       }
 
       // Render as text if it's CSV export
-      if($this->view->current_display == 'csv') {
+      if( strpos($this->view->current_display, 'csv') !== false) {
         return implode(PHP_EOL, $redirectPaths);
       }
       // Render as HTML if not the CSV export
