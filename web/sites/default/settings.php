@@ -131,13 +131,13 @@ else {
 
 
 /**
- * Overwrite Google Analytics tracking code in 'live' production site.
+ * Overwrite Google Tag Manager environment setting in 'live' production site.
  *
- * Set to tracking ID of Google Analytics property for 'production' site.
+ * Disable 'include environment' so it uses production settings.
  */
 if (isset($_ENV['PANTHEON_ENVIRONMENT'])) {
   if ($_ENV['PANTHEON_ENVIRONMENT'] === 'live') {
-    $config['google_analytics.settings']['account'] = 'UA-6858269-14';
+    $config['google_tag.container.portland.gov']['include_environment'] = FALSE;
   }
 }
 
