@@ -130,14 +130,11 @@ else {
 }
 
 
-/**
- * Overwrite Google Tag Manager environment setting in 'live' production site.
- *
- * Disable 'include environment' so it uses production settings.
- */
+// Overwrite Google Tag Manager environment setting in 'live' production site.
 if (isset($_ENV['PANTHEON_ENVIRONMENT'])) {
   if ($_ENV['PANTHEON_ENVIRONMENT'] === 'live') {
-    $config['google_tag.container.portland.gov']['include_environment'] = FALSE;
+    $config['google_tag.container.portland.gov']['environment_id'] = 'env-1';
+    $config['google_tag.container.portland.gov']['environment_token'] = 'gX0sWBBfUHwzWER-y90CyQ';
   }
 }
 
