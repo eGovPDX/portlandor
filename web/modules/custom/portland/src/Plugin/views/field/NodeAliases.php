@@ -54,16 +54,24 @@ class NodeAliases extends FieldPluginBase {
       foreach ($aliases as $alias) {
         $aliasPaths[] = $alias->alias;
       }
-      $render_array = [
-        '#theme' => 'item_list',
-        '#list_type' => 'ul',
-        // '#title' => 'Redirects',
-        '#items' => $aliasPaths,
-        // '#attributes' => ['class' => 'mylist'],
-        '#wrapper_attributes' => ['class' => 'container'],
-      ];
 
-      return \Drupal::service('renderer')->render($render_array); 
+
+      // Render as text if it's CSV export
+      if( strpos($this->view->current_display, 'csv') !== false) {
+        return implode(PHP_EOL, $aliasPaths);
+      }
+      else {
+        $render_array = [
+          '#theme' => 'item_list',
+          '#list_type' => 'ul',
+          // '#title' => 'Redirects',
+          '#items' => $aliasPaths,
+          // '#attributes' => ['class' => 'mylist'],
+          '#wrapper_attributes' => ['class' => 'container'],
+        ];
+  
+        return \Drupal::service('renderer')->render($render_array); 
+      }
     }
     return '';
   }
