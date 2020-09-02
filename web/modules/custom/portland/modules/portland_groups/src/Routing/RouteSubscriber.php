@@ -1,6 +1,6 @@
 <?php
 
-namespace Drupal\portland\Routing;
+namespace Drupal\portland_groups\Routing;
 
 use Drupal\Core\Logger\LoggerChannelFactoryInterface;
 use Drupal\Core\Routing\RouteSubscriberBase;
@@ -49,19 +49,14 @@ class RouteSubscriber extends RouteSubscriberBase {
    * {@inheritdoc}
    */
   protected function alterRoutes(RouteCollection $collection) {
-    if(!isset($_ENV['PANTHEON_ENVIRONMENT'])) {
-      $variables = [
-        '@message' => '$_ENV["PANTHEON_ENVIRONMENT"] not set.',
-      ];
-      $this->loggerFactory->get('portland')
-        ->warning('@message', $variables);
+    // override routes from the Group gnode and groupmedia modules; we want to customize the add page.
+    if ($route = $collection->get('entity.group_content.group_node_add_page')) {
+        $route->setDefault('_controller', '\Drupal\portland_groups\Controller\PortlandGroupContentController::addPage');
+    }
+    if ($route = $collection->get('entity.group_content.group_media_add_page')) {
+        $route->setDefault('_controller', '\Drupal\portland_groups\Controller\PortlandGroupMediaController::addPage');
     }
 
-    // override the routing setting in contrib module quick_node_clone that forces the
-    // node clone form to use the admin theme.
-    if ($route = $collection->get('quick_node_clone.node.quick_clone')) {
-      $route->setOption('_admin_route', FALSE);
-    }
   }
 
 }
