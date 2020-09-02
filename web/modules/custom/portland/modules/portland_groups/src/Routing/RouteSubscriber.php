@@ -56,6 +56,9 @@ class RouteSubscriber extends RouteSubscriberBase {
     if ($route = $collection->get('entity.group_content.group_media_add_page')) {
         $route->setDefault('_controller', '\Drupal\portland_groups\Controller\PortlandGroupMediaController::addPage');
     }
+    if ($route = $collection->get('entity.group_content.create_form')) {
+        $route->setDefault('_title_callback', '\Drupal\portland_groups\Controller\PortlandGroupContentController::createFormTitle');
+    }
 
   }
 

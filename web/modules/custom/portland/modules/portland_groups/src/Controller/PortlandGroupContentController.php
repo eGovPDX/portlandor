@@ -11,6 +11,9 @@ use Drupal\group\Entity\GroupInterface;
 use Drupal\group\Plugin\GroupContentEnablerManagerInterface;
 use Drupal\user\PrivateTempStoreFactory;
 use Symfony\Component\DependencyInjection\ContainerInterface;
+use Drupal\group\Entity\GroupContentType;
+use Drupal\node\Entity\NodeType;
+use Drupal\media\Entity\MediaType;
 
 use Drupal\Core\Config\Entity;
 use Symfony\Component\HttpKernel;
@@ -64,4 +67,32 @@ class PortlandGroupContentController extends GroupContentController {
         return $build;
     }
 
+    /**
+     * The _title_callback for the entity.group_content.create_form route.
+     *
+     * @param \Drupal\group\Entity\GroupInterface $group
+     *   The group to create the group content in.
+     * @param string $plugin_id
+     *   The group content enabler to create content with.
+     *
+     * @return string
+     *   The page title.
+     */
+    public function createFormTitle(GroupInterface $group, $plugin_id) {
+        /** @var \Drupal\group\Plugin\GroupContentEnablerInterface $plugin */
+        $plugin = $group->getGroupType()->getContentPlugin($plugin_id);
+        $entity_type = $plugin->getEntityTypeId();
+        switch ($entity_type) {
+        case "media":
+            $content_type = MediaType::load($plugin->getEntityBundle());
+            break;
+        case "node":
+            $content_type = NodeType::load($plugin->getEntityBundle());
+            break;
+        default:
+            $content_type = "undefined";
+        }
+        $return = $this->t('Create @name in @group', ['@name' => $content_type->label(), '@group' => $group->label()]);
+        return $return;
+    }
 }
