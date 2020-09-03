@@ -49,15 +49,15 @@ class PortlandGroupMediaController extends GroupMediaController {
                 $bundle_desc = \Drupal::config('media.type.' . $bundle_id)->get('description');
                 $t_args = ['%node_type' => $bundle_label];
 
-                $build['#bundles'][$bundle_name]['label'] = $bundle_label;
-                $build['#bundles'][$bundle_name]['description'] = $bundle_desc;
-
-                // build custom link text; this overrides the link text created in the GroupMediaDeriver
-                $text = t('Add ' . $bundle_label);
-                $build['#bundles'][$bundle_name]['add_link']->setText($text);
+                $new_bundles[$bundle_name] = $build['#bundles'][$bundle_name];
+                $new_bundles[$bundle_name]['label'] = $bundle_label;
+                $new_bundles[$bundle_name]['description'] = $bundle_desc;
+                // build custom link text; this overrides the link text created in the GroupNodeDeriver
+                $new_bundles[$bundle_name]['add_link']->setText(t('Add ' . $bundle_label));
             }
         }
 
+        $build['#bundles'] = $new_bundles;
         return $build;
     }
 

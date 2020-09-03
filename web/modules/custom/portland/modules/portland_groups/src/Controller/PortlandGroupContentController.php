@@ -42,6 +42,10 @@ class PortlandGroupContentController extends GroupContentController {
         // NOTE: ksort is working here, but bundle types are still displayed out of order.
         // there must be some other sorting process that occurs after this point.
         ksort($page_bundles);
+        // we need the $build['#bundles'] array to be sorted the same as $page_bundles, but it's
+        // being handed to us sorted by plugin_id, which doens't map well to the bundle machine names.
+        // we need to build a new array based on the foreach order below.
+        $new_bundles = [];
         foreach ($page_bundles as $plugin_id => $bundle_name) {
             // Don't process Media types. They are handled by PortlanMediaController next door.
             if(strpos($plugin_id, 'group_media:') === 0) {
@@ -55,15 +59,15 @@ class PortlandGroupContentController extends GroupContentController {
                 $bundle_desc = \Drupal::config('node.type.' . $bundle_id)->get('description');
                 $t_args = ['%node_type' => $bundle_label];
 
-                $build['#bundles'][$bundle_name]['label'] = $bundle_label;
-                $build['#bundles'][$bundle_name]['description'] = $bundle_desc;
-
+                $new_bundles[$bundle_name] = $build['#bundles'][$bundle_name];
+                $new_bundles[$bundle_name]['label'] = $bundle_label;
+                $new_bundles[$bundle_name]['description'] = $bundle_desc;
                 // build custom link text; this overrides the link text created in the GroupNodeDeriver
-                $text = t('Add ' . $bundle_label);
-                $build['#bundles'][$bundle_name]['add_link']->setText($text);
+                $new_bundles[$bundle_name]['add_link']->setText(t('Add ' . $bundle_label));
             }
         }
 
+        $build['#bundles'] = $new_bundles;
         return $build;
     }
 
