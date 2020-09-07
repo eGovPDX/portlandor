@@ -14,13 +14,13 @@ A module for migrating content from POG to portland.gov.
 The Migrate Tools module provides drush commands to run the migrations. The order of commands is important! When running the migrations on remote servers, such as multidev or Dev/Test/Live, use the terminus commands. For multidev environments, the environment id is formatted like this: portlandor.powr-1234. Example:
 
 ```
-lando terminus drush [environment] migrate:import [migration_id]
+lando terminus drush [environment] -- migrate:import [migration_id]
 ```
 
 Some migrations have interdependencies, such as eudaly_news, eudaly_news_group_content, and eudaly_news_redirects. You can automatically run all migrations in a group with:
 
 ```
-lando terminus drush [environment] migrate:import --group=[migration_group]
+lando terminus drush [environment] -- migrate:import --group=[migration_group]
 ```
 
 After editing an existing migration, you need to run `lando drush cr` before it will pick up the changes.
@@ -307,13 +307,11 @@ lando terminus remote:drush portlandor.powr-[ID] -- migrate:import parks_news_re
 ##### Local
 ```
 lando drush migrate:import bds_news
-lando drush migrate:import bds_news_group_content
 lando drush migrate:import bds_news_redirects
 ```
 ##### On Pantheon
 ```
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:import bds_news
-lando terminus remote:drush portlandor.powr-[ID] -- migrate:import bds_news_group_content
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:import bds_news_redirects
 ```
 
@@ -321,13 +319,11 @@ lando terminus remote:drush portlandor.powr-[ID] -- migrate:import bds_news_redi
 ##### Local
 ```
 lando drush migrate:import bds_service_updates
-lando drush migrate:import bds_service_updates_group_content
 lando drush migrate:import bds_service_updates_redirects
 ```
 ##### On Pantheon
 ```
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:import bds_service_updates
-lando terminus remote:drush portlandor.powr-[ID] -- migrate:import bds_service_updates_group_content
 lando terminus remote:drush portlandor.powr-[ID] -- migrate:import bds_service_updates_redirects
 ```
 

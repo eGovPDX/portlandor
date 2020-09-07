@@ -1,6 +1,6 @@
 <?php
 
-namespace Drupal\portland\Controller;
+namespace Drupal\portland_groups\Controller;
 
 use Drupal\Core\Controller\ControllerBase;
 use Drupal\Core\Entity\EntityFormBuilderInterface;
@@ -19,7 +19,7 @@ use Drupal\Core\Plugin;
 /**
  * Returns responses for 'group_media' GroupContent routes.
  */
-class PortlandMediaController extends GroupMediaController {
+class PortlandGroupMediaController extends GroupMediaController {
 
     /**
      * {@inheritdoc}
@@ -48,15 +48,16 @@ class PortlandMediaController extends GroupMediaController {
                 $bundle_id = $media_storage_handler->load($plugin->getEntityBundle())->id();
                 $bundle_desc = \Drupal::config('media.type.' . $bundle_id)->get('description');
                 $t_args = ['%node_type' => $bundle_label];
-                $description = $create_mode
-                ? $this->t('Create a node of type %node_type in the group...<br>' . $bundle_desc, $t_args)
-                : $this->t('Add an existing node of type %node_type to the group...<br>' . $bundle_desc, $t_args);
 
-                $build['#bundles'][$bundle_name]['label'] = $bundle_label;
-                $build['#bundles'][$bundle_name]['description'] = $description;
+                $new_bundles[$bundle_name] = $build['#bundles'][$bundle_name];
+                $new_bundles[$bundle_name]['label'] = $bundle_label;
+                $new_bundles[$bundle_name]['description'] = $bundle_desc;
+                // build custom link text; this overrides the link text created in the GroupNodeDeriver
+                $new_bundles[$bundle_name]['add_link']->setText(t('Add ' . $bundle_label));
             }
         }
 
+        $build['#bundles'] = $new_bundles;
         return $build;
     }
 
