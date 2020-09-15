@@ -1,5 +1,6 @@
 {# DEFAULTS #}
 {% set headingLevel = heading.level|default(3) %}
+{% set all_day = all_day|default('All day') %}
 {# CLASSES #}
 {% set classes = [
   'morsel',
@@ -45,6 +46,26 @@
         {% endif %}
       </div>
     {% endif %}
+    <div class="morsel__date">
+      {% if start_date %}
+        <span class="font-weight-bold">{{ start_date }}
+      {% endif %}
+      {% if end_date %}
+        <span class="datetime mx-1" aria-label="{{ 'through'|t }}">&ndash;</span>
+        <span class="font-weight-bold">{{ end_date }}
+      {% endif %}
+    </div>
+    <div class="morsel__date">
+      {% if is_all_day %}
+        {{ all_day|t }}
+      {% elseif start_time and end_time %}
+        {{ start_time }}
+        <span class="datetime mx-1" aria-label="{{ 'to'|t }}">&ndash;</span>
+        {{ end_time }}
+      {% else %}
+        {{ start_time }}
+      {% endif %}
+    </div>
     {% if location %}{# location component should be passed through here #}
       <div class="morsel__location">
         {{ location }}
@@ -58,6 +79,20 @@
         {% include "@components/badge/badge.twig" with {
           text: type,
           type: "default",
+          classes: ['mb-2'],
+        } only %}
+      {% endif %}
+      {% if status %}
+        {% include "@components/badge/badge.twig" with {
+          text: status,
+          type: "danger",
+          classes: ['mb-2'],
+        } only %}
+      {% endif %}
+      {% if is_online %}
+        {% include "@components/badge/badge.twig" with {
+          text: 'online ' ~ type,
+          type: "info",
           classes: ['mb-2'],
         } only %}
       {% endif %}
