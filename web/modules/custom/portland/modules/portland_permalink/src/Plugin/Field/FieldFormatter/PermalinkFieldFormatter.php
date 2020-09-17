@@ -66,14 +66,12 @@ class PermalinkFieldFormatter extends LinkFormatter {
         ],
       ];
 
-      //$url = Url::fromRoute('portland_permalink.download', $route_parameters, $options);
-      //$url = $this->buildUrl($item);
-      $url = Url::fromUri('https://portlandor.lndo.site/media/5/download');
-
+      $url = Url::fromRoute('portland_permalink.download', $route_parameters, $options);
 
       $elements[$delta] = [
         '#type' => 'link',
         '#url' => $url,
+        '#file' => $file,
         '#title' => $filename,
         '#options' => $options,
       ];
