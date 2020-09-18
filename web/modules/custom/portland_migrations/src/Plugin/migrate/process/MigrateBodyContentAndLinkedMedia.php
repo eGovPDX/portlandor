@@ -28,7 +28,7 @@ class MigrateBodyContentAndLinkedMedia extends ProcessPluginBase {
     // Some articles can be PDF files. Need to download the file, create a media document, embed the document in body
     // The CONTENT_TYPE column is "B" for binary content
     if ($row->getSourceProperty('CONTENT_TYPE') == 'B') {
-      $value = $this->processArticlePdf($value, $migrate_executable, $row, $destination_property);
+      $value = $this->processArticlePdf($value, $row, $destination_property);
     }
 
     // Find all A and IMG tags in body text
@@ -220,7 +220,6 @@ class MigrateBodyContentAndLinkedMedia extends ProcessPluginBase {
       $media = Media::load( array_keys($fileusage['file']['media'])[0] );
     } else {
       // Create a new media item
-      // TODO: Set the 'display in groups' field to assign media to a group
       if ( $media_type == 'image' ) {
         $media = Media::create([
           'bundle' => 'image',
@@ -235,6 +234,7 @@ class MigrateBodyContentAndLinkedMedia extends ProcessPluginBase {
           ],
           'field_summary' => $media_name,
           'field_media_in_library' => 1,
+          'field_display_groups' => $this->configuration['group_id'],
         ]);
       } else { // Document
         $media = Media::create([
@@ -247,6 +247,7 @@ class MigrateBodyContentAndLinkedMedia extends ProcessPluginBase {
             'target_id' => $downloaded_file->id()
           ],
           'field_summary' => $media_name,
+          'field_display_groups' => $this->configuration['group_id'],
         ]);
       }
       $media->save();
@@ -267,8 +268,7 @@ class MigrateBodyContentAndLinkedMedia extends ProcessPluginBase {
   }
 
 
-  protected function processArticlePdf($value, MigrateExecutableInterface $migrate_executable, 
-    Row $row, $destination_property) {
+  protected function processArticlePdf($value, Row $row, $destination_property) {
     // Get file meta data
     $pogFileUrl = $row->getSourceProperty('URL');
     $pogDescription = $row->getSourceProperty('CONTENT_NAME');
@@ -317,7 +317,8 @@ class MigrateBodyContentAndLinkedMedia extends ProcessPluginBase {
         'target_id' => $downloaded_file->id()
       ],
       'field_summary' => $pogDescription,
-    ]);
+      'field_display_groups' => $this->configuration['group_id'],
+      ]);
     $media->save();
     $media->status->value = 1;
     $media->moderation_state->value = 'published';

@@ -26,9 +26,43 @@ class FeedsEventsSubscriber implements EventSubscriberInterface {
    */
   public static function getSubscribedEvents() {
     return [
+      'feeds.process_entity_prevalidate' => 'prevalidate',
       'feeds.process_entity_presave' => 'presave',
       'feeds.process_entity_postsave' => 'postsave',
     ];
+  }
+
+  /**
+   * Convert fields before validation.
+   * @param Drupal\feeds\Event\EntityEvent $event
+   *
+   * @return Drupal\feeds\Event\EntityEvent $event
+   */
+  public function prevalidate(EntityEvent $event) {
+    $node = $event->getEntity();
+    $item = $event->getItem();
+    $feed = $event->getFeed();
+
+    if ($feed->type->entity->id() == 'synergy_json_feed') {
+      $node->field_location->target_id = '1135'; // Node ID of 1900 Building
+
+      $recordStatus = $item->get('recordstatus');
+      if($recordStatus == 'Modified') {
+        $node->field_event_status->value = 'Rescheduled';
+      }
+      else if($recordStatus == 'Deleted') {
+        $node->field_event_status->value = 'Cancelled';
+      }
+      else {
+        $node->field_event_status->value = null;
+      }
+
+      // Get the default group from configured feed and set the parent group for imported news
+      if( $node->hasField('field_display_groups') && $feed->hasField('field_parent_group') && 
+        count($feed->field_parent_group) > 0 ) {
+        $node->field_display_groups->target_id = $feed->field_parent_group[0]->target_id;
+      }
+    }
   }
 
   /**
@@ -42,12 +76,8 @@ class FeedsEventsSubscriber implements EventSubscriberInterface {
     $item = $event->getItem();
     $feed = $event->getFeed();
 
+    // Set default publish status, news type, event type, topic on new items only
     if ($node->isNew()) {
-      // Get the default group from configured feed and set the parent group for imported news
-      if( $node->hasField('field_display_groups') && $feed->hasField('field_parent_group') && 
-        count($feed->field_parent_group) > 0 ) {
-        $node->field_display_groups->target_id = $feed->field_parent_group[0]->target_id;
-      }
       // Get the default published status from configured feed and set the published status for imported news
       if ($node->hasField('moderation_state') && $feed->hasField('field_publish_new_item')) {
         if ($feed->field_publish_new_item->value) {
@@ -62,66 +92,99 @@ class FeedsEventsSubscriber implements EventSubscriberInterface {
         }
       }
 
-      foreach($feed->get('field_default_topics')->referencedEntities() as $term) {
-        $node->field_topics[] = $term->tid->value;
+      // Get the default event type from configured feed and set the event type for imported events
+      if ($node->hasField('field_event_type') && $feed->hasField('field_event_type')) {
+        if ($feed->field_event_type->target_id) {
+          $node->field_event_type->target_id = $feed->field_event_type->target_id;
+        }
       }
 
-      // Download images in Enclosures tag
-      $enclosures = $item->get('enclosures');
-      if( $enclosures && count($enclosures) > 0 ) {
-        $images_html = '';
-        foreach($enclosures as $enclosure) {
-          // Build unique file name ($fileName) from URL ($enclosure)
-          // URL = "https://www.flashalertnewswire.net/images/news/2020-05/3056/134593/banks.jpg"
-          // file name = "134593-banks.jpg"
-          $parts = explode('/', $enclosure);
-          if(count($parts) < 2) continue;
-          $fileName = implode('-', array_slice($parts, count($parts)-2 ));
-          $download_dir_uri = $this->prepareDownloadDirectory();
-          $destination_uri = $download_dir_uri . "/" . $fileName;
+      if( $feed->hasField('field_default_topics') ) {
+        foreach($feed->get('field_default_topics')->referencedEntities() as $term) {
+          $node->field_topics[] = $term->tid->value;
+        }
+      }
+    }
 
-          // download and save managed file
-          try {
-            $downloaded_file = system_retrieve_file($enclosure, $destination_uri, TRUE);
-          }
-          catch (Exception $e) {
-            $message = "Error occurred while trying to download URL target at " . $pogFileUrl . " and create managed file. Exception: " . $e->getMessage();
-            \Drupal::logger('portland_migrations')->notice($message);
-          }
+    // Combine some fields in Synergy JSON into the body text
+    // May need the patch https://www.drupal.org/project/feeds/issues/2850888
+    // More info https://www.mediacurrent.com/blog/drupal-8-feeds-import-external-json-api/
+    if ($feed->type->entity->id() == 'synergy_json_feed') {
+      $eventCaseNumber = $item->get('eventcasenumber');
+      $caseType = $item->get('casetype');
+      // $hearingLocation = $item->get('hearinglocation');
+      $attendees = $item->get('attendees');
+      $recordStatus = $item->get('recordstatus');
+      // Used to store case number
+      $node->field_summary->value = '';
+      // Used to store case type
+      $node->field_search_keywords->value = '';
+      $description = $item->get('description');
+      if ($description == null) $description = '\n';
+      $node->field_body_content->value = "<p><strong>Case number:</strong> $eventCaseNumber<br/><strong>Case type:</strong> $caseType<br/><strong>Attendees:</strong> $attendees</p>" . str_replace('\n', '<br/>', $description);
+      $node->field_body_content->format = 'simplified_editor_with_media_embed';
 
-          if( $downloaded_file == FALSE ) {
-            echo "Failed to download $enclosure";
-            continue;
-          }
+      //<strong>Hearing location:</strong> $hearingLocation<br/>
 
-          // Create the Media Document item
-          $media = Media::create([
-            'bundle' => 'image',
-            'uid' => 1,
-            'langcode' => \Drupal::languageManager()->getDefaultLanguage()->getId(),
-            'name' => $fileName,
-            'status' => 1,
-            'image' => [
-              'target_id' => $downloaded_file->id(),
-              'alt' => $fileName,
-            ],
-          ]);
-          $media->save();
-          $media->status->value = 1;
-          $media->moderation_state->value = 'published';
-          $media->save();
+      $node->field_start_time->value = $this->getTimeFromDate($item->get('eventstartdatetime'));
+      $node->field_end_time->value = $this->getTimeFromDate($item->get('eventenddatetime'));
+    }
 
-          if( $feed->hasField('field_parent_group') && count($feed->field_parent_group) > 0 ) {
-            $this->add_entity_to_group($media, $feed->field_parent_group[0]->target_id);
-          }
+    // Download images in Enclosures tag in FlashAlerts RSS
+    $enclosures = $item->get('enclosures');
+    if( $enclosures && count($enclosures) > 0 ) {
+      $images_html = '';
+      foreach($enclosures as $enclosure) {
+        // Build unique file name ($fileName) from URL ($enclosure)
+        // URL = "https://www.flashalertnewswire.net/images/news/2020-05/3056/134593/banks.jpg"
+        // file name = "134593-banks.jpg"
+        $parts = explode('/', $enclosure);
+        if(count($parts) < 2) continue;
+        $fileName = implode('-', array_slice($parts, count($parts)-2 ));
+        $download_dir_uri = $this->prepareDownloadDirectory();
+        $destination_uri = $download_dir_uri . "/" . $fileName;
 
-          // Build HTML
-          $media_uuid = $media->uuid();
-          $images_html .= "<drupal-entity data-align=\"responsive-right\" data-embed-button=\"image_browser\" data-entity-embed-display=\"media_image\" data-entity-type=\"media\" data-entity-uuid=\"$media_uuid\" data-langcode=\"en\"></drupal-entity>";
+        // download and save managed file
+        try {
+          $downloaded_file = system_retrieve_file($enclosure, $destination_uri, TRUE);
+        }
+        catch (Exception $e) {
+          $message = "Error occurred while trying to download URL target at " . $pogFileUrl . " and create managed file. Exception: " . $e->getMessage();
+          \Drupal::logger('portland_migrations')->notice($message);
         }
 
-        $node->field_body_content->value = $images_html . $node->field_body_content->value;
+        if( $downloaded_file == FALSE ) {
+          echo "Failed to download $enclosure";
+          continue;
+        }
+
+        // Create the Media Document item
+        $media = Media::create([
+          'bundle' => 'image',
+          'uid' => 1,
+          'langcode' => \Drupal::languageManager()->getDefaultLanguage()->getId(),
+          'name' => $fileName,
+          'status' => 1,
+          'image' => [
+            'target_id' => $downloaded_file->id(),
+            'alt' => $fileName,
+          ],
+        ]);
+        $media->save();
+        $media->status->value = 1;
+        $media->moderation_state->value = 'published';
+        $media->save();
+
+        if( $feed->hasField('field_parent_group') && count($feed->field_parent_group) > 0 ) {
+          $this->add_entity_to_group($media, $feed->field_parent_group[0]->target_id);
+        }
+
+        // Build HTML
+        $media_uuid = $media->uuid();
+        $images_html .= "<drupal-entity data-align=\"responsive-right\" data-embed-button=\"image_browser\" data-entity-embed-display=\"media_image\" data-entity-type=\"media\" data-entity-uuid=\"$media_uuid\" data-langcode=\"en\"></drupal-entity>";
       }
+
+      $node->field_body_content->value = $images_html . $node->field_body_content->value;
     }
 
   }
@@ -140,6 +203,14 @@ class FeedsEventsSubscriber implements EventSubscriberInterface {
     }
   }
 
+/**
+ * Convert the datetime string to number of seconds since midnight as required by time_field
+ */
+  protected function getTimeFromDate($dateTimeString) {
+    // Input is ISO string "2020-06-20T14:25-07:00"
+    $parts = explode('T', $dateTimeString);
+    return strtotime($dateTimeString) - strtotime($parts[0]);
+  }
   /**
    * Helper funciton to add a node to a group by Group ID
    */

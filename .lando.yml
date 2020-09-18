@@ -9,6 +9,8 @@ config:
   cache: false
 services:
   appserver:
+    build:
+      - "/app/vendor/bin/phpcs --config-set installed_paths /app/vendor/drupal/coder/coder_sniffer"
     build_as_root:
       - sed 's|mozilla\/AddTrust_External_Root.crt|#mozilla\/AddTrust_External_Root.crt|g' -i /etc/ca-certificates.conf
       - /bin/sh -c "cp /app/cop_ca_*.crt /usr/local/share/ca-certificates/"
@@ -65,6 +67,14 @@ tooling:
     description: CUSTOM Run drush commands
     service: appserver
     cmd: drush --root=/app/web
+  drupalcs:
+    service: appserver
+    cmd: "/app/vendor/bin/phpcs --standard=Drupal,DrupalPractice"
+    description: Run phpcs Drupal Coding Standards against a given file or directory.
+  drupalcbf:
+    service: appserver
+    cmd: "/app/vendor/bin/phpcbf --standard=Drupal"
+    description: Automatically fix Drupal coding standards suggestions.
   npm:
     # Although this now runs yarn, I have left it as legacy support for users who are use to running `lando npm etc etc`
     description: CUSTOM Run yarn commands
@@ -106,16 +116,21 @@ tooling:
       - appserver: date +"%T"
       - appserver: echo "Installing Composer dependencies..."
       - appserver: composer install -d /app
+      - appserver: date +"%T"
       - appserver: echo "Clearing cache..."
       - appserver: drush cr -y
       - appserver: echo "Run database updates..."
       - appserver: drush updb -y
+      - appserver: date +"%T"
       - appserver: echo "Importing Drupal config..."
       - appserver: drush cim -y
+      - appserver: date +"%T"
       - appserver: echo "Running cron..."
       - appserver: drush core:cron -y
+      - appserver: date +"%T"
       - appserver: echo "Clearing cache..."
       - appserver: drush cr -y
+      - appserver: date +"%T"
       - appserver: echo "=====Timestamp===== Drupal Config Refresh Done, Starting Theme and PL Rebuild"
       - appserver: date +"%T"
       - node: echo "Building theme asset files..."
