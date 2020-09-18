@@ -13,6 +13,8 @@ use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Symfony\Component\HttpFoundation\RedirectResponse;
+use Drupal\Core\Url;
 
 /**
  * DownloadController class.
@@ -120,41 +122,44 @@ class PermalinkController extends ControllerBase {
       throw new \Exception("File id {$fid} could not be loaded.");
     }
 
-    $uri = $file->getFileUri();
-    $filename = $file->getFilename();
-    $scheme = $this->streamWrapperManager->getScheme($uri);
+    $url = $file->url();
+    return new RedirectResponse($url);
 
-    // Or item does not exist on disk.
-    if (!$this->streamWrapperManager->isValidScheme($scheme) || !file_exists($uri)) {
-      throw new NotFoundHttpException("The file {$uri} does not exist.");
-    }
+  //   $uri = $file->getFileUri();
+  //   $filename = $file->getFilename();
+  //   $scheme = $this->streamWrapperManager->getScheme($uri);
 
-    // Let other modules provide headers and controls access to the file.
-    $headers = $this->moduleHandler()->invokeAll('file_download', [$uri]);
+  //   // Or item does not exist on disk.
+  //   if (!$this->streamWrapperManager->isValidScheme($scheme) || !file_exists($uri)) {
+  //     throw new NotFoundHttpException("The file {$uri} does not exist.");
+  //   }
 
-    foreach ($headers as $result) {
-      if ($result == -1) {
-        throw new AccessDeniedHttpException();
-      }
-    }
+  //   // Let other modules provide headers and controls access to the file.
+  //   $headers = $this->moduleHandler()->invokeAll('file_download', [$uri]);
 
-    if (count($headers)) {
-      // \Drupal\Core\EventSubscriber\FinishResponseSubscriber::onRespond()
-      // sets response as not cacheable if the Cache-Control header is not
-      // already modified. We pass in FALSE for non-private schemes for the
-      // $public parameter to make sure we don't change the headers.
-      $response = new BinaryFileResponse($uri, Response::HTTP_OK, $headers, $scheme !== 'private');
-      if (empty($headers['Content-Disposition'])) {
-        $response->setContentDisposition(
-          ResponseHeaderBag::DISPOSITION_ATTACHMENT,
-          $filename
-        );
-      }
+  //   foreach ($headers as $result) {
+  //     if ($result == -1) {
+  //       throw new AccessDeniedHttpException();
+  //     }
+  //   }
 
-      return $response;
-    }
+  //   if (count($headers)) {
+  //     // \Drupal\Core\EventSubscriber\FinishResponseSubscriber::onRespond()
+  //     // sets response as not cacheable if the Cache-Control header is not
+  //     // already modified. We pass in FALSE for non-private schemes for the
+  //     // $public parameter to make sure we don't change the headers.
+  //     $response = new BinaryFileResponse($uri, Response::HTTP_OK, $headers, $scheme !== 'private');
+  //     if (empty($headers['Content-Disposition'])) {
+  //       $response->setContentDisposition(
+  //         ResponseHeaderBag::DISPOSITION_ATTACHMENT,
+  //         $filename
+  //       );
+  //     }
 
-    throw new AccessDeniedHttpException();
+  //     return $response;
+  //   }
+
+  //   throw new AccessDeniedHttpException();
   }
 
 }
