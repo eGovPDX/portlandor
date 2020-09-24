@@ -156,13 +156,13 @@ Note: The theme build process is automatically triggered everytime your Lando co
 
 ### Quick Start
 
-1. Run `lando npm start`
+1. Run `lando yarn start`
 2. Go to `https://portlandor.lndo.site/pattern-lab`
 
 Here are some additional commands you may find useful.
 
-- Run `lando npm run build` to build both the theme assets and Pattern Lab.
-- Run `lando npm run watch` to build both the thme assets and  Pattern Lab, watch for changes and trigger rebuilds for both.
+- Run `lando yarn run build` to build both the theme assets and Pattern Lab.
+- Run `lando yarn run watch` to build both the thme assets and  Pattern Lab, watch for changes and trigger rebuilds for both.
 
 ### Pattern Lab
 
@@ -172,9 +172,9 @@ To get started with Pattern Lab,
 
 Here are some useful commands when working with Pattern Lab:
 
-- Run `lando npm run build:pl` to build the Pattern Lab site.
-- Run `lando npm run watch:pl` to build the Pattern Lab site, watch for changes and trigger rebuilds.
-- Run `lando npm run clean:pl` to delete the Pattern Lab site.
+- Run `lando yarn run build:pl` to build the Pattern Lab site.
+- Run `lando yarn run watch:pl` to build the Pattern Lab site, watch for changes and trigger rebuilds.
+- Run `lando yarn run clean:pl` to delete the Pattern Lab site.
 
 #### *Note*
 
@@ -188,11 +188,11 @@ Note: Make modifications to the desired SCSS and JavaScript files in the theme. 
 
 You have a couple of options for manually compiling the asset files:
 
-- Run `lando npm run build:wp` to build the Pattern Lab site.
-- Run `lando npm run watch:wp` to build the Pattern Lab site, watch for changes and trigger rebuilds.
-- Run `lando npm run clean:wp` to delete the Pattern Lab site.
+- Run `lando yarn run build:wp` to build the Pattern Lab site.
+- Run `lando yarn run watch:wp` to build the Pattern Lab site, watch for changes and trigger rebuilds.
+- Run `lando yarn run clean:wp` to delete the Pattern Lab site.
 
-You can run `lando npm install` if you need to install/update your Node dependencies.
+You can run `lando yarn install` if you need to install/update your Node dependencies.
 
 ### Webpack output
 
