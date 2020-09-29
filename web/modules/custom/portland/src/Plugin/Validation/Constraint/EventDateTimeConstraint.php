@@ -26,6 +26,6 @@ class EventDateTimeConstraint extends CompositeConstraintBase {
    * {@inheritdoc}
    */
   public function coversFields() {
-    return ['field_start_date', 'field_start_tiem', 'field_end_date', 'field_end_time'];
+    return ['field_start_date', 'field_start_time', 'field_end_date', 'field_end_time'];
   }
 }
