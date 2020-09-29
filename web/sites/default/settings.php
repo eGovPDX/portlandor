@@ -143,3 +143,5 @@ if (isset($_ENV['PANTHEON_ENVIRONMENT'])) {
 if (function_exists('newrelic_ignore_transaction') && php_sapi_name() === 'cli') {
   newrelic_ignore_transaction();
 }
+
+$config['file.settings']['make_unused_managed_files_temporary'] = TRUE;
