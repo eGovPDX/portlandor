@@ -132,12 +132,24 @@ function _portland_groups_synchronize_entity_group_ownership($entity) {
         $old_group = \Drupal\group\Entity\Group::load($orig_owner_group);
         if ($old_group) {
           $current_node = $old_group->getContent($plugin_id, ['entity_id' => $eid]);
-          $content = array_values($current_node)[0];
-          $content->delete();
+          if(count($current_node) > 0) {
+            $content = array_values($current_node)[0];
+            $content->delete();
+          }
         }
       }
       // assign to new group
       _portland_groups_add_entity_to_group($entity, $new_owner_group, $plugin_id);
+    }
+    else {
+      // Handle the case that Display In has a group but there is no group content node
+      $new_group = \Drupal\group\Entity\Group::load($new_owner_group);
+      if ($new_group) {
+        $current_node = $new_group->getContent($plugin_id, ['entity_id' => $eid]);
+        if(count($current_node) == 0) {
+          _portland_groups_add_entity_to_group($entity, $new_owner_group, $plugin_id);
+        }
+      }
     }
   }
 }
