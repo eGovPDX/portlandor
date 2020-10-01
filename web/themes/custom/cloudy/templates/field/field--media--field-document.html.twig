@@ -2,8 +2,13 @@
 {% block content %}
   {%- for item in items -%}
     <div{{ item.attributes.addClass(item_classes) }}>
+      {% if ('administrator' in user.getroles()) and (element['#view_mode'] == 'full') %}
+        {% set url = file_url(item.content['#file'].uri.value) %}
+      {% else %}
+        {% set url = path('entity.media.canonical', {'media': element['#object'].mid.value }) %}
+      {% endif %}
       {% include 'file-link.html.twig' with {
-        url: path('entity.media.canonical', {'media': element['#object'].mid.value }),
+        url: url,
         file: item.content['#file'],
         file_display_name: element['#object'].name.value,
         mime_type: element['#object'].field_mime_type.value,
