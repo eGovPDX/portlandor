@@ -1,0 +1,199 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+    <meta name="HandheldFriendly" content="true" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+
+    <title>PDX Projects</title>
+
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.min.css">
+    <link rel="stylesheet" href="css/leaflet.css" />
+    <link href="css/main.css?20191030" rel="stylesheet" />
+
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.2.9/angular.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.2.9/angular-touch.min.js"></script>
+    <script src="js/leaflet.js"></script>
+    <script src="https://angular-ui.github.io/bootstrap/ui-bootstrap-tpls-0.12.0.js"></script>
+    <script src="js/angularjs-geolocation.min.js"></script>
+    <script src="js/angular-sanitize.min.js"></script>
+    <script src="js/angular-leaflet-directive.min.js"></script>
+    <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+    <!-- Include all compiled plugins (below), or include individual files as needed -->
+    <script src="js/bootstrap.min.js"></script>
+    <script src="js/waterworks.js?20191030"></script>
+    <script src="js/waterworks_services.js?20191030"></script>
+    <script src="js/waterworks_controllers.js?20191030"></script>
+    <script src="js/waterworks_jquery.js?20191030"></script>
+
+</head>
+
+<body ng-app="waterworks" onload="//$('#Loading').hide();"">
+
+  <div class="wrapper" ng-controller="projects">
+
+    <div class="top-bar">
+      <div class="navActions" id="MainHead" ng-show="mainHeadVisible">
+        <!-- <a class="back" ng-click="goBack()" ng-show="detailVisible" style="cursor: pointer;"></a> -->
+        <div class="ww-home"><a class="home" href="/water/waterworks/index.cfm"></a></div>
+
+        <a href="index.html" class="brand" style="white-space: nowrap;">
+          <img src="img/logo-app.svg" alt="" style="width: auto;"><img src="img/betabadge.gif" alt="Beta" style="width: auto; margin: 6px 0 0 3px;">
+        </a>
+
+        <a class="search" ng-click="searchVisible=true" ng-show="!searchVisible || !isMobileView"></a>
+        <a class="close-search fa fa-times" aria-hidden="true" ng-click="searchVisible=false" ng-show="searchVisible && isMobileView"></a>
+
+      </div>
+
+    </div><!-- End top-bar -->
+
+    <div class="map-wrapper" id="MapWrapper" style="background-color: #999999; height: 100%;">
+     	<div class="modal fade projectTeaser" data-backdrop="false" role="dialog" id="MapPopup">
+     		<div class="modal-content">
+     			<!-- <a href="#" class="modal-close" data-dismiss="modal" ng-click="resetMarker()"></a> -->
+     			<div class="modal-body" ng-click="showDetail()"></div>
+          <a href="#" class="link--more" ng-click="showDetail()"></a>
+     		</div>
+     	</div>
+      <div id="LeafletMap" style="width: 100%; height: 100%;"></div>
+
+    </div><!-- End MapWrapper -->
+
+    <div class="projectDetail" ID="ProjectDetail" ng-class="{ 'detail-visible': detailVisible }">
+
+      <!-- apply slide class conditionally; carousel will throw js error when this isn't initially populated. -->
+      <div class="detail-toolbar">
+        <i class="fa fa-times" aria-hidden="true" ng-click="detailVisible=false; resetSelectedMarker();"></i>
+      </div>
+      <div id="DetailCarousel" class="" data-ride="carousel">
+        <div ng-class="{ 'carousel-inner': selectedProject.displayPhotos, 'no-image': !selectedProject.displayPhotos }" role="listbox">
+          <div class="item" ng-class="{ active: $first }" ng-repeat="photo in selectedProject.displayPhotos">
+            <div class="carousel-image" style="background-image: url({{photo}});" title="Photo of {{selectedProject.displayTitle}}">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="detailContainer" ng-class="{ 'no-image': !selectedProject.displayPhotos }">
+        <div class="metaWrap">
+          <div class="meta">
+            <!-- Project title -->
+            <h2 class="title" ng-bind="selectedProject.displayTitle"></h2>
+
+            <!-- Project type -->
+            <span class="type" ng-bind-html="selectedProject.properties.types" ng-show="selectedProject.properties.types"></span>
+
+            <!-- Location - if one of the location subfields is used, display the content here -->
+            <span class="location" ng-bind-html="selectedProject.displayLocation" ng-show="selectedProject.displayLocation"></span>
+
+            <!-- Dates - if one of the date/time subfields is used, display the content here -->
+            <span class="dates" ng-bind-html="selectedProject.displayDates" ng-show="selectedProject.displayDates"></span>
+          </div>
+        </div>
+
+        <div class="info">
+          <!-- Summary (text from project options checkboxes) -->
+          <div class="description" ng-bind-html="selectedProject.displaySummary" ng-show="selectedProject.displaySummary"></div>
+          <!-- Description (additional text) -->
+          <div class="description" ng-bind-html="selectedProject.displayDescription" ng-show="selectedProject.displayDescription"></div>
+        </div>
+        <div class="more-info">
+          <!-- contact info -->
+          <h3>Contacts:</h3>
+          <div class="contacts" ng-bind-html="selectedProject.properties.contacts" ng-show="selectedProject.properties.contacts"></div>
+          <!-- related bureaus -->
+          <h3 ng-show="selectedProject.properties.bureaus">Related Bureaus:</h3>
+          <div class="related-bureaus" ng-bind-html="selectedProject.properties.bureaus" ng-show="selectedProject.properties.bureaus"></div>
+        </div>
+      </div>
+
+    </div><!-- End ProjectDetail -->
+
+    <div class="searchPanel" id="SearchPanel" ng-init="searchVisible=!isMobileView" ng-class="{ 'open': searchVisible && isMobileView }">
+
+      <div class="searchFilters">
+
+        <div class="navActions" id="SearchHead">
+          <a href="#" class="back" ng-click="searchVisible=false"></a>
+          <input type="text" id="AddressSearch" ng-model="addressSearch" placeholder="Search by address..." ng-keyup="searchEnterSubmit($event);" />
+          <a href="#" id="searchSubmit" class="search" title="submit search" ng-click="locationSearch()"></a>
+        </div>
+
+        <div id="locationSearch">
+          <!-- If only 1 result found, navigate directly to it on map. If more than 1, display results here. -->
+          <div class="locationSearchResults" ng-show="locationResults.length > 0">
+            <ul id="AddressList">
+              <li ng-repeat="result in locationResults">
+                <span ng-click="selectAddress(result)">{{result.address}} &#9654;</span>
+              </li>
+            </ul>
+          </div>
+
+          <!-- locationResults will be null if no search has been performed yet. only show no results message if a search has been run. -->
+          <div class="locationSearchResults" ng-show="locationResults.length < 1">
+            <ul id="AddressList" class="no-results">
+              <li>No results found. Please try a different search.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="filters">
+          <div class="btnFilters">
+            <button type="button" class="btn btn-primary btn-sm" id="Filter-All" ng-click="filterProjects('All', $event)">All</button>
+            <button type="button" class="btn btn-default btn-sm" id="Filter-CapImprove" ng-click="filterProjects('Capital Improvement Project', $event)">Capital Improvement</button>
+            <button type="button" class="btn btn-default btn-sm" id="Filter-Discolored" ng-click="filterProjects('Dirty/Discolored Water', $event)">Discolored Water</button>
+            <button type="button" class="btn btn-default btn-sm" id="Filter-ShutDown" ng-click="filterProjects('Temporary Water Service Shut Down', $event)">Shut Off</button>
+            <button type="button" class="btn btn-default btn-sm" id="Filter-MainBreak" ng-click="filterProjects('Water Main Break', $event)">Main Break</button>
+            <button type="button" class="btn btn-default btn-sm" id="Filter-MainFlushing" ng-click="filterProjects('Water Main Flushing', $event)">Main Flushing</button>
+            <button type="button" class="btn btn-default btn-sm" id="Filter-Construction" ng-click="filterProjects('Water System Improvement Construction', $event)">Construction</button>
+          </div>
+          <div class="inputFilter">
+            <input type="text" id="Filter-Text" ng-model="nameFilter" ng-keyup="nameFilter_keyup($event)" ng-init="count=0" Placeholder="Filter by project name...">
+          </div>
+        </div>
+
+      </div><!-- End searchFilters -->
+
+      <div id="CurrentProjects">
+
+        <div class="projectsListContainer">
+          <div class="projectsSummary"><span ng-bind="projects.length"></span> Projects Found</div>
+
+          <div class="projectsList" ng-repeat="project in projects">
+            <div class="projectTeaser" id="Teaser{{project.properties.id}}" ng-click="listViewClick(project)">
+              <div class="teaserThumb" ng-style="{'background-image':'url({{project.displayThumbnail}})'}" ng-show="project.displayThumbnail"></div>
+
+              <div class="teaserContent">
+                <h3 ng-bind="project.displayTitle"></h3>
+                <span class="type" ng-bind="project.properties.types" ng-show="project.properties.types"></span>
+                <span class="location" ng-bind-html="project.displayLocation" ng-show="project.displayLocation"></span>
+                <span class="dates" ng-bind-html="project.displayDates" ng-show="project.displayDates"></span>
+              </div>
+              <a href="#" class="link--more" ng-click="showDetail()"></a>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+    </div><!-- End SearchPanel -->
+
+    <div id="scopeKludge" style="position: absolute; visibility: hidden">
+    	<div ng-repeat="project in projects">
+    		<div id="clickHelper{{project.properties.id}}" ng-click="listViewClick(project)">{{project.properties.id}}</div>
+    	</div>
+    </div>
+
+  </div><!-- End Wrapper -->
+
+</body>
+
+</html>

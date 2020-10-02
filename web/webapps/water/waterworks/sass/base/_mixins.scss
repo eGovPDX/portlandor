@@ -1,0 +1,80 @@
+$box-shadow: 0 2px 3px rgba(0,0,0,0.02);
+$border: 1px solid $border-color;
+$searchMarginDesktop: 250px;
+$searchFiltersHeight: 110px;
+$font-icon: "FontAwesome";
+$panelPadding: 1em 1em 0;
+$transition: all 0.5s ease-in-out;
+
+@mixin icon($position: before, $icon: false, $styles: true) {
+  @if $position == both {
+    $position: "before, &:after";
+  }
+
+  // Either a :before or :after pseudo-element, or both, defaulting to :before
+  &:#{$position} {
+    @if $icon {
+      // A particular icon has been specified
+      content: "#{map-get($icons, $icon)}";
+    }
+
+    @if $styles {
+      // Supportive icon styles required
+      speak: none;
+      font-style: normal;
+      font-weight: normal;
+      font-family: $font-icon;
+    }
+
+    // Include any extra rules supplied for the pseudo-element
+    @content;
+  }
+}
+
+// Map icon names to font unicode characters
+$icons: (back: "", search: "", type: "", location: "", dates: "", close: "", map: "\f278", list: "\f00b", right_arrow: "\f054");
+
+// Transition mixin
+@mixin transition($args...) {
+  transition: $args;
+}
+
+// Border shorthand version
+@mixin border($border) {
+  border: $border;
+}
+
+// Border radius shorthand
+@mixin border-radius($radius) {
+  border-radius: $radius;
+}
+
+$breakpoints: (xs: 24em, s: 35em, m: 55em, l: 62em, xl: 80em);
+
+@mixin breakpoint($bp, $rule: min-width) {
+  @media screen and (#{$rule}: map-get($breakpoints, $bp)) {
+    @content;
+  }
+}
+
+// Z-INDEX MAPPING
+
+$z-layers: (
+  "nav"                   : 6000,
+  "projectDetail-mobile"  : 2000,
+  "searchPanel-mobile"    : 3000,
+  "projectDetail-desktop" : 3000,
+  "searchPanel-desktop"   : 2000,
+  "modal-content"         : 4000,
+  "modal-close"           : 30,
+  "detail-toolbar"        : 4001,
+);
+
+@function z($layer) {
+  @if not map-has-key($z-layers, $layer) {
+    @warn "No layer found for `#{$layer}` in $z-layers map. Property omitted.";
+  }
+
+  @return map-get($z-layers, $layer);
+}
+
