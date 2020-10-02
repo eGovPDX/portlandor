@@ -4,13 +4,25 @@ status: true
 dependencies:
   module:
     - search_api_solr
+    - search_api_location
+    - group
     - taxonomy
     - node
-    - group
-    - search_api_location
     - search_api
     - portland
   config:
+    - field.storage.group.field_geo_map
+    - field.storage.group.field_official_title
+    - field.storage.group.field_neighborhood
+    - field.storage.group.field_official_organization_name
+    - field.storage.group.field_end_date
+    - field.storage.group.field_start_date
+    - field.storage.group.field_project_status
+    - field.storage.group.field_project_type
+    - field.storage.group.field_search_keywords
+    - field.storage.group.field_shortname_or_acronym
+    - field.storage.group.field_summary
+    - field.storage.group.field_topics
     - field.storage.node.field_community_actions
     - field.storage.node.field_body_content
     - field.storage.node.field_city_section
@@ -49,10 +61,7 @@ dependencies:
     - field.storage.node.field_summary
     - field.storage.node.field_topics
     - field.storage.node.field_updated_on
-    - field.storage.group.field_neighborhood
-    - field.storage.group.field_search_keywords
-    - field.storage.group.field_start_date
-    - field.storage.group.field_topics
+    - field.storage.node.field_geo_map
     - search_api.server.searchstax
 third_party_settings:
   search_api_solr:
@@ -107,6 +116,15 @@ field_settings:
         - field.storage.node.field_community_actions
       module:
         - taxonomy
+  aggregated_geo_map:
+    label: 'Aggregated geo map'
+    property_path: aggregated_field
+    type: string
+    configuration:
+      type: concat
+      fields:
+        - 'entity:group/field_geo_map'
+        - 'entity:node/field_geo_map'
   aggregated_sorting_date:
     label: 'Aggregated sorting date'
     property_path: aggregated_field
@@ -247,6 +265,38 @@ field_settings:
     dependencies:
       config:
         - field.storage.node.field_event_type
+  field_geo_map:
+    label: 'Geo Map'
+    datasource_id: 'entity:node'
+    property_path: field_geo_map
+    type: rpt
+    dependencies:
+      config:
+        - field.storage.node.field_geo_map
+  field_geo_map_group:
+    label: 'Geo Map group'
+    datasource_id: 'entity:group'
+    property_path: field_geo_map
+    type: rpt
+    dependencies:
+      config:
+        - field.storage.group.field_geo_map
+  field_geo_map_group_string:
+    label: 'Geo Map group string'
+    datasource_id: 'entity:group'
+    property_path: field_geo_map
+    type: string
+    dependencies:
+      config:
+        - field.storage.group.field_geo_map
+  field_geo_map_string:
+    label: 'Geo Map string'
+    datasource_id: 'entity:node'
+    property_path: field_geo_map
+    type: string
+    dependencies:
+      config:
+        - field.storage.node.field_geo_map
   field_geolocation:
     label: 'Content Park Geolocation'
     datasource_id: 'entity:node'
@@ -764,6 +814,9 @@ processor_settings:
   portland_group_title_field: {  }
   portland_sorting_date_field: {  }
   rendered_item: {  }
+  search_api_canonical_url: {  }
+  search_api_urls: {  }
+  site_name: {  }
   solr_date_range:
     weights:
       preprocess_index: 0
