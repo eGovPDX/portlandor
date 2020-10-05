@@ -51,6 +51,11 @@ function portland_token_info()
     'description' => 'A token to display standardized page titles for Portland.gov',
   ];
 
+  $info['tokens']['portland']['group-path'] = [
+    'name' => t('Portland group'),
+    'description' => 'A token to display the group path',
+  ];
+
   return $info;
 }
 
@@ -124,6 +129,29 @@ function portland_tokens($type, $tokens, array $data = array(), array $options =
               }
               $new_title = portland_generate_extended_title_for_group_views($title, $route_match);
               $replacements[$original] = $new_title;
+            }
+          }
+          break;
+        case 'group-path':
+          // get group shortname
+          $route_match = \Drupal::routeMatch();
+          // Entity will be found in the route parameters.
+          if (($route = $route_match->getRouteObject()) && ($parameters = $route->getOption('parameters'))) {
+            // Determine if the current route represents an entity.
+            foreach ($parameters as $name => $options) {
+              if ($name == 'group') {
+                if (isset($options['type']) && strpos($options['type'], 'entity:') === 0) {
+                  $entity = $route_match->getParameter($name);
+                  if ($entity) {
+                    $field = $entity->get('field_group_path');
+                    if ($field) {
+                      $value = $field->value;
+                      $replacements[$original] = $value;
+                      break;
+                    }
+                  }
+                }
+              }
             }
           }
           break;
