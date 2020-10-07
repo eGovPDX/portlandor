@@ -306,6 +306,69 @@ run_tests: &run_tests
         path: /var/www/html/artifacts
         destination: /
 
+visual_regression: &visual_regression
+  docker:
+    - image: kxwang/visual-regression:latest
+  # environment:
+  #   PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: true
+  parallelism: 4
+  working_directory: /home/circleci/app
+  steps:
+    - checkout
+
+    - restore_cache:
+        name: Restore Terminus cache
+        keys:
+          - terminus_-{{ checksum "composer.lock" }}
+    - run:
+        name: Install Terminus
+        command: |
+          if [ ! -f "/tmp/vendor/pantheon-systems/terminus/bin/terminus" ]; then
+          cd /tmp && composer require pantheon-systems/terminus:^2.0.0
+          fi
+    - save_cache:
+        name: Save Terminus cache
+        key: terminus_-{{ checksum "composer.lock" }}
+        paths:
+          - "/tmp/vendor"
+          
+    - run:
+        command: |
+          export PATH=/var/www/html/tests/vendor/bin:/tmp/vendor/pantheon-systems/terminus/bin:$PATH
+
+          # Log in via terminus first. Required for tests that require user login.
+          terminus auth:login --quiet --machine-token="$eGov_Terminus" --email="$eGov_Email" && terminus aliases
+
+          # Prepare environment variables to be used by Percy
+          if [[ $CIRCLE_BRANCH = "master" ]]; then
+            echo 'export SITE_NAME="dev"' > $BASH_ENV && source $BASH_ENV
+          else
+            echo 'export SITE_NAME=${CIRCLE_BRANCH}' > $BASH_ENV && source $BASH_ENV
+          fi
+
+          # Generate one time login link for tests
+          # echo 'export SUPERADMIN_LOGIN=$(terminus drush portlandor.${SITE_NAME} -- uli --name superAdmin)' >> $BASH_ENV
+          # echo 'export ALLY_LOGIN=$(terminus drush portlandor.${SITE_NAME} -- uli --mail ally.admin@portlandoregon.gov)' >> $BASH_ENV
+          # echo 'export MARTY_LOGIN=$(terminus drush portlandor.${SITE_NAME} -- uli --mail marty.member@portlandoregon.gov)' >> $BASH_ENV
+          # source $BASH_ENV
+          cd /home/circleci/app/tests/percy
+          npm install --quiet
+
+          # Start Percy tests
+          TESTFILES=$(circleci tests glob "snapshots-*.js" | circleci tests split)
+          for TESTFILE in $TESTFILES
+          do
+            if [[ ${TESTFILE} == *"ally"* ]]; then
+              echo 'export ALLY_LOGIN=$(terminus drush portlandor.${SITE_NAME} -- uli --mail ally.admin@portlandoregon.gov)' > $BASH_ENV && source $BASH_ENV
+            elif [[ ${TESTFILE} == *"marty"* ]]; then
+              echo 'export MARTY_LOGIN=$(terminus drush portlandor.${SITE_NAME} -- uli --mail marty.member@portlandoregon.gov)' > $BASH_ENV && source $BASH_ENV
+            elif [[ ${TESTFILE} == *"admin"* ]]; then
+              echo 'export SUPERADMIN_LOGIN=$(terminus drush portlandor.${SITE_NAME} -- uli --name superAdmin)' > $BASH_ENV && source $BASH_ENV
+            fi
+            npm run ${TESTFILE}
+          done
+
+
 # Declare all of the jobs we should run.
 version: 2.1
 jobs:
@@ -313,6 +376,11 @@ jobs:
      <<: *build_and_deploy
   test:
      <<: *run_tests
+  visual_regression:
+    <<: *visual_regression
+
+orbs:
+ percy: percy/agent@0.1.2
 
 # Declare a workflow that runs all of our jobs in parallel.
 workflows:
@@ -320,6 +388,12 @@ workflows:
   deploy_and_test:
     jobs:
       - deploy
-      - test:
+      # - test:
+      #     requires:
+      #       - deploy
+      - visual_regression:
           requires:
             - deploy
+      - percy/finalize_all:
+          requires:
+            - visual_regression
