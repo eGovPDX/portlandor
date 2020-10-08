@@ -607,6 +607,18 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 		// $scope.projects.push(project);
 
 		if (project.properties.thumbnail == "") project.properties.thumbnail = null;
+
+		if (project.properties.businesses != "" || project.properties.residences != "") {
+			project.properties.description += "<p>";
+			if (project.properties.businesses != "") {
+				project.properties.description += "Businesses affected: " + project.properties.businesses + "<br>";
+			}
+			if (project.properties.residences != "") {
+				project.properties.description += "Residences affected: " + project.properties.residences;
+			}
+			project.properties.description += "</p>";
+		}
+
 		
 		return project;
 	}
