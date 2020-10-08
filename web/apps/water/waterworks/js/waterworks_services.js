@@ -18,7 +18,7 @@
 		// },
 		getProjects: function (callback) {
 			// callback is 'getProjectsCallback'
-		    var url = ecm_url + '/api/water-projects-geojson';
+		    var url = ecm_url + '/api/waterworks';
 			return $http.jsonp(url, {params: {cb: 'callback'}}).then(callback);
 		},
 		getProjects2: function (callback) {

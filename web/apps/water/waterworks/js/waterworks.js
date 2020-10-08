@@ -6,9 +6,8 @@ const DEFAULT_LATITUDE = 45.51;
 const DEFAULT_LONGITUDE = -122.65;
 const DEFAULT_ZOOM = 11;
 const ZOOM_POSITION = 'topright';
-//const ECM_ROOTURL_TEST = 'http://ecm.city';
-const ECM_ROOTURL_TEST = 'https://ecm.lndo.site';
-const ECM_ROOTURL_PROD = 's';
+const ECM_ROOTURL_TEST = '';
+const ECM_ROOTURL_PROD = '';
 const ROOTURL_PROD = 'https://www.portlandoregon.gov';
 const BACK_URL = '/water/waterworks/index.html';
 const WATER_ICON = {
@@ -36,32 +35,32 @@ const HOME_ICON = {
 }
 
 // consts for options and subfields
-const FIELD_DIRTY_WATER_AREA_TOKEN = "[Dirty Water Area]";
-const FIELD_DIRTY_WATER_REASON_TOKEN = "[Dirty Water Reason]";
-const FIELD_SHUT_DOWN_DATE_TOKEN = "[Shut Down Date]";
-const FIELD_SHUT_DOWN_NUM_RESCUSTOMERS_TOKEN = "[Num Residential and Multifamily Customers]";
-const FIELD_SHUT_DOWN_NUM_BUSCUSTOMERS_TOKEN = "[Num Business Customers]";
-const FIELD_SHUT_DOWN_LOCATION_TOKEN = "[Shut Down Location]";
-const FIELD_SHUT_DOWN_REASON_TOKEN = "[Shut Down Reason]";
-const FIELD_SHUT_DOWN_DURATION_TOKEN = "[Shut Down Duration]";
+// const FIELD_DIRTY_WATER_AREA_TOKEN = "[Dirty Water Area]";
+// const FIELD_DIRTY_WATER_REASON_TOKEN = "[Dirty Water Reason]";
+// const FIELD_SHUT_DOWN_DATE_TOKEN = "[Shut Down Date]";
+// const FIELD_SHUT_DOWN_NUM_RESCUSTOMERS_TOKEN = "[Num Residential and Multifamily Customers]";
+// const FIELD_SHUT_DOWN_NUM_BUSCUSTOMERS_TOKEN = "[Num Business Customers]";
+// const FIELD_SHUT_DOWN_LOCATION_TOKEN = "[Shut Down Location]";
+// const FIELD_SHUT_DOWN_REASON_TOKEN = "[Shut Down Reason]";
+// const FIELD_SHUT_DOWN_DURATION_TOKEN = "[Shut Down Duration]";
 // const FIELD_SHUT_DOWN_DURATION_HOURS_TOKEN = "[Shut Down Duration:Hours]";
 // const FIELD_SHUT_DOWN_DURATION_START_TOKEN = "[Shut Down Duration:Start]";
 // const FIELD_SHUT_DOWN_DURATION_END_TOKEN = "[Shut Down Duration:End]";
 // const FIELD_SHUT_DOWN_DURATION_DATE_TOKEN = "[Shut Down Duration:Date]";
-const FIELD_MAIN_BREAK_LOCATION_TOKEN = "[Break Location]";
-const FIELD_MAIN_BREAK_COMPLETION_DATE_TOKEN = "[Expected Completion Date]";
-const FIELD_MAIN_BREAK_IMPACTED_STREET_TOKEN = "[Impacted Traffic Street]";
-const FIELD_MAIN_BREAK_NUMBER_HOMES_TOKEN = "[Number of Homes]";
-const FIELD_MAIN_BREAK_STREET_NAME_TOKEN = "[Street Name]";
-const FIELD_MAIN_BREAK_PIPE_SIZE_TOKEN = "[Pipe Size]";
-const FIELD_MAIN_BREAK_PIPE_MATERIAL_TOKEN = "[Pipe Material]";
-const FIELD_MAIN_BREAK_PIPE_YEAR_TOKEN = "[Pipe Year]";
-const FIELD_MAIN_FLUSHING_NEIGHBORHOOD_TOKEN = "[Impacted Neighborhood]";
-const FIELD_MAIN_FLUSHING_SEASON_TOKEN = "[Season]";
-const FIELD_MAIN_FLUSHING_YEAR_TOKEN = "[Year]";
-const FIELD_MAIN_FLUSHING_INTERSECTION_TOKEN = "[Flushing Neighborhood or Intersection]";
-const FIELD_MAIN_FLUSHING_DATE_TOKEN = "[Flushing Date]";
-const FIELD_PUBLIC_INFO_PHONE = "[Public Information Phone Number]";
+// const FIELD_MAIN_BREAK_LOCATION_TOKEN = "[Break Location]";
+// const FIELD_MAIN_BREAK_COMPLETION_DATE_TOKEN = "[Expected Completion Date]";
+// const FIELD_MAIN_BREAK_IMPACTED_STREET_TOKEN = "[Impacted Traffic Street]";
+// const FIELD_MAIN_BREAK_NUMBER_HOMES_TOKEN = "[Number of Homes]";
+// const FIELD_MAIN_BREAK_STREET_NAME_TOKEN = "[Street Name]";
+// const FIELD_MAIN_BREAK_PIPE_SIZE_TOKEN = "[Pipe Size]";
+// const FIELD_MAIN_BREAK_PIPE_MATERIAL_TOKEN = "[Pipe Material]";
+// const FIELD_MAIN_BREAK_PIPE_YEAR_TOKEN = "[Pipe Year]";
+// const FIELD_MAIN_FLUSHING_NEIGHBORHOOD_TOKEN = "[Impacted Neighborhood]";
+// const FIELD_MAIN_FLUSHING_SEASON_TOKEN = "[Season]";
+// const FIELD_MAIN_FLUSHING_YEAR_TOKEN = "[Year]";
+// const FIELD_MAIN_FLUSHING_INTERSECTION_TOKEN = "[Flushing Neighborhood or Intersection]";
+// const FIELD_MAIN_FLUSHING_DATE_TOKEN = "[Flushing Date]";
+// const FIELD_PUBLIC_INFO_PHONE = "[Public Information Phone Number]";
 
 
 /* ------------- GLOBALS ------------ */
@@ -84,8 +83,9 @@ var app = angular.module('waterworks', ['ui.bootstrap', 'geolocation', 'ngSaniti
 app.config(function($sceDelegateProvider) {
   $sceDelegateProvider.resourceUrlWhitelist([
     'self',
-    'http*://ecm.lndo.site/**',
-    'http*://ecm.portlandoregon.gov/api/**'
+    'http*://*.lndo.site/**',
+    'http*://*portlandor.pantheonsite.io/**',
+    'http*://*.portland.gov/**'
   ]);
 });
 
