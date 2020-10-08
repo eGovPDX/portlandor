@@ -11,7 +11,7 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 
 	// projects is an array for projects that should be currently displayed.
 	// the projects list in the search panel is bound to this list.
-	$scope.projects = ["one", "two", "three"];
+	$scope.projects = [];
 
 	// initialize base map and store a reference to it.
 	$scope.map = initBaseMap();
@@ -154,51 +154,33 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 		$scope.detailVisible = false;
 	}
 
-	// search is always visible in desktop view (detail view superimposes it). in mobile
-	// view, it gets toggled. NOTE: if the modal isn't closed before showing the search panel, 
-	// the open modal prevents page scrolling for some reason if the page is long.
-	$scope.showSearch = function () {
-		// clearModal();
+	// // search is always visible in desktop view (detail view superimposes it). in mobile
+	// // view, it gets toggled. NOTE: if the modal isn't closed before showing the search panel, 
+	// // the open modal prevents page scrolling for some reason if the page is long.
+	// $scope.showSearch = function () {
+	// 	// clearModal();
 		
-		// if (isMobileView) {
-		// 	// show search panel and search header
-		// 	$scope.searchVisible = true;
-		// 	$scope.searchHeadVisible = true;
-		// 	$scope.mainHeadVisible = false;
-		// } else {
-		// 	// desktop view
-		// 	// make sure detail view is hidden so that the search panel layer beneath it is visible
-		// 	$scope.detailVisible = false;
-		// }
-	}
+	// 	// if (isMobileView) {
+	// 	// 	// show search panel and search header
+	// 	// 	$scope.searchVisible = true;
+	// 	// 	$scope.searchHeadVisible = true;
+	// 	// 	$scope.mainHeadVisible = false;
+	// 	// } else {
+	// 	// 	// desktop view
+	// 	// 	// make sure detail view is hidden so that the search panel layer beneath it is visible
+	// 	// 	$scope.detailVisible = false;
+	// 	// }
+	// }
 
-	$scope.hideSearch = function () {
-		// // only hide search panel if mobile view
-		// if (isMobileView) {
-		// 	$scope.searchVisible = false;
-		// 	$scope.searchHeadVisible = false;
-		// 	$scope.mainHeadVisible = true;
-		// }
-	}
+	// $scope.hideSearch = function () {
+	// 	// // only hide search panel if mobile view
+	// 	// if (isMobileView) {
+	// 	// 	$scope.searchVisible = false;
+	// 	// 	$scope.searchHeadVisible = false;
+	// 	// 	$scope.mainHeadVisible = true;
+	// 	// }
+	// }
 	
-	// controls the action associated with the back arrow in the header. it behaves
-	// differently in different contexts.
-	$scope.goBack = function () {
-		//  	if (isMobileView) {
-		//  		if ($scope.searchVisible) {
-		//  			$scope.hideSearch();
-		//  		} else if ($scope.detailVisible) {
-		//  			$scope.hideDetail();
-		//  		} else {
-		//  			document.location = BACK_URL;
-		//  		}
-		//  	} else {
-			// $scope.detailVisible = false;
-			// $scope.searchVisible = true;
-		//  	}
-		//  	return false;
-	}
-
 	// filters projects based on project type AND keyword. this function
 	// gets called directly by the project type buttons. it also gets called by
 	// the keyword keyup event handler helper function. both type and keyword
@@ -253,7 +235,7 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 
 	$scope.openPopup = function (project) {
 		// hide search and detail panels
-		$scope.hideSearch();
+		// $scope.hideSearch();
 		$scope.hideDetail();
 		//alert(project.properties.id);
 
@@ -345,8 +327,8 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 		var homeIcon = new L.Icon(HOME_ICON);
 		$scope.homeMarker = new L.Marker([coords.latitude, coords.longitude], {icon: homeIcon, title: 'My Location'}).addTo($scope.map);
 
-		// hide search panel
-		$scope.hideSearch();
+		// // hide search panel
+		// $scope.hideSearch();
 
 		// reset clicked marker
 		$scope.resetMarker();
@@ -411,7 +393,6 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 			url,
 			function(json) { 
 				$window.waterProjects(json);
-				$scope.projects = [1, 2, 3];
 			}
 		)
 
@@ -624,6 +605,8 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 		// project.displayDates = dates;
 
 		// $scope.projects.push(project);
+
+		if (project.properties.thumbnail == "") project.properties.thumbnail = null;
 		
 		return project;
 	}
