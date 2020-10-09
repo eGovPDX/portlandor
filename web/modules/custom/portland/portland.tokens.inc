@@ -51,11 +51,6 @@ function portland_token_info()
     'description' => 'A token to display standardized page titles for Portland.gov',
   ];
 
-  $info['tokens']['portland']['group-path'] = [
-    'name' => t('Portland group'),
-    'description' => 'A token to display the group path',
-  ];
-
   return $info;
 }
 
@@ -132,7 +127,6 @@ function portland_tokens($type, $tokens, array $data = array(), array $options =
             }
           }
           break;
-        case 'group-path':
           // get group shortname
           $route_match = \Drupal::routeMatch();
           // Entity will be found in the route parameters.
