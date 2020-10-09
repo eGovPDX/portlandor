@@ -110,15 +110,6 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 				$scope.openPopup(project);
 		}
     	
-		// if (isMobileView) {
-		// 	$scope.hideSearch();
-		// 	populateModal(project, $scope.markers[project.properties.id]);
-		// 	$scope.openPopup(project);
-		// } else {
-		// 	$scope.showDetail(project);
-		// 	panToMarker(project.properties.id);
-		// }
-
 	}
 
 	$scope.toggleSearch = function () {
@@ -141,9 +132,6 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 		
 		// toggle views - show detail and hide search
 		$scope.detailVisible = true;
-		// $scope.mainHeadVisible = true;
-		// $scope.searchVisible = false;
-		// $scope.searchHeadVisible = false;
 
 		// add carousel and slide classes to slider container. this must not be done until the content is loaded
 		// or the slider will throw an error.
@@ -154,33 +142,6 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 		$scope.detailVisible = false;
 	}
 
-	// // search is always visible in desktop view (detail view superimposes it). in mobile
-	// // view, it gets toggled. NOTE: if the modal isn't closed before showing the search panel, 
-	// // the open modal prevents page scrolling for some reason if the page is long.
-	// $scope.showSearch = function () {
-	// 	// clearModal();
-		
-	// 	// if (isMobileView) {
-	// 	// 	// show search panel and search header
-	// 	// 	$scope.searchVisible = true;
-	// 	// 	$scope.searchHeadVisible = true;
-	// 	// 	$scope.mainHeadVisible = false;
-	// 	// } else {
-	// 	// 	// desktop view
-	// 	// 	// make sure detail view is hidden so that the search panel layer beneath it is visible
-	// 	// 	$scope.detailVisible = false;
-	// 	// }
-	// }
-
-	// $scope.hideSearch = function () {
-	// 	// // only hide search panel if mobile view
-	// 	// if (isMobileView) {
-	// 	// 	$scope.searchVisible = false;
-	// 	// 	$scope.searchHeadVisible = false;
-	// 	// 	$scope.mainHeadVisible = true;
-	// 	// }
-	// }
-	
 	// filters projects based on project type AND keyword. this function
 	// gets called directly by the project type buttons. it also gets called by
 	// the keyword keyup event handler helper function. both type and keyword
@@ -235,9 +196,7 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 
 	$scope.openPopup = function (project) {
 		// hide search and detail panels
-		// $scope.hideSearch();
 		$scope.hideDetail();
-		//alert(project.properties.id);
 
 		//var marker = $scope.markers[project.properties.id];
 		$scope.selectedProject = project;
@@ -281,11 +240,6 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 		}
 	}
     
-	// $scope.isNoSearchResults = function () {
-	// 	if ($scope.locationResults && $scope.locationResults.length < 1) return true;
-	// 	return false;
-	// }
-	
 	$scope.selectAddress = function (result) {
 		var coords = {};
 		coords.latitude = result.location.y;
@@ -327,9 +281,6 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 		var homeIcon = new L.Icon(HOME_ICON);
 		$scope.homeMarker = new L.Marker([coords.latitude, coords.longitude], {icon: homeIcon, title: 'My Location'}).addTo($scope.map);
 
-		// // hide search panel
-		// $scope.hideSearch();
-
 		// reset clicked marker
 		$scope.resetMarker();
 	}
@@ -339,10 +290,6 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 	// the page won't scroll if it's long. also, it's more tidy this way.
 	function clearModal() {
 		$('#MapPopup').modal("hide");
-
-		// don't reset marker. it should still be highlighted when user goes back
-		// from detail or search panel.
-		//$scope.resetMarker();
 	}
 
 
@@ -435,191 +382,21 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 	}
 
 	function setUpContent(project) {
-		// the intake form for the project data includes several project types,
-		// with options and sub-fields under each type. The content collected there
-		// needs to be compiled and concatenated into summary, location and dates
-		// properties before being displayed to the user. custom logic is used to
-		// munge the various options and subfields into usable content. also put
-		// any images into an array.
-
-		// displayTitle					
-		// properties.types
-		// displayLocation
-		// displayDates
-		// displaySummary
-		// displayDescription
-		// properties.contacts
-		// properties.bureaus
-
-		// jquery property names can't have underscores, so we need to rename a few
-		// project.properties.type = project.properties.project_type;
-		// project.properties.groups = project.properties.related_groups;
-
-		// project.properties.name = htmlDecode(project.properties.name);
-		// project.displayTitle = project.properties.name;
-
-		// split comma-delimited list of image urls into array
-		// if (project.properties.photos) project.properties.photos = project.properties.photos.split(', ');
-		// if (project.properties.thumbnailUrl) project.displayThumbnail = project.properties.thumbnailUrl;
-		
-		// create summary content from project type options. Some of the options contain replacement tokens
-		// in brackets with the label for the associated subfield. for example, the token [Area] is associated
-		// with the subfield Area, and the subfield's content should replace the token.
-		// project.displaySummary = "";
-		
-		// location and dates fields are populated using any location/date content from
-		// the project type option subfields. these will have to be hand-picked and hard-coded
-		// since the various fields are not normalized;
-		// project.displayLocation = project.properties.location;
-		// project.displayDates = project.properties.date;
-
-    	
-		// if (project.properties.dirty_water_options) {
-		// 	var options = project.properties.dirty_water_options;
-		// 	if (project.properties.dirty_water_area) {
-		// 		options = options.replace(FIELD_DIRTY_WATER_AREA_TOKEN, project.properties.dirty_water_area);
-		// 		location += project.properties.dirty_water_area + ' area, ';
-		// 	}
-		// 	if (project.properties.dirty_water_reason) {
-		// 		options = options.replace(FIELD_DIRTY_WATER_REASON_TOKEN, project.properties.dirty_water_reason);
-		// 	}
-		// 	project.displaySummary += options;
-		// }
-		
-		// if (project.properties.temp_shut_off_options) {
-		// 	var options = project.properties.temp_shut_off_options;
-		// 	if (project.properties.temp_shut_off_date) {
-		// 		options = options.replace(FIELD_SHUT_DOWN_DATE_TOKEN, project.properties.temp_shut_off_date);
-		// 		//dates += project.properties.temp_shut_off_date + ', ';
-		// 	}
-		// 	if (project.properties.temp_shut_off_num_res_customers !== null && project.properties.temp_shut_off_num_res_customers > 0) {
-		// 		options = options.replace(FIELD_SHUT_DOWN_NUM_RESCUSTOMERS_TOKEN, project.properties.temp_shut_off_num_res_customers);
-		// 	}
-		// 	if (project.properties.temp_shut_off_num_bus_customers !== null && project.properties.temp_shut_off_num_bus_customers >= 0) {
-		// 		options = options.replace(FIELD_SHUT_DOWN_NUM_BUSCUSTOMERS_TOKEN, project.properties.temp_shut_off_num_bus_customers);
-		// 	}
-		// 	if (project.properties.temp_shut_off_location) {
-		// 		options = options.replace(FIELD_SHUT_DOWN_LOCATION_TOKEN, project.properties.temp_shut_off_location);
-		// 		if (location.indexOf(project.properties.temp_shut_off_location) < 0) location += project.properties.temp_shut_off_location + ' area, ';
-		// 	}
-		// 	if (project.properties.temp_shut_off_reason) {
-		// 		options = options.replace(FIELD_SHUT_DOWN_REASON_TOKEN, project.properties.temp_shut_off_reason);
-		// 	}
-		// 	if (project.properties.temp_shut_off_duration) {
-		// 					options = options.replace(FIELD_SHUT_DOWN_DURATION_TOKEN, project.properties.temp_shut_off_duration);
-
-		// 		// // Date example from Drupal: Monday, May 16, 2016 - 14:15 to Tuesday, May 31, 2016 - 14:15
-		// 		// // NOTE: if user leaves the default values in the intake form, there will only
-		// 		// // be a single date in this field. use it for both from and to, which will result
-		// 		// // in a duration of 0 hours.
-		// 		// var arrDates = project.properties.temp_shut_off_duration.split(' to ');
-		// 		// var from = arrDates[0];
-		// 		// var to = arrDates.length > 1 ? arrDates[1] : arrDates[0];
-		// 		// var dtFrom = convertDrupalDateToDateTime(from);
-		// 		// var dtTo = convertDrupalDateToDateTime(to);
-		// 		// var diffHours = (dtTo - dtFrom) / 1000 / 60 / 60;
-		// 		// var date = (dtFrom.getMonth() + 1) + '/' + dtFrom.getDate() + '/' + dtFrom.getFullYear();
-				
-		// 		// options = options.replace(FIELD_SHUT_DOWN_DURATION_HOURS_TOKEN, diffHours);
-		// 		// options = options.replace(FIELD_SHUT_DOWN_DURATION_START_TOKEN, getFormattedTime(dtFrom));
-		// 		// options = options.replace(FIELD_SHUT_DOWN_DURATION_END_TOKEN, getFormattedTime(dtTo));
-		// 		// options = options.replace(FIELD_SHUT_DOWN_DURATION_DATE_TOKEN, date);
-
-		// 		// dates += from + ' to ' + to + ', ';
-		// 					dates += project.properties.temp_shut_off_duration;
-		// 	}
-		// 	project.displaySummary += options;
-		// }
-		
-		// if (project.properties.main_break_options) {
-		// 	var options = project.properties.main_break_options;
-		// 	if (project.properties.main_break_location) {
-		// 		options = options.replace(FIELD_MAIN_BREAK_LOCATION_TOKEN, project.properties.main_break_location);
-		// 		if (location.indexOf(project.properties.main_break_location) < 0) {
-		// 			location += location.length == 0 ? 'Near ' : 'near ';
-		// 			location += project.properties.main_break_location + ', ';
-		// 		}
-		// 	}
-		// 	if (project.properties.main_break_completed_date) {
-		// 		options = options.replace(FIELD_MAIN_BREAK_COMPLETION_DATE_TOKEN, project.properties.main_break_completed_date);
-		// 		dates += 'Completion date ' + project.properties.main_break_completed_date + ', ';
-		// 	}
-		// 	if (project.properties.main_break_impacted_street) {
-		// 		options = options.replace(FIELD_MAIN_BREAK_IMPACTED_STREET_TOKEN, project.properties.main_break_impacted_street);
-		// 		if (location.indexOf(project.properties.main_break_impacted_street) < 0) location += project.properties.main_break_impacted_street + ', ';
-		// 	}
-		// 	if (project.properties.main_break_num_homes) {
-		// 		options = options.replace(FIELD_MAIN_BREAK_NUMBER_HOMES_TOKEN, project.properties.main_break_num_homes);
-		// 	}
-		// 	if (project.properties.main_break_num_homes_street) {
-		// 		options = options.replace(FIELD_MAIN_BREAK_STREET_NAME_TOKEN, project.properties.main_break_num_homes_street);
-		// 	}
-		// 	if (project.properties.main_break_material) {
-		// 		options = options.replace(FIELD_MAIN_BREAK_PIPE_MATERIAL_TOKEN, project.properties.main_break_material);
-		// 	}
-		// 	if (project.properties.main_break_size) {
-		// 		options = options.replace(FIELD_MAIN_BREAK_PIPE_SIZE_TOKEN, project.properties.main_break_size);
-		// 	}
-		// 	if (project.properties.main_break_year) {
-		// 		options = options.replace(FIELD_MAIN_BREAK_PIPE_YEAR_TOKEN, project.properties.main_break_year);
-		// 	}
-		// 	project.displaySummary += options;
-		// }
-		
-		// if (project.properties.main_flushing_options) {
-		// 	var options = project.properties.main_flushing_options;
-		// 	if (project.properties.main_flushing_impacted_neighborhood) {
-		// 		options = options.replace(FIELD_MAIN_FLUSHING_NEIGHBORHOOD_TOKEN, project.properties.main_flushing_impacted_neighborhood);
-		// 		if (location.indexOf(project.properties.main_flushing_impacted_neighborhood) < 0) location += project.properties.main_flushing_impacted_neighborhood + ' neighborhood, ';
-		// 	}
-		// 	if (project.properties.main_flushing_season) {
-		// 		options = options.replace(FIELD_MAIN_FLUSHING_SEASON_TOKEN, project.properties.main_flushing_season);
-		// 	}
-		// 	if (project.properties.main_flushing_year) {
-		// 		options = options.replace(FIELD_MAIN_FLUSHING_YEAR_TOKEN, project.properties.main_flushing_year);
-		// 	}
-		// 	if (project.properties.main_flushing_season && project.properties.main_flushing_year) {
-		// 		dates += project.properties.main_flushing_season + ' ' + project.properties.main_flushing_year + ', ';
-		// 	}
-		// 	if (project.properties.main_flushing_neighborhood_intersection) {
-		// 		options = options.replace(FIELD_MAIN_FLUSHING_INTERSECTION_TOKEN, project.properties.main_flushing_neighborhood_intersection);
-		// 		if (location.indexOf(project.properties.main_flushing_neighborhood_intersection) < 0) location += project.properties.main_flushing_neighborhood_intersection + ' area, ';
-		// 	}
-		// 	if (project.properties.main_flushing_date) {
-		// 		options = options.replace(FIELD_MAIN_FLUSHING_DATE_TOKEN, project.properties.main_flushing_date);
-		// 		dates += project.properties.main_flushing_date + ', ';
-		// 	}
-		// 	project.displaySummary += options;
-		// }
-
-		// if (project.properties.public_info_phone) {
-		// 		project.properties.contacts = project.properties.contacts.replace(FIELD_PUBLIC_INFO_PHONE, project.properties.public_info_phone);
-		// }
-
-		// project.displayDescription = project.properties.description; //"<p>Pellentesque eleifend libero non lectus pulvinar, id bibendum magna fermentum. Sed varius facilisis dolor, nec rutrum sem aliquet quis. Aenean sollicitudin tortor ac hendrerit rutrum. Maecenas non ullamcorper leo. Fusce rutrum fringilla ligula eget fermentum. Morbi rutrum odio sed urna blandit finibus. Maecenas pulvinar vitae sem sed dignissim. Nunc non eros ut dolor dignissim lobortis. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia Curae; Nunc ac magna arcu. Morbi vel ultricies odio.</p>";
-		//project.displayDescription = "<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam eget varius velit. Sed convallis nisi eros, a facilisis augue sodales ac. Suspendisse vitae aliquet nisi. Suspendisse sed accumsan lorem. Morbi nec sodales nulla. Cras eget nisl quis massa tristique sagittis ac non tellus. Vestibulum condimentum posuere ornare. Ut nibh lacus, accumsan eget tincidunt ac, porta eu eros. Quisque placerat efficitur massa ut sollicitudin. Donec non euismod libero. In vel metus vitae purus porttitor mattis. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos. Nulla rutrum magna augue, non egestas enim eleifend ut.</p>";
-
-		// if (location.endsWith(', ')) { location = location.substring(0, location.length-2); }
-		// project.displayLocation = location;
-		// if (dates.endsWith(', ')) { dates = dates.substring(0, dates.length-2); }
-		// project.displayDates = dates;
-
-		// $scope.projects.push(project);
+		// perform any content manipulation tasks here
 
 		if (project.properties.thumbnail == "") project.properties.thumbnail = null;
 
 		if (project.properties.businesses != "" || project.properties.residences != "") {
 			project.properties.description += "<p>";
-			if (project.properties.businesses != "") {
-				project.properties.description += "Businesses affected: " + project.properties.businesses + "<br>";
-			}
 			if (project.properties.residences != "") {
-				project.properties.description += "Residences affected: " + project.properties.residences;
+				project.properties.description += "Residences affected: " + project.properties.residences + "<br>";
+			}
+			if (project.properties.businesses != "") {
+				project.properties.description += "Businesses affected: " + project.properties.businesses;
 			}
 			project.properties.description += "</p>";
 		}
 
-		
 		return project;
 	}
     
@@ -743,9 +520,6 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
     	
 		// highlight marker
 		highlightMarkerByProjectId(project.properties.id)
-		//    	if ($scope.clickedMarker) $scope.clickedMarker.setIcon(new L.Icon(WATER_ICON));
-		//    	target.setIcon(new L.Icon(WATER_ICON_SELECTED));
-		//    	$scope.clickedMarker = target;
 	}
     
 	function highlightMarkerByProjectId(id) {
