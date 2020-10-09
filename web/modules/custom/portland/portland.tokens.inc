@@ -127,28 +127,6 @@ function portland_tokens($type, $tokens, array $data = array(), array $options =
             }
           }
           break;
-          // get group shortname
-          $route_match = \Drupal::routeMatch();
-          // Entity will be found in the route parameters.
-          if (($route = $route_match->getRouteObject()) && ($parameters = $route->getOption('parameters'))) {
-            // Determine if the current route represents an entity.
-            foreach ($parameters as $name => $options) {
-              if ($name == 'group') {
-                if (isset($options['type']) && strpos($options['type'], 'entity:') === 0) {
-                  $entity = $route_match->getParameter($name);
-                  if ($entity) {
-                    $field = $entity->get('field_group_path');
-                    if ($field) {
-                      $value = $field->value;
-                      $replacements[$original] = $value;
-                      break;
-                    }
-                  }
-                }
-              }
-            }
-          }
-          break;
       }
     }
   }
