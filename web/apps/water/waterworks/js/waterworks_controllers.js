@@ -346,7 +346,7 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 		// show error if data isn't loaded safter 5 seconds
 		window.setTimeout(function() {
 			if ($scope.allProjects == null || $scope.allProjects.length < 1) {
-				alert('An error has occcurred while retrieving WaterWorks project data. Please refresh the page to try again in a few minutes.');
+				alert('No water project data exists or an error has occcurred. Please refresh the page to try again in a few minutes.');
 			}
 		}, 5000);
 
