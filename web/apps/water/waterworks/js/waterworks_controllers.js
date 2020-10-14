@@ -452,32 +452,111 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 	// use this function to set up popups, icons, etc.
 	function onEachFeature(project, layer) {
 
+		// the code below needs to support GeometryCollection type...
+
+		// this section needs to be refactored to also support GeometryCollection.
+		// this is the use case where there are multiple shapes of different types.
+		// we need to attach each geometry to the map, whether it's at project.geometry.coordinates,
+		// or project.geometry.geometries[i].coordinates. we want all of the geometries
+		// associated with a project to be
+
+		// point
+		// multi point
+		// line
+		// multi line
+		// polygon *
+		// multi polygon
+		// rectangle
+		// multi rectangle
+		// geometry collection
+
+		var lnglat = [];
+		var centroid;
+
+		switch(project.geometry.type) {
+			case "Point":
+				addPointToMap(layer, project);
+				break; // project.geometry.coordinates
+			case "Polygon":
+				centroid = getCentroid(project.geometry.coordinates[0]);
+				break;
+			case "LineString":
+				centroid = getCentroid(project.geometry.coordinates);
+				break;
+			case "MultiPolygon":
+				//for (var i = 0; i < project.geometry.coordinates.length; i++) {
+					centroid = getCentroid(project.geometry.coordinates[0][0]);
+					addShapeToMap(centroid, project);
+				//}
+				break; // project.geometry.coordinates[i]
+			case "MultiPoint":
+				//for (var i = 0; i < project.geometry.coordinates.length; i++) {
+					//addPointToMap(layer, project);
+				//}
+				break; // project.geometry.coordinates[i]
+			case "GeometryCollection":
+				for (var i = 0; i < project.geometry.geometries.length; i++) {
+					var project2 = { geometry: project.geometry.geometries[i] }
+					onEachFeature(project2, layer);
+				}
+				break; // project.geometry.geometries[i].geometry.coordinates[i], project.geometry.geometries[i].geometry.type
+			case "MultiLineString":
+			default:
+				//for (var i = 0; i < project.geometry.coordinates.length; i++) {
+					centroid = getCentroid(project.geometry.coordinates[0]);
+					addShapeToMap(centroid, project);
+				//}
+				break; // project.geometry.coordinates[i]
+		}
+
+		return;
+
 		// add marker to geometry (point markers are added automatically by geoJson
 		if (project.geometry.type != "Point") {
+
 			if (project.geometry.type == "MultiPolygon") {
-					lnglat = getCentroid(project.geometry.coordinates[0][0]);
+				lnglat.push(getCentroid(project.geometry.coordinates[0][0]));
+
+			} else if (project.geometry.type == "GeometryCollection") {
+
+				for (var i = 0; i < lnglat.length; i++) {
+					// project.geometry.geometries[i] might be a point, line or polygon
+					lnglat.push(getCentroid(project.geometry.geometries[i].coordinates))
+				}
+
+
 			} else if (typeof project.geometry.coordinates[0][0][0] === 'undefined') {
-					lnglat = getCentroid(project.geometry.coordinates);
+				// if first two indices have a value, but third is undefined, it's a line.
+				lnglat.push(getCentroid(project.geometry.coordinates));
 			} else {
-					lnglat = getCentroid(project.geometry.coordinates[0]);
+				lnglat.push(getCentroid(project.geometry.coordinates[0]));
 			}
-			var marker = L.marker([lnglat[1], lnglat[0]], {
-				icon: new L.Icon(WATER_ICON),
-				title: project.properties.name
-			}).addTo($scope.map);
-			marker.feature = project;
-			$scope.markers[project.properties.id] = marker;
-			marker.on('click', function (e) {
-				$scope.markerClick(project, e.target);
-				$scope.selectedProject = project;
-			});
+
+			addShapeToMap(lnglat, project);
 		} else {
-			// points
-			layer.on('click', function (e) {
-				$scope.markerClick(project, e.target);
-					$scope.selectedProject = project;
-			});
+			addPointToMap(layer, project);
 		}
+	}
+
+	function addShapeToMap(lnglat, project) {
+		var marker = L.marker([lnglat[1], lnglat[0]], {
+			icon: new L.Icon(WATER_ICON),
+			title: project.properties.name
+		}).addTo($scope.map);
+		marker.feature = project;
+		$scope.markers[project.properties.id] = marker;
+		marker.on('click', function (e) {
+			$scope.markerClick(project, e.target);
+			$scope.selectedProject = project;
+		});
+	}
+
+	function addPointToMap(layer, project) {
+		layer.on('click', function (e) {
+			$scope.markerClick(project, e.target);
+			$scope.selectedProject = project;
+		});
+
 	}
     
 	// grabs the appropriate content for the project, HTML-formats it,
