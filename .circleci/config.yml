@@ -346,11 +346,6 @@ visual_regression: &visual_regression
             echo 'export SITE_NAME=${CIRCLE_BRANCH}' > $BASH_ENV && source $BASH_ENV
           fi
 
-          # Generate one time login link for tests
-          # echo 'export SUPERADMIN_LOGIN=$(terminus drush portlandor.${SITE_NAME} -- uli --name superAdmin)' >> $BASH_ENV
-          # echo 'export ALLY_LOGIN=$(terminus drush portlandor.${SITE_NAME} -- uli --mail ally.admin@portlandoregon.gov)' >> $BASH_ENV
-          # echo 'export MARTY_LOGIN=$(terminus drush portlandor.${SITE_NAME} -- uli --mail marty.member@portlandoregon.gov)' >> $BASH_ENV
-          # source $BASH_ENV
           cd /home/circleci/app/tests/percy
           npm install --quiet
 
@@ -358,6 +353,7 @@ visual_regression: &visual_regression
           TESTFILES=$(circleci tests glob "snapshots-*.js" | circleci tests split)
           for TESTFILE in $TESTFILES
           do
+            # Generate one time login link for tests
             if [[ ${TESTFILE} == *"ally"* ]]; then
               echo 'export ALLY_LOGIN=$(terminus drush portlandor.${SITE_NAME} -- uli --mail ally.admin@portlandoregon.gov)' > $BASH_ENV && source $BASH_ENV
             elif [[ ${TESTFILE} == *"marty"* ]]; then

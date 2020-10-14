@@ -12,11 +12,15 @@ const MY_CONTENT = `${HOME_PAGE}/my-content`;
 
 // A script to navigate our app and take snapshots with Percy.
 PercyScript.run(async (page, percySnapshot) => {
+  // Uncomment this line to see browser console log
+  // page.on('console', msg => console.log('PAGE LOG:', page.url(), msg.text()));
+
   await page.goto(MARTY_LOGIN);
   await page.goto(MY_CONTENT);
   await percySnapshot('Marty - My content');
 
   let text_content = '';
+
   await page.goto(`${HOME_PAGE}/pay`);
   await page.waitFor('.page-title');
   text_content = await page.evaluate(() => document.querySelector('.page-title').textContent);
@@ -36,7 +40,9 @@ PercyScript.run(async (page, percySnapshot) => {
   await page.goto(`${HOME_PAGE}/powr/node/create`);
   text_content = await page.evaluate(() => document.querySelector('div.content dl').textContent);
   expect(text_content).to.have.string('Add Page');
-  await page.goto(`${HOME_PAGE}/powr/content/create/group_node%3Apage`);
+
+  await page.goto(`${HOME_PAGE}/powr/content/create/group_node:page`, { waitUntil: 'networkidle2' });
+  const ckeditor = await page.waitForSelector('iframe');
   await percySnapshot('Marty - Add content');
 
   text_content = await page.evaluate(() => document.querySelector('#node-page-form').textContent);
@@ -48,18 +54,22 @@ PercyScript.run(async (page, percySnapshot) => {
 
   await page.type('#edit-title-0-value', 'Test page');
   await page.type('#edit-field-summary-0-value', 'Summary for the test page');
-  await page.focus('#edit-field-body-content-0-value');
-  await page.keyboard.type('Body content for the test page');
+  // await page.focus('#cke_edit-field-body-content-0-value');
+  // await page.keyboard.type('Body content for the test page');
+  await ckeditor.type('body p', 'Body content for the test page', { delay: 100 });
   await page.type('#edit-revision-log-0-value', 'Test revision message');
 
-  selector = 'input#edit-submit';
-  await page.evaluate((selector) => document.querySelector(selector).click(), selector);
-  await page.waitForNavigation();
-
+  // Click submit button and wait for page load
+  let selector = 'input#edit-submit';
+  await Promise.all([
+    page.waitForNavigation({ waitUntil: 'networkidle2' }),
+    page.evaluate((selector) => document.querySelector(selector).click(), selector),
+  ])
+  await percySnapshot('Marty - Added content');
   text_content = await page.evaluate(() => document.querySelector('div.messages--status').textContent);
   expect(text_content).to.have.string('Page Test page has been created');
 
-  // Edit the page
+  // Edit the newly created page
   await page.goto(`${HOME_PAGE}/powr/test-page/edit`);
   text_content = await page.evaluate(() => document.querySelector('div.form-item-title-0-value').textContent);
   expect(text_content).to.have.string('Title');
@@ -121,4 +131,9 @@ PercyScript.run(async (page, percySnapshot) => {
   // Verify deletion message
   text_content = await page.evaluate(() => document.querySelector('div.messages--status').textContent);
   expect(text_content).to.have.string('The media item A test video has been deleted');
+},
+{
+  // Ignore HTTPS errors in Lando
+  ignoreHTTPSErrors: (typeof process.env.LANDO_CA_KEY !== 'undefined'),
+  // headless: false,
 });

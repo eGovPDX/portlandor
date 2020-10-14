@@ -77,4 +77,8 @@ PercyScript.run(async (page, percySnapshot) => {
   
   text_content = await page.evaluate(() => document.querySelector('div.messages--status').textContent);
   expect(text_content).to.have.string('has been deleted');
+},
+{
+  // Ignore HTTPS errors in Lando
+  ignoreHTTPSErrors: (typeof process.env.LANDO_CA_KEY !== 'undefined')
 });

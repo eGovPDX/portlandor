@@ -25,4 +25,8 @@ PercyScript.run(async (page, percySnapshot) => {
   // Search page
   await page.goto(`${HOME_PAGE}/search?keys=tax`);
   await percySnapshot('Anonymous - Search "tax"');
+}, 
+{
+  // Ignore HTTPS errors in Lando
+  ignoreHTTPSErrors: (typeof process.env.LANDO_CA_KEY !== 'undefined')
 });

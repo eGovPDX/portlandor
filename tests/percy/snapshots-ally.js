@@ -23,4 +23,8 @@ PercyScript.run(async (page, percySnapshot) => {
 
   await page.goto(MY_GROUPS);
   await percySnapshot('Ally - My groups');
+},
+{
+  // Ignore HTTPS errors in Lando
+  ignoreHTTPSErrors: (typeof process.env.LANDO_CA_KEY !== 'undefined')
 });
