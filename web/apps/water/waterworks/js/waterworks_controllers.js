@@ -425,6 +425,7 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 		projects = typeof a !== 'undefined' ? projects : $scope.projects;
 
 		projects.forEach(function (project) {
+			var counter = 1;
 			L.geoJson(project, {
 				onEachFeature: onEachFeature,
 				pointToLayer: function (feature, latlng) {
@@ -437,7 +438,13 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 						}),
 						title: project.properties.name
 					});
-					$scope.markers[project.properties.id] = marker;
+					// there may be multiple markers for a project, so using the id as the array key won't be unique enough.
+					// would a timestamp work? if we want to use the geometry array index, we'd need to switch case on the
+					// type, since the arrays are a little different for some.
+					// we also may need to easily get the collection of all markers for a given project in the onEachFeature
+					// function or on click.
+					$scope.markers[project.properties.id.toString() + "-" + counter.toString()] = marker;
+					counter += 1;
 					return marker;
 				}
 			}).addTo($scope.map);
@@ -491,7 +498,7 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 				break; // project.geometry.coordinates[i]
 			case "MultiPoint":
 				//for (var i = 0; i < project.geometry.coordinates.length; i++) {
-					//addPointToMap(layer, project);
+					addPointToMap(layer, project);
 				//}
 				break; // project.geometry.coordinates[i]
 			case "GeometryCollection":
@@ -602,12 +609,25 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 	}
     
 	function highlightMarkerByProjectId(id) {
-		// turn off previously selected marker, if set
-		if ($scope.clickedMarker) $scope.clickedMarker.setIcon(new L.Icon(WATER_ICON));
-		// find this selected marker
-		var marker = $scope.markers[id];
-		$scope.clickedMarker = marker;
-		marker.setIcon(new L.Icon(WATER_ICON_SELECTED));    	
+		// NOTE: multi-geometry projects will have a marker id appended to the id passed as an arg
+		// so we need to highlight all markers with array keys that start with the project id
+
+		var keys = Object.keys($scope.markers);
+
+		for (var i = 0; i < keys.length; i++) {
+			var marker = $scope.markers[keys[i]];
+			if (keys[i].indexOf(id + "-") === 0) {
+				// the marker belongs to the project, highlight it
+				$scope.markers[keys[i]].setIcon(new L.Icon(WATER_ICON_SELECTED));
+			}
+		}
+
+		// // turn off previously selected marker, if set
+		// if ($scope.clickedMarker) $scope.clickedMarker.setIcon(new L.Icon(WATER_ICON));
+		// // find this selected marker
+		// var marker = $scope.markers[id];
+		// $scope.clickedMarker = marker;
+		// marker.setIcon(new L.Icon(WATER_ICON_SELECTED));    	
 	}
 
 	function resetAllMarkers() {
