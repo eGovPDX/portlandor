@@ -19,6 +19,8 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 	// holds a reference to previously clicked marker, so we can revert it
 	// if another one is clicked.
 	$scope.clickedMarker;
+	$scope.clickedGeometry;
+	$scope.clickedProjectId;
 
 	// flags to control visiblity of detail and search panels
 	if (isMobileView) {
@@ -57,19 +59,37 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 	// functions ///////////////////////////////////////////////
 
 	// called by popup close button; resets highlighted marker.
+	// REFACTOR: reset all markers that match clickedProjectId. they may be an exact match ("12345"),
+	// or they may be in a group ("12345-1", "12345-2", "12345-3", etc)
 	$scope.resetMarker = function () {
-		if ($scope.clickedMarker) $scope.clickedMarker.setIcon(new L.Icon(WATER_ICON));
+		if ($scope.clickedProjectId) {
+			var keys = Object.keys($scope.markers);
+			for (var i = 0; i < keys.length; i++) {
+				if (keys[i] == $scope.clickedProjectId || keys[i].indexOf($scope.clickedProjectId + "-") === 0) {
+					// it's a match, reset icon
+					$scope.markers[keys[i]].setIcon(new L.Icon(WATER_ICON));
+				}
+			}
+		}
+		//if ($scope.clickedMarker) $scope.clickedMarker.setIcon(new L.Icon(WATER_ICON));
 		$scope.clickedMarker = null;
+		$scope.clickedProjectId = null;
+		$scope.clickedGeometry = null;
 	}
 	
 	// called whenever a marker is clicked in the map. behavior is different depending on mobile or desktop view.
+	var lastClick = 0;
+	var delay = 200;
 	$scope.markerClick = function(project, target) {
+
+		if (lastClick >= (Date.now() - delay)) return;
+		lastClick = Date.now();
 
 		// if marker is disabled, do nothing
 		if (project.properties.disabled) return;
 
-		// if same marker is clicked again, reset it; different handling for mobile and desktop
-		if (target == $scope.clickedMarker) {
+		// REFACTOR: if same geometry is clicked again, reset all associated markers
+		if (project.geometry == $scope.clickedGeometry) {
 			if (!isMobileView) {
 				// hide detail
 				$scope.hideDetail();
@@ -79,8 +99,16 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 			}
 			$scope.resetMarker();
 			return;
+		} else if ($scope.clickedGeometry) {
+			$scope.resetMarker();
+			if (!isMobileView) {
+				$scope.hideDetail();
+			} else {
+				clearModal();
+			}
+			return;
 		}
-				
+
 		if (isMobileView) {
 			populateModal(project, target);
 		} else {
@@ -140,6 +168,7 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 
 	$scope.hideDetail = function () {
 		$scope.detailVisible = false;
+		$scope.$apply();
 	}
 
 	// filters projects based on project type AND keyword. this function
@@ -203,6 +232,7 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 
 		// using custom popups, so marker.openPopup() won't help us here.
 		// do it manually: pan to latlng, then populate popup.
+		// this only pans to the first marker associated with the project
 		panToMarker(project.properties.id);
 		$scope.map.setZoom(15);
 		//    	var latlng = marker._latlng;
@@ -257,16 +287,30 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 	}
 
 	$scope.resetSelectedMarker = function () {
-		if ($scope.clickedMarker) $scope.clickedMarker.setIcon(new L.Icon(WATER_ICON));
+		$scope.resetMarker();
+		//if ($scope.clickedMarker) $scope.clickedMarker.setIcon(new L.Icon(WATER_ICON));
 	}
 
 	// helper functions ////////////////////////////////////////
 	// these might be moved into $scope functions.
 
+	// returns all markers associated with a project id
+	function findMarkersByProjectId(id) {
+		var keys = Object.keys($scope.markers);
+		var markers = [];
+		for (var i = 0; i < keys.length; i++) {
+			if (keys[i] == id || keys[i].indexOf(id + "-") === 0) {
+				markers.push($scope.markers[keys[i]]);
+			}
+		}
+		return markers;
+	}
+
 	function panToMarker(id) {
 		// get marker
-		var marker = $scope.markers[id];
-		var latlng = marker._latlng;
+		var markers = findMarkersByProjectId(id);// $scope.markers[id];
+		if (markers.length < 1) return;
+		var latlng = markers[0]._latlng;
 		$scope.map.panTo(L.latLng(latlng.lat, latlng.lng));
 		highlightMarkerByProjectId(id);
 	}
@@ -425,9 +469,9 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 		projects = typeof a !== 'undefined' ? projects : $scope.projects;
 
 		projects.forEach(function (project) {
-			var counter = 1;
+			var counter = 0;
 			L.geoJson(project, {
-				onEachFeature: onEachFeature,
+			  onEachFeature: onEachFeature,
 				pointToLayer: function (feature, latlng) {
 					var marker = L.marker(latlng, {
 						icon: L.icon({
@@ -443,7 +487,7 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 					// type, since the arrays are a little different for some.
 					// we also may need to easily get the collection of all markers for a given project in the onEachFeature
 					// function or on click.
-					$scope.markers[project.properties.id.toString() + "-" + counter.toString()] = marker;
+					$scope.markers[project.properties.id.toString() + "-p" + counter.toString()] = marker;
 					counter += 1;
 					return marker;
 				}
@@ -457,7 +501,7 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 
 	// gets called on each map feature (project) as it's added to the map.
 	// use this function to set up popups, icons, etc.
-	function onEachFeature(project, layer) {
+	function onEachFeature(project, layer, counter) {
 
 		// the code below needs to support GeometryCollection type...
 
@@ -482,76 +526,53 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 
 		switch(project.geometry.type) {
 			case "Point":
+				//addShapeToMap(project.geometry.coordinates, project, counter);
 				addPointToMap(layer, project);
 				break; // project.geometry.coordinates
 			case "Polygon":
 				centroid = getCentroid(project.geometry.coordinates[0]);
+				addShapeToMap(centroid, project, counter);
 				break;
 			case "LineString":
 				centroid = getCentroid(project.geometry.coordinates);
+				addShapeToMap(centroid, project, counter);
 				break;
 			case "MultiPolygon":
 				//for (var i = 0; i < project.geometry.coordinates.length; i++) {
 					centroid = getCentroid(project.geometry.coordinates[0][0]);
-					addShapeToMap(centroid, project);
+				addShapeToMap(centroid, project, counter);
 				//}
 				break; // project.geometry.coordinates[i]
 			case "MultiPoint":
 				//for (var i = 0; i < project.geometry.coordinates.length; i++) {
-					addPointToMap(layer, project);
+				addPointToMap(layer, project, counter);
 				//}
 				break; // project.geometry.coordinates[i]
 			case "GeometryCollection":
 				for (var i = 0; i < project.geometry.geometries.length; i++) {
-					var project2 = { geometry: project.geometry.geometries[i] }
-					onEachFeature(project2, layer);
+					var project2 = { geometry: project.geometry.geometries[i], type: project.type, properties: project.properties }
+					onEachFeature(project2, layer, i);
 				}
 				break; // project.geometry.geometries[i].geometry.coordinates[i], project.geometry.geometries[i].geometry.type
 			case "MultiLineString":
 			default:
-				//for (var i = 0; i < project.geometry.coordinates.length; i++) {
-					centroid = getCentroid(project.geometry.coordinates[0]);
-					addShapeToMap(centroid, project);
-				//}
+				for (var i = 0; i < project.geometry.coordinates.length; i++) {
+					centroid = getCentroid(project.geometry.coordinates[i]);
+					addShapeToMap(centroid, project, i);
+				}
 				break; // project.geometry.coordinates[i]
 		}
-
 		return;
-
-		// add marker to geometry (point markers are added automatically by geoJson
-		if (project.geometry.type != "Point") {
-
-			if (project.geometry.type == "MultiPolygon") {
-				lnglat.push(getCentroid(project.geometry.coordinates[0][0]));
-
-			} else if (project.geometry.type == "GeometryCollection") {
-
-				for (var i = 0; i < lnglat.length; i++) {
-					// project.geometry.geometries[i] might be a point, line or polygon
-					lnglat.push(getCentroid(project.geometry.geometries[i].coordinates))
-				}
-
-
-			} else if (typeof project.geometry.coordinates[0][0][0] === 'undefined') {
-				// if first two indices have a value, but third is undefined, it's a line.
-				lnglat.push(getCentroid(project.geometry.coordinates));
-			} else {
-				lnglat.push(getCentroid(project.geometry.coordinates[0]));
-			}
-
-			addShapeToMap(lnglat, project);
-		} else {
-			addPointToMap(layer, project);
-		}
 	}
 
-	function addShapeToMap(lnglat, project) {
+	function addShapeToMap(lnglat, project, counter) {
 		var marker = L.marker([lnglat[1], lnglat[0]], {
 			icon: new L.Icon(WATER_ICON),
 			title: project.properties.name
 		}).addTo($scope.map);
 		marker.feature = project;
-		$scope.markers[project.properties.id] = marker;
+		var counterString = counter ? "-" + counter : "";
+		$scope.markers[project.properties.id + counterString] = marker;
 		marker.on('click', function (e) {
 			$scope.markerClick(project, e.target);
 			$scope.selectedProject = project;
@@ -592,6 +613,7 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 			// it's desktop view, show detail instead of modal popup
 			if (project) {
 				$scope.selectedProject = project;
+				$scope.selectedGeometry = project.geometry;
 			}
 			var id = $scope.selectedProject.properties.id;
 			populateSelectedProject(id);
@@ -610,24 +632,32 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
     
 	function highlightMarkerByProjectId(id) {
 		// NOTE: multi-geometry projects will have a marker id appended to the id passed as an arg
-		// so we need to highlight all markers with array keys that start with the project id
+		// so we need to highlight all markers with array keys that start with the project id.
+
+		// WARNING: this gets called for every marker, so it might get called multiple times for each project.
+		// there's currently no harm in that, excpet a little extra processing.
+		// TODO: can we change this to a per-project click event?
 
 		var keys = Object.keys($scope.markers);
 
 		for (var i = 0; i < keys.length; i++) {
 			var marker = $scope.markers[keys[i]];
-			if (keys[i].indexOf(id + "-") === 0) {
+			if (keys[i] == id.toString() || keys[i].indexOf(id + "-") === 0) {
 				// the marker belongs to the project, highlight it
 				$scope.markers[keys[i]].setIcon(new L.Icon(WATER_ICON_SELECTED));
+				$scope.clickedProjectId = id;
 			}
 		}
 
-		// // turn off previously selected marker, if set
-		// if ($scope.clickedMarker) $scope.clickedMarker.setIcon(new L.Icon(WATER_ICON));
-		// // find this selected marker
-		// var marker = $scope.markers[id];
-		// $scope.clickedMarker = marker;
-		// marker.setIcon(new L.Icon(WATER_ICON_SELECTED));    	
+		var thisGeometry = findProjectById(id).geometry;
+		$scope.clickedGeometry = thisGeometry;
+	}
+
+	function findProjectById(id) {
+		for (var i = 0; i < $scope.projects.length; i++) {
+			if ($scope.projects[i].properties.id == id) return $scope.projects[i];
+		}
+		return false;
 	}
 
 	function resetAllMarkers() {
