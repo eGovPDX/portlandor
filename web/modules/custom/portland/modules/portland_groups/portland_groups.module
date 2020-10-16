@@ -142,12 +142,19 @@ function _portland_groups_synchronize_entity_group_ownership($entity) {
       _portland_groups_add_entity_to_group($entity, $new_owner_group, $plugin_id);
     }
     else {
-      // Handle the case that Display In has a group but there is no group content node
       $new_group = \Drupal\group\Entity\Group::load($new_owner_group);
       if ($new_group) {
+        // When the Display In field has a group but there is no group content node,
+        // add a group content node
         $current_node = $new_group->getContent($plugin_id, ['entity_id' => $eid]);
         if(count($current_node) == 0) {
           _portland_groups_add_entity_to_group($entity, $new_owner_group, $plugin_id);
+        }
+        else if (count($current_node) > 1) {
+          // POWR-2800 If there are more than one group content node, delete all but the first one
+          for($i=1; $i<count($current_node); $i++) {
+            array_values($current_node)[$i]->delete();
+          }
         }
       }
     }
