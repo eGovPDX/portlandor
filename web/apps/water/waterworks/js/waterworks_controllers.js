@@ -533,20 +533,18 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 				centroid = getCentroid(project.geometry.coordinates[0]);
 				addShapeToMap(centroid, project, counter);
 				break;
+			case "MultiPolygon":
+				for (var i = 0; i < project.geometry.coordinates.length; i++) {
+					centroid = getCentroid(project.geometry.coordinates[i][0]);
+					addShapeToMap(centroid, project, i);
+				}
+				break; // project.geometry.coordinates[i]
 			case "LineString":
 				centroid = getCentroid(project.geometry.coordinates);
 				addShapeToMap(centroid, project, counter);
 				break;
-			case "MultiPolygon":
-				//for (var i = 0; i < project.geometry.coordinates.length; i++) {
-					centroid = getCentroid(project.geometry.coordinates[0][0]);
-				addShapeToMap(centroid, project, counter);
-				//}
-				break; // project.geometry.coordinates[i]
 			case "MultiPoint":
-				//for (var i = 0; i < project.geometry.coordinates.length; i++) {
 				addPointToMap(layer, project, counter);
-				//}
 				break; // project.geometry.coordinates[i]
 			case "GeometryCollection":
 				for (var i = 0; i < project.geometry.geometries.length; i++) {
