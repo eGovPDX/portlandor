@@ -275,12 +275,12 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 		coords.latitude = result.location.y;
 		coords.longitude = result.location.x;
 		addHome(coords);
+		//$scope.map.setZoom(14); // rounding error with setZoom causes zoom to not center on latlng
 		$scope.map.panTo(L.latLng(coords.latitude, coords.longitude));
 		$scope.locationResults = null;
 		$scope.searchVisible = false;
 		// put selected address in search field
 		$scope.addressSearch = result.address;
-		$scope.map.setZoom(14);
 
 		// hide modal if open
 		clearModal();
