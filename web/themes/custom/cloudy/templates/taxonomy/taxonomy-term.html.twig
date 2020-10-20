@@ -23,19 +23,30 @@
  * @see template_preprocess_taxonomy_term()
  */
 #}
-{%
-  set classes = [
-    'taxonomy-term',
-    'vocabulary-' ~ term.bundle|clean_class,
-  ]
-%}
-<div{{ attributes.setAttribute('id', 'taxonomy-term-' ~ term.id).addClass(classes) }}>
-  {{ title_prefix }}
-  {% if not page %}
-    <h2><a href="{{ url }}">{{ name }}</a></h2>
-  {% endif %}
-  {{ title_suffix }}
-  <div class="content">
-    {{ content }}
+
+{% if not page %}
+  {% include "@components/morsel/morsel.twig" with {
+    heading: {
+      text: name.0,
+      level: 2,
+      style_override: 3,
+    },
+    url: url,
+    text: content.description.0,
+    type: term.bundle,
+  } %}
+{% else %}
+  {%
+    set classes = [
+      'taxonomy-term',
+      'vocabulary-' ~ term.bundle|clean_class,
+    ]
+  %}
+  <div{{ attributes.setAttribute('id', 'taxonomy-term-' ~ term.id).addClass(classes) }}>
+    {{ title_prefix }}
+    {{ title_suffix }}
+    <div class="content">
+      {{ content }}
+    </div>
   </div>
-</div>
+{% endif %}
