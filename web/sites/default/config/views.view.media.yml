@@ -41,8 +41,9 @@ display:
     position: 0
     display_options:
       access:
-        type: none
-        options: {  }
+        type: perm
+        options:
+          perm: 'access media overview'
       cache:
         type: tag
         options: {  }
@@ -50,7 +51,7 @@ display:
         type: views_query
         options:
           disable_sql_rewrite: false
-          distinct: false
+          distinct: true
           replica: false
           query_comment: ''
           query_tags: {  }
@@ -67,10 +68,15 @@ display:
       pager:
         type: full
         options:
-          items_per_page: 50
+          items_per_page: 25
           offset: 0
           id: 0
           total_pages: null
+          tags:
+            previous: '‹ Previous'
+            next: 'Next ›'
+            first: '« First'
+            last: 'Last »'
           expose:
             items_per_page: false
             items_per_page_label: 'Items per page'
@@ -79,11 +85,6 @@ display:
             items_per_page_options_all_label: '- All -'
             offset: false
             offset_label: Offset
-          tags:
-            previous: '‹ Previous'
-            next: 'Next ›'
-            first: '« First'
-            last: 'Last »'
           quantity: 9
       style:
         type: table
@@ -1269,16 +1270,13 @@ display:
           exposed: true
           expose:
             operator_id: label_op
-            label: 'Group contains'
+            label: 'Group title contains'
             description: ''
-            use_operator: true
+            use_operator: false
             operator: label_op
-            operator_limit_selection: true
-            operator_list:
-              contains: contains
-              empty: empty
-              'not empty': 'not empty'
-            identifier: group
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: label
             required: false
             remember: false
             multiple: false
@@ -1406,6 +1404,7 @@ display:
         - url
         - url.query_args
         - user
+        - user.permissions
       tags:
         - 'config:field.storage.media.field_caption'
         - 'config:field.storage.media.field_summary'
@@ -2472,6 +2471,7 @@ display:
         arguments: false
         relationships: false
         sorts: false
+        access: false
       row:
         type: fields
         options: {  }
@@ -3533,6 +3533,9 @@ display:
           entity_type: media
           entity_field: name
           plugin_id: standard
+      access:
+        type: none
+        options: {  }
     cache_metadata:
       max-age: -1
       contexts:
@@ -6759,10 +6762,32 @@ display:
           content: '@total items found, displaying @start - @end'
           plugin_id: result
       relationships:
+        uid:
+          id: uid
+          table: media_field_data
+          field: uid
+          relationship: none
+          group_type: group
+          admin_label: User
+          required: true
+          entity_type: media
+          entity_field: uid
+          plugin_id: standard
         group_content:
           id: group_content
           table: media_field_data
           field: group_content
+          relationship: none
+          group_type: group
+          admin_label: 'Media group content'
+          required: false
+          group_content_plugins:
+            'group_media:audio': '0'
+            'group_media:chart': '0'
+            'group_media:document': '0'
+            'group_media:image': '0'
+            'group_media:map': '0'
+            'group_media:video': '0'
           entity_type: media
           plugin_id: group_content_to_entity_reverse
         gid:
@@ -6776,17 +6801,6 @@ display:
           entity_type: group_content
           entity_field: gid
           plugin_id: standard
-        uid:
-          id: uid
-          table: media_field_data
-          field: uid
-          relationship: none
-          group_type: group
-          admin_label: User
-          required: true
-          entity_type: media
-          entity_field: uid
-          plugin_id: standard
     cache_metadata:
       max-age: 0
       contexts:
@@ -6795,6 +6809,7 @@ display:
         - url
         - url.query_args
         - user
+        - user.permissions
       tags:
         - 'config:field.storage.media.field_caption'
         - 'config:field.storage.media.field_summary'
