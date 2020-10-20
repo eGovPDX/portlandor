@@ -361,6 +361,7 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 		var zoomcontrols = new L.control.zoom({ position: ZOOM_POSITION });
 		var map = new L.Map("LeafletMap", {
 				center: new L.LatLng(DEFAULT_LATITUDE, -122.65),
+				tap: false,
 				zoomControl: false,
 				zoom: DEFAULT_ZOOM
 		});
