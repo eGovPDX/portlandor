@@ -168,7 +168,7 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 
 	$scope.hideDetail = function () {
 		$scope.detailVisible = false;
-		$scope.$apply();
+		//$scope.$apply();
 	}
 
 	// filters projects based on project type AND keyword. this function
