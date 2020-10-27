@@ -184,9 +184,18 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 		// reset all markers to normal state
 		resetAllMarkers();
 
-		// if All button is clicked, reset name filter field.
+		// if this is keyword search, reset all button states then highlight the selected one
+		if ($event) {
+			$('#SearchPanel .filters .btn').removeClass('btn-primary').addClass('btn-default');
+			$(event.target).removeClass('btn-default');
+			$(event.target).addClass('btn-primary');
+		}
+
+		// if All button is clicked, reset name filter field; markers have already
+		// been reset, so we don't need to spin through them all again.
 		if (type == "All") {
 			$scope.nameFilter = "";
+			return false;
 		}
 
 		// set selected filter if not empty. if empty, filter on the previously selected type.
@@ -205,12 +214,6 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 			}
 		});
 
-		// if this is keyword search, reset all button states then highlight the selected one
-		if ($event) {
-			$('#SearchPanel .filters .btn').removeClass('btn-primary').addClass('btn-default');
-			$(event.target).removeClass('btn-default');
-			$(event.target).addClass('btn-primary');
-		}
 	}
 
 	$scope.nameFilter_keyup = function($event) {
@@ -483,6 +486,7 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 						}),
 						title: project.properties.name
 					});
+					marker.feature = feature;
 					// there may be multiple markers for a project, so using the id as the array key won't be unique enough.
 					// would a timestamp work? if we want to use the geometry array index, we'd need to switch case on the
 					// type, since the arrays are a little different for some.
@@ -660,27 +664,53 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 	}
 
 	function resetAllMarkers() {
-			$scope.markers.forEach(function (marker) {
-					makeMarkerNormal(marker.feature.properties.id);
+			$scope.allProjects.forEach(function (project) {
+				makeMarkerNormal(project.properties.id);
 			});
 	}
 
 	function grayAllMarkers() {
-			$scope.markers.forEach(function (marker) {
-					makeMarkerGray(marker.feature.properties.id);
+			$scope.allProjects.forEach(function (project) {
+					makeMarkerGray(project.properties.id);
 			});
 	}
 
 	function makeMarkerNormal(id) {
-			var marker = $scope.markers[id];
-			marker.feature.properties.disabled = false;
-			marker.setIcon(new L.Icon(WATER_ICON));
+		// find markers that match this ID; there may be multiples connected to this project
+		var keys = Object.keys($scope.markers);
+		for (var i = 0; i < keys.length; i++) {
+			if (keys[i] == id || keys[i].indexOf(id + "-") === 0) {
+				// it's a match, make icon normal
+				var marker = $scope.markers[keys[i]];
+				if (marker.feature) {
+					marker.feature.properties.disabled = false;
+				} else if (marker.properties) {
+					marker.properties.disabled = false;
+				} else {
+					return false;
+				}
+				marker.setIcon(new L.Icon(WATER_ICON));
+			}
+		}
 	}
 
 	function makeMarkerGray(id) {
-			var marker = $scope.markers[id];
-			marker.feature.properties.disabled = true;
-			marker.setIcon(new L.Icon(WATER_ICON_GRAY));
+		// find markers that match this ID; there may be multiples connected to this project
+		var keys = Object.keys($scope.markers);
+		for (var i = 0; i < keys.length; i++) {
+			if (keys[i] == id || keys[i].indexOf(id + "-") === 0) {
+				// it's a match, make icon normal
+				var marker = $scope.markers[keys[i]];
+				if (marker.feature) {
+					marker.feature.properties.disabled = true;
+				} else if (marker.properties) {
+					marker.properties.disabled = true;
+				} else {
+					return false;
+				}
+				marker.setIcon(new L.Icon(WATER_ICON_GRAY));
+			}
+		}
 	}
 
 	function getCentroid(arr) {
