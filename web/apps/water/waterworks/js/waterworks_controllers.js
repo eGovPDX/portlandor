@@ -195,6 +195,7 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 		// been reset, so we don't need to spin through them all again.
 		if (type == "All") {
 			$scope.nameFilter = "";
+			$scope.projects = $scope.allProjects;
 			return false;
 		}
 
