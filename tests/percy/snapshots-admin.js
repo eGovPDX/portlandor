@@ -30,6 +30,7 @@ PercyScript.run(async (page, percySnapshot) => {
  
   // Add a new group
   await page.goto(`${HOME_PAGE}/group/add/bureau_office`);
+  await page.waitFor('.page-title'); 
   text_content = await page.evaluate(() => document.querySelector('.page-title').textContent);
   expect(text_content).to.have.string('Add Bureau/office');
 
@@ -50,6 +51,7 @@ PercyScript.run(async (page, percySnapshot) => {
 
   // Add member
   await page.goto(`${HOME_PAGE}/percy-test-group/members`);
+  await page.waitFor('.button-action'); 
   text_content = await page.evaluate(() => document.querySelector('.button-action').textContent);
   expect(text_content).to.equal('Add member');
   // await page.click('.button-action');
@@ -71,6 +73,7 @@ PercyScript.run(async (page, percySnapshot) => {
 
   // Delete the new group
   await page.goto(`${HOME_PAGE}/percy-test-group/delete`);
+  await page.waitFor('input#edit-submit'); 
   // await page.$eval('#edit-submit', elem => elem.click());
   selector = 'input#edit-submit';
   await page.evaluate((selector) => document.querySelector(selector).click(), selector);
