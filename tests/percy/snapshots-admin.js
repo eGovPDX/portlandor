@@ -22,6 +22,7 @@ PercyScript.run(async (page, percySnapshot) => {
   expect(text_content).to.not.have.string('Errors found');
   expect(text_content).to.not.have.string('The following changes were detected in the entity type and field definitions.');
   
+  await page.setDefaultNavigationTimeout(0);
   await page.goto(`${HOME_PAGE}/admin/config/development/configuration`);
   await page.waitFor('.region-content'); 
   text_content = await page.evaluate(() => document.querySelector('.region-content').textContent);
