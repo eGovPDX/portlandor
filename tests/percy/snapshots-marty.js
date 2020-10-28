@@ -12,6 +12,7 @@ const MY_CONTENT = `${HOME_PAGE}/my-content`;
 
 // A script to navigate our app and take snapshots with Percy.
 PercyScript.run(async (page, percySnapshot) => {
+  await page.setDefaultNavigationTimeout(0);
   // Uncomment this line to see browser console log
   // page.on('console', msg => console.log('PAGE LOG:', page.url(), msg.text()));
 
