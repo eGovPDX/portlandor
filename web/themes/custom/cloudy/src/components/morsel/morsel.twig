@@ -5,26 +5,11 @@
   'morsel',
   is_draft ? 'morsel--is-draft',
   image ? 'morsel--image-featured',
-  (updated_on and posted_on and (updated_on|striptags|date('U') > posted_on|striptags|date('U'))) ? 'morsel--updated',
 ] %}
 {# TWIG #}
 <div class="{{ classes|join(' ')|trim }}">
-  {% if image %}
-    <div class="morsel__image">
-      <div class="morsel__image-inner">
-        {{ image }}
-      </div>
-    </div>
-  {% endif %}
-  <div class="morsel__body">
-    {% if is_draft %}
-      {% include "@components/badge/badge.twig" with {
-        text: "unpublished",
-        type: "danger",
-        classes: ['mb-2'],
-      } only %}
-    {% endif %}
-    <div class="morsel__heading">
+  <div class="row no-gutters">
+    <div class="morsel__heading col-12 order-2">
       {% include "@components/heading/heading.twig" with {
         url: url,
         level: headingLevel,
@@ -32,18 +17,65 @@
         text: heading.text
       } only %}
     </div>
-    {% if updated_on and posted_on and (updated_on|striptags|date('U') > posted_on|striptags|date('U')) %}
-      <div class="morsel__date">{% if type %}<span class="morsel__type">{{ type }}</span> {% endif %}{% if updated_on %}<span class="font-weight-bold">Updated</span> {{ updated_on }}{% endif %}</div>
-    {% else %}
-      <div class="morsel__date">{% if type %}<span class="morsel__type">{{ type }}</span> {% endif %}{% if posted_on %}<span class="sr-only">Posted on</span>{{ posted_on }}{% endif %}</div>
-    {% endif %}
-    {% if location %}{# location component should be passed through here #}
-      <div class="morsel__location">
-        {{ location }}
+    <div class="morsel__prehead d-flex col-12 order-1">
+      {% if is_draft %}
+        <div class="morsel__draft">
+          {% include "@components/badge/badge.twig" with {
+            text: "unpublished",
+            type: "danger",
+            classes: ['mb-2'],
+          } only %}
+        </div>
+      {% endif %}
+      {% if popular and popular|render == "On" %}
+        <div class="morsel__popular">
+          {% include "@components/badge/badge.twig" with {
+            text: "Popular",
+            type: "info",
+          } only %}
+        </div>
+      {% endif %}
+      <div class="morsel__type">
+        {% include "@components/overline/overline.twig" with {
+          text: type
+        } only %}
       </div>
-    {% endif %}
-    {% if text %}
-      <div class="morsel__text">{{ text }}</div>
+    </div>
+  </div>
+  <div class="row no-gutters">
+    <div class="morsel__body col-md col-12-sm order-md-1 order-sm-2">
+      {% if updated_on and posted_on and (updated_on|striptags|date('U') > posted_on|striptags|date('U')) %}
+        <div class="morsel__date">{% if updated_on %}<span class="font-weight-bold">Updated</span> {{ updated_on }}{% endif %}</div>
+      {% elseif posted_on %}
+        <div class="morsel__date">{% if posted_on %}<span class="sr-only">Posted on</span>{{ posted_on }}{% endif %}</div>
+      {% endif %}
+      {% if group_date %} {# Removing the extra div; it wants to print that div even with group_date is only space #}
+        {{ group_date }}
+      {% endif %}
+      {% if group_time %}
+        <div class="morsel__time">{{ group_time }}</div>
+      {% endif %}
+      {% if status %}
+        <div class="morsel__status">{{ status }}</div> {# TODO need a more robust status; change style by status #}
+      {% endif %}
+      {% if is_online %}
+        <div class="morsel__online">{{ is_online }}</div>
+      {% endif %}
+      {% if text %}
+        <div class="morsel__text">{{ text }}</div>
+      {% endif %}
+      {% if location %}{# location component should be passed through here #}
+        <div class="morsel__location">
+          {{ location }}
+        </div>
+      {% endif %}
+    </div>
+    {% if image %}
+      <div class="morsel__image col-md-4 col-sm-12 order-md-2 order-sm-1">
+        <div class="morsel__image-inner">
+          {{ image }}
+        </div>
+      </div>
     {% endif %}
   </div>
 </div>
