@@ -12,6 +12,7 @@ const MY_CONTENT = `${HOME_PAGE}/my-content`;
 
 // A script to navigate our app and take snapshots with Percy.
 PercyScript.run(async (page, percySnapshot) => {
+  await page.setDefaultNavigationTimeout(0);
   // Uncomment this line to see browser console log
   // page.on('console', msg => console.log('PAGE LOG:', page.url(), msg.text()));
 
@@ -47,6 +48,7 @@ PercyScript.run(async (page, percySnapshot) => {
 
   text_content = await page.evaluate(() => document.querySelector('#node-page-form').textContent);
   expect(text_content).to.have.string('Title');
+  expect(text_content).to.have.string('Short Title');
   expect(text_content).to.have.string('Page type');
   expect(text_content).to.have.string('Summary');
   expect(text_content).to.have.string('Body content');
@@ -54,6 +56,7 @@ PercyScript.run(async (page, percySnapshot) => {
 
   await page.type('#edit-title-0-value', 'Test page');
   await page.type('#edit-field-summary-0-value', 'Summary for the test page');
+  await page.type('#edit-field-menu-link-text-0-value', 'Test Page');
   // await page.focus('#cke_edit-field-body-content-0-value');
   // await page.keyboard.type('Body content for the test page');
   await ckeditor.type('body p', 'Body content for the test page', { delay: 100 });
