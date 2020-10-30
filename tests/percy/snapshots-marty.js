@@ -48,7 +48,7 @@ PercyScript.run(async (page, percySnapshot) => {
 
   text_content = await page.evaluate(() => document.querySelector('#node-page-form').textContent);
   expect(text_content).to.have.string('Title');
-  expect(text_content).to.have.string('Menu/URL Text');
+  expect(text_content).to.have.string('Short Title');
   expect(text_content).to.have.string('Page type');
   expect(text_content).to.have.string('Summary');
   expect(text_content).to.have.string('Body content');
