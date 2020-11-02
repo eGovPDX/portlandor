@@ -1,25 +1,74 @@
-{%
-  set classes = [
-    'node',
-    'node--type-' ~ node.bundle|clean_class,
-    node.isPromoted() ? 'node--promoted',
-    node.isSticky() ? 'node--sticky',
-    not node.isPublished() ? 'node--unpublished',
-    view_mode ? 'node--view-mode-' ~ view_mode|clean_class,
-  ]
-%}
-{{ attach_library('classy/node') }}
-<article{{ attributes.addClass(classes) }}>
-  <header>
-    {{ title_prefix }}
-    {% if not page %}
-      <h2{{ title_attributes.addClass('node__title') }}>
-        <a href="{{ url }}" rel="bookmark">{{ label }}</a>
-      </h2>
-    {% endif %}
-    {{ title_suffix }}
-  </header>
-  <div{{ content_attributes.addClass('node__content', 'clearfix') }}>
-    {{ content }}
+<div class="row">
+  <div class="cloudy-content col-lg-8 col-md-12">
+    <article{{ attributes.addClass(classes) }}>
+      <div{{ content_attributes.addClass('node__content', 'clearfix') }}>
+        <div class="cloudy-badge cloudy-badge--info mb-2">{{ content.field_park_location_type.0 }}</div>
+        {{ content.field_featured_media }}
+        <p class="cloudy-lead-text">
+          {{ content.field_summary.0 }}
+        </p>
+        {{ content|without(
+          'field_park_location_type',
+          'field_featured_media',
+          'field_summary',
+          'field_location',
+          'field_located_within',
+          'field_contact',
+          'field_neighborhood',
+          'field_city_section',
+          'field_hours_of_operation',
+          'field_twitter',
+          'field_instagram',
+          'field_facebook',
+          'field_park_amenities_activities',
+          'field_documents'
+          ) }}
+      </div>
+    </article>
   </div>
-</article>
+  <div class="cloudy-side col-lg-4 col-md-12">
+    {{ content.field_located_within }}
+    {% set view_also_within = drupal_block('views_block:within_park_facility-block_park_siblings')|length %}
+    {% if view_also_within > 0 %}
+      {{ drupal_block('views_block:within_park_facility-block_park_siblings') }}
+    {% endif %}
+    {% set view_within = drupal_block('views_block:within_park_facility-block_park_children')|length %}
+    {% if view_within > 0 %}
+      {{ drupal_block('views_block:within_park_facility-block_park_children') }}
+    {% endif %}
+    {% set view_services = drupal_block('views_block:services_and_pages_on_location-block_services_at_location')|length %}
+    {% if view_services > 0 %}
+      {{ drupal_block('views_block:services_and_pages_on_location-block_services_at_location') }}
+    {% endif %}
+    {% set view_related = drupal_block('views_block:services_and_pages_on_location-block_pages_on_location')|length %}
+    {% if view_related > 0 %}
+      {{ drupal_block('views_block:services_and_pages_on_location-block_pages_on_location') }}
+    {% endif %}
+    {{ content.field_location }}
+    {{ content.field_hours_of_operation }}
+    {% set view_events = drupal_block('views_block:events_on_content-block_2')|length %}
+    {% if view_events > 0 %}
+      {{ drupal_block('views_block:events_on_content-block_2') }}
+    {% endif %}
+    {{ content.field_contact }}
+    {{ content.field_twitter }}
+    {{ content.field_facebook }}
+    {{ content.field_instagram }}
+    {% set view_events = drupal_block('views_block:construction_projects_on_content-block_upcoming_at_location')|length %}
+    {% if view_events > 0 %}
+      {{ drupal_block('views_block:construction_projects_on_content-block_upcoming_at_location') }}
+    {% endif %}
+    {% set view_events = drupal_block('views_block:construction_projects_on_content-block_past_at_location')|length %}
+    {% if view_events > 0 %}
+      {{ drupal_block('views_block:construction_projects_on_content-block_past_at_location') }}
+    {% endif %}
+    {% set view_news = drupal_block('views_block:news_on_content-block_1')|length %}
+    {% if view_news > 0 %}
+      {{ drupal_block('views_block:news_on_content-block_1') }}
+    {% endif %}
+    {{ content.field_park_amenities_activities }}
+    {{ content.field_documents }}
+    {{ content.field_neighborhood }}
+    {{ content.field_city_section }}
+  </div>
+</div>

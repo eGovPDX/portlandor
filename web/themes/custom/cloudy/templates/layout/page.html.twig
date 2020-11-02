@@ -45,19 +45,32 @@
 {% block header %}
   <header id="header" class="header" aria-label="{{ 'Site header'|t}}" role="banner">
     <div class="container">
-      <nav class="navbar navbar-light navbar-expand-xl" id="navbar-main">
+      <nav class="navbar navbar-light navbar-expand-md" id="navbar-main">
         {{ page.header }}
         {% if page.primary_menu or page.header_form %}
-          <button class="navbar-toggler navbar-toggler-right border-0" type="button" data-toggle="collapse" data-target="#CollapsingNavbar" aria-controls="CollapsingNavbar" aria-expanded="false" aria-label="{{ 'Toggle navigation'|t }}">{{ 'Menu'|t }}</button>
-          <div class="collapse navbar-collapse justify-content-end h-100" id="CollapsingNavbar">
+          <div class="navbar-toggle-group">
+            {% if page.header_form %}
+              <button class="search-toggle" type="button" aria-expanded="false">{% include "@elements/icon/icon.twig" with { name: "search" } only %}</button>
+            {% endif %}
+            <button class="navbar-toggler navbar-toggler-right border-0" type="button" data-toggle="collapse" data-target="#CollapsingNavbar" aria-controls="CollapsingNavbar" aria-expanded="false" aria-label="{{ 'Toggle navigation'|t }}"><span class="navbar-toggle-item--open">{{ 'Menu'|t }}</span><span class="navbar-toggle-item--close">{% include "@elements/icon/icon.twig" with { name: "close" } only %}</span></button>
+          </div>
+          {% set header_form = page.header_form|render %}
+          <div class="collapse navbar-mobile-drawer navbar-collapse justify-content-end h-100" id="CollapsingNavbar">
             {{ page.primary_menu }}
-            {% set header_form = page.header_form|render %}
             {% if header_form %}
               <div class="form-inline navbar-form">
                 {{ page.header_form }}
               </div>
             {% endif %}
           </div>
+          {% if header_form %} {# Mobile search drawer #}
+            <div class="navbar-mobile-search-drawer collapse justify-content-end h-100">
+              <div class="navbar-mobile-search-drawer-wrapper">
+                {{ page.header_form }}
+                <span class="navbar-mobile-search-drawer__close">{% include "@elements/icon/icon.twig" with { name: "x", size: "m" } only %}</span>
+              </div>
+            </div>
+          {% endif %}
         {% endif %}
       </nav>
     </div>
@@ -104,19 +117,63 @@
   {% endblock %}
 </main>
 
-{% block footer %}
-  <footer class="site-footer text-dark d-print-block">
-    <div class="container">
-      <div class="row">
-        {% if page.footer_first or page.footer_second %}
-          <div class="col-sm-6" id="footer_first">
-            {{ page.footer_first }}
+{% if page.footer_top or page.footer_first or page.footer_second or page.footer_third or page.footer_fourth %}
+  <footer class="cloudy-footer" role="contentinfo">
+    {% if page.footer_top %}
+      <section class="cloudy-footer--top">
+        <div class="container">
+          <div class="row">
+            <div class="col-12 col-md-8 order-2 order-md-1">
+              {{ page.footer_top }}
+            </div>
+            <div class="col-12 order-1 col-md-4 order-md-2 align-self-center mb-8 mb-md-0">
+              {% include "@components/link/link.twig" with {
+                background: true,
+                text: 'Explore all services'|t,
+                url: '/services',
+              } %}
+            </div>
           </div>
-          <div class="col-sm-6" id="footer_second">
-            {{ page.footer_second }}
+        </div>
+      </section>
+    {% endif %}
+
+    {% if page.footer_first or page.footer_second or page.footer_third or page.footer_fourth %}
+      <section class="cloudy-footer--bottom">
+        <div class="container">
+          <div class="row">
+            <div class="col-12 col-md-6 col-lg-3 mb-8">
+              {{ page.footer_first }}
+              <div>
+                {% include "@components/heading/heading.twig" with {
+                  text: 'General information'|t,
+                  level: 2,
+                  style: 6,
+                }%}
+                {% include "@components/contact-item/contact-item.twig" with {
+                  "email": 'cityinfo@portlandoregon.gov',
+                  "phone": '503-823-4000',
+                  "tty": '503-823-6868',
+                  "oregon_relay": true,
+                } only %}
+              </div>
+            </div>
+            <div class="col-12 col-md-6 col-lg-3 mb-8">
+              <div>
+                {{ page.footer_second }}
+              </div>
+            </div>
+            {# Adding mb-2 to account for the margin added by the editor login block #}
+            <div class="col-12 col-md-6 col-lg-3 mb-2 order-md-last">
+              {{ page.footer_third }}
+            </div>
+            {# Adding mb-2 to account for the margin added by the copyright block #}
+            <div class="col-12 col-md-6 col-lg-3 mb-2 order-lg-first">
+              {{ page.footer_fourth }}
+            </div>
           </div>
-        {% endif %}
-      </div>
-    </div>
+        </div>
+      </section>
+    {% endif %}
   </footer>
-{% endblock %}
+{% endif %}

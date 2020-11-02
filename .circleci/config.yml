@@ -7,7 +7,10 @@ build_and_deploy: &build_and_deploy
   docker:
     # - image: juampynr/drupal8ci:latest
     # updated CI image
-    - image: kxwang/drupal-ci:ci-php7.2.28-node12.16.1-yarn1.22.0
+    - image: kxwang/drupal-ci:ci-php7.3-node12.16.1-yarn1.22.0
+      auth:
+        username: kxwang
+        password: $DOCKERHUB_PASSWORD
   working_directory: /var/www/html
   steps:
     - restore_cache:
@@ -66,9 +69,7 @@ build_and_deploy: &build_and_deploy
           rm -rf ./web/modules/contrib/facets
           # Run composer install with hirak/prestissimo for better performance
           composer config --global --auth github-oauth.github.com "$COMPOSER_TOKEN"
-          composer install --no-suggest --no-interaction
-          # TODO: should only deploy non-dev packages
-          # --no-dev
+          composer install --no-suggest --no-interaction --no-dev
     - save_cache:
         name: Save Composer Cache
         key: v1-dependencies-{{ checksum "composer.lock" }}
@@ -225,7 +226,13 @@ run_tests: &run_tests
     # - image: juampynr/drupal8ci:latest
     # updated CI image
     - image: kxwang/drupal-ci:ci-php7.2.28-node12.16.1-yarn1.22.0
+      auth:
+        username: kxwang
+        password: $DOCKERHUB_PASSWORD
     - image: selenium/standalone-chrome-debug:3.7.1-beryllium
+      auth:
+        username: kxwang
+        password: $DOCKERHUB_PASSWORD
   parallelism: 5
   working_directory: /var/www/html
   steps:
@@ -284,23 +291,20 @@ run_tests: &run_tests
           fi
           echo "Pantheon environment name is $PANTHEON_ENV"
 
-          # Split feature files by timing data so all split test jobs will finish around the same time
-          TESTFILES=$(circleci tests glob "features/*.feature"  | circleci tests split --split-by=timings)
+          # Split feature files so all split test jobs will finish around the same time
+          TESTFILES=$(circleci tests glob "features/*.feature" | circleci tests split)
           if [[ $PANTHEON_ENV = "master" ]]; then
             echo 'export BEHAT_PARAMS="{\"extensions\" : {\"Behat\\\MinkExtension\" : {\"base_url\" : \"https://dev-portlandor.pantheonsite.io\"}, \"Drupal\\\DrupalExtension\" : {\"drush\" : { \"alias\": \"portlandor.dev\"}}}}"' >> $BASH_ENV && source $BASH_ENV
-            for TESTFILE in $TESTFILES
-            do
-                behat -c behat.yml -f pretty -o std -f junit -o test-results/behat ${TESTFILE}
-                mv test-results/behat/default.xml test-results/behat/${TESTFILE}.xml
-            done
           else
             echo 'export BEHAT_PARAMS="{\"extensions\" : {\"Behat\\\MinkExtension\" : {\"base_url\" : \"https://${PANTHEON_ENV}-portlandor.pantheonsite.io\"}, \"Drupal\\\DrupalExtension\" : {\"drush\" : { \"alias\": \"portlandor.${PANTHEON_ENV}\"}}}}"' >> $BASH_ENV && source $BASH_ENV
-            for TESTFILE in $TESTFILES
-            do
-                behat -c behat.yml -f pretty -o std -f junit -o test-results/behat ${TESTFILE}
-                mv test-results/behat/default.xml test-results/behat/${TESTFILE}.xml
-            done
           fi
+          for TESTFILE in $TESTFILES
+          do
+            public_ip_address=$(wget -qO- http://checkip.amazonaws.com)
+            echo "This container's public ip address is $public_ip_address"
+            behat -c behat.yml -f pretty -o std -f junit -o test-results/behat ${TESTFILE} || behat -c behat.yml -f pretty -o std -f junit -o test-results/behat ${TESTFILE}
+            mv test-results/behat/default.xml test-results/behat/${TESTFILE}.xml
+          done
     - save_cache:
         paths:
           - ./tests/vendor
@@ -311,6 +315,65 @@ run_tests: &run_tests
         path: /var/www/html/artifacts
         destination: /
 
+visual_regression: &visual_regression
+  docker:
+    - image: kxwang/visual-regression:latest
+  # environment:
+  #   PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: true
+  parallelism: 4
+  working_directory: /home/circleci/app
+  steps:
+    - checkout
+
+    - restore_cache:
+        name: Restore Terminus cache
+        keys:
+          - terminus_-{{ checksum "composer.lock" }}
+    - run:
+        name: Install Terminus
+        command: |
+          if [ ! -f "/tmp/vendor/pantheon-systems/terminus/bin/terminus" ]; then
+          cd /tmp && composer require pantheon-systems/terminus:^2.0.0
+          fi
+    - save_cache:
+        name: Save Terminus cache
+        key: terminus_-{{ checksum "composer.lock" }}
+        paths:
+          - "/tmp/vendor"
+          
+    - run:
+        command: |
+          export PATH=/var/www/html/tests/vendor/bin:/tmp/vendor/pantheon-systems/terminus/bin:$PATH
+
+          # Log in via terminus first. Required for tests that require user login.
+          terminus auth:login --quiet --machine-token="$eGov_Terminus" --email="$eGov_Email" && terminus aliases
+
+          # Prepare environment variables to be used by Percy
+          if [[ $CIRCLE_BRANCH = "master" ]]; then
+            echo 'export SITE_NAME="dev"' > $BASH_ENV && source $BASH_ENV
+          else
+            echo 'export SITE_NAME=${CIRCLE_BRANCH}' > $BASH_ENV && source $BASH_ENV
+          fi
+
+          cd /home/circleci/app/tests/percy
+          npm install --quiet
+
+          # Start Percy tests
+          TESTFILES=$(circleci tests glob "snapshots-*.js" | circleci tests split)
+          for TESTFILE in $TESTFILES
+          do
+            # Generate one time login link for tests
+            if [[ ${TESTFILE} == *"ally"* ]]; then
+              echo 'export ALLY_LOGIN=$(terminus drush portlandor.${SITE_NAME} -- uli --mail ally.admin@portlandoregon.gov)' > $BASH_ENV && source $BASH_ENV
+            elif [[ ${TESTFILE} == *"marty"* ]]; then
+              echo 'export MARTY_LOGIN=$(terminus drush portlandor.${SITE_NAME} -- uli --mail marty.member@portlandoregon.gov)' > $BASH_ENV && source $BASH_ENV
+            elif [[ ${TESTFILE} == *"admin"* ]]; then
+              echo 'export SUPERADMIN_LOGIN=$(terminus drush portlandor.${SITE_NAME} -- uli --name superAdmin)' > $BASH_ENV && source $BASH_ENV
+            fi
+            npm run ${TESTFILE}
+          done
+
+
 # Declare all of the jobs we should run.
 version: 2.1
 jobs:
@@ -318,6 +381,11 @@ jobs:
      <<: *build_and_deploy
   test:
      <<: *run_tests
+  visual_regression:
+    <<: *visual_regression
+
+orbs:
+ percy: percy/agent@0.1.2
 
 # Declare a workflow that runs all of our jobs in parallel.
 workflows:
@@ -325,6 +393,12 @@ workflows:
   deploy_and_test:
     jobs:
       - deploy
-      - test:
+      # - test:
+      #     requires:
+      #       - deploy
+      - visual_regression:
           requires:
             - deploy
+      - percy/finalize_all:
+          requires:
+            - visual_regression

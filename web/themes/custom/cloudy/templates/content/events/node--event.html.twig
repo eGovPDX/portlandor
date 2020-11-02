@@ -3,49 +3,57 @@
     <article{{ attributes }}>
       {{ content.field_event_type }}
       {{ content.field_event_status }}
-      <p class="lead">
+      <p class="cloudy-lead-text">
         {{ content.field_summary.0 }}
       </p>
       {{ content.field_featured_media }}
       <div class="row">
-        <div class="col">
-          <div class="event__date">
-            <span class="flex items-center">
-            {% if content.field_end_date|render|striptags|trim is not empty %}
+        <div class="col mb-4">
+          <div class="event__date d-flex">
+            {% if content.field_start_date.0|render|striptags is not empty and content.field_end_date|render|striptags|trim is not empty %}
               {{ content.field_start_date }}
-              <span class="datetime mx-1" aria-label="{{ 'through'|t }}">&ndash;</span>
-              {{ content.field_end_date }}
+              <span class="mx-1" aria-label="{{ 'through'|t }}"> &ndash; </span>
+              {{ content.field_end_date.0 }}
             {% else %}
               {{ content.field_start_date }}
             {% endif %}
-            </span>
           </div>
-          <div class="event_time">
-            <span class="flex items-center">
+          <div class="event_time d-flex">
               {% if content.field_all_day|render|striptags|trim is not empty %}
-                {{ content.all_day }}
-              {% elseif content.field_end_time|render|striptags|trim is not empty %}
+                {{ content.field_all_day }}
+              {% elseif content.field_start_time.0|render|striptags|trim is not empty and content.field_end_time.0|render|striptags|trim is not empty %}
                 {{ content.field_start_time }}
-                <span class="datetime mx-1" aria-label="{{ 'to'|t }}">&ndash;</span>
+                <span class="mx-1" aria-label="{{ 'to'|t }}"> &ndash; </span>
+                {{ content.field_end_time }}
+              {% elseif content.field_start_time.0|render|striptags|trim is empty and content.field_end_time.0|render|striptags|trim is not empty %}
+                <span class="mr-1">Ends </span>
                 {{ content.field_end_time }}
               {% else %}
                 {{ content.field_start_time }}
               {% endif %}
-            </span>
           </div>
         </div>
-        {% if content.field_location %}
-        <div class="col-md-6 col-sm-12">
-          {{ content.field_location }}
-        </div>
-        {% endif %}
       </div>
       <div{{ content_attributes.addClass('node__content', 'clearfix') }}>
-        {{ content|without('field_summary','field_event_type','field_event_status','field_featured_media','field_start_date','field_end_date','field_all_day','field_start_time','field_end_time','field_location','field_contact','field_related_content','field_topics','field_display_groups','field_neighborhood') }}
+        {{ content|without(
+          'field_summary',
+          'field_event_type',
+          'field_event_status',
+          'field_featured_media',
+          'field_start_date',
+          'field_end_date',
+          'field_all_day',
+          'field_start_time',
+          'field_end_time',
+          'field_contact',
+          'field_related_content',
+          'field_topics',
+          'field_display_groups',
+          'field_neighborhood') }}
       </div>
     </article>
   </div>
-  <div class="col-lg-4 col-md-12">
+  <div class="cloudy-side col-lg-4 col-md-12">
     {# Links to add this event to calendar #}
     {% if not is_cancelled %}
       {% set google_link = calendar_link('google', title, start_date_time, end_date_time, is_all_day, summary_html, address) %}
@@ -60,39 +68,21 @@
       {% set yahoo_link = calendar_link('yahoo', title, start_date_time, end_date_time, is_all_day, summary_html, address) %}
       <a href="{{ yahoo_link }}">Yahoo</a>
     {% endif %}
-    {% if content.field_contact|render|striptags %}
-      <div class="mb-4">
-        <h2 class="h4">Contact</h2>
-        {{ content.field_contact }}
-      </div>
-    {% endif %}
-    {% if content.field_related_content|render|striptags %}
-      <div class="mb-4">
-        <h2 class="h4">Related</h2>
-        {{ content.field_related_content }}
-      </div>
-    {% endif %}
-    {% if content.field_display_groups|render|striptags %}
-      <div class="mb-4">
-        <h2 class="h4">Offered by</h2>
-        {{ content.field_display_groups }}
-      </div>
-    {% endif %}
-    {% if content.field_topics|render|striptags %}
-      <div class="mb-4">
-        <h2 class="h4">Topics</h2>
-        {{ content.field_topics }}
-      </div>
-    {% endif %}
-    {% if content.field_neighborhood|render|striptags %}
-      <div class="mb-4">
-        <h2 class="h4">Neighborhoods</h2>
-        {{ content.field_neighborhood }}
-      </div>
-    {% endif %}
-    {% set view_news = drupal_block('views_block:news_on_content-block_2')|length %}
+    {{ content.field_contact }}
+    {{ content.field_related_content }}
+    {{ content.field_topics }}
+    {{ content.field_neighborhood }}
+    {% set view_news = drupal_block('views_block:related_events_and_news-backref_related_news')|length %}
     {% if view_news > 0 %}
-      {{ drupal_block('views_block:news_on_content-block_2') }}
+      {{ drupal_block('views_block:related_events_and_news-backref_related_news') }}
+    {% endif %}
+    {% set view_events = drupal_block('views_block:related_events_and_news-backref_related_events')|length %}
+    {% if view_events > 0 %}
+      {{ drupal_block('views_block:related_events_and_news-backref_related_events') }}
+    {% endif %}
+    {% set view_related_events = drupal_block('views_block:related_events_and_news-related_events')|length %}
+    {% if view_related_events > 0 %}
+      {{ drupal_block('views_block:related_events_and_news-related_events') }}
     {% endif %}
   </div>
 </div>

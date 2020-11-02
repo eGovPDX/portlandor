@@ -1,13 +1,16 @@
-## Data Table Base
+## Simple table
 
+- `scope="row"` ensures that it cannot be mistaken as a header for other cells in the same column. _Use when you would like to associate the table header with the row, otherwise omit._
 - Copy the table template code below and update to match your data.
 
-## Usage
+### Usage
 
 ```html
 <div class="table-responsive">
   <table class="table table-bordered table-hover">
-    <caption>Comparison between different types of coffee drinks.</caption>
+    <caption>
+      Comparison between different types of coffee drinks.
+    </caption>
     <thead class="thead-dark">
       <tr>
         <th scope="col">Coffee Types</th>

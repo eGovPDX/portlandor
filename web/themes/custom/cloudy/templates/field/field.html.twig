@@ -36,18 +36,17 @@
  * @see template_preprocess_field()
  */
 #}
-{% set margin = margin|default('2') %}
-
 {% set classes = classes|default([]) %}
 
+{# TODO: Remove mb/mr classes as patterns are implemented on each field template #}
 {%
   set field_classes = [
     'field',
     'field--name-' ~ field_name|clean_class,
     'field--type-' ~ field_type|clean_class,
     'field--label-' ~ label_display,
-    'mb-' ~ margin,
-    label_display == 'inline' ? 'd-flex'
+    label_display == 'inline' ? 'd-flex',
+    margin ? 'mb-' ~ margin,
   ]
 %}
 
@@ -55,32 +54,41 @@
   set title_classes = title_classes|default([
     label_display == 'visually_hidden' ? 'sr-only',
     label_display == 'inline' ? 'mr-1',
-    'field-label'
+    'field__label'
   ])
 %}
 
 {%
   set item_classes = item_classes|default([
     label_display == 'inline' ? 'mr-1',
+    'field__item'
   ])
 %}
 
-{% spaceless %}
+{% apply spaceless %}
   {% block field %}
   <div{{ attributes.addClass(field_classes).addClass(classes) }}>
     {% block label %}
-      {%- if not label_hidden -%}
-        <div{{ title_attributes.addClass(title_classes) }}>{{ label|render }}</div>
+      {% if label_display == "above" %}
+        <h2{{ title_attributes.addClass(title_classes) }}>{{ label }}</h2>
+      {% elseif label_display != "hidden" %}
+        <div{{ title_attributes.addClass(title_classes) }}>{{ label }}</div>
       {%- endif -%}
     {% endblock %}
     {% block content %}
-      {%- for item in items -%}
-        <div{{ item.attributes.addClass(item_classes) }}>
-          {{ icon }}
-          {{ item.content }}
+      {% if multiple %}
+        <div class="field__items">
+      {% endif %}
+          {% for item in items %}
+            <div{{ item.attributes.addClass(item_classes) }}>
+              {{ icon }}
+              {{ item.content }}
+            </div>
+          {% endfor %}
+      {% if multiple %}
         </div>
-      {%- endfor -%}
+      {% endif %}
     {% endblock %}
   </div>
   {% endblock %}
-{% endspaceless %}
+{% endapply %}

@@ -1,88 +1,78 @@
 <div class="row">
-  <div class="col-lg-8 col-md-12">
-    <article{{ attributes }}>
+  <div class="cloudy-content col-lg-8 col-md-12">
+    <article{{ attributes.addClass(classes) }}>
       {{ content.field_construction_type }}
       {{ content.field_project_status }}
-      <p class="lead">
-        {{ content.field_summary.0 }}
-      </p>
+      {# TODO remove this conditional when the summary field gets its own field template and scss #}
+      {% if content.field_summary|render|striptags|trim is not empty %}
+        <p class="cloudy-lead-text">
+          {{ content.field_summary.0 }}
+        </p>
+      {% endif %}
       {{ content.field_featured_media }}
       <div class="row">
-        <div class="col">
-          <div class="event__date">
-            <span class="flex items-center">
-            {% if content.field_display_date|render|striptags|trim is not empty %}
-              {{ content.field_display_date }}
-            {% else %}
-              {% if content.field_end_date|render|striptags|trim is not empty %}
+        <div class="col mb-4">
+          {% if content.field_display_date|render|striptags|trim is not empty %}
+            {{ content.field_display_date }}
+          {% else %}
+            <div class="event__date d-flex">
+              {% if content.field_start_date.0|render|striptags is not empty and content.field_end_date|render|striptags|trim is not empty %}
                 {{ content.field_start_date }}
-                <span class="datetime mx-1" aria-label="{{ 'through'|t }}">&ndash;</span>
-                {{ content.field_end_date }}
+                <span class="mx-1" aria-label="{{ 'through'|t }}"> &ndash; </span>
+                {{ content.field_end_date.0 }}
               {% else %}
                 {{ content.field_start_date }}
               {% endif %}
-            {% endif %}
-            </span>
-          </div>
-          <div class="event_time">
-            <span class="flex items-center">
-              {% if content.field_all_day|render|striptags|trim is not empty %}
-                {{ content.all_day }}
-              {% elseif content.field_end_time|render|striptags|trim is not empty %}
-                {{ content.field_start_time }}
-                <span class="datetime mx-1" aria-label="{{ 'to'|t }}">&ndash;</span>
-                {{ content.field_end_time }}
-              {% else %}
-                {{ content.field_start_time }}
-              {% endif %}
-            </span>
-          </div>
+            </div>
+            <div class="event_time d-flex">
+                {% if content.field_all_day|render|striptags|trim is not empty %}
+                  {{ content.field_all_day }}
+                {% elseif content.field_start_time.0|render|striptags|trim is not empty and content.field_end_time.0|render|striptags|trim is not empty %}
+                  {{ content.field_start_time }}
+                  <span class="mx-1" aria-label="{{ 'to'|t }}"> &ndash; </span>
+                  {{ content.field_end_time }}
+                {% elseif content.field_start_time.0|render|striptags|trim is empty and content.field_end_time.0|render|striptags|trim is not empty %}
+                  <span class="mr-1">Ends </span>
+                  {{ content.field_end_time }}
+                {% else %}
+                  {{ content.field_start_time }}
+                {% endif %}
+            </div>
+          {% endif %}
         </div>
-        {% if content.field_location %}
-        <div class="col-md-6 col-sm-12">
-          {{ content.field_location }}
-        </div>
-        {% endif %}
       </div>
-      <div{{ content_attributes.addClass('node__content', 'clearfix') }}>
-        {{ content|without('field_summary','field_construction_type','field_project_status','field_featured_media','field_start_date','field_end_date','field_all_day','field_display_date','field_start_time','field_end_time','field_location','field_contact','field_related_content','field_topics','field_display_groups','field_neighborhood') }}
-      </div>
+      {{ content|without(
+        'field_summary',
+        'field_construction_type',
+        'field_project_status',
+        'field_featured_media',
+        'field_start_date',
+        'field_end_date',
+        'field_end_time',
+        'field_start_time',
+        'field_display_date',
+        'field_contact',
+        'field_related_content',
+        'field_topics',
+        'field_display_groups',
+        'field_neighborhood',
+        'field_location_description') }}
     </article>
   </div>
-  <div class="col-lg-4 col-md-12">
-    {% if content.field_contact|render|striptags %}
-      <div class="mb-4">
-        <h2 class="h4">Contact</h2>
-        {{ content.field_contact }}
-      </div>
-    {% endif %}
-    {% if content.field_related_content|render|striptags %}
-      <div class="mb-4">
-        <h2 class="h4">Related</h2>
-        {{ content.field_related_content }}
-      </div>
-    {% endif %}
-    {% if content.field_display_groups|render|striptags %}
-      <div class="mb-4">
-        <h2 class="h4">Offered by</h2>
-        {{ content.field_display_groups }}
-      </div>
-    {% endif %}
-    {% if content.field_topics|render|striptags %}
-      <div class="mb-4">
-        <h2 class="h4">Topics</h2>
-        {{ content.field_topics }}
-      </div>
-    {% endif %}
-    {% if content.field_neighborhood|render|striptags %}
-      <div class="mb-4">
-        <h2 class="h4">Neighborhoods</h2>
-        {{ content.field_neighborhood }}
-      </div>
-    {% endif %}
+  <div class="cloudy-side col-lg-4 col-md-12">
+    {{ content.field_contact }}
+    {{ content.field_related_content }}
+    {{ content.field_topics }}
+    {{ content.field_neighborhood }}
+    {{ content.field_location_description }}
+
     {% set view_news = drupal_block('views_block:news_on_content-block_2')|length %}
     {% if view_news > 0 %}
       {{ drupal_block('views_block:news_on_content-block_2') }}
+    {% endif %}
+    {% set view_events = drupal_block('views_block:events_on_content-block_1')|length %}
+    {% if view_events > 0 %}
+      {{ drupal_block('views_block:events_on_content-block_1') }}
     {% endif %}
   </div>
 </div>

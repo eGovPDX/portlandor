@@ -3,6 +3,9 @@ langcode: en
 status: true
 dependencies:
   config:
+    - field.storage.group.field_group_path
+    - field.storage.node.field_display_groups
+    - field.storage.node.field_reviewer
     - system.menu.editor-toolbar
     - user.role.authenticated
   module:
@@ -37,7 +40,7 @@ display:
         type: views_query
         options:
           disable_sql_rewrite: false
-          distinct: false
+          distinct: true
           replica: false
           query_comment: ''
           query_tags: {  }
@@ -387,6 +390,69 @@ display:
           entity_type: node
           entity_field: title
           plugin_id: field
+        field_display_groups:
+          id: field_display_groups
+          table: node__field_display_groups
+          field: field_display_groups
+          relationship: nid
+          group_type: group
+          admin_label: ''
+          label: ''
+          exclude: true
+          alter:
+            alter_text: false
+            text: ''
+            make_link: false
+            path: ''
+            absolute: false
+            external: false
+            replace_spaces: false
+            path_case: none
+            trim_whitespace: false
+            alt: ''
+            rel: ''
+            link_class: ''
+            prefix: ''
+            suffix: ''
+            target: ''
+            nl2br: false
+            max_length: 0
+            word_boundary: true
+            ellipsis: true
+            more_link: false
+            more_link_text: ''
+            more_link_path: ''
+            strip_tags: false
+            trim: false
+            preserve_tags: ''
+            html: false
+          element_type: ''
+          element_class: ''
+          element_label_type: ''
+          element_label_class: ''
+          element_label_colon: false
+          element_wrapper_type: ''
+          element_wrapper_class: ''
+          element_default_classes: true
+          empty: ''
+          hide_empty: false
+          empty_zero: false
+          hide_alter_empty: true
+          click_sort_column: target_id
+          type: entity_reference_label
+          settings:
+            link: true
+          group_column: target_id
+          group_columns: {  }
+          group_rows: true
+          delta_limit: 0
+          delta_offset: 0
+          delta_reversed: false
+          delta_first_last: false
+          multi_type: separator
+          separator: ' || '
+          field_api_classes: false
+          plugin_id: field
         gid:
           id: gid
           table: group_content_field_data
@@ -394,11 +460,11 @@ display:
           relationship: group_content
           group_type: group
           admin_label: ''
-          label: Group
+          label: 'Owned by'
           exclude: false
           alter:
-            alter_text: false
-            text: ''
+            alter_text: true
+            text: "{# use double-pipe delimiter for multiple display groups because commas and slashes may be used in the actual titles and get caught by the split filter #}\r\n{% set groups = field_display_groups|split(' || ') %}\r\n{% set output = \"\" %}\r\n{% for group in groups %}\r\n  {% if group|raw != gid|raw %}\r\n    {% set output = output ~ group|raw ~ \", \" %}\r\n  {% endif %}\r\n{% endfor %}\r\n{% set length = output|raw|length %}\r\n{{ gid }}\r\n{% if groups|length > 1 %}\r\n<br><em>Also in {{ output|slice(0, length-2)|raw }}</em>\r\n{% endif %}"
             make_link: false
             path: ''
             absolute: false
@@ -517,55 +583,6 @@ display:
           entity_type: node
           entity_field: type
           plugin_id: field
-        break:
-          id: break
-          table: content_lock
-          field: break
-          relationship: nid
-          group_type: group
-          admin_label: ''
-          label: ''
-          exclude: true
-          alter:
-            alter_text: true
-            text: '<span class="link-break-lock">{{ break }}</span>'
-            make_link: false
-            path: ''
-            absolute: false
-            external: false
-            replace_spaces: false
-            path_case: none
-            trim_whitespace: false
-            alt: ''
-            rel: ''
-            link_class: ''
-            prefix: ''
-            suffix: ''
-            target: ''
-            nl2br: false
-            max_length: 0
-            word_boundary: true
-            ellipsis: true
-            more_link: false
-            more_link_text: ''
-            more_link_path: ''
-            strip_tags: false
-            trim: false
-            preserve_tags: ''
-            html: false
-          element_type: ''
-          element_class: ''
-          element_label_type: ''
-          element_label_class: ''
-          element_label_colon: false
-          element_wrapper_type: ''
-          element_wrapper_class: ''
-          element_default_classes: true
-          empty: ''
-          hide_empty: false
-          empty_zero: false
-          hide_alter_empty: true
-          plugin_id: content_lock_break_link
         timestamp:
           id: timestamp
           table: content_lock
@@ -695,7 +712,7 @@ display:
           exclude: true
           alter:
             alter_text: true
-            text: '<a href="/admin/lock/break/node/{{ nid }}/en/%2A"><i class="fa fa-lock" aria-hidden="true" title="Locked for {{ timestamp }}. Click to break lock."></i></a>'
+            text: '<a href="/admin/lock/break/node/{{ nid }}/und/edit?destination=/my-content"><i class="fa fa-lock" aria-hidden="true" title="Locked for {{ timestamp }}. Click to break lock."></i></a>'
             make_link: false
             path: ''
             absolute: false
@@ -737,18 +754,18 @@ display:
           type_custom_false: '0'
           not: false
           plugin_id: boolean
-        name:
-          id: name
-          table: users_field_data
-          field: name
-          relationship: field_reviewer
+        field_reviewer:
+          id: field_reviewer
+          table: node__field_reviewer
+          field: field_reviewer
+          relationship: nid
           group_type: group
           admin_label: ''
-          label: Reviewer
+          label: 'Notify reviewers'
           exclude: true
           alter:
-            alter_text: true
-            text: '<br /><span class="text-nowrap">{{ name }}</span>'
+            alter_text: false
+            text: ''
             make_link: false
             path: ''
             absolute: false
@@ -785,10 +802,72 @@ display:
           hide_empty: false
           empty_zero: false
           hide_alter_empty: true
-          click_sort_column: value
-          type: user_name
+          click_sort_column: target_id
+          type: entity_reference_label
           settings:
-            link_to_entity: true
+            link: true
+          group_column: target_id
+          group_columns: {  }
+          group_rows: true
+          delta_limit: 0
+          delta_offset: 0
+          delta_reversed: false
+          delta_first_last: false
+          multi_type: separator
+          separator: ', '
+          field_api_classes: false
+          plugin_id: field
+        revision_log:
+          id: revision_log
+          table: node_revision
+          field: revision_log
+          relationship: none
+          group_type: group
+          admin_label: ''
+          label: 'Revision log message'
+          exclude: true
+          alter:
+            alter_text: false
+            text: ''
+            make_link: false
+            path: ''
+            absolute: false
+            external: false
+            replace_spaces: false
+            path_case: none
+            trim_whitespace: false
+            alt: ''
+            rel: ''
+            link_class: ''
+            prefix: ''
+            suffix: ''
+            target: ''
+            nl2br: false
+            max_length: 0
+            word_boundary: true
+            ellipsis: true
+            more_link: false
+            more_link_text: ''
+            more_link_path: ''
+            strip_tags: true
+            trim: false
+            preserve_tags: ''
+            html: false
+          element_type: ''
+          element_class: ''
+          element_label_type: ''
+          element_label_class: ''
+          element_label_colon: true
+          element_wrapper_type: ''
+          element_wrapper_class: ''
+          element_default_classes: true
+          empty: ''
+          hide_empty: false
+          empty_zero: false
+          hide_alter_empty: true
+          click_sort_column: value
+          type: basic_string
+          settings: {  }
           group_column: value
           group_columns: {  }
           group_rows: true
@@ -799,8 +878,8 @@ display:
           multi_type: separator
           separator: ', '
           field_api_classes: false
-          entity_type: user
-          entity_field: name
+          entity_type: node
+          entity_field: revision_log
           plugin_id: field
         moderation_state_1:
           id: moderation_state_1
@@ -809,11 +888,11 @@ display:
           relationship: none
           group_type: group
           admin_label: ''
-          label: 'Latest revision'
+          label: Status/Reviewers
           exclude: false
           alter:
             alter_text: true
-            text: "{% if moderation_state_1 == \"Published\" %}\r\n<span class=\"badge badge-success\" title=\"{{ moderation_state_1 }}\" data-toggle=\"tooltip\">{{ moderation_state_1 }}</span>\r\n{% elseif moderation_state_1 == \"In review\" %}\r\n<span class=\"badge badge-warning\" title=\"{{ moderation_state_1 }}\" data-toggle=\"tooltip\">{{ moderation_state_1 }}</span>\r\n{{ name }}\r\n{% elseif moderation_state_1 == \"Unpublished/Archived\" %}\r\n<span class=\"badge badge-danger\" title=\"{{ moderation_state_1 }}\" data-toggle=\"tooltip\">{{ moderation_state_1 }}</span>\r\n{% elseif moderation_state_1 == \"Draft\" %}\r\n<span class=\"badge badge-warning\" title=\"{{ moderation_state_1 }}\" data-toggle=\"tooltip\">{{ moderation_state_1 }}</span>\r\n{% else %}\r\n<span class=\"badge badge-light\" title=\"{{ moderation_state_1 }}\" data-toggle=\"tooltip\">{{ moderation_state_1 }}</span>\r\n{% endif %}\r\n{{ is_locked }}"
+            text: "{% if moderation_state_1 == \"Published\" %}\r\n<span class=\"badge badge-success\" title=\"{{ revision_log }}\" data-toggle=\"tooltip\">{{ moderation_state_1 }}</span>\r\n{% elseif moderation_state_1 == \"In review\" %}\r\n<span class=\"badge badge-warning\" title=\"{{ revision_log }}\" data-toggle=\"tooltip\">{{ moderation_state_1 }}</span>\r\n{% elseif moderation_state_1 == \"Unpublished/Archived\" %}\r\n<span class=\"badge badge-danger\" title=\"{{ revision_log }}\" data-toggle=\"tooltip\">{{ moderation_state_1 }}</span>\r\n{% elseif moderation_state_1 == \"Draft\" %}\r\n<span class=\"badge badge-warning\" title=\"{{ revision_log }}\" data-toggle=\"tooltip\">{{ moderation_state_1 }}</span>\r\n{% else %}\r\n<span class=\"badge badge-light\" title=\"{{ revision_log }}\" data-toggle=\"tooltip\">{{ moderation_state_1 }}</span>\r\n{% endif %}\r\n{{ is_locked }}\r\n{% if field_reviewer %}\r\n<br>{{ field_reviewer }} \r\n{% endif %}"
             make_link: false
             path: ''
             absolute: false
@@ -1048,6 +1127,69 @@ display:
           destination: false
           entity_type: node
           plugin_id: entity_operations
+        field_group_path:
+          id: field_group_path
+          table: group__field_group_path
+          field: field_group_path
+          relationship: gid
+          group_type: group
+          admin_label: ''
+          label: 'Group path'
+          exclude: true
+          alter:
+            alter_text: false
+            text: ''
+            make_link: false
+            path: ''
+            absolute: false
+            external: false
+            replace_spaces: false
+            path_case: none
+            trim_whitespace: false
+            alt: ''
+            rel: ''
+            link_class: ''
+            prefix: ''
+            suffix: ''
+            target: ''
+            nl2br: false
+            max_length: 0
+            word_boundary: true
+            ellipsis: true
+            more_link: false
+            more_link_text: ''
+            more_link_path: ''
+            strip_tags: false
+            trim: false
+            preserve_tags: ''
+            html: false
+          element_type: ''
+          element_class: ''
+          element_label_type: ''
+          element_label_class: ''
+          element_label_colon: true
+          element_wrapper_type: ''
+          element_wrapper_class: ''
+          element_default_classes: true
+          empty: ''
+          hide_empty: false
+          empty_zero: false
+          hide_alter_empty: true
+          click_sort_column: value
+          type: string
+          settings:
+            link_to_entity: false
+          group_column: value
+          group_columns: {  }
+          group_rows: true
+          delta_limit: 0
+          delta_offset: 0
+          delta_reversed: false
+          delta_first_last: false
+          multi_type: separator
+          separator: ', '
+          field_api_classes: false
+          plugin_id: field
       filters:
         latest_translation_affected_revision:
           id: latest_translation_affected_revision
@@ -1271,6 +1413,71 @@ display:
             group_items: {  }
           entity_type: node
           plugin_id: moderation_state_filter
+        field_reviewer_target_id:
+          id: field_reviewer_target_id
+          table: node__field_reviewer
+          field: field_reviewer_target_id
+          relationship: nid
+          group_type: group
+          admin_label: ''
+          operator: '='
+          value:
+            min: ''
+            max: ''
+            value: ''
+          group: 1
+          exposed: true
+          expose:
+            operator_id: field_reviewer_target_id_op
+            label: 'Notify reviewers (field_reviewer)'
+            description: null
+            use_operator: false
+            operator: field_reviewer_target_id_op
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: reviewer_id
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+            placeholder: null
+            min_placeholder: null
+            max_placeholder: null
+          is_grouped: true
+          group_info:
+            label: 'Has reviewer'
+            description: ''
+            identifier: has_reviewer
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items:
+              1:
+                title: 'Yes'
+                operator: 'not empty'
+                value:
+                  value: ''
+                  min: ''
+                  max: ''
+              2:
+                title: 'No'
+                operator: empty
+                value:
+                  value: ''
+                  min: ''
+                  max: ''
+              3:
+                title: ''
+                operator: '='
+                value:
+                  value: ''
+                  min: ''
+                  max: ''
+          plugin_id: numeric
       sorts: {  }
       title: 'My Content'
       header:
@@ -1297,15 +1504,6 @@ display:
           required: true
           entity_type: node
           entity_field: nid
-          plugin_id: standard
-        field_reviewer:
-          id: field_reviewer
-          table: node_revision__field_reviewer
-          field: field_reviewer
-          relationship: none
-          group_type: group
-          admin_label: 'field_reviewer: User'
-          required: false
           plugin_id: standard
         group_content:
           id: group_content
@@ -1438,6 +1636,9 @@ display:
         - 'user.node_grants:view'
         - user.roles
       tags:
+        - 'config:field.storage.group.field_group_path'
+        - 'config:field.storage.node.field_display_groups'
+        - 'config:field.storage.node.field_reviewer'
         - 'config:workflow_list'
   page_1:
     display_plugin: page
@@ -1445,7 +1646,8 @@ display:
     display_title: Page
     position: 1
     display_options:
-      display_extenders: {  }
+      display_extenders:
+        metatag_display_extender: {  }
       path: my-content
       menu:
         type: normal
@@ -1467,4 +1669,7 @@ display:
         - 'user.node_grants:view'
         - user.roles
       tags:
+        - 'config:field.storage.group.field_group_path'
+        - 'config:field.storage.node.field_display_groups'
+        - 'config:field.storage.node.field_reviewer'
         - 'config:workflow_list'

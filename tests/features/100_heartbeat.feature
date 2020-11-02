@@ -10,15 +10,14 @@ Feature: Basic site operation and navigation
   Scenario: Visit the homepage as anonymous user
     When I visit "/"
     Then I should see "Services" in the "main_menu" region
-    And I should see "Alerts" in the "main_menu" region
-    And I should see "Portland, Oregon, USA" in the "footer_second" region
+    And I should see "City of Portland, Oregon" in the "footer_fourth" region
 
   Scenario: Visit the homepage as authenticated user
     Given I am logged in as user "oliver.outsider@portlandoregon.gov"
     When I visit "/"
     Then I wait for the page to be loaded
-    And I should see "Alerts" in the "main_menu" region
-    And I should see "Portland, Oregon, USA" in the "footer_second" region
+    And I should see "Services" in the "main_menu" region
+    And I should see "City of Portland, Oregon" in the "footer_fourth" region
 
     # Given users:
     # | name           | status | uid    | mail                              | roles              |

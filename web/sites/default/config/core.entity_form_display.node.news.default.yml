@@ -5,17 +5,20 @@ dependencies:
   config:
     - entity_browser.browser.image_browser_embed
     - entity_browser.browser.locations_browser
+    - field.field.node.news.feeds_item
     - field.field.node.news.field_body_content
     - field.field.node.news.field_contact
     - field.field.node.news.field_display_groups
     - field.field.node.news.field_feature_this_content
     - field.field.node.news.field_feature_until
     - field.field.node.news.field_featured_media
+    - field.field.node.news.field_feeds_guid
     - field.field.node.news.field_location
     - field.field.node.news.field_neighborhood
     - field.field.node.news.field_news_type
     - field.field.node.news.field_published_on
     - field.field.node.news.field_related_content
+    - field.field.node.news.field_related_events
     - field.field.node.news.field_reviewer
     - field.field.node.news.field_search_keywords
     - field.field.node.news.field_summary
@@ -42,7 +45,7 @@ third_party_settings:
         - field_feature_until
         - field_featured_media
       parent_name: ''
-      weight: 8
+      weight: 6
       format_type: details
       region: content
       format_settings:
@@ -59,8 +62,9 @@ third_party_settings:
         - url_redirects
         - path
         - field_search_keywords
+        - field_feeds_guid
       parent_name: ''
-      weight: 13
+      weight: 12
       format_type: details
       region: content
       format_settings:
@@ -74,7 +78,7 @@ third_party_settings:
       children:
         - field_redirects
       parent_name: ''
-      weight: 12
+      weight: 11
       format_type: details
       region: content
       format_settings:
@@ -88,21 +92,21 @@ third_party_settings:
       children:
         - field_display_groups
       parent_name: ''
-      weight: 11
+      weight: 10
       format_type: details
       region: content
       format_settings:
+        description: ''
         id: ''
         classes: ''
-        description: ''
         open: false
         required_fields: false
-      label: Groups
+      label: 'Groups Listing this News'
     group_contacts:
       children:
         - field_contact
       parent_name: ''
-      weight: 10
+      weight: 9
       format_type: details
       region: content
       format_settings:
@@ -112,6 +116,36 @@ third_party_settings:
         open: false
         required_fields: false
       label: Contacts
+    group_related:
+      children:
+        - field_related_content
+        - field_related_events
+      parent_name: ''
+      weight: 8
+      format_type: details
+      region: content
+      format_settings:
+        description: ''
+        id: ''
+        classes: ''
+        open: false
+        required_fields: false
+      label: Related
+    group_published_and_updated:
+      children:
+        - field_published_on
+        - field_updated_on
+      parent_name: ''
+      weight: 13
+      format_type: details
+      region: content
+      format_settings:
+        description: 'These dates are automatically populated with the current timestamp.'
+        open: true
+        required_fields: true
+        id: ''
+        classes: ''
+      label: 'Published and Updated Dates'
 id: node.news.default
 targetEntityType: node
 bundle: news
@@ -125,7 +159,7 @@ content:
     third_party_settings: {  }
   field_body_content:
     type: text_textarea
-    weight: 5
+    weight: 3
     region: content
     settings:
       rows: 5
@@ -205,13 +239,21 @@ content:
       open: false
     region: content
     third_party_settings: {  }
+  field_feeds_guid:
+    type: string_textfield
+    weight: 18
+    region: content
+    settings:
+      size: 60
+      placeholder: ''
+    third_party_settings: {  }
   field_location:
-    weight: 9
+    weight: 7
     settings:
       entity_browser: locations_browser
       field_widget_display: rendered_entity
       field_widget_display_settings:
-        view_mode: teaser
+        view_mode: related
       field_widget_remove: '1'
       selection_mode: selection_append
       field_widget_edit: 0
@@ -221,7 +263,7 @@ content:
     type: entity_reference_browser_table_widget
     region: content
   field_neighborhood:
-    weight: 7
+    weight: 5
     settings: {  }
     third_party_settings: {  }
     type: chosen_select
@@ -233,7 +275,7 @@ content:
     type: options_select
     region: content
   field_published_on:
-    weight: 2
+    weight: 3
     settings: {  }
     third_party_settings: {  }
     type: datetime_default
@@ -247,7 +289,7 @@ content:
       placeholder: ''
     third_party_settings: {  }
   field_related_content:
-    weight: 14
+    weight: 15
     settings:
       match_operator: CONTAINS
       size: 60
@@ -256,8 +298,18 @@ content:
     third_party_settings: {  }
     type: entity_reference_autocomplete
     region: content
+  field_related_events:
+    weight: 16
+    settings:
+      match_operator: CONTAINS
+      match_limit: 10
+      size: 60
+      placeholder: ''
+    third_party_settings: {  }
+    type: entity_reference_autocomplete
+    region: content
   field_reviewer:
-    weight: 15
+    weight: 14
     settings:
       match_operator: CONTAINS
       size: 60
@@ -275,7 +327,7 @@ content:
     type: string_textfield
     region: content
   field_summary:
-    weight: 4
+    weight: 2
     settings:
       rows: 2
       placeholder: ''
@@ -288,20 +340,20 @@ content:
     type: string_textarea
     region: content
   field_topics:
-    weight: 6
+    weight: 4
     settings: {  }
     third_party_settings: {  }
     type: chosen_select
     region: content
   field_updated_on:
-    weight: 3
+    weight: 4
     settings: {  }
     third_party_settings: {  }
     type: datetime_default
     region: content
   moderation_state:
     type: moderation_state_default
-    weight: 16
+    weight: 15
     region: content
     settings: {  }
     third_party_settings: {  }
@@ -335,6 +387,7 @@ content:
     settings: {  }
     third_party_settings: {  }
 hidden:
+  feeds_item: true
   field_body: true
   group_content: true
   langcode: true

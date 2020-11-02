@@ -5,7 +5,7 @@ An opinionated **Link** with emphasis.
 
 - `background`: boolean - false (default)
 - `standalone`: boolean - false (default)
-- `icon`: object { name: string, fontAwesome: boolean — false (default) }
+- `icon`: object { name: string, size: string, fontAwesome: boolean, brand: boolean }
 - `text`: string - The link text
 - `url`: string - The link url
 
@@ -17,7 +17,6 @@ An opinionated **Link** with emphasis.
     standalone: false,
     icon: {
       name: 'email',
-      fontAwesome: true
     },
     text: 'Send us an email',
     url: '#emails'

@@ -19,7 +19,7 @@ class PortlandMaps extends ProviderPluginBase {
    */
   public static function getIdFromInput($input) {
     // Portland Maps share URL
-    preg_match('/^https?:\/\/www\.portlandmaps\.com\/detail\/(?<id>.+)$/', trim($input), $matches);
+    preg_match('/^https?:\/\/www\.portlandmaps\.com\/(detail|apps)\/(?<id>.+)$/', trim($input), $matches);
     if (isset($matches['id'])) {
       return md5($matches['id']);
     }
