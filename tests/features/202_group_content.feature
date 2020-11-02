@@ -27,7 +27,7 @@ Feature: Members can manage group content
     And I should see "Legacy path"
 
     When I fill in "edit-title-0-value" with "Test page"
-    And I fill in "edit-field-menu-link-text-0-value" with "Test"
+    And I fill in "edit-field-menu-link-text-0-value" with "test-page"
     And I fill in "edit-field-summary-0-value" with "Summary for the test page"
     And I fill in wysiwyg on field "edit-field-body-content-0-value" with "Body content for the test page"
     And I fill in "edit-revision-log-0-value" with:
