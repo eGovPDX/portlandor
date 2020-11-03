@@ -638,6 +638,30 @@ function portland_search_api_solr_documents_alter(array &$documents, \Drupal\sea
 }
 
 /**
+ * Implements hook_search_api_query_alter()
+ */
+function portland_search_api_query_alter(\Drupal\search_api\Query\QueryInterface &$query) {
+    // Let the view attachment to share the page's facet settings
+    // See https://www.drupal.org/project/facets/issues/3116236
+    if ($query->getIndex()->getServerInstance()->supportsFeature('search_api_facets')) {
+        /** @var \Drupal\facets\FacetManager\DefaultFacetManager $facet_manager */
+        $facet_manager = \Drupal::service('facets.manager');
+
+        $search_id = $query->getSearchId();
+
+        // If we find an attachment view query, we use the same query alter
+        // as the page because they belong together.
+        if (strpos($search_id, 'views_attachment:construction_map__') === 0) {
+            $search_id = 'search_api:views_page__construction_map__page_1';
+
+            // Add the active filters.
+            $facet_manager->alterQuery($query, $search_id);
+        }
+    }
+}
+
+  
+/**
  * Implements hook_search_api_solr_query_alter() boost based on recently
  * published date.
  * See https://atendesigngroup.com/blog/drupal-8-apache-solr-boost-search-term-relevance-publish-date
@@ -671,7 +695,7 @@ function portland_search_api_solr_query_alter(\Solarium\QueryType\Select\Query\Q
     }
 
     // Search the whole phrase in additional of individual words
-    $original_keys = trim($query->getKeys());
+    $original_keys = strtolower(trim($query->getKeys()));
     if (is_string($original_keys) && $original_keys && strpos($original_keys, ' ') !== false) { // Do not modify empty query
         // Three things are happening here:
         // 1. Add phrase search for the entire search string.
@@ -826,7 +850,7 @@ function _validate_group_group_path(&$form, \Drupal\Core\Form\FormStateInterface
                 // If this is an existing group, check if the alias is already taken by anything OTHER THAN the current group
                 foreach ($aliases as $alias) {
                     if ($alias->path->value != "/group/$group_id") {
-                        $form_state->setErrorByName('field_group_path', t('The alias is already taken: <a href="'.$alias.'">'.$alias.'</a>'));
+                        $form_state->setErrorByName('field_group_path', t('The alias is already taken: <a href="'.$alias->alias->value.'">'.$alias->alias->value.'</a>'));
                         break;
                     }
                 }
@@ -1067,4 +1091,25 @@ function portland_form_openid_connect_login_form_alter(&$form, &$form_state)
 {
   // Override the default label of the submit button
   $form["openid_connect_client_windows_aad_login"]["#value"] = t('Log in with City of Portland network account');
+}
+
+/**
+ * Implements hook_views_pre_render().
+ */
+function portland_views_pre_render(\Drupal\views\ViewExecutable $view) {
+  if ($view->id() == 'admin_content_with_legacy_path' || 
+    ( ($view->id() == 'group_nodes' || $view->id() == 'admin_group_content_revision') && (strpos($view->current_display, 'redirects') !== false) ) ) {
+    // Have to call redirect.repository service to find which row has redirects
+    foreach ($view->result as $key => $value) {
+      $entity = $value->_entity;
+      $nid = $entity->Id();
+      $type = $entity->getEntityTypeId();
+      if ($nid && $type) {
+          $redirects = \Drupal::service('redirect.repository')->findByDestinationUri(["internal:/$type/$nid", "entity:$type/$nid"]);
+          if (empty($redirects)) {
+            unset ($view->result[$key]); // Remove rows without legacy path
+          }
+      }
+    }
+  }
 }

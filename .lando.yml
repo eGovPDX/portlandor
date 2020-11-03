@@ -9,6 +9,8 @@ config:
   cache: false
 services:
   appserver:
+    build:
+      - "/app/vendor/bin/phpcs --config-set installed_paths /app/vendor/drupal/coder/coder_sniffer"
     build_as_root:
       - sed 's|mozilla\/AddTrust_External_Root.crt|#mozilla\/AddTrust_External_Root.crt|g' -i /etc/ca-certificates.conf
       - /bin/sh -c "cp /app/cop_ca_*.crt /usr/local/share/ca-certificates/"
@@ -65,15 +67,18 @@ tooling:
     description: CUSTOM Run drush commands
     service: appserver
     cmd: drush --root=/app/web
-  npm:
-    # Although this now runs yarn, I have left it as legacy support for users who are use to running `lando npm etc etc`
-    description: CUSTOM Run yarn commands
-    service: node
-    cmd: cd /app/web/themes/custom/cloudy && yarn
+  drupalcs:
+    service: appserver
+    cmd: "/app/vendor/bin/phpcs --standard=Drupal,DrupalPractice"
+    description: Run phpcs Drupal Coding Standards against a given file or directory.
+  drupalcbf:
+    service: appserver
+    cmd: "/app/vendor/bin/phpcbf --standard=Drupal"
+    description: Automatically fix Drupal coding standards suggestions.
   yarn:
     description: CUSTOM Run yarn commands
     service: node
-    cmd: cd /app/web/themes/custom/cloudy && yarn
+    cmd: yarn --cwd /app/web/themes/custom/cloudy
   node:
     description: CUSTOM Run node commands
     service: node

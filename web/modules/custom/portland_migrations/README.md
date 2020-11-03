@@ -14,13 +14,13 @@ A module for migrating content from POG to portland.gov.
 The Migrate Tools module provides drush commands to run the migrations. The order of commands is important! When running the migrations on remote servers, such as multidev or Dev/Test/Live, use the terminus commands. For multidev environments, the environment id is formatted like this: portlandor.powr-1234. Example:
 
 ```
-lando terminus drush [environment] migrate:import [migration_id]
+lando terminus drush [environment] -- migrate:import [migration_id]
 ```
 
 Some migrations have interdependencies, such as eudaly_news, eudaly_news_group_content, and eudaly_news_redirects. You can automatically run all migrations in a group with:
 
 ```
-lando terminus drush [environment] migrate:import --group=[migration_group]
+lando terminus drush [environment] -- migrate:import --group=[migration_group]
 ```
 
 After editing an existing migration, you need to run `lando drush cr` before it will pick up the changes.
@@ -44,14 +44,14 @@ Long migrations run through terminus may exceed the Pantheon timeout and be term
 For example, the policies migration is lengthy due to custom processing and regularly times out. Use the following commands to reset and restart the migration:
 
 ```
-lando terminus remote:drush portlandor.powr-[ID] -- migrate:reset-status policies
-lando terminus remote:drush portlandor.powr-[ID] -- migrate:import policies
+lando terminus drush portlandor.powr-[ID] -- migrate:reset-status policies
+lando terminus drush portlandor.powr-[ID] -- migrate:import policies
 ```
 
 You can also check the status of the migration using the `migrate:status` command:
 
 ```
-lando terminus remote:drush portlandor.powr-[ID] -- migrate:status
+lando terminus drush portlandor.powr-[ID] -- migrate:status
 ```
 
 ## CSV files
@@ -127,6 +127,7 @@ Group content migrations are used to add content to a group by creating a group 
 - bds_news
 - bds_service_updates
 - bds_plans_examiner
+- pbot_news
 
 #### Eudaly news
 ##### Local
@@ -137,9 +138,9 @@ lando drush migrate:import eudaly_news_redirects
 ```
 ##### On Pantheon
 ```
-lando terminus remote:drush portlandor.powr-[ID] -- migrate:import eudaly_news
-lando terminus remote:drush portlandor.powr-[ID] -- migrate:import eudaly_news_group_content
-lando terminus remote:drush portlandor.powr-[ID] -- migrate:import eudaly_news_redirects
+lando terminus drush portlandor.powr-[ID] -- migrate:import eudaly_news
+lando terminus drush portlandor.powr-[ID] -- migrate:import eudaly_news_group_content
+lando terminus drush portlandor.powr-[ID] -- migrate:import eudaly_news_redirects
 ```
 
 #### Category documents for Eudaly news
@@ -150,8 +151,8 @@ lando drush migrate:import category_documents_group_content
 ```
 ##### On Pantheon
 ```
-lando terminus remote:drush portlandor.powr-[ID] -- migrate:import category_documents
-lando terminus remote:drush portlandor.powr-[ID] -- migrate:import category_documents_group_content
+lando terminus drush portlandor.powr-[ID] -- migrate:import category_documents
+lando terminus drush portlandor.powr-[ID] -- migrate:import category_documents_group_content
 ```
 
 #### Parks
@@ -165,11 +166,11 @@ lando drush migrate:import park_photos
 ```
 ##### On Pantheon
 ```
-lando terminus remote:drush portlandor.powr-[ID] -- migrate:import parks
-lando terminus remote:drush portlandor.powr-[ID] -- migrate:import parks_redirects
-lando terminus remote:drush portlandor.powr-[ID] -- migrate:import park_amenities
-lando terminus remote:drush portlandor.powr-[ID] -- migrate:import park_documents
-lando terminus remote:drush portlandor.powr-[ID] -- migrate:import park_photos
+lando terminus drush portlandor.powr-[ID] -- migrate:import parks
+lando terminus drush portlandor.powr-[ID] -- migrate:import parks_redirects
+lando terminus drush portlandor.powr-[ID] -- migrate:import park_amenities
+lando terminus drush portlandor.powr-[ID] -- migrate:import park_documents
+lando terminus drush portlandor.powr-[ID] -- migrate:import park_photos
 ```
 
 #### City charter
@@ -184,12 +185,12 @@ lando drush migrate:import city_charter_sections_redirects
 ```
 ##### On Pantheon
 ```
-lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_charter_chapters
-lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_charter_chapters_redirects
-lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_charter_articles
-lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_charter_articles_redirects
-lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_charter_sections
-lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_charter_sections_redirects
+lando terminus drush portlandor.powr-[ID] -- migrate:import city_charter_chapters
+lando terminus drush portlandor.powr-[ID] -- migrate:import city_charter_chapters_redirects
+lando terminus drush portlandor.powr-[ID] -- migrate:import city_charter_articles
+lando terminus drush portlandor.powr-[ID] -- migrate:import city_charter_articles_redirects
+lando terminus drush portlandor.powr-[ID] -- migrate:import city_charter_sections
+lando terminus drush portlandor.powr-[ID] -- migrate:import city_charter_sections_redirects
 ```
 
 #### City code
@@ -204,12 +205,12 @@ lando drush migrate:import city_code_sections_redirects
 ```
 ##### On Pantheon
 ```
-lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_code_titles
-lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_code_titles_redirects
-lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_code_chapters
-lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_code_chapters_redirects
-lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_code_sections
-lando terminus remote:drush portlandor.powr-[ID] -- migrate:import city_code_sections_redirects
+lando terminus drush portlandor.powr-[ID] -- migrate:import city_code_titles
+lando terminus drush portlandor.powr-[ID] -- migrate:import city_code_titles_redirects
+lando terminus drush portlandor.powr-[ID] -- migrate:import city_code_chapters
+lando terminus drush portlandor.powr-[ID] -- migrate:import city_code_chapters_redirects
+lando terminus drush portlandor.powr-[ID] -- migrate:import city_code_sections
+lando terminus drush portlandor.powr-[ID] -- migrate:import city_code_sections_redirects
 ```
 ##### Manual migrations for city code
 The following city code sections have images that need to be manually migrated. There are few enough that it's not worth creating the custom plugin to handle them.
@@ -247,11 +248,11 @@ lando drush migrate:import policies_redirects
 ```
 ##### On Pantheon
 ```
-lando terminus remote:drush portlandor.powr-[ID] -- migrate:import policies_categories
-lando terminus remote:drush portlandor.powr-[ID] -- migrate:import policies_categories_redirects
-lando terminus remote:drush portlandor.powr-[ID] -- migrate:import policies_types
-lando terminus remote:drush portlandor.powr-[ID] -- migrate:import policies
-lando terminus remote:drush portlandor.powr-[ID] -- migrate:import policies_redirects
+lando terminus drush portlandor.powr-[ID] -- migrate:import policies_categories
+lando terminus drush portlandor.powr-[ID] -- migrate:import policies_categories_redirects
+lando terminus drush portlandor.powr-[ID] -- migrate:import policies_types
+lando terminus drush portlandor.powr-[ID] -- migrate:import policies
+lando terminus drush portlandor.powr-[ID] -- migrate:import policies_redirects
 ```
 
 #### Wheeler blog
@@ -264,9 +265,9 @@ lando drush migrate:import wheeler_blog_group_content
 ```
 ##### On Pantheon
 ```
-lando terminus remote:drush portlandor.powr-[ID] -- migrate:import wheeler_blog
-lando terminus remote:drush portlandor.powr-[ID] -- migrate:import wheeler_blog_redirects
-lando terminus remote:drush portlandor.powr-[ID] -- migrate:import wheeler_blog_group_content
+lando terminus drush portlandor.powr-[ID] -- migrate:import wheeler_blog
+lando terminus drush portlandor.powr-[ID] -- migrate:import wheeler_blog_redirects
+lando terminus drush portlandor.powr-[ID] -- migrate:import wheeler_blog_group_content
 ```
 
 #### Wheeler press releases
@@ -278,9 +279,9 @@ lando drush migrate:import wheeler_press_releases_group_content
 ```
 ##### On Pantheon
 ```
-lando terminus remote:drush portlandor.powr-[ID] -- migrate:import wheeler_press_releases
-lando terminus remote:drush portlandor.powr-[ID] -- migrate:import wheeler_press_releases_redirects
-lando terminus remote:drush portlandor.powr-[ID] -- migrate:import wheeler_press_releases_group_content
+lando terminus drush portlandor.powr-[ID] -- migrate:import wheeler_press_releases
+lando terminus drush portlandor.powr-[ID] -- migrate:import wheeler_press_releases_redirects
+lando terminus drush portlandor.powr-[ID] -- migrate:import wheeler_press_releases_group_content
 ```
 
 #### Parks news
@@ -298,37 +299,33 @@ lando drush migrate:import parks_news_redirects
 ```
 ##### On Pantheon
 ```
-lando terminus remote:drush portlandor.powr-[ID] -- migrate:import parks_news
-lando terminus remote:drush portlandor.powr-[ID] -- migrate:import parks_news_group_content
-lando terminus remote:drush portlandor.powr-[ID] -- migrate:import parks_news_redirects
+lando terminus drush portlandor.powr-[ID] -- migrate:import parks_news
+lando terminus drush portlandor.powr-[ID] -- migrate:import parks_news_group_content
+lando terminus drush portlandor.powr-[ID] -- migrate:import parks_news_redirects
 ```
 
 #### BDS News
 ##### Local
 ```
 lando drush migrate:import bds_news
-lando drush migrate:import bds_news_group_content
 lando drush migrate:import bds_news_redirects
 ```
 ##### On Pantheon
 ```
-lando terminus remote:drush portlandor.powr-[ID] -- migrate:import bds_news
-lando terminus remote:drush portlandor.powr-[ID] -- migrate:import bds_news_group_content
-lando terminus remote:drush portlandor.powr-[ID] -- migrate:import bds_news_redirects
+lando terminus drush portlandor.powr-[ID] -- migrate:import bds_news
+lando terminus drush portlandor.powr-[ID] -- migrate:import bds_news_redirects
 ```
 
 #### BDS Service Updates
 ##### Local
 ```
 lando drush migrate:import bds_service_updates
-lando drush migrate:import bds_service_updates_group_content
 lando drush migrate:import bds_service_updates_redirects
 ```
 ##### On Pantheon
 ```
-lando terminus remote:drush portlandor.powr-[ID] -- migrate:import bds_service_updates
-lando terminus remote:drush portlandor.powr-[ID] -- migrate:import bds_service_updates_group_content
-lando terminus remote:drush portlandor.powr-[ID] -- migrate:import bds_service_updates_redirects
+lando terminus drush portlandor.powr-[ID] -- migrate:import bds_service_updates
+lando terminus drush portlandor.powr-[ID] -- migrate:import bds_service_updates_redirects
 ```
 
 #### BDS Plans Examiner
@@ -339,6 +336,18 @@ lando drush migrate:import bds_plans_examiner_redirects
 ```
 ##### On Pantheon
 ```
-lando terminus remote:drush portlandor.powr-[ID] -- migrate:import bds_plans_examiner
-lando terminus remote:drush portlandor.powr-[ID] -- migrate:import bds_plans_examiner_redirects
+lando terminus drush portlandor.powr-[ID] -- migrate:import bds_plans_examiner
+lando terminus drush portlandor.powr-[ID] -- migrate:import bds_plans_examiner_redirects
+```
+
+#### PBOT News
+##### Local
+```
+lando drush migrate:import pbot_news
+lando drush migrate:import pbot_news_redirects
+```
+##### On Pantheon
+```
+lando terminus drush portlandor.powr-[ID] -- migrate:import pbot_news
+lando terminus drush portlandor.powr-[ID] -- migrate:import pbot_news_redirects
 ```

@@ -111,6 +111,8 @@ When your work is ready for code review and merge:
    - Run smoke tests against the feature branch site to make sure the build was successful.
 2. If the build fails, you can go back to your local project and correct any issues and repeat the process of getting a clean commit pushed to GitHub. Once a PR exists, every commit to that branch will trigger a new CircleCI build. You only need to run `git push` from your branch if it is already connected to the remote, but you'll probably want to step through the rebase steps if the time between pushes is anything less than a couple of minutes.
 
+3. The CI job `visual-regression` runs tests under different users in parallel and `finalize-all` notifies Percy that all tests have finished. Functional tests are performed directly on CI servers while screenshots are sent to Percy for post processing. When a functional test fails, click on the `Details` link next to the job `ci/circleci: visual_regression` to review CI log for error messages. When a screenshot comparision test fails, click on the `Details` link next to the `percy/portlandor` job to review and approve the result if the visual difference is only caused by content updates. If the visual difference is **not** caused by content updates, a comment should be added to the JIRA ticket with a link to the screenshot in question.
+
 ### Pantheon MultiDev site
 
 1. You'll need to prep anything on the multidev site that is needed for QA to complete the test plan. This is also a chance to see if you need to address any issues with an additional commit.
@@ -156,13 +158,13 @@ Note: The theme build process is automatically triggered everytime your Lando co
 
 ### Quick Start
 
-1. Run `lando npm start`
+1. Run `lando yarn start`
 2. Go to `https://portlandor.lndo.site/pattern-lab`
 
 Here are some additional commands you may find useful.
 
-- Run `lando npm run build` to build both the theme assets and Pattern Lab.
-- Run `lando npm run watch` to build both the thme assets and  Pattern Lab, watch for changes and trigger rebuilds for both.
+- Run `lando yarn run build` to build both the theme assets and Pattern Lab.
+- Run `lando yarn run watch` to build both the thme assets and  Pattern Lab, watch for changes and trigger rebuilds for both.
 
 ### Pattern Lab
 
@@ -172,9 +174,9 @@ To get started with Pattern Lab,
 
 Here are some useful commands when working with Pattern Lab:
 
-- Run `lando npm run build:pl` to build the Pattern Lab site.
-- Run `lando npm run watch:pl` to build the Pattern Lab site, watch for changes and trigger rebuilds.
-- Run `lando npm run clean:pl` to delete the Pattern Lab site.
+- Run `lando yarn run build:pl` to build the Pattern Lab site.
+- Run `lando yarn run watch:pl` to build the Pattern Lab site, watch for changes and trigger rebuilds.
+- Run `lando yarn run clean:pl` to delete the Pattern Lab site.
 
 #### *Note*
 
@@ -188,11 +190,11 @@ Note: Make modifications to the desired SCSS and JavaScript files in the theme. 
 
 You have a couple of options for manually compiling the asset files:
 
-- Run `lando npm run build:wp` to build the Pattern Lab site.
-- Run `lando npm run watch:wp` to build the Pattern Lab site, watch for changes and trigger rebuilds.
-- Run `lando npm run clean:wp` to delete the Pattern Lab site.
+- Run `lando yarn run build:wp` to build the Pattern Lab site.
+- Run `lando yarn run watch:wp` to build the Pattern Lab site, watch for changes and trigger rebuilds.
+- Run `lando yarn run clean:wp` to delete the Pattern Lab site.
 
-You can run `lando npm install` if you need to install/update your Node dependencies.
+You can run `lando yarn install` if you need to install/update your Node dependencies.
 
 ### Webpack output
 

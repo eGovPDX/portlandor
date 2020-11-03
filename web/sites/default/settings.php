@@ -130,14 +130,11 @@ else {
 }
 
 
-/**
- * Overwrite Google Analytics tracking code in 'live' production site.
- *
- * Set to tracking ID of Google Analytics property for 'production' site.
- */
+// Overwrite Google Tag Manager environment setting in 'live' production site.
 if (isset($_ENV['PANTHEON_ENVIRONMENT'])) {
   if ($_ENV['PANTHEON_ENVIRONMENT'] === 'live') {
-    $config['google_analytics.settings']['account'] = 'UA-6858269-14';
+    $config['google_tag.container.portland.gov']['environment_id'] = 'env-1';
+    $config['google_tag.container.portland.gov']['environment_token'] = 'gX0sWBBfUHwzWER-y90CyQ';
   }
 }
 
@@ -146,3 +143,5 @@ if (isset($_ENV['PANTHEON_ENVIRONMENT'])) {
 if (function_exists('newrelic_ignore_transaction') && php_sapi_name() === 'cli') {
   newrelic_ignore_transaction();
 }
+
+$config['file.settings']['make_unused_managed_files_temporary'] = TRUE;

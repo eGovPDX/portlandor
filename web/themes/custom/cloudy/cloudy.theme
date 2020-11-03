@@ -80,7 +80,7 @@ function cloudy_preprocess_html(&$variables) {
  * Implements hook_form_alter
  */
 function cloudy_form_alter(&$form, \Drupal\Core\Form\FormStateInterface $form_state, $form_id) {
-  if ($form_id == 'search_api_page_block_form') {
+  if ($form_id == 'search_api_page_block_form_search_portland_gov') {
     $form['keys']['#attributes']['placeholder'] = 'What can we help you find?';
     $form['keys']['#attributes']['title'] = 'Enter keywords and press enter or return';
     $form['actions']['submit']['#value'] = html_entity_decode('&#xf002;');
@@ -93,29 +93,36 @@ function cloudy_form_alter(&$form, \Drupal\Core\Form\FormStateInterface $form_st
  */
 function cloudy_preprocess_form(&$vars) {
   // add role="search" to site search form
-  if ($vars['element']['#form_id'] == 'search_api_page_block_form') {
+  if ($vars['element']['#form_id'] == 'search_api_page_block_form_search_portland_gov') {
     $vars['attributes']['role'] = 'search';
     $vars['attributes']['class'] = 'input-group form-inline d-flex justify-content-center form-inline--search-block';
     $vars['attributes']['title'] = 'Search';
   }
 }
 
+function cloudy_preprocess_search_api_page(&$vars) {
+  // Save URL query parameter as variable for Twig template
+  if ( isset($_GET['keys']) ) {
+    $vars['get']['keys'] = $_GET['keys'];
+  }
+}
+
 function cloudy_preprocess_input__textfield(&$vars) {
-    // The main search input
-    if($vars["attributes"]['id'] === 'edit-keys') {
-        $vars["attributes"]['type'] = 'search';
-        $vars["attributes"]['class'] = ['form-search', 'form-autocomplete'];
-    }
-    // The search input at top-right corner
-    else if(
-      $vars["attributes"]['id'] === 'edit-keys--2' ||
-      $vars["attributes"]['id'] === 'edit-keys--3' ||
-      $vars["attributes"]['id'] === 'edit-keys--4'
-    ) {
-        $vars["attributes"]['type'] = 'search';
-        $vars["attributes"]['placeholder'] = 'Search Portland.gov';
-        $vars["attributes"]['size'] = '21';
-    }
+  // The main search input
+  if($vars["attributes"]['id'] === 'edit-keys') {
+    $vars["attributes"]['type'] = 'search';
+    $vars["attributes"]['class'] = ['form-search', 'form-autocomplete'];
+  }
+  // The search input at top-right corner
+  else if(
+    $vars["attributes"]['id'] === 'edit-keys--2' ||
+    $vars["attributes"]['id'] === 'edit-keys--3' ||
+    $vars["attributes"]['id'] === 'edit-keys--4'
+  ) {
+    $vars["attributes"]['type'] = 'search';
+    $vars["attributes"]['placeholder'] = 'Search Portland.gov';
+    $vars["attributes"]['size'] = '21';
+  }
 }
 
 /**

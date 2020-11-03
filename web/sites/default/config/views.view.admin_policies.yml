@@ -4,6 +4,7 @@ status: true
 dependencies:
   config:
     - field.storage.node.field_policy_category
+    - field.storage.node.field_policy_type
     - node.type.policy
     - system.menu.editor-toolbar
     - taxonomy.vocabulary.policy_category
@@ -53,20 +54,25 @@ display:
       exposed_form:
         type: basic
         options:
-          submit_button: Apply
-          reset_button: false
+          submit_button: Search
+          reset_button: true
           reset_button_label: Reset
           exposed_sorts_label: 'Sort by'
           expose_sort_order: true
           sort_asc_label: Asc
           sort_desc_label: Desc
       pager:
-        type: mini
+        type: full
         options:
           items_per_page: 50
           offset: 0
           id: 0
           total_pages: null
+          tags:
+            previous: ‹‹
+            next: ››
+            first: '« First'
+            last: 'Last »'
           expose:
             items_per_page: false
             items_per_page_label: 'Items per page'
@@ -75,9 +81,7 @@ display:
             items_per_page_options_all_label: '- All -'
             offset: false
             offset_label: Offset
-          tags:
-            previous: ‹‹
-            next: ››
+          quantity: 9
       style:
         type: table
         options:
@@ -92,7 +96,7 @@ display:
           columns:
             views_bulk_operations_bulk_form: views_bulk_operations_bulk_form
             title: title
-            type: type
+            field_policy_type: field_policy_type
             field_policy_category: field_policy_category
             status: status
             moderation_state: moderation_state
@@ -111,7 +115,7 @@ display:
               separator: ''
               empty_column: false
               responsive: ''
-            type:
+            field_policy_type:
               sortable: true
               default_sort_order: asc
               align: ''
@@ -151,7 +155,7 @@ display:
               separator: ''
               empty_column: false
               responsive: ''
-          default: changed
+          default: title
           empty_table: false
       row:
         type: fields
@@ -208,40 +212,27 @@ display:
           batch_size: 10
           form_step: true
           buttons: false
-          clear_on_exposed: false
+          clear_on_exposed: true
           action_title: Action
           selected_actions:
-            'entity:break_lock:node': 'entity:break_lock:node'
-            'moderation_state_change:node': 0
-            node_unpromote_action: 0
-            node_unpublish_action: 0
-            node_publish_action: 0
-            node_unpublish_by_keyword_action: 0
-            node_assign_owner_action: 0
-            node_promote_action: 0
-            node_save_action: 0
-            node_make_sticky_action: 0
-            node_make_unsticky_action: 0
-            mark_for_review_action: mark_for_review_action
-            portland_archive_action: portland_archive_action
-            portland_publish_action: portland_publish_action
-            views_bulk_operations_delete_entity: views_bulk_operations_delete_entity
-            pathauto_update_alias: 0
-            'entity:save_action:node': 0
-            'entity:unpublish_action:node': 0
-            'entity:publish_action:node': 0
-            'entity:delete_action:node': 0
-          preconfiguration:
-            'entity:break_lock:node':
-              label_override: ''
-            mark_for_review_action:
-              label_override: 'Mark for review'
-            portland_archive_action:
-              label_override: Unpublish/archive
-            portland_publish_action:
-              label_override: Publish
-            views_bulk_operations_delete_entity:
-              label_override: Delete
+            0:
+              action_id: 'entity:break_lock:node'
+            11:
+              action_id: mark_for_review_action
+              preconfiguration:
+                label_override: 'Mark for review'
+            12:
+              action_id: portland_archive_action
+              preconfiguration:
+                label_override: Unpublish
+            13:
+              action_id: portland_publish_action
+              preconfiguration:
+                label_override: Publish
+            17:
+              action_id: pathauto_update_alias
+              preconfiguration:
+                label_override: 'Update URL alias'
           plugin_id: views_bulk_operations_bulk_form
         title:
           id: title
@@ -290,14 +281,14 @@ display:
           multi_type: separator
           separator: ', '
           field_api_classes: false
-        type:
-          id: type
-          table: node_field_data
-          field: type
+        field_policy_type:
+          id: field_policy_type
+          table: node__field_policy_type
+          field: field_policy_type
           relationship: none
           group_type: group
           admin_label: ''
-          label: Type
+          label: 'Policy type'
           exclude: false
           alter:
             alter_text: false
@@ -341,7 +332,7 @@ display:
           click_sort_column: target_id
           type: entity_reference_label
           settings:
-            link: true
+            link: false
           group_column: target_id
           group_columns: {  }
           group_rows: true
@@ -352,8 +343,6 @@ display:
           multi_type: separator
           separator: ', '
           field_api_classes: false
-          entity_type: node
-          entity_field: type
           plugin_id: field
         field_policy_category:
           id: field_policy_category
@@ -667,6 +656,53 @@ display:
           entity_type: node
           plugin_id: entity_operations
       filters:
+        type_1:
+          id: type_1
+          table: node_field_data
+          field: type
+          relationship: none
+          group_type: group
+          admin_label: ''
+          operator: in
+          value:
+            policy: policy
+          group: 1
+          exposed: false
+          expose:
+            operator_id: type_1_op
+            label: Type
+            description: ''
+            use_operator: false
+            operator: type_1_op
+            identifier: type
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+              anonymous: '0'
+              administrator: '0'
+              sitewide_editor: '0'
+              code_editor: '0'
+            reduce: true
+            argument: ''
+            operator_limit_selection: false
+            operator_list: {  }
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
+          entity_type: node
+          entity_field: type
+          plugin_id: bundle
         title:
           id: title
           table: node_field_data
@@ -712,57 +748,10 @@ display:
           entity_type: node
           entity_field: title
           plugin_id: string
-        type_1:
-          id: type_1
+        term_node_tid_depth:
+          id: term_node_tid_depth
           table: node_field_data
-          field: type
-          relationship: none
-          group_type: group
-          admin_label: ''
-          operator: in
-          value:
-            policy: policy
-          group: 1
-          exposed: false
-          expose:
-            operator_id: type_1_op
-            label: Type
-            description: ''
-            use_operator: false
-            operator: type_1_op
-            identifier: type_1
-            required: false
-            remember: false
-            multiple: false
-            remember_roles:
-              authenticated: authenticated
-              anonymous: '0'
-              administrator: '0'
-              sitewide_editor: '0'
-              code_editor: '0'
-            reduce: true
-            argument: ''
-            operator_limit_selection: false
-            operator_list: {  }
-          is_grouped: false
-          group_info:
-            label: ''
-            description: ''
-            identifier: ''
-            optional: true
-            widget: select
-            multiple: false
-            remember: false
-            default_group: All
-            default_group_multiple: {  }
-            group_items: {  }
-          entity_type: node
-          entity_field: type
-          plugin_id: bundle
-        field_policy_category_target_id:
-          id: field_policy_category_target_id
-          table: node__field_policy_category
-          field: field_policy_category_target_id
+          field: term_node_tid_depth
           relationship: none
           group_type: group
           admin_label: ''
@@ -771,27 +760,34 @@ display:
           group: 1
           exposed: true
           expose:
-            operator_id: field_policy_category_target_id_op
-            label: 'Policy category'
+            operator_id: term_node_tid_depth_op
+            label: 'Category '
             description: ''
             use_operator: false
-            operator: field_policy_category_target_id_op
-            identifier: category_id
+            operator: term_node_tid_depth_op
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: category
             required: false
             remember: false
             multiple: false
             remember_roles:
               authenticated: authenticated
               anonymous: '0'
-              administrator: '0'
-              sitewide_editor: '0'
-              code_editor: '0'
+              publisher: '0'
+              policy_author: '0'
+              policy_editor: '0'
+              attorney: '0'
+              council_author: '0'
               council_clerk: '0'
-              group_creator: '0'
+              budget: '0'
               park_editor: '0'
+              code_editor: '0'
+              group_creator: '0'
+              alert_editor: '0'
+              sitewide_editor: '0'
+              administrator: '0'
             reduce: false
-            operator_limit_selection: false
-            operator_list: {  }
           is_grouped: false
           group_info:
             label: ''
@@ -810,7 +806,9 @@ display:
           vid: policy_category
           hierarchy: true
           error_message: true
-          plugin_id: taxonomy_index_tid
+          depth: 1
+          entity_type: node
+          plugin_id: taxonomy_index_tid_depth
         field_policy_type_target_id:
           id: field_policy_type_target_id
           table: node__field_policy_type
@@ -873,6 +871,7 @@ display:
           operator: in
           value:
             charter_code_policies-draft: charter_code_policies-draft
+            charter_code_policies-review: charter_code_policies-review
             charter_code_policies-published: charter_code_policies-published
             charter_code_policies-archived: charter_code_policies-archived
           group: 1
@@ -883,6 +882,8 @@ display:
             description: ''
             use_operator: false
             operator: moderation_state_op
+            operator_limit_selection: false
+            operator_list: {  }
             identifier: moderation_state
             required: false
             remember: false
@@ -890,15 +891,20 @@ display:
             remember_roles:
               authenticated: authenticated
               anonymous: '0'
-              administrator: '0'
-              sitewide_editor: '0'
-              code_editor: '0'
+              publisher: '0'
+              policy_author: '0'
+              policy_editor: '0'
+              attorney: '0'
+              council_author: '0'
               council_clerk: '0'
-              group_creator: '0'
+              budget: '0'
               park_editor: '0'
+              code_editor: '0'
+              group_creator: '0'
+              alert_editor: '0'
+              sitewide_editor: '0'
+              administrator: '0'
             reduce: true
-            operator_limit_selection: false
-            operator_list: {  }
           is_grouped: false
           group_info:
             label: ''
@@ -957,6 +963,58 @@ display:
           entity_type: node
           entity_field: status
           plugin_id: boolean
+        field_accessibility_review_value:
+          id: field_accessibility_review_value
+          table: node__field_accessibility_review
+          field: field_accessibility_review_value
+          relationship: none
+          group_type: group
+          admin_label: ''
+          operator: '='
+          value: All
+          group: 1
+          exposed: true
+          expose:
+            operator_id: ''
+            label: 'Needs Review'
+            description: ''
+            use_operator: false
+            operator: field_accessibility_review_value_op
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: accessibility_review
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+              anonymous: '0'
+              publisher: '0'
+              policy_author: '0'
+              policy_editor: '0'
+              attorney: '0'
+              council_author: '0'
+              council_clerk: '0'
+              budget: '0'
+              park_editor: '0'
+              code_editor: '0'
+              group_creator: '0'
+              alert_editor: '0'
+              sitewide_editor: '0'
+              administrator: '0'
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
+          plugin_id: boolean
       sorts: {  }
       title: 'Manage Policies'
       header:
@@ -969,8 +1027,18 @@ display:
           admin_label: ''
           empty: true
           tokenize: false
-          content: "<a href=\"/node/add/policy\" class=\"button btn-cta\">Add Portland Policy Document</a>\r\n<p class=\"muted\">If you need a new policy category or type, please use the <a href=\"/feedback\">feedback form</a>.</p>"
+          content: "<p><a href=\"/node/add/policy\" class=\"button btn-cta\">Add Portland Policy Document</a></p>\r\n<p class=\"muted\">If you need a new policy category or type, please use the <a href=\"/feedback\">feedback form</a>.</p>"
           plugin_id: text_custom
+        result:
+          id: result
+          table: views
+          field: result
+          relationship: none
+          group_type: group
+          admin_label: ''
+          empty: false
+          content: 'Displaying @start - @end of @total'
+          plugin_id: result
       footer: {  }
       empty: {  }
       relationships: {  }
@@ -992,6 +1060,7 @@ display:
         - user.roles
       tags:
         - 'config:field.storage.node.field_policy_category'
+        - 'config:field.storage.node.field_policy_type'
         - 'config:workflow_list'
   manage_policies:
     display_plugin: page
@@ -1008,7 +1077,7 @@ display:
         description: ''
         expanded: false
         parent: ''
-        weight: -43
+        weight: -42
         context: '0'
         menu_name: editor-toolbar
     cache_metadata:
@@ -1023,4 +1092,5 @@ display:
         - user.roles
       tags:
         - 'config:field.storage.node.field_policy_category'
+        - 'config:field.storage.node.field_policy_type'
         - 'config:workflow_list'

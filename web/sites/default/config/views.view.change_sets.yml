@@ -3,6 +3,7 @@ langcode: en
 status: true
 dependencies:
   config:
+    - core.entity_view_mode.node.embedded
     - core.entity_view_mode.node.related
     - core.entity_view_mode.node.teaser
     - node.type.change_set
@@ -272,7 +273,17 @@ display:
           entity_field: title
           plugin_id: standard
       title: 'Changes to Charter, Code, and Policies'
-      header: {  }
+      header:
+        result:
+          id: result
+          table: views
+          field: result
+          relationship: none
+          group_type: group
+          admin_label: ''
+          empty: false
+          content: 'Displaying @start - @end of @total effective changes. <a href="/citycode/changes">Review upcoming changes</a>.'
+          plugin_id: result
       footer: {  }
       empty: {  }
       relationships: {  }
@@ -308,6 +319,10 @@ display:
         relationships: false
         style: false
         row: false
+        header: false
+        pager: false
+        filters: false
+        filter_groups: false
       display_description: ''
       arguments:
         nid:
@@ -366,13 +381,49 @@ display:
           relationship: none
           view_mode: related
       block_hide_empty: true
+      header: {  }
+      pager:
+        type: none
+        options:
+          offset: 0
+      filters:
+        status:
+          value: '1'
+          table: node_field_data
+          field: status
+          plugin_id: boolean
+          entity_type: node
+          entity_field: status
+          id: status
+          expose:
+            operator: ''
+            operator_limit_selection: false
+            operator_list: {  }
+          group: 1
+        type:
+          id: type
+          table: node_field_data
+          field: type
+          value:
+            change_set: change_set
+          entity_type: node
+          entity_field: type
+          plugin_id: bundle
+          expose:
+            operator_limit_selection: false
+            operator_list: {  }
+          group: 1
+      filter_groups:
+        operator: AND
+        groups:
+          1: AND
+          2: OR
     cache_metadata:
       max-age: -1
       contexts:
         - 'languages:language_content'
         - 'languages:language_interface'
         - url
-        - url.query_args
         - 'user.node_grants:view'
         - user.permissions
       tags: {  }
@@ -384,13 +435,17 @@ display:
     display_options:
       display_extenders:
         metatag_display_extender: {  }
-      title: 'Upcoming Changes'
+      title: Changes
       defaults:
         title: false
         arguments: false
         relationships: false
         style: false
         row: false
+        filters: false
+        filter_groups: false
+        header: false
+        pager: false
       display_description: ''
       arguments:
         nid:
@@ -447,15 +502,51 @@ display:
         type: 'entity:node'
         options:
           relationship: none
-          view_mode: teaser
+          view_mode: embedded
       block_hide_empty: true
+      filters:
+        status:
+          value: '1'
+          table: node_field_data
+          field: status
+          plugin_id: boolean
+          entity_type: node
+          entity_field: status
+          id: status
+          expose:
+            operator: ''
+            operator_limit_selection: false
+            operator_list: {  }
+          group: 1
+        type:
+          id: type
+          table: node_field_data
+          field: type
+          value:
+            change_set: change_set
+          entity_type: node
+          entity_field: type
+          plugin_id: bundle
+          expose:
+            operator_limit_selection: false
+            operator_list: {  }
+          group: 1
+      filter_groups:
+        operator: AND
+        groups:
+          1: AND
+          2: OR
+      header: {  }
+      pager:
+        type: none
+        options:
+          offset: 0
     cache_metadata:
       max-age: -1
       contexts:
         - 'languages:language_content'
         - 'languages:language_interface'
         - url
-        - url.query_args
         - 'user.node_grants:view'
         - user.permissions
       tags: {  }
@@ -467,7 +558,7 @@ display:
     display_options:
       display_extenders:
         metatag_display_extender: {  }
-      path: government/changes
+      path: citycode/changes
       display_description: ''
       filters:
         status:
@@ -495,51 +586,7 @@ display:
           expose:
             operator_limit_selection: false
             operator_list: {  }
-        field_effective_date_value:
-          id: field_effective_date_value
-          table: node__field_effective_date
-          field: field_effective_date_value
-          relationship: none
-          group_type: group
-          admin_label: ''
-          operator: '>='
-          value:
-            min: ''
-            max: ''
-            value: today
-            type: date
           group: 1
-          exposed: false
-          expose:
-            operator_id: ''
-            label: ''
-            description: ''
-            use_operator: false
-            operator: ''
-            operator_limit_selection: false
-            operator_list: {  }
-            identifier: ''
-            required: false
-            remember: false
-            multiple: false
-            remember_roles:
-              authenticated: authenticated
-            placeholder: ''
-            min_placeholder: ''
-            max_placeholder: ''
-          is_grouped: false
-          group_info:
-            label: ''
-            description: ''
-            identifier: ''
-            optional: true
-            widget: select
-            multiple: false
-            remember: false
-            default_group: All
-            default_group_multiple: {  }
-            group_items: {  }
-          plugin_id: datetime
         field_change_type_value:
           id: field_change_type_value
           table: node__field_change_type
@@ -594,13 +641,118 @@ display:
             group_items: {  }
           reduce_duplicates: false
           plugin_id: list_field
+        field_effective_date_value_1:
+          id: field_effective_date_value_1
+          table: node__field_effective_date
+          field: field_effective_date_value
+          relationship: none
+          group_type: group
+          admin_label: ''
+          operator: empty
+          value:
+            min: ''
+            max: ''
+            value: ''
+            type: date
+          group: 2
+          exposed: false
+          expose:
+            operator_id: ''
+            label: ''
+            description: ''
+            use_operator: false
+            operator: ''
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: ''
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+            placeholder: ''
+            min_placeholder: ''
+            max_placeholder: ''
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
+          plugin_id: datetime
+        field_effective_date_value:
+          id: field_effective_date_value
+          table: node__field_effective_date
+          field: field_effective_date_value
+          relationship: none
+          group_type: group
+          admin_label: ''
+          operator: '>='
+          value:
+            min: ''
+            max: ''
+            value: today
+            type: date
+          group: 2
+          exposed: false
+          expose:
+            operator_id: ''
+            label: ''
+            description: ''
+            use_operator: false
+            operator: ''
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: type
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+            placeholder: ''
+            min_placeholder: ''
+            max_placeholder: ''
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
+          plugin_id: datetime
       defaults:
         filters: false
         filter_groups: false
+        title: false
+        header: false
       filter_groups:
         operator: AND
         groups:
           1: AND
+          2: OR
+      title: 'Upcoming Changes to Charter, Code, and Policies'
+      header:
+        result:
+          id: result
+          table: views
+          field: result
+          relationship: none
+          group_type: group
+          admin_label: ''
+          empty: false
+          content: 'Displaying @start - @end of @total upcoming changes. <a href="/citycode/changes/effective">Review recent effective changes</a>.'
+          plugin_id: result
     cache_metadata:
       max-age: -1
       contexts:
@@ -619,7 +771,7 @@ display:
     display_options:
       display_extenders:
         metatag_display_extender: {  }
-      path: government/changes/past
+      path: citycode/changes/effective
       display_description: ''
       sorts:
         field_effective_date_value:
@@ -743,7 +895,7 @@ display:
             operator: field_change_type_value_op
             operator_limit_selection: false
             operator_list: {  }
-            identifier: field_change_type_value
+            identifier: type
             required: false
             remember: false
             multiple: false
@@ -828,51 +980,7 @@ display:
           expose:
             operator_limit_selection: false
             operator_list: {  }
-        field_effective_date_value:
-          id: field_effective_date_value
-          table: node__field_effective_date
-          field: field_effective_date_value
-          relationship: none
-          group_type: group
-          admin_label: ''
-          operator: '>='
-          value:
-            min: ''
-            max: ''
-            value: today
-            type: date
           group: 1
-          exposed: false
-          expose:
-            operator_id: ''
-            label: ''
-            description: ''
-            use_operator: false
-            operator: ''
-            operator_limit_selection: false
-            operator_list: {  }
-            identifier: ''
-            required: false
-            remember: false
-            multiple: false
-            remember_roles:
-              authenticated: authenticated
-            placeholder: ''
-            min_placeholder: ''
-            max_placeholder: ''
-          is_grouped: false
-          group_info:
-            label: ''
-            description: ''
-            identifier: ''
-            optional: true
-            widget: select
-            multiple: false
-            remember: false
-            default_group: All
-            default_group_multiple: {  }
-            group_items: {  }
-          plugin_id: datetime
         field_change_type_value:
           id: field_change_type_value
           table: node__field_change_type
@@ -929,6 +1037,96 @@ display:
             group_items: {  }
           reduce_duplicates: false
           plugin_id: list_field
+        field_effective_date_value:
+          id: field_effective_date_value
+          table: node__field_effective_date
+          field: field_effective_date_value
+          relationship: none
+          group_type: group
+          admin_label: ''
+          operator: '>='
+          value:
+            min: ''
+            max: ''
+            value: today
+            type: date
+          group: 2
+          exposed: false
+          expose:
+            operator_id: ''
+            label: ''
+            description: ''
+            use_operator: false
+            operator: ''
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: ''
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+            placeholder: ''
+            min_placeholder: ''
+            max_placeholder: ''
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
+          plugin_id: datetime
+        field_effective_date_value_1:
+          id: field_effective_date_value_1
+          table: node__field_effective_date
+          field: field_effective_date_value
+          relationship: none
+          group_type: group
+          admin_label: ''
+          operator: empty
+          value:
+            min: ''
+            max: ''
+            value: ''
+            type: date
+          group: 2
+          exposed: false
+          expose:
+            operator_id: ''
+            label: ''
+            description: ''
+            use_operator: false
+            operator: ''
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: type
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+            placeholder: ''
+            min_placeholder: ''
+            max_placeholder: ''
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
+          plugin_id: datetime
       defaults:
         filters: false
         filter_groups: false
@@ -937,6 +1135,7 @@ display:
         operator: AND
         groups:
           1: AND
+          2: OR
       title: 'Upcoming Changes to Code'
     cache_metadata:
       max-age: -1
@@ -1083,7 +1282,7 @@ display:
             operator: field_change_type_value_op
             operator_limit_selection: false
             operator_list: {  }
-            identifier: field_change_type_value
+            identifier: type
             required: false
             remember: false
             multiple: false
@@ -1169,51 +1368,7 @@ display:
           expose:
             operator_limit_selection: false
             operator_list: {  }
-        field_effective_date_value:
-          id: field_effective_date_value
-          table: node__field_effective_date
-          field: field_effective_date_value
-          relationship: none
-          group_type: group
-          admin_label: ''
-          operator: '>='
-          value:
-            min: ''
-            max: ''
-            value: today
-            type: date
           group: 1
-          exposed: false
-          expose:
-            operator_id: ''
-            label: ''
-            description: ''
-            use_operator: false
-            operator: ''
-            operator_limit_selection: false
-            operator_list: {  }
-            identifier: ''
-            required: false
-            remember: false
-            multiple: false
-            remember_roles:
-              authenticated: authenticated
-            placeholder: ''
-            min_placeholder: ''
-            max_placeholder: ''
-          is_grouped: false
-          group_info:
-            label: ''
-            description: ''
-            identifier: ''
-            optional: true
-            widget: select
-            multiple: false
-            remember: false
-            default_group: All
-            default_group_multiple: {  }
-            group_items: {  }
-          plugin_id: datetime
         field_change_type_value:
           id: field_change_type_value
           table: node__field_change_type
@@ -1269,6 +1424,96 @@ display:
             group_items: {  }
           reduce_duplicates: false
           plugin_id: list_field
+        field_effective_date_value:
+          id: field_effective_date_value
+          table: node__field_effective_date
+          field: field_effective_date_value
+          relationship: none
+          group_type: group
+          admin_label: ''
+          operator: '>='
+          value:
+            min: ''
+            max: ''
+            value: today
+            type: date
+          group: 2
+          exposed: false
+          expose:
+            operator_id: ''
+            label: ''
+            description: ''
+            use_operator: false
+            operator: ''
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: ''
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+            placeholder: ''
+            min_placeholder: ''
+            max_placeholder: ''
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
+          plugin_id: datetime
+        field_effective_date_value_1:
+          id: field_effective_date_value_1
+          table: node__field_effective_date
+          field: field_effective_date_value
+          relationship: none
+          group_type: group
+          admin_label: ''
+          operator: empty
+          value:
+            min: ''
+            max: ''
+            value: ''
+            type: date
+          group: 2
+          exposed: false
+          expose:
+            operator_id: ''
+            label: ''
+            description: ''
+            use_operator: false
+            operator: ''
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: type
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+            placeholder: ''
+            min_placeholder: ''
+            max_placeholder: ''
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
+          plugin_id: datetime
       defaults:
         filters: false
         filter_groups: false
@@ -1277,6 +1522,7 @@ display:
         operator: AND
         groups:
           1: AND
+          2: OR
       title: 'Upcoming Changes to Charter'
     cache_metadata:
       max-age: -1
@@ -1421,7 +1667,7 @@ display:
             operator: field_change_type_value_op
             operator_limit_selection: false
             operator_list: {  }
-            identifier: field_change_type_value
+            identifier: type
             required: false
             remember: false
             multiple: false
