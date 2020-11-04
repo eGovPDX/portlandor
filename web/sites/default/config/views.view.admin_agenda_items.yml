@@ -6,12 +6,15 @@ dependencies:
     - field.storage.relation.field_agenda_item_number
     - field.storage.relation.field_agenda_item_type
     - field.storage.relation.field_council_document
-    - field.storage.relation.field_council_session
     - field.storage.relation.field_emergency
+    - field.storage.relation.field_session_start_datetime
     - portland_relations.relation_type.council_agenda_item
     - system.menu.council-toolbar
+    - user.role.administrator
     - user.role.council_clerk
   module:
+    - datetime
+    - eva
     - options
     - portland_relations
     - user
@@ -34,6 +37,7 @@ display:
         options:
           role:
             council_clerk: council_clerk
+            administrator: administrator
       cache:
         type: tag
         options: {  }
@@ -56,32 +60,15 @@ display:
           sort_asc_label: Asc
           sort_desc_label: Desc
       pager:
-        type: full
+        type: none
         options:
-          items_per_page: 25
           offset: 0
-          id: 0
-          total_pages: null
-          tags:
-            previous: ‹‹
-            next: ››
-            first: '« First'
-            last: 'Last »'
-          expose:
-            items_per_page: false
-            items_per_page_label: 'Items per page'
-            items_per_page_options: '5, 10, 25, 50'
-            items_per_page_options_all: false
-            items_per_page_options_all_label: '- All -'
-            offset: false
-            offset_label: Offset
-          quantity: 9
       style:
         type: table
         options:
           grouping:
             -
-              field: field_council_session
+              field: field_session_start_datetime
               rendered: true
               rendered_strip: true
           row_class: ''
@@ -92,26 +79,22 @@ display:
           summary: ''
           description: ''
           columns:
-            operations: operations
-            field_council_document: field_council_document
-            field_council_session: field_council_session
-            field_emergency: field_emergency
             field_agenda_item_number: field_agenda_item_number
+            field_council_document: field_council_document
+            field_emergency: field_emergency
             field_agenda_item_type: field_agenda_item_type
+            operations: operations
+            field_session_start_datetime: field_session_start_datetime
+            field_council_session: field_council_session
           info:
-            operations:
-              align: ''
-              separator: ''
-              empty_column: false
-              responsive: ''
-            field_council_document:
-              sortable: false
+            field_agenda_item_number:
+              sortable: true
               default_sort_order: asc
               align: ''
               separator: ''
               empty_column: false
               responsive: ''
-            field_council_session:
+            field_council_document:
               sortable: false
               default_sort_order: asc
               align: ''
@@ -125,15 +108,27 @@ display:
               separator: ''
               empty_column: false
               responsive: ''
-            field_agenda_item_number:
+            field_agenda_item_type:
               sortable: true
               default_sort_order: asc
               align: ''
               separator: ''
               empty_column: false
               responsive: ''
-            field_agenda_item_type:
-              sortable: true
+            operations:
+              align: ''
+              separator: ''
+              empty_column: false
+              responsive: ''
+            field_session_start_datetime:
+              sortable: false
+              default_sort_order: asc
+              align: ''
+              separator: ''
+              empty_column: false
+              responsive: ''
+            field_council_session:
+              sortable: false
               default_sort_order: asc
               align: ''
               separator: ''
@@ -144,17 +139,14 @@ display:
       row:
         type: fields
       fields:
-        operations:
-          table: relation
-          field: operations
-          id: operations
-          entity_type: null
-          entity_field: null
-          plugin_id: entity_operations
+        field_agenda_item_number:
+          id: field_agenda_item_number
+          table: relation__field_agenda_item_number
+          field: field_agenda_item_number
           relationship: none
           group_type: group
           admin_label: ''
-          label: 'Operations links'
+          label: Number
           exclude: false
           alter:
             alter_text: false
@@ -195,60 +187,12 @@ display:
           hide_empty: false
           empty_zero: false
           hide_alter_empty: true
-          destination: false
-        field_council_document:
-          id: field_council_document
-          table: relation__field_council_document
-          field: field_council_document
-          relationship: none
-          group_type: group
-          admin_label: ''
-          label: Document
-          exclude: false
-          alter:
-            alter_text: false
-            text: ''
-            make_link: false
-            path: ''
-            absolute: false
-            external: false
-            replace_spaces: false
-            path_case: none
-            trim_whitespace: false
-            alt: ''
-            rel: ''
-            link_class: ''
-            prefix: ''
-            suffix: ''
-            target: ''
-            nl2br: false
-            max_length: 0
-            word_boundary: true
-            ellipsis: true
-            more_link: false
-            more_link_text: ''
-            more_link_path: ''
-            strip_tags: false
-            trim: false
-            preserve_tags: ''
-            html: false
-          element_type: ''
-          element_class: ''
-          element_label_type: ''
-          element_label_class: ''
-          element_label_colon: true
-          element_wrapper_type: ''
-          element_wrapper_class: ''
-          element_default_classes: true
-          empty: ''
-          hide_empty: false
-          empty_zero: false
-          hide_alter_empty: true
-          click_sort_column: target_id
-          type: entity_reference_label
+          click_sort_column: value
+          type: number_integer
           settings:
-            link: true
-          group_column: target_id
+            thousand_separator: ''
+            prefix_suffix: true
+          group_column: value
           group_columns: {  }
           group_rows: true
           delta_limit: 0
@@ -259,14 +203,14 @@ display:
           separator: ', '
           field_api_classes: false
           plugin_id: field
-        field_council_session:
-          id: field_council_session
-          table: relation__field_council_session
-          field: field_council_session
+        field_council_document:
+          id: field_council_document
+          table: relation__field_council_document
+          field: field_council_document
           relationship: none
           group_type: group
           admin_label: ''
-          label: 'Council Session'
+          label: Document
           exclude: false
           alter:
             alter_text: false
@@ -387,70 +331,6 @@ display:
           separator: ', '
           field_api_classes: false
           plugin_id: field
-        field_agenda_item_number:
-          id: field_agenda_item_number
-          table: relation__field_agenda_item_number
-          field: field_agenda_item_number
-          relationship: none
-          group_type: group
-          admin_label: ''
-          label: Number
-          exclude: false
-          alter:
-            alter_text: false
-            text: ''
-            make_link: false
-            path: ''
-            absolute: false
-            external: false
-            replace_spaces: false
-            path_case: none
-            trim_whitespace: false
-            alt: ''
-            rel: ''
-            link_class: ''
-            prefix: ''
-            suffix: ''
-            target: ''
-            nl2br: false
-            max_length: 0
-            word_boundary: true
-            ellipsis: true
-            more_link: false
-            more_link_text: ''
-            more_link_path: ''
-            strip_tags: false
-            trim: false
-            preserve_tags: ''
-            html: false
-          element_type: ''
-          element_class: ''
-          element_label_type: ''
-          element_label_class: ''
-          element_label_colon: true
-          element_wrapper_type: ''
-          element_wrapper_class: ''
-          element_default_classes: true
-          empty: ''
-          hide_empty: false
-          empty_zero: false
-          hide_alter_empty: true
-          click_sort_column: value
-          type: number_integer
-          settings:
-            thousand_separator: ''
-            prefix_suffix: true
-          group_column: value
-          group_columns: {  }
-          group_rows: true
-          delta_limit: 0
-          delta_offset: 0
-          delta_reversed: false
-          delta_first_last: false
-          multi_type: separator
-          separator: ', '
-          field_api_classes: false
-          plugin_id: field
         field_agenda_item_type:
           id: field_agenda_item_type
           table: relation__field_agenda_item_type
@@ -513,6 +393,122 @@ display:
           separator: ', '
           field_api_classes: false
           plugin_id: field
+        operations:
+          table: relation
+          field: operations
+          id: operations
+          entity_type: null
+          entity_field: null
+          plugin_id: entity_operations
+          relationship: none
+          group_type: group
+          admin_label: ''
+          label: 'Operations links'
+          exclude: false
+          alter:
+            alter_text: false
+            text: ''
+            make_link: false
+            path: ''
+            absolute: false
+            external: false
+            replace_spaces: false
+            path_case: none
+            trim_whitespace: false
+            alt: ''
+            rel: ''
+            link_class: ''
+            prefix: ''
+            suffix: ''
+            target: ''
+            nl2br: false
+            max_length: 0
+            word_boundary: true
+            ellipsis: true
+            more_link: false
+            more_link_text: ''
+            more_link_path: ''
+            strip_tags: false
+            trim: false
+            preserve_tags: ''
+            html: false
+          element_type: ''
+          element_class: ''
+          element_label_type: ''
+          element_label_class: ''
+          element_label_colon: true
+          element_wrapper_type: ''
+          element_wrapper_class: ''
+          element_default_classes: true
+          empty: ''
+          hide_empty: false
+          empty_zero: false
+          hide_alter_empty: true
+          destination: false
+        field_session_start_datetime:
+          id: field_session_start_datetime
+          table: relation__field_session_start_datetime
+          field: field_session_start_datetime
+          relationship: field_council_session
+          group_type: group
+          admin_label: ''
+          label: ''
+          exclude: true
+          alter:
+            alter_text: false
+            text: ''
+            make_link: false
+            path: ''
+            absolute: false
+            external: false
+            replace_spaces: false
+            path_case: none
+            trim_whitespace: false
+            alt: ''
+            rel: ''
+            link_class: ''
+            prefix: ''
+            suffix: ''
+            target: ''
+            nl2br: false
+            max_length: 0
+            word_boundary: true
+            ellipsis: true
+            more_link: false
+            more_link_text: ''
+            more_link_path: ''
+            strip_tags: false
+            trim: false
+            preserve_tags: ''
+            html: false
+          element_type: ''
+          element_class: ''
+          element_label_type: ''
+          element_label_class: ''
+          element_label_colon: false
+          element_wrapper_type: ''
+          element_wrapper_class: ''
+          element_default_classes: true
+          empty: ''
+          hide_empty: false
+          empty_zero: false
+          hide_alter_empty: true
+          click_sort_column: value
+          type: datetime_default
+          settings:
+            timezone_override: ''
+            format_type: medium
+          group_column: value
+          group_columns: {  }
+          group_rows: true
+          delta_limit: 0
+          delta_offset: 0
+          delta_reversed: false
+          delta_first_last: false
+          multi_type: separator
+          separator: ', '
+          field_api_classes: false
+          plugin_id: field
       filters:
         type:
           id: type
@@ -538,11 +534,20 @@ display:
           group_type: group
           admin_label: ''
           empty: true
-          content: "<a href=\"/relation/add/council_agenda_item\" class=\"button btn-cta mb-2\">Add Agenda Item</a>\r\n<p>Displaying @start - @end of @total</p>"
+          content: "<a href=\"/relation/add/council_agenda_item?destination=council/agenda/manage/agenda-items\" class=\"button btn-cta mb-2\">Add Agenda Item</a>\r\n<p>Displaying @start - @end of @total</p>"
           plugin_id: result
       footer: {  }
       empty: {  }
-      relationships: {  }
+      relationships:
+        field_council_session:
+          id: field_council_session
+          table: relation__field_council_session
+          field: field_council_session
+          relationship: none
+          group_type: group
+          admin_label: 'field_council_session: Relation'
+          required: false
+          plugin_id: standard
       arguments: {  }
       display_extenders:
         metatag_display_extender: {  }
@@ -561,8 +566,151 @@ display:
         - 'config:field.storage.relation.field_agenda_item_number'
         - 'config:field.storage.relation.field_agenda_item_type'
         - 'config:field.storage.relation.field_council_document'
-        - 'config:field.storage.relation.field_council_session'
         - 'config:field.storage.relation.field_emergency'
+        - 'config:field.storage.relation.field_session_start_datetime'
+  entity_view_1:
+    display_plugin: entity_view
+    id: entity_view_1
+    display_title: EVA
+    position: 2
+    display_options:
+      display_extenders:
+        metatag_display_extender: {  }
+      style:
+        type: default
+        options:
+          grouping: {  }
+          row_class: ''
+          default_row_class: true
+      defaults:
+        style: false
+        row: false
+        fields: false
+        relationships: false
+        arguments: false
+        header: false
+      row:
+        type: fields
+        options: {  }
+      fields:
+        rendered_entity:
+          id: rendered_entity
+          table: relation
+          field: rendered_entity
+          relationship: none
+          group_type: group
+          admin_label: ''
+          label: ''
+          exclude: false
+          alter:
+            alter_text: false
+            text: ''
+            make_link: false
+            path: ''
+            absolute: false
+            external: false
+            replace_spaces: false
+            path_case: none
+            trim_whitespace: false
+            alt: ''
+            rel: ''
+            link_class: ''
+            prefix: ''
+            suffix: ''
+            target: ''
+            nl2br: false
+            max_length: 0
+            word_boundary: true
+            ellipsis: true
+            more_link: false
+            more_link_text: ''
+            more_link_path: ''
+            strip_tags: false
+            trim: false
+            preserve_tags: ''
+            html: false
+          element_type: ''
+          element_class: ''
+          element_label_type: ''
+          element_label_class: ''
+          element_label_colon: false
+          element_wrapper_type: ''
+          element_wrapper_class: ''
+          element_default_classes: true
+          empty: ''
+          hide_empty: false
+          empty_zero: false
+          hide_alter_empty: true
+          view_mode: default
+          entity_type: relation
+          plugin_id: rendered_entity
+      entity_type: relation
+      bundles:
+        - council_session
+      relationships:
+        field_council_session:
+          id: field_council_session
+          table: relation__field_council_session
+          field: field_council_session
+          relationship: none
+          group_type: group
+          admin_label: 'field_council_session: Relation'
+          required: true
+          plugin_id: standard
+      arguments:
+        id:
+          id: id
+          table: relation
+          field: id
+          relationship: field_council_session
+          group_type: group
+          admin_label: ''
+          default_action: ignore
+          exception:
+            value: all
+            title_enable: false
+            title: All
+          title_enable: false
+          title: ''
+          default_argument_type: fixed
+          default_argument_options:
+            argument: ''
+          default_argument_skip_url: false
+          summary_options:
+            base_path: ''
+            count: true
+            items_per_page: 25
+            override: false
+          summary:
+            sort_order: asc
+            number_of_records: 0
+            format: default_summary
+          specify_validation: false
+          validate:
+            type: none
+            fail: 'not found'
+          validate_options: {  }
+          break_phrase: false
+          not: false
+          entity_type: relation
+          entity_field: id
+          plugin_id: numeric
+      header: {  }
+    cache_metadata:
+      max-age: -1
+      contexts:
+        - 'languages:language_interface'
+        - url
+        - user.roles
+      tags:
+        - 'config:core.entity_view_display.relation.council_agenda_item.ief_table'
+        - 'config:core.entity_view_display.relation.council_agenda_item.teaser'
+        - 'config:core.entity_view_display.relation.council_session.ief_table'
+        - 'config:core.entity_view_display.relation.council_session.teaser'
+        - 'config:core.entity_view_display.relation.council_vote.default'
+        - 'config:core.entity_view_display.relation.council_vote.ief_table'
+        - 'config:core.entity_view_display.relation.council_agenda_item.default'
+        - 'config:core.entity_view_display.relation.council_session.default'
   page_1:
     display_plugin: page
     id: page_1
@@ -592,5 +740,5 @@ display:
         - 'config:field.storage.relation.field_agenda_item_number'
         - 'config:field.storage.relation.field_agenda_item_type'
         - 'config:field.storage.relation.field_council_document'
-        - 'config:field.storage.relation.field_council_session'
         - 'config:field.storage.relation.field_emergency'
+        - 'config:field.storage.relation.field_session_start_datetime'
