@@ -136,7 +136,7 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 				$scope.openPopup(project);
 		}
     	
-		$scope.map.setZoom(25);
+		$scope.map.setZoom(14);
 		panToMarker(project.properties.id);
 	}
 
