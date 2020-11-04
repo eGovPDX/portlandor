@@ -130,14 +130,14 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 
 		if (!isMobileView) {
 				$scope.showDetail(project);
-				panToMarker(project.properties.id);
-				//$scope.map.setZoom(15);
 		} else {
 				$scope.searchVisible = false;
 				populateModal(project, $scope.markers[project.properties.id]);
 				$scope.openPopup(project);
 		}
     	
+		$scope.map.setZoom(25);
+		panToMarker(project.properties.id);
 	}
 
 	$scope.toggleSearch = function () {
@@ -397,7 +397,7 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 			if ($scope.allProjects == null || $scope.allProjects.length < 1) {
 				alert('No water project data exists or an error has occcurred. Please refresh the page to try again in a few minutes.');
 			}
-		}, 5000);
+		}, 7000);
 
 	}
 	
