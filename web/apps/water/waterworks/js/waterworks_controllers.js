@@ -136,8 +136,8 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 				$scope.openPopup(project);
 		}
     	
-		$scope.map.setZoom(14);
-		panToMarker(project.properties.id);
+		// pan to marker and set zoom to 14
+		panToMarker(project.properties.id, 14);
 	}
 
 	$scope.toggleSearch = function () {
@@ -237,11 +237,7 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 		// using custom popups, so marker.openPopup() won't help us here.
 		// do it manually: pan to latlng, then populate popup.
 		// this only pans to the first marker associated with the project
-		panToMarker(project.properties.id);
-		$scope.map.setZoom(15);
-		//    	var latlng = marker._latlng;
-		//    	$scope.map.panTo(L.latLng(latlng.lat, latlng.lng));
-		//    	populateModal(project, marker);
+		panToMarker(project.properties.id, 15);
 	}
 
 	$scope.locationSearch = function () {
@@ -310,12 +306,12 @@ app.controller('projects', ['$scope', '$http', 'waterworksService', '$sce', '$wi
 		return markers;
 	}
 
-	function panToMarker(id) {
+	function panToMarker(id, zoom = null) {
 		// get marker
 		var markers = findMarkersByProjectId(id);// $scope.markers[id];
 		if (markers.length < 1) return;
 		var latlng = markers[0]._latlng;
-		$scope.map.panTo(L.latLng(latlng.lat, latlng.lng));
+		$scope.map.setView(L.latLng(latlng.lat, latlng.lng), zoom);
 		highlightMarkerByProjectId(id);
 	}
 
