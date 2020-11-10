@@ -252,14 +252,20 @@ jQuery(document).on('leaflet.map', function (e, settings, lMap, mapid) {
 
 
   if( drupalSettings.portlandmaps_layer_list && drupalSettings.portlandmaps_id_list ) {
-    var features = L.esri.featureLayer({
+    var features;
+    var where_in_condition = drupalSettings.portlandmaps_id_list.map(
+      function(item) {
+        return "'" + item.substring(item.indexOf('=') + 1) + "'"
+      }
+    ).join();
+
+    features = L.esri.featureLayer({
       url: drupalSettings.portlandmaps_layer_list[0],
-      where: drupalSettings.portlandmaps_id_list[0], // 'PropertyID=' + drupalSettings.portlandmaps_id,
+      where: 'Project_Number_SAP in (' + where_in_condition + ')', // 'PropertyID=' + drupalSettings.portlandmaps_id,
       style: function (feature, layer) {
         return JSON.parse(settings.settings.path);
       },
     }).addTo(lMap);
-
     features.once('load', function (evt) {
       // create a new empty Leaflet bounds object
       var bounds = L.latLngBounds([]);
