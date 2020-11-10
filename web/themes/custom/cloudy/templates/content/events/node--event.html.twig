@@ -55,19 +55,44 @@
   </div>
   <div class="cloudy-side col-lg-4 col-md-12">
     {# Links to add this event to calendar #}
-    {% if not is_cancelled %}
-      {% set google_link = calendar_link('google', title, start_date_time, end_date_time, is_all_day, summary_html, address) %}
-      <a href="{{ google_link }}">Google calendar</a>
-      <br/>
-      {% set ics_link = calendar_link('ics', title, start_date_time, end_date_time, is_all_day, summary_plain, address) %}
-      <a href="{{ ics_link }}">iCal</a>
-      <br/>
+    {# TODO: componentize add to calendar #}
+    {# TODO: do we want to add title attribute to Link component to show more context on hover? #}
+    <div class="mb-8">
+      {% if not is_cancelled %}
+        {% include "@components/heading/heading.twig" with {
+          text: 'Add event to calendar'|t,
+          level: 2,
+          style: 6,
+        } only %}
       {% set outlook_link = calendar_link('webOutlook', title, start_date_time, end_date_time, is_all_day, summary_html, address) %}
-      <a href="{{ outlook_link }}">Outlook.com</a>
-      <br/>
-      {% set yahoo_link = calendar_link('yahoo', title, start_date_time, end_date_time, is_all_day, summary_html, address) %}
-      <a href="{{ yahoo_link }}">Yahoo</a>
-    {% endif %}
+      {% include "@components/link/link.twig" with {
+          background: false,
+          standalone: false,
+          block: true,
+          margin: 2,
+          text: 'Outlook'|t,
+          url: outlook_link,
+        } only %}
+        {% set google_link = calendar_link('google', title, start_date_time, end_date_time, is_all_day, summary_html, address) %}
+        {% include "@components/link/link.twig" with {
+          background: false,
+          standalone: false,
+          block: true,
+          margin: 2,
+          text: 'Google Calendar'|t,
+          url: google_link,
+        } only %}
+      {% set ics_link = calendar_link('ics', title, start_date_time, end_date_time, is_all_day, summary_plain, address) %}
+        {% include "@components/link/link.twig" with {
+          background: false,
+          standalone: false,
+          block: true,
+          margin: 2,
+          text: 'iCal'|t,
+          url: ics_link,
+        } only %}
+      {% endif %}
+    </div>
     {{ content.field_contact }}
     {{ content.field_related_content }}
     {{ content.field_topics }}
