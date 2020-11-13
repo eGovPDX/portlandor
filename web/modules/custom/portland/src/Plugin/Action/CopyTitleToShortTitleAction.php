@@ -27,6 +27,8 @@ class CopyTitleToShortTitleAction extends ViewsBulkOperationsActionBase {
   public function execute($entity = NULL) {
     if( $entity->hasField('field_menu_link_text') && $entity->field_menu_link_text->value == null) {
       $entity->field_menu_link_text->value = $entity->getTitle();
+      $entity->revision_uid->target_id = \Drupal::currentUser()->id();
+      $entity->revision_log->value = "Bulk update action copied the value of Title to the Short Title field.";
       $entity->save();
       return $this->t('Title copied to empty Short Title field');
     }
