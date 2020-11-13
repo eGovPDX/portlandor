@@ -265,7 +265,11 @@ jQuery(document).on('leaflet.map', function (e, settings, lMap, mapid) {
       style: function (feature, layer) {
         return JSON.parse(settings.settings.path);
       },
-    }).addTo(lMap);
+      onEachFeature: function (feature, layer) {
+        layer.bindPopup(feature.properties.Project_Name);
+      }
+    })
+    .addTo(lMap);
     features.once('load', function (evt) {
       // create a new empty Leaflet bounds object
       var bounds = L.latLngBounds([]);
