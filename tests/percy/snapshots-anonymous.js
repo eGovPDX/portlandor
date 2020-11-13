@@ -57,7 +57,7 @@ PercyScript.run(async (page, percySnapshot) => {
 
   // Service
   await page.goto(`${HOME_PAGE}/police/report-stolen-bike`);
-  await percySnapshot('Anonymous - Service "Report Stolen Bike"');
+  await percySnapshot('Anonymous - Service "Report a Stolen Bike"');
 
   // News
   await page.goto(`${HOME_PAGE}/powr/news/2019/11/4/implementation-plan-redirect-portlandoregongov-portlandgov`);
