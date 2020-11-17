@@ -24,8 +24,8 @@ PercyScript.run(async (page, percySnapshot) => {
   await percySnapshot('Anonymous - Home page');
 
   // Search page
-  await page.goto(`${HOME_PAGE}/search?keys=powr`);
-  await percySnapshot('Anonymous - Search "powr"');
+  await page.goto(`${HOME_PAGE}/search?keys=tax`);
+  await percySnapshot('Anonymous - Search "tax"');
 
   // 404
   await page.goto(`${HOME_PAGE}/search?keys=powr-test`);
@@ -56,8 +56,8 @@ PercyScript.run(async (page, percySnapshot) => {
   await percySnapshot('Anonymous - Page "POWR About"');
 
   // Service
-  await page.goto(`${HOME_PAGE}/police/report-stolen-bike`);
-  await percySnapshot('Anonymous - Service "Report a Stolen Bike"');
+  await page.goto(`${HOME_PAGE}/police/services/police-report-or-record-online-request`);
+  await percySnapshot('Anonymous - Service "Police Report or Record"');
 
   // News
   await page.goto(`${HOME_PAGE}/powr/news/2019/11/4/implementation-plan-redirect-portlandoregongov-portlandgov`);
