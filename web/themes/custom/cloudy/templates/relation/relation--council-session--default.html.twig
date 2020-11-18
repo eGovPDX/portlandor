@@ -1,28 +1,94 @@
-{# TODO: Figure out why this component won't hook up #}
-{# {% include "@components/council-agenda-session/council-agenda-session.twig" with {
-  "title": content.field_session_title.0["#markup"],
-  "datetime": field_session_start_datetime.0,
-  "status": field_session_status,
-  "agendaItems": field_agenda_items,
-} only %} #}
-{% set type = type|default('primary') %}
-{% set classes = [
-  'council-agenda-session',
-] %}
-
-<div class="{{ classes | join(' ') }}">
-  <h2 class="council-agenda-session__title">{{ content.field_session_title }}</h2>
+{#
+/**
+ * @file
+ * Theme override to display a relation.
+ *
+ * Available variables:
+ * - relation: The relation entity with limited access to object properties and methods.
+ *   Only method names starting with "get", "has", or "is" and a few common
+ *   methods such as "id", "label", and "bundle" are available. For example:
+ *   - relation.getCreatedTime() will return the relation creation timestamp.
+ *   - relation.hasField('field_example') returns TRUE if the relation bundle includes
+ *     field_example. (This does not indicate the presence of a value in this
+ *     field.)
+ *   - relation.isPublished() will return whether the relation is published or not.
+ *   Calling other methods, such as relation.delete(), will result in an exception.
+ *   See \Drupal\relation\Entity\Node for a full list of public properties and
+ *   methods for the relation object.
+ * - label: (optional) The title of the relation.
+ * - content: All relation items. Use {{ content }} to print them all,
+ *   or print a subset such as {{ content.field_example }}. Use
+ *   {{ content|without('field_example') }} to temporarily suppress the printing
+ *   of a given child element.
+ * - date: (optional) Themed creation date field.
+ * - author_name: (optional) Themed author name field.
+ * - url: Direct URL of the current relation.
+ * - attributes: HTML attributes for the containing element.
+ *   The attributes.class element may contain one or more of the following
+ *   classes:
+ *   - relation: The current template type (also known as a "theming hook").
+ *   - relation--type-[type]: The current relation type. For example, if the relation is an
+ *     "Article" it would result in "relation--type-article". Note that the machine
+ *     name will often be in a short form of the human readable label.
+ *   - relation--view-mode-[view_mode]: The View Mode of the relation; for example, a
+ *     teaser would result in: "relation--view-mode-teaser", and
+ *     full: "relation--view-mode-full".
+ *   The following are controlled through the relation  options.
+ * - view_mode: View mode; for example, "teaser" or "full".
+ * - teaser: Flag for the teaser state. Will be true if view_mode is 'teaser'.
+ * - page: Flag for the full page state. Will be true if view_mode is 'full'.
+ * - readmore: Flag for more state. Will be true if the teaser content of the
+ *   relation cannot hold the main body content.
+ * - logged_in: Flag for authenticated user status. Will be true when the
+ *   current user is a logged-in member.
+ * - is_admin: Flag for admin user status. Will be true when the current user
+ *   is an administrator.
+ *
+ * @see template_preprocess_relation()
+ *
+ * @todo Remove the id attribute (or make it a class), because if that gets
+ *   rendered twice on a page this is invalid CSS for example: two lists
+ *   in different view modes.
+ */
+#}
+{%
+  set classes = [
+    'relation',
+    'relation--type-' ~ relation.bundle|clean_class,
+    view_mode ? 'relation--view-mode-' ~ view_mode|clean_class,
+  ]
+%}
+<div{{ attributes.addClass(classes) }}>
+  <h2>{{ content.field_session_start_datetime.0 }}</h2>
   <div class="row">
-    <div class="col">
-      {{ content.field_session_start_datetime }}
+    <div class="col-md-7 col-sm-12 order-md-1 order-sm-2">
       {{ content.field_session_status }}
-      {{ content.field_agenda_items }}
-    </div>
-    {% if content.field_council_in_attendance or council.field_council_session_video %}
-    <div class="col-md-6 col-sm-12">
+      {% if content.field_session_registration_close.0["#attributes"]["datetime"]|date('U') > 'now'|date('U') %}
+        <p>City Council will hear public testimony on resolutions and ordinances (first readings only). Testimony is not taken on
+          communications, reports, second readings, proclamations or presentations in accordance with Code 3.02.040 F. and G. Public
+          testimony will be heard by electronic communication (internet connection or telephone).</p>
+        <p>Ientify the agenda item(s) for which you want to provide testimony and provide them as part registration.
+          You must also provide your name, zip code, phone number and email address.</p>
+        <p>Individuals have three minutes to testify unless otherwise stated at the meeting.</p>
+        <p><a href="{{ content.field_session_registration_link.0['#url'].uri }}" class="btn-cta">Register to Attend this Session and Provide Testimony</a></p>
+        <p>Registration closes at {{ content.field_session_registration_close.0 }}.</p>
+      {% else %}
+      <p>The public can also provide written testimony to Council by emailing the Council Clerk at cctestimony@portlandoregon.gov.</p>
+      <p><strong>Registration closed {{ content.field_session_registration_close.0 }} to provide testimony at this session.</strong></p>
+      {% endif %}
       {{ content.field_council_in_attendance }}
+      {{ content.field_session_notes }}
+      {{ content|without(
+        'field_session_start_datetime',
+        'field_session_status',
+        'field_session_registration_close',
+        'field_session_registration_link',
+        'field_council_in_attendance',
+        'field_session_notes',
+        'field_council_session_video'
+        ) }}
+    </div>
+    <div class="col-md-5 col-sm-12 order-md-2 order-sm-1">
       {{ content.field_council_session_video }}
     </div>
-    {% endif %}
-  </div>
 </div>
