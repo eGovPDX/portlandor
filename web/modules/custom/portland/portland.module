@@ -618,7 +618,7 @@ function portland_search_api_query_alter(\Drupal\search_api\Query\QueryInterface
     }
 }
 
-  
+
 /**
  * Implements hook_search_api_solr_query_alter() boost based on recently
  * published date.
@@ -765,7 +765,7 @@ function portland_form_alter(&$form, &$form_state, $form_id)
         else {
           $group_ids = getGroupIdsByEntity($node);
           if(count($group_ids) > 0) {
-            // Assume each node only belongs to one group. 
+            // Assume each node only belongs to one group.
             // When there are multiple parent groups, use the first one.
             \Drupal::request()->getSession()->set('parent_group_id', $group_ids[0]);
           }
@@ -1013,7 +1013,9 @@ function portland_entity_prepare_view($entity_type_id, array $entities, array $d
 {
   if($entities == null) return;
   $node = $entities[0];
-  if( $node != null && _should_overwrite_council_document_title($node)) {
+  // We only want to rewrite the node title for the full page view mode. Other view modes will call
+  // the title or the full_document_title as needed.
+  if( $node != null && _should_overwrite_council_document_title($node) && $view_mode === 'full') {
     // Display the Full Document Title as Title
     $node->title->value = $node->field_full_document_title->value;
     $node->field_full_document_title->value = '';
@@ -1027,11 +1029,11 @@ function _should_overwrite_council_document_title($node) {
   if ($node != null && $node->bundle() == 'council_document') {
     $document_status_entity = $node->field_council_document_status->entity;
     $document_status = ($document_status_entity == null) ? '' : $document_status_entity->name->value;
-    
+
     $document_type_entity = $node->field_council_document_type->entity;
     $document_type = ($document_type_entity == null) ? '' : $document_type_entity->name->value;
 
-    if ( ($document_type == 'Ordinance' || $document_type == 'Resolution') && 
+    if ( ($document_type == 'Ordinance' || $document_type == 'Resolution') &&
       ($document_status == 'Passed' || $document_status == 'Adopted')) {
       return false;
     }
@@ -1055,7 +1057,7 @@ function portland_form_openid_connect_login_form_alter(&$form, &$form_state)
  * Implements hook_views_pre_render().
  */
 function portland_views_pre_render(\Drupal\views\ViewExecutable $view) {
-  if ($view->id() == 'admin_content_with_legacy_path' || 
+  if ($view->id() == 'admin_content_with_legacy_path' ||
     ( ($view->id() == 'group_nodes' || $view->id() == 'admin_group_content_revision') && (strpos($view->current_display, 'redirects') !== false) ) ) {
     // Have to call redirect.repository service to find which row has redirects
     foreach ($view->result as $key => $value) {
