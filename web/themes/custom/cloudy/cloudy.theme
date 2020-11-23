@@ -75,28 +75,96 @@ function cloudy_preprocess_html(&$variables) {
   $variables['page']['#attached']['html_head'][] = [$swiftype_site_priority, 'swiftype_site-priority'];
 }
 
+/**
+ * Implements hook_form_alter
+ */
+// function cloudy_form_alter(&$form, \Drupal\Core\Form\FormStateInterface $form_state, $form_id) {
+// 	$current_path = \Drupal::service('path.current')->getPath();
+// 	$search_form_id = 'search_api_page_block_form_search_portland_gov';
+
+// 	$path_array = [
+// 		'/node',
+// 		'/search',
+// 		'/404',
+// 	];
+
+// 	$search_form_small_classes = [
+// 		'search-form',
+// 		'search-form--small',
+// 	];
+
+// 	$search_form_large_classes = [
+// 		'search-form',
+// 		'search-form--large',
+// 	];
+
+//   if ($form_id == $search_form_id) {
+// 		$form['keys']['#attributes']['title'] = t('Enter keywords and press enter or return');
+// 		$form['actions']['submit']['#value'] = '';
+// 		$form['keys']['#type'] = 'search';
+
+// 		if(!in_array($current_path, $path_array)) {
+// 			$form['keys']['#attributes']['placeholder'] = t('Search');
+// 		} else {
+// 			$form['keys']['#attributes']['placeholder'] = t('What can we help you find?');
+// 		}
+// 		$additional_classes = in_array($current_path, $path_array) ? $search_form_large_classes : $search_form_small_classes;
+// 		$form['#attributes']['class'] = array_merge($form['#attributes']['class'], $additional_classes);
+//   }
+// }
+
+
+// function cloudy_form_alter(&$form, \Drupal\Core\Form\FormStateInterface $form_state, $form_id) {
+//   if ($form_id == 'search_api_page_block_form_search_portland_gov') {
+//     $form['keys']['#attributes']['placeholder'] = 'What can we help you find?';
+//     $form['keys']['#attributes']['title'] = 'Enter keywords and press enter or return';
+//     $form['actions']['submit']['#value'] = html_entity_decode('&#xf002;');
+//   }
+// }
 
 /**
  * Implements hook_form_alter
  */
-function cloudy_form_alter(&$form, \Drupal\Core\Form\FormStateInterface $form_state, $form_id) {
-  if ($form_id == 'search_api_page_block_form_search_portland_gov') {
-    $form['keys']['#attributes']['placeholder'] = 'What can we help you find?';
-    $form['keys']['#attributes']['title'] = 'Enter keywords and press enter or return';
-    $form['actions']['submit']['#value'] = html_entity_decode('&#xf002;');
-  }
+function cloudy_form_alter(&$form, &$form_state, $form_id) {
+	$current_path = \Drupal::service('path.current')->getPath();
+	$search_form_id = 'search_api_page_block_form_search_portland_gov';
+
+	$path_array = [
+		'/node',
+		'/search',
+		'/404',
+	];
+
+	$search_form_small_classes = [
+		'search-form',
+		'search-form--small',
+	];
+
+	$search_form_large_classes = [
+		'search-form',
+		'search-form--large',
+	];
+
+	if ($form_id == 'search_api_page_block_form_search_portland_gov') {
+		$path = base_path() . drupal_get_path('theme', 'cloudy').'/';
+		if(!in_array($current_path, $path_array)) {
+			$form['keys']['#attributes']['placeholder'] = t('Search');
+		} else {
+			$form['keys']['#attributes']['placeholder'] = t('What can we help you find?');
+		}
+		$form['actions']['submit'] = array('#type' => 'image_button', '#src' => $path . 'src/elements/icon/svgs/search.svg');
+		$form['keys']['#attributes']['title'] = t('Enter keywords and press enter or return');
+		$form['actions']['submit']['#value'] = '';
+		$additional_classes = in_array($current_path, $path_array) ? $search_form_large_classes : $search_form_small_classes;
+		$form['#attributes']['class'] = array_merge($form['#attributes']['class'], $additional_classes);
+	}
 }
 
-/**
- * Implements theme_preprocess_HOOK
- *
- */
-function cloudy_preprocess_form(&$vars) {
-  // add role="search" to site search form
-  if ($vars['element']['#form_id'] == 'search_api_page_block_form_search_portland_gov') {
-    $vars['attributes']['role'] = 'search';
-    $vars['attributes']['class'] = 'input-group form-inline d-flex justify-content-center form-inline--search-block';
-    $vars['attributes']['title'] = 'Search';
+function cloudy_preprocess_input__textfield(&$vars) {
+  // The main search input
+  if($vars["attributes"]['id'] === 'edit-keys') {
+    $vars["attributes"]['type'] = 'search';
+    $vars["attributes"]['class'][] = 'form-control';
   }
 }
 
@@ -104,24 +172,6 @@ function cloudy_preprocess_search_api_page(&$vars) {
   // Save URL query parameter as variable for Twig template
   if ( isset($_GET['keys']) ) {
     $vars['get']['keys'] = $_GET['keys'];
-  }
-}
-
-function cloudy_preprocess_input__textfield(&$vars) {
-  // The main search input
-  if($vars["attributes"]['id'] === 'edit-keys') {
-    $vars["attributes"]['type'] = 'search';
-    $vars["attributes"]['class'] = ['form-search', 'form-autocomplete'];
-  }
-  // The search input at top-right corner
-  else if(
-    $vars["attributes"]['id'] === 'edit-keys--2' ||
-    $vars["attributes"]['id'] === 'edit-keys--3' ||
-    $vars["attributes"]['id'] === 'edit-keys--4'
-  ) {
-    $vars["attributes"]['type'] = 'search';
-    $vars["attributes"]['placeholder'] = 'Search Portland.gov';
-    $vars["attributes"]['size'] = '21';
   }
 }
 
