@@ -165,3 +165,38 @@ function portland_leaflet_maps_search_api_query_alter(\Drupal\search_api\Query\Q
     }
   }
 }
+
+/**
+ * Implements hook_views_pre_render().
+ */
+function portland_leaflet_maps_views_pre_render(\Drupal\views\ViewExecutable $view) {
+  if ($view->id() == 'construction_map') {
+    // Get the values for portlandmaps_id and portlandmaps_layer
+    $layer_list = [];
+    $id_list = [];
+    foreach ($view->result as $key => $value) {
+      $entity = $value->_item->getOriginalObject()->getEntity();
+      if(!$entity->field_portlandmaps_id || !$entity->field_portlandmaps_layer) continue;
+
+      if( $entity->field_load_map_from_portlandmaps->value ) {
+        $entity->field_geo_map->value = '';
+      }
+      else {
+        continue;
+      }
+
+      $map_id = $entity->field_portlandmaps_id->value;
+      if($map_id != null) {
+        $id_list[] = $map_id;
+      }
+
+      $layer_id = $entity->field_portlandmaps_layer->value;
+      if($layer_id != null) {
+        $layer_list[] = $layer_id;
+      }
+    }
+    $view->element['#attached']['drupalSettings']['portlandmaps_id_list'] = $id_list;
+    $view->element['#attached']['drupalSettings']['portlandmaps_layer_list'] = $layer_list;
+
+  }
+}

@@ -244,10 +244,48 @@ jQuery(document).on('leaflet.map', function (e, settings, lMap, mapid) {
       });
 
       // once we've looped through all the features, zoom the map to the extent of the collection
-      lMap.fitBounds(bounds);
+      if(bounds.isValid())
+        lMap.fitBounds(bounds);
     });
   }
 
+
+
+  if( drupalSettings.portlandmaps_layer_list && drupalSettings.portlandmaps_id_list ) {
+    var features;
+    var where_in_condition = drupalSettings.portlandmaps_id_list.map(
+      function(item) {
+        return "'" + item.substring(item.indexOf('=') + 1) + "'"
+      }
+    ).join();
+
+    features = L.esri.featureLayer({
+      url: drupalSettings.portlandmaps_layer_list[0],
+      where: 'Project_Number_SAP in (' + where_in_condition + ')', // 'PropertyID=' + drupalSettings.portlandmaps_id,
+      style: function (feature, layer) {
+        return JSON.parse(settings.settings.path);
+      },
+      onEachFeature: function (feature, layer) {
+        layer.bindPopup(feature.properties.Project_Name);
+      }
+    })
+    .addTo(lMap);
+    features.once('load', function (evt) {
+      // create a new empty Leaflet bounds object
+      var bounds = L.latLngBounds([]);
+      // loop through the features returned by the server
+      features.eachFeature(function (layer) {
+        // get the bounds of an individual feature
+        var layerBounds = layer.getBounds();
+        // extend the bounds of the collection to fit the bounds of the new feature
+        bounds.extend(layerBounds);
+      });
+
+      // once we've looped through all the features, zoom the map to the extent of the collection
+      if(bounds.isValid())
+        lMap.fitBounds(bounds);
+    });
+  }
 });
 
 L.TileLayerQuad = L.TileLayer.extend({
