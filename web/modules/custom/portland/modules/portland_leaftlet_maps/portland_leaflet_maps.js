@@ -195,34 +195,6 @@ jQuery(document).on('leaflet.map', function (e, settings, lMap, mapid) {
   lMap.on('dragend', mapZoomedOrMovedByUser).on('dblclick', mapZoomedOrMovedByUser);
   jQuery('div.leaflet-control-zoom > a').on('click', mapZoomedOrMovedByUser);
 
-  // Highlight the park in map when it's scrolled just under the map
-  // jQuery(window).on('scroll', function() { 
-  //   var allCards = jQuery('div.node--type-park-facility.card');
-  //   var allMarkers = jQuery('div.park-marker');
-  //   var allMarkerTitles = jQuery('.park-marker-title');
-  //   for(var i=0; i<allCards.length; i++) {
-  //     if( 
-  //         ( i == allCards.length - 1  && (jQuery(window).scrollTop() + 400 + 80 > jQuery(allCards[i]).offset().top) )
-  //         ||
-  //         ( 
-  //           (jQuery(window).scrollTop() + 400 + 80 > jQuery(allCards[i]).offset().top) && 
-  //           (jQuery(window).scrollTop() + 400 + 80 <= jQuery(allCards[i+1]).offset().top) 
-  //         ) 
-  //       ) {
-  //       allMarkers.each(function() {
-  //         jQuery(this).removeClass( "park-marker-lg" ).addClass( "park-marker-sm" );
-  //       });
-  //       jQuery('div[data-id="' + jQuery(allCards[i]).attr('data-card-id') +'"]').removeClass( "park-marker-sm" ).addClass( "park-marker-lg" );
-  //       allMarkerTitles.each(function() {
-  //         jQuery(this).addClass( "d-none" );
-  //       });
-  //       jQuery('div[data-id="' + jQuery(allCards[i]).attr('data-card-id') +'"] > .park-marker-title').removeClass( "d-none" );
-  //       break;
-  //     }
-  //   }
-  // });
-
-
   if( drupalSettings.portlandmaps_layer && drupalSettings.portlandmaps_id ) {
     var features = L.esri.featureLayer({
       url: drupalSettings.portlandmaps_layer,
@@ -244,18 +216,18 @@ jQuery(document).on('leaflet.map', function (e, settings, lMap, mapid) {
       });
 
       // once we've looped through all the features, zoom the map to the extent of the collection
-      if(bounds.isValid())
-        lMap.fitBounds(bounds);
+      // if(bounds.isValid())
+      //   lMap.fitBounds(bounds);
     });
   }
 
-
-
+  // Display layers from PortlandMaps on Construction Map
   if( drupalSettings.portlandmaps_layer_list && drupalSettings.portlandmaps_id_list ) {
     var features;
+    var sap_id_regex = /^Project_Number_SAP='(.+)'$/;
     var where_in_condition = drupalSettings.portlandmaps_id_list.map(
       function(item) {
-        return "'" + item.substring(item.indexOf('=') + 1) + "'"
+        return "'" + item.trim().match(sap_id_regex)[1] + "'"
       }
     ).join();
 
@@ -282,8 +254,8 @@ jQuery(document).on('leaflet.map', function (e, settings, lMap, mapid) {
       });
 
       // once we've looped through all the features, zoom the map to the extent of the collection
-      if(bounds.isValid())
-        lMap.fitBounds(bounds);
+      // if(bounds.isValid())
+      //   lMap.fitBounds(bounds);
     });
   }
 });
