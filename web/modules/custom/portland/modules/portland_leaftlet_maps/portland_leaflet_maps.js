@@ -125,12 +125,14 @@ jQuery(document)
 .on('leaflet.feature', function (e, lFeature, feature, leafletMap){
   // Drupal adds the same fill style to all shapes. Even lines gets the 
   // shadow. We remove the fill explicitly here.
-  var lFeature_layers = lFeature.getLayers();
-  feature.component.forEach(function(geo_shape, i) {
-    if(geo_shape.type == 'linestring') {
-      lFeature_layers[i].setStyle({fill:false})
-    }
-  })
+  if(lFeature.getLayers) {
+    var lFeature_layers = lFeature.getLayers();
+    feature.component.forEach(function(geo_shape, i) {
+      if(geo_shape.type == 'linestring') {
+        lFeature_layers[i].setStyle({fill:false})
+      }
+    })
+  }
 })
 .on('leaflet.map', function (e, settings, lMap, mapid) {
   // Add the satellite view button
@@ -228,8 +230,8 @@ jQuery(document)
       });
 
       // once we've looped through all the features, zoom the map to the extent of the collection
-      // if(bounds.isValid())
-      //   lMap.fitBounds(bounds);
+      if(bounds.isValid())
+        lMap.fitBounds(bounds);
     });
   }
 
@@ -266,8 +268,8 @@ jQuery(document)
       });
 
       // once we've looped through all the features, zoom the map to the extent of the collection
-      // if(bounds.isValid())
-      //   lMap.fitBounds(bounds);
+      if(bounds.isValid())
+        lMap.fitBounds(bounds);
     });
   }
 });
