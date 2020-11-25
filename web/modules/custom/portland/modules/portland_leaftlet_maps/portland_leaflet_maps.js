@@ -25,8 +25,9 @@
   Drupal.Leaflet.prototype._create_feature_orig = Drupal.Leaflet.prototype.create_feature;
   Drupal.Leaflet.prototype.create_feature = function(feature) {
     // If this is NOT a geo file, call original function to handle it
-    if( feature.feature_source != 'file')
+    if( feature.feature_source != 'file') {
       return this._create_feature_orig(feature);
+    }
 
     // feature.entity_id is the map ID: "1371"
     var mapid = "leaflet-map-media-map-"+ feature.entity_id +"-field-geo-file";
@@ -120,7 +121,18 @@ function mapZoomedOrMovedByUser(e) {
 
 // Once the Leaflet Map is loaded with its features.
 var mapLoaded = false;
-jQuery(document).on('leaflet.map', function (e, settings, lMap, mapid) {
+jQuery(document)
+.on('leaflet.feature', function (e, lFeature, feature, leafletMap){
+  // Drupal adds the same fill style to all shapes. Even lines gets the 
+  // shadow. We remove the fill explicitly here.
+  var lFeature_layers = lFeature.getLayers();
+  feature.component.forEach(function(geo_shape, i) {
+    if(geo_shape.type == 'linestring') {
+      lFeature_layers[i].setStyle({fill:false})
+    }
+  })
+})
+.on('leaflet.map', function (e, settings, lMap, mapid) {
   // Add the satellite view button
   if( jQuery('div.leaflet-control-satellite').length === 0 ) {
     jQuery('div.leaflet-top.leaflet-right')
