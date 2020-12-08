@@ -1,12 +1,84 @@
-{% include "@components/council-agenda-item/council-agenda-item.twig" with {
-  "number": content.field_agenda_item_number.0["#markup"],
-  "type": content.field_agenda_item_type.0["#markup"],
-  "emergency": content.field_emergency.0,
-  "note": content.field_agenda_item_note.0,
-  "disposition": content.field_agenda_item_disposition.0,
-  "dispositionNotes": content.field_disposition_notes	.0,
-  "time_certain": content.field_time_certain.0,
-  "time_requested": content.field_time_requested.0,
-  "council_document": content.field_council_document,
-  "votes": content.field_votes,
-} only %}
+{#
+/**
+ * @file
+ * Theme override to display a relation.
+ *
+ * Available variables:
+ * - relation: The relation entity with limited access to object properties and methods.
+ *   Only method names starting with "get", "has", or "is" and a few common
+ *   methods such as "id", "label", and "bundle" are available. For example:
+ *   - relation.getCreatedTime() will return the relation creation timestamp.
+ *   - relation.hasField('field_example') returns TRUE if the relation bundle includes
+ *     field_example. (This does not indicate the presence of a value in this
+ *     field.)
+ *   - relation.isPublished() will return whether the relation is published or not.
+ *   Calling other methods, such as relation.delete(), will result in an exception.
+ *   See \Drupal\relation\Entity\Node for a full list of public properties and
+ *   methods for the relation object.
+ * - label: (optional) The title of the relation.
+ * - content: All relation items. Use {{ content }} to print them all,
+ *   or print a subset such as {{ content.field_example }}. Use
+ *   {{ content|without('field_example') }} to temporarily suppress the printing
+ *   of a given child element.
+ * - date: (optional) Themed creation date field.
+ * - author_name: (optional) Themed author name field.
+ * - url: Direct URL of the current relation.
+ * - attributes: HTML attributes for the containing element.
+ *   The attributes.class element may contain one or more of the following
+ *   classes:
+ *   - relation: The current template type (also known as a "theming hook").
+ *   - relation--type-[type]: The current relation type. For example, if the relation is an
+ *     "Article" it would result in "relation--type-article". Note that the machine
+ *     name will often be in a short form of the human readable label.
+ *   - relation--view-mode-[view_mode]: The View Mode of the relation; for example, a
+ *     teaser would result in: "relation--view-mode-teaser", and
+ *     full: "relation--view-mode-full".
+ *   The following are controlled through the relation  options.
+ * - view_mode: View mode; for example, "teaser" or "full".
+ * - teaser: Flag for the teaser state. Will be true if view_mode is 'teaser'.
+ * - page: Flag for the full page state. Will be true if view_mode is 'full'.
+ * - readmore: Flag for more state. Will be true if the teaser content of the
+ *   relation cannot hold the main body content.
+ * - logged_in: Flag for authenticated user status. Will be true when the
+ *   current user is a logged-in member.
+ * - is_admin: Flag for admin user status. Will be true when the current user
+ *   is an administrator.
+ *
+ * @see template_preprocess_relation()
+ *
+ * @todo Remove the id attribute (or make it a class), because if that gets
+ *   rendered twice on a page this is invalid CSS for example: two lists
+ *   in different view modes.
+ */
+#}
+{%
+  set classes = [
+    'relation',
+    'relation--type-' ~ relation.bundle|clean_class,
+    view_mode ? 'relation--view-mode-' ~ view_mode|clean_class,
+    'border',
+    'mb-5',
+    'p-3'
+  ]
+%}
+<div{{ attributes.addClass(classes) }}>
+  {% if content.field_agenda_item_number.0 %}
+    <h4>{{ content.field_agenda_item_number.0 }}</h4>
+  {% endif %}
+    {% if "true" in content.field_emergency.0 %}
+    <span class="council-agenda-item__emergency">
+      {% include "@components/badge/badge.twig" with {
+        text: "Emergency Ordinance",
+        type: "default",
+      } only %}
+    </span>
+  {% endif %}
+  </h4>
+  {{ content.field_council_document }}
+  {{ content.field_time_certain }}
+  {{ content.field_time_requested }}
+  {{ content.field_agenda_item_note }}
+  {{ content.field_agenda_item_disposition }}
+  {{ content.field_disposition_notes }}
+  {{ content.field_votes }}
+</div>

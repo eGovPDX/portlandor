@@ -24,13 +24,13 @@ $local_settings = __DIR__ . "/settings.local.php";
 if (file_exists($local_settings)) {
   include $local_settings;
 }
-$settings['install_profile'] = 'lightning';
+
 
 if (isset($_ENV['PANTHEON_ENVIRONMENT']) && php_sapi_name() != 'cli') {
   // Redirect to https://$primary_domain in the Live environment
   if ($_ENV['PANTHEON_ENVIRONMENT'] === 'live') {
     /** Replace www.example.com with your registered domain name */
-    $primary_domain = 'beta.portland.gov';
+    $primary_domain = 'www.portland.gov';
     $config['environment_indicator.indicator']['bg_color'] = '#dc3545';
     $config['environment_indicator.indicator']['fg_color'] = '#ffffff';
     $config['environment_indicator.indicator']['name'] = 'Production';
@@ -130,19 +130,18 @@ else {
 }
 
 
-/**
- * Overwrite Google Analytics tracking code in 'live' production site.
- *
- * Set to tracking ID of Google Analytics property for 'production' site.
- */
+// Overwrite Google Tag Manager environment setting in 'live' production site.
 if (isset($_ENV['PANTHEON_ENVIRONMENT'])) {
   if ($_ENV['PANTHEON_ENVIRONMENT'] === 'live') {
-    $config['google_analytics.settings']['account'] = 'UA-6858269-14';
+    $config['google_tag.container.portland.gov']['environment_id'] = 'env-1';
+    $config['google_tag.container.portland.gov']['environment_token'] = 'gX0sWBBfUHwzWER-y90CyQ';
   }
 }
 
 // Pantheon workaround for New Relic segmentation fault issue (https://discuss.newrelic.com/t/segmentation-fault-in-9-7-0-258/94830/20)
 // Disables New Relic for CLI context to prevent CircleCI build failures
-if (function_exists('newrelic_ignore_transaction') && php_sapi_name() === 'cli') { 
-  newrelic_ignore_transaction(); 
+if (function_exists('newrelic_ignore_transaction') && php_sapi_name() === 'cli') {
+  newrelic_ignore_transaction();
 }
+
+$config['file.settings']['make_unused_managed_files_temporary'] = TRUE;

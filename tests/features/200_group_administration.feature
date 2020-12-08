@@ -17,6 +17,7 @@ Feature: Create group
 
     When I fill in "edit-label-0-value" with "Behat test group"
     And I fill in "edit-field-official-organization-name-0-value" with "Official name of Behat test group"
+    And I select "Complete" from "edit-field-migration-status"
     And I fill in "edit-field-summary-0-value" with "This is a test summary for the Behat Test group"
     And I click the "#edit-group-path-and-redirects" element
     And I fill in "edit-field-group-path-0-value" with "behat-test"
