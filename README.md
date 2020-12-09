@@ -303,4 +303,3 @@ The lock file is not up to date with the latest changes in composer.json. You ma
 ...
 
 To resolve this, run `lando composer update --lock`, which will generate a new hash. If you encounter a conflict on the hash value when you merge or rebase, use the most recent (yours) version of the hash.
-
