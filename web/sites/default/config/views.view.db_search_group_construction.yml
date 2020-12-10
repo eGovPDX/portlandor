@@ -4,6 +4,10 @@ status: true
 dependencies:
   config:
     - search_api.index.database_full_index
+    - taxonomy.vocabulary.project_status
+    - views.view.group_construction_menu
+  content:
+    - 'taxonomy_term:project_status:b6ebc1da-06e3-4687-abb3-8befabf438b3'
   module:
     - group
     - search_api
@@ -219,18 +223,6 @@ display:
             group_items: {  }
           plugin_id: search_api_boolean
       sorts:
-        title:
-          id: title
-          table: search_api_index_database_full_index
-          field: title
-          relationship: none
-          group_type: group
-          admin_label: ''
-          order: ASC
-          exposed: false
-          expose:
-            label: ''
-          plugin_id: search_api
         field_start_date:
           id: field_start_date
           table: search_api_index_database_full_index
@@ -243,10 +235,10 @@ display:
           expose:
             label: ''
           plugin_id: search_api
-        field_end_date:
-          id: field_end_date
+        title:
+          id: title
           table: search_api_index_database_full_index
-          field: field_end_date
+          field: title
           relationship: none
           group_type: group
           admin_label: ''
@@ -332,7 +324,7 @@ display:
   page_active:
     display_plugin: page
     id: page_active
-    display_title: Page
+    display_title: Current/upcoming
     position: 1
     display_options:
       display_extenders:
@@ -347,6 +339,142 @@ display:
         empty: false
         title: false
       filters:
+        field_end_date_1:
+          id: field_end_date_1
+          table: search_api_index_database_full_index
+          field: field_end_date
+          relationship: none
+          group_type: group
+          admin_label: ''
+          operator: '>='
+          value:
+            min: ''
+            max: ''
+            value: today
+            type: offset
+          group: 1
+          exposed: false
+          expose:
+            operator_id: ''
+            label: ''
+            description: ''
+            use_operator: false
+            operator: ''
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: ''
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+            placeholder: ''
+            min_placeholder: ''
+            max_placeholder: ''
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
+          plugin_id: search_api_date
+        field_end_date_2:
+          id: field_end_date_2
+          table: search_api_index_database_full_index
+          field: field_end_date
+          relationship: none
+          group_type: group
+          admin_label: ''
+          operator: empty
+          value:
+            min: ''
+            max: ''
+            value: ''
+            type: date
+          group: 1
+          exposed: false
+          expose:
+            operator_id: ''
+            label: ''
+            description: ''
+            use_operator: false
+            operator: ''
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: ''
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+            placeholder: ''
+            min_placeholder: ''
+            max_placeholder: ''
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
+          plugin_id: search_api_date
+        field_project_status_1:
+          id: field_project_status_1
+          table: search_api_index_database_full_index
+          field: field_project_status_1
+          relationship: none
+          group_type: group
+          admin_label: ''
+          operator: not
+          value:
+            53: 53
+          group: 2
+          exposed: false
+          expose:
+            operator_id: ''
+            label: ''
+            description: ''
+            use_operator: false
+            operator: ''
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: ''
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+            reduce: false
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
+          reduce_duplicates: false
+          type: select
+          limit: true
+          vid: project_status
+          hierarchy: true
+          error_message: true
+          plugin_id: search_api_term
         search_api_fulltext:
           id: search_api_fulltext
           table: search_api_index_database_full_index
@@ -356,11 +484,11 @@ display:
           admin_label: ''
           operator: or
           value: ''
-          group: 1
+          group: 2
           exposed: true
           expose:
             operator_id: search_api_fulltext_op
-            label: 'Search construction projects'
+            label: 'Search current and upcoming projects'
             description: ''
             use_operator: false
             operator: search_api_fulltext_op
@@ -415,7 +543,7 @@ display:
           operator: or
           value:
             construction_project: construction_project
-          group: 1
+          group: 2
           exposed: false
           expose:
             operator_id: ''
@@ -455,7 +583,7 @@ display:
           admin_label: ''
           operator: '='
           value: '1'
-          group: 1
+          group: 2
           exposed: false
           expose:
             operator_id: ''
@@ -487,9 +615,21 @@ display:
       filter_groups:
         operator: AND
         groups:
-          1: AND
+          1: OR
+          2: AND
       exposed_block: false
       header:
+        view:
+          id: view
+          table: views
+          field: view
+          relationship: none
+          group_type: group
+          admin_label: ''
+          empty: false
+          view_to_insert: 'group_construction_menu:block_1'
+          inherit_arguments: true
+          plugin_id: view
         result:
           id: result
           table: views
@@ -524,6 +664,310 @@ display:
         - route
         - url
         - url.query_args
+        - user
+        - 'user.node_grants:view'
+        - user.permissions
+      tags:
+        - 'config:search_api.index.database_full_index'
+  page_completed:
+    display_plugin: page
+    id: page_completed
+    display_title: Completed
+    position: 1
+    display_options:
+      display_extenders:
+        metatag_display_extender: {  }
+      path: group/%/construction/completed
+      display_description: ''
+      defaults:
+        cache: false
+        filters: false
+        filter_groups: false
+        header: false
+        empty: false
+        title: false
+      filters:
+        field_end_date:
+          id: field_end_date
+          table: search_api_index_database_full_index
+          field: field_end_date
+          relationship: none
+          group_type: group
+          admin_label: ''
+          operator: '<'
+          value:
+            min: ''
+            max: ''
+            value: today
+            type: offset
+          group: 1
+          exposed: false
+          expose:
+            operator_id: ''
+            label: ''
+            description: ''
+            use_operator: false
+            operator: ''
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: ''
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+            placeholder: ''
+            min_placeholder: ''
+            max_placeholder: ''
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
+          plugin_id: search_api_date
+        field_project_status_1:
+          id: field_project_status_1
+          table: search_api_index_database_full_index
+          field: field_project_status_1
+          relationship: none
+          group_type: group
+          admin_label: ''
+          operator: or
+          value:
+            53: 53
+          group: 1
+          exposed: false
+          expose:
+            operator_id: ''
+            label: ''
+            description: ''
+            use_operator: false
+            operator: ''
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: ''
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+            reduce: false
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
+          reduce_duplicates: false
+          type: select
+          limit: true
+          vid: project_status
+          hierarchy: true
+          error_message: true
+          plugin_id: search_api_term
+        search_api_fulltext:
+          id: search_api_fulltext
+          table: search_api_index_database_full_index
+          field: search_api_fulltext
+          relationship: none
+          group_type: group
+          admin_label: ''
+          operator: or
+          value: ''
+          group: 2
+          exposed: true
+          expose:
+            operator_id: search_api_fulltext_op
+            label: 'Search completed projects'
+            description: ''
+            use_operator: false
+            operator: search_api_fulltext_op
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: search
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+              anonymous: '0'
+              publisher: '0'
+              policy_author: '0'
+              policy_editor: '0'
+              attorney: '0'
+              council_author: '0'
+              council_clerk: '0'
+              budget: '0'
+              park_editor: '0'
+              code_editor: '0'
+              group_creator: '0'
+              alert_editor: '0'
+              sitewide_editor: '0'
+              administrator: '0'
+            placeholder: ''
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
+          parse_mode: terms
+          min_length: null
+          fields:
+            - rendered_item
+            - title
+          plugin_id: search_api_fulltext
+        content_type:
+          id: content_type
+          table: search_api_index_database_full_index
+          field: content_type
+          relationship: none
+          group_type: group
+          admin_label: ''
+          operator: or
+          value:
+            construction_project: construction_project
+          group: 2
+          exposed: false
+          expose:
+            operator_id: ''
+            label: ''
+            description: ''
+            use_operator: false
+            operator: ''
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: ''
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+            reduce: false
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
+          reduce_duplicates: false
+          plugin_id: search_api_options
+        status:
+          id: status
+          table: search_api_index_database_full_index
+          field: status
+          relationship: none
+          group_type: group
+          admin_label: ''
+          operator: '='
+          value: '1'
+          group: 2
+          exposed: false
+          expose:
+            operator_id: ''
+            label: ''
+            description: ''
+            use_operator: false
+            operator: ''
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: ''
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
+          plugin_id: search_api_boolean
+      filter_groups:
+        operator: AND
+        groups:
+          1: OR
+          2: AND
+      exposed_block: false
+      header:
+        view:
+          id: view
+          table: views
+          field: view
+          relationship: none
+          group_type: group
+          admin_label: ''
+          empty: false
+          view_to_insert: 'group_construction_menu:block_1'
+          inherit_arguments: true
+          plugin_id: view
+        result:
+          id: result
+          table: views
+          field: result
+          relationship: none
+          group_type: group
+          admin_label: ''
+          empty: false
+          content: 'Displaying @start - @end of @total'
+          plugin_id: result
+      cache:
+        type: none
+      empty:
+        area:
+          id: area
+          table: views
+          field: area
+          relationship: none
+          group_type: group
+          admin_label: ''
+          empty: true
+          tokenize: false
+          content:
+            value: 'No completed projects found.'
+            format: full_html
+          plugin_id: text
+      title: Construction
+    cache_metadata:
+      max-age: -1
+      contexts:
+        - 'languages:language_interface'
+        - route
+        - url
+        - url.query_args
+        - user
         - 'user.node_grants:view'
         - user.permissions
       tags:
