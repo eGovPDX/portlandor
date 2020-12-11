@@ -25,8 +25,9 @@
   Drupal.Leaflet.prototype._create_feature_orig = Drupal.Leaflet.prototype.create_feature;
   Drupal.Leaflet.prototype.create_feature = function(feature) {
     // If this is NOT a geo file, call original function to handle it
-    if( feature.feature_source != 'file')
+    if( feature.feature_source != 'file') {
       return this._create_feature_orig(feature);
+    }
 
     // feature.entity_id is the map ID: "1371"
     var mapid = "leaflet-map-media-map-"+ feature.entity_id +"-field-geo-file";
@@ -120,7 +121,20 @@ function mapZoomedOrMovedByUser(e) {
 
 // Once the Leaflet Map is loaded with its features.
 var mapLoaded = false;
-jQuery(document).on('leaflet.map', function (e, settings, lMap, mapid) {
+jQuery(document)
+.on('leaflet.feature', function (e, lFeature, feature, leafletMap){
+  // Drupal adds the same fill style to all shapes. Even lines gets the 
+  // shadow. We remove the fill explicitly here.
+  if(lFeature.getLayers) {
+    var lFeature_layers = lFeature.getLayers();
+    feature.component.forEach(function(geo_shape, i) {
+      if(geo_shape.type == 'linestring') {
+        lFeature_layers[i].setStyle({fill:false})
+      }
+    })
+  }
+})
+.on('leaflet.map', function (e, settings, lMap, mapid) {
   // Add the satellite view button
   if( jQuery('div.leaflet-control-satellite').length === 0 ) {
     jQuery('div.leaflet-top.leaflet-right')
@@ -195,34 +209,6 @@ jQuery(document).on('leaflet.map', function (e, settings, lMap, mapid) {
   lMap.on('dragend', mapZoomedOrMovedByUser).on('dblclick', mapZoomedOrMovedByUser);
   jQuery('div.leaflet-control-zoom > a').on('click', mapZoomedOrMovedByUser);
 
-  // Highlight the park in map when it's scrolled just under the map
-  // jQuery(window).on('scroll', function() { 
-  //   var allCards = jQuery('div.node--type-park-facility.card');
-  //   var allMarkers = jQuery('div.park-marker');
-  //   var allMarkerTitles = jQuery('.park-marker-title');
-  //   for(var i=0; i<allCards.length; i++) {
-  //     if( 
-  //         ( i == allCards.length - 1  && (jQuery(window).scrollTop() + 400 + 80 > jQuery(allCards[i]).offset().top) )
-  //         ||
-  //         ( 
-  //           (jQuery(window).scrollTop() + 400 + 80 > jQuery(allCards[i]).offset().top) && 
-  //           (jQuery(window).scrollTop() + 400 + 80 <= jQuery(allCards[i+1]).offset().top) 
-  //         ) 
-  //       ) {
-  //       allMarkers.each(function() {
-  //         jQuery(this).removeClass( "park-marker-lg" ).addClass( "park-marker-sm" );
-  //       });
-  //       jQuery('div[data-id="' + jQuery(allCards[i]).attr('data-card-id') +'"]').removeClass( "park-marker-sm" ).addClass( "park-marker-lg" );
-  //       allMarkerTitles.each(function() {
-  //         jQuery(this).addClass( "d-none" );
-  //       });
-  //       jQuery('div[data-id="' + jQuery(allCards[i]).attr('data-card-id') +'"] > .park-marker-title').removeClass( "d-none" );
-  //       break;
-  //     }
-  //   }
-  // });
-
-
   if( drupalSettings.portlandmaps_layer && drupalSettings.portlandmaps_id ) {
     var features = L.esri.featureLayer({
       url: drupalSettings.portlandmaps_layer,
@@ -244,10 +230,48 @@ jQuery(document).on('leaflet.map', function (e, settings, lMap, mapid) {
       });
 
       // once we've looped through all the features, zoom the map to the extent of the collection
-      lMap.fitBounds(bounds);
+      if(bounds.isValid())
+        lMap.fitBounds(bounds);
     });
   }
 
+  // Display layers from PortlandMaps on Construction Map
+  if( drupalSettings.portlandmaps_layer_list && drupalSettings.portlandmaps_id_list ) {
+    var features;
+    var sap_id_regex = /^Project_Number_SAP='(.+)'$/;
+    var where_in_condition = drupalSettings.portlandmaps_id_list.map(
+      function(item) {
+        return "'" + item.trim().match(sap_id_regex)[1] + "'"
+      }
+    ).join();
+
+    features = L.esri.featureLayer({
+      url: drupalSettings.portlandmaps_layer_list[0],
+      where: 'Project_Number_SAP in (' + where_in_condition + ')', // 'PropertyID=' + drupalSettings.portlandmaps_id,
+      style: function (feature, layer) {
+        return JSON.parse(settings.settings.path);
+      },
+      onEachFeature: function (feature, layer) {
+        layer.bindPopup(feature.properties.Project_Name);
+      }
+    })
+    .addTo(lMap);
+    features.once('load', function (evt) {
+      // create a new empty Leaflet bounds object
+      var bounds = L.latLngBounds([]);
+      // loop through the features returned by the server
+      features.eachFeature(function (layer) {
+        // get the bounds of an individual feature
+        var layerBounds = layer.getBounds();
+        // extend the bounds of the collection to fit the bounds of the new feature
+        bounds.extend(layerBounds);
+      });
+
+      // once we've looped through all the features, zoom the map to the extent of the collection
+      if(bounds.isValid())
+        lMap.fitBounds(bounds);
+    });
+  }
 });
 
 L.TileLayerQuad = L.TileLayer.extend({
