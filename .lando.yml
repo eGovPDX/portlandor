@@ -19,7 +19,7 @@ services:
       - docker-php-ext-enable redis
     run_as_root:
       - /bin/sh -c "if [ ! -d /var/www/.terminus/plugins/terminus-secrets-plugin ]; then { mkdir -p /var/www/.terminus/plugins; composer create-project -d /var/www/.terminus/plugins pantheon-systems/terminus-secrets-plugin:~1; chown -R www-data:www-data /var/www/.terminus; } fi"
-    xdebug: true
+    xdebug: false
     config:
       php: xdebug.ini
     overrides:
@@ -45,25 +45,13 @@ services:
       - /bin/sh -c "chmod -R 777 /var/www"
     run:
       - echo "Installing Node.js dependencies..."
-      # - cd /app/web/themes/custom/cloudy && yarn install --ignore-engines --frozen-lockfile
-  # chromedriver:
-  #   type: compose
-  #   services:
-  #     image: robcherry/docker-chromedriver:latest
-  #     expose:
-  #       - "4444"
-  #     environment:
-  #       CHROMEDRIVER_WHITELISTED_IPS: ""
-  #       CHROMEDRIVER_URL_BASE: "/wd/hub"
-  #     security_opt:
-  #       - seccomp:unconfined
-  #     command: ["/usr/local/bin/supervisord", "-c", "/etc/supervisord.conf"]
+      - cd /app/web/themes/custom/cloudy && yarn install --ignore-engines --frozen-lockfile
 
 events:
   post-start:
     - node: /bin/sh -c "chmod -R 775 /var/www"
     - node: echo "Building theme asset files..."
-    # - node: cd /app/web/themes/custom/cloudy && yarn run build
+    - node: cd /app/web/themes/custom/cloudy && yarn run build
 tooling:
   drush:
     description: CUSTOM Run drush commands
@@ -160,11 +148,6 @@ tooling:
       - /bin/sh -c "cp /app/cop_ca_*.crt /usr/local/share/ca-certificates/"
       - update-ca-certificates
     user: root
-  behat:
-    service: appserver
-    description: CUSTOM Run behat tests
-    cmd:
-      - /app/vendor/bin/behat -c /app/tests/behat.yml
   chromedriver:
     service: chromedriver
     description: CUSTOM Run chromedriver commands
