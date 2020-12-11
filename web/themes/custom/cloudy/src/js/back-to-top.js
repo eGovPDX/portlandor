@@ -7,7 +7,7 @@ Drupal.behaviors.cloudy_back_to_top = {
     var showHeight = viewHeight * 1.5;
     var isAttached = false;
 
-    $(window).on('scroll', function() {
+    $(window).once('backToTopShowButtonHandler').onceon('scroll', function() {
       var scrollPos = $(document).scrollTop();
       if (scrollPos > showHeight && !isAttached) {
         $('#block-cloudy-content').append('<div id="back-to-top" class="btn btn-dark"><a href="#main-content">Back to top</a></div>');
@@ -18,7 +18,7 @@ Drupal.behaviors.cloudy_back_to_top = {
       }
     });
 
-    $('#back-to-top').on('click', function() {
+    $('#back-to-top').once('backToTopClickHandler').on('click', function() {
       $(this).remove();
       isAttached = false;
     });
