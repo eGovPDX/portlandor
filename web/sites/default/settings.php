@@ -153,7 +153,7 @@ $config['file.settings']['make_unused_managed_files_temporary'] = TRUE;
 ////////////////////////////////////////////////////////////
 
 // Configure Redis
-// if (defined('PANTHEON_ENVIRONMENT')) {
+// if (isset($_ENV['PANTHEON_ENVIRONMENT']) && $_ENV['PANTHEON_ENVIRONMENT'] !== 'lando') {
 //   // Include the Redis services.yml file. Adjust the path if you installed to a contrib or other subdirectory.
 //   $settings['container_yamls'][] = 'modules/contrib/redis/example.services.yml';
 
