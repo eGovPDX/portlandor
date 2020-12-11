@@ -7,7 +7,7 @@ Drupal.behaviors.cloudy_back_to_top = {
     var showHeight = viewHeight * 1.5;
     var isAttached = false;
 
-    $(window).once('backToTopShowButtonHandler').onceon('scroll', function() {
+    $(window).once('backToTopShowButtonHandler').on('scroll', function() {
       var scrollPos = $(document).scrollTop();
       if (scrollPos > showHeight && !isAttached) {
         $('#block-cloudy-content').append('<div id="back-to-top" class="btn btn-dark"><a href="#main-content">Back to top</a></div>');
