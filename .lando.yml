@@ -19,7 +19,7 @@ services:
       - /bin/sh -c "if [ ! -d /var/www/.terminus/plugins/terminus-secrets-plugin ]; then { mkdir -p /var/www/.terminus/plugins; composer create-project -d /var/www/.terminus/plugins pantheon-systems/terminus-secrets-plugin:~1; chown -R www-data:www-data /var/www/.terminus; } fi"
     xdebug: false
     config:
-      conf: xdebug.ini
+      php: xdebug.ini
     overrides:
       environment:
         BEHAT_PARAMS: '{"extensions" : {"Behat\\MinkExtension" : {"base_url" : "https://portlandor.lndo.site"}, "Drupal\\DrupalExtension" : {"drush" :   {  "root":  "/app/web" }}}}'
@@ -44,18 +44,6 @@ services:
     run:
       - echo "Installing Node.js dependencies..."
       - cd /app/web/themes/custom/cloudy && yarn install --ignore-engines --frozen-lockfile
-  chromedriver:
-    type: compose
-    services:
-      image: robcherry/docker-chromedriver:latest
-      expose:
-        - "4444"
-      environment:
-        CHROMEDRIVER_WHITELISTED_IPS: ""
-        CHROMEDRIVER_URL_BASE: "/wd/hub"
-      security_opt:
-        - seccomp:unconfined
-      command: ["/usr/local/bin/supervisord", "-c", "/etc/supervisord.conf"]
 
 events:
   post-start:
@@ -158,11 +146,6 @@ tooling:
       - /bin/sh -c "cp /app/cop_ca_*.crt /usr/local/share/ca-certificates/"
       - update-ca-certificates
     user: root
-  behat:
-    service: appserver
-    description: CUSTOM Run behat tests
-    cmd:
-      - /app/vendor/bin/behat -c /app/tests/behat.yml
   chromedriver:
     service: chromedriver
     description: CUSTOM Run chromedriver commands
