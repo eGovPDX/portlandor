@@ -146,10 +146,12 @@ build_and_deploy: &build_and_deploy
               echo "Found the branch name: '${BASH_REMATCH[1]}'";
               # Check if a multidev environment with the branch name exists or not
               terminus multidev:list --format=list --field=Name portlandor > ./env_list.txt
-              grep -E '^powr-\d+[a-z]*\s$' ./env_list.txt > ./matching_env_list.txt
+              # Pattern to match "powr-1234a" or "powr-1234-1". Not "powr-12345"
+              pattern="^${BASH_REMATCH[1]}([a-z]*|(-\d+))\s$" && echo $pattern
+              grep -E "${pattern}" ./env_list.txt > ./matching_env_list.txt 
               while read env_name; do
                 terminus multidev:delete --delete-branch portlandor.$env_name -y
-              done <matching_env_list.txt
+              done <./matching_env_list.txt
             fi
             echo "Waiting for sync code workflow to finish..."
             until [ $(terminus workflow:list --fields status,env --format string -- portlandor | egrep -i $PANTHEON_ENV -m 1 | egrep -i -o "^\w+") == succeeded ]; do
