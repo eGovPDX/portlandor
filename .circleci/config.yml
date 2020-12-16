@@ -136,18 +136,22 @@ build_and_deploy: &build_and_deploy
             # TODO: Sanitize DB here
             # terminus env:clone-content portlandor.test dev
             # After success deployment to DEV, remove the multidev site if this is a merge of a PR.
-            # Read the last Git log in the master branch. Get the branch name at the end of the log.
-            # Example: Merge pull request #35 from eGovPDX/powr-152
+            # Read the last Git log in the master branch. Get the story ID from the start of the log.
+            # Example: POWR-3058 Delete all related multi-devs when a branch is merged
             cd /var/www/html
             # Must read the last commit message from Github. The last one in local repo is "CircleCI Deployment"
             last_log=$(git log origin/master --pretty=format:%s -1)
             lowercase_last_log=`php -r "print strtolower('$last_log');"`
             if [[ $lowercase_last_log =~ ^(powr-[0-9]+)[[:space:]]+.+$ ]]; then
               echo "Found the story ID: '${BASH_REMATCH[1]}'";
-              # Check if a multidev environment with the branch name exists or not
+
+              # Save all multi-dev names in a file
               terminus multidev:list --format=list --field=Name portlandor > ./env_list.txt
-              # Pattern to match "powr-1234a" or "powr-1234-1". Not "powr-12345"
+
+              # Pattern to match "powr-1234a" or "powr-1234-1" or "powr-1234-a". Not "powr-12345"
               pattern="^${BASH_REMATCH[1]}([a-z]*|(-\d+)|(-[a-z]+))\s$"
+
+              # Find and delete all multidevs starting with the story ID
               grep -E "${pattern}" ./env_list.txt > ./matching_env_list.txt 
               while read env_name; do
                 terminus multidev:delete --delete-branch portlandor.$env_name -y
