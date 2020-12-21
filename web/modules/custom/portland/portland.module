@@ -206,6 +206,16 @@ function portland_node_presave($node)
             $node->set('field_end_date', null);
         }
     }
+
+    Cache::invalidateTags(['node_list:' . $node->bundle()]);
+}
+
+/**
+ * Implements hook_node_delete().
+ */
+function portland_node_delete($node)
+{
+    Cache::invalidateTags(['node_list:' . $node->bundle()]);
 }
 
 /**
@@ -1079,4 +1089,10 @@ function portland_views_pre_render(\Drupal\views\ViewExecutable $view) {
       }
     }
   }
+}
+
+function portland_views_post_render(\Drupal\views\ViewExecutable $view, &$output, $cache) {
+    $a = $output;
+    if( in_array( "node_list", $output["#cache"]["tags"]))
+        $a = 1;
 }
