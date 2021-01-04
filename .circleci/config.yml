@@ -136,26 +136,18 @@ build_and_deploy: &build_and_deploy
             # TODO: Sanitize DB here
             # terminus env:clone-content $CIRCLE_PROJECT_REPONAME.test dev
             # After success deployment to DEV, remove the multidev site if this is a merge of a PR.
-            # Read the last Git log in the master branch. Get the story ID from the start of the log.
-            # Example: POWR-3058 Delete all related multi-devs when a branch is merged
+            # Read the last Git log in the master branch. Get the branch name at the end of the log.
+            # Example: Merge pull request #35 from eGovPDX/powr-152
             cd /var/www/html
             # Must read the last commit message from Github. The last one in local repo is "CircleCI Deployment"
-            last_log=$(git log origin/master --pretty=format:%s -1)
-            lowercase_last_log=`php -r "print strtolower('$last_log');"`
-            if [[ $lowercase_last_log =~ ^(powr-[0-9]+)[[:space:]]+.+$ ]]; then
-              echo "Found the story ID: '${BASH_REMATCH[1]}'";
-
-              # Save all multi-dev names in a file
+            if [[ $(git log origin/master --pretty=format:%s -1) =~ (^Merge pull request #[0-9]* from eGovPDX\/)([^,]*) ]]; then
+              echo "Found a Pull Request Merge for branch: '${BASH_REMATCH[2]}'";
+              # Check if a multidev environment with the branch name exists or not
               terminus multidev:list --format=list --field=Name $CIRCLE_PROJECT_REPONAME > ./env_list.txt
-
-              # Pattern to match "powr-1234a" or "powr-1234-1" or "powr-1234-a". Not "powr-12345"
-              pattern="^${BASH_REMATCH[1]}([a-z]*|(-\d+)|(-[a-z]+))\s$"
-
-              # Find and delete all multidevs starting with the story ID
-              grep -E "${pattern}" ./env_list.txt > ./matching_env_list.txt
-              while read env_name; do
-                terminus multidev:delete --delete-branch $CIRCLE_PROJECT_REPONAME.$env_name -y
-              done <./matching_env_list.txt
+              if grep -Fxq "${BASH_REMATCH[2]}" ./env_list.txt; then
+                # Delete both the multidev site and branch
+                terminus multidev:delete --delete-branch $CIRCLE_PROJECT_REPONAME.${BASH_REMATCH[2]} -y
+              fi
             fi
             echo "Waiting for sync code workflow to finish..."
             until [ $(terminus workflow:list --fields status,env --format string -- $CIRCLE_PROJECT_REPONAME | egrep -i $PANTHEON_ENV -m 1 | egrep -i -o "^\w+") == succeeded ]; do
@@ -194,7 +186,7 @@ build_and_deploy: &build_and_deploy
                 BASE=dev
               fi
               # Create a new Multi-Dev with files and database from site corresponding to PR's base branch.
-              echo "Creating new multidev site cloned from $BASE. Please wait."
+              echo "Creating new multidev site cloned from $BASE. Please wait." 
               terminus multidev:create $CIRCLE_PROJECT_REPONAME.$BASE $PANTHEON_ENV
             fi
             rm -rf ./env_list.txt
@@ -357,7 +349,7 @@ visual_regression: &visual_regression
         key: terminus_-{{ checksum "composer.lock" }}
         paths:
           - "/tmp/vendor"
-
+          
     - run:
         name: Run Percy tests
         command: |
