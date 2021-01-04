@@ -198,27 +198,6 @@ build_and_deploy: &build_and_deploy
               terminus multidev:create $CIRCLE_PROJECT_REPONAME.$BASE $PANTHEON_ENV
             fi
 
-            # test code here
-            cd /var/www/html
-            # Must read the last commit message from Github. The last one in local repo is "CircleCI Deployment"
-            last_log=$(git log origin/$CIRCLE_BRANCH --pretty=format:%s -1)
-            lowercase_last_log=`php -r "print strtolower('$last_log');"`
-            if [[ $lowercase_last_log =~ ^(powr-[0-9]+)[[:space:]]+.+$ ]]; then
-              echo "Found the story ID: '${BASH_REMATCH[1]}'";
-
-              # Save all multi-dev names in a file
-              terminus multidev:list --format=list --field=Name portlandor > ./env_list.txt
-
-              # Pattern to match "powr-1234a" or "powr-1234-1" or "powr-1234-a". Not "powr-12345"
-              env_pattern="^${BASH_REMATCH[1]}([a-z]*|(-\d+)|(-[a-z]+))$"
-
-              # Find and delete all multidevs starting with the story ID
-              grep -E "${env_pattern}" ./env_list.txt > ./matching_env_list.txt 
-              while read env_name; do
-                echo $env_name
-              done <./matching_env_list.txt
-            fi
-
             rm -rf ./env_list.txt
             # Set the connection type to GIT
             terminus connection:set $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV git
