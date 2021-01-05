@@ -67,6 +67,16 @@ function portland_group_presave(GroupInterface $group)
         \Drupal::service("pathauto.alias_uniquifier")->uniquify($alias, "/group/$gid", $lang);
         $group->set('field_group_path', substr($alias, 1)); // Remove the first character "/"
     }
+
+    Cache::invalidateTags(['group_list:' . $group->getGroupType()->id()]);
+}
+
+
+/**
+ * Implements hook_ENTITY_TYPE_delete().
+ */
+function portland_group_delete(GroupInterface $group) {
+    Cache::invalidateTags(['group_list:' . $group->getGroupType()->id()]);
 }
 
 /**
@@ -206,6 +216,16 @@ function portland_node_presave($node)
             $node->set('field_end_date', null);
         }
     }
+
+    Cache::invalidateTags(['node_list:' . $node->bundle()]);
+}
+
+/**
+ * Implements hook_node_delete().
+ */
+function portland_node_delete($node)
+{
+    Cache::invalidateTags(['node_list:' . $node->bundle()]);
 }
 
 /**
@@ -913,8 +933,15 @@ function _notify_reviewer($entity, $entity_event_type)
     $moderation_state_message = [
         'review' => 'In review',
         'draft' => 'Draft',
-        'archived' => 'Unpublished/Archived',
+        'archived' => 'Unpublished',
         'published' => 'Published',
+        'unpublished' => 'Unpublished',
+        'bureau_review' => 'Bureau Review',
+        'attorney_review' => 'Attorney Review',
+        'budget_office_review' => 'Budget Office Review',
+        'elected_review' => 'Elected Review',
+        'council_clerk_review' => 'Council Clerk Review',
+        'ready_for_agenda' => 'Ready for Agenda',
     ];
 
     // send email for any moderation state except draft
@@ -1072,4 +1099,10 @@ function portland_views_pre_render(\Drupal\views\ViewExecutable $view) {
       }
     }
   }
+}
+
+function portland_views_post_render(\Drupal\views\ViewExecutable $view, &$output, $cache) {
+    $a = $output;
+    if( in_array( "node_list", $output["#cache"]["tags"]))
+        $a = 1;
 }

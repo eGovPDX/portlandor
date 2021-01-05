@@ -1,4 +1,4 @@
-uuid: 816a2262-7fcc-4c0f-8e13-ab1d4a2ba882
+uuid: fbc89f17-13b7-4f23-92ec-c7cc6edc9f94
 langcode: en
 status: true
 dependencies:
@@ -6,10 +6,12 @@ dependencies:
     - search_api.index.full_index
   module:
     - search_api
-id: sitewide_advisory_groups_index
-label: 'Sitewide: Advisory groups index'
+    - user
+    - views_custom_cache_tag
+id: search_charter_code_policies
+label: 'Search Charter, Code, Policies'
 module: views
-description: 'List of all projects'
+description: ''
 tag: ''
 base_table: search_api_index_full_index
 base_field: search_api_id
@@ -21,8 +23,9 @@ display:
     position: 0
     display_options:
       access:
-        type: none
-        options: {  }
+        type: perm
+        options:
+          perm: 'access content'
       cache:
         type: search_api_tag
         options: {  }
@@ -36,7 +39,7 @@ display:
         type: basic
         options:
           submit_button: Search
-          reset_button: true
+          reset_button: false
           reset_button_label: Reset
           exposed_sorts_label: 'Sort by'
           expose_sort_order: false
@@ -45,13 +48,13 @@ display:
       pager:
         type: full
         options:
-          items_per_page: 20
+          items_per_page: 25
           offset: 0
           id: 0
           total_pages: null
           tags:
-            previous: ‹‹
-            next: ››
+            previous: '‹ Previous'
+            next: 'Next ›'
             first: '« First'
             last: 'Last »'
           expose:
@@ -65,47 +68,39 @@ display:
           quantity: 9
       style:
         type: default
-        options:
-          row_class: ''
-          default_row_class: false
-          uses_fields: false
       row:
         type: search_api
         options:
           view_modes:
             'entity:group':
-              advisory_group: search_result
-              bureau_office: teaser
-              elected_official: teaser
-              program: teaser
-              project: teaser
+              advisory_group: default
+              bureau_office: default
+              elected_official: default
+              program: default
+              project: default
             'entity:node':
-              charter_article: default
-              charter_chapter: default
-              charter_section: default
+              calendar_item: default
+              city_charter: search_result
+              city_code: search_result
               city_service: default
-              code_chapter: default
-              code_section: default
-              code_title: default
+              construction_project: default
               council_document: default
               council_meeting: default
+              data_table: default
               development_permit: default
               event: default
+              external_resource: default
               news: default
               page: default
-              policy: default
+              park_facility: default
+              policy: search_result
             'entity:taxonomy_term':
               audience: default
-              community_actions: default
-              topics: default
       fields:
-        aggregated_topic:
-          table: search_api_index_full_index
-          field: aggregated_topic
-          id: aggregated_topic
-          entity_type: null
-          entity_field: null
-          plugin_id: search_api
+        title:
+          id: title
+          table: search_api_datasource_full_index_entity_node
+          field: title
           relationship: none
           group_type: group
           admin_label: ''
@@ -142,7 +137,7 @@ display:
           element_class: ''
           element_label_type: ''
           element_label_class: ''
-          element_label_colon: true
+          element_label_colon: false
           element_wrapper_type: ''
           element_wrapper_class: ''
           element_default_classes: true
@@ -150,55 +145,30 @@ display:
           hide_empty: false
           empty_zero: false
           hide_alter_empty: true
-          link_to_item: false
-          use_highlighting: false
+          click_sort_column: value
+          type: string
+          settings:
+            link_to_entity: true
+          group_column: value
+          group_columns: {  }
+          group_rows: true
+          delta_limit: 0
+          delta_offset: 0
+          delta_reversed: false
+          delta_first_last: false
           multi_type: separator
-          multi_separator: ', '
+          separator: ', '
+          field_api_classes: false
+          field_rendering: true
+          fallback_handler: search_api
+          fallback_options:
+            link_to_item: false
+            use_highlighting: false
+            multi_type: separator
+            multi_separator: ', '
+          entity_type: node
+          plugin_id: search_api_field
       filters:
-        type_2:
-          id: type_2
-          table: search_api_index_full_index
-          field: type
-          relationship: none
-          group_type: group
-          admin_label: ''
-          operator: or
-          value:
-            advisory_group: advisory_group
-          group: 1
-          exposed: false
-          expose:
-            operator_id: ''
-            label: ''
-            description: ''
-            use_operator: false
-            operator: ''
-            operator_limit_selection: false
-            operator_list: {  }
-            identifier: ''
-            required: false
-            remember: false
-            multiple: false
-            remember_roles:
-              authenticated: authenticated
-            reduce: false
-            placeholder: ''
-            min_placeholder: ''
-            max_placeholder: ''
-          is_grouped: false
-          group_info:
-            label: ''
-            description: ''
-            identifier: ''
-            optional: true
-            widget: select
-            multiple: false
-            remember: false
-            default_group: All
-            default_group_multiple: {  }
-            group_items: {  }
-          reduce_duplicates: false
-          plugin_id: search_api_string
         search_api_fulltext:
           id: search_api_fulltext
           table: search_api_index_full_index
@@ -206,7 +176,7 @@ display:
           relationship: none
           group_type: group
           admin_label: ''
-          operator: and
+          operator: or
           value: ''
           group: 1
           exposed: true
@@ -219,7 +189,7 @@ display:
             operator_limit_selection: false
             operator_list: {  }
             identifier: search
-            required: false
+            required: true
             remember: false
             multiple: false
             remember_roles:
@@ -228,8 +198,10 @@ display:
               publisher: '0'
               policy_author: '0'
               policy_editor: '0'
+              attorney: '0'
               council_author: '0'
               council_clerk: '0'
+              budget: '0'
               park_editor: '0'
               code_editor: '0'
               group_creator: '0'
@@ -252,10 +224,60 @@ display:
           parse_mode: terms
           min_length: null
           fields:
+            - content_title
+            - field_body_content
+            - field_search_keywords
+            - rendered_item
+          plugin_id: search_api_fulltext
+        content_type:
+          id: content_type
+          table: search_api_index_full_index
+          field: content_type
+          relationship: none
+          group_type: group
+          admin_label: ''
+          operator: or
+          value:
+            city_charter: city_charter
+            city_code: city_code
+            policy: policy
+          group: 1
+          exposed: false
+          expose:
+            operator_id: ''
+            label: ''
+            description: ''
+            use_operator: false
+            operator: ''
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: ''
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+            reduce: false
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
+          reduce_duplicates: false
+          parse_mode: terms
+          min_length: null
+          fields:
             - group_field_search_keywords
             - group_title
             - rendered_item
-          plugin_id: search_api_fulltext
+          plugin_id: search_api_options
         search_api_language:
           id: search_api_language
           table: search_api_index_full_index
@@ -297,32 +319,69 @@ display:
             group_items: {  }
           plugin_id: search_api_language
       sorts:
-        group_title:
-          id: group_title
+        search_api_relevance:
+          id: search_api_relevance
           table: search_api_index_full_index
-          field: group_title
+          field: search_api_relevance
+          relationship: none
+          group_type: group
+          admin_label: ''
+          order: DESC
+          exposed: true
+          expose:
+            label: Relevance
+          plugin_id: search_api
+        content_title:
+          id: content_title
+          table: search_api_index_full_index
+          field: content_title
           relationship: none
           group_type: group
           admin_label: ''
           order: ASC
-          exposed: false
+          exposed: true
           expose:
-            label: ''
+            label: Title
           plugin_id: search_api
-      title: 'Advisory Groups'
+        changed:
+          id: changed
+          table: search_api_index_full_index
+          field: changed
+          relationship: none
+          group_type: group
+          admin_label: ''
+          order: DESC
+          exposed: true
+          expose:
+            label: 'Last updated'
+          plugin_id: search_api
+      title: 'Search Code, Charter, Policy'
       header:
-        result_1:
-          id: result_1
+        result:
+          id: result
           table: views
           field: result
           relationship: none
           group_type: group
           admin_label: ''
           empty: false
-          content: "<p>Advisory groups are boards, commissions, and committees that advise City of Portland staff and officials.</p>\r\n<p>Displaying @start - @end of @total</p>\r\n"
+          content: '@start - @end of @total results'
           plugin_id: result
       footer: {  }
-      empty: {  }
+      empty:
+        area:
+          id: area
+          table: views
+          field: area
+          relationship: none
+          group_type: group
+          admin_label: ''
+          empty: true
+          tokenize: false
+          content:
+            value: 'There were no results for these keywords.'
+            format: simplified_editor_with_media_embed
+          plugin_id: text
       relationships: {  }
       arguments: {  }
       display_extenders: {  }
@@ -333,44 +392,52 @@ display:
     cache_metadata:
       max-age: -1
       contexts:
+        - 'languages:language_content'
         - 'languages:language_interface'
         - url
         - url.query_args
+        - 'url.query_args:sort_by'
         - 'user.node_grants:view'
+        - user.permissions
       tags:
         - 'config:search_api.index.full_index'
-  page_1:
+  search_charter_code_policies:
     display_plugin: page
-    id: page_1
-    display_title: 'Page: Advisory Groups'
-    position: 1
+    id: search_charter_code_policies
+    display_title: Page
+    position: 2
     display_options:
       display_extenders:
         metatag_display_extender:
           metatags:
             robots: noindex
-      path: advisory-groups
+      path: charter-code-policies/search
+      exposed_block: true
+      defaults:
+        cache: false
       menu:
         type: none
-        title: Projects
+        title: Policies
         description: ''
         expanded: false
         parent: ''
-        weight: -49
+        weight: 0
         context: '0'
         menu_name: main
-      exposed_block: false
       display_description: ''
       cache:
-        type: none
-      defaults:
-        cache: false
+        type: custom_tag
+        options:
+          custom_tag: "node_list:city_charter\r\nnode_list:city_code\r\nnode_list:policy"
     cache_metadata:
       max-age: -1
       contexts:
+        - 'languages:language_content'
         - 'languages:language_interface'
         - url
         - url.query_args
+        - 'url.query_args:sort_by'
         - 'user.node_grants:view'
+        - user.permissions
       tags:
         - 'config:search_api.index.full_index'
