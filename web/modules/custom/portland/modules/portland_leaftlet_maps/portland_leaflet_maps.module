@@ -7,6 +7,7 @@
  */
 
 use Drupal\Component\Utility\Unicode;
+use Drupal\views\ViewExecutable;
 
 const LEAFLET_MORE_MAPS_NO_CUSTOM_MAPS = 3;
 
@@ -116,22 +117,30 @@ function _portland_leaflet_maps_assemble_default_map_info(&$map_info, $default_s
       ),
     ),
   );
-
 }
 
+/**
+ * Implements hook_entity_view_alter.
+ */
 function portland_leaflet_maps_entity_view_alter(array &$build,
                             \Drupal\Core\Entity\EntityInterface $entity,
                             \Drupal\Core\Entity\Display\EntityViewDisplayInterface $display) {
   // Do not use portlandmaps_id when viewing Park Finder
-$current_path = \Drupal::service('path.current')->getPath();
-if( strpos($current_path, '/parks/search') === 0) return;
+  $current_path = \Drupal::service('path.current')->getPath();
+  if( strpos($current_path, '/parks/search') === 0) return;
 
-  if( $entity->hasField('field_portlandmaps_layer') && $entity->hasField('field_portlandmaps_id')) {
+  // If the editor would like to load map from PortlandMaps, clear the geo_map field
+  if( $entity->hasField('field_load_map_from_portlandmaps') && $entity->field_load_map_from_portlandmaps->value && 
+  $entity->hasField('field_portlandmaps_layer') && $entity->hasField('field_portlandmaps_id') ) {
+    $entity->field_geo_map->value = '';
     $build['#attached']['drupalSettings']['portlandmaps_layer'] = $entity->field_portlandmaps_layer->value;
     $build['#attached']['drupalSettings']['portlandmaps_id'] = $entity->field_portlandmaps_id->value;
   }
 }
 
+/**
+ * Implements hook_search_api_solr_query_alter.
+ */
 // Alter the Solr query to add filter query for bounding box if it's in the query string
 function portland_leaflet_maps_search_api_solr_query_alter(\Solarium\Core\Query\QueryInterface $solarium_query, \Drupal\search_api\Query\QueryInterface $query) {
   // If the bounding box (bbox) is in the query string
@@ -162,6 +171,50 @@ function portland_leaflet_maps_search_api_query_alter(\Drupal\search_api\Query\Q
 
       // Add the active filters.
       $facet_manager->alterQuery($query, $search_id);
+    }
+  }
+}
+
+/**
+ * Implements hook_views_pre_render().
+ */
+function portland_leaflet_maps_views_pre_render(\Drupal\views\ViewExecutable $view) {
+  if ($view->id() == 'construction_map') {
+    // Get the values for portlandmaps_id and portlandmaps_layer
+    $layer_list = [];
+    $id_list = [];
+    foreach ($view->result as $key => $value) {
+      $entity = $value->_item->getOriginalObject()->getEntity();
+      if(!$entity->field_portlandmaps_id || !$entity->field_portlandmaps_layer) continue;
+
+      if( $entity->field_load_map_from_portlandmaps->value ) {
+        $entity->field_geo_map->value = '';
+      }
+      else {
+        continue;
+      }
+
+      $map_id = $entity->field_portlandmaps_id->value;
+      if($map_id != null) {
+        $id_list[] = $map_id;
+      }
+
+      $layer_id = $entity->field_portlandmaps_layer->value;
+      if($layer_id != null) {
+        $layer_list[] = $layer_id;
+      }
+    }
+    $view->element['#attached']['drupalSettings']['portlandmaps_id_list'] = $id_list;
+    $view->element['#attached']['drupalSettings']['portlandmaps_layer_list'] = $layer_list;
+
+  }
+  else if ($view->id() == 'geo_map' && $view->total_rows == 1) {
+    $entity = $view->result[0]->_entity;
+    // If editor provides no geo_map value and choose NOT to load map from PortlandMaps, do not show the map
+    if( $entity->bundle() === 'construction_project' && !$entity->field_geo_map->value && 
+      !$entity->field_load_map_from_portlandmaps->value) {
+      $view->result = [];
+      $view->total_rows = 0;
     }
   }
 }

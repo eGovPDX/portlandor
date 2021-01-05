@@ -10,6 +10,7 @@ dependencies:
     - 'taxonomy_term:news_type:9e9bea1c-3219-4531-8b2c-6148e4e3fc9b'
   module:
     - search_api
+    - views_custom_cache_tag
 id: news_index
 label: 'Sitewide: News index'
 module: views
@@ -28,8 +29,9 @@ display:
         type: none
         options: {  }
       cache:
-        type: search_api_tag
-        options: {  }
+        type: custom_tag
+        options:
+          custom_tag: 'node_list:news'
       query:
         type: views_query
         options:
@@ -74,12 +76,33 @@ display:
           default_row_class: false
           uses_fields: false
       row:
-        type: fields
+        type: search_api
         options:
-          default_field_elements: false
-          inline: {  }
-          separator: ''
-          hide_empty: false
+          view_modes:
+            'entity:group':
+              advisory_group: default
+              bureau_office: default
+              elected_official: default
+              program: default
+              project: default
+            'entity:node':
+              calendar_item: default
+              change_set: default
+              city_charter: default
+              city_code: default
+              city_service: default
+              construction_project: default
+              council_agenda: default
+              council_document: default
+              event: default
+              external_resource: default
+              news: teaser
+              page: default
+              park_facility: default
+              policy: default
+            'entity:taxonomy_term':
+              community_actions: default
+              topics: default
       fields:
         search_api_rendered_item:
           id: search_api_rendered_item
@@ -499,7 +522,7 @@ display:
       defaults:
         filters: false
         filter_groups: false
-        cache: false
+        cache: true
       filters:
         content_type:
           id: content_type
@@ -508,7 +531,7 @@ display:
           relationship: none
           group_type: group
           admin_label: ''
-          operator: or
+          operator: and
           value:
             news: news
           group: 1
@@ -645,8 +668,6 @@ display:
         operator: AND
         groups:
           1: AND
-      cache:
-        type: none
     cache_metadata:
       max-age: -1
       contexts:
