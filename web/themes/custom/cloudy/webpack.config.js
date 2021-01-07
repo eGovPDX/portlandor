@@ -10,6 +10,7 @@ const config = {
     cloudy: './src/cloudy.scss',
     cloudyJs: './src/cloudy.js',
     'search-field': './src/js/search-field.js',
+    'back-to-top': './src/js/back-to-top.js',
     bootstrap: './src/js/bootstrap.js',
   },
   output: {
