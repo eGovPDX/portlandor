@@ -42,16 +42,31 @@
   {{ page.pre_header }}
 {% endblock %}
 
-<header role="banner" id="header" class="header" aria-label="{{ 'Site header'|t }}">
-{# ? Do we want site header to be fluid until large breakpoint #}
-  <div class="container-lg">
-    <div class="navbar navbar-expand-custom navbar-light flex-wrap p-0">
+{% if page.header|render is not empty or page.primary_menu|render is not empty %}
+  <header role="banner" id="header" class="cloudy-header" aria-label="{{ 'Site header'|t }}">
+    <div class="container-md d-flex justify-content-between align-items-stretch flex-wrap px-0 px-md-4">
+      {# logo #}
       {{ page.header }}
 
-      {% set header_form = page.header_form %}
-      {% if header_form %}
-        <button id="searchToggle" class="btn ml-auto" data-toggle="collapse" data-target="#navbarSearchForm" type="button" aria-expanded="false" aria-label="Toggle search">
-          {# ! This is the issue with marginalized components - not opt-in #}
+      {# menu #}
+      {% set menu_id = 'menu-' ~ random() %}
+
+      <div{{ create_attribute({ 'id': menu_id, 'class': ['cloudy-header__menu-wrapper', 'collapse'] }) }}>
+        {{ page.primary_menu }}
+      </div>
+
+      {% set toggle_attributes = create_attribute({
+        'type': 'button',
+        'data-toggle': 'collapse',
+        'aria-expanded': 'false',
+        'role': 'button',
+      }) %}
+
+      {#  search toggle #}
+      {% if page.header_form %}
+        {% set search_id = 'search-' ~ random() %}
+
+        <button{{ toggle_attributes|without('class').setAttribute('data-target', '#' ~ search_id).setAttribute('aria-controls', search_id).setAttribute('aria-label', 'toggle site search'|t).addClass(['cloudy-header__toggle', 'cloudy-header__toggle--search']) }}>
           {% include "@elements/icon/icon.twig" with {
               classes: [
                 'icon',
@@ -63,84 +78,32 @@
         </button>
       {% endif %}
 
-      <button id="navToggle" class="btn btn-lg rounded-0 mr-n4" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-        <span id="navbar-toggle-item--open" class="navbar-toggle-item--open">{{ 'Menu'|t }}</span>
-        <span id="navbar-toggle-item--close" class="navbar-toggle-item--close">
-          {% include "@elements/icon/icon.twig" with {
-            classes: [
-              'icon',
-              'icon--size-m',
-              'm-0',
-            ],
-            name: "close",
-          } only %}
-        </span>
-      </button>
+      {# menu toggle #}
+      <button{{ toggle_attributes|without('class').setAttribute('data-target', '#' ~ menu_id).setAttribute('aria-controls', menu_id).setAttribute('aria-label', 'toggle site menu'|t).addClass(['cloudy-header__toggle', 'cloudy-header__toggle--menu']) }}><span class="toggle__label">{{ 'menu'|t|capitalize }}</span></button>
 
+      {# search form #}
+      {% if page.header_form %}
+        <div{{ create_attribute({ 'id': search_id, 'class': ['cloudy-header__search-wrapper', 'collapse'] }) }}>
+          <div class="d-flex w-100 px-4 py-6 px-md-0 py-lg-0">
+            {{ page.header_form }}
 
-      <div class="collapse navbar-collapse" id="navbarNav">
-        {{ page.primary_menu }}
-      </div>
-
-      {% if header_form %}
-        <div id="navbarSearchForm" class="navbar-mobile-search-drawer align-items-center collapse">
-          <div class="navbar-mobile-search-drawer-wrapper d-flex justify-content-center">
-            {{ header_form }}
-            <button class="btn btn-lg close-search" type="button" data-toggle="collapse" data-target="#navbarSearchForm" aria-expanded="false">
-              <span class="navbar-mobile-search-drawer__close">
-                {% include "@elements/icon/icon.twig" with {
-                classes: [
+            {#  search close #}
+            <button{{ toggle_attributes|without('class').setAttribute('data-target', '#' ~ search_id).setAttribute('aria-controls', search_id).setAttribute('aria-label', 'close site search'|t).addClass('cloudy-header__close-search') }}>
+              {% include "@elements/icon/icon.twig" with {
+                  classes: [
                     'icon',
-                    'icon--size-m',
+                    'icon--size-s',
                     'm-0',
                   ],
-                  name: 'close',
-                } only %}
-              </span>
+                  name: "close",
+                } %}
             </button>
           </div>
         </div>
       {% endif %}
-
-
-    </div>
-  </div>
-</header>
-
-{# {% block header %}
-  <header id="header" class="header" aria-label="{{ 'Site header'|t}}" role="banner">
-    <div class="container">
-      <nav class="navbar navbar-light navbar-expand-md" id="navbar-main">
-        {{ page.header }}
-        {% if page.primary_menu or page.header_form %}
-          <div class="navbar-toggle-group">
-            {% if page.header_form %}
-              <button class="search-toggle" type="button" aria-expanded="false">{% include "@elements/icon/icon.twig" with { name: "search" } only %}</button>
-            {% endif %}
-            <button class="navbar-toggler navbar-toggler-right border-0" type="button" data-toggle="collapse" data-target="#CollapsingNavbar" aria-controls="CollapsingNavbar" aria-expanded="false" aria-label="{{ 'Toggle navigation'|t }}"><span class="navbar-toggle-item--open">{{ 'Menu'|t }}</span><span class="navbar-toggle-item--close">{% include "@elements/icon/icon.twig" with { name: "close" } only %}</span></button>
-          </div>
-          {% set header_form = page.header_form|render %}
-          <div class="collapse navbar-mobile-drawer navbar-collapse justify-content-end h-100" id="CollapsingNavbar">
-            {{ page.primary_menu }}
-            {% if header_form %}
-              <div class="form-inline navbar-form">
-                {{ page.header_form }}
-              </div>
-            {% endif %}
-          </div>
-          {% if header_form %}
-            <div class="navbar-mobile-search-drawer collapse justify-content-end h-100">
-              <div class="navbar-mobile-search-drawer-wrapper">
-                {{ page.header_form }}
-                <span class="navbar-mobile-search-drawer__close">{% include "@elements/icon/icon.twig" with { name: "x", size: "m" } only %}</span>
-              </div>
-            </div>
-          {% endif %}
-        {% endif %}
-      </nav>
     </div>
   </header>
-{% endblock %} #}
+{% endif %}
 
 {% block tabs %}
   {{ page.tabs }}
