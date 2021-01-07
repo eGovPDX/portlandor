@@ -7,6 +7,7 @@ config:
   index: false
   edge: false
   cache: false
+  composer_version: '1.10.19'
 services:
   appserver:
     build:
@@ -26,6 +27,7 @@ services:
         MINK_DRIVER_ARGS: '["chrome", null, "http://chromedriver:4444/wd/hub"]'
         MINK_DRIVER_ARGS_WEBDRIVER: '["chrome", null, "http://chromedriver:4444/wd/hub"]'
         MINK_DRIVER_CLASS: 'Drupal\FunctionalJavascriptTests\DrupalSelenium2Driver'
+        XDEBUG_MODE:
   node:
     type: node:custom
     globals:
@@ -95,6 +97,8 @@ tooling:
   refresh:
     description: CUSTOM Refresh branch by installing Composer dependencies and importing Drupal config, etc. Run after every merge from master.
     cmd:
+      - appserver: date +"%T"
+      - appserver: /bin/bash -c "if [[ \$(composer install --dry-run -d /app 2>&1 | grep -oPc 'Uninstalling drupal/\w+') -gt 0 ]]; then { echo Composer is about to remove one or more modules... Let\'s disable them in Drupal first.; for module in \$(composer install --dry-run -d /app 2>&1 | grep -oP 'Uninstalling drupal/\K\w+'); do { echo Disabling \$module...; drush pmu \$module -y;} done } fi"
       - appserver: echo "=====Timestamp===== Starting Drupal Config Refresh"
       - appserver: date +"%T"
       - appserver: echo "Installing Composer dependencies..."
@@ -102,6 +106,7 @@ tooling:
       - appserver: date +"%T"
       - appserver: echo "Clearing cache..."
       - appserver: drush cr -y
+      - appserver: date +"%T"
       - appserver: echo "Run database updates..."
       - appserver: drush updb -y
       - appserver: date +"%T"
