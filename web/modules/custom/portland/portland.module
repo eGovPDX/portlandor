@@ -718,6 +718,16 @@ function portland_system_breadcrumb_alter(\Drupal\Core\Breadcrumb\Breadcrumb &$b
 }
 
 /**
+ * Implements hook_preprocess_breadcrumb().
+ */
+function portland_preprocess_breadcrumb(&$variables){
+    // Remove 'Home' from breadcrumb trail on the front page
+    if (\Drupal::service('path.matcher')->isFrontPage() && count($variables['breadcrumb'])) {
+      array_shift($variables['breadcrumb']);
+    }
+}
+
+/**
  * Implements hook_inline_entity_form_entity_form_alter().
  */
 function portland_inline_entity_form_entity_form_alter(&$entity_form, &$form_state)
@@ -1099,10 +1109,4 @@ function portland_views_pre_render(\Drupal\views\ViewExecutable $view) {
       }
     }
   }
-}
-
-function portland_views_post_render(\Drupal\views\ViewExecutable $view, &$output, $cache) {
-    $a = $output;
-    if( in_array( "node_list", $output["#cache"]["tags"]))
-        $a = 1;
 }
