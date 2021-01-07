@@ -7,10 +7,11 @@ const isProd = process.env.NODE_ENV === 'production';
 
 const config = {
   entry: {
-    cloudy: './src/cloudy.scss',
-    cloudyJs: './src/cloudy.js',
-    'search-field': './src/js/search-field.js',
-    bootstrap: './src/js/bootstrap.js',
+    cloudy: ["./src/cloudy.scss", "./src/cloudy.js"],
+    bootstrap: "./src/js/bootstrap.js",
+    "header-dropdown-toggle": "./src/js/header-dropdown-toggle.js",
+    "search-field": "./src/js/search-field.js",
+    "search-autocomplete": "./src/js/search-autocomplete.js"
   },
   output: {
     path: path.resolve(__dirname, './dist'),

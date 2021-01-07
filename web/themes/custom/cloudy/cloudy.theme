@@ -76,95 +76,70 @@ function cloudy_preprocess_html(&$variables) {
 }
 
 /**
- * Implements hook_form_alter
+ * @param $form
+ * @param \Drupal\Core\Form\FormStateInterface $form_state
+ * @param $form_id
  */
-// function cloudy_form_alter(&$form, \Drupal\Core\Form\FormStateInterface $form_state, $form_id) {
-// 	$current_path = \Drupal::service('path.current')->getPath();
-// 	$search_form_id = 'search_api_page_block_form_search_portland_gov';
-
-// 	$path_array = [
-// 		'/node',
-// 		'/search',
-// 		'/404',
-// 	];
-
-// 	$search_form_small_classes = [
-// 		'search-form',
-// 		'search-form--small',
-// 	];
-
-// 	$search_form_large_classes = [
-// 		'search-form',
-// 		'search-form--large',
-// 	];
-
-//   if ($form_id == $search_form_id) {
-// 		$form['keys']['#attributes']['title'] = t('Enter keywords and press enter or return');
-// 		$form['actions']['submit']['#value'] = '';
-// 		$form['keys']['#type'] = 'search';
-
-// 		if(!in_array($current_path, $path_array)) {
-// 			$form['keys']['#attributes']['placeholder'] = t('Search');
-// 		} else {
-// 			$form['keys']['#attributes']['placeholder'] = t('What can we help you find?');
-// 		}
-// 		$additional_classes = in_array($current_path, $path_array) ? $search_form_large_classes : $search_form_small_classes;
-// 		$form['#attributes']['class'] = array_merge($form['#attributes']['class'], $additional_classes);
-//   }
-// }
-
-
-// function cloudy_form_alter(&$form, \Drupal\Core\Form\FormStateInterface $form_state, $form_id) {
-//   if ($form_id == 'search_api_page_block_form_search_portland_gov') {
-//     $form['keys']['#attributes']['placeholder'] = 'What can we help you find?';
-//     $form['keys']['#attributes']['title'] = 'Enter keywords and press enter or return';
-//     $form['actions']['submit']['#value'] = html_entity_decode('&#xf002;');
-//   }
-// }
-
 /**
  * Implements hook_form_alter
  */
-function cloudy_form_alter(&$form, &$form_state, $form_id) {
+function cloudy_form_search_api_page_block_form_search_portland_gov_alter(&$form, FormStateInterface &$form_state, $form_id) {
 	$current_path = \Drupal::service('path.current')->getPath();
-	$search_form_id = 'search_api_page_block_form_search_portland_gov';
+	$path = base_path() . drupal_get_path('theme', 'cloudy').'/';
 
 	$path_array = [
 		'/node',
 		'/search',
-		'/404',
+    '/404',
 	];
+
+  $search_form_large_classes = [
+    'cloudy-search-form',
+    'cloudy-search-form--large',
+  ];
 
 	$search_form_small_classes = [
-		'search-form',
-		'search-form--small',
+		'cloudy-search-form',
+		'cloudy-search-form--small',
 	];
 
-	$search_form_large_classes = [
-		'search-form',
-		'search-form--large',
-	];
+  // Add form classes based on display path
+  $additional_classes = in_array($current_path, $path_array) ? $search_form_large_classes : $search_form_small_classes;
 
-	if ($form_id == 'search_api_page_block_form_search_portland_gov') {
-		$path = base_path() . drupal_get_path('theme', 'cloudy').'/';
-		if(!in_array($current_path, $path_array)) {
-			$form['keys']['#attributes']['placeholder'] = t('Search');
-		} else {
-			$form['keys']['#attributes']['placeholder'] = t('What can we help you find?');
-		}
-		$form['actions']['submit'] = array('#type' => 'image_button', '#src' => $path . 'src/elements/icon/svgs/search.svg');
-		$form['keys']['#attributes']['title'] = t('Enter keywords and press enter or return');
-		$form['actions']['submit']['#value'] = '';
-		$additional_classes = in_array($current_path, $path_array) ? $search_form_large_classes : $search_form_small_classes;
-		$form['#attributes']['class'] = array_merge($form['#attributes']['class'], $additional_classes);
+  $form['#attributes']['class'] = array_merge($form['#attributes']['class'], $additional_classes);
+
+	$form['keys']['#attributes'] = array(
+		'placeholder' => t('Search'),
+		'aria-label' => t('search website'),
+		'title' => t('search website'),
+	);
+
+	$form['actions']['submit'] = array(
+		'#type' => 'submit',
+	);
+
+	// Theme suggestion for form elements
+	$form['actions']['submit']['#attributes']['data-twig-suggestion'] = $form['#id'];
+
+	foreach (\Drupal\Core\Render\Element::children($form) as $key) {
+		$form[$key]['#attributes']['data-twig-suggestion'] = $form['#id'];
 	}
 }
 
-function cloudy_preprocess_input__textfield(&$vars) {
-  // The main search input
-  if($vars["attributes"]['id'] === 'edit-keys') {
-    $vars["attributes"]['type'] = 'search';
-    $vars["attributes"]['class'][] = 'form-control';
+/**
+ * Implements template_preprocess_input().
+ */
+function cloudy_preprocess_input(&$variables) {
+  $element = $variables['element'];
+
+  // Remove 'form-text' class Bootstrap naming collision
+	$unset_types = ['search_api_autocomplete'];
+  if (isset($element['#type']) && in_array($element['#type'], $unset_types) && !empty($variables['attributes']['class']) && is_array($variables['attributes']['class'])) {
+    $key = array_search('form-text', $variables['attributes']['class']);
+    if ($key !== FALSE) {
+			unset($variables['attributes']['class'][$key]);
+		}
+		$variables['attributes']['type'] = 'search';
   }
 }
 
@@ -180,7 +155,6 @@ function cloudy_preprocess_search_api_page(&$vars) {
  *
  * Adds extra detail of view mode to field theme suggestions
  */
-
 function cloudy_theme_suggestions_field_alter(array &$suggestions, array $variables) {
 
   $entity_type = $variables['element']['#entity_type'];
@@ -194,6 +168,17 @@ function cloudy_theme_suggestions_field_alter(array &$suggestions, array $variab
   $suggestions[] = 'field__' . $field_name;
   $suggestions[] = 'field__' . $field_name  . '__' . $view_mode;
   $suggestions[] = 'field__' . $entity_type . '__' . $view_mode . '__' . $field_name;
+}
+
+/**
+ * Implements hook_theme_suggestions_input_alter().
+ */
+function cloudy_theme_suggestions_input_alter(array &$suggestions, array $variables) {
+  $element = $variables['element'];
+  if (isset($element['#attributes']['data-twig-suggestion'])) {
+    $suggestion_suffix = str_replace(['-'], '_', $element['#attributes']['data-twig-suggestion']);
+    $suggestions[] = 'input__' . $element['#type'] . '__' . $suggestion_suffix;
+  }
 }
 
 /**
