@@ -8,7 +8,7 @@ use Drupal\group\Entity\GroupContent;
 
 /**
  * Provides a Portland legacy paths block.
- * 
+ *
  * This is intended as a throwaway feature. Once all content has been migrated from the
  * legacy site, it will be removed. To remove it, the following need to be deleted:
  *   - This file, src/Plugin/Block/LegacyPathsBlock.php
@@ -36,7 +36,7 @@ class LegacyPathsBlock extends BlockBase {
 
     /**
      * {@inheritdoc}
-     * 
+     *
      * This block only ever gets displayed in view mode, due to block placement settings,
      * and is only viewable by specific roles. If the current route is a node or group, and
      * the group's field_disable_legacy_paths_block is false, then the block is populated and displayed.
@@ -73,7 +73,7 @@ class LegacyPathsBlock extends BlockBase {
 
       // at this point $entity is either we should have a populated group and can check whether the test links are enabled.
       // if they are not, return empty array to disable the block.
-      if (!isset($group) || (isset($group->field_disable_legacy_paths_block) && $group->field_disable_legacy_paths_block->value) || !isset($entity->field_redirects)) {
+      if ((isset($group->field_disable_legacy_paths_block) && $group->field_disable_legacy_paths_block->value) || !isset($entity->field_redirects)) {
         return [];
       }
 
