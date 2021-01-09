@@ -4,7 +4,7 @@
  * @file
  * Functions to support Portland.gov theming
  */
-
+use Drupal\Core\Config\Config;
 use Drupal\Core\Form\FormStateInterface;
 
 use Drupal\group\Entity\GroupContent;
@@ -76,6 +76,10 @@ function cloudy_preprocess_html(&$variables) {
 }
 
 /**
+ * Implements hook_form_FORM_ID_alter().
+ * Applies path-based classes to search api page block form.
+ * Set form attributes
+ *
  * @param $form
  * @param \Drupal\Core\Form\FormStateInterface $form_state
  * @param $form_id
@@ -84,13 +88,13 @@ function cloudy_preprocess_html(&$variables) {
  * Implements hook_form_alter
  */
 function cloudy_form_search_api_page_block_form_search_portland_gov_alter(&$form, FormStateInterface &$form_state, $form_id) {
-	$current_path = \Drupal::service('path.current')->getPath();
-	$path = base_path() . drupal_get_path('theme', 'cloudy').'/';
+  $current_path = \Drupal::service('path.current')->getPath();
+  $front_path = \Drupal::service('path.matcher')->isFrontPage();
+  $is_frontpage = $current_path == $front_path;
 
 	$path_array = [
-		'/node',
-		'/search',
-    '/404',
+		'search',
+    '404',
 	];
 
   $search_form_large_classes = [
@@ -103,8 +107,18 @@ function cloudy_form_search_api_page_block_form_search_portland_gov_alter(&$form
 		'cloudy-search-form--small',
 	];
 
-  // Add form classes based on display path
-  $additional_classes = in_array($current_path, $path_array) ? $search_form_large_classes : $search_form_small_classes;
+  // function to check array contains value
+  function path_to_check($stringtocheck, $array) {
+    foreach ($array as $value) {
+      if(stripos($stringtocheck, $value)) {
+        return true;
+      }
+    }
+  }
+
+  // Add form classes based on url path
+  // * Classes are added to the search api page block containing the form
+  $additional_classes = path_to_check($current_path, $path_array) || $is_frontpage ? $search_form_large_classes : $search_form_small_classes;
 
   $form['#attributes']['class'] = array_merge($form['#attributes']['class'], $additional_classes);
 
