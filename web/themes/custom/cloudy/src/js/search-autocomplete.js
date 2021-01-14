@@ -9,7 +9,7 @@
     attach: function(context, settings) {
       $(context)
         // Find the header search autocomplete input
-        .find(".cloudy-search-form__input")
+        .find("#edit-keys")
         .once("header-search-autocomplete")
         .autocomplete({
           // Set autocomplete position relative to the entire search form width
