@@ -12,9 +12,10 @@
         .once("search-clear")
         .on("focusin focusout", function() {
           const $this = $(this);
-          $this.attr("placeholder") === "Search"
+          const $text = Drupal.t("Search Portland.gov");
+          $this.attr("placeholder") === $text
             ? $this.attr("placeholder", "")
-            : $this.attr("placeholder", Drupal.t("Search"));
+            : $this.attr("placeholder", $text);
         });
     }
   };
