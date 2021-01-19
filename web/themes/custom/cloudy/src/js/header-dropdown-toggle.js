@@ -1,13 +1,12 @@
 /**
  * @file
- * Header global menu and search form Functionality.
+ * header global menu and search form Functionality.
  *
- * Provides global menu and search input toggle functionality.
+ * provides global menu and search input toggle functionality.
  * Used in global header.
  */
 (function($, Drupal) {
-  // Toggle header global menu text
-  // On menu open
+  // on menu open show close icon
   Drupal.behaviors.cloudyHeaderMenuToggleOpenText = {
     attach: function(context, settings) {
       $(context)
@@ -28,7 +27,7 @@
     }
   };
 
-  //On menu close
+  // on menu close show "Menu" text
   Drupal.behaviors.cloudyHeaderMenuToggleCloseText = {
     attach: function(context, settings) {
       $(context)
@@ -43,7 +42,7 @@
     }
   };
 
-  // Show $this toggle target and hide currently open, and remove transition
+  // hide all open elements before showing closed toggled element
   Drupal.behaviors.cloudyHeaderHideCurrentlyOpen = {
     attach: function(context, settings) {
       $(context)

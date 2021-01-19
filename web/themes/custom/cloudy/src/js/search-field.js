@@ -1,8 +1,8 @@
 /**
  * @file
- * Global search placeholder Functionality.
+ * search API Page placeholder Functionality.
  *
- * Hides search input placeholder text on focus change
+ * hides search input placeholder text on focus
  */
 (function($, Drupal) {
   Drupal.behaviors.cloudyHideSearchPlaceholder = {

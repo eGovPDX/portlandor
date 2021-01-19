@@ -1,18 +1,18 @@
 /**
  * @file
- * Global search autocomplete functionality.
+ * jQuery autocomplete widget customization for Search API page block search input
  *
- * Sets the position and appends relative to global search form
+ * sets the autocomplete dropdown position relative to the search input
  */
 (function($, Drupal) {
   Drupal.behaviors.cloudySearchAutocomplete = {
     attach: function(context, settings) {
       $(context)
-        // Find the header search autocomplete input
+        // find search autocomplete input
         .find("#edit-keys")
         .once("header-search-autocomplete")
         .autocomplete({
-          // Set autocomplete position relative to the entire search form width
+          // set position relative to element
           position: {
             my: "left top-1",
             at: "left bottom",
