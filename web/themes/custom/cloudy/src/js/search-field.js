@@ -1,6 +1,6 @@
 /**
  * @file
- * search API Page placeholder Functionality.
+ * Search API Page placeholder functionality.
  *
  * hides search input placeholder text on focus
  */
@@ -8,7 +8,7 @@
   Drupal.behaviors.cloudyHideSearchPlaceholder = {
     attach: function(context, settings) {
       $(context)
-        .find(".ui-autocomplete-input[data-search-api-autocomplete-search]")
+        .find("#edit-keys.ui-autocomplete-input[data-search-api-autocomplete-search]")
         .once("search-clear")
         .on("focusin focusout", function() {
           const $this = $(this);
