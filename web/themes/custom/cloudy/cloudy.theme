@@ -4,7 +4,7 @@
  * @file
  * Functions to support Portland.gov theming
  */
-
+use Drupal\Core\Config\Config;
 use Drupal\Core\Form\FormStateInterface;
 
 use Drupal\group\Entity\GroupContent;
@@ -75,28 +75,80 @@ function cloudy_preprocess_html(&$variables) {
   $variables['page']['#attached']['html_head'][] = [$swiftype_site_priority, 'swiftype_site-priority'];
 }
 
-
+/**
+ * Implements hook_form_FORM_ID_alter().
+ * Applies path-based classes to search api page block form.
+ * Set form attributes
+ *
+ * @param $form
+ * @param \Drupal\Core\Form\FormStateInterface $form_state
+ * @param $form_id
+ */
 /**
  * Implements hook_form_alter
  */
-function cloudy_form_alter(&$form, \Drupal\Core\Form\FormStateInterface $form_state, $form_id) {
-  if ($form_id == 'search_api_page_block_form_search_portland_gov') {
-    $form['keys']['#attributes']['placeholder'] = 'What can we help you find?';
-    $form['keys']['#attributes']['title'] = 'Enter keywords and press enter or return';
-    $form['actions']['submit']['#value'] = html_entity_decode('&#xf002;');
-  }
+function cloudy_form_search_api_page_block_form_search_portland_gov_alter(&$form, FormStateInterface &$form_state, $form_id) {
+  $current_path = \Drupal::routeMatch()->getRouteName();
+  $is_front_page = \Drupal::service('path.matcher')->isFrontPage();
+
+  /* paths requiring search form large classes */
+  $search_large_paths = "/^(search)/";
+
+  $search_form_large_classes = [
+    'cloudy-search-form',
+    'cloudy-search-form--large',
+  ];
+
+	$search_form_small_classes = [
+		'cloudy-search-form',
+		'cloudy-search-form--small',
+	];
+
+  $is_path_match = function($pattern, $string_to_check) {
+    return (preg_match($pattern, $string_to_check) ? true : null);
+  };
+
+  /* set search form classes based on path */
+  $additional_classes = $is_path_match($search_large_paths, $current_path) || $is_front_page ? $search_form_large_classes : $search_form_small_classes;
+
+  /* merge returned search class */
+  $form['#attributes']['class'] = array_merge($form['#attributes']['class'], $additional_classes);
+
+  $text = t("Search Portland.gov");
+
+	$form['keys']['#attributes'] = array(
+		'placeholder' => $text,
+		'aria-label' => $text,
+    'title' => $text,
+    'size' => 18,
+	);
+
+	$form['actions']['submit'] = array(
+		'#type' => 'submit',
+	);
+
+	// Theme suggestion for form elements
+	$form['actions']['submit']['#attributes']['data-twig-suggestion'] = $form['#id'];
+
+	foreach (\Drupal\Core\Render\Element::children($form) as $key) {
+		$form[$key]['#attributes']['data-twig-suggestion'] = $form['#id'];
+	}
 }
 
 /**
- * Implements theme_preprocess_HOOK
- *
+ * Implements template_preprocess_input().
  */
-function cloudy_preprocess_form(&$vars) {
-  // add role="search" to site search form
-  if ($vars['element']['#form_id'] == 'search_api_page_block_form_search_portland_gov') {
-    $vars['attributes']['role'] = 'search';
-    $vars['attributes']['class'] = 'input-group form-inline d-flex justify-content-center form-inline--search-block';
-    $vars['attributes']['title'] = 'Search';
+function cloudy_preprocess_input(&$variables) {
+  $element = $variables['element'];
+
+	$unset_types = ['edit-keys', 'edit-keys--2'];
+  if (isset($element['#id']) && in_array($element['#id'], $unset_types) && !empty($variables['attributes']['class']) && is_array($variables['attributes']['class'])) {
+    // Remove 'form-text' class Bootstrap naming collision
+    $key = array_search('form-text', $variables['attributes']['class']);
+    if ($key !== FALSE) {
+			unset($variables['attributes']['class'][$key]);
+		}
+		$variables['attributes']['type'] = 'search';
   }
 }
 
@@ -107,30 +159,11 @@ function cloudy_preprocess_search_api_page(&$vars) {
   }
 }
 
-function cloudy_preprocess_input__textfield(&$vars) {
-  // The main search input
-  if($vars["attributes"]['id'] === 'edit-keys') {
-    $vars["attributes"]['type'] = 'search';
-    $vars["attributes"]['class'] = ['form-search', 'form-autocomplete'];
-  }
-  // The search input at top-right corner
-  else if(
-    $vars["attributes"]['id'] === 'edit-keys--2' ||
-    $vars["attributes"]['id'] === 'edit-keys--3' ||
-    $vars["attributes"]['id'] === 'edit-keys--4'
-  ) {
-    $vars["attributes"]['type'] = 'search';
-    $vars["attributes"]['placeholder'] = 'Search Portland.gov';
-    $vars["attributes"]['size'] = '21';
-  }
-}
-
 /**
  * Implements hook_theme_suggestions_field_alter().
  *
  * Adds extra detail of view mode to field theme suggestions
  */
-
 function cloudy_theme_suggestions_field_alter(array &$suggestions, array $variables) {
 
   $entity_type = $variables['element']['#entity_type'];
@@ -144,6 +177,17 @@ function cloudy_theme_suggestions_field_alter(array &$suggestions, array $variab
   $suggestions[] = 'field__' . $field_name;
   $suggestions[] = 'field__' . $field_name  . '__' . $view_mode;
   $suggestions[] = 'field__' . $entity_type . '__' . $view_mode . '__' . $field_name;
+}
+
+/**
+ * Implements hook_theme_suggestions_input_alter().
+ */
+function cloudy_theme_suggestions_input_alter(array &$suggestions, array $variables) {
+  $element = $variables['element'];
+  if (isset($element['#attributes']['data-twig-suggestion'])) {
+    $suggestion_suffix = str_replace(['-'], '_', $element['#attributes']['data-twig-suggestion']);
+    $suggestions[] = 'input__' . $element['#type'] . '__' . $suggestion_suffix;
+  }
 }
 
 /**
