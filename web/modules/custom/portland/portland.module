@@ -943,12 +943,21 @@ function _notify_reviewer($entity, $entity_event_type)
             return;
         }
         $current_user_email = \Drupal::currentUser()->getAccount()->getEmail();
+
+        // Send the email to the author and CC to all reviewers.
+        // The module sendgrid_integration only sends emails one by one so only the receipeient's address
+        // is visible.
+        $author_email = $node->revision_uid->entity->mail->value;
+        $cc_emails = [];
         foreach ($reviewers->referencedEntities() as $reviewer) {
             if ($reviewer->id() != $node->revision_uid->entity->id()) {
-                $reviewer_email = $reviewer->mail->value;
-                _send_email($key, $reviewer_email, $langcode, $params, $current_user_email);
+                $cc_emails[] = $reviewer->mail->value;
             }
         }
+        $params['headers'] = array(
+            'Cc' => implode(',', $cc_emails),
+        );
+        _send_email($key, $author_email, $langcode, $params, $current_user_email);
     }
 }
 
