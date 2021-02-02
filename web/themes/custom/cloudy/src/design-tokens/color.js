@@ -1,15 +1,17 @@
 module.exports = {
   color: {
     neutral: {
-      '900': { value: '#040506' },
-      '800': { value: '#2A313C' },
-      '700': { value: '#495669' },
-      '500': { value: '#7A899F' },
-      '300': { value: '#B3BDCC' },
-      '200': { value: '#D1D7E0' },
-      '100': { value: '#EFF1F5' },
+      '900': { value: 'hsl(216, 0%, 2%)' },
+      '800': { value: 'hsl(216, 18%, 25%)' },
+      '700': { value: 'hsl(216, 18%, 35%)' },
+      '600': { value: 'hsl(216, 18%, 45%)' },
+      '500': { value: 'hsl(216, 18%, 55%)' },
+      '400': { value: 'hsl(216, 18%, 65%)' },
+      '300': { value: 'hsl(216, 18%, 75%)' },
+      '200': { value: 'hsl(216, 18%, 85%)' },
+      '100': { value: 'hsl(216, 18%, 95%)' },
       '0': {
-        value: '#FFFFFF',
+        value: 'hsl(0, 0%, 100%)',
         comment: 'White',
       },
     },
