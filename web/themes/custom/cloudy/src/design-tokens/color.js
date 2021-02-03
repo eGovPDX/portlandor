@@ -58,6 +58,7 @@ module.exports = {
       '300': { value: 'hsl(25, 65%, 75%)' },
       '200': { value: 'hsl(25, 65%, 85%)' },
       '100': { value: 'hsl(25, 65%, 95%)' },
+      'temp': { value: '#b85814' },
     },
     red: {
       '900': { value: 'hsl(360, 55%, 2%)' },
