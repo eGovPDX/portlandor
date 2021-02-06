@@ -54,6 +54,10 @@ module.exports = {
       '500': { value: '#077D8D' },// text
       '300': { value: '#8CD0D9' },
       '100': { value: '#EDF6F7' },
+    },
+    'mega menu': {
+      '1000': { value: '#171726' },
+      'button-bg': { value: 'rgba(255,255,255,.2)' },
     }
   }
 };
