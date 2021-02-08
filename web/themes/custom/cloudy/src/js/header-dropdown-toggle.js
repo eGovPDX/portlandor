@@ -20,8 +20,7 @@
 
           $(".collapse.show").each(function() {
             $(this)
-              .collapse("hide")
-              .toggleClass("no-transition");
+              .collapse("hide");
           });
         });
     }
