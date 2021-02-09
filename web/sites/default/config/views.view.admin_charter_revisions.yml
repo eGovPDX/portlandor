@@ -1,15 +1,14 @@
-uuid: e35d0815-a650-4fbe-a842-20166fccc0dc
+uuid: e8847b0f-4bd3-48bb-9dd8-9a92756392e3
 langcode: en
-status: false
+status: true
 dependencies:
   config:
-    - field.storage.node.field_code_level
-    - field.storage.node.field_code_parent
-    - node.type.city_code
+    - field.storage.node.field_charter_level
+    - field.storage.node.field_charter_parent
+    - node.type.city_charter
     - system.menu.editor-toolbar
     - user.role.administrator
     - user.role.code_editor
-    - user.role.sitewide_editor
     - workflows.workflow.charter_code_policies
   module:
     - content_moderation
@@ -17,13 +16,13 @@ dependencies:
     - options
     - user
     - views_bulk_operations
-id: admin_code
-label: 'Admin: Code'
+id: admin_charter_revisions
+label: 'Admin: Charter (revisions)'
 module: views
-description: 'Administrative view to edit charter, code, and policies'
+description: 'A rewrite of the code admin view to allow proper filtering by moderation state.'
 tag: ''
-base_table: node_field_data
-base_field: nid
+base_table: node_field_revision
+base_field: vid
 display:
   default:
     display_plugin: default
@@ -35,16 +34,15 @@ display:
         type: role
         options:
           role:
-            administrator: administrator
-            sitewide_editor: sitewide_editor
             code_editor: code_editor
+            administrator: administrator
       cache:
         type: tag
         options: {  }
       query:
         type: views_query
         options:
-          disable_sql_rewrite: true
+          disable_sql_rewrite: false
           distinct: false
           replica: false
           query_comment: ''
@@ -93,12 +91,12 @@ display:
           description: ''
           columns:
             views_bulk_operations_bulk_form: views_bulk_operations_bulk_form
-            title: title
+            title_1: title_1
             field_code_level: field_code_level
             field_code_parent: field_code_parent
             status: status
             moderation_state: moderation_state
-            changed: changed
+            changed_1: changed_1
             operations: operations
           info:
             views_bulk_operations_bulk_form:
@@ -106,7 +104,7 @@ display:
               separator: ''
               empty_column: false
               responsive: ''
-            title:
+            title_1:
               sortable: true
               default_sort_order: asc
               align: ''
@@ -141,7 +139,7 @@ display:
               separator: ''
               empty_column: false
               responsive: ''
-            changed:
+            changed_1:
               sortable: true
               default_sort_order: desc
               align: ''
@@ -153,7 +151,7 @@ display:
               separator: ''
               empty_column: false
               responsive: ''
-          default: changed
+          default: changed_1
           empty_table: false
       row:
         type: fields
@@ -207,7 +205,7 @@ display:
           empty_zero: false
           hide_alter_empty: true
           batch: true
-          batch_size: 50
+          batch_size: 10
           form_step: true
           buttons: false
           clear_on_exposed: true
@@ -215,44 +213,54 @@ display:
           selected_actions:
             0:
               action_id: 'entity:break_lock:node'
-            12:
-              action_id: portland_archive_action
               preconfiguration:
-                label_override: Unpublish
-            13:
-              action_id: portland_publish_action
+                label_override: 'Break Lock'
+            1:
+              action_id: 'moderation_state_change:node'
               preconfiguration:
-                label_override: Publish
-            17:
-              action_id: pathauto_update_alias
+                label_override: 'Change Moderation State'
+            16:
+              action_id: views_bulk_edit
               preconfiguration:
-                label_override: 'Update URL alias'
+                label_override: 'Bulk Edit (CAUTION)'
+                get_bundles_from_results: 1
           plugin_id: views_bulk_operations_bulk_form
-        title:
-          id: title
+        title_1:
+          id: title_1
           table: node_field_data
           field: title
-          entity_type: node
-          entity_field: title
-          alter:
-            alter_text: false
-            make_link: false
-            absolute: false
-            trim: false
-            word_boundary: false
-            ellipsis: false
-            strip_tags: false
-            html: false
-          hide_empty: false
-          empty_zero: false
-          settings:
-            link_to_entity: true
-          plugin_id: field
-          relationship: none
+          relationship: nid
           group_type: group
           admin_label: ''
           label: Title
           exclude: false
+          alter:
+            alter_text: false
+            text: ''
+            make_link: false
+            path: ''
+            absolute: false
+            external: false
+            replace_spaces: false
+            path_case: none
+            trim_whitespace: false
+            alt: ''
+            rel: ''
+            link_class: ''
+            prefix: ''
+            suffix: ''
+            target: ''
+            nl2br: false
+            max_length: 0
+            word_boundary: true
+            ellipsis: true
+            more_link: false
+            more_link_text: ''
+            more_link_path: ''
+            strip_tags: false
+            trim: false
+            preserve_tags: ''
+            html: false
           element_type: ''
           element_class: ''
           element_label_type: ''
@@ -262,9 +270,13 @@ display:
           element_wrapper_class: ''
           element_default_classes: true
           empty: ''
+          hide_empty: false
+          empty_zero: false
           hide_alter_empty: true
           click_sort_column: value
           type: string
+          settings:
+            link_to_entity: true
           group_column: value
           group_columns: {  }
           group_rows: true
@@ -275,14 +287,17 @@ display:
           multi_type: separator
           separator: ', '
           field_api_classes: false
-        field_code_level:
-          id: field_code_level
-          table: node__field_code_level
-          field: field_code_level
-          relationship: none
+          entity_type: node
+          entity_field: title
+          plugin_id: field
+        field_charter_level:
+          id: field_charter_level
+          table: node__field_charter_level
+          field: field_charter_level
+          relationship: nid
           group_type: group
           admin_label: ''
-          label: 'Code level'
+          label: Level
           exclude: false
           alter:
             alter_text: false
@@ -337,11 +352,11 @@ display:
           separator: ', '
           field_api_classes: false
           plugin_id: field
-        field_code_parent:
-          id: field_code_parent
-          table: node__field_code_parent
-          field: field_code_parent
-          relationship: none
+        field_charter_parent:
+          id: field_charter_parent
+          table: node__field_charter_parent
+          field: field_charter_parent
+          relationship: nid
           group_type: group
           admin_label: ''
           label: 'Belongs to'
@@ -388,7 +403,7 @@ display:
           click_sort_column: target_id
           type: entity_reference_label
           settings:
-            link: false
+            link: true
           group_column: target_id
           group_columns: {  }
           group_rows: true
@@ -404,7 +419,7 @@ display:
           id: status
           table: node_field_data
           field: status
-          relationship: none
+          relationship: nid
           group_type: group
           admin_label: ''
           label: Published
@@ -469,12 +484,12 @@ display:
           plugin_id: field
         moderation_state:
           id: moderation_state
-          table: node_field_data
+          table: node_field_revision
           field: moderation_state
           relationship: none
           group_type: group
           admin_label: ''
-          label: 'Current revision'
+          label: 'Latest Revision State'
           exclude: false
           alter:
             alter_text: false
@@ -530,9 +545,9 @@ display:
           field_api_classes: false
           entity_type: node
           plugin_id: moderation_state_field
-        changed:
-          id: changed
-          table: node_field_data
+        changed_1:
+          id: changed_1
+          table: node_field_revision
           field: changed
           relationship: none
           group_type: group
@@ -601,7 +616,7 @@ display:
           id: operations
           table: node
           field: operations
-          relationship: none
+          relationship: nid
           group_type: group
           admin_label: ''
           label: 'Operations links'
@@ -649,36 +664,31 @@ display:
           entity_type: node
           plugin_id: entity_operations
       filters:
-        title:
-          id: title
-          table: node_field_data
-          field: title
+        latest_revision:
+          id: latest_revision
+          table: node_revision
+          field: latest_revision
           relationship: none
           group_type: group
           admin_label: ''
-          operator: contains
+          operator: '='
           value: ''
           group: 1
-          exposed: true
+          exposed: false
           expose:
-            operator_id: title_op
-            label: 'Title contains'
+            operator_id: ''
+            label: ''
             description: ''
             use_operator: false
-            operator: title_op
-            identifier: title
+            operator: ''
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: ''
             required: false
             remember: false
             multiple: false
             remember_roles:
               authenticated: authenticated
-              anonymous: '0'
-              administrator: '0'
-              sitewide_editor: '0'
-              code_editor: '0'
-            placeholder: ''
-            operator_limit_selection: false
-            operator_list: {  }
           is_grouped: false
           group_info:
             label: ''
@@ -692,60 +702,12 @@ display:
             default_group_multiple: {  }
             group_items: {  }
           entity_type: node
-          entity_field: title
-          plugin_id: string
-        field_code_level_value:
-          id: field_code_level_value
-          table: node__field_code_level
-          field: field_code_level_value
-          relationship: none
-          group_type: group
-          admin_label: ''
-          operator: or
-          value: {  }
-          group: 1
-          exposed: true
-          expose:
-            operator_id: field_code_level_value_op
-            label: Level
-            description: ''
-            use_operator: false
-            operator: field_code_level_value_op
-            identifier: level
-            required: false
-            remember: false
-            multiple: false
-            remember_roles:
-              authenticated: authenticated
-              anonymous: '0'
-              administrator: '0'
-              sitewide_editor: '0'
-              code_editor: '0'
-              council_clerk: '0'
-              group_creator: '0'
-              park_editor: '0'
-            reduce: false
-            operator_limit_selection: false
-            operator_list: {  }
-          is_grouped: false
-          group_info:
-            label: ''
-            description: ''
-            identifier: ''
-            optional: true
-            widget: select
-            multiple: false
-            remember: false
-            default_group: All
-            default_group_multiple: {  }
-            group_items: {  }
-          reduce_duplicates: false
-          plugin_id: list_field
-        title_1:
-          id: title_1
-          table: node_field_data
+          plugin_id: latest_revision
+        title:
+          id: title
+          table: node_field_revision
           field: title
-          relationship: field_code_parent
+          relationship: none
           group_type: group
           admin_label: ''
           operator: contains
@@ -753,14 +715,14 @@ display:
           group: 1
           exposed: true
           expose:
-            operator_id: title_1_op
-            label: 'Belongs to (contains)'
+            operator_id: title_op
+            label: 'Title (contains)'
             description: ''
             use_operator: false
-            operator: title_1_op
+            operator: title_op
             operator_limit_selection: false
             operator_list: {  }
-            identifier: belongs_to
+            identifier: title
             required: false
             remember: false
             multiple: false
@@ -796,41 +758,34 @@ display:
           entity_type: node
           entity_field: title
           plugin_id: string
-        type_1:
-          id: type_1
+        type:
+          id: type
           table: node_field_data
           field: type
-          relationship: none
+          relationship: nid
           group_type: group
           admin_label: ''
           operator: in
           value:
-            city_code: city_code
+            city_charter: city_charter
           group: 1
           exposed: false
           expose:
-            operator_id: type_1_op
-            label: Type
+            operator_id: ''
+            label: ''
             description: ''
             use_operator: false
-            operator: type_1_op
-            identifier: type
+            operator: ''
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: ''
             required: false
             remember: false
             multiple: false
             remember_roles:
               authenticated: authenticated
-              anonymous: '0'
-              administrator: '0'
-              sitewide_editor: '0'
-              code_editor: '0'
-              council_clerk: '0'
-              group_creator: '0'
-              park_editor: '0'
-            reduce: true
-            argument: ''
-            operator_limit_selection: false
-            operator_list: {  }
+            reduce: false
+            argument: null
           is_grouped: false
           group_info:
             label: ''
@@ -848,13 +803,14 @@ display:
           plugin_id: bundle
         moderation_state:
           id: moderation_state
-          table: node_field_data
+          table: node_field_revision
           field: moderation_state
           relationship: none
           group_type: group
           admin_label: ''
           operator: in
           value:
+            all: all
             charter_code_policies-draft: charter_code_policies-draft
             charter_code_policies-review: charter_code_policies-review
             charter_code_policies-published: charter_code_policies-published
@@ -863,7 +819,7 @@ display:
           exposed: true
           expose:
             operator_id: moderation_state_op
-            label: 'Moderation state'
+            label: 'Latest State'
             description: ''
             use_operator: false
             operator: moderation_state_op
@@ -889,26 +845,46 @@ display:
               alert_editor: '0'
               sitewide_editor: '0'
               administrator: '0'
-            reduce: true
-          is_grouped: false
+            reduce: false
+          is_grouped: true
           group_info:
-            label: ''
+            label: 'Latest State'
             description: ''
-            identifier: ''
+            identifier: moderation_state
             optional: true
             widget: select
             multiple: false
             remember: false
             default_group: All
             default_group_multiple: {  }
-            group_items: {  }
+            group_items:
+              1:
+                title: Draft
+                operator: in
+                value:
+                  charter_code_policies-draft: charter_code_policies-draft
+              2:
+                title: 'In review'
+                operator: in
+                value:
+                  charter_code_policies-review: charter_code_policies-review
+              3:
+                title: Published
+                operator: in
+                value:
+                  charter_code_policies-published: charter_code_policies-published
+              4:
+                title: Unpublished
+                operator: in
+                value:
+                  charter_code_policies-archived: charter_code_policies-archived
           entity_type: node
           plugin_id: moderation_state_filter
         status:
           id: status
           table: node_field_data
           field: status
-          relationship: none
+          relationship: nid
           group_type: group
           admin_label: ''
           operator: '='
@@ -921,53 +897,9 @@ display:
             description: ''
             use_operator: false
             operator: status_op
+            operator_limit_selection: false
+            operator_list: {  }
             identifier: status
-            required: false
-            remember: false
-            multiple: false
-            remember_roles:
-              authenticated: authenticated
-              anonymous: '0'
-              administrator: '0'
-              sitewide_editor: '0'
-              code_editor: '0'
-            operator_limit_selection: false
-            operator_list: {  }
-          is_grouped: false
-          group_info:
-            label: ''
-            description: ''
-            identifier: ''
-            optional: true
-            widget: select
-            multiple: false
-            remember: false
-            default_group: All
-            default_group_multiple: {  }
-            group_items: {  }
-          entity_type: node
-          entity_field: status
-          plugin_id: boolean
-        field_accessibility_review_value:
-          id: field_accessibility_review_value
-          table: node__field_accessibility_review
-          field: field_accessibility_review_value
-          relationship: none
-          group_type: group
-          admin_label: ''
-          operator: '='
-          value: All
-          group: 1
-          exposed: true
-          expose:
-            operator_id: ''
-            label: 'Needs Review'
-            description: 'Accessibility or usability review needed'
-            use_operator: false
-            operator: field_accessibility_review_value_op
-            operator_limit_selection: false
-            operator_list: {  }
-            identifier: accessibility_review
             required: false
             remember: false
             multiple: false
@@ -999,21 +931,24 @@ display:
             default_group: All
             default_group_multiple: {  }
             group_items: {  }
+          entity_type: node
+          entity_field: status
           plugin_id: boolean
       sorts: {  }
-      title: 'Admin: Code'
-      header:
-        area_text_custom:
-          id: area_text_custom
-          table: views
-          field: area_text_custom
+      relationships:
+        nid:
+          id: nid
+          table: node_field_revision
+          field: nid
           relationship: none
           group_type: group
-          admin_label: ''
-          empty: true
-          tokenize: false
-          content: '<p><a href="/node/add/city_code?destination=/code/manage" class="button btn-cta">Add code</a></p>'
-          plugin_id: text_custom
+          admin_label: 'Get the actual content from a content revision.'
+          required: true
+          entity_type: node
+          entity_field: nid
+          plugin_id: standard
+      title: 'Admin: Charter'
+      header:
         result:
           id: result
           table: views
@@ -1022,22 +957,13 @@ display:
           group_type: group
           admin_label: ''
           empty: false
-          content: '<p>Displaying @start - @end of @total</p>'
+          content: "<p><a href=\"/node/add/city_charter?destination=/charter/manage\" class=\"button btn-cta\">Add Charter</a></p>\r\n<p>Displaying @start - @end of @total</p>"
           plugin_id: result
       footer: {  }
       empty: {  }
-      relationships:
-        field_code_parent:
-          id: field_code_parent
-          table: node__field_code_parent
-          field: field_code_parent
-          relationship: none
-          group_type: group
-          admin_label: 'field_code_parent: Content'
-          required: false
-          plugin_id: standard
       arguments: {  }
-      display_extenders: {  }
+      display_extenders:
+        metatag_display_extender: {  }
       filter_groups:
         operator: AND
         groups:
@@ -1052,25 +978,25 @@ display:
         - 'user.node_grants:view'
         - user.roles
       tags:
-        - 'config:field.storage.node.field_code_level'
-        - 'config:field.storage.node.field_code_parent'
+        - 'config:field.storage.node.field_charter_level'
+        - 'config:field.storage.node.field_charter_parent'
         - 'config:workflow_list'
-  manage_code:
+  page_1:
     display_plugin: page
-    id: manage_code
+    id: page_1
     display_title: Page
     position: 1
     display_options:
       display_extenders:
         metatag_display_extender: {  }
-      path: code/manage
+      path: charter/manage
       menu:
         type: normal
-        title: Code
-        description: ''
+        title: Charter
+        description: 'Manage Charter'
         expanded: false
         parent: ''
-        weight: -40
+        weight: -41
         context: '0'
         menu_name: editor-toolbar
     cache_metadata:
@@ -1083,6 +1009,6 @@ display:
         - 'user.node_grants:view'
         - user.roles
       tags:
-        - 'config:field.storage.node.field_code_level'
-        - 'config:field.storage.node.field_code_parent'
+        - 'config:field.storage.node.field_charter_level'
+        - 'config:field.storage.node.field_charter_parent'
         - 'config:workflow_list'

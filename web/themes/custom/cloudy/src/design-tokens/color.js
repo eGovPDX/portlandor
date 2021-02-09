@@ -93,5 +93,9 @@ module.exports = {
       '200': { value: 'hsl(190, 80%, 85%)' },
       '100': { value: 'hsl(190, 80%, 95%)' },
     },
+    'mega menu': {
+      '1000': { value: '#171726' },
+      'button-bg': { value: 'rgba(255,255,255,.2)' },
+    }
   }
 };
