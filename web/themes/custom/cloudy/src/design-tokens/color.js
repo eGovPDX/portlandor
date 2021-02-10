@@ -56,6 +56,8 @@ module.exports = {
       '100': { value: '#EDF6F7' },
     },
     'mega menu': {
+      '500': { value: '#7888A1' },
+      '700': { value: '#1F252D' },
       '1000': { value: '#171726' },
       'button-bg': { value: 'rgba(255,255,255,.2)' },
     }
