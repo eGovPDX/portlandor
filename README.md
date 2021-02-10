@@ -69,14 +69,14 @@ git checkout master
 git pull origin master
 lando latest
 lando refresh
-# Next run `git checkout -b powr-[ID]`
+git checkout -b powr-[ID]
 ```
 
 <details>
 
 1. Verify you are on the master branch with `git checkout master`.
 2. On the master branch, run `git pull origin master`. This will make sure you have the latest changes from the remote master. Optionally, running `git pull -p origin` will prune any local branches not on the remote to help keep your local repo clean.
-3. Use the issue ID from Jira for a new feature branch name to start work: `git checkout -b powr-[ID]` to create and checkout a new branch. (We use lowercase for the branch name to help create Pantheon multidev environments correctly.) If the branch already exists, you may use `git checkout powr-[ID]` to switch to your branch.
+3. Use the issue ID from Jira for a new feature branch name to start work: `git checkout -b powr-[ID]` to create and checkout a new branch. (We use lowercase for the branch name to help create Pantheon multidev environments correctly.) If the branch already exists, you may use `git checkout powr-[ID]` to switch to your branch. If you need to create multiple multidevs for your story, name your additional branches `powr-[ID][a-z]` or `powr-[ID]-[a-z or 1-9]` (but continue use just `POWR-[ID]` in the git commits and PR titles for all branches relating to that Jira story).
 4. Run `lando latest` at the start of every sprint to update your local database with a copy of the database from Dev.
 5. Run `lando refresh` to refresh your local environment to match master. (This runs composer install, drush updb, drush cim, and drush cr.)
 6. You are now ready to develop on your feature branch.
