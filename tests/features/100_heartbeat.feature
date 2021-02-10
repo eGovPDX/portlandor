@@ -9,15 +9,20 @@ Feature: Basic site operation and navigation
 
   Scenario: Visit the homepage as anonymous user
     When I visit "/"
-    Then I should see "Services" in the "main_menu" region
+    Then I wait for the page to be loaded
     And I should see "City of Portland, Oregon" in the "footer_fourth" region
+    And I click the ".cloudy-header__toggle--menu" element
+    And I wait 1 seconds
+    Then I should see "Services and Resources" in the "main_menu" region
 
   Scenario: Visit the homepage as authenticated user
     Given I am logged in as user "oliver.outsider@portlandoregon.gov"
     When I visit "/"
     Then I wait for the page to be loaded
-    And I should see "Services" in the "main_menu" region
     And I should see "City of Portland, Oregon" in the "footer_fourth" region
+    And I click the ".cloudy-header__toggle--menu" element
+    And I wait 1 seconds
+    Then I should see "Services and Resources" in the "main_menu" region
 
     # Given users:
     # | name           | status | uid    | mail                              | roles              |
