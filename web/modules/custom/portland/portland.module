@@ -943,12 +943,15 @@ function _notify_reviewer($entity, $entity_event_type)
             return;
         }
         $current_user_email = \Drupal::currentUser()->getAccount()->getEmail();
+
+        // Send email to all reviewers EXCEPT the author
+        $to_emails = [];
         foreach ($reviewers->referencedEntities() as $reviewer) {
             if ($reviewer->id() != $node->revision_uid->entity->id()) {
-                $reviewer_email = $reviewer->mail->value;
-                _send_email($key, $reviewer_email, $langcode, $params, $current_user_email);
+                $to_emails[] = $reviewer->mail->value;
             }
         }
+        if( !empty($to_emails)) _send_email($key, implode(',', $to_emails), $langcode, $params, $current_user_email);
     }
 }
 
