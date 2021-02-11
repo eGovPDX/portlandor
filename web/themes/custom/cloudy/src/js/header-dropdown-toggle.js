@@ -14,13 +14,12 @@
         .once("open-button-text")
         .on("show.bs.collapse", function() {
           const $textWrapper = $(".toggle__label");
-          const $close_label = '<i class="fa fa-times m-0"></i>';
+          const $close_label = '<span class="toggle-icon icon-close"></span>';
 
           $textWrapper.html($close_label);
 
           $(".collapse.show").each(function() {
-            $(this)
-              .collapse("hide");
+            $(this).collapse("hide");
           });
         });
     }
@@ -35,8 +34,9 @@
         .on("hide.bs.collapse", function() {
           const $textWrapper = $(".toggle__label");
           const $default_label = Drupal.t("Menu");
+          const $default_icon = '<span class="toggle-icon icon icon-menu"></span>';
 
-          $textWrapper.html($default_label);
+          $textWrapper.html($default_icon + $default_label);
         });
     }
   };
