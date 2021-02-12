@@ -13,10 +13,7 @@
         .find(".cloudy-header__menu-wrapper")
         .once("open-button-text")
         .on("show.bs.collapse", function() {
-          const $textWrapper = $(".toggle__label");
-          const $close_label = '<span class="toggle-icon icon-close"></span>';
-
-          $textWrapper.html($close_label);
+          $(".cloudy-header__toggle--menu .toggle-icon").removeClass("icon-menu").addClass("icon-close");
 
           $(".collapse.show").each(function() {
             $(this).collapse("hide");
@@ -25,18 +22,14 @@
     }
   };
 
-  // on menu close show "Menu" text
+  // on menu close show menu icon
   Drupal.behaviors.cloudyHeaderMenuToggleCloseText = {
     attach: function(context, settings) {
       $(context)
         .find(".cloudy-header__menu-wrapper")
         .once("close-button-text")
         .on("hide.bs.collapse", function() {
-          const $textWrapper = $(".toggle__label");
-          const $default_label = Drupal.t("Menu");
-          const $default_icon = '<span class="toggle-icon icon icon-menu"></span>';
-
-          $textWrapper.html($default_icon + $default_label);
+          $(".cloudy-header__toggle--menu .toggle-icon").removeClass("icon-close").addClass("icon-menu");
         });
     }
   };
