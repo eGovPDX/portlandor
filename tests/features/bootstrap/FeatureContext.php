@@ -113,6 +113,18 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
     $this->getSession()->wait(20000, "document.readyState === 'complete'");
   }
 
+  /**
+   * Waits a while, for debugging.
+   *
+   * @param int $seconds
+   *   How long to wait.
+   *
+   * @When I wait :seconds second(s)
+   */
+  public function wait($seconds) {
+    sleep($seconds);
+  }
+
   /** @Given I am using a 1440x900 browser window */
   public function iAmUsingA1440x900BrowserWindow()
   {
