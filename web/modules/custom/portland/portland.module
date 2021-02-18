@@ -860,7 +860,7 @@ function portland_cron()
 
         // Send email
         $key = 'portland_daily_mail'; // Replace with Your key
-        $to = 'powr@portlandoregon.gov';
+        $to = 'BTS-eGov@portlandoregon.gov';
         $params['message'] = '<p>These Portland.gov items were updated in the last 24 hours and should
             be reviewed according to the specific instructions below.<p/>' . $results;
         $params['title'] = 'Portland.gov list of content to review';
@@ -919,6 +919,7 @@ function _notify_reviewer($entity, $entity_event_type)
         'bureau_review' => 'Bureau Review',
         'attorney_review' => 'Attorney Review',
         'budget_office_review' => 'Budget Office Review',
+        'policy_editor_review' => 'Policy Editor Review',
         'elected_review' => 'Elected Review',
         'council_clerk_review' => 'Council Clerk Review',
         'ready_for_agenda' => 'Ready for Agenda',
@@ -943,12 +944,15 @@ function _notify_reviewer($entity, $entity_event_type)
             return;
         }
         $current_user_email = \Drupal::currentUser()->getAccount()->getEmail();
+
+        // Send email to all reviewers EXCEPT the author
+        $to_emails = [];
         foreach ($reviewers->referencedEntities() as $reviewer) {
             if ($reviewer->id() != $node->revision_uid->entity->id()) {
-                $reviewer_email = $reviewer->mail->value;
-                _send_email($key, $reviewer_email, $langcode, $params, $current_user_email);
+                $to_emails[] = $reviewer->mail->value;
             }
         }
+        if( !empty($to_emails)) _send_email($key, implode(',', $to_emails), $langcode, $params, $current_user_email);
     }
 }
 
@@ -1080,4 +1084,14 @@ function portland_views_pre_render(\Drupal\views\ViewExecutable $view) {
       }
     }
   }
+}
+
+/**
+ * Implements hook_toolbar_alter().
+ */
+function portland_toolbar_alter(&$items) {
+    $account = Drupal::currentUser();
+    if ( !in_array('administrator', $account->getRoles()) ) {
+        unset($items['administration']);
+    }
 }
