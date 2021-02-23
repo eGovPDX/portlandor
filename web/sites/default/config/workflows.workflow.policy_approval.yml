@@ -1,0 +1,88 @@
+uuid: 7bb5c602-a42b-4575-b5d1-6f16a7811459
+langcode: en
+status: true
+dependencies:
+  config:
+    - node.type.policy
+  module:
+    - content_moderation
+id: policy_approval
+label: 'Policy Approval'
+type: content_moderation
+type_settings:
+  states:
+    bureau_review:
+      published: false
+      default_revision: false
+      label: 'Bureau review'
+      weight: 2
+    draft:
+      label: Draft
+      published: false
+      default_revision: false
+      weight: 0
+    policy_editor_review:
+      published: false
+      default_revision: false
+      label: 'Policy editor review'
+      weight: 3
+    published:
+      label: Published
+      published: true
+      default_revision: true
+      weight: 1
+    unpublished:
+      published: false
+      default_revision: true
+      label: Unpublished
+      weight: 4
+  transitions:
+    create_new_draft:
+      label: 'Create New Draft'
+      to: draft
+      weight: -3
+      from:
+        - bureau_review
+        - draft
+        - policy_editor_review
+        - published
+        - unpublished
+    move_to_bureau_review:
+      label: 'Move to bureau review'
+      from:
+        - bureau_review
+        - draft
+        - policy_editor_review
+        - published
+      to: bureau_review
+      weight: -2
+    move_to_policy_editor_review:
+      label: 'Move to policy editor review'
+      from:
+        - bureau_review
+        - draft
+        - policy_editor_review
+        - published
+        - unpublished
+      to: policy_editor_review
+      weight: -1
+    move_to_unpublished:
+      label: 'Move to unpublished'
+      from:
+        - bureau_review
+        - draft
+        - policy_editor_review
+        - published
+      to: unpublished
+      weight: 1
+    publish:
+      label: Publish
+      to: published
+      weight: 0
+      from:
+        - policy_editor_review
+        - published
+  entity_types:
+    node:
+      - policy
+  default_moderation_state: draft
