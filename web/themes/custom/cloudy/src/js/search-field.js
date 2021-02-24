@@ -12,10 +12,13 @@
         .once("search-clear")
         .on("focusin focusout", function() {
           const $this = $(this);
-          const $text = Drupal.t("Search Portland.gov");
-          $this.attr("placeholder") === $text
+          if ($this.attr("placeholder").length) {
+            $this.data("placeholder", $this.attr("placeholder"));
+          }
+
+          $this.attr("placeholder") === $this.data("placeholder")
             ? $this.attr("placeholder", "")
-            : $this.attr("placeholder", $text);
+            : $this.attr("placeholder", $this.data("placeholder"));
         });
     }
   };
