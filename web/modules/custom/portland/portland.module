@@ -781,6 +781,58 @@ function portland_form_alter(&$form, &$form_state, $form_id)
     if (isset($form["replace_file"])) {
         $form["replace_file"]['keep_original_filename']["#access"] = false;
     }
+
+    if( $form_id === "media_document_add_form" || $form_id === "media_document_edit_form" ) {
+        $form['#validate'][] = '_validate_document';
+    }
+}
+
+/**
+ * A helper function to validate document.
+ */
+function _validate_document(&$form, \Drupal\Core\Form\FormStateInterface $form_state) {
+  if ($form_state->hasValue('field_efiles_link')) {
+    // DO NOT validate when the user clicks on the remove document button.
+    // ONLY validate when the entire form is submitted.
+    if($form_state->getTriggeringElement()["#name"] === "field_document_0_remove_button") return;
+
+    $efiles_link = $form_state->getValue('field_efiles_link');
+    $document = $form_state->getValue('field_document');
+    // If the eFiles link has value
+    if( !empty($efiles_link) && !empty($efiles_link[0]['uri']) ) {
+      if( !empty($document) && !empty($document[0]["fids"]) ) {
+        $form_state->setErrorByName('field_document', t('Please remove the uploaded file or the eFiles link.'));
+        return;
+      }
+      // Get eFiles file size and MIME type
+      try {
+        $headers = get_headers($efiles_link[0]['uri'] . '/File/Document', 1);
+      }catch (exception $e) {
+        $form_state->setErrorByName('field_efiles_link', 'Cannot retrieve file size and mimetype from this link.');
+        return;
+      }
+      if( !empty($headers) && $headers[0] === "HTTP/1.1 200 OK" && 
+          array_key_exists('Content-Length', $headers) &&
+          array_key_exists('Content-Type', $headers) ) {
+        $file_size = (int)$headers['Content-Length'];
+        if($file_size === 0) {
+          $form_state->setErrorByName('field_efiles_link', t('Invalid eFiles link'));
+        }
+        $form_state->setValue('field_file_size', [["value" => $file_size]]);
+        $form_state->setValue('field_mime_type', [["value" => $headers['Content-Type']]] );
+      }
+      else {
+        $form_state->setErrorByName('field_efiles_link', t('Invalid eFiles link'));
+      }
+    }
+    else {
+      $document = $form_state->getValue('field_document');
+      // The document field can't be empty when the eFile link is empty
+      if( empty($document) || empty($document[0]["fids"]) ) {
+        $form_state->setErrorByName('field_document', t('Please upload a file or add an eFiles link'));        
+      }
+    }
+  }
 }
 
 /**

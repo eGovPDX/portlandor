@@ -3,14 +3,81 @@
   } %}
   {% spaceless %}
     {% block content %}
+
+      {% set icon_map = {
+        'application/pdf': {
+          icon: 'fa-file-pdf',
+          desc: 'Download PDF file',
+        },
+        'application/msword': {
+          icon: 'fa-file-word',
+          desc: 'Download Word file',
+        },
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document': {
+          icon: 'fa-file-word',
+          desc: 'Download Word file',
+        },
+        'application/vnd.ms-excel': {
+          icon: 'fa-file-excel',
+          desc: 'Download Excel file',
+        },
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': {
+          icon: 'fa-file-excel',
+          desc: 'Download Excel file',
+        },
+        'application/vnd.ms-powerpoint': {
+          icon: 'fa-file-powerpoint',
+          desc: 'Download PowerPoint',
+        },
+        'application/vnd.openxmlformats-officedocument.presentationml.presentation': {
+          icon: 'fa-file-powerpoint',
+          desc: 'Download PowerPoint file',
+        },
+      } %}
+
       {%- for item in items if item.content|render|striptags|trim is not empty -%}
+        <div{{item.attributes.addClass(item_classes)}}>
+          {# {% include 'file-efiles-link.html.twig' with {
+            file_url: item.content['#url'].uri,
+            file_display_name: element['#object'].name.value,
+            mime_type: element['#object'].field_mime_type.value,
+            file_size: element['#object'].field_file_size.value,
+          } %} #}
+
+          {% set file_url = item.content['#url'].uri %}
+          {% set file_display_name = element['#object'].name.value %}
+          {% set mime_type = element['#object'].field_mime_type.value %}
+          {% set file_size = element['#object'].field_file_size.value %}
+          {% set text = file_display_name|default(link['#title']) %}
+
+          {% set icon_name = icon_map[mime_type].icon ?? 'fa-file-alt' %}
+          {% set file_desc = icon_map[mime_type].desc ?? 'Download file' %}
+          {# {{ devel_breakpoint() }} #}
+          <div class="inline-flex">
+          {{ con}}
+            <a href="{{ file_url }}">
+              <span class="sr-only">{{ file_desc }}</span>
+              {% include '@elements/icon/fa.twig' with {
+                name: icon_name,
+              } only %}
+              {{ text }}
+            </a>
+            {% if file_size is not null %}
+            <span class="ml-2 text-nowrap">{{ file_size_string(file_size) }}</span>
+            {% endif %}
+          </div>
+        </div>
+      {%- endfor -%}
+
+      {# {%- for item in items if item.content|render|striptags|trim is not empty -%}
         <a href="{{ item.content['#url'].uri }}">
           {% include '@elements/icon/icon.twig' with {
             name: 'archives',
           } only %}
           {{ element['#object'].name.value }}
         </a>
-      {%- endfor -%}
+        <span class="ml-2 text-nowrap">{{ element['#object'].field_file_size.value }}</span>
+      {%- endfor -%} #}
     {% endblock %}
   {% endspaceless %}
 {% endembed %}
