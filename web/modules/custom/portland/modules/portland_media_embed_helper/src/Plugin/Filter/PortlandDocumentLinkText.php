@@ -42,7 +42,7 @@ class PortlandDocumentLinkText extends FilterBase
       foreach ($anchors as $anchor) {
         foreach ($anchor->childNodes as $child_node) {
           if ($child_node->nodeType === XML_TEXT_NODE) {
-            $child_node->nodeValue = $alt_link_text;
+            $child_node->nodeValue = PHP_EOL . $alt_link_text .PHP_EOL;
           }
         }
       }
