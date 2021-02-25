@@ -351,3 +351,14 @@ lando drush migrate:import pbot_news_redirects
 lando terminus drush portlandor.powr-[ID] -- migrate:import pbot_news
 lando terminus drush portlandor.powr-[ID] -- migrate:import pbot_news_redirects
 ```
+#### Auditor Blog
+##### Local
+```
+lando drush migrate:import auditor_blog
+lando drush migrate:import auditor_blog_redirects
+```
+##### On Pantheon
+```
+lando terminus drush portlandor.powr-[ID] -- migrate:import auditor_blog
+lando terminus drush portlandor.powr-[ID] -- migrate:import auditor_blog_redirects
+```
