@@ -12,10 +12,8 @@ dependencies:
     - field.storage.node.field_file_impact_statement
     - field.storage.node.field_finanicial_impact_analysis
     - field.storage.node.field_introduced_by
-    - field.storage.node.field_needs_attorney_review
     - field.storage.node.field_requested_council_date
     - field.storage.node.field_requested_start_time
-    - field.storage.node.field_reviewed_by_city_attorney
     - field.storage.node.field_reviewer
     - field.storage.node.field_time_requested
     - field.storage.relation.field_agenda_item_disposition
@@ -46,6 +44,7 @@ dependencies:
     - text
     - time_field
     - user
+    - views_bulk_operations
 id: admin_council_documents
 label: 'Admin: Council documents'
 module: views
@@ -245,18 +244,18 @@ display:
           separator: ''
           hide_empty: false
       fields:
-        field_reviewer:
-          id: field_reviewer
-          table: node__field_reviewer
-          field: field_reviewer
+        field_requested_council_date:
+          id: field_requested_council_date
+          table: node__field_requested_council_date
+          field: field_requested_council_date
           relationship: none
           group_type: group
           admin_label: ''
-          label: Reviewer
+          label: ''
           exclude: true
           alter:
-            alter_text: false
-            text: ''
+            alter_text: true
+            text: '<h2>{{ field_requested_council_date }}</h2>'
             make_link: false
             path: ''
             absolute: false
@@ -285,19 +284,20 @@ display:
           element_class: ''
           element_label_type: ''
           element_label_class: ''
-          element_label_colon: true
+          element_label_colon: false
           element_wrapper_type: ''
           element_wrapper_class: ''
-          element_default_classes: false
+          element_default_classes: true
           empty: ''
           hide_empty: false
           empty_zero: false
           hide_alter_empty: true
-          click_sort_column: target_id
-          type: entity_reference_label
+          click_sort_column: value
+          type: datetime_default
           settings:
-            link: false
-          group_column: target_id
+            timezone_override: ''
+            format_type: month_day_year
+          group_column: value
           group_columns: {  }
           group_rows: true
           delta_limit: 0
@@ -445,7 +445,7 @@ display:
           exclude: false
           alter:
             alter_text: true
-            text: "<h3 class=\"h5 mb-0\">{{ title }}</h3>\r\n<div class=\"council-document__type\">{{ field_council_document_status }} {{ field_council_document_type }}</div>\r\n{% if field_reviewer %}<div class=\"council-document__reviewers\">Reviewers: {{ field_reviewer }}</div>{% endif %}"
+            text: "<strong>{{ title }}</strong>\r\n<div class=\"council-document__type\">{{ field_council_document_status }} {{ field_council_document_type }}</div>\r\n{% if field_reviewer %}<div class=\"council-document__reviewers\">Reviewers: {{ field_reviewer }}</div>{% endif %}"
             make_link: false
             path: ''
             absolute: false
@@ -486,8 +486,9 @@ display:
           type: string
           settings:
             link_to_entity: true
-          group_column: value
-          group_columns: {  }
+          group_column: entity_id
+          group_columns:
+            entity_id: entity_id
           group_rows: true
           delta_limit: 0
           delta_offset: 0
@@ -498,70 +499,6 @@ display:
           field_api_classes: false
           entity_type: node
           entity_field: title
-          plugin_id: field
-        field_requested_council_date:
-          id: field_requested_council_date
-          table: node__field_requested_council_date
-          field: field_requested_council_date
-          relationship: none
-          group_type: group
-          admin_label: ''
-          label: ''
-          exclude: true
-          alter:
-            alter_text: true
-            text: '<h2>{{ field_requested_council_date }}</h2>'
-            make_link: false
-            path: ''
-            absolute: false
-            external: false
-            replace_spaces: false
-            path_case: none
-            trim_whitespace: false
-            alt: ''
-            rel: ''
-            link_class: ''
-            prefix: ''
-            suffix: ''
-            target: ''
-            nl2br: false
-            max_length: 0
-            word_boundary: true
-            ellipsis: true
-            more_link: false
-            more_link_text: ''
-            more_link_path: ''
-            strip_tags: false
-            trim: false
-            preserve_tags: ''
-            html: false
-          element_type: ''
-          element_class: ''
-          element_label_type: ''
-          element_label_class: ''
-          element_label_colon: false
-          element_wrapper_type: ''
-          element_wrapper_class: ''
-          element_default_classes: true
-          empty: ''
-          hide_empty: false
-          empty_zero: false
-          hide_alter_empty: true
-          click_sort_column: value
-          type: datetime_default
-          settings:
-            timezone_override: ''
-            format_type: month_day_year
-          group_column: value
-          group_columns: {  }
-          group_rows: true
-          delta_limit: 0
-          delta_offset: 0
-          delta_reversed: false
-          delta_first_last: false
-          multi_type: separator
-          separator: ', '
-          field_api_classes: false
           plugin_id: field
         field_requested_start_time:
           id: field_requested_start_time
@@ -762,7 +699,7 @@ display:
           group_type: group
           admin_label: ''
           label: Bureau
-          exclude: true
+          exclude: false
           alter:
             alter_text: false
             text: ''
@@ -824,199 +761,8 @@ display:
           relationship: none
           group_type: group
           admin_label: ''
-          label: Elected/bureau
+          label: 'Introduced by'
           exclude: false
-          alter:
-            alter_text: true
-            text: "Introduced by {{ field_introduced_by }}<br>\r\n{{ field_bureau }}"
-            make_link: false
-            path: ''
-            absolute: false
-            external: false
-            replace_spaces: false
-            path_case: none
-            trim_whitespace: false
-            alt: ''
-            rel: ''
-            link_class: ''
-            prefix: ''
-            suffix: ''
-            target: ''
-            nl2br: false
-            max_length: 0
-            word_boundary: true
-            ellipsis: true
-            more_link: false
-            more_link_text: ''
-            more_link_path: ''
-            strip_tags: false
-            trim: false
-            preserve_tags: ''
-            html: false
-          element_type: ''
-          element_class: ''
-          element_label_type: ''
-          element_label_class: ''
-          element_label_colon: false
-          element_wrapper_type: ''
-          element_wrapper_class: ''
-          element_default_classes: true
-          empty: ''
-          hide_empty: false
-          empty_zero: false
-          hide_alter_empty: true
-          click_sort_column: target_id
-          type: entity_reference_label
-          settings:
-            link: false
-          group_column: target_id
-          group_columns: {  }
-          group_rows: true
-          delta_limit: 0
-          delta_offset: 0
-          delta_reversed: false
-          delta_first_last: false
-          multi_type: separator
-          separator: ', '
-          field_api_classes: false
-          plugin_id: field
-        field_reviewed_by_city_attorney:
-          id: field_reviewed_by_city_attorney
-          table: node__field_reviewed_by_city_attorney
-          field: field_reviewed_by_city_attorney
-          relationship: none
-          group_type: group
-          admin_label: ''
-          label: ''
-          exclude: true
-          alter:
-            alter_text: false
-            text: ''
-            make_link: false
-            path: ''
-            absolute: false
-            external: false
-            replace_spaces: false
-            path_case: none
-            trim_whitespace: false
-            alt: ''
-            rel: ''
-            link_class: ''
-            prefix: ''
-            suffix: ''
-            target: ''
-            nl2br: false
-            max_length: 0
-            word_boundary: true
-            ellipsis: true
-            more_link: false
-            more_link_text: ''
-            more_link_path: ''
-            strip_tags: false
-            trim: false
-            preserve_tags: ''
-            html: false
-          element_type: ''
-          element_class: ''
-          element_label_type: ''
-          element_label_class: ''
-          element_label_colon: false
-          element_wrapper_type: ''
-          element_wrapper_class: ''
-          element_default_classes: true
-          empty: ''
-          hide_empty: false
-          empty_zero: false
-          hide_alter_empty: true
-          click_sort_column: target_id
-          type: entity_reference_label
-          settings:
-            link: false
-          group_column: target_id
-          group_columns: {  }
-          group_rows: true
-          delta_limit: 0
-          delta_offset: 0
-          delta_reversed: false
-          delta_first_last: false
-          multi_type: separator
-          separator: ', '
-          field_api_classes: false
-          plugin_id: field
-        field_needs_attorney_review:
-          id: field_needs_attorney_review
-          table: node__field_needs_attorney_review
-          field: field_needs_attorney_review
-          relationship: none
-          group_type: group
-          admin_label: ''
-          label: Attorney
-          exclude: false
-          alter:
-            alter_text: true
-            text: "{{ field_needs_attorney_review }}\r\n{{ field_reviewed_by_city_attorney }}"
-            make_link: false
-            path: ''
-            absolute: false
-            external: false
-            replace_spaces: false
-            path_case: none
-            trim_whitespace: false
-            alt: ''
-            rel: ''
-            link_class: ''
-            prefix: ''
-            suffix: ''
-            target: ''
-            nl2br: false
-            max_length: 0
-            word_boundary: true
-            ellipsis: true
-            more_link: false
-            more_link_text: ''
-            more_link_path: ''
-            strip_tags: false
-            trim: false
-            preserve_tags: ''
-            html: false
-          element_type: ''
-          element_class: ''
-          element_label_type: ''
-          element_label_class: ''
-          element_label_colon: true
-          element_wrapper_type: ''
-          element_wrapper_class: ''
-          element_default_classes: true
-          empty: ''
-          hide_empty: false
-          empty_zero: false
-          hide_alter_empty: true
-          click_sort_column: value
-          type: boolean
-          settings:
-            format: custom
-            format_custom_true: 'Review Required'
-            format_custom_false: ''
-          group_column: value
-          group_columns: {  }
-          group_rows: true
-          delta_limit: 0
-          delta_offset: 0
-          delta_reversed: false
-          delta_first_last: false
-          multi_type: separator
-          separator: ', '
-          field_api_classes: false
-          plugin_id: field
-        uid:
-          id: uid
-          table: node_field_data
-          field: uid
-          relationship: none
-          group_type: group
-          admin_label: ''
-          label: 'Authored by'
-          exclude: true
           alter:
             alter_text: false
             text: ''
@@ -1061,7 +807,8 @@ display:
           settings:
             link: false
           group_column: target_id
-          group_columns: {  }
+          group_columns:
+            entity_id: entity_id
           group_rows: true
           delta_limit: 0
           delta_offset: 0
@@ -1070,140 +817,6 @@ display:
           multi_type: separator
           separator: ', '
           field_api_classes: false
-          entity_type: node
-          entity_field: uid
-          plugin_id: field
-        created:
-          id: created
-          table: node_field_data
-          field: created
-          relationship: none
-          group_type: group
-          admin_label: ''
-          label: Created
-          exclude: false
-          alter:
-            alter_text: true
-            text: "{{ created }}<br>\r\nby {{ uid }} "
-            make_link: false
-            path: ''
-            absolute: false
-            external: false
-            replace_spaces: false
-            path_case: none
-            trim_whitespace: false
-            alt: ''
-            rel: ''
-            link_class: ''
-            prefix: ''
-            suffix: ''
-            target: ''
-            nl2br: false
-            max_length: 0
-            word_boundary: true
-            ellipsis: true
-            more_link: false
-            more_link_text: ''
-            more_link_path: ''
-            strip_tags: false
-            trim: false
-            preserve_tags: ''
-            html: false
-          element_type: ''
-          element_class: ''
-          element_label_type: ''
-          element_label_class: ''
-          element_label_colon: true
-          element_wrapper_type: ''
-          element_wrapper_class: ''
-          element_default_classes: true
-          empty: ''
-          hide_empty: false
-          empty_zero: false
-          hide_alter_empty: true
-          click_sort_column: value
-          type: timestamp
-          settings:
-            date_format: short
-            custom_date_format: ''
-            timezone: ''
-          group_column: value
-          group_columns: {  }
-          group_rows: true
-          delta_limit: 0
-          delta_offset: 0
-          delta_reversed: false
-          delta_first_last: false
-          multi_type: separator
-          separator: ', '
-          field_api_classes: false
-          entity_type: node
-          entity_field: created
-          plugin_id: field
-        revision_uid:
-          id: revision_uid
-          table: node_revision
-          field: revision_uid
-          relationship: none
-          group_type: group
-          admin_label: ''
-          label: ''
-          exclude: true
-          alter:
-            alter_text: false
-            text: ''
-            make_link: false
-            path: ''
-            absolute: false
-            external: false
-            replace_spaces: false
-            path_case: none
-            trim_whitespace: false
-            alt: ''
-            rel: ''
-            link_class: ''
-            prefix: ''
-            suffix: ''
-            target: ''
-            nl2br: false
-            max_length: 0
-            word_boundary: true
-            ellipsis: true
-            more_link: false
-            more_link_text: ''
-            more_link_path: ''
-            strip_tags: false
-            trim: false
-            preserve_tags: ''
-            html: false
-          element_type: ''
-          element_class: ''
-          element_label_type: ''
-          element_label_class: ''
-          element_label_colon: true
-          element_wrapper_type: ''
-          element_wrapper_class: ''
-          element_default_classes: true
-          empty: ''
-          hide_empty: false
-          empty_zero: false
-          hide_alter_empty: true
-          click_sort_column: target_id
-          type: entity_reference_label
-          settings:
-            link: false
-          group_column: target_id
-          group_columns: {  }
-          group_rows: true
-          delta_limit: 0
-          delta_offset: 0
-          delta_reversed: false
-          delta_first_last: false
-          multi_type: separator
-          separator: ', '
-          field_api_classes: false
-          entity_type: node
-          entity_field: revision_uid
           plugin_id: field
         changed:
           id: changed
@@ -1215,7 +828,7 @@ display:
           label: Changed
           exclude: false
           alter:
-            alter_text: true
+            alter_text: false
             text: "{{ changed }}<br>\r\nby {{ revision_uid }}"
             make_link: false
             path: ''
@@ -1272,73 +885,6 @@ display:
           entity_type: node
           entity_field: changed
           plugin_id: field
-        status:
-          id: status
-          table: node_field_data
-          field: status
-          relationship: none
-          group_type: group
-          admin_label: ''
-          label: Published
-          exclude: true
-          alter:
-            alter_text: false
-            text: ''
-            make_link: false
-            path: ''
-            absolute: false
-            external: false
-            replace_spaces: false
-            path_case: none
-            trim_whitespace: false
-            alt: ''
-            rel: ''
-            link_class: ''
-            prefix: ''
-            suffix: ''
-            target: ''
-            nl2br: false
-            max_length: 0
-            word_boundary: true
-            ellipsis: true
-            more_link: false
-            more_link_text: ''
-            more_link_path: ''
-            strip_tags: false
-            trim: false
-            preserve_tags: ''
-            html: false
-          element_type: ''
-          element_class: ''
-          element_label_type: ''
-          element_label_class: ''
-          element_label_colon: false
-          element_wrapper_type: ''
-          element_wrapper_class: ''
-          element_default_classes: true
-          empty: ''
-          hide_empty: false
-          empty_zero: false
-          hide_alter_empty: true
-          click_sort_column: value
-          type: boolean
-          settings:
-            format: custom
-            format_custom_true: Published
-            format_custom_false: Unpublished
-          group_column: value
-          group_columns: {  }
-          group_rows: true
-          delta_limit: 0
-          delta_offset: 0
-          delta_reversed: false
-          delta_first_last: false
-          multi_type: separator
-          separator: ', '
-          field_api_classes: false
-          entity_type: node
-          entity_field: status
-          plugin_id: field
         moderation_state:
           id: moderation_state
           table: node_field_data
@@ -1349,7 +895,7 @@ display:
           label: 'Workflow state'
           exclude: false
           alter:
-            alter_text: true
+            alter_text: false
             text: "{{ moderation_state }}<br>\r\n{{ status }}"
             make_link: false
             path: ''
@@ -1798,18 +1344,6 @@ display:
             label: ''
           granularity: second
           plugin_id: datetime
-        field_introduced_by_target_id:
-          id: field_introduced_by_target_id
-          table: node__field_introduced_by
-          field: field_introduced_by_target_id
-          relationship: none
-          group_type: group
-          admin_label: ''
-          order: ASC
-          exposed: false
-          expose:
-            label: ''
-          plugin_id: standard
         title:
           id: title
           table: node_field_data
@@ -1817,7 +1351,7 @@ display:
           entity_type: node
           entity_field: title
           plugin_id: standard
-      title: 'Manage Upcoming Documents'
+      title: 'Manage Upcoming Council Documents'
       header:
         result:
           id: result
@@ -1827,7 +1361,7 @@ display:
           group_type: group
           admin_label: ''
           empty: true
-          content: "<a href=\"/node/add/council_document\" class=\"button btn-cta mb-2\">Add council document</a>\r\n<p>Displaying @start - @end of @total council documents you have authored ordered by requested council date.</p>"
+          content: '<p>Displaying @start - @end of @total council documents.</p>'
           plugin_id: result
       footer: {  }
       empty: {  }
@@ -1856,11 +1390,8 @@ display:
         - 'config:field.storage.node.field_council_document_status'
         - 'config:field.storage.node.field_council_document_type'
         - 'config:field.storage.node.field_introduced_by'
-        - 'config:field.storage.node.field_needs_attorney_review'
         - 'config:field.storage.node.field_requested_council_date'
         - 'config:field.storage.node.field_requested_start_time'
-        - 'config:field.storage.node.field_reviewed_by_city_attorney'
-        - 'config:field.storage.node.field_reviewer'
         - 'config:field.storage.node.field_time_requested'
         - 'config:workflow_list'
   entity_reference_1:
@@ -2142,6 +1673,7 @@ display:
         filters: false
         filter_groups: false
         sorts: false
+        header: false
       filters:
         type:
           id: type
@@ -2330,6 +1862,7 @@ display:
           entity_type: node
           entity_field: title
           plugin_id: standard
+      header: {  }
     cache_metadata:
       max-age: -1
       contexts:
@@ -2353,7 +1886,7 @@ display:
       display_description: ''
       menu:
         type: normal
-        title: 'Upcoming Documents'
+        title: Upcoming
         description: ''
         expanded: false
         parent: ''
@@ -2595,73 +2128,15 @@ display:
             group_items: {  }
           entity_type: node
           plugin_id: moderation_state_filter
-        uid:
-          id: uid
-          table: node_field_data
-          field: uid
+        field_council_document_status_target_id:
+          id: field_council_document_status_target_id
+          table: node__field_council_document_status
+          field: field_council_document_status_target_id
           relationship: none
           group_type: group
           admin_label: ''
-          operator: in
+          operator: empty
           value: {  }
-          group: 1
-          exposed: true
-          expose:
-            operator_id: uid_op
-            label: 'Authored by'
-            description: ''
-            use_operator: false
-            operator: uid_op
-            operator_limit_selection: false
-            operator_list: {  }
-            identifier: uid
-            required: false
-            remember: false
-            multiple: false
-            remember_roles:
-              authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              attorney: '0'
-              council_author: '0'
-              council_clerk: '0'
-              park_editor: '0'
-              code_editor: '0'
-              group_creator: '0'
-              alert_editor: '0'
-              sitewide_editor: '0'
-              administrator: '0'
-            reduce: false
-          is_grouped: false
-          group_info:
-            label: ''
-            description: ''
-            identifier: ''
-            optional: true
-            widget: select
-            multiple: false
-            remember: false
-            default_group: All
-            default_group_multiple: {  }
-            group_items: {  }
-          entity_type: node
-          entity_field: uid
-          plugin_id: user_name
-        field_requested_council_date_value:
-          id: field_requested_council_date_value
-          table: node__field_requested_council_date
-          field: field_requested_council_date_value
-          relationship: none
-          group_type: group
-          admin_label: ''
-          operator: '>='
-          value:
-            min: ''
-            max: ''
-            value: today
-            type: offset
           group: 1
           exposed: false
           expose:
@@ -2678,9 +2153,7 @@ display:
             multiple: false
             remember_roles:
               authenticated: authenticated
-            placeholder: ''
-            min_placeholder: ''
-            max_placeholder: ''
+            reduce: false
           is_grouped: false
           group_info:
             label: ''
@@ -2693,7 +2166,13 @@ display:
             default_group: All
             default_group_multiple: {  }
             group_items: {  }
-          plugin_id: datetime
+          reduce_duplicates: false
+          type: select
+          limit: true
+          vid: council_document_status
+          hierarchy: false
+          error_message: true
+          plugin_id: taxonomy_index_tid
       defaults:
         filters: false
         filter_groups: false
@@ -2713,6 +2192,7 @@ display:
           empty: true
           content: "<a href=\"/node/add/council_document\" class=\"button btn-cta mb-2\">Add council document</a>\r\n<p>Displaying @start - @end of @total ordered by requested council date. <a href=\"/council/documents/manage/past\">Manage documents for past dates</a>. <a href=\"/council/documents/manage/unscheduled\">Manage unscheduled documents</a>.</p>"
           plugin_id: result
+      use_admin_theme: 1
     cache_metadata:
       max-age: -1
       contexts:
@@ -2729,11 +2209,8 @@ display:
         - 'config:field.storage.node.field_council_document_status'
         - 'config:field.storage.node.field_council_document_type'
         - 'config:field.storage.node.field_introduced_by'
-        - 'config:field.storage.node.field_needs_attorney_review'
         - 'config:field.storage.node.field_requested_council_date'
         - 'config:field.storage.node.field_requested_start_time'
-        - 'config:field.storage.node.field_reviewed_by_city_attorney'
-        - 'config:field.storage.node.field_reviewer'
         - 'config:field.storage.node.field_time_requested'
         - 'config:workflow_list'
   manage_time_certain:
@@ -3151,6 +2628,7 @@ display:
           content: "<a href=\"/node/add/council_document\" class=\"button btn-cta mb-2\">Add council document</a>\r\n<p>Displaying @start - @end of @total ordered by requested council date. <a href=\"/council/documents/manage/past\">Manage documents for past dates</a>. <a href=\"/council/documents/manage/unscheduled\">Manage unscheduled documents</a>.</p>"
           plugin_id: result
       title: 'Upcoming Time Certain'
+      use_admin_theme: 1
     cache_metadata:
       max-age: -1
       contexts:
@@ -3167,11 +2645,8 @@ display:
         - 'config:field.storage.node.field_council_document_status'
         - 'config:field.storage.node.field_council_document_type'
         - 'config:field.storage.node.field_introduced_by'
-        - 'config:field.storage.node.field_needs_attorney_review'
         - 'config:field.storage.node.field_requested_council_date'
         - 'config:field.storage.node.field_requested_start_time'
-        - 'config:field.storage.node.field_reviewed_by_city_attorney'
-        - 'config:field.storage.node.field_reviewer'
         - 'config:field.storage.node.field_time_requested'
         - 'config:workflow_list'
   my_council_documents:
@@ -3566,6 +3041,7 @@ display:
           expose:
             label: ''
           plugin_id: standard
+      use_admin_theme: 1
     cache_metadata:
       max-age: -1
       contexts:
@@ -3582,11 +3058,8 @@ display:
         - 'config:field.storage.node.field_council_document_status'
         - 'config:field.storage.node.field_council_document_type'
         - 'config:field.storage.node.field_introduced_by'
-        - 'config:field.storage.node.field_needs_attorney_review'
         - 'config:field.storage.node.field_requested_council_date'
         - 'config:field.storage.node.field_requested_start_time'
-        - 'config:field.storage.node.field_reviewed_by_city_attorney'
-        - 'config:field.storage.node.field_reviewer'
         - 'config:field.storage.node.field_time_requested'
         - 'config:workflow_list'
   page_1:
@@ -3971,6 +3444,7 @@ display:
           expose:
             label: ''
           plugin_id: standard
+      use_admin_theme: 1
     cache_metadata:
       max-age: -1
       contexts:
@@ -3987,11 +3461,8 @@ display:
         - 'config:field.storage.node.field_council_document_status'
         - 'config:field.storage.node.field_council_document_type'
         - 'config:field.storage.node.field_introduced_by'
-        - 'config:field.storage.node.field_needs_attorney_review'
         - 'config:field.storage.node.field_requested_council_date'
         - 'config:field.storage.node.field_requested_start_time'
-        - 'config:field.storage.node.field_reviewed_by_city_attorney'
-        - 'config:field.storage.node.field_reviewer'
         - 'config:field.storage.node.field_time_requested'
         - 'config:workflow_list'
   page_2:
@@ -4119,101 +3590,6 @@ display:
           entity_type: node
           entity_field: title
           plugin_id: string
-        field_council_document_type_target_id:
-          id: field_council_document_type_target_id
-          table: node__field_council_document_type
-          field: field_council_document_type_target_id
-          relationship: none
-          group_type: group
-          admin_label: ''
-          operator: or
-          value: {  }
-          group: 1
-          exposed: true
-          expose:
-            operator_id: field_council_document_type_target_id_op
-            label: 'Document type'
-            description: ''
-            use_operator: false
-            operator: field_council_document_type_target_id_op
-            identifier: document_type_id
-            required: false
-            remember: false
-            multiple: false
-            remember_roles:
-              authenticated: authenticated
-              anonymous: '0'
-              administrator: '0'
-              sitewide_editor: '0'
-              code_editor: '0'
-              council_clerk: '0'
-            reduce: false
-            operator_limit_selection: false
-            operator_list: {  }
-          is_grouped: false
-          group_info:
-            label: ''
-            description: ''
-            identifier: ''
-            optional: true
-            widget: select
-            multiple: false
-            remember: false
-            default_group: All
-            default_group_multiple: {  }
-            group_items: {  }
-          reduce_duplicates: false
-          type: select
-          limit: true
-          vid: council_document_type
-          hierarchy: false
-          error_message: true
-          plugin_id: taxonomy_index_tid
-        status:
-          id: status
-          table: node_field_data
-          field: status
-          relationship: none
-          group_type: group
-          admin_label: ''
-          operator: '='
-          value: All
-          group: 1
-          exposed: true
-          expose:
-            operator_id: ''
-            label: Published
-            description: ''
-            use_operator: false
-            operator: status_op
-            identifier: published
-            required: false
-            remember: false
-            multiple: false
-            remember_roles:
-              authenticated: authenticated
-              anonymous: '0'
-              administrator: '0'
-              sitewide_editor: '0'
-              code_editor: '0'
-              council_clerk: '0'
-            operator_limit_selection: false
-            operator_list: {  }
-          is_grouped: false
-          group_info:
-            label: ''
-            description: ''
-            identifier: ''
-            optional: true
-            widget: select
-            multiple: false
-            remember: false
-            default_group: All
-            default_group_multiple: {  }
-            group_items: {  }
-          plugin_id: boolean
-          entity_type: node
-          entity_field: status
         moderation_state:
           id: moderation_state
           table: node_field_data
@@ -4259,60 +3635,6 @@ display:
             group_items: {  }
           entity_type: node
           plugin_id: moderation_state_filter
-        uid:
-          id: uid
-          table: node_field_data
-          field: uid
-          relationship: none
-          group_type: group
-          admin_label: ''
-          operator: in
-          value: {  }
-          group: 1
-          exposed: true
-          expose:
-            operator_id: uid_op
-            label: 'Authored by'
-            description: ''
-            use_operator: false
-            operator: uid_op
-            operator_limit_selection: false
-            operator_list: {  }
-            identifier: uid
-            required: false
-            remember: false
-            multiple: false
-            remember_roles:
-              authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              attorney: '0'
-              council_author: '0'
-              council_clerk: '0'
-              park_editor: '0'
-              code_editor: '0'
-              group_creator: '0'
-              alert_editor: '0'
-              sitewide_editor: '0'
-              administrator: '0'
-            reduce: false
-          is_grouped: false
-          group_info:
-            label: ''
-            description: ''
-            identifier: ''
-            optional: true
-            widget: select
-            multiple: false
-            remember: false
-            default_group: All
-            default_group_multiple: {  }
-            group_items: {  }
-          entity_type: node
-          entity_field: uid
-          plugin_id: user_name
         field_council_document_status_target_id_1:
           id: field_council_document_status_target_id_1
           table: node__field_council_document_status
@@ -4416,6 +3738,47 @@ display:
           hierarchy: false
           error_message: true
           plugin_id: taxonomy_index_tid
+        title_1:
+          id: title_1
+          table: node_field_data
+          field: title
+          relationship: none
+          group_type: group
+          admin_label: ''
+          operator: not
+          value: '[Template]'
+          group: 1
+          exposed: false
+          expose:
+            operator_id: ''
+            label: ''
+            description: ''
+            use_operator: false
+            operator: ''
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: ''
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+            placeholder: ''
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
+          entity_type: node
+          entity_field: title
+          plugin_id: string
       filter_groups:
         operator: AND
         groups:
@@ -4436,35 +3799,51 @@ display:
           summary: ''
           description: ''
           columns:
-            field_reviewer: field_reviewer
+            views_bulk_operations_bulk_form: views_bulk_operations_bulk_form
+            field_requested_council_date: field_requested_council_date
             field_council_document_status: field_council_document_status
+            field_agenda_item_number: field_agenda_item_number
             field_council_document_type: field_council_document_type
             field_amended_by_council: field_amended_by_council
             title: title
-            field_requested_council_date: field_requested_council_date
+            field_date_of_final_disposition: field_date_of_final_disposition
+            field_disposition_notes: field_disposition_notes
+            field_agenda_item_disposition: field_agenda_item_disposition
             field_bureau: field_bureau
-            uid: uid
-            created: created
+            field_introduced_by: field_introduced_by
             revision_uid: revision_uid
             changed: changed
-            status: status
             moderation_state: moderation_state
             edit_node: edit_node
           info:
-            field_reviewer:
+            views_bulk_operations_bulk_form:
+              align: ''
+              separator: ''
+              empty_column: false
+              responsive: ''
+            field_requested_council_date:
+              sortable: true
+              default_sort_order: asc
               align: ''
               separator: ''
               empty_column: false
               responsive: ''
             field_council_document_status:
-              sortable: false
+              sortable: true
+              default_sort_order: asc
+              align: ''
+              separator: ''
+              empty_column: false
+              responsive: ''
+            field_agenda_item_number:
+              sortable: true
               default_sort_order: asc
               align: ''
               separator: ''
               empty_column: false
               responsive: ''
             field_council_document_type:
-              sortable: false
+              sortable: true
               default_sort_order: asc
               align: ''
               separator: ''
@@ -4478,15 +3857,29 @@ display:
               empty_column: false
               responsive: ''
             title:
+              sortable: true
+              default_sort_order: asc
+              align: ''
+              separator: ''
+              empty_column: false
+              responsive: ''
+            field_date_of_final_disposition:
+              sortable: true
+              default_sort_order: asc
+              align: ''
+              separator: ''
+              empty_column: false
+              responsive: ''
+            field_disposition_notes:
               sortable: false
               default_sort_order: asc
               align: ''
               separator: ''
               empty_column: false
               responsive: ''
-            field_requested_council_date:
+            field_agenda_item_disposition:
               sortable: false
-              default_sort_order: desc
+              default_sort_order: asc
               align: ''
               separator: ''
               empty_column: false
@@ -4496,16 +3889,7 @@ display:
               separator: ''
               empty_column: false
               responsive: ''
-            uid:
-              sortable: false
-              default_sort_order: asc
-              align: ''
-              separator: ''
-              empty_column: false
-              responsive: ''
-            created:
-              sortable: false
-              default_sort_order: asc
+            field_introduced_by:
               align: ''
               separator: ''
               empty_column: false
@@ -4518,13 +3902,6 @@ display:
               empty_column: false
               responsive: ''
             changed:
-              sortable: false
-              default_sort_order: desc
-              align: ''
-              separator: ''
-              empty_column: false
-              responsive: ''
-            status:
               sortable: false
               default_sort_order: desc
               align: ''
@@ -4545,7 +3922,7 @@ display:
               separator: ''
               empty_column: false
               responsive: ''
-          default: '-1'
+          default: field_requested_council_date
           empty_table: false
       row:
         type: fields
@@ -4557,6 +3934,66 @@ display:
           separator: ''
           hide_empty: false
       fields:
+        views_bulk_operations_bulk_form:
+          id: views_bulk_operations_bulk_form
+          table: views
+          field: views_bulk_operations_bulk_form
+          relationship: none
+          group_type: group
+          admin_label: ''
+          label: ''
+          exclude: false
+          alter:
+            alter_text: false
+            text: ''
+            make_link: false
+            path: ''
+            absolute: false
+            external: false
+            replace_spaces: false
+            path_case: none
+            trim_whitespace: false
+            alt: ''
+            rel: ''
+            link_class: ''
+            prefix: ''
+            suffix: ''
+            target: ''
+            nl2br: false
+            max_length: 0
+            word_boundary: true
+            ellipsis: true
+            more_link: false
+            more_link_text: ''
+            more_link_path: ''
+            strip_tags: false
+            trim: false
+            preserve_tags: ''
+            html: false
+          element_type: ''
+          element_class: ''
+          element_label_type: ''
+          element_label_class: ''
+          element_label_colon: false
+          element_wrapper_type: ''
+          element_wrapper_class: ''
+          element_default_classes: true
+          empty: ''
+          hide_empty: false
+          empty_zero: false
+          hide_alter_empty: true
+          batch: true
+          batch_size: 10
+          form_step: true
+          buttons: false
+          clear_on_exposed: true
+          action_title: Action
+          selected_actions:
+            1:
+              action_id: 'moderation_state_change:node'
+              preconfiguration:
+                label_override: 'Change Moderation State'
+          plugin_id: views_bulk_operations_bulk_form
         field_requested_council_date:
           id: field_requested_council_date
           table: node__field_requested_council_date
@@ -4611,69 +4048,6 @@ display:
             timezone_override: ''
             format_type: month_day_year
           group_column: value
-          group_columns: {  }
-          group_rows: true
-          delta_limit: 0
-          delta_offset: 0
-          delta_reversed: false
-          delta_first_last: false
-          multi_type: separator
-          separator: ', '
-          field_api_classes: false
-          plugin_id: field
-        field_reviewer:
-          id: field_reviewer
-          table: node__field_reviewer
-          field: field_reviewer
-          relationship: none
-          group_type: group
-          admin_label: ''
-          label: Reviewer
-          exclude: true
-          alter:
-            alter_text: false
-            text: ''
-            make_link: false
-            path: ''
-            absolute: false
-            external: false
-            replace_spaces: false
-            path_case: none
-            trim_whitespace: false
-            alt: ''
-            rel: ''
-            link_class: ''
-            prefix: ''
-            suffix: ''
-            target: ''
-            nl2br: false
-            max_length: 0
-            word_boundary: true
-            ellipsis: true
-            more_link: false
-            more_link_text: ''
-            more_link_path: ''
-            strip_tags: false
-            trim: false
-            preserve_tags: ''
-            html: false
-          element_type: ''
-          element_class: ''
-          element_label_type: ''
-          element_label_class: ''
-          element_label_colon: true
-          element_wrapper_type: ''
-          element_wrapper_class: ''
-          element_default_classes: false
-          empty: ''
-          hide_empty: false
-          empty_zero: false
-          hide_alter_empty: true
-          click_sort_column: target_id
-          type: entity_reference_label
-          settings:
-            link: false
-          group_column: target_id
           group_columns: {  }
           group_rows: true
           delta_limit: 0
@@ -4874,132 +4248,6 @@ display:
           separator: ', '
           field_api_classes: false
           plugin_id: field
-        field_bureau:
-          id: field_bureau
-          table: node__field_bureau
-          field: field_bureau
-          relationship: none
-          group_type: group
-          admin_label: ''
-          label: ''
-          exclude: true
-          alter:
-            alter_text: false
-            text: ''
-            make_link: false
-            path: ''
-            absolute: false
-            external: false
-            replace_spaces: false
-            path_case: none
-            trim_whitespace: false
-            alt: ''
-            rel: ''
-            link_class: ''
-            prefix: ''
-            suffix: ''
-            target: ''
-            nl2br: false
-            max_length: 0
-            word_boundary: true
-            ellipsis: true
-            more_link: false
-            more_link_text: ''
-            more_link_path: ''
-            strip_tags: false
-            trim: false
-            preserve_tags: ''
-            html: false
-          element_type: ''
-          element_class: ''
-          element_label_type: ''
-          element_label_class: ''
-          element_label_colon: false
-          element_wrapper_type: ''
-          element_wrapper_class: ''
-          element_default_classes: true
-          empty: ''
-          hide_empty: false
-          empty_zero: false
-          hide_alter_empty: true
-          click_sort_column: target_id
-          type: entity_reference_label
-          settings:
-            link: false
-          group_column: target_id
-          group_columns: {  }
-          group_rows: true
-          delta_limit: 0
-          delta_offset: 0
-          delta_reversed: false
-          delta_first_last: false
-          multi_type: separator
-          separator: ', '
-          field_api_classes: false
-          plugin_id: field
-        field_introduced_by:
-          id: field_introduced_by
-          table: node__field_introduced_by
-          field: field_introduced_by
-          relationship: none
-          group_type: group
-          admin_label: ''
-          label: ''
-          exclude: true
-          alter:
-            alter_text: true
-            text: "Introduce by {{ field_introduced_by }}<br>\r\n{{ field_bureau }}"
-            make_link: false
-            path: ''
-            absolute: false
-            external: false
-            replace_spaces: false
-            path_case: none
-            trim_whitespace: false
-            alt: ''
-            rel: ''
-            link_class: ''
-            prefix: ''
-            suffix: ''
-            target: ''
-            nl2br: false
-            max_length: 0
-            word_boundary: true
-            ellipsis: true
-            more_link: false
-            more_link_text: ''
-            more_link_path: ''
-            strip_tags: false
-            trim: false
-            preserve_tags: ''
-            html: false
-          element_type: ''
-          element_class: ''
-          element_label_type: ''
-          element_label_class: ''
-          element_label_colon: false
-          element_wrapper_type: ''
-          element_wrapper_class: ''
-          element_default_classes: true
-          empty: ''
-          hide_empty: false
-          empty_zero: false
-          hide_alter_empty: true
-          click_sort_column: target_id
-          type: entity_reference_label
-          settings:
-            link: false
-          group_column: target_id
-          group_columns: {  }
-          group_rows: true
-          delta_limit: 0
-          delta_offset: 0
-          delta_reversed: false
-          delta_first_last: false
-          multi_type: separator
-          separator: ', '
-          field_api_classes: false
-          plugin_id: field
         field_amended_by_council:
           id: field_amended_by_council
           table: node__field_amended_by_council
@@ -5076,7 +4324,7 @@ display:
           exclude: false
           alter:
             alter_text: true
-            text: "<h2 class=\"h5 mb-0\">{{ title }}</h2>\r\n{{ field_council_document_type }} {{ field_council_document_status }} {{ field_amended_by_council }}<br>\r\n{{ field_introduced_by }}<br>\r\n{% if field_reviewer %}<div class=\"council-document__reviewers\">Reviewers: {{ field_reviewer }}</div>{% endif %}"
+            text: "<strong>{{ title }}</strong><br>\r\n{{ field_council_document_type }} {{ field_council_document_status }} {{ field_amended_by_council }}<br>\r\n{{ field_introduced_by }}<br>\r\n{% if field_reviewer %}<div class=\"council-document__reviewers\">Reviewers: {{ field_reviewer }}</div>{% endif %}"
             make_link: false
             path: ''
             absolute: false
@@ -5319,15 +4567,15 @@ display:
           separator: ', '
           field_api_classes: false
           plugin_id: field
-        uid:
-          id: uid
-          table: node_field_data
-          field: uid
+        field_bureau:
+          id: field_bureau
+          table: node__field_bureau
+          field: field_bureau
           relationship: none
           group_type: group
           admin_label: ''
-          label: 'Authored by'
-          exclude: true
+          label: ''
+          exclude: false
           alter:
             alter_text: false
             text: ''
@@ -5359,7 +4607,7 @@ display:
           element_class: ''
           element_label_type: ''
           element_label_class: ''
-          element_label_colon: true
+          element_label_colon: false
           element_wrapper_type: ''
           element_wrapper_class: ''
           element_default_classes: true
@@ -5381,21 +4629,19 @@ display:
           multi_type: separator
           separator: ', '
           field_api_classes: false
-          entity_type: node
-          entity_field: uid
           plugin_id: field
-        created:
-          id: created
-          table: node_field_data
-          field: created
+        field_introduced_by:
+          id: field_introduced_by
+          table: node__field_introduced_by
+          field: field_introduced_by
           relationship: none
           group_type: group
           admin_label: ''
-          label: Created
+          label: ''
           exclude: false
           alter:
-            alter_text: true
-            text: "{{ created }}<br>\r\nby {{ uid }} "
+            alter_text: false
+            text: "Introduce by {{ field_introduced_by }}<br>\r\n{{ field_bureau }}"
             make_link: false
             path: ''
             absolute: false
@@ -5424,7 +4670,7 @@ display:
           element_class: ''
           element_label_type: ''
           element_label_class: ''
-          element_label_colon: true
+          element_label_colon: false
           element_wrapper_type: ''
           element_wrapper_class: ''
           element_default_classes: true
@@ -5432,13 +4678,11 @@ display:
           hide_empty: false
           empty_zero: false
           hide_alter_empty: true
-          click_sort_column: value
-          type: timestamp
+          click_sort_column: target_id
+          type: entity_reference_label
           settings:
-            date_format: short
-            custom_date_format: ''
-            timezone: ''
-          group_column: value
+            link: false
+          group_column: target_id
           group_columns: {  }
           group_rows: true
           delta_limit: 0
@@ -5448,8 +4692,6 @@ display:
           multi_type: separator
           separator: ', '
           field_api_classes: false
-          entity_type: node
-          entity_field: created
           plugin_id: field
         revision_uid:
           id: revision_uid
@@ -5583,73 +4825,6 @@ display:
           entity_type: node
           entity_field: changed
           plugin_id: field
-        status:
-          id: status
-          table: node_field_data
-          field: status
-          relationship: none
-          group_type: group
-          admin_label: ''
-          label: Published
-          exclude: true
-          alter:
-            alter_text: false
-            text: ''
-            make_link: false
-            path: ''
-            absolute: false
-            external: false
-            replace_spaces: false
-            path_case: none
-            trim_whitespace: false
-            alt: ''
-            rel: ''
-            link_class: ''
-            prefix: ''
-            suffix: ''
-            target: ''
-            nl2br: false
-            max_length: 0
-            word_boundary: true
-            ellipsis: true
-            more_link: false
-            more_link_text: ''
-            more_link_path: ''
-            strip_tags: false
-            trim: false
-            preserve_tags: ''
-            html: false
-          element_type: ''
-          element_class: ''
-          element_label_type: ''
-          element_label_class: ''
-          element_label_colon: false
-          element_wrapper_type: ''
-          element_wrapper_class: ''
-          element_default_classes: true
-          empty: ''
-          hide_empty: false
-          empty_zero: false
-          hide_alter_empty: true
-          click_sort_column: value
-          type: boolean
-          settings:
-            format: custom
-            format_custom_true: Published
-            format_custom_false: Unpublished
-          group_column: value
-          group_columns: {  }
-          group_rows: true
-          delta_limit: 0
-          delta_offset: 0
-          delta_reversed: false
-          delta_first_last: false
-          multi_type: separator
-          separator: ', '
-          field_api_classes: false
-          entity_type: node
-          entity_field: status
-          plugin_id: field
         moderation_state:
           id: moderation_state
           table: node_field_data
@@ -5660,7 +4835,7 @@ display:
           label: 'Workflow state'
           exclude: false
           alter:
-            alter_text: true
+            alter_text: false
             text: "{{ moderation_state }}<br>\r\n{{ status }}"
             make_link: false
             path: ''
@@ -5775,7 +4950,7 @@ display:
           group_type: group
           admin_label: ''
           order: ASC
-          exposed: true
+          exposed: false
           expose:
             label: 'Council Date'
           granularity: second
@@ -5826,15 +5001,14 @@ display:
           empty: true
           content: "<p>Displaying @start - @end of @total documents to be dispositioned ordered by requested council date.</p>\r\n<p>Disposition and disposition notes should be added as part of the managing the agenda during council session. This list is for adding ordinance and resolution numbers and setting the final disposition date. As you add the final document status, the document will move to the document archive. <a href=\"/council/documents/manage/disposition/archive\">Manage previously dispositioned documents</a>.</p>"
           plugin_id: result
+      use_admin_theme: 1
     cache_metadata:
-      max-age: -1
+      max-age: 0
       contexts:
         - 'languages:language_content'
         - 'languages:language_interface'
         - url
         - url.query_args
-        - 'url.query_args:sort_by'
-        - 'url.query_args:sort_order'
         - user
         - 'user.node_grants:view'
         - user.roles
@@ -5846,7 +5020,6 @@ display:
         - 'config:field.storage.node.field_date_of_final_disposition'
         - 'config:field.storage.node.field_introduced_by'
         - 'config:field.storage.node.field_requested_council_date'
-        - 'config:field.storage.node.field_reviewer'
         - 'config:field.storage.relation.field_agenda_item_disposition'
         - 'config:field.storage.relation.field_agenda_item_number'
         - 'config:field.storage.relation.field_disposition_notes'
@@ -6252,6 +5425,7 @@ display:
           expose:
             label: ''
           plugin_id: standard
+      use_admin_theme: 1
     cache_metadata:
       max-age: -1
       contexts:
@@ -6268,30 +5442,27 @@ display:
         - 'config:field.storage.node.field_council_document_status'
         - 'config:field.storage.node.field_council_document_type'
         - 'config:field.storage.node.field_introduced_by'
-        - 'config:field.storage.node.field_needs_attorney_review'
         - 'config:field.storage.node.field_requested_council_date'
         - 'config:field.storage.node.field_requested_start_time'
-        - 'config:field.storage.node.field_reviewed_by_city_attorney'
-        - 'config:field.storage.node.field_reviewer'
         - 'config:field.storage.node.field_time_requested'
         - 'config:workflow_list'
   page_4:
     display_plugin: page
     id: page_4
-    display_title: 'Past Documents'
-    position: 5
+    display_title: Templates
+    position: 4
     display_options:
       display_extenders:
         metatag_display_extender: {  }
-      path: council/documents/manage/disposition/archive
+      path: council/documents/templates
       display_description: ''
       menu:
-        type: none
-        title: Disposition
+        type: normal
+        title: Templates
         description: ''
         expanded: false
         parent: ''
-        weight: 20
+        weight: 2
         context: '0'
         menu_name: council-toolbar
       tab_options:
@@ -6299,17 +5470,18 @@ display:
         title: ''
         description: ''
         weight: 0
-      title: 'Previously Dispositioned Council Documents (Archive)'
+      arguments: {  }
       defaults:
+        arguments: false
         title: false
         filters: false
         filter_groups: false
+        sorts: false
+        fields: false
         style: false
         row: false
-        fields: false
-        sorts: false
-        relationships: false
         header: false
+      title: 'Council Document Templates'
       filters:
         type:
           id: type
@@ -6354,52 +5526,6 @@ display:
           entity_type: node
           entity_field: type
           plugin_id: bundle
-        title:
-          id: title
-          table: node_field_data
-          field: title
-          relationship: none
-          group_type: group
-          admin_label: ''
-          operator: contains
-          value: ''
-          group: 1
-          exposed: true
-          expose:
-            operator_id: title_op
-            label: 'Document name contains'
-            description: ''
-            use_operator: false
-            operator: title_op
-            identifier: title
-            required: false
-            remember: false
-            multiple: false
-            remember_roles:
-              authenticated: authenticated
-              anonymous: '0'
-              administrator: '0'
-              sitewide_editor: '0'
-              code_editor: '0'
-              council_clerk: '0'
-            placeholder: ''
-            operator_limit_selection: false
-            operator_list: {  }
-          is_grouped: false
-          group_info:
-            label: ''
-            description: ''
-            identifier: ''
-            optional: true
-            widget: select
-            multiple: false
-            remember: false
-            default_group: All
-            default_group_multiple: {  }
-            group_items: {  }
-          entity_type: node
-          entity_field: title
-          plugin_id: string
         field_council_document_type_target_id:
           id: field_council_document_type_target_id
           table: node__field_council_document_type
@@ -6450,217 +5576,15 @@ display:
           hierarchy: false
           error_message: true
           plugin_id: taxonomy_index_tid
-        status:
-          id: status
+        title:
+          id: title
           table: node_field_data
-          field: status
+          field: title
           relationship: none
           group_type: group
           admin_label: ''
-          operator: '='
-          value: All
-          group: 1
-          exposed: true
-          expose:
-            operator_id: ''
-            label: Published
-            description: ''
-            use_operator: false
-            operator: status_op
-            identifier: published
-            required: false
-            remember: false
-            multiple: false
-            remember_roles:
-              authenticated: authenticated
-              anonymous: '0'
-              administrator: '0'
-              sitewide_editor: '0'
-              code_editor: '0'
-              council_clerk: '0'
-            operator_limit_selection: false
-            operator_list: {  }
-          is_grouped: false
-          group_info:
-            label: ''
-            description: ''
-            identifier: ''
-            optional: true
-            widget: select
-            multiple: false
-            remember: false
-            default_group: All
-            default_group_multiple: {  }
-            group_items: {  }
-          plugin_id: boolean
-          entity_type: node
-          entity_field: status
-        moderation_state:
-          id: moderation_state
-          table: node_field_data
-          field: moderation_state
-          relationship: none
-          group_type: group
-          admin_label: ''
-          operator: in
-          value: {  }
-          group: 1
-          exposed: true
-          expose:
-            operator_id: moderation_state_op
-            label: 'Workflow state'
-            description: ''
-            use_operator: false
-            operator: moderation_state_op
-            identifier: workflow
-            required: false
-            remember: false
-            multiple: false
-            remember_roles:
-              authenticated: authenticated
-              anonymous: '0'
-              administrator: '0'
-              sitewide_editor: '0'
-              code_editor: '0'
-              council_clerk: '0'
-            reduce: false
-            operator_limit_selection: false
-            operator_list: {  }
-          is_grouped: false
-          group_info:
-            label: ''
-            description: ''
-            identifier: ''
-            optional: true
-            widget: select
-            multiple: false
-            remember: false
-            default_group: All
-            default_group_multiple: {  }
-            group_items: {  }
-          entity_type: node
-          plugin_id: moderation_state_filter
-        uid:
-          id: uid
-          table: node_field_data
-          field: uid
-          relationship: none
-          group_type: group
-          admin_label: ''
-          operator: in
-          value: {  }
-          group: 1
-          exposed: true
-          expose:
-            operator_id: uid_op
-            label: 'Authored by'
-            description: ''
-            use_operator: false
-            operator: uid_op
-            operator_limit_selection: false
-            operator_list: {  }
-            identifier: uid
-            required: false
-            remember: false
-            multiple: false
-            remember_roles:
-              authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              attorney: '0'
-              council_author: '0'
-              council_clerk: '0'
-              park_editor: '0'
-              code_editor: '0'
-              group_creator: '0'
-              alert_editor: '0'
-              sitewide_editor: '0'
-              administrator: '0'
-            reduce: false
-          is_grouped: false
-          group_info:
-            label: ''
-            description: ''
-            identifier: ''
-            optional: true
-            widget: select
-            multiple: false
-            remember: false
-            default_group: All
-            default_group_multiple: {  }
-            group_items: {  }
-          entity_type: node
-          entity_field: uid
-          plugin_id: user_name
-        field_council_document_status_target_id_1:
-          id: field_council_document_status_target_id_1
-          table: node__field_council_document_status
-          field: field_council_document_status_target_id
-          relationship: none
-          group_type: group
-          admin_label: ''
-          operator: or
-          value: {  }
-          group: 1
-          exposed: true
-          expose:
-            operator_id: field_council_document_status_target_id_1_op
-            label: Status
-            description: ''
-            use_operator: false
-            operator: field_council_document_status_target_id_1_op
-            operator_limit_selection: false
-            operator_list: {  }
-            identifier: document_status_id
-            required: false
-            remember: false
-            multiple: false
-            remember_roles:
-              authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              attorney: '0'
-              council_author: '0'
-              council_clerk: '0'
-              park_editor: '0'
-              code_editor: '0'
-              group_creator: '0'
-              alert_editor: '0'
-              sitewide_editor: '0'
-              administrator: '0'
-            reduce: false
-          is_grouped: false
-          group_info:
-            label: ''
-            description: ''
-            identifier: ''
-            optional: true
-            widget: select
-            multiple: false
-            remember: false
-            default_group: All
-            default_group_multiple: {  }
-            group_items: {  }
-          reduce_duplicates: false
-          type: select
-          limit: true
-          vid: council_document_status
-          hierarchy: false
-          error_message: true
-          plugin_id: taxonomy_index_tid
-        field_council_document_status_target_id:
-          id: field_council_document_status_target_id
-          table: node__field_council_document_status
-          field: field_council_document_status_target_id
-          relationship: none
-          group_type: group
-          admin_label: ''
-          operator: 'not empty'
-          value: {  }
+          operator: contains
+          value: '[Template]'
           group: 1
           exposed: false
           expose:
@@ -6677,7 +5601,7 @@ display:
             multiple: false
             remember_roles:
               authenticated: authenticated
-            reduce: false
+            placeholder: ''
           is_grouped: false
           group_info:
             label: ''
@@ -6690,662 +5614,41 @@ display:
             default_group: All
             default_group_multiple: {  }
             group_items: {  }
-          reduce_duplicates: false
-          type: select
-          limit: true
-          vid: council_document_status
-          hierarchy: false
-          error_message: true
-          plugin_id: taxonomy_index_tid
+          entity_type: node
+          entity_field: title
+          plugin_id: string
       filter_groups:
         operator: AND
         groups:
           1: AND
-      style:
-        type: table
-        options:
-          grouping:
-            -
-              field: field_requested_council_date
-              rendered: true
-              rendered_strip: false
-          row_class: ''
-          default_row_class: true
-          override: false
-          sticky: false
-          caption: ''
-          summary: ''
-          description: ''
-          columns:
-            field_reviewer: field_reviewer
-            field_council_document_status: field_council_document_status
-            field_council_document_type: field_council_document_type
-            field_amended_by_council: field_amended_by_council
-            title: title
-            field_requested_council_date: field_requested_council_date
-            field_bureau: field_bureau
-            uid: uid
-            created: created
-            revision_uid: revision_uid
-            changed: changed
-            status: status
-            moderation_state: moderation_state
-            edit_node: edit_node
-          info:
-            field_reviewer:
-              align: ''
-              separator: ''
-              empty_column: false
-              responsive: ''
-            field_council_document_status:
-              sortable: false
-              default_sort_order: asc
-              align: ''
-              separator: ''
-              empty_column: false
-              responsive: ''
-            field_council_document_type:
-              sortable: false
-              default_sort_order: asc
-              align: ''
-              separator: ''
-              empty_column: false
-              responsive: ''
-            field_amended_by_council:
-              sortable: false
-              default_sort_order: asc
-              align: ''
-              separator: ''
-              empty_column: false
-              responsive: ''
-            title:
-              sortable: false
-              default_sort_order: asc
-              align: ''
-              separator: ''
-              empty_column: false
-              responsive: ''
-            field_requested_council_date:
-              sortable: false
-              default_sort_order: desc
-              align: ''
-              separator: ''
-              empty_column: false
-              responsive: ''
-            field_bureau:
-              align: ''
-              separator: ''
-              empty_column: false
-              responsive: ''
-            uid:
-              sortable: false
-              default_sort_order: asc
-              align: ''
-              separator: ''
-              empty_column: false
-              responsive: ''
-            created:
-              sortable: false
-              default_sort_order: asc
-              align: ''
-              separator: ''
-              empty_column: false
-              responsive: ''
-            revision_uid:
-              sortable: false
-              default_sort_order: asc
-              align: ''
-              separator: ''
-              empty_column: false
-              responsive: ''
-            changed:
-              sortable: false
-              default_sort_order: desc
-              align: ''
-              separator: ''
-              empty_column: false
-              responsive: ''
-            status:
-              sortable: false
-              default_sort_order: desc
-              align: ''
-              separator: ''
-              empty_column: false
-              responsive: ''
-            moderation_state:
-              sortable: false
-              default_sort_order: asc
-              align: ''
-              separator: ''
-              empty_column: false
-              responsive: ''
-            edit_node:
-              sortable: false
-              default_sort_order: asc
-              align: ''
-              separator: ''
-              empty_column: false
-              responsive: ''
-          default: '-1'
-          empty_table: false
-      row:
-        type: fields
-        options:
-          default_field_elements: true
-          inline:
-            field_start_time: field_start_time
-            title: title
-          separator: ''
-          hide_empty: false
-      fields:
-        field_requested_council_date:
-          id: field_requested_council_date
+      sorts:
+        field_requested_council_date_value:
+          id: field_requested_council_date_value
           table: node__field_requested_council_date
-          field: field_requested_council_date
+          field: field_requested_council_date_value
           relationship: none
           group_type: group
           admin_label: ''
-          label: ''
-          exclude: true
-          alter:
-            alter_text: true
-            text: '<h2>{{ field_requested_council_date }}</h2>'
-            make_link: false
-            path: ''
-            absolute: false
-            external: false
-            replace_spaces: false
-            path_case: none
-            trim_whitespace: false
-            alt: ''
-            rel: ''
-            link_class: ''
-            prefix: ''
-            suffix: ''
-            target: ''
-            nl2br: false
-            max_length: 0
-            word_boundary: true
-            ellipsis: true
-            more_link: false
-            more_link_text: ''
-            more_link_path: ''
-            strip_tags: false
-            trim: false
-            preserve_tags: ''
-            html: false
-          element_type: ''
-          element_class: ''
-          element_label_type: ''
-          element_label_class: ''
-          element_label_colon: false
-          element_wrapper_type: ''
-          element_wrapper_class: ''
-          element_default_classes: true
-          empty: ''
-          hide_empty: false
-          empty_zero: false
-          hide_alter_empty: true
-          click_sort_column: value
-          type: datetime_default
-          settings:
-            timezone_override: ''
-            format_type: month_day_year
-          group_column: value
-          group_columns: {  }
-          group_rows: true
-          delta_limit: 0
-          delta_offset: 0
-          delta_reversed: false
-          delta_first_last: false
-          multi_type: separator
-          separator: ', '
-          field_api_classes: false
-          plugin_id: field
-        field_reviewer:
-          id: field_reviewer
-          table: node__field_reviewer
-          field: field_reviewer
-          relationship: none
-          group_type: group
-          admin_label: ''
-          label: Reviewer
-          exclude: true
-          alter:
-            alter_text: false
-            text: ''
-            make_link: false
-            path: ''
-            absolute: false
-            external: false
-            replace_spaces: false
-            path_case: none
-            trim_whitespace: false
-            alt: ''
-            rel: ''
-            link_class: ''
-            prefix: ''
-            suffix: ''
-            target: ''
-            nl2br: false
-            max_length: 0
-            word_boundary: true
-            ellipsis: true
-            more_link: false
-            more_link_text: ''
-            more_link_path: ''
-            strip_tags: false
-            trim: false
-            preserve_tags: ''
-            html: false
-          element_type: ''
-          element_class: ''
-          element_label_type: ''
-          element_label_class: ''
-          element_label_colon: true
-          element_wrapper_type: ''
-          element_wrapper_class: ''
-          element_default_classes: false
-          empty: ''
-          hide_empty: false
-          empty_zero: false
-          hide_alter_empty: true
-          click_sort_column: target_id
-          type: entity_reference_label
-          settings:
-            link: false
-          group_column: target_id
-          group_columns: {  }
-          group_rows: true
-          delta_limit: 0
-          delta_offset: 0
-          delta_reversed: false
-          delta_first_last: false
-          multi_type: separator
-          separator: ', '
-          field_api_classes: false
-          plugin_id: field
-        field_council_document_status:
-          id: field_council_document_status
-          table: node__field_council_document_status
-          field: field_council_document_status
-          relationship: none
-          group_type: group
-          admin_label: ''
-          label: Status
-          exclude: false
-          alter:
-            alter_text: false
-            text: ''
-            make_link: false
-            path: ''
-            absolute: false
-            external: false
-            replace_spaces: false
-            path_case: none
-            trim_whitespace: false
-            alt: ''
-            rel: ''
-            link_class: ''
-            prefix: ''
-            suffix: ''
-            target: ''
-            nl2br: false
-            max_length: 0
-            word_boundary: true
-            ellipsis: true
-            more_link: false
-            more_link_text: ''
-            more_link_path: ''
-            strip_tags: false
-            trim: false
-            preserve_tags: ''
-            html: false
-          element_type: ''
-          element_class: ''
-          element_label_type: ''
-          element_label_class: ''
-          element_label_colon: true
-          element_wrapper_type: ''
-          element_wrapper_class: ''
-          element_default_classes: true
-          empty: ''
-          hide_empty: false
-          empty_zero: false
-          hide_alter_empty: true
-          click_sort_column: target_id
-          type: entity_reference_label
-          settings:
-            link: false
-          group_column: target_id
-          group_columns: {  }
-          group_rows: true
-          delta_limit: 0
-          delta_offset: 0
-          delta_reversed: false
-          delta_first_last: false
-          multi_type: separator
-          separator: ', '
-          field_api_classes: false
-          plugin_id: field
-        field_agenda_item_number:
-          id: field_agenda_item_number
-          table: relation__field_agenda_item_number
-          field: field_agenda_item_number
-          relationship: reverse__relation__field_council_document
-          group_type: group
-          admin_label: ''
-          label: Number
-          exclude: false
-          alter:
-            alter_text: false
-            text: ''
-            make_link: false
-            path: ''
-            absolute: false
-            external: false
-            replace_spaces: false
-            path_case: none
-            trim_whitespace: false
-            alt: ''
-            rel: ''
-            link_class: ''
-            prefix: ''
-            suffix: ''
-            target: ''
-            nl2br: false
-            max_length: 0
-            word_boundary: true
-            ellipsis: true
-            more_link: false
-            more_link_text: ''
-            more_link_path: ''
-            strip_tags: false
-            trim: false
-            preserve_tags: ''
-            html: false
-          element_type: ''
-          element_class: ''
-          element_label_type: ''
-          element_label_class: ''
-          element_label_colon: true
-          element_wrapper_type: ''
-          element_wrapper_class: ''
-          element_default_classes: true
-          empty: ''
-          hide_empty: false
-          empty_zero: false
-          hide_alter_empty: true
-          click_sort_column: value
-          type: number_integer
-          settings:
-            thousand_separator: ''
-            prefix_suffix: true
-          group_column: value
-          group_columns: {  }
-          group_rows: true
-          delta_limit: 0
-          delta_offset: 0
-          delta_reversed: false
-          delta_first_last: false
-          multi_type: separator
-          separator: ', '
-          field_api_classes: false
-          plugin_id: field
-        field_council_document_type:
-          id: field_council_document_type
-          table: node__field_council_document_type
-          field: field_council_document_type
-          relationship: none
-          group_type: group
-          admin_label: ''
-          label: 'Document type'
-          exclude: true
-          alter:
-            alter_text: false
-            text: ''
-            make_link: false
-            path: ''
-            absolute: false
-            external: false
-            replace_spaces: false
-            path_case: none
-            trim_whitespace: false
-            alt: ''
-            rel: ''
-            link_class: ''
-            prefix: ''
-            suffix: ''
-            target: ''
-            nl2br: false
-            max_length: 0
-            word_boundary: true
-            ellipsis: true
-            more_link: false
-            more_link_text: ''
-            more_link_path: ''
-            strip_tags: false
-            trim: false
-            preserve_tags: ''
-            html: false
-          element_type: ''
-          element_class: ''
-          element_label_type: ''
-          element_label_class: ''
-          element_label_colon: false
-          element_wrapper_type: ''
-          element_wrapper_class: ''
-          element_default_classes: true
-          empty: ''
-          hide_empty: false
-          empty_zero: false
-          hide_alter_empty: true
-          click_sort_column: target_id
-          type: entity_reference_label
-          settings:
-            link: false
-          group_column: target_id
-          group_columns: {  }
-          group_rows: true
-          delta_limit: 0
-          delta_offset: 0
-          delta_reversed: false
-          delta_first_last: false
-          multi_type: separator
-          separator: ', '
-          field_api_classes: false
-          plugin_id: field
-        field_bureau:
-          id: field_bureau
-          table: node__field_bureau
-          field: field_bureau
-          relationship: none
-          group_type: group
-          admin_label: ''
-          label: ''
-          exclude: true
-          alter:
-            alter_text: false
-            text: ''
-            make_link: false
-            path: ''
-            absolute: false
-            external: false
-            replace_spaces: false
-            path_case: none
-            trim_whitespace: false
-            alt: ''
-            rel: ''
-            link_class: ''
-            prefix: ''
-            suffix: ''
-            target: ''
-            nl2br: false
-            max_length: 0
-            word_boundary: true
-            ellipsis: true
-            more_link: false
-            more_link_text: ''
-            more_link_path: ''
-            strip_tags: false
-            trim: false
-            preserve_tags: ''
-            html: false
-          element_type: ''
-          element_class: ''
-          element_label_type: ''
-          element_label_class: ''
-          element_label_colon: false
-          element_wrapper_type: ''
-          element_wrapper_class: ''
-          element_default_classes: true
-          empty: ''
-          hide_empty: false
-          empty_zero: false
-          hide_alter_empty: true
-          click_sort_column: target_id
-          type: entity_reference_label
-          settings:
-            link: false
-          group_column: target_id
-          group_columns: {  }
-          group_rows: true
-          delta_limit: 0
-          delta_offset: 0
-          delta_reversed: false
-          delta_first_last: false
-          multi_type: separator
-          separator: ', '
-          field_api_classes: false
-          plugin_id: field
-        field_introduced_by:
-          id: field_introduced_by
+          order: DESC
+          exposed: false
+          expose:
+            label: ''
+          granularity: second
+          plugin_id: datetime
+        field_introduced_by_target_id:
+          id: field_introduced_by_target_id
           table: node__field_introduced_by
-          field: field_introduced_by
+          field: field_introduced_by_target_id
           relationship: none
           group_type: group
           admin_label: ''
-          label: ''
-          exclude: true
-          alter:
-            alter_text: true
-            text: "Introduce by {{ field_introduced_by }}<br>\r\n{{ field_bureau }}"
-            make_link: false
-            path: ''
-            absolute: false
-            external: false
-            replace_spaces: false
-            path_case: none
-            trim_whitespace: false
-            alt: ''
-            rel: ''
-            link_class: ''
-            prefix: ''
-            suffix: ''
-            target: ''
-            nl2br: false
-            max_length: 0
-            word_boundary: true
-            ellipsis: true
-            more_link: false
-            more_link_text: ''
-            more_link_path: ''
-            strip_tags: false
-            trim: false
-            preserve_tags: ''
-            html: false
-          element_type: ''
-          element_class: ''
-          element_label_type: ''
-          element_label_class: ''
-          element_label_colon: false
-          element_wrapper_type: ''
-          element_wrapper_class: ''
-          element_default_classes: true
-          empty: ''
-          hide_empty: false
-          empty_zero: false
-          hide_alter_empty: true
-          click_sort_column: target_id
-          type: entity_reference_label
-          settings:
-            link: false
-          group_column: target_id
-          group_columns: {  }
-          group_rows: true
-          delta_limit: 0
-          delta_offset: 0
-          delta_reversed: false
-          delta_first_last: false
-          multi_type: separator
-          separator: ', '
-          field_api_classes: false
-          plugin_id: field
-        field_amended_by_council:
-          id: field_amended_by_council
-          table: node__field_amended_by_council
-          field: field_amended_by_council
-          relationship: none
-          group_type: group
-          admin_label: ''
-          label: ''
-          exclude: true
-          alter:
-            alter_text: false
-            text: ''
-            make_link: false
-            path: ''
-            absolute: false
-            external: false
-            replace_spaces: false
-            path_case: none
-            trim_whitespace: false
-            alt: ''
-            rel: ''
-            link_class: ''
-            prefix: ''
-            suffix: ''
-            target: ''
-            nl2br: false
-            max_length: 0
-            word_boundary: true
-            ellipsis: true
-            more_link: false
-            more_link_text: ''
-            more_link_path: ''
-            strip_tags: false
-            trim: false
-            preserve_tags: ''
-            html: false
-          element_type: ''
-          element_class: ''
-          element_label_type: ''
-          element_label_class: ''
-          element_label_colon: false
-          element_wrapper_type: ''
-          element_wrapper_class: ''
-          element_default_classes: true
-          empty: ''
-          hide_empty: false
-          empty_zero: false
-          hide_alter_empty: true
-          click_sort_column: value
-          type: boolean
-          settings:
-            format: custom
-            format_custom_true: 'as Amended by Council'
-            format_custom_false: ''
-          group_column: value
-          group_columns: {  }
-          group_rows: true
-          delta_limit: 0
-          delta_offset: 0
-          delta_reversed: false
-          delta_first_last: false
-          multi_type: separator
-          separator: ', '
-          field_api_classes: false
-          plugin_id: field
+          order: ASC
+          exposed: false
+          expose:
+            label: ''
+          plugin_id: standard
+      use_admin_theme: 1
+      fields:
         title:
           id: title
           table: node_field_data
@@ -7353,11 +5656,11 @@ display:
           relationship: none
           group_type: group
           admin_label: ''
-          label: 'Council Document'
+          label: 'Template Name'
           exclude: false
           alter:
-            alter_text: true
-            text: "<h2 class=\"h5 mb-0\">{{ title }}</h2>\r\n{{ field_council_document_type }} {{ field_council_document_status }} {{ field_amended_by_council }}<br>\r\n{{ field_introduced_by }}<br>\r\n{% if field_reviewer %}<div class=\"council-document__reviewers\">Reviewers: {{ field_reviewer }}</div>{% endif %}"
+            alter_text: false
+            text: ''
             make_link: false
             path: ''
             absolute: false
@@ -7398,8 +5701,9 @@ display:
           type: string
           settings:
             link_to_entity: true
-          group_column: value
-          group_columns: {  }
+          group_column: entity_id
+          group_columns:
+            entity_id: entity_id
           group_rows: true
           delta_limit: 0
           delta_offset: 0
@@ -7411,79 +5715,15 @@ display:
           entity_type: node
           entity_field: title
           plugin_id: field
-        field_date_of_final_disposition:
-          id: field_date_of_final_disposition
-          table: node__field_date_of_final_disposition
-          field: field_date_of_final_disposition
+        field_council_document_type:
+          id: field_council_document_type
+          table: node__field_council_document_type
+          field: field_council_document_type
           relationship: none
           group_type: group
           admin_label: ''
-          label: ''
-          exclude: true
-          alter:
-            alter_text: true
-            text: '{{ field_date_of_final_disposition }} <br>'
-            make_link: false
-            path: ''
-            absolute: false
-            external: false
-            replace_spaces: false
-            path_case: none
-            trim_whitespace: false
-            alt: ''
-            rel: ''
-            link_class: ''
-            prefix: ''
-            suffix: ''
-            target: ''
-            nl2br: false
-            max_length: 0
-            word_boundary: true
-            ellipsis: true
-            more_link: false
-            more_link_text: ''
-            more_link_path: ''
-            strip_tags: false
-            trim: false
-            preserve_tags: ''
-            html: false
-          element_type: ''
-          element_class: ''
-          element_label_type: ''
-          element_label_class: ''
-          element_label_colon: false
-          element_wrapper_type: ''
-          element_wrapper_class: ''
-          element_default_classes: true
-          empty: ''
-          hide_empty: false
-          empty_zero: false
-          hide_alter_empty: true
-          click_sort_column: value
-          type: datetime_default
-          settings:
-            timezone_override: ''
-            format_type: month_day_year
-          group_column: value
-          group_columns: {  }
-          group_rows: true
-          delta_limit: 0
-          delta_offset: 0
-          delta_reversed: false
-          delta_first_last: false
-          multi_type: separator
-          separator: ', '
-          field_api_classes: false
-          plugin_id: field
-        field_disposition_notes:
-          id: field_disposition_notes
-          table: relation__field_disposition_notes
-          field: field_disposition_notes
-          relationship: reverse__relation__field_council_document
-          group_type: group
-          admin_label: ''
-          label: ''
-          exclude: true
+          label: 'Document type'
+          exclude: false
           alter:
             alter_text: false
             text: ''
@@ -7523,68 +5763,6 @@ display:
           hide_empty: false
           empty_zero: false
           hide_alter_empty: true
-          click_sort_column: value
-          type: basic_string
-          settings: {  }
-          group_column: value
-          group_columns: {  }
-          group_rows: true
-          delta_limit: 0
-          delta_offset: 0
-          delta_reversed: false
-          delta_first_last: false
-          multi_type: separator
-          separator: ', '
-          field_api_classes: false
-          plugin_id: field
-        field_agenda_item_disposition:
-          id: field_agenda_item_disposition
-          table: relation__field_agenda_item_disposition
-          field: field_agenda_item_disposition
-          relationship: reverse__relation__field_council_document
-          group_type: group
-          admin_label: ''
-          label: Disposition
-          exclude: false
-          alter:
-            alter_text: true
-            text: "{{ field_agenda_item_disposition }}<br>\r\n{{ field_date_of_final_disposition }}\r\n{{ field_disposition_notes }}"
-            make_link: false
-            path: ''
-            absolute: false
-            external: false
-            replace_spaces: false
-            path_case: none
-            trim_whitespace: false
-            alt: ''
-            rel: ''
-            link_class: ''
-            prefix: ''
-            suffix: ''
-            target: ''
-            nl2br: false
-            max_length: 0
-            word_boundary: true
-            ellipsis: true
-            more_link: false
-            more_link_text: ''
-            more_link_path: ''
-            strip_tags: false
-            trim: false
-            preserve_tags: ''
-            html: false
-          element_type: ''
-          element_class: ''
-          element_label_type: ''
-          element_label_class: ''
-          element_label_colon: true
-          element_wrapper_type: ''
-          element_wrapper_class: ''
-          element_default_classes: true
-          empty: ''
-          hide_empty: false
-          empty_zero: false
-          hide_alter_empty: true
           click_sort_column: target_id
           type: entity_reference_label
           settings:
@@ -7599,203 +5777,6 @@ display:
           multi_type: separator
           separator: ', '
           field_api_classes: false
-          plugin_id: field
-        uid:
-          id: uid
-          table: node_field_data
-          field: uid
-          relationship: none
-          group_type: group
-          admin_label: ''
-          label: 'Authored by'
-          exclude: true
-          alter:
-            alter_text: false
-            text: ''
-            make_link: false
-            path: ''
-            absolute: false
-            external: false
-            replace_spaces: false
-            path_case: none
-            trim_whitespace: false
-            alt: ''
-            rel: ''
-            link_class: ''
-            prefix: ''
-            suffix: ''
-            target: ''
-            nl2br: false
-            max_length: 0
-            word_boundary: true
-            ellipsis: true
-            more_link: false
-            more_link_text: ''
-            more_link_path: ''
-            strip_tags: false
-            trim: false
-            preserve_tags: ''
-            html: false
-          element_type: ''
-          element_class: ''
-          element_label_type: ''
-          element_label_class: ''
-          element_label_colon: true
-          element_wrapper_type: ''
-          element_wrapper_class: ''
-          element_default_classes: true
-          empty: ''
-          hide_empty: false
-          empty_zero: false
-          hide_alter_empty: true
-          click_sort_column: target_id
-          type: entity_reference_label
-          settings:
-            link: false
-          group_column: target_id
-          group_columns: {  }
-          group_rows: true
-          delta_limit: 0
-          delta_offset: 0
-          delta_reversed: false
-          delta_first_last: false
-          multi_type: separator
-          separator: ', '
-          field_api_classes: false
-          entity_type: node
-          entity_field: uid
-          plugin_id: field
-        created:
-          id: created
-          table: node_field_data
-          field: created
-          relationship: none
-          group_type: group
-          admin_label: ''
-          label: Created
-          exclude: false
-          alter:
-            alter_text: true
-            text: "{{ created }}<br>\r\nby {{ uid }} "
-            make_link: false
-            path: ''
-            absolute: false
-            external: false
-            replace_spaces: false
-            path_case: none
-            trim_whitespace: false
-            alt: ''
-            rel: ''
-            link_class: ''
-            prefix: ''
-            suffix: ''
-            target: ''
-            nl2br: false
-            max_length: 0
-            word_boundary: true
-            ellipsis: true
-            more_link: false
-            more_link_text: ''
-            more_link_path: ''
-            strip_tags: false
-            trim: false
-            preserve_tags: ''
-            html: false
-          element_type: ''
-          element_class: ''
-          element_label_type: ''
-          element_label_class: ''
-          element_label_colon: true
-          element_wrapper_type: ''
-          element_wrapper_class: ''
-          element_default_classes: true
-          empty: ''
-          hide_empty: false
-          empty_zero: false
-          hide_alter_empty: true
-          click_sort_column: value
-          type: timestamp
-          settings:
-            date_format: short
-            custom_date_format: ''
-            timezone: ''
-          group_column: value
-          group_columns: {  }
-          group_rows: true
-          delta_limit: 0
-          delta_offset: 0
-          delta_reversed: false
-          delta_first_last: false
-          multi_type: separator
-          separator: ', '
-          field_api_classes: false
-          entity_type: node
-          entity_field: created
-          plugin_id: field
-        revision_uid:
-          id: revision_uid
-          table: node_revision
-          field: revision_uid
-          relationship: none
-          group_type: group
-          admin_label: ''
-          label: ''
-          exclude: true
-          alter:
-            alter_text: false
-            text: ''
-            make_link: false
-            path: ''
-            absolute: false
-            external: false
-            replace_spaces: false
-            path_case: none
-            trim_whitespace: false
-            alt: ''
-            rel: ''
-            link_class: ''
-            prefix: ''
-            suffix: ''
-            target: ''
-            nl2br: false
-            max_length: 0
-            word_boundary: true
-            ellipsis: true
-            more_link: false
-            more_link_text: ''
-            more_link_path: ''
-            strip_tags: false
-            trim: false
-            preserve_tags: ''
-            html: false
-          element_type: ''
-          element_class: ''
-          element_label_type: ''
-          element_label_class: ''
-          element_label_colon: true
-          element_wrapper_type: ''
-          element_wrapper_class: ''
-          element_default_classes: true
-          empty: ''
-          hide_empty: false
-          empty_zero: false
-          hide_alter_empty: true
-          click_sort_column: target_id
-          type: entity_reference_label
-          settings:
-            link: false
-          group_column: target_id
-          group_columns: {  }
-          group_rows: true
-          delta_limit: 0
-          delta_offset: 0
-          delta_reversed: false
-          delta_first_last: false
-          multi_type: separator
-          separator: ', '
-          field_api_classes: false
-          entity_type: node
-          entity_field: revision_uid
           plugin_id: field
         changed:
           id: changed
@@ -7807,7 +5788,7 @@ display:
           label: Changed
           exclude: false
           alter:
-            alter_text: true
+            alter_text: false
             text: "{{ changed }}<br>\r\nby {{ revision_uid }}"
             make_link: false
             path: ''
@@ -7864,18 +5845,84 @@ display:
           entity_type: node
           entity_field: changed
           plugin_id: field
-        status:
-          id: status
+        nid:
+          id: nid
           table: node_field_data
-          field: status
+          field: nid
           relationship: none
           group_type: group
           admin_label: ''
-          label: Published
+          label: ID
           exclude: true
           alter:
             alter_text: false
             text: ''
+            make_link: false
+            path: ''
+            absolute: false
+            external: false
+            replace_spaces: false
+            path_case: none
+            trim_whitespace: false
+            alt: ''
+            rel: ''
+            link_class: ''
+            prefix: ''
+            suffix: ''
+            target: ''
+            nl2br: false
+            max_length: 0
+            word_boundary: true
+            ellipsis: true
+            more_link: false
+            more_link_text: ''
+            more_link_path: ''
+            strip_tags: false
+            trim: false
+            preserve_tags: ''
+            html: false
+          element_type: ''
+          element_class: ''
+          element_label_type: ''
+          element_label_class: ''
+          element_label_colon: true
+          element_wrapper_type: ''
+          element_wrapper_class: ''
+          element_default_classes: false
+          empty: ''
+          hide_empty: false
+          empty_zero: false
+          hide_alter_empty: true
+          click_sort_column: value
+          type: number_integer
+          settings:
+            thousand_separator: ''
+            prefix_suffix: false
+          group_column: value
+          group_columns: {  }
+          group_rows: true
+          delta_limit: 0
+          delta_offset: 0
+          delta_reversed: false
+          delta_first_last: false
+          multi_type: separator
+          separator: ', '
+          field_api_classes: false
+          entity_type: node
+          entity_field: nid
+          plugin_id: field
+        nothing:
+          id: nothing
+          table: views
+          field: nothing
+          relationship: none
+          group_type: group
+          admin_label: ''
+          label: ''
+          exclude: false
+          alter:
+            alter_text: true
+            text: '<a href="/clone/{{ nid }}/quick_clone">Clone</a>'
             make_link: false
             path: ''
             absolute: false
@@ -7911,38 +5958,20 @@ display:
           empty: ''
           hide_empty: false
           empty_zero: false
-          hide_alter_empty: true
-          click_sort_column: value
-          type: boolean
-          settings:
-            format: custom
-            format_custom_true: Published
-            format_custom_false: Unpublished
-          group_column: value
-          group_columns: {  }
-          group_rows: true
-          delta_limit: 0
-          delta_offset: 0
-          delta_reversed: false
-          delta_first_last: false
-          multi_type: separator
-          separator: ', '
-          field_api_classes: false
-          entity_type: node
-          entity_field: status
-          plugin_id: field
-        moderation_state:
-          id: moderation_state
+          hide_alter_empty: false
+          plugin_id: custom
+        status:
+          id: status
           table: node_field_data
-          field: moderation_state
+          field: status
           relationship: none
           group_type: group
           admin_label: ''
-          label: 'Workflow state'
+          label: Published
           exclude: false
           alter:
-            alter_text: true
-            text: "{{ moderation_state }}<br>\r\n{{ status }}"
+            alter_text: false
+            text: ''
             make_link: false
             path: ''
             absolute: false
@@ -7976,12 +6005,15 @@ display:
           element_wrapper_class: ''
           element_default_classes: true
           empty: ''
-          hide_empty: false
+          hide_empty: true
           empty_zero: false
           hide_alter_empty: true
           click_sort_column: value
-          type: content_moderation_state
-          settings: {  }
+          type: boolean
+          settings:
+            format: custom
+            format_custom_true: '<strong>Published: should be unpublished</strong>'
+            format_custom_false: ''
           group_column: value
           group_columns: {  }
           group_rows: true
@@ -7993,109 +6025,80 @@ display:
           separator: ', '
           field_api_classes: false
           entity_type: node
-          plugin_id: moderation_state_field
-        edit_node:
-          id: edit_node
-          table: node
-          field: edit_node
-          relationship: none
-          group_type: group
-          admin_label: ''
-          label: Edit
-          exclude: false
-          alter:
-            alter_text: false
-            text: ''
-            make_link: false
-            path: ''
-            absolute: false
-            external: false
-            replace_spaces: false
-            path_case: none
-            trim_whitespace: false
-            alt: ''
-            rel: ''
-            link_class: ''
-            prefix: ''
-            suffix: ''
-            target: ''
-            nl2br: false
-            max_length: 0
-            word_boundary: true
-            ellipsis: true
-            more_link: false
-            more_link_text: ''
-            more_link_path: ''
-            strip_tags: false
-            trim: false
-            preserve_tags: ''
-            html: false
-          element_type: ''
-          element_class: ''
-          element_label_type: ''
-          element_label_class: ''
-          element_label_colon: false
-          element_wrapper_type: ''
-          element_wrapper_class: ''
-          element_default_classes: true
-          empty: ''
+          entity_field: status
+          plugin_id: field
+      style:
+        type: table
+        options:
+          grouping: {  }
+          row_class: ''
+          default_row_class: true
+          override: true
+          sticky: true
+          caption: ''
+          summary: ''
+          description: ''
+          columns:
+            title: title
+            field_council_document_type: field_council_document_type
+            changed: changed
+            nid: nid
+            nothing: nothing
+            status: status
+          info:
+            title:
+              sortable: true
+              default_sort_order: asc
+              align: ''
+              separator: ''
+              empty_column: false
+              responsive: ''
+            field_council_document_type:
+              sortable: true
+              default_sort_order: asc
+              align: ''
+              separator: ''
+              empty_column: false
+              responsive: ''
+            changed:
+              sortable: true
+              default_sort_order: desc
+              align: ''
+              separator: ''
+              empty_column: false
+              responsive: ''
+            nid:
+              sortable: false
+              default_sort_order: asc
+              align: ''
+              separator: ''
+              empty_column: false
+              responsive: ''
+            nothing:
+              sortable: false
+              default_sort_order: asc
+              align: ''
+              separator: ''
+              empty_column: false
+              responsive: ''
+            status:
+              sortable: false
+              default_sort_order: asc
+              align: ''
+              separator: ''
+              empty_column: true
+              responsive: ''
+          default: title
+          empty_table: false
+      row:
+        type: fields
+        options:
+          default_field_elements: true
+          inline:
+            field_start_time: field_start_time
+            title: title
+          separator: ''
           hide_empty: false
-          empty_zero: false
-          hide_alter_empty: true
-          text: edit
-          output_url_as_text: false
-          absolute: false
-          entity_type: node
-          plugin_id: entity_link_edit
-      sorts:
-        field_requested_council_date_value:
-          id: field_requested_council_date_value
-          table: node__field_requested_council_date
-          field: field_requested_council_date_value
-          relationship: none
-          group_type: group
-          admin_label: ''
-          order: DESC
-          exposed: true
-          expose:
-            label: 'Council Date'
-          granularity: second
-          plugin_id: datetime
-        field_agenda_item_number_value:
-          id: field_agenda_item_number_value
-          table: relation__field_agenda_item_number
-          field: field_agenda_item_number_value
-          relationship: reverse__relation__field_council_document
-          group_type: group
-          admin_label: ''
-          order: ASC
-          exposed: false
-          expose:
-            label: ''
-          plugin_id: standard
-        field_introduced_by_target_id:
-          id: field_introduced_by_target_id
-          table: node__field_introduced_by
-          field: field_introduced_by_target_id
-          relationship: none
-          group_type: group
-          admin_label: ''
-          order: ASC
-          exposed: false
-          expose:
-            label: ''
-          plugin_id: standard
-      relationships:
-        reverse__relation__field_council_document:
-          id: reverse__relation__field_council_document
-          table: node_field_data
-          field: reverse__relation__field_council_document
-          relationship: none
-          group_type: group
-          admin_label: field_council_document
-          required: false
-          entity_type: node
-          plugin_id: entity_reverse
       header:
         result:
           id: result
@@ -8105,7 +6108,7 @@ display:
           group_type: group
           admin_label: ''
           empty: true
-          content: '<p>Displaying @start - @end of @total dispositioned documents ordered by requested council date.</p>'
+          content: "<p>Displaying @start - @end of @total templates</p>\r\n<p>Use these templates to create consistently formatted council documents following best practices from the council clerk.</p>"
           plugin_id: result
     cache_metadata:
       max-age: -1
@@ -8114,24 +6117,11 @@ display:
         - 'languages:language_interface'
         - url
         - url.query_args
-        - 'url.query_args:sort_by'
-        - 'url.query_args:sort_order'
         - user
         - 'user.node_grants:view'
         - user.roles
       tags:
-        - 'config:field.storage.node.field_amended_by_council'
-        - 'config:field.storage.node.field_bureau'
-        - 'config:field.storage.node.field_council_document_status'
         - 'config:field.storage.node.field_council_document_type'
-        - 'config:field.storage.node.field_date_of_final_disposition'
-        - 'config:field.storage.node.field_introduced_by'
-        - 'config:field.storage.node.field_requested_council_date'
-        - 'config:field.storage.node.field_reviewer'
-        - 'config:field.storage.relation.field_agenda_item_disposition'
-        - 'config:field.storage.relation.field_agenda_item_number'
-        - 'config:field.storage.relation.field_disposition_notes'
-        - 'config:workflow_list'
   page_5:
     display_plugin: page
     id: page_5
@@ -8144,7 +6134,7 @@ display:
       display_description: ''
       menu:
         type: normal
-        title: 'Attorney Review'
+        title: Attorney
         description: ''
         expanded: false
         parent: ''
@@ -8515,6 +6505,7 @@ display:
           empty: true
           content: "<p>Displaying @start - @end of @total council documents needing City Attorney review ordered by requested council date.</p>\r\n<p>Contracts and intergovernmental agreements require attorney review. </p>"
           plugin_id: result
+      use_admin_theme: 1
     cache_metadata:
       max-age: -1
       contexts:
@@ -8531,11 +6522,8 @@ display:
         - 'config:field.storage.node.field_council_document_status'
         - 'config:field.storage.node.field_council_document_type'
         - 'config:field.storage.node.field_introduced_by'
-        - 'config:field.storage.node.field_needs_attorney_review'
         - 'config:field.storage.node.field_requested_council_date'
         - 'config:field.storage.node.field_requested_start_time'
-        - 'config:field.storage.node.field_reviewed_by_city_attorney'
-        - 'config:field.storage.node.field_reviewer'
         - 'config:field.storage.node.field_time_requested'
         - 'config:workflow_list'
   page_6:
@@ -8550,7 +6538,7 @@ display:
       display_description: ''
       menu:
         type: normal
-        title: 'Budget Review'
+        title: Budget
         description: ''
         expanded: false
         parent: ''
@@ -8568,7 +6556,7 @@ display:
         title: false
         filters: false
         filter_groups: false
-        header: false
+        header: true
         fields: false
       title: 'Upcoming Council Documents: Budget Office Review'
       filters:
@@ -8806,60 +6794,6 @@ display:
             group_items: {  }
           entity_type: node
           plugin_id: moderation_state_filter
-        uid:
-          id: uid
-          table: node_field_data
-          field: uid
-          relationship: none
-          group_type: group
-          admin_label: ''
-          operator: in
-          value: {  }
-          group: 1
-          exposed: true
-          expose:
-            operator_id: uid_op
-            label: 'Authored by'
-            description: ''
-            use_operator: false
-            operator: uid_op
-            operator_limit_selection: false
-            operator_list: {  }
-            identifier: uid
-            required: false
-            remember: false
-            multiple: false
-            remember_roles:
-              authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              attorney: '0'
-              council_author: '0'
-              council_clerk: '0'
-              park_editor: '0'
-              code_editor: '0'
-              group_creator: '0'
-              alert_editor: '0'
-              sitewide_editor: '0'
-              administrator: '0'
-            reduce: false
-          is_grouped: false
-          group_info:
-            label: ''
-            description: ''
-            identifier: ''
-            optional: true
-            widget: select
-            multiple: false
-            remember: false
-            default_group: All
-            default_group_multiple: {  }
-            group_items: {  }
-          entity_type: node
-          entity_field: uid
-          plugin_id: user_name
         field_council_document_status_target_id:
           id: field_council_document_status_target_id
           table: node__field_council_document_status
@@ -8910,17 +6844,6 @@ display:
         groups:
           1: AND
           2: OR
-      header:
-        result:
-          id: result
-          table: views
-          field: result
-          relationship: none
-          group_type: group
-          admin_label: ''
-          empty: true
-          content: '<p>Displaying @start - @end of @total council documents.</p>'
-          plugin_id: result
       fields:
         field_reviewer:
           id: field_reviewer
@@ -9248,7 +7171,7 @@ display:
           exclude: false
           alter:
             alter_text: true
-            text: "<h3 class=\"h5 mb-0\">{{ title }}</h3>\r\n<div class=\"council-document__type\">{{ field_council_document_status }} {{ field_council_document_type }}</div>\r\n{% if field_reviewer %}<div class=\"council-document__reviewers\">Reviewers: {{ field_reviewer }}</div>{% endif %}\r\n<div>{{ field_introduced_by }}</div>"
+            text: "<strong>{{ title }}</strong>\r\n{{ field_council_document_status }} {{ field_council_document_type }}<br>\r\n{% if field_reviewer %}Reviewers: {{ field_reviewer }}<br>{% endif %}\r\n{{ field_introduced_by }}"
             make_link: false
             path: ''
             absolute: false
@@ -9938,6 +7861,7 @@ display:
           absolute: false
           entity_type: node
           plugin_id: entity_link_edit
+      use_admin_theme: 1
     cache_metadata:
       max-age: -1
       contexts:
@@ -10361,6 +8285,7 @@ display:
           expose:
             label: ''
           plugin_id: standard
+      use_admin_theme: 1
     cache_metadata:
       max-age: -1
       contexts:
@@ -10379,10 +8304,1566 @@ display:
         - 'config:field.storage.node.field_council_document_status'
         - 'config:field.storage.node.field_council_document_type'
         - 'config:field.storage.node.field_introduced_by'
-        - 'config:field.storage.node.field_needs_attorney_review'
         - 'config:field.storage.node.field_requested_council_date'
         - 'config:field.storage.node.field_requested_start_time'
-        - 'config:field.storage.node.field_reviewed_by_city_attorney'
-        - 'config:field.storage.node.field_reviewer'
         - 'config:field.storage.node.field_time_requested'
+        - 'config:workflow_list'
+  page_8:
+    display_plugin: page
+    id: page_8
+    display_title: 'Dispositioned Documents'
+    position: 5
+    display_options:
+      display_extenders:
+        metatag_display_extender: {  }
+      path: council/documents/manage/disposition/archive
+      display_description: ''
+      menu:
+        type: none
+        title: Disposition
+        description: ''
+        expanded: false
+        parent: ''
+        weight: 20
+        context: '0'
+        menu_name: council-toolbar
+      tab_options:
+        type: none
+        title: ''
+        description: ''
+        weight: 0
+      title: 'Previously Dispositioned Documents'
+      defaults:
+        title: false
+        filters: false
+        filter_groups: false
+        style: false
+        row: false
+        fields: false
+        sorts: false
+        relationships: false
+        header: false
+      filters:
+        type:
+          id: type
+          table: node_field_data
+          field: type
+          relationship: none
+          group_type: group
+          admin_label: ''
+          operator: in
+          value:
+            council_document: council_document
+          group: 1
+          exposed: false
+          expose:
+            operator_id: type_op
+            label: 'Content type'
+            description: null
+            use_operator: false
+            operator: type_op
+            identifier: type
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+            reduce: false
+            argument: null
+            operator_limit_selection: false
+            operator_list: {  }
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
+          entity_type: node
+          entity_field: type
+          plugin_id: bundle
+        title:
+          id: title
+          table: node_field_data
+          field: title
+          relationship: none
+          group_type: group
+          admin_label: ''
+          operator: contains
+          value: ''
+          group: 1
+          exposed: true
+          expose:
+            operator_id: title_op
+            label: 'Document name contains'
+            description: ''
+            use_operator: false
+            operator: title_op
+            identifier: title
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+              anonymous: '0'
+              administrator: '0'
+              sitewide_editor: '0'
+              code_editor: '0'
+              council_clerk: '0'
+            placeholder: ''
+            operator_limit_selection: false
+            operator_list: {  }
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
+          entity_type: node
+          entity_field: title
+          plugin_id: string
+        moderation_state:
+          id: moderation_state
+          table: node_field_data
+          field: moderation_state
+          relationship: none
+          group_type: group
+          admin_label: ''
+          operator: in
+          value: {  }
+          group: 1
+          exposed: true
+          expose:
+            operator_id: moderation_state_op
+            label: 'Workflow state'
+            description: ''
+            use_operator: false
+            operator: moderation_state_op
+            identifier: workflow
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+              anonymous: '0'
+              administrator: '0'
+              sitewide_editor: '0'
+              code_editor: '0'
+              council_clerk: '0'
+            reduce: false
+            operator_limit_selection: false
+            operator_list: {  }
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
+          entity_type: node
+          plugin_id: moderation_state_filter
+        field_council_document_status_target_id_1:
+          id: field_council_document_status_target_id_1
+          table: node__field_council_document_status
+          field: field_council_document_status_target_id
+          relationship: none
+          group_type: group
+          admin_label: ''
+          operator: or
+          value: {  }
+          group: 1
+          exposed: true
+          expose:
+            operator_id: field_council_document_status_target_id_1_op
+            label: Status
+            description: ''
+            use_operator: false
+            operator: field_council_document_status_target_id_1_op
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: document_status_id
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+              anonymous: '0'
+              publisher: '0'
+              policy_author: '0'
+              policy_editor: '0'
+              attorney: '0'
+              council_author: '0'
+              council_clerk: '0'
+              park_editor: '0'
+              code_editor: '0'
+              group_creator: '0'
+              alert_editor: '0'
+              sitewide_editor: '0'
+              administrator: '0'
+            reduce: false
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
+          reduce_duplicates: false
+          type: select
+          limit: true
+          vid: council_document_status
+          hierarchy: false
+          error_message: true
+          plugin_id: taxonomy_index_tid
+        field_council_document_status_target_id:
+          id: field_council_document_status_target_id
+          table: node__field_council_document_status
+          field: field_council_document_status_target_id
+          relationship: none
+          group_type: group
+          admin_label: ''
+          operator: 'not empty'
+          value: {  }
+          group: 1
+          exposed: false
+          expose:
+            operator_id: ''
+            label: ''
+            description: ''
+            use_operator: false
+            operator: ''
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: ''
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+            reduce: false
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
+          reduce_duplicates: false
+          type: select
+          limit: true
+          vid: council_document_status
+          hierarchy: false
+          error_message: true
+          plugin_id: taxonomy_index_tid
+        title_1:
+          id: title_1
+          table: node_field_data
+          field: title
+          relationship: none
+          group_type: group
+          admin_label: ''
+          operator: not
+          value: '[Template]'
+          group: 1
+          exposed: false
+          expose:
+            operator_id: ''
+            label: ''
+            description: ''
+            use_operator: false
+            operator: ''
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: ''
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+            placeholder: ''
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
+          entity_type: node
+          entity_field: title
+          plugin_id: string
+      filter_groups:
+        operator: AND
+        groups:
+          1: AND
+      style:
+        type: table
+        options:
+          grouping:
+            -
+              field: field_requested_council_date
+              rendered: true
+              rendered_strip: false
+          row_class: ''
+          default_row_class: true
+          override: false
+          sticky: false
+          caption: ''
+          summary: ''
+          description: ''
+          columns:
+            views_bulk_operations_bulk_form: views_bulk_operations_bulk_form
+            field_requested_council_date: field_requested_council_date
+            field_council_document_status: field_council_document_status
+            field_agenda_item_number: field_agenda_item_number
+            field_council_document_type: field_council_document_type
+            field_amended_by_council: field_amended_by_council
+            title: title
+            field_date_of_final_disposition: field_date_of_final_disposition
+            field_disposition_notes: field_disposition_notes
+            field_agenda_item_disposition: field_agenda_item_disposition
+            field_bureau: field_bureau
+            field_introduced_by: field_introduced_by
+            revision_uid: revision_uid
+            changed: changed
+            moderation_state: moderation_state
+            edit_node: edit_node
+          info:
+            views_bulk_operations_bulk_form:
+              align: ''
+              separator: ''
+              empty_column: false
+              responsive: ''
+            field_requested_council_date:
+              sortable: true
+              default_sort_order: asc
+              align: ''
+              separator: ''
+              empty_column: false
+              responsive: ''
+            field_council_document_status:
+              sortable: true
+              default_sort_order: asc
+              align: ''
+              separator: ''
+              empty_column: false
+              responsive: ''
+            field_agenda_item_number:
+              sortable: true
+              default_sort_order: asc
+              align: ''
+              separator: ''
+              empty_column: false
+              responsive: ''
+            field_council_document_type:
+              sortable: true
+              default_sort_order: asc
+              align: ''
+              separator: ''
+              empty_column: false
+              responsive: ''
+            field_amended_by_council:
+              sortable: false
+              default_sort_order: asc
+              align: ''
+              separator: ''
+              empty_column: false
+              responsive: ''
+            title:
+              sortable: true
+              default_sort_order: asc
+              align: ''
+              separator: ''
+              empty_column: false
+              responsive: ''
+            field_date_of_final_disposition:
+              sortable: true
+              default_sort_order: asc
+              align: ''
+              separator: ''
+              empty_column: false
+              responsive: ''
+            field_disposition_notes:
+              sortable: false
+              default_sort_order: asc
+              align: ''
+              separator: ''
+              empty_column: false
+              responsive: ''
+            field_agenda_item_disposition:
+              sortable: false
+              default_sort_order: asc
+              align: ''
+              separator: ''
+              empty_column: false
+              responsive: ''
+            field_bureau:
+              align: ''
+              separator: ''
+              empty_column: false
+              responsive: ''
+            field_introduced_by:
+              align: ''
+              separator: ''
+              empty_column: false
+              responsive: ''
+            revision_uid:
+              sortable: false
+              default_sort_order: asc
+              align: ''
+              separator: ''
+              empty_column: false
+              responsive: ''
+            changed:
+              sortable: false
+              default_sort_order: desc
+              align: ''
+              separator: ''
+              empty_column: false
+              responsive: ''
+            moderation_state:
+              sortable: false
+              default_sort_order: asc
+              align: ''
+              separator: ''
+              empty_column: false
+              responsive: ''
+            edit_node:
+              sortable: false
+              default_sort_order: asc
+              align: ''
+              separator: ''
+              empty_column: false
+              responsive: ''
+          default: field_requested_council_date
+          empty_table: false
+      row:
+        type: fields
+        options:
+          default_field_elements: true
+          inline:
+            field_start_time: field_start_time
+            title: title
+          separator: ''
+          hide_empty: false
+      fields:
+        views_bulk_operations_bulk_form:
+          id: views_bulk_operations_bulk_form
+          table: views
+          field: views_bulk_operations_bulk_form
+          relationship: none
+          group_type: group
+          admin_label: ''
+          label: ''
+          exclude: false
+          alter:
+            alter_text: false
+            text: ''
+            make_link: false
+            path: ''
+            absolute: false
+            external: false
+            replace_spaces: false
+            path_case: none
+            trim_whitespace: false
+            alt: ''
+            rel: ''
+            link_class: ''
+            prefix: ''
+            suffix: ''
+            target: ''
+            nl2br: false
+            max_length: 0
+            word_boundary: true
+            ellipsis: true
+            more_link: false
+            more_link_text: ''
+            more_link_path: ''
+            strip_tags: false
+            trim: false
+            preserve_tags: ''
+            html: false
+          element_type: ''
+          element_class: ''
+          element_label_type: ''
+          element_label_class: ''
+          element_label_colon: false
+          element_wrapper_type: ''
+          element_wrapper_class: ''
+          element_default_classes: true
+          empty: ''
+          hide_empty: false
+          empty_zero: false
+          hide_alter_empty: true
+          batch: true
+          batch_size: 10
+          form_step: true
+          buttons: false
+          clear_on_exposed: true
+          action_title: Action
+          selected_actions:
+            1:
+              action_id: 'moderation_state_change:node'
+              preconfiguration:
+                label_override: 'Change Moderation State'
+          plugin_id: views_bulk_operations_bulk_form
+        field_requested_council_date:
+          id: field_requested_council_date
+          table: node__field_requested_council_date
+          field: field_requested_council_date
+          relationship: none
+          group_type: group
+          admin_label: ''
+          label: ''
+          exclude: true
+          alter:
+            alter_text: true
+            text: '<h2>{{ field_requested_council_date }}</h2>'
+            make_link: false
+            path: ''
+            absolute: false
+            external: false
+            replace_spaces: false
+            path_case: none
+            trim_whitespace: false
+            alt: ''
+            rel: ''
+            link_class: ''
+            prefix: ''
+            suffix: ''
+            target: ''
+            nl2br: false
+            max_length: 0
+            word_boundary: true
+            ellipsis: true
+            more_link: false
+            more_link_text: ''
+            more_link_path: ''
+            strip_tags: false
+            trim: false
+            preserve_tags: ''
+            html: false
+          element_type: ''
+          element_class: ''
+          element_label_type: ''
+          element_label_class: ''
+          element_label_colon: false
+          element_wrapper_type: ''
+          element_wrapper_class: ''
+          element_default_classes: true
+          empty: ''
+          hide_empty: false
+          empty_zero: false
+          hide_alter_empty: true
+          click_sort_column: value
+          type: datetime_default
+          settings:
+            timezone_override: ''
+            format_type: month_day_year
+          group_column: value
+          group_columns: {  }
+          group_rows: true
+          delta_limit: 0
+          delta_offset: 0
+          delta_reversed: false
+          delta_first_last: false
+          multi_type: separator
+          separator: ', '
+          field_api_classes: false
+          plugin_id: field
+        field_council_document_status:
+          id: field_council_document_status
+          table: node__field_council_document_status
+          field: field_council_document_status
+          relationship: none
+          group_type: group
+          admin_label: ''
+          label: Status
+          exclude: false
+          alter:
+            alter_text: false
+            text: ''
+            make_link: false
+            path: ''
+            absolute: false
+            external: false
+            replace_spaces: false
+            path_case: none
+            trim_whitespace: false
+            alt: ''
+            rel: ''
+            link_class: ''
+            prefix: ''
+            suffix: ''
+            target: ''
+            nl2br: false
+            max_length: 0
+            word_boundary: true
+            ellipsis: true
+            more_link: false
+            more_link_text: ''
+            more_link_path: ''
+            strip_tags: false
+            trim: false
+            preserve_tags: ''
+            html: false
+          element_type: ''
+          element_class: ''
+          element_label_type: ''
+          element_label_class: ''
+          element_label_colon: true
+          element_wrapper_type: ''
+          element_wrapper_class: ''
+          element_default_classes: true
+          empty: ''
+          hide_empty: false
+          empty_zero: false
+          hide_alter_empty: true
+          click_sort_column: target_id
+          type: entity_reference_label
+          settings:
+            link: false
+          group_column: target_id
+          group_columns: {  }
+          group_rows: true
+          delta_limit: 0
+          delta_offset: 0
+          delta_reversed: false
+          delta_first_last: false
+          multi_type: separator
+          separator: ', '
+          field_api_classes: false
+          plugin_id: field
+        field_agenda_item_number:
+          id: field_agenda_item_number
+          table: relation__field_agenda_item_number
+          field: field_agenda_item_number
+          relationship: reverse__relation__field_council_document
+          group_type: group
+          admin_label: ''
+          label: Number
+          exclude: false
+          alter:
+            alter_text: false
+            text: ''
+            make_link: false
+            path: ''
+            absolute: false
+            external: false
+            replace_spaces: false
+            path_case: none
+            trim_whitespace: false
+            alt: ''
+            rel: ''
+            link_class: ''
+            prefix: ''
+            suffix: ''
+            target: ''
+            nl2br: false
+            max_length: 0
+            word_boundary: true
+            ellipsis: true
+            more_link: false
+            more_link_text: ''
+            more_link_path: ''
+            strip_tags: false
+            trim: false
+            preserve_tags: ''
+            html: false
+          element_type: ''
+          element_class: ''
+          element_label_type: ''
+          element_label_class: ''
+          element_label_colon: true
+          element_wrapper_type: ''
+          element_wrapper_class: ''
+          element_default_classes: true
+          empty: ''
+          hide_empty: false
+          empty_zero: false
+          hide_alter_empty: true
+          click_sort_column: value
+          type: number_integer
+          settings:
+            thousand_separator: ''
+            prefix_suffix: true
+          group_column: value
+          group_columns: {  }
+          group_rows: true
+          delta_limit: 0
+          delta_offset: 0
+          delta_reversed: false
+          delta_first_last: false
+          multi_type: separator
+          separator: ', '
+          field_api_classes: false
+          plugin_id: field
+        field_council_document_type:
+          id: field_council_document_type
+          table: node__field_council_document_type
+          field: field_council_document_type
+          relationship: none
+          group_type: group
+          admin_label: ''
+          label: 'Document type'
+          exclude: true
+          alter:
+            alter_text: false
+            text: ''
+            make_link: false
+            path: ''
+            absolute: false
+            external: false
+            replace_spaces: false
+            path_case: none
+            trim_whitespace: false
+            alt: ''
+            rel: ''
+            link_class: ''
+            prefix: ''
+            suffix: ''
+            target: ''
+            nl2br: false
+            max_length: 0
+            word_boundary: true
+            ellipsis: true
+            more_link: false
+            more_link_text: ''
+            more_link_path: ''
+            strip_tags: false
+            trim: false
+            preserve_tags: ''
+            html: false
+          element_type: ''
+          element_class: ''
+          element_label_type: ''
+          element_label_class: ''
+          element_label_colon: false
+          element_wrapper_type: ''
+          element_wrapper_class: ''
+          element_default_classes: true
+          empty: ''
+          hide_empty: false
+          empty_zero: false
+          hide_alter_empty: true
+          click_sort_column: target_id
+          type: entity_reference_label
+          settings:
+            link: false
+          group_column: target_id
+          group_columns: {  }
+          group_rows: true
+          delta_limit: 0
+          delta_offset: 0
+          delta_reversed: false
+          delta_first_last: false
+          multi_type: separator
+          separator: ', '
+          field_api_classes: false
+          plugin_id: field
+        field_amended_by_council:
+          id: field_amended_by_council
+          table: node__field_amended_by_council
+          field: field_amended_by_council
+          relationship: none
+          group_type: group
+          admin_label: ''
+          label: ''
+          exclude: true
+          alter:
+            alter_text: false
+            text: ''
+            make_link: false
+            path: ''
+            absolute: false
+            external: false
+            replace_spaces: false
+            path_case: none
+            trim_whitespace: false
+            alt: ''
+            rel: ''
+            link_class: ''
+            prefix: ''
+            suffix: ''
+            target: ''
+            nl2br: false
+            max_length: 0
+            word_boundary: true
+            ellipsis: true
+            more_link: false
+            more_link_text: ''
+            more_link_path: ''
+            strip_tags: false
+            trim: false
+            preserve_tags: ''
+            html: false
+          element_type: ''
+          element_class: ''
+          element_label_type: ''
+          element_label_class: ''
+          element_label_colon: false
+          element_wrapper_type: ''
+          element_wrapper_class: ''
+          element_default_classes: true
+          empty: ''
+          hide_empty: false
+          empty_zero: false
+          hide_alter_empty: true
+          click_sort_column: value
+          type: boolean
+          settings:
+            format: custom
+            format_custom_true: 'as Amended by Council'
+            format_custom_false: ''
+          group_column: value
+          group_columns: {  }
+          group_rows: true
+          delta_limit: 0
+          delta_offset: 0
+          delta_reversed: false
+          delta_first_last: false
+          multi_type: separator
+          separator: ', '
+          field_api_classes: false
+          plugin_id: field
+        title:
+          id: title
+          table: node_field_data
+          field: title
+          relationship: none
+          group_type: group
+          admin_label: ''
+          label: 'Council Document'
+          exclude: false
+          alter:
+            alter_text: true
+            text: "<strong>{{ title }}</strong><br>\r\n{{ field_council_document_type }} {{ field_council_document_status }} {{ field_amended_by_council }}<br>\r\n{{ field_introduced_by }}<br>\r\n{% if field_reviewer %}<div class=\"council-document__reviewers\">Reviewers: {{ field_reviewer }}</div>{% endif %}"
+            make_link: false
+            path: ''
+            absolute: false
+            external: false
+            replace_spaces: false
+            path_case: none
+            trim_whitespace: false
+            alt: ''
+            rel: ''
+            link_class: ''
+            prefix: ''
+            suffix: ''
+            target: ''
+            nl2br: false
+            max_length: 0
+            word_boundary: false
+            ellipsis: false
+            more_link: false
+            more_link_text: ''
+            more_link_path: ''
+            strip_tags: false
+            trim: false
+            preserve_tags: ''
+            html: false
+          element_type: ''
+          element_class: ''
+          element_label_type: ''
+          element_label_class: ''
+          element_label_colon: true
+          element_wrapper_type: ''
+          element_wrapper_class: ''
+          element_default_classes: true
+          empty: ''
+          hide_empty: false
+          empty_zero: false
+          hide_alter_empty: true
+          click_sort_column: value
+          type: string
+          settings:
+            link_to_entity: true
+          group_column: value
+          group_columns: {  }
+          group_rows: true
+          delta_limit: 0
+          delta_offset: 0
+          delta_reversed: false
+          delta_first_last: false
+          multi_type: separator
+          separator: ', '
+          field_api_classes: false
+          entity_type: node
+          entity_field: title
+          plugin_id: field
+        field_date_of_final_disposition:
+          id: field_date_of_final_disposition
+          table: node__field_date_of_final_disposition
+          field: field_date_of_final_disposition
+          relationship: none
+          group_type: group
+          admin_label: ''
+          label: ''
+          exclude: true
+          alter:
+            alter_text: true
+            text: '{{ field_date_of_final_disposition }} <br>'
+            make_link: false
+            path: ''
+            absolute: false
+            external: false
+            replace_spaces: false
+            path_case: none
+            trim_whitespace: false
+            alt: ''
+            rel: ''
+            link_class: ''
+            prefix: ''
+            suffix: ''
+            target: ''
+            nl2br: false
+            max_length: 0
+            word_boundary: true
+            ellipsis: true
+            more_link: false
+            more_link_text: ''
+            more_link_path: ''
+            strip_tags: false
+            trim: false
+            preserve_tags: ''
+            html: false
+          element_type: ''
+          element_class: ''
+          element_label_type: ''
+          element_label_class: ''
+          element_label_colon: false
+          element_wrapper_type: ''
+          element_wrapper_class: ''
+          element_default_classes: true
+          empty: ''
+          hide_empty: false
+          empty_zero: false
+          hide_alter_empty: true
+          click_sort_column: value
+          type: datetime_default
+          settings:
+            timezone_override: ''
+            format_type: month_day_year
+          group_column: value
+          group_columns: {  }
+          group_rows: true
+          delta_limit: 0
+          delta_offset: 0
+          delta_reversed: false
+          delta_first_last: false
+          multi_type: separator
+          separator: ', '
+          field_api_classes: false
+          plugin_id: field
+        field_disposition_notes:
+          id: field_disposition_notes
+          table: relation__field_disposition_notes
+          field: field_disposition_notes
+          relationship: reverse__relation__field_council_document
+          group_type: group
+          admin_label: ''
+          label: ''
+          exclude: true
+          alter:
+            alter_text: false
+            text: ''
+            make_link: false
+            path: ''
+            absolute: false
+            external: false
+            replace_spaces: false
+            path_case: none
+            trim_whitespace: false
+            alt: ''
+            rel: ''
+            link_class: ''
+            prefix: ''
+            suffix: ''
+            target: ''
+            nl2br: false
+            max_length: 0
+            word_boundary: true
+            ellipsis: true
+            more_link: false
+            more_link_text: ''
+            more_link_path: ''
+            strip_tags: false
+            trim: false
+            preserve_tags: ''
+            html: false
+          element_type: ''
+          element_class: ''
+          element_label_type: ''
+          element_label_class: ''
+          element_label_colon: false
+          element_wrapper_type: ''
+          element_wrapper_class: ''
+          element_default_classes: true
+          empty: ''
+          hide_empty: false
+          empty_zero: false
+          hide_alter_empty: true
+          click_sort_column: value
+          type: basic_string
+          settings: {  }
+          group_column: value
+          group_columns: {  }
+          group_rows: true
+          delta_limit: 0
+          delta_offset: 0
+          delta_reversed: false
+          delta_first_last: false
+          multi_type: separator
+          separator: ', '
+          field_api_classes: false
+          plugin_id: field
+        field_agenda_item_disposition:
+          id: field_agenda_item_disposition
+          table: relation__field_agenda_item_disposition
+          field: field_agenda_item_disposition
+          relationship: reverse__relation__field_council_document
+          group_type: group
+          admin_label: ''
+          label: Disposition
+          exclude: false
+          alter:
+            alter_text: true
+            text: "{{ field_agenda_item_disposition }}<br>\r\n{{ field_date_of_final_disposition }}\r\n{{ field_disposition_notes }}"
+            make_link: false
+            path: ''
+            absolute: false
+            external: false
+            replace_spaces: false
+            path_case: none
+            trim_whitespace: false
+            alt: ''
+            rel: ''
+            link_class: ''
+            prefix: ''
+            suffix: ''
+            target: ''
+            nl2br: false
+            max_length: 0
+            word_boundary: true
+            ellipsis: true
+            more_link: false
+            more_link_text: ''
+            more_link_path: ''
+            strip_tags: false
+            trim: false
+            preserve_tags: ''
+            html: false
+          element_type: ''
+          element_class: ''
+          element_label_type: ''
+          element_label_class: ''
+          element_label_colon: true
+          element_wrapper_type: ''
+          element_wrapper_class: ''
+          element_default_classes: true
+          empty: ''
+          hide_empty: false
+          empty_zero: false
+          hide_alter_empty: true
+          click_sort_column: target_id
+          type: entity_reference_label
+          settings:
+            link: false
+          group_column: target_id
+          group_columns: {  }
+          group_rows: true
+          delta_limit: 0
+          delta_offset: 0
+          delta_reversed: false
+          delta_first_last: false
+          multi_type: separator
+          separator: ', '
+          field_api_classes: false
+          plugin_id: field
+        field_bureau:
+          id: field_bureau
+          table: node__field_bureau
+          field: field_bureau
+          relationship: none
+          group_type: group
+          admin_label: ''
+          label: ''
+          exclude: false
+          alter:
+            alter_text: false
+            text: ''
+            make_link: false
+            path: ''
+            absolute: false
+            external: false
+            replace_spaces: false
+            path_case: none
+            trim_whitespace: false
+            alt: ''
+            rel: ''
+            link_class: ''
+            prefix: ''
+            suffix: ''
+            target: ''
+            nl2br: false
+            max_length: 0
+            word_boundary: true
+            ellipsis: true
+            more_link: false
+            more_link_text: ''
+            more_link_path: ''
+            strip_tags: false
+            trim: false
+            preserve_tags: ''
+            html: false
+          element_type: ''
+          element_class: ''
+          element_label_type: ''
+          element_label_class: ''
+          element_label_colon: false
+          element_wrapper_type: ''
+          element_wrapper_class: ''
+          element_default_classes: true
+          empty: ''
+          hide_empty: false
+          empty_zero: false
+          hide_alter_empty: true
+          click_sort_column: target_id
+          type: entity_reference_label
+          settings:
+            link: false
+          group_column: target_id
+          group_columns: {  }
+          group_rows: true
+          delta_limit: 0
+          delta_offset: 0
+          delta_reversed: false
+          delta_first_last: false
+          multi_type: separator
+          separator: ', '
+          field_api_classes: false
+          plugin_id: field
+        field_introduced_by:
+          id: field_introduced_by
+          table: node__field_introduced_by
+          field: field_introduced_by
+          relationship: none
+          group_type: group
+          admin_label: ''
+          label: ''
+          exclude: false
+          alter:
+            alter_text: false
+            text: "Introduce by {{ field_introduced_by }}<br>\r\n{{ field_bureau }}"
+            make_link: false
+            path: ''
+            absolute: false
+            external: false
+            replace_spaces: false
+            path_case: none
+            trim_whitespace: false
+            alt: ''
+            rel: ''
+            link_class: ''
+            prefix: ''
+            suffix: ''
+            target: ''
+            nl2br: false
+            max_length: 0
+            word_boundary: true
+            ellipsis: true
+            more_link: false
+            more_link_text: ''
+            more_link_path: ''
+            strip_tags: false
+            trim: false
+            preserve_tags: ''
+            html: false
+          element_type: ''
+          element_class: ''
+          element_label_type: ''
+          element_label_class: ''
+          element_label_colon: false
+          element_wrapper_type: ''
+          element_wrapper_class: ''
+          element_default_classes: true
+          empty: ''
+          hide_empty: false
+          empty_zero: false
+          hide_alter_empty: true
+          click_sort_column: target_id
+          type: entity_reference_label
+          settings:
+            link: false
+          group_column: target_id
+          group_columns: {  }
+          group_rows: true
+          delta_limit: 0
+          delta_offset: 0
+          delta_reversed: false
+          delta_first_last: false
+          multi_type: separator
+          separator: ', '
+          field_api_classes: false
+          plugin_id: field
+        revision_uid:
+          id: revision_uid
+          table: node_revision
+          field: revision_uid
+          relationship: none
+          group_type: group
+          admin_label: ''
+          label: ''
+          exclude: true
+          alter:
+            alter_text: false
+            text: ''
+            make_link: false
+            path: ''
+            absolute: false
+            external: false
+            replace_spaces: false
+            path_case: none
+            trim_whitespace: false
+            alt: ''
+            rel: ''
+            link_class: ''
+            prefix: ''
+            suffix: ''
+            target: ''
+            nl2br: false
+            max_length: 0
+            word_boundary: true
+            ellipsis: true
+            more_link: false
+            more_link_text: ''
+            more_link_path: ''
+            strip_tags: false
+            trim: false
+            preserve_tags: ''
+            html: false
+          element_type: ''
+          element_class: ''
+          element_label_type: ''
+          element_label_class: ''
+          element_label_colon: true
+          element_wrapper_type: ''
+          element_wrapper_class: ''
+          element_default_classes: true
+          empty: ''
+          hide_empty: false
+          empty_zero: false
+          hide_alter_empty: true
+          click_sort_column: target_id
+          type: entity_reference_label
+          settings:
+            link: false
+          group_column: target_id
+          group_columns: {  }
+          group_rows: true
+          delta_limit: 0
+          delta_offset: 0
+          delta_reversed: false
+          delta_first_last: false
+          multi_type: separator
+          separator: ', '
+          field_api_classes: false
+          entity_type: node
+          entity_field: revision_uid
+          plugin_id: field
+        changed:
+          id: changed
+          table: node_field_data
+          field: changed
+          relationship: none
+          group_type: group
+          admin_label: ''
+          label: Changed
+          exclude: false
+          alter:
+            alter_text: true
+            text: "{{ changed }}<br>\r\nby {{ revision_uid }}"
+            make_link: false
+            path: ''
+            absolute: false
+            external: false
+            replace_spaces: false
+            path_case: none
+            trim_whitespace: false
+            alt: ''
+            rel: ''
+            link_class: ''
+            prefix: ''
+            suffix: ''
+            target: ''
+            nl2br: false
+            max_length: 0
+            word_boundary: true
+            ellipsis: true
+            more_link: false
+            more_link_text: ''
+            more_link_path: ''
+            strip_tags: false
+            trim: false
+            preserve_tags: ''
+            html: false
+          element_type: ''
+          element_class: ''
+          element_label_type: ''
+          element_label_class: ''
+          element_label_colon: false
+          element_wrapper_type: ''
+          element_wrapper_class: ''
+          element_default_classes: true
+          empty: ''
+          hide_empty: false
+          empty_zero: false
+          hide_alter_empty: true
+          click_sort_column: value
+          type: timestamp
+          settings:
+            date_format: short
+            custom_date_format: ''
+            timezone: ''
+          group_column: value
+          group_columns: {  }
+          group_rows: true
+          delta_limit: 0
+          delta_offset: 0
+          delta_reversed: false
+          delta_first_last: false
+          multi_type: separator
+          separator: ', '
+          field_api_classes: false
+          entity_type: node
+          entity_field: changed
+          plugin_id: field
+        moderation_state:
+          id: moderation_state
+          table: node_field_data
+          field: moderation_state
+          relationship: none
+          group_type: group
+          admin_label: ''
+          label: 'Workflow state'
+          exclude: false
+          alter:
+            alter_text: false
+            text: "{{ moderation_state }}<br>\r\n{{ status }}"
+            make_link: false
+            path: ''
+            absolute: false
+            external: false
+            replace_spaces: false
+            path_case: none
+            trim_whitespace: false
+            alt: ''
+            rel: ''
+            link_class: ''
+            prefix: ''
+            suffix: ''
+            target: ''
+            nl2br: false
+            max_length: 0
+            word_boundary: true
+            ellipsis: true
+            more_link: false
+            more_link_text: ''
+            more_link_path: ''
+            strip_tags: false
+            trim: false
+            preserve_tags: ''
+            html: false
+          element_type: ''
+          element_class: ''
+          element_label_type: ''
+          element_label_class: ''
+          element_label_colon: true
+          element_wrapper_type: ''
+          element_wrapper_class: ''
+          element_default_classes: true
+          empty: ''
+          hide_empty: false
+          empty_zero: false
+          hide_alter_empty: true
+          click_sort_column: value
+          type: content_moderation_state
+          settings: {  }
+          group_column: value
+          group_columns: {  }
+          group_rows: true
+          delta_limit: 0
+          delta_offset: 0
+          delta_reversed: false
+          delta_first_last: false
+          multi_type: separator
+          separator: ', '
+          field_api_classes: false
+          entity_type: node
+          plugin_id: moderation_state_field
+        edit_node:
+          id: edit_node
+          table: node
+          field: edit_node
+          relationship: none
+          group_type: group
+          admin_label: ''
+          label: Edit
+          exclude: false
+          alter:
+            alter_text: false
+            text: ''
+            make_link: false
+            path: ''
+            absolute: false
+            external: false
+            replace_spaces: false
+            path_case: none
+            trim_whitespace: false
+            alt: ''
+            rel: ''
+            link_class: ''
+            prefix: ''
+            suffix: ''
+            target: ''
+            nl2br: false
+            max_length: 0
+            word_boundary: true
+            ellipsis: true
+            more_link: false
+            more_link_text: ''
+            more_link_path: ''
+            strip_tags: false
+            trim: false
+            preserve_tags: ''
+            html: false
+          element_type: ''
+          element_class: ''
+          element_label_type: ''
+          element_label_class: ''
+          element_label_colon: false
+          element_wrapper_type: ''
+          element_wrapper_class: ''
+          element_default_classes: true
+          empty: ''
+          hide_empty: false
+          empty_zero: false
+          hide_alter_empty: true
+          text: edit
+          output_url_as_text: false
+          absolute: false
+          entity_type: node
+          plugin_id: entity_link_edit
+      sorts:
+        field_requested_council_date_value:
+          id: field_requested_council_date_value
+          table: node__field_requested_council_date
+          field: field_requested_council_date_value
+          relationship: none
+          group_type: group
+          admin_label: ''
+          order: DESC
+          exposed: false
+          expose:
+            label: 'Council Date'
+          granularity: second
+          plugin_id: datetime
+        field_agenda_item_number_value:
+          id: field_agenda_item_number_value
+          table: relation__field_agenda_item_number
+          field: field_agenda_item_number_value
+          relationship: reverse__relation__field_council_document
+          group_type: group
+          admin_label: ''
+          order: ASC
+          exposed: false
+          expose:
+            label: ''
+          plugin_id: standard
+        field_introduced_by_target_id:
+          id: field_introduced_by_target_id
+          table: node__field_introduced_by
+          field: field_introduced_by_target_id
+          relationship: none
+          group_type: group
+          admin_label: ''
+          order: ASC
+          exposed: false
+          expose:
+            label: ''
+          plugin_id: standard
+      relationships:
+        reverse__relation__field_council_document:
+          id: reverse__relation__field_council_document
+          table: node_field_data
+          field: reverse__relation__field_council_document
+          relationship: none
+          group_type: group
+          admin_label: field_council_document
+          required: false
+          entity_type: node
+          plugin_id: entity_reverse
+      header:
+        result:
+          id: result
+          table: views
+          field: result
+          relationship: none
+          group_type: group
+          admin_label: ''
+          empty: true
+          content: '<p>Displaying @start - @end of @total dispositioned documents ordered by requested council date. <a href="/council/documents/manage/disposition/">Manage documents that need to be dispositioned</a>.</p>'
+          plugin_id: result
+      use_admin_theme: 1
+    cache_metadata:
+      max-age: 0
+      contexts:
+        - 'languages:language_content'
+        - 'languages:language_interface'
+        - url
+        - url.query_args
+        - user
+        - 'user.node_grants:view'
+        - user.roles
+      tags:
+        - 'config:field.storage.node.field_amended_by_council'
+        - 'config:field.storage.node.field_bureau'
+        - 'config:field.storage.node.field_council_document_status'
+        - 'config:field.storage.node.field_council_document_type'
+        - 'config:field.storage.node.field_date_of_final_disposition'
+        - 'config:field.storage.node.field_introduced_by'
+        - 'config:field.storage.node.field_requested_council_date'
+        - 'config:field.storage.relation.field_agenda_item_disposition'
+        - 'config:field.storage.relation.field_agenda_item_number'
+        - 'config:field.storage.relation.field_disposition_notes'
         - 'config:workflow_list'
