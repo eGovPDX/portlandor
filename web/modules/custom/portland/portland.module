@@ -804,6 +804,22 @@ function _validate_document(&$form, \Drupal\Core\Form\FormStateInterface $form_s
         $form_state->setErrorByName('field_document', t('Please remove the uploaded file or the eFiles link.'));
         return;
       }
+
+      $external_file_url = strtolower($efiles_link[0]['uri']);
+
+      // Validate the file URL format is "https://efiles.portlandoregon.gov/record/1234567" or
+      // "https://efiles.portlandoregon.gov/record/1234567/File/Document"
+      $efiles_url_regex = '/^https:\/\/efiles.portlandoregon.gov\/record\/\d+(\/file\/document)?$/i';
+      if( ! preg_match($efiles_url_regex, $external_file_url) ) {
+        $form_state->setErrorByName('field_efiles_link', t('eFiles URL must be in the format of "https://efiles.portlandoregon.gov/record/1234567" or "https://efiles.portlandoregon.gov/record/1234567/File/Document".'));
+        return;
+      }
+
+      // Append "/file/document" if it's missing
+      if( ! substr_compare($external_file_url, "/file/document", -strlen("/file/document") ) === 0) {
+        $external_file_url .= "/file/document";
+      }
+
       // Get eFiles file size and MIME type
       try {
         $headers = get_headers($efiles_link[0]['uri'] . '/File/Document', 1);
@@ -817,7 +833,15 @@ function _validate_document(&$form, \Drupal\Core\Form\FormStateInterface $form_s
         $file_size = (int)$headers['Content-Length'];
         if($file_size === 0) {
           $form_state->setErrorByName('field_efiles_link', t('Invalid eFiles link'));
+          return;
         }
+        $content_type = $headers['Content-Type'];
+        // If the eFiles link points to a webpage, assume the link is wrong
+        if($content_type === "text/html") {
+          $form_state->setErrorByName('field_efiles_link', t('The eFiles link is not a document link.'));
+          return;
+        }
+
         $form_state->setValue('field_file_size', [["value" => $file_size]]);
         $form_state->setValue('field_mime_type', [["value" => $headers['Content-Type']]] );
       }
