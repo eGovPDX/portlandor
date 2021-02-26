@@ -46,10 +46,9 @@ class GetEFilesSizeTypeAction extends ViewsBulkOperationsActionBase {
     }
 
     if( !empty($headers) && 
-        (substr_compare($external_file_url, "200 OK", -strlen("200 OK") ) === 0) &&
-        array_key_exists('Content-Length', $headers) &&
+        (substr_compare($headers[0], "200 OK", -strlen("200 OK") ) === 0) &&
         array_key_exists('Content-Type', $headers) ) {
-      $file_size = (int)$headers['Content-Length'];
+      $file_size = isset($headers['Content-Length']) ? (int)$headers['Content-Length'] : 0;
       if($file_size === 0) {
         return $this->t('External document is empty');
       }
