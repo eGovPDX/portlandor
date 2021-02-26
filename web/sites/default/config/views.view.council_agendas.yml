@@ -4,13 +4,11 @@ status: true
 dependencies:
   config:
     - core.entity_view_mode.node.teaser
-    - field.storage.node.field_start_date
-    - field.storage.node.field_start_time
+    - field.storage.node.field_council_agenda_number
     - node.type.council_agenda
   module:
     - datetime
     - node
-    - time_field
     - user
 id: council_agendas
 label: 'Council Agendas'
@@ -84,82 +82,18 @@ display:
           relationship: none
           view_mode: teaser
       fields:
-        field_start_date:
-          id: field_start_date
-          table: node__field_start_date
-          field: field_start_date
+        field_council_agenda_number:
+          id: field_council_agenda_number
+          table: node__field_council_agenda_number
+          field: field_council_agenda_number
           relationship: none
           group_type: group
           admin_label: ''
           label: ''
           exclude: true
           alter:
-            alter_text: true
-            text: '<h2>{{ field_start_date }}</h2>'
-            make_link: false
-            path: ''
-            absolute: false
-            external: false
-            replace_spaces: false
-            path_case: none
-            trim_whitespace: false
-            alt: ''
-            rel: ''
-            link_class: ''
-            prefix: ''
-            suffix: ''
-            target: ''
-            nl2br: false
-            max_length: 0
-            word_boundary: true
-            ellipsis: true
-            more_link: false
-            more_link_text: ''
-            more_link_path: ''
-            strip_tags: false
-            trim: false
-            preserve_tags: ''
-            html: false
-          element_type: ''
-          element_class: ''
-          element_label_type: ''
-          element_label_class: ''
-          element_label_colon: false
-          element_wrapper_type: ''
-          element_wrapper_class: ''
-          element_default_classes: false
-          empty: ''
-          hide_empty: false
-          empty_zero: false
-          hide_alter_empty: true
-          click_sort_column: value
-          type: datetime_default
-          settings:
-            timezone_override: ''
-            format_type: month_day_year
-          group_column: value
-          group_columns: {  }
-          group_rows: true
-          delta_limit: 0
-          delta_offset: 0
-          delta_reversed: false
-          delta_first_last: false
-          multi_type: separator
-          separator: ', '
-          field_api_classes: false
-          plugin_id: field
-        field_start_time:
-          id: field_start_time
-          table: node__field_start_time
-          field: field_start_time
-          relationship: none
-          group_type: group
-          admin_label: ''
-          label: ''
-          exclude: true
-          alter:
-            alter_text: true
-            text: '<p class="event--time"><i class="fas fa-clock"></i> {{ field_start_time }}</p>'
+            alter_text: false
+            text: ''
             make_link: false
             path: ''
             absolute: false
@@ -197,9 +131,10 @@ display:
           empty_zero: false
           hide_alter_empty: true
           click_sort_column: value
-          type: time_formatter
+          type: number_integer
           settings:
-            time_format: 'g:i A'
+            thousand_separator: ''
+            prefix_suffix: true
           group_column: value
           group_columns: {  }
           group_rows: true
@@ -219,10 +154,10 @@ display:
           group_type: group
           admin_label: ''
           label: ''
-          exclude: true
+          exclude: false
           alter:
-            alter_text: false
-            text: ''
+            alter_text: true
+            text: '{{ field_council_agenda_number }} {{ title }}'
             make_link: false
             path: ''
             absolute: false
@@ -276,55 +211,6 @@ display:
           entity_type: node
           entity_field: title
           plugin_id: field
-        nothing:
-          id: nothing
-          table: views
-          field: nothing
-          relationship: none
-          group_type: group
-          admin_label: ''
-          label: ''
-          exclude: false
-          alter:
-            alter_text: true
-            text: "<div class=\"event--summary\">\r\n  <div class=\"row\">\r\n    <div class=\"col-8\">\r\n      <h4>{{ title }}</h4>\r\n      <p>{{ field_council_meeting_status }} {{ field_council_meeting_type }}</p>\r\n    </div>\r\n    <div class=\"col-4\">\r\n      {{ field_start_time }}\r\n    </div>\r\n  </div>\r\n</div>"
-            make_link: false
-            path: ''
-            absolute: false
-            external: false
-            replace_spaces: false
-            path_case: none
-            trim_whitespace: false
-            alt: ''
-            rel: ''
-            link_class: ''
-            prefix: ''
-            suffix: ''
-            target: ''
-            nl2br: false
-            max_length: 0
-            word_boundary: true
-            ellipsis: true
-            more_link: false
-            more_link_text: ''
-            more_link_path: ''
-            strip_tags: false
-            trim: false
-            preserve_tags: ''
-            html: false
-          element_type: ''
-          element_class: ''
-          element_label_type: ''
-          element_label_class: ''
-          element_label_colon: false
-          element_wrapper_type: ''
-          element_wrapper_class: ''
-          element_default_classes: true
-          empty: ''
-          hide_empty: false
-          empty_zero: false
-          hide_alter_empty: false
-          plugin_id: custom
       filters:
         status:
           value: '1'
@@ -389,11 +275,11 @@ display:
           relationship: none
           group_type: group
           admin_label: ''
-          operator: '>='
+          operator: '<'
           value:
             min: ''
             max: ''
-            value: today
+            value: 'today -3 days'
             type: date
           group: 1
           exposed: false
@@ -442,22 +328,14 @@ display:
           granularity: second
           plugin_id: datetime
       title: 'Council Agendas'
-      header:
-        result:
-          id: result
-          table: views
-          field: result
-          relationship: none
-          group_type: group
-          admin_label: ''
-          empty: false
-          content: "Viewing @total upcoming council agendas. <a href=\"/council/agenda/past\">View past council agendas</a>.\r\n"
-          plugin_id: result
+      header: {  }
       footer: {  }
       empty: {  }
       relationships: {  }
       arguments: {  }
       display_extenders: {  }
+      link_url: ''
+      link_display: page_2
     cache_metadata:
       max-age: -1
       contexts:
@@ -467,8 +345,71 @@ display:
         - 'user.node_grants:view'
         - user.permissions
       tags:
-        - 'config:field.storage.node.field_start_date'
-        - 'config:field.storage.node.field_start_time'
+        - 'config:field.storage.node.field_council_agenda_number'
+  attachment_1:
+    display_plugin: attachment
+    id: attachment_1
+    display_title: Attachment
+    position: 3
+    display_options:
+      display_extenders:
+        metatag_display_extender: {  }
+      attachment_position: after
+      displays:
+        page_1: page_1
+      title: 'Recent Council Agendas'
+      defaults:
+        title: false
+        header: false
+        use_more: false
+        use_more_always: false
+        use_more_text: false
+        style: false
+        row: false
+      header:
+        area:
+          id: area
+          table: views
+          field: area
+          relationship: none
+          group_type: group
+          admin_label: ''
+          empty: false
+          tokenize: false
+          content:
+            value: '<h2>Recent Agendas</h2>'
+            format: simple_editor
+          plugin_id: text
+      pager:
+        type: some
+        options:
+          items_per_page: 5
+          offset: 0
+      use_more: true
+      use_more_always: true
+      use_more_text: 'More Dispositioned Agendas'
+      style:
+        type: default
+        options:
+          grouping: {  }
+          row_class: ''
+          default_row_class: true
+      row:
+        type: fields
+        options:
+          default_field_elements: true
+          inline: {  }
+          separator: ''
+          hide_empty: false
+    cache_metadata:
+      max-age: -1
+      contexts:
+        - 'languages:language_content'
+        - 'languages:language_interface'
+        - 'user.node_grants:view'
+        - user.permissions
+      tags:
+        - 'config:field.storage.node.field_council_agenda_number'
   page_1:
     display_plugin: page
     id: page_1
@@ -488,6 +429,160 @@ display:
         weight: -47
         context: '0'
         menu_name: main
+      filters:
+        status:
+          value: '1'
+          table: node_field_data
+          field: status
+          plugin_id: boolean
+          entity_type: node
+          entity_field: status
+          id: status
+          expose:
+            operator: ''
+            operator_limit_selection: false
+            operator_list: {  }
+          group: 1
+        type:
+          id: type
+          table: node_field_data
+          field: type
+          relationship: none
+          group_type: group
+          admin_label: ''
+          operator: in
+          value:
+            council_agenda: council_agenda
+          group: 1
+          exposed: false
+          expose:
+            operator_id: ''
+            label: ''
+            description: ''
+            use_operator: false
+            operator: ''
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: ''
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+            reduce: false
+            argument: null
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
+          entity_type: node
+          entity_field: type
+          plugin_id: bundle
+        field_council_agenda_date_range_end_value:
+          id: field_council_agenda_date_range_end_value
+          table: node__field_council_agenda_date_range
+          field: field_council_agenda_date_range_end_value
+          relationship: none
+          group_type: group
+          admin_label: ''
+          operator: '<='
+          value:
+            min: ''
+            max: ''
+            value: 'today +23 hours +59 minutes'
+            type: offset
+          group: 1
+          exposed: false
+          expose:
+            operator_id: ''
+            label: ''
+            description: ''
+            use_operator: false
+            operator: ''
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: ''
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+            placeholder: ''
+            min_placeholder: ''
+            max_placeholder: ''
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
+          plugin_id: datetime
+        field_council_agenda_date_range_value:
+          id: field_council_agenda_date_range_value
+          table: node__field_council_agenda_date_range
+          field: field_council_agenda_date_range_value
+          relationship: none
+          group_type: group
+          admin_label: ''
+          operator: '>='
+          value:
+            min: ''
+            max: ''
+            value: 'today -5 day'
+            type: date
+          group: 1
+          exposed: false
+          expose:
+            operator_id: ''
+            label: ''
+            description: ''
+            use_operator: false
+            operator: ''
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: ''
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+            placeholder: ''
+            min_placeholder: ''
+            max_placeholder: ''
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
+          plugin_id: datetime
+      defaults:
+        filters: false
+        filter_groups: false
+      filter_groups:
+        operator: AND
+        groups:
+          1: AND
     cache_metadata:
       max-age: -1
       contexts:
@@ -497,8 +592,7 @@ display:
         - 'user.node_grants:view'
         - user.permissions
       tags:
-        - 'config:field.storage.node.field_start_date'
-        - 'config:field.storage.node.field_start_time'
+        - 'config:field.storage.node.field_council_agenda_number'
   page_2:
     display_plugin: page
     id: page_2
@@ -656,5 +750,4 @@ display:
         - 'user.node_grants:view'
         - user.permissions
       tags:
-        - 'config:field.storage.node.field_start_date'
-        - 'config:field.storage.node.field_start_time'
+        - 'config:field.storage.node.field_council_agenda_number'
