@@ -50,19 +50,19 @@ class GetEFilesSizeTypeAction extends ViewsBulkOperationsActionBase {
         array_key_exists('Content-Type', $headers) ) {
       $file_size = (int)$headers['Content-Length'];
       if($file_size === 0) {
-        return $this->t('Failed to retrieve external document');
+        return $this->t('External document is empty');
       }
       // Content-Type header can be "text/html; charset=utf-8"
       $content_type_array = explode(';', $headers['Content-Type']);
       // If content type is text/HTML, it's not a file
       if(empty($content_type_array) || $content_type_array[0] === "text/html") {
-        return $this->t('Failed to retrieve external document');
+        return $this->t('The external document is a web page');
       }
 
       $entity->field_file_size->value = $file_size;
       $entity->field_mime_type->value = $content_type_array[0];
       $entity->save();
-      return $this->t('Bulk operation: updated eFiles size and type');
+      return $this->t('Bulk operation: updated file size and mime type');
     }
     return $this->t('Failed to retrieve external document');
   }
