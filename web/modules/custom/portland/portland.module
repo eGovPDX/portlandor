@@ -801,29 +801,22 @@ function _validate_document(&$form, \Drupal\Core\Form\FormStateInterface $form_s
     // If the eFiles link has value
     if( !empty($efiles_link) && !empty($efiles_link[0]['uri']) ) {
       if( !empty($document) && !empty($document[0]["fids"]) ) {
-        $form_state->setErrorByName('field_document', t('Please remove the uploaded file or the eFiles link.'));
+        $form_state->setErrorByName('field_document', t('Please remove the uploaded file or the external file link.'));
         return;
       }
 
       $external_file_url = strtolower($efiles_link[0]['uri']);
 
-      // Validate the file URL format is "https://efiles.portlandoregon.gov/record/1234567" or
-      // "https://efiles.portlandoregon.gov/record/1234567/File/Document"
-      $efiles_url_regex = '/^https:\/\/efiles.portlandoregon.gov\/record\/\d+(\/file\/document)?$/i';
-      if( ! preg_match($efiles_url_regex, $external_file_url) ) {
-        $form_state->setErrorByName('field_efiles_link', t('eFiles URL must be in the format of "https://efiles.portlandoregon.gov/record/1234567" or "https://efiles.portlandoregon.gov/record/1234567/File/Document".'));
-        return;
-      }
-
-      // Append "/file/document" if it's missing
-      if( ! substr_compare($external_file_url, "/file/document", -strlen("/file/document") ) === 0) {
+      // Append "/file/document" if it's missing on an eFiles link
+      if( strpos($external_file_url, 'https://efiles.portlandoregon.gov/') === 0 && 
+        ! ( substr_compare($external_file_url, "/file/document", -strlen("/file/document") ) === 0) ) {
         $external_file_url .= "/file/document";
       }
 
       // Get eFiles file size and MIME type
       try {
-        $headers = get_headers($efiles_link[0]['uri'] . '/File/Document', 1);
-      }catch (exception $e) {
+        $headers = get_headers($external_file_url, 1);
+      }catch (Exception $e) {
         $form_state->setErrorByName('field_efiles_link', 'Cannot retrieve file size and mimetype from this link.');
         return;
       }
@@ -832,28 +825,29 @@ function _validate_document(&$form, \Drupal\Core\Form\FormStateInterface $form_s
           array_key_exists('Content-Type', $headers) ) {
         $file_size = (int)$headers['Content-Length'];
         if($file_size === 0) {
-          $form_state->setErrorByName('field_efiles_link', t('Invalid eFiles link'));
+          $form_state->setErrorByName('field_efiles_link', t('The linked file is empty.'));
           return;
         }
-        $content_type = $headers['Content-Type'];
-        // If the eFiles link points to a webpage, assume the link is wrong
-        if($content_type === "text/html") {
-          $form_state->setErrorByName('field_efiles_link', t('The eFiles link is not a document link.'));
+        // Content-Type header can be "text/html; charset=utf-8"
+        $content_type_array = explode(';', $headers['Content-Type']);
+        // If content type is text/HTML, it's not a file
+        if(empty($content_type_array) || $content_type_array[0] === "text/html") {
+          $form_state->setErrorByName('field_efiles_link', t('The linked file is an HTML page. Please use External Resource instead.'));
           return;
         }
 
         $form_state->setValue('field_file_size', [["value" => $file_size]]);
-        $form_state->setValue('field_mime_type', [["value" => $headers['Content-Type']]] );
+        $form_state->setValue('field_mime_type', [["value" => $content_type_array[0]]] );
       }
       else {
-        $form_state->setErrorByName('field_efiles_link', t('Invalid eFiles link'));
+        $form_state->setErrorByName('field_efiles_link', t('Cannot retrieve file size and mimetype from this link.'));
       }
     }
     else {
       $document = $form_state->getValue('field_document');
       // The document field can't be empty when the eFile link is empty
       if( empty($document) || empty($document[0]["fids"]) ) {
-        $form_state->setErrorByName('field_document', t('Please upload a file or add an eFiles link'));        
+        $form_state->setErrorByName('field_document', t('Please upload a file or add an external file link'));        
       }
     }
   }
