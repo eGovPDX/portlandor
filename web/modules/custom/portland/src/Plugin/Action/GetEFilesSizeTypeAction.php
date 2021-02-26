@@ -45,7 +45,8 @@ class GetEFilesSizeTypeAction extends ViewsBulkOperationsActionBase {
       return $this->t('Failed to retrieve external document');
     }
 
-    if( !empty($headers) && $headers[0] === "HTTP/1.1 200 OK" && 
+    if( !empty($headers) && 
+        (substr_compare($external_file_url, "200 OK", -strlen("200 OK") ) === 0) &&
         array_key_exists('Content-Length', $headers) &&
         array_key_exists('Content-Type', $headers) ) {
       $file_size = (int)$headers['Content-Length'];
