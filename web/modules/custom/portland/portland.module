@@ -487,35 +487,22 @@ function portland_generate_extended_title_for_group_views($orig_title, $route_ma
 {
     // get the view id from the path
     $view_id = $route_match->getParameter('view_id');
-    $taxonomy_term = $route_match->getParameter('taxonomy_term');
     $site_name = \Drupal::config('system.site')->get('name');
     $display_id = $route_match->getParameter('display_id');
 
-    if (!isset($view_id) && isset($taxonomy_term)) {
-        // it's a taxonomy term page, use the term name in the title to prevent duplicates
-        $tid = $taxonomy_term->id();
-        $group_title = \Drupal::entityTypeManager()->getStorage('taxonomy_term')->load($tid)->name->value;
-        return "$orig_title | $group_title | $site_name";
+    $path = $route_match->getRouteObject()->getPath();
+    // If this is a group path, add group name to title
+    if($path != null && (substr_compare($path, "/group", 0, strlen("/group")) === 0) ) {
+        $group_id = $route_match->getParameter('group') ?? $route_match->getParameter('arg_0'); // sometimes the group object is returned; sometimes just the id string
+        $type = is_string($group_id) ? "string" : get_class($group_id);
+        $group_entity = $type == "Drupal\group\Entity\Group" ? $group_id : Drupal\group\Entity\Group::load($group_id);
+        if (isset($group_entity)) {
+            $page_title = $orig_title;
+            $group_title = $group_entity->label();
+            return "$page_title | $group_title | $site_name";
+        }
     }
-
     switch ($view_id) {
-        case "group_programs":
-        case "group_offices":
-        case "group_projects":
-        case "group_events":
-        case "group_media":
-        case "group_news":
-        case "group_services":
-        case "group_pages":
-            $group_id = $route_match->getParameter('group'); // sometimes the group object is returned; sometimes just the id string
-            $type = is_string($group_id) ? "string" : get_class($group_id);
-            $group_entity = $type == "Drupal\group\Entity\Group" ? $group_id : Drupal\group\Entity\Group::load($group_id);
-            if (isset($group_entity)) {
-                $page_title = $orig_title;
-                $group_title = $group_entity->label();
-                return "$page_title | $group_title | $site_name";
-            }
-            break;
         case "content_at_location":
             // Get location title
             $location_nid = $route_match->getParameter('arg_0');
