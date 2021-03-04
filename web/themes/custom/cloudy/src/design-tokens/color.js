@@ -1,65 +1,97 @@
 module.exports = {
   color: {
     neutral: {
-      '900': { value: '#040506' }, // text
-      '800': { value: '#2A313C' }, // text
-      '700': { value: '#495669' }, // text
-      '500': { value: '#7A899F' }, // text
-      '300': { value: '#B3BDCC' },
-      '200': { value: '#D1D7E0' },
-      '100': { value: '#EFF1F5' },
+      '900': { value: '#15191E' },
+      '800': { value: '#343D4B' },
+      '700': { value: '#495669' },
+      '600': { value: '#5E6F87' },
+      '500': { value: '#7888A1' },
+      '400': { value: '#96A3B6' },
+      '300': { value: '#B4BDCB' },
+      '200': { value: '#E1E5EA' },
+      '100': { value: '#F0F2F4' },
       '0': {
-        value: '#FFFFFF',
+        value: '#FFF',
         comment: 'White',
-      }, // text
+      },
     },
     blue: {
-      '800': { value: '#234476' },// text
-      '500': { value: '#1D5DBF' },// text
-      '300': { value: '#A3BADB' },
-      '100': { value: '#ECF1F9' },
+      '900': { value: '#0A2143' },
+      '800': { value: '#103670' },
+      '700': { value: '#164C9C' },
+      '600': { value: '#1D62C9' },
+      '500': { value: '#367BE2' },
+      '400': { value: '#6398E9' },
+      '300': { value: '#8FB6EF' },
+      '200': { value: '#BCD3F5' },
+      '100': { value: '#E9F0FC' },
     },
     green: {
-      '800': { value: '#206035' },
-      '500': { value: '#39862D' },// text
-      '300': { value: '#94D194' },
-      '100': { value: '#EFF5EF' },
+      '900': { value: '#1A3913' },
+      '800': { value: '#2B6020' },
+      '700': { value: '#3C862D' },
+      '600': { value: '#4DAC39' },
+      '500': { value: '#66C653' },
+      '400': { value: '#88D279' },
+      '300': { value: '#AADF9F' },
+      '200': { value: '#CCECC6' },
+      '100': { value: '#EEF9EC' },
     },
     yellow: {
-      '800': { value: '#866B09' },// text
-      '500': { value: '#F2B90D' },
-      '300': { value: '#FCDE83' },
-      '100': { value: '#F7F5EE' },
+      '900': { value: '#493804' },
+      '800': { value: '#795C06' },
+      '700': { value: '#916F08' },
+      '600': { value: '#DAA60B' },
+      '500': { value: '#F4C025' },
+      '400': { value: '#F6CE55' },
+      '300': { value: '#F9DC86' },
+      '200': { value: '#FBEAB6' },
+      '100': { value: '#FEF8E7' },
     },
     orange: {
-      '800': { value: '#793606' },
-      '500': { value: '#B85814' },// text
-      '300': { value: '#ECA979' },
-      '100': { value: '#F9F1EC' },
+      '900': { value: '#3F220D' },
+      '800': { value: '#6A3916' },
+      '700': { value: '#93501F' },
+      '600': { value: '#BD6628' },
+      '500': { value: '#D78042' },
+      '400': { value: '#E09C6C' },
+      '300': { value: '#E9B896' },
+      '200': { value: '#F2D5C0' },
+      '100': { value: '#FBF1EA' },
+      'temp': { value: '#b85814' },
     },
     red: {
-      '800': { value: '#602020' },
-      '500': { value: '#BF4040' },// text
-      '300': { value: '#D98C8C' },
-      '100': { value: '#F9ECEC' },
+      '900': { value: '#3B1111' },
+      '800': { value: '#631D1D' },
+      '700': { value: '#8A2828' },
+      '600': { value: '#B23434' },
+      '500': { value: '#CB4D4D' },
+      '400': { value: '#D77575' },
+      '300': { value: '#E29C9C' },
+      '200': { value: '#EEC4C4' },
+      '100': { value: '#F9EBEB' },
     },
     purple: {
-      '800': { value: '#202060' },
-      '500': { value: '#4040BF' },// text
-      '300': { value: '#8C8CD9' },
-      '100': { value: '#EFEFF5' },
+      '900': { value: '#171726' },
+      '800': { value: '#28285D' },
+      '700': { value: '#36367D' },
+      '600': { value: '#4545A1' },
+      '500': { value: '#5F5FBA' },
+      '400': { value: '#8282C9' },
+      '300': { value: '#A6A6D9' },
+      '200': { value: '#C9C9E8' },
+      '100': { value: '#EDEDF7' },
     },
     teal: {
-      '800': { value: '#205860' },
-      '500': { value: '#077D8D' },// text
-      '300': { value: '#8CD0D9' },
-      '100': { value: '#EDF6F7' },
+      '900': { value: '#083B45' },
+      '800': { value: '#0D6273' },
+      '700': { value: '#1289A1' },
+      '600': { value: '#17B0CF' },
+      '500': { value: '#30C9E8' },
+      '400': { value: '#5ED5ED' },
+      '300': { value: '#8CE1F2' },
+      '200': { value: '#BAEDF7' },
+      '100': { value: '#E8F9FC' },
     },
-    'mega menu': {
-      '500': { value: '#7888A1' },
-      '700': { value: '#1F252D' },
-      '1000': { value: '#171726' },
-      'button-bg': { value: 'rgba(255,255,255,.2)' },
-    }
   }
 };

@@ -11,7 +11,7 @@ Drupal.behaviors.cloudyBackToTop = {
       var scrollPos = $(document).scrollTop();
       if (scrollPos > showHeight && !isAttached) {
         var buttonText = Drupal.t('Back to top');
-        $('#block-cloudy-content', context).append('<div id="back-to-top" class="btn btn-dark"><a href="#header">' + buttonText + '</a></div>');
+        $('#block-cloudy-content', context).append('<div id="back-to-top" class="btn cloudy-btn-purple"><a href="#header">' + buttonText + '</a></div>');
         isAttached = true;
       } else if (scrollPos <= showHeight && isAttached) {
         $('#back-to-top').remove();
@@ -25,4 +25,3 @@ Drupal.behaviors.cloudyBackToTop = {
     });
   }
 };
-
