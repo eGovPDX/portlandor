@@ -794,7 +794,13 @@ function _validate_document(&$form, \Drupal\Core\Form\FormStateInterface $form_s
 
       $external_file_url = strtolower($efiles_link[0]['uri']);
 
-      // Append "/file/document" if it's missing on an eFiles link
+      $efiles_url_regex = '/^https:\/\/efiles.portlandoregon.gov\/(.*)/i';
+      if( !preg_match($efiles_url_regex, $external_file_url) ) {
+        $form_state->setErrorByName('field_efiles_link', t('The eFiles link must starts with https://efiles.portlandoregon.gov/.'));
+        return;
+      }
+
+      // Append "/file/document" if it's missing on an eFiles link in order to retrieve mime type and file size
       if( strpos($external_file_url, 'https://efiles.portlandoregon.gov/') === 0 && 
         ! ( substr_compare($external_file_url, "/file/document", -strlen("/file/document") ) === 0) ) {
         $external_file_url .= "/file/document";
@@ -812,7 +818,7 @@ function _validate_document(&$form, \Drupal\Core\Form\FormStateInterface $form_s
           array_key_exists('Content-Type', $headers) ) {
         $file_size = isset($headers['Content-Length']) ? (int)$headers['Content-Length'] : 0;
         if($file_size === 0) {
-          // $form_state->setErrorByName('field_efiles_link', t('The linked file is empty.'));
+          $form_state->setErrorByName('field_efiles_link', t('The linked file is empty.'));
           return;
         }
         // Content-Type header can be "text/html; charset=utf-8"
