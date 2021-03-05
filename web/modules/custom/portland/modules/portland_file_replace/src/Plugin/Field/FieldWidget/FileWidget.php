@@ -19,15 +19,9 @@ class FileWidget extends CoreFileWidget {
 
     // If there is already a file, add "replace file" link
     if( !empty($element['#default_value']['fids']) ) {
-      // $replace = $processed_element['remove_button'];
-      // $replace['#name'] = "file_replace_button";
-      // $replace['#value'] = t("Replace");
-      // $replace['#weight'] = 2;
-      // $processed_element['replace_button'] = $replace;
-
       $fid = $element['#default_value']['fids'][0];
       $file = \Drupal\file\Entity\File::load($fid);
-      // Only show replace link on permanent files
+      // Only show replace link on permanent files. file_replace cannot replace temporary files.
       if( $file->isPermanent() ) {
         $processed_element['replace_link'] = [
           '#type' => 'markup',
