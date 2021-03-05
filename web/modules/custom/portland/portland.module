@@ -787,7 +787,8 @@ function _validate_document(&$form, \Drupal\Core\Form\FormStateInterface $form_s
     $document = $form_state->getValue('field_document');
     // If the eFiles link has value
     if( !empty($efiles_link) && !empty($efiles_link[0]['uri']) ) {
-      $external_file_url = strtolower($efiles_link[0]['uri']);
+      $user_input_file_url = strtolower($efiles_link[0]['uri']);
+      $external_file_url = $user_input_file_url;
       // Validate the file URL is an eFiles link
       $efiles_url_regex = '/^https:\/\/efiles.portlandoregon.gov\/(.*)/i';
       if( !preg_match($efiles_url_regex, $external_file_url) ) {
@@ -830,7 +831,21 @@ function _validate_document(&$form, \Drupal\Core\Form\FormStateInterface $form_s
         $form_state->setValue('field_mime_type', [["value" => $content_type_array[0]]] );
       }
       else {
-        $form_state->setErrorByName('field_efiles_link', t('Cannot retrieve file size and mimetype from this link.'));
+        // Verify it's a valid eFiles folder
+        try {
+          $headers = get_headers($user_input_file_url, 1);
+        }catch (Exception $e) {
+          $form_state->setErrorByName('field_efiles_link', 'Cannot access this link.');
+          return;
+        }
+
+        // Make sure the response code is 200 and content type is HTML
+        if( empty($headers) || 
+            (substr_compare($headers[0], "200 OK", -strlen("200 OK") ) !== 0) ||
+            ( ! array_key_exists('Content-Type', $headers) ) ||
+            substr($headers['Content-Type'], 0, strlen("text/html")) !== "text/html" ) {
+            $form_state->setErrorByName('field_efiles_link', t('Cannot retrieve file size and mimetype from this link.'));
+        }
       }
     }
     else {
