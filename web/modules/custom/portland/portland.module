@@ -787,13 +787,8 @@ function _validate_document(&$form, \Drupal\Core\Form\FormStateInterface $form_s
     $document = $form_state->getValue('field_document');
     // If the eFiles link has value
     if( !empty($efiles_link) && !empty($efiles_link[0]['uri']) ) {
-      if( !empty($document) && !empty($document[0]["fids"]) ) {
-        $form_state->setErrorByName('field_document', t('Please remove the uploaded file or the external file link.'));
-        return;
-      }
-
       $external_file_url = strtolower($efiles_link[0]['uri']);
-
+      // Validate the file URL is an eFiles link
       $efiles_url_regex = '/^https:\/\/efiles.portlandoregon.gov\/(.*)/i';
       if( !preg_match($efiles_url_regex, $external_file_url) ) {
         $form_state->setErrorByName('field_efiles_link', t('The eFiles link must starts with https://efiles.portlandoregon.gov/.'));
@@ -815,7 +810,8 @@ function _validate_document(&$form, \Drupal\Core\Form\FormStateInterface $form_s
       }
       if( !empty($headers) && 
           (substr_compare($headers[0], "200 OK", -strlen("200 OK") ) === 0) &&
-          array_key_exists('Content-Type', $headers) ) {
+          array_key_exists('Content-Type', $headers) &&
+          array_key_exists('Content-Length', $headers)) {
         $file_size = isset($headers['Content-Length']) ? (int)$headers['Content-Length'] : 0;
         if($file_size === 0) {
           $form_state->setErrorByName('field_efiles_link', t('The linked file is empty.'));
