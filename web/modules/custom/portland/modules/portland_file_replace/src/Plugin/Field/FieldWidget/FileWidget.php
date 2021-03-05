@@ -21,8 +21,9 @@ class FileWidget extends CoreFileWidget {
     if( !empty($element['#default_value']['fids']) ) {
       $fid = $element['#default_value']['fids'][0];
       $file = \Drupal\file\Entity\File::load($fid);
+      $user = \Drupal::currentUser();
       // Only show replace link on permanent files. file_replace cannot replace temporary files.
-      if( $file->isPermanent() ) {
+      if( $file != null && $user != null && $file->isPermanent() && $user->hasPermission('replace files') ) {
         $processed_element['replace_link'] = [
           '#type' => 'markup',
           '#markup' => '<a target= "_blank" href="/admin/content/files/replace/' . 
