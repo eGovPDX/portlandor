@@ -44,8 +44,6 @@ class FeedsEventsSubscriber implements EventSubscriberInterface {
     $feed = $event->getFeed();
 
     if ($feed->type->entity->id() == 'synergy_json_feed') {
-      $node->field_location->target_id = '1135'; // Node ID of 1900 Building
-
       $recordStatus = $item->get('recordstatus');
       if($recordStatus == 'Modified') {
         $node->field_event_status->value = 'Rescheduled';
@@ -112,19 +110,29 @@ class FeedsEventsSubscriber implements EventSubscriberInterface {
     if ($feed->type->entity->id() == 'synergy_json_feed') {
       $eventCaseNumber = $item->get('eventcasenumber');
       $caseType = $item->get('casetype');
-      // $hearingLocation = $item->get('hearinglocation');
+      $hearingLocation = $item->get('hearinglocation');
       $attendees = $item->get('attendees');
       $recordStatus = $item->get('recordstatus');
+
       // Used to store case number
       $node->field_summary->value = '';
       // Used to store case type
       $node->field_search_keywords->value = '';
+      // Used to store hearing location
+      $node->revision_log->value = '';
+
+      // If Zoom is in the hearing location field, assume this is an online meeting
+      if( strpos( strtolower($hearingLocation), 'zoom') != false) {
+        $node->field_is_online->value = true;
+      }
+      else {
+        $node->field_location->target_id = '1135'; // Node ID of 1900 Building
+      }
+
       $description = $item->get('description');
       if ($description == null) $description = '\n';
-      $node->field_body_content->value = "<p><strong>Case number:</strong> $eventCaseNumber<br/><strong>Case type:</strong> $caseType<br/><strong>Attendees:</strong> $attendees</p>" . str_replace('\n', '<br/>', $description);
+      $node->field_body_content->value = "<p><strong>Case number:</strong> $eventCaseNumber<br/><strong>Case type:</strong> $caseType<br/><strong>Attendees:</strong> $attendees<br /><strong>Hearing location:</strong> $hearingLocation<br/></p>" . str_replace('\n', '<br/>', $description);
       $node->field_body_content->format = 'simplified_editor_with_media_embed';
-
-      //<strong>Hearing location:</strong> $hearingLocation<br/>
 
       $node->field_start_time->value = $this->getTimeFromDate($item->get('eventstartdatetime'));
       $node->field_end_time->value = $this->getTimeFromDate($item->get('eventenddatetime'));
