@@ -487,35 +487,22 @@ function portland_generate_extended_title_for_group_views($orig_title, $route_ma
 {
     // get the view id from the path
     $view_id = $route_match->getParameter('view_id');
-    $taxonomy_term = $route_match->getParameter('taxonomy_term');
     $site_name = \Drupal::config('system.site')->get('name');
     $display_id = $route_match->getParameter('display_id');
 
-    if (!isset($view_id) && isset($taxonomy_term)) {
-        // it's a taxonomy term page, use the term name in the title to prevent duplicates
-        $tid = $taxonomy_term->id();
-        $group_title = \Drupal::entityTypeManager()->getStorage('taxonomy_term')->load($tid)->name->value;
-        return "$orig_title | $group_title | $site_name";
+    $path = $route_match->getRouteObject()->getPath();
+    // If this is a group path, add group name to title
+    if($path != null && (substr_compare($path, "/group", 0, strlen("/group")) === 0) ) {
+        $group_id = $route_match->getParameter('group') ?? $route_match->getParameter('arg_0'); // sometimes the group object is returned; sometimes just the id string
+        $type = is_string($group_id) ? "string" : get_class($group_id);
+        $group_entity = $type == "Drupal\group\Entity\Group" ? $group_id : Drupal\group\Entity\Group::load($group_id);
+        if (isset($group_entity)) {
+            $page_title = $orig_title;
+            $group_title = $group_entity->label();
+            return "$page_title | $group_title | $site_name";
+        }
     }
-
     switch ($view_id) {
-        case "group_programs":
-        case "group_offices":
-        case "group_projects":
-        case "group_events":
-        case "group_media":
-        case "group_news":
-        case "group_services":
-        case "group_pages":
-            $group_id = $route_match->getParameter('group'); // sometimes the group object is returned; sometimes just the id string
-            $type = is_string($group_id) ? "string" : get_class($group_id);
-            $group_entity = $type == "Drupal\group\Entity\Group" ? $group_id : Drupal\group\Entity\Group::load($group_id);
-            if (isset($group_entity)) {
-                $page_title = $orig_title;
-                $group_title = $group_entity->label();
-                return "$page_title | $group_title | $site_name";
-            }
-            break;
         case "content_at_location":
             // Get location title
             $location_nid = $route_match->getParameter('arg_0');
@@ -781,6 +768,94 @@ function portland_form_alter(&$form, &$form_state, $form_id)
     if (isset($form["replace_file"])) {
         $form["replace_file"]['keep_original_filename']["#access"] = false;
     }
+
+    if( $form_id === "media_document_add_form" || $form_id === "media_document_edit_form" ) {
+        $form['#validate'][] = '_validate_document';
+    }
+}
+
+/**
+ * A helper function to validate document.
+ */
+function _validate_document(&$form, \Drupal\Core\Form\FormStateInterface $form_state) {
+  if ($form_state->hasValue('field_efiles_link')) {
+    // DO NOT validate when the user clicks on the remove document button.
+    // ONLY validate when the entire form is submitted.
+    if($form_state->getTriggeringElement()["#name"] === "field_document_0_remove_button") return;
+
+    $efiles_link = $form_state->getValue('field_efiles_link');
+    $document = $form_state->getValue('field_document');
+    // If the eFiles link has value
+    if( !empty($efiles_link) && !empty($efiles_link[0]['uri']) ) {
+      $user_input_file_url = strtolower($efiles_link[0]['uri']);
+      $external_file_url = $user_input_file_url;
+      // Validate the file URL is an eFiles link
+      $efiles_url_regex = '/^https:\/\/efiles.portlandoregon.gov\/(.*)/i';
+      if( !preg_match($efiles_url_regex, $external_file_url) ) {
+        $form_state->setErrorByName('field_efiles_link', t('The eFiles link must start with https://efiles.portlandoregon.gov/.'));
+        return;
+      }
+
+      // Append "/file/document" if it's missing on an eFiles link in order to retrieve mime type and file size
+      if( strpos($external_file_url, 'https://efiles.portlandoregon.gov/') === 0 && 
+        ! ( substr_compare($external_file_url, "/file/document", -strlen("/file/document") ) === 0) ) {
+        $external_file_url .= "/file/document";
+      }
+
+      // Get eFiles file size and MIME type
+      try {
+        $headers = get_headers($external_file_url, 1);
+      }catch (Exception $e) {
+        $form_state->setErrorByName('field_efiles_link', 'Cannot retrieve file size and mimetype from this link.');
+        return;
+      }
+      if( !empty($headers) && 
+          (substr_compare($headers[0], "200 OK", -strlen("200 OK") ) === 0) &&
+          array_key_exists('Content-Type', $headers) &&
+          array_key_exists('Content-Length', $headers)) {
+        $file_size = isset($headers['Content-Length']) ? (int)$headers['Content-Length'] : 0;
+        if($file_size === 0) {
+          $form_state->setErrorByName('field_efiles_link', t('The linked file is empty.'));
+          return;
+        }
+        // Content-Type header can be "text/html; charset=utf-8"
+        $content_type_array = explode(';', $headers['Content-Type']);
+        // If content type is text/HTML, it's not a file
+        if(empty($content_type_array) || $content_type_array[0] === "text/html") {
+          // Commented this line out to support existing documents that are linked to an eFiles folder
+          // $form_state->setErrorByName('field_efiles_link', t('The linked file is an HTML page. Please use External Resource instead.'));
+          return;
+        }
+
+        $form_state->setValue('field_file_size', [["value" => $file_size]]);
+        $form_state->setValue('field_mime_type', [["value" => $content_type_array[0]]] );
+      }
+      else {
+        // Verify it's a valid eFiles folder
+        try {
+          $headers = get_headers($user_input_file_url, 1);
+        }catch (Exception $e) {
+          $form_state->setErrorByName('field_efiles_link', 'Please verify the eFiles link is valid.');
+          return;
+        }
+
+        // Make sure the response code is 200 and content type is HTML
+        if( empty($headers) || 
+            (substr_compare($headers[0], "200 OK", -strlen("200 OK") ) !== 0) ||
+            ( ! array_key_exists('Content-Type', $headers) ) ||
+            substr($headers['Content-Type'], 0, strlen("text/html")) !== "text/html" ) {
+            $form_state->setErrorByName('field_efiles_link', t('Please verify the eFiles link is valid.'));
+        }
+      }
+    }
+    else {
+      $document = $form_state->getValue('field_document');
+      // The document field can't be empty when the eFile link is empty
+      if( empty($document) || empty($document[0]["fids"]) ) {
+        $form_state->setErrorByName('field_document', t('Please upload a file or add an external file link'));        
+      }
+    }
+  }
 }
 
 /**
@@ -1045,8 +1120,7 @@ function _should_overwrite_council_document_title($node) {
     $document_type_entity = $node->field_council_document_type->entity;
     $document_type = ($document_type_entity == null) ? '' : $document_type_entity->name->value;
 
-    if ( ($document_type == 'Ordinance' || $document_type == 'Resolution') &&
-      ($document_status == 'Passed' || $document_status == 'Adopted')) {
+    if ( ($document_status != null)) {
       return false;
     }
     else {

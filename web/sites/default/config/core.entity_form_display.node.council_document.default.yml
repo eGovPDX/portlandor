@@ -9,13 +9,12 @@ dependencies:
     - field.field.node.council_document.field_body_content
     - field.field.node.council_document.field_bureau
     - field.field.node.council_document.field_collaboration_storage_link
+    - field.field.node.council_document.field_confirmed_time_certain
     - field.field.node.council_document.field_council_clerk
-    - field.field.node.council_document.field_council_document_number
     - field.field.node.council_document.field_council_document_status
     - field.field.node.council_document.field_council_document_type
     - field.field.node.council_document.field_date_of_final_disposition
     - field.field.node.council_document.field_date_prepared
-    - field.field.node.council_document.field_disposition_notes
     - field.field.node.council_document.field_documents_and_exhibits
     - field.field.node.council_document.field_efiles_link
     - field.field.node.council_document.field_file_impact_statement
@@ -42,9 +41,9 @@ dependencies:
     - content_moderation
     - datetime
     - field_group
-    - file
     - link
     - path
+    - portland_file_replace
     - text
     - time_field
 third_party_settings:
@@ -53,7 +52,7 @@ third_party_settings:
       children:
         - field_efiles_link
       parent_name: ''
-      weight: 20
+      weight: 22
       format_type: details
       region: content
       format_settings:
@@ -67,7 +66,7 @@ third_party_settings:
       children:
         - field_collaboration_storage_link
       parent_name: ''
-      weight: 19
+      weight: 21
       format_type: details
       region: content
       format_settings:
@@ -79,15 +78,15 @@ third_party_settings:
       label: Collaboration
     group_council_clerk_only:
       children:
+        - field_confirmed_time_certain
         - field_council_document_status
         - field_amended_by_council
         - field_council_clerk
         - field_auditor
-        - field_council_document_number
         - field_date_of_final_disposition
         - field_disposition_notes
       parent_name: ''
-      weight: 22
+      weight: 2
       format_type: details
       region: content
       format_settings:
@@ -101,7 +100,7 @@ third_party_settings:
       children:
         - field_finanicial_impact_analysis
       parent_name: ''
-      weight: 21
+      weight: 23
       format_type: details
       region: content
       format_settings:
@@ -118,25 +117,25 @@ mode: default
 content:
   created:
     type: datetime_timestamp
-    weight: 24
+    weight: 25
     region: content
     settings: {  }
     third_party_settings: {  }
   field_agenda_type:
-    weight: 9
+    weight: 10
     settings: {  }
     third_party_settings: {  }
     type: options_select
     region: content
   field_amended_by_council:
-    weight: 27
+    weight: 39
     settings:
       display_label: true
     third_party_settings: {  }
     type: boolean_checkbox
     region: content
   field_auditor:
-    weight: 29
+    weight: 41
     settings:
       size: 60
       placeholder: ''
@@ -144,7 +143,7 @@ content:
     type: string_textfield
     region: content
   field_body_content:
-    weight: 14
+    weight: 16
     settings:
       rows: 5
       placeholder: ''
@@ -152,7 +151,7 @@ content:
     type: text_textarea
     region: content
   field_bureau:
-    weight: 13
+    weight: 15
     settings: {  }
     third_party_settings:
       conditional_fields:
@@ -184,8 +183,34 @@ content:
     third_party_settings: {  }
     type: link_default
     region: content
+  field_confirmed_time_certain:
+    weight: 37
+    settings:
+      display_label: true
+    third_party_settings:
+      conditional_fields:
+        6d36efab-8d9d-4574-bb35-e0d0d592d527:
+          dependee: field_agenda_type
+          settings:
+            state: visible
+            condition: value
+            grouping: OR
+            values_set: 1
+            value: ''
+            values: {  }
+            value_form:
+              -
+                value: time_certain
+            effect: show
+            effect_options: {  }
+            selector: ''
+            form_mode: default
+          entity_type: node
+          bundle: council_document
+    type: boolean_checkbox
+    region: content
   field_council_clerk:
-    weight: 28
+    weight: 40
     settings:
       match_operator: CONTAINS
       match_limit: 10
@@ -194,34 +219,26 @@ content:
     third_party_settings: {  }
     type: entity_reference_autocomplete
     region: content
-  field_council_document_number:
-    weight: 30
-    settings:
-      size: 60
-      placeholder: ''
-    third_party_settings: {  }
-    type: string_textfield
-    region: content
   field_council_document_status:
-    weight: 26
+    weight: 38
     settings: {  }
     third_party_settings: {  }
     type: options_select
     region: content
   field_council_document_type:
-    weight: 2
+    weight: 3
     settings: {  }
     third_party_settings: {  }
     type: options_select
     region: content
   field_date_of_final_disposition:
-    weight: 31
+    weight: 42
     settings: {  }
     third_party_settings: {  }
     type: datetime_default
     region: content
   field_date_prepared:
-    weight: 16
+    weight: 18
     settings: {  }
     third_party_settings:
       conditional_fields:
@@ -245,23 +262,15 @@ content:
           bundle: council_document
     type: datetime_default
     region: content
-  field_disposition_notes:
-    weight: 32
-    settings:
-      rows: 5
-      placeholder: ''
-    third_party_settings: {  }
-    type: text_textarea
-    region: content
   field_documents_and_exhibits:
-    weight: 17
+    weight: 19
     settings:
       progress_indicator: throbber
     third_party_settings: {  }
-    type: file_generic
+    type: portland_file_replace_file_widget
     region: content
   field_efiles_link:
-    weight: 11
+    weight: 31
     settings:
       placeholder_url: ''
       placeholder_title: ''
@@ -269,7 +278,7 @@ content:
     type: link_default
     region: content
   field_file_impact_statement:
-    weight: 18
+    weight: 20
     settings:
       progress_indicator: throbber
     third_party_settings:
@@ -292,7 +301,7 @@ content:
             form_mode: default
           entity_type: node
           bundle: council_document
-    type: file_generic
+    type: portland_file_replace_file_widget
     region: content
   field_finanicial_impact_analysis:
     weight: 33
@@ -316,7 +325,7 @@ content:
     type: string_textarea
     region: content
   field_introduced_by:
-    weight: 12
+    weight: 14
     settings: {  }
     third_party_settings:
       conditional_fields:
@@ -341,7 +350,7 @@ content:
     type: chosen_select
     region: content
   field_is_amends_budget:
-    weight: 4
+    weight: 5
     settings:
       display_label: true
     third_party_settings:
@@ -367,7 +376,7 @@ content:
     type: boolean_checkbox
     region: content
   field_is_code_change:
-    weight: 5
+    weight: 6
     settings:
       display_label: true
     third_party_settings:
@@ -391,7 +400,7 @@ content:
     type: boolean_checkbox
     region: content
   field_is_emergency_ordinance:
-    weight: 3
+    weight: 4
     settings:
       display_label: true
     third_party_settings:
@@ -417,7 +426,7 @@ content:
     type: boolean_checkbox
     region: content
   field_is_portland_policy:
-    weight: 6
+    weight: 7
     settings:
       display_label: true
     third_party_settings:
@@ -441,7 +450,7 @@ content:
     type: boolean_checkbox
     region: content
   field_needs_attorney_review:
-    weight: 7
+    weight: 8
     settings:
       display_label: true
     third_party_settings:
@@ -465,7 +474,7 @@ content:
     type: boolean_checkbox
     region: content
   field_prepared_by:
-    weight: 15
+    weight: 17
     settings:
       size: 60
       placeholder: ''
@@ -492,14 +501,14 @@ content:
     type: string_textfield
     region: content
   field_requested_council_date:
-    weight: 8
+    weight: 9
     settings: {  }
     third_party_settings:
       conditional_fields: {  }
     type: datetime_default
     region: content
   field_requested_start_time:
-    weight: 11
+    weight: 12
     settings:
       enabled: false
       step: 5
@@ -526,7 +535,7 @@ content:
     type: time_widget
     region: content
   field_reviewer:
-    weight: 27
+    weight: 28
     settings:
       match_operator: CONTAINS
       size: 60
@@ -536,7 +545,7 @@ content:
     type: entity_reference_autocomplete
     region: content
   field_time_requested:
-    weight: 10
+    weight: 11
     settings:
       size: 60
       placeholder: ''
@@ -562,13 +571,13 @@ content:
     region: content
   moderation_state:
     type: moderation_state_default
-    weight: 28
+    weight: 29
     settings: {  }
     region: content
     third_party_settings: {  }
   path:
     type: path
-    weight: 25
+    weight: 26
     region: content
     settings: {  }
     third_party_settings: {  }
@@ -582,7 +591,7 @@ content:
     third_party_settings: {  }
   uid:
     type: entity_reference_autocomplete
-    weight: 23
+    weight: 24
     settings:
       match_operator: CONTAINS
       size: 60
@@ -591,7 +600,7 @@ content:
     region: content
     third_party_settings: {  }
   url_redirects:
-    weight: 26
+    weight: 27
     region: content
     settings: {  }
     third_party_settings: {  }
