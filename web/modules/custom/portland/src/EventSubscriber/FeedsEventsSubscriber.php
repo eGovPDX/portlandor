@@ -125,9 +125,9 @@ class FeedsEventsSubscriber implements EventSubscriberInterface {
       if( strpos( strtolower($hearingLocation), 'zoom') != false) {
         $node->field_is_online->value = true;
       }
-      else {
-        $node->field_location->target_id = '1135'; // Node ID of 1900 Building
-      }
+      // else {
+      //  $node->field_location->target_id = '1135'; // Node ID of 1900 Building
+      // }
 
       $description = $item->get('description');
       if ($description == null) $description = '\n';
