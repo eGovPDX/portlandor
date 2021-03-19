@@ -900,12 +900,15 @@ function _validate_group_group_path(&$form, \Drupal\Core\Form\FormStateInterface
  */
 function portland_cron()
 {
-    // Run once a day at noon. The minute is between 0 and 59.
-    // Cron job runs on Live every 5 minutes, we only check if there is
-    // fresh updates once a day between 12:00 and 12:05
+    // In each cron run after 12pm, check if we've sent the content update summary email today.
     $hour = (int)(date('G')); // 0 to 23
-    $minute = (int)(date('i')); // 0 to 59
-    if ($hour == 12 && $minute < 5) {
+    if ($hour >= 12 ) {
+        // If an email is already sent today, do not send again
+        $last_daily_email_sent = \Drupal::state()->get('portland.last_daily_email_sent');
+        if( !empty($last_daily_email_sent) && $last_daily_email_sent === date('m/d/Y') ) {
+            return;
+        }
+
         $results = '';
 
         // Define a list of views that will be included in the email
@@ -930,6 +933,8 @@ function portland_cron()
 
         // If all views are empty, do not send the email
         if (!strlen($results)) {
+            \Drupal::state()->set('portland.last_daily_email_sent', date('m/d/Y'));
+            \Drupal::logger('mail-log')->notice(t('No content updated in the past day.'));
             return;
         }
 
@@ -941,7 +946,11 @@ function portland_cron()
         $params['title'] = 'Portland.gov list of content to review';
         $langcode = \Drupal::currentUser()->getPreferredLangcode();
 
-        _send_email($key, $to, $langcode, $params, 'powr@portlandoregon.gov');
+        $sent_successfully = _send_email($key, $to, $langcode, $params, 'powr@portlandoregon.gov');
+        if($sent_successfully) {
+            \Drupal::logger('mail-log')->notice(t('Daily content update summary email sent successfully.'));
+            \Drupal::state()->set('portland.last_daily_email_sent', date('m/d/Y'));
+        }
     }
 }
 
@@ -1040,9 +1049,11 @@ function _send_email($key, $to, $langcode, $params, $from)
     mail('portland', $key, $to, $langcode, $params, $from, true);
     if ($result['result'] != true) {
         \Drupal::logger('mail-log')->error(t('Error sending to @email.', array('@email' => $to)));
+        return false;
     } else {
         // drupal_set_message($message);
         \Drupal::logger('mail-log')->notice(t('Email sent to @email ', array('@email' => $to)));
+        return true;
     }
 }
 /**
