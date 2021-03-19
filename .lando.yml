@@ -7,7 +7,7 @@ config:
   index: false
   edge: false
   cache: false
-  composer_version: '1.10.19'
+  composer_version: 2
 services:
   appserver:
     build:
@@ -98,6 +98,7 @@ tooling:
     description: CUSTOM Refresh branch by installing Composer dependencies and importing Drupal config, etc. Run after every merge from master.
     cmd:
       - appserver: date +"%T"
+      - appserver: ln -sf /usr/local/bin/composer /app/vendor/bin/composer
       - appserver: /bin/bash -c "if [[ \$(composer install --dry-run -d /app 2>&1 | grep -oPc 'Uninstalling drupal/\w+') -gt 0 ]]; then { echo Composer is about to remove one or more modules... Let\'s disable them in Drupal first.; for module in \$(composer install --dry-run -d /app 2>&1 | grep -oP 'Uninstalling drupal/\K\w+'); do { echo Disabling \$module...; drush pmu \$module -y;} done } fi"
       - appserver: echo "=====Timestamp===== Starting Drupal Config Refresh"
       - appserver: date +"%T"
