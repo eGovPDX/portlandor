@@ -151,7 +151,9 @@ build_and_deploy: &build_and_deploy
               env_pattern="^${BASH_REMATCH[1]}([a-z]*|(-\d+)|(-[a-z]+))$"
 
               # Find and delete all multidevs starting with the story ID
-              grep -E "${env_pattern}" ./env_list.txt > ./matching_env_list.txt 
+              # TODO: determine if missing env_name is causing build re-run for dev to fail
+              # TODO: determine why some patterns for multidevs do not get deleted
+              grep -E "${env_pattern}" ./env_list.txt > ./matching_env_list.txt
               while read env_name; do
                 terminus multidev:delete --delete-branch $CIRCLE_PROJECT_REPONAME.$env_name -y
                 echo "Deleted multi-dev: $env_name"
@@ -188,7 +190,7 @@ build_and_deploy: &build_and_deploy
                 BASE=dev
               fi
               # Create a new Multi-Dev with files and database from site corresponding to PR's base branch.
-              echo "Creating new multidev site cloned from $BASE. Please wait." 
+              echo "Creating new multidev site cloned from $BASE. Please wait."
               terminus multidev:create $CIRCLE_PROJECT_REPONAME.$BASE $PANTHEON_ENV
             fi
 
@@ -348,7 +350,7 @@ visual_regression: &visual_regression
         key: terminus_-{{ checksum "composer.lock" }}
         paths:
           - "/tmp/vendor"
-          
+
     - run:
         name: Run Percy tests
         command: |
