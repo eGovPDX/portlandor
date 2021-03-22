@@ -1,16 +1,38 @@
-{% include '@components/morsel/morsel.twig' with {
-  heading: {
-    url: url,
-    text: label[0],
-    level: 2,
-    style_override: 3
-  },
-  popular: content.field_popular[0],
-  text: content.field_summary[0],
-  image: content.field_featured_media|render,
-  badge: {
-    type: {
-      text: node.type.entity.label
-    }
+{% set is_popular = content.field_popular[0]['#markup'] == 'On' %}
+{% set service_label = node.type.entity.label %}
+
+{% embed '@components/morsel/morsel.twig'
+  with {
+    is_draft: node.isPublished() ? false : true,
+    layout_mt: 8,
+    layout_mb: 8,
+    heading: {
+      url: url,
+      text: label,
+      level: 2,
+      style_override: 3
+    },
+    text: content.field_summary,
+    image: content.field_featured_media|render
   }
-} %}
+%}
+  {% block prehead %}
+    {{ parent() }}
+    {% if is_popular and service_label %}
+      <div class="d-flex mb-2 order-0">
+        {% include '@components/badge/badge.twig' with {
+          text: 'popular'|t|capitalize,
+          mr: 2
+        } only %}
+        {% include '@components/badge/badge.twig' with {
+          text: service_label
+        } only %}
+      </div>
+    {% else %}
+      {% include '@components/badge/badge.twig' with {
+        text: service_label,
+        mb: 2
+      } only %}
+    {% endif %}
+  {% endblock %}
+{% endembed %}
