@@ -1,74 +1,52 @@
-{# DEFAULTS #}
 {% set heading_level = heading.level|default(3) %}
-{# CLASSES #}
-{% set classes = [
+{% set is_draft = is_draft|default(false) %}
+{% set layout_classes = [
   'morsel',
+  layout_mt ? 'mt-' ~ layout_mt,
+  layout_mb ? 'mb-' ~ layout_mb,
   is_draft ? 'morsel--is-draft',
   image ? 'morsel--image-featured'
 ] %}
 
 {% spaceless %}
-  <div class="{{ classes|join(' ')|trim }}">
-    <div class="row no-gutters">
-      <div class="morsel__heading col-12 order-2">
+  <div class="{{ layout_classes|join(' ')|trim }}">
+    <div class="d-flex flex-column align-items-start">
+      {% block prehead %}
+        {% if is_draft %}
+          {% include '@components/badge/badge.twig' with {
+            text: 'unpublished'|t|capitalize,
+            color: 'danger',
+            mb: 2
+          } only %}
+        {% endif %}
         {% include '@components/heading/heading.twig' with {
           url: heading.url,
           level: heading.level,
           style: heading.style_override,
-          text: heading.text
+          text: heading.text,
+          classes: ['order-1', 'mb-2']
         } only %}
-      </div>
-      <div class="morsel__prehead d-flex flex-wrap col-12 order-1 mb-2">
-        {% if is_draft %}
-          {% include '@components/badge/badge.twig' with {
-            classes: ['order-1'],
-            text: 'unpublished'|t|capitalize,
-            color: 'danger'
-          } only %}
+        {% if type %}
+          {{ type }}
         {% endif %}
-        {% if badge.type.text %}
-          {% include '@components/badge/badge.twig' with {
-            text_wrap: true,
-            text: badge.type.text
-          } only %}
+        {% if items %}
+          {% include '@layouts/stack/stack.twig' with {
+            layout_classes: ['order-0'],
+            layout_spacing: 2,
+            item_spacing: 2
+          } %}
         {% endif %}
-        {% if badge.status.text %}
-          {% include '@components/badge/badge.twig' with {
-            text: badge.status.text,
-            color: badge.status.color,
-            ml: badge.status.ml
-          } only %}
-        {% endif %}
-        {% if popular and (popular|render) == 'On' %}
-          {% include '@components/badge/badge.twig' with {
-            text: 'popular'|t|capitalize,
-            color: 'black',
-            ml: 2
-          } only %}
-        {% endif %}
-      </div>
+      {% endblock %}
     </div>
     <div class="row no-gutters">
-      <div class="morsel__body col-md col-12-sm order-md-1 order-sm-2">
+      <div class="col-12 col-md">
         {% if
-          updated_on
-            and posted_on
-            and (updated_on|striptags|date('U'))
-              > (posted_on|striptags|date('U')) %}
-          <div class="morsel__date">
-            {% if updated_on %}
-              <span class="font-weight-bold">Updated </span>{{ updated_on }}
-            {% endif %}
-          </div>
+          node.field_updated_on[0].value > node.field_published_on[0].value %}
+          {{ updated_on }}
         {% elseif posted_on %}
-          <div class="morsel__date">
-            {% if posted_on %}
-              <span class="sr-only">Posted on </span>{{ posted_on }}
-            {% endif %}
-          </div>
+          {{ posted_on }}
         {% endif %}
         {% if group_date %}
-          {# Removing the extra div; it wants to print that div even with group_date is only space #}
           {{ group_date }}
         {% endif %}
         {% if group_time %}
@@ -94,10 +72,8 @@
         {% endif %}
       </div>
       {% if image %}
-        <div class="morsel__image col-md-4 col-sm-12 order-md-2 order-sm-1">
-          <div class="morsel__image-inner">
-            {{ image }}
-          </div>
+        <div class="morsel__image col-12 col-md-4">
+          {{ image }}
         </div>
       {% endif %}
     </div>
