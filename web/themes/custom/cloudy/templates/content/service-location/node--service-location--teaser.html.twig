@@ -7,11 +7,17 @@
     not node.isPublished() ? 'node--unpublished',
     view_mode ? 'node--view-mode-' ~ view_mode|clean_class,
     'mb-4',
+    'mt-4'
   ]
 %}
 {{ attach_library('classy/node') }}
 <div{{ attributes.addClass(classes) }}>
   {% spaceless %}
+  {% include "@layouts/stack/stack.twig" with {
+    layout_spacing: 2,
+    item_spacing: 2,
+    items: [content.field_emergency_closure, content.field_service_location_type]
+  } %}
   <address class="mb-2" translate="no">
   <div class="location--title">{{ label }}</div>
     {% if node.field_location[0].entity.field_address_or_entrance.address_line1 %}
@@ -27,17 +33,13 @@
     {% endif %}
   </address>
   {% endspaceless %}
-  {% if node.field_emergency_closure.value == 1 %}
-    {{ content.field_emergency_closure }}
-    {# TODO Style badge when link or additional notes #}
-    <a class="d-block mb-2" href="/emergency-closures">Emergency closure information</a>
-  {% else %}
-    {% if node.field_location[0].entity.field_geolocation is empty %}
+    {% if node.field_emergency_closure.value == 1 %}
+      <a class="d-block" href="/emergency-closures">Emergency closure information</a>
+    {% elseif node.field_location[0].entity.field_geolocation is empty %}
       <div class="get-directions-link"><a href="https://www.google.com/maps/dir/{{ node.field_location[0].entity.field_address_or_entrance.address_line1 }} {{ node.field_location[0].entity.field_address_or_entrance.address_line2 }} {{ node.field_location[0].entity.field_address_or_entrance.locality }} {{ node.field_location[0].entity.field_address_or_entrance.administrative_area }} {{ node.field_location[0].entity.field_address_or_entrance.postal_code }}" target="_blank">Get Directions</a></div>
     {% else %}
       <div class="get-directions-link"><a href="https://www.google.com/maps/dir/{{ node.field_location[0].entity.field_geolocation.lat }},{{ node.field_location[0].entity.field_geolocation.lon }}" target="_blank">Get Directions</a></div>
     {% endif %}
-    {{ content|without('field_location','field_floor','field_emergency_closure') }}
+    {{ content|without('field_service_location_type', 'field_location','field_floor','field_emergency_closure') }}
     <div class="more-information"><a href="{{ url }}" rel="bookmark">More about this location</a></div>
-  {% endif %}
 </div>
