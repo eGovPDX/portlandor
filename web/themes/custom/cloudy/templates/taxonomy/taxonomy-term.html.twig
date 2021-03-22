@@ -31,20 +31,27 @@
   {% else %}
     {% set vocabulary = 'topic'|t|title %}
   {% endif %}
-  {% include '@components/morsel/morsel.twig' with {
+  {% embed '@components/morsel/morsel.twig' with {
+    layout_mt: 8,
+    layout_mb: 8,
     heading: {
       url: url,
-      text: name[0],
+      text: name,
       level: 2,
       style_override: 3
     },
     text: content.description[0],
-    badge: {
-      type: {
-        text: vocabulary
-      }
-    }
   } %}
+    {% block prehead %}
+      {{ parent() }}
+      {% if vocabulary %}
+        {% include '@components/badge/badge.twig' with {
+          text: vocabulary,
+          mb: 2
+        } only %}
+      {% endif %}
+    {% endblock %}
+  {% endembed %}
   {#
     * TODO we'll need a custom preprocess to get the display name of the vocabulary,
     * 'type: term.bundle' is the machine name
