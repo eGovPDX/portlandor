@@ -4,19 +4,27 @@
 #  be present to be rendered and are currently optional
 #  per group display.
 #}
-{% include '@components/morsel/morsel.twig' with {
+{% set group_label = group.type.entity.label|title %}
+
+{% embed '@components/morsel/morsel.twig' with {
+  layout_mt: 8,
+  layout_mb: 8,
   heading: {
     url: url,
     text: label,
     level: 2,
     style_override: 3
   },
-  group_date: content.group_date,
   image: content.field_featured_media[0],
-  text: content.field_summary[0],
-  badge: {
-    type: {
-      text: group.type.entity.label|title
-    }
-  }
+  text: content.field_summary,
 } %}
+  {% block prehead %}
+    {{ parent() }}
+    {% if group_label %}
+      {% include '@components/badge/badge.twig' with {
+        text: group_label,
+        mb: 2
+      } only %}
+    {% endif %}
+  {% endblock %}
+{% endembed %}
