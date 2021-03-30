@@ -12,20 +12,18 @@
 ## Props
 
 - `text`\*: string - element text
-- `color`: string - default color is gray
-- `text_wrap`: boolean - default is false
+- `type`: string - default color is gray
 - `icon`: object { name: string, size: string, fontAwesome: boolean, brand: boolean }
-- `ml`: number - default is 0
-- `mr`: number - default is 0
-- `mb`: number - default is 0
+- `ml`: number - default is none
+- `mr`: number - default is none
+- `mb`: number - default is none
 
 ## Usage
 
 ```twig
 {% include '@components/badge/badge.twig' with {
   text: 'Badge',
-  color: 'red',
-  text_wrap: true,
+  type: 'danger',
   ml: 2
 } only %}
 ```
