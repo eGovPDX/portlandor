@@ -146,6 +146,7 @@ build_and_deploy: &build_and_deploy
 
               # Save all multi-dev names in a file
               terminus multidev:list --format=list --field=Name $CIRCLE_PROJECT_REPONAME > ./env_list.txt
+              echo "Multi-dev site list saved into env_list.txt"
 
               # Pattern to match "powr-1234a" or "powr-1234-1" or "powr-1234-a". Not "powr-12345"
               env_pattern="^${BASH_REMATCH[1]}([a-z]*|(-\d+)|(-[a-z]+))$"
@@ -153,11 +154,25 @@ build_and_deploy: &build_and_deploy
               # Find and delete all multidevs starting with the story ID
               # TODO: determine if missing env_name is causing build re-run for dev to fail
               # TODO: determine why some patterns for multidevs do not get deleted
-              grep -E "${env_pattern}" ./env_list.txt > ./matching_env_list.txt
-              while read env_name; do
-                terminus multidev:delete --delete-branch $CIRCLE_PROJECT_REPONAME.$env_name -y
-                echo "Deleted multi-dev: $env_name"
-              done <./matching_env_list.txt
+              if [ -f "./env_list.txt" ]
+              then
+                echo "Found multi-dev sites:";
+                cat ./env_list.txt
+                grep -E "${env_pattern}" ./env_list.txt > ./matching_env_list.txt || true
+                # If the file is NOT empty
+                if [ -s "./matching_env_list.txt" ]
+                then
+                  echo "Start to delete multi-dev..."
+                  while read env_name; do
+                    terminus multidev:delete --delete-branch $CIRCLE_PROJECT_REPONAME.$env_name -y
+                    echo "Deleted multi-dev: $env_name"
+                  done <./matching_env_list.txt
+                  echo "Done deleting multi-dev"
+                  rm -f ./matching_env_list.txt
+                else
+                  echo "No multi-dev site found matching the story ID."
+                fi
+              fi
             fi
             echo "Waiting for sync code workflow to finish..."
             until [ $(terminus workflow:list --fields status,env --format string -- $CIRCLE_PROJECT_REPONAME | egrep -i $PANTHEON_ENV -m 1 | egrep -i -o "^\w+") == succeeded ]; do
@@ -165,8 +180,14 @@ build_and_deploy: &build_and_deploy
             done
             echo "Rebuilding cache..."
             terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- cr
-            echo "Running drush deploy..."
-            terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- deploy -v -y
+            echo "Running database updates..."
+            terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- updb -y
+            echo "Importing config..."
+            terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- cim -y
+            echo "Running cron..."
+            terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- core:cron -y
+            echo "Rebuilding cache..."
+            terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- cr
           else  # All other commits deploy to a multidev
             # Set Pantheon environment name
             if [[ $CIRCLE_BRANCH =~ ^dependabot\/ ]] && [[ $CIRCLE_PULL_REQUEST =~ \/pull\/([0-9]+)$ ]]; then
@@ -206,8 +227,14 @@ build_and_deploy: &build_and_deploy
             done
             echo "Rebuilding cache..."
             terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- cr
-            echo "Running drush deploy..."
-            terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- deploy -v -y
+            echo "Running database updates..."
+            terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- updb -y
+            echo "Importing config..."
+            terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- cim -y
+            echo "Running cron..."
+            terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- core:cron -y
+            echo "Rebuilding cache..."
+            terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- cr
 
             if [[ $CIRCLE_BRANCH =~ ^dependabot\/ ]]; then
               echo "Dependabot branch detected..."
