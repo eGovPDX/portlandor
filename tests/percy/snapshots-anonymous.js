@@ -20,7 +20,7 @@ PercyScript.run(
     let text_content = await page.evaluate(
       () => document.querySelector("nav").textContent
     );
-    expect(text_content).to.have.string("Foo");
+    expect(text_content).to.have.string("Foo", "String mismatch");
 
     text_content = await page.evaluate(
       () => document.querySelector("div.content h2.h6").textContent
