@@ -4,7 +4,6 @@
     'node--type-' ~ node.bundle|clean_class,
     node.isPromoted() ? 'node--promoted',
     node.isSticky() ? 'node--sticky',
-    not node.isPublished() ? 'node--unpublished',
     view_mode ? 'node--view-mode-' ~ view_mode|clean_class,
     'mb-6',
 ]
@@ -13,9 +12,24 @@
 {{ attach_library('classy/node') }}
 <div{{ attributes.addClass(classes) }}>
   {% spaceless %}
-    {{ content.field_service_location_type }}
-    <address class="mb-4" translate="no">
-      <div class="location--title">{{ label }}</div>
+    <div class="d-flex flex-column align-items-start">
+      {% if node and not node.isPublished() %}
+        {% include "@components/badge/badge.twig" with {
+          text: 'unpublished'|capitalize,
+          type: 'danger',
+          mb: 2
+        } only %}
+      {% endif %}
+      {% include '@components/heading/heading.twig' with {
+        url: url,
+        level: 3,
+        style: 4,
+        text: label,
+        classes: ['order-1', 'mb-2']
+      } only %}
+      {{ content.field_service_location_type }}
+    </div>
+    <address class="mb-1" translate="no">
       {% if node.field_location[0].entity.field_address_or_entrance.address_line1 %}
         {{ node.field_location[0].entity.field_address_or_entrance.address_line1 }}
         <br>
@@ -30,7 +44,7 @@
     </address>
   {% endspaceless %}
   {% if node.field_emergency_closure.value == 1 %}
-    <div class="mb-4">
+    <div class="mb-2">
       {{ content.field_emergency_closure }}
       <a class="d-block" href="/emergency-closures">Emergency closure information</a>
     </div>
@@ -44,7 +58,4 @@
     </div>
   {% endif %}
   {{ content|without('field_service_location_type', 'field_location','field_floor','field_emergency_closure') }}
-  <div class="more-information">
-    <a href="{{ url }}" rel="bookmark">More about this location</a>
-  </div>
 </div>
