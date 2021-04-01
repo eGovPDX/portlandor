@@ -10,6 +10,31 @@ function portland_groups_form_alter(&$form, &$form_state, $form_id) {
   if (array_key_exists('field_display_groups', $form) === TRUE && !is_null($form['field_display_groups'])) {
     _portland_groups_populate_field_display_groups($form, $form_state);
   }
+  // Select the group add/edit form.
+  if (in_array('group_form', $form['#theme'])) {
+    // Use the node edit form template.
+    $form['#theme'][] = 'node_edit_form';
+
+    // Use the node form layout library.
+    $form['#attached']['library'] = ['node/drupal.node'];
+
+    // Create the advanced element if it doesn't exist.
+    if (!isset($form['advanced'])) {
+      $form['advanced'] = [
+        '#type' => 'container',
+        '#accordion' => TRUE,
+        '#weight' => 99,
+      ];
+    }
+    else {
+      // Make 'advanced' a container instead of vertical_tabs.
+      $form['advanced']['#type'] = 'container';
+    }
+  }
+}
+
+function portland_groups_group_form_alter(&$form, FormStateInterface &$form_state, $form_id) {
+
 }
 
 /**
@@ -56,8 +81,8 @@ function _portland_groups_inline_entity_populate_field_display_groups(&$form, &$
 
 /**
  * Implements hook_entity_update
- * 
- * Runs whenever an entity is updated. 
+ *
+ * Runs whenever an entity is updated.
  * If the entity has field_display_groups, call a function to synchronize group ownership based on the
  * first group in the field.
  */
@@ -69,7 +94,7 @@ function portland_groups_entity_update($entity) {
 
 /**
  * Implements hook_entity_insert
- * 
+ *
  * We only want this to run on insert when we're not in a group context.
  * When we are in group context, the group module will take care of creating
  * the group content entity.
@@ -118,7 +143,7 @@ function _portland_groups_synchronize_entity_group_ownership($entity) {
       // can fix it.
       return;
     }
-    
+
     // there may not be an original owner group to remove, if the entity was originally created outside of group context.
     $field_value = $orig_entity->get('field_display_groups')->getValue();
     $orig_owner_group = null;
