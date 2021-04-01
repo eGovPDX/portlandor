@@ -21,6 +21,7 @@ The *Contact Item* is a component that displays a contact entity.
   phone_help: 'Helper text to go here',
   tty: '+1-000-000-0000',
   oregon_relay: true,
+  enable_311: true,
   fax: '000-000-0000',
 } only %}
 ```
