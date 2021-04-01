@@ -13,28 +13,32 @@ const MY_GROUPS = `${HOME_PAGE}/my-groups`;
 const MY_CONTENT = `${HOME_PAGE}/my-content`;
 
 // A script to navigate our app and take snapshots with Percy.
-PercyScript.run(
-  async (page, percySnapshot) => {
-    await page.goto(HOME_PAGE);
-    await page.waitFor("nav");
-    let text_content = await page.evaluate(
-      () => document.querySelector("nav").textContent
-    );
-    expect(text_content).to.have.string("Foo", "String mismatch");
+try {
+  PercyScript.run(
+    async (page, percySnapshot) => {
+      await page.goto(HOME_PAGE);
+      await page.waitFor("nav");
+      let text_content = await page.evaluate(
+        () => document.querySelector("nav").textContent
+      );
+      expect(text_content).to.have.string("Foo", "String mismatch");
 
-    text_content = await page.evaluate(
-      () => document.querySelector("div.content h2.h6").textContent
-    );
-    expect(text_content).to.equal("City of Portland, Oregon");
+      text_content = await page.evaluate(
+        () => document.querySelector("div.content h2.h6").textContent
+      );
+      expect(text_content).to.equal("City of Portland, Oregon");
 
-    await percySnapshot("Anonymous - Home page");
+      await percySnapshot("Anonymous - Home page");
 
-    // Search page
-    await page.goto(`${HOME_PAGE}/search?keys=tax`);
-    await percySnapshot('Anonymous - Search "tax"');
-  },
-  {
-    // Ignore HTTPS errors in Lando
-    ignoreHTTPSErrors: typeof process.env.LANDO_CA_KEY !== "undefined"
-  }
-);
+      // Search page
+      await page.goto(`${HOME_PAGE}/search?keys=tax`);
+      await percySnapshot('Anonymous - Search "tax"');
+    },
+    {
+      // Ignore HTTPS errors in Lando
+      ignoreHTTPSErrors: typeof process.env.LANDO_CA_KEY !== "undefined"
+    }
+  );
+} catch {
+  console.log("My test error message");
+}
