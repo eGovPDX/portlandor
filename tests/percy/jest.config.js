@@ -3,6 +3,6 @@ module.exports = {
   globals: {
     SITE_NAME: process.env.SITE_NAME
   },
-  testMatch: ["**/*.test.js"],
+  testMatch: ["**/*.js"],
   verbose: true
 };
