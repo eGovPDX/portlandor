@@ -1,63 +1,68 @@
-const PercyScript = require('@percy/script');
-const { expect } = require('chai');
+const percySnapshot = require('@percy/puppeteer')
+const puppeteer = require('puppeteer')
+const assert = require('assert');
 
 const SITE_NAME = process.env.SITE_NAME;
-const SUPERADMIN_LOGIN = process.env.SUPERADMIN_LOGIN;
-const ALLY_LOGIN = process.env.ALLY_LOGIN;
-const MARTY_LOGIN = process.env.MARTY_LOGIN;
 const HOME_PAGE = (SITE_NAME) ? `https://${SITE_NAME}-portlandor.pantheonsite.io` : 'https://portlandor.lndo.site';
-const LOGOUT = `${HOME_PAGE}/user/logout`;
-const MY_GROUPS = `${HOME_PAGE}/my-groups`;
-const MY_CONTENT = `${HOME_PAGE}/my-content`;
 
-// A script to navigate our app and take snapshots with Percy.
-PercyScript.run(async (page, percySnapshot) => {
-  await page.goto(HOME_PAGE);
-  await page.waitFor('nav');
-  let text_content = await page.evaluate(() => document.querySelector('nav').textContent);
-  expect(text_content).to.have.string('Services');
+var browser, page;
+before(async () => {
+  browser = await puppeteer.launch({
+    ignoreHTTPSErrors: true,
+  })
+  page = await browser.newPage()
+  await page.setDefaultTimeout(30000);
+})
 
-  text_content = await page.evaluate(() => document.querySelector('div.content h2.h6').textContent);
-  expect(text_content).to.equal('City of Portland, Oregon');
+describe('Anonymous user test', () => {
+  it('has correct text on home page', async function () {
+    await page.goto(HOME_PAGE);
+    await page.waitForSelector('nav');
 
-  // Home
-  await percySnapshot('Anonymous - Home page');
+    // Verify the home page has text "Services"
+    let text_content = await page.evaluate(() => document.querySelector('nav').textContent);
+    assert(text_content.includes('Services'), 'Cannot find "Services" on Home page')
 
-  // Search page
-  await page.goto(`${HOME_PAGE}/search?keys=tax`);
-  await percySnapshot('Anonymous - Search "tax"');
+    // Verify the home page has text "Services"
+    text_content = await page.evaluate(() => document.querySelector('div.content h2.h6').textContent);
+    assert(text_content === 'City of Portland, Oregon', 'Cannot find "City of Portland, Oregon" on Home page')
 
-  // 404
-  await page.goto(`${HOME_PAGE}/search?keys=powr-test`);
-  await percySnapshot('Anonymous - 404 "powr-test"');
+    await percySnapshot(page, 'Anonymous - Home page');
 
-  // Elected Officials
-  await page.goto(`${HOME_PAGE}/wheeler`);
-  await percySnapshot('Anonymous - Elected "Mayor"');
+    // Search page
+    await page.goto(`${HOME_PAGE}/search?keys=tax`);
+    await percySnapshot(page, 'Anonymous - Search "tax"');
 
-  // Advisory Group
-  await page.goto(`${HOME_PAGE}/omf/toc`);
-  await percySnapshot('Anonymous - Advisory "Technology Oversight"');
+    // 404
+    await page.goto(`${HOME_PAGE}/search?keys=powr-test`);
+    await percySnapshot(page, 'Anonymous - 404 "powr-test"');
 
-  // Program
-  await page.goto(`${HOME_PAGE}/help`);
-  await percySnapshot('Anonymous - Program "POWR Help"');
+    // Elected Officials
+    await page.goto(`${HOME_PAGE}/wheeler`);
+    await percySnapshot(page, 'Anonymous - Elected "Mayor"');
 
-  // Bureau
-  await page.goto(`${HOME_PAGE}/omf`);
-  await percySnapshot('Anonymous - Bureau "Mangagement and Finance"');
+    // Advisory Group
+    await page.goto(`${HOME_PAGE}/omf/toc`);
+    await percySnapshot(page, 'Anonymous - Advisory "Technology Oversight"');
 
-  // Project
-  await page.goto(`${HOME_PAGE}/powr`);
-  await percySnapshot('Anonymous - Project "POWR"');
+    // Program
+    await page.goto(`${HOME_PAGE}/help`);
+    await percySnapshot(page, 'Anonymous - Program "POWR Help"');
 
-  // Service
-  await page.goto(`${HOME_PAGE}/police/services/police-report-or-record-online-request`);
-  await percySnapshot('Anonymous - Service "Police Report or Record"');
+    // Bureau
+    await page.goto(`${HOME_PAGE}/omf`);
+    await percySnapshot(page, 'Anonymous - Bureau "Mangagement and Finance"');
 
-},
+    // Project
+    await page.goto(`${HOME_PAGE}/powr`);
+    await percySnapshot(page, 'Anonymous - Project "POWR"');
 
-{
-  // Ignore HTTPS errors in Lando
-  ignoreHTTPSErrors: (typeof process.env.LANDO_CA_KEY !== 'undefined')
+    // Service
+    await page.goto(`${HOME_PAGE}/police/services/police-report-or-record-online-request`);
+    await percySnapshot(page, 'Anonymous - Service "Police Report or Record"');
+  })
 });
+
+after(async () => {
+  await browser.close()
+})
