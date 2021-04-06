@@ -256,99 +256,6 @@ build_and_deploy: &build_and_deploy
             fi
           fi
 
-run_tests: &run_tests
-  docker:
-    - image: egovpdx/drupal-ci:latest
-      auth:
-        username: egovpdx
-        password: $DOCKERHUB_PASSWORD
-    - image: selenium/standalone-chrome-debug:3.7.1-beryllium
-      auth:
-        username: egovpdx
-        password: $DOCKERHUB_PASSWORD
-  parallelism: 5
-  working_directory: /var/www/html
-  steps:
-    - restore_cache:
-        name: Retore Git cache before checkout
-        keys:
-          - source-v1-{{ .Branch }}-{{ .Revision }}
-          - source-v1-{{ .Branch }}-
-          - source-v1-
-    - checkout
-    - run: git gc
-    - save_cache:
-        name: Save Git cache after checkout
-        key: source-v1-{{ .Branch }}-{{ .Revision }}
-        paths:
-          - ".git"
-    - restore_cache:
-        name: Restore Terminus cache
-        keys:
-          - terminus_-{{ checksum "composer.lock" }}
-    - run:
-        name: Install Terminus
-        command: |
-          if [ ! -f "/tmp/vendor/pantheon-systems/terminus/bin/terminus" ]; then
-          cd /tmp && composer require pantheon-systems/terminus:^2.0.0
-          fi
-    - save_cache:
-        name: Save Terminus cache
-        key: terminus_-{{ checksum "composer.lock" }}
-        paths:
-          - "/tmp/vendor"
-    - restore_cache:
-        name: Restore Behat cache
-        key: v2-behat-dependencies-{{ checksum "tests/composer.lock" }}
-    - run:
-        name: Composer install for Behat dependencies
-        command: |
-          cd tests
-          composer -V
-          composer config --global --auth github-oauth.github.com "$COMPOSER_TOKEN"
-          composer install --no-interaction
-    - run:
-        name: Run tests against Pantheon
-        when: on_success
-        command: |
-          export PATH=/var/www/html/tests/vendor/bin:/tmp/vendor/pantheon-systems/terminus/bin:$PATH
-          # Log in via terminus first. Required for tests that require user login.
-          terminus auth:login --machine-token="$eGov_Terminus" --email="$eGov_Email" && terminus aliases
-          mkdir -p tests/test-results/behat/features
-          cd tests
-
-          # Set Pantheon environment name
-          if [[ $CIRCLE_BRANCH =~ ^dependabot\/ ]] && [[ $CIRCLE_PULL_REQUEST =~ \/pull\/([0-9]+)$ ]]; then
-            echo "export PANTHEON_ENV=bot-${BASH_REMATCH[1]}" >> $BASH_ENV && source $BASH_ENV
-          else
-            echo "export PANTHEON_ENV=$CIRCLE_BRANCH" >> $BASH_ENV && source $BASH_ENV
-          fi
-          echo "Pantheon environment name is $PANTHEON_ENV"
-
-          # Split feature files so all split test jobs will finish around the same time
-          TESTFILES=$(circleci tests glob "features/*.feature" | circleci tests split)
-          if [[ $PANTHEON_ENV = "master" ]]; then
-            echo 'export BEHAT_PARAMS="{\"extensions\" : {\"Behat\\\MinkExtension\" : {\"base_url\" : \"https://dev-${CIRCLE_PROJECT_REPONAME}.pantheonsite.io\"}, \"Drupal\\\DrupalExtension\" : {\"drush\" : { \"alias\": \"$CIRCLE_PROJECT_REPONAME.dev\"}}}}"' >> $BASH_ENV && source $BASH_ENV
-          else
-            echo 'export BEHAT_PARAMS="{\"extensions\" : {\"Behat\\\MinkExtension\" : {\"base_url\" : \"https://${PANTHEON_ENV}-${CIRCLE_PROJECT_REPONAME}.pantheonsite.io\"}, \"Drupal\\\DrupalExtension\" : {\"drush\" : { \"alias\": \"$CIRCLE_PROJECT_REPONAME.${PANTHEON_ENV}\"}}}}"' >> $BASH_ENV && source $BASH_ENV
-          fi
-          for TESTFILE in $TESTFILES
-          do
-            # public_ip_address=$(wget -qO- http://checkip.amazonaws.com)
-            # echo "This container's public ip address is $public_ip_address"
-            behat -c behat.yml -f pretty -o std -f junit -o test-results/behat ${TESTFILE} || behat -c behat.yml -f pretty -o std -f junit -o test-results/behat ${TESTFILE}
-            mv test-results/behat/default.xml test-results/behat/${TESTFILE}.xml
-          done
-    - save_cache:
-        paths:
-          - ./tests/vendor
-        key: v2-behat-dependencies-{{ checksum "tests/composer.lock" }}
-    - store_test_results:
-        path: /var/www/html/tests/test-results
-    - store_artifacts:
-        path: /var/www/html/artifacts
-        destination: /
-
 visual_regression: &visual_regression
   docker:
     - image: egovpdx/visual-regression:latest
@@ -397,10 +304,18 @@ visual_regression: &visual_regression
           npm install --quiet
 
           # Start Percy tests
-          TESTFILES=$(circleci tests glob "snapshots-*.js" | circleci tests split)
+          TESTFILES=$(circleci tests glob "test/snapshots-*.js" | circleci tests split)
           for TESTFILE in $TESTFILES
           do
-            npm run ${TESTFILE}
+            # Generate one time login link for tests
+            if [[ ${TESTFILE} == *"ally"* ]]; then
+              echo 'export ALLY_LOGIN=$(terminus drush portlandor.${SITE_NAME} -- uli --mail ally.admin@portlandoregon.gov)' > $BASH_ENV && source $BASH_ENV
+            elif [[ ${TESTFILE} == *"marty"* ]]; then
+              echo 'export MARTY_LOGIN=$(terminus drush portlandor.${SITE_NAME} -- uli --mail marty.member@portlandoregon.gov)' > $BASH_ENV && source $BASH_ENV
+            elif [[ ${TESTFILE} == *"admin"* ]]; then
+              echo 'export SUPERADMIN_LOGIN=$(terminus drush portlandor.${SITE_NAME} -- uli --name superAdmin)' > $BASH_ENV && source $BASH_ENV
+            fi          
+            npm run single-test -- ${TESTFILE}
           done
 
 
@@ -409,8 +324,6 @@ version: 2.1
 jobs:
   deploy:
      <<: *build_and_deploy
-  test:
-     <<: *run_tests
   visual_regression:
     <<: *visual_regression
 
@@ -423,9 +336,6 @@ workflows:
   deploy_and_test:
     jobs:
       - deploy
-      - test:
-          requires:
-            - deploy
       - visual_regression:
           requires:
             - deploy
