@@ -75,7 +75,7 @@ Feature: Create group
     Given I am logged in as user "superAdmin"
     When I visit "/behat-test"
     Then I wait for the page to be loaded
-    And I click "Delete" in the "header" region
+    And I click "Delete" in the "tabs" region
     And I should see "Are you sure"
     And I press "Delete"
     Then I wait for the page to be loaded
