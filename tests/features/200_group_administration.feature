@@ -15,7 +15,8 @@ Feature: Create group
     Then I wait for the page to be loaded
     And I should see "Add Bureau/office"
 
-    When I fill in "edit-label-0-value" with "Behat test group"
+    When * click the "#edit-group-administrative-fields" element
+    And I fill in "edit-label-0-value" with "Behat test group"
     And I fill in "edit-field-official-organization-name-0-value" with "Official name of Behat test group"
     And I select "Complete" from "edit-field-migration-status"
     And I fill in "edit-field-summary-0-value" with "This is a test summary for the Behat Test group"
@@ -74,7 +75,7 @@ Feature: Create group
     Given I am logged in as user "superAdmin"
     When I visit "/behat-test"
     Then I wait for the page to be loaded
-    And I click "Delete" in the "tabs" region
+    And I click "Delete" in the "header" region
     And I should see "Are you sure"
     And I press "Delete"
     Then I wait for the page to be loaded
