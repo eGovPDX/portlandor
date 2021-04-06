@@ -27,7 +27,6 @@ describe("Test homepage title", () => {
         h1Handle
       );
       expect(html).toBe("Welcome to Portland, Oregon");
-      await percySnapshot(page, "Anonymous - Home page");
     },
     timeout
   );
