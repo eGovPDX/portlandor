@@ -33,12 +33,9 @@ describe('Ally Admin user test', () => {
     await page.goto(login_url);
     await percySnapshot(page, 'Ally Admin - Account profile');
 
-    // let text_content = '';
-    // await page.goto(`${HOME_PAGE}/admin/reports/status`);
-    // await page.waitForSelector('.system-status-report');
-    // text_content = await page.evaluate(() => document.querySelector('.system-status-report').textContent);
-    // assert( ! text_content.includes('Errors found'), 'Found the text "Errors found" on Status page')
-    // assert( ! text_content.includes('The following changes were detected in the entity type and field definitions.'), 'Found the text "The following changes were detected in the entity type and field definitions." on Status page')
+    let text_content = '';
+    await page.goto(`${HOME_PAGE}/my-groups`);
+    await percySnapshot('Ally - My groups');
   })
 });
 
