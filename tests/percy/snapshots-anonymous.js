@@ -9,6 +9,7 @@ var browser, page;
 before(async () => {
   browser = await puppeteer.launch({
     ignoreHTTPSErrors: true,
+    args: [ '--no-sandbox'],
   })
   page = await browser.newPage()
   await page.setDefaultTimeout(30000);
