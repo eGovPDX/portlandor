@@ -46,7 +46,7 @@ Feature: Members can manage group content
     Then I wait for the page to be loaded
     And I should see "Title"
 
-    When I click "Delete" in the "header" region
+    When I click "Delete" in the "block-claro-primary-local-tasks" region
     Then I wait for the page to be loaded
     And I should see "This action cannot be undone."
 

@@ -15,7 +15,7 @@ Feature: Create group
     Then I wait for the page to be loaded
     And I should see "Add Bureau/office"
 
-    When * click the "#edit-group-administrative-fields" element
+    When I click the "#edit-group-administrative-fields" element
     And I fill in "edit-label-0-value" with "Behat test group"
     And I fill in "edit-field-official-organization-name-0-value" with "Official name of Behat test group"
     And I select "Complete" from "edit-field-migration-status"
