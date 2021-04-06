@@ -37,8 +37,13 @@ describe('SuperAdmin user test', () => {
     await page.goto(`${HOME_PAGE}/admin/reports/status`);
     await page.waitForSelector('.system-status-report');
     text_content = await page.evaluate(() => document.querySelector('.system-status-report').textContent);
-    assert( ! text_content.includes('Errors found'), 'Found the text "Errors found" on Status page')
-    assert( ! text_content.includes('The following changes were detected in the entity type and field definitions.'), 'Found the text "The following changes were detected in the entity type and field definitions." on Status page')
+    // Negative test
+    if( text_content.includes('Errors found') ) {
+      assert.fail('Found the text "Errors found" on Status page')
+    }
+    if( text_content.includes('The following changes were detected in the entity type and field definitions.') ) {
+      assert.fail('Found the text "The following changes were detected in the entity type and field definitions." on Status page')
+    }
   })
 });
 
