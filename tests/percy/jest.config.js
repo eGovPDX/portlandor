@@ -1,8 +1,8 @@
 module.exports = {
   preset: "jest-puppeteer",
   globals: {
-    SITE_NAME: process.env.SITE_NAME
+    SITE_NAME: process.env.SITE_NAME,
   },
-  testMatch: ["**/*.js"],
-  verbose: true
+  testMatch: ["**/*-anonymous.js"],
+  verbose: true,
 };

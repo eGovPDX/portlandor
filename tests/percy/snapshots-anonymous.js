@@ -8,13 +8,13 @@ const HOME_PAGE = SITE_NAME
 const LOGOUT = `${HOME_PAGE}/user/logout`;
 const MY_GROUPS = `${HOME_PAGE}/my-groups`;
 const MY_CONTENT = `${HOME_PAGE}/my-content`;
-
-const timeout = process.env.SLOWMO ? 30000 : 10000;
+const percySnapshot = require("@percy/puppeteer");
+const timeout = 10000;
 
 describe("Test homepage title", () => {
   beforeAll(async () => {
     await page.goto(HOME_PAGE, {
-      waitUntil: "domcontentloaded"
+      waitUntil: "domcontentloaded",
     });
   });
 
@@ -23,12 +23,11 @@ describe("Test homepage title", () => {
     async () => {
       const h1Handle = await page.$(".cloudy-homepage__title");
       const html = await page.evaluate(
-        h1Handle => h1Handle.innerHTML,
+        (h1Handle) => h1Handle.innerHTML,
         h1Handle
       );
       expect(html).toBe("Welcome to Portland, Oregon");
-
-      // await percySnapshot(page, "Anonymous - Home page");
+      await percySnapshot(page, "Anonymous - Home page");
     },
     timeout
   );
