@@ -35,7 +35,7 @@ describe('Ally Admin user test', () => {
 
     let text_content = '';
     await page.goto(`${HOME_PAGE}/my-groups`);
-    await percySnapshot('Ally - My groups');
+    await percySnapshot(page, 'Ally - My groups');
   })
 });
 
