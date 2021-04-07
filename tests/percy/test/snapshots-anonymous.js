@@ -97,11 +97,11 @@ describe("Anonymous page screenshots", () => {
 
 describe("Anonymous UI element screenshots", () => {
   // Homepage menu toggle
-  it("menu toggle", async function () {
+  it("toggles site menu open", async function () {
     await page.goto(HOME_PAGE);
     await page.waitForSelector("nav");
     await page.click("button.cloudy-header__toggle--menu");
-    await percySnapshot(page, "Anonymous - Home page");
+    await percySnapshot(page, "Anonymous - Site Menu Open");
   });
 });
 
