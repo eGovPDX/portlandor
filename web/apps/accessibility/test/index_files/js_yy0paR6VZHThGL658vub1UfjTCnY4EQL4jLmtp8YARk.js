@@ -1732,6 +1732,11 @@ function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
 
   'use strict';
 
+  $('#explore').on("blur", function() {
+    $('#explore').trigger("focus");
+  });
+
+
   // As a safety precaution, bail if the Drupal Core autocomplete framework is
   // not present.
   if (!Drupal.autocomplete) {
@@ -1825,4 +1830,4 @@ function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
   Drupal.SearchApiAutocomplete = autocomplete;
 
 })(jQuery, Drupal, drupalSettings);
-;
+
