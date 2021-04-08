@@ -152,3 +152,4 @@ PercyScript.run(async (page, percySnapshot) => {
   ignoreHTTPSErrors: (typeof process.env.LANDO_CA_KEY !== 'undefined'),
   // headless: false,
 });
+*/

@@ -112,3 +112,4 @@ PercyScript.run(async (page, percySnapshot) => {
   // Ignore HTTPS errors in Lando
   ignoreHTTPSErrors: (typeof process.env.LANDO_CA_KEY !== 'undefined')
 });
+*/
