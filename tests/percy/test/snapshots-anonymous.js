@@ -64,7 +64,7 @@ describe('Anonymous user test', () => {
       await percySnapshot(page, 'Anonymous - Service "Police Report or Record"');
     } catch (e) {
       if(process.env.CIRCLECI) {
-        screenshot_path = "/var/www/html/artifacts";
+        screenshot_path = "/home/circleci/artifacts";
         await page.screenshot({
           path: screenshot_path + "/screenshot_anonymous_test_failure.jpg",
           type: "jpeg",
