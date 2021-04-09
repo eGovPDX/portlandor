@@ -8,7 +8,6 @@ const HOME_PAGE = SITE_NAME
   : "https://portlandor.lndo.site";
 const timeout = process.env.SLOWMO ? 30000 : 10000;
 
-
 let browser;
 let page;
 
@@ -25,11 +24,9 @@ afterAll(async () => {
   await browser.close();
 });
 
-
-
-describe('Homepage', () => {
+describe("Homepage", () => {
   it(
-    'h1 text',
+    "h1 text",
     async () => {
       await page.goto(HOME_PAGE);
       // Gets page title
@@ -39,7 +36,8 @@ describe('Homepage', () => {
       // Compares it with the intended behavior
       expect(title).toBe("Welcome to Portland, Oregon");
       await percySnapshot(page, "Anonymous - Homepage h1 text");
-    }
+    },
+    timeout
   );
 
   it(
@@ -50,12 +48,13 @@ describe('Homepage', () => {
       // }
       await page.goto(HOME_PAGE);
       await page.click("button.cloudy-header__toggle--menu");
-      await page.waitForSelector('.cloudy-header__menu-wrapper.show');
+      await page.waitForSelector(".cloudy-header__menu-wrapper.show");
       // await page.screenshot({
       //   path: "./screenshots/screenshot.png",
       //   fullPage: true,
       // });
       await percySnapshot(page, "Anonymous - Home page Menu");
-    }
-  )
+    },
+    timeout
+  );
 });
