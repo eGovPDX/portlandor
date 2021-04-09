@@ -1,5 +1,6 @@
 const percySnapshot = require("@percy/puppeteer");
 const puppeteer = require("puppeteer");
+// const fs = require("fs");
 
 const SITE_NAME = process.env.SITE_NAME;
 const HOME_PAGE = SITE_NAME
@@ -7,32 +8,54 @@ const HOME_PAGE = SITE_NAME
   : "https://portlandor.lndo.site";
 const timeout = process.env.SLOWMO ? 30000 : 10000;
 
-describe("Google", () => {
-  let browser;
-  let page;
-  beforeAll(async () => {
-    browser = await puppeteer.launch({
-      // headless: false,
-      ignoreHTTPSErrors: true,
-      args: ["--no-sandbox"],
-    });
-    page = await browser.newPage();
-  });
 
-  afterAll(async () => {
-    await browser.close();
-  });
+let browser;
+let page;
 
+beforeAll(async () => {
+  browser = await puppeteer.launch({
+    // headless: false,
+    ignoreHTTPSErrors: true,
+    args: ["--no-sandbox"],
+  });
+  page = await browser.newPage();
+});
+
+afterAll(async () => {
+  await browser.close();
+});
+
+
+
+describe('Homepage', () => {
   it(
-    'title should display "City of Portland, Oregon | Portland.gov" text on homepage',
+    'h1 text',
     async () => {
       await page.goto(HOME_PAGE);
-      let text_content = await page.evaluate(
+      // Gets page title
+      const title = await page.evaluate(
         () => document.querySelector("h1").textContent
       );
-      expect(text_content).toEqual("Welcome to Portland, Oregon");
-      await percySnapshot(page, "Anonymous - Home page");
-    },
-    timeout
+      // Compares it with the intended behavior
+      expect(title).toBe("Welcome to Portland, Oregon");
+      await percySnapshot(page, "Anonymous - Homepage h1 text");
+    }
   );
+
+  it(
+    "Menu open",
+    async () => {
+      // if (!fs.existsSync("screenshots")) {
+      //   fs.mkdirSync("screenshots");
+      // }
+      await page.goto(HOME_PAGE);
+      await page.click("button.cloudy-header__toggle--menu");
+      await page.waitForSelector('.cloudy-header__menu-wrapper.show');
+      // await page.screenshot({
+      //   path: "./screenshots/screenshot.png",
+      //   fullPage: true,
+      // });
+      await percySnapshot(page, "Anonymous - Home page Menu");
+    }
+  )
 });
