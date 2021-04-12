@@ -41,7 +41,7 @@ describe("Homepage", () => {
   it(
     "Menu open",
     async () => {
-      await page.goto(HOME_PAGE);
+      await page.goto(HOME_PAGE, { waitUntil: "load" });
       await page.click("button.cloudy-header__toggle--menu");
       await page.waitForSelector(".cloudy-header__menu-wrapper.show");
       await percySnapshot(page, "Anonymous - Home page Menu");
@@ -52,7 +52,7 @@ describe("Homepage", () => {
   it(
     "Search Auto-complete powr",
     async () => {
-      await page.goto(HOME_PAGE);
+      await page.goto(HOME_PAGE, { waitUntil: "load" });
       await page.type("#edit-keys", "powr");
       await page.waitForSelector("#ui-id-1", { visible: true });
       await percySnapshot(page, "Anonymous - Home Autocomplete");
