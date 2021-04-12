@@ -57,4 +57,22 @@ describe("Homepage", () => {
     },
     timeout
   );
+
+  it(
+    "Search Auto-complete powr",
+    async () => {
+      // if (!fs.existsSync("screenshots")) {
+      //   fs.mkdirSync("screenshots");
+      // }
+      await page.goto(HOME_PAGE);
+      await page.type('#edit-keys', 'powr');
+      await page.waitForSelector("#ui-id-1.show");
+      // await page.screenshot({
+      //   path: "./screenshots/screenshot.png",
+      //   fullPage: true,
+      // });
+      await percySnapshot(page, "Anonymous - Search Auto-complete");
+    },
+    timeout
+  );
 });
