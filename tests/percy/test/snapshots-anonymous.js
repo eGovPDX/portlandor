@@ -1,6 +1,5 @@
 const percySnapshot = require("@percy/puppeteer");
 const puppeteer = require("puppeteer");
-// const fs = require("fs");
 
 const SITE_NAME = process.env.SITE_NAME;
 const HOME_PAGE = SITE_NAME
@@ -13,7 +12,6 @@ let page;
 
 beforeAll(async () => {
   browser = await puppeteer.launch({
-    // headless: false,
     ignoreHTTPSErrors: true,
     args: ["--no-sandbox"],
   });
@@ -43,16 +41,9 @@ describe("Homepage", () => {
   it(
     "Menu open",
     async () => {
-      // if (!fs.existsSync("screenshots")) {
-      //   fs.mkdirSync("screenshots");
-      // }
       await page.goto(HOME_PAGE);
       await page.click("button.cloudy-header__toggle--menu");
       await page.waitForSelector(".cloudy-header__menu-wrapper.show");
-      // await page.screenshot({
-      //   path: "./screenshots/screenshot.png",
-      //   fullPage: true,
-      // });
       await percySnapshot(page, "Anonymous - Home page Menu");
     },
     timeout
@@ -61,17 +52,10 @@ describe("Homepage", () => {
   it(
     "Search Auto-complete powr",
     async () => {
-      // if (!fs.existsSync("screenshots")) {
-      //   fs.mkdirSync("screenshots");
-      // }
       await page.goto(HOME_PAGE);
-      await page.type('#edit-keys', 'powr');
-      await page.waitForSelector("#ui-id-1.show");
-      // await page.screenshot({
-      //   path: "./screenshots/screenshot.png",
-      //   fullPage: true,
-      // });
-      await percySnapshot(page, "Anonymous - Search Auto-complete");
+      await page.type("#edit-keys", "powr");
+      await page.waitForSelector("#ui-id-1", { visible: true });
+      await percySnapshot(page, "Anonymous - Home Autocomplete");
     },
     timeout
   );
