@@ -140,7 +140,7 @@ build_and_deploy: &build_and_deploy
             cd /var/www/html
             # Must read the last commit message from Github. The last one in local repo is "CircleCI Deployment"
             last_log=$(git log origin/master --pretty=format:%s -1)
-            lowercase_last_log=`php -r "print strtolower('$last_log');"`
+            lowercase_last_log="${last_log,,}"
             if [[ $lowercase_last_log =~ ^(powr-[0-9]+)[[:space:]]+.+$ ]]; then
               echo "Found the story ID: '${BASH_REMATCH[1]}'";
 
@@ -175,7 +175,7 @@ build_and_deploy: &build_and_deploy
               fi
             fi
             echo "Waiting for sync code workflow to finish..."
-            until [ $(terminus workflow:list --fields status,env --format string -- $CIRCLE_PROJECT_REPONAME | egrep -i $PANTHEON_ENV -m 1 | egrep -i -o "^\w+") == succeeded ]; do
+            until [ $(terminus workflow:list --fields status,env,workflow --format string -- $CIRCLE_PROJECT_REPONAME | egrep -i "$PANTHEON_ENV\s+Sync code" -m 1 | egrep -i -o "^\w+") == succeeded ]; do
               sleep 30
             done
             echo "Rebuilding cache..."
@@ -183,7 +183,7 @@ build_and_deploy: &build_and_deploy
             echo "Running database updates..."
             terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- updb -y
             echo "Importing config..."
-            terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- cim -y
+            terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- cim -y -vvv
             echo "Running cron..."
             terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- core:cron -y
             echo "Rebuilding cache..."
@@ -222,7 +222,7 @@ build_and_deploy: &build_and_deploy
             git push -f pantheon $CIRCLE_BRANCH:$PANTHEON_ENV
 
             echo "Waiting for sync code workflow to finish..."
-            until [ $(terminus workflow:list --fields status,env --format string -- $CIRCLE_PROJECT_REPONAME | egrep -i $PANTHEON_ENV -m 1 | egrep -i -o "^\w+") == succeeded ]; do
+            until [ $(terminus workflow:list --fields status,env,workflow --format string -- $CIRCLE_PROJECT_REPONAME | egrep -i "$PANTHEON_ENV\s+Sync code" -m 1 | egrep -i -o "^\w+") == succeeded ]; do
               sleep 30
             done
             echo "Rebuilding cache..."
@@ -230,10 +230,8 @@ build_and_deploy: &build_and_deploy
             echo "Running database updates..."
             terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- updb -y
             echo "Importing config..."
-            terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- cim -y
-            echo "Running cron..."
-            terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- core:cron -y
-            echo "Rebuilding cache..."
+            terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- cim -y -vvv
+            echo "Rebuilding cache"
             terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- cr
 
             if [[ $CIRCLE_BRANCH =~ ^dependabot\/ ]]; then
@@ -246,7 +244,7 @@ build_and_deploy: &build_and_deploy
               # This is necessary if the build gets re-run because the drush cim above can
               # interfere with the drush cex below (by importing what was previously exported)
               terminus env:clone-content $CIRCLE_PROJECT_REPONAME.dev $PANTHEON_ENV --db-only --cc -y
-              terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- cim -y
+              terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- cim -y -vvv
 
               # Abort if there's any database updates that cause a configuration change
               echo "Run database update... and abort if there's a configuration change"
