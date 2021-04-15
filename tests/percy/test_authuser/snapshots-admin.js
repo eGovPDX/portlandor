@@ -1,128 +1,145 @@
 const percySnapshot = require('@percy/puppeteer')
 const puppeteer = require('puppeteer')
-const assert = require('assert');
 const util = require('util');
 const exec = util.promisify(require('child_process').exec);
 
 const SITE_NAME = process.env.SITE_NAME;
 const HOME_PAGE = (SITE_NAME) ? `https://${SITE_NAME}-portlandor.pantheonsite.io` : 'https://portlandor.lndo.site';
+const timeout = 30000;
 
 var browser, page, login_url;
-before(async () => {
+beforeAll(async () => {
   browser = await puppeteer.launch({
     ignoreHTTPSErrors: true,
-    args: [ '--no-sandbox'],
+    args: ['--no-sandbox'],
+    executablePath: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+    headless: false,
+    // slowMo: 100,
+    defaultViewport: null,
   })
   page = await browser.newPage()
   await page.setDefaultTimeout(30000)
 
-  var drush_uli_result;
-  if(process.env.CIRCLECI) {
+  if (process.env.CIRCLECI) {
+    // On CI, the CI script will call terminus to retrieve login URL
     login_url = process.env.SUPERADMIN_LOGIN;
   }
   else {
-    drush_uli_result = await exec('lando drush uli');
-    assert(drush_uli_result.stderr === '', `Failed to retrieve login URL ${drush_uli_result.stderr}`)
-    login_url = drush_uli_result.stdout.replace('http://default', 'https://portlandor.lndo.site')
+    var drush_uli_result = await exec('lando drush uli');
+    login_url = drush_uli_result.stdout.replace('http://default', 'https://portlandor.lndo.site');
+    // Log in once for all tests to save time
+    await page.goto(login_url);
   }
-})
+}, timeout)
+
+afterAll(async () => {
+  await browser.close()
+}, timeout)
 
 describe('SuperAdmin user test', () => {
-  it('The site is in good status', async function () {
-    // Capture user profile page
-    await page.goto(login_url);
-    await percySnapshot(page, 'Site Admin - Account profile');
+  it(
+    'The site is in good status',
+    async () => {
+      // Capture user profile page
+      // await percySnapshot(page, 'Site Admin - Account profile');
+      let text_content = '';
+      await page.goto(`${HOME_PAGE}/admin/reports/status`);
+      await page.waitForSelector('.system-status-report');
+      text_content = await page.evaluate(() => document.querySelector('.system-status-report').textContent);
+      // Negative test
+      expect(text_content).toEqual(expect.not.stringContaining('Errors found'));
+      expect(text_content).toEqual(expect.not.stringContaining('The following changes were detected in the entity type and field definitions.'));
+    },
+    timeout
+  );
 
-    let text_content = '';
-    await page.goto(`${HOME_PAGE}/admin/reports/status`);
-    await page.waitForSelector('.system-status-report');
-    text_content = await page.evaluate(() => document.querySelector('.system-status-report').textContent);
-    // Negative test
-    if( text_content.includes('Errors found') ) {
-      assert.fail('Found the text "Errors found" on Status page')
-    }
-    if( text_content.includes('The following changes were detected in the entity type and field definitions.') ) {
-      assert.fail('Found the text "The following changes were detected in the entity type and field definitions." on Status page')
-    }
-  })
+  // it(
+  //   'All configurations are imported',
+  //   async function () {
+  //     try {
+  //       let text_content = '';
+  //       await page.goto(`${HOME_PAGE}/admin/config/development/configuration`);
+  //       await page.waitFor('.region-content');
+  //       text_content = await page.evaluate(() => document.querySelector('.region-content').textContent);
+  //       expect(text_content).toEqual(expect.stringContaining('There are no configuration changes to import.'));
+  //     } catch (e) {
+  //       // Capture the screenshot when test fails and re-throw the exception
+  //       await page.screenshot({
+  //         path: "./config-import-error.jpg",
+  //         type: "jpeg",
+  //         fullPage: true
+  //       });
+  //       throw e;
+  //     }
+  //   },
+  //   timeout
+  // );
+
+
+  it(
+    'superAdmin manages group',
+    async function () {
+      try {
+        let text_content = '';
+        await page.goto(`${HOME_PAGE}/group/add/bureau_office`);
+        text_content = await page.evaluate(() => document.querySelector('.page-title').textContent);
+        expect(text_content).toEqual(expect.stringContaining('Add Bureau/office'));
+        await page.type('#edit-label-0-value', 'Percy Test Group');
+        await page.type('#edit-field-official-organization-name-0-value', 'Official name of Percy test group');
+        await page.select('#edit-field-migration-status', 'Complete')
+        await page.type('#edit-field-summary-0-value', 'This is a test summary for the Percy Test group');
+        await page.type('#edit-field-group-path-0-value', 'percy-test-group');
+
+        let selector = 'input#edit-submit';
+        await page.evaluate((selector) => document.querySelector(selector).click(), selector);
+        await page.waitForNavigation();
+
+        await percySnapshot(page, 'Site Admin - Group created');
+        text_content = await page.evaluate(() => document.querySelector('h1.page-title').textContent);
+        expect(text_content).toEqual(expect.stringContaining('Percy Test Group'));
+
+
+
+        // Add member
+        await page.goto(`${HOME_PAGE}/percy-test-group/members`);
+        text_content = await page.evaluate(() => document.querySelector('.button-action').textContent);
+        expect(text_content).toEqual('Add member');
+        // await page.click('.button-action');
+        selector = '.button-action';
+        await page.evaluate((selector) => document.querySelector(selector).click(), selector);
+        await page.waitForNavigation();
+
+        text_content = await page.evaluate(() => document.querySelector('.page-title').textContent);
+        expect(text_content).toEqual(expect.stringContaining('Add Bureau/office: Group membership'));
+        await page.type('#edit-entity-id-0-target-id', 'Ally Admin (62)');
+        selector = '#edit-group-roles-bureau-office-admin';
+        await page.evaluate((selector) => document.querySelector(selector).click(), selector);
+
+        await page.keyboard.press('Enter');
+        await page.waitForNavigation();
+
+        text_content = await page.evaluate(() => document.querySelector('td.views-field-name').textContent);
+        expect(text_content).toEqual(expect.stringContaining('Ally Admin'));
+
+        // Delete the new group
+        await page.goto(`${HOME_PAGE}/percy-test-group/delete`);
+        // await page.$eval('#edit-submit', elem => elem.click());
+        selector = 'input#edit-submit';
+        await page.evaluate((selector) => document.querySelector(selector).click(), selector);
+        await page.waitForNavigation();
+
+        text_content = await page.evaluate(() => document.querySelector('div.messages--status').textContent);
+        expect(text_content).toEqual(expect.stringContaining('has been deleted'));
+      } catch (e) {
+        // Capture the screenshot when test fails and re-throw the exception
+        await page.screenshot({
+          path: "./manage-group-error.jpg",
+          type: "jpeg",
+          fullPage: true
+        });
+        throw e;
+      }
+    },
+    timeout * 10
+  );
 });
-
-after(async () => {
-  await browser.close()
-})
-
-
-/*
-// A script to navigate our app and take snapshots with Percy.
-PercyScript.run(async (page, percySnapshot) => {
-  await page.goto(SUPERADMIN_LOGIN);
-  await percySnapshot('Site Admin - Account profile');
-
-  let text_content = '';
-  await page.goto(`${HOME_PAGE}/admin/reports/status`);
-  await page.waitFor('.system-status-report');
-  text_content = await page.evaluate(() => document.querySelector('.system-status-report').textContent);
-  expect(text_content).to.not.have.string('Errors found');
-  expect(text_content).to.not.have.string('The following changes were detected in the entity type and field definitions.');
-
-  await page.goto(`${HOME_PAGE}/admin/config/development/configuration`);
-  await page.waitFor('.region-content');
-  text_content = await page.evaluate(() => document.querySelector('.region-content').textContent);
-  expect(text_content).to.have.string('There are no configuration changes to import.');
-
-  // Add a new group
-  await page.goto(`${HOME_PAGE}/group/add/bureau_office`);
-  text_content = await page.evaluate(() => document.querySelector('.page-title').textContent);
-  expect(text_content).to.have.string('Add Bureau/office');
-
-  await page.type('#edit-label-0-value', 'Percy Test Group');
-  await page.type('#edit-field-official-organization-name-0-value', 'Official name of Percy test group');
-  await page.select('#edit-field-migration-status', 'Complete')
-  await page.type('#edit-field-summary-0-value', 'This is a test summary for the Percy Test group');
-  await page.type('#edit-field-group-path-0-value', 'percy-test-group');
-
-  let selector = 'input#edit-submit';
-  await page.evaluate((selector) => document.querySelector(selector).click(), selector);
-  await page.waitForNavigation();
-
-  await percySnapshot('Site Admin - Group created');
-
-  text_content = await page.evaluate(() => document.querySelector('h1.page-title').textContent);
-  expect(text_content).to.have.string('Percy Test Group');
-
-  // Add member
-  await page.goto(`${HOME_PAGE}/percy-test-group/members`);
-  text_content = await page.evaluate(() => document.querySelector('.button-action').textContent);
-  expect(text_content).to.equal('Add member');
-  // await page.click('.button-action');
-  selector = '.button-action';
-  await page.evaluate((selector) => document.querySelector(selector).click(), selector);
-  await page.waitForNavigation();
-
-  text_content = await page.evaluate(() => document.querySelector('.page-title').textContent);
-  expect(text_content).to.have.string('Add Bureau/office: Group membership');
-  await page.type('#edit-entity-id-0-target-id', 'Ally Admin (62)');
-  selector = '#edit-group-roles-bureau-office-admin';
-  await page.evaluate((selector) => document.querySelector(selector).click(), selector);
-
-  await page.keyboard.press('Enter');
-  await page.waitForNavigation();
-
-  text_content = await page.evaluate(() => document.querySelector('td.views-field-name').textContent);
-  expect(text_content).to.have.string('Ally Admin');
-
-  // Delete the new group
-  await page.goto(`${HOME_PAGE}/percy-test-group/delete`);
-  // await page.$eval('#edit-submit', elem => elem.click());
-  selector = 'input#edit-submit';
-  await page.evaluate((selector) => document.querySelector(selector).click(), selector);
-  await page.waitForNavigation();
-
-  text_content = await page.evaluate(() => document.querySelector('div.messages--status').textContent);
-  expect(text_content).to.have.string('has been deleted');
-},
-{
-  // Ignore HTTPS errors in Lando
-  ignoreHTTPSErrors: (typeof process.env.LANDO_CA_KEY !== 'undefined')
-});
-*/
