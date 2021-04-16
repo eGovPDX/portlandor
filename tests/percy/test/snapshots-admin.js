@@ -25,7 +25,7 @@ beforeAll(async () => {
     // On CI, the CI script will call terminus to retrieve login URL
     // login_url = process.env.SUPERADMIN_LOGIN;
 
-    var drush_uli_result = await exec('terminus drush portlandor.${SITE_NAME} -- uli --name superAdmin');
+    var drush_uli_result = await exec(`terminus drush portlandor.${SITE_NAME} -- uli --name superAdmin`);
     login_url = drush_uli_result.stdout;
     await page.goto(login_url);
   }
