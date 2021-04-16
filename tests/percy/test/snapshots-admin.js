@@ -6,7 +6,7 @@ const exec = util.promisify(require('child_process').exec);
 const SITE_NAME = process.env.SITE_NAME;
 const HOME_PAGE = (SITE_NAME) ? `https://${SITE_NAME}-portlandor.pantheonsite.io` : 'https://portlandor.lndo.site';
 const ARTIFACTS_FOLDER = (SITE_NAME) ? `/home/circleci/artifacts/` : `./`;
-const timeout = 30000;
+const timeout = 60000;
 
 var browser, page, login_url;
 beforeAll(async () => {
@@ -25,6 +25,11 @@ beforeAll(async () => {
     // On CI, the CI script will call terminus to retrieve login URL
     login_url = process.env.SUPERADMIN_LOGIN;
     await page.goto(login_url);
+    await page.screenshot({
+      path: `${ARTIFACTS_FOLDER}admin-login.jpg`,
+      type: "jpeg",
+      fullPage: true
+    });
   }
   else {
     var drush_uli_result = await exec('lando drush uli');
