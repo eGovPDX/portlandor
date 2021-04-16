@@ -1,5 +1,5 @@
 module.exports = {
-  preset: "jest-puppeteer",
+  // preset: "jest-puppeteer",
   globals: {
     SITE_NAME: process.env.SITE_NAME,
   },
