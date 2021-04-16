@@ -1,50 +1,54 @@
-const percySnapshot = require('@percy/puppeteer')
+const percySnapshot = require('@percy/puppeteer');
+const { time } = require('console');
 const puppeteer = require('puppeteer')
-const assert = require('assert');
 const util = require('util');
 const exec = util.promisify(require('child_process').exec);
 
 const SITE_NAME = process.env.SITE_NAME;
 const HOME_PAGE = (SITE_NAME) ? `https://${SITE_NAME}-portlandor.pantheonsite.io` : 'https://portlandor.lndo.site';
+const ARTIFACTS_FOLDER = (SITE_NAME) ? `/home/circleci/artifacts/` : `./`;
+const timeout = 60000 * 2;
 
 var browser, page, login_url;
-before(async () => {
+beforeAll(async () => {
   browser = await puppeteer.launch({
     ignoreHTTPSErrors: true,
     args: [ '--no-sandbox'],
   })
-  page = await browser.newPage()
-  await page.setDefaultTimeout(30000)
+  page = await browser.newPage();
+  await page.setDefaultTimeout(timeout);
 
   var drush_uli_result;
   if(process.env.CIRCLECI) {
+    // On CI, the CI script will call terminus to retrieve login URL
     login_url = process.env.MARTY_LOGIN;
+    await page.goto(login_url);
+    await percySnapshot(page, 'Marty Member - Account profile');
   }
   else {
-    drush_uli_result = await exec('lando drush uli --mail marty.member@portlandoregon.gov');
-    assert(drush_uli_result.stderr === '', `Failed to retrieve login URL ${drush_uli_result.stderr}`)
-    login_url = drush_uli_result.stdout.replace('http://default', 'https://portlandor.lndo.site')
+    var drush_uli_result = await exec('lando drush uli --mail marty.member@portlandoregon.gov');
+    expect(drush_uli_result.stdout).toEqual(expect.stringContaining('http'));
+    login_url = drush_uli_result.stdout.replace('http://default', 'https://portlandor.lndo.site');
+    // Log in once for all tests to save time
+    await page.goto(login_url);
   }
-})
+}, timeout)
 
 describe('Marty Member user test', () => {
   it('The site is in good status', async function () {
-    // Capture user profile page
-    await page.goto(login_url);
-    await percySnapshot(page, 'Marty Member - Account profile');
-
     let text_content = '';
+
+    // Visit a topic page
     await page.goto(`${HOME_PAGE}/pay`);
     await page.waitForSelector('.page-title');
     text_content = await page.evaluate(() => document.querySelector('.page-title').textContent);
-    assert(text_content.includes('Pay'), 'Cannot find "Pay" in page title')
-
-  })
+    expect(text_content).toEqual(expect.stringContaining('Pay'));
+  }, timeout)
 });
 
-after(async () => {
+afterAll(async () => {
   await browser.close()
-})
+}, timeout)
 
 /*
 // A script to navigate our app and take snapshots with Percy.
