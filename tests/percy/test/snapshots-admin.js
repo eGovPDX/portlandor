@@ -12,10 +12,10 @@ beforeAll(async () => {
   browser = await puppeteer.launch({
     ignoreHTTPSErrors: true,
     args: ['--no-sandbox'],
-    executablePath: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
-    headless: false,
-    // slowMo: 100,
-    defaultViewport: null,
+    // executablePath: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+    // headless: false,
+    // // slowMo: 100,
+    // defaultViewport: null,
   })
   page = await browser.newPage()
   await page.setDefaultTimeout(30000)
