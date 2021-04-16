@@ -283,6 +283,10 @@ visual_regression: &visual_regression
         paths:
           - "/tmp/vendor"
 
+    - restore_cache:
+        name: Restore Jest and Percy dependencies cache
+        keys:
+          - jest_-{{ checksum "tests/percy/package-lock.json" }}
     - run:
         name: Run Percy tests
         command: |
@@ -316,6 +320,11 @@ visual_regression: &visual_regression
             fi
             npm run single-test -- ${TESTFILE}
           done
+    - save_cache:
+        name: Save Jest and Percy dependencies cache
+        key: jest-{{ checksum "tests/percy/package-lock.json" }}
+        paths:
+          - "tests/percy/node_modules"
     - store_artifacts:
         path: /home/circleci/artifacts
         destination: /
