@@ -286,7 +286,18 @@ visual_regression: &visual_regression
     - restore_cache:
         name: Restore Jest and Percy dependencies cache
         keys:
-          - jest_-{{ checksum "tests/percy/package-lock.json" }}
+          - jest-{{ checksum "tests/percy/package-lock.json" }}
+    - run:
+        name: Install Jest and Percy dependencies
+        command: |
+          cd /home/circleci/app/tests/percy
+          npm install --quiet
+    - save_cache:
+        name: Save Jest and Percy dependencies cache
+        key: jest-{{ checksum "tests/percy/package-lock.json" }}
+        paths:
+          - "tests/percy/node_modules"
+
     - run:
         name: Run Percy tests
         command: |
@@ -304,7 +315,6 @@ visual_regression: &visual_regression
 
           mkdir /home/circleci/artifacts
           cd /home/circleci/app/tests/percy
-          npm install --quiet
 
           # Start Percy tests
           TESTFILES=$(circleci tests glob "test/snapshots-*.js" | circleci tests split)
@@ -320,11 +330,6 @@ visual_regression: &visual_regression
             fi
             npm run single-test -- ${TESTFILE}
           done
-    - save_cache:
-        name: Save Jest and Percy dependencies cache
-        key: jest-{{ checksum "tests/percy/package-lock.json" }}
-        paths:
-          - "tests/percy/node_modules"
     - store_artifacts:
         path: /home/circleci/artifacts
         destination: /
