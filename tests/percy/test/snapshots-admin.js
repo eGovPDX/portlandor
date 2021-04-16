@@ -19,7 +19,7 @@ beforeAll(async () => {
     // defaultViewport: null,
   })
   page = await browser.newPage()
-  await page.setDefaultTimeout(30000)
+  await page.setDefaultTimeout(timeout)
 
   if (process.env.CIRCLECI) {
     // On CI, the CI script will call terminus to retrieve login URL
