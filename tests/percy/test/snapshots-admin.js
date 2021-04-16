@@ -5,6 +5,7 @@ const exec = util.promisify(require('child_process').exec);
 
 const SITE_NAME = process.env.SITE_NAME;
 const HOME_PAGE = (SITE_NAME) ? `https://${SITE_NAME}-portlandor.pantheonsite.io` : 'https://portlandor.lndo.site';
+const ARTIFACTS_FOLDER = (SITE_NAME) ? `/home/circleci/artifacts/` : `./`;
 const timeout = 30000;
 
 var browser, page, login_url;
@@ -22,7 +23,11 @@ beforeAll(async () => {
 
   if (process.env.CIRCLECI) {
     // On CI, the CI script will call terminus to retrieve login URL
-    login_url = process.env.SUPERADMIN_LOGIN;
+    // login_url = process.env.SUPERADMIN_LOGIN;
+
+    var drush_uli_result = await exec('terminus drush portlandor.${SITE_NAME} -- uli --name superAdmin');
+    login_url = drush_uli_result.stdout;
+    await page.goto(login_url);
   }
   else {
     var drush_uli_result = await exec('lando drush uli');
@@ -65,7 +70,7 @@ describe('SuperAdmin user test', () => {
   //     } catch (e) {
   //       // Capture the screenshot when test fails and re-throw the exception
   //       await page.screenshot({
-  //         path: "./config-import-error.jpg",
+  //         path: `${ARTIFACTS_FOLDER}config-import-error.jpg`,
   //         type: "jpeg",
   //         fullPage: true
   //       });
@@ -143,7 +148,7 @@ describe('SuperAdmin user test', () => {
       } catch (e) {
         // Capture the screenshot when test fails and re-throw the exception
         await page.screenshot({
-          path: "./manage-group-error.jpg",
+          path: `${ARTIFACTS_FOLDER}manage-group-error.jpg`,
           type: "jpeg",
           fullPage: true
         });
