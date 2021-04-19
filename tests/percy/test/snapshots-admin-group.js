@@ -23,7 +23,7 @@ beforeAll(async () => {
 
   if (process.env.CIRCLECI) {
     // On CI, the CI script will call terminus to retrieve login URL
-    login_url = process.env.SUPERADMIN_LOGIN_2;
+    login_url = process.env.KEVIN_LOGIN;
     await page.goto(login_url);
     await page.screenshot({
       path: `${ARTIFACTS_FOLDER}admin-profile.jpg`,
