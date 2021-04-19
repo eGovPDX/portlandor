@@ -39,9 +39,9 @@ beforeAll(async () => {
   }
 
   // Print browser version
-  await page.browser().version().then(function(version) {
-    console.log(version);
-    });
+  // await page.browser().version().then(function(version) {
+  //   console.log(version);
+  //   });
   // console.log(browser.process().spawnfile);
 
 }, timeout)
