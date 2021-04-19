@@ -104,6 +104,7 @@ build_and_deploy: &build_and_deploy
           # Terminus log in with the user email that will be displayed as the commit user in Pantheon Git repo
           terminus auth:login --machine-token="$eGov_Terminus" --email="$eGov_Email"
           # Git operations
+          git config --global core.safecrlf false
           git remote add pantheon ssh://codeserver.dev.5c6715db-abac-4633-ada8-1c9efe354629@codeserver.dev.5c6715db-abac-4633-ada8-1c9efe354629.drush.in:2222/~/repository.git
           git config --global user.email "$eGov_Email"
           # Force add all files to include those excluded by .gitignore
@@ -212,7 +213,7 @@ build_and_deploy: &build_and_deploy
               fi
               # Create a new Multi-Dev with files and database from site corresponding to PR's base branch.
               echo "Creating new multidev site cloned from $BASE. Please wait."
-              terminus multidev:create $CIRCLE_PROJECT_REPONAME.$BASE $PANTHEON_ENV
+              terminus multidev:create $CIRCLE_PROJECT_REPONAME.$BASE $PANTHEON_ENV >/dev/null
             fi
 
             rm -rf ./env_list.txt
@@ -325,12 +326,16 @@ visual_regression: &visual_regression
             # Generate one time login link for tests
             if [[ ${TESTFILE} == *"ally"* ]]; then
               echo 'export ALLY_LOGIN=$(terminus drush portlandor.${SITE_NAME} -- uli --mail ally.admin@portlandoregon.gov)' > $BASH_ENV && source $BASH_ENV
+              npm run jest-test -- ${TESTFILE}
             elif [[ ${TESTFILE} == *"marty"* ]]; then
               echo 'export MARTY_LOGIN=$(terminus drush portlandor.${SITE_NAME} -- uli --mail marty.member@portlandoregon.gov)' > $BASH_ENV && source $BASH_ENV
+              npm run jest-test -- ${TESTFILE}
             elif [[ ${TESTFILE} == *"admin"* ]]; then
               echo 'export SUPERADMIN_LOGIN=$(terminus drush portlandor.${SITE_NAME} -- uli --name superAdmin) KEVIN_LOGIN=$(terminus drush portlandor.${SITE_NAME} -- uli --mail xinju.wang@portlandoregon.gov)' > $BASH_ENV && source $BASH_ENV
+              npm run jest-test -- ${TESTFILE}
+            elif [[ ${TESTFILE} == *"anonymous"* ]]; then
+              npm run single-test -- ${TESTFILE}
             fi
-            npm run single-test -- ${TESTFILE}
           done
     - store_artifacts:
         path: /home/circleci/artifacts
