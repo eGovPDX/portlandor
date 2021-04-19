@@ -32,18 +32,11 @@ beforeAll(async () => {
     });
   }
   else {
-    var drush_uli_result = await exec('lando drush uli');
+    var drush_uli_result = await exec('lando drush uli --name=superAdmin powr');
     login_url = drush_uli_result.stdout.replace('http://default', 'https://portlandor.lndo.site');
     // Log in once for all tests to save time
     await page.goto(login_url);
   }
-
-  // Print browser version
-  await page.browser().version().then(function(version) {
-    console.log(version);
-    });
-  // console.log(browser.process().spawnfile);
-
 }, timeout)
 
 afterAll(async () => {

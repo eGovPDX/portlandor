@@ -48,7 +48,7 @@ beforeAll(async () => {
 
 afterAll(async () => {
   await browser.close()
-}, timeout * 20)
+}, timeout * 2)
 
 describe('SuperAdmin user test', () => {
   it(
