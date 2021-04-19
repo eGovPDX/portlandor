@@ -2,7 +2,7 @@
 
 #Jobs
 
-## Job to run the update path and Behat tests.
+## Job to run the update path and tests.
 build_and_deploy: &build_and_deploy
   docker:
     - image: egovpdx/drupal-ci:latest
@@ -262,7 +262,7 @@ visual_regression: &visual_regression
         password: $DOCKERHUB_PASSWORD
   # environment:
   #   PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: true
-  parallelism: 4
+  parallelism: 5
   working_directory: /home/circleci/app
   steps:
     - checkout
@@ -283,6 +283,23 @@ visual_regression: &visual_regression
         paths:
           - "/tmp/vendor"
 
+    - restore_cache:
+        name: Restore Jest and Percy dependencies cache
+        keys:
+          - jest-{{ checksum "tests/percy/yarn.lock" }}-v2
+    - run:
+        name: Install Jest and Percy dependencies
+        command: |
+          cd /home/circleci/app/tests/percy
+          export PERCY_POSTINSTALL_BROWSER=true
+          yarn install
+          # npm install --prefer-offline --no-audit
+    - save_cache:
+        name: Save Jest and Percy dependencies cache
+        key: jest-{{ checksum "tests/percy/yarn.lock" }}-v2
+        paths:
+          - "tests/percy/node_modules"
+
     - run:
         name: Run Percy tests
         command: |
@@ -300,7 +317,6 @@ visual_regression: &visual_regression
 
           mkdir /home/circleci/artifacts
           cd /home/circleci/app/tests/percy
-          npm install --quiet
 
           # Start Percy tests
           TESTFILES=$(circleci tests glob "test/snapshots-*.js" | circleci tests split)
@@ -312,7 +328,7 @@ visual_regression: &visual_regression
             elif [[ ${TESTFILE} == *"marty"* ]]; then
               echo 'export MARTY_LOGIN=$(terminus drush portlandor.${SITE_NAME} -- uli --mail marty.member@portlandoregon.gov)' > $BASH_ENV && source $BASH_ENV
             elif [[ ${TESTFILE} == *"admin"* ]]; then
-              echo 'export SUPERADMIN_LOGIN=$(terminus drush portlandor.${SITE_NAME} -- uli --name superAdmin)' > $BASH_ENV && source $BASH_ENV
+              echo 'export SUPERADMIN_LOGIN=$(terminus drush portlandor.${SITE_NAME} -- uli --name superAdmin) KEVIN_LOGIN=$(terminus drush portlandor.${SITE_NAME} -- uli --mail xinju.wang@portlandoregon.gov)' > $BASH_ENV && source $BASH_ENV
             fi
             npm run single-test -- ${TESTFILE}
           done
@@ -336,13 +352,13 @@ workflows:
   version: 2
   deploy_and_test:
     jobs:
-      # - deploy
-      # - visual_regression:
-      #     requires:
-      #       - deploy
+      - deploy
+      - visual_regression:
+          requires:
+            - deploy
       # Temporarily disable deploy to speed up test in POWR-3411
       # MUST REMOVE before merging
-      - visual_regression
+      # - visual_regression
       - percy/finalize_all:
           requires:
             - visual_regression
