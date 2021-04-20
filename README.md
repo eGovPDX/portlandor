@@ -69,14 +69,35 @@ git checkout master
 git pull origin master
 lando latest
 lando refresh
-# Next run `git checkout -b powr-[ID]`
+git checkout -b powr-[ID]
 ```
 
 <details>
 
 1. Verify you are on the master branch with `git checkout master`.
 2. On the master branch, run `git pull origin master`. This will make sure you have the latest changes from the remote master. Optionally, running `git pull -p origin` will prune any local branches not on the remote to help keep your local repo clean.
-3. Use the issue ID from Jira for a new feature branch name to start work: `git checkout -b powr-[ID]` to create and checkout a new branch. (We use lowercase for the branch name to help create Pantheon multidev environments correctly.) If the branch already exists, you may use `git checkout powr-[ID]` to switch to your branch.
+3. Use the issue ID from Jira for a new feature branch name to start work: `git checkout -b powr-[ID]` to create and checkout a new branch. (We use lowercase for the branch name to help create Pantheon multidev environments correctly.) If the branch already exists, you may use `git checkout powr-[ID]` to switch to your branch. If you need to create multiple multidevs for your story, name your additional branches `powr-[ID][a-z]` or `powr-[ID]-[a-z or 1-9]` (but continue use just `POWR-[ID]` in the git commits and PR titles for all branches relating to that Jira story).
+
+    **TLDR:**
+
+    - New feature branch
+        ```
+        git checkout -b powr-[ID]
+        ```
+    - New branch from current branch
+        ```
+        powr-[ID][a-z]` or `powr-[ID]-[a-z or 1-9]
+        ```
+    - Use base branch ID for base/sub-branch commits and PR titles
+        ```
+        POWR-[ID]
+
+        // on base branch powr-123
+        git commit -m "POWR-123 ..."
+
+        // on powr-123-a branched from powr-123
+        git commit -m "POWR-123 ..."
+        ```
 4. Run `lando latest` at the start of every sprint to update your local database with a copy of the database from Dev.
 5. Run `lando refresh` to refresh your local environment to match master. (This runs composer install, drush updb, drush cim, and drush cr.)
 6. You are now ready to develop on your feature branch.
@@ -303,4 +324,3 @@ The lock file is not up to date with the latest changes in composer.json. You ma
 ...
 
 To resolve this, run `lando composer update --lock`, which will generate a new hash. If you encounter a conflict on the hash value when you merge or rebase, use the most recent (yours) version of the hash.
-

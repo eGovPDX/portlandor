@@ -12,6 +12,7 @@ dependencies:
     - field.field.node.city_service.field_display_groups
     - field.field.node.city_service.field_editor_experience
     - field.field.node.city_service.field_has_parent
+    - field.field.node.city_service.field_has_payment_gateway
     - field.field.node.city_service.field_include_in_menu
     - field.field.node.city_service.field_location
     - field.field.node.city_service.field_menu_link_text
@@ -29,7 +30,6 @@ dependencies:
     - workflows.workflow.editorial
   module:
     - address
-    - chosen_field
     - conditional_fields
     - content_moderation
     - entity_browser_table
@@ -38,11 +38,13 @@ dependencies:
     - maxlength
     - paragraphs
     - path
+    - select2
     - text
 third_party_settings:
   field_group:
     group_administrative_fields:
       children:
+        - field_has_payment_gateway
         - field_popular
         - uid
         - created
@@ -50,8 +52,8 @@ third_party_settings:
         - url_redirects
         - field_search_keywords
       parent_name: ''
-      weight: 19
-      format_type: details
+      weight: 21
+      format_type: details_sidebar
       region: content
       format_settings:
         id: ''
@@ -59,13 +61,14 @@ third_party_settings:
         description: ''
         open: false
         required_fields: false
+        weight: 0
       label: 'Administrative Fields (Site Admins Only)'
     group_paths_and_redirects:
       children:
         - field_redirects
       parent_name: ''
-      weight: 18
-      format_type: details
+      weight: 20
+      format_type: details_sidebar
       region: content
       format_settings:
         id: ''
@@ -73,13 +76,14 @@ third_party_settings:
         description: ''
         open: false
         required_fields: false
+        weight: 0
       label: 'Paths and Redirects'
     group_contacts:
       children:
         - field_contact
       parent_name: ''
       weight: 15
-      format_type: details
+      format_type: details_sidebar
       region: content
       format_settings:
         id: ''
@@ -87,13 +91,14 @@ third_party_settings:
         description: ''
         open: false
         required_fields: false
+        weight: 0
       label: Contacts
     group_mailing_address:
       children:
         - field_address
       parent_name: ''
       weight: 16
-      format_type: details
+      format_type: details_sidebar
       region: content
       format_settings:
         id: ''
@@ -101,13 +106,14 @@ third_party_settings:
         description: ''
         open: false
         required_fields: false
+        weight: 0
       label: 'Mailing Address'
     group_online_application:
       children:
         - field_online_application
       parent_name: ''
-      weight: 14
-      format_type: details
+      weight: 12
+      format_type: details_sidebar
       region: content
       format_settings:
         id: ''
@@ -115,7 +121,70 @@ third_party_settings:
         description: ''
         open: false
         required_fields: false
+        weight: 0
       label: 'Online Application'
+    group_menu:
+      children:
+        - field_include_in_menu
+        - field_has_parent
+        - field_menu_parent
+      parent_name: ''
+      weight: 13
+      format_type: details_sidebar
+      region: content
+      format_settings:
+        id: ''
+        classes: ''
+        description: ''
+        open: false
+        required_fields: false
+        weight: 0
+      label: Menu
+    group_topics:
+      children:
+        - field_topics
+      parent_name: ''
+      weight: 14
+      format_type: details_sidebar
+      region: content
+      format_settings:
+        id: ''
+        classes: ''
+        description: ''
+        open: false
+        required_fields: false
+        weight: 0
+      label: Topics
+    group_related:
+      children:
+        - field_related_content
+      parent_name: ''
+      weight: 18
+      format_type: details_sidebar
+      region: content
+      format_settings:
+        id: ''
+        classes: ''
+        description: ''
+        open: false
+        required_fields: false
+        weight: 0
+      label: Related
+    group_service_location:
+      children:
+        - field_location
+      parent_name: ''
+      weight: 19
+      format_type: details_sidebar
+      region: content
+      format_settings:
+        id: ''
+        classes: ''
+        description: ''
+        open: false
+        required_fields: false
+        weight: 0
+      label: 'Service Location'
 id: node.city_service.default
 targetEntityType: node
 bundle: city_service
@@ -123,7 +192,7 @@ mode: default
 content:
   created:
     type: datetime_timestamp
-    weight: 8
+    weight: 13
     region: content
     settings: {  }
     third_party_settings: {  }
@@ -134,7 +203,7 @@ content:
     type: address_default
     region: content
   field_body_content:
-    weight: 9
+    weight: 6
     settings:
       rows: 5
       placeholder: ''
@@ -161,10 +230,14 @@ content:
     type: text_textarea
     region: content
   field_community_actions:
-    weight: 5
-    settings: {  }
+    weight: 2
+    settings:
+      autocomplete: false
+      match_operator: CONTAINS
+      match_limit: 10
+      width: 100%
     third_party_settings: {  }
-    type: options_select
+    type: select2_entity_reference
     region: content
   field_contact:
     weight: 21
@@ -177,7 +250,7 @@ content:
     type: entity_reference_autocomplete
     region: content
   field_display_groups:
-    weight: 11
+    weight: 8
     settings:
       match_operator: CONTAINS
       size: 60
@@ -187,7 +260,7 @@ content:
     type: entity_reference_autocomplete
     region: content
   field_editor_experience:
-    weight: 8
+    weight: 5
     settings: {  }
     third_party_settings: {  }
     type: options_buttons
@@ -221,6 +294,13 @@ content:
           bundle: city_service
     type: boolean_checkbox
     region: content
+  field_has_payment_gateway:
+    weight: 10
+    settings:
+      display_label: true
+    third_party_settings: {  }
+    type: boolean_checkbox
+    region: content
   field_include_in_menu:
     weight: 2
     settings:
@@ -236,10 +316,10 @@ content:
       field_widget_display_settings:
         view_mode: related
       field_widget_remove: '1'
+      open: '1'
       selection_mode: selection_append
       field_widget_edit: 0
       field_widget_replace: 0
-      open: 0
     third_party_settings: {  }
     type: entity_reference_browser_table_widget
     region: content
@@ -295,7 +375,7 @@ content:
     type: link_default
     region: content
   field_popular:
-    weight: 6
+    weight: 11
     settings:
       display_label: true
     third_party_settings: {  }
@@ -310,7 +390,7 @@ content:
       placeholder: ''
     third_party_settings: {  }
   field_related_content:
-    weight: 13
+    weight: 9
     settings:
       match_operator: CONTAINS
       size: 60
@@ -320,7 +400,7 @@ content:
     type: entity_reference_autocomplete
     region: content
   field_reviewer:
-    weight: 20
+    weight: 10
     settings:
       match_operator: CONTAINS
       size: 60
@@ -330,7 +410,7 @@ content:
     type: entity_reference_autocomplete
     region: content
   field_search_keywords:
-    weight: 11
+    weight: 16
     settings:
       size: 60
       placeholder: ''
@@ -342,7 +422,7 @@ content:
     region: content
   field_service_mode:
     type: paragraphs
-    weight: 10
+    weight: 7
     settings:
       title: 'service mode'
       title_plural: 'service modes'
@@ -379,7 +459,7 @@ content:
           bundle: city_service
     region: content
   field_summary:
-    weight: 6
+    weight: 3
     settings:
       rows: 2
       placeholder: ''
@@ -392,7 +472,7 @@ content:
     type: string_textarea
     region: content
   field_time_to_complete:
-    weight: 7
+    weight: 4
     settings:
       size: 60
       placeholder: ''
@@ -403,17 +483,17 @@ content:
     weight: 12
     settings: {  }
     third_party_settings: {  }
-    type: chosen_select
+    type: options_buttons
     region: content
   moderation_state:
     type: moderation_state_default
-    weight: 21
+    weight: 11
     settings: {  }
     region: content
     third_party_settings: {  }
   path:
     type: path
-    weight: 9
+    weight: 14
     region: content
     settings: {  }
     third_party_settings: {  }
@@ -434,9 +514,14 @@ content:
       maxlength:
         maxlength_js: 78
         maxlength_js_label: '<strong>Full title</strong> for search. Use title case. Google displays ~78 characters for titles. Content limited to @limit characters, remaining: <strong>@remaining</strong>'
+  translation:
+    weight: 10
+    settings: {  }
+    third_party_settings: {  }
+    region: content
   uid:
     type: entity_reference_autocomplete
-    weight: 7
+    weight: 12
     settings:
       match_operator: CONTAINS
       match_limit: 10
@@ -445,7 +530,7 @@ content:
     region: content
     third_party_settings: {  }
   url_redirects:
-    weight: 10
+    weight: 15
     region: content
     settings: {  }
     third_party_settings: {  }

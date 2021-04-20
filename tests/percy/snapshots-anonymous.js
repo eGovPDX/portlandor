@@ -51,23 +51,11 @@ PercyScript.run(async (page, percySnapshot) => {
   await page.goto(`${HOME_PAGE}/powr`);
   await percySnapshot('Anonymous - Project "POWR"');
 
-  // Page
-  await page.goto(`${HOME_PAGE}/powr/about-powr-project`);
-  await percySnapshot('Anonymous - Page "POWR About"');
-
   // Service
   await page.goto(`${HOME_PAGE}/police/services/police-report-or-record-online-request`);
   await percySnapshot('Anonymous - Service "Police Report or Record"');
 
-  // News
-  await page.goto(`${HOME_PAGE}/powr/news/2019/11/4/implementation-plan-redirect-portlandoregongov-portlandgov`);
-  await percySnapshot('Anonymous - News "Home Page Redirect"');
-
-  // Event
-  await page.goto(`${HOME_PAGE}/powr/events/2020/4/28/powr-office-hours`);
-  await percySnapshot('Anonymous - Event "Office Hours"');
-
-}, 
+},
 
 {
   // Ignore HTTPS errors in Lando

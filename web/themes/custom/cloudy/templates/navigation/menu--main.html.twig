@@ -1,7 +1,12 @@
+{% set list_classes = ['cloudy-global-menu__list', 'row'] %}
+{% set list_item_classes = ['cloudy-global-menu__item', 'col-sm-6', 'col-md-4'] %}
+{% set link_classes = ['cloudy-global-menu__link'] %}
+
+
 {#
 /**
  * @file
- * Override to display a menu.
+ * Theme override to display a menu.
  *
  * Available variables:
  * - menu_name: The machine name of the menu.
@@ -22,41 +27,45 @@
 
 {#
   We call a macro which calls itself to render the full tree.
-  @see http://twig.sensiolabs.org/doc/tags/macro.html
+  @see https://twig.symfony.com/doc/1.x/tags/macro.html
 #}
-{{ menus.menu_links(items, attributes, 0) }}
+{{ menus.menu_links(items, attributes, 0, list_classes, list_item_classes, link_classes) }}
 
-{% macro menu_links(items, attributes, menu_level) %}
+{% macro menu_links(items, attributes, menu_level, list_classes, list_item_classes, link_classes) %}
   {% import _self as menus %}
+
+  {% set list_classes = list_classes|default([
+    'menu',
+  ]) %}
+
+  {% set list_item_classes = list_item_classes|default([
+    'menu-item',
+    item.is_expanded ? 'menu-item--expanded',
+    item.is_collapsed ? 'menu-item--collapsed',
+    item.in_active_trail ? 'menu-item--active-trail',
+  ]) %}
+
+  {% set link_classes = link_classes|default([]) %}
+
+  {% set link_attributes = create_attribute({
+    'class': link_classes,
+  }) %}
+
   {% if items %}
     {% if menu_level == 0 %}
-      <ul{{ attributes.addClass('nav navbar-nav') }}>
+      <ul{{ attributes.addClass(list_classes) }}>
     {% else %}
-      <ul class="dropdown-menu">
+      <ul class="menu">
     {% endif %}
     {% for item in items %}
-      {%
-        set classes = [
-          menu_level ? 'dropdown-item' : 'nav-item',
-          item.is_expanded ? 'menu-item--expanded',
-          item.is_collapsed ? 'menu-item--collapsed',
-          item.in_active_trail ? 'active',
-          item.below ? 'dropdown',
-        ]
-      %}
-      <li{{ item.attributes.addClass(classes) }}>
-        {%
-          set link_classes = [
-            not menu_level ? 'nav-link',
-            item.in_active_trail ? 'active',
-            item.below ? 'dropdown-toggle',
-          ]
-        %}
+      <li{{ item.attributes.addClass(list_item_classes) }}>
+        {# Append item description to menu link #}
+        {% set title %}
+          {{ item.title }} <span class="desc">{{ item.url.getOption('attributes')['title'] }}</span>
+        {% endset %}
+        {{ link(title, item.url, link_attributes) }}
         {% if item.below %}
-          {{ link(item.title, item.url, {'class': link_classes, 'data-toggle': 'dropdown', 'aria-expanded': 'false', 'aria-haspopup': 'true' }) }}
           {{ menus.menu_links(item.below, attributes, menu_level + 1) }}
-        {% else %}
-          {{ link(item.title, item.url, {'class': link_classes}) }}
         {% endif %}
       </li>
     {% endfor %}

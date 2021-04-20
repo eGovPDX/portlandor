@@ -42,40 +42,71 @@
   {{ page.pre_header }}
 {% endblock %}
 
-{% block header %}
-  <header id="header" class="header" aria-label="{{ 'Site header'|t}}" role="banner">
-    <div class="container">
-      <nav class="navbar navbar-light navbar-expand-md" id="navbar-main">
-        {{ page.header }}
-        {% if page.primary_menu or page.header_form %}
-          <div class="navbar-toggle-group">
-            {% if page.header_form %}
-              <button class="search-toggle" type="button" aria-expanded="false">{% include "@elements/icon/icon.twig" with { name: "search" } only %}</button>
-            {% endif %}
-            <button class="navbar-toggler navbar-toggler-right border-0" type="button" data-toggle="collapse" data-target="#CollapsingNavbar" aria-controls="CollapsingNavbar" aria-expanded="false" aria-label="{{ 'Toggle navigation'|t }}"><span class="navbar-toggle-item--open">{{ 'Menu'|t }}</span><span class="navbar-toggle-item--close">{% include "@elements/icon/icon.twig" with { name: "close" } only %}</span></button>
+{% if page.header|render is not empty or page.primary_menu|render is not empty %}
+  <header role="banner" id="header" class="cloudy-header" aria-label="{{ 'Site header'|t }}">
+    <div class="cloudy-header__wrapper d-flex justify-content-between align-items-center flex-wrap px-0">
+      {# logo #}
+      {{ page.header }}
+
+      {% set toggle_attributes = create_attribute({
+        'type': 'button',
+        'data-toggle': 'collapse',
+        'aria-expanded': 'false',
+        'role': 'button',
+      }) %}
+
+      {#  search toggle #}
+      {% if page.header_form %}
+        {# assign unique value to search api block form id and search toggle button target attributes #}
+        {% set search_id = 'cloudy-search' %}
+
+        <button{{ toggle_attributes|without('class').setAttribute('data-target', '#' ~ search_id).setAttribute('aria-controls', search_id).setAttribute('aria-label', 'toggle site search'|t).addClass(['cloudy-header__toggle', 'cloudy-header__toggle--search']) }}>
+          <span class="toggle__label">
+            <span class="icon toggle-icon icon-search"></span>
+            {{ 'search'|t|capitalize }}
+          </span>
+        </button>
+      {% endif %}
+
+      {# search form #}
+      {% if page.header_form %}
+        <div{{ create_attribute({ 'id': search_id, 'class': ['cloudy-header__search-wrapper', 'collapse'] }) }}>
+          <div class="d-flex px-4 py-6 px-md-0 py-lg-0 align-items-center">
+            {{ page.header_form }}
+
+            {#  search close #}
+            <button{{ toggle_attributes|without('class').setAttribute('data-target', '#' ~ search_id).setAttribute('aria-controls', search_id).setAttribute('aria-label', 'close site search'|t).addClass('cloudy-header__close-search') }}>
+              {% include "@elements/icon/icon.twig" with {
+                name: "close",
+                classes: [
+                  'icon',
+                  'icon--size-s',
+                  'm-0',
+                ]
+              } %}
+            </button>
           </div>
-          {% set header_form = page.header_form|render %}
-          <div class="collapse navbar-mobile-drawer navbar-collapse justify-content-end h-100" id="CollapsingNavbar">
-            {{ page.primary_menu }}
-            {% if header_form %}
-              <div class="form-inline navbar-form">
-                {{ page.header_form }}
-              </div>
-            {% endif %}
-          </div>
-          {% if header_form %} {# Mobile search drawer #}
-            <div class="navbar-mobile-search-drawer collapse justify-content-end h-100">
-              <div class="navbar-mobile-search-drawer-wrapper">
-                {{ page.header_form }}
-                <span class="navbar-mobile-search-drawer__close">{% include "@elements/icon/icon.twig" with { name: "x", size: "m" } only %}</span>
-              </div>
-            </div>
-          {% endif %}
-        {% endif %}
-      </nav>
+        </div>
+      {% endif %}
+
+      {# assign unique value to site menu id and site menu toggle button target attributes #}
+      {% set menu_id = 'cloudy-menu' %}
+
+      {# menu toggle #}
+      <button{{ toggle_attributes|without('class').setAttribute('data-target', '#' ~ menu_id).setAttribute('aria-controls', menu_id).setAttribute('aria-label', 'toggle site menu'|t).addClass(['cloudy-header__toggle', 'cloudy-header__toggle--menu']) }}>
+        <span class="toggle__label">
+          <span class="icon toggle-icon icon-menu"></span>
+          {{ 'menu'|t|capitalize }}
+        </span>
+      </button>
     </div>
+
+      {# main menu #}
+      <div{{ create_attribute({ 'id': menu_id, 'class': ['cloudy-header__menu-wrapper', 'collapse'] }) }}>
+        {{ page.primary_menu }}
+      </div>
   </header>
-{% endblock %}
+{% endif %}
 
 {% block tabs %}
   {{ page.tabs }}

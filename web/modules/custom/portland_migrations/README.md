@@ -128,6 +128,7 @@ Group content migrations are used to add content to a group by creating a group 
 - bds_service_updates
 - bds_plans_examiner
 - pbot_news
+- ppb_directives
 
 #### Eudaly news
 ##### Local
@@ -350,4 +351,41 @@ lando drush migrate:import pbot_news_redirects
 ```
 lando terminus drush portlandor.powr-[ID] -- migrate:import pbot_news
 lando terminus drush portlandor.powr-[ID] -- migrate:import pbot_news_redirects
+```
+#### Police Directives
+
+##### Modifications to ppb_directives.csv
+* Rename column CATEGORY_NAME to CATEGORY_NAME_RAW. Create new column to the right named CATEGORY_NAME and use forumula `=REPLACE(A2, 1, 7, "")` for data values.
+* Create new column to the right of CONTENT_NAME, name it POLICY_NUMBER, and use formula `="ARB-PPB-" & LEFT(D2, 7)` for data values.
+* Create a new column to the right of POLICY_NUMBER, name it NUMERIC_ORDER, and use formula `=LEFT(D2, 7)` for data values.
+
+##### Supplemental file: ppb_directives_categories.csv
+This is a simple list of 2nd level categories in its own csv file. The list was manually generated due to the relatively low number of items and the difficulty in generating it dynamically. The list is not expected to change prior to final migration. The 3rd level categories are included in the main policies datafile and are created as children of their parent 2nd level categories and linked to the content using a custom process plugin.
+
+##### Local
+```
+lando drush migrate:import ppb_directives_categories
+lando drush migrate:import ppb_directives_categories_redirects
+lando drush migrate:import ppb_directives
+lando drush migrate:import ppb_directives_redirects
+```
+##### On Pantheon
+```
+lando terminus drush portlandor.powr-[ID] -- migrate:import ppb_directives_categories
+lando terminus drush portlandor.powr-[ID] -- migrate:import ppb_directives_categories_redirects
+lando terminus drush portlandor.powr-[ID] -- migrate:import ppb_directives
+lando terminus drush portlandor.powr-[ID] -- migrate:import ppb_directives_redirects
+```
+
+#### Auditor Blog
+
+##### Local
+```
+lando drush migrate:import auditor_blog
+lando drush migrate:import auditor_blog_redirects
+```
+##### On Pantheon
+```
+lando terminus drush portlandor.powr-[ID] -- migrate:import auditor_blog
+lando terminus drush portlandor.powr-[ID] -- migrate:import auditor_blog_redirects
 ```
