@@ -3,6 +3,7 @@ langcode: en
 status: true
 dependencies:
   config:
+    - field.field.node.policy.field_accessibility_review
     - field.field.node.policy.field_body_content
     - field.field.node.policy.field_display_groups
     - field.field.node.policy.field_documents_and_exhibits
@@ -12,14 +13,47 @@ dependencies:
     - field.field.node.policy.field_policy_type
     - field.field.node.policy.field_reviewer
     - node.type.policy
-    - workflows.workflow.charter_code_policies
+    - workflows.workflow.policy_approval
   module:
-    - chosen_field
     - content_moderation
-    - file
+    - field_group
     - maxlength
     - path
+    - portland_file_replace
+    - select2
     - text
+third_party_settings:
+  field_group:
+    group_needs_accessibility_review:
+      children:
+        - field_accessibility_review
+      parent_name: ''
+      weight: 12
+      format_type: details_sidebar
+      region: content
+      format_settings:
+        description: ''
+        weight: 0
+        id: ''
+        classes: ''
+        open: false
+        required_fields: false
+      label: 'Needs Accessibility Review'
+    group_groups:
+      children:
+        - field_display_groups
+      parent_name: ''
+      weight: 13
+      format_type: details_sidebar
+      region: content
+      format_settings:
+        description: ''
+        weight: 0
+        id: ''
+        classes: ''
+        open: false
+        required_fields: false
+      label: Groups
 id: node.policy.default
 targetEntityType: node
 bundle: policy
@@ -27,12 +61,19 @@ mode: default
 content:
   created:
     type: datetime_timestamp
-    weight: 14
+    weight: 15
     region: content
     settings: {  }
     third_party_settings: {  }
+  field_accessibility_review:
+    weight: 9
+    settings:
+      display_label: true
+    third_party_settings: {  }
+    type: boolean_checkbox
+    region: content
   field_body_content:
-    weight: 7
+    weight: 5
     settings:
       rows: 5
       placeholder: ''
@@ -40,7 +81,7 @@ content:
     type: text_textarea
     region: content
   field_display_groups:
-    weight: 10
+    weight: 8
     settings:
       match_operator: CONTAINS
       match_limit: 10
@@ -50,27 +91,31 @@ content:
     type: entity_reference_autocomplete
     region: content
   field_documents_and_exhibits:
-    weight: 8
+    weight: 6
     settings:
       progress_indicator: throbber
     third_party_settings: {  }
-    type: file_generic
+    type: portland_file_replace_file_widget
     region: content
   field_numeric_order_decimal:
-    weight: 6
+    weight: 4
     settings:
       placeholder: ''
     third_party_settings: {  }
     type: number
     region: content
   field_policy_category:
-    weight: 3
-    settings: {  }
+    weight: 2
+    settings:
+      autocomplete: false
+      match_operator: CONTAINS
+      match_limit: 10
+      width: 100%
     third_party_settings: {  }
-    type: chosen_select
+    type: select2_entity_reference
     region: content
   field_policy_number:
-    weight: 4
+    weight: 3
     settings:
       size: 12
       placeholder: ''
@@ -82,20 +127,24 @@ content:
     region: content
   field_policy_type:
     weight: 1
-    settings: {  }
+    settings:
+      autocomplete: false
+      match_operator: CONTAINS
+      match_limit: 10
+      width: 100%
     third_party_settings: {  }
-    type: chosen_select
+    type: select2_entity_reference
     region: content
   field_redirects:
     type: string_textfield
-    weight: 9
+    weight: 7
     region: content
     settings:
       size: 60
       placeholder: ''
     third_party_settings: {  }
   field_reviewer:
-    weight: 11
+    weight: 10
     settings:
       match_operator: CONTAINS
       size: 60
@@ -104,22 +153,15 @@ content:
     third_party_settings: {  }
     type: entity_reference_autocomplete
     region: content
-  langcode:
-    type: language_select
-    weight: 2
-    region: content
-    settings:
-      include_locked: true
-    third_party_settings: {  }
   moderation_state:
     type: moderation_state_default
-    weight: 12
+    weight: 11
     settings: {  }
     region: content
     third_party_settings: {  }
   path:
     type: path
-    weight: 15
+    weight: 16
     region: content
     settings: {  }
     third_party_settings: {  }
@@ -136,7 +178,7 @@ content:
         maxlength_js_label: 'Content limited to @limit characters, remaining: <strong>@remaining</strong>'
   uid:
     type: entity_reference_autocomplete
-    weight: 13
+    weight: 14
     settings:
       match_operator: CONTAINS
       size: 60
@@ -145,12 +187,13 @@ content:
     region: content
     third_party_settings: {  }
   url_redirects:
-    weight: 16
+    weight: 17
     region: content
     settings: {  }
     third_party_settings: {  }
 hidden:
   group_content: true
+  langcode: true
   promote: true
   status: true
   sticky: true

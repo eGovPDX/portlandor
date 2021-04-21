@@ -43,12 +43,12 @@ use Drupal\Core\Entity\EntityTypeInterface;
  *     "uuid" = "uuid",
  *   },
  *   links = {
- *     "canonical" = "/admin/structure/relation/{relation}",
- *     "add-page" = "/admin/structure/relation/add",
- *     "add-form" = "/admin/structure/relation/add/{relation_type}",
- *     "edit-form" = "/admin/structure/relation/{relation}/edit",
- *     "delete-form" = "/admin/structure/relation/{relation}/delete",
- *     "collection" = "/admin/structure/relation",
+ *     "canonical" = "/relation/{relation}",
+ *     "add-page" = "/relation/add",
+ *     "add-form" = "/relation/add/{relation_type}",
+ *     "edit-form" = "/relation/{relation}/edit",
+ *     "delete-form" = "/relation/{relation}/delete",
+ *     "collection" = "/admin/relation",
  *   },
  *   bundle_entity_type = "relation_type",
  *   field_ui_base_route = "entity.relation_type.edit_form"

@@ -8,23 +8,30 @@ dependencies:
     - field.field.media.document.field_document
     - field.field.media.document.field_document_type
     - field.field.media.document.field_efiles_link
+    - field.field.media.document.field_end_date
     - field.field.media.document.field_file_size
     - field.field.media.document.field_media_in_library
     - field.field.media.document.field_mime_type
+    - field.field.media.document.field_neighborhood
     - field.field.media.document.field_summary
     - media.type.document
     - workflows.workflow.media
   module:
     - content_moderation
+    - datetime
     - field_group
     - file
     - link
+    - maxlength
+    - select2
 third_party_settings:
   field_group:
     group_details:
-      children: {  }
+      children:
+        - field_document
+        - field_efiles_link
       parent_name: ''
-      weight: 17
+      weight: 3
       format_type: details
       format_settings:
         id: ''
@@ -33,7 +40,7 @@ third_party_settings:
         open: true
         required_fields: true
       label: 'Document storage'
-      region: hidden
+      region: content
 _core:
   default_config_hash: X8KEO5iV-XcsBLSyLEMOMv3sw-WxXeIdWnZZ1btyyVU
 id: media.document.media_browser
@@ -53,7 +60,7 @@ content:
     third_party_settings: {  }
   field_document:
     type: file_generic
-    weight: 3
+    weight: 4
     region: content
     settings:
       progress_indicator: throbber
@@ -66,38 +73,44 @@ content:
     third_party_settings: {  }
   field_efiles_link:
     type: link_default
-    weight: 4
+    weight: 5
     region: content
     settings:
       placeholder_url: ''
       placeholder_title: ''
     third_party_settings: {  }
-  field_redirects:
-    type: string_textfield
-    weight: 7
-    region: content
-    settings:
-      placeholder: ''
-      size: 60
-    third_party_settings: {  }
-  field_summary:
-    type: string_textfield
+  field_end_date:
+    type: datetime_default
     weight: 5
     region: content
-    settings:
-      size: 60
-      placeholder: ''
+    settings: {  }
     third_party_settings: {  }
-  langcode:
-    type: language_select
+  field_neighborhood:
+    type: select2_entity_reference
+    weight: 4
+    region: content
+    settings:
+      autocomplete: false
+      match_operator: CONTAINS
+      match_limit: 10
+      width: 100%
+    third_party_settings: {  }
+  field_summary:
+    type: string_textarea
     weight: 2
     region: content
     settings:
-      include_locked: true
-    third_party_settings: {  }
+      rows: 3
+      placeholder: ''
+    third_party_settings:
+      maxlength:
+        maxlength_js: 300
+        maxlength_js_label: 'Content limited to @limit characters, remaining: <strong>@remaining</strong>'
+        maxlength_js_enforce: true
+        maxlength_js_truncate_html: true
   moderation_state:
     type: moderation_state_default
-    weight: 8
+    weight: 7
     settings: {  }
     region: content
     third_party_settings: {  }
@@ -109,12 +122,23 @@ content:
       placeholder: ''
     third_party_settings: {  }
     region: content
+  revision_log_message:
+    type: string_textarea
+    weight: 25
+    settings:
+      rows: 4
+      placeholder: ''
+    region: content
+    third_party_settings: {  }
 hidden:
   created: true
   field_file_size: true
   field_media_in_library: true
   field_mime_type: true
+  field_redirects: true
+  langcode: true
   path: true
   replace_file: true
+  revision_log_message: true
   status: true
   uid: true

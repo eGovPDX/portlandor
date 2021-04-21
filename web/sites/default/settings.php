@@ -24,7 +24,7 @@ $local_settings = __DIR__ . "/settings.local.php";
 if (file_exists($local_settings)) {
   include $local_settings;
 }
-$settings['install_profile'] = 'lightning';
+
 
 if (isset($_ENV['PANTHEON_ENVIRONMENT']) && php_sapi_name() != 'cli') {
   // Redirect to https://$primary_domain in the Live environment
@@ -130,14 +130,11 @@ else {
 }
 
 
-/**
- * Overwrite Google Analytics tracking code in 'live' production site.
- *
- * Set to tracking ID of Google Analytics property for 'production' site.
- */
+// Overwrite Google Tag Manager environment setting in 'live' production site.
 if (isset($_ENV['PANTHEON_ENVIRONMENT'])) {
   if ($_ENV['PANTHEON_ENVIRONMENT'] === 'live') {
-    $config['google_analytics.settings']['account'] = 'UA-6858269-14';
+    $config['google_tag.container.portland.gov']['environment_id'] = 'env-1';
+    $config['google_tag.container.portland.gov']['environment_token'] = 'gX0sWBBfUHwzWER-y90CyQ';
   }
 }
 
@@ -145,4 +142,28 @@ if (isset($_ENV['PANTHEON_ENVIRONMENT'])) {
 // Disables New Relic for CLI context to prevent CircleCI build failures
 if (function_exists('newrelic_ignore_transaction') && php_sapi_name() === 'cli') {
   newrelic_ignore_transaction();
+}
+
+$config['file.settings']['make_unused_managed_files_temporary'] = TRUE;
+
+
+////////////////////////////////////////////////////////////
+// Only uncomment the following lines in the next deployment after the Redis module is enabled on Pantheon.
+// Otherwise will get WSOD.
+////////////////////////////////////////////////////////////
+
+// Configure Redis
+if (isset($_ENV['PANTHEON_ENVIRONMENT']) && $_ENV['PANTHEON_ENVIRONMENT'] !== 'lando') {
+  // Include the Redis services.yml file. Adjust the path if you installed to a contrib or other subdirectory.
+  $settings['container_yamls'][] = 'modules/contrib/redis/example.services.yml';
+
+  //phpredis is built into the Pantheon application container.
+  $settings['redis.connection']['interface'] = 'PhpRedis';
+  // These are dynamic variables handled by Pantheon.
+  $settings['redis.connection']['host']      = $_ENV['CACHE_HOST'];
+  $settings['redis.connection']['port']      = $_ENV['CACHE_PORT'];
+  $settings['redis.connection']['password']  = $_ENV['CACHE_PASSWORD'];
+
+  $settings['cache']['default'] = 'cache.backend.redis'; // Use Redis as the default cache.
+  $settings['cache_prefix']['default'] = 'pantheon-redis';
 }

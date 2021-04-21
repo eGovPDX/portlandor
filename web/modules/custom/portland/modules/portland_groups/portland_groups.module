@@ -1,6 +1,6 @@
 <?php
 
-use Drupal\group\Entity\GroupContent;
+use \Drupal\group\Entity\GroupContent;
 use \Drupal\group\Entity\Group;
 
 /**
@@ -9,6 +9,23 @@ use \Drupal\group\Entity\Group;
 function portland_groups_form_alter(&$form, &$form_state, $form_id) {
   if (array_key_exists('field_display_groups', $form) === TRUE && !is_null($form['field_display_groups'])) {
     _portland_groups_populate_field_display_groups($form, $form_state);
+  }
+  // Select the group add/edit form.
+  if (isset($form_id) && isset($form) && preg_match('/^group/',$form_id)) {
+    // Use the node edit form template.
+    $form['#theme'][0] = 'node_edit_form';
+
+    // Use the node form layout library.
+    $form['#attached']['library'] = ['node/drupal.node'];
+
+    // Create the advanced element if it doesn't exist.
+    if (!isset($form['advanced'])) {
+      $form['advanced'] = [
+        '#type' => 'container',
+        '#accordion' => TRUE,
+        '#weight' => 99,
+      ];
+    }
   }
 }
 
@@ -56,8 +73,8 @@ function _portland_groups_inline_entity_populate_field_display_groups(&$form, &$
 
 /**
  * Implements hook_entity_update
- * 
- * Runs whenever an entity is updated. 
+ *
+ * Runs whenever an entity is updated.
  * If the entity has field_display_groups, call a function to synchronize group ownership based on the
  * first group in the field.
  */
@@ -69,7 +86,7 @@ function portland_groups_entity_update($entity) {
 
 /**
  * Implements hook_entity_insert
- * 
+ *
  * We only want this to run on insert when we're not in a group context.
  * When we are in group context, the group module will take care of creating
  * the group content entity.
@@ -118,7 +135,7 @@ function _portland_groups_synchronize_entity_group_ownership($entity) {
       // can fix it.
       return;
     }
-    
+
     // there may not be an original owner group to remove, if the entity was originally created outside of group context.
     $field_value = $orig_entity->get('field_display_groups')->getValue();
     $orig_owner_group = null;
@@ -130,12 +147,43 @@ function _portland_groups_synchronize_entity_group_ownership($entity) {
       if ($orig_owner_group) {
         // remove from old group
         $old_group = \Drupal\group\Entity\Group::load($orig_owner_group);
-        $current_node = $old_group->getContent($plugin_id, ['entity_id' => $eid]);
-        $content = array_values($current_node)[0];
-        $content->delete();
+        if ($old_group) {
+          $current_node = $old_group->getContent($plugin_id, ['entity_id' => $eid]);
+          if(count($current_node) > 0) {
+            $content = array_values($current_node)[0];
+            $content->delete();
+          }
+        }
       }
       // assign to new group
       _portland_groups_add_entity_to_group($entity, $new_owner_group, $plugin_id);
+    }
+    else {
+      $new_group = \Drupal\group\Entity\Group::load($new_owner_group);
+      if ($new_group) {
+        // When the Display In field has a group but there is no group content node,
+        // add a group content node
+        $current_node = $new_group->getContent($plugin_id, ['entity_id' => $eid]);
+        if(count($current_node) == 0) {
+          _portland_groups_add_entity_to_group($entity, $new_owner_group, $plugin_id);
+        }
+        else if (count($current_node) > 1) {
+          // POWR-2800 One entity added to the same group many times, delete all group content but the first one
+          for($i=1; $i<count($current_node); $i++) {
+            array_values($current_node)[$i]->delete();
+          }
+        }
+
+        // POWR-2800 One entity added to many different groups, delete all but the first Displayed In group
+        $group_content_nodes = GroupContent::loadByEntity($entity);
+        if (count($group_content_nodes) > 1) {
+          foreach($group_content_nodes as $group_content_node) {
+            if($group_content_node->getGroup()->id() != $new_owner_group) {
+              $group_content_node->delete();
+            }
+          }
+        }
+      }
     }
   }
 }
@@ -144,11 +192,11 @@ function _portland_groups_add_entity_to_group($entity, $group_id, $plugin_id) {
   // make sure entity isn't already in group; the entity may already be assigned to
   // the group by virtue of having been created in that context.
   $group = \Drupal\group\Entity\Group::load($group_id);
-  $group->addContent($entity, $plugin_id);
+  // $group->addContent($entity, $plugin_id);
 
   // use this code if we ever need to check if a node is in a group before adding it.
-  // $current_node = $group->getContent($plugin_id, ['entity_id' => $entity->id()]);
-  // if (!$current_node || count($current_node) < 1) {
-  //  $group->addContent($entity, $plugin_id);
-  // }
+  $current_node = $group->getContent($plugin_id, ['entity_id' => $entity->id()]);
+  if (!$current_node || count($current_node) < 1) {
+   $group->addContent($entity, $plugin_id);
+  }
 }

@@ -1,57 +1,70 @@
 <div class="row">
   <div class="cloudy-content col-lg-8 col-md-12">
-    <article{{ attributes.addClass(classes) }}>
-      {{ content.field_construction_type }}
-      {{ content.field_project_status }}
-      <p class="cloudy-lead-text">
-        {{ content.field_summary.0 }}
-      </p>
+    <article{{ attributes }}>
+      {% include "@layouts/stack/stack.twig" with {
+        layout_spacing: 4,
+        item_spacing: 2,
+        items: [content.field_construction_type, content.field_project_status]
+      } %}
+      {{ content.field_summary }}
       {{ content.field_featured_media }}
       <div class="row">
-        <div class="col">
-          <div class="event__date">
-            <span class="d-flex align-items-center">
-            {% if content.field_display_date|render|striptags|trim is not empty %}
-              {{ content.field_display_date }}
-            {% else %}
-              {% if content.field_end_date|render|striptags|trim is not empty %}
+        <div class="col mb-4">
+          {% if content.field_display_date|render|striptags|trim is not empty %}
+            {{ content.field_display_date }}
+          {% else %}
+            <div class="event__date d-flex">
+              {% if content.field_start_date.0|render|striptags is not empty and content.field_end_date|render|striptags|trim is not empty %}
                 {{ content.field_start_date }}
-                <span class="datetime mx-1" aria-label="{{ 'through'|t }}">&ndash;</span>
-                {{ content.field_end_date }}
+                <span class="mx-1" aria-label="{{ 'through'|t }}"> &ndash; </span>
+                {{ content.field_end_date.0 }}
               {% else %}
                 {{ content.field_start_date }}
               {% endif %}
-            {% endif %}
-            </span>
-          </div>
-          <div class="event_time">
-            <span class="d-flex align-items-center">
-              {% if content.field_all_day|render|striptags|trim is not empty %}
-                {{ content.all_day }}
-              {% elseif content.field_end_time|render|striptags|trim is not empty %}
-                {{ content.field_start_time }}
-                <span class="datetime mx-1" aria-label="{{ 'to'|t }}">&ndash;</span>
-                {{ content.field_end_time }}
-              {% else %}
-                {{ content.field_start_time }}
-              {% endif %}
-            </span>
-          </div>
+            </div>
+            <div class="event_time d-flex">
+                {% if content.field_all_day|render|striptags|trim is not empty %}
+                  {{ content.field_all_day }}
+                {% elseif content.field_start_time.0|render|striptags|trim is not empty and content.field_end_time.0|render|striptags|trim is not empty %}
+                  {{ content.field_start_time }}
+                  <span class="mx-1" aria-label="{{ 'to'|t }}"> &ndash; </span>
+                  {{ content.field_end_time }}
+                {% elseif content.field_start_time.0|render|striptags|trim is empty and content.field_end_time.0|render|striptags|trim is not empty %}
+                  <span class="mr-1">Ends </span>
+                  {{ content.field_end_time }}
+                {% else %}
+                  {{ content.field_start_time }}
+                {% endif %}
+            </div>
+          {% endif %}
         </div>
-        {% if content.field_location %}
-        <div class="col-md-6 col-sm-12">
-          {{ content.field_location }}
-        </div>
-        {% endif %}
       </div>
-      {{ content|without('field_summary','field_construction_type','field_project_status','field_featured_media','field_start_date','field_end_date','field_all_day','field_display_date','field_start_time','field_end_time','field_location','field_contact','field_related_content','field_topics','field_display_groups','field_neighborhood') }}
+      {{ content|without(
+        'field_summary',
+        'field_construction_type',
+        'field_project_status',
+        'field_location',
+        'field_featured_media',
+        'field_start_date',
+        'field_end_date',
+        'field_end_time',
+        'field_start_time',
+        'field_display_date',
+        'field_contact',
+        'field_related_content',
+        'field_topics',
+        'field_display_groups',
+        'field_neighborhood')
+      }}
     </article>
   </div>
   <div class="cloudy-side col-lg-4 col-md-12">
+    {{ content.field_location }}
     {{ content.field_contact }}
     {{ content.field_related_content }}
     {{ content.field_topics }}
     {{ content.field_neighborhood }}
+
     {% set view_news = drupal_block('views_block:news_on_content-block_2')|length %}
     {% if view_news > 0 %}
       {{ drupal_block('views_block:news_on_content-block_2') }}

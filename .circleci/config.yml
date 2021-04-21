@@ -5,9 +5,10 @@
 ## Job to run the update path and Behat tests.
 build_and_deploy: &build_and_deploy
   docker:
-    # - image: juampynr/drupal8ci:latest
-    # updated CI image
-    - image: kxwang/drupal-ci:ci-php7.2.28-node12.16.1-yarn1.22.0
+    - image: egovpdx/drupal-ci:latest
+      auth:
+        username: egovpdx
+        password: $DOCKERHUB_PASSWORD
   working_directory: /var/www/html
   steps:
     - restore_cache:
@@ -54,9 +55,9 @@ build_and_deploy: &build_and_deploy
     - restore_cache:
         name: Restore Composer Cache
         keys:
-          - v1-dependencies-{{ checksum "composer.lock" }}
+          - v2-dependencies-{{ checksum "composer.lock" }}
           # fallback to using the latest cache if no exact match is found
-          - v1-dependencies-
+          - v2-dependencies-
     - run:
         name: Composer install
         command: |
@@ -64,14 +65,13 @@ build_and_deploy: &build_and_deploy
           rm -rf ./web/modules/contrib/search_api_solr
           # Pantheon don't allow these folders but Composer needs them
           rm -rf ./web/modules/contrib/facets
-          # Run composer install with hirak/prestissimo for better performance
+          # Run composer install
+          composer -V
           composer config --global --auth github-oauth.github.com "$COMPOSER_TOKEN"
-          composer install --no-suggest --no-interaction
-          # TODO: should only deploy non-dev packages
-          # --no-dev
+          composer install --no-interaction --no-dev
     - save_cache:
         name: Save Composer Cache
-        key: v1-dependencies-{{ checksum "composer.lock" }}
+        key: v2-dependencies-{{ checksum "composer.lock" }}
         paths:
           - ./vendor
           - ./web/core
@@ -130,38 +130,64 @@ build_and_deploy: &build_and_deploy
             # Set Pantheon environment name
             echo "export PANTHEON_ENV=dev" >> $BASH_ENV && source $BASH_ENV
             # Set the connection type to GIT
-            terminus connection:set portlandor.dev git
+            terminus connection:set $CIRCLE_PROJECT_REPONAME.dev git
             git push -f pantheon master
             # TODO: Sanitize DB here
-            # terminus env:clone-content portlandor.test dev
+            # terminus env:clone-content $CIRCLE_PROJECT_REPONAME.test dev
             # After success deployment to DEV, remove the multidev site if this is a merge of a PR.
-            # Read the last Git log in the master branch. Get the branch name at the end of the log.
-            # Example: Merge pull request #35 from eGovPDX/powr-152
+            # Read the last Git log in the master branch. Get the story ID from the start of the log.
+            # Example: POWR-3058 Delete all related multi-devs when a branch is merged
             cd /var/www/html
             # Must read the last commit message from Github. The last one in local repo is "CircleCI Deployment"
-            if [[ $(git log origin/master --pretty=format:%s -1) =~ (^Merge pull request #[0-9]* from eGovPDX\/)([^,]*) ]]; then
-              echo "Found a Pull Request Merge for branch: '${BASH_REMATCH[2]}'";
-              # Check if a multidev environment with the branch name exists or not
-              terminus multidev:list --format=list --field=Name portlandor > ./env_list.txt
-              if grep -Fxq "${BASH_REMATCH[2]}" ./env_list.txt; then
-                # Delete both the multidev site and branch
-                terminus multidev:delete --delete-branch portlandor.${BASH_REMATCH[2]} -y
+            last_log=$(git log origin/master --pretty=format:%s -1)
+            lowercase_last_log="${last_log,,}"
+            if [[ $lowercase_last_log =~ ^(powr-[0-9]+)[[:space:]]+.+$ ]]; then
+              echo "Found the story ID: '${BASH_REMATCH[1]}'";
+
+              # Save all multi-dev names in a file
+              terminus multidev:list --format=list --field=Name $CIRCLE_PROJECT_REPONAME > ./env_list.txt
+              echo "Multi-dev site list saved into env_list.txt"
+
+              # Pattern to match "powr-1234a" or "powr-1234-1" or "powr-1234-a". Not "powr-12345"
+              env_pattern="^${BASH_REMATCH[1]}([a-z]*|(-\d+)|(-[a-z]+))$"
+
+              # Find and delete all multidevs starting with the story ID
+              # TODO: determine if missing env_name is causing build re-run for dev to fail
+              # TODO: determine why some patterns for multidevs do not get deleted
+              if [ -f "./env_list.txt" ]
+              then
+                echo "Found multi-dev sites:";
+                cat ./env_list.txt
+                grep -E "${env_pattern}" ./env_list.txt > ./matching_env_list.txt || true
+                # If the file is NOT empty
+                if [ -s "./matching_env_list.txt" ]
+                then
+                  echo "Start to delete multi-dev..."
+                  while read env_name; do
+                    terminus multidev:delete --delete-branch $CIRCLE_PROJECT_REPONAME.$env_name -y
+                    echo "Deleted multi-dev: $env_name"
+                  done <./matching_env_list.txt
+                  echo "Done deleting multi-dev"
+                  rm -f ./matching_env_list.txt
+                else
+                  echo "No multi-dev site found matching the story ID."
+                fi
               fi
             fi
             echo "Waiting for sync code workflow to finish..."
-            until [ $(terminus workflow:list --fields status,env --format string -- portlandor | egrep -i $PANTHEON_ENV -m 1 | egrep -i -o "^\w+") == succeeded ]; do
+            until [ $(terminus workflow:list --fields status,env,workflow --format string -- $CIRCLE_PROJECT_REPONAME | egrep -i "$PANTHEON_ENV\s+Sync code" -m 1 | egrep -i -o "^\w+") == succeeded ]; do
               sleep 30
             done
             echo "Rebuilding cache..."
-            terminus drush portlandor.$PANTHEON_ENV -- cr
+            terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- cr
             echo "Running database updates..."
-            terminus drush portlandor.$PANTHEON_ENV -- updb -y
+            terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- updb -y
             echo "Importing config..."
-            terminus drush portlandor.$PANTHEON_ENV -- cim -y
+            terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- cim -y -vvv
             echo "Running cron..."
-            terminus drush portlandor.$PANTHEON_ENV -- core:cron -y
+            terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- core:cron -y
             echo "Rebuilding cache..."
-            terminus drush portlandor.$PANTHEON_ENV -- cr
+            terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- cr
           else  # All other commits deploy to a multidev
             # Set Pantheon environment name
             if [[ $CIRCLE_BRANCH =~ ^dependabot\/ ]] && [[ $CIRCLE_PULL_REQUEST =~ \/pull\/([0-9]+)$ ]]; then
@@ -172,60 +198,72 @@ build_and_deploy: &build_and_deploy
             echo "Pantheon environment name is $PANTHEON_ENV"
 
             # Check if the multidev branch site exists. If not, create it
-            terminus multidev:list --format=list --field=Name portlandor > ./env_list.txt
+            terminus multidev:list --format=list --field=Name $CIRCLE_PROJECT_REPONAME > ./env_list.txt
             if grep -Fxq "$PANTHEON_ENV" ./env_list.txt; then
               echo "Found multidev site"
             else
-              # Create a new Multi-Dev with files and database from Dev.
-              echo "Creating new multidev site. Please wait." && terminus multidev:create portlandor.dev $PANTHEON_ENV
+              # Determine base branch of PR
+              #   - Extract PR number from pull request URL
+              #   - Query GitHub API for PR data and extract base branch from JSON base.ref property
+              [[ $CIRCLE_PULL_REQUEST =~ \/pull\/([0-9]+)$ ]]
+              BASE=$(curl -s https://api.github.com/repos/egovPDX/$CIRCLE_PROJECT_REPONAME/pulls/${BASH_REMATCH[1]} | grep -Pzo '(?s)"base":.*?"ref": "\K[A-Za-z0-9_-]+' | tr -d '\0')
+              if [[ $BASE = "master" ]]; then
+                BASE=dev
+              fi
+              # Create a new Multi-Dev with files and database from site corresponding to PR's base branch.
+              echo "Creating new multidev site cloned from $BASE. Please wait."
+              terminus multidev:create $CIRCLE_PROJECT_REPONAME.$BASE $PANTHEON_ENV
             fi
+
             rm -rf ./env_list.txt
             # Set the connection type to GIT
-            terminus connection:set portlandor.$PANTHEON_ENV git
+            terminus connection:set $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV git
             # Force push $CIRCLE_BRANCH to Pantheon as branch named $PANTHEON_ENV
             git push -f pantheon $CIRCLE_BRANCH:$PANTHEON_ENV
 
             echo "Waiting for sync code workflow to finish..."
-            until [ $(terminus workflow:list --fields status,env --format string -- portlandor | egrep -i $PANTHEON_ENV -m 1 | egrep -i -o "^\w+") == succeeded ]; do
+            until [ $(terminus workflow:list --fields status,env,workflow --format string -- $CIRCLE_PROJECT_REPONAME | egrep -i "$PANTHEON_ENV\s+Sync code" -m 1 | egrep -i -o "^\w+") == succeeded ]; do
               sleep 30
             done
             echo "Rebuilding cache..."
-            terminus drush portlandor.$PANTHEON_ENV -- cr
+            terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- cr
             echo "Running database updates..."
-            terminus drush portlandor.$PANTHEON_ENV -- updb -y
+            terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- updb -y
             echo "Importing config..."
-            terminus drush portlandor.$PANTHEON_ENV -- cim -y
-            echo "Running cron..."
-            terminus drush portlandor.$PANTHEON_ENV -- core:cron -y
-            echo "Rebuilding cache..."
-            terminus drush portlandor.$PANTHEON_ENV -- cr
+            terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- cim -y -vvv
+            echo "Rebuilding cache"
+            terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- cr
 
             if [[ $CIRCLE_BRANCH =~ ^dependabot\/ ]]; then
               echo "Dependabot branch detected..."
 
               # Set the connection type to SFTP
-              terminus connection:set portlandor.$PANTHEON_ENV sftp
+              terminus connection:set $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV sftp
 
               # Clone database from DEV
               # This is necessary if the build gets re-run because the drush cim above can
               # interfere with the drush cex below (by importing what was previously exported)
-              terminus env:clone-content portlandor.dev $PANTHEON_ENV --db-only --cc -y
-              terminus drush portlandor.$PANTHEON_ENV -- cim -y
+              terminus env:clone-content $CIRCLE_PROJECT_REPONAME.dev $PANTHEON_ENV --db-only --cc -y
+              terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- cim -y -vvv
 
               # Abort if there's any database updates that cause a configuration change
               echo "Run database update... and abort if there's a configuration change"
               echo "IMPORTANT: If there's a configuation change, download this branch and manually update the dependency"
-              terminus drush portlandor.$PANTHEON_ENV -- updb -y
-              terminus drush portlandor.$PANTHEON_ENV -- cex --no   # this will return failure code if there's config to export
+              terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- updb -y
+              terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- cex --no   # this will return failure code if there's config to export
             fi
           fi
 
 run_tests: &run_tests
   docker:
-    # - image: juampynr/drupal8ci:latest
-    # updated CI image
-    - image: kxwang/drupal-ci:ci-php7.2.28-node12.16.1-yarn1.22.0
+    - image: egovpdx/drupal-ci:latest
+      auth:
+        username: egovpdx
+        password: $DOCKERHUB_PASSWORD
     - image: selenium/standalone-chrome-debug:3.7.1-beryllium
+      auth:
+        username: egovpdx
+        password: $DOCKERHUB_PASSWORD
   parallelism: 5
   working_directory: /var/www/html
   steps:
@@ -259,13 +297,14 @@ run_tests: &run_tests
           - "/tmp/vendor"
     - restore_cache:
         name: Restore Behat cache
-        key: v1-behat-dependencies-{{ checksum "tests/composer.lock" }}
+        key: v2-behat-dependencies-{{ checksum "tests/composer.lock" }}
     - run:
         name: Composer install for Behat dependencies
         command: |
           cd tests
+          composer -V
           composer config --global --auth github-oauth.github.com "$COMPOSER_TOKEN"
-          composer install --no-suggest --no-interaction
+          composer install --no-interaction
     - run:
         name: Run tests against Pantheon
         when: on_success
@@ -287,26 +326,81 @@ run_tests: &run_tests
           # Split feature files so all split test jobs will finish around the same time
           TESTFILES=$(circleci tests glob "features/*.feature" | circleci tests split)
           if [[ $PANTHEON_ENV = "master" ]]; then
-            echo 'export BEHAT_PARAMS="{\"extensions\" : {\"Behat\\\MinkExtension\" : {\"base_url\" : \"https://dev-portlandor.pantheonsite.io\"}, \"Drupal\\\DrupalExtension\" : {\"drush\" : { \"alias\": \"portlandor.dev\"}}}}"' >> $BASH_ENV && source $BASH_ENV
+            echo 'export BEHAT_PARAMS="{\"extensions\" : {\"Behat\\\MinkExtension\" : {\"base_url\" : \"https://dev-${CIRCLE_PROJECT_REPONAME}.pantheonsite.io\"}, \"Drupal\\\DrupalExtension\" : {\"drush\" : { \"alias\": \"$CIRCLE_PROJECT_REPONAME.dev\"}}}}"' >> $BASH_ENV && source $BASH_ENV
           else
-            echo 'export BEHAT_PARAMS="{\"extensions\" : {\"Behat\\\MinkExtension\" : {\"base_url\" : \"https://${PANTHEON_ENV}-portlandor.pantheonsite.io\"}, \"Drupal\\\DrupalExtension\" : {\"drush\" : { \"alias\": \"portlandor.${PANTHEON_ENV}\"}}}}"' >> $BASH_ENV && source $BASH_ENV
+            echo 'export BEHAT_PARAMS="{\"extensions\" : {\"Behat\\\MinkExtension\" : {\"base_url\" : \"https://${PANTHEON_ENV}-${CIRCLE_PROJECT_REPONAME}.pantheonsite.io\"}, \"Drupal\\\DrupalExtension\" : {\"drush\" : { \"alias\": \"$CIRCLE_PROJECT_REPONAME.${PANTHEON_ENV}\"}}}}"' >> $BASH_ENV && source $BASH_ENV
           fi
           for TESTFILE in $TESTFILES
           do
-            public_ip_address=$(wget -qO- http://checkip.amazonaws.com)
-            echo "This container's public ip address is $public_ip_address"
+            # public_ip_address=$(wget -qO- http://checkip.amazonaws.com)
+            # echo "This container's public ip address is $public_ip_address"
             behat -c behat.yml -f pretty -o std -f junit -o test-results/behat ${TESTFILE} || behat -c behat.yml -f pretty -o std -f junit -o test-results/behat ${TESTFILE}
             mv test-results/behat/default.xml test-results/behat/${TESTFILE}.xml
           done
     - save_cache:
         paths:
           - ./tests/vendor
-        key: v1-behat-dependencies-{{ checksum "tests/composer.lock" }}
+        key: v2-behat-dependencies-{{ checksum "tests/composer.lock" }}
     - store_test_results:
         path: /var/www/html/tests/test-results
     - store_artifacts:
         path: /var/www/html/artifacts
         destination: /
+
+visual_regression: &visual_regression
+  docker:
+    - image: egovpdx/visual-regression:latest
+      auth:
+        username: egovpdx
+        password: $DOCKERHUB_PASSWORD
+  # environment:
+  #   PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: true
+  parallelism: 4
+  working_directory: /home/circleci/app
+  steps:
+    - checkout
+
+    - restore_cache:
+        name: Restore Terminus cache
+        keys:
+          - terminus_-{{ checksum "composer.lock" }}
+    - run:
+        name: Install Terminus
+        command: |
+          if [ ! -f "/tmp/vendor/pantheon-systems/terminus/bin/terminus" ]; then
+          cd /tmp && composer require pantheon-systems/terminus:^2.0.0
+          fi
+    - save_cache:
+        name: Save Terminus cache
+        key: terminus_-{{ checksum "composer.lock" }}
+        paths:
+          - "/tmp/vendor"
+
+    - run:
+        name: Run Percy tests
+        command: |
+          export PATH=/var/www/html/tests/vendor/bin:/tmp/vendor/pantheon-systems/terminus/bin:$PATH
+
+          # Log in via terminus first. Required for tests that require user login.
+          terminus auth:login --quiet --machine-token="$eGov_Terminus" --email="$eGov_Email" && terminus aliases
+
+          # Prepare environment variables to be used by Percy
+          if [[ $CIRCLE_BRANCH = "master" ]]; then
+            echo 'export SITE_NAME="dev"' > $BASH_ENV && source $BASH_ENV
+          else
+            echo 'export SITE_NAME=${CIRCLE_BRANCH}' > $BASH_ENV && source $BASH_ENV
+          fi
+
+          cd /home/circleci/app/tests/percy
+          npm install --quiet
+
+          # Start Percy tests
+          TESTFILES=$(circleci tests glob "snapshots-*.js" | circleci tests split)
+          for TESTFILE in $TESTFILES
+          do
+            npm run ${TESTFILE}
+          done
+
 
 # Declare all of the jobs we should run.
 version: 2.1
@@ -315,6 +409,11 @@ jobs:
      <<: *build_and_deploy
   test:
      <<: *run_tests
+  visual_regression:
+    <<: *visual_regression
+
+orbs:
+  percy: percy/agent@0.1.2
 
 # Declare a workflow that runs all of our jobs in parallel.
 workflows:
@@ -325,3 +424,9 @@ workflows:
       - test:
           requires:
             - deploy
+      - visual_regression:
+          requires:
+            - deploy
+      - percy/finalize_all:
+          requires:
+            - visual_regression

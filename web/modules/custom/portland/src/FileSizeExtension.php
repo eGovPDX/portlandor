@@ -31,6 +31,7 @@ class FileSizeExtension extends \Twig_Extension {
    * This function is used to build a friendly file size string from raw byte count
    */
   public function file_size_string($bytes) {
+    if( empty($bytes) ) return '';
     $kbytes = round($bytes / 1024, 2);
     $mbytes = round($kbytes / 1024, 2);
     $size = "";

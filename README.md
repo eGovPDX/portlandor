@@ -69,14 +69,35 @@ git checkout master
 git pull origin master
 lando latest
 lando refresh
-# Next run `git checkout -b powr-[ID]`
+git checkout -b powr-[ID]
 ```
 
 <details>
 
 1. Verify you are on the master branch with `git checkout master`.
 2. On the master branch, run `git pull origin master`. This will make sure you have the latest changes from the remote master. Optionally, running `git pull -p origin` will prune any local branches not on the remote to help keep your local repo clean.
-3. Use the issue ID from Jira for a new feature branch name to start work: `git checkout -b powr-[ID]` to create and checkout a new branch. (We use lowercase for the branch name to help create Pantheon multidev environments correctly.) If the branch already exists, you may use `git checkout powr-[ID]` to switch to your branch.
+3. Use the issue ID from Jira for a new feature branch name to start work: `git checkout -b powr-[ID]` to create and checkout a new branch. (We use lowercase for the branch name to help create Pantheon multidev environments correctly.) If the branch already exists, you may use `git checkout powr-[ID]` to switch to your branch. If you need to create multiple multidevs for your story, name your additional branches `powr-[ID][a-z]` or `powr-[ID]-[a-z or 1-9]` (but continue use just `POWR-[ID]` in the git commits and PR titles for all branches relating to that Jira story).
+
+    **TLDR:**
+
+    - New feature branch
+        ```
+        git checkout -b powr-[ID]
+        ```
+    - New branch from current branch
+        ```
+        powr-[ID][a-z]` or `powr-[ID]-[a-z or 1-9]
+        ```
+    - Use base branch ID for base/sub-branch commits and PR titles
+        ```
+        POWR-[ID]
+
+        // on base branch powr-123
+        git commit -m "POWR-123 ..."
+
+        // on powr-123-a branched from powr-123
+        git commit -m "POWR-123 ..."
+        ```
 4. Run `lando latest` at the start of every sprint to update your local database with a copy of the database from Dev.
 5. Run `lando refresh` to refresh your local environment to match master. (This runs composer install, drush updb, drush cim, and drush cr.)
 6. You are now ready to develop on your feature branch.
@@ -88,7 +109,7 @@ lando refresh
 1. In addition to any custom modules or theming files you may have created, you need to export any configuraiton changes to the repo in order for those changes to be synchronized. Run `lando drush cex` (config-export) in your local envionrment to create/update/delete the necessary config files. You will need to commit these to git.
 2. To commit your work, run `git add -A` to add all of the changes to your local repo. (If you prefer to be a little more precise, you can `git add [filename]` for each file or several files separated by a space.
 3. Then create a commit with a comment, such as `git commit -m "POWR-[ID] description of your change."`
-4. Just before you push to GitHub, you should rebase your feature branch on the latest in the remote master. To do this run `git fetch origin master` then `git rebase -i origin/master`. This lets you "interatively" replay your change on the tip of a current master branch. You'll need to pick, squash or drop your changes and resolve any conflicts to get a clean commit that can be pushed to master. You may need to `git rebase --continue` until all of your changes have been replayed and your branch is clean.
+4. Just before you push to GitHub, you should rebase your feature branch on the latest in the remote master. To do this run `git fetch origin master` then `git rebase -i origin/master`. This lets you "interactively" replay your change on the tip of a current master branch. You'll need to pick, squash or drop your changes and resolve any conflicts to get a clean commit that can be pushed to master. You may need to `git rebase --continue` until all of your changes have been replayed and your branch is clean.
 5. Run `lando refresh` to refresh your local environment with any changes from master. (This runs composer install, drush updb, drush cim, and drush cr.)
 6. You can now run `git push -u origin powr-[ID]`. This will push your feature branch and set its remote to a branch of the same name on origin (GitHub).
 
@@ -110,6 +131,8 @@ When your work is ready for code review and merge:
    - Run `drush cr` to rebuild the caches.
    - Run smoke tests against the feature branch site to make sure the build was successful.
 2. If the build fails, you can go back to your local project and correct any issues and repeat the process of getting a clean commit pushed to GitHub. Once a PR exists, every commit to that branch will trigger a new CircleCI build. You only need to run `git push` from your branch if it is already connected to the remote, but you'll probably want to step through the rebase steps if the time between pushes is anything less than a couple of minutes.
+
+3. The CI job `visual-regression` runs tests under different users in parallel and `finalize-all` notifies Percy that all tests have finished. Functional tests are performed directly on CI servers while screenshots are sent to Percy for post processing. When a functional test fails, click on the `Details` link next to the job `ci/circleci: visual_regression` to review CI log for error messages. When a screenshot comparision test fails, click on the `Details` link next to the `percy/portlandor` job to review and approve the result if the visual difference is only caused by content updates. If the visual difference is **not** caused by content updates, a comment should be added to the JIRA ticket with a link to the screenshot in question.
 
 ### Pantheon MultiDev site
 
@@ -156,13 +179,13 @@ Note: The theme build process is automatically triggered everytime your Lando co
 
 ### Quick Start
 
-1. Run `lando npm start`
+1. Run `lando yarn start`
 2. Go to `https://portlandor.lndo.site/pattern-lab`
 
 Here are some additional commands you may find useful.
 
-- Run `lando npm run build` to build both the theme assets and Pattern Lab.
-- Run `lando npm run watch` to build both the thme assets and  Pattern Lab, watch for changes and trigger rebuilds for both.
+- Run `lando yarn run build` to build both the theme assets and Pattern Lab.
+- Run `lando yarn run watch` to build both the thme assets and  Pattern Lab, watch for changes and trigger rebuilds for both.
 
 ### Pattern Lab
 
@@ -172,9 +195,9 @@ To get started with Pattern Lab,
 
 Here are some useful commands when working with Pattern Lab:
 
-- Run `lando npm run build:pl` to build the Pattern Lab site.
-- Run `lando npm run watch:pl` to build the Pattern Lab site, watch for changes and trigger rebuilds.
-- Run `lando npm run clean:pl` to delete the Pattern Lab site.
+- Run `lando yarn run build:pl` to build the Pattern Lab site.
+- Run `lando yarn run watch:pl` to build the Pattern Lab site, watch for changes and trigger rebuilds.
+- Run `lando yarn run clean:pl` to delete the Pattern Lab site.
 
 #### *Note*
 
@@ -188,11 +211,11 @@ Note: Make modifications to the desired SCSS and JavaScript files in the theme. 
 
 You have a couple of options for manually compiling the asset files:
 
-- Run `lando npm run build:wp` to build the Pattern Lab site.
-- Run `lando npm run watch:wp` to build the Pattern Lab site, watch for changes and trigger rebuilds.
-- Run `lando npm run clean:wp` to delete the Pattern Lab site.
+- Run `lando yarn run build:wp` to build the Pattern Lab site.
+- Run `lando yarn run watch:wp` to build the Pattern Lab site, watch for changes and trigger rebuilds.
+- Run `lando yarn run clean:wp` to delete the Pattern Lab site.
 
-You can run `lando npm install` if you need to install/update your Node dependencies.
+You can run `lando yarn install` if you need to install/update your Node dependencies.
 
 ### Webpack output
 
@@ -301,4 +324,3 @@ The lock file is not up to date with the latest changes in composer.json. You ma
 ...
 
 To resolve this, run `lando composer update --lock`, which will generate a new hash. If you encounter a conflict on the hash value when you merge or rebase, use the most recent (yours) version of the hash.
-

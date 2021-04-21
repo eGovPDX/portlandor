@@ -1,10 +1,25 @@
-import $ from 'jquery';
-import Drupal from 'Drupal';
+/**
+ * @file
+ * Search API Page placeholder functionality.
+ *
+ * hides search input placeholder text on focus
+ */
+(function($, Drupal) {
+  Drupal.behaviors.cloudyHideSearchPlaceholder = {
+    attach: function(context, settings) {
+      $(context)
+        .find("#edit-keys.ui-autocomplete-input[data-search-api-autocomplete-search]")
+        .once("search-clear")
+        .on("focusin focusout", function() {
+          const $this = $(this);
+          if ($this.attr("placeholder").length) {
+            $this.data("placeholder", $this.attr("placeholder"));
+          }
 
-// Set up handlers for behaviors associated with the `cloudy/search-field` library
-// On pageshow, reset form to restore search field value to original search term
-Drupal.behaviors.search_field = {
-  attach: function() {
-    $('#search-api-page-block-form')[0].reset()
-  }
-};
+          $this.attr("placeholder") === $this.data("placeholder")
+            ? $this.attr("placeholder", "")
+            : $this.attr("placeholder", $this.data("placeholder"));
+        });
+    }
+  };
+})(jQuery, Drupal);

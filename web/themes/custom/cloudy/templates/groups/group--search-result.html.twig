@@ -1,19 +1,30 @@
-<div class="card mb-4">
-  <div class="card-body d-flex flex-column align-items-start">
-  <h3 class="order-2">
-    <a href="{{ url }}" rel="bookmark">
-      {{ label }}</a>
-  </h3>
-  {% if content.field_summary %}
-    <div class="order-3">
-      <p>{{ content.field_summary.0 }}</p>
-    </div>
-  {% endif %}
-  {% if group.type.entity.label %}
-    <div class="badge badge-pill badge-light order-1 align-self-start">
-      <span class="sr-only">Type is</span>
-        {{ group.type.entity.label }}
-    </div>
-  {% endif %}
-  </div>
-</div>
+{#
+#  Implements morsel on all group teasers.
+#  Note that field_featured_media and group_date must
+#  be present to be rendered and are currently optional
+#  per group display.
+#}
+{% set group_label = group.type.entity.label|title %}
+
+{% embed '@components/morsel/morsel.twig' with {
+  layout_mt: 8,
+  layout_mb: 8,
+  heading: {
+    url: url,
+    text: label,
+    level: 2,
+    style_override: 3
+  },
+  image: content.field_featured_media[0],
+  text: content.field_summary,
+} %}
+  {% block prehead %}
+    {{ parent() }}
+    {% if group_label %}
+      {% include '@components/badge/badge.twig' with {
+        text: group_label,
+        mb: 2
+      } only %}
+    {% endif %}
+  {% endblock %}
+{% endembed %}

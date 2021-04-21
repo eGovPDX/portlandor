@@ -1,16 +1,28 @@
-<div class="d-flex flex-column align-items-start mb-4">
-  <h3 class="order-2">
-    <a href="{{ url }}" rel="bookmark">
-      {{ label }}</a>
-  </h3>
-  {% if node.field_summary.value %}
-  <div class="order-3">
-    <p>{{ node.field_summary.value }}</p>
-  </div>
-  {% endif %}
-  {% if node.type.entity.label %}
-    <span class="badge badge-pill badge-light mb-1 order-1 align-self-start">
-      <span class="sr-only">Type is</span>
-      {{ node.type.entity.label }}</span>
-  {% endif %}
-</div>
+{% set is_popular = content.field_popular[0]['#markup'] == 'On' %}
+{% set service_label = node.type.entity.label %}
+
+{% embed '@components/morsel/morsel.twig'
+  with {
+    is_draft: node.isPublished() ? false : true,
+    layout_mt: 8,
+    layout_mb: 8,
+    heading: {
+      url: url,
+      text: label,
+      level: 2,
+      style_override: 3
+    },
+    text: content.field_summary,
+    image: content.field_featured_media|render
+  }
+%}
+  {% block prehead %}
+    {{ parent() }}
+    {% if service_label %}
+      {% include '@components/badge/badge.twig' with {
+        text: service_label,
+        mb: 2
+      } only %}
+    {% endif %}
+  {% endblock %}
+{% endembed %}

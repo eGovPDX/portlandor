@@ -1,0 +1,34 @@
+id: pbot_news_redirects
+label: 'Migrate PBOT News paths into Redirects table'
+langcode: en
+migration_group: pbot_news
+source:
+  plugin: csv
+  path: modules/custom/portland_migrations/sources/pbot_news.csv
+  header_row_count: 1
+  constants:
+    redirect_prefix: 'internal:/node/'
+    uid_admin: 1
+    status_code: 301
+  keys:
+    - CONTENT_ID
+destination:
+  plugin: 'entity:redirect'
+process:
+  uid: constants/uid_admin
+  status_code: constants/status_code
+  temp_nid:
+    plugin: migration_lookup
+    source: CONTENT_ID
+    migration: pbot_news
+  redirect_source:
+    plugin: str_replace
+    case_insensitivity: true
+    source: URL
+    search: https://www.portlandoregon.gov/
+    replace: ''
+  redirect_redirect:
+    plugin: concat
+    source:
+      - constants/redirect_prefix
+      - "@temp_nid"
