@@ -1,19 +1,23 @@
 const percySnapshot = require('@percy/puppeteer')
 const puppeteer = require('puppeteer')
-const util = require('util');
-const exec = util.promisify(require('child_process').exec);
+var fs = require('fs');
 
 const SITE_NAME = process.env.SITE_NAME;
 const HOME_PAGE = (SITE_NAME) ? `https://${SITE_NAME}-portlandor.pantheonsite.io` : 'https://portlandor.lndo.site';
 const ARTIFACTS_FOLDER = (SITE_NAME) ? `/home/circleci/artifacts/` : `./`;
 const timeout = 60000 * 2;
 
+var BROWSER_OPTION = { 
+  ignoreHTTPSErrors: true,
+  args: ["--no-sandbox"],
+};
+
+if (!SITE_NAME) {
+  BROWSER_OPTION.executablePath = "/usr/bin/google-chrome";
+}
 var browser, page, login_url;
 beforeAll(async () => {
-  browser = await puppeteer.launch({
-    ignoreHTTPSErrors: true,
-    args: [ '--no-sandbox'],
-  })
+  browser = await puppeteer.launch(BROWSER_OPTION)
   page = await browser.newPage()
   await page.setDefaultTimeout(timeout)
 
@@ -24,9 +28,9 @@ beforeAll(async () => {
     await percySnapshot(page, 'Ally Admin - Account profile');
   }
   else {
-    var drush_uli_result = await exec('lando drush uli --mail ally.admin@portlandoregon.gov');
-    expect(drush_uli_result.stdout).toEqual(expect.stringContaining('http'));
-    login_url = drush_uli_result.stdout.replace('http://default', 'https://portlandor.lndo.site');
+    var drush_uli_result = fs.readFileSync("ally_uli.log").toString();
+    // expect(drush_uli_result.stdout).toEqual(expect.stringContaining('http'));
+    login_url = drush_uli_result.replace('http://default', 'https://portlandor.lndo.site');
     // Log in once for all tests to save time
     await page.goto(login_url);
   }

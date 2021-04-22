@@ -7,20 +7,32 @@ const HOME_PAGE = SITE_NAME
   : "https://portlandor.lndo.site";
 const timeout = 30000;
 
+var BROWSER_OPTION = { 
+  ignoreHTTPSErrors: true,
+  args: ["--no-sandbox"],
+};
+
+if (!SITE_NAME) {
+  BROWSER_OPTION.executablePath = "/usr/bin/google-chrome";
+}
+
 let browser;
 let page;
 
 beforeAll(async () => {
-  browser = await puppeteer.launch({
-    ignoreHTTPSErrors: true,
-    args: ["--no-sandbox"],
-  });
+  browser = await puppeteer.launch(BROWSER_OPTION);
   page = await browser.newPage();
-});
+
+  // Print browser version
+  await page.browser().version().then(function(version) {
+    console.log(version);
+    });
+  console.log(browser.process().spawnfile);
+}, timeout)
 
 afterAll(async () => {
   await browser.close();
-});
+}, timeout)
 
 describe("Homepage", () => {
   it(

@@ -39,9 +39,11 @@ services:
       - /bin/sh -c "adduser www-data dialout"
       - /bin/sh -c "adduser node dialout"
       - /bin/sh -c "chmod -R 777 /var/www"
+      - /bin/sh -c "apt update && wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb && apt install ./google-chrome-stable_current_amd64.deb && rm ./google-chrome-stable_current_amd64.deb"
     run:
       - echo "Installing Node.js dependencies..."
       - cd /app/web/themes/custom/cloudy && yarn install --ignore-engines --frozen-lockfile
+      - cd /app/tests/percy && yarn install
 
 events:
   post-start:
@@ -69,6 +71,15 @@ tooling:
     description: CUSTOM Run yarn commands
     service: node
     cmd: yarn --cwd /app/tests/percy
+  jest:
+    description: CUSTOM Run Jest tests
+    cmd:
+      - appserver: drush uli > /app/tests/percy/superAdmin_uli.log
+      - appserver: drush uli --mail xinju.wang@portlandoregon.gov > /app/tests/percy/superAdmin_uli_2.log
+      - appserver: drush uli --mail ally.admin@portlandoregon.gov > /app/tests/percy/ally_uli.log
+      - appserver: drush uli --mail marty.member@portlandoregon.gov > /app/tests/percy/marty_uli.log
+      - node: cd /app/tests/percy && npm run jest-test
+      - appserver: rm /app/tests/percy/*uli*.log 
   node:
     description: CUSTOM Run node commands
     service: node
