@@ -7,7 +7,7 @@ $pantheon_yellow = '#EFD01B';
 // The full Slack Message API allows you to specify other channels and enhance the messagge further
 // if you like: https://api.slack.com/docs/messages/builder
 $defaults = array(
-  'slack_username' => 'Pantheon-Quicksilver',
+  'username' => 'Pantheon-Quicksilver',
   'always_show_text' => true,
 );
 
