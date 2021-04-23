@@ -83,9 +83,9 @@ describe('SuperAdmin user test', () => {
 
         // Add Ally Admin as a group admin to the test group
         await page.goto(`${HOME_PAGE}/percy-test-group/members`);
-        text_content = await page.evaluate(() => document.querySelector('.button-action').textContent);
+        text_content = await page.evaluate(() => document.querySelector('.button--action').textContent);
         expect(text_content).toEqual('Add member');
-        selector = '.button-action';
+        selector = '.button--action';
         await page.evaluate((selector) => document.querySelector(selector).click(), selector);
         await page.waitForNavigation();
 

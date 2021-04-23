@@ -24,10 +24,10 @@ beforeAll(async () => {
   page = await browser.newPage();
 
   // Print browser version
-  await page.browser().version().then(function(version) {
-    console.log(version);
-    });
-  console.log(browser.process().spawnfile);
+  // await page.browser().version().then(function(version) {
+  //   console.log(version);
+  //   });
+  // console.log(browser.process().spawnfile);
 }, timeout)
 
 afterAll(async () => {

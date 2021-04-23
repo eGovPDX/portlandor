@@ -73,7 +73,7 @@ describe('SuperAdmin user test', () => {
       try {
         let text_content = '';
         await page.goto(`${HOME_PAGE}/admin/config/development/configuration`);
-        await page.waitFor('.region-content');
+        await page.waitForSelector('.region-content');
         text_content = await page.evaluate(() => document.querySelector('.region-content').textContent);
         expect(text_content).toEqual(expect.stringContaining('There are no configuration changes to import.'));
       } catch (e) {
