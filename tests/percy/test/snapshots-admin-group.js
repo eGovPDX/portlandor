@@ -25,11 +25,6 @@ beforeAll(async () => {
     // On CI, the CI script will call terminus to retrieve login URL
     login_url = process.env.KEVIN_LOGIN;
     await page.goto(login_url);
-    await page.screenshot({
-      path: `${ARTIFACTS_FOLDER}admin-profile.jpg`,
-      type: "jpeg",
-      fullPage: true
-    });
   }
   else {
     var drush_uli_result = fs.readFileSync("superAdmin_uli_2.log").toString();
