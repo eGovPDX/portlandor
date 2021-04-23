@@ -2,13 +2,31 @@
   <div class="cloudy-content col-lg-8 col-md-12">
     <article{{ attributes }}>
       <div{{ content_attributes.addClass('node__content', 'clearfix') }}>
+        {% spaceless %}
+          {{ content.field_service_location_type }}
+          <address class="mb-4" translate="no">
+            <div class="location--title">{{ label }}</div>
+            {% if node.field_location[0].entity.field_address_or_entrance.address_line1 %}
+              {{ node.field_location[0].entity.field_address_or_entrance.address_line1 }}
+              <br>
+            {% endif %}
+            {% if node.field_floor.value %}
+              {{ node.field_floor.value }}
+              <br>
+            {% endif %}
+            {% if node.field_location[0].entity.field_address_or_entrance.locality %}
+              {{ node.field_location[0].entity.field_address_or_entrance.locality }}{% if node.field_location[0].entity.field_address_or_entrance.administrative_area %}, {{ node.field_location[0].entity.field_address_or_entrance.administrative_area }}{% endif %}{% if node.field_location[0].entity.field_address_or_entrance.postal_code %} {{ node.field_location[0].entity.field_address_or_entrance.postal_code }}{% endif %}
+            {% endif %}
+          </address>
+        {% endspaceless %}
         {% if node.field_emergency_closure.value == 1 %}
-          <div class="location--closure">
-            <span class="badge badge-danger">Emergency Closure</span><br>
-            <a href="/emergency-closures">Emergency closure information</a>
-          </div>
+          {{ content.field_emergency_closure }}
+          <a class="d-block mb-4" href="/emergency-closures">Emergency closure information</a>
         {% endif %}
-        {{ content|without('field_geolocation','field_emergency_closure','field_display_groups') }}
+        {{ content|without('field_service_location_type', 'field_location','field_floor','field_emergency_closure') }}
+        <div class="more-information">
+          <a href="{{ url }}" rel="bookmark">More about this location</a>
+        </div>
       </div>
     </article>
   </div>
