@@ -129,10 +129,10 @@ $attachment = array(
   'fields' => $fields
 );
 
-//_slack_notification($secrets['slack_url'], $secrets['slack_channel'], $secrets['slack_username'], $text, $attachment, $secrets['always_show_text']);
+//_slack_notification($secrets['slack_url'], $secrets['slack_username'], $text, $attachment, $secrets['always_show_text']);
 // Only send message when deploying from DEV to TEST. Don't show attachment.
 if($_POST['wf_type'] == 'deploy') {
-    _slack_notification($secrets['slack_url'], $secrets['slack_channel'], $secrets['slack_username'], $text);
+    _slack_notification($secrets['slack_url'], $secrets['slack_username'], $text);
 }
 
 /**
@@ -167,7 +167,6 @@ function _slack_notification($slack_url, $channel, $username, $text, /*$attachme
   // $attachment['fallback'] = $text;
   $post = array(
     'username' => $username,
-    'channel' => $channel,
     'icon_emoji' => ':lightning_cloud:',
     // 'attachments' => array($attachment)
   );
