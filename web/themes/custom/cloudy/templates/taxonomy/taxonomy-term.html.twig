@@ -26,21 +26,32 @@
 
 {% if not page %}
   {% set vocabulary = term.bundle|join %}
-  {% if "community_actions" in vocabulary %}
-    {% set vocabulary = "Service Type"|t %}
-  {% elseif "topic" in vocabulary %}
-    {% set vocabulary = "Topic"|t %}
+  {% if 'community_actions' in vocabulary %}
+    {% set vocabulary = 'service type'|t|title %}
+  {% else %}
+    {% set vocabulary = 'topic'|t|title %}
   {% endif %}
-  {% include "@components/morsel/morsel.twig" with {
+  {% embed '@components/morsel/morsel.twig' with {
+    layout_mt: 8,
+    layout_mb: 8,
     heading: {
-      text: name.0,
+      url: url,
+      text: name,
       level: 2,
-      style_override: 3,
+      style_override: 3
     },
-    url: url,
-    text: content.description.0,
-    type: vocabulary,
+    text: content.description[0],
   } %}
+    {% block prehead %}
+      {{ parent() }}
+      {% if vocabulary %}
+        {% include '@components/badge/badge.twig' with {
+          text: vocabulary,
+          mb: 2
+        } only %}
+      {% endif %}
+    {% endblock %}
+  {% endembed %}
   {#
     * TODO we'll need a custom preprocess to get the display name of the vocabulary,
     * 'type: term.bundle' is the machine name

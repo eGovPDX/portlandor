@@ -1,12 +1,29 @@
-{% set type = type|default("default") %}
-{% set is_bold = is_bold|default(false) %}
+{% set text = text|default('Badge') %}
+{% set type = type|default('light') %}
+{% set icon = icon|default(false) %}
 
-{%
-  set classes = [
-    'cloudy-badge',
-    'cloudy-badge--' ~ type,
-    is_bold ? 'cloudy-badge--bold',
-  ] | merge(classes|default([]))
+{% set classes =
+  [
+    'badge',
+    'badge-pill',
+    'text-wrap text-left',
+    type ? 'badge-' ~ type,
+    mb ? 'mb-' ~ mb : '',
+    ml ? 'ml-' ~ ml : '',
+    mr ? 'mr-' ~ mr : ''
+  ]|merge(classes|default([]))
 %}
 
-<div class="{{ classes|join(' ') }}">{{ text }}</div>
+{% spaceless %}
+  <div class="{{ classes|join(' ')|trim }}">
+    {% if icon and icon.name %}
+      {% include '@elements/icon/icon.twig' with {
+        name: icon.name,
+        size: icon.size
+      } only %}
+      <span>{{ text }}</span>
+    {% else %}
+      {{ text }}
+    {% endif %}
+  </div>
+{% endspaceless %}
