@@ -7,7 +7,7 @@ $pantheon_yellow = '#EFD01B';
 // The full Slack Message API allows you to specify other channels and enhance the messagge further
 // if you like: https://api.slack.com/docs/messages/builder
 $defaults = array(
-  'username' => 'Pantheon-Quicksilver',
+  'slack_username' => 'Pantheon-Quicksilver',
   'always_show_text' => true,
 );
 
@@ -130,9 +130,9 @@ $attachment = array(
 );
 
 //_slack_notification($secrets['slack_url'], $secrets['slack_username'], $text, $attachment, $secrets['always_show_text']);
-// Only send message when deploying from DEV to TEST or TEST to PROD. Don't show attachment.
+// Only send message when deploying from DEV to TEST. Don't show attachment.
 if($_POST['wf_type'] == 'deploy') {
-    _slack_notification($secrets['slack_url'], $text);
+    _slack_notification($secrets['slack_url'], $secrets['slack_username'], $text);
 }
 
 /**
@@ -162,7 +162,7 @@ function _get_secrets($requiredKeys, $defaults)
 /**
  * Send a notification to slack
  */
-function _slack_notification($slack_url, $username, $text, /*$attachment,*/ $alwaysShowText = true)
+function _slack_notification($slack_url, $channel, $username, $text, /*$attachment,*/ $alwaysShowText = true)
 {
   // $attachment['fallback'] = $text;
   $post = array(
