@@ -162,7 +162,7 @@ function _get_secrets($requiredKeys, $defaults)
 /**
  * Send a notification to slack
  */
-function _slack_notification($slack_url, $channel, $username, $text, /*$attachment,*/ $alwaysShowText = true)
+function _slack_notification($slack_url, $username, $text, /*$attachment,*/ $alwaysShowText = true)
 {
   // $attachment['fallback'] = $text;
   $post = array(
