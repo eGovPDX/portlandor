@@ -12,7 +12,7 @@ use Drupal\filter\Render\FilteredMarkup;
  * @Filter(
  *   id = "portland_media_embed_html_filter",
  *   title = @Translation("Portland Media Embed HTML Filter"),
- *   description = @Translation("Removes HTML elements that only contain non breaking spaces."),
+ *   description = @Translation("Removes HTML elements that only contain non breaking spaces. IMPORTANT: This filter must be run after the Embed Media filter from Media Library."),
  *   type = Drupal\filter\Plugin\FilterInterface::TYPE_MARKUP_LANGUAGE,
  * )
  */
