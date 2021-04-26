@@ -12,7 +12,7 @@ use Drupal\filter\Render\FilteredMarkup;
  * @Filter(
  *   id = "portland_media_embed_html_filter",
  *   title = @Translation("Portland Media Embed HTML Filter"),
- *   description = @Translation("Removes HTML elements that only contain non breaking spaces. IMPORTANT: This filter must be run after the Embed Media filter from Media Library."),
+ *   description = @Translation("Removes HTML elements that only contain non breaking spaces. IMPORTANT: This filter must be run before the Embed Media filter from Media Library, or media won't render correctly."),
  *   type = Drupal\filter\Plugin\FilterInterface::TYPE_MARKUP_LANGUAGE,
  * )
  */
@@ -33,20 +33,20 @@ class PortlandMediaEmbedHtmlFilter extends FilterBase {
     // HOWEVER, it also removes empty table cells, so we'll need to modify this if we ever decide to allow tables in content.
     $query = "//*[not(normalize-space((translate(., '\xC2\xA0\', ''))))
                 and
-                  not(descendant-or-self::*[self::img or self::input or self::br or self::hr or self::drupal-entity])
+                  not(descendant-or-self::*[self::img or self::input or self::br or self::hr or self::drupal-entity or self::drupal-media or self::head or self::div])
                   ]
                   [not(ancestor::*
                           [count(.| //*[not(normalize-space((translate(., '\xC2\xA0\', ''))))
                                       and
                                         not(descendant-or-self::*
-                                                [self::img or self::input or self::br or self::hr or self::drupal-entity])
+                                                [self::img or self::input or self::br or self::hr or self::drupal-entity or self::drupal-media or self::head or self::div])
                                         ]
                                   )
                           =
                             count(//*[not(normalize-space((translate(., '\xC2\xA0\', ''))))
                                     and
                                       not(descendant-or-self::*
-                                              [self::img or self::input or self::br or self::hr or self::drupal-entity])
+                                              [self::img or self::input or self::br or self::hr or self::drupal-entity or self::drupal-media or self::head or self::div])
                                       ]
                                 )
                             ]
