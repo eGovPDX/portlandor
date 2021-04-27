@@ -157,9 +157,9 @@ build_and_deploy: &build_and_deploy
           # Set the connection type to GIT and force push
           terminus connection:set $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV git
           git push -f pantheon $CIRCLE_BRANCH
-          # Wait upto 180 seconds for the Sync code workflow to finish
+          # Wait upto 240 seconds for the Sync code workflow to finish
           echo "Waiting for the workflow: Sync code on $PANTHEON_ENV..."
-          terminus build:workflow:wait --max 180 $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV "Sync code on \"$PANTHEON_ENV\""
+          terminus build:workflow:wait --max 240 $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV "Sync code on \"$PANTHEON_ENV\""
 
           echo "Rebuilding cache..."
           terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- cr
@@ -178,13 +178,13 @@ build_and_deploy: &build_and_deploy
             cd /var/www/html
 
             # Must read the last commit message from Github. The last one in local repo is "CircleCI Deployment"
-            last_log=$(git log origin/master --pretty=format:%s -1)
+            last_log=$(git log origin/$CIRCLE_BRANCH --pretty=format:%s -1)
             lowercase_last_log="${last_log,,}"
             JIRA_STORY_ID=""
             if [[ $PANTHEON_ENV = "dev" ]]; then
               # Simple merge on Master
               # Example: Merge pull request #35 from eGovPDX/powr-152
-              if [[ $(git log origin/master --pretty=format:%s -1) =~ (^Merge pull request #[0-9]* from eGovPDX\/)([^,]*) ]]; then
+              if [[ $lowercase_last_log =~ (^merge pull request #[0-9]* from egovpdx\/)([^,]*) ]]; then
                 echo "Found a Pull Request Merge for branch: '${BASH_REMATCH[2]}'";
                 JIRA_STORY_ID=$BASH_REMATCH[2]
               fi
