@@ -112,6 +112,10 @@ build_and_deploy: &build_and_deploy
           terminus auth:login --machine-token="$eGov_Terminus" --email="$eGov_Email"
           
           # Git operations
+          # Set the git commit user name and email address so it's clear in Pantheon log who made the change
+          git config --global user.name $CIRCLE_USERNAME
+          git config --global user.email $eGov_Email
+          git config --global core.safecrlf false
           git remote add pantheon ssh://codeserver.dev.5c6715db-abac-4633-ada8-1c9efe354629@codeserver.dev.5c6715db-abac-4633-ada8-1c9efe354629.drush.in:2222/~/repository.git
           git config --global user.email "$eGov_Email"
           # Force add all files to include those excluded by .gitignore
@@ -120,11 +124,6 @@ build_and_deploy: &build_and_deploy
           # Pantheon site will use the wrong DB if the local is kept
           git rm --cache  web/sites/default/settings.local.php --ignore-unmatch
           git rm -r --cache web/sites/default/files --ignore-unmatch
-
-          # Set the git commit user name and email address so it's clear in Pantheon log who made the change
-          git config --global user.name $CIRCLE_USERNAME
-          git config --global user.email $eGov_Email
-          git config --global core.safecrlf false
 
           export COMMIT_MSG="$(git log -1 --pretty=%B)"
           git commit -m "CircleCI deployment for: " -m "$COMMIT_MSG" --quiet
