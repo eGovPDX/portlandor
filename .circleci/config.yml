@@ -173,43 +173,63 @@ build_and_deploy: &build_and_deploy
           terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- cr
 
           # When commit on a permanent branch or master, delete the multi-dev site with name like "powr-1234a"
-          if [[ $PANTHEON_ENV = "dev" || $PANTHEON_ENV = "media" || $PANTHEON_ENV = "translate" || $PANTHEON_ENV = "release" ]]; then
+          # if [[ $PANTHEON_ENV = "dev" || $PANTHEON_ENV = "media" || $PANTHEON_ENV = "translate" || $PANTHEON_ENV = "release" ]]; then
             # After success deployment to DEV, remove the multidev site if this is a merge of a PR.
-            # Read the last Git log in the master branch. Get the story ID from the start of the log.
-            # Example: POWR-3058 Delete all related multi-devs when a branch is merged
             cd /var/www/html
+
             # Must read the last commit message from Github. The last one in local repo is "CircleCI Deployment"
             last_log=$(git log origin/master --pretty=format:%s -1)
             lowercase_last_log="${last_log,,}"
-            if [[ $lowercase_last_log =~ ^(powr-[0-9]+)[[:space:]]+.+$ ]]; then
-              echo "Found the story ID: '${BASH_REMATCH[1]}'";
-              # Save all multi-dev names in a file
-              terminus multidev:list --format=list --field=Name $CIRCLE_PROJECT_REPONAME > ./env_list.txt
-              echo "Multi-dev site list saved into env_list.txt"
-              # Pattern to match "powr-1234a" or "powr-1234-1" or "powr-1234-a". Not "powr-12345"
-              env_pattern="^${BASH_REMATCH[1]}([a-z]*|(-\d+)|(-[a-z]+))$"
-              # Find and delete all multidevs starting with the story ID
-              if [ -f "./env_list.txt" ]
-              then
-                echo "Found multi-dev sites:";
-                cat ./env_list.txt
-                grep -E "${env_pattern}" ./env_list.txt > ./matching_env_list.txt || true
-                # If the file is NOT empty
-                if [ -s "./matching_env_list.txt" ]
-                then
-                  echo "Start to delete multi-dev..."
-                  while read env_name; do
-                    terminus multidev:delete --delete-branch $CIRCLE_PROJECT_REPONAME.$env_name -y
-                    echo "Deleted multi-dev: $env_name"
-                  done <./matching_env_list.txt
-                  echo "Done deleting multi-dev"
-                  rm -f ./matching_env_list.txt
-                else
-                  echo "No multi-dev site found matching the story ID."
-                fi
+            JIRA_STORY_ID=""
+            if [[ $PANTHEON_ENV = "dev" ]]; then
+              # Simple merge on Master
+              # Example: Merge pull request #35 from eGovPDX/powr-152
+              if [[ $(git log origin/master --pretty=format:%s -1) =~ (^Merge pull request #[0-9]* from eGovPDX\/)([^,]*) ]]; then
+                echo "Found a Pull Request Merge for branch: '${BASH_REMATCH[2]}'";
+                JIRA_STORY_ID=$BASH_REMATCH[2]
+              fi
+            else
+              # Squash and Merge on other feature branches
+              # Example: POWR-3058 Delete all related multi-devs when a branch is merged
+              if [[ $lowercase_last_log =~ ^(powr-[0-9]+)[[:space:]]+.+$ ]]; then
+                echo "Found the story ID: '${BASH_REMATCH[1]}'";
+                JIRA_STORY_ID=$BASH_REMATCH[1]
               fi
             fi
-          fi
+
+            if [[ $JIRA_STORY_ID = "" ]]; then
+              echo "Cannot find JIRA story ID from the last commit message: $lowercase_last_log"
+              exit 1
+            fi
+
+            # Save all multi-dev names in a file
+            terminus multidev:list --format=list --field=Name $CIRCLE_PROJECT_REPONAME > ./env_list.txt
+            echo "Multi-dev site list saved into env_list.txt"
+
+            # Pattern to match "powr-1234a" or "powr-1234-1" or "powr-1234-a". Not "powr-12345"
+            env_pattern="^${JIRA_STORY_ID}([a-z]*|(-\d+)|(-[a-z]+))$"
+
+            # Find and delete all multidevs starting with the story ID
+            if [ -f "./env_list.txt" ]
+            then
+              echo "Found multi-dev sites:";
+              cat ./env_list.txt
+              grep -E "${env_pattern}" ./env_list.txt > ./matching_env_list.txt || true
+              # If the file is NOT empty
+              if [ -s "./matching_env_list.txt" ]
+              then
+                echo "Start to delete multi-dev..."
+                while read env_name; do
+                  # terminus multidev:delete --delete-branch $CIRCLE_PROJECT_REPONAME.$env_name -y
+                  echo "Deleted multi-dev: $env_name"
+                done <./matching_env_list.txt
+                echo "Done deleting multi-dev"
+                rm -f ./matching_env_list.txt
+              else
+                echo "No multi-dev site found matching the story ID."
+              fi
+            fi
+          # fi
 
 
 run_tests: &run_tests
