@@ -33,20 +33,20 @@ class PortlandMediaEmbedHtmlFilter extends FilterBase {
     // HOWEVER, it also removes empty table cells, so we'll need to modify this if we ever decide to allow tables in content.
     $query = "//*[not(normalize-space((translate(., '\xC2\xA0\', ''))))
                 and
-                  not(descendant-or-self::*[self::img or self::input or self::br or self::hr or self::drupal-entity or self::drupal-media or self::head or self::div])
+                  not(descendant-or-self::*[self::img or self::input or self::br or self::hr or self::drupal-entity or self::drupal-media])
                   ]
                   [not(ancestor::*
                           [count(.| //*[not(normalize-space((translate(., '\xC2\xA0\', ''))))
                                       and
                                         not(descendant-or-self::*
-                                                [self::img or self::input or self::br or self::hr or self::drupal-entity or self::drupal-media or self::head or self::div])
+                                                [self::img or self::input or self::br or self::hr or self::drupal-entity or self::drupal-media])
                                         ]
                                   )
                           =
                             count(//*[not(normalize-space((translate(., '\xC2\xA0\', ''))))
                                     and
                                       not(descendant-or-self::*
-                                              [self::img or self::input or self::br or self::hr or self::drupal-entity or self::drupal-media or self::head or self::div])
+                                              [self::img or self::input or self::br or self::hr or self::drupal-entity or self::drupal-media])
                                       ]
                                 )
                             ]
