@@ -173,7 +173,7 @@ build_and_deploy: &build_and_deploy
           terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- cr
 
           # When commit on a permanent branch or master, delete the multi-dev site with name like "powr-1234a"
-          # if [[ $PANTHEON_ENV = "dev" || $PANTHEON_ENV = "media" || $PANTHEON_ENV = "translate" || $PANTHEON_ENV = "release" ]]; then
+          if [[ $PANTHEON_ENV = "dev" || $PANTHEON_ENV = "media" || $PANTHEON_ENV = "translate" || $PANTHEON_ENV = "release" ]]; then
             # After success deployment to DEV, remove the multidev site if this is a merge of a PR.
             cd /var/www/html
 
@@ -197,6 +197,7 @@ build_and_deploy: &build_and_deploy
               fi
             fi
 
+            # Check if the story ID is empty
             if [ "x$JIRA_STORY_ID" = "x" ]; then
               echo "Cannot find JIRA story ID from the last commit message: $lowercase_last_log"
               exit 1
@@ -213,15 +214,15 @@ build_and_deploy: &build_and_deploy
             if [ -f "./env_list.txt" ]
             then
               echo "Found multi-dev sites:";
-              cat ./env_list.txt
+              # cat ./env_list.txt
               grep -E "${env_pattern}" ./env_list.txt > ./matching_env_list.txt || true
-              cat ./matching_env_list.txt
+              # cat ./matching_env_list.txt
               # If the file is NOT empty
               if [ -s "./matching_env_list.txt" ]
               then
                 echo "Start to delete multi-dev..."
                 while read env_name; do
-                  # terminus multidev:delete --delete-branch $CIRCLE_PROJECT_REPONAME.$env_name -y
+                  terminus multidev:delete --delete-branch $CIRCLE_PROJECT_REPONAME.$env_name -y
                   echo "Deleted multi-dev: $env_name"
                 done <./matching_env_list.txt
                 echo "Done deleting multi-dev"
@@ -230,7 +231,7 @@ build_and_deploy: &build_and_deploy
                 echo "No multi-dev site found matching the story ID: $JIRA_STORY_ID."
               fi
             fi
-          # fi
+          fi
 
 
 run_tests: &run_tests
