@@ -117,7 +117,6 @@ build_and_deploy: &build_and_deploy
           git config --global user.email $eGov_Email
           git config --global core.safecrlf false
           git remote add pantheon ssh://codeserver.dev.5c6715db-abac-4633-ada8-1c9efe354629@codeserver.dev.5c6715db-abac-4633-ada8-1c9efe354629.drush.in:2222/~/repository.git
-          git config --global user.email "$eGov_Email"
           # Force add all files to include those excluded by .gitignore
           cd /var/www/html && find ./web/modules -name .git -type d -prune -exec rm -rf "{}" \;
           git add -f /var/www/html
@@ -133,26 +132,26 @@ build_and_deploy: &build_and_deploy
             echo "export PANTHEON_ENV=dev" >> $BASH_ENV && source $BASH_ENV
           else
             echo "export PANTHEON_ENV=$CIRCLE_BRANCH" >> $BASH_ENV && source $BASH_ENV
-          fi
 
-          # Check if the multidev branch site exists. If not, create it
-          terminus multidev:list --format=list --field=Name $CIRCLE_PROJECT_REPONAME > ./env_list.txt
-          if grep -Fxq "$PANTHEON_ENV" ./env_list.txt; then
-            echo "Found Pantheon site: $PANTHEON_ENV"
-          else
-            # Determine base branch of PR
-            #   - Extract PR number from pull request URL
-            #   - Query GitHub API for PR data and extract base branch from JSON base.ref property
-            [[ $CIRCLE_PULL_REQUEST =~ \/pull\/([0-9]+)$ ]]
-            BASE=$(curl -s https://api.github.com/repos/egovPDX/$CIRCLE_PROJECT_REPONAME/pulls/${BASH_REMATCH[1]} | grep -Pzo '(?s)"base":.*?"ref": "\K[A-Za-z0-9_-]+' | tr -d '\0')
-            if [[ $BASE = "master" ]]; then
-              BASE=dev
+            # Check if the multidev branch site exists. If not, create it
+            terminus multidev:list --format=list --field=Name $CIRCLE_PROJECT_REPONAME > ./env_list.txt
+            if grep -Fxq "$PANTHEON_ENV" ./env_list.txt; then
+              echo "Found Pantheon site: $PANTHEON_ENV"
+            else
+              # Determine base branch of PR
+              #   - Extract PR number from pull request URL
+              #   - Query GitHub API for PR data and extract base branch from JSON base.ref property
+              [[ $CIRCLE_PULL_REQUEST =~ \/pull\/([0-9]+)$ ]]
+              BASE=$(curl -s https://api.github.com/repos/egovPDX/$CIRCLE_PROJECT_REPONAME/pulls/${BASH_REMATCH[1]} | grep -Pzo '(?s)"base":.*?"ref": "\K[A-Za-z0-9_-]+' | tr -d '\0')
+              if [[ $BASE = "master" ]]; then
+                BASE=dev
+              fi
+              # Create a new Multi-Dev with files and database from site corresponding to PR's base branch.
+              echo "Creating new multidev site cloned from $BASE. Please wait."
+              terminus multidev:create $CIRCLE_PROJECT_REPONAME.$BASE $PANTHEON_ENV
             fi
-            # Create a new Multi-Dev with files and database from site corresponding to PR's base branch.
-            echo "Creating new multidev site cloned from $BASE. Please wait."
-            terminus multidev:create $CIRCLE_PROJECT_REPONAME.$BASE $PANTHEON_ENV
+            rm -rf ./env_list.txt
           fi
-          rm -rf ./env_list.txt
 
           # Set the connection type to GIT and force push
           terminus connection:set $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV git
