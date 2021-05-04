@@ -28,7 +28,7 @@ beforeAll(async () => {
     // On CI, the CI script will call terminus to retrieve login URL
     login_url = process.env.MARTY_LOGIN;
     await page.goto(login_url);
-    await percySnapshot(page, 'Marty Member - Account profile');
+    // await percySnapshot(page, 'Marty Member - Account profile');
   }
   else {
     var drush_uli_result = fs.readFileSync("marty_uli.log").toString();

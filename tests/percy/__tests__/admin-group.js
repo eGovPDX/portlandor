@@ -72,7 +72,7 @@ describe('SuperAdmin user test', () => {
         await page.evaluate((selector) => document.querySelector(selector).click(), selector);
         await page.waitForNavigation();
 
-        await percySnapshot(page, 'Site Admin - Group created');
+        // await percySnapshot(page, 'Site Admin - Group created');
         text_content = await page.evaluate(() => document.querySelector('h1.page-title').textContent);
         expect(text_content).toEqual(expect.stringContaining('Percy Test Group'));
 
