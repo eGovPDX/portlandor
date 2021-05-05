@@ -12,7 +12,7 @@ use Drupal\filter\Render\FilteredMarkup;
  * @Filter(
  *   id = "portland_media_embed_helper_filter",
  *   title = @Translation("Portland Media Embed Helper Filter"),
- *   description = @Translation("Adds classes to entity embed containers and pre-selects image display mode based on alignment selections. This filter must be executed before Align, Caption, or Display Embedded Entities."),
+ *   description = @Translation("Adds classes to entity embed containers and pre-selects image display mode based on alignment selections. IMPORTANT: This filter must be executed before Align, Caption, or Display Embedded Entities."),
  *   type = Drupal\filter\Plugin\FilterInterface::TYPE_MARKUP_LANGUAGE,
  * )
  */

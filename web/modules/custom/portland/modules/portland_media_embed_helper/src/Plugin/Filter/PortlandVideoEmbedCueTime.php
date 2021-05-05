@@ -12,7 +12,7 @@ use Drupal\filter\Render\FilteredMarkup;
  * @Filter(
  *   id = "portland_video_embed_cue_time",
  *   title = @Translation("Portland Video Embed Cue Time"),
- *   description = @Translation("When enabled, applies a start cue time to YouTube and Vimeo video URLs. Requries a custom embed dialog field to capture the timecode. This filter must be processed after the Display Embedded Entities filter."),
+ *   description = @Translation("When enabled, applies a start cue time to YouTube and Vimeo video URLs. Requries a custom embed dialog field to capture the timecode. IMPORTANT: This filter must be processed after the Display Embedded Entities filter."),
  *   type = Drupal\filter\Plugin\FilterInterface::TYPE_MARKUP_LANGUAGE,
  * )
  */
