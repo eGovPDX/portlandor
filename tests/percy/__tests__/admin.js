@@ -1,4 +1,3 @@
-const percySnapshot = require('@percy/puppeteer')
 const puppeteer = require('puppeteer')
 var fs = require('fs');
 
@@ -49,8 +48,6 @@ describe('SuperAdmin user test', () => {
   it(
     'The site is in good status',
     async () => {
-      // Capture user profile page
-      // await percySnapshot(page, 'Site Admin - Account profile');
       let text_content = '';
       await page.goto(`${HOME_PAGE}/admin/reports/status`);
       await page.waitForSelector('.system-status-report');

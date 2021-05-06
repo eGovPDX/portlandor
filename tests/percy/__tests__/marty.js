@@ -1,4 +1,3 @@
-const percySnapshot = require('@percy/puppeteer');
 const { time } = require('console');
 const puppeteer = require('puppeteer')
 var fs = require('fs');
@@ -28,7 +27,6 @@ beforeAll(async () => {
     // On CI, the CI script will call terminus to retrieve login URL
     login_url = process.env.MARTY_LOGIN;
     await page.goto(login_url);
-    // await percySnapshot(page, 'Marty Member - Account profile');
   }
   else {
     var drush_uli_result = fs.readFileSync("marty_uli.log").toString();
@@ -79,7 +77,6 @@ describe('Marty Member user test', () => {
 
       await page.goto(`${HOME_PAGE}/powr/content/create/group_node:page`, { waitUntil: 'networkidle2' });
       const ckeditor = await page.waitForSelector('iframe');
-      // await percySnapshot('Marty - Add content');
       text_content = await page.evaluate(() => document.querySelector('#node-page-form').textContent);
       expect(text_content).toEqual(expect.stringContaining('Title'));
       expect(text_content).toEqual(expect.stringContaining('Page type'));
@@ -97,7 +94,6 @@ describe('Marty Member user test', () => {
       selector = 'input#edit-submit';
       await page.evaluate((selector) => document.querySelector(selector).click(), selector);
       await page.waitForNavigation();
-      // await percySnapshot('Marty - Added content');
       text_content = await page.evaluate(() => document.querySelector('div.messages--status').textContent);
       expect(text_content).toEqual(expect.stringContaining('has been created'));
 
@@ -105,7 +101,6 @@ describe('Marty Member user test', () => {
       await page.goto(`${HOME_PAGE}/powr/test-page/edit`);
       text_content = await page.evaluate(() => document.querySelector('div.form-item--title-0-value').textContent);
       expect(text_content).toEqual(expect.stringContaining('Title'));
-      // await percySnapshot('Marty - Edit content');
 
       // Delete the page
       await page.goto(`${HOME_PAGE}/powr/test-page/delete`);
@@ -138,7 +133,6 @@ describe('Marty Member user test', () => {
       text_content = await page.evaluate(() => document.querySelector('div.region-content dl').textContent);
       expect(text_content).toEqual(expect.stringContaining('Add Video'));
       await page.goto(`${HOME_PAGE}/powr/content/create/group_media%3Avideo`);
-      // await percySnapshot('Marty - Add video');
 
       text_content = await page.evaluate(() => document.querySelector('#media-video-add-form').textContent);
       expect(text_content).toEqual(expect.stringContaining('Name'));
@@ -163,7 +157,6 @@ describe('Marty Member user test', () => {
       selector = 'ul.dropbutton li.delete a';
       await page.evaluate((selector) => document.querySelector(selector).click(), selector);
       await page.waitForNavigation();
-      // await percySnapshot('Marty - Confirm deleting video');
 
       // Confirm deletion
       text_content = await page.evaluate(() => document.querySelector('h1.page-title').textContent);

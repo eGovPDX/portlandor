@@ -1,4 +1,3 @@
-const percySnapshot = require('@percy/puppeteer')
 const puppeteer = require('puppeteer')
 var fs = require('fs');
 
@@ -25,7 +24,6 @@ beforeAll(async () => {
     // On CI, the CI script will call terminus to retrieve login URL
     login_url = process.env.ALLY_LOGIN;
     await page.goto(login_url);
-    // await percySnapshot(page, 'Ally Admin - Account profile');
   }
   else {
     var drush_uli_result = fs.readFileSync("ally_uli.log").toString();
@@ -40,7 +38,6 @@ describe('Ally Admin user test', () => {
   it('The site is in good status', async function () {
     let text_content = '';
     await page.goto(`${HOME_PAGE}/my-groups`);
-    await percySnapshot(page, 'Ally - My groups');
   }, timeout)
 });
 
