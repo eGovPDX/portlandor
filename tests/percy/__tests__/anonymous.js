@@ -45,7 +45,7 @@ describe("Homepage", () => {
       );
       // Compares it with the intended behavior
       expect(title).toBe("Welcome to Portland, Oregon");
-      await percySnapshot(page, "Anonymous - Homepage h1 text");
+      await percySnapshot(page, "Anonymous - Home page");
     },
     timeout
   );
@@ -80,7 +80,7 @@ describe("Homepage", () => {
       await page.goto(`${HOME_PAGE}/powr`, { waitUntil: "load" });
       await percySnapshot(page, "Anonymous - Project \"POWR\"");
       await page.goto(`${HOME_PAGE}/help`, { waitUntil: "load" });
-      await percySnapshot(page, "Anonymous - Program \"POWR help\"");
+      await percySnapshot(page, "Anonymous - Program \"POWR Help\"");
       await page.goto(`${HOME_PAGE}/omf/toc`, { waitUntil: "load" });
       await percySnapshot(page, "Anonymous - Advisory \"Technology Oversight\"");
       await page.goto(`${HOME_PAGE}/mayor`, { waitUntil: "load" });
@@ -95,7 +95,7 @@ describe("Homepage", () => {
       await page.goto(`${HOME_PAGE}/search?keys=tax&op=`, { waitUntil: "load" });
       await percySnapshot(page, "Anonymous - Search \"tax\"");
       await page.goto(`${HOME_PAGE}/search?keys=powr-test&op=`, { waitUntil: "load" });
-      await percySnapshot(page, "Anonymous - Search \"powr-test\"");
+      await percySnapshot(page, "Anonymous - 404 \"powr-test\"");
       await page.goto(`${HOME_PAGE}/police/report-or-record-request`, { waitUntil: "load" });
       await percySnapshot(page, "Anonymous - Service \"Police Report or Record\"");
     },
