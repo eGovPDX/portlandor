@@ -73,6 +73,9 @@ describe('Ally Admin user test', () => {
 
       // Find the Remove link and click it
       let remove_link = await page.evaluate(() => document.querySelector('div.view-group-members a[href="/marty-member"]').parentNode.parentNode.querySelector('td.views-field-delete-group-content a').getAttribute('href'));
+      if( remove_link == '' ) {
+        fail('Cannot find the link to delete Marty Member from POWR.');
+      }
       await page.goto(`${HOME_PAGE}${remove_link}`);
 
       text_content = await page.evaluate(() => document.querySelector('.page-title').textContent);
