@@ -56,25 +56,25 @@ describe('Ally Admin user test', () => {
   it('Ally can manage POWR', async function () {
     try {
       await page.goto(`${HOME_PAGE}/powr/content/add/group_membership?destination=/powr/members`);
-      await page.type('#edit-entity-id-0-target-id', 'Marty Member');
+      await page.type('#edit-entity-id-0-target-id', 'Oliver Outsider');
       await page.click('#edit-group-roles-project-editor');
       selector = 'input#edit-submit';
       await page.evaluate((selector) => document.querySelector(selector).click(), selector);
       await page.waitForNavigation();
 
-      // Verify Marty is listed
-      let marty_link = await page.$('div.view-group-members a[href="/marty-member"]');
-      if( marty_link != null ) {
-        expect(await marty_link.evaluate(node => node.textContent)).toEqual(expect.stringContaining('Marty Member'));
+      // Verify Oliver is listed
+      let member_link = await page.$('div.view-group-members a[href="/oliver-outsider"]');
+      if( member_link != null ) {
+        expect(await member_link.evaluate(node => node.textContent)).toEqual(expect.stringContaining('Oliver Outsider'));
       }
       else {
-        fail('Cannot find Marty Member in the group members table.');
+        fail('Cannot find Oliver Outsider in the group members table.');
       }
 
       // Find the Remove link and click it
-      let remove_link = await page.evaluate(() => document.querySelector('div.view-group-members a[href="/marty-member"]').parentNode.parentNode.querySelector('td.views-field-delete-group-content a').getAttribute('href'));
+      let remove_link = await page.evaluate(() => document.querySelector('div.view-group-members a[href="/oliver-outsider"]').parentNode.parentNode.querySelector('td.views-field-delete-group-content a').getAttribute('href'));
       if( remove_link == '' ) {
-        fail('Cannot find the link to delete Marty Member from POWR.');
+        fail('Cannot find the link to delete Oliver Outsider from POWR.');
       }
       await page.goto(`${HOME_PAGE}${remove_link}`);
 
@@ -84,9 +84,9 @@ describe('Ally Admin user test', () => {
       await page.evaluate((selector) => document.querySelector(selector).click(), selector);
       await page.waitForNavigation();
 
-      // Verify Marty is not listed
+      // Verify Oliver is not listed
       text_content = await page.evaluate(() => document.querySelector('div.view-group-members td.views-field-name').textContent);
-      expect(text_content).toEqual(expect.not.stringContaining('Marty Member'));
+      expect(text_content).toEqual(expect.not.stringContaining('Oliver Outsider'));
     } catch (e) {
       // Capture the screenshot when test fails and re-throw the exception
       await page.screenshot({
