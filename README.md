@@ -324,3 +324,16 @@ The lock file is not up to date with the latest changes in composer.json. You ma
 ...
 
 To resolve this, run `lando composer update --lock`, which will generate a new hash. If you encounter a conflict on the hash value when you merge or rebase, use the most recent (yours) version of the hash.
+
+## Run Jest tests
+Tests can be found under `tests/percy/__tests__/`. In order to reduce the time spent in switching user sessions, tests are generally organized by users. The same tests can be run in both local and CI environments.
+
+### Run tests locally 
+One time setup: run `lando rebuild -y` to install all dependencies required by Jest.
+
+Run all tests at once: `lando jest`
+
+Run a single test: `lando jest [YOUR_TEST_NAME]`. Currently there are 5 tests available: admin, admin_group, marty, ally, and anonymous.
+
+### Run tests in CI
+All tests will be run in a CI job. When a test fails, a screenshot of the last visited page can be found in the artifacts.
