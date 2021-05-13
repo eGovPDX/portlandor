@@ -43,15 +43,7 @@ services:
       - /bin/sh -c "adduser www-data dialout"
       - /bin/sh -c "adduser node dialout"
       - /bin/sh -c "chmod -R 777 /var/www"
-    run:
-      - echo "Installing Node.js dependencies..."
-      - cd /app/web/themes/custom/cloudy && yarn install --ignore-engines --frozen-lockfile
 
-events:
-  post-start:
-    - node: /bin/sh -c "chmod -R 775 /var/www"
-    - node: echo "Building theme asset files..."
-    - node: cd /app/web/themes/custom/cloudy && yarn run build
 tooling:
   drush:
     description: CUSTOM Run drush commands
@@ -69,6 +61,10 @@ tooling:
     description: CUSTOM Run yarn commands
     service: node
     cmd: yarn --cwd /app/web/themes/custom/cloudy
+  yarn-rebuild:
+    description: CUSTOM Install Cloudy dependencies, rebuild Cloudy theme including pattern labs files
+    service: node
+    cmd: "cd /app/web/themes/custom/cloudy && yarn install --ignore-engines --frozen-lockfile && yarn run build"
   node:
     description: CUSTOM Run node commands
     service: node
