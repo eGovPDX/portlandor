@@ -27,31 +27,21 @@ build_and_deploy: &build_and_deploy
     - restore_cache:
         name: Restore Terminus cache
         keys:
-          - terminus_-{{ checksum "composer.lock" }}
+          - terminus_2_with_build_tools_2
     - run:
         name: Install Terminus
         command: |
           if [ ! -f "/tmp/vendor/pantheon-systems/terminus/bin/terminus" ]; then
-          cd /tmp && composer require pantheon-systems/terminus:^2.0.0
+            cd /tmp && composer require pantheon-systems/terminus:^2.0.0
+            mkdir -p ~/.terminus/plugins
+            composer create-project --no-dev -d ~/.terminus/plugins pantheon-systems/terminus-build-tools-plugin:^2.0.0
           fi
     - save_cache:
         name: Save Terminus cache
-        key: terminus_-{{ checksum "composer.lock" }}
+        key: terminus_2_with_build_tools_2
         paths:
           - "/tmp/vendor"
-    - restore_cache:
-        name: Restore theme dependencies cache
-        keys:
-          - cloudy_-{{ checksum "web/themes/custom/cloudy/yarn.lock" }}
-    - run:
-        name: Install theme dependencies
-        command: |
-          cd web/themes/custom/cloudy && yarn install --frozen-lockfile
-    - save_cache:
-        name: Save theme dependencies cache
-        key: cloudy_-{{ checksum "web/themes/custom/cloudy/yarn.lock" }}
-        paths:
-          - "web/themes/custom/cloudy/node_modules"
+          - "/root/.terminus"
     - restore_cache:
         name: Restore Composer Cache
         keys:
@@ -80,32 +70,28 @@ build_and_deploy: &build_and_deploy
           - ./web/themes/contrib
           - ./web/libraries
     - run:
-        name: Build Theme and Pattern Lab
-        command: cd web/themes/custom/cloudy && yarn run build:ci
-    - run:
-        name: Remove Node Modules post build to lighten upload to Pantheon
-        command: cd /var/www/html && rm -rf web/themes/custom/cloudy/node_modules
-    - run:
-        # Unlike npm, security audit is not automatically included in install
-        name: Security Audit of Node dependencies
-        # Once POWR-2023 is resolved and yarn updated, we can bring this back. However this command is not yet available in yarn 1.6
-        # command: cd web/themes/custom/cloudy && yarn audit
-        command: cd web/themes/custom/cloudy && yarn audit || echo 'it appears that yarn audit found some security issues in your node dependencies, consider running a yarn upgrade'
-    - run:
         name: Deploy to Pantheon
         when: on_success
         no_output_timeout: 15m # allow 15 minutes instead of 10 minute default for script to complete
         command: |
+          # Add terminus into path
           export PATH=/tmp/vendor/bin:/var/www/html/vendor/bin:$PATH && cd /var/www/html
+
           # Don't check the repo host key
           export GIT_SSH_COMMAND="ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no"
+
           # Don't check for host key for Pantheon sites
           echo -e "host *.drush.in\n    StrictHostKeyChecking no" >> ~/.ssh/config
+
           # Terminus log in with the user email that will be displayed as the commit user in Pantheon Git repo
           terminus auth:login --machine-token="$eGov_Terminus" --email="$eGov_Email"
+          
           # Git operations
+          # Set the git commit user name and email address so it's clear in Pantheon log who made the change
+          git config --global user.name $CIRCLE_USERNAME
+          git config --global user.email $eGov_Email
+          git config --global core.safecrlf false
           git remote add pantheon ssh://codeserver.dev.5c6715db-abac-4633-ada8-1c9efe354629@codeserver.dev.5c6715db-abac-4633-ada8-1c9efe354629.drush.in:2222/~/repository.git
-          git config --global user.email "$eGov_Email"
           # Force add all files to include those excluded by .gitignore
           cd /var/www/html && find ./web/modules -name .git -type d -prune -exec rm -rf "{}" \;
           git add -f /var/www/html
@@ -113,94 +99,19 @@ build_and_deploy: &build_and_deploy
           git rm --cache  web/sites/default/settings.local.php --ignore-unmatch
           git rm -r --cache web/sites/default/files --ignore-unmatch
 
-          # Set the git commit user name and email address so it's clear in Pantheon log who made the change
-          if [[ $CIRCLE_USERNAME = "" ]]; then
-            git config --global user.name Dependabot
-          else
-            git config --global user.name $CIRCLE_USERNAME
-          fi
-          git config --global user.email $eGov_Email
-
           export COMMIT_MSG="$(git log -1 --pretty=%B)"
           git commit -m "CircleCI deployment for: " -m "$COMMIT_MSG" --quiet
 
           # When commit on master, we deploy to DEV
           if [[ $CIRCLE_BRANCH = "master" ]]; then
-            echo "Deploy to Pantheon DEV site"
-            # Set Pantheon environment name
             echo "export PANTHEON_ENV=dev" >> $BASH_ENV && source $BASH_ENV
-            # Set the connection type to GIT
-            terminus connection:set $CIRCLE_PROJECT_REPONAME.dev git
-            git push -f pantheon master
-            # TODO: Sanitize DB here
-            # terminus env:clone-content $CIRCLE_PROJECT_REPONAME.test dev
-            # After success deployment to DEV, remove the multidev site if this is a merge of a PR.
-            # Read the last Git log in the master branch. Get the story ID from the start of the log.
-            # Example: POWR-3058 Delete all related multi-devs when a branch is merged
-            cd /var/www/html
-            # Must read the last commit message from Github. The last one in local repo is "CircleCI Deployment"
-            last_log=$(git log origin/master --pretty=format:%s -1)
-            lowercase_last_log="${last_log,,}"
-            if [[ $lowercase_last_log =~ ^(powr-[0-9]+)[[:space:]]+.+$ ]]; then
-              echo "Found the story ID: '${BASH_REMATCH[1]}'";
-
-              # Save all multi-dev names in a file
-              terminus multidev:list --format=list --field=Name $CIRCLE_PROJECT_REPONAME > ./env_list.txt
-              echo "Multi-dev site list saved into env_list.txt"
-
-              # Pattern to match "powr-1234a" or "powr-1234-1" or "powr-1234-a". Not "powr-12345"
-              env_pattern="^${BASH_REMATCH[1]}([a-z]*|(-\d+)|(-[a-z]+))$"
-
-              # Find and delete all multidevs starting with the story ID
-              # TODO: determine if missing env_name is causing build re-run for dev to fail
-              # TODO: determine why some patterns for multidevs do not get deleted
-              if [ -f "./env_list.txt" ]
-              then
-                echo "Found multi-dev sites:";
-                cat ./env_list.txt
-                grep -E "${env_pattern}" ./env_list.txt > ./matching_env_list.txt || true
-                # If the file is NOT empty
-                if [ -s "./matching_env_list.txt" ]
-                then
-                  echo "Start to delete multi-dev..."
-                  while read env_name; do
-                    terminus multidev:delete --delete-branch $CIRCLE_PROJECT_REPONAME.$env_name -y
-                    echo "Deleted multi-dev: $env_name"
-                  done <./matching_env_list.txt
-                  echo "Done deleting multi-dev"
-                  rm -f ./matching_env_list.txt
-                else
-                  echo "No multi-dev site found matching the story ID."
-                fi
-              fi
-            fi
-            echo "Waiting for sync code workflow to finish..."
-            until [ $(terminus workflow:list --fields status,env,workflow --format string -- $CIRCLE_PROJECT_REPONAME | egrep -i "$PANTHEON_ENV\s+Sync code" -m 1 | egrep -i -o "^\w+") == succeeded ]; do
-              sleep 30
-            done
-            echo "Rebuilding cache..."
-            terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- cr
-            echo "Running database updates..."
-            terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- updb -y
-            echo "Importing config..."
-            terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- cim -y -vvv
-            echo "Running cron..."
-            terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- core:cron -y
-            echo "Rebuilding cache..."
-            terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- cr
-          else  # All other commits deploy to a multidev
-            # Set Pantheon environment name
-            if [[ $CIRCLE_BRANCH =~ ^dependabot\/ ]] && [[ $CIRCLE_PULL_REQUEST =~ \/pull\/([0-9]+)$ ]]; then
-              echo "export PANTHEON_ENV=bot-${BASH_REMATCH[1]}" >> $BASH_ENV && source $BASH_ENV
-            else
-              echo "export PANTHEON_ENV=$CIRCLE_BRANCH" >> $BASH_ENV && source $BASH_ENV
-            fi
-            echo "Pantheon environment name is $PANTHEON_ENV"
+          else
+            echo "export PANTHEON_ENV=$CIRCLE_BRANCH" >> $BASH_ENV && source $BASH_ENV
 
             # Check if the multidev branch site exists. If not, create it
             terminus multidev:list --format=list --field=Name $CIRCLE_PROJECT_REPONAME > ./env_list.txt
             if grep -Fxq "$PANTHEON_ENV" ./env_list.txt; then
-              echo "Found multidev site"
+              echo "Found Pantheon site: $PANTHEON_ENV"
             else
               # Determine base branch of PR
               #   - Extract PR number from pull request URL
@@ -214,43 +125,75 @@ build_and_deploy: &build_and_deploy
               echo "Creating new multidev site cloned from $BASE. Please wait."
               terminus multidev:create $CIRCLE_PROJECT_REPONAME.$BASE $PANTHEON_ENV
             fi
-
             rm -rf ./env_list.txt
-            # Set the connection type to GIT
-            terminus connection:set $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV git
-            # Force push $CIRCLE_BRANCH to Pantheon as branch named $PANTHEON_ENV
-            git push -f pantheon $CIRCLE_BRANCH:$PANTHEON_ENV
+          fi
 
-            echo "Waiting for sync code workflow to finish..."
-            until [ $(terminus workflow:list --fields status,env,workflow --format string -- $CIRCLE_PROJECT_REPONAME | egrep -i "$PANTHEON_ENV\s+Sync code" -m 1 | egrep -i -o "^\w+") == succeeded ]; do
-              sleep 30
-            done
-            echo "Rebuilding cache..."
-            terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- cr
-            echo "Running database updates..."
-            terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- updb -y
-            echo "Importing config..."
-            terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- cim -y -vvv
-            echo "Rebuilding cache"
-            terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- cr
+          # Set the connection type to GIT and force push
+          terminus connection:set $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV git
+          git push -f pantheon $CIRCLE_BRANCH
+          echo "Waiting for the workflow: Sync code on $PANTHEON_ENV..."
+          terminus build:workflow:wait $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV "Sync code on \"$PANTHEON_ENV\""
 
-            if [[ $CIRCLE_BRANCH =~ ^dependabot\/ ]]; then
-              echo "Dependabot branch detected..."
+          echo "Rebuilding cache..."
+          terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- cr
+          echo "Running database updates..."
+          terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- updb -y
+          echo "Importing config..."
+          terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- cim -y -vvv
+          echo "Rebuilding cache..."
+          terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- cr
 
-              # Set the connection type to SFTP
-              terminus connection:set $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV sftp
+          # When commit on a permanent branch or master, delete the multi-dev site with name like "powr-1234a"
+          if [[ $PANTHEON_ENV = "dev" || $PANTHEON_ENV = "release" ]]; then
+            # After success deployment to DEV, remove the multidev site if this is a merge of a PR.
+            cd /var/www/html
 
-              # Clone database from DEV
-              # This is necessary if the build gets re-run because the drush cim above can
-              # interfere with the drush cex below (by importing what was previously exported)
-              terminus env:clone-content $CIRCLE_PROJECT_REPONAME.dev $PANTHEON_ENV --db-only --cc -y
-              terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- cim -y -vvv
+            # Must read the last commit message from Github. The last one in local repo is "CircleCI Deployment"
+            last_log=$(git log origin/$CIRCLE_BRANCH --pretty=format:%s -1)
+            lowercase_last_log="${last_log,,}"
+            JIRA_STORY_ID=""
+            # Simple merge
+            # Example: Merge pull request #35 from eGovPDX/powr-152
+            if [[ $lowercase_last_log =~ (^merge pull request #[0-9]* from egovpdx\/)([^,]*) ]]; then
+              echo "Found story ID from merge commit message: '${BASH_REMATCH[2]}'";
+              JIRA_STORY_ID=${BASH_REMATCH[2]}
+            # Squash and Merge on other feature branches
+            # Example: POWR-3058 Delete all related multi-devs when a branch is merged
+            elif [[ $lowercase_last_log =~ ^(powr-[0-9]+)[[:space:]]+.+$ ]]; then
+              echo "Found story ID from squash and merge commit message: '${BASH_REMATCH[1]}'";
+              JIRA_STORY_ID=${BASH_REMATCH[1]}
+            else
+              echo "Cannot find JIRA story ID from the last commit message: $lowercase_last_log"
+              exit 0
+            fi
 
-              # Abort if there's any database updates that cause a configuration change
-              echo "Run database update... and abort if there's a configuration change"
-              echo "IMPORTANT: If there's a configuation change, download this branch and manually update the dependency"
-              terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- updb -y
-              terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- cex --no   # this will return failure code if there's config to export
+            # Save all multi-dev names in a file
+            terminus multidev:list --format=list --field=Name $CIRCLE_PROJECT_REPONAME > ./env_list.txt
+            echo "Multi-dev site list saved into env_list.txt"
+
+            # Pattern to match "powr-1234a" or "powr-1234-1" or "powr-1234-a". Not "powr-12345"
+            env_pattern="^${JIRA_STORY_ID}([a-z]*|(-\d+)|(-[a-z]+))$"
+
+            # Find and delete all multidevs starting with the story ID
+            if [ -f "./env_list.txt" ]
+            then
+              echo "Found multi-dev sites:";
+              # cat ./env_list.txt
+              grep -E "${env_pattern}" ./env_list.txt > ./matching_env_list.txt || true
+              # cat ./matching_env_list.txt
+              # If the file is NOT empty
+              if [ -s "./matching_env_list.txt" ]
+              then
+                echo "Start to delete multi-dev..."
+                while read env_name; do
+                  terminus multidev:delete --delete-branch $CIRCLE_PROJECT_REPONAME.$env_name -y
+                  echo "Deleted multi-dev: $env_name"
+                done <./matching_env_list.txt
+                echo "Done deleting multi-dev"
+                rm -f ./matching_env_list.txt
+              else
+                echo "No multi-dev site found matching the story ID: $JIRA_STORY_ID."
+              fi
             fi
           fi
 
