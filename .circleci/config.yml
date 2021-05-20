@@ -43,19 +43,6 @@ build_and_deploy: &build_and_deploy
           - "/tmp/vendor"
           - "/root/.terminus"
     - restore_cache:
-        name: Restore theme dependencies cache
-        keys:
-          - cloudy_-{{ checksum "web/themes/custom/cloudy/yarn.lock" }}
-    - run:
-        name: Install theme dependencies
-        command: |
-          cd web/themes/custom/cloudy && yarn install --frozen-lockfile
-    - save_cache:
-        name: Save theme dependencies cache
-        key: cloudy_-{{ checksum "web/themes/custom/cloudy/yarn.lock" }}
-        paths:
-          - "web/themes/custom/cloudy/node_modules"
-    - restore_cache:
         name: Restore Composer Cache
         keys:
           - v2-dependencies-{{ checksum "composer.lock" }}
@@ -82,18 +69,6 @@ build_and_deploy: &build_and_deploy
           - ./web/profiles/contrib
           - ./web/themes/contrib
           - ./web/libraries
-    - run:
-        name: Build Theme and Pattern Lab
-        command: cd web/themes/custom/cloudy && yarn run build:ci
-    - run:
-        name: Remove Node Modules post build to lighten upload to Pantheon
-        command: cd /var/www/html && rm -rf web/themes/custom/cloudy/node_modules
-    - run:
-        # Unlike npm, security audit is not automatically included in install
-        name: Security Audit of Node dependencies
-        # Once POWR-2023 is resolved and yarn updated, we can bring this back. However this command is not yet available in yarn 1.6
-        # command: cd web/themes/custom/cloudy && yarn audit
-        command: cd web/themes/custom/cloudy && yarn audit || echo 'it appears that yarn audit found some security issues in your node dependencies, consider running a yarn upgrade'
     - run:
         name: Deploy to Pantheon
         when: on_success
@@ -221,7 +196,6 @@ build_and_deploy: &build_and_deploy
               fi
             fi
           fi
-
 
 run_tests: &run_tests
   docker:
