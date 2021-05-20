@@ -24,7 +24,7 @@ use Drupal\Core\Utility\LinkGeneratorInterface;
  *
  * @FieldFormatter(
  *   id = "leaflet_formatter_default",
- *   label = @Translation("PDX Leaflet Map"),
+ *   label = @Translation("Portland Leaflet Map"),
  *   field_types = {
  *     "file"
  *   }
