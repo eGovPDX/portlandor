@@ -203,11 +203,11 @@ visual_regression: &visual_regression
       auth:
         username: egovpdx
         password: $DOCKERHUB_PASSWORD
-  # environment:
+  environment:
   #   PERCY_PARALLEL_TOTAL: -1
-  #   PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: true
+    PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: true
   parallelism: 5
-  working_directory: /home/circleci/app
+  working_directory: /var/www/html
   steps:
     - restore_cache:
         name: Retore Git cache before checkout
@@ -245,7 +245,7 @@ visual_regression: &visual_regression
     - run:
         name: Install Jest and Percy dependencies
         command: |
-          cd /home/circleci/app/tests/percy
+          cd ./tests/percy
           export PERCY_POSTINSTALL_BROWSER=true
           yarn install --frozen-lockfile
     - save_cache:
@@ -269,8 +269,8 @@ visual_regression: &visual_regression
             echo 'export SITE_NAME=${CIRCLE_BRANCH}' > $BASH_ENV && source $BASH_ENV
           fi
 
-          mkdir /home/circleci/artifacts
-          cd /home/circleci/app/tests/percy
+          mkdir /var/www/html/artifacts
+          cd ./tests/percy
 
           # Start Percy tests
           TESTFILES=$(circleci tests glob "__tests__/*.js" | circleci tests split)
@@ -294,7 +294,7 @@ visual_regression: &visual_regression
             fi
           done
     - store_artifacts:
-        path: /home/circleci/artifacts
+        path: /var/www/html/artifacts
         destination: /
 
 # Declare all of the jobs we should run.
