@@ -41,16 +41,7 @@ services:
       - /bin/sh -c "adduser node dialout"
       - /bin/sh -c "chmod -R 777 /var/www"
       - /bin/sh -c "apt update && wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb && apt install ./google-chrome-stable_current_amd64.deb && rm ./google-chrome-stable_current_amd64.deb"
-    run:
-      - echo "Installing Node.js dependencies..."
-      - cd /app/web/themes/custom/cloudy && yarn install --ignore-engines --frozen-lockfile
-      - cd /app/tests/percy && yarn install
 
-events:
-  post-start:
-    - node: /bin/sh -c "chmod -R 775 /var/www"
-    - node: echo "Building theme asset files..."
-    - node: cd /app/web/themes/custom/cloudy && yarn run build
 tooling:
   drush:
     description: CUSTOM Run drush commands
@@ -81,6 +72,10 @@ tooling:
       - appserver: drush uli --mail ally.admin@portlandoregon.gov > ally_uli.log
       - appserver: drush uli --mail marty.member@portlandoregon.gov > marty_uli.log
       - node: npm run jest-test
+  yarn-rebuild:
+    description: CUSTOM Install Cloudy dependencies, rebuild Cloudy theme including pattern labs files
+    service: node
+    cmd: "cd /app/web/themes/custom/cloudy && yarn install --ignore-engines --frozen-lockfile && yarn run build"
   node:
     description: CUSTOM Run node commands
     service: node
