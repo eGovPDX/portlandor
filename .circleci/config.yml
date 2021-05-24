@@ -209,8 +209,19 @@ visual_regression: &visual_regression
   parallelism: 5
   working_directory: /home/circleci/app
   steps:
+    - restore_cache:
+        name: Retore Git cache before checkout
+        keys:
+          - source-v1-{{ .Branch }}-{{ .Revision }}
+          - source-v1-{{ .Branch }}-
+          - source-v1-
     - checkout
-
+    - run: git gc
+    - save_cache:
+        name: Save Git cache after checkout
+        key: source-v1-{{ .Branch }}-{{ .Revision }}
+        paths:
+          - ".git"
     - restore_cache:
         name: Restore Terminus cache
         keys:
@@ -237,7 +248,6 @@ visual_regression: &visual_regression
           cd /home/circleci/app/tests/percy
           export PERCY_POSTINSTALL_BROWSER=true
           yarn install --frozen-lockfile
-          # npm install --prefer-offline --no-audit
     - save_cache:
         name: Save Jest and Percy dependencies cache
         key: jest-{{ checksum "tests/percy/yarn.lock" }}-v2
