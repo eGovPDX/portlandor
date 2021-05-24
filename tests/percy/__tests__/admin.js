@@ -6,12 +6,12 @@ const HOME_PAGE = (SITE_NAME) ? `https://${SITE_NAME}-portlandor.pantheonsite.io
 const ARTIFACTS_FOLDER = (SITE_NAME) ? `/home/circleci/artifacts/` : `./`;
 const timeout = 60000 * 2;
 
-var BROWSER_OPTION = { 
+var BROWSER_OPTION = {
   ignoreHTTPSErrors: true,
   args: ["--no-sandbox"],
 };
 
-if ( !SITE_NAME ) {
+if (!SITE_NAME) {
   BROWSER_OPTION.executablePath = "/usr/bin/google-chrome";
 }
 var browser, page, login_url;
@@ -48,13 +48,24 @@ describe('SuperAdmin user test', () => {
   it(
     'The site is in good status',
     async () => {
-      let text_content = '';
-      await page.goto(`${HOME_PAGE}/admin/reports/status`);
-      await page.waitForSelector('.system-status-report');
-      text_content = await page.evaluate(() => document.querySelector('.system-status-report').textContent);
-      // Negative test
-      expect(text_content).toEqual(expect.not.stringContaining('Errors found'));
-      expect(text_content).toEqual(expect.not.stringContaining('The following changes were detected in the entity type and field definitions.'));
+      try {
+
+        let text_content = '';
+        await page.goto(`${HOME_PAGE}/admin/reports/status`);
+        await page.waitForSelector('.system-status-report');
+        text_content = await page.evaluate(() => document.querySelector('.system-status-report').textContent);
+        // Negative test
+        expect(text_content).toEqual(expect.not.stringContaining('Errors found'));
+        expect(text_content).toEqual(expect.not.stringContaining('The following changes were detected in the entity type and field definitions.'));
+      } catch (e) {
+        // Capture the screenshot when test fails and re-throw the exception
+        await page.screenshot({
+          path: `${ARTIFACTS_FOLDER}site-status-error.jpg`,
+          type: "jpeg",
+          fullPage: true
+        });
+        throw e;
+      }
     },
     timeout
   );
