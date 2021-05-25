@@ -12,21 +12,14 @@ services:
   appserver:
     build:
       - "/app/vendor/bin/phpcs --config-set installed_paths /app/vendor/drupal/coder/coder_sniffer"
-    build_as_root:
-      - sed 's|mozilla\/AddTrust_External_Root.crt|#mozilla\/AddTrust_External_Root.crt|g' -i /etc/ca-certificates.conf
-      - /bin/sh -c "cp /app/cop_ca_*.crt /usr/local/share/ca-certificates/"
-      - update-ca-certificates -f
     run_as_root:
       - /bin/sh -c "if [ ! -d /var/www/.terminus/plugins/terminus-secrets-plugin ]; then { mkdir -p /var/www/.terminus/plugins; composer create-project -d /var/www/.terminus/plugins pantheon-systems/terminus-secrets-plugin:~1; chown -R www-data:www-data /var/www/.terminus; } fi"
+      - ln -sf /usr/local/bin/composer /app/vendor/bin/composer
     xdebug: false
     config:
       php: xdebug.ini
     overrides:
       environment:
-        BEHAT_PARAMS: '{"extensions" : {"Behat\\MinkExtension" : {"base_url" : "https://portlandor.lndo.site"}, "Drupal\\DrupalExtension" : {"drush" :   {  "root":  "/app/web" }}}}'
-        MINK_DRIVER_ARGS: '["chrome", null, "http://chromedriver:4444/wd/hub"]'
-        MINK_DRIVER_ARGS_WEBDRIVER: '["chrome", null, "http://chromedriver:4444/wd/hub"]'
-        MINK_DRIVER_CLASS: 'Drupal\FunctionalJavascriptTests\DrupalSelenium2Driver'
         XDEBUG_MODE:
   node:
     type: node:custom
@@ -34,15 +27,12 @@ services:
       yarn: latest
     overrides:
       image: kxwang/drupal-ci:ci-php7.2.28-node12.16.1-yarn1.22.0
-      environment:
-        # LANDO_WEBROOT_USER: www-data
-        # LANDO_WEBROOT_GROUP: node
-        NODE_EXTRA_CA_CERTS: /app/cop_ca.pem
     run_as_root:
       - /bin/sh -c "adduser www-data node"
       - /bin/sh -c "adduser www-data dialout"
       - /bin/sh -c "adduser node dialout"
       - /bin/sh -c "chmod -R 777 /var/www"
+      - /bin/sh -c "apt update && wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb && apt install ./google-chrome-stable_current_amd64.deb && rm ./google-chrome-stable_current_amd64.deb"
 
 tooling:
   drush:
@@ -61,6 +51,19 @@ tooling:
     description: CUSTOM Run yarn commands
     service: node
     cmd: yarn --cwd /app/web/themes/custom/cloudy
+  yarn-percy:
+    description: CUSTOM Run yarn commands
+    service: node
+    cmd: yarn --cwd /app/tests/percy
+  jest:
+    description: CUSTOM Run Jest tests
+    dir: /app/tests/percy
+    cmd:
+      - appserver: drush uli > superAdmin_uli.log
+      - appserver: drush uli --mail xinju.wang@portlandoregon.gov > superAdmin_uli_2.log
+      - appserver: drush uli --mail ally.admin@portlandoregon.gov > ally_uli.log
+      - appserver: drush uli --mail marty.member@portlandoregon.gov > marty_uli.log
+      - node: npm run jest-test
   yarn-rebuild:
     description: CUSTOM Install Cloudy dependencies, rebuild Cloudy theme including pattern labs files
     service: node
@@ -137,13 +140,6 @@ tooling:
     service: appserver
     description: CUSTOM Disable xdebug for nginx.
     cmd: rm /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini && pkill -o -USR2 php-fpm && echo "Disabling xdebug"
-    user: root
-  install-certs:
-    description: CUSTOM Installs City of Portland certificate authority certificates used for SSL decryption
-    service: appserver
-    cmd:
-      - /bin/sh -c "cp /app/cop_ca_*.crt /usr/local/share/ca-certificates/"
-      - update-ca-certificates
     user: root
   chromedriver:
     service: chromedriver

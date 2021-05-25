@@ -1,0 +1,4 @@
+- One time setup to install browser and node modules: `lando rebuild -y`
+- Run all tests at once: `lando jest`
+- Run single test: `lando jest admin`
+- Available tests can be found in folder `__tests__`
