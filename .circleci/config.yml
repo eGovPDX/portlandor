@@ -2,7 +2,7 @@
 
 #Jobs
 
-## Job to run the update path and Behat tests.
+## Job to run the update path and tests.
 build_and_deploy: &build_and_deploy
   docker:
     - image: egovpdx/drupal-ci:latest
@@ -123,7 +123,7 @@ build_and_deploy: &build_and_deploy
               fi
               # Create a new Multi-Dev with files and database from site corresponding to PR's base branch.
               echo "Creating new multidev site cloned from $BASE. Please wait."
-              terminus multidev:create $CIRCLE_PROJECT_REPONAME.$BASE $PANTHEON_ENV
+              terminus multidev:create $CIRCLE_PROJECT_REPONAME.$BASE $PANTHEON_ENV >/dev/null
             fi
             rm -rf ./env_list.txt
           fi
@@ -197,30 +197,29 @@ build_and_deploy: &build_and_deploy
             fi
           fi
 
-run_tests: &run_tests
+visual_regression: &visual_regression
   docker:
-    - image: egovpdx/drupal-ci:latest
+    - image: cimg/php:7.4-browsers
       auth:
         username: egovpdx
         password: $DOCKERHUB_PASSWORD
-    - image: selenium/standalone-chrome-debug:3.7.1-beryllium
-      auth:
-        username: egovpdx
-        password: $DOCKERHUB_PASSWORD
+  # environment:
+  #   PERCY_PARALLEL_TOTAL: -1
+  #   PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: true
   parallelism: 5
-  working_directory: /var/www/html
+  working_directory: /home/circleci/app
   steps:
     - restore_cache:
         name: Retore Git cache before checkout
         keys:
-          - source-v1-{{ .Branch }}-{{ .Revision }}
-          - source-v1-{{ .Branch }}-
-          - source-v1-
+          - jest-source-v1-{{ .Branch }}-{{ .Revision }}
+          - jest-source-v1-{{ .Branch }}-
+          - jest-source-v1-
     - checkout
     - run: git gc
     - save_cache:
         name: Save Git cache after checkout
-        key: source-v1-{{ .Branch }}-{{ .Revision }}
+        key: jest-source-v1-{{ .Branch }}-{{ .Revision }}
         paths:
           - ".git"
     - restore_cache:
@@ -238,86 +237,22 @@ run_tests: &run_tests
         key: terminus_-{{ checksum "composer.lock" }}
         paths:
           - "/tmp/vendor"
-    - restore_cache:
-        name: Restore Behat cache
-        key: v2-behat-dependencies-{{ checksum "tests/composer.lock" }}
-    - run:
-        name: Composer install for Behat dependencies
-        command: |
-          cd tests
-          composer -V
-          composer config --global --auth github-oauth.github.com "$COMPOSER_TOKEN"
-          composer install --no-interaction
-    - run:
-        name: Run tests against Pantheon
-        when: on_success
-        command: |
-          export PATH=/var/www/html/tests/vendor/bin:/tmp/vendor/pantheon-systems/terminus/bin:$PATH
-          # Log in via terminus first. Required for tests that require user login.
-          terminus auth:login --machine-token="$eGov_Terminus" --email="$eGov_Email" && terminus aliases
-          mkdir -p tests/test-results/behat/features
-          cd tests
-
-          # Set Pantheon environment name
-          if [[ $CIRCLE_BRANCH =~ ^dependabot\/ ]] && [[ $CIRCLE_PULL_REQUEST =~ \/pull\/([0-9]+)$ ]]; then
-            echo "export PANTHEON_ENV=bot-${BASH_REMATCH[1]}" >> $BASH_ENV && source $BASH_ENV
-          else
-            echo "export PANTHEON_ENV=$CIRCLE_BRANCH" >> $BASH_ENV && source $BASH_ENV
-          fi
-          echo "Pantheon environment name is $PANTHEON_ENV"
-
-          # Split feature files so all split test jobs will finish around the same time
-          TESTFILES=$(circleci tests glob "features/*.feature" | circleci tests split)
-          if [[ $PANTHEON_ENV = "master" ]]; then
-            echo 'export BEHAT_PARAMS="{\"extensions\" : {\"Behat\\\MinkExtension\" : {\"base_url\" : \"https://dev-${CIRCLE_PROJECT_REPONAME}.pantheonsite.io\"}, \"Drupal\\\DrupalExtension\" : {\"drush\" : { \"alias\": \"$CIRCLE_PROJECT_REPONAME.dev\"}}}}"' >> $BASH_ENV && source $BASH_ENV
-          else
-            echo 'export BEHAT_PARAMS="{\"extensions\" : {\"Behat\\\MinkExtension\" : {\"base_url\" : \"https://${PANTHEON_ENV}-${CIRCLE_PROJECT_REPONAME}.pantheonsite.io\"}, \"Drupal\\\DrupalExtension\" : {\"drush\" : { \"alias\": \"$CIRCLE_PROJECT_REPONAME.${PANTHEON_ENV}\"}}}}"' >> $BASH_ENV && source $BASH_ENV
-          fi
-          for TESTFILE in $TESTFILES
-          do
-            # public_ip_address=$(wget -qO- http://checkip.amazonaws.com)
-            # echo "This container's public ip address is $public_ip_address"
-            behat -c behat.yml -f pretty -o std -f junit -o test-results/behat ${TESTFILE} || behat -c behat.yml -f pretty -o std -f junit -o test-results/behat ${TESTFILE}
-            mv test-results/behat/default.xml test-results/behat/${TESTFILE}.xml
-          done
-    - save_cache:
-        paths:
-          - ./tests/vendor
-        key: v2-behat-dependencies-{{ checksum "tests/composer.lock" }}
-    - store_test_results:
-        path: /var/www/html/tests/test-results
-    - store_artifacts:
-        path: /var/www/html/artifacts
-        destination: /
-
-visual_regression: &visual_regression
-  docker:
-    - image: egovpdx/visual-regression:latest
-      auth:
-        username: egovpdx
-        password: $DOCKERHUB_PASSWORD
-  # environment:
-  #   PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: true
-  parallelism: 4
-  working_directory: /home/circleci/app
-  steps:
-    - checkout
 
     - restore_cache:
-        name: Restore Terminus cache
+        name: Restore Jest and Percy dependencies cache
         keys:
-          - terminus_-{{ checksum "composer.lock" }}
+          - jest-{{ checksum "tests/percy/yarn.lock" }}-v2
     - run:
-        name: Install Terminus
+        name: Install Jest and Percy dependencies
         command: |
-          if [ ! -f "/tmp/vendor/pantheon-systems/terminus/bin/terminus" ]; then
-          cd /tmp && composer require pantheon-systems/terminus:^2.0.0
-          fi
+          cd /home/circleci/app/tests/percy
+          export PERCY_POSTINSTALL_BROWSER=true
+          yarn install --frozen-lockfile
     - save_cache:
-        name: Save Terminus cache
-        key: terminus_-{{ checksum "composer.lock" }}
+        name: Save Jest and Percy dependencies cache
+        key: jest-{{ checksum "tests/percy/yarn.lock" }}-v2
         paths:
-          - "/tmp/vendor"
+          - "tests/percy/node_modules"
 
     - run:
         name: Run Percy tests
@@ -334,24 +269,39 @@ visual_regression: &visual_regression
             echo 'export SITE_NAME=${CIRCLE_BRANCH}' > $BASH_ENV && source $BASH_ENV
           fi
 
+          mkdir /home/circleci/artifacts
           cd /home/circleci/app/tests/percy
-          npm install --quiet
 
           # Start Percy tests
-          TESTFILES=$(circleci tests glob "snapshots-*.js" | circleci tests split)
+          TESTFILES=$(circleci tests glob "__tests__/*.js" | circleci tests split)
           for TESTFILE in $TESTFILES
           do
-            npm run ${TESTFILE}
+            # Generate one time login link for tests
+            if [[ ${TESTFILE} == *"ally"* ]]; then
+              echo 'export ALLY_LOGIN=$(terminus drush portlandor.${SITE_NAME} -- uli --mail ally.admin@portlandoregon.gov)' > $BASH_ENV && source $BASH_ENV
+              npm run jest-test -- ${TESTFILE}
+            elif [[ ${TESTFILE} == *"marty"* ]]; then
+              echo 'export MARTY_LOGIN=$(terminus drush portlandor.${SITE_NAME} -- uli --mail marty.member@portlandoregon.gov)' > $BASH_ENV && source $BASH_ENV
+              npm run jest-test -- ${TESTFILE}
+            elif [[ ${TESTFILE} == *"admin-group"* ]]; then
+              echo 'export KEVIN_LOGIN=$(terminus drush portlandor.${SITE_NAME} -- uli --mail xinju.wang@portlandoregon.gov)' > $BASH_ENV && source $BASH_ENV
+              npm run jest-test -- ${TESTFILE}
+            elif [[ ${TESTFILE} == *"admin"* ]]; then
+              echo 'export SUPERADMIN_LOGIN=$(terminus drush portlandor.${SITE_NAME} -- uli --name superAdmin)' > $BASH_ENV && source $BASH_ENV
+              npm run jest-test -- ${TESTFILE}
+            elif [[ ${TESTFILE} == *"anonymous"* ]]; then
+              npm run single-test -- ${TESTFILE}
+            fi
           done
-
+    - store_artifacts:
+        path: /home/circleci/artifacts
+        destination: /
 
 # Declare all of the jobs we should run.
 version: 2.1
 jobs:
   deploy:
-     <<: *build_and_deploy
-  test:
-     <<: *run_tests
+    <<: *build_and_deploy
   visual_regression:
     <<: *visual_regression
 
@@ -364,12 +314,6 @@ workflows:
   deploy_and_test:
     jobs:
       - deploy
-      - test:
-          requires:
-            - deploy
       - visual_regression:
           requires:
             - deploy
-      - percy/finalize_all:
-          requires:
-            - visual_regression
