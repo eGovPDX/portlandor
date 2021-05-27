@@ -7,8 +7,10 @@ dependencies:
     - core.entity_view_mode.node.related
     - core.entity_view_mode.node.search_result
     - core.entity_view_mode.node.teaser
+    - field.storage.node.field_popular
     - field.storage.node.field_search_keywords
     - field.storage.node.field_summary
+    - field.storage.node.field_topics
     - node.type.city_service
     - node.type.construction_project
     - node.type.event
@@ -3956,6 +3958,8 @@ display:
         link_display: false
         link_url: false
         sorts: false
+        relationships: false
+        header: false
       filter_groups:
         operator: AND
         groups:
@@ -4018,7 +4022,11 @@ display:
       style:
         type: html_list
         options:
-          grouping: {  }
+          grouping:
+            -
+              field: field_topics
+              rendered: true
+              rendered_strip: false
           row_class: ''
           default_row_class: false
           type: ul
@@ -4028,10 +4036,75 @@ display:
         type: fields
         options:
           default_field_elements: true
-          inline: {  }
+          inline:
+            title: title
+            field_popular: field_popular
           separator: ''
           hide_empty: false
       fields:
+        field_topics:
+          id: field_topics
+          table: node__field_topics
+          field: field_topics
+          relationship: none
+          group_type: group
+          admin_label: ''
+          label: ''
+          exclude: true
+          alter:
+            alter_text: true
+            text: '<h2>{{ field_topics }}</h2>'
+            make_link: false
+            path: ''
+            absolute: false
+            external: false
+            replace_spaces: false
+            path_case: none
+            trim_whitespace: false
+            alt: ''
+            rel: ''
+            link_class: ''
+            prefix: ''
+            suffix: ''
+            target: ''
+            nl2br: false
+            max_length: 0
+            word_boundary: true
+            ellipsis: true
+            more_link: false
+            more_link_text: ''
+            more_link_path: ''
+            strip_tags: false
+            trim: false
+            preserve_tags: ''
+            html: false
+          element_type: ''
+          element_class: ''
+          element_label_type: ''
+          element_label_class: ''
+          element_label_colon: false
+          element_wrapper_type: ''
+          element_wrapper_class: ''
+          element_default_classes: true
+          empty: ''
+          hide_empty: false
+          empty_zero: false
+          hide_alter_empty: true
+          click_sort_column: target_id
+          type: entity_reference_label
+          settings:
+            link: false
+          group_column: target_id
+          group_columns: {  }
+          group_rows: false
+          delta_limit: 1
+          delta_offset: 0
+          delta_reversed: false
+          delta_first_last: false
+          multi_type: separator
+          separator: ', '
+          field_api_classes: false
+          plugin_id: field
         title:
           id: title
           table: node_field_data
@@ -4096,6 +4169,71 @@ display:
           field_api_classes: false
           entity_type: node
           entity_field: title
+          plugin_id: field
+        field_popular:
+          id: field_popular
+          table: node__field_popular
+          field: field_popular
+          relationship: none
+          group_type: group
+          admin_label: ''
+          label: ''
+          exclude: false
+          alter:
+            alter_text: false
+            text: ''
+            make_link: false
+            path: ''
+            absolute: false
+            external: false
+            replace_spaces: false
+            path_case: none
+            trim_whitespace: false
+            alt: ''
+            rel: ''
+            link_class: ''
+            prefix: ''
+            suffix: ''
+            target: ''
+            nl2br: false
+            max_length: 0
+            word_boundary: true
+            ellipsis: true
+            more_link: false
+            more_link_text: ''
+            more_link_path: ''
+            strip_tags: false
+            trim: false
+            preserve_tags: ''
+            html: false
+          element_type: ''
+          element_class: ''
+          element_label_type: ''
+          element_label_class: ''
+          element_label_colon: false
+          element_wrapper_type: ''
+          element_wrapper_class: ''
+          element_default_classes: true
+          empty: ''
+          hide_empty: false
+          empty_zero: false
+          hide_alter_empty: true
+          click_sort_column: value
+          type: boolean
+          settings:
+            format: custom
+            format_custom_true: (Popular)
+            format_custom_false: ''
+          group_column: value
+          group_columns: {  }
+          group_rows: true
+          delta_limit: 0
+          delta_offset: 0
+          delta_reversed: false
+          delta_first_last: false
+          multi_type: separator
+          separator: ', '
+          field_api_classes: false
           plugin_id: field
         field_summary:
           id: field_summary
@@ -4226,6 +4364,20 @@ display:
       link_display: '0'
       link_url: 'news/{{ arguments.term_node_tid_depth }}'
       sorts:
+        name:
+          id: name
+          table: taxonomy_term_field_data
+          field: name
+          relationship: field_topics
+          group_type: group
+          admin_label: ''
+          order: ASC
+          exposed: false
+          expose:
+            label: ''
+          entity_type: taxonomy_term
+          entity_field: name
+          plugin_id: standard
         field_popular_value:
           id: field_popular_value
           table: node__field_popular
@@ -4253,6 +4405,17 @@ display:
           entity_field: title
           plugin_id: standard
       block_category: 'Content by Term (Block View)'
+      relationships:
+        field_topics:
+          id: field_topics
+          table: node__field_topics
+          field: field_topics
+          relationship: none
+          group_type: group
+          admin_label: 'field_topics: Taxonomy term'
+          required: false
+          plugin_id: standard
+      header: {  }
     cache_metadata:
       max-age: -1
       contexts:
@@ -4262,8 +4425,10 @@ display:
         - 'user.node_grants:view'
         - user.permissions
       tags:
+        - 'config:field.storage.node.field_popular'
         - 'config:field.storage.node.field_search_keywords'
         - 'config:field.storage.node.field_summary'
+        - 'config:field.storage.node.field_topics'
   services_info_by_term_page:
     id: services_info_by_term_page
     display_title: 'Page: Services and Info'
