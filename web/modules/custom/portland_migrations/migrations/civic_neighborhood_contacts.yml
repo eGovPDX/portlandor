@@ -1,0 +1,40 @@
+id: civic_neighborhood_contacts
+label: 'Civic Life Neighborhood Contacts'
+migration_group: civic_neighborhood_contacts
+source:
+  plugin: csv
+  path: modules/custom/portland_migrations/sources/civic_neighborhood_contacts.csv
+  header_row_count: 1
+  keys:
+    - CONTACT_ID2
+process:
+  uid:
+    plugin: default_value
+    default_value: 1
+  title: CONTACT_NAME
+  field_contact_type:
+    -
+      plugin: static_map
+      source: GROUP_NAME
+      map:
+        'Chair/Co-Chair/President': 'Chair / Co-Chair / President'
+        'Vice Chair/Vice President': 'Vice Chair / Vice President'
+        'Secretary': 'Secretary'
+        'Treasurer/Finance Committee Chair': 'Treasurer'
+        'Land Use/Planning Committee Chair/Co-Chair': 'Land Use Committee Chair'
+        'General correspondance': 'General Correspondence Contact'
+        'City Required Notice Contact/Co-Contact': 'City Required Notice Contact'
+    -
+      plugin: text_to_taxonomy
+      vocabulary: contact_type
+  field_email: EMAIL
+  field_address/country_code:
+    plugin: default_value
+    default_value: 'US'
+  field_address/address_line1: ADDRESS
+  field_address/locality: CITY
+  field_address/administrative_area: STATE_ABBR
+  field_address/postal_code: ZIP
+destination:
+  plugin: 'entity:node'
+  default_bundle: contact
