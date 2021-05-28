@@ -11,7 +11,7 @@ var BROWSER_OPTION = {
   args: ["--no-sandbox"],
 };
 
-describe("Homepage", () => {
+describe("Full regression test suite for anonymous", () => {
   let browser, page;
 
   beforeAll(async () => {
