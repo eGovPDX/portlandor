@@ -26,13 +26,15 @@ services:
     globals:
       yarn: latest
     overrides:
-      image: kxwang/drupal-ci:ci-php7.2.28-node12.16.1-yarn1.22.0
+      image: cimg/php:7.4-browsers
+    build_as_root:
+      - /bin/sh -c "mkdir /home/node"
+      - /bin/sh -c "chmod -R 777 /home/node"
     run_as_root:
       - /bin/sh -c "adduser www-data node"
       - /bin/sh -c "adduser www-data dialout"
       - /bin/sh -c "adduser node dialout"
       - /bin/sh -c "chmod -R 777 /var/www"
-      - /bin/sh -c "apt update && wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb && apt install ./google-chrome-stable_current_amd64.deb && rm ./google-chrome-stable_current_amd64.deb"
 
 tooling:
   drush:
@@ -64,6 +66,11 @@ tooling:
       - appserver: drush uli --mail ally.admin@portlandoregon.gov > ally_uli.log
       - appserver: drush uli --mail marty.member@portlandoregon.gov > marty_uli.log
       - node: npm run jest-test
+  jest-full:
+    description: CUSTOM Run full regression Jest tests
+    dir: /app/tests/percy
+    cmd:
+      - node: npm run jest-full
   yarn-rebuild:
     description: CUSTOM Install Cloudy dependencies, rebuild Cloudy theme including pattern labs files
     service: node

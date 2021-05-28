@@ -253,7 +253,6 @@ visual_regression: &visual_regression
         key: jest-{{ checksum "tests/percy/yarn.lock" }}-v2
         paths:
           - "tests/percy/node_modules"
-
     - run:
         name: Run Percy tests
         command: |
@@ -272,7 +271,7 @@ visual_regression: &visual_regression
           mkdir /home/circleci/artifacts
           cd /home/circleci/app/tests/percy
 
-          # Start Percy tests
+          # Start Percy tests excluding full regression tests
           TESTFILES=$(circleci tests glob "__tests__/*.js" | circleci tests split)
           for TESTFILE in $TESTFILES
           do
@@ -297,6 +296,111 @@ visual_regression: &visual_regression
         path: /home/circleci/artifacts
         destination: /
 
+full_regression: &full_regression
+  docker:
+    - image: cimg/php:7.4-browsers
+      auth:
+        username: egovpdx
+        password: $DOCKERHUB_PASSWORD
+  working_directory: /home/circleci/app
+  steps:
+    - restore_cache:
+        name: Retore Git cache before checkout
+        keys:
+          - jest-source-v1-{{ .Branch }}-{{ .Revision }}
+          - jest-source-v1-{{ .Branch }}-
+          - jest-source-v1-
+    - checkout
+    - run: git gc
+    - save_cache:
+        name: Save Git cache after checkout
+        key: jest-source-v1-{{ .Branch }}-{{ .Revision }}
+        paths:
+          - ".git"
+    - restore_cache:
+        name: Restore Terminus cache
+        keys:
+          - terminus_-{{ checksum "composer.lock" }}
+    - run:
+        name: Install Terminus
+        command: |
+          if [ ! -f "/tmp/vendor/pantheon-systems/terminus/bin/terminus" ]; then
+          cd /tmp && composer require pantheon-systems/terminus:^2.0.0
+          fi
+    - save_cache:
+        name: Save Terminus cache
+        key: terminus_-{{ checksum "composer.lock" }}
+        paths:
+          - "/tmp/vendor"
+
+    - restore_cache:
+        name: Restore Jest and Percy dependencies cache
+        keys:
+          - jest-{{ checksum "tests/percy/yarn.lock" }}-v2
+    - run:
+        name: Install Jest and Percy dependencies
+        command: |
+          cd /home/circleci/app/tests/percy
+          export PERCY_POSTINSTALL_BROWSER=true
+          yarn install --frozen-lockfile
+    - save_cache:
+        name: Save Jest and Percy dependencies cache
+        key: jest-{{ checksum "tests/percy/yarn.lock" }}-v2
+        paths:
+          - "tests/percy/node_modules"
+
+    - restore_cache:
+        name: Restore last git commit file
+        keys:
+          - git-commit-{{ .Revision }}-v1
+    - run:
+        name: Run full regression tests
+        command: |
+          export PATH=/var/www/html/tests/vendor/bin:/tmp/vendor/pantheon-systems/terminus/bin:$PATH
+
+          # Skip test if there is no new commit since the last run
+          echo "Current commit: $CIRCLE_SHA1"
+          if [ -s "./last_commit_hash.txt" ]
+          then
+            export LAST_COMMIT_HASH=$(<last_commit_hash.txt)
+            echo "Last commit: $LAST_COMMIT_HASH"
+            if [[ "$CIRCLE_SHA1" == "$LAST_COMMIT_HASH" ]]; then
+              echo "No new commit since ${LAST_COMMIT_HASH}. Skip full regression test."
+              exit 0
+            else
+              echo "New commit since ${LAST_COMMIT_HASH}. Start full regression test"
+              echo "$CIRCLE_SHA1" > ./last_commit_hash.txt
+            fi
+          fi
+          if [ ! -f ./last_commit_hash.txt ]; then
+            echo "$CIRCLE_SHA1" > ./last_commit_hash.txt
+            cat ./last_commit_hash.txt
+          fi
+
+          # Log in via terminus first. Required for tests that require user login.
+          terminus auth:login --quiet --machine-token="$eGov_Terminus" --email="$eGov_Email" && terminus aliases
+
+          # Prepare environment variables to be used by Percy
+          if [[ $CIRCLE_BRANCH = "master" ]]; then
+            echo 'export SITE_NAME="dev"' > $BASH_ENV && source $BASH_ENV
+          else
+            echo 'export SITE_NAME=${CIRCLE_BRANCH}' > $BASH_ENV && source $BASH_ENV
+          fi
+
+          mkdir /home/circleci/artifacts
+          cd /home/circleci/app/tests/percy
+
+          # Start Percy tests
+          npm run jest-full
+    - save_cache:
+        name: Save git commit file
+        key: git-commit-{{ .Revision }}-v1
+        paths:
+          - "/home/circleci/app/last_commit_hash.txt"
+    - store_artifacts:
+        path: /home/circleci/artifacts
+        destination: /
+
 # Declare all of the jobs we should run.
 version: 2.1
 jobs:
@@ -304,6 +408,8 @@ jobs:
     <<: *build_and_deploy
   visual_regression:
     <<: *visual_regression
+  full_regression:
+    <<: *full_regression
 
 orbs:
   percy: percy/agent@0.1.2
@@ -317,3 +423,15 @@ workflows:
       - visual_regression:
           requires:
             - deploy
+  daily:
+    jobs:
+      - full_regression
+    triggers:
+      - schedule:
+          # UTC date/time 8am is Pacific 12am
+          cron: "0 8 * * 1,2,3,4,5"
+          filters:
+            branches:
+              only:
+                # - master
+                - powr-3508

@@ -5,7 +5,6 @@ var fs = require('fs');
 const SITE_NAME = process.env.SITE_NAME;
 const HOME_PAGE = (SITE_NAME) ? `https://${SITE_NAME}-portlandor.pantheonsite.io` : 'https://portlandor.lndo.site';
 const ARTIFACTS_FOLDER = (SITE_NAME) ? `/home/circleci/artifacts/` : `./`;
-const timeout = 60000 * 3;
 let text_content = '', selector = '';
 
 var BROWSER_OPTION = {
@@ -13,31 +12,32 @@ var BROWSER_OPTION = {
   args: ["--no-sandbox"],
 };
 
-if (!SITE_NAME) {
-  BROWSER_OPTION.executablePath = "/usr/bin/google-chrome";
-}
-var browser, page, login_url;
-beforeAll(async () => {
-  browser = await puppeteer.launch(BROWSER_OPTION)
-  page = await browser.newPage();
-  await page.setDefaultTimeout(timeout);
-
-  var drush_uli_result;
-  if (process.env.CIRCLECI) {
-    // On CI, the CI script will call terminus to retrieve login URL
-    login_url = process.env.MARTY_LOGIN;
-    await page.goto(login_url);
-  }
-  else {
-    var drush_uli_result = fs.readFileSync("marty_uli.log").toString();
-    // expect(drush_uli_result.stdout).toEqual(expect.stringContaining('http'));
-    login_url = drush_uli_result.replace('http://default', 'https://portlandor.lndo.site');
-    // Log in once for all tests to save time
-    await page.goto(login_url);
-  }
-}, timeout)
-
 describe('Marty Member user test', () => {
+  var browser, page, login_url;
+  beforeAll(async () => {
+    browser = await puppeteer.launch(BROWSER_OPTION)
+    page = await browser.newPage();
+    await page.setDefaultTimeout(30000);
+
+    var drush_uli_result;
+    if (process.env.CIRCLECI) {
+      // On CI, the CI script will call terminus to retrieve login URL
+      login_url = process.env.MARTY_LOGIN;
+      await page.goto(login_url);
+    }
+    else {
+      var drush_uli_result = fs.readFileSync("marty_uli.log").toString();
+      // expect(drush_uli_result.stdout).toEqual(expect.stringContaining('http'));
+      login_url = drush_uli_result.replace('http://default', 'https://portlandor.lndo.site');
+      // Log in once for all tests to save time
+      await page.goto(login_url);
+    }
+  })
+
+  afterAll(async () => {
+    await browser.close()
+  })
+
   it('Marty can view Topic page', async function () {
     try {
       // Visit a topic page
@@ -61,7 +61,7 @@ describe('Marty Member user test', () => {
       });
       throw e;
     }
-  }, timeout);
+  });
 
 
   it('Marty can create and edit a page', async function () {
@@ -124,7 +124,7 @@ describe('Marty Member user test', () => {
       });
       throw e;
     }
-  }, timeout);
+  });
 
   it('Marty can create and edit media', async function () {
     try {
@@ -178,9 +178,5 @@ describe('Marty Member user test', () => {
       });
       throw e;
     }
-  }, timeout);
+  });
 });
-
-afterAll(async () => {
-  await browser.close()
-}, timeout)

@@ -5,36 +5,29 @@ const SITE_NAME = process.env.SITE_NAME;
 const HOME_PAGE = SITE_NAME
   ? `https://${SITE_NAME}-portlandor.pantheonsite.io`
   : "https://portlandor.lndo.site";
-const timeout = 60000*2;
 
 var BROWSER_OPTION = {
   ignoreHTTPSErrors: true,
   args: ["--no-sandbox"],
 };
 
-if (!SITE_NAME) {
-  BROWSER_OPTION.executablePath = "/usr/bin/google-chrome";
-}
-
-let browser;
-let page;
-
-beforeAll(async () => {
-  browser = await puppeteer.launch(BROWSER_OPTION);
-  page = await browser.newPage();
-
-  // Print browser version
-  // await page.browser().version().then(function (version) {
-  //   console.log(version);
-  // });
-  // console.log(browser.process().spawnfile);
-}, timeout)
-
-afterAll(async () => {
-  await browser.close();
-}, timeout)
-
 describe("Homepage", () => {
+  let browser, page;
+  beforeAll(async () => {
+    browser = await puppeteer.launch(BROWSER_OPTION);
+    page = await browser.newPage();
+
+    // Print browser version
+    // await page.browser().version().then(function (version) {
+    //   console.log(version);
+    // });
+    // console.log(browser.process().spawnfile);
+  })
+
+  afterAll(async () => {
+    await browser.close();
+  })
+  
   it(
     "h1 text",
     async () => {
@@ -46,8 +39,7 @@ describe("Homepage", () => {
       // Compares it with the intended behavior
       expect(title).toBe("Welcome to Portland, Oregon");
       await percySnapshot(page, "Anonymous - Home page");
-    },
-    timeout
+    }
   );
 
   it(
@@ -57,8 +49,7 @@ describe("Homepage", () => {
       await page.click("button.cloudy-header__toggle--menu");
       await page.waitForSelector(".cloudy-header__menu-wrapper.show");
       await percySnapshot(page, "Anonymous - Home page Menu");
-    },
-    timeout
+    }
   );
 
   it(
@@ -68,8 +59,7 @@ describe("Homepage", () => {
       await page.type("#edit-keys", "powr");
       await page.waitForSelector("#ui-id-1", { visible: true });
       await percySnapshot(page, "Anonymous - Home Autocomplete");
-    },
-    timeout
+    }
   );
 
   it(
@@ -85,8 +75,7 @@ describe("Homepage", () => {
       await percySnapshot(page, "Anonymous - Advisory \"Technology Oversight\"");
       await page.goto(`${HOME_PAGE}/mayor`, { waitUntil: "load" });
       await percySnapshot(page, "Anonymous - Elected \"Mayor\"");
-    },
-    timeout
+    }
   );
 
   it(
@@ -98,7 +87,6 @@ describe("Homepage", () => {
       await percySnapshot(page, "Anonymous - 404 \"powr-test\"");
       await page.goto(`${HOME_PAGE}/police/report-or-record-request`, { waitUntil: "load" });
       await percySnapshot(page, "Anonymous - Service \"Police Report or Record\"");
-    },
-    timeout
+    }
   );
 });

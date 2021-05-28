@@ -4,40 +4,36 @@ var fs = require('fs');
 const SITE_NAME = process.env.SITE_NAME;
 const HOME_PAGE = (SITE_NAME) ? `https://${SITE_NAME}-portlandor.pantheonsite.io` : 'https://portlandor.lndo.site';
 const ARTIFACTS_FOLDER = (SITE_NAME) ? `/home/circleci/artifacts/` : `./`;
-const timeout = 60000 * 2;
 
-var BROWSER_OPTION = { 
+var BROWSER_OPTION = {
   ignoreHTTPSErrors: true,
   args: ["--no-sandbox"],
 };
 
-if (!SITE_NAME) {
-  BROWSER_OPTION.executablePath = "/usr/bin/google-chrome";
-}
-var browser, page, login_url;
-beforeAll(async () => {
-  browser = await puppeteer.launch(BROWSER_OPTION)
-  page = await browser.newPage()
-  await page.setDefaultTimeout(timeout)
-
-  if (process.env.CIRCLECI) {
-    // On CI, the CI script will call terminus to retrieve login URL
-    login_url = process.env.KEVIN_LOGIN;
-    await page.goto(login_url);
-  }
-  else {
-    var drush_uli_result = fs.readFileSync("superAdmin_uli_2.log").toString();
-    login_url = drush_uli_result.replace('http://default', 'https://portlandor.lndo.site');
-    // Log in once for all tests to save time
-    await page.goto(login_url);
-  }
-}, timeout)
-
-afterAll(async () => {
-  await browser.close()
-}, timeout)
-
 describe('SuperAdmin user test', () => {
+  var browser, page, login_url;
+  beforeAll(async () => {
+    browser = await puppeteer.launch(BROWSER_OPTION)
+    page = await browser.newPage()
+    await page.setDefaultTimeout(30000)
+  
+    if (process.env.CIRCLECI) {
+      // On CI, the CI script will call terminus to retrieve login URL
+      login_url = process.env.KEVIN_LOGIN;
+      await page.goto(login_url);
+    }
+    else {
+      var drush_uli_result = fs.readFileSync("superAdmin_uli_2.log").toString();
+      login_url = drush_uli_result.replace('http://default', 'https://portlandor.lndo.site');
+      // Log in once for all tests to save time
+      await page.goto(login_url);
+    }
+  })
+
+  afterAll(async () => {
+    await browser.close()
+  })
+  
   it(
     'superAdmin manages group',
     async function () {
@@ -111,7 +107,6 @@ describe('SuperAdmin user test', () => {
         });
         throw e;
       }
-    },
-    timeout * 5
+    }
   );
 });
