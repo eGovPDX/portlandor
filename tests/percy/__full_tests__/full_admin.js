@@ -2,8 +2,8 @@ const puppeteer = require('puppeteer')
 var fs = require('fs');
 
 const SITE_NAME = process.env.SITE_NAME;
-const HOME_PAGE = (SITE_NAME) ? `https://${SITE_NAME}-portlandor.pantheonsite.io` : 'https://portlandor.lndo.site';
-const ARTIFACTS_FOLDER = (SITE_NAME) ? `/home/circleci/artifacts/` : `./`;
+const HOME_PAGE = (process.env.CIRCLECI) ? `https://${SITE_NAME}-portlandor.pantheonsite.io` : 'https://portlandor.lndo.site';
+const ARTIFACTS_FOLDER = (process.env.CIRCLECI) ? `/home/circleci/artifacts/` : `./`;
 
 var BROWSER_OPTION = {
   ignoreHTTPSErrors: true,
@@ -21,6 +21,11 @@ describe('Full regression test suite for Admin', () => {
       // On CI, the CI script will call terminus to retrieve login URL
       login_url = process.env.SUPERADMIN_LOGIN;
       await page.goto(login_url);
+      await page.screenshot({
+        path: `${ARTIFACTS_FOLDER}admin-login.jpg`,
+        type: "jpeg",
+        fullPage: true
+      });
     }
     else {
       var drush_uli_result = fs.readFileSync("superAdmin_uli.log").toString();
@@ -49,7 +54,7 @@ describe('Full regression test suite for Admin', () => {
       } catch (e) {
         // Capture the screenshot when test fails and re-throw the exception
         await page.screenshot({
-          path: `${ARTIFACTS_FOLDER}site-status-error.jpg`,
+          path: `${ARTIFACTS_FOLDER}full-site-status-error.jpg`,
           type: "jpeg",
           fullPage: true
         });

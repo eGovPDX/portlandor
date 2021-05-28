@@ -3,8 +3,8 @@ var fs = require('fs');
 const { fail } = require('assert');
 
 const SITE_NAME = process.env.SITE_NAME;
-const HOME_PAGE = (SITE_NAME) ? `https://${SITE_NAME}-portlandor.pantheonsite.io` : 'https://portlandor.lndo.site';
-const ARTIFACTS_FOLDER = (SITE_NAME) ? `/home/circleci/artifacts/` : `./`;
+const HOME_PAGE = (process.env.CIRCLECI) ? `https://${SITE_NAME}-portlandor.pantheonsite.io` : 'https://portlandor.lndo.site';
+const ARTIFACTS_FOLDER = (process.env.CIRCLECI) ? `/home/circleci/artifacts/` : `./`;
 let text_content = '', selector = '';
 
 var BROWSER_OPTION = {
@@ -46,7 +46,7 @@ describe("Full regression test suite for Ally", () => {
     } catch (e) {
       // Capture the screenshot when test fails and re-throw the exception
       await page.screenshot({
-        path: `${ARTIFACTS_FOLDER}ally-my-groups-error.jpg`,
+        path: `${ARTIFACTS_FOLDER}full-ally-my-groups-error.jpg`,
         type: "jpeg",
         fullPage: true
       });
