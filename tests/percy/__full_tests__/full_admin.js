@@ -21,11 +21,6 @@ describe('Full regression test suite for Admin', () => {
       // On CI, the CI script will call terminus to retrieve login URL
       login_url = process.env.SUPERADMIN_LOGIN;
       await page.goto(login_url);
-      await page.screenshot({
-        path: `${ARTIFACTS_FOLDER}admin-login.jpg`,
-        type: "jpeg",
-        fullPage: true
-      });
     }
     else {
       var drush_uli_result = fs.readFileSync("superAdmin_uli.log").toString();
