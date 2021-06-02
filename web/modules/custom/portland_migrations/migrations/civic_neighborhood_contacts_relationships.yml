@@ -1,0 +1,36 @@
+id: civic_neighborhood_contacts_relationships
+label: 'Civic Life Neighborhood Contacts Relationships'
+migration_group: civic_neighborhood_contacts
+source:
+  plugin: csv
+  path: modules/custom/portland_migrations/sources/civic_neighborhood_contacts.csv
+  header_row_count: 1
+  keys:
+    - CONTACT_ID_UNIQUE
+process:
+  tid:
+    plugin: text_to_taxonomy
+    vocabulary: neighborhood
+    source: NEIGHBORHOOD_NAME
+  # field_general_meetings:
+  #   plugin: default_value
+  #   default_value: '@temp_field_contact'
+  field_contact:
+    plugin: migration_lookup
+    migration: civic_neighborhood_contacts
+    source: CONTACT_ID_UNIQUE
+    no_stub: true
+    multivalued_append: true
+    multivalued_unique: true
+    # plugin: default_value
+    # default_value: 
+    #   -
+    #     19835
+    #   -
+    #     19836
+  # field_contact/1/target_id:
+destination:
+  plugin: entity:taxonomy_term
+  default_bundle: neighborhood
+  overwrite_properties:
+    - field_contact
