@@ -402,3 +402,16 @@ lando drush migrate:import civic_neighborhood_meetings_redirects
 lando terminus drush portlandor.powr-[ID] -- migrate:import civic_neighborhood_meetings
 lando terminus drush portlandor.powr-[ID] -- migrate:import civic_neighborhood_meetings_redirects
 ```
+
+#### Civic Life Neighborhood Contacts
+
+##### Local
+```
+lando drush migrate:import civic_neighborhood_contacts
+lando drush migrate:import civic_neighborhood_contacts_relationships
+```
+##### On Pantheon
+```
+lando terminus drush portlandor.powr-[ID] -- migrate:import civic_neighborhood_contacts
+lando terminus drush portlandor.powr-[ID] -- migrate:import civic_neighborhood_contacts_relationships
+```
