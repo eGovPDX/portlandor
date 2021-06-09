@@ -395,6 +395,9 @@ full_regression: &full_regression
           echo 'export MARTY_LOGIN=$(terminus drush portlandor.${SITE_NAME} -- uli --mail marty.member@portlandoregon.gov)' > $BASH_ENV && source $BASH_ENV
           echo 'export SUPERADMIN_LOGIN=$(terminus drush portlandor.${SITE_NAME} -- uli --name superAdmin)' > $BASH_ENV && source $BASH_ENV
 
+          # Test build error
+          exit 1
+
           # Start Percy tests
           npm run jest-full
     - save_cache:
@@ -405,10 +408,6 @@ full_regression: &full_regression
     - store_artifacts:
         path: /home/circleci/artifacts
         destination: /
-    - slack/notify:
-        branch_pattern: powr-3508
-        event: pass
-        template: basic_pass_1
     - slack/notify:
         branch_pattern: powr-3508
         event: fail
@@ -441,6 +440,8 @@ workflows:
   daily:
     jobs:
       - full_regression
+        context:
+          - eGovPDX
     triggers:
       - schedule:
           # UTC date/time 8am is Pacific 12am
