@@ -1,35 +1,41 @@
 {% set is_draft = node.isPublished() ? false : true %}
-{% set type = content.field_page_type is not empty
+{% set type = content.field_page_type|render|trim is not empty
   ? content.field_page_type
-  : content.field_external_resource_type is not empty
+  : content.field_external_resource_type|render|trim is not empty
     ? content.field_external_resource_type
-    : label['#bundle']|replace({
-      city_: '',
-      '_': ' '
-    })
+    : content.field_construction_type|render|trim is not empty
+      ? content.field_construction_type
+      : node.fields.type[0].target_id == 'city_service'
+        ? node.fields.type[0].target_id|replace({
+          city_: ''
+        })
 %}
+{% set margin = node.fields.type[0].target_id == 'city_service' ? '2' %}
 
-<div class="card">
-  <div class="card-img-top">
-    {{ content.field_featured_media|render }}
-  </div>
-  <div class="card-body">
-    {% if is_draft %}
-      {% include '@components/badge/badge.twig' with {
-        text: 'unpublished'|t|capitalize,
-        type: 'danger',
-        mb: 2
-      } only %}
+{% if content %}
+  <div class="card">
+    {% if content.field_featured_media|render|trim is not empty %}
+      <div class="card-img-top">
+        {{ content.field_featured_media|render }}
+      </div>
     {% endif %}
-    {% include '@components/overline/overline.twig' with {
-      text: type,
-      margin: content.field_page_type is empty ? '2'
-    } %}
-    {% include '@components/heading/heading.twig' with {
-      url: url,
-      level: 3,
-      text: label
-    } only %}
-    {{ content.field_summary }}
+    <div class="card-body">
+      {% if is_draft %}
+        {% include '@components/badge/badge.twig' with {
+          text: 'unpublished'|t|capitalize,
+          type: 'danger',
+          mb: 2
+        } only %}
+      {% endif %}
+      {% include '@components/overline/overline.twig' with {
+        text: type,
+        margin: margin
+      } %}
+      {% include '@components/heading/heading.twig' with {
+        url: url,
+        level: 3,
+        text: label
+      } only %}
+    </div>
   </div>
-</div>
+{% endif %}
