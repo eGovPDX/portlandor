@@ -76,6 +76,7 @@ describe('SuperAdmin user test', () => {
         });
         throw e;
       }
-    }
+    },
+    60000 // 60s timeout
   );
 });
