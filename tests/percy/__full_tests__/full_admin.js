@@ -179,7 +179,7 @@ describe('Full regression test suite for Admin', () => {
       } catch (e) {
         // Capture the screenshot when test fails and re-throw the exception
         await page.screenshot({
-          path: `${ARTIFACTS_FOLDER}ally-add-content-error.jpg`,
+          path: `${ARTIFACTS_FOLDER}ally-add-service-error.jpg`,
           type: "jpeg",
           fullPage: true
         });
@@ -198,7 +198,7 @@ describe('Full regression test suite for Admin', () => {
       } catch (e) {
         // Capture the screenshot when test fails and re-throw the exception
         await page.screenshot({
-          path: `${ARTIFACTS_FOLDER}ally-add-content-error.jpg`,
+          path: `${ARTIFACTS_FOLDER}ally-add-construction-error.jpg`,
           type: "jpeg",
           fullPage: true
         });
@@ -217,7 +217,7 @@ describe('Full regression test suite for Admin', () => {
       } catch (e) {
         // Capture the screenshot when test fails and re-throw the exception
         await page.screenshot({
-          path: `${ARTIFACTS_FOLDER}ally-add-content-error.jpg`,
+          path: `${ARTIFACTS_FOLDER}ally-add-contact-error.jpg`,
           type: "jpeg",
           fullPage: true
         });
@@ -236,7 +236,7 @@ describe('Full regression test suite for Admin', () => {
       } catch (e) {
         // Capture the screenshot when test fails and re-throw the exception
         await page.screenshot({
-          path: `${ARTIFACTS_FOLDER}ally-add-content-error.jpg`,
+          path: `${ARTIFACTS_FOLDER}ally-add-event-error.jpg`,
           type: "jpeg",
           fullPage: true
         });
@@ -255,7 +255,7 @@ describe('Full regression test suite for Admin', () => {
       } catch (e) {
         // Capture the screenshot when test fails and re-throw the exception
         await page.screenshot({
-          path: `${ARTIFACTS_FOLDER}ally-add-content-error.jpg`,
+          path: `${ARTIFACTS_FOLDER}ally-add-resource-error.jpg`,
           type: "jpeg",
           fullPage: true
         });
@@ -274,7 +274,7 @@ describe('Full regression test suite for Admin', () => {
       } catch (e) {
         // Capture the screenshot when test fails and re-throw the exception
         await page.screenshot({
-          path: `${ARTIFACTS_FOLDER}ally-add-content-error.jpg`,
+          path: `${ARTIFACTS_FOLDER}ally-add-news-error.jpg`,
           type: "jpeg",
           fullPage: true
         });
@@ -293,7 +293,84 @@ describe('Full regression test suite for Admin', () => {
       } catch (e) {
         // Capture the screenshot when test fails and re-throw the exception
         await page.screenshot({
-          path: `${ARTIFACTS_FOLDER}ally-add-content-error.jpg`,
+          path: `${ARTIFACTS_FOLDER}ally-add-notification-error.jpg`,
+          type: "jpeg",
+          fullPage: true
+        });
+        throw e;
+      }
+    }
+  );
+
+  // Masquerade as Ally
+  it(
+    'Ally can create document',
+    async () => {
+      try {
+        let text_content = '', selector = '';
+
+      } catch (e) {
+        // Capture the screenshot when test fails and re-throw the exception
+        await page.screenshot({
+          path: `${ARTIFACTS_FOLDER}ally-add-document-error.jpg`,
+          type: "jpeg",
+          fullPage: true
+        });
+        throw e;
+      }
+    }
+  );
+
+  // Masquerade as Ally
+  it(
+    'Ally can create image',
+    async () => {
+      try {
+        let text_content = '', selector = '';
+
+      } catch (e) {
+        // Capture the screenshot when test fails and re-throw the exception
+        await page.screenshot({
+          path: `${ARTIFACTS_FOLDER}ally-add-image-error.jpg`,
+          type: "jpeg",
+          fullPage: true
+        });
+        throw e;
+      }
+    }
+  );
+
+  // Masquerade as Ally
+  it(
+    'Ally can create map',
+    async () => {
+      try {
+        let text_content = '', selector = '';
+
+      } catch (e) {
+        // Capture the screenshot when test fails and re-throw the exception
+        await page.screenshot({
+          path: `${ARTIFACTS_FOLDER}ally-add-map-error.jpg`,
+          type: "jpeg",
+          fullPage: true
+        });
+        throw e;
+      }
+    }
+  );
+
+
+  // Masquerade as Ally
+  it(
+    'Ally can create video',
+    async () => {
+      try {
+        let text_content = '', selector = '';
+
+      } catch (e) {
+        // Capture the screenshot when test fails and re-throw the exception
+        await page.screenshot({
+          path: `${ARTIFACTS_FOLDER}ally-add-video-error.jpg`,
           type: "jpeg",
           fullPage: true
         });
