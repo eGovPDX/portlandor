@@ -10,6 +10,7 @@ let text_content = '', selector = '';
 var BROWSER_OPTION = {
   ignoreHTTPSErrors: true,
   args: ["--no-sandbox"],
+  defaultViewport: null,
 };
 
 describe('Ally Admin user test', () => {
