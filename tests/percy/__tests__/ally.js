@@ -20,10 +20,10 @@ describe('Ally Admin user test', () => {
     await page.setDefaultTimeout(30000)
 
     // Print browser version
-    await page.browser().version().then(function (version) {
-      console.log(version);
-    });
-    console.log(browser.process().spawnfile);
+    // await page.browser().version().then(function (version) {
+    //   console.log(version);
+    // });
+    // console.log(browser.process().spawnfile);
 
     if (process.env.CIRCLECI) {
       // On CI, the CI script will call terminus to retrieve login URL
@@ -46,7 +46,7 @@ describe('Ally Admin user test', () => {
     try {
       let text_content = '';
       await page.goto(`${HOME_PAGE}/my-groups`);
-      text_content = await page.evaluate(() => document.querySelector('div.view-my-groups td.views-field-label-1').textContent);
+      text_content = await page.evaluate(() => document.querySelector('div.view-my-groups table').textContent);
       expect(text_content).toEqual(expect.stringContaining('Portland Oregon Website Replacement'));
     } catch (e) {
       // Capture the screenshot when test fails and re-throw the exception
