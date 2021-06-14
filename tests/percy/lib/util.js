@@ -9,6 +9,7 @@ exports.masqueradeAs = async function(email, page, HOME_PAGE) {
 }
 
 exports.unmasquerade = async function(page, HOME_PAGE) {
+  await page.goto(`${HOME_PAGE}/my-groups`);
   var link = await page.evaluate(() => document.querySelector('div.toolbar-tab a[href^="/unmasquerade').getAttribute('href'));
   await page.goto(`${HOME_PAGE}${link}`);
 }
