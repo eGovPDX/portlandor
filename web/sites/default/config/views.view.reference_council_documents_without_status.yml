@@ -12,12 +12,12 @@ dependencies:
     - field.storage.node.field_requested_start_time
     - field.storage.node.field_time_requested
     - node.type.council_document
-    - taxonomy.vocabulary.council_document_status
     - taxonomy.vocabulary.council_document_type
     - user.role.administrator
     - user.role.attorney
     - user.role.council_author
     - user.role.council_clerk
+    - workflows.workflow.council_document_workflow
   module:
     - content_moderation
     - datetime
@@ -1698,51 +1698,6 @@ display:
           entity_type: node
           entity_field: type
           plugin_id: bundle
-        field_council_document_status_target_id:
-          id: field_council_document_status_target_id
-          table: node__field_council_document_status
-          field: field_council_document_status_target_id
-          relationship: none
-          group_type: group
-          admin_label: ''
-          operator: empty
-          value: {  }
-          group: 1
-          exposed: false
-          expose:
-            operator_id: ''
-            label: ''
-            description: ''
-            use_operator: false
-            operator: ''
-            operator_limit_selection: false
-            operator_list: {  }
-            identifier: ''
-            required: false
-            remember: false
-            multiple: false
-            remember_roles:
-              authenticated: authenticated
-            reduce: false
-          is_grouped: false
-          group_info:
-            label: ''
-            description: ''
-            identifier: ''
-            optional: true
-            widget: select
-            multiple: false
-            remember: false
-            default_group: All
-            default_group_multiple: {  }
-            group_items: {  }
-          reduce_duplicates: false
-          type: select
-          limit: true
-          vid: council_document_status
-          hierarchy: false
-          error_message: true
-          plugin_id: taxonomy_index_tid
         field_requested_council_date_value:
           id: field_requested_council_date_value
           table: node__field_requested_council_date
@@ -1750,11 +1705,11 @@ display:
           relationship: none
           group_type: group
           admin_label: ''
-          operator: 'not empty'
+          operator: '>='
           value:
             min: ''
             max: ''
-            value: ''
+            value: today
             type: date
           group: 1
           exposed: false
@@ -1788,6 +1743,49 @@ display:
             default_group_multiple: {  }
             group_items: {  }
           plugin_id: datetime
+        moderation_state:
+          id: moderation_state
+          table: node_field_data
+          field: moderation_state
+          relationship: none
+          group_type: group
+          admin_label: ''
+          operator: in
+          value:
+            council_document_workflow-ready_for_agenda: council_document_workflow-ready_for_agenda
+            council_document_workflow-published: council_document_workflow-published
+            council_document_workflow-unpublished: council_document_workflow-unpublished
+          group: 1
+          exposed: false
+          expose:
+            operator_id: ''
+            label: ''
+            description: ''
+            use_operator: false
+            operator: ''
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: ''
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+            reduce: false
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
+          entity_type: node
+          plugin_id: moderation_state_filter
       filter_groups:
         operator: AND
         groups:
@@ -1843,14 +1841,18 @@ display:
           entity_field: title
           plugin_id: standard
       header: {  }
+      pager:
+        type: none
+        options:
+          offset: 0
     cache_metadata:
       max-age: -1
       contexts:
         - 'languages:language_content'
         - 'languages:language_interface'
-        - user
         - 'user.node_grants:view'
         - user.roles
       tags:
         - 'config:field.storage.node.field_introduced_by'
         - 'config:field.storage.node.field_requested_council_date'
+        - 'config:workflow_list'
