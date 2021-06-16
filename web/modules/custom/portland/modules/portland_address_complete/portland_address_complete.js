@@ -8,13 +8,29 @@
     var option = $('#addresslist').find("[value='" + value + "']");
 
     if (option.length > 0) {
-      $('input.locality').val(option.data("city"));
-      $('input.postal-code').val(option.data("zip"));
 
+      var city = option.data("city");
+      var state = option.data("state");
+      var zip = option.data("zip");
+
+      $('input.locality').val(city);
+      $('input.postal-code').val(zip);
       $("input.administrative-area option").each(function() {
-        this.selected =  (this.text.toLowerCase() === option.data("state").toLowerCase());
+        this.selected =  (this.text.toLowerCase() === state.toLowerCase());
       });
+
+      // new additional logic for filling address fields from the standard webform template
+      var cityfieldvalue = $(event.target).data('field-city');
+      var statefieldvalue = $(event.target).data('field-state');
+      var zipfieldvalue = $(event.target).data('field-zip');
+
+      $("#" + cityfieldvalue).val(city);
+      $("#" + statefieldvalue + " option").each(function() {
+        this.selected = (this.text.toLowerCase() === state.toLowerCase());
+      });
+      $("#" + zipfieldvalue).val(zip);
     }
+
   }
 
   function handleAddressKeyup(event) {
@@ -90,6 +106,12 @@
       address_input.on("keyup", handleAddressKeyup);
       address_input.on("input", handleAddressInput);
     }
+
+    // bind listeners to any input with the address-lookup class
+    $('input.address-lookup').each(function() {
+      $(this).on("keyup", handleAddressKeyup);
+      $(this).on("input", handleAddressInput);
+    })
   });
 
 })(jQuery);
