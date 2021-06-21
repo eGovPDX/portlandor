@@ -16,8 +16,8 @@ var BROWSER_OPTION = {
   ignoreHTTPSErrors: true,
   args: ["--no-sandbox"],
   defaultViewport: null,
-  executablePath: "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
-  headless: false,
+  // executablePath: "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+  // headless: false,
 };
 
 describe("Full regression test suite for Admin", () => {
@@ -143,7 +143,7 @@ describe("Full regression test suite for Admin", () => {
   });
 
   // Masquerade as Ally
-  it.skip("Ally can create Page", async () => {
+  it("Ally can create Page", async () => {
     try {
       let text_content = "",
         selector = "";
@@ -255,7 +255,7 @@ describe("Full regression test suite for Admin", () => {
   });
 
   // Masquerade as Ally
-  it.skip("Ally can create service", async () => {
+  it("Ally can create service", async () => {
     try {
       let text_content = "",
         selector = "";
@@ -353,7 +353,7 @@ describe("Full regression test suite for Admin", () => {
   });
 
   // Masquerade as Ally
-  it.skip("Ally can create construction", async () => {
+  it("Ally can create construction", async () => {
     try {
       let text_content = "",
         selector = "";
@@ -445,7 +445,7 @@ describe("Full regression test suite for Admin", () => {
   });
 
   // Masquerade as Ally
-  it.skip("Ally can create contact", async () => {
+  it("Ally can create contact", async () => {
 
     try {
       let text_content = "",
@@ -698,7 +698,7 @@ describe("Full regression test suite for Admin", () => {
   });
 
   // Masquerade as Ally
-  it.skip("Ally can create news", async () => {
+  it("Ally can create news", async () => {
     try {
       let text_content = "",
         selector = "";
@@ -786,7 +786,7 @@ describe("Full regression test suite for Admin", () => {
   });
 
   // Masquerade as Ally
-  it.skip("Ally can create notification", async () => {
+  it("Ally can create notification", async () => {
     try {
       let text_content = "",
         selector = "";
@@ -932,7 +932,7 @@ describe("Full regression test suite for Admin", () => {
     }
   });
 
-  it.skip("Admin can delete group", async () => {
+  it("Admin can delete group", async () => {
     try {
       let text_content = "",
         selector = "";
