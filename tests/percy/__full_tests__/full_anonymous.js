@@ -25,7 +25,7 @@ describe("Full regression test suite for anonymous", () => {
     await browser.close();
   })
 
-  it(
+  it.skip(
     "h1 text",
     async () => {
       await page.goto(HOME_PAGE);

@@ -16,6 +16,10 @@ var BROWSER_OPTION = {
   ignoreHTTPSErrors: true,
   args: ["--no-sandbox"],
   defaultViewport: null,
+  // To watch tests locally on MacOS:
+  // 1. Uncomment these two settings below
+  // 2. In CLI, go into folder "tests/percy"
+  // 3. Run "lando drush uli > superAdmin_uli.log && npm run jest-full"
   // executablePath: "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
   // headless: false,
 };
@@ -46,7 +50,7 @@ describe("Full regression test suite for Admin", () => {
     await browser.close();
   });
 
-  it("Admin can create a group and add Ally as admin", async () => {
+  it.only("Admin can create a group and add Ally as admin", async () => {
     try {
       let text_content = "",
         selector = "";
@@ -96,6 +100,43 @@ describe("Full regression test suite for Admin", () => {
         () => document.querySelector("h1.page-title").textContent
       );
       expect(text_content).toEqual(expect.stringContaining(TEST_GROUP_NAME));
+
+    } catch (e) {
+      // Capture the screenshot when test fails and re-throw the exception
+      await page.screenshot({
+        path: `${ARTIFACTS_FOLDER}create-new-group-error.jpg`,
+        type: "jpeg",
+        fullPage: true,
+      });
+      throw e;
+    }
+  });
+
+  // Assigned to Ronnie
+  // TODO: add tests for site wide content like Alerts, Code, Charter, Policy, Location, etc
+  // Admin create site wide content
+  it.only("Admin can create alert", async () => {
+    try {
+      let text_content = "",
+        selector = "";
+
+    } catch (e) {
+      // Capture the screenshot when test fails and re-throw the exception
+      await page.screenshot({
+        path: `${ARTIFACTS_FOLDER}ally-add-page-error.jpg`,
+        type: "jpeg",
+        fullPage: true,
+      });
+
+      throw e;
+    }
+  });
+
+  // Masquerade as Ally
+  it.only("Add Ally to the new group and masquerade as Ally", async () => {
+    try {
+      let text_content = "",
+        selector = "";
 
       // Add Ally to the new group as the group admin
       await page.goto(
@@ -254,7 +295,7 @@ describe("Full regression test suite for Admin", () => {
     }
   });
 
-  // Masquerade as Ally
+  // Ally creates a service in the group
   it("Ally can create service", async () => {
     try {
       let text_content = "",
@@ -352,7 +393,7 @@ describe("Full regression test suite for Admin", () => {
     }
   });
 
-  // Masquerade as Ally
+  // Ally create a construction project in the group
   it("Ally can create construction", async () => {
     try {
       let text_content = "",
@@ -444,7 +485,7 @@ describe("Full regression test suite for Admin", () => {
     }
   });
 
-  // Masquerade as Ally
+  // Ally creates contact in the group
   it("Ally can create contact", async () => {
 
     try {
@@ -522,7 +563,7 @@ describe("Full regression test suite for Admin", () => {
     }
   });
 
-  // Masquerade as Ally
+  // Ally creates event in the group
   it("Ally can create event", async () => {
     try {
       let text_content = "",
@@ -617,7 +658,7 @@ describe("Full regression test suite for Admin", () => {
     }
   });
 
-  // Masquerade as Ally
+  // Ally creates resource in the group
   it("Ally can create resource", async () => {
     try {
       let text_content = "",
@@ -697,7 +738,7 @@ describe("Full regression test suite for Admin", () => {
     }
   });
 
-  // Masquerade as Ally
+  // Ally creates news in the group
   it("Ally can create news", async () => {
     try {
       let text_content = "",
@@ -785,7 +826,7 @@ describe("Full regression test suite for Admin", () => {
     }
   });
 
-  // Masquerade as Ally
+  // Ally creates notification in the group
   it("Ally can create notification", async () => {
     try {
       let text_content = "",
@@ -868,8 +909,10 @@ describe("Full regression test suite for Admin", () => {
     }
   });
 
-  // Masquerade as Ally
-  it("Ally can create document", async () => {
+  // Ally creates document in the group
+  // Assigned to Kevin
+  // TODO: include both file upload and eFiles link
+  it.only("Ally can create document", async () => {
     try {
       let text_content = "",
         selector = "";
@@ -884,8 +927,9 @@ describe("Full regression test suite for Admin", () => {
     }
   });
 
-  // Masquerade as Ally
-  it("Ally can create image", async () => {
+  // Ally creates image in the group
+  // Assigned to Kevin
+  it.only("Ally can create image", async () => {
     try {
       let text_content = "",
         selector = "";
@@ -900,7 +944,10 @@ describe("Full regression test suite for Admin", () => {
     }
   });
 
-  // Masquerade as Ally
+  // Ally creates map in the group
+  // Assigned to Brit
+  // TODO: shape files, embed map, etc
+  // 
   it("Ally can create map", async () => {
     try {
       let text_content = "",
@@ -916,7 +963,9 @@ describe("Full regression test suite for Admin", () => {
     }
   });
 
-  // Masquerade as Ally
+  // Ally creates video in the group
+  // Assigned to Brit
+  // TODO: may need to upload the preview image
   it("Ally can create video", async () => {
     try {
       let text_content = "",
@@ -932,7 +981,7 @@ describe("Full regression test suite for Admin", () => {
     }
   });
 
-  it("Admin can delete group", async () => {
+  it.only("Admin can delete group", async () => {
     try {
       let text_content = "",
         selector = "";

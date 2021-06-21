@@ -39,7 +39,7 @@ describe('Full regression test suite for Marty', () => {
     await browser.close()
   })
 
-  it('Marty can create and edit a page', async function () {
+  it.skip('Marty can create and edit a page', async function () {
     try {
       // Add page content
       await page.goto(`${HOME_PAGE}/powr`);
