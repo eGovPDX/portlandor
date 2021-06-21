@@ -405,11 +405,11 @@ full_regression: &full_regression
     - store_artifacts:
         path: /home/circleci/artifacts
         destination: /
-    - slack/notify:
-        branch_pattern: powr-3508
-        event: fail
-        # mentions: '<@U8XXXXXXX>, @UserName'
-        template: basic_fail_1
+    # - slack/notify:
+    #     branch_pattern: powr-3508
+    #     event: fail
+    #     # mentions: '<@U8XXXXXXX>, @UserName'
+    #     template: basic_fail_1
 
 # Declare all of the jobs we should run.
 version: 2.1
@@ -434,16 +434,26 @@ workflows:
       - visual_regression:
           requires:
             - deploy
-  daily:
-    jobs:
       - full_regression:
+          requires:
+            - visual_regression
           context: eGovPDX
-    triggers:
-      - schedule:
-          # UTC date/time 8am is Pacific 12am
-          cron: "0 8 * * 1,2,3,4,5"
           filters:
             branches:
               only:
                 # - master
                 - powr-3508
+
+  # daily:
+  #   jobs:
+  #     - full_regression:
+  #         context: eGovPDX
+  #   triggers:
+  #     - schedule:
+  #         # UTC date/time 8am is Pacific 12am
+  #         cron: "0 8 * * 1,2,3,4,5"
+  #         filters:
+  #           branches:
+  #             only:
+  #               # - master
+  #               - powr-3508

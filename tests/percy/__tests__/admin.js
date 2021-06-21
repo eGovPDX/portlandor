@@ -8,6 +8,7 @@ const ARTIFACTS_FOLDER = (SITE_NAME) ? `/home/circleci/artifacts/` : `./`;
 var BROWSER_OPTION = {
   ignoreHTTPSErrors: true,
   args: ["--no-sandbox"],
+  defaultViewport: null,
 };
 
 describe('SuperAdmin user test', () => {
@@ -63,6 +64,7 @@ describe('SuperAdmin user test', () => {
     async function () {
       try {
         let text_content = '';
+        await page.setDefaultNavigationTimeout(60000);
         await page.goto(`${HOME_PAGE}/admin/config/development/configuration`);
         await page.waitForSelector('.region-content');
         text_content = await page.evaluate(() => document.querySelector('.region-content').textContent);

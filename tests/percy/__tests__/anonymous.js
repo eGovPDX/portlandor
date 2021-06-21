@@ -9,6 +9,7 @@ const HOME_PAGE = SITE_NAME
 var BROWSER_OPTION = {
   ignoreHTTPSErrors: true,
   args: ["--no-sandbox"],
+  defaultViewport: null,
 };
 
 describe("Homepage", () => {

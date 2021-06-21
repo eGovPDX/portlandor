@@ -8,6 +8,7 @@ const ARTIFACTS_FOLDER = (SITE_NAME) ? `/home/circleci/artifacts/` : `./`;
 var BROWSER_OPTION = {
   ignoreHTTPSErrors: true,
   args: ["--no-sandbox"],
+  defaultViewport: null,
 };
 
 describe('SuperAdmin user test', () => {
