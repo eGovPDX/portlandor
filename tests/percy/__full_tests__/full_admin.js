@@ -948,7 +948,7 @@ describe("Full regression test suite for Admin", () => {
   // Assigned to Brit
   // TODO: shape files, embed map, etc
   // 
-  it("Ally can create map", async () => {
+  it.only("Ally can create map", async () => {
     try {
       let text_content = "",
         selector = "";
@@ -966,7 +966,7 @@ describe("Full regression test suite for Admin", () => {
   // Ally creates video in the group
   // Assigned to Brit
   // TODO: may need to upload the preview image
-  it("Ally can create video", async () => {
+  it.only("Ally can create video", async () => {
     try {
       let text_content = "",
         selector = "";
