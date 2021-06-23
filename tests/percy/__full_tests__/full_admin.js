@@ -1,6 +1,7 @@
 const puppeteer = require("puppeteer");
 var fs = require("fs");
 const util = require("../lib/util");
+const path = require('path');
 
 const SITE_NAME = process.env.SITE_NAME;
 const HOME_PAGE = process.env.CIRCLECI
@@ -22,7 +23,95 @@ var BROWSER_OPTION = {
   // 3. Run "lando drush uli > superAdmin_uli.log && npm run jest-full"
   // executablePath: "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
   // headless: false,
+  // slowMo: 100,
 };
+
+var ContentTester = {
+  init: function(contentType, page) {
+    this.contentType = contentType;
+    this.page = page;
+  },
+  testContent: async function() {
+    // Add content
+    await this.page.goto(
+      `${HOME_PAGE}/${TEST_GROUP_PATH}/content/create/group_node:${this.contentType}`,
+      { waitUntil: "networkidle2" }
+    );
+    // Verify the add content form field titles
+    await this.verifyFieldLabels();
+    await this.inputFieldValues();
+    await this.submitForm();
+    await this.editContent();
+    await this.deleteContent();
+  },
+  verifyFieldLabels: async function() {
+    let text_content = "", selector = "";
+    text_content = await this.page.evaluate(
+      (contentType) => document.querySelector(`#node-${contentType.replace("_", "-")}-form`).textContent,
+      this.contentType
+    );
+    expect(text_content).toEqual(expect.stringContaining("Title"));
+  },
+  inputFieldValues: async function() {
+    let text_content = "", selector = "";
+
+    text_content = await this.page.evaluate(
+      (contentType) => document.querySelector(`#node-${contentType.replace("_", "-")}-form`).textContent,
+      this.contentType
+    );
+    expect(text_content).toEqual(expect.stringContaining("Title"));
+  },
+  submitForm: async function() {
+    let text_content = "", selector = "";
+
+    // Click submit button and wait for page load
+    selector = "input#edit-submit";
+    await this.page.evaluate(
+      (selector) => document.querySelector(selector).click(),
+      selector
+    );
+    await this.page.waitForNavigation();
+    text_content = await this.page.evaluate(
+      () => document.querySelector("div.messages--status").textContent
+    );
+    expect(text_content).toEqual(expect.stringContaining("has been created"));
+  },
+  editContent: async function() {
+    let text_content = "", selector = "";
+
+    // Edit the newly created page
+    await this.page.goto(`${HOME_PAGE}/${TEST_GROUP_PATH}/full-regression-test-${this.contentType.replace("_", "-")}/edit`);
+    text_content = await this.page.evaluate(
+      () => document.querySelector("div.form-item--title-0-value").textContent
+    );
+    expect(text_content).toEqual(expect.stringContaining("Title"));
+  },
+  deleteContent: async function() {
+    let text_content = "", selector = "";
+    // Delete the content
+    await this.page.goto(`${HOME_PAGE}/${TEST_GROUP_PATH}/full-regression-test-${this.contentType.replace("_", "-")}/delete`);
+    text_content = await this.page.evaluate(
+      (contentType) => document.querySelector(`form.node-${contentType.replace("_", "-")}-delete-form`).textContent,
+      this.contentType
+    );
+    expect(text_content).toEqual(
+      expect.stringContaining("This action cannot be undone")
+    );
+
+    selector = "input#edit-submit";
+    await this.page.evaluate(
+      (selector) => document.querySelector(selector).click(),
+      selector
+    );
+    await this.page.waitForNavigation();
+
+    // Verify deletion message
+    text_content = await this.page.evaluate(
+      () => document.querySelector("div.messages--status").textContent
+    );
+    expect(text_content).toEqual(expect.stringContaining("has been deleted"));
+  },
+}
 
 describe("Full regression test suite for Admin", () => {
   var browser, page, login_url, link;
@@ -160,8 +249,7 @@ describe("Full regression test suite for Admin", () => {
       await page.waitForNavigation();
       text_content = await page.evaluate(
         () =>
-          document.querySelector("td.views-field-name a[href='/ally-admin']")
-            .textContent
+          document.querySelector("td.views-field-name a[href='/ally-admin']").textContent
       );
 
       expect(text_content).toEqual(expect.stringContaining("Ally Admin"));
@@ -281,7 +369,7 @@ describe("Full regression test suite for Admin", () => {
       text_content = await page.evaluate(
         () => document.querySelector(".page-title").textContent
       );
-      if(text_content !== "Page not found") {
+      if (text_content !== "Page not found") {
         await page.goto(`${HOME_PAGE}/${TEST_GROUP_PATH}/full-regression-test-page/delete`);
 
         selector = "input#edit-submit";
@@ -296,8 +384,32 @@ describe("Full regression test suite for Admin", () => {
   });
 
   // Ally creates a service in the group
-  it("Ally can create service", async () => {
+  it.only("Ally can create service", async () => {
     try {
+      var cityServiceTester = Object.create(ContentTester);
+      cityServiceTester.init("city_service", page);
+      cityServiceTester.inputFieldValues = async function() {
+        console.log(this)
+
+        // Title
+        await page.type("#edit-title-0-value", "Full regression test city service");
+        // Short title
+        await page.type("#edit-field-menu-link-text-0-value", "Full regression test city Service");
+  
+        // Click on "Actions"
+        //TODO: Need a more robust way to work with Select2 options
+        selector = "ul.select2-selection__rendered";
+        await page.evaluate(
+          (selector) => document.querySelector(selector).click(),
+          selector
+        );
+        // Select the first option "Apply"
+        await page.keyboard.press('Enter');
+      };
+
+      await cityServiceTester.testContent();
+
+      /*
       let text_content = "",
         selector = "";
 
@@ -380,7 +492,7 @@ describe("Full regression test suite for Admin", () => {
         () => document.querySelector("div.messages--status").textContent
       );
       expect(text_content).toEqual(expect.stringContaining("has been deleted"));
-
+*/
     } catch (e) {
       // Capture the screenshot when test fails and re-throw the exception
       await page.screenshot({
@@ -415,9 +527,9 @@ describe("Full regression test suite for Admin", () => {
 
       await page.type("#edit-title-0-value", "Full regression test construction");
       // Select "Water" as type
-      await page.select('#edit-field-construction-type', '342') 
+      await page.select('#edit-field-construction-type', '342')
       // Select "Active" as status
-      await page.select('#edit-field-project-status', '52') 
+      await page.select('#edit-field-project-status', '52')
 
       await page.type("input#edit-field-start-date-0-value-date", "06042021")
 
@@ -585,7 +697,7 @@ describe("Full regression test suite for Admin", () => {
 
       await page.type("#edit-title-0-value", "Full regression test event");
       // Select "Meeting" as type
-      await page.select('#edit-field-event-type', '332') 
+      await page.select('#edit-field-event-type', '332')
       // Select "Rescheduled" as status
       await page.select('#edit-field-event-status', 'Rescheduled');
       await page.type(
@@ -846,7 +958,7 @@ describe("Full regression test suite for Admin", () => {
       await page.type("#edit-title-0-value", "Full regression test notification");
 
       // Update the CKEditor content
-      await page.evaluate(()=> {
+      await page.evaluate(() => {
         document.querySelector('iframe').contentDocument.querySelector('body p').textContent = "Body content for the test notification"
       });
 
@@ -912,10 +1024,79 @@ describe("Full regression test suite for Admin", () => {
   // Ally creates document in the group
   // Assigned to Kevin
   // TODO: include both file upload and eFiles link
-  it.only("Ally can create document", async () => {
+  it("Ally can create document", async () => {
     try {
       let text_content = "",
         selector = "";
+
+      // Add document
+      await page.goto(
+        `${HOME_PAGE}/${TEST_GROUP_PATH}/content/create/group_media:document`,
+        { waitUntil: "networkidle2" }
+      );
+      text_content = await page.evaluate(
+        () => document.querySelector("#media-document-add-form").textContent
+      );
+      expect(text_content).toEqual(expect.stringContaining("Name"));
+      expect(text_content).toEqual(expect.stringContaining("Document type"));
+
+      await page.type("#edit-name-0-value", "Full regression test document");
+      // "Meeting materials" as document type
+      await page.select('#edit-field-document-type', '335');
+
+      await page.type(
+        "#edit-field-summary-0-value",
+        "Summary for the test document"
+      );
+
+      // Upload a file
+      const fileElement = await page.$('div.form-managed-file__main input[type="file"]');
+      const filePath = path.relative(process.cwd(), __dirname + "/assets/upload_test.txt");
+      await fileElement.uploadFile(filePath);
+      await page.waitForSelector('div.form-managed-file__main span.file');
+
+      await page.select('#edit-moderation-state-0-state', 'published');
+
+      // Click submit button and wait for page load
+      selector = "input#edit-submit";
+      await page.evaluate(
+        (selector) => document.querySelector(selector).click(),
+        selector
+      );
+      await page.waitForNavigation();
+      text_content = await page.evaluate(
+        () => document.querySelector("div.messages--status").textContent
+      );
+      expect(text_content).toEqual(expect.stringContaining("has been created"));
+
+      // Edit the newly created document
+      await page.goto(`${HOME_PAGE}/${TEST_GROUP_PATH}/documents/full-regression-test-document/edit`);
+      text_content = await page.evaluate(
+        () => document.querySelector("div.form-item--name-0-value").textContent
+      );
+      expect(text_content).toEqual(expect.stringContaining("Name"));
+
+      // Delete the document
+      await page.goto(`${HOME_PAGE}/${TEST_GROUP_PATH}/documents/full-regression-test-document/delete`);
+      text_content = await page.evaluate(
+        () => document.querySelector("form.media-document-delete-form").textContent
+      );
+      expect(text_content).toEqual(
+        expect.stringContaining("This action cannot be undone")
+      );
+
+      selector = "input#edit-submit";
+      await page.evaluate(
+        (selector) => document.querySelector(selector).click(),
+        selector
+      );
+      await page.waitForNavigation();
+
+      // Verify deletion message
+      text_content = await page.evaluate(
+        () => document.querySelector("div.messages--status").textContent
+      );
+      expect(text_content).toEqual(expect.stringContaining("has been deleted"));
     } catch (e) {
       // Capture the screenshot when test fails and re-throw the exception
       await page.screenshot({
@@ -995,17 +1176,50 @@ describe("Full regression test suite for Admin", () => {
       await page.goto(`${HOME_PAGE}/admin/content?title=&body_content=&moderation_state=All&status=All&is_locked=All&revision_uid=&uid=&has_reviewer=All&group_op=contains&group=full+regression+test`);
       await page.waitForSelector('#view-title-table-column');
 
-      let tableIsEmpty = await page.evaluate( () => {
-        if(document.querySelector('td.views-empty') == null) return false;
-        if(document.querySelector('td.views-empty').textContent.indexOf('No content available') >= 0) return true;
+      let tableIsEmpty = await page.evaluate(() => {
+        if (document.querySelector('td.views-empty') == null) return false;
+        if (document.querySelector('td.views-empty').textContent.indexOf('No content available') >= 0) return true;
         return false;
       });
 
-      if( ! tableIsEmpty ) {
+      if (!tableIsEmpty) {
         await page.evaluate(() => {
           document.querySelector('input[title="Select all rows in this table"]').click();
         });
         await page.select('#edit-action', '16');
+        // Apply to selected items
+        await page.evaluate(() => {
+          document.querySelector('#edit-submit--2').click();
+        });
+        await page.waitForNavigation();
+        // Execute action button
+        await page.evaluate(() => {
+          document.querySelector('#edit-submit').click();
+        });
+        // Wait for and verify the batch processing result
+        await page.waitForSelector('div.messages__content', { timeout: 60000 })
+        text_content = await page.evaluate(
+          () => document.querySelector('div.messages__content').textContent
+        );
+        expect(text_content).toEqual(expect.stringContaining("Action processing results: Delete"));
+      }
+
+
+      // Must delete all content nodes before deleting the group
+      await page.goto(`${HOME_PAGE}/admin/content/media?keyword=&type=All&status=All&langcode=All&label=full+regression+test&field_efiles_link_uri=All`);
+      await page.waitForSelector('#view-name-table-column');
+
+      tableIsEmpty = await page.evaluate(() => {
+        if (document.querySelector('td.views-empty') == null) return false;
+        if (document.querySelector('td.views-empty').textContent.indexOf('No content available') >= 0) return true;
+        return false;
+      });
+
+      if (!tableIsEmpty) {
+        await page.evaluate(() => {
+          document.querySelector('input[title="Select all rows in this table"]').click();
+        });
+        await page.select('#edit-action', '7');
         // Apply to selected items
         await page.evaluate(() => {
           document.querySelector('#edit-submit--2').click();

@@ -1,4 +1,5 @@
 const { promisify } = require('util');
+const path = require ('path');
 
 exports.masqueradeAs = async function(email, page, HOME_PAGE) {
   var encodedEmail = encodeURI(email);
