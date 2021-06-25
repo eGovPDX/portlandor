@@ -103,7 +103,7 @@ exports.ContentTester = {
     await this.page.goto(deleteContentUrl);
 
     let deleteFormId = `#${this.entityType}-${this.contentType.replace("_", "-")}-delete-form`;
-    console.log(deleteFormId);
+    // console.log(deleteFormId);
     text_content = await this.page.evaluate((deleteFormId) => {
         return document.querySelector(deleteFormId).textContent
       },
