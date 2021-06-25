@@ -121,7 +121,7 @@ describe("Full regression test suite for Admin", () => {
   // Assigned to Ronnie
   // TODO: add tests for site wide content like Alerts, Code, Charter, Policy, Location, etc
   // Admin create site wide content
-  it.only("Admin can create alert", async () => {
+  it("Admin can create alert", async () => {
     try {
       var alertTester = Object.create(ContentTester);
       alertTester.init({
