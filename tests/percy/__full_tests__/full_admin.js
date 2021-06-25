@@ -120,9 +120,24 @@ describe("Full regression test suite for Admin", () => {
   // Admin create site wide content
   it("Admin can create alert", async () => {
     try {
-      let text_content = "",
-        selector = "";
+      var alertTester = Object.create(ContentTester);
+      alertTester.init({
+        entityType: "node", 
+        contentType: "alert", 
+        page: page, 
+        fieldLabelArray: [],
+        homepageUrl: HOME_PAGE,
+        testGroupPath: TEST_GROUP_PATH
+      });
 
+      // Override the function that inputs test values into form
+      alertTester.gotoContentCreatePage = async function () {
+        // Add content
+        await this.page.goto(
+          `${this.homepageUrl}/node/add/${this.contentType}`,
+          { waitUntil: "networkidle2" }
+        );
+      }
     } catch (e) {
       // Capture the screenshot when test fails and re-throw the exception
       await page.screenshot({
@@ -553,7 +568,6 @@ describe("Full regression test suite for Admin", () => {
   });
 
   // Ally creates document in the group
-  // Assigned to Kevin
   // TODO: include both file upload and eFiles link
   it("Ally can create document", async () => {
     try {
@@ -600,11 +614,38 @@ describe("Full regression test suite for Admin", () => {
   });
 
   // Ally creates image in the group
-  // Assigned to Kevin
   it("Ally can create image", async () => {
     try {
-      let text_content = "",
-        selector = "";
+      var imageTester = Object.create(ContentTester);
+      imageTester.init({
+        entityType: "media", 
+        contentType: "image", 
+        page: page, 
+        fieldLabelArray: [
+          "Name", "Caption"
+        ],
+        homepageUrl: HOME_PAGE,
+        testGroupPath: TEST_GROUP_PATH
+      });
+      // Override the function that inputs test values into form
+      imageTester.inputFieldValues = async function () {
+        await this.page.type("#edit-name-0-value", "Full regression test image");
+        // Upload a file
+        const fileElement = await this.page.$('div.form-managed-file__main input[type="file"]');
+        const filePath = path.relative(process.cwd(), __dirname + "/assets/upload_test.jpg");
+        await fileElement.uploadFile(filePath);
+        // await this.page.waitForSelector('div.form-managed-file__main span.file');
+        await this.page.waitForSelector('div.form-item--image-0-alt input[type="text"]');
+        await this.page.type('div.form-item--image-0-alt input[type="text"]', "Alternative text for the test image")
+
+        await this.page.type(
+          "#edit-field-caption-0-value",
+          "Caption for the test image"
+        );
+  
+        await this.page.select('#edit-moderation-state-0-state', 'published');
+      };
+      await imageTester.runTest();
     } catch (e) {
       // Capture the screenshot when test fails and re-throw the exception
       await page.screenshot({
