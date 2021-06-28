@@ -22,10 +22,10 @@ var BROWSER_OPTION = {
   // 1. Uncomment these two settings below
   // 2. In CLI, go into folder "tests/percy"
   // 3. Run "lando drush uli > superAdmin_uli.log && npm run jest-full"
-  executablePath:
-    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
-  headless: false,
-  slowMo: 100,
+  // executablePath:
+  //   "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+  // headless: false,
+  // slowMo: 100,
 };
 
 describe("Full regression test suite for Admin", () => {
@@ -772,13 +772,240 @@ describe("Full regression test suite for Admin", () => {
   });
 
   // Ally creates map in the group
-  // Assigned to Brit
   // TODO: shape files, embed map, etc
   //
   it("Ally can create map", async () => {
     try {
       let text_content = "",
         selector = "";
+      // Map - embedded
+      // Add map content
+      await page.goto(`${HOME_PAGE}/${TEST_GROUP_PATH}`);
+      text_content = await page.evaluate(
+        () => document.querySelector("ul.primary").textContent
+      );
+      expect(text_content).toEqual(expect.stringContaining("+ Add Content"));
+      expect(text_content).toEqual(expect.stringContaining("+ Add Media"));
+      await page.goto(`${HOME_PAGE}/${TEST_GROUP_PATH}/media/create`);
+      text_content = await page.evaluate(
+        () => document.querySelector("div.region-content dl").textContent
+      );
+      expect(text_content).toEqual(expect.stringContaining("Add Map"));
+      await page.goto(
+        `${HOME_PAGE}/${TEST_GROUP_PATH}/content/create/group_media%3Amap`,
+        { waitUntil: "networkidle2" }
+      );
+      // Verify add Map form elements exist
+      text_content = await page.evaluate(
+        () => document.querySelector("#media-map-add-form").textContent
+      );
+      expect(text_content).toEqual(expect.stringContaining("Name"));
+      expect(text_content).toEqual(expect.stringContaining("Summary"));
+      expect(text_content).toEqual(expect.stringContaining("Map type"));
+      expect(text_content).toEqual(
+        expect.stringContaining("Map URL or embed code")
+      );
+      expect(text_content).toEqual(expect.stringContaining("Preview image"));
+      expect(text_content).toEqual(expect.stringContaining("Legacy path"));
+      expect(text_content).toEqual(expect.stringContaining("Displayed in"));
+      // Fill out form
+      await page.type(
+        "#edit-name-0-value",
+        "Full regression test map (embedded)"
+      );
+      await page.type(
+        "#edit-field-summary-0-value",
+        "Summary for the test map"
+      );
+      selector = "#edit-field-map-type-embedded";
+      await page.evaluate(
+        (selector) => document.querySelector(selector).click(),
+        selector
+      );
+      const map_embed_code =
+        '<iframe a src="//pdx.maps.arcgis.com/apps/Embed/index.html?webmap=6f91f2b1ce2a47b2afa6c2a8b1ec4113&search=true"></iframe>';
+      await page.type("#edit-field-map-embed-0-value", map_embed_code);
+      let fileElement = await page.$(
+        'div.form-managed-file--image input[type="file"]'
+      );
+      let filePath = path.relative(
+        process.cwd(),
+        __dirname + "/assets/map_thumbnail.png"
+      );
+      await fileElement.uploadFile(filePath);
+      await page.waitForSelector("span.file--image");
+      await page.type(
+        "#edit-revision-log-message-0-value",
+        "Full regression test revision message"
+      );
+      await page.select("#edit-moderation-state-0-state", "published");
+      // Click submit button and wait for page load
+      selector = "input#edit-submit";
+      await page.evaluate(
+        (selector) => document.querySelector(selector).click(),
+        selector
+      );
+      await page.waitForNavigation();
+      text_content = await page.evaluate(
+        () => document.querySelector(".messages--status").textContent
+      );
+      expect(text_content).toEqual(expect.stringContaining("has been created"));
+
+      // Map - printable
+      // Add map content
+      await page.goto(`${HOME_PAGE}/${TEST_GROUP_PATH}`);
+      text_content = await page.evaluate(
+        () => document.querySelector("ul.primary").textContent
+      );
+      expect(text_content).toEqual(expect.stringContaining("+ Add Content"));
+      expect(text_content).toEqual(expect.stringContaining("+ Add Media"));
+      await page.goto(`${HOME_PAGE}/${TEST_GROUP_PATH}/media/create`);
+      text_content = await page.evaluate(
+        () => document.querySelector("div.region-content dl").textContent
+      );
+      expect(text_content).toEqual(expect.stringContaining("Add Map"));
+      await page.goto(
+        `${HOME_PAGE}/${TEST_GROUP_PATH}/content/create/group_media%3Amap`,
+        { waitUntil: "networkidle2" }
+      );
+      // Verify add Map form elements exist
+      text_content = await page.evaluate(
+        () => document.querySelector("#media-map-add-form").textContent
+      );
+      expect(text_content).toEqual(expect.stringContaining("Name"));
+      expect(text_content).toEqual(expect.stringContaining("Summary"));
+      expect(text_content).toEqual(expect.stringContaining("Map type"));
+      expect(text_content).toEqual(
+        expect.stringContaining("Map URL or embed code")
+      );
+      expect(text_content).toEqual(expect.stringContaining("Preview image"));
+      expect(text_content).toEqual(expect.stringContaining("Legacy path"));
+      expect(text_content).toEqual(expect.stringContaining("Displayed in"));
+      // Fill out form
+      await page.type(
+        "#edit-name-0-value",
+        "Full regression test map (printable)"
+      );
+      await page.type(
+        "#edit-field-summary-0-value",
+        "Summary for the test map"
+      );
+      selector = "#edit-field-map-type-print";
+      await page.evaluate(
+        (selector) => document.querySelector(selector).click(),
+        selector
+      );
+      fileElement = await page.$(
+        'div#edit-field-map-file-0 input[type="file"]'
+      );
+      filePath = path.relative(process.cwd(), __dirname + "/assets/map.pdf");
+      await fileElement.uploadFile(filePath);
+      await page.waitForSelector("span.file--application-pdf");
+      let filePreviewElement = await page.$(
+        'div.form-managed-file--image input[type="file"]'
+      );
+      let filePreviewPath = path.relative(
+        process.cwd(),
+        __dirname + "/assets/map_thumbnail.png"
+      );
+      await filePreviewElement.uploadFile(filePreviewPath);
+      await page.waitForSelector("span.file--image");
+      await page.type(
+        "#edit-revision-log-message-0-value",
+        "Full regression test revision message"
+      );
+      await page.select("#edit-moderation-state-0-state", "published");
+      // Click submit button and wait for page load
+      selector = "input#edit-submit";
+      await page.evaluate(
+        (selector) => document.querySelector(selector).click(),
+        selector
+      );
+      await page.waitForNavigation();
+      text_content = await page.evaluate(
+        () => document.querySelector(".messages--status").textContent
+      );
+      expect(text_content).toEqual(expect.stringContaining("has been created"));
+
+      // Map - geojson
+      // Add map content
+      await page.goto(`${HOME_PAGE}/${TEST_GROUP_PATH}`);
+      text_content = await page.evaluate(
+        () => document.querySelector("ul.primary").textContent
+      );
+      expect(text_content).toEqual(expect.stringContaining("+ Add Content"));
+      expect(text_content).toEqual(expect.stringContaining("+ Add Media"));
+      await page.goto(`${HOME_PAGE}/${TEST_GROUP_PATH}/media/create`);
+      text_content = await page.evaluate(
+        () => document.querySelector("div.region-content dl").textContent
+      );
+      expect(text_content).toEqual(expect.stringContaining("Add Map"));
+      await page.goto(
+        `${HOME_PAGE}/${TEST_GROUP_PATH}/content/create/group_media%3Amap`,
+        { waitUntil: "networkidle2" }
+      );
+      // Verify add map form elements exist
+      text_content = await page.evaluate(
+        () => document.querySelector("#media-map-add-form").textContent
+      );
+      expect(text_content).toEqual(expect.stringContaining("Name"));
+      expect(text_content).toEqual(expect.stringContaining("Summary"));
+      expect(text_content).toEqual(expect.stringContaining("Map type"));
+      expect(text_content).toEqual(
+        expect.stringContaining("Map URL or embed code")
+      );
+      expect(text_content).toEqual(expect.stringContaining("Preview image"));
+      expect(text_content).toEqual(expect.stringContaining("Legacy path"));
+      expect(text_content).toEqual(expect.stringContaining("Displayed in"));
+      // Fill out form
+      await page.type(
+        "#edit-name-0-value",
+        "Full regression test map (geofile)"
+      );
+      await page.type(
+        "#edit-field-summary-0-value",
+        "Summary for the test map"
+      );
+      selector = "#edit-field-map-type-geo";
+      await page.evaluate(
+        (selector) => document.querySelector(selector).click(),
+        selector
+      );
+      fileElement = await page.$(
+        'div#edit-field-geo-file-0 input[type="file"]'
+      );
+      filePath = path.relative(
+        process.cwd(),
+        __dirname + "/assets/map.geojson"
+      );
+      await fileElement.uploadFile(filePath);
+      await page.waitForSelector("span.file--general");
+      // Preview
+      filePreviewElement = await page.$(
+        'div.form-managed-file--image input[type="file"]'
+      );
+      filePreviewPath = path.relative(
+        process.cwd(),
+        __dirname + "/assets/map_thumbnail.png"
+      );
+      await filePreviewElement.uploadFile(filePreviewPath);
+      await page.waitForSelector("span.file--image");
+      await page.type(
+        "#edit-revision-log-message-0-value",
+        "Full regression test revision message"
+      );
+      await page.select("#edit-moderation-state-0-state", "published");
+      // Click submit button and wait for page load
+      selector = "input#edit-submit";
+      await page.evaluate(
+        (selector) => document.querySelector(selector).click(),
+        selector
+      );
+      await page.waitForNavigation();
+      text_content = await page.evaluate(
+        () => document.querySelector(".messages--status").textContent
+      );
+      expect(text_content).toEqual(expect.stringContaining("has been created"));
     } catch (e) {
       // Capture the screenshot when test fails and re-throw the exception
       await page.screenshot({
@@ -791,12 +1018,90 @@ describe("Full regression test suite for Admin", () => {
   });
 
   // Ally creates video in the group
-  // Assigned to Brit
-  // TODO: may need to upload the preview image
   it("Ally can create video", async () => {
     try {
       let text_content = "",
         selector = "";
+
+      // Add video content
+      await page.goto(`${HOME_PAGE}/${TEST_GROUP_PATH}`);
+      text_content = await page.evaluate(
+        () => document.querySelector("ul.primary").textContent
+      );
+      expect(text_content).toEqual(expect.stringContaining("+ Add Content"));
+      expect(text_content).toEqual(expect.stringContaining("+ Add Media"));
+      await page.goto(`${HOME_PAGE}/${TEST_GROUP_PATH}/media/create`);
+      text_content = await page.evaluate(
+        () => document.querySelector("div.region-content dl").textContent
+      );
+      expect(text_content).toEqual(expect.stringContaining("Add Video"));
+      await page.goto(
+        `${HOME_PAGE}/${TEST_GROUP_PATH}/content/create/group_media%3Avideo`,
+        { waitUntil: "networkidle2" }
+      );
+      // Verify add video form elements exist
+      text_content = await page.evaluate(
+        () => document.querySelector("#media-video-add-form").textContent
+      );
+      expect(text_content).toEqual(expect.stringContaining("Name"));
+      expect(text_content).toEqual(expect.stringContaining("Video URL"));
+      expect(text_content).toEqual(expect.stringContaining("Caption"));
+      expect(text_content).toEqual(expect.stringContaining("Transcript"));
+      expect(text_content).toEqual(expect.stringContaining("Attribution"));
+      expect(text_content).toEqual(expect.stringContaining("Displayed in"));
+      expect(text_content).toEqual(expect.stringContaining("Legacy path"));
+      await page.type("#edit-name-0-value", "Full regression test video");
+      const video_url =
+        "https://www.youtube.com/watch?v=V3xeJL4SuSM&list=PL4m94lCOY10kcH-ufAjNIh1ntElCElA4_&index=1";
+      await page.type("#edit-field-media-video-embed-field-0-value", video_url);
+      // TODO Distinguish multiple editor selectors
+      await page.evaluate(() => {
+        document
+          .querySelector('iframe[title="Rich Text Editor, Caption field"]')
+          .contentDocument.querySelector("body p").textContent =
+          "Caption content for the test video";
+      });
+      await page.evaluate(() => {
+        document
+          .querySelector('iframe[title="Rich Text Editor, Transcript field"]')
+          .contentDocument.querySelector("body p").textContent =
+          "Transcript content for the test video";
+      });
+      await page.waitForTimeout(1000);
+      selector = "details#edit-group-attribution";
+      await page.evaluate(
+        (selector) => document.querySelector(selector).click(),
+        selector
+      );
+      await page.type(
+        "details#edit-group-attribution #edit-field-title-0-value",
+        "Some title"
+      );
+      await page.type(
+        "details#edit-group-attribution #edit-field-creator-0-value",
+        "Some creator"
+      );
+      await page.type(
+        "details#edit-group-attribution #edit-field-source-0-value",
+        "Some source"
+      );
+      await page.select("#edit-field-license", "57");
+      await page.type(
+        "#edit-revision-log-message-0-value",
+        "Full regression test revision message"
+      );
+      await page.select("#edit-moderation-state-0-state", "published");
+      // Click submit button and wait for page load
+      selector = "input#edit-submit";
+      await page.evaluate(
+        (selector) => document.querySelector(selector).click(),
+        selector
+      );
+      await page.waitForNavigation();
+      text_content = await page.evaluate(
+        () => document.querySelector(".messages--status").textContent
+      );
+      expect(text_content).toEqual(expect.stringContaining("has been created"));
     } catch (e) {
       // Capture the screenshot when test fails and re-throw the exception
       await page.screenshot({
