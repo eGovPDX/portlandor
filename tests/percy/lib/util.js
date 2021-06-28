@@ -25,11 +25,7 @@ exports.ContentTester = {
     this.testGroupPath = testSettings.testGroupPath // URL path to the group created for testing
   },
   runTest: async function () {
-    // Add content
-    await this.page.goto(
-      `${this.homepageUrl}/${this.testGroupPath}/content/create/group_${this.entityType}:${this.contentType}`,
-      { waitUntil: "networkidle2" }
-    );
+    await this.gotoContentCreatePage();
     // Verify the add content form field titles
     await this.verifyFieldLabels();
     await this.inputFieldValues();
@@ -40,6 +36,13 @@ exports.ContentTester = {
     if(contentUrl.indexOf(this.homepageUrl) != 0) contentUrl = this.homepageUrl + contentUrl;
     await this.deleteContent(`${contentUrl}/delete`);
     await this.submitForm();
+  },
+  gotoContentCreatePage: async function() {
+    // Add content
+    await this.page.goto(
+      `${this.homepageUrl}/${this.testGroupPath}/content/create/group_${this.entityType}:${this.contentType}`,
+      { waitUntil: "networkidle2" }
+    );
   },
   verifyFieldLabels: async function () {
     let text_content = "", selector = "";
