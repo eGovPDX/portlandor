@@ -1,22 +1,22 @@
-const puppeteer = require("puppeteer");
-var fs = require("fs");
-const util = require("../lib/util");
-const path = require("path");
+const puppeteer = require('puppeteer');
+var fs = require('fs');
+const util = require('../lib/util');
+const path = require('path');
 
 const ContentTester = util.ContentTester;
 const SITE_NAME = process.env.SITE_NAME;
 const HOME_PAGE = process.env.CIRCLECI
   ? `https://${SITE_NAME}-portlandor.pantheonsite.io`
-  : "https://portlandor.lndo.site";
+  : 'https://portlandor.lndo.site';
 const ARTIFACTS_FOLDER = process.env.CIRCLECI
   ? `/home/circleci/artifacts/`
   : `./`;
-const TEST_GROUP_PATH = "full-regression-test-group";
-const TEST_GROUP_NAME = "Full Regression Test Group";
+const TEST_GROUP_PATH = 'full-regression-test-group';
+const TEST_GROUP_NAME = 'Full Regression Test Group';
 
 var BROWSER_OPTION = {
   ignoreHTTPSErrors: true,
-  args: ["--no-sandbox"],
+  args: ['--no-sandbox'],
   defaultViewport: null,
   // To watch tests locally on MacOS:
   // 1. Uncomment these two settings below
@@ -28,7 +28,7 @@ var BROWSER_OPTION = {
   // slowMo: 100,
 };
 
-describe("Full regression test suite for Admin", () => {
+describe('Full regression test suite for Admin', () => {
   var browser, page, login_url, link;
   beforeAll(async () => {
     browser = await puppeteer.launch(BROWSER_OPTION);
@@ -40,10 +40,10 @@ describe("Full regression test suite for Admin", () => {
       login_url = process.env.SUPERADMIN_LOGIN;
       await page.goto(login_url);
     } else {
-      var drush_uli_result = fs.readFileSync("superAdmin_uli.log").toString();
+      var drush_uli_result = fs.readFileSync('superAdmin_uli.log').toString();
       login_url = drush_uli_result.replace(
-        "http://default",
-        "https://portlandor.lndo.site"
+        'http://default',
+        'https://portlandor.lndo.site'
       );
       // Log in once for all tests to save time
       await page.goto(login_url);
@@ -54,18 +54,18 @@ describe("Full regression test suite for Admin", () => {
     await browser.close();
   });
 
-  it("Admin can create a group and add Ally as admin", async () => {
+  it('Admin can create a group and add Ally as admin', async () => {
     try {
-      let text_content = "",
-        selector = "";
+      let text_content = '',
+        selector = '';
 
       // If a previous test failed without deleting the test group, delete it first
       await page.goto(`${HOME_PAGE}/${TEST_GROUP_PATH}/delete`);
       text_content = await page.evaluate(
-        () => document.querySelector(".page-title").textContent
+        () => document.querySelector('.page-title').textContent
       );
       if (text_content.indexOf(TEST_GROUP_NAME) > 0) {
-        selector = "input#edit-submit";
+        selector = 'input#edit-submit';
         await page.focus(selector);
         await page.evaluate(
           (selector) => document.querySelector(selector).click(),
@@ -77,26 +77,26 @@ describe("Full regression test suite for Admin", () => {
       // Create a new group
       await page.goto(`${HOME_PAGE}/group/add/bureau_office`);
       text_content = await page.evaluate(
-        () => document.querySelector(".page-title").textContent
+        () => document.querySelector('.page-title').textContent
       );
       expect(text_content).toEqual(
-        expect.stringContaining("Add Bureau/office")
+        expect.stringContaining('Add Bureau/office')
       );
-      await page.type("#edit-label-0-value", TEST_GROUP_NAME);
+      await page.type('#edit-label-0-value', TEST_GROUP_NAME);
       await page.type(
-        "#edit-field-official-organization-name-0-value",
+        '#edit-field-official-organization-name-0-value',
         `Official name of ${TEST_GROUP_NAME}`
       );
-      await page.select("#edit-field-migration-status", "Complete");
+      await page.select('#edit-field-migration-status', 'Complete');
       await page.type(
-        "#edit-field-summary-0-value",
+        '#edit-field-summary-0-value',
         `This is a test summary for the ${TEST_GROUP_PATH}`
       );
       // Must expand the admin fields group in order to input Group Path
-      await page.click("details#edit-group-administrative-fields");
-      await page.type("#edit-field-group-path-0-value", TEST_GROUP_PATH);
+      await page.click('details#edit-group-administrative-fields');
+      await page.type('#edit-field-group-path-0-value', TEST_GROUP_PATH);
 
-      selector = "#edit-submit";
+      selector = '#edit-submit';
       await page.evaluate(
         (selector) => document.querySelector(selector).click(),
         selector
@@ -104,14 +104,14 @@ describe("Full regression test suite for Admin", () => {
       await page.waitForNavigation();
 
       text_content = await page.evaluate(
-        () => document.querySelector("h1.page-title").textContent
+        () => document.querySelector('h1.page-title').textContent
       );
       expect(text_content).toEqual(expect.stringContaining(TEST_GROUP_NAME));
     } catch (e) {
       // Capture the screenshot when test fails and re-throw the exception
       await page.screenshot({
         path: `${ARTIFACTS_FOLDER}create-new-group-error.jpg`,
-        type: "jpeg",
+        type: 'jpeg',
         fullPage: true,
       });
       throw e;
@@ -121,14 +121,14 @@ describe("Full regression test suite for Admin", () => {
   // Assigned to Ronnie
   // TODO: add tests for site wide content like Alerts, Code, Charter, Policy, Location, etc
   // Admin create site wide content
-  it("Admin can create alert", async () => {
+  it('Admin can create alert', async () => {
     try {
       var alertTester = Object.create(ContentTester);
       alertTester.init({
-        entityType: "node",
-        contentType: "alert",
+        entityType: 'node',
+        contentType: 'alert',
         page: page,
-        fieldLabelArray: ["Title", "Severity", "Alert text"],
+        fieldLabelArray: ['Title', 'Severity', 'Alert text'],
         homepageUrl: HOME_PAGE,
         testGroupPath: TEST_GROUP_PATH,
       });
@@ -138,7 +138,7 @@ describe("Full regression test suite for Admin", () => {
         //Add content
         await this.page.goto(
           `${this.homepageUrl}/node/add/${this.contentType}`,
-          { waitUntil: "networkidle2" }
+          { waitUntil: 'networkidle2' }
         );
         // alertTester.inputFieldValues = async function () {
         //   // Title
@@ -168,7 +168,7 @@ describe("Full regression test suite for Admin", () => {
       // Capture the screenshot when test fails and re-throw the exception
       await page.screenshot({
         path: `${ARTIFACTS_FOLDER}ally-add-page-error.jpg`,
-        type: "jpeg",
+        type: 'jpeg',
         fullPage: true,
       });
 
@@ -177,29 +177,29 @@ describe("Full regression test suite for Admin", () => {
   });
 
   // Masquerade as Ally
-  it("Add Ally to the new group and masquerade as Ally", async () => {
+  it('Add Ally to the new group and masquerade as Ally', async () => {
     try {
-      let text_content = "",
-        selector = "";
+      let text_content = '',
+        selector = '';
 
       // Add Ally to the new group as the group admin
       await page.goto(
         `${HOME_PAGE}/${TEST_GROUP_PATH}/content/add/group_membership?destination=/${TEST_GROUP_PATH}/members`
       );
       text_content = await page.evaluate(
-        () => document.querySelector(".page-title").textContent
+        () => document.querySelector('.page-title').textContent
       );
       expect(text_content).toEqual(
-        expect.stringContaining("Add Bureau/office: Group membership")
+        expect.stringContaining('Add Bureau/office: Group membership')
       );
-      await page.type("#edit-entity-id-0-target-id", "Ally Admin (62)");
-      selector = "#edit-group-roles-bureau-office-admin";
+      await page.type('#edit-entity-id-0-target-id', 'Ally Admin (62)');
+      selector = '#edit-group-roles-bureau-office-admin';
       await page.evaluate(
         (selector) => document.querySelector(selector).click(),
         selector
       );
       // Submit form
-      await page.keyboard.press("Enter");
+      await page.keyboard.press('Enter');
 
       await page.waitForNavigation();
       text_content = await page.evaluate(
@@ -208,19 +208,19 @@ describe("Full regression test suite for Admin", () => {
             .textContent
       );
 
-      expect(text_content).toEqual(expect.stringContaining("Ally Admin"));
+      expect(text_content).toEqual(expect.stringContaining('Ally Admin'));
 
       // Masquerade as Ally to create content
-      await util.masqueradeAs("ally.admin@portlandoregon.gov", page, HOME_PAGE);
+      await util.masqueradeAs('ally.admin@portlandoregon.gov', page, HOME_PAGE);
       text_content = await page.evaluate(
-        () => document.querySelector("#toolbar-item-user").textContent
+        () => document.querySelector('#toolbar-item-user').textContent
       );
-      expect(text_content).toEqual(expect.stringMatching("Ally Admin"));
+      expect(text_content).toEqual(expect.stringMatching('Ally Admin'));
     } catch (e) {
       // Capture the screenshot when test fails and re-throw the exception
       await page.screenshot({
         path: `${ARTIFACTS_FOLDER}add-ally-to-new-group-error.jpg`,
-        type: "jpeg",
+        type: 'jpeg',
         fullPage: true,
       });
       throw e;
@@ -228,19 +228,19 @@ describe("Full regression test suite for Admin", () => {
   });
 
   // Masquerade as Ally
-  it("Ally can create Page", async () => {
+  it('Ally can create Page', async () => {
     try {
       var pageTester = Object.create(ContentTester);
       pageTester.init({
-        entityType: "node",
-        contentType: "page",
+        entityType: 'node',
+        contentType: 'page',
         page: page,
         fieldLabelArray: [
-          "Title",
-          "Page type",
-          "Summary",
-          "Body content",
-          "Legacy path",
+          'Title',
+          'Page type',
+          'Summary',
+          'Body content',
+          'Legacy path',
         ],
         homepageUrl: HOME_PAGE,
         testGroupPath: TEST_GROUP_PATH,
@@ -249,24 +249,24 @@ describe("Full regression test suite for Admin", () => {
       pageTester.inputFieldValues = async function () {
         // Title
         await this.page.type(
-          "#edit-title-0-value",
-          "Full regression test page"
+          '#edit-title-0-value',
+          'Full regression test page'
         );
         // Short title
         await this.page.type(
-          "#edit-field-menu-link-text-0-value",
-          "Full regression test page"
+          '#edit-field-menu-link-text-0-value',
+          'Full regression test page'
         );
 
         await this.page.type(
-          "#edit-field-summary-0-value",
-          "Summary for the test page"
+          '#edit-field-summary-0-value',
+          'Summary for the test page'
         );
         await this.page.type(
-          "#edit-revision-log-0-value",
-          "Full regression test revision message"
+          '#edit-revision-log-0-value',
+          'Full regression test revision message'
         );
-        await this.page.select("#edit-moderation-state-0-state", "published");
+        await this.page.select('#edit-moderation-state-0-state', 'published');
       };
 
       await pageTester.runTest();
@@ -274,7 +274,7 @@ describe("Full regression test suite for Admin", () => {
       // Capture the screenshot when test fails and re-throw the exception
       await page.screenshot({
         path: `${ARTIFACTS_FOLDER}ally-add-page-error.jpg`,
-        type: "jpeg",
+        type: 'jpeg',
         fullPage: true,
       });
 
@@ -283,14 +283,14 @@ describe("Full regression test suite for Admin", () => {
   });
 
   // Ally creates a service in the group
-  it("Ally can create service", async () => {
+  it('Ally can create service', async () => {
     try {
       var cityServiceTester = Object.create(ContentTester);
       cityServiceTester.init({
-        entityType: "node",
-        contentType: "city_service",
+        entityType: 'node',
+        contentType: 'city_service',
         page: page,
-        fieldLabelArray: ["Title", "Short Title", "Summary", "Body content"],
+        fieldLabelArray: ['Title', 'Short Title', 'Summary', 'Body content'],
         homepageUrl: HOME_PAGE,
         testGroupPath: TEST_GROUP_PATH,
       });
@@ -300,42 +300,42 @@ describe("Full regression test suite for Admin", () => {
         let text_content, selector;
         // Title
         await this.page.type(
-          "#edit-title-0-value",
-          "Full regression test city service"
+          '#edit-title-0-value',
+          'Full regression test city service'
         );
         // Short title
         await this.page.type(
-          "#edit-field-menu-link-text-0-value",
-          "Full regression test city Service"
+          '#edit-field-menu-link-text-0-value',
+          'Full regression test city Service'
         );
 
         // Click on "Actions"
         //TODO: Need a more robust way to work with Select2 options
-        selector = "ul.select2-selection__rendered";
+        selector = 'ul.select2-selection__rendered';
         await this.page.evaluate(
           (selector) => document.querySelector(selector).click(),
           selector
         );
         // Select the first option "Apply"
-        await this.page.keyboard.press("Enter");
+        await this.page.keyboard.press('Enter');
 
         await this.page.type(
-          "#edit-field-summary-0-value",
-          "Summary for the test service"
+          '#edit-field-summary-0-value',
+          'Summary for the test service'
         );
 
         // Update the CKEditor content
         await this.page.evaluate(() => {
           document
-            .querySelector("iframe.cke_wysiwyg_frame")
-            .contentDocument.querySelector("body p").textContent =
-            "Body content for the test city service";
+            .querySelector('iframe.cke_wysiwyg_frame')
+            .contentDocument.querySelector('body p').textContent =
+            'Body content for the test city service';
         });
         await this.page.type(
-          "#edit-revision-log-0-value",
-          "Full regression test revision message"
+          '#edit-revision-log-0-value',
+          'Full regression test revision message'
         );
-        await this.page.select("#edit-moderation-state-0-state", "published");
+        await this.page.select('#edit-moderation-state-0-state', 'published');
       };
 
       await cityServiceTester.runTest();
@@ -343,7 +343,7 @@ describe("Full regression test suite for Admin", () => {
       // Capture the screenshot when test fails and re-throw the exception
       await page.screenshot({
         path: `${ARTIFACTS_FOLDER}ally-add-service-error.jpg`,
-        type: "jpeg",
+        type: 'jpeg',
         fullPage: true,
       });
 
@@ -352,18 +352,18 @@ describe("Full regression test suite for Admin", () => {
   });
 
   // Ally create a construction project in the group
-  it("Ally can create construction", async () => {
+  it('Ally can create construction', async () => {
     try {
       var constructionTester = Object.create(ContentTester);
       constructionTester.init({
-        entityType: "node",
-        contentType: "construction_project",
+        entityType: 'node',
+        contentType: 'construction_project',
         page: page,
         fieldLabelArray: [
-          "Title",
-          "Construction type",
-          "Summary",
-          "Body content",
+          'Title',
+          'Construction type',
+          'Summary',
+          'Body content',
         ],
         homepageUrl: HOME_PAGE,
         testGroupPath: TEST_GROUP_PATH,
@@ -371,37 +371,37 @@ describe("Full regression test suite for Admin", () => {
       // Override the function that inputs test values into form
       constructionTester.inputFieldValues = async function () {
         await this.page.type(
-          "#edit-title-0-value",
-          "Full regression test construction project"
+          '#edit-title-0-value',
+          'Full regression test construction project'
         );
         // Select "Water" as type
-        await this.page.select("#edit-field-construction-type", "342");
+        await this.page.select('#edit-field-construction-type', '342');
         // Select "Active" as status
-        await this.page.select("#edit-field-project-status", "52");
+        await this.page.select('#edit-field-project-status', '52');
 
         await this.page.type(
-          "input#edit-field-start-date-0-value-date",
-          "06042021"
+          'input#edit-field-start-date-0-value-date',
+          '06042021'
         );
 
         await this.page.type(
-          "#edit-field-summary-0-value",
-          "Summary for the test construction"
+          '#edit-field-summary-0-value',
+          'Summary for the test construction'
         );
 
         // Update the CKEditor content
         await this.page.evaluate(() => {
           document
-            .querySelector("iframe.cke_wysiwyg_frame")
-            .contentDocument.querySelector("body p").textContent =
-            "Body content for the test construction";
+            .querySelector('iframe.cke_wysiwyg_frame')
+            .contentDocument.querySelector('body p').textContent =
+            'Body content for the test construction';
         });
 
         await this.page.type(
-          "#edit-revision-log-0-value",
-          "Full regression test revision message"
+          '#edit-revision-log-0-value',
+          'Full regression test revision message'
         );
-        await this.page.select("#edit-moderation-state-0-state", "published");
+        await this.page.select('#edit-moderation-state-0-state', 'published');
       };
 
       await constructionTester.runTest();
@@ -409,7 +409,7 @@ describe("Full regression test suite for Admin", () => {
       // Capture the screenshot when test fails and re-throw the exception
       await page.screenshot({
         path: `${ARTIFACTS_FOLDER}ally-add-construction-error.jpg`,
-        type: "jpeg",
+        type: 'jpeg',
         fullPage: true,
       });
 
@@ -419,14 +419,14 @@ describe("Full regression test suite for Admin", () => {
   });
 
   // Ally creates contact in the group
-  it("Ally can create contact", async () => {
+  it('Ally can create contact', async () => {
     try {
       var contactTester = Object.create(ContentTester);
       contactTester.init({
-        entityType: "node",
-        contentType: "contact",
+        entityType: 'node',
+        contentType: 'contact',
         page: page,
-        fieldLabelArray: ["Contact Name", "Contact Title", "Contact Type"],
+        fieldLabelArray: ['Contact Name', 'Contact Title', 'Contact Type'],
         homepageUrl: HOME_PAGE,
         testGroupPath: TEST_GROUP_PATH,
       });
@@ -434,16 +434,16 @@ describe("Full regression test suite for Admin", () => {
       // Override the function that inputs test values into form
       contactTester.inputFieldValues = async function () {
         await this.page.type(
-          "#edit-title-0-value",
-          "Full regression test contact"
+          '#edit-title-0-value',
+          'Full regression test contact'
         );
         await this.page.type(
-          "#edit-field-contact-title-0-value",
-          "Full regression test contact title"
+          '#edit-field-contact-title-0-value',
+          'Full regression test contact title'
         );
         // "Chair"
-        await this.page.select("#edit-field-contact-type", "620");
-        await this.page.type("#cleave-telephone--2", "5035551212");
+        await this.page.select('#edit-field-contact-type', '620');
+        await this.page.type('#cleave-telephone--2', '5035551212');
       };
 
       await contactTester.runTest();
@@ -451,7 +451,7 @@ describe("Full regression test suite for Admin", () => {
       // Capture the screenshot when test fails and re-throw the exception
       await page.screenshot({
         path: `${ARTIFACTS_FOLDER}ally-add-contact-error.jpg`,
-        type: "jpeg",
+        type: 'jpeg',
         fullPage: true,
       });
 
@@ -460,14 +460,14 @@ describe("Full regression test suite for Admin", () => {
   });
 
   // Ally creates event in the group
-  it("Ally can create event", async () => {
+  it('Ally can create event', async () => {
     try {
       var eventTester = Object.create(ContentTester);
       eventTester.init({
-        entityType: "node",
-        contentType: "event",
+        entityType: 'node',
+        contentType: 'event',
         page: page,
-        fieldLabelArray: ["Title", "Event type", "Summary", "Body content"],
+        fieldLabelArray: ['Title', 'Event type', 'Summary', 'Body content'],
         homepageUrl: HOME_PAGE,
         testGroupPath: TEST_GROUP_PATH,
       });
@@ -475,32 +475,32 @@ describe("Full regression test suite for Admin", () => {
       // Override the function that inputs test values into form
       eventTester.inputFieldValues = async function () {
         await this.page.type(
-          "#edit-title-0-value",
-          "Full regression test event"
+          '#edit-title-0-value',
+          'Full regression test event'
         );
         // Select "Meeting" as type
-        await this.page.select("#edit-field-event-type", "332");
+        await this.page.select('#edit-field-event-type', '332');
         // Select "Rescheduled" as status
-        await this.page.select("#edit-field-event-status", "Rescheduled");
+        await this.page.select('#edit-field-event-status', 'Rescheduled');
         await this.page.type(
-          "#edit-field-summary-0-value",
-          "Summary for the test event"
+          '#edit-field-summary-0-value',
+          'Summary for the test event'
         );
 
-        await this.page.type("input#edit-field-start-time-0-value", "02:30pm");
-        await this.page.type("input#edit-field-end-time-0-value", "04:00pm");
+        await this.page.type('input#edit-field-start-time-0-value', '02:30pm');
+        await this.page.type('input#edit-field-end-time-0-value', '04:00pm');
 
         await this.page.evaluate(() => {
           document
-            .querySelector("iframe.cke_wysiwyg_frame")
-            .contentDocument.querySelector("body p").textContent =
-            "Body content for the test event";
+            .querySelector('iframe.cke_wysiwyg_frame')
+            .contentDocument.querySelector('body p').textContent =
+            'Body content for the test event';
         });
         await this.page.type(
-          "#edit-revision-log-0-value",
-          "Full regression test revision message"
+          '#edit-revision-log-0-value',
+          'Full regression test revision message'
         );
-        await this.page.select("#edit-moderation-state-0-state", "published");
+        await this.page.select('#edit-moderation-state-0-state', 'published');
       };
 
       await eventTester.runTest();
@@ -508,7 +508,7 @@ describe("Full regression test suite for Admin", () => {
       // Capture the screenshot when test fails and re-throw the exception
       await page.screenshot({
         path: `${ARTIFACTS_FOLDER}ally-add-event-error.jpg`,
-        type: "jpeg",
+        type: 'jpeg',
         fullPage: true,
       });
       console.log(page.url());
@@ -517,17 +517,17 @@ describe("Full regression test suite for Admin", () => {
   });
 
   // Ally creates resource in the group
-  it("Ally can create resource", async () => {
+  it('Ally can create resource', async () => {
     try {
-      let text_content = "",
-        selector = "";
+      let text_content = '',
+        selector = '';
 
       var resourceTester = Object.create(ContentTester);
       resourceTester.init({
-        entityType: "node",
-        contentType: "external_resource",
+        entityType: 'node',
+        contentType: 'external_resource',
         page: page,
-        fieldLabelArray: ["Title", "Resource Type", "Summary"],
+        fieldLabelArray: ['Title', 'Resource Type', 'Summary'],
         homepageUrl: HOME_PAGE,
         testGroupPath: TEST_GROUP_PATH,
       });
@@ -535,23 +535,23 @@ describe("Full regression test suite for Admin", () => {
       // Override the function that inputs test values into form
       resourceTester.inputFieldValues = async function () {
         await this.page.type(
-          "#edit-title-0-value",
-          "Full regression test resource"
+          '#edit-title-0-value',
+          'Full regression test resource'
         );
         await this.page.type(
-          "#edit-field-summary-0-value",
-          "Summary for the test resource"
+          '#edit-field-summary-0-value',
+          'Summary for the test resource'
         );
 
         await this.page.type(
-          "#edit-field-destination-url-0-uri",
-          "https://www.oregon.gov"
+          '#edit-field-destination-url-0-uri',
+          'https://www.oregon.gov'
         );
         await this.page.type(
-          "#edit-revision-log-0-value",
-          "Full regression test revision message"
+          '#edit-revision-log-0-value',
+          'Full regression test revision message'
         );
-        await this.page.select("#edit-moderation-state-0-state", "published");
+        await this.page.select('#edit-moderation-state-0-state', 'published');
       };
 
       await resourceTester.runTest();
@@ -559,7 +559,7 @@ describe("Full regression test suite for Admin", () => {
       // Capture the screenshot when test fails and re-throw the exception
       await page.screenshot({
         path: `${ARTIFACTS_FOLDER}ally-add-resource-error.jpg`,
-        type: "jpeg",
+        type: 'jpeg',
         fullPage: true,
       });
       throw e;
@@ -567,41 +567,41 @@ describe("Full regression test suite for Admin", () => {
   });
 
   // Ally creates news in the group
-  it("Ally can create news", async () => {
+  it('Ally can create news', async () => {
     try {
       var newsTester = Object.create(ContentTester);
       newsTester.init({
-        entityType: "node",
-        contentType: "news",
+        entityType: 'node',
+        contentType: 'news',
         page: page,
-        fieldLabelArray: ["Title", "News Type", "Summary", "Body content"],
+        fieldLabelArray: ['Title', 'News Type', 'Summary', 'Body content'],
         homepageUrl: HOME_PAGE,
         testGroupPath: TEST_GROUP_PATH,
       });
 
       // Override the function that inputs test values into form
       newsTester.inputFieldValues = async function () {
-        await this.page.waitForSelector("iframe");
+        await this.page.waitForSelector('iframe');
         await this.page.type(
-          "#edit-title-0-value",
-          "Full regression test news"
+          '#edit-title-0-value',
+          'Full regression test news'
         );
         await this.page.type(
-          "#edit-field-summary-0-value",
-          "Summary for the test news"
+          '#edit-field-summary-0-value',
+          'Summary for the test news'
         );
 
         await this.page.evaluate(() => {
           document
-            .querySelector("iframe.cke_wysiwyg_frame")
-            .contentDocument.querySelector("body p").textContent =
-            "Body content for the test news";
+            .querySelector('iframe.cke_wysiwyg_frame')
+            .contentDocument.querySelector('body p').textContent =
+            'Body content for the test news';
         });
         await this.page.type(
-          "#edit-revision-log-0-value",
-          "Full regression test revision message"
+          '#edit-revision-log-0-value',
+          'Full regression test revision message'
         );
-        await this.page.select("#edit-moderation-state-0-state", "published");
+        await this.page.select('#edit-moderation-state-0-state', 'published');
       };
       await newsTester.runTest();
     } catch (e) {
@@ -609,7 +609,7 @@ describe("Full regression test suite for Admin", () => {
       console.log(await page.url());
       await page.screenshot({
         path: `${ARTIFACTS_FOLDER}ally-add-news-error.jpg`,
-        type: "jpeg",
+        type: 'jpeg',
         fullPage: true,
       });
       throw e;
@@ -617,14 +617,14 @@ describe("Full regression test suite for Admin", () => {
   });
 
   // Ally creates notification in the group
-  it("Ally can create notification", async () => {
+  it('Ally can create notification', async () => {
     try {
       var notificationTester = Object.create(ContentTester);
       notificationTester.init({
-        entityType: "node",
-        contentType: "notification",
+        entityType: 'node',
+        contentType: 'notification',
         page: page,
-        fieldLabelArray: ["Title", "Notification text"],
+        fieldLabelArray: ['Title', 'Notification text'],
         homepageUrl: HOME_PAGE,
         testGroupPath: TEST_GROUP_PATH,
       });
@@ -632,30 +632,30 @@ describe("Full regression test suite for Admin", () => {
       // Override the function that inputs test values into form
       notificationTester.inputFieldValues = async function () {
         await this.page.type(
-          "#edit-title-0-value",
-          "Full regression test notification"
+          '#edit-title-0-value',
+          'Full regression test notification'
         );
 
         // Update the CKEditor content
         await this.page.evaluate(() => {
           document
-            .querySelector("iframe.cke_wysiwyg_frame")
-            .contentDocument.querySelector("body p").textContent =
-            "Body content for the test notification";
+            .querySelector('iframe.cke_wysiwyg_frame')
+            .contentDocument.querySelector('body p').textContent =
+            'Body content for the test notification';
         });
 
         await this.page.type(
-          "#edit-revision-log-0-value",
-          "Full regression test revision message"
+          '#edit-revision-log-0-value',
+          'Full regression test revision message'
         );
-        await this.page.select("#edit-moderation-state-0-state", "published");
+        await this.page.select('#edit-moderation-state-0-state', 'published');
       };
       await notificationTester.runTest();
     } catch (e) {
       // Capture the screenshot when test fails and re-throw the exception
       await page.screenshot({
         path: `${ARTIFACTS_FOLDER}ally-add-notification-error.jpg`,
-        type: "jpeg",
+        type: 'jpeg',
         fullPage: true,
       });
       throw e;
@@ -664,29 +664,29 @@ describe("Full regression test suite for Admin", () => {
 
   // Ally creates document in the group
   // TODO: include both file upload and eFiles link
-  it("Ally can create document", async () => {
+  it('Ally can create document', async () => {
     try {
       var documentTester = Object.create(ContentTester);
       documentTester.init({
-        entityType: "media",
-        contentType: "document",
+        entityType: 'media',
+        contentType: 'document',
         page: page,
-        fieldLabelArray: ["Name", "Document type"],
+        fieldLabelArray: ['Name', 'Document type'],
         homepageUrl: HOME_PAGE,
         testGroupPath: TEST_GROUP_PATH,
       });
       // Override the function that inputs test values into form
       documentTester.inputFieldValues = async function () {
         await this.page.type(
-          "#edit-name-0-value",
-          "Full regression test document"
+          '#edit-name-0-value',
+          'Full regression test document'
         );
         // "Meeting materials" as document type
-        await this.page.select("#edit-field-document-type", "335");
+        await this.page.select('#edit-field-document-type', '335');
 
         await this.page.type(
-          "#edit-field-summary-0-value",
-          "Summary for the test document"
+          '#edit-field-summary-0-value',
+          'Summary for the test document'
         );
 
         // Upload a file
@@ -695,21 +695,21 @@ describe("Full regression test suite for Admin", () => {
         );
         const filePath = path.relative(
           process.cwd(),
-          __dirname + "/assets/upload_test.txt"
+          __dirname + '/assets/upload_test.txt'
         );
         await fileElement.uploadFile(filePath);
         await this.page.waitForSelector(
-          "div.form-managed-file__main span.file"
+          'div.form-managed-file__main span.file'
         );
 
-        await this.page.select("#edit-moderation-state-0-state", "published");
+        await this.page.select('#edit-moderation-state-0-state', 'published');
       };
       await documentTester.runTest();
     } catch (e) {
       // Capture the screenshot when test fails and re-throw the exception
       await page.screenshot({
         path: `${ARTIFACTS_FOLDER}ally-add-document-error.jpg`,
-        type: "jpeg",
+        type: 'jpeg',
         fullPage: true,
       });
       throw e;
@@ -717,22 +717,22 @@ describe("Full regression test suite for Admin", () => {
   });
 
   // Ally creates image in the group
-  it("Ally can create image", async () => {
+  it('Ally can create image', async () => {
     try {
       var imageTester = Object.create(ContentTester);
       imageTester.init({
-        entityType: "media",
-        contentType: "image",
+        entityType: 'media',
+        contentType: 'image',
         page: page,
-        fieldLabelArray: ["Name", "Caption"],
+        fieldLabelArray: ['Name', 'Caption'],
         homepageUrl: HOME_PAGE,
         testGroupPath: TEST_GROUP_PATH,
       });
       // Override the function that inputs test values into form
       imageTester.inputFieldValues = async function () {
         await this.page.type(
-          "#edit-name-0-value",
-          "Full regression test image"
+          '#edit-name-0-value',
+          'Full regression test image'
         );
         // Upload a file
         const fileElement = await this.page.$(
@@ -740,7 +740,7 @@ describe("Full regression test suite for Admin", () => {
         );
         const filePath = path.relative(
           process.cwd(),
-          __dirname + "/assets/upload_test.jpg"
+          __dirname + '/assets/upload_test.jpg'
         );
         await fileElement.uploadFile(filePath);
         // await this.page.waitForSelector('div.form-managed-file__main span.file');
@@ -749,22 +749,22 @@ describe("Full regression test suite for Admin", () => {
         );
         await this.page.type(
           'div.form-item--image-0-alt input[type="text"]',
-          "Alternative text for the test image"
+          'Alternative text for the test image'
         );
 
         await this.page.type(
-          "#edit-field-caption-0-value",
-          "Caption for the test image"
+          '#edit-field-caption-0-value',
+          'Caption for the test image'
         );
 
-        await this.page.select("#edit-moderation-state-0-state", "published");
+        await this.page.select('#edit-moderation-state-0-state', 'published');
       };
       await imageTester.runTest();
     } catch (e) {
       // Capture the screenshot when test fails and re-throw the exception
       await page.screenshot({
         path: `${ARTIFACTS_FOLDER}ally-add-image-error.jpg`,
-        type: "jpeg",
+        type: 'jpeg',
         fullPage: true,
       });
       throw e;
@@ -774,123 +774,123 @@ describe("Full regression test suite for Admin", () => {
   // Ally creates map in the group
   // TODO: shape files, embed map, etc
   //
-  it("Ally can create map", async () => {
+  it('Ally can create map', async () => {
     try {
-      let text_content = "",
-        selector = "";
+      let text_content = '',
+        selector = '';
       // Map - embedded
       // Add map content
       await page.goto(`${HOME_PAGE}/${TEST_GROUP_PATH}`);
       text_content = await page.evaluate(
-        () => document.querySelector("ul.primary").textContent
+        () => document.querySelector('ul.primary').textContent
       );
-      expect(text_content).toEqual(expect.stringContaining("+ Add Content"));
-      expect(text_content).toEqual(expect.stringContaining("+ Add Media"));
+      expect(text_content).toEqual(expect.stringContaining('+ Add Content'));
+      expect(text_content).toEqual(expect.stringContaining('+ Add Media'));
       await page.goto(`${HOME_PAGE}/${TEST_GROUP_PATH}/media/create`);
       text_content = await page.evaluate(
-        () => document.querySelector("div.region-content dl").textContent
+        () => document.querySelector('div.region-content dl').textContent
       );
-      expect(text_content).toEqual(expect.stringContaining("Add Map"));
+      expect(text_content).toEqual(expect.stringContaining('Add Map'));
       await page.goto(
         `${HOME_PAGE}/${TEST_GROUP_PATH}/content/create/group_media%3Amap`,
-        { waitUntil: "networkidle2" }
+        { waitUntil: 'networkidle2' }
       );
       // Verify add Map form elements exist
       text_content = await page.evaluate(
-        () => document.querySelector("#media-map-add-form").textContent
+        () => document.querySelector('#media-map-add-form').textContent
       );
-      expect(text_content).toEqual(expect.stringContaining("Name"));
-      expect(text_content).toEqual(expect.stringContaining("Summary"));
-      expect(text_content).toEqual(expect.stringContaining("Map type"));
+      expect(text_content).toEqual(expect.stringContaining('Name'));
+      expect(text_content).toEqual(expect.stringContaining('Summary'));
+      expect(text_content).toEqual(expect.stringContaining('Map type'));
       expect(text_content).toEqual(
-        expect.stringContaining("Map URL or embed code")
+        expect.stringContaining('Map URL or embed code')
       );
-      expect(text_content).toEqual(expect.stringContaining("Preview image"));
-      expect(text_content).toEqual(expect.stringContaining("Legacy path"));
-      expect(text_content).toEqual(expect.stringContaining("Displayed in"));
+      expect(text_content).toEqual(expect.stringContaining('Preview image'));
+      expect(text_content).toEqual(expect.stringContaining('Legacy path'));
+      expect(text_content).toEqual(expect.stringContaining('Displayed in'));
       // Fill out form
       await page.type(
-        "#edit-name-0-value",
-        "Full regression test map (embedded)"
+        '#edit-name-0-value',
+        'Full regression test map (embedded)'
       );
       await page.type(
-        "#edit-field-summary-0-value",
-        "Summary for the test map"
+        '#edit-field-summary-0-value',
+        'Summary for the test map'
       );
-      selector = "#edit-field-map-type-embedded";
+      selector = '#edit-field-map-type-embedded';
       await page.evaluate(
         (selector) => document.querySelector(selector).click(),
         selector
       );
       const map_embed_code =
         '<iframe a src="//pdx.maps.arcgis.com/apps/Embed/index.html?webmap=6f91f2b1ce2a47b2afa6c2a8b1ec4113&search=true"></iframe>';
-      await page.type("#edit-field-map-embed-0-value", map_embed_code);
+      await page.type('#edit-field-map-embed-0-value', map_embed_code);
       let fileElement = await page.$(
         'div.form-managed-file--image input[type="file"]'
       );
       let filePath = path.relative(
         process.cwd(),
-        __dirname + "/assets/map_thumbnail.png"
+        __dirname + '/assets/map_thumbnail.png'
       );
       await fileElement.uploadFile(filePath);
-      await page.waitForSelector("span.file--image");
+      await page.waitForSelector('span.file--image');
       await page.type(
-        "#edit-revision-log-message-0-value",
-        "Full regression test revision message"
+        '#edit-revision-log-message-0-value',
+        'Full regression test revision message'
       );
-      await page.select("#edit-moderation-state-0-state", "published");
+      await page.select('#edit-moderation-state-0-state', 'published');
       // Click submit button and wait for page load
-      selector = "input#edit-submit";
+      selector = 'input#edit-submit';
       await page.evaluate(
         (selector) => document.querySelector(selector).click(),
         selector
       );
       await page.waitForNavigation();
       text_content = await page.evaluate(
-        () => document.querySelector(".messages--status").textContent
+        () => document.querySelector('.messages--status').textContent
       );
-      expect(text_content).toEqual(expect.stringContaining("has been created"));
+      expect(text_content).toEqual(expect.stringContaining('has been created'));
 
       // Map - printable
       // Add map content
       await page.goto(`${HOME_PAGE}/${TEST_GROUP_PATH}`);
       text_content = await page.evaluate(
-        () => document.querySelector("ul.primary").textContent
+        () => document.querySelector('ul.primary').textContent
       );
-      expect(text_content).toEqual(expect.stringContaining("+ Add Content"));
-      expect(text_content).toEqual(expect.stringContaining("+ Add Media"));
+      expect(text_content).toEqual(expect.stringContaining('+ Add Content'));
+      expect(text_content).toEqual(expect.stringContaining('+ Add Media'));
       await page.goto(`${HOME_PAGE}/${TEST_GROUP_PATH}/media/create`);
       text_content = await page.evaluate(
-        () => document.querySelector("div.region-content dl").textContent
+        () => document.querySelector('div.region-content dl').textContent
       );
-      expect(text_content).toEqual(expect.stringContaining("Add Map"));
+      expect(text_content).toEqual(expect.stringContaining('Add Map'));
       await page.goto(
         `${HOME_PAGE}/${TEST_GROUP_PATH}/content/create/group_media%3Amap`,
-        { waitUntil: "networkidle2" }
+        { waitUntil: 'networkidle2' }
       );
       // Verify add Map form elements exist
       text_content = await page.evaluate(
-        () => document.querySelector("#media-map-add-form").textContent
+        () => document.querySelector('#media-map-add-form').textContent
       );
-      expect(text_content).toEqual(expect.stringContaining("Name"));
-      expect(text_content).toEqual(expect.stringContaining("Summary"));
-      expect(text_content).toEqual(expect.stringContaining("Map type"));
+      expect(text_content).toEqual(expect.stringContaining('Name'));
+      expect(text_content).toEqual(expect.stringContaining('Summary'));
+      expect(text_content).toEqual(expect.stringContaining('Map type'));
       expect(text_content).toEqual(
-        expect.stringContaining("Map URL or embed code")
+        expect.stringContaining('Map URL or embed code')
       );
-      expect(text_content).toEqual(expect.stringContaining("Preview image"));
-      expect(text_content).toEqual(expect.stringContaining("Legacy path"));
-      expect(text_content).toEqual(expect.stringContaining("Displayed in"));
+      expect(text_content).toEqual(expect.stringContaining('Preview image'));
+      expect(text_content).toEqual(expect.stringContaining('Legacy path'));
+      expect(text_content).toEqual(expect.stringContaining('Displayed in'));
       // Fill out form
       await page.type(
-        "#edit-name-0-value",
-        "Full regression test map (printable)"
+        '#edit-name-0-value',
+        'Full regression test map (printable)'
       );
       await page.type(
-        "#edit-field-summary-0-value",
-        "Summary for the test map"
+        '#edit-field-summary-0-value',
+        'Summary for the test map'
       );
-      selector = "#edit-field-map-type-print";
+      selector = '#edit-field-map-type-print';
       await page.evaluate(
         (selector) => document.querySelector(selector).click(),
         selector
@@ -898,75 +898,75 @@ describe("Full regression test suite for Admin", () => {
       fileElement = await page.$(
         'div#edit-field-map-file-0 input[type="file"]'
       );
-      filePath = path.relative(process.cwd(), __dirname + "/assets/map.pdf");
+      filePath = path.relative(process.cwd(), __dirname + '/assets/map.pdf');
       await fileElement.uploadFile(filePath);
-      await page.waitForSelector("span.file--application-pdf");
+      await page.waitForSelector('span.file--application-pdf');
       let filePreviewElement = await page.$(
         'div.form-managed-file--image input[type="file"]'
       );
       let filePreviewPath = path.relative(
         process.cwd(),
-        __dirname + "/assets/map_thumbnail.png"
+        __dirname + '/assets/map_thumbnail.png'
       );
       await filePreviewElement.uploadFile(filePreviewPath);
-      await page.waitForSelector("span.file--image");
+      await page.waitForSelector('span.file--image');
       await page.type(
-        "#edit-revision-log-message-0-value",
-        "Full regression test revision message"
+        '#edit-revision-log-message-0-value',
+        'Full regression test revision message'
       );
-      await page.select("#edit-moderation-state-0-state", "published");
+      await page.select('#edit-moderation-state-0-state', 'published');
       // Click submit button and wait for page load
-      selector = "input#edit-submit";
+      selector = 'input#edit-submit';
       await page.evaluate(
         (selector) => document.querySelector(selector).click(),
         selector
       );
       await page.waitForNavigation();
       text_content = await page.evaluate(
-        () => document.querySelector(".messages--status").textContent
+        () => document.querySelector('.messages--status').textContent
       );
-      expect(text_content).toEqual(expect.stringContaining("has been created"));
+      expect(text_content).toEqual(expect.stringContaining('has been created'));
 
       // Map - geojson
       // Add map content
       await page.goto(`${HOME_PAGE}/${TEST_GROUP_PATH}`);
       text_content = await page.evaluate(
-        () => document.querySelector("ul.primary").textContent
+        () => document.querySelector('ul.primary').textContent
       );
-      expect(text_content).toEqual(expect.stringContaining("+ Add Content"));
-      expect(text_content).toEqual(expect.stringContaining("+ Add Media"));
+      expect(text_content).toEqual(expect.stringContaining('+ Add Content'));
+      expect(text_content).toEqual(expect.stringContaining('+ Add Media'));
       await page.goto(`${HOME_PAGE}/${TEST_GROUP_PATH}/media/create`);
       text_content = await page.evaluate(
-        () => document.querySelector("div.region-content dl").textContent
+        () => document.querySelector('div.region-content dl').textContent
       );
-      expect(text_content).toEqual(expect.stringContaining("Add Map"));
+      expect(text_content).toEqual(expect.stringContaining('Add Map'));
       await page.goto(
         `${HOME_PAGE}/${TEST_GROUP_PATH}/content/create/group_media%3Amap`,
-        { waitUntil: "networkidle2" }
+        { waitUntil: 'networkidle2' }
       );
       // Verify add map form elements exist
       text_content = await page.evaluate(
-        () => document.querySelector("#media-map-add-form").textContent
+        () => document.querySelector('#media-map-add-form').textContent
       );
-      expect(text_content).toEqual(expect.stringContaining("Name"));
-      expect(text_content).toEqual(expect.stringContaining("Summary"));
-      expect(text_content).toEqual(expect.stringContaining("Map type"));
+      expect(text_content).toEqual(expect.stringContaining('Name'));
+      expect(text_content).toEqual(expect.stringContaining('Summary'));
+      expect(text_content).toEqual(expect.stringContaining('Map type'));
       expect(text_content).toEqual(
-        expect.stringContaining("Map URL or embed code")
+        expect.stringContaining('Map URL or embed code')
       );
-      expect(text_content).toEqual(expect.stringContaining("Preview image"));
-      expect(text_content).toEqual(expect.stringContaining("Legacy path"));
-      expect(text_content).toEqual(expect.stringContaining("Displayed in"));
+      expect(text_content).toEqual(expect.stringContaining('Preview image'));
+      expect(text_content).toEqual(expect.stringContaining('Legacy path'));
+      expect(text_content).toEqual(expect.stringContaining('Displayed in'));
       // Fill out form
       await page.type(
-        "#edit-name-0-value",
-        "Full regression test map (geofile)"
+        '#edit-name-0-value',
+        'Full regression test map (geofile)'
       );
       await page.type(
-        "#edit-field-summary-0-value",
-        "Summary for the test map"
+        '#edit-field-summary-0-value',
+        'Summary for the test map'
       );
-      selector = "#edit-field-map-type-geo";
+      selector = '#edit-field-map-type-geo';
       await page.evaluate(
         (selector) => document.querySelector(selector).click(),
         selector
@@ -976,41 +976,41 @@ describe("Full regression test suite for Admin", () => {
       );
       filePath = path.relative(
         process.cwd(),
-        __dirname + "/assets/map.geojson"
+        __dirname + '/assets/map.geojson'
       );
       await fileElement.uploadFile(filePath);
-      await page.waitForSelector("span.file--general");
+      await page.waitForSelector('span.file--general');
       // Preview
       filePreviewElement = await page.$(
         'div.form-managed-file--image input[type="file"]'
       );
       filePreviewPath = path.relative(
         process.cwd(),
-        __dirname + "/assets/map_thumbnail.png"
+        __dirname + '/assets/map_thumbnail.png'
       );
       await filePreviewElement.uploadFile(filePreviewPath);
-      await page.waitForSelector("span.file--image");
+      await page.waitForSelector('span.file--image');
       await page.type(
-        "#edit-revision-log-message-0-value",
-        "Full regression test revision message"
+        '#edit-revision-log-message-0-value',
+        'Full regression test revision message'
       );
-      await page.select("#edit-moderation-state-0-state", "published");
+      await page.select('#edit-moderation-state-0-state', 'published');
       // Click submit button and wait for page load
-      selector = "input#edit-submit";
+      selector = 'input#edit-submit';
       await page.evaluate(
         (selector) => document.querySelector(selector).click(),
         selector
       );
       await page.waitForNavigation();
       text_content = await page.evaluate(
-        () => document.querySelector(".messages--status").textContent
+        () => document.querySelector('.messages--status').textContent
       );
-      expect(text_content).toEqual(expect.stringContaining("has been created"));
+      expect(text_content).toEqual(expect.stringContaining('has been created'));
     } catch (e) {
       // Capture the screenshot when test fails and re-throw the exception
       await page.screenshot({
         path: `${ARTIFACTS_FOLDER}ally-add-map-error.jpg`,
-        type: "jpeg",
+        type: 'jpeg',
         fullPage: true,
       });
       throw e;
@@ -1018,123 +1018,123 @@ describe("Full regression test suite for Admin", () => {
   });
 
   // Ally creates video in the group
-  it("Ally can create video", async () => {
+  it('Ally can create video', async () => {
     try {
-      let text_content = "",
-        selector = "";
+      let text_content = '',
+        selector = '';
 
       // Add video content
       await page.goto(`${HOME_PAGE}/${TEST_GROUP_PATH}`);
       text_content = await page.evaluate(
-        () => document.querySelector("ul.primary").textContent
+        () => document.querySelector('ul.primary').textContent
       );
-      expect(text_content).toEqual(expect.stringContaining("+ Add Content"));
-      expect(text_content).toEqual(expect.stringContaining("+ Add Media"));
+      expect(text_content).toEqual(expect.stringContaining('+ Add Content'));
+      expect(text_content).toEqual(expect.stringContaining('+ Add Media'));
       await page.goto(`${HOME_PAGE}/${TEST_GROUP_PATH}/media/create`);
       text_content = await page.evaluate(
-        () => document.querySelector("div.region-content dl").textContent
+        () => document.querySelector('div.region-content dl').textContent
       );
-      expect(text_content).toEqual(expect.stringContaining("Add Video"));
+      expect(text_content).toEqual(expect.stringContaining('Add Video'));
       await page.goto(
         `${HOME_PAGE}/${TEST_GROUP_PATH}/content/create/group_media%3Avideo`,
-        { waitUntil: "networkidle2" }
+        { waitUntil: 'networkidle2' }
       );
       // Verify add video form elements exist
       text_content = await page.evaluate(
-        () => document.querySelector("#media-video-add-form").textContent
+        () => document.querySelector('#media-video-add-form').textContent
       );
-      expect(text_content).toEqual(expect.stringContaining("Name"));
-      expect(text_content).toEqual(expect.stringContaining("Video URL"));
-      expect(text_content).toEqual(expect.stringContaining("Caption"));
-      expect(text_content).toEqual(expect.stringContaining("Transcript"));
-      expect(text_content).toEqual(expect.stringContaining("Attribution"));
-      expect(text_content).toEqual(expect.stringContaining("Displayed in"));
-      expect(text_content).toEqual(expect.stringContaining("Legacy path"));
-      await page.type("#edit-name-0-value", "Full regression test video");
+      expect(text_content).toEqual(expect.stringContaining('Name'));
+      expect(text_content).toEqual(expect.stringContaining('Video URL'));
+      expect(text_content).toEqual(expect.stringContaining('Caption'));
+      expect(text_content).toEqual(expect.stringContaining('Transcript'));
+      expect(text_content).toEqual(expect.stringContaining('Attribution'));
+      expect(text_content).toEqual(expect.stringContaining('Displayed in'));
+      expect(text_content).toEqual(expect.stringContaining('Legacy path'));
+      await page.type('#edit-name-0-value', 'Full regression test video');
       const video_url =
-        "https://www.youtube.com/watch?v=V3xeJL4SuSM&list=PL4m94lCOY10kcH-ufAjNIh1ntElCElA4_&index=1";
-      await page.type("#edit-field-media-video-embed-field-0-value", video_url);
+        'https://www.youtube.com/watch?v=V3xeJL4SuSM&list=PL4m94lCOY10kcH-ufAjNIh1ntElCElA4_&index=1';
+      await page.type('#edit-field-media-video-embed-field-0-value', video_url);
       // TODO Distinguish multiple editor selectors
       await page.evaluate(() => {
         document
           .querySelector('iframe[title="Rich Text Editor, Caption field"]')
-          .contentDocument.querySelector("body p").textContent =
-          "Caption content for the test video";
+          .contentDocument.querySelector('body p').textContent =
+          'Caption content for the test video';
       });
       await page.evaluate(() => {
         document
           .querySelector('iframe[title="Rich Text Editor, Transcript field"]')
-          .contentDocument.querySelector("body p").textContent =
-          "Transcript content for the test video";
+          .contentDocument.querySelector('body p').textContent =
+          'Transcript content for the test video';
       });
       await page.waitForTimeout(1000);
-      selector = "details#edit-group-attribution";
+      selector = 'details#edit-group-attribution';
       await page.evaluate(
         (selector) => document.querySelector(selector).click(),
         selector
       );
       await page.type(
-        "details#edit-group-attribution #edit-field-title-0-value",
-        "Some title"
+        'details#edit-group-attribution #edit-field-title-0-value',
+        'Some title'
       );
       await page.type(
-        "details#edit-group-attribution #edit-field-creator-0-value",
-        "Some creator"
+        'details#edit-group-attribution #edit-field-creator-0-value',
+        'Some creator'
       );
       await page.type(
-        "details#edit-group-attribution #edit-field-source-0-value",
-        "Some source"
+        'details#edit-group-attribution #edit-field-source-0-value',
+        'Some source'
       );
-      await page.select("#edit-field-license", "57");
+      await page.select('#edit-field-license', '57');
       await page.type(
-        "#edit-revision-log-message-0-value",
-        "Full regression test revision message"
+        '#edit-revision-log-message-0-value',
+        'Full regression test revision message'
       );
-      await page.select("#edit-moderation-state-0-state", "published");
+      await page.select('#edit-moderation-state-0-state', 'published');
       // Click submit button and wait for page load
-      selector = "input#edit-submit";
+      selector = 'input#edit-submit';
       await page.evaluate(
         (selector) => document.querySelector(selector).click(),
         selector
       );
       await page.waitForNavigation();
       text_content = await page.evaluate(
-        () => document.querySelector(".messages--status").textContent
+        () => document.querySelector('.messages--status').textContent
       );
-      expect(text_content).toEqual(expect.stringContaining("has been created"));
+      expect(text_content).toEqual(expect.stringContaining('has been created'));
     } catch (e) {
       // Capture the screenshot when test fails and re-throw the exception
       await page.screenshot({
         path: `${ARTIFACTS_FOLDER}ally-add-video-error.jpg`,
-        type: "jpeg",
+        type: 'jpeg',
         fullPage: true,
       });
       throw e;
     }
   });
 
-  it("Admin can delete group", async () => {
+  it('Admin can delete group', async () => {
     try {
-      let text_content = "",
-        selector = "";
+      let text_content = '',
+        selector = '';
       await util.unmasquerade(page, HOME_PAGE);
       text_content = await page.evaluate(
-        () => document.querySelector("#toolbar-item-user").textContent
+        () => document.querySelector('#toolbar-item-user').textContent
       );
-      expect(text_content).toEqual(expect.stringMatching("superAdmin"));
+      expect(text_content).toEqual(expect.stringMatching('superAdmin'));
 
       // Must delete all content nodes before deleting the group
       await page.goto(
         `${HOME_PAGE}/admin/content?title=&body_content=&moderation_state=All&status=All&is_locked=All&revision_uid=&uid=&has_reviewer=All&group_op=contains&group=full+regression+test`
       );
-      await page.waitForSelector("#view-title-table-column");
+      await page.waitForSelector('#view-title-table-column');
 
       let tableIsEmpty = await page.evaluate(() => {
-        if (document.querySelector("td.views-empty") == null) return false;
+        if (document.querySelector('td.views-empty') == null) return false;
         if (
           document
-            .querySelector("td.views-empty")
-            .textContent.indexOf("No content available") >= 0
+            .querySelector('td.views-empty')
+            .textContent.indexOf('No content available') >= 0
         )
           return true;
         return false;
@@ -1146,23 +1146,23 @@ describe("Full regression test suite for Admin", () => {
             .querySelector('input[title="Select all rows in this table"]')
             .click();
         });
-        await page.select("#edit-action", "16");
+        await page.select('#edit-action', '16');
         // Apply to selected items
         await page.evaluate(() => {
-          document.querySelector("#edit-submit--2").click();
+          document.querySelector('#edit-submit--2').click();
         });
         await page.waitForNavigation();
         // Execute action button
         await page.evaluate(() => {
-          document.querySelector("#edit-submit").click();
+          document.querySelector('#edit-submit').click();
         });
         // Wait for and verify the batch processing result
-        await page.waitForSelector("div.messages__content", { timeout: 60000 });
+        await page.waitForSelector('div.messages__content', { timeout: 60000 });
         text_content = await page.evaluate(
-          () => document.querySelector("div.messages__content").textContent
+          () => document.querySelector('div.messages__content').textContent
         );
         expect(text_content).toEqual(
-          expect.stringContaining("Action processing results: Delete")
+          expect.stringContaining('Action processing results: Delete')
         );
       }
 
@@ -1170,14 +1170,14 @@ describe("Full regression test suite for Admin", () => {
       await page.goto(
         `${HOME_PAGE}/admin/content/media?keyword=&type=All&status=All&langcode=All&label=full+regression+test&field_efiles_link_uri=All`
       );
-      await page.waitForSelector("#view-name-table-column");
+      await page.waitForSelector('#view-name-table-column');
 
       tableIsEmpty = await page.evaluate(() => {
-        if (document.querySelector("td.views-empty") == null) return false;
+        if (document.querySelector('td.views-empty') == null) return false;
         if (
           document
-            .querySelector("td.views-empty")
-            .textContent.indexOf("No content available") >= 0
+            .querySelector('td.views-empty')
+            .textContent.indexOf('No content available') >= 0
         )
           return true;
         return false;
@@ -1189,29 +1189,29 @@ describe("Full regression test suite for Admin", () => {
             .querySelector('input[title="Select all rows in this table"]')
             .click();
         });
-        await page.select("#edit-action", "7");
+        await page.select('#edit-action', '7');
         // Apply to selected items
         await page.evaluate(() => {
-          document.querySelector("#edit-submit--2").click();
+          document.querySelector('#edit-submit--2').click();
         });
         await page.waitForNavigation();
         // Execute action button
         await page.evaluate(() => {
-          document.querySelector("#edit-submit").click();
+          document.querySelector('#edit-submit').click();
         });
         // Wait for and verify the batch processing result
-        await page.waitForSelector("div.messages__content", { timeout: 60000 });
+        await page.waitForSelector('div.messages__content', { timeout: 60000 });
         text_content = await page.evaluate(
-          () => document.querySelector("div.messages__content").textContent
+          () => document.querySelector('div.messages__content').textContent
         );
         expect(text_content).toEqual(
-          expect.stringContaining("Action processing results: Delete")
+          expect.stringContaining('Action processing results: Delete')
         );
       }
 
       // Delete the new group
       await page.goto(`${HOME_PAGE}/${TEST_GROUP_PATH}/delete`);
-      selector = "input#edit-submit";
+      selector = 'input#edit-submit';
       await page.evaluate(
         (selector) => document.querySelector(selector).click(),
         selector
@@ -1219,14 +1219,14 @@ describe("Full regression test suite for Admin", () => {
       await page.waitForNavigation();
 
       text_content = await page.evaluate(
-        () => document.querySelector("div.messages--status").textContent
+        () => document.querySelector('div.messages--status').textContent
       );
-      expect(text_content).toEqual(expect.stringContaining("has been deleted"));
+      expect(text_content).toEqual(expect.stringContaining('has been deleted'));
     } catch (e) {
       // Capture the screenshot when test fails and re-throw the exception
       await page.screenshot({
         path: `${ARTIFACTS_FOLDER}admin-delete-group-error.jpg`,
-        type: "jpeg",
+        type: 'jpeg',
         fullPage: true,
       });
       throw e;
