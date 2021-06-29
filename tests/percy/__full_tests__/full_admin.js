@@ -920,7 +920,7 @@ describe('Full regression test suite for Admin', () => {
   });
 
   // Ally creates video in the group
-  it('Ally can create video new', async () => {
+  it('Ally can create video', async () => {
     const video_url =
       'https://www.youtube.com/watch?v=V3xeJL4SuSM&list=PL4m94lCOY10kcH-ufAjNIh1ntElCElA4_&index=1';
     let selector = '';
