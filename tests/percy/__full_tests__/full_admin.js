@@ -33,7 +33,7 @@ describe('Full regression test suite for Admin', () => {
   beforeAll(async () => {
     browser = await puppeteer.launch(BROWSER_OPTION);
     page = await browser.newPage();
-    await page.setDefaultTimeout(30000);
+    await page.setDefaultTimeout(60000*2); // 2 minutes navigation and wait timeout
 
     if (process.env.CIRCLECI) {
       // On CI, the CI script will call terminus to retrieve login URL
@@ -123,7 +123,7 @@ describe('Full regression test suite for Admin', () => {
   // Admin create site wide content
   it('Admin can create alert', async () => {
     try {
-      var alertTester = Object.create(ContentTester);
+      let alertTester = Object.create(ContentTester);
       alertTester.init({
         entityType: 'node',
         contentType: 'alert',
@@ -133,41 +133,44 @@ describe('Full regression test suite for Admin', () => {
         testGroupPath: TEST_GROUP_PATH,
       });
 
-      // Override the function that inputs test values into form
+      // Alert is site-wide content. No a group content. Override the function that goes to the content creation page
       alertTester.gotoContentCreatePage = async function () {
         //Add content
         await this.page.goto(
           `${this.homepageUrl}/node/add/${this.contentType}`,
           { waitUntil: 'networkidle2' }
         );
-        // alertTester.inputFieldValues = async function () {
-        //   // Title
-        //   await this.page.type(
-        //     "#edit-title-0-value",
-        //     "Full regression test alert"
-        //   );
-        //   //Severity
-        //   await this.page.select("#edit-field-severity", "20");
-        //   //Alert Text
-        //   await this.page.evaluate(() => {
-        //     document
-        //       .querySelector("iframe.cke_wysiwyg_frame")
-        //       .contentDocument.querySelector("body p").textContent =
-        //       "Full regression test alert text";
-        //   });
-        //   //Revision text
-        //   await this.page.type(
-        //     "#edit-revision-log-0-value",
-        //     "Full regression test revision message"
-        //   );
-        //   await this.page.select("#edit-moderation-state-0-state", "published");
-        //   await alertTester.runTest();
-        // };
       };
+
+      // Override the function that inputs test values into form
+      alertTester.inputFieldValues = async function () {
+        // Title
+        await this.page.type(
+          "#edit-title-0-value",
+          "Full regression test alert"
+        );
+        //Severity
+        await this.page.select("#edit-field-severity", "20");
+        //Alert Text
+        await this.page.evaluate(() => {
+          document
+            .querySelector("iframe.cke_wysiwyg_frame")
+            .contentDocument.querySelector("body p").textContent =
+            "Full regression test alert text";
+        });
+        //Revision text
+        await this.page.type(
+          "#edit-revision-log-0-value",
+          "Full regression test revision message"
+        );
+        await this.page.select("#edit-moderation-state-0-state", "published");
+      };
+
+      await alertTester.runTest();
     } catch (e) {
       // Capture the screenshot when test fails and re-throw the exception
       await page.screenshot({
-        path: `${ARTIFACTS_FOLDER}ally-add-page-error.jpg`,
+        path: `${ARTIFACTS_FOLDER}admin-add-alert-error.jpg`,
         type: 'jpeg',
         fullPage: true,
       });
@@ -859,6 +862,7 @@ describe('Full regression test suite for Admin', () => {
           process.cwd(),
           __dirname + '/assets/map_thumbnail.png'
         );
+        await page.waitForTimeout(5000);
         await filePreviewElement.uploadFile(filePreviewPath);
         await page.waitForSelector('span.file--image');
         await page.type(
@@ -899,6 +903,7 @@ describe('Full regression test suite for Admin', () => {
           process.cwd(),
           __dirname + '/assets/map_thumbnail.png'
         );
+        await page.waitForTimeout(5000);
         await filePreviewElement.uploadFile(filePreviewPath);
         await page.waitForSelector('span.file--image');
         await page.type(
@@ -925,8 +930,8 @@ describe('Full regression test suite for Admin', () => {
       'https://www.youtube.com/watch?v=V3xeJL4SuSM&list=PL4m94lCOY10kcH-ufAjNIh1ntElCElA4_&index=1';
     let selector = '';
     try {
-      let mapTester = Object.create(ContentTester);
-      mapTester.init({
+      let videoTester = Object.create(ContentTester);
+      videoTester.init({
         entityType: 'media',
         contentType: 'video',
         page: page,
@@ -940,7 +945,7 @@ describe('Full regression test suite for Admin', () => {
         homepageUrl: HOME_PAGE,
         testGroupPath: TEST_GROUP_PATH,
       });
-      mapTester.inputFieldValues = async function () {
+      videoTester.inputFieldValues = async function () {
         await this.page.type(
           '#edit-name-0-value',
           'Full regression test video'
@@ -985,7 +990,7 @@ describe('Full regression test suite for Admin', () => {
         );
         await this.page.select('#edit-moderation-state-0-state', 'published');
       };
-      await mapTester.runTest();
+      await videoTester.runTest();
     } catch (e) {
       // Capture the screenshot when test fails and re-throw the exception
       await page.screenshot({
