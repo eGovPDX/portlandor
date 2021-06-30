@@ -38,7 +38,7 @@ describe("Full regression test suite for Ally", () => {
     await browser.close();
   })
 
-  it.skip('Ally can view My Groups', async function () {
+  it('Ally can view My Groups', async function () {
     try {
       let text_content = '';
       await page.goto(`${HOME_PAGE}/my-groups`);
