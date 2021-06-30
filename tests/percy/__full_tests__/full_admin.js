@@ -118,7 +118,6 @@ describe('Full regression test suite for Admin', () => {
     }
   });
 
-  // Assigned to Ronnie
   // TODO: add tests for site wide content like Alerts, Code, Charter, Policy, Location, etc
   // Admin create site wide content
   it('Admin can create alert', async () => {
