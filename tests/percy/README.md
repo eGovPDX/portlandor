@@ -1,35 +1,75 @@
 ## Quick start
-1. Run one-time setup to install dependencies: `lando rebuild -y`
-1. Run test locally:
-    - Run all `visual_regression` tests (takes ~2 minutes): `lando jest`
-    - Run a single `visual_regression` test like `admin.js`: `lando jest admin`
-    - Run the `full_regression` tests (takes ~5 minutes): `lando jest-full`
-1. No user interaction is needed to run tests in CI environment, the `visual_regression` tests will be run during each build. The `full_regression` tests is configured to only run on certain branch like Release or Master.
+
+### Installing dependencies
+Run one-time setup to install dependencies
+```
+lando rebuild -y
+```
+
+### Running tests
+Runs all `visual_regression` tests locally (takes ~2 minutes)
+```
+lando jest
+```
+
+Runs a single `visual_regression` test like `admin.js`
+```
+lando jest admin
+```
+
+Runs the `full_regression` tests locally (takes ~5 minutes)
+```
+lando jest-full
+```
+
+The `visual_regression` tests will be run during each build.
+
+The `full_regression` test is configured to only run on certain branch like Release or Master.
 
 ## Intro
 The test code is written in JavaScript and relies on Puppeteer to interact with the browser and Jest to validate test result and run tests. In CI environment, it also uses Percy to capture and analyse visual differences. It's recommended to learn about [Puppeteer](https://developers.google.com/web/tools/puppeteer/get-started) and [Jest](https://jestjs.io/docs/getting-started) before writing tests.
 
-Tests are divided into two groups. The first group "visual_regression" contains essential tests that must be run during each build. Currently it duplicates the orginal build tests written in Behat. To reduce build time, the test runtime should be limited to under 3 minutes. The second group "full_regression" is a full regression test suite that is meant to give the developer or build lead higher confidence that the code change didn't introduce any major regressions. The first implementation of full regression test suite covers CRUD operations on all group content types and media types in a bureau/office group.
-## Add test in visual_regression
-Tests in the `visual_regression` group are under the folder `__tests__` and organized by users: anonymous, ally, marty, and admin. In CI environment, they are run in parallel to save time, which requires each test **must** be independent and have no side effect on other tests. For example, a test can't depend on other tests to create the content it'll be testing on. The tests for admin was split into `admin.js` and `admin-group.js` to satisfy the build time constraint.
+Tests are divided into two groups:
 
-To add a new test:
+- `visual_regression`
+- `full_regression`
+
+The first group `visual_regression` contains essential tests that must be run during each build. Currently it duplicates the original build tests written in Behat. To reduce build time, the test runtime should be limited to under 3 minutes.
+
+The second group `full_regression` is a full test suite that is meant to give the developer or build lead higher confidence that the code change didn't cause any major regressions. The first implementation covers the CRUD operations on all group content types and media types in a bureau/office. More tests will be added in the future.
+
+IMPORTANT: Tests **must** be independent and have no side effect in other tests.
+## Writing tests
+Tests in the `visual_regression` group are under the folder `__tests__` and organized by the following users:
+- anonymous
+- ally
+- marty
+- admin
+
+### Add visual_regression test
+To add new test:
 1. Identify which user the test should run as.
-1. Edit the test file. Copy an existing test `it()` and modify the test code inside `async () => {...}`
-1. Save file and run the single build test.
-1. If the new test passes locally, push it to GitHub and verify it also works in CI. 
+2. Edit the test file. Copy an existing test `it()` and modify the test code inside `async () => {...}`
+3. Save file and run the single build test `lando jest [filename]`
+4. If the new test passes locally, push it to GitHub and verify it also works in CI.
 
-## Add test in full_regression
-Tests in the `full_regression` group are inside the folder `__full_tests__` and also organized by users: `full_anonymous.js`, `full_ally.js`, `full_marty.js`, `full_admin.js`. Since the full regression test suite must support more complex test scenrios like run a series of tests under different users, most tests are implemented in `full_admin.js` to allow the admin to masquerade as different users without the need to generate a new ULI every time.
+### Add full_regression test
+Tests in the `full_regression` group are inside the folder `__full_tests__` and also organized by the following users:
+- anonymous
+- ally
+- marty
+- admin
 
-`full_admin.js` has these stages:
+Since the full regression test suite must support more complex test scenarios like run a series of tests under different users, most tests are implemented in `full_admin.js` to allow the admin to masquerade as different users without the need to generate a new ULI every time.
+
+`full_admin.js` test performs the following:
 
 1. Log in as the site admin.
-1. Create a new bureau/office group and add Ally as a member.
-1. Run site wide content test like `alert`
-1. Masquerade as Ally
-1. Run group content test like `page` and `map` as Ally
-1. Unmasquerade as Ally and delete the test group created in step 2.
+2. Create a new bureau/office test group and add Ally as a member.
+3. Run site wide content test like creating an `alert`
+4. Masquerade as Ally
+5. Run group content test like creating a `page` and `map` as Ally
+6. Unmasquerade as Ally and delete the test group created in step 2.
 
 To add a new test:
 
@@ -47,8 +87,16 @@ All utility code are inside `lib/util.js`. Currently there are helper functions 
 ## Debugging tips
 Jest allows users to include or exclude tests. To only run certain test, use `it.only`. To exclude a test, use `it.skip`.
 
-In order to help diagonize failed test, all test code are wrapped in try-catch block to generate a screenshot when an assertions fails or exception being thrown.
+In order to help diagnose a failed test, all test code is wrapped inside try-catch blocks which generates a screenshot when an assertion fails or an exception is thrown.
 
-When the screenshot is not sufficient to root cause the issue, you can watch the test run locally to see how the test failed. At the top of `__full_tests__/full_admin.js`, you can find some instructions in `BROWSER_OPTION` on how to do this in MacOS. It assumes that both node/npm and Chrome are installed natively.
+When the screenshot is not sufficient to root cause the issue, you can watch the test run inside your natively installed Chrome browser.
+
+At the top of `__full_tests__/full_admin.js`, you can find instructions inside `BROWSER_OPTION` on how to enable this in MacOS.
+
+IMPORTANT: both node/npm and Chrome must be installed natively to launch tests in watch mode.
 
 If watching the test doesn't help, you may need to consult the [official Puppeteer debugging tips](https://developers.google.com/web/tools/puppeteer/debugging) in order to step through your code.
+
+## Continuous Integration
+
+In CI environment, tests are run in parallel to save time. Note that admin tests are split into `admin.js` and `admin-group.js` to keep individual test execution time under 3 minutes.
