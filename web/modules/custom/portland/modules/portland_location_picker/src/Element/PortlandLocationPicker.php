@@ -34,27 +34,29 @@ class PortlandLocationPicker extends WebformCompositeBase {
    */
   public static function getCompositeElements(array $element) {
     $elements = [];
-    $elements['first_name'] = [
+    $elements['location_latlon'] = [
+      '#type' => 'geofield_latlon',
+      '#title' => t('Location lat/lon'),
+      '#description' => t('Enter an address or cross streets'),
+      '#attributes' => ['class' => ['visually-hidden']],
+    ];
+    $elements['location_address'] = [
       '#type' => 'textfield',
-      '#title' => t('First name'),
+      '#title' => t('Address or Cross Streets'),
     ];
-    $elements['last_name'] = [
-      '#type' => 'textfield',
-      '#title' => t('Last name'),
-    ];
-    $elements['date_of_birth'] = [
-      '#type' => 'date',
-      '#title' => t('Date of birth'),
+    $elements['location_verify'] = [
+      '#type' => 'button',
+      '#title' => t('Find'),
       // Use #after_build to add #states.
-      '#after_build' => [[get_called_class(), 'afterBuild']],
+      //'#after_build' => [[get_called_class(), 'afterBuild']],
     ];
-    $elements['gender'] = [
-      '#type' => 'select',
-      '#title' => t('Gender'),
-      '#options' => 'gender',
-      // Use #after_build to add #states.
-      '#after_build' => [[get_called_class(), 'afterBuild']],
-    ];
+    // $elements['gender'] = [
+    //   '#type' => 'select',
+    //   '#title' => t('Gender'),
+    //   '#options' => 'gender',
+    //   // Use #after_build to add #states.
+    //   '#after_build' => [[get_called_class(), 'afterBuild']],
+    // ];
 
     return $elements;
   }
