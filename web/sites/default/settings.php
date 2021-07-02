@@ -25,6 +25,16 @@ if (file_exists($local_settings)) {
   include $local_settings;
 }
 
+// Set environment variable for config_split module
+if (isset($_ENV['PANTHEON_ENVIRONMENT'])) {
+  // Pantheon environments are 'live', 'test', 'dev', and '[multidev name]'
+  $env = $_ENV['PANTHEON_ENVIRONMENT'];
+}
+else {
+  // Default to lando if no Pantheon Environment is set.
+  $env = 'lando';
+  $_ENV['PANTHEON_ENVIRONMENT'] = 'lando';
+}
 
 if (isset($_ENV['PANTHEON_ENVIRONMENT']) && php_sapi_name() != 'cli') {
   // Redirect to https://$primary_domain in the Live environment
@@ -82,16 +92,6 @@ if (isset($_ENV['PANTHEON_ENVIRONMENT']) && php_sapi_name() != 'cli') {
   if (is_array($settings)) {
     $settings['trusted_host_patterns'][] = '^'. preg_quote($primary_domain) .'$';
   }
-}
-
-// Set environment variable for config_split module
-if (isset($_ENV['PANTHEON_ENVIRONMENT'])) {
-  // Pantheon environments are 'live', 'test', 'dev', and '[multidev name]'
-  $env = $_ENV['PANTHEON_ENVIRONMENT'];
-}
-else {
-  // Treat local dev same as Pantheon 'dev'
-  $env = 'dev';
 }
 
 // Enable/disable config_split configurations based on the current environment
@@ -166,4 +166,10 @@ if (isset($_ENV['PANTHEON_ENVIRONMENT']) && $_ENV['PANTHEON_ENVIRONMENT'] !== 'l
 
   $settings['cache']['default'] = 'cache.backend.redis'; // Use Redis as the default cache.
   $settings['cache_prefix']['default'] = 'pantheon-redis';
+}
+
+// Automatically generated include for settings managed by ddev.
+$ddev_settings = dirname(__FILE__) . '/settings.ddev.php';
+if (getenv('IS_DDEV_PROJECT') == 'true' && is_readable($ddev_settings)) {
+  require $ddev_settings;
 }
