@@ -17,17 +17,52 @@ function portland_address_complete_preprocess_input(&$variables) {
       // Workaround for FireFox bug: https://bugzilla.mozilla.org/show_bug.cgi?id=1474137
       $variables["attributes"]['autocomplete'] = 'off';
     }
+
+    // look for address fields from standard webform template
+    if ($element["#id"] == "edit-contact-street-address" || $element["#id"] == "edit-business-street-address") {
+      $variables["attributes"]['list'] = 'addresslist';
+      // Workaround for FireFox bug: https://bugzilla.mozilla.org/show_bug.cgi?id=1474137
+      $variables["attributes"]['autocomplete'] = 'off';
+      // we're loading these fields into attributes for use in the template and jquery
+      // for setting the rest of the address fields from the selected address.
+      if ($element["#id"] == "edit-contact-street-address") {
+        $variables["attributes"]["data-field-city"] = "edit-contact-city";
+        $variables["attributes"]["data-field-state"] = "edit-contact-state";
+        $variables["attributes"]["data-field-zip"] = "edit-contact-zip-code";
+      }
+      if ($element["#id"] == "edit-business-street-address") {
+        $variables["attributes"]["data-field-city"] = "edit-business-city";
+        $variables["attributes"]["data-field-state"] = "edit-business-state";
+        $variables["attributes"]["data-field-zip"] = "edit-business-zip-code";
+      }
+    }
+    // TODO: is there a more abstract way to do this? if we could look for the address-lookup class,
+    // we could set the attributes for any with the class and not rely on specific IDs.
   }
 }
 
 // The Location edit form
 function portland_address_complete_form_alter(&$form, &$form_state, $form_id) {
+  $library_attached = false;
   if(array_key_exists("field_address_or_entrance", $form)) {
     // $form['field_address_or_entrance']['address']['address_line1']['#attributes']['list'] = 'address_list';
     // $form['address_list']['#markup'] = t('<datalist id="address_list"></datalist>');
-    $form['#attached']['library'][] = 'portland_address_complete/portland_address_complete';
-    $form['#attached']['drupalSettings']['portlandmaps_api_key'] = \Drupal::service('key.repository')->getKey('portlandmaps_api')->getKeyValue();
+    _attach_address_complete_library($form);
+    $library_attached = true;
   }
+
+  // look for elements from standard webform template and attach library if found
+  if (!$library_attached && array_key_exists("elements", $form)) {
+    if (array_key_exists("section_contact", $form["elements"]) || array_key_exists("section_business", $form['elements'])) {
+      _attach_address_complete_library($form);
+      $library_attached = true;
+    }
+  }
+}
+
+function _attach_address_complete_library(&$form) {
+  $form['#attached']['library'][] = 'portland_address_complete/portland_address_complete';
+  $form['#attached']['drupalSettings']['portlandmaps_api_key'] = \Drupal::service('key.repository')->getKey('portlandmaps_api')->getKeyValue();
 }
 
 // The location edit form embedded in entity browser
