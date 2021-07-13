@@ -1,0 +1,37 @@
+{% set is_draft = node.isPublished() ? false : true %}
+{% set type =
+  node.fields.type[0].target_id
+    |render
+    |trim
+    |replace({
+      _: ' '
+    })
+%}
+
+{% if content %}
+  <div class="card">
+    {% if content.field_featured_media|render|trim is not empty %}
+      <div class="card-img-top">
+        {{ content.field_featured_media|render }}
+      </div>
+    {% endif %}
+    <div class="card-body">
+      {% if is_draft %}
+        {% include '@components/badge/badge.twig' with {
+          text: 'unpublished'|t|capitalize,
+          type: 'danger',
+          mb: 2
+        } only %}
+      {% endif %}
+      {% include '@components/overline/overline.twig' with {
+        text: type,
+        margin: 2
+      } %}
+      {% include '@components/heading/heading.twig' with {
+        url: url,
+        level: 3,
+        text: label
+      } only %}
+    </div>
+  </div>
+{% endif %}
