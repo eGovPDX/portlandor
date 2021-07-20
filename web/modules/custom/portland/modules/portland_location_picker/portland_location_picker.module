@@ -19,6 +19,29 @@ function portland_location_picker_theme() {
   ];
 }
 
+function portland_location_picker_form_alter(&$form, &$form_state, $form_id) {
+  $library_attached = false;
+
+  // if elements array exists, this may be a webform. flatten the elements array and look for
+  // the location picker field. if it exists, attach the library.
+  if (!$library_attached && array_key_exists("elements", $form)) {
+    $flattened = Drupal\webform\Utility\WebformElementHelper::getFlattened($form['elements']);
+    foreach ($flattened as $key => $value) {
+      if ($flattened[$key]['#type'] == "portland_location_picker") {
+        $form['#attached']['library'][] = 'portland_location_picker/portland_location_picker';
+        $library_attached = true;
+        break;
+      }
+    }
+  }
+}
+
+function _find_location_picker_field($array) {
+  foreach ($array as $key => $value) {
+    $test = $key;
+  }
+}
+
 /**
  * Prepares variables for webform example composite templates.
  *
@@ -32,4 +55,5 @@ function template_preprocess_portland_location_picker(array &$variables) {
   // Here you can get the composite element and alter it.
   // This function resides in webform.theme.template.inc
   _template_preprocess_webform_composite($variables);
+
 }

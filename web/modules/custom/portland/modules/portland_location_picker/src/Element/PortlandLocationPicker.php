@@ -47,8 +47,11 @@ class PortlandLocationPicker extends WebformCompositeBase {
     $elements['location_verify'] = [
       '#type' => 'button',
       '#title' => t('Find'),
-      // Use #after_build to add #states.
-      //'#after_build' => [[get_called_class(), 'afterBuild']],
+      '#value' => 'Find'
+    ];
+    $elements['location_map'] = [
+      '#type' => 'markup',
+      '#markup' => '<div id="location_map" class="location-map">Map goes here</div>',
     ];
     // $elements['gender'] = [
     //   '#type' => 'select',
