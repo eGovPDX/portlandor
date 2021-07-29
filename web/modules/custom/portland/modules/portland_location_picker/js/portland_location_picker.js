@@ -42,10 +42,13 @@
         $('.leaflet-container').css('cursor', 'crosshair');
 
         // Set up verify button //////////////////////////////////
-        $('#edit-portland-location-picker-location-address').after('<input class="btn location-verify button js-form-submit form-submit" type="submit" id="location_verify" name="op" value="Locate">');
+        $('.location-picker-address').after('<input class="btn location-verify button js-form-submit form-submit" type="submit" id="location_verify" name="op" value="Locate">');
         $(document).on('click', '#location_verify', function (e) {
           e.preventDefault();
-          var address = $('#edit-portland-location-picker-location-address').val();
+          var address = $('.location-picker-address').val();
+          // Portland Maps API for location suggestions doesn't work property when an ampersand is used
+          // to identify an intersection. It must be the word "and."
+          address.replace("&", "and");
           if (address.length < 1) {
             alert("Please enter an address or cross streets and try again.");
             return false;
@@ -59,7 +62,7 @@
           // get address data from link
           var address = $(this).data('pick-address');
           // put selected address in address field
-          $('#edit-portland-location-picker-location-address').val(address);
+          $('.location-picker-address').val(address);
           // TODO: fix the kludge below. can't figure out how to programmatically close the dialog,
           // so we're programmatically clicking the close button instead.
           $('button:contains("Close")').click();
@@ -163,7 +166,7 @@
         var city = data.address.City;
         var business = data.address.PlaceName;
         var addressLabel = address.length > 0 ? address + ', ' + city : city;
-        $('#edit-portland-location-picker-location-address').val(addressLabel);
+        $('.location-picker-address').val(addressLabel);
         $('#place_name').val(business);
       }
 
