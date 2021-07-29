@@ -159,9 +159,12 @@
       }
 
       function processReverseLocationData(data) {
-        var test = data;
-        var address = data.address.LongLabel;
-        $('#edit-portland-location-picker-location-address').val(address);
+        var address = data.address.Address;
+        var city = data.address.City;
+        var business = data.address.PlaceName;
+        var addressLabel = address.length > 0 ? address + ', ' + city : city;
+        $('#edit-portland-location-picker-location-address').val(addressLabel);
+        $('#place_name').val(business);
       }
 
       function setMarkerAndZoom(lat, lon, zoom, center, zoomlevel) {

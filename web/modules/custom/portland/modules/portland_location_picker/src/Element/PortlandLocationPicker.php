@@ -55,6 +55,11 @@ class PortlandLocationPicker extends WebformCompositeBase {
       '#type' => 'markup',
       '#markup' => '<div id="suggestions_modal" class="visually-hidden"></div>',
     ];
+    $elements['place_name'] = [
+      '#type' => 'textfield',
+      '#title' => t('Place Name'),
+      '#id' => 'place_name'
+    ];
     $elements['location_latlon'] = [
       '#type' => 'geofield_latlon',
       //'#attributes' => ['class' => ['visually-hidden']],
