@@ -48,7 +48,7 @@
           var address = $('.location-picker-address').val();
           // Portland Maps API for location suggestions doesn't work property when an ampersand is used
           // to identify an intersection. It must be the word "and."
-          address.replace("&", "and");
+          address = address.replace("&", "and");
           if (address.length < 1) {
             alert("Please enter an address or cross streets and try again.");
             return false;
@@ -188,15 +188,15 @@
         }
         
         // anytime a marker is set or moved, put the latlon in the hidden fields
-        $('#edit-portland-location-picker-location-latlon-lat').val(lat);
-        $('#edit-portland-location-picker-location-latlon-lon').val(lon);
+        $('.geofield-lat').val(lat);
+        $('.geofield-lon').val(lon);
 
         // set dragend event handler on marker
         marker.on('dragend', function (e) {
           // capture new lat/lon values in hidden fields
           var latlng = marker.getLatLng();
-          $('#edit-portland-location-picker-location-latlon-lat').val(latlng.lat);
-          $('#edit-portland-location-picker-location-latlon-lon').val(latlng.lng);
+          $('.geofield-lat').val(latlng.lat);
+          $('.geofield-lon').val(latlng.lng);
           reverseLookup(latlng.lat, latlng.lng);
         });
       }
