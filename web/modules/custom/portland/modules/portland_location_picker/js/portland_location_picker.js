@@ -1,6 +1,6 @@
 (function ($) {
 
-  var hinterXHR = new XMLHttpRequest();
+  var request = new XMLHttpRequest();
   var map;
   var marker;
 
@@ -13,39 +13,36 @@
       const DEFAULT_LATITUDE = 45.51;
       const DEFAULT_LONGITUDE = -122.65;
       const DEFAULT_ZOOM = 11;
-      const DEFAULT_ZOOM_CLICK = 17;
+      const DEFAULT_ZOOM_CLICK = 18;
       const DEFAULT_ZOOM_VERIFIED = 18;
       const ZOOM_POSITION = 'topright';
       const AUTOCOMPLETE_MIN_CHARACTERS = 2;
 
       initialize();
-      //setUpVerifyButton();
-      //setUpPickLinks();
-      //setUpAddressAutocomplete();
 
       function initialize() {
 
         // initialize map ///////////////////////////////////
-
         var zoomcontrols = new L.control.zoom({ position: ZOOM_POSITION });
         map = new L.Map("location_map", {
           center: new L.LatLng(DEFAULT_LATITUDE, DEFAULT_LONGITUDE),
           zoomControl: false,
           zoom: DEFAULT_ZOOM
         });
-
         var baseLayer = L.tileLayer('https://www.portlandmaps.com/arcgis/rest/services/Public/Basemap_Color_Complete/MapServer/tile/{z}/{y}/{x}', {
           attribution: "PortlandMaps ESRI"
         });
-        var aerialLayer = L.tileLayer('https://www.portlandmaps.com/arcgis/rest/services/Public/Basemap_Color_Complete_Aerial/MapServer/tile/{z}/{y}/{x}', {
-          attribution: "PortlandMaps ESRI"
-        });
+        // var aerialLayer = L.tileLayer('https://www.portlandmaps.com/arcgis/rest/services/Public/Basemap_Color_Complete_Aerial/MapServer/tile/{z}/{y}/{x}', {
+        //   attribution: "PortlandMaps ESRI"
+        // });
         map.addLayer(baseLayer);
         map.addControl(zoomcontrols);
-
-        map.on('click', setMarkerOnClick);
+        map.on('click', handleMapClick);
+        // force a crosshair cursor
+        $('.leaflet-container').css('cursor', 'crosshair');
 
         // Set up verify button //////////////////////////////////
+        $('#edit-portland-location-picker-location-address').after('<input class="btn location-verify button js-form-submit form-submit" type="submit" id="location_verify" name="op" value="Locate">');
         $(document).on('click', '#location_verify', function (e) {
           e.preventDefault();
           var address = $('#edit-portland-location-picker-location-address').val();
@@ -71,73 +68,55 @@
           var lon = $(this).data('lon');
           setMarkerAndZoom(lat, lon, true, true, DEFAULT_ZOOM_VERIFIED);
         });
-
-        
       }
 
-      function setMarkerOnClick(e) {
+      function handleMapClick(e) {
         setMarkerAndZoom(e.latlng.lat, e.latlng.lng, true, false, DEFAULT_ZOOM_CLICK);
+        reverseLookup(e.latlng.lat, e.latlng.lng);
       }
 
       function verifyAddress(address) {
         var encodedAddress = encodeURI(address);
-
         // abort any pending requests
-        hinterXHR.abort();
-
-        hinterXHR.onreadystatechange = function () {
+        request.abort();
+        // set up event handler to process response
+        request.onreadystatechange = function () {
           if (this.readyState == 4 && this.status == 200) {
-
-            // We're expecting a json response so we convert it to an object
             var response = JSON.parse(this.responseText);
-
-            // clear any previously loaded options in the datalist
-            //addresslist.innerHTML = "";
-
-            // When no candidates are found, clear input fields
             if (response.candidates.length == 0) {
-              $('input.postal-code').val('');
+              alert('No matching locations found. Please try a different address and try again.');
+              return false;
             }
-
             processLocationData(response.candidates);
-            // response.candidates.forEach(function (item) {
-            //   // Create a new <option> element.
-            //   var option = document.createElement('option');
-            //   option.value = item.address;
-            //   // Set default when the data is incomplete
-            //   var city = item.attributes.city ? item.attributes.city : 'Portland';
-            //   var state = item.attributes.state ? item.attributes.state : 'Oregon';
-            //   var zip_code = item.attributes.zip_code ? item.attributes.zip_code : '';
-            //   var latitude = item.attributes.lat ? item.attributes.lat : '';
-            //   var longitude = item.attributes.lon ? item.attributes.lon : '';
-            //   // option.text = item.address + ', ' + city + ', ' + state;
-            //   // if(zip_code) option.text += ', ' + item.attributes.zip_code;
-            //   option.setAttribute('data-city', city);
-            //   option.setAttribute('data-state', state);
-            //   option.setAttribute('data-zip', zip_code);
-            //   option.setAttribute('data-latitude', latitude);
-            //   option.setAttribute('data-longitude', longitude);
-
-            //   // attach the option to the datalist element
-            //   addresslist.appendChild(option);
-            // });
           };
-
         }
-
         // API documentation: https://www.portlandmaps.com/development/#suggest
         var url = "https://www.portlandmaps.com/api/suggest/?intersections=1&alt_coords=1&api_key=" + drupalSettings.portlandmaps_api_key + "&query=" + encodedAddress;
-        hinterXHR.open("GET", url, true);
-        hinterXHR.send();
+        request.open("GET", url, true);
+        request.send();
+      }
 
+      function reverseLookup(lat, lng) {
+        // abort any pending requests
+        request.abort();
+        // set up event handler to process response
+        request.onreadystatechange = function () {
+          if (this.readyState == 4 && this.status == 200) {
+            var response = JSON.parse(this.responseText);
+            // if (response.candidates.length == 0) {
+            //   alert('No matching locations found. Please try a different address and try again.');
+            //   return false;
+            // }
+            processReverseLocationData(response);
+          };
+        }
+        // API documentation: https://developers.arcgis.com/rest/geocode/api-reference/geocoding-reverse-geocode.htm
+        var url = 'https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer/reverseGeocode?f=json&locationType=street&location=' + lng + ',' + lat;
+        // featureTypes paramter values:
+        // StreetInt, DistanceMarker, StreetAddress, StreetName, POI, Subaddress, PointAddress, Postal, Locality
 
-
-        // var url = '/location/verify/' + encodedAddress;
-        // $.get(url).done(function (data) {
-        //   var test = data;
-        //   processLocationData(address, data);
-        // });
-
+        request.open("GET", url, true);
+        request.send();
       }
 
       function processLocationData(candidates) {
@@ -179,6 +158,12 @@
 
       }
 
+      function processReverseLocationData(data) {
+        var test = data;
+        var address = data.address.LongLabel;
+        $('#edit-portland-location-picker-location-address').val(address);
+      }
+
       function setMarkerAndZoom(lat, lon, zoom, center, zoomlevel) {
         // remove previous marker
         if (marker) {
@@ -203,18 +188,11 @@
         // set dragend event handler on marker
         marker.on('dragend', function (e) {
           // capture new lat/lon values in hidden fields
-          $('#edit-portland-location-picker-location-latlon-lat').val(marker.getLatLng().lat);
-          $('#edit-portland-location-picker-location-latlon-lon').val(marker.getLatLng().lng);
-
-          // perform reverse geolocation and call PM API to get approximate address
-          // TODO: will this be suggestions, an approximate address, or can the API target the nearest valid address?
-
-          // populate address field with result from API
+          var latlng = marker.getLatLng();
+          $('#edit-portland-location-picker-location-latlon-lat').val(latlng.lat);
+          $('#edit-portland-location-picker-location-latlon-lon').val(latlng.lng);
+          reverseLookup(latlng.lat, latlng.lng);
         });
-      }
-
-      function setUpAddressAutocomplete() {
-        //$('.location-picker-address').on("keyup", handleAddressKeyup);
       }
 
     }

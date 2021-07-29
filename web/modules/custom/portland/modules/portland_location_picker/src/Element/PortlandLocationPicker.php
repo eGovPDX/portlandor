@@ -38,14 +38,15 @@ class PortlandLocationPicker extends WebformCompositeBase {
       '#type' => 'textfield',
       '#title' => t('Address or Cross Streets'),
       '#attributes' => ['class' => ['location-picker-address']],
-      '#description' => t('Enter an address or cross streets, then click the Locate button to verify the location. Alternately, you may click the map to set the location.'),
+      '#required' => TRUE,
+      '#help' => t('Enter an address or cross streets, then click the Locate button to verify the location. Alternately, you may click the map to set the location.'),
     ];
-    $elements['location_verify'] = [
-      '#type' => 'button',
-      '#value' => t('Locate'),
-      '#attributes' => ['class' => ['btn', 'location-verify']],
-      '#id' => 'location_verify',
-    ];
+    // $elements['location_verify'] = [
+    //   '#type' => 'button',
+    //   '#value' => t('Locate'),
+    //   '#attributes' => ['class' => ['btn', 'location-verify']],
+    //   '#id' => 'location_verify',
+    // ];
     $elements['location_map'] = [
       '#type' => 'markup',
       '#markup' => '<div id="location_map" class="location-map">Map of Portland</div>',
