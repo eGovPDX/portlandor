@@ -1,5 +1,6 @@
 (function ($) {
 
+  var hinterXHR = new XMLHttpRequest();
   var map;
   var marker;
 
@@ -7,17 +8,24 @@
     attach: function (context, settings) {
 
       // canned response data for development and testing
-      var response = { "status": "success", "spatialReference": { "wkid": 102100, "latestWkid": 3857 }, "candidates": [{ "location": { "x": -1.3642874419E7, "y": 5707881.163 }, "attributes": { "jurisdiction": "PORTLAND", "zip_code": 97220, "state": "OREGON", "lon": -122.55603, "sp_x": 7675414.962, "sp_y": 691837.194, "status": "Active", "city": "Portland", "zip4": 2753, "id": 862775, "type": "address", "lat": 45.54593, "county": "MULTNOMAH" }, "address": "10333 NE FARGO ST", "extent": { "ymin": 5707880.913, "ymax": 5707881.413, "xmin": -1.3642874669E7, "xmax": -1.3642874169E7 } }, { "location": { "x": -1.3642911751E7, "y": 5704930.168 }, "attributes": { "jurisdiction": "PORTLAND", "zip_code": 97220, "state": "OREGON", "lon": -122.55636, "sp_x": 7675156.747, "sp_y": 685076.490, "status": "Active", "city": "Portland", "zip4": 4016, "id": 862776, "type": "address", "lat": 45.52737, "county": "MULTNOMAH" }, "address": "10333 NE HOYT ST", "extent": { "ymin": 5704929.918, "ymax": 5704930.418, "xmin": -1.3642912001E7, "xmax": -1.3642911501E7 } }, { "location": { "x": -1.3642866728E7, "y": 5705085.216 }, "attributes": { "jurisdiction": "PORTLAND", "zip_code": 97220, "state": "OREGON", "lon": -122.55596, "sp_x": 7675264.396, "sp_y": 685398.818, "status": "Active", "city": "Portland", "zip4": 4021, "id": 636684, "type": "address", "lat": 45.52834, "county": "MULTNOMAH" }, "address": "10333 NE OREGON ST", "extent": { "ymin": 5705084.966, "ymax": 5705085.466, "xmin": -1.3642866978E7, "xmax": -1.3642866478E7 } }, { "location": { "x": -1.3642898744E7, "y": 5707163.257 }, "attributes": { "sp_x": 7675317.089, "sp_y": 690192.319, "status": "Active", "city": "Portland", "jurisdiction": "PORTLAND", "zip_code": 97220, "state": "OREGON", "lon": -122.55624, "id": 1235952, "type": "address", "lat": 45.54142, "county": "MULTNOMAH" }, "address": "10333 NE RUSSELL CT", "extent": { "ymin": 5707163.007, "ymax": 5707163.507, "xmin": -1.3642898994E7, "xmax": -1.3642898494E7 } }, { "location": { "x": -1.3642891339E7, "y": 5706895.928 }, "attributes": { "jurisdiction": "PORTLAND", "zip_code": 97220, "state": "OREGON", "lon": -122.55618, "sp_x": 7675319.106, "sp_y": 689544.571, "status": "Active", "city": "Portland", "zip4": 3738, "id": 614613, "type": "address", "lat": 45.53974, "county": "MULTNOMAH" }, "address": "10333 NE SACRAMENTO ST", "extent": { "ymin": 5706895.678, "ymax": 5706896.178, "xmin": -1.3642891589E7, "xmax": -1.3642891089E7 } }, { "location": { "x": -1.3642906371E7, "y": 5706750.479 }, "attributes": { "jurisdiction": "PORTLAND", "zip_code": 97220, "state": "OREGON", "lon": -122.55631, "sp_x": 7675274.958, "sp_y": 689215.507, "status": "Active", "city": "Portland", "zip4": 3750, "id": 614766, "type": "address", "lat": 45.53882, "county": "MULTNOMAH" }, "address": "10333 NE THOMPSON ST", "extent": { "ymin": 5706750.229, "ymax": 5706750.729, "xmin": -1.3642906621E7, "xmax": -1.3642906121E7 } }] };
+      var response; // = { "status": "success", "spatialReference": { "wkid": 102100, "latestWkid": 3857 }, "candidates": [{ "location": { "x": -1.3645401627E7, "y": 5708911.764 }, "attributes": { "sp_x": 7669661.490, "sp_y": 694349.134, "city": "PORTLAND", "jurisdiction": "PORTLAND", "state": "OREGON", "lon": -122.57872839300, "id": 40159, "type": "intersection", "lat": 45.55241828270, "county": "MULTNOMAH" }, "address": "NE 82ND AVE AND NE SANDY BLVD", "extent": { "ymin": 5708911.514, "ymax": 5708912.014, "xmin": -1.3645401877E7, "xmax": -1.3645401377E7 } }] };
 
-      initializeMap();
-      setUpVerifyButton();
-      setUpPickLinks();
+      const DEFAULT_LATITUDE = 45.51;
+      const DEFAULT_LONGITUDE = -122.65;
+      const DEFAULT_ZOOM = 11;
+      const DEFAULT_ZOOM_CLICK = 17;
+      const DEFAULT_ZOOM_VERIFIED = 18;
+      const ZOOM_POSITION = 'topright';
+      const AUTOCOMPLETE_MIN_CHARACTERS = 2;
 
-      function initializeMap() {
-        const DEFAULT_LATITUDE = 45.51;
-        const DEFAULT_LONGITUDE = -122.65;
-        const DEFAULT_ZOOM = 11;
-        const ZOOM_POSITION = 'topright';
+      initialize();
+      //setUpVerifyButton();
+      //setUpPickLinks();
+      //setUpAddressAutocomplete();
+
+      function initialize() {
+
+        // initialize map ///////////////////////////////////
 
         var zoomcontrols = new L.control.zoom({ position: ZOOM_POSITION });
         map = new L.Map("location_map", {
@@ -34,27 +42,21 @@
         });
         map.addLayer(baseLayer);
         map.addControl(zoomcontrols);
-      }
 
-      function setUpVerifyButton() {
+        map.on('click', setMarkerOnClick);
+
+        // Set up verify button //////////////////////////////////
         $(document).on('click', '#location_verify', function (e) {
           e.preventDefault();
-
           var address = $('#edit-portland-location-picker-location-address').val();
           if (address.length < 1) {
             alert("Please enter an address or cross streets and try again.");
             return false;
           }
-          var encodedAddress = encodeURI(address);
-          var url = '/location/verify/' + encodedAddress;
-          $.get(url).done(function (data) {
-            var test = data;
-            processLocationData(address, data);
-          });
+          verifyAddress(address);
         });
-      }
 
-      function setUpPickLinks() {
+        // Set up pick links //////////////////////////////////
         $(document).on('click', 'a.pick', function (e) {
           e.preventDefault();
           // get address data from link
@@ -67,26 +69,86 @@
           // locate address on map
           var lat = $(this).data('lat');
           var lon = $(this).data('lon');
-          setMarkerAndZoom(lat, lon);
-          // var latlon = [lat, lon];
-          // map.removeLayer(marker);
-          // marker = null;
-          // marker = L.marker(latlon, { draggable: true, riseOnHover: true }).addTo(map);
-          // map.setView(latlon, 18);
-          // $('#edit-portland-location-picker-location-latlon-lat').val(lat);
-          // $('#edit-portland-location-picker-location-latlon-lon').val(lon);
+          setMarkerAndZoom(lat, lon, true, true, DEFAULT_ZOOM_VERIFIED);
         });
+
+        
       }
 
-      function processLocationData(address, data) {
+      function setMarkerOnClick(e) {
+        setMarkerAndZoom(e.latlng.lat, e.latlng.lng, true, false, DEFAULT_ZOOM_CLICK);
+      }
+
+      function verifyAddress(address) {
+        var encodedAddress = encodeURI(address);
+
+        // abort any pending requests
+        hinterXHR.abort();
+
+        hinterXHR.onreadystatechange = function () {
+          if (this.readyState == 4 && this.status == 200) {
+
+            // We're expecting a json response so we convert it to an object
+            var response = JSON.parse(this.responseText);
+
+            // clear any previously loaded options in the datalist
+            //addresslist.innerHTML = "";
+
+            // When no candidates are found, clear input fields
+            if (response.candidates.length == 0) {
+              $('input.postal-code').val('');
+            }
+
+            processLocationData(response.candidates);
+            // response.candidates.forEach(function (item) {
+            //   // Create a new <option> element.
+            //   var option = document.createElement('option');
+            //   option.value = item.address;
+            //   // Set default when the data is incomplete
+            //   var city = item.attributes.city ? item.attributes.city : 'Portland';
+            //   var state = item.attributes.state ? item.attributes.state : 'Oregon';
+            //   var zip_code = item.attributes.zip_code ? item.attributes.zip_code : '';
+            //   var latitude = item.attributes.lat ? item.attributes.lat : '';
+            //   var longitude = item.attributes.lon ? item.attributes.lon : '';
+            //   // option.text = item.address + ', ' + city + ', ' + state;
+            //   // if(zip_code) option.text += ', ' + item.attributes.zip_code;
+            //   option.setAttribute('data-city', city);
+            //   option.setAttribute('data-state', state);
+            //   option.setAttribute('data-zip', zip_code);
+            //   option.setAttribute('data-latitude', latitude);
+            //   option.setAttribute('data-longitude', longitude);
+
+            //   // attach the option to the datalist element
+            //   addresslist.appendChild(option);
+            // });
+          };
+
+        }
+
+        // API documentation: https://www.portlandmaps.com/development/#suggest
+        var url = "https://www.portlandmaps.com/api/suggest/?intersections=1&alt_coords=1&api_key=" + drupalSettings.portlandmaps_api_key + "&query=" + encodedAddress;
+        hinterXHR.open("GET", url, true);
+        hinterXHR.send();
+
+
+
+        // var url = '/location/verify/' + encodedAddress;
+        // $.get(url).done(function (data) {
+        //   var test = data;
+        //   processLocationData(address, data);
+        // });
+
+      }
+
+      function processLocationData(candidates) {
 
         // if only one candidate, immediately locate it on the map
-        if (response.candidates.length > 1) {
+        if (candidates.length > 1) {
           // multiple candidates, how to handle? how about a modal dialog?
           var $dialog = $('#suggestions_modal');
           var listMarkup = "<p>Multiple possible matches found. Please select one by clicking it.</p><ul>";
-          for (var i = 0; i < response.candidates.length; i++) {
-            var c = response.candidates[i];
+          for (var i = 0; i < candidates.length; i++) {
+            var c = candidates[i];
             var fulladdress = c.address + ', ' + c.attributes.city + ', ' + c.attributes.state + ' ' + c.attributes.zip_code;
             listMarkup += '<li><a href="#" class="pick" data-lat="' + c.attributes.lat + '" data-lon="' + c.attributes.lon + '" data-pick-address="' + fulladdress + '">' + fulladdress.toUpperCase() + '</a></li>';
           }
@@ -104,10 +166,10 @@
           }).showModal();
           $dialog.removeClass('visually-hidden');
 
-        } else if (response.candidates.length == 1) {
-          var lat = response.candidates[0]["attributes"]["lat"];
-          var lon = response.candidates[0]["attributes"]["lon"];
-          setMarkerAndZoom(lat, lon);
+        } else if (candidates.length == 1) {
+          var lat = candidates[0]["attributes"]["lat"];
+          var lon = candidates[0]["attributes"]["lon"];
+          setMarkerAndZoom(lat, lon, true, true, DEFAULT_ZOOM_VERIFIED);
         } else {
           // no matches found
           alert('No matches found. Please try again.');
@@ -117,7 +179,7 @@
 
       }
 
-      function setMarkerAndZoom(lat, lon) {
+      function setMarkerAndZoom(lat, lon, zoom, center, zoomlevel) {
         // remove previous marker
         if (marker) {
           map.removeLayer(marker);
@@ -127,7 +189,13 @@
         // set new layer
         var latlon = [lat, lon];
         marker = L.marker(latlon, { draggable: true, riseOnHover: true }).addTo(map);
-        map.setView(latlon, 18);
+        if (center) {
+          map.setView(latlon);
+        }
+        if (zoom) {
+          map.setView(latlon, zoomlevel);
+        }
+        
         // anytime a marker is set or moved, put the latlon in the hidden fields
         $('#edit-portland-location-picker-location-latlon-lat').val(lat);
         $('#edit-portland-location-picker-location-latlon-lon').val(lon);
@@ -145,10 +213,9 @@
         });
       }
 
-
-
-
-
+      function setUpAddressAutocomplete() {
+        //$('.location-picker-address').on("keyup", handleAddressKeyup);
+      }
 
     }
   };

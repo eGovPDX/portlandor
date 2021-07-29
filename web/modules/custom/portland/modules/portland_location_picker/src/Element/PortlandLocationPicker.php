@@ -34,16 +34,11 @@ class PortlandLocationPicker extends WebformCompositeBase {
    */
   public static function getCompositeElements(array $element) {
     $elements = [];
-    $elements['location_latlon'] = [
-      '#type' => 'geofield_latlon',
-      '#title' => t('Location lat/lon'),
-      '#description' => t('Enter an address or cross streets'),
-      // '#attributes' => ['class' => ['visually-hidden']],
-    ];
     $elements['location_address'] = [
       '#type' => 'textfield',
       '#title' => t('Address or Cross Streets'),
-      '#description' => t('Enter an address or cross streets, then click the Locate button to verify the location.'),
+      '#attributes' => ['class' => ['location-picker-address']],
+      '#description' => t('Enter an address or cross streets, then click the Locate button to verify the location. Alternately, you may click the map to set the location.'),
     ];
     $elements['location_verify'] = [
       '#type' => 'button',
@@ -58,6 +53,10 @@ class PortlandLocationPicker extends WebformCompositeBase {
     $elements['suggestions_modal'] = [
       '#type' => 'markup',
       '#markup' => '<div id="suggestions_modal" class="visually-hidden"></div>',
+    ];
+    $elements['location_latlon'] = [
+      '#type' => 'geofield_latlon',
+      //'#attributes' => ['class' => ['visually-hidden']],
     ];
 
     return $elements;
