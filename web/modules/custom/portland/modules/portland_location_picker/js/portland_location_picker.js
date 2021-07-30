@@ -3,6 +3,11 @@
   var request = new XMLHttpRequest();
   var map;
   var marker;
+  var locationErrorShown;
+  var locateControl;
+  var locMarker;
+  var locCircle;
+  var locateControlContaier;
 
   Drupal.behaviors.portland_location_picker = {
     attach: function (context, settings) {
@@ -17,6 +22,26 @@
       const DEFAULT_ZOOM_VERIFIED = 18;
       const ZOOM_POSITION = 'topright';
       const AUTOCOMPLETE_MIN_CHARACTERS = 2;
+
+      var LocateControl = L.Control.extend({
+        options: {
+          position: "bottomright"
+        },
+        onAdd: function (map) {
+          locateControlContaier = L.DomUtil.create('div', 'leaflet-bar locate-control leaflet-control leaflet-control-custom');
+
+          locateControlContaier.style.backgroundImage = "url(/themes/custom/cloudy/images/icons/map_locate.png)";
+          locateControlContaier.title = 'Locate me';
+
+          locateControlContaier.onclick = function (e) {
+            cancelEventBubble(e);
+            locationErrorShown = false;
+            geoLocate();
+          };
+
+          return locateControlContaier;
+        }
+      });
 
       initialize();
 
@@ -38,8 +63,12 @@
         map.addLayer(baseLayer);
         map.addControl(zoomcontrols);
         map.on('click', handleMapClick);
+        map.on('locationerror', handleLocationError);
+        map.on('locationfound', handleLocationFound);
         // force a crosshair cursor
         $('.leaflet-container').css('cursor', 'crosshair');
+        locateControl = new LocateControl();
+        map.addControl(locateControl);
 
         // Set up verify button //////////////////////////////////
         $('.location-picker-address').after('<input class="btn location-verify button js-form-submit form-submit" type="submit" id="location_verify" name="op" value="Locate">');
@@ -128,7 +157,7 @@
         if (candidates.length > 1) {
           // multiple candidates, how to handle? how about a modal dialog?
           var $dialog = $('#suggestions_modal');
-          var listMarkup = "<p>Multiple possible matches found. Please select one by clicking it.</p><ul>";
+          var listMarkup = "<p>Please select an address by clicking it.</p><ul>";
           for (var i = 0; i < candidates.length; i++) {
             var c = candidates[i];
             var fulladdress = c.address + ', ' + c.attributes.city + ', ' + c.attributes.state + ' ' + c.attributes.zip_code;
@@ -137,7 +166,7 @@
           listMarkup += "</ul>";
           $dialog.html(listMarkup);
           Drupal.dialog($dialog, {
-            title: 'A title',
+            title: 'Multiple possible matches found',
             width: '600px',
             buttons: [{
               text: 'Close',
@@ -200,6 +229,63 @@
           reverseLookup(latlng.lat, latlng.lng);
         });
       }
+
+      function geoLocate() {
+        var t = setTimeout(function () {
+          map.locate({ watch: false, setView: true, maximumAge: 20000, enableHighAccuracy: true });
+        }, 500);
+      }
+
+      function cancelEventBubble(e) {
+        var evt = e ? e : window.event;
+        if (evt.stopPropagation) evt.stopPropagation();
+        if (evt.cancelBubble != null) evt.cancelBubble = true;
+      }
+
+      function handleLocationFound(e) {
+        if (!locateControl) {
+          locateControl = new LocateControl();
+          map.addControl(locateControl);
+        }
+
+        if (locMarker && locCircle) {
+          map.removeLayer(locMarker).removeLayer(locCircle);
+        }
+        var radius = e.accuracy;
+        locMarker = L.marker(e.latlng, { icon: hereIcon }).addTo(map);
+        locCircle = L.circle(e.latlng, radius, { weight: 2, fillOpacity: 0.1 }).addTo(map);
+
+        //var circleBounds = locCircle.getBounds();
+
+        locateControlContaier.style.backgroundImage = 'url("/themes/custom/cloudy/images/icons/map_locate_on.png")';
+
+
+      }
+
+      function handleLocationError(e) {
+        if (ocMarker && locCircle) {
+          map.removeLayer(locMarker).removeLayer(ocCircle);
+        }
+
+        map.setView(new L.LatLng(DEFAULT_LATITUDE, DEFAULT_LONGITUDE), DEFAULT_ZOOM);
+
+        if (!locationErrorShown) {
+          alert('Location error!');
+          //displayErrorMessage(ERROR_MESSAGES.LocationFailed);
+          locationErrorShown = true;
+        }
+
+        locateControlContaier.style.backgroundImage = 'url("/themes/custom/cloudy/images/icons/map_locate.png")';
+      }
+
+      var hereIcon = L.icon({
+        iconUrl: "/themes/custom/cloudy/images/icons/map_marker_here.png",
+        iconSize: [25, 41],
+        iconAnchor: [13, 41],
+        className: "hereIcon"
+      });
+
+
 
     }
   };
