@@ -30,7 +30,7 @@
         onAdd: function (map) {
           locateControlContaier = L.DomUtil.create('div', 'leaflet-bar locate-control leaflet-control leaflet-control-custom');
 
-          locateControlContaier.style.backgroundImage = "url(/themes/custom/cloudy/images/icons/map_locate.png)";
+          locateControlContaier.style.backgroundImage = "url(/modules/custom/portland/modules/portland_location_picker/images/map_locate.png)";
           locateControlContaier.title = 'Locate me';
 
           locateControlContaier.onclick = function (e) {
@@ -257,7 +257,7 @@
 
         //var circleBounds = locCircle.getBounds();
 
-        locateControlContaier.style.backgroundImage = 'url("/themes/custom/cloudy/images/icons/map_locate_on.png")';
+        locateControlContaier.style.backgroundImage = 'url("/modules/custom/portland/modules/portland_location_picker/images/map_locate_on.png")';
 
 
       }
@@ -275,11 +275,11 @@
           locationErrorShown = true;
         }
 
-        locateControlContaier.style.backgroundImage = 'url("/themes/custom/cloudy/images/icons/map_locate.png")';
+        locateControlContaier.style.backgroundImage = 'url("/modules/custom/portland/modules/portland_location_picker/images/map_locate.png")';
       }
 
       var hereIcon = L.icon({
-        iconUrl: "/themes/custom/cloudy/images/icons/map_marker_here.png",
+        iconUrl: "/modules/custom/portland/modules/portland_location_picker/images/map_marker_here.png",
         iconSize: [25, 41],
         iconAnchor: [13, 41],
         className: "hereIcon"

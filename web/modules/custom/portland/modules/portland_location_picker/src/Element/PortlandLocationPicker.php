@@ -57,14 +57,14 @@ class PortlandLocationPicker extends WebformCompositeBase {
       '#description' => t('If this location has a name, such as a business or public building, please enter it here.')
     ];
     $elements['location_lat'] = [
-      '#type' => 'textfield',
+      '#type' => 'hidden',
       '#id' => 'location_lat',
-      '#attributes' => ['class' => ['location-lat', 'visually-hiddenx']],
+      '#attributes' => ['class' => ['location-lat']],
     ];
     $elements['location_lon'] = [
-      '#type' => 'textfield',
+      '#type' => 'hidden',
       '#id' => 'location_lon',
-      '#attributes' => ['class' => ['location-lon', 'visually-hiddenx']],
+      '#attributes' => ['class' => ['location-lon']],
     ];
 
     return $elements;
