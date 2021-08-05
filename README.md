@@ -342,3 +342,5 @@ Run a single test: `lando jest [YOUR_TEST_NAME]`. Currently there are 5 tests av
 
 ### Run tests in CI
 All tests will be run in a CI job. When a test fails, a screenshot of the last visited page can be found in the artifacts.
+
+TODO: Remove this line before merging into release. (Triggering a new PR.)
