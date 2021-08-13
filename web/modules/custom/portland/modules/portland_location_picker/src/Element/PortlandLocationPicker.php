@@ -22,12 +22,12 @@ use Drupal\webform\Element\WebformCompositeBase;
  */
 class PortlandLocationPicker extends WebformCompositeBase {
 
-  /**
-   * {@inheritdoc}
-   */
-  public function getInfo() {
-    return parent::getInfo() + ['#theme' => 'portland_locatiom_picker'];
-  }
+  // /**
+  //  * {@inheritdoc}
+  //  */
+  // public function getInfo() {
+  //   return parent::getInfo();
+  // }
 
   /**
    * {@inheritdoc}
