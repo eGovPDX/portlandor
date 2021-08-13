@@ -14,6 +14,8 @@
 
       // canned response data for development and testing
       var response; // = { "status": "success", "spatialReference": { "wkid": 102100, "latestWkid": 3857 }, "candidates": [{ "location": { "x": -1.3645401627E7, "y": 5708911.764 }, "attributes": { "sp_x": 7669661.490, "sp_y": 694349.134, "city": "PORTLAND", "jurisdiction": "PORTLAND", "state": "OREGON", "lon": -122.57872839300, "id": 40159, "type": "intersection", "lat": 45.55241828270, "county": "MULTNOMAH" }, "address": "NE 82ND AVE AND NE SANDY BLVD", "extent": { "ymin": 5708911.514, "ymax": 5708912.014, "xmin": -1.3645401877E7, "xmax": -1.3645401377E7 } }] };
+      var suggestionsModal;
+      var statusModal;
 
       const DEFAULT_LATITUDE = 45.51;
       const DEFAULT_LONGITUDE = -122.65;
@@ -92,14 +94,19 @@
           var address = $(this).data('pick-address');
           // put selected address in address field
           $('.location-picker-address').val(address);
-          // TODO: fix the kludge below. can't figure out how to programmatically close the dialog,
-          // so we're programmatically clicking the close button instead.
-          $('button:contains("Close")').click();
+          suggestionsModal.dialog('close');
           // locate address on map
           var lat = $(this).data('lat');
           var lon = $(this).data('lon');
           setMarkerAndZoom(lat, lon, true, true, DEFAULT_ZOOM_VERIFIED);
         });
+
+        // set up status modal ///////////////////////////////
+        // this will display a status indicator when performing slow ajax operations, such as self geolocation
+        statusModal = $('#status_modal');
+
+        // set up message modal //////////////////////////////
+        // this is where error and other messages will appear, such as when geolocation fails
       }
 
       function handleMapClick(e) {
@@ -135,10 +142,6 @@
         request.onreadystatechange = function () {
           if (this.readyState == 4 && this.status == 200) {
             var response = JSON.parse(this.responseText);
-            // if (response.candidates.length == 0) {
-            //   alert('No matching locations found. Please try a different address and try again.');
-            //   return false;
-            // }
             processReverseLocationData(response);
           };
         }
@@ -156,7 +159,7 @@
         // if only one candidate, immediately locate it on the map
         if (candidates.length > 1) {
           // multiple candidates, how to handle? how about a modal dialog?
-          var $dialog = $('#suggestions_modal');
+          suggestionsModal = $('#suggestions_modal');
           var listMarkup = "<p>Please select an address by clicking it.</p><ul>";
           for (var i = 0; i < candidates.length; i++) {
             var c = candidates[i];
@@ -164,8 +167,8 @@
             listMarkup += '<li><a href="#" class="pick" data-lat="' + c.attributes.lat + '" data-lon="' + c.attributes.lon + '" data-pick-address="' + fulladdress + '">' + fulladdress.toUpperCase() + '</a></li>';
           }
           listMarkup += "</ul>";
-          $dialog.html(listMarkup);
-          Drupal.dialog($dialog, {
+          suggestionsModal.html(listMarkup);
+          Drupal.dialog(suggestionsModal, {
             title: 'Multiple possible matches found',
             width: '600px',
             buttons: [{
@@ -175,19 +178,15 @@
               }
             }]
           }).showModal();
-          $dialog.removeClass('visually-hidden');
-
+          suggestionsModal.removeClass('visually-hidden');
         } else if (candidates.length == 1) {
           var lat = candidates[0]["attributes"]["lat"];
           var lon = candidates[0]["attributes"]["lon"];
           setMarkerAndZoom(lat, lon, true, true, DEFAULT_ZOOM_VERIFIED);
         } else {
           // no matches found
-          alert('No matches found. Please try again.');
+          showStatusModal("No matches found. Please try again.");
         }
-
-        // add event handler to marker to capture lat/lon on dragend
-
       }
 
       function processReverseLocationData(data) {
@@ -232,8 +231,24 @@
 
       function geoLocate() {
         var t = setTimeout(function () {
+          // display status indicator
+          showStatusModal("We are looking for your current location. Please wait...");
           map.locate({ watch: false, setView: true, maximumAge: 20000, enableHighAccuracy: true });
         }, 500);
+      }
+
+      function showStatusModal(message) {
+        statusModal.html('<p class="status-message">' + message + '</p>');
+        Drupal.dialog(statusModal, {
+          width: '600px',
+          buttons: [{
+            text: 'Close',
+            click: function () {
+              $(this).dialog('close');
+            }
+          }]
+        }).showModal();
+        statusModal.removeClass('visually-hidden');
       }
 
       function cancelEventBubble(e) {
@@ -254,27 +269,16 @@
         var radius = e.accuracy;
         locMarker = L.marker(e.latlng, { icon: hereIcon }).addTo(map);
         locCircle = L.circle(e.latlng, radius, { weight: 2, fillOpacity: 0.1 }).addTo(map);
-
-        //var circleBounds = locCircle.getBounds();
-
         locateControlContaier.style.backgroundImage = 'url("/modules/custom/portland/modules/portland_location_picker/images/map_locate_on.png")';
-
-
+      
+        // hide status indicator
+        statusModal.dialog('close');
       }
 
       function handleLocationError(e) {
-        if (ocMarker && locCircle) {
-          map.removeLayer(locMarker).removeLayer(ocCircle);
-        }
-
-        map.setView(new L.LatLng(DEFAULT_LATITUDE, DEFAULT_LONGITUDE), DEFAULT_ZOOM);
-
-        if (!locationErrorShown) {
-          alert('Location error!');
-          //displayErrorMessage(ERROR_MESSAGES.LocationFailed);
-          locationErrorShown = true;
-        }
-
+        var message = e.message;
+        statusModal.dialog('close');
+        showStatusModal(message);
         locateControlContaier.style.backgroundImage = 'url("/modules/custom/portland/modules/portland_location_picker/images/map_locate.png")';
       }
 
@@ -284,8 +288,6 @@
         iconAnchor: [13, 41],
         className: "hereIcon"
       });
-
-
 
     }
   };
