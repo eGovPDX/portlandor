@@ -31,6 +31,8 @@ class PortlandLocationPicker extends WebformCompositeBase {
 
   /**
    * {@inheritdoc}
+   * NOTE: custom elements must have a #title attribute, even if it's empty. if not, an error is thrown
+   * when trying to add an email handler.
    */
   public static function getCompositeElements(array $element) {
     $elements = [];
@@ -43,18 +45,22 @@ class PortlandLocationPicker extends WebformCompositeBase {
     ];
     $elements['location_map'] = [
       '#type' => 'markup',
+      '#title' => '',
       '#markup' => '<div id="location_map" class="location-map">Map of Portland</div>',
     ];
     $elements['suggestions_modal'] = [
       '#type' => 'markup',
+      '#title' => '',
       '#markup' => '<div id="suggestions_modal" class="visually-hidden"></div>',
     ];
     $elements['status_modal'] = [
       '#type' => 'markup',
+      '#title' => '',
       '#markup' => '<div id="status_modal" class="visually-hidden"></div>',
     ];
     $elements['message_modal'] = [
       '#type' => 'markup',
+      '#title' => '',
       '#markup' => '<div id="message_modal" class="visually-hidden"></div>',
     ];
     $elements['place_name'] = [
@@ -66,11 +72,13 @@ class PortlandLocationPicker extends WebformCompositeBase {
     ];
     $elements['location_lat'] = [
       '#type' => 'hidden',
+      '#title' => t('Latitude'),
       '#id' => 'location_lat',
       '#attributes' => ['class' => ['location-lat']],
     ];
     $elements['location_lon'] = [
       '#type' => 'hidden',
+      '#title' => t('Longitude'),
       '#id' => 'location_lon',
       '#attributes' => ['class' => ['location-lon']],
     ];
