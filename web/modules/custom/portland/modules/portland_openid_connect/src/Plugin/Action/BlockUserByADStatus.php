@@ -33,7 +33,7 @@ class BlockUserByADStatus extends ActionBase
     ];
     if( in_array($account->getEmail(), $skip_emails)) return;
 
-    $tokens = SyncUserWithAD::GetAccessToken();
+    $tokens = BlockUserByADStatus::GetAccessToken();
     if (empty($tokens) || empty($tokens['access_token'])) {
       \Drupal::logger('portland OpenID')->error("Cannot retrieve access token for Microsoft Graph. Make sure the client secret is correct.");
       return;
