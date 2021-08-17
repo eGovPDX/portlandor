@@ -4,19 +4,18 @@ namespace Drupal\portland_openid_connect\Plugin\Action;
 
 use Drupal\Core\Action\ActionBase;
 use Drupal\Core\Session\AccountInterface;
-use Drupal\group\Entity\GroupInterface;
 use GuzzleHttp\Exception\RequestException;
 
 /**
- * Deactivate users who are removed from AD.
+ * Block users who are removed from AD.
  *
  * @Action(
- *   id = "sync_user_with_ad",
- *   label = @Translation("Block (disable) users based on AD status"),
+ *   id = "sync_user_by_ad_status",
+ *   label = @Translation("Block (disable) users by AD status"),
  *   type = "user"
  * )
  */
-class SyncUserWithAD extends ActionBase
+class BlockUserByADStatus extends ActionBase
 {
   /**
    * {@inheritdoc}
@@ -78,7 +77,7 @@ class SyncUserWithAD extends ActionBase
       $response = $client->get('https://graph.microsoft.com/v1.0/users/' . $email, $options);
 
       $response_data = json_decode((string) $response->getBody(), TRUE);
-      // If we cannot find the user in AD by email, assume we need to deactivate the user in Drupal
+      // If we cannot find the user in AD by email, assume we need to block the user in Drupal
       $found_user_in_AD = isset($response_data['mail']);
     } catch (RequestException $e) {
     }
@@ -92,7 +91,7 @@ class SyncUserWithAD extends ActionBase
         $user = array_values($users)[0]; // Assume the lookup returns only one unique user.
         $user->status = 0;
         $user->save();
-        \Drupal::logger('portland OpenID')->notice('User deactivated: ' . $user->mail->value);
+        \Drupal::logger('portland OpenID')->notice('User blocked: ' . $user->mail->value);
       }
 
       $variables = [
@@ -100,7 +99,7 @@ class SyncUserWithAD extends ActionBase
         '@error_message' => $e->getMessage(),
       ];
       \Drupal::logger('portland OpenID')->error('@message. Details: @error_message', $variables);
-      return $this->t('User deactivated');
+      return $this->t('User blocked');
     }
   }
 
