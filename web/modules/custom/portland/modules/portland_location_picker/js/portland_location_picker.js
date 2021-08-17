@@ -143,6 +143,8 @@
           if (this.readyState == 4 && this.status == 200) {
             var response = JSON.parse(this.responseText);
             processReverseLocationData(response);
+          } else if (this.readyState == 4 && this.status != 200) {
+            showStatusModal('There was a problem retrieving location data (error code ' + this.status + ').<br><br>Please try again in a few moments. If the error persists, please <a href="/feedback">contact us</a>.');
           };
         }
         // API documentation: https://developers.arcgis.com/rest/geocode/api-reference/geocoding-reverse-geocode.htm
