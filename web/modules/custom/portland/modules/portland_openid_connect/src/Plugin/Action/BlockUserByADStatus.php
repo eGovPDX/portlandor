@@ -30,9 +30,11 @@ class BlockUserByADStatus extends ActionBase
       'marty.member@portlandoregon.gov',
       'amy.archer-masters@portlandoregon.gov',
       'amy.archer@portlandoregon.gov',
+      'Aaron.ScottMerrion@portlandoregon.gov',
+      'WBUDFTeam@portlandoregon.gov',
+      'council140@portlandoregon.gov'
     ];
-    if( in_array($account->getEmail(), $skip_emails)) return;
-
+    if( in_array(strtolower($account->getEmail()), array_map('strtolower', $skip_emails)) ) return;
     $tokens = BlockUserByADStatus::GetAccessToken();
     if (empty($tokens) || empty($tokens['access_token'])) {
       \Drupal::logger('portland OpenID')->error("Cannot retrieve access token for Microsoft Graph. Make sure the client secret is correct.");
