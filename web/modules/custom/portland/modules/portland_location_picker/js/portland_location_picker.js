@@ -165,7 +165,7 @@
           var listMarkup = "<p>Please select an address by clicking it.</p><ul>";
           for (var i = 0; i < candidates.length; i++) {
             var c = candidates[i];
-            var fulladdress = c.address + ', ' + c.attributes.city + ', ' + c.attributes.state + ' ' + c.attributes.zip_code;
+            var fulladdress = buildFullAddress(c);
             listMarkup += '<li><a href="#" class="pick" data-lat="' + c.attributes.lat + '" data-lon="' + c.attributes.lon + '" data-pick-address="' + fulladdress + '">' + fulladdress.toUpperCase() + '</a></li>';
           }
           listMarkup += "</ul>";
@@ -184,11 +184,19 @@
         } else if (candidates.length == 1) {
           var lat = candidates[0]["attributes"]["lat"];
           var lon = candidates[0]["attributes"]["lon"];
+          // put full address in field
+          var fulladdress = buildFullAddress(candidates[0]);
+          $('.location-picker-address').val(fulladdress);
           setMarkerAndZoom(lat, lon, true, true, DEFAULT_ZOOM_VERIFIED);
         } else {
           // no matches found
           showStatusModal("No matches found. Please try again.");
         }
+      }
+
+      function buildFullAddress(c){
+        var fulladdress = c.address + ', ' + c.attributes.city + ', ' + c.attributes.state + ' ' + c.attributes.zip_code;
+        return fulladdress;
       }
 
       function processReverseLocationData(data) {
