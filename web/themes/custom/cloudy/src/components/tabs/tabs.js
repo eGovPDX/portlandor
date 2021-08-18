@@ -69,7 +69,8 @@ Drupal.behaviors.tab_handler = {
 
       // aria-hidden should be true for all but visible pane; bootstrap doesn't handle this
       $('#serviceModesContent .tab-pane').attr('aria-hidden', 'true');
-      var panel = $("#pane-" + linkHash.substr(1));
+      var id = "#" + linkHash.substr(1);
+      var panel = $(id);
       panel.attr('aria-hidden', false);
 
       // focus the active tab; necessary in the case of page reload or direct navigation
