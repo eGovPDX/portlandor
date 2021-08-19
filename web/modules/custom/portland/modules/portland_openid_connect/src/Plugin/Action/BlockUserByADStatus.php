@@ -85,7 +85,7 @@ class BlockUserByADStatus extends ActionBase
 
     $found_user_in_AD = false;
     try {
-      // Document: https://docs.microsoft.com/en-us/graph/query-parameters?context=graph%2Fapi%2F1.0&view=graph-rest-1.0
+      // API Document: https://docs.microsoft.com/en-us/graph/query-parameters?context=graph%2Fapi%2F1.0&view=graph-rest-1.0
       // Example: https://graph.microsoft.com/v1.0/users?$count=true&$search="mail:xinju.wang@portlandoregon.gov"
       $response = $client->get(
         'https://graph.microsoft.com/v1.0/users?$count=true&$search="mail:' . $email . '"',
@@ -103,7 +103,24 @@ class BlockUserByADStatus extends ActionBase
       \Drupal::logger('portland OpenID')->error('@message. Details: @error_message', $variables);
     }
 
-    if (!$found_user_in_AD) {
+    // If a user is found in AD, activate the user if she's inactive
+    if ($found_user_in_AD) {
+      // Load the Drupal user with email
+      $users = \Drupal::entityTypeManager()->getStorage('user')
+        ->loadByProperties(['mail' => $email]);
+
+      if (count($users) != 0) {
+        $user = array_values($users)[0]; // Assume the lookup returns only one unique user.
+        if ( ! $user->status->value) {
+          $user->status = 1;
+          $user->save();
+          \Drupal::logger('portland OpenID')->notice('User activated: ' . $user->mail->value);
+        }
+      }
+      return $this->t('User activated');
+    }
+    // If a user is NOT found in AD, deactivate the user if she's active
+    else {
       // Load the Drupal user with email
       $users = \Drupal::entityTypeManager()->getStorage('user')
         ->loadByProperties(['mail' => $email]);
@@ -116,7 +133,6 @@ class BlockUserByADStatus extends ActionBase
           \Drupal::logger('portland OpenID')->notice('User blocked: ' . $user->mail->value);
         }
       }
-
       return $this->t('User blocked');
     }
   }
