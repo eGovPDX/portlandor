@@ -284,7 +284,7 @@
       function geoLocate() {
         var t = setTimeout(function () {
           // display status indicator
-          showStatusModal("We are looking for your current location. Please wait...");
+          showStatusModal("Triangulating on your current location. Please wait...");
           map.locate({ watch: false, setView: true, maximumAge: 20000, enableHighAccuracy: true });
         }, 500);
       }
