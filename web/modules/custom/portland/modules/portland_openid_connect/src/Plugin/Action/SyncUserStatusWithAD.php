@@ -7,15 +7,15 @@ use Drupal\Core\Session\AccountInterface;
 use GuzzleHttp\Exception\RequestException;
 
 /**
- * Block users who are removed from AD.
+ * Synchronize user status with Azure AD.
  *
  * @Action(
- *   id = "sync_user_by_ad_status",
- *   label = @Translation("Block (disable) users by AD status"),
+ *   id = "sync_user_status_with_ad",
+ *   label = @Translation("Synchronize user status with AD"),
  *   type = "user"
  * )
  */
-class BlockUserByADStatus extends ActionBase
+class SyncUserStatusWithAD extends ActionBase
 {
   /**
    * {@inheritdoc}
@@ -43,7 +43,7 @@ class BlockUserByADStatus extends ActionBase
     ];
     if (in_array(strtolower($account->getEmail()), array_map('strtolower', $skip_emails))) return;
 
-    $tokens = BlockUserByADStatus::GetAccessToken();
+    $tokens = SyncUserStatusWithAD::GetAccessToken();
     if (empty($tokens) || empty($tokens['access_token'])) {
       \Drupal::logger('portland OpenID')->error("Cannot retrieve access token for Microsoft Graph. Make sure the client secret is correct.");
       return;
