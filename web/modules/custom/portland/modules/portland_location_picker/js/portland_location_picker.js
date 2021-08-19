@@ -16,6 +16,15 @@
       var response; // = { "status": "success", "spatialReference": { "wkid": 102100, "latestWkid": 3857 }, "candidates": [{ "location": { "x": -1.3645401627E7, "y": 5708911.764 }, "attributes": { "sp_x": 7669661.490, "sp_y": 694349.134, "city": "PORTLAND", "jurisdiction": "PORTLAND", "state": "OREGON", "lon": -122.57872839300, "id": 40159, "type": "intersection", "lat": 45.55241828270, "county": "MULTNOMAH" }, "address": "NE 82ND AVE AND NE SANDY BLVD", "extent": { "ymin": 5708911.514, "ymax": 5708912.014, "xmin": -1.3645401877E7, "xmax": -1.3645401377E7 } }] };
       var suggestionsModal;
       var statusModal;
+      var baseLayer;
+      var aerialLayer;
+      var currentView = "base";
+      var baseLayer = L.tileLayer('https://www.portlandmaps.com/arcgis/rest/services/Public/Basemap_Color_Complete/MapServer/tile/{z}/{y}/{x}', {
+        attribution: "PortlandMaps ESRI"
+      });
+      var aerialLayer = L.tileLayer('https://www.portlandmaps.com/arcgis/rest/services/Public/Basemap_Color_Complete_Aerial/MapServer/tile/{z}/{y}/{x}', {
+        attribution: "PortlandMaps ESRI"
+      });
 
       const DEFAULT_LATITUDE = 45.51;
       const DEFAULT_LONGITUDE = -122.65;
@@ -45,6 +54,26 @@
         }
       });
 
+      var AerialControl = L.Control.extend({
+        options: {
+          position: "bottomright"
+        },
+        onAdd: function (map) {
+          aerialControlContainer = L.DomUtil.create('div', 'leaflet-bar locate-control leaflet-control leaflet-control-custom');
+
+          aerialControlContainer.style.backgroundImage = "url(/modules/custom/portland/modules/portland_location_picker/images/map_aerial.png)";
+          aerialControlContainer.title = 'Aerial view';
+
+          aerialControlContainer.onclick = function (e) {
+            cancelEventBubble(e);
+            locationErrorShown = false;
+            toggleAerialView();
+          };
+
+          return aerialControlContainer;
+        }
+      });
+
       initialize();
 
       function initialize() {
@@ -56,12 +85,6 @@
           zoomControl: false,
           zoom: DEFAULT_ZOOM
         });
-        var baseLayer = L.tileLayer('https://www.portlandmaps.com/arcgis/rest/services/Public/Basemap_Color_Complete/MapServer/tile/{z}/{y}/{x}', {
-          attribution: "PortlandMaps ESRI"
-        });
-        // var aerialLayer = L.tileLayer('https://www.portlandmaps.com/arcgis/rest/services/Public/Basemap_Color_Complete_Aerial/MapServer/tile/{z}/{y}/{x}', {
-        //   attribution: "PortlandMaps ESRI"
-        // });
         map.addLayer(baseLayer);
         map.addControl(zoomcontrols);
         map.on('click', handleMapClick);
@@ -69,6 +92,8 @@
         map.on('locationfound', handleLocationFound);
         // force a crosshair cursor
         $('.leaflet-container').css('cursor', 'crosshair');
+        aerialControl = new AerialControl();
+        map.addControl(aerialControl);
         locateControl = new LocateControl();
         map.addControl(locateControl);
 
@@ -107,6 +132,21 @@
 
         // set up message modal //////////////////////////////
         // this is where error and other messages will appear, such as when geolocation fails
+      }
+
+      function toggleAerialView() {
+        if (currentView != "aerial") {
+          map.removeLayer(baseLayer);
+          map.addLayer(aerialLayer);
+          currentView = "aerial";
+          // show icon active
+          aerialControlContainer.style.background = 'url("/modules/custom/portland/modules/portland_location_picker/images/map_base.png")';
+        } else {
+          map.removeLayer(aerialLayer);
+          map.addLayer(baseLayer);
+          currentView = "base";
+          aerialControlContainer.style.background = 'url("/modules/custom/portland/modules/portland_location_picker/images/map_aerial.png")';
+        }
       }
 
       function handleMapClick(e) {
