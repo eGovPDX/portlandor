@@ -242,8 +242,10 @@
       function processReverseLocationData(data) {
         var address = data.address.Address;
         var city = data.address.City;
+        var postalExt = data.address.PostalExt;
+        var postal = postalExt && postalExt.length > 0 ? data.address.Postal + '-' + postalExt : data.address.Postal;
         var business = data.address.PlaceName;
-        var addressLabel = address.length > 0 ? address + ', ' + city : city;
+        var addressLabel = address.length > 0 ? address + ', ' + city + ' ' + postal : city;
         $('.location-picker-address').val(addressLabel);
         $('.place-name').val(business);
       }
