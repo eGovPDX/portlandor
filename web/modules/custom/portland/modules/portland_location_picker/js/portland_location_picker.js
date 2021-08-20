@@ -106,7 +106,7 @@
           // to identify an intersection. It must be the word "and."
           address = address.replace("&", "and");
           if (address.length < 1) {
-            alert("Please enter an address or cross streets and try again.");
+            showStatusModal("Please enter an address or cross streets and try again.");
             return false;
           }
           verifyAddress(address);
@@ -162,11 +162,18 @@
         request.onreadystatechange = function () {
           if (this.readyState == 4 && this.status == 200) {
             var response = JSON.parse(this.responseText);
+            if (response.error) {
+              showErrorModal("There was a problem retrieving address data.");
+              return false;
+            }
             if (response.candidates.length == 0) {
-              alert('No matching locations found. Please try a different address and try again.');
+              showStatusModal('No matching locations found. Please try a different address and try again.');
               return false;
             }
             processLocationData(response.candidates);
+          } else if (this.readyState == 4 && this.status != 200) {
+            showStatusModal('There was a problem retrieving address data. Error code ' + this.status + '.');
+            return false;
           };
         }
         // API documentation: https://www.portlandmaps.com/development/#suggest
@@ -182,9 +189,14 @@
         request.onreadystatechange = function () {
           if (this.readyState == 4 && this.status == 200) {
             var response = JSON.parse(this.responseText);
+            if (response.error) {
+              showErrorModal("There was a problem retrieving data for the selected location.");
+              return false;
+            }
             processReverseLocationData(response);
           } else if (this.readyState == 4 && this.status != 200) {
-            showStatusModal('There was a problem retrieving location data (error code ' + this.status + ').<br><br>Please try again in a few moments. If the error persists, please <a href="/feedback">contact us</a>.');
+            showStatusModal('There was a problem retrieving data for the selected location. Error code ' + this.status + '.');
+            return false;
           };
         }
         // API documentation: https://developers.arcgis.com/rest/geocode/api-reference/geocoding-reverse-geocode.htm
@@ -242,10 +254,11 @@
       function processReverseLocationData(data) {
         var address = data.address.Address;
         var city = data.address.City;
+        var state = data.address.Region;
         var postalExt = data.address.PostalExt;
-        var postal = postalExt && postalExt.length > 0 ? data.address.Postal + '-' + postalExt : data.address.Postal;
+        var postal = data.address.Postal;
         var business = data.address.PlaceName;
-        var addressLabel = address.length > 0 ? address + ', ' + city + ' ' + postal : city;
+        var addressLabel = address.length > 0 ? address + ', ' + city + ', ' + state + ' ' + postal : city;
         $('.location-picker-address').val(addressLabel);
         $('.place-name').val(business);
       }
@@ -301,6 +314,11 @@
           }]
         }).showModal();
         statusModal.removeClass('visually-hidden');
+      }
+
+      function showErrorModal(message) {
+        message = message + '<br><br>Please try again in a few moments. If the error persists, please <a href="/feedback">contact us</a>.';
+        showStatusModal(message);
       }
 
       function cancelEventBubble(e) {
