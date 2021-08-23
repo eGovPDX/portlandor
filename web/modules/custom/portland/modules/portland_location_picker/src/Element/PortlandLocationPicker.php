@@ -62,12 +62,6 @@ class PortlandLocationPicker extends WebformCompositeBase {
       '#title_display' => 'invisible',
       '#markup' => '<div id="status_modal" class="visually-hidden"></div>',
     ];
-    $elements['message_modal'] = [
-      '#type' => 'markup',
-      '#title' => 'Status message',
-      '#title_display' => 'invisible',
-      '#markup' => '<div id="message_modal" class="visually-hidden"></div>',
-    ];
     $elements['place_name'] = [
       '#type' => 'textfield',
       '#id' => 'place_name',

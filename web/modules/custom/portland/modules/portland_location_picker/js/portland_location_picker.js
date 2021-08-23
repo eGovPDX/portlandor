@@ -12,7 +12,13 @@
   Drupal.behaviors.portland_location_picker = {
     attach: function (context, settings) {
 
-      // canned response data for development and testing
+      const DEFAULT_LATITUDE = 45.51;
+      const DEFAULT_LONGITUDE = -122.65;
+      const DEFAULT_ZOOM = 11;
+      const DEFAULT_ZOOM_CLICK = 18;
+      const DEFAULT_ZOOM_VERIFIED = 18;
+      const ZOOM_POSITION = 'topright';
+
       var response; // = { "status": "success", "spatialReference": { "wkid": 102100, "latestWkid": 3857 }, "candidates": [{ "location": { "x": -1.3645401627E7, "y": 5708911.764 }, "attributes": { "sp_x": 7669661.490, "sp_y": 694349.134, "city": "PORTLAND", "jurisdiction": "PORTLAND", "state": "OREGON", "lon": -122.57872839300, "id": 40159, "type": "intersection", "lat": 45.55241828270, "county": "MULTNOMAH" }, "address": "NE 82ND AVE AND NE SANDY BLVD", "extent": { "ymin": 5708911.514, "ymax": 5708912.014, "xmin": -1.3645401877E7, "xmax": -1.3645401377E7 } }] };
       var suggestionsModal;
       var statusModal;
@@ -25,14 +31,6 @@
       var aerialLayer = L.tileLayer('https://www.portlandmaps.com/arcgis/rest/services/Public/Basemap_Color_Complete_Aerial/MapServer/tile/{z}/{y}/{x}', {
         attribution: "PortlandMaps ESRI"
       });
-
-      const DEFAULT_LATITUDE = 45.51;
-      const DEFAULT_LONGITUDE = -122.65;
-      const DEFAULT_ZOOM = 11;
-      const DEFAULT_ZOOM_CLICK = 18;
-      const DEFAULT_ZOOM_VERIFIED = 18;
-      const ZOOM_POSITION = 'topright';
-      const AUTOCOMPLETE_MIN_CHARACTERS = 2;
 
       var LocateControl = L.Control.extend({
         options: {
@@ -72,6 +70,13 @@
 
           return aerialControlContainer;
         }
+      });
+
+      var hereIcon = L.icon({
+        iconUrl: "/modules/custom/portland/modules/portland_location_picker/images/map_marker_here.png",
+        iconSize: [25, 41],
+        iconAnchor: [13, 41],
+        className: "hereIcon"
       });
 
       initialize();
@@ -127,11 +132,8 @@
         });
 
         // set up status modal ///////////////////////////////
-        // this will display a status indicator when performing slow ajax operations, such as self geolocation
+        // this will display error messages, or a status indicator when performing slow ajax operations such as self geolocation
         statusModal = $('#status_modal');
-
-        // set up message modal //////////////////////////////
-        // this is where error and other messages will appear, such as when geolocation fails
       }
 
       function toggleAerialView() {
@@ -147,11 +149,6 @@
           currentView = "base";
           aerialControlContainer.style.background = 'url("/modules/custom/portland/modules/portland_location_picker/images/map_aerial.png")';
         }
-      }
-
-      function handleMapClick(e) {
-        setMarkerAndZoom(e.latlng.lat, e.latlng.lng, true, false, DEFAULT_ZOOM_CLICK);
-        reverseLookup(e.latlng.lat, e.latlng.lng);
       }
 
       function verifyAddress(address) {
@@ -180,6 +177,14 @@
         var url = "https://www.portlandmaps.com/api/suggest/?intersections=1&alt_coords=1&api_key=" + drupalSettings.portlandmaps_api_key + "&query=" + encodedAddress;
         request.open("GET", url, true);
         request.send();
+      }
+
+      function geoLocate() {
+        var t = setTimeout(function () {
+          // display status indicator
+          showStatusModal("Triangulating on your current location. Please wait...");
+          map.locate({ watch: false, setView: true, maximumAge: 20000, enableHighAccuracy: true });
+        }, 500);
       }
 
       function reverseLookup(lat, lng) {
@@ -263,6 +268,30 @@
         $('.place-name').val(business);
       }
 
+      function showStatusModal(message) {
+        statusModal.html('<p class="status-message">' + message + '</p>');
+        Drupal.dialog(statusModal, {
+          width: '600px',
+          buttons: [{
+            text: 'Close',
+            click: function () {
+              $(this).dialog('close');
+            }
+          }]
+        }).showModal();
+        statusModal.removeClass('visually-hidden');
+      }
+
+      function showErrorModal(message) {
+        message = message + '<br><br>Please try again in a few moments. If the error persists, please <a href="/feedback">contact us</a>.';
+        showStatusModal(message);
+      }
+
+      function handleMapClick(e) {
+        setMarkerAndZoom(e.latlng.lat, e.latlng.lng, true, false, DEFAULT_ZOOM_CLICK);
+        reverseLookup(e.latlng.lat, e.latlng.lng);
+      }
+
       function setMarkerAndZoom(lat, lon, zoom, center, zoomlevel) {
         // remove previous marker
         if (marker) {
@@ -292,33 +321,6 @@
           $('.location-lon').val(latlng.lng);
           reverseLookup(latlng.lat, latlng.lng);
         });
-      }
-
-      function geoLocate() {
-        var t = setTimeout(function () {
-          // display status indicator
-          showStatusModal("Triangulating on your current location. Please wait...");
-          map.locate({ watch: false, setView: true, maximumAge: 20000, enableHighAccuracy: true });
-        }, 500);
-      }
-
-      function showStatusModal(message) {
-        statusModal.html('<p class="status-message">' + message + '</p>');
-        Drupal.dialog(statusModal, {
-          width: '600px',
-          buttons: [{
-            text: 'Close',
-            click: function () {
-              $(this).dialog('close');
-            }
-          }]
-        }).showModal();
-        statusModal.removeClass('visually-hidden');
-      }
-
-      function showErrorModal(message) {
-        message = message + '<br><br>Please try again in a few moments. If the error persists, please <a href="/feedback">contact us</a>.';
-        showStatusModal(message);
       }
 
       function cancelEventBubble(e) {
@@ -351,13 +353,6 @@
         showStatusModal(message);
         locateControlContaier.style.backgroundImage = 'url("/modules/custom/portland/modules/portland_location_picker/images/map_locate.png")';
       }
-
-      var hereIcon = L.icon({
-        iconUrl: "/modules/custom/portland/modules/portland_location_picker/images/map_marker_here.png",
-        iconSize: [25, 41],
-        iconAnchor: [13, 41],
-        className: "hereIcon"
-      });
 
     }
   };
