@@ -260,8 +260,14 @@
       }
 
       function buildFullAddress(c){
-        var fulladdress = c.address + ', ' + c.attributes.city + ', ' + c.attributes.state + ' ' + c.attributes.zip_code;
-        return fulladdress;
+        if (c.attributes.type == "intersection") {
+          return c.address;
+        }
+        var address = c.address;
+        var city = c.attributes.city;
+        var state = c.attributes.state;
+        var zip = c.attributes.zip_code;
+        return address + ', ' + city + ', ' + state + ' ' + zip;
       }
 
       function processReverseLocationData(data) {
