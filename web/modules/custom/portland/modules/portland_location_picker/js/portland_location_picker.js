@@ -103,7 +103,8 @@
         map.addControl(locateControl);
 
         // Set up verify button //////////////////////////////////
-        $('.location-picker-address').after('<input class="btn location-verify button js-form-submit form-submit" type="submit" id="location_verify" name="op" value="Locate">');
+        $('.location-picker-address').after('<input class="btn location-verify button js-form-submit form-submit" type="submit" id="location_verify" name="op" value="Verify">');
+        $('.location-picker-address').after('<span class="verified-checkmark invisible" title="Location is verified!">✓</span>');
         $(document).on('click', '#location_verify', function (e) {
           e.preventDefault();
           var address = $('.location-picker-address').val();
@@ -129,11 +130,17 @@
           var lat = $(this).data('lat');
           var lon = $(this).data('lon');
           setMarkerAndZoom(lat, lon, true, true, DEFAULT_ZOOM_VERIFIED);
+          setVerified();
         });
 
         // set up status modal ///////////////////////////////
         // this will display error messages, or a status indicator when performing slow ajax operations such as self geolocation
         statusModal = $('#status_modal');
+
+        // set up address field to turn off verified checkmark if value changes
+        $('.location-picker-address').on('keyup', function () {
+          setUnverified();
+        });
       }
 
       function toggleAerialView() {
@@ -245,6 +252,7 @@
           var fulladdress = buildFullAddress(candidates[0]);
           $('.location-picker-address').val(fulladdress);
           setMarkerAndZoom(lat, lon, true, true, DEFAULT_ZOOM_VERIFIED);
+          setVerified();
         } else {
           // no matches found
           showStatusModal("No matches found. Please try again.");
@@ -266,6 +274,7 @@
         var addressLabel = address.length > 0 ? address + ', ' + city + ', ' + state + ' ' + postal : city;
         $('.location-picker-address').val(addressLabel);
         $('.place-name').val(business);
+        setVerified();
       }
 
       function showStatusModal(message) {
@@ -286,6 +295,17 @@
         message = message + '<br><br>Please try again in a few moments. If the error persists, please <a href="/feedback">contact us</a>.';
         showStatusModal(message);
       }
+
+      function setVerified() {
+        $('.verified-checkmark').removeClass('invisible');
+        $('.location-verify').prop('disabled', true);
+      }
+
+      function setUnverified() {
+        $('.verified-checkmark').addClass('invisible');
+        $('.location-verify').prop('disabled', false);
+      }
+
 
       function handleMapClick(e) {
         setMarkerAndZoom(e.latlng.lat, e.latlng.lng, true, false, DEFAULT_ZOOM_CLICK);
