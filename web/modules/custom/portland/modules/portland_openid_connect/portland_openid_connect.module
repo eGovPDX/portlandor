@@ -1,0 +1,266 @@
+<?php
+
+use Drupal\user\Entity\User;
+use Drupal\Core\Language\LanguageInterface;
+use GuzzleHttp\Exception\RequestException;
+use Drupal\portland_openid_connect\Util\PortlandOpenIdConnectUtil;
+
+/**
+ * Implement hook_cron()
+ */
+function portland_openid_connect_cron()
+{
+  // When Cron got into a locked state, you will see the log "Attempting to re-run cron while it is already running.".
+  // Run this command: lando drush sqlq "DELETE FROM semaphore WHERE name = 'cron';"
+
+  // Call Microsoft Graph API to retrieve user info
+  $tokens = _get_access_token();
+  if (empty($tokens['access_token'])) {
+    \Drupal::logger('portland OpenID')->error("Cannot retrieve access token for Microsoft Graph. Make sure the client secret is correct.");
+    return;
+  }
+
+  _get_all_users($tokens['access_token']);
+}
+
+/**
+ * Parse the response from Microsoft Graph API to add users.
+ * https://docs.microsoft.com/en-us/graph/delta-query-users
+ * 
+ * @param array $response_data
+ *   The decoded JSON response from Microsoft Graph.
+ */
+function _process_users($response_data, $access_token)
+{
+  $user_data_array = $response_data['value']; // array of users
+  if (empty($user_data_array)) {
+    \Drupal::logger('portland OpenID')->notice('No user change since the last sync.');
+    return;
+  }
+
+  $count_user_created = 0;
+  $count_user_updated = 0;
+  $count_user_deleted = 0;
+
+  foreach ($user_data_array as $user_data) {
+    // Skip accounts without first name, last name, or email. These are not people acount.
+    if (
+      empty($user_data['givenName']) ||
+      empty($user_data['surname']) ||
+      empty($user_data['mail']) ||
+      empty($user_data['id'])
+    )
+      continue;
+
+    // Find the user with email
+    $users = \Drupal::entityTypeManager()->getStorage('user')
+      ->loadByProperties(['mail' => $user_data['mail']]);
+
+    if (count($users) != 0) {
+      $user = array_values($users)[0]; // Assume the lookup returns only one unique user.
+      // If the user is removed in AD, deactivate this user
+      // https://docs.microsoft.com/en-us/graph/delta-query-users
+      if (array_key_exists('@removed', $user_data)) {
+        $user->status = 0;
+        $user->save();
+        $count_user_deleted++;
+        \Drupal::logger('portland OpenID')->notice('User deactivated: ' . $user->mail->value);
+      }
+    }
+  }
+
+  // Summarize the changes made in this batch
+  $log_message = 'Retrieved ' . count($user_data_array) . ' users. ';
+  if ($count_user_created != 0) {
+    $log_message .= " Created $count_user_created.";
+  }
+  if ($count_user_updated != 0) {
+    $log_message .= " Updated $count_user_updated.";
+  }
+  if ($count_user_deleted != 0) {
+    $log_message .= " Deactivated $count_user_deleted.";
+  }
+  \Drupal::logger('portland OpenID')->notice($log_message);
+}
+
+
+
+/**
+ * Use the access token to get user profile
+ */
+function _get_user_profile_by_email($access_token, $user_email)
+{
+  if (strlen($access_token) === 0 || strlen($user_email) === 0) return [];
+
+  /* @var \GuzzleHttp\ClientInterface $client */
+  $client = new \GuzzleHttp\Client();
+  // Perform the request.
+  $options = [
+    'method' => 'GET',
+    'headers' => [
+      'Content-Type' => 'application/json',
+      'Authorization' => 'Bearer ' . $access_token,
+    ],
+  ];
+
+  try {
+    // If there is a resume link, use it. Otherwise start fresh
+    // Try it on https://developer.microsoft.com/en-us/graph/graph-explorer
+    $request_url = "https://graph.microsoft.com/beta/users/$user_email/profile";
+    $response = $client->get($request_url, $options);
+    $response_data = json_decode((string) $response->getBody(), TRUE);
+    if ($response_data == null) return false;
+    return _process_user_profile($response_data, $user_email);
+  } catch (RequestException $e) {
+    $variables = [
+      '@message' => 'Could not retrieve user profile for ' . $user_email,
+      '@error_message' => $e->getMessage(),
+    ];
+    \Drupal::logger('portland OpenID')->error('@message. Details: @error_message', $variables);
+    return [];
+  }
+}
+
+/**
+ * Update or create the user's bureau and phone
+ */
+function _process_user_profile($response_data)
+{
+  if ($response_data == null) return [];
+
+  $phones = $response_data['phones'] ?? [];
+  $user_phone = '';
+  foreach ($phones as $phone) {
+    $phone_type = $phone['type'] ?? '';
+    if ($phone_type == 'business') {
+      $user_phone = $phone['number'] ?? '';
+    }
+  }
+  $positions = $response_data['positions'] ?? [];
+  $user_bureau_array = [];
+  foreach ($positions as $position) {
+    $position_isCurrent = $position['isCurrent'] ?? false;
+    if ($position_isCurrent) {
+      $detail = $position['detail'] ?? [];
+      $company = $detail['company'] ?? [];
+      if (array_key_exists('displayName', $company)) {
+        $user_bureau_array[] = $company['displayName'];
+      }
+    }
+  }
+  $user_bureau_string = implode(',', array_unique($user_bureau_array));
+
+  return [
+    'phone' => $user_phone,
+    'group_names' => $user_bureau_string
+  ];
+}
+
+/**
+ * Use the access token to get user info
+ */
+function _get_all_users($access_token)
+{
+  $system_state = \Drupal::state();
+
+  /* @var \GuzzleHttp\ClientInterface $client */
+  $client = new \GuzzleHttp\Client();
+  // Perform the request.
+  $options = [
+    'method' => 'GET',
+    'headers' => [
+      'Content-Type' => 'application/json',
+      'Authorization' => 'Bearer ' . $access_token,
+    ],
+  ];
+
+  try {
+    // Run this command to restart the sync process next time
+    // lando drush state:del user_sync.resume_url
+
+    if ($resume_url = $system_state->get('user_sync.resume_url')) {
+      \Drupal::logger('portland OpenID')->notice('Resume retrieving user information ...');
+    } else {
+      \Drupal::logger('portland OpenID')->notice('Start retrieving user information ...');
+    }
+
+    // If there is a resume link, use it. Otherwise start fresh
+    $request_url = (empty($resume_url)) ? 'https://graph.microsoft.com/v1.0/users/delta' : $resume_url;
+    $request_limit = 3;
+    $request_count = 0;
+    $response_data = null;
+    while (strlen($request_url) > 0 && $request_count < $request_limit) {
+      $response = $client->get($request_url, $options);
+      $response_data = json_decode((string) $response->getBody(), TRUE);
+      if ((!isset($response_data['@odata.nextLink'])) && !($response_data['@odata.deltaLink'])) {
+        \Drupal::logger('portland OpenID')->error('Response contains neither nextLink nor deltaLink.');
+        return false;
+      }
+      _process_users($response_data, $access_token);
+      $request_url = $response_data['@odata.nextLink'] ?? '';
+      $request_count++;
+    }
+    if ($response_data == null) return false;
+
+    // Where there is no nextLink, there is no new user info.
+    // Should use deltaLink to resume in the next Cron.
+    $system_state->set('user_sync.resume_url', $response_data['@odata.nextLink'] ?? $response_data['@odata.deltaLink']);
+    \Drupal::logger('portland OpenID')->notice(isset($response_data['@odata.nextLink']) ?
+      'More user information to be retrieved by the next cron job.' :
+      'Finished retrieving all user information.');
+    return true;
+  } catch (RequestException $e) {
+    $variables = [
+      '@message' => 'Could not retrieve user information',
+      '@error_message' => $e->getMessage(),
+    ];
+    \Drupal::logger('portland OpenID')->error('@message. Details: @error_message', $variables);
+    return false;
+  }
+}
+
+/**
+ * Call Microsoft Azure AD OAuth API to retrieve the access token.
+ * Need a fresh token for each CRON job run.
+ */
+function _get_access_token()
+{
+  $windows_aad_config = \Drupal::config('openid_connect.settings.windows_aad');
+  $client_id = $windows_aad_config->get('settings.client_id');
+  $tenant_id = '636d7808-73c9-41a7-97aa-8c4733642141';
+
+  $request_options = [
+    'form_params' => [
+      // 'code' => $authorization_code,
+      'client_id' => $client_id,
+      'client_secret' => $windows_aad_config->get('settings.client_secret'),
+      'grant_type' => 'client_credentials',
+      'scope' => 'https://graph.microsoft.com/.default',
+    ],
+  ];
+
+  /* @var \GuzzleHttp\ClientInterface $client */
+  $client = new \GuzzleHttp\Client();
+
+  try {
+    $response = $client->post("https://login.microsoftonline.com/$tenant_id/oauth2/v2.0/token", $request_options);
+    $response_data = json_decode((string) $response->getBody(), TRUE);
+
+    // Expected result.
+    $tokens = [
+      // 'id_token' => $response_data['id_token'],
+      'access_token' => $response_data['access_token'],
+    ];
+    if (array_key_exists('expires_in', $response_data)) {
+      $tokens['expire'] = \Drupal::time()->getRequestTime() + $response_data['expires_in'];
+    }
+    return $tokens;
+  } catch (RequestException $e) {
+    $variables = [
+      '@message' => 'Could not retrieve access token',
+      '@error_message' => $e->getMessage(),
+    ];
+    \Drupal::logger('portland OpenID')->error('@message. Details: @error_message', $variables);
+    return FALSE;
+  }
+}
