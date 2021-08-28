@@ -9,6 +9,10 @@
   var locCircle;
   var locateControlContaier;
 
+  // Here's how to reverse geolocate a park. Note the x/y values in the geometry parameter:
+  // https://www.portlandmaps.com/arcgis/rest/services/Public/Parks_Misc/MapServer/2/query?geometry=%7B%22x%22%3A-122.55203425884248%2C%22y%22%3A45.53377174783918%2C%22spatialReference%22%3A%7B%22wkid%22%3A4326%7D%7D&geometryType=esriGeometryPoint&spacialRel=esriSpatialRelIntersects&returnGeometry=false&returnTrueCurves=false&returnIdsOnly=false&returnCountOnly=false&returnDistinctValues=false&f=pjson"
+  // returns an object that includes the park name. 
+  
   Drupal.behaviors.portland_location_picker = {
     attach: function (context, settings) {
 
@@ -21,6 +25,7 @@
 
       var response; // = { "status": "success", "spatialReference": { "wkid": 102100, "latestWkid": 3857 }, "candidates": [{ "location": { "x": -1.3645401627E7, "y": 5708911.764 }, "attributes": { "sp_x": 7669661.490, "sp_y": 694349.134, "city": "PORTLAND", "jurisdiction": "PORTLAND", "state": "OREGON", "lon": -122.57872839300, "id": 40159, "type": "intersection", "lat": 45.55241828270, "county": "MULTNOMAH" }, "address": "NE 82ND AVE AND NE SANDY BLVD", "extent": { "ymin": 5708911.514, "ymax": 5708912.014, "xmin": -1.3645401877E7, "xmax": -1.3645401377E7 } }] };
       var suggestionsModal;
+      var locationType;
       var statusModal;
       var baseLayer;
       var aerialLayer;
@@ -137,9 +142,29 @@
         // this will display error messages, or a status indicator when performing slow ajax operations such as self geolocation
         statusModal = $('#status_modal');
 
-        // set up address field to turn off verified checkmark if value changes
+        // set up address field /////////////////////////////
+        // turn off verified checkmark if value changes
         $('.location-picker-address').on('keyup', function () {
           setUnverified();
+        });
+
+        // set up location type radios //////////////////////
+        $('fieldset.location-type input[type="radio"]').on("click", function() {
+          locationType = $(this).val();
+          if (locationType != 'private') {
+            setTimeout(function () { map.invalidateSize(); }, 0);
+          }
+        });
+
+        // set up parks select list /////////////////////////
+        $('#location_park').on("change", function() {
+          if (locationType == 'park') {
+            var park = $(this).val();
+            if (park) {
+              console.log("zoom to park " + park);
+              locatePark(park);
+            }
+          }
         });
       }
 
@@ -194,7 +219,70 @@
         }, 500);
       }
 
+      function locatePark(id) {
+        // abort any pending requests
+        request.abort();
+        // set up event handler to process response
+        request.onreadystatechange = function () {
+          if (this.readyState == 4 && this.status == 200) {
+            var response = JSON.parse(this.responseText);
+            if (response.error) {
+              showErrorModal("There was a problem retrieving data for the selected location.");
+              return false;
+            }
+            if (response.length < 1) {
+              showStatusModal("Location data not found for the selected park or natural area. Please try finding the location on the map.");
+            }
+            // the coordinates returned by this call are for park entrances. some may have more than
+            // one entrance, such as large parks like Washington Park. we use the first one in the array.
+            var txt = document.createElement("textarea");
+            txt.innerHTML = response[0].field_geolocation;
+            var json = JSON.parse(txt.value);
+            var lon = json.coordinates[0];
+            var lat = json.coordinates[1];
+            setMarkerAndZoom(lat, lon, true, true, DEFAULT_ZOOM_VERIFIED-1);
+            setVerified();
+          } else if (this.readyState == 4 && this.status != 200) {
+            showStatusModal('There was a problem retrieving data for the selected location. Error code ' + this.status + '.');
+            return false;
+          };
+        }
+        var url = '/parks/search/' + id;
+        request.open("GET", url, true);
+        request.send();
+      }
+
+      function isPark(lat, lng) {
+        // abort any pending requests
+        request.abort();
+        // set up event handler to process response
+        request.onreadystatechange = function () {
+          if (this.readyState == 4 && this.status == 200) {
+            var response = JSON.parse(this.responseText);
+            if (response.error) {
+              showErrorModal("There was a problem retrieving data for the selected location.");
+              return false;
+            }
+            alert(response);
+          } else if (this.readyState == 4 && this.status != 200) {
+            showStatusModal('There was a problem retrieving data for the selected location. Error code ' + this.status + '.');
+            return false;
+          };
+        }
+        var url = 'https://www.portlandmaps.com/arcgis/rest/services/Public/Parks_Misc/MapServer/2/query?geometry=%7B%22x%22%3A' + lng + '%2C%22y%22%3A' + lat + '%2C%22spatialReference%22%3A%7B%22wkid%22%3A4326%7D%7D&geometryType=esriGeometryPoint&spacialRel=esriSpatialRelIntersects&returnGeometry=false&returnTrueCurves=false&returnIdsOnly=false&returnCountOnly=false&returnDistinctValues=false&f=pjson';
+
+        var returnVal = $http.get(url);
+
+
+
+
+        request.open("GET", url, true);
+        request.send();
+      }
+
       function reverseLookup(lat, lng) {
+        isPark(lat, lng);
+
         // abort any pending requests
         request.abort();
         // set up event handler to process response
@@ -222,7 +310,6 @@
 
       function processLocationData(candidates) {
 
-        // if only one candidate, immediately locate it on the map
         if (candidates.length > 1) {
           // multiple candidates, how to handle? how about a modal dialog?
           suggestionsModal = $('#suggestions_modal');
@@ -246,6 +333,7 @@
           }).showModal();
           suggestionsModal.removeClass('visually-hidden');
         } else if (candidates.length == 1) {
+          // if only one candidate, immediately locate it on the map
           var lat = candidates[0]["attributes"]["lat"];
           var lon = candidates[0]["attributes"]["lon"];
           // put full address in field
