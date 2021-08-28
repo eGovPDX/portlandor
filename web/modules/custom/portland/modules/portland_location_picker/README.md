@@ -2,6 +2,11 @@
 
 This custom sub-module of the Portland module implements a custom composite element for webforms. It is used for address verification, geolocation, and reverse geolocation.
 
+## Configuration
+
+IMPORTANT: When placed in a webform, the widget MUST have the machine name "report_location" in order for the built-in
+conditional logic to work. If sub-fields aren't hiding/showing as expect, this is the first thing to check.
+
 ## Address verification
 
 Uses the PortlandMaps.com API for address verification and suggestions.
