@@ -252,36 +252,36 @@
         request.send();
       }
 
-      function isPark(lat, lng) {
-        // abort any pending requests
-        request.abort();
-        // set up event handler to process response
-        request.onreadystatechange = function () {
-          if (this.readyState == 4 && this.status == 200) {
-            var response = JSON.parse(this.responseText);
-            if (response.error) {
-              showErrorModal("There was a problem retrieving data for the selected location.");
-              return false;
-            }
-            alert(response);
-          } else if (this.readyState == 4 && this.status != 200) {
-            showStatusModal('There was a problem retrieving data for the selected location. Error code ' + this.status + '.');
-            return false;
-          };
-        }
-        var url = 'https://www.portlandmaps.com/arcgis/rest/services/Public/Parks_Misc/MapServer/2/query?geometry=%7B%22x%22%3A' + lng + '%2C%22y%22%3A' + lat + '%2C%22spatialReference%22%3A%7B%22wkid%22%3A4326%7D%7D&geometryType=esriGeometryPoint&spacialRel=esriSpatialRelIntersects&returnGeometry=false&returnTrueCurves=false&returnIdsOnly=false&returnCountOnly=false&returnDistinctValues=false&f=pjson';
+      // function isPark(lat, lng) {
+      //   // abort any pending requests
+      //   request.abort();
+      //   // set up event handler to process response
+      //   request.onreadystatechange = function () {
+      //     if (this.readyState == 4 && this.status == 200) {
+      //       var response = JSON.parse(this.responseText);
+      //       if (response.error) {
+      //         showErrorModal("There was a problem retrieving data for the selected location.");
+      //         return false;
+      //       }
+      //       alert(response);
+      //     } else if (this.readyState == 4 && this.status != 200) {
+      //       showStatusModal('There was a problem retrieving data for the selected location. Error code ' + this.status + '.');
+      //       return false;
+      //     };
+      //   }
+      //   var url = 'https://www.portlandmaps.com/arcgis/rest/services/Public/Parks_Misc/MapServer/2/query?geometry=%7B%22x%22%3A' + lng + '%2C%22y%22%3A' + lat + '%2C%22spatialReference%22%3A%7B%22wkid%22%3A4326%7D%7D&geometryType=esriGeometryPoint&spacialRel=esriSpatialRelIntersects&returnGeometry=false&returnTrueCurves=false&returnIdsOnly=false&returnCountOnly=false&returnDistinctValues=false&f=pjson';
 
-        var returnVal = $http.get(url);
-
-
+      //   var returnVal = $http.get(url);
 
 
-        request.open("GET", url, true);
-        request.send();
-      }
+
+
+      //   request.open("GET", url, true);
+      //   request.send();
+      // }
 
       function reverseLookup(lat, lng) {
-        isPark(lat, lng);
+        // isPark(lat, lng);
 
         // abort any pending requests
         request.abort();
@@ -402,8 +402,38 @@
 
 
       function handleMapClick(e) {
-        setMarkerAndZoom(e.latlng.lat, e.latlng.lng, true, false, DEFAULT_ZOOM_CLICK);
+        // normally when the map is clicked, we want to zoom to the clicked location
+        // and perform a reverse lookup. there are some cases where we may want to 
+        // perform additional actions. for example, if location type = park, we also
+        // need to do a reverse parks lookup and adjust the park selector accordingly.
+
+        // don't zoom in as far for parks; we don't need to
+        var zoom = locationType == "park" ? DEFAULT_ZOOM_CLICK-1 : DEFAULT_ZOOM_CLICK;
+        setMarkerAndZoom(e.latlng.lat, e.latlng.lng, true, false, zoom);
         reverseLookup(e.latlng.lat, e.latlng.lng);
+
+        if (locationType == "park") {
+          // do a reverse parks lookup
+          var url = `https://www.portlandmaps.com/arcgis/rest/services/Public/Parks_Misc/MapServer/2/query?geometry=%7B%22x%22%3A${e.latlng.lng}%2C%22y%22%3A${e.latlng.lat}%2C%22spatialReference%22%3A%7B%22wkid%22%3A4326%7D%7D&geometryType=esriGeometryPoint&spacialRel=esriSpatialRelIntersects&returnGeometry=false&returnTrueCurves=false&returnIdsOnly=false&returnCountOnly=false&returnDistinctValues=false&f=pjson`;
+          $.ajax({url: url, success: processReverseParksLookup});
+        }
+      }
+
+      function processReverseParksLookup(result) {
+        var jsonResult = JSON.parse(result);
+        if (jsonResult.features.length < 1) return false;
+
+        var parkName = jsonResult.features[0].attributes.NAME;
+
+        // attempt to set park selector; name may not be an exact match though.
+        // if not match, set to empty.
+        $('#location_park').val("");
+        $('#location_park option').filter(function() {
+          return $(this).text() == parkName;
+        }).prop('selected', true);
+        
+        // set place name field from result. this will be more accurate than the ArcGIS reverse geo data.
+        $('.place-name').val(parkName);
       }
 
       function setMarkerAndZoom(lat, lon, zoom, center, zoomlevel) {
