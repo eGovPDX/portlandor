@@ -28,11 +28,17 @@ describe("Homepage", () => {
   afterAll(async () => {
     await browser.close();
   })
-  
+
   it(
     "h1 text",
     async () => {
       await page.goto(HOME_PAGE);
+      // Remove sitewide alert
+      await page.evaluate(() =>
+        document
+          .querySelector('#block-cloudy-views-block-alerts-block-1')
+          .remove()
+      );
       // Gets page title
       const title = await page.evaluate(
         () => document.querySelector("h1").textContent
