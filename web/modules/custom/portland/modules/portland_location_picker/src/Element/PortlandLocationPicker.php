@@ -64,19 +64,13 @@ class PortlandLocationPicker extends WebformCompositeBase {
       '#id' => 'location_park',
       '#title' => t('Which park or natural area?'),
       '#type' => 'webform_entity_select',
-      '#states' => [
-        'visible' => [
-          ':input[name="report_location[location_type]"]' => [
-            'value' => 'park'
-          ],
-        ],
-      ],
       '#target_type' => 'node',
       '#selection_handler' => 'views',
       '#selection_settings' => [
         'view' => ['view_name' => 'entity_browser_park_facilities', 'display_name' => 'location_picker_parks_list'],
       ],
       '#empty_option' => t('Select...'),
+      '#attributes' => ['class' => ['location-park']],
     ];
     // visible if location type != private
     $elements['park_instructions'] = [
