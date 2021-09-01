@@ -125,6 +125,11 @@ class PortlandLocationPicker extends WebformCompositeBase {
             'value' => 'private'
           ],
         ],
+        'required' => [
+          ':input[name="report_location[location_type]"]' => [
+            'value' => 'private'
+          ],
+        ],
       ],
     ];
     // visible if location type = street|other
@@ -184,16 +189,48 @@ class PortlandLocationPicker extends WebformCompositeBase {
       '#title' => t('Place name'),
       '#attributes' => ['class' => ['place-name']],
       '#description' => t('If this location has a name, such as a business or public building, please enter it here.'),
-      '#description_display' => 'before'
+      '#description_display' => 'before',
+      '#states' => [
+        'visible' => [
+          ':input[name="report_location[location_type]"]' => [
+            ['value' => 'street'],
+            'or',
+            ['value' => 'park'],
+            'or',
+            ['value' => 'other'],
+          ],
+        ],
+      ],
+    ];
+    $elements['location_details'] = [
+      '#type' => 'textarea',
+      '#id' => 'location_details',
+      '#title' => t('Location details'),
+      '#attributes' => ['class' => ['location-details']],
+      '#description' => t('Please provide any other details that might help us locate the site you are reporting.'),
+      '#description_display' => 'before',
+      '#states' => [
+        'visible' => [
+          ':input[name="report_location[location_type]"]' => [
+            ['value' => 'street'],
+            'or',
+            ['value' => 'park'],
+            'or',
+            ['value' => 'waterway'],
+            'or',
+            ['value' => 'other'],
+          ],
+        ],
+      ],
     ];
     $elements['location_lat'] = [
-      '#type' => 'textfield',
+      '#type' => 'hidden',
       '#title' => t('Latitude'),
       '#id' => 'location_lat',
       '#attributes' => ['class' => ['location-lat']],
     ];
     $elements['location_lon'] = [
-      '#type' => 'textfield',
+      '#type' => 'hidden',
       '#title' => t('Longitude'),
       '#id' => 'location_lon',
       '#attributes' => ['class' => ['location-lon']],

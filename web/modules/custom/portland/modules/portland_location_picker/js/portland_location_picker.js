@@ -109,7 +109,7 @@
 
         // Set up verify button //////////////////////////////////
         $('.location-picker-address').after('<input class="btn location-verify button js-form-submit form-submit" type="submit" id="location_verify" name="op" value="Verify">');
-        $('.location-picker-address').after('<span class="verified-checkmark invisible" title="Location is verified!">✓</span>');
+        $('.location-picker-address').after('<span class="verified-checkmark address invisible" title="Location is verified!">✓</span>');
         $(document).on('click', '#location_verify', function (e) {
           e.preventDefault();
           var address = $('.location-picker-address').val();
@@ -157,11 +157,11 @@
         });
 
         // set up parks select list /////////////////////////
+        $('#location_park').after('<span class="verified-checkmark park invisible" title="Location is verified!">✓</span>');
         $('#location_park').on("change", function() {
           if (locationType == 'park') {
             var park = $(this).val();
             if (park) {
-              console.log("zoom to park " + park);
               locatePark(park);
             }
           }
@@ -241,7 +241,7 @@
             var lon = json.coordinates[0];
             var lat = json.coordinates[1];
             setMarkerAndZoom(lat, lon, true, true, DEFAULT_ZOOM_VERIFIED-1);
-            setVerified();
+            setVerified("park");
           } else if (this.readyState == 4 && this.status != 200) {
             showStatusModal('There was a problem retrieving data for the selected location. Error code ' + this.status + '.');
             return false;
@@ -367,7 +367,7 @@
         var business = data.address.PlaceName;
         var addressLabel = address.length > 0 ? address + ', ' + city + ', ' + state + ' ' + postal : city;
         $('.location-picker-address').val(addressLabel);
-        $('.place-name').val(business);
+        if (business) $('.place-name').val(business);
         setVerified();
       }
 
@@ -390,12 +390,12 @@
         showStatusModal(message);
       }
 
-      function setVerified() {
-        $('.verified-checkmark').removeClass('invisible');
-        $('.location-verify').prop('disabled', true);
+      function setVerified(type = "address") {
+        $('.verified-checkmark.' + type).removeClass('invisible');
+        $('.location-verify.' + type).prop('disabled', true);
       }
 
-      function setUnverified() {
+      function setUnverified(type = "address") {
         $('.verified-checkmark').addClass('invisible');
         $('.location-verify').prop('disabled', false);
       }
@@ -407,33 +407,44 @@
         // perform additional actions. for example, if location type = park, we also
         // need to do a reverse parks lookup and adjust the park selector accordingly.
 
+        // clear place name and park selector fields; they will get reset if appropriate after the click.
+        $('.place-name').val("");
+        $('#location_park').val("");
+
         // don't zoom in as far for parks; we don't need to
         var zoom = locationType == "park" ? DEFAULT_ZOOM_CLICK-1 : DEFAULT_ZOOM_CLICK;
         setMarkerAndZoom(e.latlng.lat, e.latlng.lng, true, false, zoom);
         reverseLookup(e.latlng.lat, e.latlng.lng);
 
         if (locationType == "park") {
-          // do a reverse parks lookup
-          var url = `https://www.portlandmaps.com/arcgis/rest/services/Public/Parks_Misc/MapServer/2/query?geometry=%7B%22x%22%3A${e.latlng.lng}%2C%22y%22%3A${e.latlng.lat}%2C%22spatialReference%22%3A%7B%22wkid%22%3A4326%7D%7D&geometryType=esriGeometryPoint&spacialRel=esriSpatialRelIntersects&returnGeometry=false&returnTrueCurves=false&returnIdsOnly=false&returnCountOnly=false&returnDistinctValues=false&f=pjson`;
-          $.ajax({url: url, success: processReverseParksLookup});
+          reverseParksLookup(e.latlng.lat, e.latlng.lng);
         }
       }
 
-      function processReverseParksLookup(result) {
-        var jsonResult = JSON.parse(result);
-        if (jsonResult.features.length < 1) return false;
+      function reverseParksLookup(lat, lng) {
+        var url = `https://www.portlandmaps.com/arcgis/rest/services/Public/Parks_Misc/MapServer/2/query?geometry=%7B%22x%22%3A${lng}%2C%22y%22%3A${lat}%2C%22spatialReference%22%3A%7B%22wkid%22%3A4326%7D%7D&geometryType=esriGeometryPoint&spacialRel=esriSpatialRelIntersects&returnGeometry=false&returnTrueCurves=false&returnIdsOnly=false&returnCountOnly=false&returnDistinctValues=false&f=pjson`;
+        $.ajax({ url: url, success: function(result) {
+          
 
-        var parkName = jsonResult.features[0].attributes.NAME;
+          var jsonResult = JSON.parse(result);
+          if (jsonResult.features.length < 1) {
+            setUnverified();
+            return false;
+          }
 
-        // attempt to set park selector; name may not be an exact match though.
-        // if not match, set to empty.
-        $('#location_park').val("");
-        $('#location_park option').filter(function() {
-          return $(this).text() == parkName;
-        }).prop('selected', true);
-        
-        // set place name field from result. this will be more accurate than the ArcGIS reverse geo data.
-        $('.place-name').val(parkName);
+          var parkName = jsonResult.features[0].attributes.NAME;
+
+          // attempt to set park selector; name may not be an exact match though.
+          // if not match, set to empty.
+          $('#location_park option').filter(function() {
+            return $(this).text() == parkName;
+          }).prop('selected', true);
+          
+          // set place name field from result. this will be more accurate than the ArcGIS reverse geo data.
+          
+          $('.place-name').val(parkName);
+          setVerified("park");
+        }});
       }
 
       function setMarkerAndZoom(lat, lon, zoom, center, zoomlevel) {
