@@ -222,30 +222,19 @@
 
       function verifyAddressPortlandMaps(address) {
         var encodedAddress = encodeURI(address);
-        // abort any pending requests
-        request.abort();
-        // set up event handler to process response
-        request.onreadystatechange = function () {
-          if (this.readyState == 4 && this.status == 200) {
-            var response = JSON.parse(this.responseText);
-            if (response.error) {
-              showErrorModal("There was a problem retrieving address data.");
-              return false;
-            }
-            if (response.candidates.length == 0) {
-              showStatusModal('No matching locations found. Please try a different address and try again.');
+        // API documentation: https://www.portlandmaps.com/development/#suggest
+        var url = "https://www.portlandmaps.com/api/suggest/?intersections=1&alt_coords=1&api_key=" + drupalSettings.portlandmaps_api_key + "&query=" + encodedAddress;
+        $.ajax({
+          url: url, success: function (response) {
+            if (response.length < 1 || response.candidates.length < 1) {
+              showStatusModal("No matching locations found. Please try a different address and try again.");
+              setUnverified();
               return false;
             }
             processLocationData(response.candidates);
-          } else if (this.readyState == 4 && this.status != 200) {
-            showStatusModal('There was a problem retrieving address data. Error code ' + this.status + '.');
-            return false;
-          };
-        }
-        // API documentation: https://www.portlandmaps.com/development/#suggest
-        var url = "https://www.portlandmaps.com/api/suggest/?intersections=1&alt_coords=1&api_key=" + drupalSettings.portlandmaps_api_key + "&query=" + encodedAddress;
-        request.open("GET", url, true);
-        request.send();
+          }
+        });
+
       }
 
       function processLocationData(candidates) {
@@ -319,31 +308,19 @@
       }
 
       function reverseGeolocate(lat, lng) {
-        // isPark(lat, lng);
-
-        // abort any pending requests
-        request.abort();
-        // set up event handler to process response
-        request.onreadystatechange = function () {
-          if (this.readyState == 4 && this.status == 200) {
-            var response = JSON.parse(this.responseText);
-            if (response.error) {
-              showErrorModal("There was a problem retrieving data for the selected location.");
+        // API documentation: https://developers.arcgis.com/rest/geocode/api-reference/geocoding-reverse-geocode.htm
+        var url = 'https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer/reverseGeocode?f=json&locationType=street&location=' + lng + ',' + lat;
+        $.ajax({
+          url: url, success: function (response) {
+            if (response.length < 1 || !response.address || !response.location) {
+              showStatusModal("There was a problem retrieving data for the selected location.");
+              setUnverified();
               return false;
             }
             processReverseLocationData(response);
-          } else if (this.readyState == 4 && this.status != 200) {
-            showStatusModal('There was a problem retrieving data for the selected location. Error code ' + this.status + '.');
-            return false;
-          };
-        }
-        // API documentation: https://developers.arcgis.com/rest/geocode/api-reference/geocoding-reverse-geocode.htm
-        var url = 'https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer/reverseGeocode?f=json&locationType=street&location=' + lng + ',' + lat;
-        // featureTypes paramter values:
-        // StreetInt, DistanceMarker, StreetAddress, StreetName, POI, Subaddress, PointAddress, Postal, Locality
+          }
+        });
 
-        request.open("GET", url, true);
-        request.send();
       }
 
       function processReverseLocationData(data) {
