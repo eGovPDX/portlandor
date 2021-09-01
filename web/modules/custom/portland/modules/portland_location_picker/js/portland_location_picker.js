@@ -29,6 +29,7 @@
       var statusModal;
       var baseLayer;
       var aerialLayer;
+      var mapClickSelection = false;
       var currentView = "base";
       var baseLayer = L.tileLayer('https://www.portlandmaps.com/arcgis/rest/services/Public/Basemap_Color_Complete/MapServer/tile/{z}/{y}/{x}', {
         attribution: "PortlandMaps ESRI"
@@ -221,65 +222,35 @@
       }
 
       function locatePark(id) {
-        // abort any pending requests
-        request.abort();
-        // set up event handler to process response
-        request.onreadystatechange = function () {
-          if (this.readyState == 4 && this.status == 200) {
-            var response = JSON.parse(this.responseText);
-            if (response.error) {
-              showErrorModal("There was a problem retrieving data for the selected location.");
-              return false;
-            }
-            if (response.length < 1) {
+        // this function is triggered by the parks selector onchange. when user selects a park, look up the
+        // lat/lon and show it on the map. HOWEVER, the selector might get updated if the user clicks into a
+        // park on the map. in that case, we skip the onchange park geolocation.
+        // this function uses a view in Drupal to return parks data using the node id as a parameter.
+        if (mapClickSelection) {
+          mapClickSelection = false;
+          return false;
+        }
+        var url = '/parks/search/' + id; // this is a drupal view that returns json about the park
+        $.ajax({
+          url: url, success: function (result) {
+            if (result.length < 1) {
               showStatusModal("Location data not found for the selected park or natural area. Please try finding the location on the map.");
+              setUnverified();
             }
+
             // the coordinates returned by this call are for park entrances. some may have more than
             // one entrance, such as large parks like Washington Park. we use the first one in the array.
+            // the geolocaiton data needs to be escaped; best way is in a textarea element (kludgey but works).
             var txt = document.createElement("textarea");
-            txt.innerHTML = response[0].field_geolocation;
+            txt.innerHTML = result[0].field_geolocation;
             var json = JSON.parse(txt.value);
             var lon = json.coordinates[0];
             var lat = json.coordinates[1];
-            setMarkerAndZoom(lat, lon, true, true, DEFAULT_ZOOM_VERIFIED-1);
+            setMarkerAndZoom(lat, lon, true, true, DEFAULT_ZOOM_VERIFIED - 1);
             setVerified("park");
-          } else if (this.readyState == 4 && this.status != 200) {
-            showStatusModal('There was a problem retrieving data for the selected location. Error code ' + this.status + '.');
-            return false;
-          };
-        }
-        var url = '/parks/search/' + id;
-        request.open("GET", url, true);
-        request.send();
+          }
+        });
       }
-
-      // function isPark(lat, lng) {
-      //   // abort any pending requests
-      //   request.abort();
-      //   // set up event handler to process response
-      //   request.onreadystatechange = function () {
-      //     if (this.readyState == 4 && this.status == 200) {
-      //       var response = JSON.parse(this.responseText);
-      //       if (response.error) {
-      //         showErrorModal("There was a problem retrieving data for the selected location.");
-      //         return false;
-      //       }
-      //       alert(response);
-      //     } else if (this.readyState == 4 && this.status != 200) {
-      //       showStatusModal('There was a problem retrieving data for the selected location. Error code ' + this.status + '.');
-      //       return false;
-      //     };
-      //   }
-      //   var url = 'https://www.portlandmaps.com/arcgis/rest/services/Public/Parks_Misc/MapServer/2/query?geometry=%7B%22x%22%3A' + lng + '%2C%22y%22%3A' + lat + '%2C%22spatialReference%22%3A%7B%22wkid%22%3A4326%7D%7D&geometryType=esriGeometryPoint&spacialRel=esriSpatialRelIntersects&returnGeometry=false&returnTrueCurves=false&returnIdsOnly=false&returnCountOnly=false&returnDistinctValues=false&f=pjson';
-
-      //   var returnVal = $http.get(url);
-
-
-
-
-      //   request.open("GET", url, true);
-      //   request.send();
-      // }
 
       function reverseLookup(lat, lng) {
         // isPark(lat, lng);
@@ -424,27 +395,34 @@
 
       function reverseParksLookup(lat, lng) {
         var url = `https://www.portlandmaps.com/arcgis/rest/services/Public/Parks_Misc/MapServer/2/query?geometry=%7B%22x%22%3A${lng}%2C%22y%22%3A${lat}%2C%22spatialReference%22%3A%7B%22wkid%22%3A4326%7D%7D&geometryType=esriGeometryPoint&spacialRel=esriSpatialRelIntersects&returnGeometry=false&returnTrueCurves=false&returnIdsOnly=false&returnCountOnly=false&returnDistinctValues=false&f=pjson`;
+        setUnverified();
         $.ajax({ url: url, success: function(result) {
-          
-
+          // if no features returned, exit
           var jsonResult = JSON.parse(result);
           if (jsonResult.features.length < 1) {
-            setUnverified();
+            showStatusModal("No park data found for selected location.");
+            $('#location_park').val('');
+            $('#location_park').trigger('change');
+            mapClickSelection = true;
             return false;
           }
 
-          var parkName = jsonResult.features[0].attributes.NAME;
-
           // attempt to set park selector; name may not be an exact match though.
-          // if not match, set to empty.
+          // if not match, we want to set to empty.
+          var parkName = jsonResult.features[0].attributes.NAME;
           $('#location_park option').filter(function() {
             return $(this).text() == parkName;
           }).prop('selected', true);
+
+          // get value of selected item, then pass it to Select2
+          var parkId = $('#location_park').val();
+          $('#location_park').val(parkId);
+          $('#location_park').trigger('change');
           
-          // set place name field from result. this will be more accurate than the ArcGIS reverse geo data.
-          
+          // set place name field and mark as verified          
           $('.place-name').val(parkName);
           setVerified("park");
+          mapClickSelection = true;
         }});
       }
 

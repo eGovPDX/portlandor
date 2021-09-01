@@ -60,7 +60,12 @@ class PortlandLocationPicker extends WebformCompositeBase {
     // we need to either figure out how to populate the webform_entity_select option value with the park lat/lon, or we need
     // to use a regular select and manually retrieve the values/text we need. ideally the data we need would be stored in the
     // select value, without having to make another trip to the server to look up the parks location.
-    $elements['location_park'] = [
+    $elements['location_park_container'] = [
+      '#id' => 'location_park_container',
+      '#title' => t('Parks list container'),
+      '#type' => 'container',
+    ];
+    $elements['location_park_container']['location_park'] = [
       '#id' => 'location_park',
       '#title' => t('Which park or natural area?'),
       '#type' => 'webform_entity_select',
@@ -71,9 +76,16 @@ class PortlandLocationPicker extends WebformCompositeBase {
       ],
       '#empty_option' => t('Select...'),
       '#attributes' => ['class' => ['location-park']],
+      '#states' => [
+        'visible' => [
+          ':input[name="report_location[location_type]"]' => [
+            'value' => 'park'
+          ],
+        ],
+      ],
     ];
     // visible if location type != private
-    $elements['park_instructions'] = [
+    $elements['location_park_container']['park_instructions'] = [
       '#type' => 'markup',
       '#title' => 'Park instructions',
       '#title_display' => 'invisible',
