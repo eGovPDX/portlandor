@@ -92,26 +92,6 @@ class PortlandLocationPicker extends WebformCompositeBase {
         ],
       ],
     ];
-    // $elements['location_park'] = [
-    //   '#id' => 'location_park',
-    //   '#title' => t('Which park or natural area?'),
-    //   '#type' => 'entity_autocomplete',
-    //   '#description' => t('Begin typing to see a list of matching park and natural area names.'),
-    //   '#description_display' => 'before',
-    //   '#states' => [
-    //     'visible' => [
-    //       ':input[name="report_location[location_type]"]' => [
-    //         'value' => 'park'
-    //       ],
-    //     ],
-    //   ],
-    //   '#target_type' => 'node',
-    //   '#selection_handler' => 'default:node',
-    //   '#selection_settings' => [
-    //     'target_bundles' => ['park_facility' => 'park_facility'],
-    //     'sort' => ['field' => 'title', 'direction' => 'asc'],
-    //   ],
-    // ];
     $elements['location_private_owner'] = [
       '#id' => 'location_private_owner',
       '#type' => 'radios',
@@ -138,7 +118,6 @@ class PortlandLocationPicker extends WebformCompositeBase {
       '#id' => 'location_address',
       '#title' => t('Address or Cross Streets'),
       '#attributes' => ['class' => ['location-picker-address']],
-      '#required' => TRUE,
       '#description' => t('Enter an address or cross streets of the issue being reported, then click the button to verify the location. Alternately, you may click the map to set the location.'),
       '#description_display' => 'before',
       '#states' => [
@@ -147,6 +126,13 @@ class PortlandLocationPicker extends WebformCompositeBase {
             ['value' => 'street'],
             'or',
             ['value' => 'other'],
+          ],
+        ],
+        'required' => [
+          ':input[name="report_location[location_type]"]' => [
+            'value' => 'street',
+            'or',
+            'value' => 'other',
           ],
         ],
       ],
@@ -186,7 +172,7 @@ class PortlandLocationPicker extends WebformCompositeBase {
     $elements['place_name'] = [
       '#type' => 'textfield',
       '#id' => 'place_name',
-      '#title' => t('Place name'),
+      '#title' => t('Place Name'),
       '#attributes' => ['class' => ['place-name']],
       '#description' => t('If this location has a name, such as a business or public building, please enter it here.'),
       '#description_display' => 'before',
@@ -205,7 +191,7 @@ class PortlandLocationPicker extends WebformCompositeBase {
     $elements['location_details'] = [
       '#type' => 'textarea',
       '#id' => 'location_details',
-      '#title' => t('Location details'),
+      '#title' => t('Location Details'),
       '#attributes' => ['class' => ['location-details']],
       '#description' => t('Please provide any other details that might help us locate the site you are reporting.'),
       '#description_display' => 'before',
@@ -235,6 +221,27 @@ class PortlandLocationPicker extends WebformCompositeBase {
       '#id' => 'location_lon',
       '#attributes' => ['class' => ['location-lon']],
     ];
+
+    // $elements['location_park'] = [
+    //   '#id' => 'location_park',
+    //   '#title' => t('Which park or natural area?'),
+    //   '#type' => 'entity_autocomplete',
+    //   '#description' => t('Begin typing to see a list of matching park and natural area names.'),
+    //   '#description_display' => 'before',
+    //   '#states' => [
+    //     'visible' => [
+    //       ':input[name="report_location[location_type]"]' => [
+    //         'value' => 'park'
+    //       ],
+    //     ],
+    //   ],
+    //   '#target_type' => 'node',
+    //   '#selection_handler' => 'default:node',
+    //   '#selection_settings' => [
+    //     'target_bundles' => ['park_facility' => 'park_facility'],
+    //     'sort' => ['field' => 'title', 'direction' => 'asc'],
+    //   ],
+    // ];
 
     return $elements;
   }
