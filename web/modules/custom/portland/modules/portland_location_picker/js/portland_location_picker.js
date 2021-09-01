@@ -158,6 +158,7 @@
 
         // set up parks select list /////////////////////////
         $('#location_park').after('<span class="verified-checkmark park invisible" title="Location is verified!">✓</span>');
+        $('#location_park').select2();
         $('#location_park').on("change", function() {
           if (locationType == 'park') {
             var park = $(this).val();
@@ -485,10 +486,10 @@
       }
 
       function handleLocationFound(e) {
-        if (!locateControl) {
-          locateControl = new LocateControl();
-          map.addControl(locateControl);
-        }
+        // if (!locateControl) {
+        //   locateControl = new LocateControl();
+        //   map.addControl(locateControl);
+        // }
 
         if (locMarker && locCircle) {
           map.removeLayer(locMarker).removeLayer(locCircle);
