@@ -1,5 +1,6 @@
 const percySnapshot = require("@percy/puppeteer");
 const puppeteer = require("puppeteer");
+const util = require('../lib/util');
 
 const SITE_NAME = process.env.SITE_NAME;
 const HOME_PAGE = SITE_NAME
@@ -33,12 +34,7 @@ describe("Homepage", () => {
     "h1 text",
     async () => {
       await page.goto(HOME_PAGE);
-      // Remove sitewide alert
-      await page.evaluate(() =>
-        document
-          .querySelector('#block-cloudy-views-block-alerts-block-1')
-          .remove()
-      );
+      util.hideAlert
       // Gets page title
       const title = await page.evaluate(
         () => document.querySelector("h1").textContent
@@ -53,6 +49,7 @@ describe("Homepage", () => {
     "Menu open",
     async () => {
       await page.goto(HOME_PAGE, { waitUntil: "load" });
+      util.hideAlert
       await page.click("button.cloudy-header__toggle--menu");
       await page.waitForSelector(".cloudy-header__menu-wrapper.show");
       await percySnapshot(page, "Anonymous - Home page Menu");
@@ -63,6 +60,7 @@ describe("Homepage", () => {
     "Search Auto-complete powr",
     async () => {
       await page.goto(HOME_PAGE, { waitUntil: "load" });
+      util.hideAlert
       await page.type("#edit-keys", "powr");
       await page.waitForSelector("#ui-id-1", { visible: true });
       await percySnapshot(page, "Anonymous - Home Autocomplete");
@@ -73,14 +71,19 @@ describe("Homepage", () => {
     "Take snapshots of Group home pages",
     async () => {
       await page.goto(`${HOME_PAGE}/omf`, { waitUntil: "load" });
+      util.hideAlert
       await percySnapshot(page, "Anonymous - Bureau \"Mangagement and Finance\"");
       await page.goto(`${HOME_PAGE}/powr`, { waitUntil: "load" });
+      util.hideAlert
       await percySnapshot(page, "Anonymous - Project \"POWR\"");
       await page.goto(`${HOME_PAGE}/help`, { waitUntil: "load" });
+      util.hideAlert
       await percySnapshot(page, "Anonymous - Program \"POWR Help\"");
       await page.goto(`${HOME_PAGE}/omf/toc`, { waitUntil: "load" });
+      util.hideAlert
       await percySnapshot(page, "Anonymous - Advisory \"Technology Oversight\"");
       await page.goto(`${HOME_PAGE}/mayor`, { waitUntil: "load" });
+      util.hideAlert
       await percySnapshot(page, "Anonymous - Elected \"Mayor\"");
     }
   );
@@ -89,10 +92,13 @@ describe("Homepage", () => {
     "Take snapshots of search results and content pages",
     async () => {
       await page.goto(`${HOME_PAGE}/search?keys=tax&op=`, { waitUntil: "load" });
+      util.hideAlert
       await percySnapshot(page, "Anonymous - Search \"tax\"");
       await page.goto(`${HOME_PAGE}/search?keys=powr-test&op=`, { waitUntil: "load" });
+      util.hideAlert
       await percySnapshot(page, "Anonymous - 404 \"powr-test\"");
       await page.goto(`${HOME_PAGE}/police/report-or-record-request`, { waitUntil: "load" });
+      util.hideAlert
       await percySnapshot(page, "Anonymous - Service \"Police Report or Record\"");
     }
   );
