@@ -183,6 +183,7 @@
 
         if (locCircle) {
           map.removeLayer(locCircle);
+          locateControlContaier.style.backgroundImage = 'url("/modules/custom/portland/modules/portland_location_picker/images/map_locate.png")';
         }
 
         // don't zoom in as far for parks; we don't need to
@@ -205,8 +206,7 @@
         reverseGeolocate(e.latlng.lat, e.latlng.lng);
         locateControlContaier.style.backgroundImage = 'url("/modules/custom/portland/modules/portland_location_picker/images/map_locate_on.png")';
 
-        // hide status indicator
-        statusModal.dialog('close');
+        closeStatusModal();
       }
 
       function handleLocationError(e) {
@@ -215,8 +215,6 @@
         showStatusModal(message);
         locateControlContaier.style.backgroundImage = 'url("/modules/custom/portland/modules/portland_location_picker/images/map_locate.png")';
       }
-
-
 
       // HELPER FUNCTIONS ///////////////////////////////
 
@@ -445,6 +443,10 @@
           }]
         }).showModal();
         statusModal.removeClass('visually-hidden');
+      }
+
+      function closeStatusModal() {
+        statusModal.dialog('close');
       }
 
       function showErrorModal(message) {
