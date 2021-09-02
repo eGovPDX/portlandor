@@ -15,6 +15,16 @@ exports.unmasquerade = async function(page, HOME_PAGE) {
   await page.goto(`${HOME_PAGE}${link}`);
 }
 
+exports.removeAlert = async function(url, HOME_PAGE, page) {
+  await page.goto(`${HOME_PAGE}/${url}`, { waitUntil: "load" });
+    //   // Remove sitewide alert
+      await page.evaluate(() =>
+      document
+        .querySelector('#block-cloudy-views-block-alerts-block-1')
+        .remove()
+    );
+}
+
 exports.ContentTester = {
   init: function ( testSettings ) {
     this.entityType = testSettings.entityType; // node or media
@@ -24,6 +34,8 @@ exports.ContentTester = {
     this.homepageUrl = testSettings.homepageUrl, // The site URL
     this.testGroupPath = testSettings.testGroupPath // URL path to the group created for testing
   },
+
+
   runTest: async function () {
     await this.gotoContentCreatePage();
     // Verify the add content form field titles
@@ -116,12 +128,5 @@ exports.ContentTester = {
       expect.stringContaining("This action cannot be undone")
     );
   },
-  // Remove sitewide alert
-  hideAlert: async function () {
-      await page.evaluate(() =>
-      document
-        .querySelector('#block-cloudy-views-block-alerts-block-1')
-        .remove()
-    );
-  }
 }
+
