@@ -17,7 +17,7 @@ exports.unmasquerade = async function(page, HOME_PAGE) {
 
 exports.removeAlert = async function(url, HOME_PAGE, page) {
   await page.goto(`${HOME_PAGE}/${url}`, { waitUntil: "load" });
-    //   // Remove sitewide alert
+    // Remove sitewide alert
       await page.evaluate(() =>
       document
         .querySelector('#block-cloudy-views-block-alerts-block-1')
