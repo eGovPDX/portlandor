@@ -116,8 +116,8 @@ exports.ContentTester = {
       expect.stringContaining("This action cannot be undone")
     );
   },
+  // Remove sitewide alert
   hideAlert: async function () {
-      // Remove sitewide alert
       await page.evaluate(() =>
       document
         .querySelector('#block-cloudy-views-block-alerts-block-1')
