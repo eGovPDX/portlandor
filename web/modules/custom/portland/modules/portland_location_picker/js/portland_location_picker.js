@@ -64,12 +64,7 @@
         }
       });
 
-      var hereIcon = L.icon({
-        iconUrl: "/modules/custom/portland/modules/portland_location_picker/images/map_marker_here.png",
-        iconSize: [25, 41],
-        iconAnchor: [13, 41],
-        className: "hereIcon"
-      });
+      
 
       initialize();
 
@@ -186,6 +181,10 @@
         $('.place-name').val("");
         $('#location_park').val("");
 
+        if (locCircle) {
+          map.removeLayer(locCircle);
+        }
+
         // don't zoom in as far for parks; we don't need to
         var zoom = locationType == "park" ? DEFAULT_ZOOM_CLICK - 1 : DEFAULT_ZOOM_CLICK;
         setMarkerAndZoom(e.latlng.lat, e.latlng.lng, true, false, zoom);
@@ -197,12 +196,13 @@
       }
 
       function handleLocationFound(e) {
-        if (locMarker && locCircle) {
-          map.removeLayer(locMarker).removeLayer(locCircle);
+        if (locCircle) {
+          map.removeLayer(locCircle);
         }
         var radius = e.accuracy;
-        locMarker = L.marker(e.latlng, { icon: hereIcon }).addTo(map);
         locCircle = L.circle(e.latlng, radius, { weight: 2, fillOpacity: 0.1 }).addTo(map);
+        setMarkerAndZoom(e.latlng.lat, e.latlng.lng, true, true, DEFAULT_ZOOM_VERIFIED);
+        reverseGeolocate(e.latlng.lat, e.latlng.lng);
         locateControlContaier.style.backgroundImage = 'url("/modules/custom/portland/modules/portland_location_picker/images/map_locate_on.png")';
 
         // hide status indicator
