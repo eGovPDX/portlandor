@@ -345,7 +345,7 @@
           shouldRecenterPark = true;
           return false;
         }
-        var url = '/parks/search/' + id; // this is a drupal view that returns json about the park
+        var url = '/api/parks/' + id; // this is a drupal view that returns json about the park
         $.ajax({
           url: url, success: function (result) {
             if (result.length < 1) {
@@ -357,7 +357,7 @@
             // one entrance, such as large parks like Washington Park. we use the first one in the array.
             // the geolocaiton data needs to be escaped; best way is in a textarea element (kludgey but works).
             var txt = document.createElement("textarea");
-            txt.innerHTML = result[0].field_geolocation;
+            txt.innerHTML = result[0].location;
             var json = JSON.parse(txt.value);
             var lon = json.coordinates[0];
             var lat = json.coordinates[1];
