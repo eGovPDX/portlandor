@@ -76,7 +76,7 @@
 
         // initialize map ///////////////////////////////////
         var zoomcontrols = new L.control.zoom({ position: ZOOM_POSITION });
-        map = new L.Map("location_map", {
+        map = new L.Map("location_map_container", {
           center: new L.LatLng(DEFAULT_LATITUDE, DEFAULT_LONGITUDE),
           zoomControl: false,
           zoom: DEFAULT_ZOOM
