@@ -75,7 +75,7 @@ describe('Homepage', () => {
     await page.goto(`${HOME_PAGE}/powr`, { waitUntil: 'load' });
     await util.removeAlert(page);
     await percySnapshot(page, 'Anonymous - Project "POWR"');
-    await page.goto(`${HOME_PAGE}/help'`, { waitUntil: 'load' });
+    await page.goto(`${HOME_PAGE}/help`, { waitUntil: 'load' });
     await util.removeAlert(page);
     await percySnapshot(page, 'Anonymous - Program "POWR Help"');
     await page.goto(`${HOME_PAGE}/omf/toc`, { waitUntil: 'load' });
