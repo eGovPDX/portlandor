@@ -46,6 +46,7 @@ class PortlandLocationPicker extends WebformCompositeBase {
       '#type' => 'radios',
       '#title' => t('On what type of property is the issue located?'),
       '#title_display' => 'before',
+      '#required' => TRUE,
       '#options' => [
         'street' => t('Along ANY street, sidewalk, highway, trail, or other public right-of-way'),
         'park' => t('Within a public park or natural area'),
@@ -126,40 +127,36 @@ class PortlandLocationPicker extends WebformCompositeBase {
       '#attributes' => ['class' => ['location-picker-address']],
       '#description' => t('Enter an address or cross streets of the issue being reported, then click the button to verify the location. Alternately, you may click the map to set the location.'),
       '#description_display' => 'before',
+      '#required' => TRUE,
       '#states' => [
         'visible' => [
-          ':input[name="report_location[location_type]"]' => [
-            ['value' => 'street'],
-            'or',
-            ['value' => 'other'],
-          ],
+          [':input[name="report_location[location_type]"]' => ['value' => 'street']],
+          'or',
+          [':input[name="report_location[location_type]"]' => ['value' => 'other']],
         ],
         'required' => [
-          ':input[name="report_location[location_type]"]' => [
-            'value' => 'street',
-            'or',
-            'value' => 'other',
-          ],
+          [':input[name="report_location[location_type]"]' => ['value' => 'street']],
+          'or',
+          [':input[name="report_location[location_type]"]' => ['value' => 'other']],
         ],
       ],
     ];
     // visible if location type != private
     $elements['location_map'] = [
       '#type' => 'markup',
+      '#id' => 'location_map',
       '#title' => 'Map',
       '#title_display' => 'invisible',
-      '#markup' => '<div id="location_map" class="location-map"></div>',
+      '#markup' => '<div id="location_map_container" class="location-map"></div>',
       '#states' => [
         'visible' => [
-          ':input[name="report_location[location_type]"]' => [
-            ['value' => 'street'],
-            'or',
-            ['value' => 'park'],
-             'or',
-            ['value' => 'waterway'],
-            'or',
-            ['value' => 'other'],
-         ],
+          [':input[name="report_location[location_type]"]' => ['value' => 'street']],
+          'or',
+          [':input[name="report_location[location_type]"]' => ['value' => 'park']],
+          'or',
+          [':input[name="report_location[location_type]"]' => ['value' => 'waterway']],
+          'or',
+          [':input[name="report_location[location_type]"]' => ['value' => 'other']],
         ],
       ],
     ];
@@ -184,13 +181,11 @@ class PortlandLocationPicker extends WebformCompositeBase {
       '#description_display' => 'before',
       '#states' => [
         'visible' => [
-          ':input[name="report_location[location_type]"]' => [
-            ['value' => 'street'],
-            'or',
-            ['value' => 'park'],
-            'or',
-            ['value' => 'other'],
-          ],
+          [':input[name="report_location[location_type]"]' => ['value' => 'street']],
+          'or',
+          [':input[name="report_location[location_type]"]' => ['value' => 'park']],
+          'or',
+          [':input[name="report_location[location_type]"]' => ['value' => 'other']],
         ],
       ],
     ];
@@ -203,29 +198,29 @@ class PortlandLocationPicker extends WebformCompositeBase {
       '#description_display' => 'before',
       '#states' => [
         'visible' => [
-          ':input[name="report_location[location_type]"]' => [
-            ['value' => 'street'],
-            'or',
-            ['value' => 'park'],
-            'or',
-            ['value' => 'waterway'],
-            'or',
-            ['value' => 'other'],
-          ],
+          [':input[name="report_location[location_type]"]' => ['value' => 'street']],
+          'or',
+          [':input[name="report_location[location_type]"]' => ['value' => 'park']],
+          'or',
+          [':input[name="report_location[location_type]"]' => ['value' => 'waterway']],
+          'or',
+          [':input[name="report_location[location_type]"]' => ['value' => 'other']],
         ],
       ],
     ];
     $elements['location_lat'] = [
-      '#type' => 'hidden',
+      '#type' => 'textfield',
       '#title' => t('Latitude'),
+      '#title_display' => 'invisible',
       '#id' => 'location_lat',
-      '#attributes' => ['class' => ['location-lat']],
+      '#attributes' => ['class' => ['location-lat','visually-hidden']],
     ];
     $elements['location_lon'] = [
-      '#type' => 'hidden',
+      '#type' => 'textfield',
       '#title' => t('Longitude'),
+      '#title_display' => 'invisible',
       '#id' => 'location_lon',
-      '#attributes' => ['class' => ['location-lon']],
+      '#attributes' => ['class' => ['location-lon','visually-hidden']],
     ];
 
     // $elements['location_park'] = [

@@ -1,5 +1,7 @@
 <?php
 
+use Drupal\Core\Form\FormStateInterface;
+
 /**
  * Implements hook_form_alter 
  */
@@ -19,3 +21,28 @@ function portland_location_picker_form_alter(&$form, &$form_state, $form_id) {
     }
   }
 }
+
+/**
+ * Implements hook_webform_element_alter().
+ *
+ * @param array              $element
+ * @param FormStateInterface $form_state
+ * @param array              $context
+ */
+function portland_location_picker_webform_element_alter(array &$element, FormStateInterface $form_state, array $context) {
+  if (array_key_exists('#id', $element) && $element['#id'] == "location_map") {
+    $element['#element_validate'][] = [
+        'Drupal\portland_location_picker\Validate\GeolocationValidationConstraint',
+        'validate'
+    ];
+  }  
+  
+  // // check for the location picker element; if present, apply our custom validation that checks for map coordinates
+  // if (isset($element['#webform_id']) && $element['#webform_id'] === $element['#webform'] . '--' . 'report_location') {
+  //     $element['#element_validate'][] = [
+  //         'Drupal\portland_location_picker\Validate\GeolocationValidationConstraint',
+  //         'validate'
+  //     ];
+  // }
+}
+
