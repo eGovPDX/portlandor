@@ -27,11 +27,12 @@ class PortlandLocationPicker extends WebformCompositeBase {
    * NOTE: custom elements must have a #title attribute. if a value is not set here, it must be set
    * in the field config. if not, an error is thrown when trying to add an email handler.
    * 
-   * street - location_address, location_map
-   * park - location_park, location_map
-   * waterway - location_map
-   * private - location_private_owner
-   * other - location_address, location_map
+   * Location types:
+   *  street - location_address, location_map
+   *  park - location_park, location_map
+   *  waterway - location_map
+   *  private - location_private_owner
+   *  other - location_address, location_map
    * 
    * How to programmatically set field conditions: https://www.drupal.org/docs/drupal-apis/form-api/conditional-form-fields
    */
@@ -40,6 +41,7 @@ class PortlandLocationPicker extends WebformCompositeBase {
     $nodes = \Drupal::entityTypeManager()->getStorage('node')->loadByProperties(['type' => 'park_facility', 'status' => 1]);
 
     $elements = [];
+    // no other controls should be visible until user has selected a location type; it determines which controls are required.
     $elements['location_type'] = [
       '#id' => 'location_type',
       '#name' => 'location_type',
@@ -58,9 +60,6 @@ class PortlandLocationPicker extends WebformCompositeBase {
       '#default_value' => 'street',
       '#attributes' => ['class' => ['location-type']],
     ];
-    // we need to either figure out how to populate the webform_entity_select option value with the park lat/lon, or we need
-    // to use a regular select and manually retrieve the values/text we need. ideally the data we need would be stored in the
-    // select value, without having to make another trip to the server to look up the parks location.
     $elements['location_park_container'] = [
       '#id' => 'location_park_container',
       '#title' => t('Parks list container'),
@@ -85,7 +84,6 @@ class PortlandLocationPicker extends WebformCompositeBase {
         ],
       ],
     ];
-    // visible if location type != private
     $elements['location_park_container']['park_instructions'] = [
       '#type' => 'markup',
       '#title' => 'Park instructions',
@@ -119,7 +117,6 @@ class PortlandLocationPicker extends WebformCompositeBase {
         ],
       ],
     ];
-    // visible if location type = street|other
     $elements['location_address'] = [
       '#type' => 'textfield',
       '#id' => 'location_address',
@@ -141,11 +138,10 @@ class PortlandLocationPicker extends WebformCompositeBase {
         ],
       ],
     ];
-    // visible if location type != private
     $elements['location_map'] = [
       '#type' => 'markup',
       '#id' => 'location_map',
-      '#title' => 'Map',
+      '#title' => 'Location marker on map',
       '#title_display' => 'invisible',
       '#markup' => '<div id="location_map_container" class="location-map"></div>',
       '#states' => [
@@ -223,28 +219,6 @@ class PortlandLocationPicker extends WebformCompositeBase {
       '#attributes' => ['class' => ['location-lon','visually-hidden']],
     ];
 
-    // $elements['location_park'] = [
-    //   '#id' => 'location_park',
-    //   '#title' => t('Which park or natural area?'),
-    //   '#type' => 'entity_autocomplete',
-    //   '#description' => t('Begin typing to see a list of matching park and natural area names.'),
-    //   '#description_display' => 'before',
-    //   '#states' => [
-    //     'visible' => [
-    //       ':input[name="report_location[location_type]"]' => [
-    //         'value' => 'park'
-    //       ],
-    //     ],
-    //   ],
-    //   '#target_type' => 'node',
-    //   '#selection_handler' => 'default:node',
-    //   '#selection_settings' => [
-    //     'target_bundles' => ['park_facility' => 'park_facility'],
-    //     'sort' => ['field' => 'title', 'direction' => 'asc'],
-    //   ],
-    // ];
-
     return $elements;
   }
-
 }
