@@ -1110,9 +1110,12 @@ function portland_mail_alter(&$message)
     if ($message['id'] == "portland_portland_notify_reviewers") {
         // Make the email appear to be from the current Editor
         $user = \Drupal::currentUser()->getAccount();
-        $user_name = $user->name;
-        $user_email = $user->getEmail();
-        if( empty($user_name) || empty($user_email)) {
+        if( $user->isAuthenticated() ) {
+            $user_name = $user->name;
+            $user_email = $user->getEmail();
+        }
+        // If the user is Anonymouse when running Cron
+        else {
             $config = \Drupal::config('system.site');
             $user_name = $config->get('name');
             $user_email = $config->get('mail');
