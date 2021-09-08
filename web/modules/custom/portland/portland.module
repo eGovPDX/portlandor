@@ -206,7 +206,14 @@ function portland_node_presave($node)
             $node->set('field_end_date', null);
         }
     }
-}
+
+    // If the Save is from a cron job, add a revision log
+    $current_path = \Drupal::service('path.current')->getPath();
+    // Start cron by loading URL or clicking button
+    if( strpos($current_path, '/cron') === 0  || $current_path == '/admin/config/system/cron' ) {
+            $node->revision_log->value = 'Scheduled update';
+        }
+    }
 
 /**
  * Implements hook_form_FORM_ID_alter().
@@ -1032,6 +1039,7 @@ function _notify_reviewer($entity, $entity_event_type)
             return;
         }
         $current_user_email = \Drupal::currentUser()->getAccount()->getEmail();
+        if( empty($current_user_email) ) $current_user_email = \Drupal::config('system.site')->get('mail');
 
         // Send email to all reviewers EXCEPT the author
         $to_emails = [];
@@ -1102,8 +1110,16 @@ function portland_mail_alter(&$message)
     if ($message['id'] == "portland_portland_notify_reviewers") {
         // Make the email appear to be from the current Editor
         $user = \Drupal::currentUser()->getAccount();
-        $user_name = $user->name;
-        $user_email = $user->getEmail();
+        if( $user->isAuthenticated() ) {
+            $user_name = $user->name;
+            $user_email = $user->getEmail();
+        }
+        // If the user is Anonymouse when running Cron
+        else {
+            $config = \Drupal::config('system.site');
+            $user_name = $config->get('name');
+            $user_email = $config->get('mail');
+        }
         $message['headers']['Reply-To'] = "\"$user_name\" <$user_email>";
     }
 }
