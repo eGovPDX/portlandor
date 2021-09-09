@@ -97,6 +97,17 @@ class PortlandLocationPicker extends WebformCompositeBase {
         ],
       ],
     ];
+    // $elements['location_park_container']['park_instructions_not_found'] = [
+    //   '#type' => 'markup',
+    //   '#title' => 'Park instructions',
+    //   '#title_display' => 'invisible',
+    //   '#markup' => '<p class="webform-element-description description">If you can\'t find the park in the list, select "I\'m not sure" above.</p>',
+    //   '#states' => [
+    //     'visible' => [
+    //       [':input[name="report_location[location_park]"]' => ['!value' => '0']],
+    //     ],
+    //   ],
+    // ];
     $elements['location_private_owner'] = [
       '#id' => 'location_private_owner',
       '#type' => 'radios',
@@ -148,7 +159,7 @@ class PortlandLocationPicker extends WebformCompositeBase {
         'visible' => [
           [':input[name="report_location[location_type]"]' => ['value' => 'street']],
           'or',
-          [':input[name="report_location[location_type]"]' => ['value' => 'park']],
+          [':input[name="report_location[location_park]"]' => ['filled' => TRUE]],
           'or',
           [':input[name="report_location[location_type]"]' => ['value' => 'waterway']],
           'or',

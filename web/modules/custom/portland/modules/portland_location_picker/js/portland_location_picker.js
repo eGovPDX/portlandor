@@ -22,6 +22,7 @@
       const DEFAULT_ZOOM_CLICK = 18;
       const DEFAULT_ZOOM_VERIFIED = 18;
       const ZOOM_POSITION = 'topright';
+      const NOT_A_PARK = "You selected park or natural area as the property type, but no park data was found for the selected location. If you believe this is a valid location or are unsure, plese continue to submit your report.";
 
       var response; // = { "status": "success", "spatialReference": { "wkid": 102100, "latestWkid": 3857 }, "candidates": [{ "location": { "x": -1.3645401627E7, "y": 5708911.764 }, "attributes": { "sp_x": 7669661.490, "sp_y": 694349.134, "city": "PORTLAND", "jurisdiction": "PORTLAND", "state": "OREGON", "lon": -122.57872839300, "id": 40159, "type": "intersection", "lat": 45.55241828270, "county": "MULTNOMAH" }, "address": "NE 82ND AVE AND NE SANDY BLVD", "extent": { "ymin": 5708911.514, "ymax": 5708912.014, "xmin": -1.3645401877E7, "xmax": -1.3645401377E7 } }] };
       var suggestionsModal;
@@ -29,6 +30,7 @@
       var statusModal;
       var baseLayer;
       var aerialLayer;
+      var isPark;
       var shouldRecenterPark = true;
       var currentView = "base";
       var baseLayer = L.tileLayer('https://www.portlandmaps.com/arcgis/rest/services/Public/Basemap_Color_Complete/MapServer/tile/{z}/{y}/{x}', {
@@ -136,15 +138,19 @@
 
         // set up location type radios //////////////////////
         $('fieldset.location-type input[type="radio"]').on("click", function() {
-          locationType = $(this).val();
-          if (locationType != 'private') {
-            setTimeout(function () { map.invalidateSize(); }, 0);
-          }
+          handleLocationTypeClick($(this));
         });
 
         // set up parks select list /////////////////////////
         $('#location_park').after('<span class="verified-checkmark park invisible" title="Location is verified!">✓</span>');
-        $('#location_park').select2();
+        $('#location_park').select2({
+          escapeMarkup: function (markup) { return markup; },
+          language: {
+            noResults: function() {
+              return 'No results found. Please try again, or select one of the other property type options above.';
+            }
+          }
+        });
         $('#location_park').on("change", function() {
           if (locationType == 'park') {
             var park = $(this).val();
@@ -158,6 +164,26 @@
 
 
       // EVENT HANDLERS ///////////////////////////////
+
+      function handleLocationTypeClick(radios) {
+        // reset park list; it may have been changed
+        $('#location_park')[0].selectedIndex = 0;
+
+        // if type is not private, the map is exposed but needs to be redrawn
+        locationType = radios.val();
+        if (locationType != 'private') {
+          redrawMap();
+        }
+
+        // if type is street or other, show location name field
+        var placeNameContainer = $('#place_name').parent();
+        if (locationType == "street" || locationType == "other") {
+          placeNameContainer.removeClass('visually-hidden');
+        } else {
+          placeNameContainer.addClass('visually-hidden');
+        }
+
+      }
 
       function handleLocateButtonClick(e) {
         cancelEventBubble(e);
@@ -187,13 +213,9 @@
         }
 
         // don't zoom in as far for parks; we don't need to
-        var zoom = locationType == "park" ? DEFAULT_ZOOM_CLICK - 1 : DEFAULT_ZOOM_CLICK;
-        setMarkerAndZoom(e.latlng.lat, e.latlng.lng, true, false, zoom);
-        reverseGeolocate(e.latlng.lat, e.latlng.lng);
-
-        if (locationType == "park") {
-          reverseParksGeolocate(e.latlng.lat, e.latlng.lng);
-        }
+        // var zoom = locationType == "park" ? DEFAULT_ZOOM_CLICK - 1 : DEFAULT_ZOOM_CLICK;
+        // setMarkerAndZoom(e.latlng.lat, e.latlng.lng, true, false, zoom);
+        reverseGeolocate(e);
       }
 
       function handleLocationFound(e) {
@@ -203,7 +225,7 @@
         var radius = e.accuracy;
         locCircle = L.circle(e.latlng, radius, { weight: 2, fillOpacity: 0.1 }).addTo(map);
         setMarkerAndZoom(e.latlng.lat, e.latlng.lng, true, true, DEFAULT_ZOOM_VERIFIED);
-        reverseGeolocate(e.latlng.lat, e.latlng.lng);
+        reverseGeolocate(e);
         locateControlContaier.style.backgroundImage = 'url("/modules/custom/portland/modules/portland_location_picker/images/map_locate_on.png")';
 
         closeStatusModal();
@@ -217,6 +239,17 @@
       }
 
       // HELPER FUNCTIONS ///////////////////////////////
+
+      function setLocationType(type) {
+        $("input[name='report_location[location_type]'][value='" + type + "']").click();
+      }
+
+      function redrawMap() {
+        // if map is initialized while hidden, this function needs to be called when the map is
+        // exposed, so it can redraw the tiles.
+        map.invalidateSize();
+        //setTimeout(function () { map.invalidateSize(); }, 500);
+      }
 
       function verifyAddressPortlandMaps(address) {
         var encodedAddress = encodeURI(address);
@@ -301,11 +334,21 @@
           var latlng = marker.getLatLng();
           $('.location-lat').val(latlng.lat);
           $('.location-lon').val(latlng.lng);
-          reverseGeolocate(latlng.lat, latlng.lng);
+          reverseGeolocate(e);
         });
       }
 
-      function reverseGeolocate(lat, lng) {
+      function reverseGeolocate(e) {
+        var lat = e.latlng.lat;
+        var lng = e.latlng.lng;
+
+        // first check if this is a park by doing the parks reverse geocoding call to portland maps.
+        // if park, then we don't neet to use the ArcGIS reverse geocoding.
+        isPark = reverseParksGeolocate(lat, lng);
+        if (isPark){
+          return true;
+        }
+
         // API documentation: https://developers.arcgis.com/rest/geocode/api-reference/geocoding-reverse-geocode.htm
         var url = 'https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer/reverseGeocode?f=json&locationType=street&location=' + lng + ',' + lat;
         $.ajax({
@@ -315,13 +358,14 @@
               setUnverified();
               return false;
             }
-            processReverseLocationData(response);
+            processReverseLocationData(response, e);
           }
         });
 
       }
 
-      function processReverseLocationData(data) {
+      function processReverseLocationData(data, e) {
+        setMarkerAndZoom(e.latlng.lat, e.latlng.lng, true, false, DEFAULT_ZOOM_CLICK);
         var address = data.address.Address;
         var city = data.address.City;
         var state = data.address.Region;
@@ -343,11 +387,19 @@
           shouldRecenterPark = true;
           return false;
         }
+        // if user selected the "Other/Not found" option (value = "0"), don't do the lookup,
+        // but do unhide the map and redraw it.
+        if (id === "0") {
+          redrawMap(); // workaround for map redraw issue when initialized while hidden
+          // change location type to "I'm not sure"
+          setLocationType("other");
+          return false;
+        }
         var url = '/api/parks/' + id; // this is a drupal view that returns json about the park
         $.ajax({
           url: url, success: function (result) {
             if (result.length < 1) {
-              showStatusModal("Location data not found for the selected park or natural area. Please try finding the location on the map.");
+              showStatusModal(NOT_A_PARK);
               setUnverified();
             }
 
@@ -360,6 +412,7 @@
             var lon = json.coordinates[0];
             var lat = json.coordinates[1];
             setMarkerAndZoom(lat, lon, true, true, DEFAULT_ZOOM_VERIFIED - 1);
+            redrawMap();
             setVerified("park");
           }
         });
@@ -373,13 +426,23 @@
           // if no features returned, exit
           var jsonResult = JSON.parse(result);
           if (jsonResult.features.length < 1) {
-            showStatusModal("No park data found for selected location.");
-            $('#location_park').val('');
+            if (locationType == "park") {
+              //showStatusModal(NOT_A_PARK);
+              shouldRecenterPark = true;
+            }
+            setLocationType("street");
+            $('#location_park').val('0');
             $('#location_park').trigger('change');
             return false;
           }
 
-          // attempt to set park selector; name may not be an exact match though.
+          setMarkerAndZoom(lat, lng, true, false, DEFAULT_ZOOM_CLICK);
+
+          // if we reached this point, that means the click was in a park.
+          // first switch the location type to park....
+          setLocationType("park");
+
+          // next, attempt to set park selector; name may not be an exact match though.
           // if not match, we want to set to empty.
           var parkName = jsonResult.features[0].attributes.NAME;
           $('#location_park option').filter(function() {
@@ -388,12 +451,20 @@
 
           // get value of selected item, then pass it to Select2
           var parkId = $('#location_park').val();
+          if (!parkId) {
+            // if parkId is empty at this point, it means the parks selector could not be set by name.
+            // this typically occurs when the name in Portland Maps differs from what is in Portland.gov.
+            // ideally, the data will get synchronized, and this condition/workaround will never occur.
+            parkId = "0"; // this value sets park selector to Other/Not found and keeps the map visible
+          }
           $('#location_park').val(parkId);
           $('#location_park').trigger('change');
           
           // set place name field and mark as verified          
           $('.place-name').val(parkName);
           setVerified("park");
+          
+          return true;
         }});
       }
 
