@@ -247,8 +247,8 @@
       function redrawMap() {
         // if map is initialized while hidden, this function needs to be called when the map is
         // exposed, so it can redraw the tiles.
-        map.invalidateSize();
-        //setTimeout(function () { map.invalidateSize(); }, 500);
+        //map.invalidateSize();
+        setTimeout(function () { map.invalidateSize(); }, 500);
       }
 
       function verifyAddressPortlandMaps(address) {
@@ -390,9 +390,9 @@
         // if user selected the "Other/Not found" option (value = "0"), don't do the lookup,
         // but do unhide the map and redraw it.
         if (id === "0") {
-          redrawMap(); // workaround for map redraw issue when initialized while hidden
           // change location type to "I'm not sure"
           setLocationType("other");
+          redrawMap(); // workaround for map redraw issue when initialized while hidden
           return false;
         }
         var url = '/api/parks/' + id; // this is a drupal view that returns json about the park
@@ -426,11 +426,12 @@
           // if no features returned, exit
           var jsonResult = JSON.parse(result);
           if (jsonResult.features.length < 1) {
+            // no parks data returned, so it's not managed by Parks. set to I'm Not Sure so that it goes to 311 for triage.
             if (locationType == "park") {
               //showStatusModal(NOT_A_PARK);
               shouldRecenterPark = true;
             }
-            setLocationType("street");
+            setLocationType("other");
             $('#location_park').val('0');
             $('#location_park').trigger('change');
             return false;

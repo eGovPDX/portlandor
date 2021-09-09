@@ -69,6 +69,8 @@ class PortlandLocationPicker extends WebformCompositeBase {
       '#id' => 'location_park',
       '#title' => t('Which park or natural area?'),
       '#type' => 'webform_entity_select',
+      '#description' => t('If you can\'t find the park in the list, or would like to find it using a map, choose "Other / Not sure."'),
+      "#description_display" => 'before',
       '#target_type' => 'node',
       '#selection_handler' => 'views',
       '#selection_settings' => [
@@ -164,6 +166,9 @@ class PortlandLocationPicker extends WebformCompositeBase {
           [':input[name="report_location[location_type]"]' => ['value' => 'waterway']],
           'or',
           [':input[name="report_location[location_type]"]' => ['value' => 'other']],
+        ],
+        'hidden' => [
+          [':input[name="report_location[location_type]"]' => ['value' => 'private']],
         ],
       ],
     ];
