@@ -957,7 +957,12 @@ function portland_cron()
         $to = 'BTS-eGov@portlandoregon.gov';
         $params['message'] = '<p>These Portland.gov items were updated in the last 24 hours and should
             be reviewed according to the specific instructions below.<p/>' . $results;
-        $params['title'] = 'Portland.gov list of content to review';
+        // Add environment name to the email subject
+        $environment_name = '';
+        if(isset($_ENV['PANTHEON_ENVIRONMENT']) && $_ENV['PANTHEON_ENVIRONMENT'] != 'live') {
+            $environment_name = ' (' . $_ENV['PANTHEON_ENVIRONMENT'] . ')';
+        }
+        $params['title'] = 'Portland.gov list of content to review' . $environment_name;
         $langcode = \Drupal::currentUser()->getPreferredLangcode();
 
         $sent_successfully = _send_email($key, $to, $langcode, $params, 'powr@portlandoregon.gov');
