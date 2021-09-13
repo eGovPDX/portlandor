@@ -94,6 +94,13 @@
         map.addControl(aerialControl);
         locateControl = new LocateControl();
         map.addControl(locateControl);
+        // if there are coordinates in the hidden lat/lon fields, set the map marker.
+        // this is likely a submit postback that had validation errors, so we need to re set it.
+        var lat = $('#location_lat').val();
+        var lon = $('#location_lon').val();
+        if (lat && lon) {
+          setMarkerAndZoom(lat, lon, true, true, DEFAULT_ZOOM_CLICK);
+        }
 
         // Set up verify button //////////////////////////////////
         $('.location-picker-address').after('<input class="btn location-verify button js-form-submit form-submit" type="submit" id="location_verify" name="op" value="Verify">');
