@@ -404,8 +404,10 @@
               $('#location_park').val('0'); // set park selector to 
               $('#location_park').trigger('change');
 
-              // now do ArcGIS reverse geocoding call to get the non-park address for the location
-              var reverseGeocodeUrl = `https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer/reverseGeocode?f=json&locationType=street&location=${lng},${lat}`;
+              // now do PortlandMaps ArcGIS reverse geocoding call to get the non-park address for the location
+              // https://www.portlandmaps.com/arcgis/rest/services/Public/Geocoding_PDX/GeocodeServer/reverseGeocode
+              var reverseGeocodeUrl = `https://www.portlandmaps.com/arcgis/rest/services/Public/Geocoding_PDX/GeocodeServer/reverseGeocode?location=%7B%22x%22%3A${lng}%2C+%22y%22%3A${lat}%2C+%22spatialReference%22%3A%7B%22wkid%22+%3A+4326%7D%7D&distance=100&langCode=&locationType=&featureTypes=&outSR=4326&returnIntersection=false&f=json`;
+              // arcgis_reversegeocode_url = `https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer/reverseGeocode?f=json&locationType=street&location=${lng},${lat}`;
               $.ajax({
                 url: reverseGeocodeUrl, success: function (response) {
                   if (response.length < 1 || !response.address || !response.location) {
@@ -419,93 +421,16 @@
             }
           }
         });
-
-        // // first check if this is a park by doing the parks reverse geocoding call to portland maps.
-        // // if park, then we don't neet to use the ArcGIS reverse geocoding.
-        // isPark = reverseParksGeolocate(lat, lng);
-        // if (isPark){
-        //   return true;
-        // }
-
-        // // API documentation: https://developers.arcgis.com/rest/geocode/api-reference/geocoding-reverse-geocode.htm
-        // var url = 'https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer/reverseGeocode?f=json&locationType=street&location=' + lng + ',' + lat;
-        // $.ajax({
-        //   url: url, success: function (response) {
-        //     if (response.length < 1 || !response.address || !response.location) {
-        //       showStatusModal("There was a problem retrieving data for the selected location.");
-        //       setUnverified();
-        //       return false;
-        //     }
-        //     processReverseLocationData(response, e);
-        //   }
-        // });
-
       }
-
-      // function reverseParksGeolocate(lat, lng) {
-      //   var url = reverseParksGeocodeUrl;
-      //   setUnverified();
-      //   shouldRecenterPark = false;
-      //   $.ajax({
-      //     url: url, success: function (result, e) {
-      //       // if no features returned, exit
-      //       var jsonResult = JSON.parse(result);
-      //       if (jsonResult.features.length < 1) {
-      //         // no parks data returned, so it's not managed by Parks. set to I'm Not Sure so that it goes to 311 for triage.
-      //         if (locationType == "park") {
-      //           //showStatusModal(NOT_A_PARK);
-      //           shouldRecenterPark = true;
-      //         }
-      //         setLocationType("other");
-      //         $('#location_park').val('0');
-      //         $('#location_park').trigger('change');
-      //         return false;
-      //       }
-
-      //       setMarkerAndZoom(lat, lng, true, false, DEFAULT_ZOOM_CLICK);
-
-      //       // if we reached this point, that means the click was in a park.
-      //       // first switch the location type to park....
-      //       setLocationType("park");
-
-      //       // next, attempt to set park selector; name may not be an exact match though.
-      //       // if not match, we want to set to empty.
-      //       var parkName = jsonResult.features[0].attributes.NAME;
-      //       $('#location_park option').filter(function () {
-      //         return $(this).text() == parkName;
-      //       }).prop('selected', true);
-
-      //       // get value of selected item, then pass it to Select2
-      //       var parkId = $('#location_park').val();
-      //       if (!parkId) {
-      //         // if parkId is empty at this point, it means the parks selector could not be set by name.
-      //         // this typically occurs when the name in Portland Maps differs from what is in Portland.gov.
-      //         // ideally, the data will get synchronized, and this condition/workaround will never occur.
-      //         parkId = "0"; // this value sets park selector to Other/Not found and keeps the map visible
-      //       }
-      //       $('#location_park').val(parkId);
-      //       $('#location_park').trigger('change');
-
-      //       // set place name field and mark as verified          
-      //       $('.place-name').val(parkName);
-      //       setVerified("park");
-
-      //       return true;
-      //     }
-      //   });
-      // }
 
       function processReverseLocationData(data, lat, lng) {
         setMarkerAndZoom(lat, lng, true, false, DEFAULT_ZOOM_CLICK);
-        var address = data.address.Address;
+        var street = data.address.Street;
         var city = data.address.City;
-        var state = data.address.Region;
-        var postalExt = data.address.PostalExt;
-        var postal = data.address.Postal;
-        var business = data.address.PlaceName;
-        var addressLabel = address.length > 0 ? address + ', ' + city + ', ' + state + ' ' + postal : city;
+        var state = data.address.State;
+        var postal = data.address.ZIP;
+        var addressLabel = street.length > 0 ? street + ', ' + city + ', ' + state + ' ' + postal : city;
         $('.location-picker-address').val(addressLabel);
-        if (business) $('.place-name').val(business);
         setVerified();
       }
 
