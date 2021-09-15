@@ -45,7 +45,7 @@ class DeleteOrphanedFiles extends ViewsBulkOperationsActionBase {
         file_delete($current_file_id);
 
         // Don't return anything for a default completion message, otherwise return translatable markup.
-        return $this->t("Deleted unused file: $uri");
+        return $this->t("Deleted file: $uri");
       }
     }
     return $this->t("Skipped processing");
