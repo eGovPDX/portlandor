@@ -17,15 +17,37 @@ The included Leaflet map locate() function geolocates the user through the brows
 
 ## Reverse Geolocation
 
-Uses the ArcGIS public reverse geolocation API.
+Uses the ArcGIS reverse geolocation API via PortlandMaps: https://www.portlandmaps.com/arcgis/rest/services/Public/Geocoding_PDX/GeocodeServer/reverseGeocode
+
+Sample GET request: https://www.portlandmaps.com/arcgis/rest/services/Public/Geocoding_PDX/GeocodeServer/reverseGeocode?location=%7B%22x%22%3A-122.6500834%2C+%22y%22%3A45.5083671%2C+%22spatialReference%22%3A%7B%22wkid%22+%3A+4326%7D%7D&distance=100&langCode=&locationType=&featureTypes=&outSR=4326&returnIntersection=false&f=json
+
+Sample JSON response:
+
+{
+  "address": {
+    "Street": "1969 SE LADD AVE",
+    "City": "Portland",
+    "State": "OREGON",
+    "ZIP": "97214",
+    "Loc_name": "address_pdx"
+  },
+  "location": {
+    "x": -122.65025498720404,
+    "y": 45.508273260891066,
+    "spatialReference": {
+      "wkid": 4326,
+      "latestWkid": 4326
+    }
+  }
+}
 
 ## Results data
 
 Results from Drupal webforms can be displayed in confirmation messages and delivered to external systems using tokens.
 
-The class Drupal\portland_location_picker\Plugin\WebformElement\PortlandLocationPicker includes functions to format result data for default output. By default, the formatted data looks like this: 
+The class Drupal\portland_location_picker\Plugin\WebformElement\PortlandLocationPicker includes functions to format result data for default output. By default, the formatted data is rendered in the format shown below. If the user has provided a Place Name, it's prepended to the address string.
 
-  Private residence, 10333 NE OREGON ST, Portland, OREGON 97220 (45.52834, -122.55596)
+  10333 NE OREGON ST, Portland, OREGON 97220 (45.52834, -122.55596)
   ABC Company, 1234 NE 102ND AVE, PORTLAND, OREGON 97220 (45.52834, -122.55596)
 
 This default data can be accessed using the token [webform_submission:values:report_location], where report_location is the machine name of the field in the webform. Individual values from sub-fields can be accessed by drilling down further into the composite field. For example, the place name returned by reverse geolocation can be accessed using the token [webform_submission:values:report_location:place_name].
