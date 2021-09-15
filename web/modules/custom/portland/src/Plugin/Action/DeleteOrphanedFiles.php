@@ -5,7 +5,6 @@ namespace Drupal\portland\Plugin\Action;
 use Drupal\views_bulk_operations\Action\ViewsBulkOperationsActionBase;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
-use Drupal\Core\Form\FormStateInterface;
 
 /**
  * Some description.
@@ -25,7 +24,9 @@ class DeleteOrphanedFiles extends ViewsBulkOperationsActionBase {
    * {@inheritdoc}
    */
   public function execute($entity = NULL) {
-    if( $entity == null || $entity->bundle() != 'document') return;
+    if( $entity == null || $entity->bundle() != 'document') 
+      return $this->t("Not applicable");
+
     // Don't process the latest revision
     if( ! $entity->isLatestRevision() ) {
       $media_storage = \Drupal::entityTypeManager()->getStorage('media');
@@ -47,20 +48,14 @@ class DeleteOrphanedFiles extends ViewsBulkOperationsActionBase {
         return $this->t("Deleted unused file: $uri");
       }
     }
+    return $this->t("Skipped processing");
   }
 
   /**
    * {@inheritdoc}
    */
   public function access($object, AccountInterface $account = NULL, $return_as_object = FALSE) {
-    // if ($object->getEntityType() === 'node' || $object->getEntityType() === 'media') {
-    //   $access = $object->access('update', $account, TRUE)
-    //     ->andIf($object->status->access('edit', $account, TRUE));
-    //   return $return_as_object ? $access : $access->isAllowed();
-    // }
-
-    // Other entity types may have different
-    // access methods and properties.
-    return TRUE;
+    if($account == null) return false;
+    return $account->hasPermission('administer media');
   }
 }
