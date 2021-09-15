@@ -1,13 +1,6 @@
 (function ($) {
 
-  var request = new XMLHttpRequest();
-  var map;
-  var marker;
-  var locationErrorShown;
-  var locateControl;
-  var locMarker;
-  var locCircle;
-  var locateControlContaier;
+  var initialized = false;
 
   // Here's how to reverse geolocate a park. Note the x/y values in the geometry parameter:
   // https://www.portlandmaps.com/arcgis/rest/services/Public/Parks_Misc/MapServer/2/query?geometry=%7B%22x%22%3A-122.55203425884248%2C%22y%22%3A45.53377174783918%2C%22spatialReference%22%3A%7B%22wkid%22%3A4326%7D%7D&geometryType=esriGeometryPoint&spacialRel=esriSpatialRelIntersects&returnGeometry=false&returnTrueCurves=false&returnIdsOnly=false&returnCountOnly=false&returnDistinctValues=false&f=pjson"
@@ -23,6 +16,15 @@
       const DEFAULT_ZOOM_VERIFIED = 18;
       const ZOOM_POSITION = 'topright';
       const NOT_A_PARK = "You selected park or natural area as the property type, but no park data was found for the selected location. If you believe this is a valid location or are unsure, plese continue to submit your report.";
+
+      var request = new XMLHttpRequest();
+      var map;
+      var marker;
+      var locationErrorShown;
+      var locateControl;
+      var locMarker;
+      var locCircle;
+      var locateControlContaier;
 
       var response; // = { "status": "success", "spatialReference": { "wkid": 102100, "latestWkid": 3857 }, "candidates": [{ "location": { "x": -1.3645401627E7, "y": 5708911.764 }, "attributes": { "sp_x": 7669661.490, "sp_y": 694349.134, "city": "PORTLAND", "jurisdiction": "PORTLAND", "state": "OREGON", "lon": -122.57872839300, "id": 40159, "type": "intersection", "lat": 45.55241828270, "county": "MULTNOMAH" }, "address": "NE 82ND AVE AND NE SANDY BLVD", "extent": { "ymin": 5708911.514, "ymax": 5708912.014, "xmin": -1.3645401877E7, "xmax": -1.3645401377E7 } }] };
       var suggestionsModal;
@@ -67,10 +69,14 @@
       });
 
       
-
-      initialize();
-
-
+      // if ajax is used in the webform (for computed twig, for example), this script
+      // and the initialize function may get called multiple times for some reason.
+      // adding this flag prevents that.
+      if (!initialized) {
+        initialize();
+        initialized = true;
+      }
+      
 
       // SETUP FUNCTIONS ///////////////////////////////
 
