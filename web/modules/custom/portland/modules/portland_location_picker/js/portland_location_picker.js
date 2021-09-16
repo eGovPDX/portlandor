@@ -419,8 +419,12 @@
                   if (response.length < 1 || !response.address || !response.location) {
                     // portlandmaps doesn't have data for this location.
                     // set location type to "other" so 311 can triage but still set marker.
-                    // address is not required for "other."
+                    // and clear address field; address is not required for "other."
                     setMarkerAndZoom(lat, lng, true, false, DEFAULT_ZOOM_CLICK);
+                    if (locationType == "park") {
+                      setLocationType("other");
+                    }
+                    $('#location_address').val("");
                     setUnverified();
                     return false;
                     // showStatusModal("There was a problem retrieving data for the selected location.");
