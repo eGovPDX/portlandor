@@ -417,9 +417,13 @@
               $.ajax({
                 url: reverseGeocodeUrl, success: function (response) {
                   if (response.length < 1 || !response.address || !response.location) {
-                    showStatusModal("There was a problem retrieving data for the selected location.");
+                    // portlandmaps doesn't have data for this location.
+                    // set location type to "other" so 311 can triage but still set marker.
+                    // address is not required for "other."
+                    setMarkerAndZoom(lat, lng, true, false, DEFAULT_ZOOM_CLICK);
                     setUnverified();
                     return false;
+                    // showStatusModal("There was a problem retrieving data for the selected location.");
                   }
                   processReverseLocationData(response, lat, lng);
                 }
