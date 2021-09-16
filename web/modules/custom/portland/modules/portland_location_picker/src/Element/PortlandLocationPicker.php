@@ -162,6 +162,8 @@ class PortlandLocationPicker extends WebformCompositeBase {
           [':input[name="report_location[location_type]"]' => ['value' => 'waterway']],
            'or',
           [':input[name="report_location[location_type]"]' => ['value' => 'private']],
+           'or',
+          [':input[name="report_location[location_type]"]' => ['value' => 'other']],
        ],
       ],
     ];
