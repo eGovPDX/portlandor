@@ -1200,3 +1200,32 @@ function portland_toolbar_alter(&$items) {
         unset($items['administration']);
     }
 }
+
+/**
+ * Implements hook_views_query_alter
+ */
+function portland_views_query_alter($view, $query) {
+    if ($view->id() == 'document_revisions' && $view->current_display === 'page') {
+        // The sub-query that will show the unique file count for each Document
+        $subquery = \Drupal::database()->select('media_revision__field_document', 'media_revision__field_document');
+        $subquery->addField('media_revision__field_document', 'entity_id');
+        $subquery->addExpression("COUNT(DISTINCT(media_revision__field_document.field_document_target_id))", 'unique_file_count');
+        $subquery->having('unique_file_count > 1');
+        $subquery->groupBy("entity_id");
+
+        // Add the INNER JOIN with the view's query
+        $definition = [
+            'type' => 'INNER',
+            'table formula' => $subquery,
+            'field' => 'entity_id',
+            'left_table' => 'media_field_revision',
+            'left_field' => 'mid',
+            'adjust' => TRUE,
+        ];
+        $join = Drupal::service('plugin.manager.views.join')->createInstance('standard', $definition);
+        $query->addRelationship('media_revision_with_file_count', $join, 'media_field_revision');
+
+        // Force sorting on revision ID
+        $query->addOrderBy('media_field_revision', 'vid', 'DESC');
+    }
+}
