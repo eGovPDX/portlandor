@@ -1,4 +1,4 @@
-FROM cimg/php:7.3-node
+FROM cimg/php:7.4-node
 
 USER root
 
