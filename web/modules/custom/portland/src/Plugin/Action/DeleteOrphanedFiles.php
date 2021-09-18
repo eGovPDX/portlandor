@@ -41,8 +41,10 @@ class DeleteOrphanedFiles extends ViewsBulkOperationsActionBase {
         else {
           $uri = 'file already deleted';
         }
-        
+        // Delete the file
         file_delete($current_file_id);
+        // Delete the revision
+        $media_storage->deleteRevision($entity->getRevisionId());
 
         // Don't return anything for a default completion message, otherwise return translatable markup.
         return $this->t("Deleted file: $uri");
