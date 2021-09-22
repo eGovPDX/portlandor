@@ -7,10 +7,9 @@ dependencies:
     - field.storage.node.field_change_type
     - field.storage.node.field_effective_date
     - node.type.change_set
-    - system.menu.editor-toolbar
+    - system.menu.code-and-policies-toolbar
     - user.role.administrator
     - user.role.code_editor
-    - workflows.workflow.charter_code_policies
   module:
     - content_moderation
     - datetime
@@ -96,9 +95,10 @@ display:
             field_effective_date: field_effective_date
             title: title
             field_change_type: field_change_type
-            field_effective_notes: field_effective_notes
             created: created
             changed: changed
+            moderation_state: moderation_state
+            status: status
             operations: operations
           info:
             views_bulk_operations_bulk_form:
@@ -108,7 +108,7 @@ display:
               responsive: ''
             field_effective_date:
               sortable: true
-              default_sort_order: asc
+              default_sort_order: desc
               align: ''
               separator: ''
               empty_column: false
@@ -127,13 +127,6 @@ display:
               separator: ''
               empty_column: false
               responsive: ''
-            field_effective_notes:
-              sortable: false
-              default_sort_order: asc
-              align: ''
-              separator: ''
-              empty_column: false
-              responsive: ''
             created:
               sortable: true
               default_sort_order: asc
@@ -143,6 +136,20 @@ display:
               responsive: ''
             changed:
               sortable: true
+              default_sort_order: asc
+              align: ''
+              separator: ''
+              empty_column: false
+              responsive: ''
+            moderation_state:
+              sortable: false
+              default_sort_order: asc
+              align: ''
+              separator: ''
+              empty_column: false
+              responsive: ''
+            status:
+              sortable: false
               default_sort_order: asc
               align: ''
               separator: ''
@@ -215,22 +222,22 @@ display:
           clear_on_exposed: false
           action_title: Action
           selected_actions:
-            -
-              action_id: mark_for_review_action
-              preconfiguration:
-                label_override: ''
-            -
+            11:
               action_id: portland_archive_action
               preconfiguration:
-                label_override: ''
-            -
+                label_override: Unpublish
+                add_confirmation: 1
+            13:
+              action_id: mark_for_review_action
+              preconfiguration:
+                label_override: 'Mark for review'
+                add_confirmation: 1
+            14:
               action_id: portland_publish_action
               preconfiguration:
-                label_override: ''
-            -
-              action_id: views_bulk_operations_delete_entity
-              preconfiguration:
-                label_override: ''
+                label_override: Publish
+                add_confirmation: 1
+          force_selection_info: false
           plugin_id: views_bulk_operations_bulk_form
         field_effective_date:
           id: field_effective_date
@@ -671,7 +678,7 @@ display:
           click_sort_column: value
           type: boolean
           settings:
-            format: default
+            format: yes-no
             format_custom_true: ''
             format_custom_false: ''
           group_column: value
@@ -891,110 +898,6 @@ display:
           entity_type: node
           entity_field: type
           plugin_id: bundle
-        field_effective_date_value_1:
-          id: field_effective_date_value_1
-          table: node__field_effective_date
-          field: field_effective_date_value
-          relationship: none
-          group_type: group
-          admin_label: ''
-          operator: '>='
-          value:
-            min: ''
-            max: ''
-            value: today
-            type: date
-          group: 2
-          exposed: false
-          expose:
-            operator_id: field_effective_date_value_1_op
-            label: 'Effective Date (field_effective_date)'
-            description: ''
-            use_operator: false
-            operator: field_effective_date_value_1_op
-            operator_limit_selection: false
-            operator_list: {  }
-            identifier: effective_date
-            required: false
-            remember: false
-            multiple: false
-            remember_roles:
-              authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              attorney: '0'
-              council_author: '0'
-              council_clerk: '0'
-              budget: '0'
-              park_editor: '0'
-              code_editor: '0'
-              group_creator: '0'
-              alert_editor: '0'
-              sitewide_editor: '0'
-              administrator: '0'
-            placeholder: ''
-            min_placeholder: ''
-            max_placeholder: ''
-          is_grouped: false
-          group_info:
-            label: ''
-            description: ''
-            identifier: ''
-            optional: true
-            widget: select
-            multiple: false
-            remember: false
-            default_group: All
-            default_group_multiple: {  }
-            group_items: {  }
-          plugin_id: datetime
-        field_effective_date_value:
-          id: field_effective_date_value
-          table: node__field_effective_date
-          field: field_effective_date_value
-          relationship: none
-          group_type: group
-          admin_label: ''
-          operator: empty
-          value:
-            min: ''
-            max: ''
-            value: ''
-            type: date
-          group: 2
-          exposed: false
-          expose:
-            operator_id: ''
-            label: ''
-            description: ''
-            use_operator: false
-            operator: ''
-            operator_limit_selection: false
-            operator_list: {  }
-            identifier: ''
-            required: false
-            remember: false
-            multiple: false
-            remember_roles:
-              authenticated: authenticated
-            placeholder: ''
-            min_placeholder: ''
-            max_placeholder: ''
-          is_grouped: false
-          group_info:
-            label: ''
-            description: ''
-            identifier: ''
-            optional: true
-            widget: select
-            multiple: false
-            remember: false
-            default_group: All
-            default_group_multiple: {  }
-            group_items: {  }
-          plugin_id: datetime
       sorts:
         field_effective_date_value:
           id: field_effective_date_value
@@ -1071,393 +974,10 @@ display:
       tags:
         - 'config:field.storage.node.field_change_type'
         - 'config:field.storage.node.field_effective_date'
-  page_past:
+  page_manage_change_sets:
     display_plugin: page
-    id: page_past
-    display_title: 'Page: Past Changes'
-    position: 1
-    display_options:
-      display_extenders:
-        metatag_display_extender: {  }
-      path: charter-code-policies/changes/manage/past
-      title: 'Manage Past Change Sets'
-      defaults:
-        title: false
-        filters: false
-        filter_groups: false
-        header: false
-      display_description: ''
-      filters:
-        type:
-          id: type
-          table: node_field_data
-          field: type
-          relationship: none
-          group_type: group
-          admin_label: ''
-          operator: in
-          value:
-            change_set: change_set
-          group: 1
-          exposed: false
-          expose:
-            operator_id: ''
-            label: ''
-            description: ''
-            use_operator: false
-            operator: ''
-            operator_limit_selection: false
-            operator_list: {  }
-            identifier: ''
-            required: false
-            remember: false
-            multiple: false
-            remember_roles:
-              authenticated: authenticated
-            reduce: false
-            argument: null
-          is_grouped: false
-          group_info:
-            label: ''
-            description: ''
-            identifier: ''
-            optional: true
-            widget: select
-            multiple: false
-            remember: false
-            default_group: All
-            default_group_multiple: {  }
-            group_items: {  }
-          entity_type: node
-          entity_field: type
-          plugin_id: bundle
-        field_effective_date_value_1:
-          id: field_effective_date_value_1
-          table: node__field_effective_date
-          field: field_effective_date_value
-          relationship: none
-          group_type: group
-          admin_label: ''
-          operator: '<'
-          value:
-            min: ''
-            max: ''
-            value: today
-            type: date
-          group: 1
-          exposed: false
-          expose:
-            operator_id: field_effective_date_value_1_op
-            label: 'Effective Date (field_effective_date)'
-            description: ''
-            use_operator: false
-            operator: field_effective_date_value_1_op
-            operator_limit_selection: false
-            operator_list: {  }
-            identifier: effective_date
-            required: false
-            remember: false
-            multiple: false
-            remember_roles:
-              authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              attorney: '0'
-              council_author: '0'
-              council_clerk: '0'
-              budget: '0'
-              park_editor: '0'
-              code_editor: '0'
-              group_creator: '0'
-              alert_editor: '0'
-              sitewide_editor: '0'
-              administrator: '0'
-            placeholder: ''
-            min_placeholder: ''
-            max_placeholder: ''
-          is_grouped: false
-          group_info:
-            label: ''
-            description: ''
-            identifier: ''
-            optional: true
-            widget: select
-            multiple: false
-            remember: false
-            default_group: All
-            default_group_multiple: {  }
-            group_items: {  }
-          plugin_id: datetime
-        title:
-          id: title
-          table: node_field_data
-          field: title
-          relationship: none
-          group_type: group
-          admin_label: ''
-          operator: contains
-          value: ''
-          group: 1
-          exposed: true
-          expose:
-            operator_id: title_op
-            label: 'Title Contains'
-            description: ''
-            use_operator: false
-            operator: title_op
-            operator_limit_selection: false
-            operator_list: {  }
-            identifier: title
-            required: false
-            remember: false
-            multiple: false
-            remember_roles:
-              authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              attorney: '0'
-              council_author: '0'
-              council_clerk: '0'
-              budget: '0'
-              park_editor: '0'
-              code_editor: '0'
-              group_creator: '0'
-              alert_editor: '0'
-              sitewide_editor: '0'
-              administrator: '0'
-            placeholder: ''
-          is_grouped: false
-          group_info:
-            label: ''
-            description: ''
-            identifier: ''
-            optional: true
-            widget: select
-            multiple: false
-            remember: false
-            default_group: All
-            default_group_multiple: {  }
-            group_items: {  }
-          entity_type: node
-          entity_field: title
-          plugin_id: string
-        field_change_type_value:
-          id: field_change_type_value
-          table: node__field_change_type
-          field: field_change_type_value
-          relationship: none
-          group_type: group
-          admin_label: ''
-          operator: or
-          value: {  }
-          group: 1
-          exposed: true
-          expose:
-            operator_id: field_change_type_value_op
-            label: Type
-            description: ''
-            use_operator: false
-            operator: field_change_type_value_op
-            operator_limit_selection: false
-            operator_list: {  }
-            identifier: type
-            required: false
-            remember: false
-            multiple: false
-            remember_roles:
-              authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              attorney: '0'
-              council_author: '0'
-              council_clerk: '0'
-              budget: '0'
-              park_editor: '0'
-              code_editor: '0'
-              group_creator: '0'
-              alert_editor: '0'
-              sitewide_editor: '0'
-              administrator: '0'
-            reduce: false
-          is_grouped: false
-          group_info:
-            label: ''
-            description: ''
-            identifier: ''
-            optional: true
-            widget: select
-            multiple: false
-            remember: false
-            default_group: All
-            default_group_multiple: {  }
-            group_items: {  }
-          reduce_duplicates: false
-          plugin_id: list_field
-        status:
-          id: status
-          table: node_field_data
-          field: status
-          relationship: none
-          group_type: group
-          admin_label: ''
-          operator: '='
-          value: All
-          group: 1
-          exposed: true
-          expose:
-            operator_id: ''
-            label: Published
-            description: ''
-            use_operator: false
-            operator: status_op
-            operator_limit_selection: false
-            operator_list: {  }
-            identifier: status
-            required: false
-            remember: false
-            multiple: false
-            remember_roles:
-              authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              attorney: '0'
-              council_author: '0'
-              council_clerk: '0'
-              budget: '0'
-              park_editor: '0'
-              code_editor: '0'
-              group_creator: '0'
-              alert_editor: '0'
-              sitewide_editor: '0'
-              administrator: '0'
-          is_grouped: false
-          group_info:
-            label: ''
-            description: ''
-            identifier: ''
-            optional: true
-            widget: select
-            multiple: false
-            remember: false
-            default_group: All
-            default_group_multiple: {  }
-            group_items: {  }
-          entity_type: node
-          entity_field: status
-          plugin_id: boolean
-        moderation_state:
-          id: moderation_state
-          table: node_field_data
-          field: moderation_state
-          relationship: none
-          group_type: group
-          admin_label: ''
-          operator: in
-          value:
-            all: all
-            charter_code_policies-draft: charter_code_policies-draft
-            charter_code_policies-review: charter_code_policies-review
-            charter_code_policies-published: charter_code_policies-published
-            charter_code_policies-archived: charter_code_policies-archived
-          group: 1
-          exposed: true
-          expose:
-            operator_id: moderation_state_op
-            label: 'Moderation state'
-            description: ''
-            use_operator: false
-            operator: moderation_state_op
-            operator_limit_selection: false
-            operator_list: {  }
-            identifier: moderation_state
-            required: false
-            remember: false
-            multiple: false
-            remember_roles:
-              authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              attorney: '0'
-              council_author: '0'
-              council_clerk: '0'
-              budget: '0'
-              park_editor: '0'
-              code_editor: '0'
-              group_creator: '0'
-              alert_editor: '0'
-              sitewide_editor: '0'
-              administrator: '0'
-            reduce: false
-          is_grouped: false
-          group_info:
-            label: ''
-            description: ''
-            identifier: ''
-            optional: true
-            widget: select
-            multiple: false
-            remember: false
-            default_group: All
-            default_group_multiple: {  }
-            group_items: {  }
-          entity_type: node
-          plugin_id: moderation_state_filter
-      filter_groups:
-        operator: AND
-        groups:
-          1: AND
-      header:
-        area:
-          id: area
-          table: views
-          field: area
-          relationship: none
-          group_type: group
-          admin_label: ''
-          empty: false
-          tokenize: false
-          content:
-            value: '<p><a href="/node/add/change_set" class="button">Add a change set</a></p>'
-            format: full_html
-          plugin_id: text
-        result:
-          id: result
-          table: views
-          field: result
-          relationship: none
-          group_type: group
-          admin_label: ''
-          empty: false
-          content: '<p>Displaying @start - @end of @total upcoming change sets. <a href="/citycode/changes/manage">Manage upcoming change sets</a>.</p>'
-          plugin_id: result
-      use_admin_theme: true
-    cache_metadata:
-      max-age: 0
-      contexts:
-        - 'languages:language_content'
-        - 'languages:language_interface'
-        - url
-        - url.query_args
-        - 'user.node_grants:view'
-        - user.roles
-      tags:
-        - 'config:field.storage.node.field_change_type'
-        - 'config:field.storage.node.field_effective_date'
-        - 'config:workflow_list'
-  page_upcoming:
-    display_plugin: page
-    id: page_upcoming
-    display_title: 'Page: Upcoming Changes'
+    id: page_manage_change_sets
+    display_title: 'Page: Manage Change Sets'
     position: 1
     display_options:
       display_extenders:
@@ -1478,23 +998,10 @@ display:
         description: ''
         expanded: false
         parent: ''
-        weight: -38
+        weight: 4
         context: '0'
-        menu_name: editor-toolbar
+        menu_name: code-and-policies-toolbar
       header:
-        area:
-          id: area
-          table: views
-          field: area
-          relationship: none
-          group_type: group
-          admin_label: ''
-          empty: true
-          tokenize: false
-          content:
-            value: '<p><a href="/node/add/change_set" class="button">Add a change set</a></p>'
-            format: full_html
-          plugin_id: text
         result:
           id: result
           table: views
@@ -1503,7 +1010,7 @@ display:
           group_type: group
           admin_label: ''
           empty: true
-          content: '<p>Displaying @start - @end of @total upcoming change sets. <a href="/charter-code-policies/changes/manage/past">Manage past change sets</a>.</p>'
+          content: '<p>Displaying @start - @end of @total change sets.</p>'
           plugin_id: result
       use_admin_theme: true
     cache_metadata:
