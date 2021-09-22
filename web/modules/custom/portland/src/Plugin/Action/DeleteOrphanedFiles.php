@@ -16,48 +16,53 @@ use Drupal\Core\StringTranslation\StringTranslationTrait;
  *   confirm = TRUE,
  * )
  */
-class DeleteOrphanedFiles extends ViewsBulkOperationsActionBase {
+class DeleteOrphanedFiles extends ViewsBulkOperationsActionBase
+{
 
   use StringTranslationTrait;
 
   /**
    * {@inheritdoc}
    */
-  public function execute($entity = NULL) {
-    if( $entity == null || $entity->bundle() != 'document') 
+  public function execute($entity = NULL)
+  {
+    if ($entity == null || $entity->bundle() != 'document')
       return $this->t("Not applicable");
-
-    // Don't process the latest revision
-    if( ! $entity->isLatestRevision() ) {
-      $media_storage = \Drupal::entityTypeManager()->getStorage('media');
-      $latest_revision = $media_storage->loadRevision($media_storage->getLatestRevisionId($entity->id()));
-      $latest_file_id = $latest_revision->field_document->target_id;
-      $current_file_id = $entity->field_document->target_id;
-      if($current_file_id != $latest_file_id) {
-        if( $entity->field_document[0]->entity ) {
-          $uri = $entity->field_document[0]->entity->getFileUri();
-          $entity->field_document[0]->entity->delete();
-        }
-        else {
-          $uri = 'file already deleted';
-        }
-        // Delete the file
-        file_delete($current_file_id);
-        // Delete the revision
-        $media_storage->deleteRevision($entity->getRevisionId());
-
-        // Don't return anything for a default completion message, otherwise return translatable markup.
-        return $this->t("Deleted file: $uri");
-      }
+    if ($entity->isLatestRevision()) {
+      return $this->t("Skipped the latest revision");
     }
-    return $this->t("Skipped processing");
+    $media_storage = \Drupal::entityTypeManager()->getStorage('media');
+    $latest_revision = $media_storage->loadRevision($media_storage->getLatestRevisionId($entity->id()));
+    $latest_file_id = $latest_revision->field_document->target_id;
+    $current_file_id = $entity->field_document->target_id;
+    // If the current revision has the same file as the lastet revision, DO NOT delete the file.
+    // Otherwise the latest revision will lose the attached file.
+    if ($current_file_id != $latest_file_id) {
+      if ($entity->field_document[0]->entity) {
+        $uri = $entity->field_document[0]->entity->getFileUri();
+        $entity->field_document[0]->entity->delete();
+      } else {
+        $uri = 'file already deleted';
+      }
+      // Delete the file
+      file_delete($current_file_id);
+      // Delete the revision
+      $media_storage->deleteRevision($entity->getRevisionId());
+
+      // Don't return anything for a default completion message, otherwise return translatable markup.
+      return $this->t("Deleted file: $uri");
+    }
+    else {
+      return $this->t("Skipped processing");
+    }
   }
 
   /**
    * {@inheritdoc}
    */
-  public function access($object, AccountInterface $account = NULL, $return_as_object = FALSE) {
-    if($account == null) return false;
+  public function access($object, AccountInterface $account = NULL, $return_as_object = FALSE)
+  {
+    if ($account == null) return false;
     return $account->hasPermission('administer media');
   }
 }
