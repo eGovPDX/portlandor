@@ -28,33 +28,30 @@ class DeleteOrphanedFiles extends ViewsBulkOperationsActionBase
   {
     if ($entity == null || $entity->bundle() != 'document')
       return $this->t("Not applicable");
-    if ($entity->isLatestRevision()) {
-      return $this->t("Skipped the latest revision");
+    if (!$entity->isLatestRevision()) {
+      return $this->t("Not applicable");
     }
     $media_storage = \Drupal::entityTypeManager()->getStorage('media');
-    $latest_revision = $media_storage->loadRevision($media_storage->getLatestRevisionId($entity->id()));
-    $latest_file_id = $latest_revision->field_document->target_id;
-    $current_file_id = $entity->field_document->target_id;
-    // If the current revision has the same file as the lastet revision, DO NOT delete the file.
-    // Otherwise the latest revision will lose the attached file.
-    if ($current_file_id != $latest_file_id) {
-      if ($entity->field_document[0]->entity) {
-        $uri = $entity->field_document[0]->entity->getFileUri();
-        $entity->field_document[0]->entity->delete();
-      } else {
-        $uri = 'file already deleted';
-      }
-      // Delete the file
-      file_delete($current_file_id);
-      // Delete the revision
-      $media_storage->deleteRevision($entity->getRevisionId());
+    $latest_revision_id = $media_storage->getLatestRevisionId($entity->id());
+    $latest_file_id = $media_storage->loadRevision($latest_revision_id)->field_document->target_id;
 
-      // Don't return anything for a default completion message, otherwise return translatable markup.
-      return $this->t("Deleted file: $uri");
+    // Load all revisions and their file IDs
+    $conn = \Drupal\Core\Database\Database::getConnection();
+    $query = $conn->select('media_revision__field_document', 'media_revision__field_document');
+    $query->condition('media_revision__field_document.entity_id', $entity->id(), '=');
+    $query->fields('media_revision__field_document', ['revision_id', 'field_document_target_id']);
+    $result = $query->execute();
+
+    // Delete all but the latest revision
+    foreach ($result as $row) {
+      if($row->revision_id == $latest_revision_id) continue;
+      // Delete the associated file if it's not used in the latest revision
+      if($row->field_document_target_id != $latest_file_id) {
+        file_delete($row->field_document_target_id);
+      }
+      $media_storage->deleteRevision($row->revision_id);
     }
-    else {
-      return $this->t("Skipped processing");
-    }
+    return $this->t("Document processed");
   }
 
   /**
