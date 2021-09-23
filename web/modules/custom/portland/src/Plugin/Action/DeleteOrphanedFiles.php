@@ -13,7 +13,7 @@ use Drupal\Core\StringTranslation\StringTranslationTrait;
  *   id = "portland_delete_orphaned_files",
  *   label = @Translation("Delete orphaned files (custom action)"),
  *   type = "media",
- *   confirm = TRUE,
+ *   confirm = FALSE,
  * )
  */
 class DeleteOrphanedFiles extends ViewsBulkOperationsActionBase
