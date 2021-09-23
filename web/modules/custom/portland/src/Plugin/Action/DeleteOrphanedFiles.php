@@ -29,7 +29,7 @@ class DeleteOrphanedFiles extends ViewsBulkOperationsActionBase
     if ($entity == null || $entity->bundle() != 'document')
       return $this->t("Not applicable");
     if (!$entity->isLatestRevision()) {
-      return $this->t("Not applicable");
+      return $this->t("Revision processed");
     }
     $media_storage = \Drupal::entityTypeManager()->getStorage('media');
     $latest_revision_id = $media_storage->getLatestRevisionId($entity->id());
