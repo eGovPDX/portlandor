@@ -4,6 +4,19 @@ use Drupal\user\Entity\User;
 use Drupal\Core\Language\LanguageInterface;
 use GuzzleHttp\Exception\RequestException;
 use Drupal\portland_openid_connect\Util\PortlandOpenIdConnectUtil;
+use Drupal\Core\Datetime\DrupalDateTime;
+use Drupal\datetime\Plugin\Field\FieldType\DateTimeItemInterface;
+
+/**
+ * Implement hook_ENTITY_TYPE_presave()
+ */
+function portland_openid_connect_user_presave($user) {
+  // If this is an existing user and the status is updated
+  if( $user->original !== null && $user->status->value !== $user->original->status->value) {
+    $now = new Drupal\Core\Datetime\DrupalDateTime('now', 'UTC');
+    $user->set('field_status_updated_on', $now->format('Y-m-d\TH:i:s'));
+  }
+}
 
 /**
  * Implement hook_cron()
