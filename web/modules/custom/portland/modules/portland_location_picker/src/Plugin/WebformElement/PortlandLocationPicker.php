@@ -37,7 +37,8 @@ class PortlandLocationPicker extends WebformCompositeBase {
     // needed, such as in a handler that is sending data to an external system, the sub-field needs to be
     // specified in the token, such as [webform_submission:values:location:place_name].
     $lines = [];
-    $lines[] = ($value['place_name'] ? $value['place_name'] . ', ' : '') .
+    $lines[] = 'Location type: ' . $value['location_type'] . ', ' .
+      ($value['place_name'] ? $value['place_name'] . ', ' : '') .
       ($value['location_address'] ? $value['location_address'] . ' ' : '') .
       ($value['location_lat'] ? '(' . $value['location_lat'] . ', ' : '') .
       ($value['location_lon'] ? $value['location_lon'] . ')' : '');
@@ -55,7 +56,8 @@ class PortlandLocationPicker extends WebformCompositeBase {
     // needed, such as in a handler that is sending data to an external system, the sub-field needs to be
     // specified in the token, such as [webform_submission:values:location:place_name].
     $lines = [];
-    $lines[] = ($value['place_name'] ? $value['place_name'] . ', ' : '') .
+    $lines[] = 'Location type: ' . $value['location_type'] . ', ' .
+      ($value['place_name'] ? $value['place_name'] . ', ' : '') .
       ($value['location_address'] ? $value['location_address'] . ' ' : '') .
       ($value['location_lat'] ? '(' . $value['location_lat'] . ', ' : '') .
       ($value['location_lon'] ? $value['location_lon'] . ')' : '');
