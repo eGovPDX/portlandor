@@ -1044,61 +1044,60 @@ function _notify_reviewer($entity, $entity_event_type)
     }
   }
 
-    $reviewers = null;
-    $latest_and_previous_revs = _load_latest_revision($node);
-    $latest_rev = $latest_and_previous_revs['latest'];
-    $reviewers = $node->field_reviewer;
+  $reviewers = null;
+  $latest_and_previous_revs = _load_latest_revision($node);
+  $latest_rev = $latest_and_previous_revs['latest'];
+  $reviewers = $node->field_reviewer;
 
-    $revision_log_output = $node->revision_log->value ?
-        "<div><h3>Revision log:</h3>\r\n".$node->revision_log->value."</div>\r\n<p/>\r\n<div>" : '';
+  $revision_log_output = $node->revision_log->value ?
+      "<div><h3>Revision log:</h3>\r\n".$node->revision_log->value."</div>\r\n<p/>\r\n<div>" : '';
 
-    $moderation_state_message = [
-        'review' => 'In review',
-        'draft' => 'Draft',
-        'archived' => 'Unpublished',
-        'published' => 'Published',
-        'unpublished' => 'Unpublished',
-        'bureau_review' => 'Bureau Review',
-        'attorney_review' => 'Attorney Review',
-        'budget_office_review' => 'Budget Office Review',
-        'policy_editor_review' => 'Policy Editor Review',
-        'elected_review' => 'Elected Review',
-        'council_clerk_review' => 'Council Clerk Review',
-        'ready_for_agenda' => 'Ready for Agenda',
-        'cancelled' => 'Cancelled (To Be Deleted)',
-    ];
+  $moderation_state_message = [
+      'review' => 'In review',
+      'draft' => 'Draft',
+      'archived' => 'Unpublished',
+      'published' => 'Published',
+      'unpublished' => 'Unpublished',
+      'bureau_review' => 'Bureau Review',
+      'attorney_review' => 'Attorney Review',
+      'budget_office_review' => 'Budget Office Review',
+      'policy_editor_review' => 'Policy Editor Review',
+      'elected_review' => 'Elected Review',
+      'council_clerk_review' => 'Council Clerk Review',
+      'ready_for_agenda' => 'Ready for Agenda',
+      'cancelled' => 'Cancelled (To Be Deleted)',
+  ];
 
-    // send email for any moderation state except draft
-    if ($latest_rev->moderation_state->value != 'draft') {
-        $key = 'portland_notify_reviewers';
-        $params['title'] = 'Portland.gov reviewer update';
-        $langcode = \Drupal::currentUser()->getPreferredLangcode();
-        $params['message'] = "You have been assigned to review <a href=\"/node/".$node->id().
-            "/revisions/".$node->vid->value."/view\"> ".$latest_rev->label().
-            "</a> . You will be notified of all changes to this content.<p/>".
-            "<a href=\"".$node->revision_uid->entity->toUrl()->toString()."\">".$node->revision_uid->entity->label().
-            "</a> ".$status_message." a new <strong>".$moderation_state_message[$latest_rev->moderation_state->value].
-            "</strong> revision at ".
-            \Drupal::service('date.formatter')->format($node->changed->value, 'custom', 'l Y/n/j g:i A').
-            ".<p/>".$revision_log_output;
+  // send email for any moderation state except draft
+  if ($latest_rev->moderation_state->value != 'draft') {
+      $key = 'portland_notify_reviewers';
+      $params['title'] = 'Portland.gov reviewer update';
+      $langcode = \Drupal::currentUser()->getPreferredLangcode();
+      $params['message'] = "You have been assigned to review <a href=\"/node/".$node->id().
+          "/revisions/".$node->vid->value."/view\"> ".$latest_rev->label().
+          "</a> . You will be notified of all changes to this content.<p/>".
+          "<a href=\"".$node->revision_uid->entity->toUrl()->toString()."\">".$node->revision_uid->entity->label().
+          "</a> ".$status_message." a new <strong>".$moderation_state_message[$latest_rev->moderation_state->value].
+          "</strong> revision at ".
+          \Drupal::service('date.formatter')->format($node->changed->value, 'custom', 'l Y/n/j g:i A').
+          ".<p/>".$revision_log_output;
 
-        if ($reviewers == null) {
-            return;
-        }
-        $current_user_email = \Drupal::currentUser()->getAccount()->getEmail();
-        if( empty($current_user_email) ) $current_user_email = \Drupal::config('system.site')->get('mail');
+      if ($reviewers == null) {
+          return;
+      }
+      $current_user_email = \Drupal::currentUser()->getAccount()->getEmail();
+      if( empty($current_user_email) ) $current_user_email = \Drupal::config('system.site')->get('mail');
 
-        // Send email to all reviewers EXCEPT the author
-        $to_emails = [];
-        foreach ($reviewers->referencedEntities() as $reviewer) {
-            if ($reviewer->id() != $node->revision_uid->entity->id()) {
-                $to_emails[] = $reviewer->mail->value;
-            }
-        }
-        if( !empty($to_emails)) _send_email($key, implode(',', $to_emails), $langcode, $params, $current_user_email);
-    }
-    if (!empty($to_emails)) _send_email($key, implode(',', $to_emails), $langcode, $params, $current_user_email);
+      // Send email to all reviewers EXCEPT the author
+      $to_emails = [];
+      foreach ($reviewers->referencedEntities() as $reviewer) {
+          if ($reviewer->id() != $node->revision_uid->entity->id()) {
+              $to_emails[] = $reviewer->mail->value;
+          }
+      }
+      if( !empty($to_emails)) _send_email($key, implode(',', $to_emails), $langcode, $params, $current_user_email);
   }
+  if (!empty($to_emails)) _send_email($key, implode(',', $to_emails), $langcode, $params, $current_user_email);
 }
 
 /**
