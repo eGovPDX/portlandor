@@ -25,17 +25,17 @@ const ALERTS_COUNTER_CACHE_KEY = 'portland.active.alerts';
  */
 function getGroupIdsByEntity($entity)
 {
-    if ($entity == null) {
-        return [];
-    }
-    $group_ids = [];
+  if ($entity == null) {
+    return [];
+  }
+  $group_ids = [];
 
-    $group_contents = GroupContent::loadByEntity($entity);
-    foreach ($group_contents as $group_content) {
-        $group_ids[] = $group_content->getGroup()->id();
-    }
+  $group_contents = GroupContent::loadByEntity($entity);
+  foreach ($group_contents as $group_content) {
+    $group_ids[] = $group_content->getGroup()->id();
+  }
 
-    return $group_ids;
+  return $group_ids;
 }
 
 /**
@@ -49,25 +49,25 @@ function getGroupIdsByEntity($entity)
  */
 function portland_group_presave(GroupInterface $group)
 {
-    $newgroup_path = $group->get('field_group_path')->value;
-    if ($group->original === null) {
-        $originalgroup_path = ''; // new group
-    } else {
-        $originalgroup_path = $group->original->get('field_group_path')->value;
+  $newgroup_path = $group->get('field_group_path')->value;
+  if ($group->original === null) {
+    $originalgroup_path = ''; // new group
+  } else {
+    $originalgroup_path = $group->original->get('field_group_path')->value;
+  }
+  // Check if this is a new group or an existing group whose group_path has been modified
+  if ($originalgroup_path !== $newgroup_path) {
+    $cleangroup_path = $newgroup_path;
+    if ($cleangroup_path === '') {
+      $cleangroup_path = 'invalid-short-name';
     }
-    // Check if this is a new group or an existing group whose group_path has been modified
-    if ($originalgroup_path !== $newgroup_path) {
-        $cleangroup_path = $newgroup_path;
-        if ($cleangroup_path === '') {
-            $cleangroup_path = 'invalid-short-name';
-        }
-        $alias = "/$cleangroup_path";
-        $gid = $group->id();
-        $lang = \Drupal::languageManager()->getCurrentLanguage()->getId();
-        // Update the group path when we have alias conflict
-        \Drupal::service("pathauto.alias_uniquifier")->uniquify($alias, "/group/$gid", $lang);
-        $group->set('field_group_path', substr($alias, 1)); // Remove the first character "/"
-    }
+    $alias = "/$cleangroup_path";
+    $gid = $group->id();
+    $lang = \Drupal::languageManager()->getCurrentLanguage()->getId();
+    // Update the group path when we have alias conflict
+    \Drupal::service("pathauto.alias_uniquifier")->uniquify($alias, "/group/$gid", $lang);
+    $group->set('field_group_path', substr($alias, 1)); // Remove the first character "/"
+  }
 }
 
 /**
@@ -78,35 +78,35 @@ function portland_group_presave(GroupInterface $group)
  */
 function _clean_group_group_path(&$group_group_path)
 {
-    if (empty($group_group_path)) {
-        return false;
-    }
+  if (empty($group_group_path)) {
+    return false;
+  }
 
-    // If the group_path contains "/", we have to clean each part and put it back again.
-    if (strpos($group_group_path, '/') !== false) {
-        // Split the string and clean each part
-        $original_parts = explode("/", $group_group_path);
-        $parts = [];
-        foreach ($original_parts as $original_part) {
-            // Skip empty string
-            if ($original_part == "") {
-                continue;
-            }
-            $parts[] = \Drupal::service("pathauto.alias_cleaner")->cleanString($original_part);
-        }
-        // The string only contains "/"
-        if (count($parts) == 0) {
-            return false;
-        }
-        // Put everything back again
-        $group_group_path = implode("/", $parts);
-    } else {
-        $group_group_path = \Drupal::service("pathauto.alias_cleaner")->cleanString($group_group_path);
-        if (empty($group_group_path)) {
-            return false;
-        }
+  // If the group_path contains "/", we have to clean each part and put it back again.
+  if (strpos($group_group_path, '/') !== false) {
+    // Split the string and clean each part
+    $original_parts = explode("/", $group_group_path);
+    $parts = [];
+    foreach ($original_parts as $original_part) {
+      // Skip empty string
+      if ($original_part == "") {
+        continue;
+      }
+      $parts[] = \Drupal::service("pathauto.alias_cleaner")->cleanString($original_part);
     }
-    return true;
+    // The string only contains "/"
+    if (count($parts) == 0) {
+      return false;
+    }
+    // Put everything back again
+    $group_group_path = implode("/", $parts);
+  } else {
+    $group_group_path = \Drupal::service("pathauto.alias_cleaner")->cleanString($group_group_path);
+    if (empty($group_group_path)) {
+      return false;
+    }
+  }
+  return true;
 }
 
 /**
@@ -115,10 +115,10 @@ function _clean_group_group_path(&$group_group_path)
  */
 function portland_group_insert(GroupInterface $group)
 {
-    // Workaround for Drupal bug: https://www.drupal.org/project/inline_entity_form/issues/2966933
-    $group->path->pathauto = Drupal\pathauto\PathautoState::CREATE;
+  // Workaround for Drupal bug: https://www.drupal.org/project/inline_entity_form/issues/2966933
+  $group->path->pathauto = Drupal\pathauto\PathautoState::CREATE;
 
-    // <TODO:>LOW PRIORITY: Generate URL aliases for group action links using group path (ie. /bds/content, /bds/members)</TODO:>
+  // <TODO:>LOW PRIORITY: Generate URL aliases for group action links using group path (ie. /bds/content, /bds/members)</TODO:>
 }
 
 /**
@@ -126,59 +126,59 @@ function portland_group_insert(GroupInterface $group)
  */
 function portland_theme($existing, $type, $theme, $path)
 {
-    return [
-        'portland_alert' => [
-            'variables' => [
-                'dismissible' => false,
-                'type' => null,
-                'title' => null,
-                'text' => null,
-                'link_url' => null,
-                'link_text' => null,
-                'changed' => null,
-                'nid' => null,
-                'changed_timestamp' => null,
-            ],
-        ],
+  return [
+    'portland_alert' => [
+      'variables' => [
+        'dismissible' => false,
+        'type' => null,
+        'title' => null,
+        'text' => null,
+        'link_url' => null,
+        'link_text' => null,
+        'changed' => null,
+        'nid' => null,
+        'changed_timestamp' => null,
+      ],
+    ],
 
-        'portland_revision_block' => [
-            'variables' => [
-                'title' => null,
-                'alert_color' => null,
-                'alert_icon' => null,
-                'current_revision_state' => null,
-                'latest_revision_state' => null,
-                'revision_link' => null,
-                'revision_link_text' => null,
-                'rabbithole_action' => null,
-                'rabbithole_redirect' => null,
-            ],
-            'template' => 'block--portland-revision-block',
-        ],
+    'portland_revision_block' => [
+      'variables' => [
+        'title' => null,
+        'alert_color' => null,
+        'alert_icon' => null,
+        'current_revision_state' => null,
+        'latest_revision_state' => null,
+        'revision_link' => null,
+        'revision_link_text' => null,
+        'rabbithole_action' => null,
+        'rabbithole_redirect' => null,
+      ],
+      'template' => 'block--portland-revision-block',
+    ],
 
-        'portland_group_rabbithole_block' => [
-            'variables' => [
-                'rabbithole_action' => null,
-                'rabbithole_redirect' => null,
-            ],
-            'template' => 'block--portland-group-rabbithole-block',
-        ],
+    'portland_group_rabbithole_block' => [
+      'variables' => [
+        'rabbithole_action' => null,
+        'rabbithole_redirect' => null,
+      ],
+      'template' => 'block--portland-group-rabbithole-block',
+    ],
 
-        'portland_legacy_paths_block' => [
-            'variables' => [
-                'pog_base_url' => null,
-                'legacy_paths' => null,
-                'help_text' => null,
-            ],
-            'template' => 'block--portland-legacy-paths-block',
-        ],
+    'portland_legacy_paths_block' => [
+      'variables' => [
+        'pog_base_url' => null,
+        'legacy_paths' => null,
+        'help_text' => null,
+      ],
+      'template' => 'block--portland-legacy-paths-block',
+    ],
 
-        'portland_login_block' => [
-            'variables' => [
-                'markup' => null
-            ]
-        ]
-    ];
+    'portland_login_block' => [
+      'variables' => [
+        'markup' => null
+      ]
+    ]
+  ];
 }
 
 /**
@@ -186,8 +186,8 @@ function portland_theme($existing, $type, $theme, $path)
  */
 function portland_entity_type_alter(array &$entity_types)
 {
-    $node = $entity_types['node'];
-    $node->addConstraint('EventDateTime', []);
+  $node = $entity_types['node'];
+  $node->addConstraint('EventDateTime', []);
 }
 
 /**
@@ -195,26 +195,28 @@ function portland_entity_type_alter(array &$entity_types)
  */
 function portland_node_presave($node)
 {
-    if ($node->bundle() == 'event') {
-        // Clear start and end time for all-day events.
-        if ($node->field_all_day->value) {
-            $node->set('field_start_time', null);
-            $node->set('field_end_time', null);
-        }
-        // Clear the end date if it's the same as the start date.
-        if (isset($node->field_end_date->value) &&
-            $node->field_end_date->value == $node->field_start_date->value) {
-            $node->set('field_end_date', null);
-        }
+  if ($node->bundle() == 'event') {
+    // Clear start and end time for all-day events.
+    if ($node->field_all_day->value) {
+      $node->set('field_start_time', null);
+      $node->set('field_end_time', null);
     }
+    // Clear the end date if it's the same as the start date.
+    if (
+      isset($node->field_end_date->value) &&
+      $node->field_end_date->value == $node->field_start_date->value
+    ) {
+      $node->set('field_end_date', null);
+    }
+  }
 
-    // If the Save is from a cron job, add a revision log
-    $current_path = \Drupal::service('path.current')->getPath();
-    // Start cron by loading URL or clicking button
-    if( strpos($current_path, '/cron') === 0  || $current_path == '/admin/config/system/cron' ) {
-            $node->revision_log->value = 'Scheduled update';
-        }
-    }
+  // If the Save is from a cron job, add a revision log
+  $current_path = \Drupal::service('path.current')->getPath();
+  // Start cron by loading URL or clicking button
+  if (strpos($current_path, '/cron') === 0  || $current_path == '/admin/config/system/cron') {
+    $node->revision_log->value = 'Scheduled update';
+  }
+}
 
 /**
  * Implements hook_form_FORM_ID_alter().
@@ -222,12 +224,12 @@ function portland_node_presave($node)
  */
 function portland_form_views_exposed_form_alter(&$form, &$form_state)
 {
-    // Add an own reset button to all views exposed forms. The reason behind is that the default Drupal reset button doesn't play nice with AJAX
-    $submit_btn_id = $form['actions']['submit']['#id'];
-    if (!empty($submit_btn_id) && !empty($form['actions']['reset'])) {
-        // Add own reset button
-        $form['actions']['reset']['#attributes'] = array('onclick' => 'javascript:jQuery(this.form).clearForm();jQuery(this.form).find(\'#' . $submit_btn_id . '\').trigger(\'click\');return false;');
-    }
+  // Add an own reset button to all views exposed forms. The reason behind is that the default Drupal reset button doesn't play nice with AJAX
+  $submit_btn_id = $form['actions']['submit']['#id'];
+  if (!empty($submit_btn_id) && !empty($form['actions']['reset'])) {
+    // Add own reset button
+    $form['actions']['reset']['#attributes'] = array('onclick' => 'javascript:jQuery(this.form).clearForm();jQuery(this.form).find(\'#' . $submit_btn_id . '\').trigger(\'click\');return false;');
+  }
 }
 
 /**
@@ -235,21 +237,21 @@ function portland_form_views_exposed_form_alter(&$form, &$form_state)
  */
 function portland_preprocess_menu(&$vars)
 {
-    // find main menu and modify the Alerts link text to display number of alerts,
-    // or remove the Alerts item if count is zero.
-    if (array_key_exists('menu_name', $vars) && $vars['menu_name'] == 'main') {
-        foreach ($vars['items'] as $key => &$item) {
-            if ($item['title'] == 'Alerts') {
-                $alertCount = _get_active_alerts_count();
-                if ($alertCount < 1) {
-                    unset($vars['items'][$key]);
-                    return;
-                }
-                $item['title'] = Drupal\Core\Render\Markup::create('Alerts <span class="badge badge-dark">' . $alertCount . '</span>');
-                break;
-            }
+  // find main menu and modify the Alerts link text to display number of alerts,
+  // or remove the Alerts item if count is zero.
+  if (array_key_exists('menu_name', $vars) && $vars['menu_name'] == 'main') {
+    foreach ($vars['items'] as $key => &$item) {
+      if ($item['title'] == 'Alerts') {
+        $alertCount = _get_active_alerts_count();
+        if ($alertCount < 1) {
+          unset($vars['items'][$key]);
+          return;
         }
+        $item['title'] = Drupal\Core\Render\Markup::create('Alerts <span class="badge badge-dark">' . $alertCount . '</span>');
+        break;
+      }
     }
+  }
 }
 
 /**
@@ -257,35 +259,35 @@ function portland_preprocess_menu(&$vars)
  */
 function portland_entity_insert($entity)
 {
-    switch ($entity->bundle()) {
-        case 'alert':
-            // alert has been inserted, update alerts count in cache
-            _get_active_alerts_count(true);
-            break;
-        case 'park_facility':
-            // Add this new Park Facility node to the Parks menu
-            $menu_link_service = \Drupal::service('plugin.manager.menu.link');
-            // Get the parent menu
-            $park_finder_menu = $menu_link_service->loadLinksByRoute('view.park_finder.page_1', [], 'site-map');
-            if (count($park_finder_menu)) {
-                $menu_link_service->addDefinition('park-'. $entity->id(), [
-                    'menu_name' => 'site-map',
-                    'route_name' => 'entity.node.canonical',
-                    'route_parameters' => [ 'node' => $entity->id() ],
-                    'title' => $entity->label(),
-                    'parent' => key($park_finder_menu), // Get the plugin ID of Park Finder link
-                    'expanded' => false,
-                    'enabled' => true,
-                    'weight' => 0,
-                ]);
-            }
-            break;
+  switch ($entity->bundle()) {
+    case 'alert':
+      // alert has been inserted, update alerts count in cache
+      _get_active_alerts_count(true);
+      break;
+    case 'park_facility':
+      // Add this new Park Facility node to the Parks menu
+      $menu_link_service = \Drupal::service('plugin.manager.menu.link');
+      // Get the parent menu
+      $park_finder_menu = $menu_link_service->loadLinksByRoute('view.park_finder.page_1', [], 'site-map');
+      if (count($park_finder_menu)) {
+        $menu_link_service->addDefinition('park-' . $entity->id(), [
+          'menu_name' => 'site-map',
+          'route_name' => 'entity.node.canonical',
+          'route_parameters' => ['node' => $entity->id()],
+          'title' => $entity->label(),
+          'parent' => key($park_finder_menu), // Get the plugin ID of Park Finder link
+          'expanded' => false,
+          'enabled' => true,
+          'weight' => 0,
+        ]);
+      }
+      break;
 
-        default:
-            break;
-    }
+    default:
+      break;
+  }
 
-    _notify_reviewer($entity, 'created');
+  _notify_reviewer($entity, 'created');
 }
 
 /**
@@ -293,15 +295,37 @@ function portland_entity_insert($entity)
  */
 function portland_entity_update($entity)
 {
-    if ($entity->bundle() == 'alert') {
-        // if moderation state has changed, update alerts count in cache
-        $origstate = $entity->original->get('moderation_state')->getString();
-        $newstate = $entity->get('moderation_state')->getString();
-        if ($origstate != $newstate) {
-            _get_active_alerts_count(true);
-        }
+  if ($entity->bundle() == 'alert') {
+    // if moderation state has changed, update alerts count in cache
+    $origstate = $entity->original->get('moderation_state')->getString();
+    $newstate = $entity->get('moderation_state')->getString();
+    if ($origstate != $newstate) {
+      _get_active_alerts_count(true);
     }
-    _notify_reviewer($entity, 'updated');
+  } else if ($entity->bundle() == 'document') {
+    // Get the file ID of the latest revision
+    $media_storage = \Drupal::entityTypeManager()->getStorage('media');
+    $latest_revision_id = $media_storage->getLatestRevisionId($entity->id());
+    $latest_file_id = $media_storage->loadRevision($latest_revision_id)->field_document->target_id;
+
+    // Load all revisions and their file IDs
+    $conn = \Drupal\Core\Database\Database::getConnection();
+    $query = $conn->select('media_revision__field_document', 'media_revision__field_document');
+    $query->condition('media_revision__field_document.entity_id', $entity->id(), '=');
+    $query->fields('media_revision__field_document', ['revision_id', 'field_document_target_id']);
+    $result = $query->execute();
+
+    // Delete all but the latest revision
+    foreach ($result as $row) {
+      if ($row->revision_id == $latest_revision_id) continue;
+      // Delete the associated file if it's not used in the latest revision
+      if ($row->field_document_target_id != $latest_file_id) {
+        file_delete($row->field_document_target_id);
+      }
+      $media_storage->deleteRevision($row->revision_id);
+    }
+  }
+  _notify_reviewer($entity, 'updated');
 }
 
 /**
@@ -310,23 +334,23 @@ function portland_entity_update($entity)
  */
 function _build_log_message($entity)
 {
-    if (!$entity) {
-        return '';
-    }
+  if (!$entity) {
+    return '';
+  }
 
-    $parentGroupTitle = '';
-    if ($entity->getEntityTypeId() == 'group_content') {
-        $parentGroupTitle = 'Parent Group='.$entity->getGroup()->label().',   ';
-        $titleText = 'Title='.$entity->label->value.','; // Group content didn't implement "label()"
-    } else {
-        $titleText = 'Title='.$entity->label().',';
-    }
+  $parentGroupTitle = '';
+  if ($entity->getEntityTypeId() == 'group_content') {
+    $parentGroupTitle = 'Parent Group=' . $entity->getGroup()->label() . ',   ';
+    $titleText = 'Title=' . $entity->label->value . ','; // Group content didn't implement "label()"
+  } else {
+    $titleText = 'Title=' . $entity->label() . ',';
+  }
 
-    $idText = 'ID='.$entity->id().',';
-    $typeText = 'Type='.$entity->bundle().',';
-    $createdText = ($entity->created) ? ('Created='.date('r', $entity->created->value)) : '';
+  $idText = 'ID=' . $entity->id() . ',';
+  $typeText = 'Type=' . $entity->bundle() . ',';
+  $createdText = ($entity->created) ? ('Created=' . date('r', $entity->created->value)) : '';
 
-    return "Deleted: $idText    \n$titleText    \n$typeText   \n$createdText    \n$parentGroupTitle";
+  return "Deleted: $idText    \n$titleText    \n$typeText   \n$createdText    \n$parentGroupTitle";
 }
 
 /**
@@ -334,33 +358,33 @@ function _build_log_message($entity)
  */
 function portland_entity_delete($entity)
 {
-    switch ($entity->bundle()) {
-        case 'alert':
-            _get_active_alerts_count(true);
-            break;
-        case 'park_facility':
-            // Delete the menu link for this park
-            \Drupal::service('menu.tree_storage')->delete('park-'. $entity->id());
-            break;
-        default:
-            break;
-    }
+  switch ($entity->bundle()) {
+    case 'alert':
+      _get_active_alerts_count(true);
+      break;
+    case 'park_facility':
+      // Delete the menu link for this park
+      \Drupal::service('menu.tree_storage')->delete('park-' . $entity->id());
+      break;
+    default:
+      break;
+  }
 
-    // Log entity deletion event
-    switch ($entity->getEntityTypeId()) {
-        case 'group_content':
-            \Drupal::logger('Group content')->notice(_build_log_message($entity));
-            break;
-        case 'node':
-            \Drupal::logger('Content')->notice(_build_log_message($entity));
-            break;
-        case 'media':
-            \Drupal::logger('Media')->notice(_build_log_message($entity));
-            break;
-        default:
-            // Skip other deletion events: redirect, group, etc.
-            break;
-    }
+  // Log entity deletion event
+  switch ($entity->getEntityTypeId()) {
+    case 'group_content':
+      \Drupal::logger('Group content')->notice(_build_log_message($entity));
+      break;
+    case 'node':
+      \Drupal::logger('Content')->notice(_build_log_message($entity));
+      break;
+    case 'media':
+      \Drupal::logger('Media')->notice(_build_log_message($entity));
+      break;
+    default:
+      // Skip other deletion events: redirect, group, etc.
+      break;
+  }
 }
 
 /**
@@ -368,20 +392,20 @@ function portland_entity_delete($entity)
  */
 function _get_active_alerts_count($reset = false)
 {
-    $alertCount = 0;
-    if (!$reset && $cache = \Drupal::cache()->get(ALERTS_COUNTER_CACHE_KEY)) {
-        $alertCount = $cache->data;
-    } else {
-        // invalidate main menu block in cache to show current alerts
-        \Drupal\Core\Cache\Cache::invalidateTags(['config:block.block.cloudy_main_menu']);
-        $query = \Drupal::entityQuery('node')
-            ->condition('type', 'alert')
-            ->condition('status', 1);
-        $nids = $query->execute();
-        $alertCount = count($nids);
-        \Drupal::cache()->set(ALERTS_COUNTER_CACHE_KEY, $alertCount);
-    }
-    return $alertCount;
+  $alertCount = 0;
+  if (!$reset && $cache = \Drupal::cache()->get(ALERTS_COUNTER_CACHE_KEY)) {
+    $alertCount = $cache->data;
+  } else {
+    // invalidate main menu block in cache to show current alerts
+    \Drupal\Core\Cache\Cache::invalidateTags(['config:block.block.cloudy_main_menu']);
+    $query = \Drupal::entityQuery('node')
+      ->condition('type', 'alert')
+      ->condition('status', 1);
+    $nids = $query->execute();
+    $alertCount = count($nids);
+    \Drupal::cache()->set(ALERTS_COUNTER_CACHE_KEY, $alertCount);
+  }
+  return $alertCount;
 }
 
 /**
@@ -389,88 +413,96 @@ function _get_active_alerts_count($reset = false)
  */
 function portland_preprocess_paragraph(&$vars)
 {
-    switch ($vars['paragraph']->bundle()) {
-        case 'image':
-            $image = $vars['paragraph'];
-            if ($image->hasField("field_image_alignment") &&
-                $image->field_image_alignment->value !== null) {
-                // If there is not an existing class array, create an empty array.
-                if (!isset($vars['attributes']['class'])) {
-                    $vars['attributes']['class'] = [];
-                }
-                $vars['attributes']['class'] = array_merge(
-                    $vars['attributes']['class'],
-                    ['float-'.$image->field_image_alignment->value, 'image-align']
-                );
-            }
-            break;
-        case 'document':
-            // If there is not an existing class array, create an empty array.
-            if (!isset($vars['attributes']['class'])) {
-                $vars['attributes']['class'] = [];
-            };
-            $document = $vars['paragraph'];
+  switch ($vars['paragraph']->bundle()) {
+    case 'image':
+      $image = $vars['paragraph'];
+      if (
+        $image->hasField("field_image_alignment") &&
+        $image->field_image_alignment->value !== null
+      ) {
+        // If there is not an existing class array, create an empty array.
+        if (!isset($vars['attributes']['class'])) {
+          $vars['attributes']['class'] = [];
+        }
+        $vars['attributes']['class'] = array_merge(
+          $vars['attributes']['class'],
+          ['float-' . $image->field_image_alignment->value, 'image-align']
+        );
+      }
+      break;
+    case 'document':
+      // If there is not an existing class array, create an empty array.
+      if (!isset($vars['attributes']['class'])) {
+        $vars['attributes']['class'] = [];
+      };
+      $document = $vars['paragraph'];
 
-            if ($document->hasField("field_document") &&
-                $document->field_document->entity !== null) {
-                // Map mimetype to font awesome icon names. Sources:
-                // https://api.drupal.org/api/drupal/includes%21file.mimetypes.inc/function/file_default_mimetype_mapping/7.x
-                // https://fontawesome.com/icons?d=gallery
-                $mimetypeToFontawesomeIcon = [
-                    'text/plain' => 'file',
-                    'application/pdf' => 'file-pdf',
-                    'application/msword' => 'file-word', // *.doc
-                    'application/vnd.openxmlformats-officedocument.wordprocessingml.document' => 'file-word', // *.docx
-                    'application/vnd.ms-excel' => 'file-excel', // *.xls
-                    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' => 'file-excel', // *.xlsx
-                    'application/vnd.ms-powerpoint' => 'file-powerpoint', // *.ppt
-                    'application/vnd.openxmlformats-officedocument.presentationml.presentation' => 'file-powerpoint',
-                ];
+      if (
+        $document->hasField("field_document") &&
+        $document->field_document->entity !== null
+      ) {
+        // Map mimetype to font awesome icon names. Sources:
+        // https://api.drupal.org/api/drupal/includes%21file.mimetypes.inc/function/file_default_mimetype_mapping/7.x
+        // https://fontawesome.com/icons?d=gallery
+        $mimetypeToFontawesomeIcon = [
+          'text/plain' => 'file',
+          'application/pdf' => 'file-pdf',
+          'application/msword' => 'file-word', // *.doc
+          'application/vnd.openxmlformats-officedocument.wordprocessingml.document' => 'file-word', // *.docx
+          'application/vnd.ms-excel' => 'file-excel', // *.xls
+          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' => 'file-excel', // *.xlsx
+          'application/vnd.ms-powerpoint' => 'file-powerpoint', // *.ppt
+          'application/vnd.openxmlformats-officedocument.presentationml.presentation' => 'file-powerpoint',
+        ];
 
-                // Paragraph -> Media -> File
-                if (isset($document->field_document->entity->field_document->entity)) {
-                    $vars['fileSize'] = format_size(
-                        $document->field_document->entity->field_document->entity->getSize()
-                    );
-                    $vars['fileUrl'] = $document->field_document->entity->field_document->entity->url();
-                    $mimeType = $document->field_document->entity->field_document->entity->getMimeType();
-                    // Set fontawesome icon based on mime type. Use "file" as the default in case no matching mime type is found.
-                    $vars['fontawesomeIcon'] = array_key_exists($mimeType, $mimetypeToFontawesomeIcon) ?
-                        $mimetypeToFontawesomeIcon[$mimeType] : 'file';
-                }
-            };
-            break;
-        case 'video':
-        case 'audio':
-            // NOTE: audio files also use a YouTube video player and re-uses field_video_alignment
-            $video = $vars['paragraph'];
-            if ($video->hasField("field_video_alignment") &&
-                $video->field_video_alignment->value !== null) {
-                // If there is not an existing class array, create an empty array.
-                if (!isset($vars['attributes']['class'])) {
-                    $vars['attributes']['class'] = [];
-                }
-                $vars['attributes']['class'] = array_merge(
-                    $vars['attributes']['class'],
-                    ['float-'.$video->field_video_alignment->value, 'video-align']
-                );
-            }
-            break;
-        case 'quote':
-            $quote = $vars['paragraph'];
-            if ($quote->hasField("field_alignment") &&
-                $quote->field_alignment->value !== null) {
-                // If there is not an existing class array, create an empty array.
-                if (!isset($vars['attributes']['class'])) {
-                    $vars['attributes']['class'] = [];
-                }
-                $vars['attributes']['class'] = array_merge(
-                    $vars['attributes']['class'],
-                    ['float-'.$quote->field_alignment->value, 'quote-align']
-                );
-            }
-            break;
-    }
+        // Paragraph -> Media -> File
+        if (isset($document->field_document->entity->field_document->entity)) {
+          $vars['fileSize'] = format_size(
+            $document->field_document->entity->field_document->entity->getSize()
+          );
+          $vars['fileUrl'] = $document->field_document->entity->field_document->entity->url();
+          $mimeType = $document->field_document->entity->field_document->entity->getMimeType();
+          // Set fontawesome icon based on mime type. Use "file" as the default in case no matching mime type is found.
+          $vars['fontawesomeIcon'] = array_key_exists($mimeType, $mimetypeToFontawesomeIcon) ?
+            $mimetypeToFontawesomeIcon[$mimeType] : 'file';
+        }
+      };
+      break;
+    case 'video':
+    case 'audio':
+      // NOTE: audio files also use a YouTube video player and re-uses field_video_alignment
+      $video = $vars['paragraph'];
+      if (
+        $video->hasField("field_video_alignment") &&
+        $video->field_video_alignment->value !== null
+      ) {
+        // If there is not an existing class array, create an empty array.
+        if (!isset($vars['attributes']['class'])) {
+          $vars['attributes']['class'] = [];
+        }
+        $vars['attributes']['class'] = array_merge(
+          $vars['attributes']['class'],
+          ['float-' . $video->field_video_alignment->value, 'video-align']
+        );
+      }
+      break;
+    case 'quote':
+      $quote = $vars['paragraph'];
+      if (
+        $quote->hasField("field_alignment") &&
+        $quote->field_alignment->value !== null
+      ) {
+        // If there is not an existing class array, create an empty array.
+        if (!isset($vars['attributes']['class'])) {
+          $vars['attributes']['class'] = [];
+        }
+        $vars['attributes']['class'] = array_merge(
+          $vars['attributes']['class'],
+          ['float-' . $quote->field_alignment->value, 'quote-align']
+        );
+      }
+      break;
+  }
 }
 
 /**
@@ -485,57 +517,57 @@ function portland_preprocess_paragraph(&$vars)
  */
 function portland_set_extended_title_for_group_views(&$vars)
 {
-    $route_match = \Drupal::routeMatch();
-    $new_title = portland_generate_extended_title_for_group_views($vars['page']['#title'], $route_match);
-    $vars['head_title']['title'] = $new_title;
-    $vars['title_override_set'] = true;
+  $route_match = \Drupal::routeMatch();
+  $new_title = portland_generate_extended_title_for_group_views($vars['page']['#title'], $route_match);
+  $vars['head_title']['title'] = $new_title;
+  $vars['title_override_set'] = true;
 }
 
 function portland_generate_extended_title_for_group_views($orig_title, $route_match)
 {
-    // get the view id from the path
-    $view_id = $route_match->getParameter('view_id');
-    $site_name = \Drupal::config('system.site')->get('name');
-    $display_id = $route_match->getParameter('display_id');
+  // get the view id from the path
+  $view_id = $route_match->getParameter('view_id');
+  $site_name = \Drupal::config('system.site')->get('name');
+  $display_id = $route_match->getParameter('display_id');
 
-    $path = $route_match->getRouteObject()->getPath();
-    // If this is a group path, add group name to title
-    if($path != null && (substr_compare($path, "/group", 0, strlen("/group")) === 0) ) {
-        $group_id = $route_match->getParameter('group') ?? $route_match->getParameter('arg_0'); // sometimes the group object is returned; sometimes just the id string
-        $type = is_string($group_id) ? "string" : get_class($group_id);
-        $group_entity = $type == "Drupal\group\Entity\Group" ? $group_id : Drupal\group\Entity\Group::load($group_id);
-        if (isset($group_entity)) {
-            $page_title = $orig_title;
-            $group_title = $group_entity->label();
-            return "$page_title | $group_title | $site_name";
-        }
+  $path = $route_match->getRouteObject()->getPath();
+  // If this is a group path, add group name to title
+  if ($path != null && (substr_compare($path, "/group", 0, strlen("/group")) === 0)) {
+    $group_id = $route_match->getParameter('group') ?? $route_match->getParameter('arg_0'); // sometimes the group object is returned; sometimes just the id string
+    $type = is_string($group_id) ? "string" : get_class($group_id);
+    $group_entity = $type == "Drupal\group\Entity\Group" ? $group_id : Drupal\group\Entity\Group::load($group_id);
+    if (isset($group_entity)) {
+      $page_title = $orig_title;
+      $group_title = $group_entity->label();
+      return "$page_title | $group_title | $site_name";
     }
-    switch ($view_id) {
-        case "content_at_location":
-            // Get location title
-            $location_nid = $route_match->getParameter('arg_0');
-            if ($location_nid == null) {
-                break;
-            }
-            $location_node = \Drupal\node\Entity\Node::load($location_nid);
-            if ($location_node == null) {
-                break;
-            }
-            $location_title = $location_node->getTitle();
-            switch ($display_id) {
-                case "page_past_events_at_location":
-                    return "Past events | $location_title | $site_name";
-                    break;
-                case "page_upcoming_events_at_location":
-                    return "Upcoming events | $location_title | $site_name";
-                    break;
-                case "page_news_at_location":
-                    return "News | $location_title | $site_name";
-                    break;
-            }
-            break;
-    }
-    return "$orig_title | $site_name";
+  }
+  switch ($view_id) {
+    case "content_at_location":
+      // Get location title
+      $location_nid = $route_match->getParameter('arg_0');
+      if ($location_nid == null) {
+        break;
+      }
+      $location_node = \Drupal\node\Entity\Node::load($location_nid);
+      if ($location_node == null) {
+        break;
+      }
+      $location_title = $location_node->getTitle();
+      switch ($display_id) {
+        case "page_past_events_at_location":
+          return "Past events | $location_title | $site_name";
+          break;
+        case "page_upcoming_events_at_location":
+          return "Upcoming events | $location_title | $site_name";
+          break;
+        case "page_news_at_location":
+          return "News | $location_title | $site_name";
+          break;
+      }
+      break;
+  }
+  return "$orig_title | $site_name";
 }
 
 /**
@@ -543,21 +575,21 @@ function portland_generate_extended_title_for_group_views($orig_title, $route_ma
  */
 function portland_address_field_form_alter(&$form, $form_state, $form_id)
 {
-    // POWR-699
-    // If address field is present, change organization label back to 'Organization'.
-    // This field is present in many bundles, so it will be easier to check for its
-    // presence than checking the form_id.
-    if (isset($form['field_address'])) {
-        // when adding a custom #process callback, we need to manually add back the processAddress callback below
-        $form['field_address']['widget'][0]['address']['#process'][] = ['Drupal\address\Element\Address', 'processAddress'];
-        $form['field_address']['widget'][0]['address']['#process'][] = 'portland_change_address_company_label';
-    }
+  // POWR-699
+  // If address field is present, change organization label back to 'Organization'.
+  // This field is present in many bundles, so it will be easier to check for its
+  // presence than checking the form_id.
+  if (isset($form['field_address'])) {
+    // when adding a custom #process callback, we need to manually add back the processAddress callback below
+    $form['field_address']['widget'][0]['address']['#process'][] = ['Drupal\address\Element\Address', 'processAddress'];
+    $form['field_address']['widget'][0]['address']['#process'][] = 'portland_change_address_company_label';
+  }
 }
 
 function portland_change_address_company_label($element, $form_state, $complete_form)
 {
-    $element['organization']['#title'] = t('Organization');
-    return $element;
+  $element['organization']['#title'] = t('Organization');
+  return $element;
 }
 
 /**
@@ -565,9 +597,9 @@ function portland_change_address_company_label($element, $form_state, $complete_
  */
 function portland_diff_layout_builder_info_alter(array &$diff_layouts)
 {
-    // Set a new label for the text_field_diff_builder plugin
-    // instead of the one provided in the annotation.
-    $diff_layouts['visual_inline']['label'] = t('Visual inline (slow)');
+  // Set a new label for the text_field_diff_builder plugin
+  // instead of the one provided in the annotation.
+  $diff_layouts['visual_inline']['label'] = t('Visual inline (slow)');
 }
 
 /**
@@ -575,42 +607,42 @@ function portland_diff_layout_builder_info_alter(array &$diff_layouts)
  */
 function portland_search_api_solr_documents_alter(array &$documents, \Drupal\search_api\IndexInterface $index, array $items)
 {
-    foreach ($documents as $document) {
-        if ($document->ss_content_type == 'news') {
-            // When editor did not specify an Updated On date, use Published On date
-            if ($document->ds_field_updated_on == null) {
-                $document->ds_aggregated_sorting_date = $document->ds_field_published_on;
-            } else {
-                $document->ds_aggregated_sorting_date = $document->ds_field_updated_on;
-            }
-        }
-        else if ($document->ss_content_type == 'event') {
-            $document->ds_aggregated_sorting_date = $document->ds_field_start_date;
-        }
+  foreach ($documents as $document) {
+    if ($document->ss_content_type == 'news') {
+      // When editor did not specify an Updated On date, use Published On date
+      if ($document->ds_field_updated_on == null) {
+        $document->ds_aggregated_sorting_date = $document->ds_field_published_on;
+      } else {
+        $document->ds_aggregated_sorting_date = $document->ds_field_updated_on;
+      }
+    } else if ($document->ss_content_type == 'event') {
+      $document->ds_aggregated_sorting_date = $document->ds_field_start_date;
     }
+  }
 }
 
 /**
  * Implements hook_search_api_query_alter()
  */
-function portland_search_api_query_alter(\Drupal\search_api\Query\QueryInterface &$query) {
-    // Let the view attachment to share the page's facet settings
-    // See https://www.drupal.org/project/facets/issues/3116236
-    if ($query->getIndex()->getServerInstance()->supportsFeature('search_api_facets')) {
-        /** @var \Drupal\facets\FacetManager\DefaultFacetManager $facet_manager */
-        $facet_manager = \Drupal::service('facets.manager');
+function portland_search_api_query_alter(\Drupal\search_api\Query\QueryInterface &$query)
+{
+  // Let the view attachment to share the page's facet settings
+  // See https://www.drupal.org/project/facets/issues/3116236
+  if ($query->getIndex()->getServerInstance()->supportsFeature('search_api_facets')) {
+    /** @var \Drupal\facets\FacetManager\DefaultFacetManager $facet_manager */
+    $facet_manager = \Drupal::service('facets.manager');
 
-        $search_id = $query->getSearchId();
+    $search_id = $query->getSearchId();
 
-        // If we find an attachment view query, we use the same query alter
-        // as the page because they belong together.
-        if (strpos($search_id, 'views_attachment:construction_map__') === 0) {
-            $search_id = 'search_api:views_page__construction_map__page_1';
+    // If we find an attachment view query, we use the same query alter
+    // as the page because they belong together.
+    if (strpos($search_id, 'views_attachment:construction_map__') === 0) {
+      $search_id = 'search_api:views_page__construction_map__page_1';
 
-            // Add the active filters.
-            $facet_manager->alterQuery($query, $search_id);
-        }
+      // Add the active filters.
+      $facet_manager->alterQuery($query, $search_id);
     }
+  }
 }
 
 
@@ -621,41 +653,41 @@ function portland_search_api_query_alter(\Drupal\search_api\Query\QueryInterface
  */
 function portland_search_api_solr_query_alter(\Solarium\QueryType\Select\Query\Query $solarium_query, \Drupal\search_api\Query\QueryInterface $query)
 {
-    // Only modify the query for site search
-    $search_id = $query->getSearchId();
-    if (strpos($search_id, "search_api_page:search_portland_gov") !== 0) {
-        return;
-    }
+  // Only modify the query for site search
+  $search_id = $query->getSearchId();
+  if (strpos($search_id, "search_api_page:search_portland_gov") !== 0) {
+    return;
+  }
 
-    $date_field_name = 'aggregated_sorting_date'; // This can be any UNIX timestamp field
-    $index = $query->getIndex();
-    $fields = $index->getServerInstance()->getBackend()->getSolrFieldNames($index);
-    $solr_field = !empty($fields[$date_field_name]) ? $fields[$date_field_name] : '';
-    // See the link above for the effect of magic numbers
-    if ($solr_field) {
-        // 1. Calculate the difference between NOW and the Date field in milliseconds
-        //    Two weeks 8.27e-10, One week 1.65e-9, Two days 5.79e-9, One day 1.157e-8
-        // 2. Use the reciprocal function y = a / (m * x + b)
-        //    a. m = 8.27e-10: Convert the time difference into 2 weeks
-        //    b. a = 0.15 and b = 0.1: Adjust how quickly the curve decline
-        //    c. Can plot the function at https://www.desmos.com/calculator
-        // 3. Add the result to query($q) which is the original Solr score.
-        // https://stackoverflow.com/questions/22017616/stronger-boosting-by-date-in-solr
+  $date_field_name = 'aggregated_sorting_date'; // This can be any UNIX timestamp field
+  $index = $query->getIndex();
+  $fields = $index->getServerInstance()->getBackend()->getSolrFieldNames($index);
+  $solr_field = !empty($fields[$date_field_name]) ? $fields[$date_field_name] : '';
+  // See the link above for the effect of magic numbers
+  if ($solr_field) {
+    // 1. Calculate the difference between NOW and the Date field in milliseconds
+    //    Two weeks 8.27e-10, One week 1.65e-9, Two days 5.79e-9, One day 1.157e-8
+    // 2. Use the reciprocal function y = a / (m * x + b)
+    //    a. m = 8.27e-10: Convert the time difference into 2 weeks
+    //    b. a = 0.15 and b = 0.1: Adjust how quickly the curve decline
+    //    c. Can plot the function at https://www.desmos.com/calculator
+    // 3. Add the result to query($q) which is the original Solr score.
+    // https://stackoverflow.com/questions/22017616/stronger-boosting-by-date-in-solr
 
-        // When Start Date of Event is in the future or News since the last month, give a large boost.
-        // Otherwise, give small boost based on start date or updated date.
-        $solarium_query->addParam('sort', 'if(or(and(eq(ss_content_type, "event"),gte(ms(ds_aggregated_sorting_date,NOW/DAY), 0)),and(eq(ss_content_type, "news"),gte(ms(ds_aggregated_sorting_date,NOW-1MONTH/DAY),0))),product(query($q), recip(abs(ms(NOW/DAY,ds_aggregated_sorting_date)),1.157e-8,6.5,0.5)),if(or(eq(ss_content_type, "event"),eq(ss_content_type, "news")),product(query($q), recip(abs(ms(NOW/DAY,ds_aggregated_sorting_date)),1.157e-8,2,0.5)),query($q))) desc');
-    }
+    // When Start Date of Event is in the future or News since the last month, give a large boost.
+    // Otherwise, give small boost based on start date or updated date.
+    $solarium_query->addParam('sort', 'if(or(and(eq(ss_content_type, "event"),gte(ms(ds_aggregated_sorting_date,NOW/DAY), 0)),and(eq(ss_content_type, "news"),gte(ms(ds_aggregated_sorting_date,NOW-1MONTH/DAY),0))),product(query($q), recip(abs(ms(NOW/DAY,ds_aggregated_sorting_date)),1.157e-8,6.5,0.5)),if(or(eq(ss_content_type, "event"),eq(ss_content_type, "news")),product(query($q), recip(abs(ms(NOW/DAY,ds_aggregated_sorting_date)),1.157e-8,2,0.5)),query($q))) desc');
+  }
 
-    // Search the whole phrase in additional of individual words
-    $original_keys = strtolower(trim($query->getKeys()));
-    if (is_string($original_keys) && $original_keys && strpos($original_keys, ' ') !== false) { // Do not modify empty query
-        // Three things are happening here:
-        // 1. Add phrase search for the entire search string.
-        // 2. Set proximity to 3
-        // 3. Boost the score by 5
-        $query->keys("(\"$original_keys\"~3)^5 $original_keys");
-    }
+  // Search the whole phrase in additional of individual words
+  $original_keys = strtolower(trim($query->getKeys()));
+  if (is_string($original_keys) && $original_keys && strpos($original_keys, ' ') !== false) { // Do not modify empty query
+    // Three things are happening here:
+    // 1. Add phrase search for the entire search string.
+    // 2. Set proximity to 3
+    // 3. Boost the score by 5
+    $query->keys("(\"$original_keys\"~3)^5 $original_keys");
+  }
 }
 
 /**
@@ -664,9 +696,9 @@ function portland_search_api_solr_query_alter(\Solarium\QueryType\Select\Query\Q
  */
 function _get_solr_field_name($query, $index_field_name)
 {
-    $index = $query->getIndex();
-    $fields = $index->getServerInstance()->getBackend()->getSolrFieldNames($index);
-    return !empty($fields[$index_field_name]) ? $fields[$index_field_name] : '';
+  $index = $query->getIndex();
+  $fields = $index->getServerInstance()->getBackend()->getSolrFieldNames($index);
+  return !empty($fields[$index_field_name]) ? $fields[$index_field_name] : '';
 }
 
 /**
@@ -674,22 +706,22 @@ function _get_solr_field_name($query, $index_field_name)
  */
 function portland_system_breadcrumb_alter(\Drupal\Core\Breadcrumb\Breadcrumb &$breadcrumb, \Drupal\Core\Routing\RouteMatchInterface $route_match, array $context)
 {
-    // For breadcrumb "policy/category1/category2" or "policy/category1",
-    // set the category name to taxonomy term name.
-    $links = $breadcrumb->getLinks();
-    if (count($links) > 2 && $links[1]->getUrl()->getInternalPath() == 'policies') {
-        // Loop must start at index 2. 0 is "home" and 1 is "policies".
-        for ($i=2; $i<count($links); $i++) {
-            $params = $links[$i]->getUrl()->getRouteParameters();
-            if( ! array_key_exists('taxonomy_term', $params) ) continue;
-            $tid = $links[$i]->getUrl()->getRouteParameters()['taxonomy_term'];
-            $term = \Drupal::entityTypeManager()->getStorage('taxonomy_term')->load($tid);
-            if ($term == null) {
-                continue;
-            } // skip if we can't load by term ID
-            $links[$i]->setText($term->getName());
-        }
+  // For breadcrumb "policy/category1/category2" or "policy/category1",
+  // set the category name to taxonomy term name.
+  $links = $breadcrumb->getLinks();
+  if (count($links) > 2 && $links[1]->getUrl()->getInternalPath() == 'policies') {
+    // Loop must start at index 2. 0 is "home" and 1 is "policies".
+    for ($i = 2; $i < count($links); $i++) {
+      $params = $links[$i]->getUrl()->getRouteParameters();
+      if (!array_key_exists('taxonomy_term', $params)) continue;
+      $tid = $links[$i]->getUrl()->getRouteParameters()['taxonomy_term'];
+      $term = \Drupal::entityTypeManager()->getStorage('taxonomy_term')->load($tid);
+      if ($term == null) {
+        continue;
+      } // skip if we can't load by term ID
+      $links[$i]->setText($term->getName());
     }
+  }
 }
 
 /**
@@ -697,18 +729,18 @@ function portland_system_breadcrumb_alter(\Drupal\Core\Breadcrumb\Breadcrumb &$b
  */
 function portland_inline_entity_form_entity_form_alter(&$entity_form, &$form_state)
 {
-    if (
-        $entity_form['#entity_type'] == 'media' &&
-        array_key_exists('field_display_groups', $entity_form) &&
-        array_key_exists('widget', $entity_form["field_display_groups"])&&
-        array_key_exists('add_more', $entity_form["field_display_groups"]['widget'])
-    ) {
-        // Set the Group field to the correct default value. Have to use session because the entity browser is in an iFrame.
-        $group_id = \Drupal::request()->getSession()->get('parent_group_id');
-        if ($group_id != null) {
-          $entity_form["field_display_groups"]['widget'][0]['target_id']['#default_value'] = $group_id;
-        }
+  if (
+    $entity_form['#entity_type'] == 'media' &&
+    array_key_exists('field_display_groups', $entity_form) &&
+    array_key_exists('widget', $entity_form["field_display_groups"]) &&
+    array_key_exists('add_more', $entity_form["field_display_groups"]['widget'])
+  ) {
+    // Set the Group field to the correct default value. Have to use session because the entity browser is in an iFrame.
+    $group_id = \Drupal::request()->getSession()->get('parent_group_id');
+    if ($group_id != null) {
+      $entity_form["field_display_groups"]['widget'][0]['target_id']['#default_value'] = $group_id;
     }
+  }
 }
 
 /**
@@ -716,153 +748,158 @@ function portland_inline_entity_form_entity_form_alter(&$entity_form, &$form_sta
  */
 function portland_form_alter(&$form, &$form_state, $form_id)
 {
-    // Only set the default field for new Media items
-    $form_array_with_group_field = [
-        'node_news_form',
-        'node_news_edit_form',
-        'node_page_form',
-        'node_page_edit_form',
-        'node_event_form',
-        'node_event_edit_form',
-        'node_construction_project_form',
-        'node_construction_project_edit_form',
-        'node_city_service_form',
-        'node_city_service_edit_form',
-        'node_service_location_form',
-        'node_service_location_edit_form',
-        'media_image_add_form',
-        'media_audio_add_form',
-        'media_video_add_form',
-        'media_document_add_form',
-        'media_map_add_form'
-    ];
+  // Only set the default field for new Media items
+  $form_array_with_group_field = [
+    'node_news_form',
+    'node_news_edit_form',
+    'node_page_form',
+    'node_page_edit_form',
+    'node_event_form',
+    'node_event_edit_form',
+    'node_construction_project_form',
+    'node_construction_project_edit_form',
+    'node_city_service_form',
+    'node_city_service_edit_form',
+    'node_service_location_form',
+    'node_service_location_edit_form',
+    'media_image_add_form',
+    'media_audio_add_form',
+    'media_video_add_form',
+    'media_document_add_form',
+    'media_map_add_form'
+  ];
 
-    $group_form_prefix = 'group_';
+  $group_form_prefix = 'group_';
 
-    if (in_array($form_id, $form_array_with_group_field)) {
-        // Set the default value as the node's current group
-        $node = $form_state->getFormObject()->getEntity();
-        $group_id = null;
-        // The value is used in portland_inline_entity_form_entity_form_alter()
-        // When creating a node, get the group from form state.
-        if ($node->isNew()) {
-            if (array_key_exists('group', $form_state->getStorage()) && $form_state->getStorage()['group'] != null) {
-                $group_id = $form_state->getStorage()['group']->id();
-                if (array_key_exists('group_content', $form) && $group_id != null) {
-                    \Drupal::request()->getSession()->set('parent_group_id', $group_id);
-                }
-            }
+  if (in_array($form_id, $form_array_with_group_field)) {
+    // Set the default value as the node's current group
+    $node = $form_state->getFormObject()->getEntity();
+    $group_id = null;
+    // The value is used in portland_inline_entity_form_entity_form_alter()
+    // When creating a node, get the group from form state.
+    if ($node->isNew()) {
+      if (array_key_exists('group', $form_state->getStorage()) && $form_state->getStorage()['group'] != null) {
+        $group_id = $form_state->getStorage()['group']->id();
+        if (array_key_exists('group_content', $form) && $group_id != null) {
+          \Drupal::request()->getSession()->set('parent_group_id', $group_id);
         }
-        // POWR-2493 Set the default group in "field_display_groups" in entity browser form
-        // When editing a node, get the node's parent group
-        else {
-          $group_ids = getGroupIdsByEntity($node);
-          if(count($group_ids) > 0) {
-            // Assume each node only belongs to one group.
-            // When there are multiple parent groups, use the first one.
-            \Drupal::request()->getSession()->set('parent_group_id', $group_ids[0]);
-          }
-        }
-    } elseif (substr_compare($form_id, $group_form_prefix, 0, strlen($group_form_prefix)) === 0) {
-        $form['#validate'][] = '_validate_group_group_path';
+      }
     }
-
-    // media_entity_file_replace provides a checkbox that allows document contents to be replaced
-    // while retaining the same filename. this is the expected default behavior, and there is no
-    // use case for the old versions of files to be retained, especially since there is no way for
-    // editors to access them, so the checkbox has been hidden.
-    if (isset($form["replace_file"])) {
-        $form["replace_file"]['keep_original_filename']["#access"] = false;
+    // POWR-2493 Set the default group in "field_display_groups" in entity browser form
+    // When editing a node, get the node's parent group
+    else {
+      $group_ids = getGroupIdsByEntity($node);
+      if (count($group_ids) > 0) {
+        // Assume each node only belongs to one group.
+        // When there are multiple parent groups, use the first one.
+        \Drupal::request()->getSession()->set('parent_group_id', $group_ids[0]);
+      }
     }
+  } elseif (substr_compare($form_id, $group_form_prefix, 0, strlen($group_form_prefix)) === 0) {
+    $form['#validate'][] = '_validate_group_group_path';
+  }
 
-    if( $form_id === "media_document_add_form" || $form_id === "media_document_edit_form" ) {
-        $form['#validate'][] = '_validate_document';
-    }
+  // media_entity_file_replace provides a checkbox that allows document contents to be replaced
+  // while retaining the same filename. this is the expected default behavior, and there is no
+  // use case for the old versions of files to be retained, especially since there is no way for
+  // editors to access them, so the checkbox has been hidden.
+  if (isset($form["replace_file"])) {
+    $form["replace_file"]['keep_original_filename']["#access"] = false;
+  }
 
-    // POWR-3657 - disable HTML 5 validation for all forms
-    $form['#attributes']['novalidate'] = '';
-    // TOOD: remove this once something similar is included in core, or the Drupal community
-    // decides how it wants to handle accessible and usable validation.
+  if ($form_id === "media_document_add_form" || $form_id === "media_document_edit_form") {
+    $form['#validate'][] = '_validate_document';
+  }
+
+  // POWR-3657 - disable HTML 5 validation for all forms
+  $form['#attributes']['novalidate'] = '';
+  // TOOD: remove this once something similar is included in core, or the Drupal community
+  // decides how it wants to handle accessible and usable validation.
 }
 
 /**
  * A helper function to validate document.
  */
-function _validate_document(&$form, \Drupal\Core\Form\FormStateInterface $form_state) {
+function _validate_document(&$form, \Drupal\Core\Form\FormStateInterface $form_state)
+{
   if ($form_state->hasValue('field_efiles_link')) {
     // DO NOT validate when the user clicks on the remove document button.
     // ONLY validate when the entire form is submitted.
-    if($form_state->getTriggeringElement()["#name"] === "field_document_0_remove_button") return;
+    if ($form_state->getTriggeringElement()["#name"] === "field_document_0_remove_button") return;
 
     $efiles_link = $form_state->getValue('field_efiles_link');
     $document = $form_state->getValue('field_document');
     // If the eFiles link has value
-    if( !empty($efiles_link) && !empty($efiles_link[0]['uri']) ) {
+    if (!empty($efiles_link) && !empty($efiles_link[0]['uri'])) {
       $user_input_file_url = strtolower($efiles_link[0]['uri']);
       $external_file_url = $user_input_file_url;
       // Validate the file URL is an eFiles link
       $efiles_url_regex = '/^https:\/\/efiles.portlandoregon.gov\/(.*)/i';
-      if( !preg_match($efiles_url_regex, $external_file_url) ) {
+      if (!preg_match($efiles_url_regex, $external_file_url)) {
         $form_state->setErrorByName('field_efiles_link', t('The eFiles link must start with https://efiles.portlandoregon.gov/.'));
         return;
       }
 
       // Append "/file/document" if it's missing on an eFiles link in order to retrieve mime type and file size
-      if( strpos($external_file_url, 'https://efiles.portlandoregon.gov/') === 0 &&
-        ! ( substr_compare($external_file_url, "/file/document", -strlen("/file/document") ) === 0) ) {
+      if (
+        strpos($external_file_url, 'https://efiles.portlandoregon.gov/') === 0 &&
+        !(substr_compare($external_file_url, "/file/document", -strlen("/file/document")) === 0)
+      ) {
         $external_file_url .= "/file/document";
       }
 
       // Get eFiles file size and MIME type
       try {
         $headers = get_headers($external_file_url, 1);
-      }catch (Exception $e) {
+      } catch (Exception $e) {
         $form_state->setErrorByName('field_efiles_link', 'Cannot retrieve file size and mimetype from this link.');
         return;
       }
-      if( !empty($headers) &&
-          (substr_compare($headers[0], "200 OK", -strlen("200 OK") ) === 0) &&
-          array_key_exists('Content-Type', $headers) &&
-          array_key_exists('Content-Length', $headers)) {
+      if (
+        !empty($headers) &&
+        (substr_compare($headers[0], "200 OK", -strlen("200 OK")) === 0) &&
+        array_key_exists('Content-Type', $headers) &&
+        array_key_exists('Content-Length', $headers)
+      ) {
         $file_size = isset($headers['Content-Length']) ? (int)$headers['Content-Length'] : 0;
-        if($file_size === 0) {
+        if ($file_size === 0) {
           $form_state->setErrorByName('field_efiles_link', t('The linked file is empty.'));
           return;
         }
         // Content-Type header can be "text/html; charset=utf-8"
         $content_type_array = explode(';', $headers['Content-Type']);
         // If content type is text/HTML, it's not a file
-        if(empty($content_type_array) || $content_type_array[0] === "text/html") {
+        if (empty($content_type_array) || $content_type_array[0] === "text/html") {
           // Commented this line out to support existing documents that are linked to an eFiles folder
           // $form_state->setErrorByName('field_efiles_link', t('The linked file is an HTML page. Please use External Resource instead.'));
           return;
         }
 
         $form_state->setValue('field_file_size', [["value" => $file_size]]);
-        $form_state->setValue('field_mime_type', [["value" => $content_type_array[0]]] );
-      }
-      else {
+        $form_state->setValue('field_mime_type', [["value" => $content_type_array[0]]]);
+      } else {
         // Verify it's a valid eFiles folder
         try {
           $headers = get_headers($user_input_file_url, 1);
-        }catch (Exception $e) {
+        } catch (Exception $e) {
           $form_state->setErrorByName('field_efiles_link', 'Please verify the eFiles link is valid.');
           return;
         }
 
         // Make sure the response code is 200 and content type is HTML
-        if( empty($headers) ||
-            (substr_compare($headers[0], "200 OK", -strlen("200 OK") ) !== 0) ||
-            ( ! array_key_exists('Content-Type', $headers) ) ||
-            substr($headers['Content-Type'], 0, strlen("text/html")) !== "text/html" ) {
-            $form_state->setErrorByName('field_efiles_link', t('Please verify the eFiles link is valid.'));
+        if (
+          empty($headers) ||
+          (substr_compare($headers[0], "200 OK", -strlen("200 OK")) !== 0) ||
+          (!array_key_exists('Content-Type', $headers)) ||
+          substr($headers['Content-Type'], 0, strlen("text/html")) !== "text/html"
+        ) {
+          $form_state->setErrorByName('field_efiles_link', t('Please verify the eFiles link is valid.'));
         }
       }
-    }
-    else {
+    } else {
       $document = $form_state->getValue('field_document');
       // The document field can't be empty when the eFile link is empty
-      if( empty($document) || empty($document[0]["fids"]) ) {
+      if (empty($document) || empty($document[0]["fids"])) {
         $form_state->setErrorByName('field_document', t('Please upload a file or add an external file link'));
       }
     }
@@ -874,35 +911,35 @@ function _validate_document(&$form, \Drupal\Core\Form\FormStateInterface $form_s
  */
 function _validate_group_group_path(&$form, \Drupal\Core\Form\FormStateInterface $form_state)
 {
-    if ($form_state->hasValue('field_group_path')) {
-        $group_group_path = $form_state->getValue('field_group_path')[0]['value'];
-        $is_valid_group_path = _clean_group_group_path($group_group_path);
-        $form_state->setValue('field_group_path', ['0' => ['value' => $group_group_path,], ]);
+  if ($form_state->hasValue('field_group_path')) {
+    $group_group_path = $form_state->getValue('field_group_path')[0]['value'];
+    $is_valid_group_path = _clean_group_group_path($group_group_path);
+    $form_state->setValue('field_group_path', ['0' => ['value' => $group_group_path,],]);
 
-        if ($is_valid_group_path) {
-            $group_id = $form_state->getformObject()->getEntity()->id();
-            $pathStorage = \Drupal::entityTypeManager()->getStorage('path_alias');
-            $aliases = $pathStorage->loadByProperties(['alias' => '/'.$group_group_path]);
-            // If this is a new group, $group_id will be null.
-            if ($group_id == null) {
-                // Check if the alias already taken by any entity
-                if (count($aliases) > 0) {
-                    $existing_alias = array_values($aliases)[0]->alias->value;
-                    $form_state->setErrorByName('field_group_path', t('The alias is already taken: <a href="'.$existing_alias.'">'.$existing_alias.'</a>'));
-                }
-            } else {
-                // If this is an existing group, check if the alias is already taken by anything OTHER THAN the current group
-                foreach ($aliases as $alias) {
-                    if ($alias->path->value != "/group/$group_id") {
-                        $form_state->setErrorByName('field_group_path', t('The alias is already taken: <a href="'.$alias->alias->value.'">'.$alias->alias->value.'</a>'));
-                        break;
-                    }
-                }
-            }
-        } else {
-            $form_state->setErrorByName('field_group_path', t('Invalid group path'));
+    if ($is_valid_group_path) {
+      $group_id = $form_state->getformObject()->getEntity()->id();
+      $pathStorage = \Drupal::entityTypeManager()->getStorage('path_alias');
+      $aliases = $pathStorage->loadByProperties(['alias' => '/' . $group_group_path]);
+      // If this is a new group, $group_id will be null.
+      if ($group_id == null) {
+        // Check if the alias already taken by any entity
+        if (count($aliases) > 0) {
+          $existing_alias = array_values($aliases)[0]->alias->value;
+          $form_state->setErrorByName('field_group_path', t('The alias is already taken: <a href="' . $existing_alias . '">' . $existing_alias . '</a>'));
         }
+      } else {
+        // If this is an existing group, check if the alias is already taken by anything OTHER THAN the current group
+        foreach ($aliases as $alias) {
+          if ($alias->path->value != "/group/$group_id") {
+            $form_state->setErrorByName('field_group_path', t('The alias is already taken: <a href="' . $alias->alias->value . '">' . $alias->alias->value . '</a>'));
+            break;
+          }
+        }
+      }
+    } else {
+      $form_state->setErrorByName('field_group_path', t('Invalid group path'));
     }
+  }
 }
 
 /**
@@ -911,66 +948,66 @@ function _validate_group_group_path(&$form, \Drupal\Core\Form\FormStateInterface
  */
 function portland_cron()
 {
-    // In each cron run after 12pm, check if we've sent the content update summary email today.
-    $hour = (int)(date('G')); // 0 to 23
-    if ( $hour >= 12 ) {
-        // If an email is already sent today, do not send again
-        $last_daily_email_sent = \Drupal::state()->get('portland.last_daily_email_sent');
-        if( !empty($last_daily_email_sent) && $last_daily_email_sent === date('m/d/Y') ) {
-            return;
-        }
-
-        $results = '';
-
-        // Define a list of views that will be included in the email
-        $views[] = ['view_id' => 'locations_updated_recently', 'block_id' => 'block_1'];  // Locations
-        $views[] = ['view_id' => 'content_updated_recently', 'block_id' => 'block_2'];  // Tables
-        $views[] = ['view_id' => 'media_updated_recently', 'block_id' => 'block_1'];    // Media
-        $views[] = ['view_id' => 'content_updated_recently', 'block_id' => 'block_3'];    // Body text URLs
-        $views[] = ['view_id' => 'user_updated_recently', 'block_id' => 'block_recently_created_users'];
-        $views[] = ['view_id' => 'user_updated_recently', 'block_id' => 'block_recently_activated_users'];
-        $views[] = ['view_id' => 'user_updated_recently', 'block_id' => 'block_recently_deactivated_users'];
-
-        foreach ($views as $view) {
-            // Get the view by machine id
-            $theview = \Drupal\views\Views::getView($view['view_id']);
-            // Set the display machine id
-            $theview->setDisplay($view['block_id']);
-            $theview->preExecute();
-            $theview->execute();
-
-            if (count($theview->result)) {
-                // Render the view and append to results
-                $results .= \Drupal::service('renderer')->render($theview->render());
-            }
-        }
-
-        // If all views are empty, do not send the email
-        if (!strlen($results)) {
-            \Drupal::state()->set('portland.last_daily_email_sent', date('m/d/Y'));
-            \Drupal::logger('mail-log')->notice(t('No content updated in the past day.'));
-            return;
-        }
-
-        // Send email
-        $key = 'portland_daily_mail'; // Replace with Your key
-        $to = 'BTS-eGov@portlandoregon.gov';
-        $params['message'] = '<p>These Portland.gov items were updated in the last 24 hours and should
-            be reviewed according to the specific instructions below.<p/>' . $results;
-        // Add environment name to the email subject
-        $environment_name = '';
-        if(isset($_ENV['PANTHEON_ENVIRONMENT']) && $_ENV['PANTHEON_ENVIRONMENT'] != 'live') {
-            $environment_name = ' (' . $_ENV['PANTHEON_ENVIRONMENT'] . ')';
-        }
-        $params['title'] = 'Portland.gov list of content to review' . $environment_name;
-        $langcode = \Drupal::currentUser()->getPreferredLangcode();
-
-        $sent_successfully = _send_email($key, $to, $langcode, $params, 'powr@portlandoregon.gov');
-        if($sent_successfully) {
-            \Drupal::logger('mail-log')->notice(t('Daily content update summary email sent successfully.'));
-            \Drupal::state()->set('portland.last_daily_email_sent', date('m/d/Y'));
-        }
+  // In each cron run after 12pm, check if we've sent the content update summary email today.
+  $hour = (int)(date('G')); // 0 to 23
+  if ($hour >= 12) {
+    // If an email is already sent today, do not send again
+    $last_daily_email_sent = \Drupal::state()->get('portland.last_daily_email_sent');
+    if (!empty($last_daily_email_sent) && $last_daily_email_sent === date('m/d/Y')) {
+      return;
     }
+
+    $results = '';
+
+    // Define a list of views that will be included in the email
+    $views[] = ['view_id' => 'locations_updated_recently', 'block_id' => 'block_1'];  // Locations
+    $views[] = ['view_id' => 'content_updated_recently', 'block_id' => 'block_2'];  // Tables
+    $views[] = ['view_id' => 'media_updated_recently', 'block_id' => 'block_1'];    // Media
+    $views[] = ['view_id' => 'content_updated_recently', 'block_id' => 'block_3'];    // Body text URLs
+    $views[] = ['view_id' => 'user_updated_recently', 'block_id' => 'block_recently_created_users'];
+    $views[] = ['view_id' => 'user_updated_recently', 'block_id' => 'block_recently_activated_users'];
+    $views[] = ['view_id' => 'user_updated_recently', 'block_id' => 'block_recently_deactivated_users'];
+
+    foreach ($views as $view) {
+      // Get the view by machine id
+      $theview = \Drupal\views\Views::getView($view['view_id']);
+      // Set the display machine id
+      $theview->setDisplay($view['block_id']);
+      $theview->preExecute();
+      $theview->execute();
+
+      if (count($theview->result)) {
+        // Render the view and append to results
+        $results .= \Drupal::service('renderer')->render($theview->render());
+      }
+    }
+
+    // If all views are empty, do not send the email
+    if (!strlen($results)) {
+      \Drupal::state()->set('portland.last_daily_email_sent', date('m/d/Y'));
+      \Drupal::logger('mail-log')->notice(t('No content updated in the past day.'));
+      return;
+    }
+
+    // Send email
+    $key = 'portland_daily_mail'; // Replace with Your key
+    $to = 'BTS-eGov@portlandoregon.gov';
+    $params['message'] = '<p>These Portland.gov items were updated in the last 24 hours and should
+            be reviewed according to the specific instructions below.<p/>' . $results;
+    // Add environment name to the email subject
+    $environment_name = '';
+    if (isset($_ENV['PANTHEON_ENVIRONMENT']) && $_ENV['PANTHEON_ENVIRONMENT'] != 'live') {
+      $environment_name = ' (' . $_ENV['PANTHEON_ENVIRONMENT'] . ')';
+    }
+    $params['title'] = 'Portland.gov list of content to review' . $environment_name;
+    $langcode = \Drupal::currentUser()->getPreferredLangcode();
+
+    $sent_successfully = _send_email($key, $to, $langcode, $params, 'powr@portlandoregon.gov');
+    if ($sent_successfully) {
+      \Drupal::logger('mail-log')->notice(t('Daily content update summary email sent successfully.'));
+      \Drupal::state()->set('portland.last_daily_email_sent', date('m/d/Y'));
+    }
+  }
 }
 
 
@@ -984,80 +1021,82 @@ function portland_cron()
  */
 function _notify_reviewer($entity, $entity_event_type)
 {
-    // Only notify on nodes that has Moderation State and has the Reviewer field
-    if ($entity->getEntityTypeId() != 'node' ||
-        !$entity->hasField('moderation_state') ||
-        !$entity->hasField('field_reviewer')) {
-        return;
+  // Only notify on nodes that has Moderation State and has the Reviewer field
+  if (
+    $entity->getEntityTypeId() != 'node' ||
+    !$entity->hasField('moderation_state') ||
+    !$entity->hasField('field_reviewer')
+  ) {
+    return;
+  }
+  $node = $entity;
+  $status_message = $entity_event_type;
+
+  // Group module would save the node twice when creating a new node.
+  // We only want to send out email once.
+  if ($entity->hasField('field_display_groups') && $node->field_display_groups->count() > 0) {
+    $vids = \Drupal::entityTypeManager()->getStorage('node')->revisionIds($node);
+    if (count($vids) ==  1 && $entity_event_type == 'created') {
+      return;
     }
-    $node = $entity;
-    $status_message = $entity_event_type;
-
-    // Group module would save the node twice when creating a new node.
-    // We only want to send out email once.
-    if ($entity->hasField('field_display_groups') && $node->field_display_groups->count() > 0) {
-        $vids = \Drupal::entityTypeManager()->getStorage('node')->revisionIds($node);
-        if (count($vids) ==  1 && $entity_event_type == 'created') {
-            return;
-        }
-        if (count($vids) ==  2 && $entity_event_type == 'updated') {
-            $status_message = 'created';
-        }
+    if (count($vids) ==  2 && $entity_event_type == 'updated') {
+      $status_message = 'created';
     }
+  }
 
-    $reviewers = null;
-    $latest_and_previous_revs = _load_latest_revision($node);
-    $latest_rev = $latest_and_previous_revs['latest'];
-    $reviewers = $node->field_reviewer;
+  $reviewers = null;
+  $latest_and_previous_revs = _load_latest_revision($node);
+  $latest_rev = $latest_and_previous_revs['latest'];
+  $reviewers = $node->field_reviewer;
 
-    $revision_log_output = $node->revision_log->value ?
-        "<div><h3>Revision log:</h3>\r\n".$node->revision_log->value."</div>\r\n<p/>\r\n<div>" : '';
+  $revision_log_output = $node->revision_log->value ?
+    "<div><h3>Revision log:</h3>\r\n" . $node->revision_log->value . "</div>\r\n<p/>\r\n<div>" : '';
 
-    $moderation_state_message = [
-        'review' => 'In review',
-        'draft' => 'Draft',
-        'archived' => 'Unpublished',
-        'published' => 'Published',
-        'unpublished' => 'Unpublished',
-        'bureau_review' => 'Bureau Review',
-        'attorney_review' => 'Attorney Review',
-        'budget_office_review' => 'Budget Office Review',
-        'policy_editor_review' => 'Policy Editor Review',
-        'elected_review' => 'Elected Review',
-        'council_clerk_review' => 'Council Clerk Review',
-        'ready_for_agenda' => 'Ready for Agenda',
-        'cancelled' => 'Cancelled (To Be Deleted)',
-    ];
+  $moderation_state_message = [
+    'review' => 'In review',
+    'draft' => 'Draft',
+    'archived' => 'Unpublished',
+    'published' => 'Published',
+    'unpublished' => 'Unpublished',
+    'bureau_review' => 'Bureau Review',
+    'attorney_review' => 'Attorney Review',
+    'budget_office_review' => 'Budget Office Review',
+    'policy_editor_review' => 'Policy Editor Review',
+    'elected_review' => 'Elected Review',
+    'council_clerk_review' => 'Council Clerk Review',
+    'ready_for_agenda' => 'Ready for Agenda',
+    'cancelled' => 'Cancelled (To Be Deleted)',
+  ];
 
-    // send email for any moderation state except draft
-    if ($latest_rev->moderation_state->value != 'draft') {
-        $key = 'portland_notify_reviewers';
-        $params['title'] = 'Portland.gov reviewer update';
-        $langcode = \Drupal::currentUser()->getPreferredLangcode();
-        $params['message'] = "You have been assigned to review <a href=\"/node/".$node->id().
-            "/revisions/".$node->vid->value."/view\"> ".$latest_rev->label().
-            "</a> . You will be notified of all changes to this content.<p/>".
-            "<a href=\"".$node->revision_uid->entity->url()."\">".$node->revision_uid->entity->label().
-            "</a> ".$status_message." a new <strong>".$moderation_state_message[$latest_rev->moderation_state->value].
-            "</strong> revision at ".
-            \Drupal::service('date.formatter')->format($node->changed->value, 'custom', 'l Y/n/j g:i A').
-            ".<p/>".$revision_log_output;
+  // send email for any moderation state except draft
+  if ($latest_rev->moderation_state->value != 'draft') {
+    $key = 'portland_notify_reviewers';
+    $params['title'] = 'Portland.gov reviewer update';
+    $langcode = \Drupal::currentUser()->getPreferredLangcode();
+    $params['message'] = "You have been assigned to review <a href=\"/node/" . $node->id() .
+      "/revisions/" . $node->vid->value . "/view\"> " . $latest_rev->label() .
+      "</a> . You will be notified of all changes to this content.<p/>" .
+      "<a href=\"" . $node->revision_uid->entity->url() . "\">" . $node->revision_uid->entity->label() .
+      "</a> " . $status_message . " a new <strong>" . $moderation_state_message[$latest_rev->moderation_state->value] .
+      "</strong> revision at " .
+      \Drupal::service('date.formatter')->format($node->changed->value, 'custom', 'l Y/n/j g:i A') .
+      ".<p/>" . $revision_log_output;
 
-        if ($reviewers == null) {
-            return;
-        }
-        $current_user_email = \Drupal::currentUser()->getAccount()->getEmail();
-        if( empty($current_user_email) ) $current_user_email = \Drupal::config('system.site')->get('mail');
-
-        // Send email to all reviewers EXCEPT the author
-        $to_emails = [];
-        foreach ($reviewers->referencedEntities() as $reviewer) {
-            if ($reviewer->id() != $node->revision_uid->entity->id()) {
-                $to_emails[] = $reviewer->mail->value;
-            }
-        }
-        if( !empty($to_emails)) _send_email($key, implode(',', $to_emails), $langcode, $params, $current_user_email);
+    if ($reviewers == null) {
+      return;
     }
+    $current_user_email = \Drupal::currentUser()->getAccount()->getEmail();
+    if (empty($current_user_email)) $current_user_email = \Drupal::config('system.site')->get('mail');
+
+    // Send email to all reviewers EXCEPT the author
+    $to_emails = [];
+    foreach ($reviewers->referencedEntities() as $reviewer) {
+      if ($reviewer->id() != $node->revision_uid->entity->id()) {
+        $to_emails[] = $reviewer->mail->value;
+      }
+    }
+    if (!empty($to_emails)) _send_email($key, implode(',', $to_emails), $langcode, $params, $current_user_email);
+  }
 }
 
 /**
@@ -1065,29 +1104,28 @@ function _notify_reviewer($entity, $entity_event_type)
  */
 function _send_email($key, $to, $langcode, $params, $from)
 {
-    $result = $mailManager = \Drupal::service('plugin.manager.mail')->
-    mail('portland', $key, $to, $langcode, $params, $from, true);
-    if ($result['result'] != true) {
-        \Drupal::logger('mail-log')->error(t('Error sending to @email.', array('@email' => $to)));
-        return false;
-    } else {
-        // drupal_set_message($message);
-        \Drupal::logger('mail-log')->notice(t('Email sent to @email ', array('@email' => $to)));
-        return true;
-    }
+  $result = $mailManager = \Drupal::service('plugin.manager.mail')->mail('portland', $key, $to, $langcode, $params, $from, true);
+  if ($result['result'] != true) {
+    \Drupal::logger('mail-log')->error(t('Error sending to @email.', array('@email' => $to)));
+    return false;
+  } else {
+    // drupal_set_message($message);
+    \Drupal::logger('mail-log')->notice(t('Email sent to @email ', array('@email' => $to)));
+    return true;
+  }
 }
 /**
  * Helper function to get the latest revision
  */
 function _load_latest_revision($node)
 {
-    $vids = \Drupal::entityTypeManager()->getStorage('node')->revisionIds($node);
-    $latest_vid = end($vids);
-    $previous_vid = prev($vids);
-    return [
-        "latest" => \Drupal::entityTypeManager()->getStorage('node')->loadRevision($latest_vid),
-        "previous" =>  $previous_vid ? \Drupal::entityTypeManager()->getStorage('node')->loadRevision($previous_vid) : null,
-    ];
+  $vids = \Drupal::entityTypeManager()->getStorage('node')->revisionIds($node);
+  $latest_vid = end($vids);
+  $previous_vid = prev($vids);
+  return [
+    "latest" => \Drupal::entityTypeManager()->getStorage('node')->loadRevision($latest_vid),
+    "previous" =>  $previous_vid ? \Drupal::entityTypeManager()->getStorage('node')->loadRevision($previous_vid) : null,
+  ];
 }
 
 /**
@@ -1095,18 +1133,18 @@ function _load_latest_revision($node)
  */
 function portland_mail($key, &$message, $params)
 {
-    $options = array(
-        'langcode' => $message['langcode'],
-    );
-    switch ($key) {
-        case 'portland_daily_mail':
-        case 'portland_notify_reviewers':
-            $message['from'] = \Drupal::config('system.site')->get('mail');
-            $message['subject'] = t('@title', array('@title' => $params['title']), $options);
-            $message['body'][] = $params['message'];
-            $message['headers']['Content-Type'] = 'text/html; charset=UTF-8; format=flowed; delsp=yes';
-            break;
-    }
+  $options = array(
+    'langcode' => $message['langcode'],
+  );
+  switch ($key) {
+    case 'portland_daily_mail':
+    case 'portland_notify_reviewers':
+      $message['from'] = \Drupal::config('system.site')->get('mail');
+      $message['subject'] = t('@title', array('@title' => $params['title']), $options);
+      $message['body'][] = $params['message'];
+      $message['headers']['Content-Type'] = 'text/html; charset=UTF-8; format=flowed; delsp=yes';
+      break;
+  }
 }
 
 /**
@@ -1114,22 +1152,22 @@ function portland_mail($key, &$message, $params)
  */
 function portland_mail_alter(&$message)
 {
-    // id = module + key
-    if ($message['id'] == "portland_portland_notify_reviewers") {
-        // Make the email appear to be from the current Editor
-        $user = \Drupal::currentUser()->getAccount();
-        if( $user->isAuthenticated() ) {
-            $user_name = $user->name;
-            $user_email = $user->getEmail();
-        }
-        // If the user is Anonymouse when running Cron
-        else {
-            $config = \Drupal::config('system.site');
-            $user_name = $config->get('name');
-            $user_email = $config->get('mail');
-        }
-        $message['headers']['Reply-To'] = "\"$user_name\" <$user_email>";
+  // id = module + key
+  if ($message['id'] == "portland_portland_notify_reviewers") {
+    // Make the email appear to be from the current Editor
+    $user = \Drupal::currentUser()->getAccount();
+    if ($user->isAuthenticated()) {
+      $user_name = $user->name;
+      $user_email = $user->getEmail();
     }
+    // If the user is Anonymouse when running Cron
+    else {
+      $config = \Drupal::config('system.site');
+      $user_name = $config->get('name');
+      $user_email = $config->get('mail');
+    }
+    $message['headers']['Reply-To'] = "\"$user_name\" <$user_email>";
+  }
 }
 
 /**
@@ -1137,11 +1175,11 @@ function portland_mail_alter(&$message)
  */
 function portland_entity_prepare_view($entity_type_id, array $entities, array $displays, $view_mode)
 {
-  if($entities == null) return;
+  if ($entities == null) return;
   $node = $entities[0];
   // We only want to rewrite the node title for the full page view mode. Other view modes will call
   // the title or the full_document_title as needed.
-  if( $node != null && _should_overwrite_council_document_title($node) && $view_mode === 'full') {
+  if ($node != null && _should_overwrite_council_document_title($node) && $view_mode === 'full') {
     // Display the Full Document Title as Title
     $node->title->value = $node->field_full_document_title->value;
     $node->field_full_document_title->value = '';
@@ -1151,7 +1189,8 @@ function portland_entity_prepare_view($entity_type_id, array $entities, array $d
 /**
  * Helper function that checks if the node should have its title overwritten
  */
-function _should_overwrite_council_document_title($node) {
+function _should_overwrite_council_document_title($node)
+{
   if ($node != null && $node->bundle() == 'council_document') {
     $document_status_entity = $node->field_council_document_status->entity;
     $document_status = ($document_status_entity == null) ? '' : $document_status_entity->name->value;
@@ -1159,10 +1198,9 @@ function _should_overwrite_council_document_title($node) {
     $document_type_entity = $node->field_council_document_type->entity;
     $document_type = ($document_type_entity == null) ? '' : $document_type_entity->name->value;
 
-    if ( ($document_status != null)) {
+    if (($document_status != null)) {
       return false;
-    }
-    else {
+    } else {
       return true;
     }
   }
@@ -1181,19 +1219,22 @@ function portland_form_openid_connect_login_form_alter(&$form, &$form_state)
 /**
  * Implements hook_views_pre_render().
  */
-function portland_views_pre_render(\Drupal\views\ViewExecutable $view) {
-  if ($view->id() == 'admin_content_with_legacy_path' ||
-    ( ($view->id() == 'group_nodes' || $view->id() == 'admin_group_content_revision') && (strpos($view->current_display, 'redirects') !== false) ) ) {
+function portland_views_pre_render(\Drupal\views\ViewExecutable $view)
+{
+  if (
+    $view->id() == 'admin_content_with_legacy_path' ||
+    (($view->id() == 'group_nodes' || $view->id() == 'admin_group_content_revision') && (strpos($view->current_display, 'redirects') !== false))
+  ) {
     // Have to call redirect.repository service to find which row has redirects
     foreach ($view->result as $key => $value) {
       $entity = $value->_entity;
       $nid = $entity->Id();
       $type = $entity->getEntityTypeId();
       if ($nid && $type) {
-          $redirects = \Drupal::service('redirect.repository')->findByDestinationUri(["internal:/$type/$nid", "entity:$type/$nid"]);
-          if (empty($redirects)) {
-            unset ($view->result[$key]); // Remove rows without legacy path
-          }
+        $redirects = \Drupal::service('redirect.repository')->findByDestinationUri(["internal:/$type/$nid", "entity:$type/$nid"]);
+        if (empty($redirects)) {
+          unset($view->result[$key]); // Remove rows without legacy path
+        }
       }
     }
   }
@@ -1202,40 +1243,73 @@ function portland_views_pre_render(\Drupal\views\ViewExecutable $view) {
 /**
  * Implements hook_toolbar_alter().
  */
-function portland_toolbar_alter(&$items) {
-    $account = Drupal::currentUser();
-    if ( !in_array('administrator', $account->getRoles()) ) {
-        unset($items['administration']);
-    }
+function portland_toolbar_alter(&$items)
+{
+  $account = Drupal::currentUser();
+  if (!in_array('administrator', $account->getRoles())) {
+    unset($items['administration']);
+  }
+}
+
+/**
+ * Implements hook_views_query_alter
+ */
+function portland_views_query_alter($view, $query)
+{
+  if ($view->id() == 'document_revisions' && $view->current_display === 'page') {
+    // The sub-query that will show the unique file count for each Document
+    $subquery = \Drupal::database()->select('media_revision__field_document', 'media_revision__field_document');
+    $subquery->addField('media_revision__field_document', 'entity_id');
+    $subquery->addExpression("COUNT(DISTINCT(media_revision__field_document.field_document_target_id))", 'unique_file_count');
+    $subquery->having('unique_file_count > 1');
+    $subquery->groupBy("entity_id");
+
+    // Add the INNER JOIN with the view's query
+    $definition = [
+      'type' => 'INNER',
+      'table formula' => $subquery,
+      'field' => 'entity_id',
+      'left_table' => 'media_field_revision',
+      'left_field' => 'mid',
+      'adjust' => TRUE,
+    ];
+    $join = Drupal::service('plugin.manager.views.join')->createInstance('standard', $definition);
+    $query->addRelationship('media_revision_with_file_count', $join, 'media_field_revision');
+
+    // Force sorting on revision ID
+    $query->addOrderBy('media_field_revision', 'vid', 'DESC');
+  }
 }
 
 /**
  * Implements hook_preprocess_views_view_field().
  */
-function portland_preprocess_views_view_field(&$variables) {
-    // Only render the Group Memberships fild if we are part of a cron job
-    $current_path = \Drupal::service('path.current')->getPath();
-    // Start cron by loading URL or clicking button
-    if( strpos($current_path, '/cron') === 0  || $current_path == '/admin/config/system/cron' ) {
-        // The Custom Text field has "nothing" as the machine name
-        if ($variables['view']->id() == 'user_updated_recently') {  
-    $field = $variables["field"];
-            if( $field->field == 'nothing') {
-    // The User EVA to display group memberships is not rendered 
-    // when sending email notification. Render the view manually here.
+function portland_preprocess_views_view_field(&$variables)
+{
+  // Only render the Group Memberships fild if we are part of a cron job
+  $current_path = \Drupal::service('path.current')->getPath();
+  // Start cron by loading URL or clicking button
+  if (strpos($current_path, '/cron') === 0  || $current_path == '/admin/config/system/cron') {
+    // The Custom Text field has "nothing" as the machine name
+    if ($variables['view']->id() == 'user_updated_recently') {
+      $field = $variables["field"];
+      if ($field->field == 'nothing') {
+        // The User EVA to display group memberships is not rendered 
+        // when sending email notification. Render the view manually here.
         $theview = \Drupal\views\Views::getView('groups_for_a_user');
         // Set the display machine id
         $theview->setDisplay('entity_view_1');
-                $theview->setArguments([$variables["row"]->uid]);
+        $theview->setArguments([$variables["row"]->uid]);
         $theview->preExecute();
         $theview->execute();
-                // When group membership is not empty, append the rendered view at the end
-                if (count($theview->result)) {
-                    $variables['output'] = ViewsRenderPipelineMarkup::create(
-                        (string)$variables["output"] . '<strong>Group membership: </strong>' . \Drupal::service('renderer')
-                        ->renderPlain($theview->render()));
-                }
-            }
+        // When group membership is not empty, append the rendered view at the end
+        if (count($theview->result)) {
+          $variables['output'] = ViewsRenderPipelineMarkup::create(
+            (string)$variables["output"] . '<strong>Group membership: </strong>' . \Drupal::service('renderer')
+              ->renderPlain($theview->render())
+          );
+        }
+      }
     }
   }
 }
