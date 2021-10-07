@@ -12,8 +12,7 @@ namespace Drupal\portland_address_complete\Geocoder\Provider;
 
 use Geocoder\Exception\NoResult;
 use Geocoder\Exception\UnsupportedOperation;
-use Ivory\HttpAdapter\HttpAdapterInterface;
-use Geocoder\Provider\AbstractHttpProvider;
+use Geocoder\Http\Provider\AbstractHttpProvider;
 use Geocoder\Provider\Provider;
 
 /**
@@ -123,7 +122,7 @@ class PortlandMaps extends AbstractHttpProvider implements Provider
     /**
      * {@inheritDoc}
      */
-    public function getName()
+    public function getName(): string
     {
         return 'portlandmaps';
     }

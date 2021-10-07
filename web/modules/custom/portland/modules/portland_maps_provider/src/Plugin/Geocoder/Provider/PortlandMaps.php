@@ -10,7 +10,7 @@ use Drupal\geocoder\ProviderUsingHandlerWithAdapterBase;
  * @GeocoderProvider(
  *   id = "portlandmaps",
  *   name = "PortlandMaps",
- *   handler = "\Drupal\portland_address_complete\Geocoder\Provider\PortlandMaps",
+ *   handler = "\Drupal\portland_maps_provider\Geocoder\Provider\PortlandMaps",
  *   arguments = {
  *     "sourcecountry" = NULL,
  *     "usessl" = false
