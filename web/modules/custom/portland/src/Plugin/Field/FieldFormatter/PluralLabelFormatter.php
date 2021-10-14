@@ -12,7 +12,7 @@ use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\Exception\UndefinedLinkTemplateException;
 use Drupal\Core\Field\FieldItemListInterface;
 use Drupal\Core\Form\FormStateInterface;
-use Doctrine\Common\Inflector\Inflector;
+use Symfony\Component\Inflector\Inflector;
 
 /**
  * Plugin implementation of the 'leaflet_default' formatter.

@@ -25,7 +25,7 @@
  * not to any Drupal files.
  */
 if (!defined("PANTHEON_VERSION")) {
-  define("PANTHEON_VERSION", "3");
+  define("PANTHEON_VERSION", "4");
 }
 
 /**
@@ -71,14 +71,10 @@ $is_installer_url = (strpos($_SERVER['SCRIPT_NAME'], '/core/install.php') === 0)
  *
  */
 if ($is_installer_url) {
-  $config_directories = array(
-    CONFIG_SYNC_DIRECTORY => 'sites/default/files',
-  );
+  $settings['config_sync_directory'] = 'sites/default/files';
 }
 else {
-  $config_directories = array(
-    CONFIG_SYNC_DIRECTORY => 'sites/default/config',
-  );
+  $settings['config_sync_directory'] = 'sites/default/config';
 }
 
 
@@ -150,7 +146,7 @@ if (isset($_ENV['PANTHEON_ENVIRONMENT'])) {
  *
  */
 if (isset($_ENV['PANTHEON_ENVIRONMENT'])) {
-  $settings['file_temp_path'] = $_SERVER['HOME'] .'/tmp';
+  $settings["file_temp_path"] = sys_get_temp_dir();
 }
 
 /**
