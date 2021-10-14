@@ -270,8 +270,12 @@
         var url = "https://www.portlandmaps.com/api/suggest/?intersections=1&alt_coords=1&api_key=" + drupalSettings.portlandmaps_api_key + "&query=" + encodedAddress;
         $.ajax({
           url: url, success: function (response) {
-            if (response.length < 1 || response.candidates.length < 1) {
+            if (response.length < 1 || (response.candidates && response.candidates.length < 1)) {
               showStatusModal("No matching locations found. Please try a different address and try again.");
+              setUnverified();
+              return false;
+            } else if (response.error) {
+              showErrorModal("An server error occurred.");
               setUnverified();
               return false;
             }
@@ -280,6 +284,11 @@
         });
 
       }
+
+
+
+
+
 
       function processLocationData(candidates) {
 
