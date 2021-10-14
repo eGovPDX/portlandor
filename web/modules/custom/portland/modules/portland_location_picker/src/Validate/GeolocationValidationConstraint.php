@@ -19,6 +19,7 @@ class GeolocationValidationConstraint {
    */
   public static function validate(array &$element, FormStateInterface $formState, array &$form) {
     $value = $formState->getValue('report_location');
+    $loctype = $value['location_type'];
 
     // if $value is null, that means the location picker widget wasn't exposed or used in the form.
     // we can ignore validation.
@@ -32,7 +33,7 @@ class GeolocationValidationConstraint {
     // field is present.
     $lat = $value['location_lat'];
     $lon = $value['location_lon'];
-    $invalid = !$lat || !$lon;
+    $invalid = $loctype && $loctype != "private" && (!$lat || !$lon);
 
     if ($invalid) {
       // location is required but not provided
