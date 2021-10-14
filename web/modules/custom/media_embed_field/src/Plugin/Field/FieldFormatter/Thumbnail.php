@@ -89,7 +89,7 @@ class Thumbnail extends FormatterBase implements ContainerFactoryPluginInterface
       $configuration['view_mode'],
       $configuration['third_party_settings'],
       $container->get('media_embed_field.provider_manager'),
-      $container->get('entity.manager')->getStorage('image_style')
+      $container->get('entity_type.manager')->getStorage('image_style')
     );
   }
 
