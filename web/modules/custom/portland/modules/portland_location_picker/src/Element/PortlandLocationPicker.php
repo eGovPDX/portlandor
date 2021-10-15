@@ -48,10 +48,9 @@ class PortlandLocationPicker extends WebformCompositeBase {
       '#type' => 'radios',
       '#title' => t('On what type of property is the issue located?'),
       '#title_display' => 'before',
-      '#required' => TRUE,
       '#options' => [
         'street' => t('Along ANY street, sidewalk, highway, trail, or other public right-of-way'),
-        'private' => t('On private property, such as at a residence, school, or business'),
+        'private' => t('On private property, such as at a residence or business'),
         'park' => t('Within a public park or natural area'),
         'waterway' => t('On a river, stream, or other waterway'),
         'other' => t('I\'m not sure')
@@ -109,17 +108,6 @@ class PortlandLocationPicker extends WebformCompositeBase {
         ],
       ],
     ];
-    // $elements['location_park_container']['park_instructions_not_found'] = [
-    //   '#type' => 'markup',
-    //   '#title' => 'Park instructions',
-    //   '#title_display' => 'invisible',
-    //   '#markup' => '<p class="webform-element-description description">If you can\'t find the park in the list, select "I\'m not sure" above.</p>',
-    //   '#states' => [
-    //     'visible' => [
-    //       [':input[name="report_location[location_park]"]' => ['!value' => '0']],
-    //     ],
-    //   ],
-    // ];
     $elements['location_private_owner'] = [
       '#id' => 'location_private_owner',
       '#type' => 'radios',
@@ -164,6 +152,8 @@ class PortlandLocationPicker extends WebformCompositeBase {
           [':input[name="report_location[location_type]"]' => ['value' => 'private']],
            'or',
           [':input[name="report_location[location_type]"]' => ['value' => 'other']],
+           'or',
+          [':input[name="report_location[location_type]"]' => ['checked' => FALSE]],
        ],
       ],
     ];
