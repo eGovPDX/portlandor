@@ -404,6 +404,10 @@
               $('.place-name').val(parkName);
               setVerified("park");
 
+              // clear address field. in some instances it might be visible, such as in
+              // the streamlined implementation of the widget.
+              $('.location-picker-address').val("");
+
               return true;
 
             } else {
