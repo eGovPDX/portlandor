@@ -1,6 +1,6 @@
 <?php
 
-// phpcs:ignoreFile
+// @codingStandardsIgnoreFile
 
 /**
  * @file
