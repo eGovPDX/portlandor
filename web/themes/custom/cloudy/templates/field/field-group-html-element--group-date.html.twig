@@ -1,33 +1,37 @@
-{% embed "field-group-html-element.html.twig" with {
-  classes: [
-    'd-flex',
-  ]
-} %}
-  {% set display_date_toggle = element["field_display_date_toggle"][0]["#markup"] %}
-  {% set display_date = element["field_display_date"]|render %}
-  {% set start_date = element["field_start_date"]|render %}
-  {% set end_date = element["field_end_date"]|render %}
-  {% block group %}
-    {% if display_date|striptags|trim is not empty or start_date is not empty %}
-      {{ parent() }}
-    {% endif %}
-  {% endblock %}
-  {% block content %}
-{% include '@elements/icon/fa.twig' with {
-      name: 'calendar',
-    } only %}
+{% set custom_date = element['field_display_date'][0]|render|trim %}
+{% set show_custom_date =
+  element['field_display_date_toggle'][0]['#markup'] == 1
+%}
+{% set start_date = element['field_start_date'][0] %}
+{% set end_date = element['field_end_date'][0] %}
 
-<div class="d-flex flex-wrap">
-    {% if display_date|striptags|trim is not empty and display_date_toggle == 1 %}
-      {{ display_date }}
-    {% elseif start_date is not empty and end_date is not empty %}
-      {{ start_date }}
-      <span class="datetime mx-1 mb-2" aria-label="{{ 'through'|t }}">&ndash;</span>
-      {{ end_date }}
-    {% else %}
-      {{ start_date }}
-    {% endif %}
-</div>
-
-  {% endblock %}
+{% embed 'field-group-html-element.html.twig'
+  with {
+    classes: [
+      'd-flex',
+      'pb-2'
+    ]
+  }
+%}
+  {% spaceless %}
+    {% block content %}
+      {% if start_date is not empty or custom_date is not empty and show_custom_date %}
+        {% include '@elements/icon/fa.twig' with {
+          classes: ['pt-1'],
+          name: 'calendar',
+        } only %}
+        <div class="flex-wrap">
+          {% if custom_date is not empty and show_custom_date %}
+            {{ custom_date }}
+          {% elseif start_date is not empty and end_date is not empty %}
+            {{ start_date }}
+            <span class="mx-1" aria-label="{{ 'through'|t }}">&ndash;</span>
+            {{ end_date }}
+          {% else %}
+            {{ start_date }}
+          {% endif %}
+        </div>
+      {% endif %}
+    {% endblock %}
+  {% endspaceless %}
 {% endembed %}
