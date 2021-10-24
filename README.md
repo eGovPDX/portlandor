@@ -182,6 +182,8 @@ Once a deployment to Test has been tested and passes, the same set of changes sh
 
 Note: The theme build process is automatically triggered everytime your Lando containers start up and whenever you run `lando refresh` so you should only need to manually run it if you're editing the .scss or .js source files.
 
+You can run `lando yarn install` if you need to install/update your Node dependencies.
+
 ### Quick Start
 
 1. Run `lando yarn start`
@@ -216,11 +218,9 @@ Note: Make modifications to the desired SCSS and JavaScript files in the theme. 
 
 You have a couple of options for manually compiling the asset files:
 
-- Run `lando yarn run build:wp` to build the Pattern Lab site.
-- Run `lando yarn run watch:wp` to build the Pattern Lab site, watch for changes and trigger rebuilds.
-- Run `lando yarn run clean:wp` to delete the Pattern Lab site.
-
-You can run `lando yarn install` if you need to install/update your Node dependencies.
+- Run `lando yarn run build:wp` to run Webpack and rebuild our CSS/JS assets.
+- Run `lando yarn run watch:wp` to watch for SCSS/JS file changes and automatically rebuild our assets.
+- Run `lando yarn run clean:wp` to delete the Webpack assets.
 
 ### Webpack output
 
