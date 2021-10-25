@@ -540,6 +540,13 @@ describe('Full regression test suite for Admin', () => {
           '#edit-title-0-value',
           'Full regression test resource'
         );
+
+        // Menu Link title
+        await this.page.type(
+          '#edit-field-menu-link-text-0-value',
+          'Full regression test resource'
+        );
+
         await this.page.type(
           '#edit-field-summary-0-value',
           'Summary for the test resource'
