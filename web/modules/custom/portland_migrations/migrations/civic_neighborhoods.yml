@@ -1,0 +1,51 @@
+id: civic_neighborhoods
+label: 'Civic Life Neighborhoods'
+migration_group: civic_neighborhoods
+source:
+  plugin: csv
+  path: modules/custom/portland_migrations/sources/civic_neighborhoods.csv
+  header_row_count: 1
+  keys:
+    - neighborhood_id
+  constants:
+    neighborhood_type: 'neighborhood'
+    newline: "\n\n"
+process:
+  tid:
+    plugin: text_to_taxonomy
+    vocabulary: neighborhood
+    source: new_neighborhood_name
+  field_full_name: neighborhood_name
+  field_neighborhood_type: constants/neighborhood_type
+  field_website: website_url
+  field_correspondence_to_raw: correspondence_to
+  field_general_meetings:
+    plugin: concat
+    source:
+      - meeting_time
+      - constants/newline
+      - meeting_location
+  field_board_meetings:
+    plugin: concat
+    source:
+      - board_time
+      - constants/newline
+      - board_location
+  field_land_use_committee_meeting:
+    plugin: concat
+    source:
+      - landuse_time
+      - constants/newline
+      - landuse_location
+
+destination:
+  plugin: entity:taxonomy_term
+  default_bundle: neighborhood
+  overwrite_properties:
+    - field_full_name
+    - field_neighborhood_type
+    - field_website
+    - field_correspondence_to_raw
+    - field_general_meetings
+    - field_board_meetings
+    - field_land_use_committee_meeting

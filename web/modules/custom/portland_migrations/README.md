@@ -389,3 +389,40 @@ lando drush migrate:import auditor_blog_redirects
 lando terminus drush portlandor.powr-[ID] -- migrate:import auditor_blog
 lando terminus drush portlandor.powr-[ID] -- migrate:import auditor_blog_redirects
 ```
+
+#### Civic Life Neighborhood Meetings
+
+##### Local
+```
+lando drush migrate:import civic_neighborhood_meetings
+lando drush migrate:import civic_neighborhood_meetings_redirects
+```
+##### On Pantheon
+```
+lando terminus drush portlandor.powr-[ID] -- migrate:import civic_neighborhood_meetings
+lando terminus drush portlandor.powr-[ID] -- migrate:import civic_neighborhood_meetings_redirects
+```
+
+#### Civic Life Neighborhood Contacts
+
+##### Local
+```
+lando drush migrate:import civic_neighborhood_contacts
+lando drush migrate:import civic_neighborhood_contacts_relationships
+```
+##### On Pantheon
+```
+lando terminus drush portlandor.powr-[ID] -- migrate:import civic_neighborhood_contacts
+lando terminus drush portlandor.powr-[ID] -- migrate:import civic_neighborhood_contacts_relationships
+```
+
+#### Civic Life Neighborhoods
+
+##### Local
+```
+lando drush migrate:import civic_neighborhoods
+```
+##### On Pantheon
+```
+lando terminus drush portlandor.powr-[ID] -- migrate:import civic_neighborhoods
+```

@@ -4,61 +4,62 @@ status: true
 dependencies:
   module:
     - search_api_solr
-    - search_api_location
+    - node
     - group
     - taxonomy
-    - node
+    - search_api_location
     - search_api
     - portland
   config:
-    - field.storage.group.field_certified_advisory_body
-    - field.storage.group.field_geo_map
-    - field.storage.group.field_official_title
-    - field.storage.group.field_neighborhood
-    - field.storage.group.field_official_organization_name
-    - field.storage.group.field_parent_group
-    - field.storage.group.field_end_date
-    - field.storage.group.field_start_date
-    - field.storage.group.field_project_status
-    - field.storage.group.field_project_type
-    - field.storage.group.field_search_keywords
-    - field.storage.group.field_shortname_or_acronym
-    - field.storage.group.field_summary
-    - field.storage.group.field_topics
-    - field.storage.node.field_community_actions
+    - field.storage.taxonomy_term.field_coalition
     - field.storage.node.field_body_content
+    - field.storage.group.field_certified_advisory_body
     - field.storage.node.field_city_section
-    - field.storage.node.field_project_status
+    - field.storage.node.field_community_actions
     - field.storage.node.field_construction_type
     - field.storage.node.field_display_groups
     - field.storage.node.field_end_date
+    - field.storage.group.field_end_date
     - field.storage.node.field_end_time
     - field.storage.node.field_event_type
-    - field.storage.node.field_history
+    - field.storage.node.field_geo_map
+    - field.storage.group.field_geo_map
     - field.storage.node.field_geolocation
     - field.storage.node.field_location
+    - field.storage.node.field_history
+    - field.storage.node.field_load_map_from_portlandmaps
     - field.storage.node.field_neighborhood
+    - field.storage.taxonomy_term.field_neighborhood_type
     - field.storage.node.field_news_type
+    - field.storage.group.field_official_organization_name
+    - field.storage.group.field_official_title
+    - field.storage.group.field_parent_group
     - field.storage.node.field_park_amenities_activities
-    - field.storage.node.field_park_address_or_entrance
     - field.storage.node.field_park_location_type
     - field.storage.node.field_policy_category
     - field.storage.node.field_policy_type
     - field.storage.node.field_popular
     - field.storage.node.field_popular_weight
+    - field.storage.node.field_portlandmaps_id
+    - field.storage.node.field_portlandmaps_layer
+    - field.storage.group.field_project_status
+    - field.storage.node.field_project_status
+    - field.storage.group.field_project_type
     - field.storage.node.field_published_on
     - field.storage.node.field_reservations_available
     - field.storage.node.field_search_keywords
     - field.storage.node.field_section_body
+    - field.storage.group.field_shortname_or_acronym
     - field.storage.node.field_start_date
     - field.storage.node.field_start_time
+    - field.storage.group.field_summary
     - field.storage.node.field_summary
     - field.storage.node.field_topics
     - field.storage.node.field_updated_on
-    - field.storage.node.field_geo_map
-    - field.storage.node.field_load_map_from_portlandmaps
-    - field.storage.node.field_portlandmaps_id
-    - field.storage.node.field_portlandmaps_layer
+    - field.storage.group.field_neighborhood
+    - field.storage.group.field_search_keywords
+    - field.storage.group.field_start_date
+    - field.storage.group.field_topics
     - search_api.server.searchstax
 third_party_settings:
   search_api_solr:
@@ -94,6 +95,9 @@ third_party_settings:
       maxntp: 2000
       boost: false
       interestingTerms: none
+    term_modifiers:
+      slop: 3
+      fuzzy: 1
     advanced:
       index_prefix: ''
       collection: ''
@@ -103,16 +107,6 @@ name: 'Full index'
 description: 'Full index of all content entities on Portland.gov'
 read_only: false
 field_settings:
-  action_name:
-    label: ' Content Actions (deprecated)'
-    datasource_id: 'entity:node'
-    property_path: 'field_community_actions:entity:name'
-    type: string
-    dependencies:
-      config:
-        - field.storage.node.field_community_actions
-      module:
-        - taxonomy
   aggregated_geo_map:
     label: 'Aggregated geo map'
     property_path: aggregated_field
@@ -163,6 +157,16 @@ field_settings:
     property_path: changed
     type: date
     dependencies:
+      module:
+        - taxonomy
+  coalition_name:
+    label: 'Coalition Name'
+    datasource_id: 'entity:taxonomy_term'
+    property_path: 'field_coalition:entity:name'
+    type: string
+    dependencies:
+      config:
+        - field.storage.taxonomy_term.field_coalition
       module:
         - taxonomy
   content_id:
@@ -266,7 +270,7 @@ field_settings:
     label: 'Content Event Type'
     datasource_id: 'entity:node'
     property_path: field_event_type
-    type: string
+    type: integer
     dependencies:
       config:
         - field.storage.node.field_event_type
@@ -302,17 +306,6 @@ field_settings:
     dependencies:
       config:
         - field.storage.node.field_geo_map
-  field_geolocation:
-    label: 'Content Park Geolocation'
-    datasource_id: 'entity:node'
-    property_path: 'field_park_address_or_entrance:entity:field_geolocation'
-    type: location
-    dependencies:
-      config:
-        - field.storage.node.field_geolocation
-        - field.storage.node.field_park_address_or_entrance
-      module:
-        - node
   field_geolocation_1:
     label: 'Content Location Geolocation'
     datasource_id: 'entity:node'
@@ -348,6 +341,14 @@ field_settings:
     dependencies:
       config:
         - field.storage.node.field_neighborhood
+  field_neighborhood_type:
+    label: 'Neighborhood Type'
+    datasource_id: 'entity:taxonomy_term'
+    property_path: field_neighborhood_type
+    type: string
+    dependencies:
+      config:
+        - field.storage.taxonomy_term.field_neighborhood_type
   field_news_type:
     label: 'Content News Type'
     datasource_id: 'entity:node'
@@ -618,6 +619,29 @@ field_settings:
     dependencies:
       config:
         - field.storage.group.field_topics
+  name:
+    label: 'Grandparent Term Name'
+    datasource_id: 'entity:taxonomy_term'
+    property_path: 'parent:entity:parent:entity:name'
+    type: string
+    dependencies:
+      module:
+        - taxonomy
+  node_grants:
+    label: 'Node access information'
+    property_path: search_api_node_grants
+    type: string
+    indexed_locked: true
+    type_locked: true
+    hidden: true
+  parent_name:
+    label: 'Parent Term Name'
+    datasource_id: 'entity:taxonomy_term'
+    property_path: 'parent:entity:name'
+    type: string
+    dependencies:
+      module:
+        - taxonomy
   portland_content_type_name_field:
     label: 'Content type name'
     property_path: portland_content_type_name_field
@@ -641,14 +665,13 @@ field_settings:
           program: default
           project: default
         'entity:node':
-          calendar_item: default
+          change_set: ''
           city_charter: default
           city_code: default
           city_service: default
           construction_project: default
           council_agenda: default
           council_document: default
-          development_permit: default
           event: default
           external_resource: default
           news: default
@@ -656,12 +679,15 @@ field_settings:
           park_facility: default
           policy: default
         'entity:taxonomy_term':
-          audience: default
+          community_actions: ''
+          topics: ''
   status:
     label: 'Content Published'
     datasource_id: 'entity:node'
     property_path: status
     type: boolean
+    indexed_locked: true
+    type_locked: true
     dependencies:
       module:
         - node
@@ -708,6 +734,24 @@ field_settings:
     dependencies:
       module:
         - group
+  uid:
+    label: uid
+    datasource_id: 'entity:node'
+    property_path: uid
+    type: integer
+    indexed_locked: true
+    type_locked: true
+    dependencies:
+      module:
+        - node
+  vid:
+    label: Vocabulary
+    datasource_id: 'entity:taxonomy_term'
+    property_path: vid
+    type: string
+    dependencies:
+      module:
+        - taxonomy
 datasource_settings:
   'entity:group':
     bundles:
@@ -722,7 +766,6 @@ datasource_settings:
       selected:
         - alert
         - contact
-        - data_table
         - location
         - notification
         - room
@@ -736,6 +779,7 @@ datasource_settings:
       default: false
       selected:
         - community_actions
+        - neighborhood
         - topics
     languages:
       default: true
@@ -743,11 +787,15 @@ datasource_settings:
 processor_settings:
   add_url: {  }
   aggregated_field: {  }
+  content_access:
+    weights:
+      preprocess_query: -30
   entity_status: {  }
   hierarchy:
     fields:
       field_community_actions: taxonomy_term-parent
       field_construction_type: taxonomy_term-parent
+      field_event_type: taxonomy_term-parent
       field_neighborhood: taxonomy_term-parent
       field_park_amenities_activities: taxonomy_term-parent
       field_policy_category: taxonomy_term-parent
@@ -762,11 +810,9 @@ processor_settings:
   html_filter:
     all_fields: false
     fields:
-      - action_name
       - content_title
       - content_type
       - field_body_content
-      - field_event_type
       - field_history
       - field_news_type
       - field_official_organization_name
@@ -802,11 +848,9 @@ processor_settings:
   ignore_character:
     all_fields: false
     fields:
-      - action_name
       - content_title
       - content_type
       - field_body_content
-      - field_event_type
       - field_history
       - field_news_type
       - field_official_organization_name

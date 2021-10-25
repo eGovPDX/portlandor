@@ -1,0 +1,96 @@
+id: civic_neighborhood_meetings
+label: 'Civic Life Neighborhood Meetings'
+migration_group: civic_neighborhood_meetings
+source:
+  plugin: csv
+  path: modules/custom/portland_migrations/sources/civic_neighborhood_meetings.csv
+  header_row_count: 1
+  keys:
+    - CONTENT_ID
+process:
+  uid:
+    plugin: default_value
+    default_value: 1
+  title: EVENT_NAME
+  field_body_content/value:
+    - 
+      plugin: concat
+      source:
+        - TEXT
+        - LOCATION
+    - 
+      plugin: migrate_body_content_and_linked_media
+  field_body_content/format:
+    plugin: default_value
+    default_value: simplified_editor_with_media_embed
+  field_summary: 
+    plugin: substr
+    source: SUMMARY_TEXT
+    length: 300
+  field_start_date:
+    plugin: format_date
+    from_format: 'Y-m-d H:i:s T'
+    to_format: 'Y-m-d'
+    from_timezone: UTC
+    to_timezone: 'America/Los_Angeles'
+    source: START_DATE
+  field_start_time:
+    -
+      plugin: format_date
+      from_format: 'Y-m-d H:i:s T'
+      to_format: 'H:i'
+      to_timezone: 'America/Los_Angeles'
+      source: START_DATE
+    -
+      plugin: convert_time_field
+  field_end_date:
+    plugin: format_date
+    from_format: 'Y-m-d H:i:s T'
+    to_format: 'Y-m-d'
+    from_timezone: UTC
+    to_timezone: 'America/Los_Angeles'
+    source: END_DATE
+  field_end_time:
+    -
+      plugin: format_date
+      from_format: 'Y-m-d H:i:s T'
+      to_format: 'H:i'
+      to_timezone: 'America/Los_Angeles'
+      source: END_DATE
+    -
+      plugin: convert_time_field
+  field_event_type:
+    -
+      plugin: static_map
+      source: EVENT_TYPE_NAME
+      map:
+        'Meetings': 'Meeting'
+        'Neighborhood/Business Association Meeting': 'Neighborhood Association Meeting'
+        'Neighborhood Event': 'Community Event'
+        'Community Events': 'Community Event'
+        'Seminar/Workshop/Class': 'Classes and Activities'
+        'Land Use Planning': 'Meeting'
+    -
+      plugin: text_to_taxonomy
+      vocabulary: event_type
+  field_neighborhood:
+    plugin: text_to_taxonomy
+    vocabulary: neighborhood
+    source: NEIGHBORHOOD
+
+  field_published_on:
+    plugin: format_date
+    from_format: 'Y-m-d H:i:s T'
+    to_format: 'Y-m-d\TH:i:s'
+    source: PUBLISH_DATE
+  field_updated_on:
+    plugin: format_date
+    from_format: 'Y-m-d H:i:s T'
+    to_format: 'Y-m-d\TH:i:s'
+    source: LAST_UPDATED_DATE
+  field_display_groups:
+      plugin: default_value
+      default_value: 234
+destination:
+  plugin: 'entity:node'
+  default_bundle: event

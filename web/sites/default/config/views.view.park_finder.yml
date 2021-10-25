@@ -12,9 +12,12 @@ dependencies:
     - search_api.index.full_index
     - system.menu.main
   module:
+    - entity_browser
     - geofield
     - leaflet_views
+    - rest
     - search_api
+    - serialization
 id: park_finder
 label: 'Park finder'
 module: views
@@ -89,13 +92,13 @@ display:
               program: default
               project: default
             'entity:node':
-              calendar_item: default
+              change_set: default
               city_charter: default
               city_code: default
               city_service: default
+              construction_project: default
+              council_agenda: default
               council_document: default
-              council_meeting: default
-              development_permit: default
               event: default
               external_resource: default
               news: default
@@ -103,7 +106,8 @@ display:
               park_facility: teaser
               policy: default
             'entity:taxonomy_term':
-              audience: default
+              community_actions: default
+              topics: default
       fields:
         action_name:
           table: search_api_index_full_index
@@ -323,12 +327,12 @@ display:
           plugin_id: text
       relationships: {  }
       arguments: {  }
-      display_extenders: {  }
+      display_extenders:
+        metatag_display_extender: {  }
       use_ajax: false
     cache_metadata:
       max-age: -1
       contexts:
-        - 'languages:language_content'
         - 'languages:language_interface'
         - url
         - url.query_args
@@ -357,21 +361,21 @@ display:
           leaflet_map: portlandmaps_park
           height: '400'
           height_unit: px
-          hide_empty_map: 1
-          disable_wheel: 1
-          fullscreen_control: 1
+          hide_empty_map: true
+          disable_wheel: true
+          fullscreen_control: true
           reset_map:
-            control: 0
+            control: false
             position: topright
           map_position:
-            force: 0
+            force: false
             center:
-              lat: '0'
-              lon: '0'
-            zoom: '12'
-            minZoom: '1'
-            maxZoom: '18'
-            zoomFiner: '0'
+              lat: !!float 0
+              lon: !!float 0
+            zoom: 12
+            minZoom: 1
+            maxZoom: 18
+            zoomFiner: 0
           icon:
             iconType: marker
             iconUrl: ''
@@ -395,10 +399,10 @@ display:
               'y': ''
           path: '{"color":"#3388ff","opacity":"1.0","stroke":true,"weight":3,"fill":"depends","fillColor":"*","fillOpacity":"0.2"}'
           geocoder:
-            control: 0
+            control: false
             settings:
               position: topright
-              input_size: '25'
+              input_size: 25
               providers:
                 arcgisonline:
                   weight: '0'
@@ -469,10 +473,10 @@ display:
                 yandex:
                   weight: '0'
                   checked: 0
-              min_terms: '4'
-              delay: '800'
-              zoom: '16'
-              popup: 0
+              min_terms: 4
+              delay: 800
+              zoom: 16
+              popup: false
               options: ''
       defaults:
         style: false
@@ -488,7 +492,6 @@ display:
           default_field_elements: true
           inline:
             title: title
-            field_geolocation: field_geolocation
           separator: ''
           hide_empty: false
       fields:
@@ -785,11 +788,6 @@ display:
             multi_type: separator
             multi_separator: ', '
             display_methods:
-              audience:
-                display_method: label
-                view_mode: default
-              calendar_item_type:
-                display_method: label
               city_section:
                 display_method: label
               city_service_modes:
@@ -825,8 +823,6 @@ display:
               park_amenities_activities:
                 display_method: label
               park_location_type:
-                display_method: label
-              permit_type:
                 display_method: label
               policy_category:
                 display_method: label
@@ -988,11 +984,6 @@ display:
             multi_type: separator
             multi_separator: ', '
             display_methods:
-              audience:
-                display_method: label
-                view_mode: default
-              calendar_item_type:
-                display_method: label
               city_section:
                 display_method: label
               city_service_modes:
@@ -1001,7 +992,11 @@ display:
               community_actions:
                 display_method: label
                 view_mode: default
-              council_agenda_item_status:
+              construction_types:
+                display_method: label
+              contact_type:
+                display_method: label
+              council_agenda_item_disposition:
                 display_method: label
               council_agenda_type:
                 display_method: label
@@ -1009,11 +1004,13 @@ display:
                 display_method: label
               council_document_type:
                 display_method: label
-              council_meeting_status:
-                display_method: label
               council_meeting_type:
                 display_method: label
               document_type:
+                display_method: label
+              event_type:
+                display_method: label
+              external_resource_type:
                 display_method: label
               location_status:
                 display_method: label
@@ -1021,6 +1018,7 @@ display:
                 display_method: label
               neighborhood:
                 display_method: label
+                view_mode: default
               news_type:
                 display_method: label
               page_type:
@@ -1449,22 +1447,18 @@ display:
               program: default
               project: default
             'entity:node':
-              calendar_item: default
               city_charter: default
               city_code: default
               city_service: default
               construction_project: default
               council_agenda: default
               council_document: default
-              development_permit: default
               event: default
               external_resource: default
               news: default
               page: default
               park_facility: teaser
               policy: default
-            'entity:taxonomy_term':
-              audience: default
       menu:
         type: normal
         title: 'Find a Park'
@@ -1478,11 +1472,227 @@ display:
     cache_metadata:
       max-age: -1
       contexts:
-        - 'languages:language_content'
         - 'languages:language_interface'
         - url
         - url.query_args
         - 'url.query_args:sort_by'
         - 'user.node_grants:view'
       tags:
+        - 'config:search_api.index.full_index'
+  rest_export_1:
+    display_plugin: rest_export
+    id: rest_export_1
+    display_title: 'API: Park Finder'
+    position: 3
+    display_options:
+      display_extenders:
+        metatag_display_extender: {  }
+      title: 'API: Park Info'
+      defaults:
+        title: false
+        fields: false
+        arguments: false
+      display_description: 'Returns JSON details of the park identified in the URL by node ID'
+      style:
+        type: serializer
+        options:
+          uses_fields: false
+          formats:
+            json: json
+      row:
+        type: data_field
+        options:
+          field_options:
+            content_title:
+              alias: name
+              raw_output: false
+            field_geolocation_1:
+              alias: location
+              raw_output: false
+      fields:
+        content_title:
+          id: content_title
+          table: search_api_index_full_index
+          field: content_title
+          relationship: none
+          group_type: group
+          admin_label: ''
+          label: ''
+          exclude: false
+          alter:
+            alter_text: false
+            text: ''
+            make_link: false
+            path: ''
+            absolute: false
+            external: false
+            replace_spaces: false
+            path_case: none
+            trim_whitespace: false
+            alt: ''
+            rel: ''
+            link_class: ''
+            prefix: ''
+            suffix: ''
+            target: ''
+            nl2br: false
+            max_length: 0
+            word_boundary: true
+            ellipsis: true
+            more_link: false
+            more_link_text: ''
+            more_link_path: ''
+            strip_tags: false
+            trim: false
+            preserve_tags: ''
+            html: false
+          element_type: ''
+          element_class: ''
+          element_label_type: ''
+          element_label_class: ''
+          element_label_colon: false
+          element_wrapper_type: ''
+          element_wrapper_class: ''
+          element_default_classes: true
+          empty: ''
+          hide_empty: false
+          empty_zero: false
+          hide_alter_empty: true
+          click_sort_column: value
+          type: string
+          settings:
+            link_to_entity: false
+          group_column: value
+          group_columns: {  }
+          group_rows: true
+          delta_limit: 0
+          delta_offset: 0
+          delta_reversed: false
+          delta_first_last: false
+          multi_type: separator
+          separator: ', '
+          field_api_classes: false
+          field_rendering: true
+          fallback_handler: search_api
+          fallback_options:
+            link_to_item: false
+            use_highlighting: false
+            multi_type: separator
+            multi_separator: ', '
+          plugin_id: search_api_field
+        field_geolocation_1:
+          id: field_geolocation_1
+          table: search_api_index_full_index
+          field: field_geolocation_1
+          relationship: none
+          group_type: group
+          admin_label: ''
+          label: ''
+          exclude: false
+          alter:
+            alter_text: false
+            text: ''
+            make_link: false
+            path: ''
+            absolute: false
+            external: false
+            replace_spaces: false
+            path_case: none
+            trim_whitespace: false
+            alt: ''
+            rel: ''
+            link_class: ''
+            prefix: ''
+            suffix: ''
+            target: ''
+            nl2br: false
+            max_length: 0
+            word_boundary: true
+            ellipsis: true
+            more_link: false
+            more_link_text: ''
+            more_link_path: ''
+            strip_tags: false
+            trim: false
+            preserve_tags: ''
+            html: false
+          element_type: ''
+          element_class: ''
+          element_label_type: ''
+          element_label_class: ''
+          element_label_colon: false
+          element_wrapper_type: ''
+          element_wrapper_class: ''
+          element_default_classes: true
+          empty: ''
+          hide_empty: false
+          empty_zero: false
+          hide_alter_empty: true
+          click_sort_column: value
+          type: geofield_default
+          settings:
+            output_format: json
+            output_escape: true
+          group_column: value
+          group_columns: {  }
+          group_rows: true
+          delta_limit: 0
+          delta_offset: 0
+          delta_reversed: false
+          delta_first_last: false
+          multi_type: separator
+          separator: ', '
+          field_api_classes: false
+          field_rendering: true
+          fallback_handler: search_api
+          fallback_options:
+            link_to_item: false
+            use_highlighting: false
+            multi_type: separator
+            multi_separator: ', '
+          plugin_id: search_api_field
+      arguments:
+        content_id:
+          id: content_id
+          table: search_api_index_full_index
+          field: content_id
+          relationship: none
+          group_type: group
+          admin_label: ''
+          default_action: empty
+          exception:
+            value: all
+            title_enable: false
+            title: All
+          title_enable: false
+          title: ''
+          default_argument_type: fixed
+          default_argument_options:
+            argument: ''
+          default_argument_skip_url: false
+          summary_options: {  }
+          summary:
+            sort_order: asc
+            number_of_records: 0
+            format: default_summary
+          specify_validation: false
+          validate:
+            type: none
+            fail: 'not found'
+          validate_options: {  }
+          break_phrase: false
+          not: false
+          plugin_id: search_api
+      path: api/parks/%
+      display_comment: 'Returns details of the location identified by content id in the contextual filter. Currently includes name and geolocation data for use by the Location Picker Widget, but can be expanded to include additional details.'
+    cache_metadata:
+      max-age: -1
+      contexts:
+        - 'languages:language_content'
+        - 'languages:language_interface'
+        - request_format
+        - url
+        - 'user.node_grants:view'
+      tags:
+        - 'config:field.storage.node.field_geolocation'
         - 'config:search_api.index.full_index'

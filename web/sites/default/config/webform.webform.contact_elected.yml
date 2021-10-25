@@ -1,0 +1,609 @@
+uuid: c813e2b0-8b9d-4862-9857-df78b9e6e6b1
+langcode: en
+status: open
+dependencies: {  }
+open: null
+close: null
+weight: 0
+uid: 60
+template: false
+archive: false
+id: contact_elected
+title: 'Contact an Elected Official'
+description: 'Used to send feedback directly to elected officials and to request meetings.'
+category: ''
+elements: |-
+  introductory_text:
+    '#type': webform_markup
+    '#markup': |
+      <p>Provide feedback on policy or actions of the City of Portland or request a meeting with the mayor, a city commissioner, or the city auditor.&nbsp;</p>
+      
+      <p><span class="required-indicator">*</span> Required</p>
+      
+  purpose:
+    '#type': radios
+    '#title': 'What would you like to do?'
+    '#options':
+      provide_testimony: 'Provide testimony on an upcoming agenda item.'
+      provide_feedback: 'Provide comment or feedback on a topic to all city elected officials.'
+      provide_feedback_specific_elected: 'Provide a comment or feedback to specific elected officials.'
+      request_meeting: 'Request a meeting with an elected official or ask them to speak at an event.'
+    '#required': true
+  section_provide_testimony:
+    '#type': webform_section
+    '#title': 'Provide testimony on an upcoming agenda item'
+    '#states':
+      visible:
+        ':input[name="purpose"]':
+          value: provide_testimony
+    testimony_instructions:
+      '#type': webform_markup
+      '#markup': |
+        Written testimony may be submitted for specific agenda items as well as for general topics. Testimony will be shared with City Council and included as part of the official record.<br />
+        <br />
+        Submit written testimony by email at&nbsp;<a href="mailto:cctestimony@portlandoregon.gov">cctestimony@portlandoregon.gov</a>.<br />
+        <br />
+        <a href="/council/agenda">View upcoming agendas</a>
+        
+  section_provide_feedback:
+    '#type': webform_section
+    '#title': 'Provide a comment or feedback on a topic to all city elected officials'
+    '#states':
+      visible:
+        ':input[name="purpose"]':
+          value: provide_feedback
+    feedback_topics_entity:
+      '#type': webform_entity_checkboxes
+      '#title': 'Choose one or more appropriate topics'
+      '#options_display': two_columns
+      '#states':
+        visible:
+          ':input[name="feedback_direction"]':
+            value: topic
+      '#target_type': taxonomy_term
+      '#selection_handler': views
+      '#selection_settings':
+        view:
+          view_name: topics
+          display_name: entity_reference_1
+          arguments: {  }
+    feedback_topic_other:
+      '#type': textfield
+      '#title': 'Other topic not listed above'
+      '#states':
+        visible:
+          ':input[name="feedback_direction"]':
+            value: topic
+    feedback_recipients_entity_all:
+      '#type': webform_entity_checkboxes
+      '#title': 'To whom should we send your comment or feedback'
+      '#options_display': two_columns
+      '#options_all_text': 'I''m not sure'
+      '#default_value':
+        - '71'
+        - '353'
+        - '75'
+        - '352'
+        - '331'
+        - '44'
+      '#wrapper_attributes':
+        class:
+          - visually-hidden
+        style: 'display: none'
+      '#access': false
+      '#target_type': group
+      '#selection_handler': views
+      '#selection_settings':
+        view:
+          view_name: electeds
+          display_name: entity_reference_1
+          arguments: {  }
+  section_request_meeting:
+    '#type': webform_section
+    '#title': 'Request a meeting with an elected official or ask them to speak at an event'
+    '#states':
+      visible:
+        ':input[name="purpose"]':
+          value: request_meeting
+    meeting_recipients_entity:
+      '#type': webform_entity_select
+      '#title': 'To whom should we send your request?'
+      '#required': true
+      '#target_type': group
+      '#selection_handler': views
+      '#selection_settings':
+        view:
+          view_name: electeds
+          display_name: entity_reference_1
+          arguments: {  }
+    meeting_event_type:
+      '#type': webform_radios_other
+      '#title': 'To what would you like to invite them?'
+      '#options':
+        'Attend an event': 'Attend an event'
+        'Speak at an event': 'Speak at an event'
+        'Speak at a meeting': 'Speak at a meeting'
+        'Meet with me or my group': 'Meet with me or my group'
+      '#required': true
+    meeting_title:
+      '#type': textfield
+      '#title': 'Event or meeting title'
+      '#required': true
+    meeting_description:
+      '#type': textarea
+      '#title': 'Event/meeting description'
+      '#description': '<p data-renderer-start-pos="2355">Please provide a brief summary of the event/meeting, its location, its purpose, the audience, how many people will attend, and any other important details.&nbsp;</p>'
+      '#rows': 3
+      '#required': true
+    meeting_preferred_datetime:
+      '#type': datetime
+      '#title': 'Preferred meeting date and time'
+      '#required': true
+      '#date_date_format': ''
+      '#date_year_range': '2021:2050'
+      '#date_time_format': ''
+      '#date_time_step': '60'
+    meeting_alternate_datetime:
+      '#type': datetime
+      '#title': 'Alternate meeting date and time'
+      '#required': true
+      '#date_date_format': ''
+      '#date_year_range': '2021:2050'
+      '#date_time_format': ''
+      '#date_time_step': '60'
+    meeting_duration:
+      '#type': radios
+      '#title': 'How much time are you requesting?'
+      '#options':
+        '15 minutes or less': '15 minutes or less'
+        '30 minutes': '30 minutes'
+        '1 hour': '1 hour'
+        'More than 1 hour': 'More than 1 hour'
+      '#required': true
+    meeting_phone:
+      '#type': tel
+      '#title': 'Phone number'
+      '#description': 'Please provide your phone number for us to contact you and schedule your request if approved.'
+      '#required': true
+  section_feedback_specific_official:
+    '#type': webform_section
+    '#title': 'Provide a comment or feedback to specific elected officials'
+    '#states':
+      visible:
+        ':input[name="purpose"]':
+          value: provide_feedback_specific_elected
+    feedback_recipients_entity:
+      '#type': webform_entity_checkboxes
+      '#title': 'To whom should we send your comment or feedback (choose all that apply)'
+      '#options_display': two_columns
+      '#options_all_text': 'I''m not sure'
+      '#states':
+        disabled:
+          ':input[name="feedback_specific_not_sure"]':
+            checked: true
+        required:
+          ':input[name="purpose"]':
+            value: provide_feedback_specific_elected
+          ':input[name="feedback_specific_not_sure"]':
+            unchecked: true
+      '#target_type': group
+      '#selection_handler': views
+      '#selection_settings':
+        view:
+          view_name: electeds
+          display_name: entity_reference_1
+          arguments: {  }
+    feedback_specific_not_sure:
+      '#type': checkbox
+      '#title': Unsure
+    feedback_specific_official_link:
+      '#type': webform_markup
+      '#markup': '<a href="/elected-officials">View current bureau assignments by official</a>'
+  feedback_comments:
+    '#type': textarea
+    '#title': 'What would you like to say?'
+    '#description': '<p data-pm-slice="1 1 []">Clear concise comments and feedback are appreciated.</p>'
+    '#rows': 5
+    '#required': true
+    '#states':
+      visible:
+        - ':input[name="purpose"]':
+            value: provide_feedback
+        - xor
+        - ':input[name="purpose"]':
+            value: provide_feedback_specific_elected
+  section_contact_information:
+    '#type': webform_section
+    '#title': 'Your Contact Information'
+    '#states':
+      visible:
+        - ':input[name="purpose"]':
+            value: request_meeting
+        - xor
+        - ':input[name="purpose"]':
+            value: provide_feedback
+        - xor
+        - ':input[name="purpose"]':
+            value: provide_feedback_specific_elected
+    contact_name:
+      '#type': textfield
+      '#title': Name
+      '#required': true
+    contact_email_address:
+      '#type': textfield
+      '#title': 'Email Address'
+      '#input_mask': '''alias'': ''email'''
+      '#required': true
+    contact_country:
+      '#type': select
+      '#title': Country
+      '#options': country_names
+      '#default_value': 'United States'
+    container_contact_domestic_address:
+      '#type': container
+      '#states':
+        visible:
+          ':input[name="contact_country"]':
+            value: 'United States'
+      contact_street_address:
+        '#type': textfield
+        '#title': 'Street Address'
+      contact_unit_type:
+        '#type': webform_select_other
+        '#title': 'Unit Type'
+        '#options': unit_type
+        '#empty_value': none
+      contact_unit_number:
+        '#type': textfield
+        '#title': 'Unit Number'
+        '#states':
+          visible:
+            ':input[name="contact_unit_type[select]"]':
+              '!value': none
+      contact_city:
+        '#type': textfield
+        '#title': City
+      contact_state:
+        '#type': select
+        '#title': State
+        '#options': state_province_names
+      contact_postal_code:
+        '#type': textfield
+        '#title': 'ZIP/Postal Code'
+        '#input_mask': '99999[-9999]'
+        '#required': true
+    contact_international_address:
+      '#type': textarea
+      '#title': 'International Postal Address'
+      '#states':
+        visible:
+          ':input[name="contact_country"]':
+            '!value': 'United States'
+  section_public_records_statement:
+    '#type': webform_section
+    '#title': 'Public Records Statement'
+    '#states':
+      visible:
+        - ':input[name="purpose"]':
+            value: provide_feedback
+        - xor
+        - ':input[name="purpose"]':
+            value: request_meeting
+        - xor
+        - ':input[name="purpose"]':
+            value: provide_feedback_specific_elected
+    public_records_statement_text:
+      '#type': webform_markup
+      '#markup': 'Information you provide to the City is a public record and may be subject to release under Oregon&rsquo;s <a data-renderer-mark="true" href="https://www.doj.state.or.us/oregon-department-of-justice/public-records/attorney-generals-public-records-and-meetings-manual/i-public-records/#:~:text=Under%20Oregon''s%20Public%20Records%20Law,committee%20of%20the%20Legislative%20Assembly" title="https://www.doj.state.or.us/oregon-department-of-justice/public-records/attorney-generals-public-records-and-meetings-manual/i-public-records/#:~:text=Under%20Oregon''s%20Public%20Records%20Law,committee%20of%20the%20Legislative%20Assembly">Public Records Law</a>. This law classifies certain information as available to the public on request. See our <a data-renderer-mark="true" href="/help/about/privacy" title="https://www.portland.gov/help/about/privacy">privacy statement</a> for more information.'
+  hidden_container:
+    '#type': container
+    '#attributes':
+      class:
+        - visually-hidden
+    computed_recipient_list:
+      '#type': webform_computed_twig
+      '#title': 'Recipient list'
+      '#description_display': invisible
+      '#access': false
+      '#mode': text
+      '#template': |
+        {% if data.purpose and data.purpose == "provide_feedback_specific_elected" %}
+        
+          {% if data.feedback_specific_not_sure == "1" %}
+            311@portlandoregon.gov
+          {% else %}
+        
+        {{ webform_token('[webform_submission:values:feedback_recipients_entity:0:entity:field_routing_email]', webform_submission) }},
+        
+        {{ webform_token('[webform_submission:values:feedback_recipients_entity:1:entity:field_routing_email]', webform_submission) }},
+        
+        {{ webform_token('[webform_submission:values:feedback_recipients_entity:2:entity:field_routing_email]', webform_submission) }},
+        
+        {{ webform_token('[webform_submission:values:feedback_recipients_entity:3:entity:field_routing_email]', webform_submission) }},
+        
+        {{ webform_token('[webform_submission:values:feedback_recipients_entity:4:entity:field_routing_email]', webform_submission) }},
+        
+        {{ webform_token('[webform_submission:values:feedback_recipients_entity:5:entity:field_routing_email]', webform_submission) }}
+        
+          {% endif %}
+        
+        {% elseif data.purpose and data.purpose == "request_meeting" %}
+        
+          {% if webform_token('[webform_submission:values:meeting_recipients_entity]', webform_submission) != null %}
+          {{ webform_token('[webform_submission:values:meeting_recipients_entity:entity:field_routing_email]', webform_submission) }}
+          {% endif %}
+        
+        {% elseif data.purpose and data.purpose == "provide_feedback" %}
+        
+          {{ webform_token('[webform_submission:values:feedback_recipients_entity_all:0:entity:field_routing_email]', webform_submission) }},
+        
+          {{ webform_token('[webform_submission:values:feedback_recipients_entity_all:1:entity:field_routing_email]', webform_submission) }},
+        
+          {{ webform_token('[webform_submission:values:feedback_recipients_entity_all:2:entity:field_routing_email]', webform_submission) }},
+        
+          {{ webform_token('[webform_submission:values:feedback_recipients_entity_all:3:entity:field_routing_email]', webform_submission) }},
+        
+          {{ webform_token('[webform_submission:values:feedback_recipients_entity_all:4:entity:field_routing_email]', webform_submission) }},
+        
+          {{ webform_token('[webform_submission:values:feedback_recipients_entity_all:5:entity:field_routing_email]', webform_submission) }}
+        
+        {% endif %}
+        
+      '#whitespace': spaceless
+      '#ajax': true
+    computed_subject:
+      '#type': webform_computed_twig
+      '#title': Subject
+      '#description_display': invisible
+      '#access': false
+      '#display_on': form
+      '#mode': text
+      '#template': |
+        {% if data.purpose == "request_meeting" %}
+        Meeting request received from {{ data.contact_name }}
+        {% else %}
+        Website feedback received from {{ data.contact_name }}
+        {% endif %}
+        
+      '#whitespace': spaceless
+      '#ajax': true
+  final_text:
+    '#type': webform_markup
+  actions:
+    '#type': webform_actions
+    '#title': 'Submit button(s)'
+    '#states':
+      visible:
+        - ':input[name="purpose"]':
+            value: provide_feedback
+        - xor
+        - ':input[name="purpose"]':
+            value: request_meeting
+        - xor
+        - ':input[name="purpose"]':
+            value: provide_feedback_specific_elected
+css: ''
+javascript: ''
+settings:
+  ajax: false
+  ajax_scroll_top: form
+  ajax_progress_type: ''
+  ajax_effect: ''
+  ajax_speed: null
+  page: true
+  page_submit_path: /contact-elected-official
+  page_confirm_path: ''
+  page_theme_name: ''
+  form_title: source_entity_webform
+  form_submit_once: false
+  form_exception_message: ''
+  form_open_message: ''
+  form_close_message: ''
+  form_previous_submissions: true
+  form_confidential: false
+  form_confidential_message: ''
+  form_disable_remote_addr: false
+  form_convert_anonymous: false
+  form_prepopulate: false
+  form_prepopulate_source_entity: false
+  form_prepopulate_source_entity_required: false
+  form_prepopulate_source_entity_type: ''
+  form_reset: false
+  form_disable_autocomplete: false
+  form_novalidate: false
+  form_disable_inline_errors: false
+  form_required: true
+  form_unsaved: false
+  form_disable_back: false
+  form_submit_back: false
+  form_autofocus: false
+  form_details_toggle: false
+  form_access_denied: default
+  form_access_denied_title: ''
+  form_access_denied_message: ''
+  form_access_denied_attributes: {  }
+  form_file_limit: ''
+  share: false
+  share_node: false
+  share_theme_name: ''
+  share_title: true
+  share_page_body_attributes: {  }
+  submission_label: ''
+  submission_log: false
+  submission_views: {  }
+  submission_views_replace: {  }
+  submission_user_columns: {  }
+  submission_user_duplicate: false
+  submission_access_denied: default
+  submission_access_denied_title: ''
+  submission_access_denied_message: ''
+  submission_access_denied_attributes: {  }
+  submission_exception_message: ''
+  submission_locked_message: ''
+  submission_excluded_elements: {  }
+  submission_exclude_empty: false
+  submission_exclude_empty_checkbox: false
+  previous_submission_message: ''
+  previous_submissions_message: ''
+  autofill: false
+  autofill_message: ''
+  autofill_excluded_elements: {  }
+  wizard_progress_bar: false
+  wizard_progress_pages: false
+  wizard_progress_percentage: false
+  wizard_progress_link: false
+  wizard_progress_states: false
+  wizard_auto_forward: true
+  wizard_auto_forward_hide_next_button: false
+  wizard_keyboard: true
+  wizard_start_label: ''
+  wizard_preview_link: false
+  wizard_confirmation: true
+  wizard_confirmation_label: ''
+  wizard_track: ''
+  wizard_prev_button_label: ''
+  wizard_next_button_label: ''
+  wizard_toggle: true
+  wizard_toggle_show_label: ''
+  wizard_toggle_hide_label: ''
+  preview: 0
+  preview_label: ''
+  preview_title: ''
+  preview_message: ''
+  preview_attributes: {  }
+  preview_excluded_elements: {  }
+  preview_exclude_empty: true
+  preview_exclude_empty_checkbox: false
+  draft: none
+  draft_multiple: false
+  draft_auto_save: false
+  draft_saved_message: ''
+  draft_loaded_message: ''
+  draft_pending_single_message: ''
+  draft_pending_multiple_message: ''
+  confirmation_type: page
+  confirmation_title: 'Thank you for your submission'
+  confirmation_message: "We appreciate your feedback.<br />\r\n<br />\r\nIf you requested a meeting with an elected official, and the request is approved, someone will reach out to you to schedule the meeting."
+  confirmation_url: ''
+  confirmation_attributes: {  }
+  confirmation_back: true
+  confirmation_back_label: ''
+  confirmation_back_attributes: {  }
+  confirmation_exclude_query: false
+  confirmation_exclude_token: false
+  confirmation_update: false
+  limit_total: null
+  limit_total_interval: null
+  limit_total_message: ''
+  limit_total_unique: false
+  limit_user: null
+  limit_user_interval: null
+  limit_user_message: ''
+  limit_user_unique: false
+  entity_limit_total: null
+  entity_limit_total_interval: null
+  entity_limit_user: null
+  entity_limit_user_interval: null
+  purge: all
+  purge_days: 14
+  results_disabled: false
+  results_disabled_ignore: false
+  results_customize: false
+  token_view: false
+  token_update: false
+  token_delete: false
+  serial_disabled: false
+access:
+  create:
+    roles:
+      - anonymous
+      - authenticated
+    users: {  }
+    permissions: {  }
+  view_any:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  update_any:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  delete_any:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  purge_any:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  view_own:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  update_own:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  delete_own:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  administer:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  test:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  configuration:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+handlers:
+  email_2:
+    id: email
+    label: 'Send email to selected electeds'
+    notes: ''
+    handler_id: email_2
+    status: true
+    conditions: {  }
+    weight: 6
+    settings:
+      states:
+        - completed
+      to_mail: '[webform_submission:values:computed_recipient_list]'
+      to_options: {  }
+      cc_mail: ''
+      cc_options: {  }
+      bcc_mail: ''
+      bcc_options: {  }
+      from_mail: '[webform_submission:values:contact_email_address:raw]'
+      from_options: {  }
+      from_name: '[webform_submission:values:contact_name:raw]'
+      subject: '[webform_submission:values:computed_subject]'
+      body: '[webform_submission:values]'
+      excluded_elements:
+        introductory_text: introductory_text
+        testimony_instructions: testimony_instructions
+        feedback_recipients_entity_all: feedback_recipients_entity_all
+        feedback_specific_official_link: feedback_specific_official_link
+        public_records_statement_text: public_records_statement_text
+        computed_recipient_list: computed_recipient_list
+        computed_subject: computed_subject
+        final_text: final_text
+      ignore_access: true
+      exclude_empty: true
+      exclude_empty_checkbox: true
+      exclude_attachments: false
+      html: true
+      attachments: false
+      twig: false
+      debug: false
+      reply_to: ''
+      return_path: ''
+      sender_mail: ''
+      sender_name: ''
+      theme_name: ''
+      parameters: {  }
+variants: {  }

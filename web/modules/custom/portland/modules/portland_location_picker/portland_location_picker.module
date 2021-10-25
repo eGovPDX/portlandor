@@ -1,0 +1,53 @@
+<?php
+
+use Drupal\Core\Form\FormStateInterface;
+
+/**
+ * Implements hook_form_alter 
+ */
+function portland_location_picker_form_alter(&$form, &$form_state, $form_id) {
+  // if elements array exists, this may be a webform. flatten the elements array and look for
+  // the location picker field. if it exists, attach the library.
+  $library_attached = false;
+  if (!$library_attached && array_key_exists("elements", $form)) {
+    $flattened = Drupal\webform\Utility\WebformElementHelper::getFlattened($form['elements']);
+    foreach ($flattened as $key => $value) {
+      if ($flattened[$key]['#type'] == "portland_location_picker") {
+        $form['#attached']['library'][] = 'portland_location_picker/portland_location_picker';
+        $form['#attached']['drupalSettings']['portlandmaps_api_key'] = \Drupal::service('key.repository')->getKey('portlandmaps_api')->getKeyValue();
+        $library_attached = true;
+        break;
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_webform_element_alter().
+ *
+ * @param array              $element
+ * @param FormStateInterface $form_state
+ * @param array              $context
+ */
+function portland_location_picker_webform_element_alter(array &$element, FormStateInterface $form_state, array $context) {
+  // add a custom validation constraint to the map element; 
+  // it will check lat/lon to validate that a location has been selected.
+  if (array_key_exists('#id', $element) && $element['#id'] == "location_map") {
+    $element['#element_validate'][] = [
+        'Drupal\portland_location_picker\Validate\GeolocationValidationConstraint',
+        'validate'
+    ];
+  } 
+
+  // add a custom option to the parks list for Other/Not Found. when this option is
+  // selected, the location type is changed to "I'm not sure" so that the report
+  // can be routed to 311 for triage.
+   if (array_key_exists('#id', $element) && $element['#id'] == "location_park") {
+    $notfound = [ '' => 'Not found'];
+    //array_unshift($element['#options'], 'Not found');
+    $options = $element['#options'];
+    $element['#options'] = array('0' => 'Other / I\'m not sure') + $element['#options'];
+  } 
+ 
+}
+

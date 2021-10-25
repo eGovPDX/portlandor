@@ -2,7 +2,7 @@
 
 #Jobs
 
-## Job to run the update path and Behat tests.
+## Job to run the update path and tests.
 build_and_deploy: &build_and_deploy
   docker:
     - image: egovpdx/drupal-ci:latest
@@ -43,19 +43,6 @@ build_and_deploy: &build_and_deploy
           - "/tmp/vendor"
           - "/root/.terminus"
     - restore_cache:
-        name: Restore theme dependencies cache
-        keys:
-          - cloudy_-{{ checksum "web/themes/custom/cloudy/yarn.lock" }}
-    - run:
-        name: Install theme dependencies
-        command: |
-          cd web/themes/custom/cloudy && yarn install --frozen-lockfile
-    - save_cache:
-        name: Save theme dependencies cache
-        key: cloudy_-{{ checksum "web/themes/custom/cloudy/yarn.lock" }}
-        paths:
-          - "web/themes/custom/cloudy/node_modules"
-    - restore_cache:
         name: Restore Composer Cache
         keys:
           - v2-dependencies-{{ checksum "composer.lock" }}
@@ -83,18 +70,6 @@ build_and_deploy: &build_and_deploy
           - ./web/themes/contrib
           - ./web/libraries
     - run:
-        name: Build Theme and Pattern Lab
-        command: cd web/themes/custom/cloudy && yarn run build:ci
-    - run:
-        name: Remove Node Modules post build to lighten upload to Pantheon
-        command: cd /var/www/html && rm -rf web/themes/custom/cloudy/node_modules
-    - run:
-        # Unlike npm, security audit is not automatically included in install
-        name: Security Audit of Node dependencies
-        # Once POWR-2023 is resolved and yarn updated, we can bring this back. However this command is not yet available in yarn 1.6
-        # command: cd web/themes/custom/cloudy && yarn audit
-        command: cd web/themes/custom/cloudy && yarn audit || echo 'it appears that yarn audit found some security issues in your node dependencies, consider running a yarn upgrade'
-    - run:
         name: Deploy to Pantheon
         when: on_success
         no_output_timeout: 15m # allow 15 minutes instead of 10 minute default for script to complete
@@ -110,7 +85,7 @@ build_and_deploy: &build_and_deploy
 
           # Terminus log in with the user email that will be displayed as the commit user in Pantheon Git repo
           terminus auth:login --machine-token="$eGov_Terminus" --email="$eGov_Email"
-          
+
           # Git operations
           # Set the git commit user name and email address so it's clear in Pantheon log who made the change
           git config --global user.name $CIRCLE_USERNAME
@@ -148,7 +123,7 @@ build_and_deploy: &build_and_deploy
               fi
               # Create a new Multi-Dev with files and database from site corresponding to PR's base branch.
               echo "Creating new multidev site cloned from $BASE. Please wait."
-              terminus multidev:create $CIRCLE_PROJECT_REPONAME.$BASE $PANTHEON_ENV
+              terminus multidev:create $CIRCLE_PROJECT_REPONAME.$BASE $PANTHEON_ENV >/dev/null
             fi
             rm -rf ./env_list.txt
           fi
@@ -169,8 +144,8 @@ build_and_deploy: &build_and_deploy
           terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- cr
 
           # When commit on a permanent branch or master, delete the multi-dev site with name like "powr-1234a"
-          if [[ $PANTHEON_ENV = "dev" || $PANTHEON_ENV = "release" ]]; then
-            # After success deployment to DEV, remove the multidev site if this is a merge of a PR.
+          if [[ $PANTHEON_ENV = "release" ]]; then
+            # After success deployment to release, remove the multidev site if this is a merge of a PR.
             cd /var/www/html
 
             # Must read the last commit message from Github. The last one in local repo is "CircleCI Deployment"
@@ -222,31 +197,29 @@ build_and_deploy: &build_and_deploy
             fi
           fi
 
-
-run_tests: &run_tests
+visual_regression: &visual_regression
   docker:
-    - image: egovpdx/drupal-ci:latest
+    - image: cimg/php:7.4-browsers
       auth:
         username: egovpdx
         password: $DOCKERHUB_PASSWORD
-    - image: selenium/standalone-chrome-debug:3.7.1-beryllium
-      auth:
-        username: egovpdx
-        password: $DOCKERHUB_PASSWORD
+  # environment:
+  #   PERCY_PARALLEL_TOTAL: -1
+  #   PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: true
   parallelism: 5
-  working_directory: /var/www/html
+  working_directory: /home/circleci/app
   steps:
     - restore_cache:
         name: Retore Git cache before checkout
         keys:
-          - source-v1-{{ .Branch }}-{{ .Revision }}
-          - source-v1-{{ .Branch }}-
-          - source-v1-
+          - jest-source-v1-{{ .Branch }}-{{ .Revision }}
+          - jest-source-v1-{{ .Branch }}-
+          - jest-source-v1-
     - checkout
     - run: git gc
     - save_cache:
         name: Save Git cache after checkout
-        key: source-v1-{{ .Branch }}-{{ .Revision }}
+        key: jest-source-v1-{{ .Branch }}-{{ .Revision }}
         paths:
           - ".git"
     - restore_cache:
@@ -264,71 +237,86 @@ run_tests: &run_tests
         key: terminus_-{{ checksum "composer.lock" }}
         paths:
           - "/tmp/vendor"
+
     - restore_cache:
-        name: Restore Behat cache
-        key: v2-behat-dependencies-{{ checksum "tests/composer.lock" }}
+        name: Restore Jest and Percy dependencies cache
+        keys:
+          - jest-{{ checksum "tests/percy/yarn.lock" }}-v2
     - run:
-        name: Composer install for Behat dependencies
+        name: Install Jest and Percy dependencies
         command: |
-          cd tests
-          composer -V
-          composer config --global --auth github-oauth.github.com "$COMPOSER_TOKEN"
-          composer install --no-interaction
+          cd /home/circleci/app/tests/percy
+          export PERCY_POSTINSTALL_BROWSER=true
+          yarn install --frozen-lockfile
+    - save_cache:
+        name: Save Jest and Percy dependencies cache
+        key: jest-{{ checksum "tests/percy/yarn.lock" }}-v2
+        paths:
+          - "tests/percy/node_modules"
     - run:
-        name: Run tests against Pantheon
-        when: on_success
+        name: Run Percy tests
         command: |
           export PATH=/var/www/html/tests/vendor/bin:/tmp/vendor/pantheon-systems/terminus/bin:$PATH
+
           # Log in via terminus first. Required for tests that require user login.
-          terminus auth:login --machine-token="$eGov_Terminus" --email="$eGov_Email" && terminus aliases
-          mkdir -p tests/test-results/behat/features
-          cd tests
+          terminus auth:login --quiet --machine-token="$eGov_Terminus" --email="$eGov_Email" && terminus aliases
 
-          # Set Pantheon environment name
-          if [[ $CIRCLE_BRANCH =~ ^dependabot\/ ]] && [[ $CIRCLE_PULL_REQUEST =~ \/pull\/([0-9]+)$ ]]; then
-            echo "export PANTHEON_ENV=bot-${BASH_REMATCH[1]}" >> $BASH_ENV && source $BASH_ENV
+          # Prepare environment variables to be used by Percy
+          if [[ $CIRCLE_BRANCH = "master" ]]; then
+            echo 'export SITE_NAME="dev"' > $BASH_ENV && source $BASH_ENV
           else
-            echo "export PANTHEON_ENV=$CIRCLE_BRANCH" >> $BASH_ENV && source $BASH_ENV
+            echo 'export SITE_NAME=${CIRCLE_BRANCH}' > $BASH_ENV && source $BASH_ENV
           fi
-          echo "Pantheon environment name is $PANTHEON_ENV"
 
-          # Split feature files so all split test jobs will finish around the same time
-          TESTFILES=$(circleci tests glob "features/*.feature" | circleci tests split)
-          if [[ $PANTHEON_ENV = "master" ]]; then
-            echo 'export BEHAT_PARAMS="{\"extensions\" : {\"Behat\\\MinkExtension\" : {\"base_url\" : \"https://dev-${CIRCLE_PROJECT_REPONAME}.pantheonsite.io\"}, \"Drupal\\\DrupalExtension\" : {\"drush\" : { \"alias\": \"$CIRCLE_PROJECT_REPONAME.dev\"}}}}"' >> $BASH_ENV && source $BASH_ENV
-          else
-            echo 'export BEHAT_PARAMS="{\"extensions\" : {\"Behat\\\MinkExtension\" : {\"base_url\" : \"https://${PANTHEON_ENV}-${CIRCLE_PROJECT_REPONAME}.pantheonsite.io\"}, \"Drupal\\\DrupalExtension\" : {\"drush\" : { \"alias\": \"$CIRCLE_PROJECT_REPONAME.${PANTHEON_ENV}\"}}}}"' >> $BASH_ENV && source $BASH_ENV
-          fi
+          mkdir /home/circleci/artifacts
+          cd /home/circleci/app/tests/percy
+
+          # Start Percy tests excluding full regression tests
+          TESTFILES=$(circleci tests glob "__tests__/*.js" | circleci tests split)
           for TESTFILE in $TESTFILES
           do
-            # public_ip_address=$(wget -qO- http://checkip.amazonaws.com)
-            # echo "This container's public ip address is $public_ip_address"
-            behat -c behat.yml -f pretty -o std -f junit -o test-results/behat ${TESTFILE} || behat -c behat.yml -f pretty -o std -f junit -o test-results/behat ${TESTFILE}
-            mv test-results/behat/default.xml test-results/behat/${TESTFILE}.xml
+            # Generate one time login link for tests
+            if [[ ${TESTFILE} == *"ally"* ]]; then
+              echo 'export ALLY_LOGIN=$(terminus drush portlandor.${SITE_NAME} -- uli --mail ally.admin@portlandoregon.gov)' > $BASH_ENV && source $BASH_ENV
+              npm run jest-test -- ${TESTFILE}
+            elif [[ ${TESTFILE} == *"marty"* ]]; then
+              echo 'export MARTY_LOGIN=$(terminus drush portlandor.${SITE_NAME} -- uli --mail marty.member@portlandoregon.gov)' > $BASH_ENV && source $BASH_ENV
+              npm run jest-test -- ${TESTFILE}
+            elif [[ ${TESTFILE} == *"admin-group"* ]]; then
+              echo 'export KEVIN_LOGIN=$(terminus drush portlandor.${SITE_NAME} -- uli --mail xinju.wang@portlandoregon.gov)' > $BASH_ENV && source $BASH_ENV
+              npm run jest-test -- ${TESTFILE}
+            elif [[ ${TESTFILE} == *"admin"* ]]; then
+              echo 'export SUPERADMIN_LOGIN=$(terminus drush portlandor.${SITE_NAME} -- uli --name superAdmin)' > $BASH_ENV && source $BASH_ENV
+              npm run jest-test -- ${TESTFILE}
+            elif [[ ${TESTFILE} == *"anonymous"* ]]; then
+              npm run single-test -- ${TESTFILE}
+            fi
           done
-    - save_cache:
-        paths:
-          - ./tests/vendor
-        key: v2-behat-dependencies-{{ checksum "tests/composer.lock" }}
-    - store_test_results:
-        path: /var/www/html/tests/test-results
     - store_artifacts:
-        path: /var/www/html/artifacts
+        path: /home/circleci/artifacts
         destination: /
 
-visual_regression: &visual_regression
+full_regression: &full_regression
   docker:
-    - image: egovpdx/visual-regression:latest
+    - image: cimg/php:7.4-browsers
       auth:
         username: egovpdx
         password: $DOCKERHUB_PASSWORD
-  # environment:
-  #   PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: true
-  parallelism: 4
   working_directory: /home/circleci/app
   steps:
+    - restore_cache:
+        name: Retore Git cache before checkout
+        keys:
+          - jest-source-v1-{{ .Branch }}-{{ .Revision }}
+          - jest-source-v1-{{ .Branch }}-
+          - jest-source-v1-
     - checkout
-
+    - run: git gc
+    - save_cache:
+        name: Save Git cache after checkout
+        key: jest-source-v1-{{ .Branch }}-{{ .Revision }}
+        paths:
+          - ".git"
     - restore_cache:
         name: Restore Terminus cache
         keys:
@@ -345,10 +333,49 @@ visual_regression: &visual_regression
         paths:
           - "/tmp/vendor"
 
+    - restore_cache:
+        name: Restore Jest and Percy dependencies cache
+        keys:
+          - jest-{{ checksum "tests/percy/yarn.lock" }}-v2
     - run:
-        name: Run Percy tests
+        name: Install Jest and Percy dependencies
+        command: |
+          cd /home/circleci/app/tests/percy
+          export PERCY_POSTINSTALL_BROWSER=true
+          yarn install --frozen-lockfile
+    - save_cache:
+        name: Save Jest and Percy dependencies cache
+        key: jest-{{ checksum "tests/percy/yarn.lock" }}-v2
+        paths:
+          - "tests/percy/node_modules"
+
+    - restore_cache:
+        name: Restore last git commit file
+        keys:
+          - git-commit-{{ .Revision }}-v1
+    - run:
+        name: Run full regression tests
         command: |
           export PATH=/var/www/html/tests/vendor/bin:/tmp/vendor/pantheon-systems/terminus/bin:$PATH
+
+          # Skip test if there is no new commit since the last run
+          echo "Current commit: $CIRCLE_SHA1"
+          if [ -s "./last_commit_hash.txt" ]
+          then
+            export LAST_COMMIT_HASH=$(<last_commit_hash.txt)
+            echo "Last commit: $LAST_COMMIT_HASH"
+            if [[ "$CIRCLE_SHA1" == "$LAST_COMMIT_HASH" ]]; then
+              echo "No new commit since ${LAST_COMMIT_HASH}. Skip full regression test."
+              exit 0
+            else
+              echo "New commit since ${LAST_COMMIT_HASH}. Start full regression test"
+              echo "$CIRCLE_SHA1" > ./last_commit_hash.txt
+            fi
+          fi
+          if [ ! -f ./last_commit_hash.txt ]; then
+            echo "$CIRCLE_SHA1" > ./last_commit_hash.txt
+            # cat ./last_commit_hash.txt
+          fi
 
           # Log in via terminus first. Required for tests that require user login.
           terminus auth:login --quiet --machine-token="$eGov_Terminus" --email="$eGov_Email" && terminus aliases
@@ -360,29 +387,43 @@ visual_regression: &visual_regression
             echo 'export SITE_NAME=${CIRCLE_BRANCH}' > $BASH_ENV && source $BASH_ENV
           fi
 
+          mkdir /home/circleci/artifacts
           cd /home/circleci/app/tests/percy
-          npm install --quiet
+
+          # Get login links
+          echo 'export ALLY_LOGIN=$(terminus drush portlandor.${SITE_NAME} -- uli --mail ally.admin@portlandoregon.gov)' > $BASH_ENV && source $BASH_ENV
+          echo 'export MARTY_LOGIN=$(terminus drush portlandor.${SITE_NAME} -- uli --mail marty.member@portlandoregon.gov)' > $BASH_ENV && source $BASH_ENV
+          echo 'export SUPERADMIN_LOGIN=$(terminus drush portlandor.${SITE_NAME} -- uli --name superAdmin)' > $BASH_ENV && source $BASH_ENV
 
           # Start Percy tests
-          TESTFILES=$(circleci tests glob "snapshots-*.js" | circleci tests split)
-          for TESTFILE in $TESTFILES
-          do
-            npm run ${TESTFILE}
-          done
-
+          npm run jest-full
+    - save_cache:
+        name: Save git commit file
+        key: git-commit-{{ .Revision }}-v1
+        paths:
+          - "/home/circleci/app/last_commit_hash.txt"
+    - store_artifacts:
+        path: /home/circleci/artifacts
+        destination: /
+    # - slack/notify:
+    #     branch_pattern: powr-3508
+    #     event: fail
+    #     # mentions: '<@U8XXXXXXX>, @UserName'
+    #     template: basic_fail_1
 
 # Declare all of the jobs we should run.
 version: 2.1
 jobs:
   deploy:
-     <<: *build_and_deploy
-  test:
-     <<: *run_tests
+    <<: *build_and_deploy
   visual_regression:
     <<: *visual_regression
+  full_regression:
+    <<: *full_regression
 
 orbs:
   percy: percy/agent@0.1.2
+  slack: circleci/slack@4.4.2
 
 # Declare a workflow that runs all of our jobs in parallel.
 workflows:
@@ -390,12 +431,29 @@ workflows:
   deploy_and_test:
     jobs:
       - deploy
-      - test:
-          requires:
-            - deploy
       - visual_regression:
           requires:
             - deploy
-      - percy/finalize_all:
+      - full_regression:
           requires:
             - visual_regression
+          context: eGovPDX
+          filters:
+            branches:
+              only:
+                - master
+                - powr-3508
+
+  # daily:
+  #   jobs:
+  #     - full_regression:
+  #         context: eGovPDX
+  #   triggers:
+  #     - schedule:
+  #         # UTC date/time 8am is Pacific 12am
+  #         cron: "0 8 * * 1,2,3,4,5"
+  #         filters:
+  #           branches:
+  #             only:
+  #               # - master
+  #               - powr-3508
