@@ -23,17 +23,17 @@ elements: |-
     '#type': select
     '#title': 'Type of feedback'
     '#options':
-      'General feedback': 'General website feedback'
-      'Website problem': 'Report a website problem'
-      'Feature request': 'Request a new feature'
-      'Info request': 'Request more information'
-      Other: Other
+      'I cannot find what I''m looking for': 'I cannot find what I''m looking for'
+      'I have a question': 'I have a question'
+      'The page looks broken': 'The page looks broken'
+      'The information looks incorrect': 'The information looks incorrect'
+      'Contact an elected official with feedback': 'Contact an elected official with feedback'
     '#empty_option': '-- Select --'
     '#other__maxlength': '500'
     '#required': true
   feedback:
     '#type': textarea
-    '#title': 'How can we improve?'
+    '#title': Details
     '#description': 'Please be specific, so we can better assist you.'
     '#required': true
   your_name:
@@ -43,8 +43,8 @@ elements: |-
   email_address:
     '#type': email
     '#title': 'Your email'
-    '#description': 'If you would like us to follow up with you, please provide your email address.'
     '#default_value': '[current-user:mail]'
+    '#required': true
   page_you_last_viewed:
     '#type': textfield
     '#title': 'Page you last viewed'
@@ -67,6 +67,9 @@ elements: |-
     '#whitespace': trim
     '#store': true
     '#ajax': true
+  public_records_statement:
+    '#type': webform_markup
+    '#markup': 'The information you provide in this form is considered a public record under Oregon&rsquo;s <a data-renderer-mark="true" href="https://www.doj.state.or.us/oregon-department-of-justice/public-records/attorney-generals-public-records-and-meetings-manual/i-public-records/#:~:text=Under%20Oregon''s%20Public%20Records%20Law,committee%20of%20the%20Legislative%20Assembly" title="https://www.doj.state.or.us/oregon-department-of-justice/public-records/attorney-generals-public-records-and-meetings-manual/i-public-records/#:~:text=Under%20Oregon''s%20Public%20Records%20Law,committee%20of%20the%20Legislative%20Assembly">Public Records Law</a> and is available to the public on request.'
   actions:
     '#type': webform_actions
     '#title': 'Submit button(s)'
@@ -260,14 +263,66 @@ access:
     users: {  }
     permissions: {  }
 handlers:
-  email:
+  submit_report_to_311:
     id: email
-    label: 'Send email after receiving feedback form submission'
+    label: 'Submit report to 311'
     notes: ''
-    handler_id: email
+    handler_id: submit_report_to_311
     status: true
-    conditions: {  }
-    weight: 0
+    conditions:
+      enabled:
+        -
+          ':input[name="subject"]':
+            value: 'I cannot find what I''m looking for'
+        - or
+        -
+          ':input[name="subject"]':
+            value: 'I have a question'
+        - or
+        -
+          ':input[name="subject"]':
+            value: 'The information looks incorrect'
+    weight: 1
+    settings:
+      states:
+        - completed
+      to_mail: 311@portlandoregon.gov
+      to_options: {  }
+      cc_mail: ''
+      cc_options: {  }
+      bcc_mail: ''
+      bcc_options: {  }
+      from_mail: '[webform_submission:values:computed_email_address]'
+      from_options: {  }
+      from_name: '[webform_submission:values:your_name:raw]'
+      subject: '[webform_submission:values:subject:raw] - [webform_submission:values:feedback]'
+      body: "<p>Subject: [webform_submission:values:subject]</p>\r\n\r\n<p>Feedback: [webform_submission:values:feedback]</p>\r\n\r\n<p>Name: [webform_submission:values:your_name]</p>\r\n\r\n<p>Email: [webform_submission:values:computed_email_address]</p>\r\n\r\n<p>Page last viewed: [webform_submission:values:page_you_last_viewed]</p>\r\n\r\n<p>Submitted on: [webform_submission:created]</p>\r\n\r\n<p>User agent: [server:HTTP_USER_AGENT]</p>"
+      excluded_elements: {  }
+      ignore_access: false
+      exclude_empty: true
+      exclude_empty_checkbox: false
+      exclude_attachments: false
+      html: true
+      attachments: false
+      twig: false
+      debug: false
+      reply_to: ''
+      return_path: ''
+      sender_mail: ''
+      sender_name: ''
+      theme_name: cloudy
+      parameters: {  }
+  submit_report_to_website_support:
+    id: email
+    label: 'Submit report to website support'
+    notes: ''
+    handler_id: submit_report_to_website_support
+    status: true
+    conditions:
+      enabled:
+        ':input[name="subject"]':
+          value: 'The page looks broken'
+    weight: 2
     settings:
       states:
         - completed
