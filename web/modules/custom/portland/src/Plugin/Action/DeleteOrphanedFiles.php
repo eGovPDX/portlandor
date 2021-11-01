@@ -47,7 +47,9 @@ class DeleteOrphanedFiles extends ViewsBulkOperationsActionBase
       if($row->revision_id == $latest_revision_id) continue;
       // Delete the associated file if it's not used in the latest revision
       if($row->field_document_target_id != $latest_file_id) {
-        file_delete($row->field_document_target_id);
+        $file_storage = \Drupal::entityTypeManager()->getStorage('file');
+        $file = $file_storage->load($row->field_document_target_id);
+        $file_storage->delete([$file]);
       }
       $media_storage->deleteRevision($row->revision_id);
     }
