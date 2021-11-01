@@ -13,39 +13,38 @@
  *
  */
 #}
-{% set group_label = content["#bundle"]|replace({'_': ' '})|title %}
+{%
+  set classes = [
+    'layout',
+    'layout--cloudy-elected-official',
+    'row',
+  ]
+%}
 
-<div class="row">
-  <div class="col">
-        {% include '@components/badge/badge.twig' with {
-      text: group_label,
-      mb: 4
-    } only %}
-  </div>
-</div>
-<div class="row">
-  <div class="elected--portrait col-lg-3 col-md-4 col-sm-12 mb-4">
-    {{ content.portrait }}
-  </div>
-  <div class="elected--meta col-lg-5 col-md-8 col-sm-12">
-    {% set contact_entity = content.portrait.field_contact|render|trim %}
-    {% if contact_entity is not empty %}{# We have a related contact entity, therfore do not show deprecated social media fields  #}
-      {{ content.meta|without('field_facebook', 'field_twitter', 'field_instagram') }}
-    {% else %}
-      {{ content.meta }}{# In this case, we do not have a related contact entity reference — show deprecated social media fields #}
+{% if content %}
+  <div{{ attributes.addClass(classes) }}>
+    {% if content.portrait %}
+      <div {{ region_attributes.portrait.addClass('layout__region', 'layout__region--portrait', 'elected--portrait', 'col-lg-2', 'col-md-4', 'mb-4') }}>
+        {{ content.portrait }}
+      </div>
     {% endif %}
-  </div>
-  <div class="elected--contact col-lg-4 col-md-12 col-sm-12">
-    {% if contact_entity is not empty %}{# We have a related contact entity, therfore do not show fields that are rendered there (phone and email) #}
-      {{ content.contact|without('field_phone', 'field_email') }}
-    {% else %}
-      {{ content.contact }}{# In this case, we do not have a related contact entity reference — show phone and email #}
+    {% if content.meta %}
+      <div {{ region_attributes.meta.addClass('layout__region', 'layout__region--meta', 'elected--meta', 'col-lg-5', 'col-md-8', 'col-sm-12') }}>
+          {{ content.meta }}
+      </div>
     {% endif %}
+    {# TODO: Refactor the name of this region ans it will now hold more than contact info.
+       Any refactor is going to need to replace the blocks in this region for the default
+       As well as any customized elected pages. #}
+    {% if content.contact %}
+      <div {{ region_attributes.contact.addClass('layout__region', 'layout__region--contact', 'elected--contact', 'col-lg-5', 'col-md-12', 'col-sm-12') }}>
+        {{ content.contact }}
+      </div>
+    {% endif %}
+    {% if content.main %}
+      <div {{ region_attributes.main.addClass('layout__region', 'layout__region--main', 'elected--main', 'col-12') }}>
+        {{ content.main }}
+      </div>
+  {% endif %}
   </div>
-  </div>
-</div>
-<div class="row">
-  <div class="elected--main-content col-sm-12">
-    {{ content.main }}
-  </div>
-</div>
+{% endif %}
