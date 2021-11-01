@@ -6,14 +6,17 @@ dependencies:
     - entity_browser.browser.locations_browser
     - entity_browser.browser.map_browser_embed
     - field.field.node.construction_project.field_body_content
+    - field.field.node.construction_project.field_construction_estimate
     - field.field.node.construction_project.field_construction_type
     - field.field.node.construction_project.field_contact
+    - field.field.node.construction_project.field_contract_scope
     - field.field.node.construction_project.field_display_date
     - field.field.node.construction_project.field_display_date_toggle
     - field.field.node.construction_project.field_display_groups
     - field.field.node.construction_project.field_end_date
     - field.field.node.construction_project.field_end_time
     - field.field.node.construction_project.field_featured_media
+    - field.field.node.construction_project.field_federal_funds
     - field.field.node.construction_project.field_geo_map
     - field.field.node.construction_project.field_hide_map
     - field.field.node.construction_project.field_load_map_from_portlandmaps
@@ -28,6 +31,8 @@ dependencies:
     - field.field.node.construction_project.field_project_status
     - field.field.node.construction_project.field_related_content
     - field.field.node.construction_project.field_reviewer
+    - field.field.node.construction_project.field_solicitation_date
+    - field.field.node.construction_project.field_solicitation_qualifier
     - field.field.node.construction_project.field_start_date
     - field.field.node.construction_project.field_start_time
     - field.field.node.construction_project.field_summary
@@ -38,6 +43,7 @@ dependencies:
     - conditional_fields
     - content_moderation
     - datetime
+    - datetime_range
     - entity_browser
     - entity_browser_table
     - field_group
@@ -52,7 +58,7 @@ third_party_settings:
       children:
         - field_redirects
       parent_name: ''
-      weight: 19
+      weight: 20
       format_type: details
       region: content
       format_settings:
@@ -68,12 +74,12 @@ third_party_settings:
       children:
         - field_start_date
         - field_end_date
-        - field_start_time
-        - field_end_time
         - field_display_date_toggle
         - field_display_date
+        - field_start_time
+        - field_end_time
       parent_name: ''
-      weight: 3
+      weight: 4
       format_type: details
       region: content
       format_settings:
@@ -82,7 +88,7 @@ third_party_settings:
         id: ''
         classes: ''
         required_fields: false
-      label: 'Project Dates'
+      label: Dates
     group_administrative_fields:
       children:
         - created
@@ -90,7 +96,7 @@ third_party_settings:
         - path
         - url_redirects
       parent_name: ''
-      weight: 23
+      weight: 24
       format_type: details_sidebar
       region: content
       format_settings:
@@ -105,7 +111,7 @@ third_party_settings:
       children:
         - field_contact
       parent_name: ''
-      weight: 15
+      weight: 16
       format_type: details
       region: content
       format_settings:
@@ -120,7 +126,7 @@ third_party_settings:
       children:
         - field_related_content
       parent_name: ''
-      weight: 18
+      weight: 19
       format_type: details
       region: content
       format_settings:
@@ -135,7 +141,7 @@ third_party_settings:
       children:
         - field_topics
       parent_name: ''
-      weight: 16
+      weight: 17
       format_type: details
       region: content
       format_settings:
@@ -150,7 +156,7 @@ third_party_settings:
       children:
         - field_neighborhood
       parent_name: ''
-      weight: 17
+      weight: 18
       format_type: details
       region: content
       format_settings:
@@ -167,7 +173,7 @@ third_party_settings:
         - field_portlandmaps_layer
         - field_portlandmaps_id
       parent_name: ''
-      weight: 14
+      weight: 15
       format_type: details
       region: content
       format_settings:
@@ -177,6 +183,24 @@ third_party_settings:
         open: false
         required_fields: false
       label: 'Portland Maps Integration'
+    group_contract_forecasting:
+      children:
+        - field_contract_scope
+        - field_solicitation_date
+        - field_construction_estimate
+        - field_federal_funds
+        - field_solicitation_qualifier
+      parent_name: ''
+      weight: 3
+      format_type: details
+      region: content
+      format_settings:
+        id: ''
+        classes: ''
+        description: ''
+        open: false
+        required_fields: true
+      label: 'Contract Forecasting'
 id: node.construction_project.default
 targetEntityType: node
 bundle: construction_project
@@ -189,12 +213,18 @@ content:
     settings: {  }
     third_party_settings: {  }
   field_body_content:
-    weight: 5
+    weight: 6
     settings:
       rows: 5
       placeholder: ''
     third_party_settings: {  }
     type: text_textarea
+    region: content
+  field_construction_estimate:
+    weight: 37
+    settings: {  }
+    third_party_settings: {  }
+    type: options_select
     region: content
   field_construction_type:
     type: options_select
@@ -203,7 +233,7 @@ content:
     settings: {  }
     third_party_settings: {  }
   field_contact:
-    weight: 7
+    weight: 18
     settings:
       match_operator: CONTAINS
       match_limit: 10
@@ -212,8 +242,18 @@ content:
     third_party_settings: {  }
     type: entity_reference_autocomplete
     region: content
+  field_contract_scope:
+    weight: 34
+    settings:
+      width: 100%
+      match_operator: CONTAINS
+      match_limit: 10
+      autocomplete: false
+    third_party_settings: {  }
+    type: select2_entity_reference
+    region: content
   field_display_date:
-    weight: 9
+    weight: 16
     settings:
       placeholder: ''
       size: 60
@@ -243,14 +283,14 @@ content:
     type: string_textfield
     region: content
   field_display_date_toggle:
-    weight: 8
+    weight: 15
     settings:
       display_label: true
     third_party_settings: {  }
     type: boolean_checkbox
     region: content
   field_display_groups:
-    weight: 20
+    weight: 21
     settings:
       match_operator: CONTAINS
       match_limit: 10
@@ -260,39 +300,38 @@ content:
     type: entity_reference_autocomplete
     region: content
   field_end_date:
-    weight: 5
+    weight: 14
     settings: {  }
     third_party_settings: {  }
     type: datetime_default
     region: content
   field_end_time:
-    weight: 7
+    type: time_widget
+    weight: 18
+    region: content
     settings:
       enabled: false
       step: 5
     third_party_settings:
       conditional_fields:
-        f08edf6d-589f-45a8-8ae2-d6afe349ce28:
+        7473bf30-9ef6-4fc5-9952-3cf3889dffa4:
           dependee: field_construction_type
           settings:
             state: visible
             condition: value
-            grouping: AND
+            grouping: OR
             values_set: 3
             value: ''
-            values: "578\r\n579\r\n581"
+            values: "578\r\n580\r\n581\r\n579"
             value_form: {  }
             effect: show
             effect_options: {  }
             selector: ''
-            form_mode: default
           entity_type: node
           bundle: construction_project
-    type: time_widget
-    region: content
   field_featured_media:
     type: entity_browser_entity_reference
-    weight: 9
+    weight: 10
     settings:
       entity_browser: image_browser_embed
       field_widget_display: rendered_entity
@@ -305,9 +344,16 @@ content:
       open: false
     region: content
     third_party_settings: {  }
+  field_federal_funds:
+    weight: 38
+    settings:
+      display_label: true
+    third_party_settings: {  }
+    type: boolean_checkbox
+    region: content
   field_geo_map:
     type: leaflet_widget_default
-    weight: 13
+    weight: 14
     region: content
     settings:
       map:
@@ -382,7 +428,7 @@ content:
           entity_type: node
           bundle: construction_project
   field_hide_map:
-    weight: 12
+    weight: 13
     settings:
       display_label: true
     third_party_settings: {  }
@@ -396,7 +442,7 @@ content:
     type: boolean_checkbox
     region: content
   field_location:
-    weight: 10
+    weight: 11
     settings:
       entity_browser: locations_browser
       field_widget_display: rendered_entity
@@ -411,7 +457,7 @@ content:
     type: entity_reference_browser_table_widget
     region: content
   field_location_description:
-    weight: 6
+    weight: 7
     settings:
       size: 60
       placeholder: ''
@@ -420,7 +466,7 @@ content:
     region: content
   field_map:
     type: entity_browser_entity_reference
-    weight: 11
+    weight: 12
     settings:
       entity_browser: map_browser_embed
       field_widget_display: label
@@ -443,21 +489,21 @@ content:
     type: select2_entity_reference
     region: content
   field_num_businesses:
-    weight: 7
-    settings:
-      placeholder: ''
-    third_party_settings: {  }
-    type: number
-    region: content
-  field_num_residences:
     weight: 8
     settings:
       placeholder: ''
     third_party_settings: {  }
     type: number
     region: content
+  field_num_residences:
+    weight: 9
+    settings:
+      placeholder: ''
+    third_party_settings: {  }
+    type: number
+    region: content
   field_portlandmaps_id:
-    weight: 16
+    weight: 17
     settings:
       size: 60
       placeholder: ''
@@ -514,14 +560,14 @@ content:
     region: content
   field_redirects:
     type: string_textfield
-    weight: 14
+    weight: 21
     region: content
     settings:
       placeholder: ''
       size: 60
     third_party_settings: {  }
   field_related_content:
-    weight: 16
+    weight: 18
     settings:
       match_operator: CONTAINS
       match_limit: 10
@@ -531,7 +577,7 @@ content:
     type: entity_reference_autocomplete
     region: content
   field_reviewer:
-    weight: 21
+    weight: 22
     settings:
       match_operator: CONTAINS
       match_limit: 10
@@ -540,39 +586,50 @@ content:
     third_party_settings: {  }
     type: entity_reference_autocomplete
     region: content
+  field_solicitation_date:
+    weight: 36
+    settings: {  }
+    third_party_settings: {  }
+    type: daterange_default
+    region: content
+  field_solicitation_qualifier:
+    weight: 39
+    settings: {  }
+    third_party_settings: {  }
+    type: options_select
+    region: content
   field_start_date:
-    weight: 4
+    weight: 13
     settings: {  }
     third_party_settings: {  }
     type: datetime_default
     region: content
   field_start_time:
-    weight: 6
+    type: time_widget
+    weight: 17
+    region: content
     settings:
       enabled: false
       step: 5
     third_party_settings:
       conditional_fields:
-        fcc4d474-0de9-41be-a595-155ac78d66ad:
+        22014fec-3989-4dfd-b61e-7ae599912617:
           dependee: field_construction_type
           settings:
             state: visible
             condition: value
-            grouping: AND
+            grouping: OR
             values_set: 3
             value: ''
-            values: "578\r\n579\r\n581"
+            values: "578\r\n580\r\n581\r\n579"
             value_form: {  }
             effect: show
             effect_options: {  }
             selector: ''
-            form_mode: default
           entity_type: node
           bundle: construction_project
-    type: time_widget
-    region: content
   field_summary:
-    weight: 4
+    weight: 5
     settings:
       rows: 2
       placeholder: ''
@@ -585,20 +642,20 @@ content:
     type: string_textarea
     region: content
   field_topics:
-    weight: 6
+    weight: 19
     settings: {  }
     third_party_settings: {  }
     type: options_buttons
     region: content
   moderation_state:
     type: moderation_state_default
-    weight: 22
+    weight: 23
     region: content
     settings: {  }
     third_party_settings: {  }
   path:
     type: path
-    weight: 13
+    weight: 14
     region: content
     settings: {  }
     third_party_settings: {  }
@@ -612,7 +669,7 @@ content:
     third_party_settings: {  }
   uid:
     type: entity_reference_autocomplete
-    weight: 12
+    weight: 13
     settings:
       match_operator: CONTAINS
       match_limit: 10
@@ -621,7 +678,7 @@ content:
     region: content
     third_party_settings: {  }
   url_redirects:
-    weight: 14
+    weight: 15
     region: content
     settings: {  }
     third_party_settings: {  }
