@@ -49,7 +49,7 @@ class DeleteOrphanedFiles extends ViewsBulkOperationsActionBase
       if($row->field_document_target_id != $latest_file_id) {
         $file_storage = \Drupal::entityTypeManager()->getStorage('file');
         $file = $file_storage->load($row->field_document_target_id);
-        $file_storage->delete([$file]);
+        if($file) $file_storage->delete([$file]);
       }
       $media_storage->deleteRevision($row->revision_id);
     }
