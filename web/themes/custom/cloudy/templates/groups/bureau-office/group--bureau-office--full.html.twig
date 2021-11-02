@@ -1,31 +1,11 @@
-{% set group_label = group.type.entity.label|title %}
-
 {% set overline %}
+  {% set group_label = group.type.entity.label|title %}
   {% if group_label %}
     {% include '@components/badge/badge.twig' with {
       text: group_label,
       mb: 4
     } only %}
   {% endif %}
-{% endset %}
-
-{% set left %}
-  <div class="mb-4">{{ content.field_logo }}</div>
-  <h1>{{ drupal_title() }}</h1>
-  {{ overline }}
-  <div class="mb-4">{{ content.field_summary }}</div>
-  <div class="d-flex align-items-center mb-4">
-    {# TODO: Add check for social fields #}
-    <i class="fab fa-facebook fa-2x mr-4"></i>
-    <i class="fab fa-twitter fa-2x mr-4"></i>
-    <i class="fab fa-instagram fa-2x mr-4"></i>
-    <i class="fab fa-youtube fa-2x mr-4"></i>
-    <i class="fab fa-linkedin fa-2x mr-4"></i>
-    {% include '@elements/icon/icon.twig' with {
-      name: 'nextdoor',
-      size: 'xl'
-    } only %}
-  </div>
 {% endset %}
 
 {% set contact %}
@@ -37,6 +17,21 @@
     {{ content.field_facebook }}
     {{ content.field_twitter }}
     {{ content.field_instagram }}
+  {% endif %}
+{% endset %}
+
+{% set left %}
+  {% if content.field_logo.0|render|trim is not empty %}
+    <div class="mb-8">{{ content.field_logo }}</div>
+  {% endif %}
+  {% if label|trim is not empty %}
+    <h1 class="page-title">{{ label }}</h1>
+  {% endif %}
+  {% if overline|trim is not empty %}
+    <div class="mb-8">{{ overline }}</div>
+  {% endif %}
+  {% if content.field_summary.0|render|trim is not empty %}
+    <div class="mb-8">{{ content.field_summary }}</div>
   {% endif %}
 {% endset %}
 
@@ -53,28 +48,23 @@
   {{ content.field_featured_groups }}
 {% endset %}
 
-{# TODO: Add title to first col under logo #}
-{# TODO: Featured image vertically centered #}
-{# TODO: Scope featured image to b/o home #}
-{# TODO: Check page margin bottom I think used to be 5 #}
-{# TODO: Current hero images may need recropped due to new image style #}
 {% spaceless %}
-  <div class="row">
-    <div class="col-sm-12 col-md-6">
-      {% if left|trim|length %}
-        {{ left }}
-        {# Add social icons #}
-      {% endif %}
-    </div>
-    <div class="col-sm-12 col-md-6 my-auto">
+  {% if left|trim|length or right|trim|length %}
+    <div class="row">
+      <div class="col">
+        {% if left|trim|length %}
+          {{ left }}
+        {% endif %}
+      </div>
       {% if right|trim|length %}
-        {{ right }}
+        <div class="col-sm-12 col-md-6 my-auto">
+          {{ right }}
+        </div>
       {% endif %}
     </div>
-  </div>
-  <div class="row">
-    <div class="col-12">{{ body_header }}</div>
-    <div class="col-12">{{ body_body }}</div>
-    <div class="col-12">{{ body_footer }}</div>
-  </div>
+    <div class="row">
+      <div class="col-12">{{ body_header }}</div>
+      <div class="col-12">{{ body_body }}</div>
+    </div>
+  {% endif %}
 {% endspaceless %}
