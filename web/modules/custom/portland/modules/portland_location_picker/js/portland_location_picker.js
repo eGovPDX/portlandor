@@ -285,11 +285,6 @@
 
       }
 
-
-
-
-
-
       function processLocationData(candidates) {
 
         if (candidates.length > 1) {
