@@ -1,4 +1,3 @@
-{{ drupal_breakpoint() }}
 {% set overline %}
   {% set group_label = group.type.entity.label|title %}
   {% if group_label %}
@@ -10,30 +9,18 @@
 {% endset %}
 
 {% set contact %}
-  {% if content.field_contact[0] %}
-    {{ content.field_contact }}
-  {% else %}
-      {% include '@components/heading/heading.twig' with {
-        level: 3,
-        style: 5,
-        text: "Follow on Social Media"|t,
-        classes: ['order-1', 'mb-4']
-      } only %}
-    {{ content.field_email }}
-    {{ content.field_phone }}
-    {{ content.field_facebook }}
-    {{ content.field_twitter }}
-    {{ content.field_instagram }}
-    {{ content.field_linkedin_link }}
-    {{ content.field_nextdoor_link }}
-    {{ content.field_youtube_link }}
-  {% endif %}
+  {{ content.field_contact }}
 {% endset %}
+
 {% set location %}
   {{ content.field_location }}
 {% endset %}
 
-{% set left %}
+{% set group_menu %}
+  {{ drupal_view('group_site_menu', 'entity_view_1')|render }}
+{% endset %}
+
+{% set header_left %}
   {% if content.field_logo.0|render|trim is not empty %}
     <div class="mb-4">{{ content.field_logo }}</div>
   {% endif %}
@@ -50,52 +37,70 @@
   {% endif %}
 {% endset %}
 
-{% set right %}
+{% set header_right %}
   {{ content.field_featured_media }}
 {% endset %}
 
-{% set body_header %}
-  {{ drupal_view('group_site_menu', 'entity_view_1')|render }}
+{% set body_contact %}
+  {% if contact|trim is not empty and location|render|striptags|trim is not empty %}
+    <div class="col-12 col-md-8 col-lg-6">
+      {{ contact }}
+    </div>
+    <div class="col-12 col-md-4 col-lg-6">
+      {{ location }}
+    </div>
+  {% elseif contact|trim is not empty and location|trim is empty %}
+    <div class="col-12">
+      {{ contact }}
+    </div>
+  {% elseif contact.0|render|striptags|trim is empty and location|trim is not empty %}
+    <div class="col-12">
+      {{ location }}
+    </div>
+  {% endif %}
 {% endset %}
 
-{% set body_body %}
+{% set body_featured_content %}
   {{ content.field_featured_content|render }}
-  <h2 class="mb-8">{{ "Contact Us"|t }}</h2>
-<div class="row mb-4">
-  <div class="col-6">
-    {{ contact }}
-  </div>
-  <div class="col-6">
-    {{ location }}
-  </div>
-</div>
+{% endset %}
 
+{% set body_featured_groups %}
   {{ content.field_featured_groups|render }}
 {% endset %}
 
 {% spaceless %}
-  {% if left|trim|length or right|trim|length %}
+  {% if header_left|trim|length or header_right|trim|length %}
     <div class="row mb-8">
-      <div class="col">
-        {% if left|trim|length %}
-          {{ left }}
-        {% endif %}
-      </div>
-      {% if right|trim|length %}
+      {% if header_left|trim|length %}
+        <div class="col">
+          {{ header_left }}
+        </div>
+      {% endif %}
+      {% if header_right|trim|length %}
         <div class="col-sm-12 col-md-6 my-auto">
-          {{ right }}
+          {{ header_right }}
         </div>
       {% endif %}
     </div>
-    {% if body_header|striptags|trim is not empty %}
+    {% if group_menu|striptags|trim is not empty %}
       <div class="row">
-        <div class="col-12">{{ body_header }}</div>
+        <div class="col-12">{{ group_menu }}</div>
       </div>
     {% endif %}
-
-    {% if body_body|striptags|trim is not empty %}
+    {% if body_featured_content|striptags|trim is not empty %}
       <div class="row">
-        <div class="col-12">{{ body_body }}</div>
+        <div class="col-12">{{ body_featured_content }}</div>
+      </div>
+    {% endif %}
+    {% if body_contact|striptags|trim is not empty %}
+      <h2 class="mb-4">{{ "Contact Us"|t }}</h2>
+      <div class="row mb-8">
+        {{ body_contact }}
+      </div>
+    {% endif %}
+    {% if body_featured_groups|striptags|trim is not empty %}
+      <div class="row">
+        <div class="col-12">{{ body_featured_groups }}</div>
       </div>
     {% endif %}
   {% endif %}
