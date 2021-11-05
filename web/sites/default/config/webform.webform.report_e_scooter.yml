@@ -5,6 +5,7 @@ dependencies:
   module:
     - antibot
     - honeypot
+    - zendesk_webform
 third_party_settings:
   antibot:
     antibot: true
@@ -67,6 +68,7 @@ elements: |-
         visible:
           ':input[name="report_scooter_issue[radios]"]':
             value: 'improperly parked'
+      '#default_value': 'No'
     report_scooter_private_property:
       '#type': radios
       '#title': 'Is the e-scooter parked on private property?'
@@ -76,6 +78,7 @@ elements: |-
         visible:
           ':input[name="report_scooter_blocking"]':
             value: 'No'
+      '#default_value': 'No'
     report_scooter_id:
       '#type': textfield
       '#title': 'E-scooter ID'
@@ -120,9 +123,9 @@ elements: |-
       '#type': textfield
       '#title': 'Your Name'
     contact_email:
-      '#type': textfield
+      '#type': email
       '#title': 'Your Email'
-      '#description': 'We will use your email to confirm your submission.'
+      '#description': 'We will use your email to confirm your submission and respond if necessary.'
       '#input_mask': '''alias'': ''email'''
       '#required': true
   section_agent_use_only:
@@ -413,7 +416,7 @@ handlers:
     label: 'Submit to Zendesk'
     notes: ''
     handler_id: submit_to_zendesk
-    status: true
+    status: false
     conditions: {  }
     weight: 5
     settings:
@@ -461,4 +464,25 @@ handlers:
       sender_name: ''
       theme_name: ''
       parameters: {  }
+  submit_to_zendesk_api:
+    id: zendesk
+    label: 'Submit to Zendesk API'
+    notes: 'Uses the zendesk-webform module to submit the report and create a ticket in Zendesk using the API.'
+    handler_id: submit_to_zendesk_api
+    status: true
+    conditions: {  }
+    weight: 6
+    settings:
+      requester_name: contact_name
+      requester_email: contact_email
+      subject: 'E-scooter Report: [webform_submission:values:report_scooter_issue]'
+      comment: "What is the issue with the e-scooter?\r\n[webform_submission:values:report_scooter_issue]\r\n\r\nE-scooter company:\r\n[webform_submission:values:report_scooter_company]\r\n\r\nIs the e-scooter blocking a sidewalk, trail, bike lane, driveway, street, transit stop or other type of transportation lane?\r\n[webform_submission:values:report_scooter_blocking]\r\n\r\nIs the e-scooter parked on private property?\r\n[webform_submission:values:report_scooter_private_property]\r\n\r\nE-scooter ID: \r\n[webform_submission:values:report_scooter_id]\r\n\r\nLocation:\r\n[webform_submission:values:report_location]\r\n"
+      tags: ''
+      priority: normal
+      status: new
+      assignee_id: '1520526687201'
+      type: problem
+      collaborators: ''
+      custom_fields: ''
+      ticket_id_field: agent_ticket_number
 variants: {  }
