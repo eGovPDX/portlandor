@@ -1,10 +1,11 @@
-uuid: a7826b6f-af77-4421-a819-c6a3ebd58c61
+uuid: 98a2017b-c544-4ce6-955f-c678dbd0e0fd
 langcode: en
 status: open
 dependencies:
   module:
     - antibot
     - honeypot
+    - zendesk_webform
 third_party_settings:
   antibot:
     antibot: true
@@ -16,31 +17,52 @@ weight: 0
 uid: 60
 template: false
 archive: false
-id: resolution_report_e_scooter
+id: report_e_scooter_resolution
 title: 'Report an E-Scooter - Resolution'
-description: 'Used by e-scooter company personnel to report the resolution of a scooter issue.'
+description: ''
 category: Resolution
 elements: |-
-  markup:
-    '#type': webform_markup
-    '#markup': |-
-      <p>
-        &nbsp;
-      </p>
-  scooter_issue:
+  section_report:
+    '#type': webform_section
+    '#title': Report
+    '#title_display': invisible
+    report_scooter_issue:
+      '#type': webform_radios_other
+      '#title': 'What is the issue with the e-scooter?'
+      '#prepopulate': true
+      '#options':
+        'improperly parked': 'E-scooter is improperly parked'
+        damaged: 'E-scooter is damaged or not working correctly'
+        'riding on sidewalk': 'User is riding on a sidewalk'
+      '#other__option_label': 'Something else...'
+      '#other__placeholder': 'Please describe...'
+      '#required': true
+    report_scooter_company:
+      '#type': radios
+      '#title': 'Electric scooter (e-scooter) company'
+      '#description': 'Which e-scooter company does the scooter belong to? Or, what color is the e-scooter?'
+      '#description_display': before
+      '#prepopulate': true
+      '#options':
+        Bird: 'Bird (black)'
+        Bolt: 'Bold (black and yellow)'
+        Lime: 'Lime (green)'
+        Spin: 'Spin (orange)'
+        'Not sure': 'Not sure'
+    report_scooter_id:
+      '#type': textfield
+      '#title': 'E-scooter ID'
+      '#minlength': 5
+      '#maxlength': 12
+      '#prepopulate': true
+  report_ticket_id:
     '#type': textfield
-    '#title': 'What is the issue with the e-scooter?'
-    '#disabled': true
-    '#prepopulate': true
-    '#required': true
-  ticket_id:
-    '#type': number
     '#title': 'Zendesk Ticket ID'
     '#prepopulate': true
     '#required': true
-  resolution:
+  issue_resolution:
     '#type': webform_radios_other
-    '#title': Resolution
+    '#title': 'Issue Resolution'
     '#options':
       'Scooter has been moved': 'Scooter has been moved'
       'Scooter has been taken in for repairs': 'Scooter has been taken in for repairs'
@@ -48,9 +70,9 @@ elements: |-
     '#other__option_label': 'Something else...'
     '#other__placeholder': 'Please describe...'
     '#required': true
-  representative_id:
+  company_rep_id:
     '#type': textfield
-    '#title': 'Representative ID'
+    '#title': 'Company Rep ID'
     '#required': true
   actions:
     '#type': webform_actions
@@ -253,46 +275,25 @@ access:
     users: {  }
     permissions: {  }
 handlers:
-  submit_to_zendesk:
-    id: email
-    label: 'Submit to Zendesk'
-    notes: ''
-    handler_id: submit_to_zendesk
+  submit_to_zendesk_api:
+    id: zendesk
+    label: 'Update report ticket using Zendesk API'
+    notes: 'Uses the zendesk-webform module to update an existing ticket with resolution details using the Zendesk API.'
+    handler_id: submit_to_zendesk_api
     status: true
     conditions: {  }
-    weight: 5
+    weight: 6
     settings:
-      states:
-        - completed
-      to_mail: support@portlandoregon1634078411.zendesk.com
-      to_options: {  }
-      cc_mail: ''
-      cc_options: {  }
-      bcc_mail: ''
-      bcc_options: {  }
-      from_mail: noreply@portlandoregon.gov
-      from_options: {  }
-      from_name: '[current-user:display-name]'
-      subject: 'E-scooter issue resolution report'
-      body: "<p>\r\n  Ticket ID: [webform_submission:values:ticket_id]\r\n</p>\r\n<p>\r\n  Resolution: [webform_submission:values:resolution]\r\n</p>\r\n<p>\r\n  Representative: [webform_submission:values:representative_id]\r\n</p>"
-      excluded_elements:
-        markup: markup
-        scooter_issue: scooter_issue
-        ticket_id: ticket_id
-        resolution: resolution
-        representative_id: representative_id
-      ignore_access: false
-      exclude_empty: false
-      exclude_empty_checkbox: false
-      exclude_attachments: false
-      html: true
-      attachments: true
-      twig: false
-      debug: false
-      reply_to: ''
-      return_path: ''
-      sender_mail: ''
-      sender_name: ''
-      theme_name: ''
-      parameters: {  }
+      requester_name: company_rep_id
+      requester_email: noreply@portland.gov
+      subject: 'Portland e-scooter report RESOLVED: [webform_submission:values:report_scooter_issue]'
+      comment: "<p><b>What is the issue with the e-scooter?</b> [webform_submission:values:report_scooter_issue]</p>\r\n\r\n<p><b>E-scooter company:</b> [webform_submission:values:report_scooter_company:raw]</p>\r\n\r\n<p><b>Is the e-scooter blocking?</b> [webform_submission:values:report_scooter_blocking]</p>\r\n\r\n<p><b>Is the e-scooter parked on private property?</b> [webform_submission:values:report_scooter_private_property]</p>\r\n\r\n<p><b>E-scooter ID:</b> [webform_submission:values:report_scooter_id]</p>\r\n\r\n<p><b>Location:</b><br>\r\nAddress: <a href=\"https://www.google.com/maps/place/[webform_submission:values:report_location:location_address]\">[webform_submission:values:report_location:location_address]</a><br>\r\n\r\nPlace name: [webform_submission:values:report_location:place_name]<br>\r\nLocation description: [webform_submission:values:report_location:location_details]<br>\r\nLat/lon: \r\n<a href=\"https://www.google.com/maps/place/[webform_submission:values:report_location:location_lat],[webform_submission:values:report_location:location_lon]\">[webform_submission:values:report_location:location_lat],[webform_submission:values:report_location:location_lon]</a></p>\r\n\r\n<p><b>Service level expectation (in hours):</b> [webform_submission:values:service_level_expectation_hours]</p>"
+      tags: ''
+      priority: normal
+      status: solved
+      assignee_id: '1520526687201'
+      type: problem
+      collaborators: ''
+      custom_fields: "1500012251042: '[webform_submission:values:report_scooter_company:raw]'\r\n1500011653762: '[webform_submission:values:report_location:location_address]'\r\n1900003291865: '[webform_submission:values:report_location:location_lat],[webform_submission:values:report_location:location_lon]'\r\n1500012260701: '[webform_submission:values:service_level_expectation_hours]'\r\n1900003111085: '[webform_submission:values:agent_contact_type]'\r\n1500012355781: '[webform_submission:values:report_scooter_issue]'\r\n1500012420562: '[webform_submission:values:report_scooter_id]'"
+      ticket_id_field: report_ticket_id
 variants: {  }
