@@ -404,7 +404,6 @@ class ZendeskHandler extends WebformHandlerBase
     public function postSave(WebformSubmissionInterface $webform_submission, $update = TRUE)
     {
         // run only for new submissions
-        echo($update . "*****");
         if (! $update) {
 
             // declare working variables

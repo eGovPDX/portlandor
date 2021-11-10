@@ -36,6 +36,7 @@ elements: |-
     report_scooter_issue:
       '#type': webform_radios_other
       '#title': 'What is the issue with the e-scooter?'
+      '#prepopulate': true
       '#options':
         'improperly parked': 'E-scooter is improperly parked'
         damaged: 'E-scooter is damaged or not working correctly'
@@ -48,6 +49,7 @@ elements: |-
       '#title': 'Electric scooter (e-scooter) company'
       '#description': 'Which e-scooter company does the scooter belong to? Or, what color is the e-scooter?'
       '#description_display': before
+      '#prepopulate': true
       '#options':
         Bird: 'Bird (black)'
         Bolt: 'Bold (black and yellow)'
@@ -86,6 +88,7 @@ elements: |-
       '#title': 'E-scooter ID'
       '#minlength': 5
       '#maxlength': 12
+      '#prepopulate': true
       '#states':
         visible:
           ':input[name="report_scooter_issue[radios]"]':
@@ -130,6 +133,32 @@ elements: |-
       '#description': 'We will use your email to confirm your submission and respond if necessary.'
       '#input_mask': '''alias'': ''email'''
       '#required': true
+  resolution:
+    '#type': webform_section
+    '#title': Resolution
+    '#states':
+      visible:
+        ':input[name="issue_resolved"]':
+          checked: true
+    '#attributes':
+      style: 'padding: 15px; background-color: #cccccc;'
+    markup_resolved:
+      '#type': webform_markup
+      '#markup': '<strong>Was the incorrect e-scooter company identified in this report? </strong>If so, uncheck the &quot;Issue Resolved&quot; checkbox, select the correct company above, and submit the form. It will be re-routed to the correct company.'
+    issue_resolved:
+      '#type': checkbox
+      '#title': 'Issue Resolved'
+      '#prepopulate': true
+    report_issue_resolution:
+      '#type': webform_radios_other
+      '#title': 'How was the issue resolved?'
+      '#options':
+        'Scooter has been moved': 'Scooter has been moved'
+        'Scooter has been taken in for repairs': 'Scooter has been taken in for repairs'
+        'Scooter has been fixed on location': 'Scooter has been fixed on location'
+    company_rep_id:
+      '#type': textfield
+      '#title': 'Company Rep ID'
   section_agent_use_only:
     '#type': webform_section
     '#title': 'Agent Use Only'
@@ -214,8 +243,12 @@ elements: |-
       '#store': true
       '#ajax': true
   report_ticket_id:
-    '#type': hidden
+    '#type': textfield
     '#title': 'Zendesk New Ticket ID'
+  update_token:
+    '#type': hidden
+    '#title': 'Update Token'
+    '#default_value': '[webform_submission:token-update-url]'
   actions:
     '#type': webform_actions
     '#title': 'Submit button(s)'
@@ -351,7 +384,7 @@ settings:
   results_disabled_ignore: false
   results_customize: false
   token_view: false
-  token_update: false
+  token_update: true
   token_delete: false
   serial_disabled: false
 access:
@@ -423,7 +456,10 @@ handlers:
     notes: 'Uses the zendesk-webform module to submit the report and create a ticket in Zendesk using the API.'
     handler_id: submit_to_zendesk_api
     status: true
-    conditions: {  }
+    conditions:
+      disabled:
+        ':input[name="issue_resolved"]':
+          checked: true
     weight: 6
     settings:
       requester_name: contact_name
@@ -433,6 +469,30 @@ handlers:
       tags: ''
       priority: normal
       status: new
+      assignee_id: '1520526687201'
+      type: problem
+      collaborators: ''
+      custom_fields: "1500012251042: '[webform_submission:values:report_scooter_company:raw]'\r\n1500011653762: '[webform_submission:values:report_location:location_address]'\r\n1900003291865: '[webform_submission:values:report_location:location_lat],[webform_submission:values:report_location:location_lon]'\r\n1500012260701: '[webform_submission:values:service_level_expectation_hours]'\r\n1900003111085: '[webform_submission:values:agent_contact_type]'\r\n1500012355781: '[webform_submission:values:report_scooter_issue]'\r\n1500012420562: '[webform_submission:values:report_scooter_id]'\r\n1500012365401: '[webform_submission:token-update-url]'"
+      ticket_id_field: report_ticket_id
+  update_resolved_report_ticket_using_zendesk_api:
+    id: zendesk
+    label: 'Update resolved report ticket using Zendesk API'
+    notes: 'Uses the zendesk-webform module to submit the report and create a ticket in Zendesk using the API.'
+    handler_id: update_resolved_report_ticket_using_zendesk_api
+    status: true
+    conditions:
+      enabled:
+        ':input[name="issue_resolved"]':
+          checked: true
+    weight: 1
+    settings:
+      requester_name: contact_name
+      requester_email: contact_email
+      subject: 'Portland e-scooter report: [webform_submission:values:report_scooter_issue]'
+      comment: "<p><b>What is the issue with the e-scooter?</b> [webform_submission:values:report_scooter_issue]</p>\r\n\r\n<p><b>E-scooter company:</b> [webform_submission:values:report_scooter_company:raw]</p>\r\n\r\n<p><b>Is the e-scooter blocking?</b> [webform_submission:values:report_scooter_blocking]</p>\r\n\r\n<p><b>Is the e-scooter parked on private property?</b> [webform_submission:values:report_scooter_private_property]</p>\r\n\r\n<p><b>E-scooter ID:</b> [webform_submission:values:report_scooter_id]</p>\r\n\r\n<p><b>Location:</b><br>\r\nAddress: <a href=\"https://www.google.com/maps/place/[webform_submission:values:report_location:location_address]\">[webform_submission:values:report_location:location_address]</a><br>\r\n\r\nPlace name: [webform_submission:values:report_location:place_name]<br>\r\nLocation description: [webform_submission:values:report_location:location_details]<br>\r\nLat/lon: \r\n<a href=\"https://www.google.com/maps/place/[webform_submission:values:report_location:location_lat],[webform_submission:values:report_location:location_lon]\">[webform_submission:values:report_location:location_lat],[webform_submission:values:report_location:location_lon]</a></p>\r\n\r\n<p><b>Service level expectation (in hours):</b> [webform_submission:values:service_level_expectation_hours]</p>"
+      tags: ''
+      priority: normal
+      status: solved
       assignee_id: '1520526687201'
       type: problem
       collaborators: ''
