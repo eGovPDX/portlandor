@@ -6,7 +6,7 @@
  * Time: 10:05 AM
  */
 
-namespace Drupal\zendesk_webform\Plugin\WebformHandler;
+namespace Drupal\portland_zendesk\Plugin\WebformHandler;
 use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Form\FormStateInterface;
@@ -14,12 +14,12 @@ use Drupal\Core\Logger\LoggerChannelFactoryInterface;
 use Drupal\webform\Plugin\WebformHandlerBase;
 use Drupal\webform\WebformSubmissionConditionsValidatorInterface;
 use Drupal\webform\WebformSubmissionInterface;
-use Drupal\zendesk_webform\Client\ZendeskClient;
+use Drupal\portland_zendesk\Client\ZendeskClient;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Drupal\webform\WebformTokenManagerInterface;
 use Drupal\Core\Serialization\Yaml;
 use Drupal\file\Entity\File;
-use Drupal\zendesk_webform\Utils\Utility;
+use Drupal\portland_zendesk\Utils\Utility;
 
 
 /**
@@ -101,7 +101,7 @@ class ZendeskHandler extends WebformHandlerBase
     {
 
         $webform_fields = $this->getWebform()->getElementsDecoded();
-        $zendesk_subdomain = \Drupal::config('zendesk_webform.adminsettings')->get('subdomain');
+        $zendesk_subdomain = \Drupal::config('portland_zendesk.adminsettings')->get('subdomain');
         $options = [
             'email' => [''],
             'name' => [''],

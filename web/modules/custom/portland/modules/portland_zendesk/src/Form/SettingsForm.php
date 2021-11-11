@@ -1,19 +1,13 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: Steven
- * Date: 2019-05-18
- * Time: 8:15 AM
- */
 
-namespace Drupal\zendesk_webform\Form;
+namespace Drupal\portland_zendesk\Form;
 use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormStateInterface;
 
 /**
  * Class SettingsForm
  * Contains Drupal\welcome\Form\MessagesForm.
- * @package Drupal\zendesk_webform\Form
+ * @package Drupal\portland_zendesk\Form
  * @file
  */
 class SettingsForm extends ConfigFormBase
@@ -24,7 +18,7 @@ class SettingsForm extends ConfigFormBase
     protected function getEditableConfigNames()
     {
         return [
-            'zendesk_webform.adminsettings'
+            'portland_zendesk.adminsettings'
         ];
     }
 
@@ -33,7 +27,7 @@ class SettingsForm extends ConfigFormBase
      */
     public function getFormId()
     {
-        return 'zendesk_webform_form';
+        return 'portland_zendesk_form';
     }
 
     /**
@@ -42,7 +36,7 @@ class SettingsForm extends ConfigFormBase
     public function buildForm(array $form, FormStateInterface $form_state)
     {
 
-        $config = $this->config('zendesk_webform.adminsettings');
+        $config = $this->config('portland_zendesk.adminsettings');
 
         $form['subdomain'] = [
             '#type' => 'textfield',
@@ -75,7 +69,7 @@ class SettingsForm extends ConfigFormBase
     {
         parent::submitForm($form, $form_state);
 
-        $this->config('zendesk_webform.adminsettings')
+        $this->config('portland_zendesk.adminsettings')
             ->set('subdomain',$form_state->getValue('subdomain'))
             ->set('user_email',$form_state->getValue('user_email'))
             ->set('web_token',$form_state->getValue('web_token'))

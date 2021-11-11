@@ -7,7 +7,7 @@
  */
 
 
-namespace Drupal\zendesk_webform\Utils;
+namespace Drupal\portland_zendesk\Utils;
 
 
 class Name

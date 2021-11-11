@@ -5,7 +5,7 @@ dependencies:
   module:
     - antibot
     - honeypot
-    - zendesk_webform
+    - portland_zendesk
 third_party_settings:
   antibot:
     antibot: true
@@ -33,7 +33,7 @@ elements: |-
     '#type': webform_section
     '#title': Report
     '#title_display': invisible
-    report_scooter_issue:
+    report_issue:
       '#type': webform_radios_other
       '#title': 'What is the issue with the e-scooter?'
       '#prepopulate': true
@@ -43,8 +43,7 @@ elements: |-
         'riding on sidewalk': 'User is riding on a sidewalk'
       '#other__option_label': 'Something else...'
       '#other__placeholder': 'Please describe...'
-      '#required': true
-    report_scooter_company:
+    report_company:
       '#type': radios
       '#title': 'Electric scooter (e-scooter) company'
       '#description': 'Which e-scooter company does the scooter belong to? Or, what color is the e-scooter?'
@@ -83,7 +82,7 @@ elements: |-
           ':input[name="report_scooter_blocking"]':
             value: 'No'
       '#default_value': 'No'
-    report_scooter_id:
+    report_asset_id:
       '#type': textfield
       '#title': 'E-scooter ID'
       '#minlength': 5
@@ -133,32 +132,6 @@ elements: |-
       '#description': 'We will use your email to confirm your submission and respond if necessary.'
       '#input_mask': '''alias'': ''email'''
       '#required': true
-  resolution:
-    '#type': webform_section
-    '#title': Resolution
-    '#states':
-      visible:
-        ':input[name="issue_resolved"]':
-          checked: true
-    '#attributes':
-      style: 'padding: 15px; background-color: #cccccc;'
-    markup_resolved:
-      '#type': webform_markup
-      '#markup': '<strong>Was the incorrect e-scooter company identified in this report? </strong>If so, uncheck the &quot;Issue Resolved&quot; checkbox, select the correct company above, and submit the form. It will be re-routed to the correct company.'
-    issue_resolved:
-      '#type': checkbox
-      '#title': 'Issue Resolved'
-      '#prepopulate': true
-    report_issue_resolution:
-      '#type': webform_radios_other
-      '#title': 'How was the issue resolved?'
-      '#options':
-        'Scooter has been moved': 'Scooter has been moved'
-        'Scooter has been taken in for repairs': 'Scooter has been taken in for repairs'
-        'Scooter has been fixed on location': 'Scooter has been fixed on location'
-    company_rep_id:
-      '#type': textfield
-      '#title': 'Company Rep ID'
   section_agent_use_only:
     '#type': webform_section
     '#title': 'Agent Use Only'
@@ -221,7 +194,7 @@ elements: |-
       '#type': hidden
       '#title': 'Reason for Contact'
       '#default_value': Incident
-    service_level_expectation_hours:
+    company_sla:
       '#type': webform_computed_twig
       '#title': 'Service Level Expectation (in hours)'
       '#mode': text
@@ -245,10 +218,6 @@ elements: |-
   report_ticket_id:
     '#type': textfield
     '#title': 'Zendesk New Ticket ID'
-  update_token:
-    '#type': hidden
-    '#title': 'Update Token'
-    '#default_value': '[webform_submission:token-update-url]'
   actions:
     '#type': webform_actions
     '#title': 'Submit button(s)'
@@ -450,52 +419,62 @@ access:
     users: {  }
     permissions: {  }
 handlers:
-  submit_to_zendesk_api:
+  zendesk:
     id: zendesk
-    label: 'Create report ticket using Zendesk API'
-    notes: 'Uses the zendesk-webform module to submit the report and create a ticket in Zendesk using the API.'
-    handler_id: submit_to_zendesk_api
+    label: Zendesk
+    notes: ''
+    handler_id: zendesk
     status: true
-    conditions:
-      disabled:
-        ':input[name="issue_resolved"]':
-          checked: true
-    weight: 6
+    conditions: {  }
+    weight: -50
     settings:
       requester_name: contact_name
       requester_email: contact_email
-      subject: 'Portland e-scooter report: [webform_submission:values:report_scooter_issue]'
-      comment: "<p><b>What is the issue with the e-scooter?</b> [webform_submission:values:report_scooter_issue]</p>\r\n\r\n<p><b>E-scooter company:</b> [webform_submission:values:report_scooter_company:raw]</p>\r\n\r\n<p><b>Is the e-scooter blocking?</b> [webform_submission:values:report_scooter_blocking]</p>\r\n\r\n<p><b>Is the e-scooter parked on private property?</b> [webform_submission:values:report_scooter_private_property]</p>\r\n\r\n<p><b>E-scooter ID:</b> [webform_submission:values:report_scooter_id]</p>\r\n\r\n<p><b>Location:</b><br>\r\nAddress: <a href=\"https://www.google.com/maps/place/[webform_submission:values:report_location:location_address]\">[webform_submission:values:report_location:location_address]</a><br>\r\n\r\nPlace name: [webform_submission:values:report_location:place_name]<br>\r\nLocation description: [webform_submission:values:report_location:location_details]<br>\r\nLat/lon: \r\n<a href=\"https://www.google.com/maps/place/[webform_submission:values:report_location:location_lat],[webform_submission:values:report_location:location_lon]\">[webform_submission:values:report_location:location_lat],[webform_submission:values:report_location:location_lon]</a></p>\r\n\r\n<p><b>Service level expectation (in hours):</b> [webform_submission:values:service_level_expectation_hours]</p>"
-      tags: ''
+      subject: 'Portland E-scooter Report: [webform_submission:values:report_issue]'
+      comment: "<p><b>What is the issue with the e-scooter?</b> [webform_submission:values:report_issue]</p>\r\n<p><b>E-scooter company:</b> [webform_submission:values:report_company]</p>\r\n<p><b>Is the e-scooter blocking?</b> [webform_submission:values:report_scooter_blocking]</p>\r\n<p><b>Is the e-scooter on private property?</b> [webform_submission:values:report_scooter_private_property]</p>\r\n<p><b>E-scooter ID</b> [webform_submission:values:report_asset_id]</p>\r\n\r\n<p><b>Location:</b><br>\r\nAddress: <a href=\"https://www.google.com/maps/place/[webform_submission:values:report_location:location_address]\">[webform_submission:values:report_location:location_address]</a><br>\r\nLat/Lon: <a href=\"https://www.google.com/maps/place/[webform_submission:values:report_location:location_lat],[webform_submission:values:report_location:location_lon]\">[webform_submission:values:report_location:location_lat],[webform_submission:values:report_location:location_lon]</a><br>\r\nPlace name: [webform_submission:values:report_location:place_name]<br>\r\nAdditional details:  [webform_submission:values:report_loction:location_details]</p>\r\n"
+      tags: 'e-scooter webform'
       priority: normal
       status: new
-      assignee_id: '1520526687201'
-      type: problem
+      assignee_id: '1907953043925'
+      type: question
       collaborators: ''
-      custom_fields: "1500012251042: '[webform_submission:values:report_scooter_company:raw]'\r\n1500011653762: '[webform_submission:values:report_location:location_address]'\r\n1900003291865: '[webform_submission:values:report_location:location_lat],[webform_submission:values:report_location:location_lon]'\r\n1500012260701: '[webform_submission:values:service_level_expectation_hours]'\r\n1900003111085: '[webform_submission:values:agent_contact_type]'\r\n1500012355781: '[webform_submission:values:report_scooter_issue]'\r\n1500012420562: '[webform_submission:values:report_scooter_id]'\r\n1500012365401: '[webform_submission:token-update-url]'"
+      custom_fields: "1500012251042: '[webform_submission:values:report_company]'\r\n1500012355781: '[webform_submission:values:report_issue]'\r\n1500011653762: '[webform_submission:values:report_location:location_address]'\r\n1900003291865: '[webform_submission:values:report_location:location_lat],[webform_submission:values:location_lon]'\r\n1500012431801: '[webform_submission:values:company_sla]'\r\n1500012420562: '[webform_submission:values:report_asset_id]'\r\n1500012365401: '[webform_submission:values:report_update_link]'"
       ticket_id_field: report_ticket_id
-  update_resolved_report_ticket_using_zendesk_api:
-    id: zendesk
-    label: 'Update resolved report ticket using Zendesk API'
-    notes: 'Uses the zendesk-webform module to submit the report and create a ticket in Zendesk using the API.'
-    handler_id: update_resolved_report_ticket_using_zendesk_api
+  email:
+    id: email
+    label: Email
+    notes: ''
+    handler_id: email
     status: true
-    conditions:
-      enabled:
-        ':input[name="issue_resolved"]':
-          checked: true
-    weight: 1
+    conditions: {  }
+    weight: -49
     settings:
-      requester_name: contact_name
-      requester_email: contact_email
-      subject: 'Portland e-scooter report: [webform_submission:values:report_scooter_issue]'
-      comment: "<p><b>What is the issue with the e-scooter?</b> [webform_submission:values:report_scooter_issue]</p>\r\n\r\n<p><b>E-scooter company:</b> [webform_submission:values:report_scooter_company:raw]</p>\r\n\r\n<p><b>Is the e-scooter blocking?</b> [webform_submission:values:report_scooter_blocking]</p>\r\n\r\n<p><b>Is the e-scooter parked on private property?</b> [webform_submission:values:report_scooter_private_property]</p>\r\n\r\n<p><b>E-scooter ID:</b> [webform_submission:values:report_scooter_id]</p>\r\n\r\n<p><b>Location:</b><br>\r\nAddress: <a href=\"https://www.google.com/maps/place/[webform_submission:values:report_location:location_address]\">[webform_submission:values:report_location:location_address]</a><br>\r\n\r\nPlace name: [webform_submission:values:report_location:place_name]<br>\r\nLocation description: [webform_submission:values:report_location:location_details]<br>\r\nLat/lon: \r\n<a href=\"https://www.google.com/maps/place/[webform_submission:values:report_location:location_lat],[webform_submission:values:report_location:location_lon]\">[webform_submission:values:report_location:location_lat],[webform_submission:values:report_location:location_lon]</a></p>\r\n\r\n<p><b>Service level expectation (in hours):</b> [webform_submission:values:service_level_expectation_hours]</p>"
-      tags: ''
-      priority: normal
-      status: solved
-      assignee_id: '1520526687201'
-      type: problem
-      collaborators: ''
-      custom_fields: "1500012251042: '[webform_submission:values:report_scooter_company:raw]'\r\n1500011653762: '[webform_submission:values:report_location:location_address]'\r\n1900003291865: '[webform_submission:values:report_location:location_lat],[webform_submission:values:report_location:location_lon]'\r\n1500012260701: '[webform_submission:values:service_level_expectation_hours]'\r\n1900003111085: '[webform_submission:values:agent_contact_type]'\r\n1500012355781: '[webform_submission:values:report_scooter_issue]'\r\n1500012420562: '[webform_submission:values:report_scooter_id]'"
-      ticket_id_field: report_ticket_id
+      states:
+        - completed
+      to_mail: gregoryscottclapp@gmail.com
+      to_options: {  }
+      cc_mail: ''
+      cc_options: {  }
+      bcc_mail: ''
+      bcc_options: {  }
+      from_mail: '[webform_submission:values:contact_email:raw]'
+      from_options: {  }
+      from_name: '[webform_submission:values:contact_name:raw]'
+      subject: 'Testing whether handlers are synchronous'
+      body: "<h3>\r\n  Is ticket number set below?\r\n</h3>\r\n<p>\r\n  If so, then requests are synchronous, and we can use Drupal to send the company notification.\r\n</p>\r\n<p>Submitted on [webform_submission:created]</p>\r\n<p>Submitted by: [webform_submission:user]</p>\r\n<p>Submitted values are:</p>\r\n[webform_submission:values]"
+      excluded_elements: {  }
+      ignore_access: false
+      exclude_empty: true
+      exclude_empty_checkbox: false
+      exclude_attachments: false
+      html: true
+      attachments: true
+      twig: false
+      debug: false
+      reply_to: ''
+      return_path: ''
+      sender_mail: ''
+      sender_name: ''
+      theme_name: ''
+      parameters: {  }
 variants: {  }

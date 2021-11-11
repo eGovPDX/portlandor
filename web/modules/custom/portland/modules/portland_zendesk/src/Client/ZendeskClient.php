@@ -1,17 +1,11 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: Steven
- * Date: 2019-05-18
- * Time: 9:43 AM
- */
 
-namespace Drupal\zendesk_webform\Client;
+namespace Drupal\portland_zendesk\Client;
 use Zendesk\API\HttpClient;
 
 /**
  * Class ZendeskClient
- * @package Drupal\zendesk_webform\Client
+ * @package Drupal\portland_zendesk\Client
  */
 class ZendeskClient extends HttpClient
 {
@@ -26,7 +20,7 @@ class ZendeskClient extends HttpClient
      */
     public function __construct($scheme = "https", $hostname = "zendesk.com", $port = 443, \GuzzleHttp\Client $guzzle = null)
     {
-        $config = \Drupal::config('zendesk_webform.adminsettings');
+        $config = \Drupal::config('portland_zendesk.adminsettings');
 
         $subdomain = $config->get('subdomain');
         $username = $config->get('user_email');

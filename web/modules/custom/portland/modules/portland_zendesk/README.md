@@ -1,3 +1,11 @@
+# portland/portland_zendesk
+This module is an extension of the strakez/zendesk-webform module. That module is a non-standard,
+unofficial Drupal module, so we chose to knock it off and customize in place, rather than fork or
+patch the original.
+
+Original README follows...
+
+
 # strakez/zendesk-webform
 Add a webform handler to create Zendesk tickets from Drupal webform submissions.
 

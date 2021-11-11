@@ -6,11 +6,11 @@
  * Time: 5:28 PM
  */
 
-namespace Drupal\zendesk_webform\Utils;
+namespace Drupal\portland_zendesk\Utils;
 
 /**
  * Class Utility
- * @package Drupal\zendesk_webform\Utils
+ * @package Drupal\portland_zendesk\Utils
  */
 class Utility
 {
