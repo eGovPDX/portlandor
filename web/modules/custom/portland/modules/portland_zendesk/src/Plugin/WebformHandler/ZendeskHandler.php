@@ -559,8 +559,7 @@ class ZendeskHandler extends WebformHandlerBase
         }
 
         return [
-            '#theme' => 'markup',
-            '#markup' => implode('<br>',$markup),
+          '#markup' => implode('<br>',$markup),
         ];
     }
 

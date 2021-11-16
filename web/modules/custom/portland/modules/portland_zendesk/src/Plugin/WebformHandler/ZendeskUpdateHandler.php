@@ -33,7 +33,7 @@ use Drupal\portland_zendesk\Utils\Utility;
  * - package synchronizing Drupal forms and Zendesk forms: https://git.drupalcode.org/project/zendesk_tickets
  *
  */
-class ZendeskHandler extends WebformHandlerBase
+class ZendeskUpdateHandler extends WebformHandlerBase
 {
 
     /**
@@ -553,7 +553,6 @@ class ZendeskHandler extends WebformHandlerBase
         }
 
         return [
-            '#theme' => 'markup',
             '#markup' => implode('<br>',$markup),
         ];
     }
