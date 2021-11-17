@@ -17,7 +17,7 @@ use Drupal\portland_zendesk\Utils\Utility;
 
 
 /**
- * Form submission to Zendesk handler.
+ * Form submission to Zendesk to update a ticket.
  *
  * @WebformHandler(
  *   id = "zendesk_update_ticket",
@@ -28,10 +28,43 @@ use Drupal\portland_zendesk\Utils\Utility;
  *   results = \Drupal\webform\Plugin\WebformHandlerInterface::RESULTS_PROCESSED,
  * )
  *
- * Took inspiration from the following packages:
- * - incomplete Zendesk webform handler port from Drupal 7: https://git.drupalcode.org/sandbox/hanoii-2910895
- * - package synchronizing Drupal forms and Zendesk forms: https://git.drupalcode.org/project/zendesk_tickets
- *
+ * This handler needs to do the following:
+ * - Allow specifying which webform field holds the zendesk ticket ID
+ * - Retrieve the ticket identified in the field using $client->tickets()->find($id); 
+ * - Update ticket: https://developer.zendesk.com/api-reference/ticketing/tickets/tickets/#update-ticket
+ * - Update tag lists: https://developer.zendesk.com/api-reference/ticketing/tickets/tickets/#updating-tag-lists
+ * - How do we determine which fields we need to update?
+ *    - Need two fields: Ticket Fields and Ticket Custom Fields
+ *    - Use the Ticket Custom Fields field in the handler config
+ *    - Use Drupal placeholders to add values
+ *    - Only what's listed here gets updated
+ * - On load of the handler config form, retrieve the ticket object using the api
+ *    - Make the ticket structure viewable in the UI (like the custom Field Reference accordion?)
+ * 
+ * - General tab, remove:
+ *    - Subject - REMOVE
+ *    - Ticket Body - Change to comment
+ *    - Ticket CCs - REMOVE
+ *    - Requester Name - REMOVE
+ *    - Requester Email Address - REMOVE
+ *    - Ticket Type - REMOVE, can be included in texy field list
+ *    - Ticket Priority - REMOVE, can be included in texy field list
+ *    - Ticket Assignee - REMOVE, can be included in texy field list
+ * 
+ * Fields from ticket object we might want to populate:
+ *  type
+ *  priority
+ *  status
+ *  assignee_id
+ *  zendesk ticket id field
+ *  ticket tags
+ *  custom_fields
+ *  comment - it looks like setting the comment property on ticket update json will add it to the thread
+ *    https://developer.zendesk.com/api-reference/ticketing/tickets/tickets/?_ga=2.3553525.417292175.1637041656-1860072951.1623776472#example-body-2
+ *  tokens link
+ * 
+ * TODO: What kind of validation can we put on the resolution requests? The company agent might mess up the URL and close the wrong ticket.
+ * 
  */
 class ZendeskUpdateHandler extends WebformHandlerBase
 {
@@ -64,16 +97,12 @@ class ZendeskUpdateHandler extends WebformHandlerBase
     public function defaultConfiguration()
     {
         return [
-            'requester_name' => '',
-            'requester_email' => '',
-            'subject' => '',
-            'comment' => '[webform_submission:values]', // by default lists all submission values as body
-            'tags' => 'drupal webform',
-            'priority' => 'normal',
-            'status' => 'new',
+            'comment' => '',
+            'tags' => '',
+            'priority' => '',
+            'status' => '',
             'assignee_id' => '',
-            'type' => 'question',
-            'collaborators' => '',
+            'type' => '',
             'custom_fields' => '',
             'ticket_id_field' => '',
         ];
@@ -96,11 +125,6 @@ class ZendeskUpdateHandler extends WebformHandlerBase
 
         $webform_fields = $this->getWebform()->getElementsDecoded();
         $zendesk_subdomain = \Drupal::config('portland_zendesk.adminsettings')->get('subdomain');
-        $options = [
-            'email' => [''],
-            'name' => [''],
-            'hidden' => [''],
-        ];
         $form_ticket_fields = [];
         $form_field_exclusions = [
             'Subject',
@@ -112,35 +136,7 @@ class ZendeskUpdateHandler extends WebformHandlerBase
             'Assignee',
         ];
 
-        // get available email fields to use as requester email address
-        foreach($webform_fields as $key => $field){
-            if( Utility::checkIsGroupingField($field) ){
-                foreach($field as $subkey => $subfield){
-                    if(!preg_match("/^#/",$subkey) && isset($subfield['#type'])) {
-                        if (Utility::checkIsEmailField($subfield)) {
-                            $options['email'][$subkey] = $subfield['#title'];
-                        }
-                        elseif (Utility::checkIsNameField($subfield)) {
-                            $options['name'][$subkey] = $subfield['#title'];
-                        }
-                        elseif (Utility::checkIsHiddenField($subfield)) {
-                            $options['hidden'][$subkey] = $subfield['#title'];
-                        }
-                    }
-                }
-            }
-            else{
-                if( Utility::checkIsEmailField($field) ){
-                    $options['email'][$key] = $field['#title'];
-                }
-                elseif( Utility::checkIsNameField($field) ){
-                    $options['name'][$key] = $field['#title'];
-                }
-                elseif( Utility::checkIsHiddenField($field) ){
-                    $options['hidden'][$key] = $field['#title'];
-                }
-            }
-        }
+        // 
 
         $assignees = [];
 
@@ -178,7 +174,6 @@ class ZendeskUpdateHandler extends WebformHandlerBase
 
         }
         catch( \Exception $e ){
-
             // Encode HTML entities to prevent broken markup from breaking the page.
             $message = nl2br(htmlentities($e->getMessage()));
 
@@ -192,39 +187,21 @@ class ZendeskUpdateHandler extends WebformHandlerBase
         }
 
         // build form fields
+        // TODO: Figure out why the values won't save if we use a ['settings'] container to hold the config fields.
+        //       Natural and weighted sorting does't work correctly if the container is used.
+        //       $form['settings']['intro_text'] = [ ... ];
 
-        $form['requester_name'] = [
-            '#type' => 'webform_select_other',
-            '#title' => $this->t('Requester name'),
-            '#description' => $this->t('The name of the user who requested this ticket. Select from available name fields, or specify a name.'),
-            '#default_value' => $this->configuration['requester_name'],
-            '#options' => $options['name'],
-            '#required' => false
+        $form['intro_text'] = [
+            '#type' => 'markup',
+            '#title' => $this->t('How to use this handler'),
+            '#markup' => '<p>This handler will update an existing ticket identified by Zendesk Ticket ID Field, which must be provided in the webform either by the user or prepopulated from the URL. Only fields with values will be updated. <b>Leave fields empty if they should not be updated.</b></p>',
         ];
 
-        $form['requester_email'] = [
-            '#type' => 'webform_select_other',
-            '#title' => $this->t('Requester email address'),
-            '#description' => $this->t('The email address of user who requested this ticket. Select from available email fields, or specify an email address.'),
-            '#default_value' => $this->configuration['requester_email'],
-            '#options' => $options['email'],
-            '#required' => true
-        ];
-
-        $form['subject'] = [
+        $form['ticket_id_field'] = [
             '#type' => 'textfield',
-            '#title' => $this->t('Subject'),
-            '#description' => $this->t('The value of the subject field for this ticket'),
-            '#default_value' => $this->configuration['subject'],
-            '#required' => true
-        ];
-
-        $form['comment'] = [
-            '#type' => 'textarea',
-            '#title' => $this->t('Ticket Body'),
-            '#description' => $this->t('The initial comment/message of the ticket.'),
-            '#default_value' => $this->configuration['comment'],
-            '#format' => 'full_html',
+            '#title' => $this->t('Zendesk Ticket ID Field'),
+            '#description' => $this->t('Enter the machine name of the field that contains the Zendesk ticket ID.'),
+            '#default_value' => $this->configuration['ticket_id_field'],
             '#required' => true
         ];
 
@@ -234,21 +211,12 @@ class ZendeskUpdateHandler extends WebformHandlerBase
             '#description' => $this->t('The type of this ticket. Possible values: "problem", "incident", "question" or "task".'),
             '#default_value' => $this->configuration['type'],
             '#options' => [
+                '' => 'Do not update',
                 'question' => 'Question',
                 'incident' => 'Incident',
                 'problem' => 'Problem',
                 'task' => 'Task'
             ],
-            '#required' => false
-        ];
-
-        // space separated tags
-        $form['tags'] = [
-            '#type' => 'textfield',
-            '#title' => $this->t('Ticket Tags'),
-            '#description' => $this->t('The list of tags applied to this ticket.'),
-            '#default_value' => $this->configuration['tags'],
-            '#multiple' => true,
             '#required' => false
         ];
 
@@ -258,6 +226,7 @@ class ZendeskUpdateHandler extends WebformHandlerBase
             '#description' => $this->t('The urgency with which the ticket should be addressed. Possible values: "urgent", "high", "normal", "low".'),
             '#default_value' => $this->configuration['priority'],
             '#options' => [
+                '' => 'Do not update',
                 'low' => 'Low',
                 'normal' => 'Normal',
                 'high' => 'High',
@@ -272,6 +241,7 @@ class ZendeskUpdateHandler extends WebformHandlerBase
             '#description' => $this->t('The state of the ticket. Possible values: "new", "open", "pending", "hold", "solved", "closed".'),
             '#default_value' => $this->configuration['status'],
             '#options' => [
+                '' => 'Do not update',
                 'new' => 'New',
                 'open' => 'Open',
                 'pending' => 'Pending',
@@ -287,14 +257,13 @@ class ZendeskUpdateHandler extends WebformHandlerBase
         // otherwise provide field to specify assignee ID
         $form['assignee_id'] = [
             '#title' => $this->t('Ticket Assignee'),
-            '#description' => $this->t('The id of the intended assignee'),
+            '#description' => $this->t('Select an assignee for the updated ticket or enter an email address (must be a Zendesk user). Or select None to leave the ticket assigned to the current assignee.'),
             '#default_value' => $this->configuration['assignee_id'],
             '#required' => false
         ];
-        if(! empty($assignees) ){
+        if(!empty($assignees) ){
             $form['assignee_id']['#type'] = 'webform_select_other';
-            $form['assignee_id']['#options'] = ['' => '-- none --'] + $assignees;
-            $form['assignee_id']['#description'] = $this->t('The email address the assignee');
+            $form['assignee_id']['#options'] = $assignees;
         }
         else {
             $form['assignee_id']['#type'] = 'textfield';
@@ -303,14 +272,25 @@ class ZendeskUpdateHandler extends WebformHandlerBase
             ];
         }
 
-        $form['collaborators'] = [
-            '#type' => 'textfield',
-            '#title' => $this->t('Ticket CCs'),
-            '#description' => $this->t('Users to add as cc\'s when creating a ticket.'),
-            '#default_value' => $this->configuration['collaborators'],
-            '#multiple' => true,
-            '#required' => false
+        $form['comment'] = [
+            '#type' => 'textarea',
+            '#title' => $this->t('Ticket Comment'),
+            '#description' => $this->t('Use this field to add a comment to every ticket updated by this webform. A comment notification will be sent to the original requester.'),
+            '#default_value' => $this->configuration['comment'],
+            '#format' => 'full_html'
         ];
+
+        // space separated tags
+        // $form['tags'] = [
+        //     '#type' => 'textfield',
+        //     '#title' => $this->t('Ticket Tags'),
+        //     '#description' => $this->t('This is the full list of tags for the ticket. You may add or update tags here, and this list will replace the tags on the ticket.'),
+        //     '#default_value' => $this->configuration['tags'],
+        //     '#multiple' => true,
+        //     '#required' => false
+        // ];
+
+        // get ticket data to display in the Ticket Reference accordion attached to update_fields
 
         $form['custom_fields'] = [
             '#type' => 'webform_codemirror',
@@ -322,7 +302,6 @@ class ZendeskUpdateHandler extends WebformHandlerBase
             ),
             '#default_value' => $this->configuration['custom_fields'],
             '#description_display' => 'before',
-            '#weight' => 90,
             '#attributes' => [
                 'placeholder' => '146455678: \'[webform_submission:value:email]\''
             ],
@@ -333,15 +312,6 @@ class ZendeskUpdateHandler extends WebformHandlerBase
 
         // display link for token variables
         $form['token_link'] = $this->getTokenManager()->buildTreeLink();
-
-        $form['ticket_id_field'] = [
-            '#type' => 'webform_select_other',
-            '#title' => $this->t('Zendesk Ticket ID Field'),
-            '#description' => $this->t('The name of hidden field which will be updated with the created Ticket ID.'),
-            '#default_value' => $this->configuration['ticket_id_field'],
-            '#options' => $options['hidden'],
-            '#required' => false
-        ];
 
         return parent::buildConfigurationForm($form, $form_state);
     }
@@ -397,142 +367,154 @@ class ZendeskUpdateHandler extends WebformHandlerBase
      */
     public function postSave(WebformSubmissionInterface $webform_submission, $update = TRUE)
     {
-        // run only for new submissions
-        if (! $update) {
+      //return false;
 
-            // declare working variables
-            $request = [];
-            $submission_fields = $webform_submission->toArray(TRUE);
-            $configuration = $this->getTokenManager()->replace($this->configuration, $webform_submission);
+      // declare working variables
+      $request = [];
+      $submission_fields = $webform_submission->toArray(TRUE);
+      $configuration = $this->getTokenManager()->replace($this->configuration, $webform_submission);
+      $zendesk_ticket_id = $submission_fields['data'][$configuration['ticket_id_field']];
 
-            // Allow for either values coming from other fields or static/tokens
-            foreach ($this->defaultConfigurationNames() as $field) {
-                $request[$field] = $configuration[$field];
-                if (!empty($submission_fields['data'][$configuration[$field]])) {
-                    $request[$field] = $submission_fields['data'][$configuration[$field]];
-                }
-            }
+      // Allow for either values coming from other fields or static/tokens
+      foreach ($this->defaultConfigurationNames() as $field) {
+          $request[$field] = $configuration[$field];
+          if (!empty($submission_fields['data'][$configuration[$field]])) {
+              $request[$field] = $submission_fields['data'][$configuration[$field]];
+          }
+      }
 
-            // clean up tags
-            $request['tags'] = Utility::cleanTags( $request['tags'] );
-            $request['collaborators'] = preg_split("/[^a-z0-9_\-@\.']+/i", $request['collaborators'] );
+      // clean up tags
+      $request['tags'] = Utility::cleanTags( $request['tags'] );
+      //$request['collaborators'] = preg_split("/[^a-z0-9_\-@\.']+/i", $request['collaborators'] );
 
-            // restructure requester
-            if(!isset($request['requester'])){
-                $request['requester'] = $request['requester_name']
-                    ? [
-                        'name' => Utility::convertName($request['requester_name']),
-                        'email' => $request['requester_email'],
-                    ]
-                    : $request['requester_email'];
+      // // restructure requester
+      // if(!isset($request['requester'])){
+      //     $request['requester'] = $request['requester_name']
+      //         ? [
+      //             'name' => Utility::convertName($request['requester_name']),
+      //             'email' => $request['requester_email'],
+      //         ]
+      //         : $request['requester_email'];
 
-                unset($request['requester_name']);
-                unset($request['requester_email']);
-            }
+      //     unset($request['requester_name']);
+      //     unset($request['requester_email']);
+      // }
 
-            // restructure comment array
-            if(!isset($request['comment']['body'])){
-                $comment = $request['comment'];
-                $request['comment'] = [
-                    'html_body' => $comment
-                ];
-            }
+      // TODO: does this do what we want it to do? Add the comment to the thread?
+      if(!isset($request['comment']['body'])){
+          $comment = $request['comment'];
+          $request['comment'] = [
+              'html_body' => $comment, 'public' => true
+          ];
+      }
 
-            // convert custom fields format from [key:data} to [id:key,value:data] for Zendesk field referencing
-            $custom_fields = Yaml::decode($request['custom_fields']);
-            unset($request['custom_fields']);
-            $request['custom_fields'] = [];
-            if($custom_fields) {
-                foreach ($custom_fields as $key => $value) {
-                    $request['custom_fields'][] = [
-                        'id' => $key,
-                        'value' => $value
-                    ];
-                }
-            }
+      // convert custom fields format from [key:data} to [id:key,value:data] for Zendesk field referencing
+      $custom_fields = Yaml::decode($request['custom_fields']);
+      unset($request['custom_fields']);
+      $request['custom_fields'] = [];
+      if($custom_fields) {
+          foreach ($custom_fields as $key => $value) {
+              $request['custom_fields'][] = [
+                  'id' => $key,
+                  'value' => $value
+              ];
+          }
+      }
 
-            // set external_id to connect zendesk ticket with submission ID
-            $request['external_id'] = $webform_submission->id();
+      // set external_id to connect zendesk ticket with submission ID
+      //$request['external_id'] = $webform_submission->id(); // this sends webform id to zendesk; do we need this? probably not.
 
-            // get list of all webform fields with a file field type
-            $file_fields = $this->getWebformFieldsWithFiles();
+      // get list of all webform fields with a file field type
+      $file_fields = $this->getWebformFieldsWithFiles();
 
-            // attempt to send request to create zendesk ticket
-            try {
+      // attempt to send request to update zendesk ticket
+      try {
 
-                // initiate api client
-                $client = new ZendeskClient();
+          // initiate api client
+          $client = new ZendeskClient();
 
-                // Checks for files in submission values and uploads them if found
-                foreach($submission_fields['data'] as $key => $submission_field){
-                    if( in_array($key, $file_fields) && !empty($submission_field) ){
+          // get existing ticket values
+          $ticket = $client->tickets()->find($zendesk_ticket_id)->ticket;      
 
-                        // pack file index/indices into an array for looping
-                        if( is_array( $submission_field ) ){
-                            $file_indices = $submission_field;
-                        } else {
-                            $file_indices = []; // clear var
-                            $file_indices[] = $submission_field;
-                        }
+          // Checks for files in submission values and uploads them if found
+          foreach($submission_fields['data'] as $key => $submission_field){
+              if( in_array($key, $file_fields) && !empty($submission_field) ){
 
-                        // individually attach each uploaded file per file submission_field
-                        foreach( $file_indices as $file_index) {
+                  // pack file index/indices into an array for looping
+                  if( is_array( $submission_field ) ){
+                      $file_indices = $submission_field;
+                  } else {
+                      $file_indices = []; // clear var
+                      $file_indices[] = $submission_field;
+                  }
 
-                            // get file from index for upload
-                            $file = File::load($file_index);
+                  // individually attach each uploaded file per file submission_field
+                  foreach( $file_indices as $file_index) {
 
-                            // add uploads key to Zendesk comment, if not already present
-                            if ($file && !array_key_exists('uploads', $request['comment'])) {
-                                $request['comment']['uploads'] = [];
-                            }
+                      // get file from index for upload
+                      $file = File::load($file_index);
 
-                            // upload file and get response
-                            $attachment = $client->attachments()->upload([
-                                'file' => $file->getFileUri(),
-                                'type' => $file->getMimeType(),
-                                'name' => $file->getFileName(),
-                            ]);
+                      // add uploads key to Zendesk comment, if not already present
+                      if ($file && !array_key_exists('uploads', $request['comment'])) {
+                          $request['comment']['uploads'] = [];
+                      }
 
-                            // add upload token to comment
-                            if ($attachment && isset($attachment->upload->token)) {
-                                $request['comment']['uploads'][] = $attachment->upload->token;
-                            }
-                        }
-                    }
-                }
+                      // upload file and get response
+                      $attachment = $client->attachments()->upload([
+                          'file' => $file->getFileUri(),
+                          'type' => $file->getMimeType(),
+                          'name' => $file->getFileName(),
+                      ]);
 
-                // create ticket
-                $new_ticket = $client->tickets()->create($request);
+                      // add upload token to comment
+                      if ($attachment && isset($attachment->upload->token)) {
+                          $request['comment']['uploads'][] = $attachment->upload->token;
+                      }
+                  }
+              }
+          }
 
-                // retrieve the name of the field in which to store the created Zendesk Ticket ID
-                $zendesk_ticket_id_field_name = $configuration['ticket_id_field'];
-                
-                // retrieve submission data
-                $data = $webform_submission->getData();
+          // type and priority are required by the API, even for update. if they're not set, set them from
+          // previous ticket data.
+          if (!isset($request['type']) || $request['type'] == "") {
+            $request['type'] = $ticket->type;
+          }
+          if (!isset($request['priority']) || $request['priority'] == "") {
+            $request['priority'] = $ticket->priority;
+          }
 
-                // if name field is set and present,  add ticket ID to hidden Zendesk Ticket ID field
-                if($zendesk_ticket_id_field_name && array_key_exists( $zendesk_ticket_id_field_name, $data ) && $new_ticket){
-                    $data[$zendesk_ticket_id_field_name] = $new_ticket->ticket->id;
-                    $webform_submission->setData($data);
-                    $webform_submission->save();
-                }
+          // create ticket
+          //$new_ticket = $client->tickets()->create($request);
+          $updated_ticket = $client->tickets()->update($zendesk_ticket_id, $request);
 
-            }
-            catch( \Exception $e ){
+          // // retrieve the name of the field in which to store the created Zendesk Ticket ID
+          // $zendesk_ticket_id_field_name = $configuration['ticket_id_field'];
+          
+          // // retrieve submission data
+          // $data = $webform_submission->getData();
 
-                // Encode HTML entities to prevent broken markup from breaking the page.
-                $message = nl2br(htmlentities($e->getMessage()));
+          // // if name field is set and present,  add ticket ID to hidden Zendesk Ticket ID field
+          // if($zendesk_ticket_id_field_name && array_key_exists( $zendesk_ticket_id_field_name, $data ) && $updated_ticket){
+          //     $data[$zendesk_ticket_id_field_name] = $updated_ticket->ticket->id;
+          //     $webform_submission->setData($data);
+          //     $webform_submission->save();
+          // }
 
-                // Log error message.
-                $this->getLogger()->error('@form webform submission to zendesk failed. @exception: @message. Click to edit @link.', [
-                    '@exception' => get_class($e),
-                    '@form' => $this->getWebform()->label(),
-                    '@message' => $message,
-                    'link' => $this->getWebform()->toLink($this->t('Edit'), 'handlers')->toString(),
-                ]);
-            }
-        }
-        return;
+      }
+      catch( \Exception $e ){
+
+          // Encode HTML entities to prevent broken markup from breaking the page.
+          $message = nl2br(htmlentities($e->getMessage()));
+
+          // Log error message.
+          $this->getLogger()->error('@form webform submission to zendesk failed. @exception: @message. Click to edit @link.', [
+              '@exception' => get_class($e),
+              '@form' => $this->getWebform()->label(),
+              '@message' => $message,
+              'link' => $this->getWebform()->toLink($this->t('Edit'), 'handlers')->toString(),
+          ]);
+      }
+      return;
     }
 
     /**
@@ -543,7 +525,7 @@ class ZendeskUpdateHandler extends WebformHandlerBase
     {
         $markup = [];
         $configNames = array_keys($this->defaultConfiguration());
-        $excluded_fields = ['comment','custom_fields'];
+        $excluded_fields = [];
 
         // loop through fields to display an at-a-glance summary of settings
         foreach($configNames as $configName){
