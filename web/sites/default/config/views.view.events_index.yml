@@ -91,21 +91,13 @@ display:
       style:
         type: default
         options:
-          grouping:
-            -
-              field: field_start_date_1
-              rendered: true
-              rendered_strip: false
-            -
-              field: field_start_date
-              rendered: true
-              rendered_strip: false
+          grouping: {  }
           row_class: ''
           default_row_class: false
       row:
         type: fields
         options:
-          default_field_elements: true
+          default_field_elements: false
           inline: {  }
           separator: ''
           hide_empty: false
@@ -412,17 +404,17 @@ display:
           plugin_id: search_api
       title: Events
       header:
-        area_text_custom:
-          id: area_text_custom
+        view:
+          id: view
           table: views
-          field: area_text_custom
+          field: view
           relationship: none
           group_type: group
           admin_label: ''
           empty: false
-          tokenize: true
-          content: "<div class=\"sr-only\">{{ portland_content_type_name_field }} Menu</div>\r\n<ul class=\"nav nav-group-menu nav-group-menu\">\r\n<li class=\"nav-item\"><a href=\"/events\" class=\"nav-link{% if path('<current>') matches '[events$]' %} active{% endif %}\">Events</a></li>\r\n<li class=\"nav-item\"><a href=\"/events/past\" class=\"nav-link{% if path('<current>') matches '[events/past$]' %} active{% endif %}\">Past Events</a></li>\r\n<li class=\"nav-item\"><a href=\"/events/meetings\" class=\"nav-link{% if path('<current>') matches '[events/meetings$]' %} active{% endif %}\">Past Meetings and Hearings</a></li>\r\n<li class=\"nav-item\"><a href=\"/events/bids\" class=\"nav-link{% if path('<current>') matches '[events/bids$]' %} active{% endif %}\">Open Bids and Proposals</a></li>\r\n</ul>\r\n"
-          plugin_id: text_custom
+          view_to_insert: 'group_events_menu:block_events_menu'
+          inherit_arguments: true
+          plugin_id: view
         result:
           id: result
           table: views
@@ -813,6 +805,8 @@ display:
         use_more_text: false
         link_display: false
         link_url: false
+        style: true
+        row: true
       title: 'Past Meetings and Hearings'
       filters:
         field_start_date:
@@ -1350,8 +1344,8 @@ display:
           label: ''
           exclude: true
           alter:
-            alter_text: false
-            text: ''
+            alter_text: true
+            text: '<span class="badge badge-pill badge-light ml-2">{{ field_event_type }}</span>'
             make_link: false
             path: ''
             absolute: false
@@ -1490,7 +1484,7 @@ display:
           exclude: true
           alter:
             alter_text: true
-            text: ' <span class="sr-only">This event has been </span><span class="badge badge-danger">{{ field_event_status }}</span>'
+            text: ' <span class="sr-only">This event has been </span><span class="badge badge-pill badge-danger ml-2">{{ field_event_status }}</span>'
             make_link: false
             path: ''
             absolute: false
@@ -1560,7 +1554,7 @@ display:
           exclude: false
           alter:
             alter_text: true
-            text: '{{ field_start_date }} {{ title }}{{ field_event_status }}{{ field_event_type }}'
+            text: '<h3 class="h4">{{ field_start_date }} – {{ title }}{{ field_event_status }}{{ field_event_type }}</h3>'
             make_link: false
             path: ''
             absolute: false
@@ -1649,11 +1643,11 @@ display:
         menu_name: main
       display_description: ''
       defaults:
-        header: true
+        header: false
         title: false
         filters: false
         filter_groups: false
-        cache: false
+        cache: true
       title: 'Bids and Proposals'
       filters:
         field_start_date:
@@ -1759,7 +1753,7 @@ display:
           exposed: true
           expose:
             operator_id: search_api_fulltext_op
-            label: 'Search upcoming events'
+            label: 'Search Bids and Proposals'
             description: ''
             use_operator: false
             operator: search_api_fulltext_op
@@ -1783,9 +1777,13 @@ display:
               code_editor: '0'
               group_creator: '0'
               alert_editor: '0'
+              neighborhood_editor: '0'
               sitewide_editor: '0'
+              support_agent: '0'
               administrator: '0'
             placeholder: ''
+            expose_fields: false
+            searched_fields_id: ''
           is_grouped: false
           group_info:
             label: ''
@@ -1932,8 +1930,28 @@ display:
         groups:
           1: OR
           2: AND
-      cache:
-        type: none
+      header:
+        area_text_custom:
+          id: area_text_custom
+          table: views
+          field: area_text_custom
+          relationship: none
+          group_type: group
+          admin_label: ''
+          empty: false
+          tokenize: true
+          content: "<div class=\"sr-only\">{{ portland_content_type_name_field }} Menu</div>\r\n<ul class=\"nav nav-group-menu nav-group-menu\">\r\n<li class=\"nav-item\"><a href=\"/events\" class=\"nav-link{% if path('<current>') matches '[events$]' %} active{% endif %}\">Events</a></li>\r\n<li class=\"nav-item\"><a href=\"/events/past\" class=\"nav-link{% if path('<current>') matches '[events/past$]' %} active{% endif %}\">Past Events</a></li>\r\n<li class=\"nav-item\"><a href=\"/events/meetings\" class=\"nav-link{% if path('<current>') matches '[events/meetings$]' %} active{% endif %}\">Past Meetings and Hearings</a></li>\r\n<li class=\"nav-item\"><a href=\"/events/bids\" class=\"nav-link{% if path('<current>') matches '[events/bids$]' %} active{% endif %}\">Open Bids and Proposals</a></li>\r\n</ul>\r\n"
+          plugin_id: text_custom
+        result:
+          id: result
+          table: views
+          field: result
+          relationship: none
+          group_type: group
+          admin_label: ''
+          empty: true
+          content: 'Displaying @start - @end of @total'
+          plugin_id: result
     cache_metadata:
       max-age: -1
       contexts:
@@ -1972,7 +1990,7 @@ display:
         filters: false
         filter_groups: false
         sorts: false
-        header: true
+        header: false
         cache: true
       sorts:
         field_start_date:
@@ -2190,7 +2208,7 @@ display:
           exposed: true
           expose:
             operator_id: search_api_fulltext_op
-            label: 'Search past events'
+            label: 'Search Past Events'
             description: ''
             use_operator: false
             operator: search_api_fulltext_op
@@ -2214,9 +2232,13 @@ display:
               code_editor: '0'
               group_creator: '0'
               alert_editor: '0'
+              neighborhood_editor: '0'
               sitewide_editor: '0'
+              support_agent: '0'
               administrator: '0'
             placeholder: ''
+            expose_fields: false
+            searched_fields_id: ''
           is_grouped: false
           group_info:
             label: ''
@@ -2276,6 +2298,28 @@ display:
         groups:
           1: OR
           2: AND
+      header:
+        area_text_custom:
+          id: area_text_custom
+          table: views
+          field: area_text_custom
+          relationship: none
+          group_type: group
+          admin_label: ''
+          empty: false
+          tokenize: true
+          content: "<div class=\"sr-only\">{{ portland_content_type_name_field }} Menu</div>\r\n<ul class=\"nav nav-group-menu nav-group-menu\">\r\n<li class=\"nav-item\"><a href=\"/events\" class=\"nav-link{% if path('<current>') matches '[events$]' %} active{% endif %}\">Events</a></li>\r\n<li class=\"nav-item\"><a href=\"/events/past\" class=\"nav-link{% if path('<current>') matches '[events/past$]' %} active{% endif %}\">Past Events</a></li>\r\n<li class=\"nav-item\"><a href=\"/events/meetings\" class=\"nav-link{% if path('<current>') matches '[events/meetings$]' %} active{% endif %}\">Past Meetings and Hearings</a></li>\r\n<li class=\"nav-item\"><a href=\"/events/bids\" class=\"nav-link{% if path('<current>') matches '[events/bids$]' %} active{% endif %}\">Open Bids and Proposals</a></li>\r\n</ul>\r\n"
+          plugin_id: text_custom
+        result:
+          id: result
+          table: views
+          field: result
+          relationship: none
+          group_type: group
+          admin_label: ''
+          empty: true
+          content: 'Displaying @start - @end of @total'
+          plugin_id: result
     cache_metadata:
       max-age: -1
       contexts:
@@ -2314,11 +2358,11 @@ display:
         filters: false
         filter_groups: false
         sorts: false
-        header: true
+        header: false
         fields: false
         style: false
         row: false
-        cache: false
+        cache: true
       sorts:
         field_start_date:
           id: field_start_date
@@ -2489,7 +2533,7 @@ display:
           exposed: true
           expose:
             operator_id: search_api_fulltext_op
-            label: 'Search past meetings and hearings'
+            label: 'Search Past Meetings and Hearings'
             description: ''
             use_operator: false
             operator: search_api_fulltext_op
@@ -2513,9 +2557,13 @@ display:
               code_editor: '0'
               group_creator: '0'
               alert_editor: '0'
+              neighborhood_editor: '0'
               sitewide_editor: '0'
+              support_agent: '0'
               administrator: '0'
             placeholder: ''
+            expose_fields: false
+            searched_fields_id: ''
           is_grouped: false
           group_info:
             label: ''
@@ -2770,8 +2818,28 @@ display:
           inline: {  }
           separator: ''
           hide_empty: false
-      cache:
-        type: none
+      header:
+        area_text_custom:
+          id: area_text_custom
+          table: views
+          field: area_text_custom
+          relationship: none
+          group_type: group
+          admin_label: ''
+          empty: false
+          tokenize: true
+          content: "<div class=\"sr-only\">{{ portland_content_type_name_field }} Menu</div>\r\n<ul class=\"nav nav-group-menu nav-group-menu\">\r\n<li class=\"nav-item\"><a href=\"/events\" class=\"nav-link{% if path('<current>') matches '[events$]' %} active{% endif %}\">Events</a></li>\r\n<li class=\"nav-item\"><a href=\"/events/past\" class=\"nav-link{% if path('<current>') matches '[events/past$]' %} active{% endif %}\">Past Events</a></li>\r\n<li class=\"nav-item\"><a href=\"/events/meetings\" class=\"nav-link{% if path('<current>') matches '[events/meetings$]' %} active{% endif %}\">Past Meetings and Hearings</a></li>\r\n<li class=\"nav-item\"><a href=\"/events/bids\" class=\"nav-link{% if path('<current>') matches '[events/bids$]' %} active{% endif %}\">Open Bids and Proposals</a></li>\r\n</ul>\r\n"
+          plugin_id: text_custom
+        result:
+          id: result
+          table: views
+          field: result
+          relationship: none
+          group_type: group
+          admin_label: ''
+          empty: true
+          content: 'Displaying @start - @end of @total'
+          plugin_id: result
     cache_metadata:
       max-age: -1
       contexts:
@@ -2806,11 +2874,11 @@ display:
         enabled: true
       display_description: ''
       defaults:
-        header: true
+        header: false
         title: false
         filters: false
         filter_groups: false
-        cache: false
+        cache: true
       title: Events
       filters:
         field_start_date:
@@ -2916,7 +2984,7 @@ display:
           exposed: true
           expose:
             operator_id: search_api_fulltext_op
-            label: 'Search upcoming events'
+            label: 'Search Upcoming Events'
             description: ''
             use_operator: false
             operator: search_api_fulltext_op
@@ -2940,9 +3008,13 @@ display:
               code_editor: '0'
               group_creator: '0'
               alert_editor: '0'
+              neighborhood_editor: '0'
               sitewide_editor: '0'
+              support_agent: '0'
               administrator: '0'
             placeholder: ''
+            expose_fields: false
+            searched_fields_id: ''
           is_grouped: false
           group_info:
             label: ''
@@ -3089,9 +3161,28 @@ display:
         groups:
           1: OR
           2: AND
-      cache:
-        type: search_api_tag
-        options: {  }
+      header:
+        area_text_custom:
+          id: area_text_custom
+          table: views
+          field: area_text_custom
+          relationship: none
+          group_type: group
+          admin_label: ''
+          empty: false
+          tokenize: true
+          content: "<div class=\"sr-only\">{{ portland_content_type_name_field }} Menu</div>\r\n<ul class=\"nav nav-group-menu nav-group-menu\">\r\n<li class=\"nav-item\"><a href=\"/events\" class=\"nav-link{% if path('<current>') matches '[events$]' %} active{% endif %}\">Events</a></li>\r\n<li class=\"nav-item\"><a href=\"/events/past\" class=\"nav-link{% if path('<current>') matches '[events/past$]' %} active{% endif %}\">Past Events</a></li>\r\n<li class=\"nav-item\"><a href=\"/events/meetings\" class=\"nav-link{% if path('<current>') matches '[events/meetings$]' %} active{% endif %}\">Past Meetings and Hearings</a></li>\r\n<li class=\"nav-item\"><a href=\"/events/bids\" class=\"nav-link{% if path('<current>') matches '[events/bids$]' %} active{% endif %}\">Open Bids and Proposals</a></li>\r\n</ul>\r\n"
+          plugin_id: text_custom
+        result:
+          id: result
+          table: views
+          field: result
+          relationship: none
+          group_type: group
+          admin_label: ''
+          empty: true
+          content: 'Displaying @start - @end of @total'
+          plugin_id: result
     cache_metadata:
       max-age: -1
       contexts:
@@ -3125,7 +3216,7 @@ display:
         menu_name: main
       display_description: ''
       defaults:
-        header: false
+        header: true
         title: false
         filters: false
         filter_groups: false
@@ -3237,7 +3328,7 @@ display:
           exposed: true
           expose:
             operator_id: search_api_fulltext_op
-            label: 'Search upcoming events'
+            label: 'Search Bids and Proposals'
             description: ''
             use_operator: false
             operator: search_api_fulltext_op
@@ -3261,9 +3352,13 @@ display:
               code_editor: '0'
               group_creator: '0'
               alert_editor: '0'
+              neighborhood_editor: '0'
               sitewide_editor: '0'
+              support_agent: '0'
               administrator: '0'
             placeholder: ''
+            expose_fields: false
+            searched_fields_id: ''
           is_grouped: false
           group_info:
             label: ''
@@ -3410,28 +3505,6 @@ display:
         groups:
           1: OR
           2: AND
-      header:
-        result:
-          id: result
-          table: views
-          field: result
-          relationship: none
-          group_type: group
-          admin_label: ''
-          empty: true
-          content: 'Displaying @start - @end of @total'
-          plugin_id: result
-        view:
-          id: view
-          table: views
-          field: view
-          relationship: none
-          group_type: group
-          admin_label: ''
-          empty: false
-          view_to_insert: 'group_events_menu:block_events_menu'
-          inherit_arguments: true
-          plugin_id: view
       relationships:
         field_display_groups:
           id: field_display_groups
@@ -3509,7 +3582,7 @@ display:
         menu_name: main
       display_description: ''
       defaults:
-        header: false
+        header: true
         title: false
         filters: false
         filter_groups: false
@@ -3621,7 +3694,7 @@ display:
           exposed: true
           expose:
             operator_id: search_api_fulltext_op
-            label: 'Search upcoming events'
+            label: 'Search Upcoming Events'
             description: ''
             use_operator: false
             operator: search_api_fulltext_op
@@ -3645,9 +3718,13 @@ display:
               code_editor: '0'
               group_creator: '0'
               alert_editor: '0'
+              neighborhood_editor: '0'
               sitewide_editor: '0'
+              support_agent: '0'
               administrator: '0'
             placeholder: ''
+            expose_fields: false
+            searched_fields_id: ''
           is_grouped: false
           group_info:
             label: ''
@@ -3748,28 +3825,6 @@ display:
         groups:
           1: OR
           2: AND
-      header:
-        result:
-          id: result
-          table: views
-          field: result
-          relationship: none
-          group_type: group
-          admin_label: ''
-          empty: true
-          content: 'Displaying @start - @end of @total'
-          plugin_id: result
-        view:
-          id: view
-          table: views
-          field: view
-          relationship: none
-          group_type: group
-          admin_label: ''
-          empty: false
-          view_to_insert: 'group_events_menu:block_events_menu'
-          inherit_arguments: true
-          plugin_id: view
       relationships:
         field_display_groups:
           id: field_display_groups
@@ -3846,7 +3901,7 @@ display:
         menu_name: main
       display_description: ''
       defaults:
-        header: false
+        header: true
         title: false
         filters: false
         filter_groups: false
@@ -3914,7 +3969,7 @@ display:
           exposed: true
           expose:
             operator_id: search_api_fulltext_op
-            label: 'Search upcoming events'
+            label: 'Search Past Events'
             description: ''
             use_operator: false
             operator: search_api_fulltext_op
@@ -3938,9 +3993,13 @@ display:
               code_editor: '0'
               group_creator: '0'
               alert_editor: '0'
+              neighborhood_editor: '0'
               sitewide_editor: '0'
+              support_agent: '0'
               administrator: '0'
             placeholder: ''
+            expose_fields: false
+            searched_fields_id: ''
           is_grouped: false
           group_info:
             label: ''
@@ -4041,28 +4100,6 @@ display:
         groups:
           1: OR
           2: AND
-      header:
-        result:
-          id: result
-          table: views
-          field: result
-          relationship: none
-          group_type: group
-          admin_label: ''
-          empty: true
-          content: 'Displaying @start - @end of @total'
-          plugin_id: result
-        view:
-          id: view
-          table: views
-          field: view
-          relationship: none
-          group_type: group
-          admin_label: ''
-          empty: false
-          view_to_insert: 'group_events_menu:block_events_menu'
-          inherit_arguments: true
-          plugin_id: view
       relationships:
         field_display_groups:
           id: field_display_groups
@@ -4164,7 +4201,7 @@ display:
         menu_name: main
       display_description: ''
       defaults:
-        header: false
+        header: true
         title: false
         filters: false
         filter_groups: false
@@ -4227,13 +4264,13 @@ display:
           relationship: none
           group_type: group
           admin_label: ''
-          operator: and
+          operator: or
           value: ''
           group: 2
           exposed: true
           expose:
             operator_id: search_api_fulltext_op
-            label: 'Search upcoming events'
+            label: 'Search Past Mmeetings'
             description: ''
             use_operator: false
             operator: search_api_fulltext_op
@@ -4257,9 +4294,13 @@ display:
               code_editor: '0'
               group_creator: '0'
               alert_editor: '0'
+              neighborhood_editor: '0'
               sitewide_editor: '0'
+              support_agent: '0'
               administrator: '0'
             placeholder: ''
+            expose_fields: false
+            searched_fields_id: search_api_fulltext_searched_fields
           is_grouped: false
           group_info:
             label: ''
@@ -4273,8 +4314,11 @@ display:
             default_group_multiple: {  }
             group_items: {  }
           parse_mode: terms
-          min_length: null
-          fields: {  }
+          min_length: 3
+          fields:
+            - content_title
+            - field_body_content
+            - field_search_keywords
           plugin_id: search_api_fulltext
         content_type:
           id: content_type
@@ -4416,28 +4460,6 @@ display:
         groups:
           1: OR
           2: AND
-      header:
-        result:
-          id: result
-          table: views
-          field: result
-          relationship: none
-          group_type: group
-          admin_label: ''
-          empty: true
-          content: 'Displaying @start - @end of @total'
-          plugin_id: result
-        view:
-          id: view
-          table: views
-          field: view
-          relationship: none
-          group_type: group
-          admin_label: ''
-          empty: false
-          view_to_insert: 'group_events_menu:block_events_menu'
-          inherit_arguments: true
-          plugin_id: view
       relationships:
         field_display_groups:
           id: field_display_groups
