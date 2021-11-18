@@ -407,13 +407,13 @@ lando terminus drush portlandor.powr-[ID] -- migrate:import civic_neighborhood_m
 
 ##### Local
 ```
-lando drush migrate:import civic_neighborhood_contacts
-lando drush migrate:import civic_neighborhood_contacts_relationships
+lando drush migrate:import civic_neighborhood_contacts_v2
+lando drush migrate:import civic_neighborhood_contacts_relationships_v2
 ```
 ##### On Pantheon
 ```
-lando terminus drush portlandor.powr-[ID] -- migrate:import civic_neighborhood_contacts
-lando terminus drush portlandor.powr-[ID] -- migrate:import civic_neighborhood_contacts_relationships
+lando terminus drush portlandor.powr-[ID] -- migrate:import civic_neighborhood_contacts_v2
+lando terminus drush portlandor.powr-[ID] -- migrate:import civic_neighborhood_contacts_relationships_v2
 ```
 
 #### Civic Life Neighborhoods
