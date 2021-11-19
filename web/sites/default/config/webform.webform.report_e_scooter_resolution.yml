@@ -22,44 +22,37 @@ title: 'Report an E-Scooter - Resolution'
 description: ''
 category: Resolution
 elements: |-
-  section_report:
-    '#type': webform_section
-    '#title': Report
-    '#title_display': invisible
-    report_issue:
-      '#type': webform_radios_other
-      '#title': 'What is the issue with the e-scooter?'
-      '#prepopulate': true
-      '#options':
-        'improperly parked': 'E-scooter is improperly parked'
-        damaged: 'E-scooter is damaged or not working correctly'
-        'riding on sidewalk': 'User is riding on a sidewalk'
-      '#other__option_label': 'Something else...'
-      '#other__placeholder': 'Please describe...'
-      '#required': true
-    report_company:
-      '#type': radios
-      '#title': 'Electric scooter (e-scooter) company'
-      '#description': 'Which e-scooter company does the scooter belong to? Or, what color is the e-scooter?'
-      '#description_display': before
-      '#prepopulate': true
-      '#options':
-        Bird: 'Bird (black)'
-        Bolt: 'Bold (black and yellow)'
-        Lime: 'Lime (green)'
-        Spin: 'Spin (orange)'
-        'Not sure': 'Not sure'
-    report_asset_id:
-      '#type': textfield
-      '#title': 'E-scooter ID'
-      '#minlength': 5
-      '#maxlength': 12
-      '#prepopulate': true
-  report_ticket_id:
-    '#type': textfield
-    '#title': 'Zendesk Ticket ID'
+  report_issue:
+    '#type': webform_radios_other
+    '#title': 'What is the issue with the e-scooter?'
     '#prepopulate': true
+    '#options':
+      'improperly parked': 'E-scooter is improperly parked'
+      damaged: 'E-scooter is damaged or not working correctly'
+      'riding on sidewalk': 'User is riding on a sidewalk'
+    '#other__option_label': 'Something else...'
+    '#other__placeholder': 'Please describe...'
     '#required': true
+  report_blocking:
+    '#type': radios
+    '#title': 'Is the e-scooter blocking a sidewalk, trail, bike lane, driveway, street, transit stop or other type of transportation lane? '
+    '#prepopulate': true
+    '#options': yes_no
+    '#options_display': side_by_side
+    '#states':
+      visible:
+        ':input[name="report_issue[radios]"]':
+          value: 'improperly parked'
+  report_private_property:
+    '#type': radios
+    '#title': 'Is the e-scooter parked on private property?'
+    '#prepopulate': true
+    '#options': yes_no
+    '#options_display': side_by_side
+    '#states':
+      visible:
+        ':input[name="report_issue[radios]"]':
+          value: 'improperly parked'
   issue_resolution:
     '#type': webform_radios_other
     '#title': 'Issue Resolution'
@@ -67,13 +60,49 @@ elements: |-
       'Scooter has been moved': 'Scooter has been moved'
       'Scooter has been taken in for repairs': 'Scooter has been taken in for repairs'
       'Scooter has been fixed on location': 'Scooter has been fixed on location'
+      'Incorrect e-scooter company selected by community member': 'Incorrect e-scooter company selected by community member -- Please select the correct company below. The ticket will be re-routed.'
     '#other__option_label': 'Something else...'
     '#other__placeholder': 'Please describe...'
+    '#required': true
+  report_company:
+    '#type': radios
+    '#title': 'Electric scooter (e-scooter) company'
+    '#description': 'Which e-scooter company does the scooter belong to? Or, what color is the e-scooter?'
+    '#description_display': before
+    '#prepopulate': true
+    '#options':
+      Bird: 'Bird (black)'
+      Bolt: 'Bolt (black and yellow)'
+      Lime: 'Lime (green)'
+      Spin: 'Spin (orange)'
+      'Not sure': 'Not sure'
+  report_asset_id:
+    '#type': textfield
+    '#title': 'E-scooter ID'
+    '#minlength': 5
+    '#maxlength': 12
+    '#prepopulate': true
+  report_ticket_id:
+    '#type': textfield
+    '#title': 'Support Ticket ID'
+    '#prepopulate': true
     '#required': true
   company_rep_id:
     '#type': textfield
     '#title': 'Company Rep ID'
     '#required': true
+  company_sla:
+    '#type': hidden
+    '#title': 'Service Level Expectation'
+    '#prepopulate': true
+  computed_blocking:
+    '#type': hidden
+    '#title': 'Is e-scooter blocking?'
+    '#prepopulate': true
+  computed_private_property:
+    '#type': hidden
+    '#title': 'Is e-scooter parked on private property?'
+    '#prepopulate': true
   actions:
     '#type': webform_actions
     '#title': 'Submit button(s)'
@@ -275,14 +304,14 @@ access:
     users: {  }
     permissions: {  }
 handlers:
-  zendesk_update_ticket:
+  resolve_ticket:
     id: zendesk_update_ticket
-    label: 'Zendesk update ticket'
+    label: 'Resolve ticket'
     notes: ''
-    handler_id: zendesk_update_ticket
+    handler_id: resolve_ticket
     status: true
     conditions: {  }
-    weight: 0
+    weight: -50
     settings:
       requester_name: ''
       requester_email: ''
@@ -295,5 +324,29 @@ handlers:
       type: ''
       collaborators: ''
       custom_fields: '1500012801542: [webform_submission:values:report_asset_id]'
+      ticket_id_field: report_ticket_id
+  reroute_ticket:
+    id: zendesk_update_ticket
+    label: 'Reroute ticket'
+    notes: 'Reroutes a ticket to a different company if the incorrect company was selected by community member.'
+    handler_id: reroute_ticket
+    status: true
+    conditions:
+      enabled:
+        ':input[name="issue_resolution[radios]"]':
+          value: 'Incorrect e-scooter company selected by community member'
+    weight: -49
+    settings:
+      requester_name: ''
+      requester_email: ''
+      subject: ''
+      comment: "The e-scooter company in this report was incorrectly identified. The report is being re-routed to [webform_submission:values:report_company].<br><br>\r\nBy: [webform_submission:values:company_rep_id]"
+      tags: ''
+      priority: ''
+      status: open
+      assignee_id: ''
+      type: ''
+      collaborators: ''
+      custom_fields: "1500012801542: [webform_submission:values:report_asset_id]\r\n1900004448785: [webform_submission:values:report_company:raw]"
       ticket_id_field: report_ticket_id
 variants: {  }
