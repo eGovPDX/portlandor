@@ -19,7 +19,7 @@ class ArcGISOnline extends ProviderPluginBase {
    */
   public static function getIdFromInput($input) {
     // Extract map URL from iframe embed code
-    preg_match('/^(<style>\.embed-container [^>]+<\/style><div class="embed-container">)?<iframe [^>]+ src="\/\/[^\/]+\.maps\.arcgis\.com\/apps\/Embed\/index.html\?webmap=(?<id>[^"]+)".+<\/iframe>(<\/div>)?$/', trim($input), $matches);
+    preg_match('/^(<style>\.embed-container [^>]+<\/style><div class="embed-container">)?<iframe [^>]+ src="(https?:)?\/\/[^\/]+\.maps\.arcgis\.com\/apps\/Embed\/index.html\?webmap=(?<id>[^"]+)".+<\/iframe>(<\/div>)?$/', trim($input), $matches);
     if (isset($matches['id'])) {
       return md5($matches['id']);
     }
@@ -43,7 +43,7 @@ class ArcGISOnline extends ProviderPluginBase {
    */
   public static function getUrlFromInput($input) {
     // Extract map URL from iframe embed code
-    preg_match('/^(<style>\.embed-container [^>]+<\/style><div class="embed-container">)?<iframe [^>]+ src="(?<url>\/\/[^\/]+\.maps\.arcgis\.com\/apps\/Embed\/index.html\?webmap=[^"]+)".+<\/iframe>(<\/div>)?$/', trim($input), $matches);
+    preg_match('/^(<style>\.embed-container [^>]+<\/style><div class="embed-container">)?<iframe [^>]+ src="(https?:)?(?<url>\/\/[^\/]+\.maps\.arcgis\.com\/apps\/Embed\/index.html\?webmap=[^"]+)".+<\/iframe>(<\/div>)?$/', trim($input), $matches);
     if (isset($matches['url'])) {
       return $matches['url'];
     }
