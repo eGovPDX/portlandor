@@ -109,7 +109,7 @@
         }
 
         // Set up verify button //////////////////////////////////
-        $('.location-picker-address').after('<input class="btn location-verify button js-form-submit form-submit" type="submit" id="location_verify" name="op" value="Verify">');
+        $('.location-picker-address').after('<input class="btn location-verify button js-form-submit form-submit" type="button" id="location_verify" name="op" value="Verify">');
         $('.location-picker-address').after('<span class="verified-checkmark address invisible" title="Location is verified!">✓</span>');
         $(document).on('click', '#location_verify', function (e) {
           e.preventDefault();
@@ -275,7 +275,7 @@
               setUnverified();
               return false;
             } else if (response.error) {
-              showErrorModal("An server error occurred.");
+              showErrorModal(response.error.message);
               setUnverified();
               return false;
             }
