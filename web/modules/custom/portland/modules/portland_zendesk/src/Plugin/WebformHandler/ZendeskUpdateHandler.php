@@ -103,6 +103,7 @@ class ZendeskUpdateHandler extends WebformHandlerBase
             'status' => '',
             'assignee_id' => '',
             'type' => '',
+            'collaborators' => '',
             'custom_fields' => '',
             'ticket_id_field' => '',
         ];
@@ -272,6 +273,15 @@ class ZendeskUpdateHandler extends WebformHandlerBase
             ];
         }
 
+        $form['collaborators'] = [
+          '#type' => 'textfield',
+          '#title' => $this->t('Ticket CCs'),
+          '#description' => $this->t('Users to add as cc\'s when creating a ticket.'),
+          '#default_value' => $this->configuration['collaborators'],
+          '#multiple' => true,
+          '#required' => false
+        ];
+
         $form['comment'] = [
             '#type' => 'textarea',
             '#title' => $this->t('Ticket Comment'),
@@ -385,7 +395,7 @@ class ZendeskUpdateHandler extends WebformHandlerBase
 
       // clean up tags
       $request['tags'] = Utility::cleanTags( $request['tags'] );
-      //$request['collaborators'] = preg_split("/[^a-z0-9_\-@\.']+/i", $request['collaborators'] );
+      $request['collaborators'] = preg_split("/[^a-z0-9_\-@\.']+/i", $request['collaborators'] );
 
       // // restructure requester
       // if(!isset($request['requester'])){
