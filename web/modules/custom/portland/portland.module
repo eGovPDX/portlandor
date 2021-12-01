@@ -657,8 +657,17 @@ function portland_search_api_solr_query_alter(\Solarium\QueryType\Select\Query\Q
 {
   // Only modify the query for site search
   $search_id = $query->getSearchId();
-  if (strpos($search_id, "search_api_page:search_portland_gov") !== 0) {
+  if (strpos($search_id, "search_api_page:search_portland_gov") !== 0 && 
+  strpos($search_id, "search_api_autocomplete:search_portland_gov") !== 0) {
     return;
+  }
+
+  // POWR-2462 Override the parse mode for autocomplete to "direct" to match the main search 
+  // page. By default, the autocomplete module uses "terms" parse mode. 
+  if(strpos($search_id, "search_api_autocomplete:search_portland_gov") === 0) {
+    $parse_mode_manager = \Drupal::service('plugin.manager.search_api.parse_mode');
+    $parse_mode_direct = $parse_mode_manager->createInstance('direct');
+    $query->setParseMode($parse_mode_direct);
   }
 
   $date_field_name = 'aggregated_sorting_date'; // This can be any UNIX timestamp field
