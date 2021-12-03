@@ -88,7 +88,7 @@ describe('SuperAdmin user test', () => {
         await page.keyboard.press('Enter');
         await page.waitForNavigation();
 
-        text_content = await page.evaluate(() => document.querySelector('td.views-field-name').textContent);
+        text_content = await page.evaluate(() => document.querySelector('table.views-view-table').textContent);
         expect(text_content).toEqual(expect.stringContaining('Ally Admin'));
 
         // Delete the new group
