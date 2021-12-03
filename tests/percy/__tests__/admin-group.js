@@ -63,6 +63,8 @@ describe('SuperAdmin user test', () => {
         // Must expand the admin fields group in order to input Group Path
         await page.click('details#edit-group-administrative-fields');
         await page.type('#edit-field-group-path-0-value', 'percy-test-group');
+        // Publish group
+        await page.select("#edit-moderation-state-0-state", "published");
 
         selector = '#edit-submit';
         await page.evaluate((selector) => document.querySelector(selector).click(), selector);
