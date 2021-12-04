@@ -1,18 +1,21 @@
-{# CLASSES #}
-{% set classes = [
-  'cloudy-contact-item',
-] %}
-{# TWIG #}
-<div class="{{ classes|join(' ')|trim }}">
-  {% if name %}
-  {# TODO: Josh removed the heading component from here as it was impossible to reset the margin to match Figma #}
-  {# TODO: Decide if a heading is really the correct approach for a list of contacts. #}
-    {% block name %}
-      <h3>{{ name.0 }}</h3>
-    {% endblock %}
-  {% endif %}
+{% set level = heading.level|default(3) %}
+{% set style = heading.style|default(5) %}
+
+{% set classes = classes|default([
+  'cloudy-contact-item'
+]) %}
+
+<div{{ attributes.addClass(classes|join('')) }}>
+  {{ title_prefix }}
+  {% include "@components/heading/heading.twig" with {
+    level: level,
+    style: style,
+    text: heading.text,
+    classes: title ? ['mb-0'] : heading.classes
+  } only %}
+  {{ title_suffix }}
   {% if title %}
-    <p class="cloudy-helper-text">{{ title }}</p>
+    <span class="d-block mb-4">{{ title }}</span>
   {% endif %}
   <div class="cloudy-contact__resource">
     {% if email %}
@@ -29,14 +32,8 @@
       </div>
     {% endif %}
     {% if phone %}
-      {# Add margin to bottom of phone link only if there is help text #}
-      {% if phone_help %}
-        {% set classes = ['mb-2'] %}
-      {% endif %}
-
       <div class="cloudy-contact-item__resource-wrapper">
         {% include "@components/link/link.twig" with {
-          classes: classes,
           background: false,
           standalone: false,
           icon: {
@@ -46,7 +43,7 @@
           url: 'tel:' ~ phone
         } only %}
         {% if phone_help %}
-          <p class="cloudy-helper-text">{{ phone_help }}</p>
+          <span class="d-block ml-6">{{ phone_help }}</span>
         {% endif %}
       </div>
     {% endif %}
@@ -61,7 +58,7 @@
           text: tty|replace({'+1-': '', '+1': '', }),
           url: 'tel:' ~ tty
         } only %}
-        <span> TTY</span>
+        <span class="pl-1">TTY</span>
       </div>
     {% endif %}
     {% if oregon_relay %}
@@ -75,7 +72,7 @@
           text: '711',
           url: 'tel:711'
         } only %}
-        <span> Oregon Relay Service</span>
+        <span class="pl-1">Oregon Relay Service</span>
       </div>
     {% endif %}
     {% if display_311 %}
@@ -84,12 +81,12 @@
           background: false,
           standalone: false,
           icon: {
-            name: 'phone',
+            name: 'phone'
           },
           text: '311',
           url: 'tel:311'
         } only %}
-        <span> Customer Service</span>
+        <span class="pl-1">City of Portland general information hotline</span>
       </div>
     {% endif %}
     {% if fax %}
@@ -104,7 +101,12 @@
       </div>
     {% endif %}
     {% if social.facebook or social.twitter or social.instagram or social.youtube_link or social.linkedin or social.nextdoor %}
-      <h3 class="h5 mt-8">Follow on Social Media</h3>
+      {% include "@components/heading/heading.twig" with {
+        level,
+        style,
+        text: "follow on social media"|t|title,
+        classes: ['mt-8']
+      } only %}
       {% if social.facebook %}
         <div class="cloudy-contact-item__resource-wrapper">
           {% spaceless %}
