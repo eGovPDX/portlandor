@@ -19,6 +19,7 @@ elements: |-
     '#options':
       'Yes': 'Yes, I would like to report discrimination'
       'No': 'No, but I would like to request an ADA or language access accommodation'
+    '#default_value': 'Yes'
   request_ada_accommodation_text_stop:
     '#type': webform_markup
     '#states':
@@ -37,46 +38,271 @@ elements: |-
       visible:
         ':input[name="report_discrimination"]':
           value: 'Yes'
-    report_discrimination_based_on:
-      '#type': webform_checkboxes_other
-      '#title': 'I believe the discrimination I experienced was based on...'
-      '#description': '(Check all that apply)'
-      '#description_display': before
-      '#options': discrimination_causes
-      '#other__option_label': 'Something else...'
-      '#other__placeholder': 'Please describe'
+    container_request:
+      '#type': container
+      how_would_you_like_to_complete_your_request_or_report_:
+        '#type': radios
+        '#title': 'How would you like to complete your request or report?'
+        '#options':
+          'Call us': 'Call us'
+          'We contact you': 'We can contact you'
+          'Continue online': 'Continue online'
+        '#default_value': 'Continue online'
+      markup_contact_us_text_stop:
+        '#type': webform_markup
+        '#states':
+          visible:
+            ':input[name="how_would_you_like_to_complete_your_request_or_report_"]':
+              value: 'Call us'
+        '#markup': |-
+          <div class="webform-alert alert alert--info">
+          <h2>Next Steps</h2>
+
+          <p>Please call us at 311,&nbsp;<a href="tel:+15038234000">(503) 823-4000</a>,&nbsp;or&nbsp;<a href="tel:711">711</a>&nbsp;for TTY via Oregon Relay Service. Staff are available Monday through Friday from 8:00 a.m. to 5:00 p.m., excluding Federal Holidays.</p>
+          </div>
+    container_online:
+      '#type': container
+      '#states':
+        visible:
+          ':input[name="how_would_you_like_to_complete_your_request_or_report_"]':
+            value: 'Continue online'
+      report_discrimination_based_on:
+        '#type': webform_checkboxes_other
+        '#title': 'I believe the discrimination I experienced was based on...'
+        '#description': '(Check all that apply)'
+        '#description_display': before
+        '#options': discrimination_causes
+        '#other__option_label': 'Something else...'
+        '#other__placeholder': 'Please describe'
+        '#required': true
+      report_discrimination_date:
+        '#type': date
+        '#title': 'When did the discrimination occur?'
+        '#date_date_format': ''
+        '#required': true
+      report_discrimination_location:
+        '#type': portland_location_picker
+        '#title': 'Where did the discrimination occur?'
+        '#location_type__access': false
+        '#location_park_container__access': false
+        '#waterway_instructions__access': false
+        '#location_private_owner__access': false
+      report_discrimination_bureau_office_etc:
+        '#type': textfield
+        '#title': 'Please provide the name of the city bureau, office, employee, event, or program associated with the discrimination'
+      report_discrimination_group_entity:
+        '#type': webform_entity_select
+        '#title': 'Please select the city bureau, office, employee, event, or program associated with the discrimination'
+        '#select2': true
+        '#target_type': group
+        '#selection_handler': views
+        '#selection_settings':
+          view:
+            view_name: sitewide_groups_list
+            display_name: active_groups_reference
+            arguments: {  }
+      report_discrimination_description:
+        '#type': textarea
+        '#title': 'In your own words, describe the alleged discrimination.'
+        '#description': 'Please explain what happened; who was involved; what policy, program, or activity was discriminatory (if applicable); why you believe it happened, and how you were discriminated against. To protect your privacy, do not include any personal or health-related information.'
+        '#description_display': before
+        '#required': true
+      report_discrimination_witnesses:
+        '#type': radios
+        '#title': 'Were there witnesses to the discrimination?'
+        '#options': yes_no
+        '#options_display': side_by_side
+      container_witnesses:
+        '#type': container
+        '#states':
+          visible:
+            ':input[name="report_discrimination_witnesses"]':
+              value: 'Yes'
+        report_discrimination_witnesses_contact_known:
+          '#type': radios
+          '#title': 'Do you know their name and phone number or email address?'
+          '#options': yes_no
+          '#options_display': side_by_side
+        container_witness_1:
+          '#type': container
+          '#states':
+            visible:
+              ':input[name="report_discrimination_witnesses_contact_known"]':
+                value: 'Yes'
+          report_discrimination_witness_1_name:
+            '#type': textfield
+            '#title': 'First Witness Name'
+          report_discrimination_witness_1_phone:
+            '#type': textfield
+            '#title': 'First Witness Phone'
+          report_discrimination_witness_1_email:
+            '#type': textfield
+            '#title': 'First Witness Email'
+            '#input_mask': '''alias'': ''email'''
+          report_discrimination_add_witness:
+            '#type': radios
+            '#title': 'Add another witness?'
+            '#title_display': none
+            '#options':
+              'Add another witness': 'Add another witness'
+            '#options_display': buttons
+            '#states':
+              invisible:
+                ':input[name="report_discrimination_add_witness"]':
+                  checked: true
+          container_witness_2:
+            '#type': container
+            '#states':
+              visible:
+                ':input[name="report_discrimination_add_witness"]':
+                  checked: true
+            report_discrimination_witness_2_name:
+              '#type': textfield
+              '#title': 'Second Witness Name'
+            report_discrimination_witness_2_phone:
+              '#type': textfield
+              '#title': 'Second Witness Phone'
+            report_discrimination_witness_2_email:
+              '#type': textfield
+              '#title': 'Second Witness Email'
+              '#input_mask': '''alias'': ''email'''
+      report_discrimination_file_upload:
+        '#type': managed_file
+        '#title': 'If appropriate, please attach any photos or other materials relevant to your complaint. '
+        '#file_preview': name
+        '#file_extensions': 'gif jpg jpeg png txt pdf doc docx ppt pptx xls xlsx avi mov mp3 wav'
+        '#sanitize': true
+      report_discrimination_desired_outcome:
+        '#type': textarea
+        '#title': 'What type of action or resolution would you like to see taken?'
+        '#required': true
+      report_discrimination_filed_complaint_other:
+        '#type': radios
+        '#title': 'Have you filed a complaint with any other federal, state, or local agencies, or within any Federal or State Court?'
+        '#options': yes_no
+        '#options_display': side_by_side
+        '#required': true
+      container_other_agency:
+        '#type': container
+        '#states':
+          visible:
+            ':input[name="report_discrimination_filed_complaint_other"]':
+              value: 'Yes'
+        report_discrimination_filed_complaint_other_agency:
+          '#type': textfield
+          '#title': 'Which agency or court?'
+          '#required': true
+        report_discrimination_filed_complaint_other_agency_contact_name:
+          '#type': textfield
+          '#title': 'Agency or court contact person'
+        report_discrimination_filed_complaint_other_agency_contact_phone:
+          '#type': textfield
+          '#title': 'Agency or court contact phone'
+      report_discrimination_on_behalf_of:
+        '#type': radios
+        '#title': 'Who are you making this request or complaint for?'
+        '#options':
+          Myself: Myself
+          'Someone else': 'Someone else'
+        '#options_display': side_by_side
+        '#required': true
+      container_on_behalf_of:
+        '#type': container
+        '#states':
+          visible:
+            ':input[name="report_discrimination_on_behalf_of"]':
+              value: 'Someone else'
+        report_discrimination_on_behalf_of_name:
+          '#type': textfield
+          '#title': 'What is their name?'
+        report_discrimination_on_behalf_of_relationship:
+          '#type': textfield
+          '#title': 'What is your relationship to them?'
+        report_discrimination_on_behalf_of_permission:
+          '#type': radios
+          '#title': 'Have you obtained permission from them to file this complaint?'
+          '#options': yes_no
+          '#options_display': side_by_side
+          '#required': true
+        report_discrimination_on_behalf_of_permission_text_stop:
+          '#type': webform_markup
+          '#states':
+            visible:
+              ':input[name="report_discrimination_on_behalf_of_permission"]':
+                value: 'No'
+          '#markup': |-
+            <div class="webform-alert alert alert--info">
+            <h2>Next Steps</h2>
+
+            <p>Please obtain their permission before submitting this form.</p>
+            </div>
+    container_contact:
+      '#type': container
+      '#states':
+        invisible:
+          ':input[name="how_would_you_like_to_complete_your_request_or_report_"]':
+            value: 'Call us'
+      contact_name:
+        '#type': textfield
+        '#title': 'Your Name'
+        '#required': true
+      contact_email:
+        '#type': textfield
+        '#title': Email
+        '#description': 'We will use your email to confirm your submission.'
+        '#description_display': before
+        '#input_mask': '''alias'': ''email'''
+        '#required': true
+      contact_phone:
+        '#type': textfield
+        '#title': Phone
+      contact_preferred_method:
+        '#type': radios
+        '#title': 'If needed, would you prefer that we contact you by phone or email?'
+        '#options':
+          Phone: Phone
+          Email: Email
+      contact_interpreter:
+        '#type': radios
+        '#title': 'Do you need an interpreter?'
+        '#options':
+          'No': 'No'
+          'Yes, VRI': 'Yes, VRI'
+          'Yes, Oregon Relay Service (TTY)': 'Yes, Oregon Relay Service (TTY)'
+          'Yes, language interpreter': 'Yes, language interpreter'
+        '#states':
+          visible:
+            ':input[name="contact_preferred_method"]':
+              value: Phone
+      contact_language:
+        '#type': textfield
+        '#title': 'Which language?'
+        '#states':
+          visible:
+            ':input[name="contact_interpreter"]':
+              value: 'Yes, language interpreter'
+    markup_complainant_acknowledgement_text:
+      '#type': webform_markup
+      '#markup': |-
+        <p>
+          <strong>Complainant Acknowledgement</strong>
+        </p>
+        <p>
+          By submitting this form, I affirm that (1) I have read, understand and accept the terms for procedures for tracking and investigating Civil Rights complaints and (2) The information I have provided in this form is true to the best of my knowledge.
+        </p>
+    complainant_acknowledgement_agree:
+      '#type': checkbox
+      '#title': 'I agree'
       '#required': true
-    report_discrimination_date:
-      '#type': date
-      '#title': 'When did the discrimination occur?'
-      '#date_date_format': ''
-      '#required': true
-    report_discrimination_location:
-      '#type': portland_location_picker
-      '#title': 'Where did the discrimination occur?'
-      '#location_type__access': false
-      '#location_park_container__access': false
-      '#waterway_instructions__access': false
-      '#location_private_owner__access': false
-    report_discrimination_bureau_office_etc:
-      '#type': textfield
-      '#title': 'Please provide the name of the city bureau, office, employee, event, or program associated with the discrimination'
-    report_discrimination_group_entity:
-      '#type': webform_entity_select
-      '#title': 'Please select the city bureau, office, employee, event, or program associated with the discrimination'
-      '#select2': true
-      '#target_type': group
-      '#selection_handler': views
-      '#selection_settings':
-        view:
-          view_name: sitewide_groups_list
-          display_name: active_groups_reference
-          arguments: {  }
-  actions:
-    '#type': webform_actions
-    '#title': 'Submit button(s)'
-    '#submit__label': Submit
-    '#update_hide': true
+    actions:
+      '#type': webform_actions
+      '#title': 'Submit button(s)'
+      '#states':
+        invisible:
+          ':input[name="report_discrimination_on_behalf_of_permission"]':
+            value: 'No'
+      '#submit__label': Submit
+      '#update_hide': true
 css: ''
 javascript: ''
 settings:
@@ -89,7 +315,7 @@ settings:
   page_submit_path: ''
   page_confirm_path: ''
   page_theme_name: ''
-  form_title: both
+  form_title: source_entity_webform
   form_submit_once: false
   form_exception_message: ''
   form_open_message: ''
@@ -103,11 +329,11 @@ settings:
   form_prepopulate_source_entity: false
   form_prepopulate_source_entity_required: false
   form_prepopulate_source_entity_type: ''
-  form_reset: false
+  form_reset: true
   form_disable_autocomplete: false
   form_novalidate: false
   form_disable_inline_errors: false
-  form_required: false
+  form_required: true
   form_unsaved: false
   form_disable_back: false
   form_submit_back: false
@@ -161,7 +387,7 @@ settings:
   wizard_track: ''
   wizard_prev_button_label: ''
   wizard_next_button_label: ''
-  wizard_toggle: false
+  wizard_toggle: true
   wizard_toggle_show_label: ''
   wizard_toggle_hide_label: ''
   preview: 0
