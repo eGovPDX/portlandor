@@ -290,18 +290,6 @@ class ZendeskUpdateHandler extends WebformHandlerBase
             '#format' => 'full_html'
         ];
 
-        // space separated tags
-        // $form['tags'] = [
-        //     '#type' => 'textfield',
-        //     '#title' => $this->t('Ticket Tags'),
-        //     '#description' => $this->t('This is the full list of tags for the ticket. You may add or update tags here, and this list will replace the tags on the ticket.'),
-        //     '#default_value' => $this->configuration['tags'],
-        //     '#multiple' => true,
-        //     '#required' => false
-        // ];
-
-        // get ticket data to display in the Ticket Reference accordion attached to update_fields
-
         $form['custom_fields'] = [
             '#type' => 'webform_codemirror',
             '#mode' => 'yaml',
@@ -417,9 +405,6 @@ class ZendeskUpdateHandler extends WebformHandlerBase
         }
       }
 
-      // set external_id to connect zendesk ticket with submission ID
-      //$request['external_id'] = $webform_submission->id(); // this sends webform id to zendesk; do we need this? probably not.
-
       // get list of all webform fields with a file field type
       $file_fields = $this->getWebformFieldsWithFiles();
 
@@ -480,21 +465,7 @@ class ZendeskUpdateHandler extends WebformHandlerBase
           }
 
           // create ticket
-          //$new_ticket = $client->tickets()->create($request);
           $updated_ticket = $client->tickets()->update($zendesk_ticket_id, $request);
-
-          // // retrieve the name of the field in which to store the created Zendesk Ticket ID
-          // $zendesk_ticket_id_field_name = $configuration['ticket_id_field'];
-          
-          // // retrieve submission data
-          // $data = $webform_submission->getData();
-
-          // // if name field is set and present,  add ticket ID to hidden Zendesk Ticket ID field
-          // if($zendesk_ticket_id_field_name && array_key_exists( $zendesk_ticket_id_field_name, $data ) && $updated_ticket){
-          //     $data[$zendesk_ticket_id_field_name] = $updated_ticket->ticket->id;
-          //     $webform_submission->setData($data);
-          //     $webform_submission->save();
-          // }
 
       }
       catch( \Exception $e ){

@@ -66,19 +66,6 @@ class TicketValidationWebformHandler extends WebformHandlerBase {
 
     $ticket_submission_key = $custom_fields[self::SUBMISSION_KEY_CUSTOM_FIELD_ID];
 
-    // // convert custom fields format from [key:data} to [id:key,value:data] for Zendesk field referencing
-    // $custom_fields = Yaml::decode($request['custom_fields']);
-    // unset($request['custom_fields']);
-    // $request['custom_fields'] = [];
-    // if($custom_fields) {
-    //   foreach ($custom_fields as $key => $value) {
-    //     $request['custom_fields'][] = [
-    //         'id' => $key,
-    //         'value' => $value
-    //     ];
-    //   }
-    // }
-
     if ($ticket_submission_key != $submission_key) {
       $formState->setErrorByName('original_submission_key', $this->t('The submission key is not valid. This form cannot be processed.'));
     }
