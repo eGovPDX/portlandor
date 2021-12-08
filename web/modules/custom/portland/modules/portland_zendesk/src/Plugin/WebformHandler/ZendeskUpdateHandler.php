@@ -397,25 +397,11 @@ class ZendeskUpdateHandler extends WebformHandlerBase
       $request['tags'] = Utility::cleanTags( $request['tags'] );
       $request['collaborators'] = preg_split("/[^a-z0-9_\-@\.']+/i", $request['collaborators'] );
 
-      // // restructure requester
-      // if(!isset($request['requester'])){
-      //     $request['requester'] = $request['requester_name']
-      //         ? [
-      //             'name' => Utility::convertName($request['requester_name']),
-      //             'email' => $request['requester_email'],
-      //         ]
-      //         : $request['requester_email'];
-
-      //     unset($request['requester_name']);
-      //     unset($request['requester_email']);
-      // }
-
-      // TODO: does this do what we want it to do? Add the comment to the thread?
       if(!isset($request['comment']['body'])){
-          $comment = $request['comment'];
-          $request['comment'] = [
-              'html_body' => $comment, 'public' => true
-          ];
+        $comment = $request['comment'];
+        $request['comment'] = [
+            'html_body' => $comment, 'public' => true
+        ];
       }
 
       // convert custom fields format from [key:data} to [id:key,value:data] for Zendesk field referencing
@@ -423,12 +409,12 @@ class ZendeskUpdateHandler extends WebformHandlerBase
       unset($request['custom_fields']);
       $request['custom_fields'] = [];
       if($custom_fields) {
-          foreach ($custom_fields as $key => $value) {
-              $request['custom_fields'][] = [
-                  'id' => $key,
-                  'value' => $value
-              ];
-          }
+        foreach ($custom_fields as $key => $value) {
+          $request['custom_fields'][] = [
+              'id' => $key,
+              'value' => $value
+          ];
+        }
       }
 
       // set external_id to connect zendesk ticket with submission ID
