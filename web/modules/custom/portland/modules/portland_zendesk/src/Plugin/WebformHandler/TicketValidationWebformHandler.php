@@ -57,7 +57,15 @@ class TicketValidationWebformHandler extends WebformHandlerBase {
     $valid = false;
 
     $client = new ZendeskClient();
-    $ticket = $client->tickets()->find($ticket_id)->ticket;
+    $ticket = null;
+
+    // if the ticket number is invalid, the find() call will throw an error that we need to catch
+    try {
+      $ticket = $client->tickets()->find($ticket_id)->ticket;
+    } catch (\Exception $e) {
+      $formState->setErrorByName('original_submission_key', $this->t('An error occurred while trying to access the specified ticket. Please contact a site administrator.'));
+      return;
+    }
 
     $custom_fields = [];
     foreach ($ticket->custom_fields as $item) {
@@ -72,3 +80,4 @@ class TicketValidationWebformHandler extends WebformHandlerBase {
   }
 
 }
+
