@@ -294,7 +294,7 @@ class ZendeskUpdateHandler extends WebformHandlerBase
         $form['comment_private'] = [
           '#type' => 'checkbox',
           '#title' => $this->t('Private Comment'),
-          '#description' => $this->t('Check this box if you want the comment to be private and not visible to the requester.'),
+          '#description' => $this->t('Check this box if you want the ticket comment to be private and not visible to the requester.'),
           '#default_value' => $this->configuration['comment_private']
         ];
 
