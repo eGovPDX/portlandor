@@ -98,6 +98,7 @@ class ZendeskUpdateHandler extends WebformHandlerBase
     {
         return [
             'comment' => '',
+            'comment_private' => false,
             'tags' => '',
             'priority' => '',
             'status' => '',
@@ -290,6 +291,13 @@ class ZendeskUpdateHandler extends WebformHandlerBase
             '#format' => 'full_html'
         ];
 
+        $form['comment_private'] = [
+          '#type' => 'checkbox',
+          '#title' => $this->t('Private Comment'),
+          '#description' => $this->t('Check this box if you want the comment to be private and not visible to the requester.'),
+          '#default_value' => $this->configuration['comment_private']
+        ];
+
         $form['custom_fields'] = [
             '#type' => 'webform_codemirror',
             '#mode' => 'yaml',
@@ -388,7 +396,7 @@ class ZendeskUpdateHandler extends WebformHandlerBase
       if(!isset($request['comment']['body'])){
         $comment = $request['comment'];
         $request['comment'] = [
-            'html_body' => $comment, 'public' => true
+            'html_body' => $comment, 'public' => !$request['comment_private']
         ];
       }
 
