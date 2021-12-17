@@ -432,7 +432,7 @@
                     if (locationType == "park") {
                       setLocationType("other");
                     }
-                    $('#location_address').val("");
+                    $('#location_address').val("n/a");
                     setUnverified();
                     return false;
                     // showStatusModal("There was a problem retrieving data for the selected location.");
