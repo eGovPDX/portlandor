@@ -10,6 +10,10 @@ config:
   composer_version: 2
 services:
   appserver:
+    build_as_root:
+      - sed 's|mozilla\/AddTrust_External_Root.crt|#mozilla\/AddTrust_External_Root.crt|g' -i /etc/ca-certificates.conf
+      - /bin/sh -c "cp /app/cop_ca_*.crt /usr/local/share/ca-certificates/"
+      - update-ca-certificates
     build:
       - "/app/vendor/bin/phpcs --config-set installed_paths /app/vendor/drupal/coder/coder_sniffer"
     run_as_root:
@@ -28,6 +32,8 @@ services:
       yarn: latest
     overrides:
       image: cimg/php:7.4-browsers
+      environment:
+        NODE_EXTRA_CA_CERTS: /app/cop_ca.pem
     build_as_root:
       - /bin/sh -c "mkdir /home/node"
       - /bin/sh -c "chmod -R 777 /home/node"
@@ -107,7 +113,7 @@ tooling:
     cmd:
       - appserver: date +"%T"
       - appserver: ln -sf /usr/local/bin/composer /app/vendor/bin/composer
-      - appserver: /bin/bash -c "if [[ \$(composer install --dry-run -d /app 2>&1 | grep -oPc 'Removing drupal/\S+') -gt 0 ]]; then { echo Composer is about to remove one or more modules... Let\'s disable them in Drupal first.; for module in \$(composer install --dry-run -d /app 2>&1 | grep -oP 'Removing drupal/\K\S+'); do { echo Disabling \$module...; drush pmu \$module -y;} done } fi || true"
+      - appserver: /bin/bash -c "if [[ \$(composer install --dry-run -d /app --no-interaction 2>&1 | grep -oPc 'Removing drupal/\S+') -gt 0 ]]; then { echo Composer is about to remove one or more modules... Let\'s disable them in Drupal first.; for module in \$(composer install --dry-run -d /app --no-interaction 2>&1 | grep -oP 'Removing drupal/\K\S+'); do { echo Disabling \$module...; drush pmu \$module -y;} done } fi || true"
       - appserver: echo "=====Timestamp===== Starting Drupal Config Refresh"
       - appserver: date +"%T"
       - appserver: echo "Installing Composer dependencies..."
@@ -153,3 +159,10 @@ tooling:
   chromedriver:
     service: chromedriver
     description: CUSTOM Run chromedriver commands
+  install-certs:
+    description: CUSTOM Installs City of Portland certificate authority certificates used for TLS decryption
+    service: appserver
+    cmd:
+      - /bin/sh -c "cp /app/cop_ca_*.crt /usr/local/share/ca-certificates/"
+      - update-ca-certificates
+    user: root
