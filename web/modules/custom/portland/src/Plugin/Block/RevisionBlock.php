@@ -267,7 +267,7 @@ class RevisionBlock extends BlockBase {
 
   /**
    * Loads the default revision of a node for the specified language.
-   * The default revision is the published revision, if any, otherwise it's the latest revision.
+   * The default revision is the latest published revision, if any, otherwise it's the latest revision.
    *
    * @param int $nid
    *   The node ID.
@@ -282,7 +282,7 @@ class RevisionBlock extends BlockBase {
                       ->allRevisions()
                       ->condition('nid', $nid)
                       ->condition('revision_translation_affected', 1, '=', $langcode)
-                      ->condition('revision_default', 1)
+                      ->condition('status', 1)
                       ->range(0, 1)
                       ->sort('vid', 'DESC')
                       ->accessCheck(FALSE)
@@ -295,7 +295,7 @@ class RevisionBlock extends BlockBase {
       return self::loadLatestRevision($nid, $langcode);
     } else {
       // Return the published revision
-      return \Drupal::entityTypeManager()->getStorage('node')->loadRevision($publishedRevisionId);
+      return \Drupal::entityTypeManager()->getStorage('node')->loadRevision($publishedRevisionId)->getTranslation($langcode);
     }
   }
 }
