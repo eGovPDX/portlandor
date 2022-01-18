@@ -368,148 +368,177 @@ class ZendeskHandler extends WebformHandlerBase
         }
     }
 
-    // /**
-    //  * Submits a Zendesk ticket once the Webform has been submitted and saved
-    //  * {@inheritdoc}
-    //  */
-    public function postSave(WebformSubmissionInterface $webform_submission, $update = TRUE)
+    /**
+     * {@inheritdoc}
+     */
+    public function validateForm(array &$form, FormStateInterface $form_state, WebformSubmissionInterface $webform_submission) {
+      $this->submitAndValidateTicket($form_state);
+    }
+
+    /**
+     * Submit report to Zendesk API and validate the ticket was successfully created.
+     * 
+     * By submitting to the API during the validate phase, we can interrupt the form submission,
+     * prevent the email handlers from firing, and display an error message to the user. Validation
+     * in a custom handler is performed after all the built-in webform validation, so this is a
+     * safe approach.
+     */
+    private function submitAndValidateTicket(FormStateInterface $formState) {
+      $submission_key = !empty($formState->getValue('original_submission_key')) ? $formState->getValue('original_submission_key') : NULL;
+      $ticket_id = !empty($formState->getValue('report_ticket_id')) ? $formState->getValue('report_ticket_id') : NULL;
+
+      if (!$formState->hasAnyErrors()) {
+        // comment out the line below to test the error handling
+        $ticket_id = $this->sendToZendesk($webform_submission, $update);
+        if (!$ticket_id) {
+          // throw error and don't let form submit
+          \Drupal::messenger()->addError(t('There was a problem submitting your report to our support system. Please try again in a few minutes. If the error persists, please <a href="/feedback?subject=The page looks broken&feedback=Report could not be submitted to the support ticketing system.">contact us</a>.'));
+          $formState->setErrorByName('report_ticket_id');
+        }
+      }
+    }
+
+    public function sendToZendesk(WebformSubmissionInterface $webform_submission, $update = TRUE)
     {
-        // run only for new submissions
-        if (! $update) {
+      $new_ticket_id = 0;
 
-            // declare working variables
-            $request = [];
-            $submission_fields = $webform_submission->toArray(TRUE);
-            $configuration = $this->getTokenManager()->replace($this->configuration, $webform_submission);
+      // run only for new submissions
+      if (! $update) {
 
-            // Allow for either values coming from other fields or static/tokens
-            foreach ($this->defaultConfigurationNames() as $field) {
-                $request[$field] = $configuration[$field];
-                if (!empty($submission_fields['data'][$configuration[$field]])) {
-                    $request[$field] = $submission_fields['data'][$configuration[$field]];
-                }
-            }
+        // declare working variables
+        $request = [];
+        $submission_fields = $webform_submission->toArray(TRUE);
+        $configuration = $this->getTokenManager()->replace($this->configuration, $webform_submission);
 
-            // clean up tags
-            $request['tags'] = Utility::cleanTags( $request['tags'] );
-            $request['collaborators'] = preg_split("/[^a-z0-9_\-@\.']+/i", $request['collaborators'] );
-
-            // restructure requester
-            if(!isset($request['requester'])){
-                $request['requester'] = $request['requester_name']
-                    ? [
-                        'name' => Utility::convertName($request['requester_name']),
-                        'email' => $request['requester_email'],
-                    ]
-                    : $request['requester_email'];
-
-                unset($request['requester_name']);
-                unset($request['requester_email']);
-            }
-
-            // restructure comment array
-            if(!isset($request['comment']['body'])){
-                $comment = $request['comment'];
-                $request['comment'] = [
-                    'html_body' => $comment
-                ];
-            }
-
-            // convert custom fields format from [key:data} to [id:key,value:data] for Zendesk field referencing
-            $custom_fields = Yaml::decode($request['custom_fields']);
-            unset($request['custom_fields']);
-            $request['custom_fields'] = [];
-            if($custom_fields) {
-                foreach ($custom_fields as $key => $value) {
-                    $request['custom_fields'][] = [
-                        'id' => $key,
-                        'value' => $value
-                    ];
-                }
-            }
-
-            // set external_id to connect zendesk ticket with submission ID
-            $request['external_id'] = $webform_submission->id();
-
-            // get list of all webform fields with a file field type
-            $file_fields = $this->getWebformFieldsWithFiles();
-
-            // attempt to send request to create zendesk ticket
-            try {
-
-                // initiate api client
-                $client = new ZendeskClient();
-
-                // Checks for files in submission values and uploads them if found
-                foreach($submission_fields['data'] as $key => $submission_field){
-                    if( in_array($key, $file_fields) && !empty($submission_field) ){
-
-                        // pack file index/indices into an array for looping
-                        if( is_array( $submission_field ) ){
-                            $file_indices = $submission_field;
-                        } else {
-                            $file_indices = []; // clear var
-                            $file_indices[] = $submission_field;
-                        }
-
-                        // individually attach each uploaded file per file submission_field
-                        foreach( $file_indices as $file_index) {
-
-                            // get file from index for upload
-                            $file = File::load($file_index);
-
-                            // add uploads key to Zendesk comment, if not already present
-                            if ($file && !array_key_exists('uploads', $request['comment'])) {
-                                $request['comment']['uploads'] = [];
-                            }
-
-                            // upload file and get response
-                            $attachment = $client->attachments()->upload([
-                                'file' => $file->getFileUri(),
-                                'type' => $file->getMimeType(),
-                                'name' => $file->getFileName(),
-                            ]);
-
-                            // add upload token to comment
-                            if ($attachment && isset($attachment->upload->token)) {
-                                $request['comment']['uploads'][] = $attachment->upload->token;
-                            }
-                        }
-                    }
-                }
-
-                // create ticket
-                $new_ticket = $client->tickets()->create($request);
-
-                // retrieve the name of the field in which to store the created Zendesk Ticket ID
-                $zendesk_ticket_id_field_name = $configuration['ticket_id_field'];
-                
-                // retrieve submission data
-                $data = $webform_submission->getData();
-
-                // if name field is set and present,  add ticket ID to hidden Zendesk Ticket ID field
-                if($zendesk_ticket_id_field_name && array_key_exists( $zendesk_ticket_id_field_name, $data ) && $new_ticket){
-                    $data[$zendesk_ticket_id_field_name] = $new_ticket->ticket->id;
-                    $webform_submission->setData($data);
-                    $webform_submission->resave();
-                }
-
-            }
-            catch( \Exception $e ){
-
-                // Encode HTML entities to prevent broken markup from breaking the page.
-                $message = nl2br(htmlentities($e->getMessage()));
-
-                // Log error message.
-                $this->getLogger()->error('@form webform submission to zendesk failed. @exception: @message. Click to edit @link.', [
-                    '@exception' => get_class($e),
-                    '@form' => $this->getWebform()->label(),
-                    '@message' => $message,
-                    'link' => $this->getWebform()->toLink($this->t('Edit'), 'handlers')->toString(),
-                ]);
+        // Allow for either values coming from other fields or static/tokens
+        foreach ($this->defaultConfigurationNames() as $field) {
+            $request[$field] = $configuration[$field];
+            if (!empty($submission_fields['data'][$configuration[$field]])) {
+                $request[$field] = $submission_fields['data'][$configuration[$field]];
             }
         }
-        return;
+
+        // clean up tags
+        $request['tags'] = Utility::cleanTags( $request['tags'] );
+        $request['collaborators'] = preg_split("/[^a-z0-9_\-@\.']+/i", $request['collaborators'] );
+
+        // restructure requester
+        if(!isset($request['requester'])){
+            $request['requester'] = $request['requester_name']
+                ? [
+                    'name' => Utility::convertName($request['requester_name']),
+                    'email' => $request['requester_email'],
+                ]
+                : $request['requester_email'];
+
+            unset($request['requester_name']);
+            unset($request['requester_email']);
+        }
+
+        // restructure comment array
+        if(!isset($request['comment']['body'])){
+            $comment = $request['comment'];
+            $request['comment'] = [
+                'html_body' => $comment
+            ];
+        }
+
+        // convert custom fields format from [key:data} to [id:key,value:data] for Zendesk field referencing
+        $custom_fields = Yaml::decode($request['custom_fields']);
+        unset($request['custom_fields']);
+        $request['custom_fields'] = [];
+        if($custom_fields) {
+            foreach ($custom_fields as $key => $value) {
+                $request['custom_fields'][] = [
+                    'id' => $key,
+                    'value' => $value
+                ];
+            }
+        }
+
+        // set external_id to connect zendesk ticket with submission ID
+        $request['external_id'] = $webform_submission->id();
+
+        // get list of all webform fields with a file field type
+        $file_fields = $this->getWebformFieldsWithFiles();
+
+        // attempt to send request to create zendesk ticket
+        try {
+
+          // initiate api client
+          $client = new ZendeskClient();
+
+          // Checks for files in submission values and uploads them if found
+          foreach($submission_fields['data'] as $key => $submission_field){
+              if( in_array($key, $file_fields) && !empty($submission_field) ){
+
+                  // pack file index/indices into an array for looping
+                  if( is_array( $submission_field ) ){
+                      $file_indices = $submission_field;
+                  } else {
+                      $file_indices = []; // clear var
+                      $file_indices[] = $submission_field;
+                  }
+
+                  // individually attach each uploaded file per file submission_field
+                  foreach( $file_indices as $file_index) {
+
+                      // get file from index for upload
+                      $file = File::load($file_index);
+
+                      // add uploads key to Zendesk comment, if not already present
+                      if ($file && !array_key_exists('uploads', $request['comment'])) {
+                          $request['comment']['uploads'] = [];
+                      }
+
+                      // upload file and get response
+                      $attachment = $client->attachments()->upload([
+                          'file' => $file->getFileUri(),
+                          'type' => $file->getMimeType(),
+                          'name' => $file->getFileName(),
+                      ]);
+
+                      // add upload token to comment
+                      if ($attachment && isset($attachment->upload->token)) {
+                          $request['comment']['uploads'][] = $attachment->upload->token;
+                      }
+                  }
+              }
+          }
+
+          // create ticket
+          $new_ticket = $client->tickets()->create($request);
+
+          // retrieve the name of the field in which to store the created Zendesk Ticket ID
+          $zendesk_ticket_id_field_name = $configuration['ticket_id_field'];
+          
+          // retrieve submission data
+          $data = $webform_submission->getData();
+
+          // if name field is set and present,  add ticket ID to hidden Zendesk Ticket ID field
+          if($zendesk_ticket_id_field_name && array_key_exists( $zendesk_ticket_id_field_name, $data ) && $new_ticket){
+              $data[$zendesk_ticket_id_field_name] = $new_ticket->ticket->id;
+              $new_ticket_id = $new_ticket->ticket->id;
+              $webform_submission->setData($data);
+              $webform_submission->resave();
+          }
+
+        }
+        catch( \Exception $e ){
+
+          // Encode HTML entities to prevent broken markup from breaking the page.
+          $message = nl2br(htmlentities($e->getMessage()));
+
+          // Log error message.
+          $this->getLogger()->error('@form webform submission to zendesk failed. @exception: @message. Click to edit @link.', [
+              '@exception' => get_class($e),
+              '@form' => $this->getWebform()->label(),
+              '@message' => $message,
+              'link' => $this->getWebform()->toLink($this->t('Edit'), 'handlers')->toString(),
+          ]);
+        }
+      }
+      return $new_ticket->ticket->id;;
     }
 
     /**
