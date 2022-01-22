@@ -399,10 +399,9 @@
               $('.place-name').val(parkName);
               setVerified("park");
 
-              // clear address field. in some instances it might be visible, such as in
-              // the streamlined implementation of the widget.
-              $('.location-picker-address').val("");
-
+              // There shouldn't be an address for a park, so use N/A
+              $('.location-picker-address').val("N/A");
+              
               return true;
 
             } else {
@@ -432,7 +431,11 @@
                     if (locationType == "park") {
                       setLocationType("other");
                     }
-                    $('#location_address').val("n/a");
+                    var locName = "N/A";
+                    if (jsonResult && jsonResult.features.length > 0 && jsonResult.features[0].attributes && jsonResult.features[0].attributes.NAME) {
+                      var locName = jsonResult.features[0].attributes.NAME;
+                    }
+                    $('#location_address').val(locName);
                     setUnverified();
                     return false;
                     // showStatusModal("There was a problem retrieving data for the selected location.");
