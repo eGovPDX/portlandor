@@ -369,7 +369,18 @@ class ZendeskUpdateHandler extends WebformHandlerBase
    * {@inheritdoc}
    */
   public function validateForm(array &$form, FormStateInterface $form_state, WebformSubmissionInterface $webform_submission) {
-    $this->sendToZendeskAndValidateNoError($form_state);
+    // the file upload button triggers the validation handler, which is undesired.
+    // in order to prevent that, we need to determine the triggering element for the submission.
+    // call our validation function only if it's not an upload button. be extra careful about
+    // null references here, since we're not sure when/if these elements will be populated.
+    // Candiates for checking whether this is an upload submit:
+    //    $form_state->getTriggeringElement()['#submit'][0] == "file_managed_file_submit"
+    //    $form_state->getTriggeringElement()['#value']->getUntranslatedString() == "Uplooad"
+    if (!$form_state->getTriggeringElement() 
+        || !$form_state->getTriggeringElement()['#value'] 
+        || $form_state->getTriggeringElement()['#value']->getUntranslatedString() != "Upload") {
+      $this->sendToZendeskAndValidateNoError($form_state);
+    }
   }
 
    /**
