@@ -76,6 +76,21 @@ function cloudy_preprocess_html(&$variables) {
 }
 
 /**
+ * Implements hook_preprocess_HOOK()
+ *
+ * Unset page title on Bureau/Office Homepages and move display to content for custom layouts
+ */
+function cloudy_preprocess_page(&$variables) {
+  if($group = \Drupal::routeMatch()->getParameter('group')) {
+    $group_view_mode = \Drupal::routeMatch()->getRouteObject()->getDefault('_entity_view');
+    if($group_view_mode == "group.full" && \Drupal::routeMatch()->getParameter('group')->bundle() == "bureau_office") {
+      // Unset page title
+      unset($variables['page']['content']['cloudy_page_title']);
+    }
+  }
+}
+
+/**
  * Implements hook_form_FORM_ID_alter().
  * Applies path-based classes to search api page block form.
  * Set form attributes
@@ -180,6 +195,30 @@ function cloudy_preprocess_field(&$variables) {
 }
 
 /**
+ * Implements hook_theme_suggestions_node_alter().
+ */
+function cloudy_theme_suggestions_node_alter(array &$suggestions, array $variables)
+{
+  $route_match = \Drupal::routeMatch();
+  $route_object = $route_match->getRouteObject();
+  $original = $variables['theme_hook_original'];
+
+  // Route is a bureau/office homepage
+  if ($route_match->getParameter('group') && $route_match->getRouteObject()->getDefault('_entity_view') == "group.full" && $route_match->getParameter('group')->bundle() == "bureau_office") {
+
+    // Add custom theme suggestions for bureau/office homepage items
+    if (!empty($variables['elements']['#node'])) {
+      $bundle = $variables['elements']['#node']->bundle();
+      $view_mode = $variables['elements']['#view_mode'];
+      $group_type = $route_match->getParameter('group')->bundle();
+      $route_view_mode = preg_replace("(group.)", "", $route_object->getDefault('_entity_view'));
+
+      $suggestions[] = $original . '__' . $bundle . '__' . $view_mode . '__' . $group_type . '__' . $route_view_mode;
+    }
+  }
+}
+
+/**
  * Implements hook_theme_suggestions_views_view_alter().
  */
 function cloudy_theme_suggestions_views_view_alter(array &$suggestions, array $variables)
@@ -193,17 +232,22 @@ function cloudy_theme_suggestions_views_view_alter(array &$suggestions, array $v
  * Adds extra detail of view mode to field theme suggestions
  */
 function cloudy_theme_suggestions_field_alter(array &$suggestions, array $variables) {
+  $element = $variables['element'];
 
-  $entity_type = $variables['element']['#entity_type'];
-  $view_mode = $variables['element']['#view_mode'];
-  $field_type = $variables['element']['#field_type'];
-  $field_name = $variables['element']['#field_name'];
+  $entity_type = $element['#entity_type'];
+  $bundle = $element['#bundle'];
+  $view_mode = $element['#view_mode'];
+  $field_type = $element['#field_type'];
+  $field_name = $element['#field_name'];
 
   $suggestions[] = 'field__' . $view_mode;
+  $suggestions[] = 'field__' . $field_type  . '__' . $bundle;
+  $suggestions[] = 'field__' . $field_type  . '__' . $view_mode;
+  $suggestions[] = 'field__' . $field_name;
+  $suggestions[] = 'field__' . $field_name  . '__' . $bundle;
+  $suggestions[] = 'field__' . $field_name  . '__' . $view_mode;
   $suggestions[] = 'field__' . $entity_type;
   $suggestions[] = 'field__' . $entity_type . '__' . $view_mode;
-  $suggestions[] = 'field__' . $field_name;
-  $suggestions[] = 'field__' . $field_name  . '__' . $view_mode;
   $suggestions[] = 'field__' . $entity_type . '__' . $view_mode . '__' . $field_name;
 }
 
