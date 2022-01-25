@@ -376,9 +376,7 @@ class ZendeskUpdateHandler extends WebformHandlerBase
     // Candiates for checking whether this is an upload submit:
     //    $form_state->getTriggeringElement()['#submit'][0] == "file_managed_file_submit"
     //    $form_state->getTriggeringElement()['#value']->getUntranslatedString() == "Uplooad"
-    if (!$form_state->getTriggeringElement() 
-        || !$form_state->getTriggeringElement()['#value'] 
-        || $form_state->getTriggeringElement()['#value']->getUntranslatedString() != "Upload") {
+    if ($form_state->getTriggeringElement() && $form_state->getTriggeringElement()['#value'] === "Submit") {
       $this->sendToZendeskAndValidateNoError($form_state);
     }
   }
