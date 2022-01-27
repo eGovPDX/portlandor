@@ -406,30 +406,6 @@ class ZendeskHandler extends WebformHandlerBase
     }
   }
 
-  // /**
-  //  * Submits a Zendesk ticket once the Webform has been submitted and saved
-  //  * {@inheritdoc}
-  //  */
-  // public function postSave(WebformSubmissionInterface $webform_submission, $update = TRUE)
-  // {
-  //   //return false;
-
-  //   // declare working variables
-  //   $request = [];
-  //   $submission_fields = $webform_submission->toArray(TRUE);
-  //   $configuration = $this->getTokenManager()->replace($this->configuration, $webform_submission); // can we make this work with formstate?
-
-  //   // Allow for either values coming from other fields or static/tokens
-  //   foreach ($this->defaultConfigurationNames() as $field) {
-  //     $request[$field] = $configuration[$field];
-  //     if (!empty($submission_fields['data'][$configuration[$field]])) {
-  //         $request[$field] = $submission_fields['data'][$configuration[$field]];
-  //     }
-  //   }
-
-  //   $test = 1;
-  // }
-
   public function sendToZendesk(array &$form, FormStateInterface &$form_state)
   {
     // NOTE: This will run for both new and update webform submissions, so this handler should only
