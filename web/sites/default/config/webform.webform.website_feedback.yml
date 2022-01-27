@@ -140,10 +140,10 @@ elements: |-
         '#title': 'Agent Summary'
         '#display_on': none
         '#template': |-
-          {% if data.agent_email %}<p>Agent Email: {{ data.agent_email }}</p>{% endif %}
+          {% if uid %}<p>Agent Email: {{ data.agent_email }}</p>{% endif %}
           {% if data.agent_ticket_number %}<p>Ticket Number: {{ data.agent_ticket_number }}</p>{% endif %}
           {% if data.agent_action_taken %}<p>Action Taken: {{ data.agent_action_taken }}</p>{% endif %}
-          <p>Contact Type: {{ data.agent_contact_type }}</p>
+          <p>Contact Type: {% if data.agent_contact_type %}{{ data.agent_contact_type }}{% else %}Webform{% endif %}</p>
           <p>Ticket Type: {{ data.agent_ticket_type }}</p>
         '#ajax': true
     actions:
@@ -159,15 +159,6 @@ elements: |-
     '#type': hidden
     '#title': 'IP Address'
     '#default_value': '[current-user:ip-address]'
-  computed_email_address:
-    '#type': webform_computed_twig
-    '#title': 'Computed email address'
-    '#display_on': none
-    '#mode': text
-    '#template': '{% if data.email_address %}{{ data.email_address }}{% else %}anonymous@portlandoregon.gov{% endif %}'
-    '#whitespace': trim
-    '#store': true
-    '#ajax': true
 css: 'd-flex justify-content-around'
 javascript: ''
 settings:
@@ -274,7 +265,7 @@ settings:
   draft_pending_multiple_message: ''
   confirmation_type: inline
   confirmation_title: ''
-  confirmation_message: "<h2>Thank you for submitting your feedback, we appreciate your help!</h2>\r\nYou should receive an email confirmation in just a moment. You may reply to that email to add additional information or comments to your feedback.<br />\r\n<br />\r\nName:&nbsp;[webform_submission:values:your_name]<br />\r\n<br />\r\nType of feedback:&nbsp;[webform_submission:values:subject]<br />\r\n<br />\r\nLast page viewed:&nbsp;<a href=\"[webform_submission:values:page_you_last_viewed]\">[webform_submission:values:page_you_last_viewed]</a><br />\r\n<br />\r\nFeedback:&nbsp;[webform_submission:values:feedback]"
+  confirmation_message: "<h2>Thank you for submitting your feedback, we appreciate your help!</h2>\r\nYou should receive an email confirmation in just a moment. You may reply to that email to add additional information or comments to your feedback.<br />\r\n<br />\r\nName:&nbsp;[webform_submission:values:your_name]<br />\r\n<br />\r\nEmail:&nbsp;[webform_submission:values:email_address]<br />\r\n<br />\r\nType of feedback:&nbsp;[webform_submission:values:subject]<br />\r\n<br />\r\nLast page viewed:&nbsp;<a href=\"[webform_submission:values:page_you_last_viewed]\">[webform_submission:values:page_you_last_viewed]</a><br />\r\n<br />\r\nFeedback:&nbsp;[webform_submission:values:feedback]"
   confirmation_url: ''
   confirmation_attributes: {  }
   confirmation_back: true
@@ -384,7 +375,7 @@ handlers:
       cc_options: {  }
       bcc_mail: ''
       bcc_options: {  }
-      from_mail: '[webform_submission:values:email_address]'
+      from_mail: '[webform_submission:values:email_address:raw]'
       from_options: {  }
       from_name: '[webform_submission:values:your_name:raw]'
       subject: '[webform_submission:values:subject:raw] - [webform_submission:values:feedback]'
@@ -425,7 +416,7 @@ handlers:
       cc_options: {  }
       bcc_mail: ''
       bcc_options: {  }
-      from_mail: '[webform_submission:values:email_address]'
+      from_mail: '[webform_submission:values:email_address:raw]'
       from_options: {  }
       from_name: '[webform_submission:values:your_name:raw]'
       subject: '[webform_submission:values:subject:raw] - [webform_submission:values:feedback]'
