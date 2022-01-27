@@ -121,16 +121,30 @@ elements: |-
           invisible:
             ':input[name="agent_ticket_number"]':
               filled: true
-        '#default_value': Webform
+      agent_ticket_type:
+        '#type': webform_computed_twig
+        '#title': 'Ticket Type'
+        '#display_on': none
+        '#mode': text
+        '#template': |-
+          {% if data.subject == "I have a question" %}
+          Question
+          {% elseif data.subject == "I cannot find what I'm looking for" or data.subject == "The information looks incorrect" %}
+          Problem
+          {% elseif data.subject == "The page looks broken" %}
+          Incident
+          {% endif %}
+        '#whitespace': spaceless
       agent_summary:
         '#type': webform_computed_twig
         '#title': 'Agent Summary'
         '#display_on': none
         '#template': |-
-          <p>Agent Email: {{ data.agent_email }}</p>
-          <p>Ticket Number: {{ data.agent_ticket_number }}</p>
-          <p>Action Taken: {{ data.agent_action_taken }}</p>
+          {% if data.agent_email %}<p>Agent Email: {{ data.agent_email }}</p>{% endif %}
+          {% if data.agent_ticket_number %}<p>Ticket Number: {{ data.agent_ticket_number }}</p>{% endif %}
+          {% if data.agent_action_taken %}<p>Action Taken: {{ data.agent_action_taken }}</p>{% endif %}
           <p>Contact Type: {{ data.agent_contact_type }}</p>
+          <p>Ticket Type: {{ data.agent_ticket_type }}</p>
         '#ajax': true
     actions:
       '#type': webform_actions
@@ -370,11 +384,11 @@ handlers:
       cc_options: {  }
       bcc_mail: ''
       bcc_options: {  }
-      from_mail: '[webform_submission:values:computed_email_address]'
+      from_mail: '[webform_submission:values:email_address]'
       from_options: {  }
       from_name: '[webform_submission:values:your_name:raw]'
       subject: '[webform_submission:values:subject:raw] - [webform_submission:values:feedback]'
-      body: "<p>Subject: [webform_submission:values:subject]</p>\r\n\r\n<p>Feedback: [webform_submission:values:feedback]</p>\r\n\r\n<p>Name: [webform_submission:values:your_name]</p>\r\n\r\n<p>Email: [webform_submission:values:computed_email_address]</p>\r\n\r\n<p>Page last viewed: [webform_submission:values:page_you_last_viewed]</p>\r\n\r\n<p>Submitted on: [webform_submission:created]</p>\r\n\r\n<p>User agent: [server:HTTP_USER_AGENT]</p>\r\n\r\n[webform_submission:values:agent_summary]"
+      body: "<p>Subject: [webform_submission:values:subject]</p>\r\n\r\n<p>Feedback: [webform_submission:values:feedback]</p>\r\n\r\n<p>Name: [webform_submission:values:your_name]</p>\r\n\r\n<p>Email: [webform_submission:values:email_address]</p>\r\n\r\n<p>Page last viewed: [webform_submission:values:page_you_last_viewed]</p>\r\n\r\n<p>Submitted on: [webform_submission:created]</p>\r\n\r\n<p>User agent: [server:HTTP_USER_AGENT]</p>\r\n[webform_submission:values:agent_summary]"
       excluded_elements:
         agent_summary: agent_summary
       ignore_access: false
@@ -411,11 +425,11 @@ handlers:
       cc_options: {  }
       bcc_mail: ''
       bcc_options: {  }
-      from_mail: '[webform_submission:values:computed_email_address]'
+      from_mail: '[webform_submission:values:email_address]'
       from_options: {  }
       from_name: '[webform_submission:values:your_name:raw]'
       subject: '[webform_submission:values:subject:raw] - [webform_submission:values:feedback]'
-      body: "<p>Subject: [webform_submission:values:subject]</p>\r\n\r\n<p>Feedback: [webform_submission:values:feedback]</p>\r\n\r\n<p>Name: [webform_submission:values:your_name]</p>\r\n\r\n<p>Email: [webform_submission:values:computed_email_address]</p>\r\n\r\n<p>Page last viewed: [webform_submission:values:page_you_last_viewed]</p>\r\n\r\n<p>Submitted on: [webform_submission:created]</p>\r\n\r\n<p>User agent: [server:HTTP_USER_AGENT]<br />\r\n<br />\r\n[webform_submission:values:agent_summary]</p>"
+      body: "<p>Subject: [webform_submission:values:subject]</p>\r\n\r\n<p>Feedback: [webform_submission:values:feedback]</p>\r\n\r\n<p>Name: [webform_submission:values:your_name]</p>\r\n\r\n<p>Email: [webform_submission:values:email_address]</p>\r\n\r\n<p>Page last viewed: [webform_submission:values:page_you_last_viewed]</p>\r\n\r\n<p>Submitted on: [webform_submission:created]</p>\r\n\r\n<p>User agent: [server:HTTP_USER_AGENT]<br />\r\n<br />\r\n[webform_submission:values:agent_summary]</p>"
       excluded_elements: {  }
       ignore_access: false
       exclude_empty: true
