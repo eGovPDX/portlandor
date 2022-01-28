@@ -42,15 +42,34 @@
 {% endset %}
 
 {% set contact_left %}
-  {% if content.field_contact.0 %}
+  {% set email = content.field_email.0['#title'] %}
+  {% set phone = content.field_phone.0['#title'] %}
+  {% set facebook = content.field_facebook.0['#context'].value %}
+  {% set twitter = content.field_twitter.0['#context'].value %}
+  {% set instagram = content.field_instagram.0['#context'].value %}
+  {% if content.field_contact.0 is not empty %}
     {{ content.field_contact }}
-  {% else %}
-    <h3 class="h5">{{ 'Follow on Social Media'|t }}</h3>
-    {{ content.field_email }}
-    {{ content.field_phone }}
-    {{ content.field_facebook }}
-    {{ content.field_twitter }}
-    {{ content.field_instagram }}
+  {% elseif email|trim is not empty or phone|trim is not empty %}
+    {% include "@components/contact-item/contact-item.twig" with {
+      "heading": {
+        "text": label
+      },
+      "email": email,
+      "phone": phone,
+      "social": {
+        "facebook": facebook,
+        "twitter": twitter,
+        "instagram": instagram
+      }
+    } only %}
+    {% else %}
+      {% include "@components/contact-item/contact-item.twig" with {
+        "social": {
+          "facebook": facebook,
+          "twitter": twitter,
+          "instagram": instagram
+        }
+      } only %}
   {% endif %}
 {% endset %}
 
@@ -67,7 +86,7 @@
   {% set contact_left_classes = contact_left_classes|default(['col']) %}
   {% set contact_right_classes = contact_right_classes|default(['col']) %}
 
-  {% if contact_left|trim is not empty and contact_right|render|striptags|trim is not empty %}
+  {% if contact_left|striptags|trim is not empty and contact_right|render|striptags|trim is not empty %}
     {% set contact_right_classes = [
       'col-12',
       'col-md-4',
@@ -77,7 +96,7 @@
     ] %}
   {% endif %}
 
-  {% if contact_left|trim is not empty %}
+  {% if contact_left|striptags|trim is not empty %}
     <div class="{{ contact_left_classes|join(' ')|trim }}">
       {{ contact_left }}
     </div>
