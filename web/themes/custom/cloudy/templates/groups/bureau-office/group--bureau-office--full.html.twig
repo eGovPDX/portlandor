@@ -1,3 +1,4 @@
+{{ drupal_breakpoint() }}
 {% set overline %}
   {% set group_label = group.type.entity.label|title %}
   {% if group_label %}
@@ -47,29 +48,40 @@
   {% set facebook = content.field_facebook.0['#context'].value %}
   {% set twitter = content.field_twitter.0['#context'].value %}
   {% set instagram = content.field_instagram.0['#context'].value %}
+  {% set linkedin_url = content.field_linkedin_link.0['#url'].uri %}
+  {% set youtube_url = content.field_youtube_link.0['#url'].uri %}
+  {% set nextdoor_url = content.field_nextdoor_link.0['#url'].uri %}
   {% if content.field_contact.0 is not empty %}
     {{ content.field_contact }}
-  {% elseif email|trim is not empty or phone|trim is not empty %}
+  {% else %}
+    {% set heading_text = email or phone ? label %}
     {% include "@components/contact-item/contact-item.twig" with {
       "heading": {
-        "text": label
+        "text": heading_text
       },
       "email": email,
       "phone": phone,
       "social": {
+        "heading": {
+          "classes": heading_text ? ['mt-8']
+        },
         "facebook": facebook,
         "twitter": twitter,
-        "instagram": instagram
+        "instagram": instagram,
+        "youtube": {
+          "text": "YouTube",
+          "url": youtube_url
+        },
+        "linkedin": {
+          "text": "LinkedIn",
+          "url": linkedin_url
+        },
+        "nextdoor": {
+          "text": "Nextdoor",
+          "url": nextdoor_url
+        }
       }
     } only %}
-    {% else %}
-      {% include "@components/contact-item/contact-item.twig" with {
-        "social": {
-          "facebook": facebook,
-          "twitter": twitter,
-          "instagram": instagram
-        }
-      } only %}
   {% endif %}
 {% endset %}
 
