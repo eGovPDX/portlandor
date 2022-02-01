@@ -107,7 +107,7 @@ describe('Full regression test suite for Admin', () => {
       await page.waitForNavigation();
 
       text_content = await page.evaluate(
-        () => document.querySelector('h1.page-title').textContent
+        () => document.querySelector('h1.h1').textContent
       );
       expect(text_content).toEqual(expect.stringContaining(TEST_GROUP_NAME));
     } catch (e) {
