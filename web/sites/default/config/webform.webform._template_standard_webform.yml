@@ -419,10 +419,23 @@ elements: |-
         invisible:
           ':input[name="agent_ticket_number"]':
             filled: true
-    agent_reason:
-      '#type': hidden
-      '#title': 'Reason for Contact'
-      '#default_value': Incident
+    agent_ticket_type:
+      '#type': radios
+      '#title': 'Ticket Type'
+      '#options':
+        Question: Question
+        Incident: Incident
+        Problem: Problem
+        Task: Task
+    agent_summary:
+      '#type': webform_computed_twig
+      '#title': 'Agent Summary'
+      '#template': |-
+        {% if uid %}<p>Agent Email: {{ data.agent_email }}</p>{% endif %}
+        {% if data.agent_ticket_number %}<p>Ticket Number: {{ data.agent_ticket_number }}</p>{% endif %}
+        {% if data.agent_action_taken %}<p>Action Taken: {{ data.agent_action_taken }}</p>{% endif %}
+        <p>Contact Type: {% if data.agent_contact_type %}{{ data.agent_contact_type }}{% else %}Webform{% endif %}</p>
+        <p>Ticket Type: {{ data.agent_ticket_type }}</p>
 css: ''
 javascript: ''
 settings:
@@ -631,7 +644,7 @@ handlers:
     settings:
       states:
         - completed
-      to_mail: gregoryscottclapp@gmail.com
+      to_mail: powr@portlandoregon.gov
       to_options: {  }
       cc_mail: ''
       cc_options: {  }
@@ -641,7 +654,7 @@ handlers:
       from_options: {  }
       from_name: '[webform_submission:values:contact_name:raw]'
       subject: _default
-      body: "&nbsp;<br />\r\nSubmitted on [webform_submission:created]<br />\r\n<br />\r\nSubmitted by: [webform_submission:user]<br />\r\n<br />\r\n[webform_submission:values]<br />\r\n<br />\r\n<strong>Agent use only</strong><br />\r\n<br />\r\nAgent email: [webform_submission:values:agent_email]<br />\r\n<br />\r\nTicket number: [webform_submission:values:agent_ticket_number]<br />\r\n<br />\r\nAction taken:&nbsp;[webform_submission:values:agent_action_taken]<br />\r\n<br />\r\nContact type: [webform_submission:values:agent_contact_type]<br />\r\n<br />\r\nReason for contact: [webform_submission:values:agent_reason]"
+      body: "&nbsp;<br />\r\nSubmitted on [webform_submission:created]<br />\r\n<br />\r\nSubmitted by: [webform_submission:user]<br />\r\n<br />\r\n[webform_submission:values]<br />\r\n<br />\r\n<strong>Agent Use Only:</strong><br />\r\n<br />\r\n[webform_submission:values:agent_summary]<br />\r\n&nbsp;"
       excluded_elements: {  }
       ignore_access: false
       exclude_empty: true

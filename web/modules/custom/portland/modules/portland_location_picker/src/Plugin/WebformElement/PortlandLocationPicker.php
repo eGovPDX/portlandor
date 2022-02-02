@@ -37,11 +37,24 @@ class PortlandLocationPicker extends WebformCompositeBase {
     // needed, such as in a handler that is sending data to an external system, the sub-field needs to be
     // specified in the token, such as [webform_submission:values:location:place_name].
     $lines = [];
-    $lines[] = 'Location type: ' . $value['location_type'] . ', ' .
-      ($value['place_name'] ? $value['place_name'] . ', ' : '') .
-      ($value['location_address'] ? $value['location_address'] . ' ' : '') .
-      ($value['location_lat'] ? '(' . $value['location_lat'] . ', ' : '') .
-      ($value['location_lon'] ? $value['location_lon'] . ')' : '');
+    if ($value['location_type']) {
+      $lines[] = 'Location type: ' . $value['location_type'] . '<br>';
+    }
+    if ($value['place_name']) {
+      $lines[] = 'Place name: ' . $value['place_name'] . '<br>';
+    }
+    if ($value['location_address']) {
+      $lines[] = 'Address: ' . $value['location_address'] . '<br>';
+    }
+    if ($value['location_lat']) {
+      $lines[] = 'Lat: ' . $value['location_lat'] . '<br>';
+    }
+    if ($value['location_lon']) {
+      $lines[] = 'Lon: ' . $value['location_lon'] . '<br>';
+    }
+    if ($value['location_details']) {
+      $lines[] = 'Location details: ' . $value['location_details'] . '<br>';
+    }
     return $lines;
   }
 
@@ -56,11 +69,24 @@ class PortlandLocationPicker extends WebformCompositeBase {
     // needed, such as in a handler that is sending data to an external system, the sub-field needs to be
     // specified in the token, such as [webform_submission:values:location:place_name].
     $lines = [];
-    $lines[] = 'Location type: ' . $value['location_type'] . ', ' .
-      ($value['place_name'] ? $value['place_name'] . ', ' : '') .
-      ($value['location_address'] ? $value['location_address'] . ' ' : '') .
-      ($value['location_lat'] ? '(' . $value['location_lat'] . ', ' : '') .
-      ($value['location_lon'] ? $value['location_lon'] . ')' : '');
+    if ($value['location_type']) {
+      $lines[] = 'Location type: ' . $value['location_type'];
+    }
+    if ($value['place_name']) {
+      $lines[] = 'Place name: ' . $value['place_name'];
+    }
+    if ($value['location_address']) {
+      $lines[] = 'Address: ' . $value['location_address'];
+    }
+    if ($value['location_lat']) {
+      $lines[] = 'Lat: ' . $value['location_lat'];
+    }
+    if ($value['location_lon']) {
+      $lines[] = 'Lon: ' . $value['location_lon'];
+    }
+    if ($value['location_details']) {
+      $lines[] = 'Location details: ' . $value['location_details'];
+    }
     return $lines;
   }
 
