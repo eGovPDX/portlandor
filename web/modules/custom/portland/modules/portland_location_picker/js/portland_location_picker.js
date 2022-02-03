@@ -86,7 +86,7 @@
         var maps = $('.portland-location-picker--wrapper');
         var count = maps.length;
         if (count > 1) {
-          console.log("WARNING: More than one location widget detected. Only one location widget per webform is currently supported. The second one will not function correctly.");
+          console.log("WARNING: More than one location widget detected. Only one location widget per webform is currently supported. Adding multiples will result in unpredictable behavior.");
         }
 
         // initialize map ///////////////////////////////////
