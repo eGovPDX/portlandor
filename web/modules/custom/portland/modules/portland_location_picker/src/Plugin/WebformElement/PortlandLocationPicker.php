@@ -11,7 +11,7 @@ use Drupal\webform\WebformSubmissionInterface;
  * @WebformElement(
  *   id = "portland_location_picker",
  *   label = @Translation("Portland location picker"),
- *   description = @Translation("Provides an element for selecting a location by map or address and storing the lat/lon coordiantes."),
+ *   description = @Translation("Provides an element for selecting a location by map or address and storing the lat/lon coordiantes. WARNING: Only one instance of a location picker widget is supported in a webform, and the machine name must be 'report_location.'"),
  *   category = @Translation("Composite elements"),
  *   multiline = TRUE,
  *   composite = TRUE,
