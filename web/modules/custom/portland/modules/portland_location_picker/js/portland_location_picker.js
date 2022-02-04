@@ -15,7 +15,7 @@
       const DEFAULT_ZOOM_CLICK = 18;
       const DEFAULT_ZOOM_VERIFIED = 18;
       const ZOOM_POSITION = 'topright';
-      const NOT_A_PARK = "You selected park or natural area as the property type, but no park data was found for the selected location. If you believe this is a valid location or are unsure, plese zoom in to find the park on the map, click to select a location, and continue to submit your report.";
+      const NOT_A_PARK = "You selected park or natural area as the property type, but no park data was found for the selected location. If you believe this is a valid location or are unsure, please zoom in to find the park on the map, click to select a location, and continue to submit your report.";
 
       var request = new XMLHttpRequest();
       var map;
@@ -486,7 +486,7 @@
         var url = '/api/parks/' + id; // this is a drupal view that returns json about the park
         // this lookup uses the Park Finder view, which is a search view.
         // if there is a problem with the search index, in particular in
-        // a local environment, it will not return results but may still
+        // a local environment, it will not return results but should still
         // work in a multidev or Live.
         $.ajax({
           url: url, success: function (result) {
@@ -583,6 +583,7 @@
         if (evt.cancelBubble != null) evt.cancelBubble = true;
       }
 
+      // this function monitors our map div and fires redrawMap function if visibility changes.
       function onVisible(element, callback) {
         new IntersectionObserver((entries, observer) => {
           entries.forEach(entry => {
