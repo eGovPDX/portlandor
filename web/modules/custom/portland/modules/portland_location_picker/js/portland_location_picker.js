@@ -15,7 +15,7 @@
       const DEFAULT_ZOOM_CLICK = 18;
       const DEFAULT_ZOOM_VERIFIED = 18;
       const ZOOM_POSITION = 'topright';
-      const NOT_A_PARK = "You selected park or natural area as the property type, but no park data was found for the selected location. If you believe this is a valid location or are unsure, please zoom in to find the park on the map, click to select a location, and continue to submit your report.";
+      const NOT_A_PARK = "You selected park or natural area as the property type, but no park data was found for the selected location. If you believe this is a valid location, please zoom in to find the park on the map, click to select a location, and continue to submit your report.";
 
       var request = new XMLHttpRequest();
       var map;
