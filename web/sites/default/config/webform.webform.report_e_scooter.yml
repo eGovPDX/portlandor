@@ -11,9 +11,9 @@ third_party_settings:
     antibot: true
   honeypot:
     honeypot: true
+weight: 0
 open: null
 close: null
-weight: 0
 uid: 60
 template: false
 archive: false
@@ -327,9 +327,9 @@ settings:
   page_theme_name: ''
   form_title: source_entity_webform
   form_submit_once: false
-  form_exception_message: ''
   form_open_message: ''
   form_close_message: ''
+  form_exception_message: ''
   form_previous_submissions: true
   form_confidential: false
   form_confidential_message: ''
@@ -339,31 +339,36 @@ settings:
   form_prepopulate_source_entity: false
   form_prepopulate_source_entity_required: false
   form_prepopulate_source_entity_type: ''
-  form_reset: false
+  form_unsaved: false
+  form_disable_back: false
+  form_submit_back: false
   form_disable_autocomplete: false
   form_novalidate: false
   form_disable_inline_errors: false
   form_required: true
-  form_unsaved: false
-  form_disable_back: false
-  form_submit_back: false
   form_autofocus: false
   form_details_toggle: false
+  form_reset: false
   form_access_denied: default
   form_access_denied_title: ''
   form_access_denied_message: ''
   form_access_denied_attributes: {  }
   form_file_limit: ''
+  form_attributes: {  }
   form_method: ''
   form_action: ''
-  form_attributes: {  }
   share: false
   share_node: false
   share_theme_name: ''
   share_title: true
   share_page_body_attributes: {  }
   submission_label: ''
+  submission_exception_message: ''
+  submission_locked_message: ''
   submission_log: false
+  submission_excluded_elements: {  }
+  submission_exclude_empty: false
+  submission_exclude_empty_checkbox: false
   submission_views: {  }
   submission_views_replace: {  }
   submission_user_columns: {  }
@@ -372,11 +377,6 @@ settings:
   submission_access_denied_title: ''
   submission_access_denied_message: ''
   submission_access_denied_attributes: {  }
-  submission_exception_message: ''
-  submission_locked_message: ''
-  submission_excluded_elements: {  }
-  submission_exclude_empty: false
-  submission_exclude_empty_checkbox: false
   previous_submission_message: ''
   previous_submissions_message: ''
   autofill: false
@@ -387,13 +387,13 @@ settings:
   wizard_progress_percentage: false
   wizard_progress_link: false
   wizard_progress_states: false
-  wizard_auto_forward: true
-  wizard_auto_forward_hide_next_button: false
-  wizard_keyboard: true
   wizard_start_label: ''
   wizard_preview_link: false
   wizard_confirmation: true
   wizard_confirmation_label: ''
+  wizard_auto_forward: true
+  wizard_auto_forward_hide_next_button: false
+  wizard_keyboard: true
   wizard_track: ''
   wizard_prev_button_label: ''
   wizard_next_button_label: ''
@@ -416,9 +416,9 @@ settings:
   draft_pending_single_message: ''
   draft_pending_multiple_message: ''
   confirmation_type: page
+  confirmation_url: ''
   confirmation_title: 'Thank you for your report!'
   confirmation_message: 'Your submission has been received and forwarded to the appropriate e-scooter company for resolution.'
-  confirmation_url: ''
   confirmation_attributes: {  }
   confirmation_back: true
   confirmation_back_label: ''
@@ -513,9 +513,9 @@ access:
 handlers:
   zendesk_create_ticket:
     id: zendesk
+    handler_id: zendesk_create_ticket
     label: 'Create Zendesk Ticket'
     notes: 'Uses the Zendesk tickets API to create a new e-scooter report ticket in the sandbox and assign it to the E-scooter Response group. Covers all issue types except Riding on Sidewalk.'
-    handler_id: zendesk_create_ticket
     status: true
     conditions:
       enabled:
@@ -537,9 +537,9 @@ handlers:
       ticket_id_field: report_ticket_id
   zendesk_create_ticket_riding_on_sidewalk:
     id: zendesk
+    handler_id: zendesk_create_ticket_riding_on_sidewalk
     label: 'Create Zendesk Ticket - Riding on Sidewalk'
     notes: 'Uses the Zendesk tickets API to create a new e-scooter report ticket in the sandbox and assign it to the E-scooter Response group. This is only for the Riding on Sidewalk option, which is created as solved. '
-    handler_id: zendesk_create_ticket_riding_on_sidewalk
     status: true
     conditions:
       enabled:
@@ -561,9 +561,9 @@ handlers:
       ticket_id_field: report_ticket_id
   email_notification_company:
     id: email
+    handler_id: email_notification_company
     label: 'Email notification to scooter company'
     notes: ''
-    handler_id: email_notification_company
     status: true
     conditions:
       enabled:
@@ -575,13 +575,17 @@ handlers:
         - completed
       to_mail: '[webform_submission:values:computed_recipient]'
       to_options: {  }
-      cc_mail: ''
-      cc_options: {  }
       bcc_mail: ''
       bcc_options: {  }
+      cc_mail: ''
+      cc_options: {  }
       from_mail: '[webform_submission:values:contact_email:raw]'
       from_options: {  }
       from_name: '[webform_submission:values:contact_name:raw]'
+      reply_to: ''
+      return_path: ''
+      sender_mail: ''
+      sender_name: ''
       subject: '[webform_submission:values:computed_urgency]Portland E-scooter Report [webform_submission:values:report_ticket_id]: [webform_submission:values:report_issue]'
       body: "<p>The following e-scooter issue was reported to the City of Portland. [webform_submission:values:computed_urgency_text]</p>\r\n\r\n<p><strong>What is the issue with the e-scooter?</strong> [webform_submission:values:report_issue]</p>\r\n\r\n<p><strong>E-scooter company:</strong> [webform_submission:values:report_company:raw]</p>\r\n\r\n<p><strong>Is the e-scooter blocking a sidewalk, trail, bike lane, driveway, street, transit stop or other type of transportation lane?</strong> [webform_submission:values:computed_blocking]</p>\r\n\r\n<p><strong>Is the e-scooter parked on private property?</strong> [webform_submission:values:computed_private_property]</p>\r\n\r\n<p><strong>E-scooter ID:</strong> [webform_submission:values:report_asset_id]</p>\r\n\r\n<p><strong>Location:</strong><br />\r\nAddress: <a href=\"https://www.google.com/maps/place/[webform_submission:values:report_location:location_address]\">[webform_submission:values:report_location:location_address]</a><br />\r\nLat/Lon: <a href=\"https://www.google.com/maps/place/[webform_submission:values:report_location:location_lat],[webform_submission:values:report_location:location_lon]\">[webform_submission:values:report_location:location_lat],[webform_submission:values:report_location:location_lon]</a><br />\r\nPlace name: [webform_submission:values:report_location:place_name]<br />\r\nAdditional details: [webform_submission:values:report_location:location_details]</p>\r\n\r\n<p><strong>Service Level Expectation (hours):</strong> [webform_submission:values:company_sla]</p>\r\n\r\n<p><strong>Support Ticket ID:</strong>&nbsp;[webform_submission:values:report_ticket_id]</p>\r\n\r\n<div style=\"padding: 10px 20px; background-color: #dddddd;\">\r\n<p><strong><a href=\"[webform_submission:values:computed_resolution_url]\">Report resolution of this issue</a></strong></p>\r\n</div>"
       excluded_elements: {  }
@@ -592,18 +596,14 @@ handlers:
       html: true
       attachments: true
       twig: false
-      debug: false
-      reply_to: ''
-      return_path: ''
-      sender_mail: ''
-      sender_name: ''
       theme_name: ''
       parameters: {  }
+      debug: false
   email_notification_company_no_resolution:
     id: email
+    handler_id: email_notification_company_no_resolution
     label: 'Email notification to scooter company, no resolution required'
     notes: ''
-    handler_id: email_notification_company_no_resolution
     status: true
     conditions:
       enabled:
@@ -615,13 +615,17 @@ handlers:
         - completed
       to_mail: '[webform_submission:values:computed_recipient]'
       to_options: {  }
-      cc_mail: ''
-      cc_options: {  }
       bcc_mail: ''
       bcc_options: {  }
+      cc_mail: ''
+      cc_options: {  }
       from_mail: '[webform_submission:values:contact_email:raw]'
       from_options: {  }
       from_name: '[webform_submission:values:contact_name:raw]'
+      reply_to: ''
+      return_path: ''
+      sender_mail: ''
+      sender_name: ''
       subject: '[webform_submission:values:computed_urgency]Portland E-scooter Report [webform_submission:values:report_ticket_id]: [webform_submission:values:report_issue]'
       body: "<p>The following e-scooter issue was reported to the City of Portland. [webform_submission:values:computed_urgency_text]</p>\r\n\r\n<p><strong>What is the issue with the e-scooter?</strong> [webform_submission:values:report_issue]</p>\r\n\r\n<p><strong>E-scooter company:</strong> [webform_submission:values:report_company:raw]</p>\r\n\r\n<p><strong>Is the e-scooter blocking a sidewalk, trail, bike lane, driveway, street, transit stop or other type of transportation lane?</strong> [webform_submission:values:computed_blocking]</p>\r\n\r\n<p><strong>Is the e-scooter parked on private property?</strong> [webform_submission:values:computed_private_property]</p>\r\n\r\n<p><strong>E-scooter ID:</strong> [webform_submission:values:report_asset_id]</p>\r\n\r\n<p><strong>Location:</strong><br />\r\nAddress: <a href=\"https://www.google.com/maps/place/[webform_submission:values:report_location:location_address]\">[webform_submission:values:report_location:location_address]</a><br />\r\nLat/Lon: <a href=\"https://www.google.com/maps/place/[webform_submission:values:report_location:location_lat],[webform_submission:values:report_location:location_lon]\">[webform_submission:values:report_location:location_lat],[webform_submission:values:report_location:location_lon]</a><br />\r\nPlace name: [webform_submission:values:report_location:place_name]<br />\r\nAdditional details: [webform_submission:values:report_location:location_details]</p>\r\n\r\n<p><strong>Service Level Expectation (hours):</strong> [webform_submission:values:company_sla]</p>\r\n\r\n<p><strong>Support Ticket ID:</strong>&nbsp;[webform_submission:values:report_ticket_id]</p>\r\n\r\n<div style=\"padding: 10px 20px; background-color: #dddddd;\">\r\n<p>This is a Riding on Sidewalk report. No resolution is necessary.</p>\r\n</div>"
       excluded_elements: {  }
@@ -632,11 +636,7 @@ handlers:
       html: true
       attachments: true
       twig: false
-      debug: false
-      reply_to: ''
-      return_path: ''
-      sender_mail: ''
-      sender_name: ''
       theme_name: ''
       parameters: {  }
+      debug: false
 variants: {  }
