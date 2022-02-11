@@ -109,7 +109,7 @@
         }
 
         // Set up verify button //////////////////////////////////
-        $('.location-picker-address').after('<input class="btn location-verify button js-form-submit form-submit" type="submit" id="location_verify" name="op" value="Verify">');
+        $('.location-picker-address').after('<input class="btn location-verify button js-form-submit form-submit" type="button" id="location_verify" name="op" value="Verify">');
         $('.location-picker-address').after('<span class="verified-checkmark address invisible" title="Location is verified!">✓</span>');
         $(document).on('click', '#location_verify', function (e) {
           e.preventDefault();
@@ -270,8 +270,12 @@
         var url = "https://www.portlandmaps.com/api/suggest/?intersections=1&alt_coords=1&api_key=" + drupalSettings.portlandmaps_api_key + "&query=" + encodedAddress;
         $.ajax({
           url: url, success: function (response) {
-            if (response.length < 1 || response.candidates.length < 1) {
+            if (response.length < 1 || (response.candidates && response.candidates.length < 1)) {
               showStatusModal("No matching locations found. Please try a different address and try again.");
+              setUnverified();
+              return false;
+            } else if (response.error) {
+              showErrorModal(response.error.message);
               setUnverified();
               return false;
             }
@@ -395,6 +399,9 @@
               $('.place-name').val(parkName);
               setVerified("park");
 
+              // There shouldn't be an address for a park, so use N/A
+              $('.location-picker-address').val("N/A");
+              
               return true;
 
             } else {
@@ -424,7 +431,11 @@
                     if (locationType == "park") {
                       setLocationType("other");
                     }
-                    $('#location_address').val("");
+                    var locName = "N/A";
+                    if (jsonResult && jsonResult.features.length > 0 && jsonResult.features[0].attributes && jsonResult.features[0].attributes.NAME) {
+                      var locName = jsonResult.features[0].attributes.NAME;
+                    }
+                    $('#location_address').val(locName);
                     setUnverified();
                     return false;
                     // showStatusModal("There was a problem retrieving data for the selected location.");
