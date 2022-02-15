@@ -662,14 +662,6 @@ function portland_search_api_solr_query_alter(\Solarium\QueryType\Select\Query\Q
     return;
   }
 
-  // POWR-2462 Override the parse mode for autocomplete to "direct" to match the main search 
-  // page. By default, the autocomplete module uses "terms" parse mode. 
-  if(strpos($search_id, "search_api_autocomplete:search_portland_gov") === 0) {
-    $parse_mode_manager = \Drupal::service('plugin.manager.search_api.parse_mode');
-    $parse_mode_direct = $parse_mode_manager->createInstance('direct');
-    $query->setParseMode($parse_mode_direct);
-  }
-
   $date_field_name = 'aggregated_sorting_date'; // This can be any UNIX timestamp field
   $index = $query->getIndex();
   $fields = $index->getServerInstance()->getBackend()->getSolrFieldNames($index);
@@ -689,16 +681,6 @@ function portland_search_api_solr_query_alter(\Solarium\QueryType\Select\Query\Q
     // Otherwise, give small boost based on start date or updated date.
     $solarium_query->addParam('sort', 'if(or(and(eq(ss_content_type, "event"),gte(ms(ds_aggregated_sorting_date,NOW/DAY), 0)),and(eq(ss_content_type, "news"),gte(ms(ds_aggregated_sorting_date,NOW-1MONTH/DAY),0))),product(query($q), recip(abs(ms(NOW/DAY,ds_aggregated_sorting_date)),1.157e-8,6.5,0.5)),if(or(eq(ss_content_type, "event"),eq(ss_content_type, "news")),product(query($q), recip(abs(ms(NOW/DAY,ds_aggregated_sorting_date)),1.157e-8,2,0.5)),query($q))) desc');
   }
-
-  // Search the whole phrase in additional of individual words
-  // $original_keys = strtolower(trim($query->getKeys()));
-  // if (is_string($original_keys) && $original_keys && strpos($original_keys, ' ') !== false) { // Do not modify empty query
-  //   // Three things are happening here:
-  //   // 1. Add phrase search for the entire search string.
-  //   // 2. Set proximity to 3
-  //   // 3. Boost the score by 5
-  //   $query->keys("(\"$original_keys\"~3)^5 $original_keys");
-  // }
 }
 
 /**
