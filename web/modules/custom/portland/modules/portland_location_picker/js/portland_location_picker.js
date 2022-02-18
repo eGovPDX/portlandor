@@ -94,7 +94,9 @@
         map = new L.Map("location_map_container", {
           center: new L.LatLng(DEFAULT_LATITUDE, DEFAULT_LONGITUDE),
           zoomControl: false,
-          zoom: DEFAULT_ZOOM
+          zoom: DEFAULT_ZOOM,
+          scrollWheelZoom: false,
+          gestureHandling: true
         });
         map.addLayer(baseLayer);
         map.addControl(zoomcontrols);
