@@ -96,7 +96,6 @@
           center: new L.LatLng(DEFAULT_LATITUDE, DEFAULT_LONGITUDE),
           zoomControl: false,
           zoom: DEFAULT_ZOOM,
-          scrollWheelZoom: false,
           gestureHandling: true
         });
         map.addLayer(baseLayer);
