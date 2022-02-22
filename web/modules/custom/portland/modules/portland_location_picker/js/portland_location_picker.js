@@ -15,7 +15,7 @@
       const DEFAULT_ZOOM_CLICK = 18;
       const DEFAULT_ZOOM_VERIFIED = 18;
       const ZOOM_POSITION = 'topright';
-      const NOT_A_PARK = "You selected park or natural area as the property type, but no park data was found for the selected location. If you believe this is a valid location or are unsure, plese continue to submit your report.";
+      const NOT_A_PARK = "You selected park or natural area as the property type, but no park data was found for the selected location. If you believe this is a valid location, please zoom in to find the park on the map, click to select a location, and continue to submit your report.";
 
       var request = new XMLHttpRequest();
       var map;
@@ -82,6 +82,13 @@
 
       function initialize() {
 
+        // count number of map widgets
+        var maps = $('.portland-location-picker--wrapper');
+        var count = maps.length;
+        if (count > 1) {
+          console.log("WARNING: More than one location widget detected. Only one location widget per webform is currently supported. Adding multiples will result in unpredictable behavior.");
+        }
+
         // initialize map ///////////////////////////////////
         var zoomcontrols = new L.control.zoom({ position: ZOOM_POSITION });
         map = new L.Map("location_map_container", {
@@ -109,7 +116,7 @@
         }
 
         // Set up verify button //////////////////////////////////
-        $('.location-picker-address').after('<input class="btn location-verify button js-form-submit form-submit" type="submit" id="location_verify" name="op" value="Verify">');
+        $('.location-picker-address').after('<input class="btn location-verify button js-form-submit form-submit" type="button" id="location_verify" name="op" value="Verify">');
         $('.location-picker-address').after('<span class="verified-checkmark address invisible" title="Location is verified!">✓</span>');
         $(document).on('click', '#location_verify', function (e) {
           e.preventDefault();
@@ -173,8 +180,6 @@
           //}
         });
       }
-
-
 
       // EVENT HANDLERS ///////////////////////////////
 
@@ -261,7 +266,7 @@
         // if map is initialized while hidden, this function needs to be called when the map is
         // exposed, so it can redraw the tiles.
         //map.invalidateSize();
-        setTimeout(function () { map.invalidateSize(); }, 500);
+        setTimeout(function () { map.invalidateSize(); }, 200);
       }
 
       function verifyAddressPortlandMaps(address) {
@@ -270,8 +275,12 @@
         var url = "https://www.portlandmaps.com/api/suggest/?intersections=1&alt_coords=1&api_key=" + drupalSettings.portlandmaps_api_key + "&query=" + encodedAddress;
         $.ajax({
           url: url, success: function (response) {
-            if (response.length < 1 || response.candidates.length < 1) {
+            if (response.length < 1 || (response.candidates && response.candidates.length < 1)) {
               showStatusModal("No matching locations found. Please try a different address and try again.");
+              setUnverified();
+              return false;
+            } else if (response.error) {
+              showErrorModal(response.error.message);
               setUnverified();
               return false;
             }
@@ -395,6 +404,9 @@
               $('.place-name').val(parkName);
               setVerified("park");
 
+              // There shouldn't be an address for a park, so use N/A
+              $('.location-picker-address').val("N/A");
+              
               return true;
 
             } else {
@@ -424,7 +436,11 @@
                     if (locationType == "park") {
                       setLocationType("other");
                     }
-                    $('#location_address').val("");
+                    var locName = "N/A";
+                    if (jsonResult && jsonResult.features.length > 0 && jsonResult.features[0].attributes && jsonResult.features[0].attributes.NAME) {
+                      var locName = jsonResult.features[0].attributes.NAME;
+                    }
+                    $('#location_address').val(locName);
                     setUnverified();
                     return false;
                     // showStatusModal("There was a problem retrieving data for the selected location.");
@@ -468,6 +484,10 @@
           return false;
         }
         var url = '/api/parks/' + id; // this is a drupal view that returns json about the park
+        // this lookup uses the Park Finder view, which is a search view.
+        // if there is a problem with the search index, in particular in
+        // a local environment, it will not return results but should still
+        // work in a multidev or Live.
         $.ajax({
           url: url, success: function (result) {
             if (result.length < 1) {
@@ -562,6 +582,19 @@
         if (evt.stopPropagation) evt.stopPropagation();
         if (evt.cancelBubble != null) evt.cancelBubble = true;
       }
+
+      // this function monitors our map div and fires redrawMap function if visibility changes.
+      function onVisible(element, callback) {
+        new IntersectionObserver((entries, observer) => {
+          entries.forEach(entry => {
+            if(entry.intersectionRatio > 0) {
+              callback(element);
+              observer.disconnect();
+            }
+          });
+        }).observe(element);
+      }
+      onVisible(document.querySelector("#location_map_container"), () => redrawMap());
 
     }
   };

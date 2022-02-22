@@ -24,24 +24,15 @@ build_and_deploy: &build_and_deploy
         key: source-v1-{{ .Branch }}-{{ .Revision }}
         paths:
           - ".git"
-    - restore_cache:
-        name: Restore Terminus cache
-        keys:
-          - terminus_2_with_build_tools_2
     - run:
         name: Install Terminus
         command: |
           if [ ! -f "/tmp/vendor/pantheon-systems/terminus/bin/terminus" ]; then
-            cd /tmp && composer require pantheon-systems/terminus:^2.0.0
-            mkdir -p ~/.terminus/plugins
-            composer create-project --no-dev -d ~/.terminus/plugins pantheon-systems/terminus-build-tools-plugin:^2.0.0
+            cd /tmp && composer require pantheon-systems/terminus:^3
+            # Temporary workaround to https://github.com/pantheon-systems/terminus/issues/2336
+            cd /tmp && composer require league/container:3.4.1
+            /tmp/vendor/bin/terminus self:plugin:install terminus-build-tools-plugin
           fi
-    - save_cache:
-        name: Save Terminus cache
-        key: terminus_2_with_build_tools_2
-        paths:
-          - "/tmp/vendor"
-          - "/root/.terminus"
     - restore_cache:
         name: Restore Composer Cache
         keys:
@@ -222,22 +213,14 @@ visual_regression: &visual_regression
         key: jest-source-v1-{{ .Branch }}-{{ .Revision }}
         paths:
           - ".git"
-    - restore_cache:
-        name: Restore Terminus cache
-        keys:
-          - terminus_-{{ checksum "composer.lock" }}
     - run:
         name: Install Terminus
         command: |
           if [ ! -f "/tmp/vendor/pantheon-systems/terminus/bin/terminus" ]; then
-          cd /tmp && composer require pantheon-systems/terminus:^2.0.0
+            cd /tmp && composer require pantheon-systems/terminus:^3
+            # Temporary workaround to https://github.com/pantheon-systems/terminus/issues/2336
+            cd /tmp && composer require league/container:3.4.1
           fi
-    - save_cache:
-        name: Save Terminus cache
-        key: terminus_-{{ checksum "composer.lock" }}
-        paths:
-          - "/tmp/vendor"
-
     - restore_cache:
         name: Restore Jest and Percy dependencies cache
         keys:
@@ -317,22 +300,14 @@ full_regression: &full_regression
         key: jest-source-v1-{{ .Branch }}-{{ .Revision }}
         paths:
           - ".git"
-    - restore_cache:
-        name: Restore Terminus cache
-        keys:
-          - terminus_-{{ checksum "composer.lock" }}
     - run:
         name: Install Terminus
         command: |
           if [ ! -f "/tmp/vendor/pantheon-systems/terminus/bin/terminus" ]; then
-          cd /tmp && composer require pantheon-systems/terminus:^2.0.0
+            cd /tmp && composer require pantheon-systems/terminus:^3
+            # Temporary workaround to https://github.com/pantheon-systems/terminus/issues/2336
+            cd /tmp && composer require league/container:3.4.1
           fi
-    - save_cache:
-        name: Save Terminus cache
-        key: terminus_-{{ checksum "composer.lock" }}
-        paths:
-          - "/tmp/vendor"
-
     - restore_cache:
         name: Restore Jest and Percy dependencies cache
         keys:

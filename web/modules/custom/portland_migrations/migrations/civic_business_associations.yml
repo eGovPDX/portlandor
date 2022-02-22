@@ -1,0 +1,37 @@
+id: civic_business_associations
+label: 'Civic Life Business Associations'
+migration_group: civic_business_associations
+source:
+  plugin: csv
+  path: modules/custom/portland_migrations/sources/civic_business_associations.csv
+  header_row_count: 1
+  ids:
+    - business_assn_id
+  constants:
+    newline: "\n\n"
+process:
+  tid:
+    plugin: text_to_taxonomy
+    vocabulary: business_association
+    source: business_assn_name
+  field_id: business_assn_id
+  field_website: website_url
+  field_correspondence_to_raw: correspondence_to
+  field_general_meetings:
+    plugin: concat
+    source:
+      - meeting_time
+      - constants/newline
+      - meeting_location
+
+destination:
+  plugin: entity:taxonomy_term
+  default_bundle: business_association
+  # overwrite_properties:
+  #   - field_full_name
+  #   - field_neighborhood_type
+  #   - field_website
+  #   - field_correspondence_to_raw
+  #   - field_general_meetings
+  #   - field_board_meetings
+  #   - field_land_use_committee_meeting
