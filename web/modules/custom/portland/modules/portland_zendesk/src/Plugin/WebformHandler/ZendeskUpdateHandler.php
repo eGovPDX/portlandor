@@ -55,7 +55,7 @@ use Drupal\portland_zendesk\Utils\Utility;
  *  type
  *  priority
  *  status
- *  assignee_id
+ *  group_id
  *  zendesk ticket id field
  *  ticket tags
  *  custom_fields
@@ -106,7 +106,7 @@ class ZendeskUpdateHandler extends WebformHandlerBase
           'tags' => '',
           'priority' => '',
           'status' => '',
-          'assignee_id' => '',
+          'group_id' => '',
           'type' => '',
           'collaborators' => '',
           'custom_fields' => '',
@@ -250,19 +250,19 @@ class ZendeskUpdateHandler extends WebformHandlerBase
       '#required' => false
     ];
 
-    // prep assignees field
+    // prep group field
     // if found group assignees from Zendesk, populate dropdown.
     // otherwise provide field to specify assignee ID
-    $form['assignee_id'] = [
-      '#title' => $this->t('Ticket Assignee'),
-      '#description' => $this->t('The id of the intended assignee'),
-      '#default_value' => $this->configuration['assignee_id'],
+    $form['group_id'] = [
+      '#title' => $this->t('Ticket Group'),
+      '#description' => $this->t('The id of the intended group'),
+      '#default_value' => $this->configuration['group_id'],
       '#required' => false
     ];
     if(!empty($assignees) ){
-      $form['assignee_id']['#type'] = 'select';
-      $form['assignee_id']['#options'] = ['' => 'Do not update'] + $assignees;
-      $form['assignee_id']['#description'] = $this->t('The email address the assignee');
+      $form['group_id']['#type'] = 'select';
+      $form['group_id']['#options'] = ['' => 'Do not update'] + $assignees;
+      $form['group_id']['#description'] = $this->t('The email address the assignee');
     }
 
     $form['collaborators'] = [
