@@ -153,21 +153,22 @@ class ZendeskHandler extends WebformHandlerBase
       $assignees = [];
 
       try {
-        // get available assignees from zendesk
-        // initiate api client
+        // get available groups from zendesk
+        // NOTE: We don't want to use individual users here, only groups.
+        // Individual users shouldn't be stored in config, which has to be deployed,
+        // in case there is an urgent change required.
+        
         $client = new ZendeskClient();
 
-        // get list of all users who are either agents or admins
-        $response_agents = $client->users()->findAll([ 'role' => 'agent' ]);
-        $response_admins = $client->users()->findAll([ 'role' => 'admin' ]);
-        $users = array_merge( $response_agents->users, $response_admins->users );
+        // get list of all groups
+        $response = $client->groups()->findAll();
 
-        // store found agents
-        foreach($users as $user){
-            $assignees[ $user->id ] = $user->name;
+        // store found groups
+        foreach($response->groups as $group){
+            $assignees[ $group->id ] = $group->name;
         }
 
-        // order agents by name
+        // order groups by name
         asort($assignees);
 
         // get list of ticket fields and assign them to an array by id->title
@@ -191,7 +192,7 @@ class ZendeskHandler extends WebformHandlerBase
         $message = nl2br(htmlentities($e->getMessage()));
 
         // Log error message.
-        $this->getLogger()->error('Retrieval of assignees for @form webform Zendesk handler failed. @exception: @message. Click to edit @link.', [
+        $this->getLogger()->error('Retrieval of groups for @form webform Zendesk handler failed. @exception: @message. Click to edit @link.', [
           '@exception' => get_class($e),
           '@form' => $this->getWebform()->label(),
           '@message' => $message,
@@ -291,7 +292,7 @@ class ZendeskHandler extends WebformHandlerBase
       ];
 
       // prep assignees field
-      // if found assignees from Zendesk, populate dropdown.
+      // if found group assignees from Zendesk, populate dropdown.
       // otherwise provide field to specify assignee ID
       $form['assignee_id'] = [
         '#title' => $this->t('Ticket Assignee'),
@@ -299,16 +300,10 @@ class ZendeskHandler extends WebformHandlerBase
         '#default_value' => $this->configuration['assignee_id'],
         '#required' => false
       ];
-      if(! empty($assignees) ){
-        $form['assignee_id']['#type'] = 'webform_select_other';
+      if(!empty($assignees) ){
+        $form['assignee_id']['#type'] = 'select';
         $form['assignee_id']['#options'] = ['' => '-- none --'] + $assignees;
         $form['assignee_id']['#description'] = $this->t('The email address the assignee');
-      }
-      else {
-        $form['assignee_id']['#type'] = 'textfield';
-        $form['assignee_id']['#attribute'] = [
-          'type' => 'number'
-        ];
       }
 
       $form['collaborators'] = [

@@ -149,14 +149,12 @@ class ZendeskUpdateHandler extends WebformHandlerBase
       // initiate api client
       $client = new ZendeskClient();
 
-      // get list of all users who are either agents or admins
-      $response_agents = $client->users()->findAll([ 'role' => 'agent' ]);
-      $response_admins = $client->users()->findAll([ 'role' => 'admin' ]);
-      $users = array_merge( $response_agents->users, $response_admins->users );
+      // get list of all groups
+      $response = $client->groups()->findAll();
 
-      // store found agents
-      foreach($users as $user){
-        $assignees[ $user->id ] = $user->name;
+      // store found groups
+      foreach($response->groups as $group){
+          $assignees[ $group->id ] = $group->name;
       }
 
       // order agents by name
@@ -253,23 +251,18 @@ class ZendeskUpdateHandler extends WebformHandlerBase
     ];
 
     // prep assignees field
-    // if found assignees from Zendesk, populate dropdown.
+    // if found group assignees from Zendesk, populate dropdown.
     // otherwise provide field to specify assignee ID
     $form['assignee_id'] = [
       '#title' => $this->t('Ticket Assignee'),
-      '#description' => $this->t('Select an assignee for the updated ticket or enter an email address (must be a Zendesk user). Or select None to leave the ticket assigned to the current assignee.'),
+      '#description' => $this->t('The id of the intended assignee'),
       '#default_value' => $this->configuration['assignee_id'],
       '#required' => false
     ];
     if(!empty($assignees) ){
-      $form['assignee_id']['#type'] = 'webform_select_other';
-      $form['assignee_id']['#options'] = $assignees;
-    }
-    else {
-      $form['assignee_id']['#type'] = 'textfield';
-      $form['assignee_id']['#attribute'] = [
-          'type' => 'number'
-      ];
+      $form['assignee_id']['#type'] = 'select';
+      $form['assignee_id']['#options'] = ['' => 'Do not update'] + $assignees;
+      $form['assignee_id']['#description'] = $this->t('The email address the assignee');
     }
 
     $form['collaborators'] = [
