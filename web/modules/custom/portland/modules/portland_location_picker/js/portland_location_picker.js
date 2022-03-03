@@ -15,7 +15,7 @@
       const DEFAULT_ZOOM_CLICK = 18;
       const DEFAULT_ZOOM_VERIFIED = 18;
       const ZOOM_POSITION = 'topright';
-      const NOT_A_PARK = "You selected park or natural area as the property type, but no park data was found for the selected location. If you believe this is a valid location or are unsure, plese continue to submit your report.";
+      const NOT_A_PARK = "You selected park or natural area as the property type, but no park data was found for the selected location. If you believe this is a valid location, please zoom in to find the park on the map, click to select a location, and continue to submit your report.";
 
       var request = new XMLHttpRequest();
       var map;
@@ -82,12 +82,20 @@
 
       function initialize() {
 
+        // count number of map widgets
+        var maps = $('.portland-location-picker--wrapper');
+        var count = maps.length;
+        if (count > 1) {
+          console.log("WARNING: More than one location widget detected. Only one location widget per webform is currently supported. Adding multiples will result in unpredictable behavior.");
+        }
+
         // initialize map ///////////////////////////////////
         var zoomcontrols = new L.control.zoom({ position: ZOOM_POSITION });
         map = new L.Map("location_map_container", {
           center: new L.LatLng(DEFAULT_LATITUDE, DEFAULT_LONGITUDE),
           zoomControl: false,
-          zoom: DEFAULT_ZOOM
+          zoom: DEFAULT_ZOOM,
+          gestureHandling: true
         });
         map.addLayer(baseLayer);
         map.addControl(zoomcontrols);
@@ -174,8 +182,6 @@
         });
       }
 
-
-
       // EVENT HANDLERS ///////////////////////////////
 
       function handleLocationTypeClick(radios) {
@@ -261,7 +267,7 @@
         // if map is initialized while hidden, this function needs to be called when the map is
         // exposed, so it can redraw the tiles.
         //map.invalidateSize();
-        setTimeout(function () { map.invalidateSize(); }, 500);
+        setTimeout(function () { map.invalidateSize(); }, 200);
       }
 
       function verifyAddressPortlandMaps(address) {
@@ -479,6 +485,10 @@
           return false;
         }
         var url = '/api/parks/' + id; // this is a drupal view that returns json about the park
+        // this lookup uses the Park Finder view, which is a search view.
+        // if there is a problem with the search index, in particular in
+        // a local environment, it will not return results but should still
+        // work in a multidev or Live.
         $.ajax({
           url: url, success: function (result) {
             if (result.length < 1) {
@@ -573,6 +583,19 @@
         if (evt.stopPropagation) evt.stopPropagation();
         if (evt.cancelBubble != null) evt.cancelBubble = true;
       }
+
+      // this function monitors our map div and fires redrawMap function if visibility changes.
+      function onVisible(element, callback) {
+        new IntersectionObserver((entries, observer) => {
+          entries.forEach(entry => {
+            if(entry.intersectionRatio > 0) {
+              callback(element);
+              observer.disconnect();
+            }
+          });
+        }).observe(element);
+      }
+      onVisible(document.querySelector("#location_map_container"), () => redrawMap());
 
     }
   };
