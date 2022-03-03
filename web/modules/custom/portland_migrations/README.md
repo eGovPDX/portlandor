@@ -450,4 +450,14 @@ lando drush migrate:import civic_business_association_contacts_relationships
 lando terminus drush portlandor.powr-[ID] -- migrate:import civic_business_association_contacts
 lando terminus drush portlandor.powr-[ID] -- migrate:import civic_business_association_contacts_relationships
 ```
+#### Office of Equity and Human Rights News
 
+##### Local
+```
+lando drush migrate:import oehr_news
+```
+##### On Pantheon
+```
+lando terminus drush portlandor.powr-[ID] -- migrate:import oehr_news
+
+```
