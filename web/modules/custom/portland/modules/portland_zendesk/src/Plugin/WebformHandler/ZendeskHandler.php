@@ -160,7 +160,7 @@ class ZendeskHandler extends WebformHandlerBase
         // Individual users shouldn't be stored in config, which has to be deployed,
         // in case there is an urgent change required. However, if tickets are to be
         // creatd as Solved, they need to have an individual assignee. Using the
-        // service account would be acceptable and necessar in this case.
+        // service account would be acceptable and necessary in this case.
         
         $client = new ZendeskClient();
 
@@ -174,7 +174,6 @@ class ZendeskHandler extends WebformHandlerBase
         asort($groups);
 
         // get list of all admin and agent users to populate assignee field
-        // get list of all users who are either agents or admins
         $response_agents = $client->users()->findAll([ 'role' => 'agent' ]);
         $response_admins = $client->users()->findAll([ 'role' => 'admin' ]);
         $users = array_merge( $response_agents->users, $response_admins->users );

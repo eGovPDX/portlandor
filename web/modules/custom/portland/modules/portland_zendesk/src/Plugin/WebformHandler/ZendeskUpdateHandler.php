@@ -27,41 +27,6 @@ use Drupal\portland_zendesk\Utils\Utility;
  *   cardinality = \Drupal\webform\Plugin\WebformHandlerInterface::CARDINALITY_UNLIMITED,
  *   results = \Drupal\webform\Plugin\WebformHandlerInterface::RESULTS_PROCESSED,
  * )
- *
- * This handler needs to do the following:
- * - Allow specifying which webform field holds the zendesk ticket ID
- * - Retrieve the ticket identified in the field using $client->tickets()->find($id); 
- * - Update ticket: https://developer.zendesk.com/api-reference/ticketing/tickets/tickets/#update-ticket
- * - Update tag lists: https://developer.zendesk.com/api-reference/ticketing/tickets/tickets/#updating-tag-lists
- * - How do we determine which fields we need to update?
- *    - Need two fields: Ticket Fields and Ticket Custom Fields
- *    - Use the Ticket Custom Fields field in the handler config
- *    - Use Drupal placeholders to add values
- *    - Only what's listed here gets updated
- * - On load of the handler config form, retrieve the ticket object using the api
- *    - Make the ticket structure viewable in the UI (like the custom Field Reference accordion?)
- * 
- * - General tab, remove:
- *    - Subject - REMOVE
- *    - Ticket Body - Change to comment
- *    - Ticket CCs - REMOVE
- *    - Requester Name - REMOVE
- *    - Requester Email Address - REMOVE
- *    - Ticket Type - REMOVE, can be included in texy field list
- *    - Ticket Priority - REMOVE, can be included in texy field list
- *    - Ticket Assignee - REMOVE, can be included in texy field list
- * 
- * Fields from ticket object we might want to populate:
- *  type
- *  priority
- *  status
- *  group_id
- *  zendesk ticket id field
- *  ticket tags
- *  custom_fields
- *  comment - it looks like setting the comment property on ticket update json will add it to the thread
- *    https://developer.zendesk.com/api-reference/ticketing/tickets/tickets/?_ga=2.3553525.417292175.1637041656-1860072951.1623776472#example-body-2
- *  tokens link
  * 
  * The handler also validates that the right ticket is being updated. Each ticket includes the original report webform UUID.
  * The UUID is passed into a hidden field in the resolution form when the company agent click the link in their notification email.
@@ -152,7 +117,7 @@ class ZendeskUpdateHandler extends WebformHandlerBase
       // Individual users shouldn't be stored in config, which has to be deployed,
       // in case there is an urgent change required. However, if tickets are to be
       // creatd as Solved, they need to have an individual assignee. Using the
-      // service account would be acceptable and necessar in this case.
+      // service account would be acceptable and necessary in this case.
       
       $client = new ZendeskClient();
 
