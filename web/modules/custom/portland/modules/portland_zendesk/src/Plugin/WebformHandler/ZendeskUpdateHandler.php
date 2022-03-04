@@ -27,41 +27,6 @@ use Drupal\portland_zendesk\Utils\Utility;
  *   cardinality = \Drupal\webform\Plugin\WebformHandlerInterface::CARDINALITY_UNLIMITED,
  *   results = \Drupal\webform\Plugin\WebformHandlerInterface::RESULTS_PROCESSED,
  * )
- *
- * This handler needs to do the following:
- * - Allow specifying which webform field holds the zendesk ticket ID
- * - Retrieve the ticket identified in the field using $client->tickets()->find($id); 
- * - Update ticket: https://developer.zendesk.com/api-reference/ticketing/tickets/tickets/#update-ticket
- * - Update tag lists: https://developer.zendesk.com/api-reference/ticketing/tickets/tickets/#updating-tag-lists
- * - How do we determine which fields we need to update?
- *    - Need two fields: Ticket Fields and Ticket Custom Fields
- *    - Use the Ticket Custom Fields field in the handler config
- *    - Use Drupal placeholders to add values
- *    - Only what's listed here gets updated
- * - On load of the handler config form, retrieve the ticket object using the api
- *    - Make the ticket structure viewable in the UI (like the custom Field Reference accordion?)
- * 
- * - General tab, remove:
- *    - Subject - REMOVE
- *    - Ticket Body - Change to comment
- *    - Ticket CCs - REMOVE
- *    - Requester Name - REMOVE
- *    - Requester Email Address - REMOVE
- *    - Ticket Type - REMOVE, can be included in texy field list
- *    - Ticket Priority - REMOVE, can be included in texy field list
- *    - Ticket Assignee - REMOVE, can be included in texy field list
- * 
- * Fields from ticket object we might want to populate:
- *  type
- *  priority
- *  status
- *  assignee_id
- *  zendesk ticket id field
- *  ticket tags
- *  custom_fields
- *  comment - it looks like setting the comment property on ticket update json will add it to the thread
- *    https://developer.zendesk.com/api-reference/ticketing/tickets/tickets/?_ga=2.3553525.417292175.1637041656-1860072951.1623776472#example-body-2
- *  tokens link
  * 
  * The handler also validates that the right ticket is being updated. Each ticket includes the original report webform UUID.
  * The UUID is passed into a hidden field in the resolution form when the company agent click the link in their notification email.
@@ -100,18 +65,19 @@ class ZendeskUpdateHandler extends WebformHandlerBase
    */
   public function defaultConfiguration()
   {
-      return [
-          'comment' => '',
-          'comment_private' => false,
-          'tags' => '',
-          'priority' => '',
-          'status' => '',
-          'assignee_id' => '',
-          'type' => '',
-          'collaborators' => '',
-          'custom_fields' => '',
-          'ticket_id_field' => '',
-      ];
+    return [
+      'comment' => '',
+      'comment_private' => false,
+      'tags' => '',
+      'priority' => '',
+      'status' => '',
+      'group_id' => '',
+      'assignee_id' => '',
+      'type' => '',
+      'collaborators' => '',
+      'custom_fields' => '',
+      'ticket_id_field' => '',
+    ];
   }
 
   /**
@@ -143,12 +109,28 @@ class ZendeskUpdateHandler extends WebformHandlerBase
     ];
 
     $assignees = [];
+    $groups = [];
 
     try {
-      // get available assignees from zendesk
-      // initiate api client
+      // Get available groups and assignees from zendesk.
+      // NOTE: Typically we don't want to use individual users here, only groups.
+      // Individual users shouldn't be stored in config, which has to be deployed,
+      // in case there is an urgent change required. However, if tickets are to be
+      // creatd as Solved, they need to have an individual assignee. Using the
+      // service account would be acceptable and necessary in this case.
+      
       $client = new ZendeskClient();
 
+      // get list of all groups
+      $response_groups = $client->groups()->findAll();
+      // store found groups
+      foreach($response_groups->groups as $group){
+        $groups[ $group->id ] = $group->name;
+      }
+      // order groups by name
+      asort($groups);
+
+      // get list of all admin and agent users to populate assignee field
       // get list of all users who are either agents or admins
       $response_agents = $client->users()->findAll([ 'role' => 'agent' ]);
       $response_admins = $client->users()->findAll([ 'role' => 'admin' ]);
@@ -182,7 +164,7 @@ class ZendeskUpdateHandler extends WebformHandlerBase
         $message = nl2br(htmlentities($e->getMessage()));
 
         // Log error message.
-        $this->getLogger()->error('Retrieval of assignees for @form webform Zendesk handler failed. @exception: @message. Click to edit @link.', [
+        $this->getLogger()->error('Retrieval of groups or assignees for @form webform Zendesk handler failed. @exception: @message. Click to edit @link.', [
             '@exception' => get_class($e),
             '@form' => $this->getWebform()->label(),
             '@message' => $message,
@@ -252,33 +234,48 @@ class ZendeskUpdateHandler extends WebformHandlerBase
       '#required' => false
     ];
 
+    // prep groups field
+    // if found groups from Zendesk, populate dropdown.
+    $form['group_id'] = [
+      '#title' => $this->t('Ticket Group'),
+      '#description' => $this->t('The id of the intended group'),
+      '#default_value' => $this->configuration['group_id'],
+      '#required' => false
+    ];
+    if(!empty($groups) ){
+      $form['group_id']['#type'] = 'select';
+      $form['group_id']['#options'] = ['' => '-- None --'] + $groups;
+      $form['group_id']['#description'] = $this->t('The group to which the ticket should be assigned. Set either Ticket Group or Ticket Assignee, but not both.');
+    }
+
     // prep assignees field
     // if found assignees from Zendesk, populate dropdown.
     // otherwise provide field to specify assignee ID
     $form['assignee_id'] = [
       '#title' => $this->t('Ticket Assignee'),
-      '#description' => $this->t('Select an assignee for the updated ticket or enter an email address (must be a Zendesk user). Or select None to leave the ticket assigned to the current assignee.'),
+      '#description' => $this->t('The id of the intended assignee'),
       '#default_value' => $this->configuration['assignee_id'],
       '#required' => false
     ];
-    if(!empty($assignees) ){
+    if(! empty($assignees) ){
       $form['assignee_id']['#type'] = 'webform_select_other';
-      $form['assignee_id']['#options'] = $assignees;
+      $form['assignee_id']['#options'] = ['' => '-- None --'] + $assignees;
+      $form['assignee_id']['#description'] = $this->t('The assignee to which the ticket should be assigned. Set either Ticket Group or Ticket Assignee, but not both. Typically tickets created by webforms should not be assigned to individual users, but tickets that are created as Solved must have an individual assignee. In this case, use the Portland.gov Support service account.');
     }
     else {
       $form['assignee_id']['#type'] = 'textfield';
       $form['assignee_id']['#attribute'] = [
-          'type' => 'number'
+        'type' => 'number'
       ];
     }
 
     $form['collaborators'] = [
-    '#type' => 'textfield',
-    '#title' => $this->t('Ticket CCs'),
-    '#description' => $this->t('Users to add as cc\'s when creating a ticket.'),
-    '#default_value' => $this->configuration['collaborators'],
-    '#multiple' => true,
-    '#required' => false
+      '#type' => 'textfield',
+      '#title' => $this->t('Ticket CCs'),
+      '#description' => $this->t('Users to add as cc\'s when creating a ticket.'),
+      '#default_value' => $this->configuration['collaborators'],
+      '#multiple' => true,
+      '#required' => false
     ];
 
     $form['comment'] = [
