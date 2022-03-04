@@ -55,8 +55,7 @@ elements: |-
   ticket_id:
     '#type': textfield
     '#title': 'Ticket ID'
-    '#description': 'This field is non-editable and gets auto populated with the ID of the new Zendesk ticket.'
-    '#readonly': true
+    '#description': 'If left blank, a new Zenesk ticket is created, and this field gets auto populated with the ticket ID after submission. If you enter an existing Zendesk ticket ID, the update handler will be invoked to update the existing ticket, adding a private note and marking it as Solved.'
   suppress_ticket_confirmation:
     '#type': select
     '#title': 'Suppress Ticket Confirmation'
@@ -201,58 +200,76 @@ settings:
 access:
   create:
     roles:
-      - anonymous
-      - authenticated
+      - support_agent
+      - administrator
     users: {  }
     permissions: {  }
   view_any:
-    roles: {  }
+    roles:
+      - support_agent
+      - administrator
     users: {  }
     permissions: {  }
   update_any:
-    roles: {  }
+    roles:
+      - administrator
     users: {  }
     permissions: {  }
   delete_any:
-    roles: {  }
+    roles:
+      - administrator
     users: {  }
     permissions: {  }
   purge_any:
-    roles: {  }
+    roles:
+      - administrator
     users: {  }
     permissions: {  }
   view_own:
-    roles: {  }
+    roles:
+      - support_agent
+      - administrator
     users: {  }
     permissions: {  }
   update_own:
-    roles: {  }
+    roles:
+      - support_agent
+      - administrator
     users: {  }
     permissions: {  }
   delete_own:
-    roles: {  }
+    roles:
+      - support_agent
+      - administrator
     users: {  }
     permissions: {  }
   administer:
-    roles: {  }
+    roles:
+      - administrator
     users: {  }
     permissions: {  }
   test:
-    roles: {  }
+    roles:
+      - support_agent
+      - administrator
     users: {  }
     permissions: {  }
   configuration:
-    roles: {  }
+    roles:
+      - administrator
     users: {  }
     permissions: {  }
 handlers:
   zendesk_new_ticket:
     id: zendesk
     label: 'Zendesk new ticket'
-    notes: ''
+    notes: 'Sends a form submission to Zendesk to create a support ticket. This handler must fire after any other validation handlers, and it should not be used for forms that allow users to update their original submission. Updating will create a new Zendesk ticket, which is most likely not the desired behavior. Enabled if no ticket ID is provided.'
     handler_id: zendesk_new_ticket
     status: true
-    conditions: {  }
+    conditions:
+      enabled:
+        ':input[name="ticket_id"]':
+          empty: true
     weight: 0
     settings:
       requester_name: contact_name
@@ -267,4 +284,27 @@ handlers:
       collaborators: ''
       custom_fields: ''
       ticket_id_field: '[webform_submission:values:ticket_id]'
+      group_id: '4549352062487'
+  zendesk_update_ticket:
+    id: zendesk_update_ticket
+    label: 'Zendesk update ticket'
+    notes: 'Updates an existing Zendesk support ticket. Enabled if a Zendesk ticket ID has been provided.'
+    handler_id: zendesk_update_ticket
+    status: true
+    conditions:
+      enabled:
+        ':input[name="ticket_id"]':
+          filled: true
+    weight: 0
+    settings:
+      comment: 'This ticket has been updated by the Zendesk Update Handler from the portland_zendesk module.'
+      comment_private: 1
+      tags: ''
+      priority: ''
+      status: solved
+      group_id: '4549352062487'
+      type: ''
+      collaborators: ''
+      custom_fields: ''
+      ticket_id_field: ticket_id
 variants: {  }
