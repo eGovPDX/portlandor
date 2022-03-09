@@ -44,13 +44,11 @@ class PortlandLocationPicker extends WebformCompositeBase {
       $lines[] = 'Place name: ' . $value['place_name'] . '<br>';
     }
     if ($value['location_address']) {
-      $lines[] = 'Address: ' . $value['location_address'] . '<br>';
+      $lines[] = 'Address: <a href="https://www.google.com/maps/place/' . $value['location_address'] . '">' . $value['location_address'] . '</a>';
     }
-    if ($value['location_lat']) {
-      $lines[] = 'Lat: ' . $value['location_lat'] . '<br>';
-    }
-    if ($value['location_lon']) {
-      $lines[] = 'Lon: ' . $value['location_lon'] . '<br>';
+    if ($value['location_lat'] && $value['location_lon']) {
+      $latlon = $value['location_lat'] . ',' . $value['location_lon'];
+      $lines[] = 'Lat/lon: <a href="https://www.google.com/maps/place/' . $latlon . '">' . $latlon . '</a><br>';
     }
     if ($value['location_details']) {
       $lines[] = 'Location details: ' . $value['location_details'] . '<br>';
