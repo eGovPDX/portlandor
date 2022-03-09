@@ -99,7 +99,8 @@ class MigrateBodyContentAndLinkedMedia extends ProcessPluginBase {
         $media_type = $this->getMediaType($filename);
 
         // Search for possible duplicates using filename sans POG content id
-        $realpath_dir = drupal_realpath($download_dir_uri);
+        $realpath_dir = realpath($destination_uri);
+        // $realpath_dir = FileSystem::realpath($download_dir_uri);
         $realpath_filename = $realpath_dir . '/' . $filename;
         $filename_search = str_replace($content_id, '*', $filename);
         $files = glob($realpath_dir . '/' . $filename_search);
@@ -332,11 +333,11 @@ class MigrateBodyContentAndLinkedMedia extends ProcessPluginBase {
 
   protected function prepareDownloadDirectory() {
     // prepare download directory
-    $folder_name = date("Y-m");
+    $folder_name = date("Y-m") ;
     $folder_uri = file_build_uri($folder_name);
-    $public_path = \Drupal::service('file_system')->realpath(file_default_scheme() . "://");
+    $public_path = \Drupal::service('file_system')->realpath(\Drupal::config('system.file')->get('default_scheme') . '://');
     $download_path = $public_path . "/" . $folder_name;
-    $dir = file_prepare_directory($download_path, FILE_CREATE_DIRECTORY);
+    $dir = \Drupal::service('file_system')->prepareDirectory($download_path, \Drupal\Core\File\FileSystemInterface::CREATE_DIRECTORY);
     return $folder_uri;
   }
 
