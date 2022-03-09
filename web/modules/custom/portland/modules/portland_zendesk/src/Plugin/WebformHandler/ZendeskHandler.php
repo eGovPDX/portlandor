@@ -248,7 +248,7 @@ class ZendeskHandler extends WebformHandlerBase
         '#title' => $this->t('Ticket Body'),
         '#description' => $this->t('The initial comment/message of the ticket.'),
         '#default_value' => $this->configuration['comment'],
-        '#format' => 'full_html',
+        '#format' => '',
         '#required' => true
       ];
 
