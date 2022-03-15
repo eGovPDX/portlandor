@@ -100,7 +100,6 @@ class MigrateBodyContentAndLinkedMedia extends ProcessPluginBase {
 
         // Search for possible duplicates using filename sans POG content id
         $realpath_dir = realpath($destination_uri);
-        // $realpath_dir = FileSystem::realpath($download_dir_uri);
         $realpath_filename = $realpath_dir . '/' . $filename;
         $filename_search = str_replace($content_id, '*', $filename);
         $files = glob($realpath_dir . '/' . $filename_search);
