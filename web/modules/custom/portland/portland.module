@@ -826,12 +826,19 @@ function _validate_document(&$form, \Drupal\Core\Form\FormStateInterface $form_s
 
     // Get values from the inline entity form
     if($is_embedded_document_form_with_efiles) {
+      // Can't have both uploaded document and eFiles
+      if( $form_state->getValue("inline_entity_form")["field_efiles_link"][0]['uri'] && 
+        count($form_state->getValue("inline_entity_form")["field_document"][0]['fids']) !== 0) {
+        $form_state->setErrorByName('field_document', t('Cannot have both uploaded document and eFiles link'));
+        return;
+      }
+
       $efiles_link = $form_state->getValue("inline_entity_form")["field_efiles_link"];
       $document = $form_state->getValue("inline_entity_form")["field_document"];
     }
     else {
-    $efiles_link = $form_state->getValue('field_efiles_link');
-    $document = $form_state->getValue('field_document');
+      $efiles_link = $form_state->getValue('field_efiles_link');
+      $document = $form_state->getValue('field_document');
     }
     // If the eFiles link has value
     if (!empty($efiles_link) && !empty($efiles_link[0]['uri'])) {
@@ -885,8 +892,8 @@ function _validate_document(&$form, \Drupal\Core\Form\FormStateInterface $form_s
           $form["#entity"]->field_mime_type->value = $content_type_array[0];
         }
         else {
-        $form_state->setValue('field_file_size', [["value" => $file_size]]);
-        $form_state->setValue('field_mime_type', [["value" => $content_type_array[0]]]);
+          $form_state->setValue('field_file_size', [["value" => $file_size]]);
+          $form_state->setValue('field_mime_type', [["value" => $content_type_array[0]]]);
         }
       } else {
         // Verify it's a valid eFiles folder
@@ -910,7 +917,14 @@ function _validate_document(&$form, \Drupal\Core\Form\FormStateInterface $form_s
     } else {
       $document = $form_state->getValue('field_document');
       // The document field can't be empty when the eFile link is empty
-      if (empty($document) || empty($document[0]["fids"])) {
+      if ($is_embedded_document_form_with_efiles) { 
+        if( $form_state->getValue("inline_entity_form")["field_efiles_link"][0]['uri'] == null && 
+            count($form_state->getValue("inline_entity_form")["field_document"][0]['fids']) === 0
+        ) {
+          $form_state->setErrorByName('field_document', t('Please upload a file or add an external file link'));
+        }
+      }
+      else if (empty($document) || empty($document[0]["fids"])) {
         $form_state->setErrorByName('field_document', t('Please upload a file or add an external file link'));
       }
     }
