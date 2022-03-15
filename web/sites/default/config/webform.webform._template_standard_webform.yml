@@ -28,15 +28,29 @@ elements: |-
     '#admin_notes': 'Remove this text block before publication.'
     '#access_create_roles':
       - authenticated
-    '#markup': |
+    '#markup': |-
       <h2>Editor Instructions</h2>
-      <p>
-        REMOVE THIS BLOCK BEORE PUBLICATION.
-      </p>
 
-      <p>This template includes standardized fields and formatting for use in city webforms. Not all sections are appropriate for all forms. To create a new form, start by duplicating this template and replacing the default machine name (_template_standard_webform) with a more descriptive one. Machine names may only include lowercase letters and underscores.</p>
+      <p>REMOVE THIS BLOCK BEORE PUBLICATION.</p>
 
-      <p>In the new duplicated form, remove, update, or add fields as necessary, matching the existing formatting as closely as possible. Make sure to remove this instruction block before publishing new forms. Alternately, you may create a new form and use this template as a guide.</p>
+      <p>This template includes standardized fields and formatting for use in city webforms. Not all sections are appropriate for all forms. This form can be used as a style guide when creating new forms from scratch, or can be duplicated and customized.</p>
+
+      <h3>Duplicate and Customize</h3>
+
+      <p>To create a new form based on this one, start by duplicating this template and replacing the default machine name with a more descriptive one. Machine names may only include lowercase letters and underscores. In the new duplicated form, remove, update, or add fields as necessary, matching the existing formatting as closely as possible.</p>
+
+      <h3>Special Fields</h3>
+
+      <h4>Location (report_location)</h4>
+      If the Portland Location Picker widget is used, it must be named &quot;report_location,&quot; or the client-side functionality will fail. By default all the subfields are enabled to allow routing to multiple groups. If the location_type field is visible, additional fields and conditional logic must be added to handle the private property options. To create a simplified map widget, disable the location_type,&nbsp;location_park_container,&nbsp;waterway_instructions, and&nbsp;location_private_owner&nbsp;fields.
+
+      <h4>Agent Use Only fields (section_agent_use_only)</h4>
+      These fields are used by 311 agents when submitting tickets on behalf of community members, such as when requests come in by phone or in person. They must be used as shown here on any webform that a 311 agent might need to submit on behalf of a community member. This section is configured to be visible only to the Support Agent and Administrator roles.
+
+      <h4>Notification Suppression</h4>
+      Typically a confirmation email will be sent to the submitter from Zendesk, so they can reply to add more comments to the ticket. To suppress sending of the confirmation, add the string, &quot;Suppress Ticket Confirmation: TRUE&quot; to the ticket description/first comment that is sent by the form&#39;s submission hanlder(s). If a ticket confirmation should be sent conditionally, a hidden field that is conditionally enabled or a Computed Twig field with conditional logic may be necessary to generate the string in the handler when needed.
+
+      <h3>Submissions</h3>
 
       <p>Portland.gov is not a system of record for webform submissions. Each form must be configured to submit user data to the appropriate external system or email address for handling and permanent storage. Please consult with a Portland.gov administrator for assistance. Webform submissions are typically stored on Portland.gov for no more than two weeks, as a backup in case the integration with the external system fails.</p>
 
@@ -52,7 +66,7 @@ elements: |-
 
       <p>For forms where allowing confidential submissions may be prudent (e.g. delivery fee complaints, but could also apply to payday lender, TNC driver complaints, etc.). The third option in this field, an alternate limited waiver response, may be used if a limited waiver is more appropriate. Edit as necessary based on consultation with the City Attorney&#39;s Office.</p>
 
-      <h2>Public Records Statement</h2>
+      <h3>Public Records Statement</h3>
 
       <p>At the bottom of the form, there are two different public records statements in Basic HTML blocks. Select the most appropriate one and remove the other.&nbsp;The first block, the standard template (public_records_statement_standard), is for use in most instances. For submissions that are required to be public record (e.g. testimony to City Council, PSC), use the second block&nbsp;(public_records_statement_required).</p>
   introductory_text:
@@ -419,10 +433,26 @@ elements: |-
         invisible:
           ':input[name="agent_ticket_number"]':
             filled: true
-    agent_reason:
-      '#type': hidden
-      '#title': 'Reason for Contact'
-      '#default_value': Incident
+    agent_ticket_type:
+      '#type': radios
+      '#title': 'Ticket Type'
+      '#options':
+        Question: Question
+        Incident: Incident
+        Problem: Problem
+        Task: Task
+      '#options_display': side_by_side
+    agent_summary:
+      '#type': webform_computed_twig
+      '#title': 'Agent Summary'
+      '#display_on': none
+      '#template': |-
+        {% if uid %}<p>Agent Email: {{ data.agent_email }}</p>{% endif %}
+        {% if data.agent_ticket_number %}<p>Ticket Number: {{ data.agent_ticket_number }}</p>{% endif %}
+        {% if data.agent_action_taken %}<p>Action Taken: {{ data.agent_action_taken }}</p>{% endif %}
+        <p>Contact Type: {% if data.agent_contact_type %}{{ data.agent_contact_type }}{% else %}Webform{% endif %}</p>
+        <p>Ticket Type: {{ data.agent_ticket_type }}</p>
+      '#store': true
 css: ''
 javascript: ''
 settings:
@@ -631,7 +661,7 @@ handlers:
     settings:
       states:
         - completed
-      to_mail: gregoryscottclapp@gmail.com
+      to_mail: 311@portlandoregon.gov
       to_options: {  }
       cc_mail: ''
       cc_options: {  }
@@ -641,7 +671,7 @@ handlers:
       from_options: {  }
       from_name: '[webform_submission:values:contact_name:raw]'
       subject: _default
-      body: "&nbsp;<br />\r\nSubmitted on [webform_submission:created]<br />\r\n<br />\r\nSubmitted by: [webform_submission:user]<br />\r\n<br />\r\n[webform_submission:values]<br />\r\n<br />\r\n<strong>Agent use only</strong><br />\r\n<br />\r\nAgent email: [webform_submission:values:agent_email]<br />\r\n<br />\r\nTicket number: [webform_submission:values:agent_ticket_number]<br />\r\n<br />\r\nAction taken:&nbsp;[webform_submission:values:agent_action_taken]<br />\r\n<br />\r\nContact type: [webform_submission:values:agent_contact_type]<br />\r\n<br />\r\nReason for contact: [webform_submission:values:agent_reason]"
+      body: "&nbsp;<br />\r\nSubmitted on [webform_submission:created]<br />\r\n<br />\r\nSubmitted by: [webform_submission:user]<br />\r\n<br />\r\n[webform_submission:values]<br />\r\n<br />\r\n<strong>Agent Use Only:</strong><br />\r\n<br />\r\n[webform_submission:values:agent_summary]<br />\r\n&nbsp;"
       excluded_elements: {  }
       ignore_access: false
       exclude_empty: true

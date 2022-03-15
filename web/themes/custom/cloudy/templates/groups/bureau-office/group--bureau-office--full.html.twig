@@ -1,50 +1,168 @@
-{% set group_label = group.type.entity.label|title %}
-
 {% set overline %}
+  {% set group_label = group.type.entity.label|title %}
   {% if group_label %}
     {% include '@components/badge/badge.twig' with {
       text: group_label,
-      mb: 4
+      mb: 8
     } only %}
   {% endif %}
 {% endset %}
 
-{% set marquee_primary_left %}
-  {{ content.field_featured_media }}
+{% set heading %}
+  {% include '@components/heading/heading.twig' with {
+    text: label
+  } only %}
+{% endset %}
+
+
+{% set header_left %}
+  {{ heading }}
+  {{ overline }}
+  {{ content.group_date }}
   {{ content.field_summary }}
 {% endset %}
 
-{% set marquee_secondary_left %}
-  {{ content.field_location }}
-  {{ content.field_address }}
+{% set header_right %}
+  {{ content.field_featured_media.0 }}
 {% endset %}
 
-{% set marquee_secondary_right %}
-  {% if content.field_contact[0] %}
+{% set header %}
+  <div class="container">
+    <div class="row mb-8 align-items-center">
+      <div class="col">
+        {{ header_left }}
+      </div>
+      {% if header_left|trim|length and header_right|trim|length %}
+        <div class="col-lg-6 pl-md-4 align-items-center">
+          {{ header_right }}
+        </div>
+      {% endif %}
+    </div>
+  </div>
+{% endset %}
+
+{% set group_menu %}
+  <div class="col">
+    {{ drupal_view('group_site_menu', 'entity_view_1')|render }}
+  </div>
+{% endset %}
+
+{% set contact_left %}
+  {% set email = content.field_email.0['#title'] %}
+  {% set phone = content.field_phone.0['#title'] %}
+  {% set facebook = content.field_facebook.0['#context'].value %}
+  {% set twitter = content.field_twitter.0['#context'].value %}
+  {% set instagram = content.field_instagram.0['#context'].value %}
+  {% set linkedin_url = content.field_linkedin_link.0['#url'].uri %}
+  {% set youtube_url = content.field_youtube_link.0['#url'].uri %}
+  {% set nextdoor_url = content.field_nextdoor_link.0['#url'].uri %}
+  {% if content.field_contact.0 is not empty %}
     {{ content.field_contact }}
   {% else %}
-    {{ content.field_email }}
-    {{ content.field_phone }}
-    {{ content.field_facebook }}
-    {{ content.field_twitter }}
-    {{ content.field_instagram }}
+    {% set heading_text = email or phone ? label %}
+    {% include "@components/contact-item/contact-item.twig" with {
+      "heading": {
+        "text": heading_text
+      },
+      "email": email,
+      "phone": phone,
+      "social": {
+        "facebook": facebook,
+        "twitter": twitter,
+        "instagram": instagram,
+        "youtube": {
+          "text": "Youtube",
+          "url": youtube_url
+        },
+        "linkedin": {
+          "text": "Linkedin",
+          "url": linkedin_url
+        },
+        "nextdoor": {
+          "text": "Nextdoor",
+          "url": nextdoor_url
+        }
+      }
+    } only %}
   {% endif %}
 {% endset %}
 
-{% set body_header %}
-  {{ content.group_site_menu_entity_view_1 }}
+{% set contact_right %}
+  {{ content.field_location }}
+  {% if content.field_location.0 is not empty and content.field_address.0['#address_line1'] is not empty %}
+    <div class="mt-8">{{ content.field_address }}</div>
+  {% elseif content.field_address.0['#address_line1'] is not empty %}
+    {{ content.field_address }}
+  {% endif %}
 {% endset %}
 
-{% set body_body %}
-  {{ content.field_featured_content }}
-  {{ content.field_featured_groups }}
+{% set contact %}
+  {% set contact_left_classes = contact_left_classes|default(['col']) %}
+  {% set contact_right_classes = contact_right_classes|default(['col']) %}
+
+  {% if contact_left|striptags|trim is not empty and contact_right|render|striptags|trim is not empty %}
+    {% set contact_right_classes = [
+      'col-12',
+      'col-md-4',
+      'col-lg-6',
+      'mt-8',
+      'mt-md-0'
+    ] %}
+  {% endif %}
+  {% if contact_left|striptags|trim is not empty %}
+    <div class="{{ contact_left_classes|join(' ')|trim }}">
+      {{ contact_left }}
+    </div>
+  {% endif %}
+  {% if contact_right|render|striptags|trim is not empty %}
+    <div class="{{ contact_right_classes|join(' ')|trim }}">
+      {{ contact_right }}
+    </div>
+  {% endif %}
 {% endset %}
 
-{% include '@layouts/group-default/group-default.twig' with {
-  marquee_primary_left: marquee_primary_left,
-  marquee_secondary_left: marquee_secondary_left,
-  marquee_secondary_right: marquee_secondary_right,
-  body_header: body_header,
-  body_body: body_body,
-  body_footer: body_footer
-} %}
+{% set featured_content %}
+  <div class="col">
+  {{ content.field_featured_content|render }}
+  </div>
+{% endset %}
+
+{% set featured_groups %}
+  <div class="col">
+    {{ content.field_featured_groups|render }}
+  </div>
+{% endset %}
+
+{% spaceless %}
+  <article>
+    {% if header|trim|length %}
+      <section class="row">
+        {{ header }}
+      </section>
+    {% endif %}
+    {% if group_menu|striptags|trim is not empty %}
+      <section class="row">
+        {{ group_menu }}
+      </section>
+    {% endif %}
+    {% if featured_content|striptags|trim is not empty %}
+      <section class="row">
+        {{ featured_content }}
+      </section>
+    {% endif %}
+    {% if contact|striptags|trim is not empty %}
+      <hr class="separator mb-8 mt-0">
+      <section class="row mt-4 mt-sm-0 mb-12">
+        <div class="col-12">
+          <h2 class="mb-8">{{ "contact"|t|capitalize }}</h2>
+        </div>
+        {{ contact }}
+      </section>
+    {% endif %}
+    {% if featured_groups|striptags|trim is not empty %}
+      <section class="row">
+        {{ featured_groups }}
+      </section>
+    {% endif %}
+  </article>
+{% endspaceless %}
