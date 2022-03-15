@@ -129,6 +129,7 @@ Group content migrations are used to add content to a group by creating a group 
 - bds_plans_examiner
 - pbot_news
 - ppb_directives
+- oehr_news
 
 #### Eudaly news
 ##### Local
