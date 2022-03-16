@@ -102,7 +102,7 @@ In addition to the primary content migrations, there are two supplemental migrat
 
 Redirects migrations write entities to the redirects table. This is used for creating the Portland.gov legacy paths functionality, where the path from POG is linked to the corresponding page in the new site. Redirects migrations are named with the suffix "_redirects." *Example: eudaly_news_redirects*
 
-Group content migrations are used to add content to a group by creating a group content entity. These migrations are named with the suffix "_group_content." *Example: eudaly_news_group_content*
+Group content migrations are used to add content to a group by creating a group content entity. These migrations are named with the suffix "_group_content." *Example: eudaly_news_group_content*. Alternatively, a default value in "field_display_groups" will add content to the group_id you provide.
 
 ### Migrations in this module
 
@@ -456,9 +456,13 @@ lando terminus drush portlandor.powr-[ID] -- migrate:import civic_business_assoc
 ##### Local
 ```
 lando drush migrate:import oehr_news
+lando drush migrate:import oehr_news_news_redirects
+lando drush migrate:import --group=oehr_news
 ```
 ##### On Pantheon
 ```
 lando terminus drush portlandor.powr-[ID] -- migrate:import oehr_news
+lando terminus drush portlandor.powr-[ID] -- migrate:import oehr_news_news_redirects
+lando terminus drush portlandor.powr-[ID] -- migrate:import --group=oehr_news
 
 ```
