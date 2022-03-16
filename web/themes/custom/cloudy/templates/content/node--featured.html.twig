@@ -1,41 +1,20 @@
 {% set is_draft = node.isPublished() ? false : true %}
-{% set type = content.field_page_type|render|trim is not empty
-  ? content.field_page_type
-  : content.field_external_resource_type|render|trim is not empty
-    ? content.field_external_resource_type
-    : content.field_construction_type|render|trim is not empty
-      ? content.field_construction_type
-      : node.fields.type[0].target_id == 'city_service'
-        ? node.fields.type[0].target_id|replace({
-          city_: ''
-        })
-%}
-{% set margin = node.fields.type[0].target_id == 'city_service' ? '2' %}
-
-{% if content %}
-  <div class="card">
-    {% if content.field_featured_media|render|trim is not empty %}
-      <div class="card-img-top">
-        {{ content.field_featured_media|render }}
+{% set title = label %}
+<div class="col mb-10">
+  <div class="card border-2 rounded-0 h-100">
+      {{ content.field_featured_media }}
+      <div class="card-body d-flex">  
+        {% if is_draft %}
+          {% include '@components/badge/badge.twig' with {
+            text: 'unpublished'|t|capitalize,
+            type: 'danger',
+            mb: 2
+          } only %}
+        {% endif %}
+        <h3 class="card-title h4 mb-0 text-primary"><a href="{{ url }}" class="stretched-link">{{ label }}</a></h3>
+        <p class="card-text">
+          {{ content|without('field_menu_link_text','field_featured_media') }}
+        </p>
       </div>
-    {% endif %}
-    <div class="card-body">
-      {% if is_draft %}
-        {% include '@components/badge/badge.twig' with {
-          text: 'unpublished'|t|capitalize,
-          type: 'danger',
-          mb: 2
-        } only %}
-      {% endif %}
-      {% include '@components/overline/overline.twig' with {
-        text: type,
-        margin: margin
-      } %}
-      {% include '@components/heading/heading.twig' with {
-        url: url,
-        level: 3,
-        text: label
-      } only %}
-    </div>
   </div>
-{% endif %}
+</div>

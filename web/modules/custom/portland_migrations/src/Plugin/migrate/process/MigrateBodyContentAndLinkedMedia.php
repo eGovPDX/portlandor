@@ -260,7 +260,7 @@ class MigrateBodyContentAndLinkedMedia extends ProcessPluginBase {
     $media_uuid = $media->uuid();
     $newNode = $dom->createDocumentFragment();
     if ( $media_type == 'image' ) {
-      $newNode->appendXML("<drupal-entity data-align=\"responsive-full\" data-embed-button=\"image_browser\" data-entity-embed-display=\"media_image\" data-entity-type=\"media\" data-entity-uuid=\"$media_uuid\" data-langcode=\"en\"></drupal-entity>");
+      $newNode->appendXML("<drupal-entity data-align=\"right\" data-embed-button=\"image_browser\" data-entity-embed-display=\"media_image\" data-entity-type=\"media\" data-entity-uuid=\"$media_uuid\" data-langcode=\"en\"></drupal-entity>");
     } else {
       $newNode->appendXML("<drupal-entity data-embed-button=\"document_browser\" data-entity-embed-display=\"view_mode:media.embedded\" data-entity-type=\"media\" data-entity-uuid=\"$media_uuid\" data-langcode=\"en\"></drupal-entity>");
     }
