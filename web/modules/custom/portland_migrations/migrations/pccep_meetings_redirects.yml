@@ -1,17 +1,17 @@
-id: policies_categories_redirects
-label: 'Migrate legacy paths into Redirects table'
+id: pccep_meetings_redirects
+label: 'Migrate PCCEP Meetings legacy paths into Redirects table'
 langcode: en
-migration_group: policies
+migration_group: pccep_meetings
 source:
   plugin: csv
-  path: modules/custom/portland_migrations/sources/policies_categories.csv
+  path: modules/custom/portland_migrations/sources/pccep_meetings.csv
   header_row_count: 1
   constants:
-    redirect_prefix: 'internal:/taxonomy/term/'
+    redirect_prefix: 'internal:/node/'
     uid_admin: 1
     status_code: 301
   ids:
-    - CATEGORY
+    - CONTENT_ID
 destination:
   plugin: 'entity:redirect'
 process:
@@ -19,14 +19,26 @@ process:
   status_code: constants/status_code
   temp_nid:
     plugin: migration_lookup
-    source: CATEGORY
-    migration: policies_categories
+    source: CONTENT_ID
+    migration: pccep_meetings
   redirect_source:
-    plugin: substr
+    plugin: str_replace
+    case_insensitivity: true
     source: URL
-    start: 1
+    search: https://www.portlandoregon.gov/
+    replace: ''
   redirect_redirect:
     plugin: concat
     source:
       - constants/redirect_prefix
       - "@temp_nid"
+
+
+  #   plugin: substr
+  #   source: URL
+  #   start: 1
+  # redirect_redirect:
+  #   plugin: concat
+  #   source:
+  #     - constants/redirect_prefix
+  #     - "@temp_nid"
