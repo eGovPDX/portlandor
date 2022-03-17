@@ -17,7 +17,7 @@ describe('SuperAdmin user test', () => {
     browser = await puppeteer.launch(BROWSER_OPTION)
     page = await browser.newPage()
     await page.setDefaultTimeout(30000)
-  
+
     if (process.env.CIRCLECI) {
       // On CI, the CI script will call terminus to retrieve login URL
       login_url = process.env.KEVIN_LOGIN;
@@ -34,7 +34,7 @@ describe('SuperAdmin user test', () => {
   afterAll(async () => {
     await browser.close()
   })
-  
+
   it(
     'superAdmin manages group',
     async function () {
@@ -44,6 +44,7 @@ describe('SuperAdmin user test', () => {
         // If a previous test failed without deleting the test group, delete it first
         await page.goto(`${HOME_PAGE}/percy-test-group/delete`);
         // await page.$eval('#edit-submit', elem => elem.click());
+
         text_content = await page.evaluate(() => document.querySelector('.page-title').textContent);
         if(text_content.indexOf('Percy Test Group') > 0) {
           selector = 'input#edit-submit';
@@ -63,12 +64,14 @@ describe('SuperAdmin user test', () => {
         // Must expand the admin fields group in order to input Group Path
         await page.click('details#edit-group-administrative-fields');
         await page.type('#edit-field-group-path-0-value', 'percy-test-group');
+        // Publish group
+        await page.select("#edit-moderation-state-0-state", "published");
 
         selector = '#edit-submit';
         await page.evaluate((selector) => document.querySelector(selector).click(), selector);
         await page.waitForNavigation();
 
-        text_content = await page.evaluate(() => document.querySelector('h1.page-title').textContent);
+        text_content = await page.evaluate(() => document.querySelector('h1.h1').textContent);
         expect(text_content).toEqual(expect.stringContaining('Percy Test Group'));
 
         // Add Ally Admin as a group admin to the test group
@@ -88,7 +91,7 @@ describe('SuperAdmin user test', () => {
         await page.keyboard.press('Enter');
         await page.waitForNavigation();
 
-        text_content = await page.evaluate(() => document.querySelector('td.views-field-name').textContent);
+        text_content = await page.evaluate(() => document.querySelector('table.views-view-table').textContent);
         expect(text_content).toEqual(expect.stringContaining('Ally Admin'));
 
         // Delete the new group
