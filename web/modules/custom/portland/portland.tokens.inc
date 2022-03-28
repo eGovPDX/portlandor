@@ -45,7 +45,7 @@ function portland_token_info()
  *
  * @ingroup portland
  */
-function portland_tokens($type, $tokens, array $data = array(), array $options = array(), BubbleableMetadata $bubbleable_metadata)
+function portland_tokens($type, $tokens, array $data, array $options, BubbleableMetadata $bubbleable_metadata)
 {
   $replacements = [];
   $sanitize = !empty($options['sanitize']);
