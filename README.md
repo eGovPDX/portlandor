@@ -102,6 +102,8 @@ git checkout -b powr-[ID]
 5. Run `lando refresh` to refresh your local environment's dependencies and config. (This runs composer install, drush updb, drush cim, and drush cr.)
 6. You are now ready to develop on your feature branch.
 
+NOTE: If you are working in the CSM (Customer Service Management or 311) project, replace the POWR or "powr" identifier in your branch name with CSM or "csm."
+
 </details>
 
 ### Commit code and push to Github
