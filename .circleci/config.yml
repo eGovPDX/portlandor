@@ -5,23 +5,23 @@
 ## Job to run the update path and tests.
 build_and_deploy: &build_and_deploy
   docker:
-    - image: cityofportland/drupal-ci:latest
+    - image: cimg/php:8.0-node
       auth:
         username: egovpdx
         password: $DOCKERHUB_PASSWORD
-  working_directory: /var/www/html
+  working_directory: /home/circleci/app
   steps:
     - restore_cache:
         name: Retore Git cache before checkout
         keys:
-          - source-v1-{{ .Branch }}-{{ .Revision }}
-          - source-v1-{{ .Branch }}-
-          - source-v1-
+          - source-v2-{{ .Branch }}-{{ .Revision }}
+          - source-v2-{{ .Branch }}-
+          - source-v2-
     - checkout
     - run: git gc
     - save_cache:
         name: Save Git cache after checkout
-        key: source-v1-{{ .Branch }}-{{ .Revision }}
+        key: source-v2-{{ .Branch }}-{{ .Revision }}
         paths:
           - ".git"
     - run:
@@ -36,9 +36,8 @@ build_and_deploy: &build_and_deploy
     - restore_cache:
         name: Restore Composer Cache
         keys:
-          - v2-dependencies-{{ checksum "composer.lock" }}
-          # fallback to using the latest cache if no exact match is found
-          - v2-dependencies-
+          - v3-dependencies-{{ checksum "composer.lock" }}
+          - v3-dependencies-
     - run:
         name: Composer install
         command: |
@@ -52,21 +51,21 @@ build_and_deploy: &build_and_deploy
           composer install --no-interaction --no-dev
     - save_cache:
         name: Save Composer Cache
-        key: v2-dependencies-{{ checksum "composer.lock" }}
+        key: v3-dependencies-{{ checksum "composer.lock" }}
         paths:
-          - ./vendor
-          - ./web/core
-          - ./web/modules/contrib
-          - ./web/profiles/contrib
-          - ./web/themes/contrib
-          - ./web/libraries
+          - /home/circleci/app/vendor
+          - /home/circleci/app/web/core
+          - /home/circleci/app/web/modules/contrib
+          - /home/circleci/app/web/profiles/contrib
+          - /home/circleci/app/web/themes/contrib
+          - /home/circleci/app/web/libraries
     - run:
         name: Deploy to Pantheon
         when: on_success
         no_output_timeout: 15m # allow 15 minutes instead of 10 minute default for script to complete
         command: |
           # Add terminus into path
-          export PATH=/tmp/vendor/bin:/var/www/html/vendor/bin:$PATH && cd /var/www/html
+          export PATH=/tmp/vendor/bin:/home/circleci/app/vendor/bin:$PATH && cd /home/circleci/app
 
           # Don't check the repo host key
           export GIT_SSH_COMMAND="ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no"
@@ -84,8 +83,8 @@ build_and_deploy: &build_and_deploy
           git config --global core.safecrlf false
           git remote add pantheon ssh://codeserver.dev.5c6715db-abac-4633-ada8-1c9efe354629@codeserver.dev.5c6715db-abac-4633-ada8-1c9efe354629.drush.in:2222/~/repository.git
           # Force add all files to include those excluded by .gitignore
-          cd /var/www/html && find ./web/modules -name .git -type d -prune -exec rm -rf "{}" \;
-          git add -f /var/www/html
+          cd /home/circleci/app && find ./web/modules -name .git -type d -prune -exec rm -rf "{}" \;
+          git add -f /home/circleci/app
           # Pantheon site will use the wrong DB if the local is kept
           git rm --cache  web/sites/default/settings.local.php --ignore-unmatch
           git rm -r --cache web/sites/default/files --ignore-unmatch
@@ -137,7 +136,7 @@ build_and_deploy: &build_and_deploy
           # When commit on a permanent branch or master, delete the multi-dev site with name like "powr-1234a"
           if [[ $PANTHEON_ENV = "dev" ]]; then
             # After success deployment to dev, remove the multidev site if this is a merge of a PR.
-            cd /var/www/html
+            cd /home/circleci/app
 
             # Must read the last commit message from Github. The last one in local repo is "CircleCI Deployment"
             last_log=$(git log origin/$CIRCLE_BRANCH --pretty=format:%s -1)
@@ -150,7 +149,9 @@ build_and_deploy: &build_and_deploy
               JIRA_STORY_ID=${BASH_REMATCH[2]}
             # Squash and Merge on other feature branches
             # Example: POWR-3058 Delete all related multi-devs when a branch is merged
-            elif [[ $lowercase_last_log =~ ^(powr-[0-9]+)[[:space:]]+.+$ ]]; then
+            # Should also match for CSM prefix
+            # Example: CSM-3058 Delete all related multi-devs when a branch is merged
+            elif [[ $lowercase_last_log =~ ^((powr|csm)-[0-9]+)[[:space:]]+.+$ ]]; then
               echo "Found story ID from squash and merge commit message: '${BASH_REMATCH[1]}'";
               JIRA_STORY_ID=${BASH_REMATCH[1]}
             else
@@ -190,7 +191,7 @@ build_and_deploy: &build_and_deploy
 
 visual_regression: &visual_regression
   docker:
-    - image: cimg/php:7.4-browsers
+    - image: cimg/php:8.0-browsers
       auth:
         username: egovpdx
         password: $DOCKERHUB_PASSWORD
@@ -239,7 +240,7 @@ visual_regression: &visual_regression
     - run:
         name: Run Percy tests
         command: |
-          export PATH=/var/www/html/tests/vendor/bin:/tmp/vendor/pantheon-systems/terminus/bin:$PATH
+          export PATH=/home/circleci/app/tests/vendor/bin:/tmp/vendor/pantheon-systems/terminus/bin:$PATH
 
           # Log in via terminus first. Required for tests that require user login.
           terminus auth:login --quiet --machine-token="$eGov_Terminus" --email="$eGov_Email" && terminus aliases
@@ -281,7 +282,7 @@ visual_regression: &visual_regression
 
 full_regression: &full_regression
   docker:
-    - image: cimg/php:7.4-browsers
+    - image: cimg/php:8.0-browsers
       auth:
         username: egovpdx
         password: $DOCKERHUB_PASSWORD
@@ -331,7 +332,7 @@ full_regression: &full_regression
     - run:
         name: Run full regression tests
         command: |
-          export PATH=/var/www/html/tests/vendor/bin:/tmp/vendor/pantheon-systems/terminus/bin:$PATH
+          export PATH=/home/circleci/app/tests/vendor/bin:/tmp/vendor/pantheon-systems/terminus/bin:$PATH
 
           # Skip test if there is no new commit since the last run
           echo "Current commit: $CIRCLE_SHA1"

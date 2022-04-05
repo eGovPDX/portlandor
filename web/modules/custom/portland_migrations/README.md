@@ -466,3 +466,18 @@ lando terminus drush portlandor.powr-[ID] -- migrate:import oehr_news_news_redir
 lando terminus drush portlandor.powr-[ID] -- migrate:import --group=oehr_news
 
 ```
+#### PCCEP Meetings
+
+##### Local
+```
+lando drush migrate:import pccep_meetings
+lando drush migrate:import pccep_meetings_redirects
+lando drush migrate:import --group=pccep_meetings
+```
+##### On Pantheon
+```
+lando terminus drush portlandor.powr-[ID] -- migrate:import pccep_meetings
+lando terminus drush portlandor.powr-[ID] -- migrate:import pccep_meetings_redirects
+lando terminus drush portlandor.powr-[ID] -- migrate:import --group=pccep_meetings
+
+```
