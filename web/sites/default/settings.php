@@ -166,6 +166,8 @@ if (isset($_ENV['PANTHEON_ENVIRONMENT']) && $_ENV['PANTHEON_ENVIRONMENT'] !== 'l
 
   $settings['cache']['default'] = 'cache.backend.redis'; // Use Redis as the default cache.
   $settings['cache_prefix']['default'] = 'pantheon-redis';
+  
+  $settings['cache']['bins']['form'] = 'cache.backend.database'; // Use the database for forms
 }
 
 // Automatically generated include for settings managed by ddev.
