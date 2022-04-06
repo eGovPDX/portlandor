@@ -164,6 +164,9 @@ if (isset($_ENV['PANTHEON_ENVIRONMENT']) && $_ENV['PANTHEON_ENVIRONMENT'] !== 'l
   $settings['redis.connection']['port']      = $_ENV['CACHE_PORT'];
   $settings['redis.connection']['password']  = $_ENV['CACHE_PASSWORD'];
 
+  $settings['redis_compress_length'] = 100;
+  $settings['redis_compress_level'] = 1;
+  
   $settings['cache']['default'] = 'cache.backend.redis'; // Use Redis as the default cache.
   $settings['cache_prefix']['default'] = 'pantheon-redis';
 
