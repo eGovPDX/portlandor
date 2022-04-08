@@ -28,9 +28,8 @@ describe("Full regression test suite for Ally", () => {
     }
     else {
       var drush_uli_result = fs.readFileSync("ally_uli.log").toString();
-      login_url = drush_uli_result.replace('http://default', 'https://portlandor.lndo.site');
       // Log in once for all tests to save time
-      await page.goto(login_url);
+      await page.goto(drush_uli_result);
     }
   })
 
