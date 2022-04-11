@@ -733,6 +733,8 @@ function portland_inline_entity_form_entity_form_alter(&$entity_form, &$form_sta
     if ($group_id != null) {
       $entity_form["field_display_groups"]['widget'][0]['target_id']['#default_value'] = $group_id;
     }
+
+    $entity_form['#element_validate'][] = '_validate_document';
   }
 }
 
@@ -815,13 +817,29 @@ function portland_form_alter(&$form, &$form_state, $form_id)
  */
 function _validate_document(&$form, \Drupal\Core\Form\FormStateInterface $form_state)
 {
-  if ($form_state->hasValue('field_efiles_link')) {
+  $is_embedded_document_form_with_efiles = $form_state->hasValue("inline_entity_form") && 
+    ($form_state->getValue("inline_entity_form")["field_efiles_link"] != null);
+  if ($form_state->hasValue('field_efiles_link') || $is_embedded_document_form_with_efiles) {
     // DO NOT validate when the user clicks on the remove document button.
     // ONLY validate when the entire form is submitted.
     if ($form_state->getTriggeringElement()["#name"] === "field_document_0_remove_button") return;
 
-    $efiles_link = $form_state->getValue('field_efiles_link');
-    $document = $form_state->getValue('field_document');
+    // Get values from the inline entity form
+    if($is_embedded_document_form_with_efiles) {
+      // Can't have both uploaded document and eFiles
+      if( $form_state->getValue("inline_entity_form")["field_efiles_link"][0]['uri'] && 
+        count($form_state->getValue("inline_entity_form")["field_document"][0]['fids']) !== 0) {
+        $form_state->setErrorByName('field_document', t('Cannot have both uploaded document and eFiles link'));
+        return;
+      }
+
+      $efiles_link = $form_state->getValue("inline_entity_form")["field_efiles_link"];
+      $document = $form_state->getValue("inline_entity_form")["field_document"];
+    }
+    else {
+      $efiles_link = $form_state->getValue('field_efiles_link');
+      $document = $form_state->getValue('field_document');
+    }
     // If the eFiles link has value
     if (!empty($efiles_link) && !empty($efiles_link[0]['uri'])) {
       $user_input_file_url = strtolower($efiles_link[0]['uri']);
@@ -867,9 +885,16 @@ function _validate_document(&$form, \Drupal\Core\Form\FormStateInterface $form_s
           // $form_state->setErrorByName('field_efiles_link', t('The linked file is an HTML page. Please use External Resource instead.'));
           return;
         }
-
-        $form_state->setValue('field_file_size', [["value" => $file_size]]);
-        $form_state->setValue('field_mime_type', [["value" => $content_type_array[0]]]);
+        if($is_embedded_document_form_with_efiles) {
+          $form_state->getValue("inline_entity_form")["field_file_size"] = [["value" => $file_size]];
+          $form["#entity"]->field_file_size->value = $file_size;
+          $form_state->getValue("inline_entity_form")["field_mime_type"] = [["value" => $content_type_array[0]]];
+          $form["#entity"]->field_mime_type->value = $content_type_array[0];
+        }
+        else {
+          $form_state->setValue('field_file_size', [["value" => $file_size]]);
+          $form_state->setValue('field_mime_type', [["value" => $content_type_array[0]]]);
+        }
       } else {
         // Verify it's a valid eFiles folder
         try {
@@ -892,7 +917,14 @@ function _validate_document(&$form, \Drupal\Core\Form\FormStateInterface $form_s
     } else {
       $document = $form_state->getValue('field_document');
       // The document field can't be empty when the eFile link is empty
-      if (empty($document) || empty($document[0]["fids"])) {
+      if ($is_embedded_document_form_with_efiles) { 
+        if( $form_state->getValue("inline_entity_form")["field_efiles_link"][0]['uri'] == null && 
+            count($form_state->getValue("inline_entity_form")["field_document"][0]['fids']) === 0
+        ) {
+          $form_state->setErrorByName('field_document', t('Please upload a file or add an external file link'));
+        }
+      }
+      else if (empty($document) || empty($document[0]["fids"])) {
         $form_state->setErrorByName('field_document', t('Please upload a file or add an external file link'));
       }
     }
