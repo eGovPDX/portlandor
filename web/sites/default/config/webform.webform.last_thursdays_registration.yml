@@ -2,9 +2,9 @@ uuid: c664bbb3-e500-4565-ba23-26127dc2197f
 langcode: en
 status: open
 dependencies: {  }
+weight: 0
 open: null
 close: null
-weight: 0
 uid: 1
 template: false
 archive: false
@@ -90,9 +90,9 @@ settings:
   page_theme_name: ''
   form_title: source_entity_webform
   form_submit_once: false
-  form_exception_message: ''
   form_open_message: ''
   form_close_message: ''
+  form_exception_message: ''
   form_previous_submissions: true
   form_confidential: false
   form_confidential_message: ''
@@ -102,31 +102,36 @@ settings:
   form_prepopulate_source_entity: false
   form_prepopulate_source_entity_required: false
   form_prepopulate_source_entity_type: ''
-  form_reset: false
+  form_unsaved: false
+  form_disable_back: false
+  form_submit_back: false
   form_disable_autocomplete: false
   form_novalidate: false
   form_disable_inline_errors: false
   form_required: true
-  form_unsaved: false
-  form_disable_back: false
-  form_submit_back: false
   form_autofocus: false
   form_details_toggle: false
+  form_reset: false
   form_access_denied: default
   form_access_denied_title: ''
   form_access_denied_message: ''
   form_access_denied_attributes: {  }
   form_file_limit: ''
+  form_attributes: {  }
   form_method: ''
   form_action: ''
-  form_attributes: {  }
   share: false
   share_node: false
   share_theme_name: ''
   share_title: true
   share_page_body_attributes: {  }
   submission_label: ''
+  submission_exception_message: ''
+  submission_locked_message: ''
   submission_log: false
+  submission_excluded_elements: {  }
+  submission_exclude_empty: false
+  submission_exclude_empty_checkbox: false
   submission_views: {  }
   submission_views_replace:
     webform_routes: {  }
@@ -137,11 +142,6 @@ settings:
   submission_access_denied_title: ''
   submission_access_denied_message: ''
   submission_access_denied_attributes: {  }
-  submission_exception_message: ''
-  submission_locked_message: ''
-  submission_excluded_elements: {  }
-  submission_exclude_empty: false
-  submission_exclude_empty_checkbox: false
   previous_submission_message: ''
   previous_submissions_message: ''
   autofill: false
@@ -152,13 +152,13 @@ settings:
   wizard_progress_percentage: false
   wizard_progress_link: false
   wizard_progress_states: false
-  wizard_auto_forward: true
-  wizard_auto_forward_hide_next_button: false
-  wizard_keyboard: true
   wizard_start_label: ''
   wizard_preview_link: false
   wizard_confirmation: true
   wizard_confirmation_label: ''
+  wizard_auto_forward: true
+  wizard_auto_forward_hide_next_button: false
+  wizard_keyboard: true
   wizard_track: ''
   wizard_prev_button_label: ''
   wizard_next_button_label: ''
@@ -181,9 +181,9 @@ settings:
   draft_pending_single_message: ''
   draft_pending_multiple_message: ''
   confirmation_type: inline
+  confirmation_url: ''
   confirmation_title: ''
   confirmation_message: 'Thank you for registering for Last Thursdays on Alberta!&nbsp; Look for an e-mail confirming your registration and one with your vendor badge.&nbsp; Please print the vendor badge email out and have it with you when vending at any Last Thursdays on Alberta events.'
-  confirmation_url: ''
   confirmation_attributes: {  }
   confirmation_back: true
   confirmation_back_label: ''
@@ -266,9 +266,9 @@ access:
 handlers:
   vendor_confirmation_email:
     id: email
+    handler_id: vendor_confirmation_email
     label: 'Vendor confirmation email'
     notes: ''
-    handler_id: vendor_confirmation_email
     status: true
     conditions: {  }
     weight: 0
@@ -277,13 +277,17 @@ handlers:
         - completed
       to_mail: '[webform_submission:values:contact_email:raw]'
       to_options: {  }
-      cc_mail: ''
-      cc_options: {  }
       bcc_mail: ''
       bcc_options: {  }
+      cc_mail: ''
+      cc_options: {  }
       from_mail: noreply@portlandoregon.gov
       from_options: {  }
       from_name: 'Last Thursdays on Alberta'
+      reply_to: ''
+      return_path: ''
+      sender_mail: ''
+      sender_name: ''
       subject: 'Registration confirmation for Last Thursdays on Alberta'
       body: "<p>{{ webform_token('[webform_submission:values:contact_name]', webform_submission) }},</p>\r\n<p>Thank you for registering with Last Thursdays on Alberta. Your registration information is copied below. Thank you also for confirming that you have read and will follow our <a href=\"www.portland.gov/last-thursdays/vendor-requirements\">vendor requirements</a>. For Last Thursdays events, vendor spaces are first come first served. Most vendors arrive about 5:00 for set up. Please stay clear of the travel lane before the road closes to cars at 6:00. If you have a 10 x 10 tent, please set up two feet of it on the sidewalk and 8 feet in the parking lane. The parking lane where cars park is 8 feet wide, so this will keep you out of the travel lane.</p>\r\n<p>We will review your registration for approval within one week. Once approved, you will also receive a vendor badge by e-mail. Please print that e-mail out and have it available at your vending location while vending at Last Thursday.\r\n</p>\r\n{{ webform_token('[webform_submission:values]', webform_submission) }}\r\n<p>If you have any questions or concerns, please contact Greg Raisman, City of Portland Bureau of Transportation, at <a href=\"mailto:greg.raisman@portlandoregon.gov\">greg.raisman@portlandoregon.gov</a> or <a href=\"tel:503-823-1052\">503-823-1052</a>.</p>\r\n<p>The City of Portland complies with all non‐discrimination, Civil Rights laws including Civil Rights Title VI and ADA Title II. To help ensure equal access to City programs, services and activities, the City of Portland will reasonably modify policies/procedures and provide auxiliary aids/services to persons with disabilities. Call 503-823-2036, TTY 503-823-6868 or Oregon Relay Service: 711 with such requests, or visit <a href=\"http://bit.ly/13EWaCg\">http://bit.ly/13EWaCg</a></p>\r\n\r\n"
       excluded_elements:
@@ -296,18 +300,14 @@ handlers:
       html: true
       attachments: false
       twig: true
-      debug: false
-      reply_to: ''
-      return_path: ''
-      sender_mail: ''
-      sender_name: ''
       theme_name: ''
       parameters: {  }
+      debug: false
   vendor_notification_email:
     id: email
+    handler_id: vendor_notification_email
     label: 'Admin notification email'
     notes: ''
-    handler_id: vendor_notification_email
     status: true
     conditions: {  }
     weight: 0
@@ -316,13 +316,17 @@ handlers:
         - completed
       to_mail: 'michael.mcdonald@portlandoregon.gov,greg.raisman@portlandoregon.gov'
       to_options: {  }
-      cc_mail: ''
-      cc_options: {  }
       bcc_mail: ''
       bcc_options: {  }
+      cc_mail: ''
+      cc_options: {  }
       from_mail: _default
       from_options: {  }
       from_name: _default
+      reply_to: ''
+      return_path: ''
+      sender_mail: ''
+      sender_name: ''
       subject: 'New vendor registration for Last Thursdays on Alberta: [webform_submission:values:vendor_name]'
       body: "<p>Submitted on {{ webform_token('[webform_submission:created]', webform_submission) }}</p>\r\n{{ webform_token('[webform_submission:values]', webform_submission) }}\r\n<p>You can update, including approve, the submission here: {{ webform_token('[webform_submission:url]', webform_submission) }}</p>\r\n"
       excluded_elements: {  }
@@ -333,18 +337,14 @@ handlers:
       html: true
       attachments: false
       twig: true
-      debug: false
-      reply_to: ''
-      return_path: ''
-      sender_mail: ''
-      sender_name: ''
       theme_name: ''
       parameters: {  }
+      debug: false
   vendor_badge_email:
     id: email
+    handler_id: vendor_badge_email
     label: 'Vendor badge email'
     notes: ''
-    handler_id: vendor_badge_email
     status: true
     conditions:
       enabled:
@@ -357,13 +357,17 @@ handlers:
         - updated
       to_mail: '[webform_submission:values:contact_email:raw]'
       to_options: {  }
-      cc_mail: ''
-      cc_options: {  }
       bcc_mail: ''
       bcc_options: {  }
+      cc_mail: ''
+      cc_options: {  }
       from_mail: noreply@portlandoregon.gov
       from_options: {  }
       from_name: 'Last Thursdays on Alberta'
+      reply_to: ''
+      return_path: ''
+      sender_mail: ''
+      sender_name: ''
       subject: 'Last Thursdays on Alberta vendor badge for [webform_submission:values:vendor_name]'
       body: "<h1>Permit for {{ webform_token('[webform_submission:values:vendor_name]', webform_submission, [], options) }}</h1>\r\n<h2>Vendor type: {{ webform_token('[webform_submission:values:vendor_type]', webform_submission, [], options) }}</h2>\r\n<h1 style=\"font-size: 7em;\">#{{ webform_token('[webform_submission:values:vendor_hash]', webform_submission, [], options) }}</h1>\r\n"
       excluded_elements: {  }
@@ -374,11 +378,7 @@ handlers:
       html: true
       attachments: false
       twig: true
-      debug: false
-      reply_to: ''
-      return_path: ''
-      sender_mail: ''
-      sender_name: ''
       theme_name: ''
       parameters: {  }
+      debug: false
 variants: {  }
