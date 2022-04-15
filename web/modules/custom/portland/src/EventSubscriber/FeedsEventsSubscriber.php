@@ -10,6 +10,8 @@ use Drupal\Component\Utility\Xss;
 use Drupal\media\Entity\Media;
 use Drupal\file\Entity\File;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
+use Drupal\node\Entity\Node;
+use Drupal\Core\File\FileSystemInterface;
 
 /**
  * Handle Feeds events
@@ -157,7 +159,7 @@ class FeedsEventsSubscriber implements EventSubscriberInterface {
           $downloaded_file = system_retrieve_file($enclosure, $destination_uri, TRUE);
         }
         catch (Exception $e) {
-          $message = "Error occurred while trying to download URL target at " . $pogFileUrl . " and create managed file. Exception: " . $e->getMessage();
+          $message = "Error occurred while trying to download URL target at " . $enclosure . " and create managed file. Exception: " . $e->getMessage();
           \Drupal::logger('portland_migrations')->notice($message);
         }
 
@@ -203,7 +205,7 @@ class FeedsEventsSubscriber implements EventSubscriberInterface {
   public function postsave(EntityEvent $event) {
     $entity = $event->getEntity();
     $nid = $entity->Id();
-    $node = node_load($nid);
+    $node = Node::load($nid);
     $feed = $event->getFeed();
 
     if( $feed->hasField('field_parent_group') && count($feed->field_parent_group) > 0 ) {
@@ -235,73 +237,13 @@ class FeedsEventsSubscriber implements EventSubscriberInterface {
   }
 
   /**
-   * Helper funciton to retrieve images and embed into the body text
-   */
-  protected function add_images( $description ) {
-    $url = $link->getAttribute('src');
-    if (is_null($url)) return;
-
-    // Use alt text as the media name if available
-    $media_name = $link->getAttribute('alt') ? $link->getAttribute('alt') : $filename;
-    $media_type = $this->getMediaType($filename);
-    // Create the Media Document item
-
-    if( $media_type == 'image' ) {
-      $media = Media::create([
-        'bundle' => 'image',
-        'uid' => 1,
-        'langcode' => \Drupal::languageManager()->getDefaultLanguage()->getId(),
-        'name' => $media_name,
-        'field_title' => $media_name,
-        'status' => 1,
-        'image' => [
-          'target_id' => $downloaded_file->id()
-        ],
-        'field_summary' => $media_name,
-        'field_media_in_library' => 1,
-      ]);
-    }
-    else { // Document
-      $media = Media::create([
-        'bundle' => 'document',
-        'uid' => 1,
-        'langcode' => \Drupal::languageManager()->getDefaultLanguage()->getId(),
-        'name' => $media_name,
-        'status' => 1,
-        'field_document' => [
-          'target_id' => $downloaded_file->id()
-        ],
-        'field_summary' => $media_name,
-      ]);
-    }
-    $media->save();
-    $media->status->value = 1;
-    $media->moderation_state->value = 'published';
-    $media->save();
-
-    // Replace the old link with a embedded image
-    $media_uuid = $media->uuid();
-    $newNode = $dom->createDocumentFragment();
-    if( $media_type == 'image' ) {
-      $newNode->appendXML("<drupal-entity data-align=\"responsive-full\" data-embed-button=\"image_browser\" data-entity-embed-display=\"media_image\" data-entity-type=\"media\" data-entity-uuid=\"$media_uuid\" data-langcode=\"en\"></drupal-entity>");
-    }
-    else {
-      $newNode->appendXML("<drupal-entity data-embed-button=\"document_browser\" data-entity-embed-display=\"view_mode:media.embedded\" data-entity-type=\"media\" data-entity-uuid=\"$media_uuid\" data-langcode=\"en\"></drupal-entity>");
-    }
-    $link->parentNode->replaceChild($newNode, $link);
-  }
-
-  /**
    * Helper funciton to create the download directory for image downloads
    */
   protected function prepareDownloadDirectory() {
-    // prepare download directory
-    $folder_name = date("Y-m") ;
-    $folder_uri = file_build_uri($folder_name);
-    $public_path = \Drupal::service('file_system')->realpath(file_default_scheme() . "://");
-    $download_path = $public_path . "/" . $folder_name;
-    $dir = file_prepare_directory($download_path, FILE_CREATE_DIRECTORY);
-    return $folder_uri;
+    // prepare download directory as Year-Month
+    $uri = \Drupal::config('system.file')->get('default_scheme') . '://' . date("Y-m");
+    $stream_wrapper_manager = \Drupal::service('stream_wrapper_manager');
+    \Drupal::service('file_system')->prepareDirectory($uri, FileSystemInterface::CREATE_DIRECTORY | FileSystemInterface::MODIFY_PERMISSIONS);
+    return $stream_wrapper_manager->normalizeUri($uri);
   }
-
 }

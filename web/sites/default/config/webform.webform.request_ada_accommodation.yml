@@ -11,9 +11,9 @@ third_party_settings:
     antibot: true
   honeypot:
     honeypot: true
+weight: 0
 open: null
 close: null
-weight: 0
 uid: 60
 template: false
 archive: false
@@ -397,9 +397,7 @@ elements: |-
       agent_action_taken:
         '#type': radios
         '#title': 'Action Taken'
-        '#options':
-          Resolved: Resolved
-          Referred: Referred
+        '#options': action_taken
         '#options_display': side_by_side
         '#states':
           invisible:
@@ -408,22 +406,28 @@ elements: |-
       agent_contact_type:
         '#type': radios
         '#title': 'Contact Type'
-        '#options':
-          Phone: Phone
-          Email: Email
-          Webform: Webform
-          'In Person': 'In Person'
-          Webchat: Webchat
-          'Social Media': 'Social Media'
+        '#options': contact_type
         '#options_display': side_by_side
         '#states':
           invisible:
             ':input[name="agent_ticket_number"]':
               filled: true
-      agent_reason:
-        '#type': hidden
-        '#title': 'Reason for Contact'
-        '#default_value': Incident
+      agent_ticket_type:
+        '#type': radios
+        '#title': 'Ticket Type'
+        '#options': ticket_type
+        '#options_display': side_by_side
+      agent_summary:
+        '#type': webform_computed_twig
+        '#title': 'Agent Summary'
+        '#display_on': none
+        '#template': |-
+          {% if uid %}<p>Agent Email: {{ data.agent_email }}</p>{% endif %}
+          {% if data.agent_ticket_number %}<p>Ticket Number: {{ data.agent_ticket_number }}</p>{% endif %}
+          {% if data.agent_action_taken %}<p>Action Taken: {{ data.agent_action_taken }}</p>{% endif %}
+          <p>Contact Type: {% if data.agent_contact_type %}{{ data.agent_contact_type }}{% else %}Webform{% endif %}</p>
+          <p>Ticket Type: {{ data.agent_ticket_type }}</p>
+        '#ajax': true
     report_ticket_id:
       '#type': hidden
       '#title': 'Report Ticket ID'
@@ -463,9 +467,9 @@ settings:
   page_theme_name: ''
   form_title: source_entity_webform
   form_submit_once: false
-  form_exception_message: ''
   form_open_message: ''
   form_close_message: ''
+  form_exception_message: ''
   form_previous_submissions: true
   form_confidential: false
   form_confidential_message: ''
@@ -475,31 +479,36 @@ settings:
   form_prepopulate_source_entity: false
   form_prepopulate_source_entity_required: false
   form_prepopulate_source_entity_type: ''
-  form_reset: false
+  form_unsaved: false
+  form_disable_back: false
+  form_submit_back: false
   form_disable_autocomplete: false
   form_novalidate: false
   form_disable_inline_errors: false
   form_required: true
-  form_unsaved: false
-  form_disable_back: false
-  form_submit_back: false
   form_autofocus: false
   form_details_toggle: false
+  form_reset: false
   form_access_denied: default
   form_access_denied_title: ''
   form_access_denied_message: ''
   form_access_denied_attributes: {  }
   form_file_limit: ''
+  form_attributes: {  }
   form_method: ''
   form_action: ''
-  form_attributes: {  }
   share: false
   share_node: false
   share_theme_name: ''
   share_title: true
   share_page_body_attributes: {  }
   submission_label: ''
+  submission_exception_message: ''
+  submission_locked_message: ''
   submission_log: false
+  submission_excluded_elements: {  }
+  submission_exclude_empty: false
+  submission_exclude_empty_checkbox: false
   submission_views: {  }
   submission_views_replace: {  }
   submission_user_columns: {  }
@@ -508,11 +517,6 @@ settings:
   submission_access_denied_title: ''
   submission_access_denied_message: ''
   submission_access_denied_attributes: {  }
-  submission_exception_message: ''
-  submission_locked_message: ''
-  submission_excluded_elements: {  }
-  submission_exclude_empty: false
-  submission_exclude_empty_checkbox: false
   previous_submission_message: ''
   previous_submissions_message: ''
   autofill: false
@@ -523,13 +527,13 @@ settings:
   wizard_progress_percentage: false
   wizard_progress_link: false
   wizard_progress_states: false
-  wizard_auto_forward: true
-  wizard_auto_forward_hide_next_button: false
-  wizard_keyboard: true
   wizard_start_label: ''
   wizard_preview_link: false
   wizard_confirmation: true
   wizard_confirmation_label: ''
+  wizard_auto_forward: true
+  wizard_auto_forward_hide_next_button: false
+  wizard_keyboard: true
   wizard_track: ''
   wizard_prev_button_label: ''
   wizard_next_button_label: ''
@@ -552,9 +556,9 @@ settings:
   draft_pending_single_message: ''
   draft_pending_multiple_message: ''
   confirmation_type: page
+  confirmation_url: ''
   confirmation_title: 'Thank you for submitting your reqest!'
   confirmation_message: 'Your request has been received, and you should be contacted within 48 hours.'
-  confirmation_url: ''
   confirmation_attributes: {  }
   confirmation_back: true
   confirmation_back_label: ''
@@ -649,9 +653,9 @@ access:
 handlers:
   zendesk_new_ticket:
     id: zendesk
+    handler_id: zendesk_new_ticket
     label: 'Zendesk new ticket'
     notes: 'Creates a new ADA Accommodation Request ticket and assigns it to the 311 group.'
-    handler_id: zendesk_new_ticket
     status: true
     conditions: {  }
     weight: 0
