@@ -6,6 +6,7 @@ use Drupal\views_bulk_operations\Action\ViewsBulkOperationsActionBase;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Access\AccessResult;
 
 /**
  * Some description.
@@ -27,9 +28,10 @@ class ArchiveAction extends ViewsBulkOperationsActionBase {
   public function execute($entity = NULL) {
 
     if( $entity->status->value == 0 ) {
-      if( ($entity->getEntityTypeId() == 'node' && $entity->moderation_state->value == 'archived') ||
+      if( ($entity->getEntityTypeId() == 'node' && in_array($entity->moderation_state->value, array('archived', 'unpublished')) ) ||
           ($entity->getEntityTypeId() == 'media' && $entity->moderation_state->value == 'unpublished_archived') ) {
-        return $this->t('Is already archived.');
+        $title = $entity->title->value;
+        return $this->t("'$title' is already unpublished.");
       }
     }
 
@@ -38,7 +40,20 @@ class ArchiveAction extends ViewsBulkOperationsActionBase {
 
     $entity->status->value = 0;
     if($entity->getEntityTypeId() == 'node') {
-      $entity->moderation_state->value = 'archived';
+      // The machine name of the unpublished state for some workflows is "archived", whereas most use "unpublished" 
+      // so we need to figure out the correct state name depending on the entity's associated workflow.
+
+      // Get workflow associated with the entity bundle
+      $bundle = $entity->bundle();
+      $query = \Drupal::entityTypeManager()->getStorage('workflow')->getQuery();
+      $query->condition('type_settings.entity_types.node.*', $bundle);
+      $workflow = $query->execute();
+      $workflow = array_shift( $workflow );
+
+      // Get the workflow's states and set the entity's moderation state to either
+      // 'unpublished' or 'archived' depending on correct workflow state name.
+      $workflow_states = \Drupal::config("workflows.workflow." . $workflow)->get("type_settings.states");
+      $entity->moderation_state->value = array_key_exists('unpublished', $workflow_states) ? 'unpublished' : 'archived';
     }
     else if($entity->getEntityTypeId() == 'media') {
       $entity->moderation_state->value = 'unpublished_archived';
@@ -65,6 +80,6 @@ class ArchiveAction extends ViewsBulkOperationsActionBase {
 
     // Other entity types may have different
     // access methods and properties.
-    return TRUE;
+    return ($return_as_object ? AccessResult::allowed() : true );
   }
 }
