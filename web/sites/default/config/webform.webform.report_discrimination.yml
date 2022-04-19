@@ -1,7 +1,9 @@
 uuid: 2780d79f-b1b4-4a84-a5ca-605f5e23449e
 langcode: en
 status: open
-dependencies: {  }
+dependencies:
+  module:
+    - portland_zendesk
 weight: 0
 open: null
 close: null
@@ -297,6 +299,8 @@ elements: |-
     section_agent_use_only:
       '#type': webform_section
       '#title': 'Agent Use Only'
+      '#attributes':
+        style: 'padding: 15px; background-color: #cccccc;'
       '#access_create_roles':
         - support_agent
         - administrator
@@ -310,7 +314,7 @@ elements: |-
         '#type': textfield
         '#title': 'Agent Email'
         '#default_value': '[current-user:display-name] <[current-user:mail]>'
-      ticket_number:
+      agent_ticket_number:
         '#type': number
         '#title': 'Ticket Number'
         '#min': 1000
@@ -324,11 +328,37 @@ elements: |-
           invisible:
             '':
               '': ''
-      agent_ticket_number:
-        '#type': number
-        '#title': 'Ticket Number'
-        '#min': 1000
-        '#max': 999999999
+      agent_contact_type:
+        '#type': radios
+        '#title': 'Contact Type'
+        '#options': contact_type
+        '#options_display': side_by_side
+        '#states':
+          invisible:
+            ':input[name="agent_ticket_number"]':
+              filled: true
+        '#default_value': Webform
+      agent_ticket_type:
+        '#type': radios
+        '#title': 'Ticket Type'
+        '#disabled': true
+        '#options': ticket_type
+        '#options_display': side_by_side
+        '#default_value': Problem
+      agent_summary:
+        '#type': webform_computed_twig
+        '#title': 'Agent Summary'
+        '#display_on': none
+        '#template': |-
+          {% if uid %}<p>Agent Email: {{ data.agent_email }}</p>{% endif %}
+          {% if data.agent_ticket_number %}<p>Ticket Number: {{ data.agent_ticket_number }}</p>{% endif %}
+          {% if data.agent_action_taken %}<p>Action Taken: {{ data.agent_action_taken }}</p>{% endif %}
+          <p>Contact Type: {% if data.agent_contact_type %}{{ data.agent_contact_type }}{% else %}Webform{% endif %}</p>
+          <p>Ticket Type: {{ data.agent_ticket_type }}</p>
+        '#store': true
+      report_ticket_id:
+        '#type': hidden
+        '#title': 'Report Ticket ID'
     actions:
       '#type': webform_actions
       '#title': 'Submit button(s)'
@@ -520,41 +550,26 @@ access:
     users: {  }
     permissions: {  }
 handlers:
-  zendesk_new_ticket_via_email:
-    id: email
-    handler_id: zendesk_new_ticket_via_email
-    label: 'Zendesk new ticket via email'
-    notes: 'Creates a new discrimination report and assigns to the 311 group'
+  zendesk_new_ticket:
+    id: zendesk
+    handler_id: zendesk_new_ticket
+    label: 'Zendesk new ticket'
+    notes: 'Creates a new Discrimination complaint ticket and assigns it to the 311: ADA and Discrimination group.'
     status: true
     conditions: {  }
     weight: 0
     settings:
-      states:
-        - completed
-      to_mail: 311@portlandoregon.gov
-      to_options: {  }
-      bcc_mail: ''
-      bcc_options: {  }
-      cc_mail: ''
-      cc_options: {  }
-      from_mail: '[webform_submission:values:contact_email:raw]'
-      from_options: {  }
-      from_name: '[webform_submission:values:contact_name:raw]'
-      reply_to: ''
-      return_path: ''
-      sender_mail: ''
-      sender_name: ''
-      subject: _default
-      body: _default
-      excluded_elements: {  }
-      ignore_access: false
-      exclude_empty: true
-      exclude_empty_checkbox: false
-      exclude_attachments: false
-      html: true
-      attachments: false
-      twig: false
-      theme_name: ''
-      parameters: {  }
-      debug: false
+      requester_name: contact_name
+      requester_email: contact_email
+      subject: 'Discrimination Complaint'
+      comment: '[webform_submission:values]'
+      tags: 'drupal webform discrimination'
+      priority: normal
+      status: new
+      group_id: '4763233132567'
+      assignee_id: ''
+      type: problem
+      collaborators: ''
+      custom_fields: "1500012743961: '[webform_submission:values:computed_location_address]'\r\n1900004448725: '[webform_submission:values:computed_location_latlon]'"
+      ticket_id_field: report_ticket_id
 variants: {  }
