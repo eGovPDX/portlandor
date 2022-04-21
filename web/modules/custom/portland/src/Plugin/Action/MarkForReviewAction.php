@@ -7,6 +7,7 @@ use Drupal\Core\Session\AccountInterface;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Plugin\PluginFormInterface;
+use Drupal\Core\Access\AccessResult;
 
 /**
  * Some description.
@@ -30,9 +31,25 @@ class MarkForReviewAction extends ViewsBulkOperationsActionBase {
     $reviewer_uid = $this->configuration['reviewer'];
     $user_display_name = \Drupal\user\Entity\User::load($reviewer_uid)->getDisplayName();
 
+    // The machine name of the review state for some workflows is "review", whereas others use "in_review" 
+    // so we need to figure out the correct state name depending on the entity's associated workflow.
+
+    // Get workflow associated with the entity bundle
+    $bundle = $entity->bundle();
+    $query = \Drupal::entityTypeManager()->getStorage('workflow')->getQuery();
+    $query->condition('type_settings.entity_types.node.*', $bundle);
+    $workflow = $query->execute();
+    $workflow = array_shift( $workflow );
+
+    // Get the workflow's states and set the entity's moderation state to either
+    // 'review' or 'in_review' depending on correct workflow state name.
+    $workflow_states = \Drupal::config("workflows.workflow." . $workflow)->get("type_settings.states");
+    $entity->moderation_state->value = array_key_exists('review', $workflow_states) ? 'review' : 'in_review';
+
     $entity->status->value = 0;
-    $entity->moderation_state->value = 'review';
-    $entity->field_reviewer->entity = $reviewer_uid;
+    // Some entities (e.g. contacts) don't have a reviewer field
+    if ($entity->hasField('field_reviewer'))
+      $entity->field_reviewer->entity = $reviewer_uid;
     $entity->setNewRevision(TRUE);
     $entity->revision_log = 'Bulk operation: assigned to '. $user_display_name .' for review';
     $entity->setRevisionUserId(\Drupal::currentUser()->id());
@@ -53,7 +70,7 @@ class MarkForReviewAction extends ViewsBulkOperationsActionBase {
 
     // Other entity types may have different
     // access methods and properties.
-    return TRUE;
+    return ($return_as_object ? AccessResult::allowed() : true );
   }
 
   /**
