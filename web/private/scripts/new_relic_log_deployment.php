@@ -27,6 +27,8 @@ $result = curl_exec($ch);
 curl_close($ch);
 $appdata = json_decode($result);
 
+// During the initial deployment, the applications array could be empty
+if( count($appdata->applications) == 0 ) return;
 
 // Prepare parameters for deployment API
 $application_id = $appdata->applications[0]->id;
