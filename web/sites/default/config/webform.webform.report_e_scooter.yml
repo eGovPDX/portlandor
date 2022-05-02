@@ -298,7 +298,18 @@ elements: |-
     '#title': 'Computed Recipient'
     '#admin_notes': 'If this computed field changes, it needs to be updated in all webforms that send notifications to scooter companies.'
     '#display_on': view
-    '#template': '{% if data.report_company == "Bird" %}portland311@bird.co{% elseif data.report_company == "Bolt" %}BoltPDX@micromobility.com{% elseif data.report_company == "Lime" %}help-portland@li.me{% elseif data.report_company == "Spin" %}portlandsupport@spin.pm,support@spin.pm{% endif %}'
+    '#template': |-
+      {% if data.report_company == "Bird" %}
+      portland311@bird.co
+      {% elseif data.report_company == "Bolt" %}
+      BoltPDX@micromobility.com
+      {% elseif data.report_company == "Lime" %}
+      help-portland@li.me
+      {% elseif data.report_company == "Spin" %}
+      portlandsupport@spin.pm,support@spin.pm,portland_warehouse-aaaabebkw557a3vu7d3cteq4vi@spin-org.slack.com
+      {% elseif data.report_company == "E-scooter company not specified" %}
+      portland311@bird.co,BoltPDX@micromobility.com,help-portland@li.me,portlandsupport@spin.pm,support@spin.pm,portland_warehouse-aaaabebkw557a3vu7d3cteq4vi@spin-org.slack.com
+      {% endif %}
     '#whitespace': trim
     '#store': true
   actions:
@@ -507,7 +518,7 @@ handlers:
     id: zendesk
     handler_id: zendesk_create_ticket
     label: 'Create Zendesk Ticket'
-    notes: 'Uses the Zendesk tickets API to create a new e-scooter report ticket in the sandbox and assign it to the E-scooter Response group. Covers all issue types except Riding on Sidewalk.'
+    notes: 'Uses the Zendesk tickets API to create a new e-scooter report ticket in the sandbox and assign it to the E-scooter Response group. Sends notification to selected e-scooter company. Covers all issue types except Riding on Sidewalk.'
     status: true
     conditions:
       enabled:
@@ -525,14 +536,14 @@ handlers:
       assignee_id: ''
       type: problem
       collaborators: ''
-      custom_fields: "1900004448785: '[webform_submission:values:report_company:raw]'\r\n1500012743961: '[webform_submission:values:report_location:location_address]'\r\n1900004448725: '[webform_submission:values:report_location:location_lat],[webform_submission:values:report_location:location_lon]'\r\n1500012801562: '[webform_submission:values:company_sla]'\r\n1500012801542: '[webform_submission:values:report_asset_id]'\r\n1500007391541: '[webform_submission:values:computed_contact_type]'\r\n1500013095781: '[webform_submission:uuid]'"
+      custom_fields: "1900004448785: '[webform_submission:values:report_company:raw]'\r\n1500012743961: '[webform_submission:values:report_location:location_address]'\r\n1500012801562: '[webform_submission:values:company_sla]'\r\n1500012801542: '[webform_submission:values:report_asset_id]'\r\n1500007391541: '[webform_submission:values:computed_contact_type]'\r\n1500013095781: '[webform_submission:uuid]'\r\n5581480390679: '[webform_submission:values:report_location:location_lat]'\r\n5581490332439: '[webform_submission:values:report_location:location_lon]'"
       ticket_id_field: report_ticket_id
       group_id: '1500006561502'
   zendesk_create_ticket_riding_on_sidewalk:
     id: zendesk
     handler_id: zendesk_create_ticket_riding_on_sidewalk
     label: 'Create Zendesk Ticket - Riding on Sidewalk'
-    notes: 'Uses the Zendesk tickets API to create a new e-scooter report ticket in the sandbox and assign it to the E-scooter Response group. This is only for the Riding on Sidewalk option, which is created as solved. '
+    notes: 'Uses the Zendesk tickets API to create a new e-scooter report ticket in the sandbox and assign it to the E-scooter Response group. This is only for the Riding on Sidewalk option, which is created as solved. Fires whether or not a company is selected.'
     status: true
     conditions:
       enabled:
@@ -550,7 +561,7 @@ handlers:
       assignee_id: '1505212728301'
       type: problem
       collaborators: ''
-      custom_fields: "1900004448785: '[webform_submission:values:report_company:raw]'\r\n1500012743961: '[webform_submission:values:report_location:location_address]'\r\n1900004448725: '[webform_submission:values:report_location:location_lat],[webform_submission:values:report_location:location_lon]'\r\n1500012801562: '[webform_submission:values:company_sla]'\r\n1500012801542: '[webform_submission:values:report_asset_id]'\r\n1500007391541: '[webform_submission:values:agent_contact_type]'\r\n1500013095781: '[webform_submission:uuid]'"
+      custom_fields: "1900004448785: '[webform_submission:values:report_company:raw]'\r\n1500012743961: '[webform_submission:values:report_location:location_address]'\r\n1500012801562: '[webform_submission:values:company_sla]'\r\n1500012801542: '[webform_submission:values:report_asset_id]'\r\n1500007391541: '[webform_submission:values:agent_contact_type]'\r\n1500013095781: '[webform_submission:uuid]'\r\n5581480390679: '[webform_submission:values:report_location:location_lat]'\r\n5581490332439: '[webform_submission:values:report_location:location_lon]'"
       ticket_id_field: report_ticket_id
       group_id: ''
   email_notification_company:
@@ -565,7 +576,9 @@ handlers:
           '!value': 'riding on sidewalk'
         ':input[name="computed_recipient"]':
           filled: true
-    weight: 3
+        ':input[name="report_company"]':
+          '!value': 'E-scooter company not specified'
+    weight: -48
     settings:
       states:
         - completed
@@ -599,7 +612,7 @@ handlers:
     id: email
     handler_id: email_notification_company_no_resolution
     label: 'Email notification to scooter company, no resolution required'
-    notes: ''
+    notes: 'Sends a notification email to the selected e-scooter company if the issue is Riding on Sidewalk. Only sends if a company is selected.'
     status: true
     conditions:
       enabled:
@@ -607,7 +620,7 @@ handlers:
           value: 'riding on sidewalk'
         ':input[name="computed_recipient"]':
           filled: true
-    weight: 4
+    weight: -46
     settings:
       states:
         - completed
@@ -626,6 +639,48 @@ handlers:
       sender_name: ''
       subject: '[webform_submission:values:computed_urgency]Portland E-scooter Report [webform_submission:values:report_ticket_id]: [webform_submission:values:report_issue]'
       body: "<p>The following e-scooter issue was reported to the City of Portland. [webform_submission:values:computed_urgency_text]</p>\r\n\r\n<p><strong>What is the issue with the e-scooter?</strong> [webform_submission:values:report_issue]</p>\r\n\r\n<p><strong>E-scooter company:</strong> [webform_submission:values:report_company:raw]</p>\r\n\r\n<p><strong>Is the e-scooter blocking a sidewalk, trail, bike lane, driveway, street, transit stop or other type of transportation lane?</strong> [webform_submission:values:computed_blocking]</p>\r\n\r\n<p><strong>Is the e-scooter parked on private property?</strong> [webform_submission:values:computed_private_property]</p>\r\n\r\n<p><strong>E-scooter ID:</strong> [webform_submission:values:report_asset_id]</p>\r\n\r\n<p><strong>Location:</strong><br />\r\nAddress: <a href=\"https://www.google.com/maps/place/[webform_submission:values:report_location:location_address]\">[webform_submission:values:report_location:location_address]</a><br />\r\nLat/Lon: <a href=\"https://www.google.com/maps/place/[webform_submission:values:report_location:location_lat],[webform_submission:values:report_location:location_lon]\">[webform_submission:values:report_location:location_lat],[webform_submission:values:report_location:location_lon]</a><br />\r\nPlace name: [webform_submission:values:report_location:place_name]<br />\r\nAdditional details: [webform_submission:values:report_location:location_details]</p>\r\n\r\n<p><strong>Service Level Expectation (hours):</strong> [webform_submission:values:company_sla]</p>\r\n\r\n<p><strong>Support Ticket ID:</strong>&nbsp;[webform_submission:values:report_ticket_id]</p>\r\n\r\n<div style=\"padding: 10px 20px; background-color: #dddddd;\">\r\n<p>This is a Riding on Sidewalk report. No resolution is necessary.</p>\r\n</div>"
+      excluded_elements: {  }
+      ignore_access: false
+      exclude_empty: true
+      exclude_empty_checkbox: false
+      exclude_attachments: true
+      html: true
+      attachments: true
+      twig: false
+      theme_name: ''
+      parameters: {  }
+      debug: false
+  email_notification_no_company_selected:
+    id: email
+    handler_id: email_notification_no_company_selected
+    label: 'Email notification - no company selected'
+    notes: 'When the user selects "Not sure" as the e-scooter company, this handler sends a notification to all scooter companies and asks them to check their records and respond if their scooter matches the location.'
+    status: true
+    conditions:
+      enabled:
+        ':input[name="report_issue[radios]"]':
+          '!value': 'riding on sidewalk'
+        ':input[name="report_company"]':
+          value: 'E-scooter company not specified'
+    weight: -47
+    settings:
+      states:
+        - completed
+      to_mail: '[webform_submission:values:computed_recipient]'
+      to_options: {  }
+      bcc_mail: ''
+      bcc_options: {  }
+      cc_mail: ''
+      cc_options: {  }
+      from_mail: noreply@portlandoregon.gov
+      from_options: {  }
+      from_name: ''
+      reply_to: '[webform_submission:values:contact_email:raw]'
+      return_path: ''
+      sender_mail: ''
+      sender_name: ''
+      subject: '[webform_submission:values:computed_urgency]Portland E-scooter Report [webform_submission:values:report_ticket_id]: [webform_submission:values:report_issue]'
+      body: "<p>The following e-scooter issue was reported to the City of Portland. [webform_submission:values:computed_urgency_text]</p>\r\n\r\n<p style=\"border: solid 1px red; padding: 5px;\"><strong>NOTE: The e-scooter company was not specified in this report. Please check your records to determine whether you have an e-scooter deployed at this location and respond accordingly. If not, you may disregard this report.</strong></p>\r\n\r\n<p><strong>What is the issue with the e-scooter?</strong> [webform_submission:values:report_issue]</p>\r\n\r\n<p><strong>E-scooter company:</strong> [webform_submission:values:report_company:raw]</p>\r\n\r\n<p><strong>Is the e-scooter blocking a sidewalk, trail, bike lane, driveway, street, transit stop or other type of transportation lane?</strong> [webform_submission:values:computed_blocking]</p>\r\n\r\n<p><strong>Is the e-scooter parked on private property?</strong> [webform_submission:values:computed_private_property]</p>\r\n\r\n<p><strong>E-scooter ID:</strong> [webform_submission:values:report_asset_id]</p>\r\n\r\n<p><strong>Location:</strong><br />\r\nAddress: <a href=\"https://www.google.com/maps/place/[webform_submission:values:report_location:location_address]\">[webform_submission:values:report_location:location_address]</a><br />\r\nLat/Lon: <a href=\"https://www.google.com/maps/place/[webform_submission:values:report_location:location_lat],[webform_submission:values:report_location:location_lon]\">[webform_submission:values:report_location:location_lat],[webform_submission:values:report_location:location_lon]</a><br />\r\nPlace name: [webform_submission:values:report_location:place_name]<br />\r\nAdditional details: [webform_submission:values:report_location:location_details]</p>\r\n\r\n<p><strong>Service Level Expectation (hours):</strong> [webform_submission:values:company_sla]</p>\r\n\r\n<p><strong>Support Ticket ID:</strong>&nbsp;[webform_submission:values:report_ticket_id]</p>\r\n\r\n<div style=\"padding: 10px 20px; background-color: #dddddd;\">\r\n<p><strong><a href=\"[webform_submission:values:computed_resolution_url]\">Report resolution of this issue</a></strong></p>\r\n</div>"
       excluded_elements: {  }
       ignore_access: false
       exclude_empty: true
