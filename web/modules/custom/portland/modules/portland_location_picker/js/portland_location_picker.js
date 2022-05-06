@@ -484,7 +484,7 @@
           redrawMap(); // workaround for map redraw issue when initialized while hidden
           return false;
         }
-        var url = '/api/parks/' + id; // this is a drupal view that returns json about the park
+        var url = '/api/parks/locationpicker/' + id; // this is a drupal view that returns json about the park
         // this lookup uses the Park Finder view, which is a search view.
         // if there is a problem with the search index, in particular in
         // a local environment, it will not return results but should still
