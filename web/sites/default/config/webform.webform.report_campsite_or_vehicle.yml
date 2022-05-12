@@ -10,9 +10,9 @@ third_party_settings:
     antibot: true
   honeypot:
     honeypot: true
+weight: 0
 open: null
 close: null
-weight: 0
 uid: 60
 template: false
 archive: false
@@ -25,10 +25,8 @@ elements: |-
     '#type': container
     introductory_text:
       '#type': webform_markup
-      '#markup': |
-        <p>If this is a life-threatening emergency or to report a crime in progress, call 9-1-1.</p>
-
-        <p><span class="required-indicator">*</span> Required field<br />
+      '#markup': |-
+        <p>If this is a life-threatening emergency or to report a crime in progress, call 9-1-1.<br />
         &nbsp;</p>
   section_confidentiality:
     '#type': webform_section
@@ -431,25 +429,29 @@ elements: |-
     agent_action_taken:
       '#type': radios
       '#title': 'Action Taken'
-      '#options':
-        Resolved: Resolved
-        Referred: Referred
+      '#options': action_taken
       '#options_display': side_by_side
     agent_contact_type:
       '#type': radios
       '#title': 'Contact Type'
-      '#options':
-        Phone: Phone
-        Email: Email
-        Webform: Webform
-        'In Person': 'In Person'
-        Webchat: Webchat
-        'Social Media': 'Social Media'
+      '#options': contact_type
       '#options_display': side_by_side
-    agent_reason:
-      '#type': hidden
-      '#title': 'Reason for Action'
-      '#default_value': Incident
+    agent_ticket_type:
+      '#type': radios
+      '#title': 'Ticket Type'
+      '#options': ticket_type
+      '#options_display': side_by_side
+    agent_summary:
+      '#type': webform_computed_twig
+      '#title': 'Agent Summary'
+      '#display_on': none
+      '#template': |-
+        {% if uid %}<p>Agent Email: {{ data.agent_email }}</p>{% endif %}
+        {% if data.agent_ticket_number %}<p>Ticket Number: {{ data.agent_ticket_number }}</p>{% endif %}
+        {% if data.agent_action_taken %}<p>Action Taken: {{ data.agent_action_taken }}</p>{% endif %}
+        <p>Contact Type: {% if data.agent_contact_type %}{{ data.agent_contact_type }}{% else %}Webform{% endif %}</p>
+        <p>Ticket Type: {{ data.agent_ticket_type }}</p>
+      '#ajax': true
 css: ''
 javascript: ''
 settings:
@@ -464,9 +466,9 @@ settings:
   page_theme_name: ''
   form_title: source_entity_webform
   form_submit_once: false
-  form_exception_message: ''
   form_open_message: ''
   form_close_message: ''
+  form_exception_message: ''
   form_previous_submissions: true
   form_confidential: false
   form_confidential_message: ''
@@ -476,31 +478,36 @@ settings:
   form_prepopulate_source_entity: false
   form_prepopulate_source_entity_required: false
   form_prepopulate_source_entity_type: ''
-  form_reset: false
+  form_unsaved: false
+  form_disable_back: false
+  form_submit_back: false
   form_disable_autocomplete: false
   form_novalidate: false
   form_disable_inline_errors: false
   form_required: true
-  form_unsaved: false
-  form_disable_back: false
-  form_submit_back: false
   form_autofocus: false
   form_details_toggle: false
+  form_reset: false
   form_access_denied: default
   form_access_denied_title: ''
   form_access_denied_message: ''
   form_access_denied_attributes: {  }
   form_file_limit: ''
+  form_attributes: {  }
   form_method: ''
   form_action: ''
-  form_attributes: {  }
   share: false
   share_node: false
   share_theme_name: ''
   share_title: true
   share_page_body_attributes: {  }
   submission_label: ''
+  submission_exception_message: ''
+  submission_locked_message: ''
   submission_log: false
+  submission_excluded_elements: {  }
+  submission_exclude_empty: false
+  submission_exclude_empty_checkbox: false
   submission_views: {  }
   submission_views_replace: {  }
   submission_user_columns: {  }
@@ -509,11 +516,6 @@ settings:
   submission_access_denied_title: ''
   submission_access_denied_message: ''
   submission_access_denied_attributes: {  }
-  submission_exception_message: ''
-  submission_locked_message: ''
-  submission_excluded_elements: {  }
-  submission_exclude_empty: false
-  submission_exclude_empty_checkbox: false
   previous_submission_message: ''
   previous_submissions_message: ''
   autofill: false
@@ -524,13 +526,13 @@ settings:
   wizard_progress_percentage: false
   wizard_progress_link: false
   wizard_progress_states: false
-  wizard_auto_forward: true
-  wizard_auto_forward_hide_next_button: false
-  wizard_keyboard: true
   wizard_start_label: ''
   wizard_preview_link: false
   wizard_confirmation: true
   wizard_confirmation_label: ''
+  wizard_auto_forward: true
+  wizard_auto_forward_hide_next_button: false
+  wizard_keyboard: true
   wizard_track: ''
   wizard_prev_button_label: ''
   wizard_next_button_label: ''
@@ -553,9 +555,9 @@ settings:
   draft_pending_single_message: ''
   draft_pending_multiple_message: ''
   confirmation_type: page
+  confirmation_url: ''
   confirmation_title: ''
   confirmation_message: "<p>Thank you! Your report has been received.<br />\r\n<br />\r\nIt is not necessary to submit multiple reports of the same location in one day.&nbsp;The Homelessness and Urban Camping Impact Reduction Program (HUCIRP) recommends submitting a new report of the same site once a week.&nbsp;Not all reports will result in immediate action by the City. Every site is reviewed and analyzed.&nbsp;</p>\r\n\r\n<p>&nbsp;</p>\r\n\r\n<h2>Next Steps</h2>\r\n\r\n<p><strong>Is a vehicle blocking a street, driveway, sidewalk, or bus/MAX/Streetcar stop or lane?</strong></p>\r\n\r\n<p>Please call Parking Enforcement at <a href=\"tel:+15038235195\">503-823-5195</a> to report the vehicle.</p>\r\n\r\n<p><strong>Do you think a vehicle may be stolen?</strong></p>\r\n\r\n<p>Please contact Portland Police Auto Records at <a href=\"tel:+15038230044\">(503) 823-0044</a>&nbsp;to report the vehicle.</p>\r\n\r\n<p><strong>Do you have any additional concerns or questions?</strong></p>\r\n\r\n<p>Please call us at <a href=\"tel:311\">3-1-1</a> or <a href=\"tel:+15038234000\">(503) 823-4000</a> to discuss further.</p>\r\n\r\n<p>&nbsp;</p>"
-  confirmation_url: ''
   confirmation_attributes: {  }
   confirmation_back: true
   confirmation_back_label: ''
@@ -646,9 +648,9 @@ access:
 handlers:
   email_parks:
     id: email
+    handler_id: email_parks
     label: 'Submit to PP&R'
     notes: 'Enabled if property type = park'
-    handler_id: email_parks
     status: true
     conditions:
       enabled:
@@ -660,13 +662,17 @@ handlers:
         - completed
       to_mail: gregoryscottclapp+parks@gmail.com
       to_options: {  }
-      cc_mail: ''
-      cc_options: {  }
       bcc_mail: ''
       bcc_options: {  }
+      cc_mail: ''
+      cc_options: {  }
       from_mail: '[webform_submission:values:contact_email:raw]'
       from_options: {  }
       from_name: '[webform_submission:values:contact_name:raw]'
+      reply_to: ''
+      return_path: ''
+      sender_mail: ''
+      sender_name: ''
       subject: _default
       body: "<p>&nbsp;<br />\r\nSubmitted on [webform_submission:created]<br />\r\n<br />\r\nSubmitted by: [webform_submission:user]<br />\r\n<br />\r\n[webform_submission:values]<br />\r\n<br />\r\n<strong>Agent use only</strong><br />\r\n<br />\r\nAgent email: [webform_submission:values:agent_email]<br />\r\n<br />\r\nTicket number: [webform_submission:values:agent_ticket_number]<br />\r\n<br />\r\nAction taken:&nbsp;[webform_submission:values:agent_action_taken]<br />\r\n<br />\r\nContact type: [webform_submission:values:agent_contact_type]<br />\r\n<br />\r\nReason for contact: [webform_submission:values:agent_reason]<br />\r\n<br />\r\n&nbsp;</p>"
       excluded_elements:
@@ -689,18 +695,14 @@ handlers:
       html: true
       attachments: true
       twig: false
-      debug: false
-      reply_to: ''
-      return_path: ''
-      sender_mail: ''
-      sender_name: ''
       theme_name: ''
       parameters: {  }
+      debug: false
   email_abandoned_auto_group:
     id: email
+    handler_id: email_abandoned_auto_group
     label: 'Submit to Abandoned Auto group'
     notes: 'Enabled if vehicle appears to be inoperable.'
-    handler_id: email_abandoned_auto_group
     status: true
     conditions:
       enabled:
@@ -712,13 +714,17 @@ handlers:
         - completed
       to_mail: gregoryscottclapp+abandoned@gmail.com
       to_options: {  }
-      cc_mail: ''
-      cc_options: {  }
       bcc_mail: ''
       bcc_options: {  }
+      cc_mail: ''
+      cc_options: {  }
       from_mail: '[webform_submission:values:contact_email:raw]'
       from_options: {  }
       from_name: '[webform_submission:values:contact_name:raw]'
+      reply_to: ''
+      return_path: ''
+      sender_mail: ''
+      sender_name: ''
       subject: _default
       body: "<p>&nbsp;<br />\r\nSubmitted on [webform_submission:created]<br />\r\n<br />\r\nSubmitted by: [webform_submission:user]<br />\r\n<br />\r\n[webform_submission:values]<br />\r\n<br />\r\n<strong>Agent use only</strong><br />\r\n<br />\r\nAgent email: [webform_submission:values:agent_email]<br />\r\n<br />\r\nTicket number: [webform_submission:values:agent_ticket_number]<br />\r\n<br />\r\nAction taken:&nbsp;[webform_submission:values:agent_action_taken]<br />\r\n<br />\r\nContact type: [webform_submission:values:agent_contact_type]<br />\r\n<br />\r\nReason for contact: [webform_submission:values:agent_reason]<br />\r\n&nbsp;</p>"
       excluded_elements:
@@ -741,18 +747,14 @@ handlers:
       html: true
       attachments: true
       twig: false
-      debug: false
-      reply_to: ''
-      return_path: ''
-      sender_mail: ''
-      sender_name: ''
       theme_name: ''
       parameters: {  }
+      debug: false
   email_irp:
     id: email
+    handler_id: email_irp
     label: 'Submit to IRP'
     notes: 'Enabled if property type = street and people are living at site.'
-    handler_id: email_irp
     status: true
     conditions:
       enabled:
@@ -766,13 +768,17 @@ handlers:
         - completed
       to_mail: gregoryscottclapp+irp@gmail.com
       to_options: {  }
-      cc_mail: ''
-      cc_options: {  }
       bcc_mail: ''
       bcc_options: {  }
+      cc_mail: ''
+      cc_options: {  }
       from_mail: '[webform_submission:values:contact_email:raw]'
       from_options: {  }
       from_name: '[webform_submission:values:contact_name:raw]'
+      reply_to: ''
+      return_path: ''
+      sender_mail: ''
+      sender_name: ''
       subject: _default
       body: "<p>&nbsp;<br />\r\nSubmitted on [webform_submission:created]<br />\r\n<br />\r\nSubmitted by: [webform_submission:user]<br />\r\n<br />\r\n[webform_submission:values]<br />\r\n<br />\r\n<strong>Agent use only</strong><br />\r\n<br />\r\nAgent email: [webform_submission:values:agent_email]<br />\r\n<br />\r\nTicket number: [webform_submission:values:agent_ticket_number]<br />\r\n<br />\r\nAction taken:&nbsp;[webform_submission:values:agent_action_taken]<br />\r\n<br />\r\nContact type: [webform_submission:values:agent_contact_type]<br />\r\n<br />\r\nReason for contact: [webform_submission:values:agent_reason]<br />\r\n&nbsp;</p>"
       excluded_elements:
@@ -795,18 +801,14 @@ handlers:
       html: true
       attachments: true
       twig: false
-      debug: false
-      reply_to: ''
-      return_path: ''
-      sender_mail: ''
-      sender_name: ''
       theme_name: ''
       parameters: {  }
+      debug: false
   email_pbot_vehicle_inspection:
     id: email
+    handler_id: email_pbot_vehicle_inspection
     label: 'Submit to PBOT Vehicle Inspection'
     notes: 'Enabled if property type = street, people are living at site, and vehicle is visible.'
-    handler_id: email_pbot_vehicle_inspection
     status: true
     conditions:
       enabled:
@@ -822,13 +824,17 @@ handlers:
         - completed
       to_mail: gregoryscottclapp+pbotvehicleinspection@gmail.com
       to_options: {  }
-      cc_mail: ''
-      cc_options: {  }
       bcc_mail: ''
       bcc_options: {  }
+      cc_mail: ''
+      cc_options: {  }
       from_mail: '[webform_submission:values:contact_email:raw]'
       from_options: {  }
       from_name: '[webform_submission:values:contact_name:raw]'
+      reply_to: ''
+      return_path: ''
+      sender_mail: ''
+      sender_name: ''
       subject: _default
       body: "<p>&nbsp;<br />\r\nSubmitted on [webform_submission:created]<br />\r\n<br />\r\nSubmitted by: [webform_submission:user]<br />\r\n<br />\r\n[webform_submission:values]<br />\r\n<br />\r\n<strong>Agent use only</strong><br />\r\n<br />\r\nAgent email: [webform_submission:values:agent_email]<br />\r\n<br />\r\nTicket number: [webform_submission:values:agent_ticket_number]<br />\r\n<br />\r\nAction taken:&nbsp;[webform_submission:values:agent_action_taken]<br />\r\n<br />\r\nContact type: [webform_submission:values:agent_contact_type]<br />\r\n<br />\r\nReason for contact: [webform_submission:values:agent_reason]<br />\r\n&nbsp;</p>"
       excluded_elements:
@@ -851,18 +857,14 @@ handlers:
       html: true
       attachments: true
       twig: false
-      debug: false
-      reply_to: ''
-      return_path: ''
-      sender_mail: ''
-      sender_name: ''
       theme_name: ''
       parameters: {  }
+      debug: false
   email_parking_enforcement:
     id: email
+    handler_id: email_parking_enforcement
     label: 'Submit to Parking Enforcement'
     notes: 'Enabled if a vehicle appears to be illegally parked.'
-    handler_id: email_parking_enforcement
     status: true
     conditions:
       enabled:
@@ -876,13 +878,17 @@ handlers:
         - completed
       to_mail: gregoryscottclapp+parkingenforcement@gmail.com
       to_options: {  }
-      cc_mail: ''
-      cc_options: {  }
       bcc_mail: ''
       bcc_options: {  }
+      cc_mail: ''
+      cc_options: {  }
       from_mail: '[webform_submission:values:contact_email:raw]'
       from_options: {  }
       from_name: '[webform_submission:values:contact_name:raw]'
+      reply_to: ''
+      return_path: ''
+      sender_mail: ''
+      sender_name: ''
       subject: _default
       body: "<p>&nbsp;<br />\r\nSubmitted on [webform_submission:created]<br />\r\n<br />\r\nSubmitted by: [webform_submission:user]<br />\r\n<br />\r\n[webform_submission:values]<br />\r\n<br />\r\n<strong>Agent use only</strong><br />\r\n<br />\r\nAgent email: [webform_submission:values:agent_email]<br />\r\n<br />\r\nTicket number: [webform_submission:values:agent_ticket_number]<br />\r\n<br />\r\nAction taken:&nbsp;[webform_submission:values:agent_action_taken]<br />\r\n<br />\r\nContact type: [webform_submission:values:agent_contact_type]<br />\r\n<br />\r\nReason for contact: [webform_submission:values:agent_reason]<br />\r\n&nbsp;</p>"
       excluded_elements:
@@ -905,18 +911,14 @@ handlers:
       html: true
       attachments: true
       twig: false
-      debug: false
-      reply_to: ''
-      return_path: ''
-      sender_mail: ''
-      sender_name: ''
       theme_name: ''
       parameters: {  }
+      debug: false
   email_311:
     id: email
+    handler_id: email_311
     label: 'Submit to 311'
     notes: 'Enabled if the property type is waterway or other.'
-    handler_id: email_311
     status: true
     conditions:
       enabled:
@@ -933,13 +935,17 @@ handlers:
         - completed
       to_mail: gregoryscottclapp+311@gmail.com
       to_options: {  }
-      cc_mail: ''
-      cc_options: {  }
       bcc_mail: ''
       bcc_options: {  }
+      cc_mail: ''
+      cc_options: {  }
       from_mail: '[webform_submission:values:contact_email:raw]'
       from_options: {  }
       from_name: '[webform_submission:values:contact_name:raw]'
+      reply_to: ''
+      return_path: ''
+      sender_mail: ''
+      sender_name: ''
       subject: _default
       body: "<p>&nbsp;<br />\r\nSubmitted on [webform_submission:created]<br />\r\n<br />\r\nSubmitted by: [webform_submission:user]<br />\r\n<br />\r\n[webform_submission:values]<br />\r\n<br />\r\n<strong>Agent use only</strong><br />\r\n<br />\r\nAgent email: [webform_submission:values:agent_email]<br />\r\n<br />\r\nTicket number: [webform_submission:values:agent_ticket_number]<br />\r\n<br />\r\nAction taken:&nbsp;[webform_submission:values:agent_action_taken]<br />\r\n<br />\r\nContact type: [webform_submission:values:agent_contact_type]<br />\r\n<br />\r\nReason for contact: [webform_submission:values:agent_reason]<br />\r\n&nbsp;</p>"
       excluded_elements:
@@ -962,18 +968,14 @@ handlers:
       html: true
       attachments: true
       twig: false
-      debug: false
-      reply_to: ''
-      return_path: ''
-      sender_mail: ''
-      sender_name: ''
       theme_name: ''
       parameters: {  }
+      debug: false
   email_metro_rid:
     id: email
+    handler_id: email_metro_rid
     label: 'Submit to RID'
     notes: 'Enabled if property type = street, there are no people living at site, and trash is reported at the location.'
-    handler_id: email_metro_rid
     status: true
     conditions:
       enabled:
@@ -989,13 +991,17 @@ handlers:
         - completed
       to_mail: gregoryscottclapp+rid@gmail.com
       to_options: {  }
-      cc_mail: ''
-      cc_options: {  }
       bcc_mail: ''
       bcc_options: {  }
+      cc_mail: ''
+      cc_options: {  }
       from_mail: '[webform_submission:values:contact_email:raw]'
       from_options: {  }
       from_name: '[webform_submission:values:contact_name:raw]'
+      reply_to: ''
+      return_path: ''
+      sender_mail: ''
+      sender_name: ''
       subject: _default
       body: "<p>&nbsp;<br />\r\nSubmitted on [webform_submission:created]<br />\r\n<br />\r\nSubmitted by: [webform_submission:user]<br />\r\n<br />\r\n[webform_submission:values]<br />\r\n<br />\r\n<strong>Agent use only</strong><br />\r\n<br />\r\nAgent email: [webform_submission:values:agent_email]<br />\r\n<br />\r\nTicket number: [webform_submission:values:agent_ticket_number]<br />\r\n<br />\r\nAction taken:&nbsp;[webform_submission:values:agent_action_taken]<br />\r\n<br />\r\nContact type: [webform_submission:values:agent_contact_type]<br />\r\n<br />\r\nReason for contact: [webform_submission:values:agent_reason]<br />\r\n&nbsp;</p>"
       excluded_elements:
@@ -1018,11 +1024,7 @@ handlers:
       html: true
       attachments: true
       twig: false
-      debug: false
-      reply_to: ''
-      return_path: ''
-      sender_mail: ''
-      sender_name: ''
       theme_name: ''
       parameters: {  }
+      debug: false
 variants: {  }

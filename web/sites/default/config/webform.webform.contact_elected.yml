@@ -2,9 +2,9 @@ uuid: c813e2b0-8b9d-4862-9857-df78b9e6e6b1
 langcode: en
 status: open
 dependencies: {  }
+weight: 0
 open: null
 close: null
-weight: 0
 uid: 60
 template: false
 archive: false
@@ -15,19 +15,16 @@ category: ''
 elements: |-
   introductory_text:
     '#type': webform_markup
-    '#markup': |
-      <p>Provide feedback on policy or actions of the City of Portland or request a meeting with the mayor, a city commissioner, or the city auditor.&nbsp;</p>
-      
-      <p><span class="required-indicator">*</span> Required</p>
-      
+    '#markup': '<p>Provide feedback on policy or actions of the City of Portland or request a meeting with the mayor, a city commissioner, or the city auditor.&nbsp;</p>'
   purpose:
     '#type': radios
     '#title': 'What would you like to do?'
     '#options':
-      provide_testimony: 'Provide testimony on an upcoming agenda item.'
-      provide_feedback: 'Provide comment or feedback on a topic to all city elected officials.'
-      provide_feedback_specific_elected: 'Provide a comment or feedback to specific elected officials.'
-      request_meeting: 'Request a meeting with an elected official or ask them to speak at an event.'
+      provide_feedback_council: 'Provide comment or feedback on a topic to City Council members'
+      provide_feedback: 'Provide comment or feedback on a topic to all city elected officials'
+      provide_feedback_specific_elected: 'Provide comment or feedback to specific elected officials'
+      request_meeting: 'Request a meeting with an elected official or ask them to speak at an event'
+      provide_testimony: 'Provide testimony on an upcoming agenda item'
     '#required': true
   section_provide_testimony:
     '#type': webform_section
@@ -38,28 +35,41 @@ elements: |-
           value: provide_testimony
     testimony_instructions:
       '#type': webform_markup
-      '#markup': |
-        Written testimony may be submitted for specific agenda items as well as for general topics. Testimony will be shared with City Council and included as part of the official record.<br />
+      '#markup': |-
+        Written testimony may be submitted for specific agenda items. Testimony will be shared with City Council and staff. It will be included in the public record according to Oregon&rsquo;s&nbsp;<a href="https://www.doj.state.or.us/oregon-department-of-justice/public-records/attorney-generals-public-records-and-meetings-manual/i-public-records/#:~:text=Under%20Oregon%27s%20Public%20Records%20Law,committee%20of%20the%20Legislative%20Assembly">Public Records Law</a>.<br />
         <br />
         Submit written testimony by email at&nbsp;<a href="mailto:cctestimony@portlandoregon.gov">cctestimony@portlandoregon.gov</a>.<br />
         <br />
         <a href="/council/agenda">View upcoming agendas</a>
-        
   section_provide_feedback:
     '#type': webform_section
-    '#title': 'Provide a comment or feedback on a topic to all city elected officials'
+    '#title': 'Provide comment or feedback on a topic to all city elected officials'
+    '#title_display': invisible
     '#states':
       visible:
-        ':input[name="purpose"]':
-          value: provide_feedback
+        - ':input[name="purpose"]':
+            value: provide_feedback
+        - or
+        - ':input[name="purpose"]':
+            value: provide_feedback_council
+    elected_officials_feedback_title:
+      '#type': webform_markup
+      '#states':
+        visible:
+          ':input[name="purpose"]':
+            value: provide_feedback
+      '#markup': '<h2>Provide comment or feedback on a topic to all city elected officials</h2>'
+    markup:
+      '#type': webform_markup
+      '#states':
+        visible:
+          ':input[name="purpose"]':
+            value: provide_feedback_council
+      '#markup': '<h2>Provide comment or feedback on a topic to City Council members</h2>'
     feedback_topics_entity:
       '#type': webform_entity_checkboxes
       '#title': 'Choose one or more appropriate topics'
       '#options_display': two_columns
-      '#states':
-        visible:
-          ':input[name="feedback_direction"]':
-            value: topic
       '#target_type': taxonomy_term
       '#selection_handler': views
       '#selection_settings':
@@ -70,10 +80,6 @@ elements: |-
     feedback_topic_other:
       '#type': textfield
       '#title': 'Other topic not listed above'
-      '#states':
-        visible:
-          ':input[name="feedback_direction"]':
-            value: topic
     feedback_recipients_entity_all:
       '#type': webform_entity_checkboxes
       '#title': 'To whom should we send your comment or feedback'
@@ -167,7 +173,7 @@ elements: |-
       '#required': true
   section_feedback_specific_official:
     '#type': webform_section
-    '#title': 'Provide a comment or feedback to specific elected officials'
+    '#title': 'Provide comment or feedback to specific elected officials'
     '#states':
       visible:
         ':input[name="purpose"]':
@@ -212,6 +218,9 @@ elements: |-
         - xor
         - ':input[name="purpose"]':
             value: provide_feedback_specific_elected
+        - xor
+        - ':input[name="purpose"]':
+            value: provide_feedback_council
   section_contact_information:
     '#type': webform_section
     '#title': 'Your Contact Information'
@@ -225,6 +234,9 @@ elements: |-
         - xor
         - ':input[name="purpose"]':
             value: provide_feedback_specific_elected
+        - xor
+        - ':input[name="purpose"]':
+            value: provide_feedback_council
     contact_name:
       '#type': textfield
       '#title': Name
@@ -292,6 +304,9 @@ elements: |-
         - xor
         - ':input[name="purpose"]':
             value: provide_feedback_specific_elected
+        - xor
+        - ':input[name="purpose"]':
+            value: provide_feedback_council
     public_records_statement_text:
       '#type': webform_markup
       '#markup': 'Information you provide to the City is a public record and may be subject to release under Oregon&rsquo;s <a data-renderer-mark="true" href="https://www.doj.state.or.us/oregon-department-of-justice/public-records/attorney-generals-public-records-and-meetings-manual/i-public-records/#:~:text=Under%20Oregon''s%20Public%20Records%20Law,committee%20of%20the%20Legislative%20Assembly" title="https://www.doj.state.or.us/oregon-department-of-justice/public-records/attorney-generals-public-records-and-meetings-manual/i-public-records/#:~:text=Under%20Oregon''s%20Public%20Records%20Law,committee%20of%20the%20Legislative%20Assembly">Public Records Law</a>. This law classifies certain information as available to the public on request. See our <a data-renderer-mark="true" href="/help/about/privacy" title="https://www.portland.gov/help/about/privacy">privacy statement</a> for more information.'
@@ -300,60 +315,93 @@ elements: |-
     '#attributes':
       class:
         - visually-hidden
+    voting_electeds_entity:
+      '#type': webform_entity_checkboxes
+      '#title': 'Voting electeds'
+      '#default_value':
+        - '71'
+        - '353'
+        - '331'
+        - '75'
+        - '352'
+      '#wrapper_attributes':
+        class:
+          - visually-hidden
+      '#access_create_roles': {  }
+      '#access_update_roles': {  }
+      '#access_view_roles': {  }
+      '#access': false
+      '#target_type': group
+      '#selection_handler': views
+      '#selection_settings':
+        view:
+          view_name: electeds
+          display_name: voting_elected_reference
+          arguments: {  }
     computed_recipient_list:
       '#type': webform_computed_twig
       '#title': 'Recipient list'
+      '#title_display': invisible
       '#description_display': invisible
       '#access': false
+      '#display_on': form
       '#mode': text
       '#template': |
         {% if data.purpose and data.purpose == "provide_feedback_specific_elected" %}
-        
+
           {% if data.feedback_specific_not_sure == "1" %}
             311@portlandoregon.gov
           {% else %}
-        
+
         {{ webform_token('[webform_submission:values:feedback_recipients_entity:0:entity:field_routing_email]', webform_submission) }},
-        
+
         {{ webform_token('[webform_submission:values:feedback_recipients_entity:1:entity:field_routing_email]', webform_submission) }},
-        
+
         {{ webform_token('[webform_submission:values:feedback_recipients_entity:2:entity:field_routing_email]', webform_submission) }},
-        
+
         {{ webform_token('[webform_submission:values:feedback_recipients_entity:3:entity:field_routing_email]', webform_submission) }},
-        
+
         {{ webform_token('[webform_submission:values:feedback_recipients_entity:4:entity:field_routing_email]', webform_submission) }},
-        
+
         {{ webform_token('[webform_submission:values:feedback_recipients_entity:5:entity:field_routing_email]', webform_submission) }}
-        
+
           {% endif %}
-        
+
         {% elseif data.purpose and data.purpose == "request_meeting" %}
-        
+
           {% if webform_token('[webform_submission:values:meeting_recipients_entity]', webform_submission) != null %}
           {{ webform_token('[webform_submission:values:meeting_recipients_entity:entity:field_routing_email]', webform_submission) }}
           {% endif %}
-        
+
         {% elseif data.purpose and data.purpose == "provide_feedback" %}
-        
+
           {{ webform_token('[webform_submission:values:feedback_recipients_entity_all:0:entity:field_routing_email]', webform_submission) }},
-        
+
           {{ webform_token('[webform_submission:values:feedback_recipients_entity_all:1:entity:field_routing_email]', webform_submission) }},
-        
+
           {{ webform_token('[webform_submission:values:feedback_recipients_entity_all:2:entity:field_routing_email]', webform_submission) }},
-        
+
           {{ webform_token('[webform_submission:values:feedback_recipients_entity_all:3:entity:field_routing_email]', webform_submission) }},
-        
+
           {{ webform_token('[webform_submission:values:feedback_recipients_entity_all:4:entity:field_routing_email]', webform_submission) }},
-        
+
           {{ webform_token('[webform_submission:values:feedback_recipients_entity_all:5:entity:field_routing_email]', webform_submission) }}
-        
+
+        {% elseif data.purpose and data.purpose == "provide_feedback_council" %}
+          {{ webform_token('[webform_submission:values:voting_electeds_entity:0:entity:field_routing_email]', webform_submission) }},
+          {{ webform_token('[webform_submission:values:voting_electeds_entity:1:entity:field_routing_email]', webform_submission) }},
+          {{ webform_token('[webform_submission:values:voting_electeds_entity:2:entity:field_routing_email]', webform_submission) }},
+          {{ webform_token('[webform_submission:values:voting_electeds_entity:3:entity:field_routing_email]', webform_submission) }},
+          {{ webform_token('[webform_submission:values:voting_electeds_entity:4:entity:field_routing_email]', webform_submission) }},
+
         {% endif %}
-        
       '#whitespace': spaceless
+      '#store': true
       '#ajax': true
     computed_subject:
       '#type': webform_computed_twig
       '#title': Subject
+      '#title_display': invisible
       '#description_display': invisible
       '#access': false
       '#display_on': form
@@ -364,9 +412,21 @@ elements: |-
         {% else %}
         Website feedback received from {{ data.contact_name }}
         {% endif %}
-        
       '#whitespace': spaceless
+      '#store': true
       '#ajax': true
+    computed_confirmation_message:
+      '#type': webform_computed_twig
+      '#title': 'Computed Confirmation Message'
+      '#access': false
+      '#mode': html
+      '#template': |-
+        <p>We appreciate your feedback.</p>
+
+        {% if data.purpose == "request_meeting" %}
+        <p>If you requested a meeting with an elected official, and the request is approved, someone will reach out to you to schedule the meeting.</p>
+        {% endif %}
+      '#whitespace': trim
   final_text:
     '#type': webform_markup
   actions:
@@ -382,6 +442,9 @@ elements: |-
         - xor
         - ':input[name="purpose"]':
             value: provide_feedback_specific_elected
+        - xor
+        - ':input[name="purpose"]':
+            value: provide_feedback_council
 css: ''
 javascript: ''
 settings:
@@ -396,9 +459,9 @@ settings:
   page_theme_name: ''
   form_title: source_entity_webform
   form_submit_once: false
-  form_exception_message: ''
   form_open_message: ''
   form_close_message: ''
+  form_exception_message: ''
   form_previous_submissions: true
   form_confidential: false
   form_confidential_message: ''
@@ -408,44 +471,77 @@ settings:
   form_prepopulate_source_entity: false
   form_prepopulate_source_entity_required: false
   form_prepopulate_source_entity_type: ''
-  form_reset: false
+  form_unsaved: false
+  form_disable_back: false
+  form_submit_back: false
   form_disable_autocomplete: false
   form_novalidate: false
   form_disable_inline_errors: false
   form_required: true
-  form_unsaved: false
-  form_disable_back: false
-  form_submit_back: false
   form_autofocus: false
   form_details_toggle: false
+  form_reset: false
   form_access_denied: default
   form_access_denied_title: ''
   form_access_denied_message: ''
   form_access_denied_attributes: {  }
   form_file_limit: ''
+  form_attributes: {  }
   form_method: ''
   form_action: ''
-  form_attributes: {  }
   share: false
   share_node: false
   share_theme_name: ''
   share_title: true
   share_page_body_attributes: {  }
   submission_label: ''
+  submission_exception_message: ''
+  submission_locked_message: ''
   submission_log: false
+  submission_excluded_elements: {  }
+  submission_exclude_empty: false
+  submission_exclude_empty_checkbox: false
   submission_views: {  }
   submission_views_replace: {  }
-  submission_user_columns: {  }
+  submission_user_columns:
+    - serial
+    - created
+    - remote_addr
+    - sid
+    - label
+    - completed
+    - changed
+    - langcode
+    - element__purpose
+    - element__feedback_topics_entity
+    - element__feedback_topic_other
+    - element__meeting_recipients_entity
+    - element__meeting_event_type
+    - element__meeting_title
+    - element__meeting_description
+    - element__meeting_preferred_datetime
+    - element__meeting_alternate_datetime
+    - element__meeting_duration
+    - element__meeting_phone
+    - element__feedback_recipients_entity
+    - element__feedback_specific_not_sure
+    - element__feedback_comments
+    - element__contact_name
+    - element__contact_email_address
+    - element__contact_country
+    - element__contact_street_address
+    - element__contact_unit_type
+    - element__contact_unit_number
+    - element__contact_city
+    - element__contact_state
+    - element__contact_postal_code
+    - element__contact_international_address
+    - operations
   submission_user_duplicate: false
   submission_access_denied: default
   submission_access_denied_title: ''
   submission_access_denied_message: ''
   submission_access_denied_attributes: {  }
-  submission_exception_message: ''
-  submission_locked_message: ''
-  submission_excluded_elements: {  }
-  submission_exclude_empty: false
-  submission_exclude_empty_checkbox: false
   previous_submission_message: ''
   previous_submissions_message: ''
   autofill: false
@@ -456,13 +552,13 @@ settings:
   wizard_progress_percentage: false
   wizard_progress_link: false
   wizard_progress_states: false
-  wizard_auto_forward: true
-  wizard_auto_forward_hide_next_button: false
-  wizard_keyboard: true
   wizard_start_label: ''
   wizard_preview_link: false
   wizard_confirmation: true
   wizard_confirmation_label: ''
+  wizard_auto_forward: true
+  wizard_auto_forward_hide_next_button: false
+  wizard_keyboard: true
   wizard_track: ''
   wizard_prev_button_label: ''
   wizard_next_button_label: ''
@@ -485,9 +581,9 @@ settings:
   draft_pending_single_message: ''
   draft_pending_multiple_message: ''
   confirmation_type: page
-  confirmation_title: 'Thank you for your submission'
-  confirmation_message: "We appreciate your feedback.<br />\r\n<br />\r\nIf you requested a meeting with an elected official, and the request is approved, someone will reach out to you to schedule the meeting."
   confirmation_url: ''
+  confirmation_title: 'Thank you for your submission'
+  confirmation_message: "[webform_submission:values:computed_confirmation_message:htmldecode]<br />\r\n&nbsp;"
   confirmation_attributes: {  }
   confirmation_back: true
   confirmation_back_label: ''
@@ -566,9 +662,9 @@ access:
 handlers:
   email_2:
     id: email
+    handler_id: email_2
     label: 'Send email to selected electeds'
     notes: ''
-    handler_id: email_2
     status: true
     conditions: {  }
     weight: 6
@@ -577,13 +673,17 @@ handlers:
         - completed
       to_mail: '[webform_submission:values:computed_recipient_list]'
       to_options: {  }
-      cc_mail: ''
-      cc_options: {  }
       bcc_mail: ''
       bcc_options: {  }
+      cc_mail: ''
+      cc_options: {  }
       from_mail: '[webform_submission:values:contact_email_address:raw]'
       from_options: {  }
       from_name: '[webform_submission:values:contact_name:raw]'
+      reply_to: ''
+      return_path: ''
+      sender_mail: ''
+      sender_name: ''
       subject: '[webform_submission:values:computed_subject]'
       body: '[webform_submission:values]'
       excluded_elements:
@@ -602,11 +702,7 @@ handlers:
       html: true
       attachments: false
       twig: false
-      debug: false
-      reply_to: ''
-      return_path: ''
-      sender_mail: ''
-      sender_name: ''
       theme_name: ''
       parameters: {  }
+      debug: false
 variants: {  }

@@ -1,16 +1,23 @@
-{# CLASSES #}
-{% set classes = [
-  'cloudy-contact-item',
-] %}
-{# TWIG #}
-<div class="{{ classes|join(' ')|trim }}">
-  {% if name %}
-  {# TODO: Josh removed the heading component from here as it was impossible to reset the margin to match Figma #}
-  {# TODO: Decide if a heading is really the correct approach for a list of contacts. #}
-    <h3>{{ name.0 }}</h3>
+{% set level = heading.level|default(3) %}
+{% set style = heading.style|default(5) %}
+
+{% set classes = classes|default([
+  'cloudy-contact-item'
+]) %}
+
+<div{{ attributes.addClass(classes|join('')) }}>
+  {{ title_prefix }}
+  {% if heading.text %}
+    {% include "@components/heading/heading.twig" with {
+      level: level,
+      style: style,
+      text: heading.text,
+      classes: title ? ['mb-0'] : ''
+    } only %}
   {% endif %}
+  {{ title_suffix }}
   {% if title %}
-    <p class="cloudy-helper-text">{{ title }}</p>
+    <span class="d-block mb-4">{{ title }}</span>
   {% endif %}
   <div class="cloudy-contact__resource">
     {% if email %}
@@ -27,14 +34,8 @@
       </div>
     {% endif %}
     {% if phone %}
-      {# Add margin to bottom of phone link only if there is help text #}
-      {% if phone_help %}
-        {% set classes = ['mb-2'] %}
-      {% endif %}
-
       <div class="cloudy-contact-item__resource-wrapper">
         {% include "@components/link/link.twig" with {
-          classes: classes,
           background: false,
           standalone: false,
           icon: {
@@ -44,7 +45,7 @@
           url: 'tel:' ~ phone
         } only %}
         {% if phone_help %}
-          <p class="cloudy-helper-text">{{ phone_help }}</p>
+          <span class="d-block ml-6">{{ phone_help }}</span>
         {% endif %}
       </div>
     {% endif %}
@@ -59,7 +60,7 @@
           text: tty|replace({'+1-': '', '+1': '', }),
           url: 'tel:' ~ tty
         } only %}
-        <span> TTY</span>
+        <span class="pl-1">TTY</span>
       </div>
     {% endif %}
     {% if oregon_relay %}
@@ -73,7 +74,7 @@
           text: '711',
           url: 'tel:711'
         } only %}
-        <span> Oregon Relay Service</span>
+        <span class="pl-1">Oregon Relay Service</span>
       </div>
     {% endif %}
     {% if display_311 %}
@@ -82,12 +83,12 @@
           background: false,
           standalone: false,
           icon: {
-            name: 'phone',
+            name: 'phone'
           },
           text: '311',
           url: 'tel:311'
         } only %}
-        <span> Customer Service</span>
+        <span class="pl-1">City of Portland general information hotline</span>
       </div>
     {% endif %}
     {% if fax %}
@@ -101,99 +102,103 @@
         {% endspaceless %}
       </div>
     {% endif %}
-    {% if social.facebook %}
-      <div class="cloudy-contact-item__resource-wrapper">
-        {% spaceless %}
-          {% include "@components/link/link.twig" with {
-            background: false,
-            standalone: false,
-            icon: {
-              name: 'facebook',
-            },
-            text: social.facebook,
-            url: "http://facebook.com/#{social.facebook}"
-          } only %}
-        {% endspaceless %}
-      </div>
-    {% endif %}
-    {% if social.twitter %}
-      <div class="cloudy-contact-item__resource-wrapper">
-        {% spaceless %}
-          {% include "@components/link/link.twig" with {
-            background: false,
-            standalone: false,
-            icon: {
-              name: 'twitter',
-            },
-            text: social.twitter,
-            url: "http://twitter.com/#{social.twitter}"
-          } only %}
-        {% endspaceless %}
-      </div>
-    {% endif %}
-    {% if social.instagram %}
-      <div class="cloudy-contact-item__resource-wrapper">
-        {% spaceless %}
-          {% include "@components/link/link.twig" with {
-            background: false,
-            standalone: false,
-            icon: {
-              name: 'instagram',
-            },
-            text: social.instagram,
-            url: "http://instagram.com/#{social.instagram}"
-          } only %}
-        {% endspaceless %}
-      </div>
-    {% endif %}
-    {% if social.youtube_link and social.youtube_link.uri and social.youtube_link.title %}
-      <div class="cloudy-contact-item__resource-wrapper">
-        {% spaceless %}
-          {% include "@components/link/link.twig" with {
-            background: false,
-            standalone: false,
-            icon: {
-              name: 'youtube',
-              fontAwesome: true,
-              brand: true,
-            },
-            text: social.youtube_link.title,
-            url: social.youtube_link.uri
-          } only %}
-        {% endspaceless %}
-      </div>
-    {% endif %}
-    {% if social.linkedin and social.linkedin.uri and social.linkedin.title %}
-      <div class="cloudy-contact-item__resource-wrapper">
-        {% spaceless %}
-          {% include "@components/link/link.twig" with {
-            background: false,
-            standalone: false,
-            icon: {
-              name: 'linkedin',
-              fontAwesome: true,
-              brand: true,
-            },
-            text: social.linkedin.title,
-            url: social.linkedin.uri
-          } only %}
-        {% endspaceless %}
-      </div>
-    {% endif %}
-    {% if social.nextdoor and social.nextdoor.uri and social.nextdoor.title %}
-      <div class="cloudy-contact-item__resource-wrapper">
-        {% spaceless %}
-          {% include "@components/link/link.twig" with {
-            background: false,
-            standalone: false,
-            icon: {
-              name: 'nextdoor',
-            },
-            text: social.nextdoor.title,
-            url: social.nextdoor.uri
-          } only %}
-        {% endspaceless %}
-      </div>
+    {% if social.facebook or social.twitter or social.instagram or social.youtube.url or social.linkedin.url or social.nextdoor.url %}
+      {% include "@components/heading/heading.twig" with {
+        level,
+        style,
+        text: "Follow on Social Media"|t,
+        classes: email or phone ? ['mt-8']
+      } only %}
+      {% if social.facebook %}
+        <div class="cloudy-contact-item__resource-wrapper">
+          {% spaceless %}
+            {% include "@components/link/link.twig" with {
+              background: false,
+              standalone: false,
+              icon: {
+                name: 'facebook',
+              },
+              text: social.facebook,
+              url: "http://facebook.com/#{social.facebook}"
+            } only %}
+          {% endspaceless %}
+        </div>
+      {% endif %}
+      {% if social.twitter %}
+        <div class="cloudy-contact-item__resource-wrapper">
+          {% spaceless %}
+            {% include "@components/link/link.twig" with {
+              background: false,
+              standalone: false,
+              icon: {
+                name: 'twitter',
+              },
+              text: social.twitter,
+              url: "http://twitter.com/#{social.twitter}"
+            } only %}
+          {% endspaceless %}
+        </div>
+      {% endif %}
+      {% if social.instagram %}
+        <div class="cloudy-contact-item__resource-wrapper">
+          {% spaceless %}
+            {% include "@components/link/link.twig" with {
+              background: false,
+              standalone: false,
+              icon: {
+                name: 'instagram',
+              },
+              text: social.instagram,
+              url: "http://instagram.com/#{social.instagram}"
+            } only %}
+          {% endspaceless %}
+        </div>
+      {% endif %}
+      {% if social.linkedin.url and social.linkedin.text %}
+        <div class="cloudy-contact-item__resource-wrapper">
+          {% spaceless %}
+            {% include "@components/link/link.twig" with {
+              background: false,
+              standalone: false,
+              icon: {
+                name: 'linkedin'
+              },
+              text: social.linkedin.text,
+              url: social.linkedin.url
+            } only %}
+          {% endspaceless %}
+        </div>
+      {% endif %}
+      {% if social.youtube.url and social.youtube.text %}
+        <div class="cloudy-contact-item__resource-wrapper">
+          {% spaceless %}
+            {% include "@components/link/link.twig" with {
+              background: false,
+              standalone: false,
+              icon: {
+                name: 'youtube'
+              },
+              text: social.youtube.text,
+              url: social.youtube.url
+            } only %}
+          {% endspaceless %}
+        </div>
+      {% endif %}
+      {% if social.nextdoor.url and social.nextdoor.text %}
+        <div class="cloudy-contact-item__resource-wrapper">
+          {% spaceless %}
+            {% include "@components/link/link.twig" with {
+              background: false,
+              standalone: false,
+              icon: {
+                name: 'nextdoor',
+              },
+              text: social.nextdoor.text,
+              url: social.nextdoor.url
+            } only %}
+          {% endspaceless %}
+        </div>
+      {% endif %}
     {% endif %}
   </div>
 </div>

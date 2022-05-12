@@ -102,7 +102,7 @@ In addition to the primary content migrations, there are two supplemental migrat
 
 Redirects migrations write entities to the redirects table. This is used for creating the Portland.gov legacy paths functionality, where the path from POG is linked to the corresponding page in the new site. Redirects migrations are named with the suffix "_redirects." *Example: eudaly_news_redirects*
 
-Group content migrations are used to add content to a group by creating a group content entity. These migrations are named with the suffix "_group_content." *Example: eudaly_news_group_content*
+Group content migrations are used to add content to a group by creating a group content entity. These migrations are named with the suffix "_group_content." *Example: eudaly_news_group_content*. Alternatively, a default value in "field_display_groups" will add content to the group_id you provide.
 
 ### Migrations in this module
 
@@ -129,6 +129,7 @@ Group content migrations are used to add content to a group by creating a group 
 - bds_plans_examiner
 - pbot_news
 - ppb_directives
+- oehr_news
 
 #### Eudaly news
 ##### Local
@@ -403,6 +404,17 @@ lando terminus drush portlandor.powr-[ID] -- migrate:import civic_neighborhood_m
 lando terminus drush portlandor.powr-[ID] -- migrate:import civic_neighborhood_meetings_redirects
 ```
 
+#### Civic Life Neighborhoods
+
+##### Local
+```
+lando drush migrate:import civic_neighborhoods
+```
+##### On Pantheon
+```
+lando terminus drush portlandor.powr-[ID] -- migrate:import civic_neighborhoods
+```
+
 #### Civic Life Neighborhood Contacts
 
 ##### Local
@@ -416,13 +428,56 @@ lando terminus drush portlandor.powr-[ID] -- migrate:import civic_neighborhood_c
 lando terminus drush portlandor.powr-[ID] -- migrate:import civic_neighborhood_contacts_relationships_v2
 ```
 
-#### Civic Life Neighborhoods
+#### Civic Life Business Associations
 
 ##### Local
 ```
-lando drush migrate:import civic_neighborhoods
+lando drush migrate:import civic_business_associations
 ```
 ##### On Pantheon
 ```
-lando terminus drush portlandor.powr-[ID] -- migrate:import civic_neighborhoods
+lando terminus drush portlandor.powr-[ID] -- migrate:import civic_business_associations
+```
+
+#### Civic Life Business Association Contacts
+
+##### Local
+```
+lando drush migrate:import civic_business_association_contacts
+lando drush migrate:import civic_business_association_contacts_relationships
+```
+##### On Pantheon
+```
+lando terminus drush portlandor.powr-[ID] -- migrate:import civic_business_association_contacts
+lando terminus drush portlandor.powr-[ID] -- migrate:import civic_business_association_contacts_relationships
+```
+#### Office of Equity and Human Rights News
+
+##### Local
+```
+lando drush migrate:import oehr_news
+lando drush migrate:import oehr_news_news_redirects
+lando drush migrate:import --group=oehr_news
+```
+##### On Pantheon
+```
+lando terminus drush portlandor.powr-[ID] -- migrate:import oehr_news
+lando terminus drush portlandor.powr-[ID] -- migrate:import oehr_news_news_redirects
+lando terminus drush portlandor.powr-[ID] -- migrate:import --group=oehr_news
+
+```
+#### PCCEP Meetings
+
+##### Local
+```
+lando drush migrate:import pccep_meetings
+lando drush migrate:import pccep_meetings_redirects
+lando drush migrate:import --group=pccep_meetings
+```
+##### On Pantheon
+```
+lando terminus drush portlandor.powr-[ID] -- migrate:import pccep_meetings
+lando terminus drush portlandor.powr-[ID] -- migrate:import pccep_meetings_redirects
+lando terminus drush portlandor.powr-[ID] -- migrate:import --group=pccep_meetings
+
 ```

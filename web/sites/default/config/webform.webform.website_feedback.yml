@@ -8,9 +8,9 @@ third_party_settings:
   honeypot:
     honeypot: true
     time_restriction: true
+weight: 0
 open: null
 close: null
-weight: 0
 uid: 1
 template: false
 archive: false
@@ -22,6 +22,7 @@ elements: |-
   subject:
     '#type': select
     '#title': 'Type of feedback'
+    '#prepopulate': true
     '#options':
       'I cannot find what I''m looking for': 'I cannot find what I''m looking for'
       'I have a question': 'I have a question'
@@ -53,6 +54,7 @@ elements: |-
       '#type': textarea
       '#title': Details
       '#description': 'Please be specific, so we can better assist you.'
+      '#prepopulate': true
       '#required': true
     your_name:
       '#type': textfield
@@ -69,16 +71,75 @@ elements: |-
       '#description': 'You can change this address if you would rather comment on a different page.'
       '#autocomplete': 'off'
       '#default_value': '[server:HTTP_REFERER]'
-    ip_address:
-      '#type': hidden
-      '#title': 'IP Address'
-      '#default_value': '[current-user:ip-address]'
-    zendesk_ticket_id:
-      '#type': hidden
-      '#title': 'Zendesk ticket id'
     public_records_statement:
       '#type': webform_markup
       '#markup': 'The information you provide in this form is considered a public record under Oregon&rsquo;s <a data-renderer-mark="true" href="https://www.doj.state.or.us/oregon-department-of-justice/public-records/attorney-generals-public-records-and-meetings-manual/i-public-records/#:~:text=Under%20Oregon''s%20Public%20Records%20Law,committee%20of%20the%20Legislative%20Assembly" title="https://www.doj.state.or.us/oregon-department-of-justice/public-records/attorney-generals-public-records-and-meetings-manual/i-public-records/#:~:text=Under%20Oregon''s%20Public%20Records%20Law,committee%20of%20the%20Legislative%20Assembly">Public Records Law</a> and is available to the public on request.'
+    section_agent_use_only:
+      '#type': webform_section
+      '#title': 'Agent Use Only'
+      '#attributes':
+        style: 'padding: 15px; background-color: #cccccc;'
+      '#access_create_roles':
+        - support_agent
+        - administrator
+      '#access_update_roles':
+        - support_agent
+        - administrator
+      '#access_view_roles':
+        - support_agent
+        - administrator
+      agent_email:
+        '#type': textfield
+        '#title': 'Agent Email'
+        '#default_value': '[current-user:display-name] <[current-user:mail]>'
+      agent_ticket_number:
+        '#type': number
+        '#title': 'Ticket Number'
+        '#min': 1000
+        '#max': 999999999
+      agent_action_taken:
+        '#type': radios
+        '#title': 'Action Taken'
+        '#options': action_taken
+        '#options_display': side_by_side
+        '#states':
+          invisible:
+            ':input[name="agent_ticket_number"]':
+              filled: true
+      agent_contact_type:
+        '#type': radios
+        '#title': 'Contact Type'
+        '#options': contact_type
+        '#options_display': side_by_side
+        '#states':
+          invisible:
+            ':input[name="agent_ticket_number"]':
+              filled: true
+      agent_ticket_type:
+        '#type': webform_computed_twig
+        '#title': 'Ticket Type'
+        '#display_on': none
+        '#mode': text
+        '#template': |-
+          {% if data.subject == "I have a question" %}
+          Question
+          {% elseif data.subject == "I cannot find what I'm looking for" or data.subject == "The information looks incorrect" %}
+          Problem
+          {% elseif data.subject == "The page looks broken" %}
+          Incident
+          {% endif %}
+        '#whitespace': spaceless
+      agent_summary:
+        '#type': webform_computed_twig
+        '#title': 'Agent Summary'
+        '#display_on': none
+        '#template': |-
+          {% if uid %}<p>Agent Email: {{ data.agent_email }}</p>{% endif %}
+          {% if data.agent_ticket_number %}<p>Ticket Number: {{ data.agent_ticket_number }}</p>{% endif %}
+          {% if data.agent_action_taken %}<p>Action Taken: {{ data.agent_action_taken }}</p>{% endif %}
+          <p>Contact Type: {% if data.agent_contact_type %}{{ data.agent_contact_type }}{% else %}Webform{% endif %}</p>
+          <p>Ticket Type: {{ data.agent_ticket_type }}</p>
+        '#ajax': true
     actions:
       '#type': webform_actions
       '#title': 'Submit button(s)'
@@ -88,15 +149,10 @@ elements: |-
       '#submit__attributes':
         class:
           - w-50
-  computed_email_address:
-    '#type': webform_computed_twig
-    '#title': 'Computed email address'
-    '#display_on': none
-    '#mode': text
-    '#template': '{% if data.email_address %}{{ data.email_address }}{% else %}anonymous@portlandoregon.gov{% endif %}'
-    '#whitespace': trim
-    '#store': true
-    '#ajax': true
+  ip_address:
+    '#type': hidden
+    '#title': 'IP Address'
+    '#default_value': '[current-user:ip-address]'
 css: 'd-flex justify-content-around'
 javascript: ''
 settings:
@@ -111,9 +167,9 @@ settings:
   page_theme_name: ''
   form_title: source_entity_webform
   form_submit_once: false
-  form_exception_message: ''
   form_open_message: ''
   form_close_message: 'Our feedback form is temporarily closed. If you have feedback or suggestions for how we can improve this page, email the web team at powr@portlandoregon.gov.'
+  form_exception_message: ''
   form_previous_submissions: true
   form_confidential: false
   form_confidential_message: ''
@@ -123,31 +179,36 @@ settings:
   form_prepopulate_source_entity: false
   form_prepopulate_source_entity_required: false
   form_prepopulate_source_entity_type: ''
-  form_reset: false
+  form_unsaved: false
+  form_disable_back: false
+  form_submit_back: false
   form_disable_autocomplete: false
   form_novalidate: false
   form_disable_inline_errors: false
   form_required: true
-  form_unsaved: false
-  form_disable_back: false
-  form_submit_back: false
   form_autofocus: false
   form_details_toggle: false
+  form_reset: false
   form_access_denied: default
   form_access_denied_title: ''
   form_access_denied_message: ''
   form_access_denied_attributes: {  }
   form_file_limit: ''
+  form_attributes: {  }
   form_method: ''
   form_action: ''
-  form_attributes: {  }
   share: false
   share_node: false
   share_theme_name: ''
   share_title: true
   share_page_body_attributes: {  }
   submission_label: ''
+  submission_exception_message: ''
+  submission_locked_message: ''
   submission_log: false
+  submission_excluded_elements: {  }
+  submission_exclude_empty: false
+  submission_exclude_empty_checkbox: false
   submission_views: {  }
   submission_views_replace:
     webform_routes: {  }
@@ -158,11 +219,6 @@ settings:
   submission_access_denied_title: ''
   submission_access_denied_message: ''
   submission_access_denied_attributes: {  }
-  submission_exception_message: ''
-  submission_locked_message: ''
-  submission_excluded_elements: {  }
-  submission_exclude_empty: false
-  submission_exclude_empty_checkbox: false
   previous_submission_message: ''
   previous_submissions_message: ''
   autofill: false
@@ -173,13 +229,13 @@ settings:
   wizard_progress_percentage: false
   wizard_progress_link: false
   wizard_progress_states: false
-  wizard_auto_forward: true
-  wizard_auto_forward_hide_next_button: false
-  wizard_keyboard: true
   wizard_start_label: ''
   wizard_preview_link: false
   wizard_confirmation: true
   wizard_confirmation_label: ''
+  wizard_auto_forward: true
+  wizard_auto_forward_hide_next_button: false
+  wizard_keyboard: true
   wizard_track: ''
   wizard_prev_button_label: ''
   wizard_next_button_label: ''
@@ -202,9 +258,9 @@ settings:
   draft_pending_single_message: ''
   draft_pending_multiple_message: ''
   confirmation_type: inline
-  confirmation_title: ''
-  confirmation_message: "<h2>Thank you for submitting your feedback, we appreciate your help!</h2>\r\nYou should receive an email confirmation in just a moment. You may reply to that email to add additional information or comments to your feedback.<br />\r\n<br />\r\nName:&nbsp;[webform_submission:values:your_name]<br />\r\n<br />\r\nType of feedback:&nbsp;[webform_submission:values:subject]<br />\r\n<br />\r\nLast page viewed:&nbsp;<a href=\"[webform_submission:values:page_you_last_viewed]\">[webform_submission:values:page_you_last_viewed]</a><br />\r\n<br />\r\nFeedback:&nbsp;[webform_submission:values:feedback]"
   confirmation_url: ''
+  confirmation_title: ''
+  confirmation_message: "<h2>Thank you for submitting your feedback, we appreciate your help!</h2>\r\nYou should receive an email confirmation in just a moment. You may reply to that email to add additional information or comments to your feedback.<br />\r\n<br />\r\nName:&nbsp;[webform_submission:values:your_name]<br />\r\n<br />\r\nEmail:&nbsp;[webform_submission:values:email_address]<br />\r\n<br />\r\nType of feedback:&nbsp;[webform_submission:values:subject]<br />\r\n<br />\r\nLast page viewed:&nbsp;<a href=\"[webform_submission:values:page_you_last_viewed]\">[webform_submission:values:page_you_last_viewed]</a><br />\r\n<br />\r\nFeedback:&nbsp;[webform_submission:values:feedback]"
   confirmation_attributes: {  }
   confirmation_back: true
   confirmation_back_label: ''
@@ -286,9 +342,9 @@ access:
 handlers:
   submit_report_to_311:
     id: email
+    handler_id: submit_report_to_311
     label: 'Submit report to 311'
     notes: ''
-    handler_id: submit_report_to_311
     status: true
     conditions:
       enabled:
@@ -309,16 +365,21 @@ handlers:
         - completed
       to_mail: 311@portlandoregon.gov
       to_options: {  }
-      cc_mail: ''
-      cc_options: {  }
       bcc_mail: ''
       bcc_options: {  }
-      from_mail: '[webform_submission:values:computed_email_address]'
+      cc_mail: ''
+      cc_options: {  }
+      from_mail: '[webform_submission:values:email_address:raw]'
       from_options: {  }
       from_name: '[webform_submission:values:your_name:raw]'
+      reply_to: ''
+      return_path: ''
+      sender_mail: ''
+      sender_name: ''
       subject: '[webform_submission:values:subject:raw] - [webform_submission:values:feedback]'
-      body: "<p>Subject: [webform_submission:values:subject]</p>\r\n\r\n<p>Feedback: [webform_submission:values:feedback]</p>\r\n\r\n<p>Name: [webform_submission:values:your_name]</p>\r\n\r\n<p>Email: [webform_submission:values:computed_email_address]</p>\r\n\r\n<p>Page last viewed: [webform_submission:values:page_you_last_viewed]</p>\r\n\r\n<p>Submitted on: [webform_submission:created]</p>\r\n\r\n<p>User agent: [server:HTTP_USER_AGENT]</p>"
-      excluded_elements: {  }
+      body: "<p>Subject: [webform_submission:values:subject]</p>\r\n\r\n<p>Feedback: [webform_submission:values:feedback]</p>\r\n\r\n<p>Name: [webform_submission:values:your_name]</p>\r\n\r\n<p>Email: [webform_submission:values:email_address]</p>\r\n\r\n<p>Page last viewed: [webform_submission:values:page_you_last_viewed]</p>\r\n\r\n<p>Submitted on: [webform_submission:created]</p>\r\n\r\n<p>User agent: [server:HTTP_USER_AGENT]</p>\r\n[webform_submission:values:agent_summary]"
+      excluded_elements:
+        agent_summary: agent_summary
       ignore_access: false
       exclude_empty: true
       exclude_empty_checkbox: false
@@ -326,18 +387,14 @@ handlers:
       html: true
       attachments: false
       twig: false
-      debug: false
-      reply_to: ''
-      return_path: ''
-      sender_mail: ''
-      sender_name: ''
       theme_name: cloudy
       parameters: {  }
+      debug: false
   submit_report_to_website_support:
     id: email
+    handler_id: submit_report_to_website_support
     label: 'Submit report to website support'
     notes: ''
-    handler_id: submit_report_to_website_support
     status: true
     conditions:
       enabled:
@@ -349,15 +406,19 @@ handlers:
         - completed
       to_mail: website@portlandoregon.gov
       to_options: {  }
-      cc_mail: ''
-      cc_options: {  }
       bcc_mail: ''
       bcc_options: {  }
-      from_mail: '[webform_submission:values:computed_email_address]'
+      cc_mail: ''
+      cc_options: {  }
+      from_mail: '[webform_submission:values:email_address:raw]'
       from_options: {  }
       from_name: '[webform_submission:values:your_name:raw]'
+      reply_to: ''
+      return_path: ''
+      sender_mail: ''
+      sender_name: ''
       subject: '[webform_submission:values:subject:raw] - [webform_submission:values:feedback]'
-      body: "<p>Subject: [webform_submission:values:subject]</p>\r\n\r\n<p>Feedback: [webform_submission:values:feedback]</p>\r\n\r\n<p>Name: [webform_submission:values:your_name]</p>\r\n\r\n<p>Email: [webform_submission:values:computed_email_address]</p>\r\n\r\n<p>Page last viewed: [webform_submission:values:page_you_last_viewed]</p>\r\n\r\n<p>Submitted on: [webform_submission:created]</p>\r\n\r\n<p>User agent: [server:HTTP_USER_AGENT]</p>"
+      body: "<p>Subject: [webform_submission:values:subject]</p>\r\n\r\n<p>Feedback: [webform_submission:values:feedback]</p>\r\n\r\n<p>Name: [webform_submission:values:your_name]</p>\r\n\r\n<p>Email: [webform_submission:values:email_address]</p>\r\n\r\n<p>Page last viewed: [webform_submission:values:page_you_last_viewed]</p>\r\n\r\n<p>Submitted on: [webform_submission:created]</p>\r\n\r\n<p>User agent: [server:HTTP_USER_AGENT]<br />\r\n<br />\r\n[webform_submission:values:agent_summary]</p>"
       excluded_elements: {  }
       ignore_access: false
       exclude_empty: true
@@ -366,11 +427,7 @@ handlers:
       html: true
       attachments: false
       twig: false
-      debug: false
-      reply_to: ''
-      return_path: ''
-      sender_mail: ''
-      sender_name: ''
       theme_name: cloudy
       parameters: {  }
+      debug: false
 variants: {  }
