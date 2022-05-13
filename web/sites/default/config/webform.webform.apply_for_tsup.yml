@@ -37,6 +37,13 @@ elements: |-
 
         <p>[Go to separate renewal/change process]</p>
         </div>
+    actions_02:
+      '#type': webform_actions
+      '#title': 'Submit button(s)'
+      '#states':
+        invisible:
+          ':input[name="apply_already_have_permit"]':
+            value: 'Yes'
   page_purpose:
     '#type': webform_wizard_page
     '#title': Purpose
@@ -73,9 +80,23 @@ elements: |-
 
         <p>[Go to Portland in the Streets]</p>
         </div>
+    actions_01:
+      '#type': webform_actions
+      '#title': 'Submit button(s)'
+      '#states':
+        invisible:
+          - ':input[name="apply_why"]':
+              value: 'Business use'
+          - or
+          - ':input[name="apply_why"]':
+              value: 'Community use or event'
   page_entire_street:
     '#type': webform_wizard_page
     '#title': Scope
+    '#states':
+      invisible:
+        ':input[name="apply_why"]':
+          value: 'Moving or loading'
     apply_entire_street:
       '#type': radios
       '#title': 'Do you need to close the entire street?'
@@ -94,25 +115,27 @@ elements: |-
         visible:
           ':input[name="apply_entire_street"]':
             value: 'No'
+    actions_03:
+      '#type': webform_actions
+      '#title': 'Submit button(s)'
   page_parking:
     '#type': webform_wizard_page
     '#title': Parking
     '#states':
-      invisible:
-        ':input[name="apply_entire_street"]':
-          value: 'Yes'
+      visible:
+        - ':input[name="apply_which_parts[Parking space(s)]"]':
+            checked: true
+        - or
+        - ':input[name="apply_why"]':
+            value: 'Moving or loading'
     apply_parking_metered:
       '#type': radios
       '#title': 'Is the parking space(es) in a metered zone?'
-      '#options': yes_no
+      '#options':
+        'No': 'No'
+        'Yes': 'Yes'
       '#options_display': side_by_side
       '#required': true
-      '#states':
-        invisible:
-          ':input[name="apply_which_parts[Travel lane(s), including car and/or bike lanes]"]':
-            checked: true
-          ':input[name="apply_which_parts[Sidewalk]"]':
-            checked: true
     apply_how_much_parking_to_reserve:
       '#type': radios
       '#title': 'How many parking spaces do you need to reserve?'
@@ -130,6 +153,9 @@ elements: |-
           ':input[name="apply_how_much_parking_to_reserve"]':
             value: 'More than 5...'
       '#min': 1
+    actions_04:
+      '#type': webform_actions
+      '#title': 'Submit button(s)'
   page_duration:
     '#type': webform_wizard_page
     '#title': Duration
@@ -141,19 +167,23 @@ elements: |-
         'Up to 4 weeks': 'Up to 4 weeks'
         'Up to 6 months': 'Up to 6 months'
       '#required': true
+    actions_05:
+      '#type': webform_actions
+      '#title': 'Submit button(s)'
   page_additional_info:
     '#type': webform_wizard_page
     '#title': Details
     report_location:
       '#type': portland_location_picker
       '#title': 'Location of closure'
+      '#required': true
       '#location_type__access': false
       '#location_park_container__access': false
       '#waterway_instructions__access': false
       '#location_private_owner__access': false
+      '#location_address__description': 'Enter the address or cross streets of the requested closure, then click the button to verify the location. Alternately, you may click the map to set the location.'
       '#place_name__access': false
       '#location_details__access': false
-      '#required': true
     apply_closed_street_name:
       '#type': textfield
       '#title': 'Name of street that will be closed'
@@ -194,6 +224,9 @@ elements: |-
     apply_permit_ivr:
       '#type': textfield
       '#title': 'Permit/IVR number'
+    actions_06:
+      '#type': webform_actions
+      '#title': 'Submit button(s)'
   page_contact:
     '#type': webform_wizard_page
     '#title': Contact
@@ -209,6 +242,9 @@ elements: |-
     contact_phone:
       '#type': textfield
       '#title': Phone
+    actions_07:
+      '#type': webform_actions
+      '#title': 'Submit button(s)'
   page_agreement:
     '#type': webform_wizard_page
     '#title': Agreement
@@ -238,51 +274,46 @@ elements: |-
       '#type': checkbox
       '#title': 'I agree'
       '#required': true
-  actions:
-    '#type': webform_actions
-    '#title': 'Submit button(s)'
-    '#states':
-      invisible:
-        - ':input[name="apply_already_have_permit"]':
-            value: 'Yes'
-        - or
-        - ':input[name="apply_why"]':
-            value: 'Business use'
-        - or
-        - ':input[name="apply_why"]':
-            value: 'Community use or event'
+    actions_08:
+      '#type': webform_actions
+      '#title': 'Submit button(s)'
   apply_permit_type:
     '#type': webform_computed_twig
-    '#title': 'Permit Type Required'
+    '#title': 'Permit Type Required:'
+    '#description': 'Defaults to Complex. When this form is ready to release, it will only be displayed at the end of the process. It is displayed here now for debugging purposes.'
     '#title_display': inline
+    '#wrapper_attributes':
+      style: 'color: gray; background-color: platinum; margin-top: 2rem;'
     '#template': |-
+      {% set permit_type = "Complex (default)" %}
       {% if data.apply_why == "Moving or loading" %}
 
         {% if data.apply_parking_metered == "No" and data.apply_how_much_parking_to_reserve == "5 or less" and data.apply_duration == "Up to 7 days" %}
-          7-day
-        {% elseif data.apply_parking_metered == "No" and data.apply_how_much_parking_to_reserve == "More than 5" %}
-          Simple
+          {% set permit_type = "7-day" %}
+        {% elseif data.apply_parking_metered == "No" and data.apply_how_much_parking_to_reserve == "More than 5..." %}
+          {% set permit_type = "Simple" %}
         {% elseif data.apply_parking_metered == "Yes" or (data.apply_duration == "Up to 4 weeks" or data.apply_duration == "Up to 6 months") %}
-          Simple
+          {% set permit_type = "Simple" %}
         {% endif %}
         
       {% elseif data.apply_why == "Construction or utility work" %}
 
         {% if data.apply_entire_street == "Yes" and (data.apply_duration == "Up to 7 days" or data.apply_duration == "Up to 4 weeks") %}
-          Complex
+          {% set permit_type = "Complex" %}
         {% elseif data.apply_entire_street == "Yes" and data.apply_duration == "Up to 6 months" %}
-          LT Complex
-        {% elseif data.apply_entire_street == "No" and (data.apply_which_parts == "Parking space(s)" and data.apply_which_parts != "Travel lane(s), including car and/or bike lanes" and data.apply_which_parts != "Bus or transit lane" and data.apply_which_parts != "Sidewalk") and data.apply_parking_metered == "No" and data.apply_duration == "Up to 7 days" %}
-          7-day
-        {% elseif data.apply_entire_street == "No" and (data.apply_which_parts == "Parking space(s)" and data.apply_which_parts != "Travel lane(s), including car and/or bike lanes" and data.apply_which_parts != "Bus or transit lane" and data.apply_which_parts != "Sidewalk") and data.apply_parking_metered == "Yes" or (data.apply_duration == "Up to 4 weeks" or data.apply_duration == "Up to 6 months") %}
-          Simple
-        {% elseif data.apply_entire_street == "No" and (data.apply_which_parts == "Travel lane(s), including car and/or bike lanes" or data.apply_which_parts == "Sidewalk") and (data.apply_duration == "Up to 7 days" or data.apply_duration == "Up to 4 weeks") %}  
-          Complex
-        {% elseif data.apply_entire_street == "No" and (data.apply_which_parts == "Travel lane(s), including car and/or bike lanes" or data.apply_which_parts == "Sidewalk") and data.apply_duration == "Up to 6 months" %}
-          LT Complex
+          {% set permit_type = "LT Complex" %}
+        {% elseif data.apply_entire_street == "No" and webform_token('[webform_submission:values:apply_which_parts]', webform_submission, []) == "Parking space(s)" and data.apply_parking_metered == "No" and data.apply_duration == "Up to 7 days" %}
+          {% set permit_type = "7-day" %}
+        {% elseif data.apply_entire_street == "No" and webform_token('[webform_submission:values:apply_which_parts]', webform_submission, []) == "Parking space(s)" and data.apply_parking_metered == "Yes" or (data.apply_duration == "Up to 4 weeks" or data.apply_duration == "Up to 6 months") %}
+          {% set permit_type = "Simple" %}
+        {% elseif data.apply_entire_street == "No" and ("Travel lane(s), including car and/or bike lanes" in webform_token('[webform_submission:values:apply_which_parts]', webform_submission, []) or "Sidewalk" in webform_token('[webform_submission:values:apply_which_parts]', webform_submission, [])) and (data.apply_duration == "Up to 7 days" or data.apply_duration == "Up to 4 weeks") %}  
+          {% set permit_type = "Complex" %}
+        {% elseif data.apply_entire_street == "No" and ("Travel lane(s), including car and/or bike lanes" in webform_token('[webform_submission:values:apply_which_parts]', webform_submission, []) or "Sidewalk" in webform_token('[webform_submission:values:apply_which_parts]', webform_submission, [])) and data.apply_duration == "Up to 6 months" %}
+          {% set permit_type = "LT Complex" %}
         {% endif %}
 
       {% endif %}
+      {{ permit_type }}
     '#whitespace': trim
     '#hide_empty': true
     '#store': true
@@ -322,7 +353,7 @@ settings:
   form_required: false
   form_autofocus: false
   form_details_toggle: false
-  form_reset: false
+  form_reset: true
   form_access_denied: default
   form_access_denied_title: ''
   form_access_denied_message: ''
