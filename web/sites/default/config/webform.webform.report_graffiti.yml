@@ -5,6 +5,7 @@ dependencies:
   module:
     - antibot
     - honeypot
+    - portland_zendesk
 third_party_settings:
   antibot:
     antibot: true
@@ -17,7 +18,7 @@ uid: 1
 template: false
 archive: false
 id: report_graffiti
-title: 'Graffiti Reporting'
+title: 'Report Graffiti'
 description: 'Report graffiti on public property, or request removal assistance on private property'
 category: Report
 elements: |-
@@ -44,8 +45,14 @@ elements: |-
         visible:
           ':input[name="report_location[location_type]"]':
             checked: true
-      container_hate_or_gang:
-        '#type': container
+      report_property_address:
+        '#type': textfield
+        '#title': 'Property Address'
+        '#states':
+          visible:
+            ':input[name="report_location[location_type]"]':
+              value: private
+        '#admin_notes': 'This field is for demo purposes only. It should be removed after the location widget has been modified so it can be configured to use the map and address verification features even if Private Property is selected.'
       report_private_owner:
         '#type': radios
         '#title': 'Are you the owner of the property?'
@@ -88,12 +95,8 @@ elements: |-
                 value: 'No'
           report_private_property_type:
             '#type': radios
-            '#title': 'Is the Private Property:'
-            '#options':
-              'A Small Business': 'A Small Business'
-              'A single-family home': 'A single-family home'
-              'A Condo or Apartment Building/Complex': 'A Condo or Apartment Building/Complex'
-              'A non-profit organization, or houses a non-profit organization': 'A non-profit organization, or houses a non-profit organization'
+            '#title': 'What type of property is it?'
+            '#options': private_property_type
             '#required': true
           report_corporate_franchise:
             '#type': radios
@@ -342,6 +345,23 @@ elements: |-
         actions:
           '#type': webform_actions
           '#title': 'Submit button(s)'
+  report_ticket_id:
+    '#type': hidden
+    '#title': 'Support Ticket ID'
+  resolution_url:
+    '#type': webform_computed_twig
+    '#title': 'Resolution URL'
+    '#display_on': none
+    '#template': '{{ webform_token(''[site:url]'', webform_submission, [], options) }}form/report-graffiti-resolution?original_submission_key={{ uuid }}&report_ticket_id='
+    '#store': true
+    '#ajax': true
+  waiver_url:
+    '#type': webform_computed_twig
+    '#title': 'Waiver URL'
+    '#display_on': none
+    '#template': '{{ webform_token(''[site:url]'', webform_submission, [], options) }}form/report-graffiti-waiver?original_submission_key={{ uuid }}&property_address={{ data.report_property_address }}&property_type={{ data.report_private_property_type }}&contact_name={{ data.contact_name }}&contact_email={{ data.contact_email }}&report_ticket_id='
+    '#store': true
+    '#ajax': true
 css: ''
 javascript: ''
 settings:
@@ -450,7 +470,7 @@ settings:
   confirmation_message: ''
   confirmation_attributes: {  }
   confirmation_back: true
-  confirmation_back_label: ''
+  confirmation_back_label: 'Submit another report'
   confirmation_back_attributes: {  }
   confirmation_exclude_query: false
   confirmation_exclude_token: false
@@ -479,6 +499,7 @@ settings:
 access:
   create:
     roles:
+      - anonymous
       - authenticated
     users: {  }
     permissions: {  }
@@ -539,41 +560,26 @@ access:
     users: {  }
     permissions: {  }
 handlers:
-  submit_to_zendesk:
-    id: email
-    handler_id: submit_to_zendesk
-    label: 'Submit to Zendesk'
+  create_new_zendesk_ticket:
+    id: zendesk
+    handler_id: create_new_zendesk_ticket
+    label: 'Create new Zendesk ticket'
     notes: ''
     status: true
     conditions: {  }
     weight: 0
     settings:
-      states:
-        - completed
-      to_mail: 311@portlandoregon.gov
-      to_options: {  }
-      bcc_mail: ''
-      bcc_options: {  }
-      cc_mail: ''
-      cc_options: {  }
-      from_mail: '[webform_submission:values:contact_email:raw]'
-      from_options: {  }
-      from_name: '[webform_submission:values:contact_name:raw]'
-      reply_to: ''
-      return_path: ''
-      sender_mail: ''
-      sender_name: ''
-      subject: _default
-      body: "&nbsp;<br />\r\nSubmitted on [webform_submission:created]<br />\r\n<br />\r\nSubmitted by: [webform_submission:user]<br />\r\n<br />\r\n[webform_submission:values]<br />\r\n<br />\r\n<strong>Agent Use Only:</strong><br />\r\n<br />\r\n[webform_submission:values:agent_summary]<br />\r\n&nbsp;"
-      excluded_elements: {  }
-      ignore_access: false
-      exclude_empty: true
-      exclude_empty_checkbox: false
-      exclude_attachments: false
-      html: true
-      attachments: false
-      twig: false
-      theme_name: ''
-      parameters: {  }
-      debug: false
+      requester_name: contact_name
+      requester_email: contact_email
+      subject: 'Graffiti Report'
+      comment: "[webform_submission:values:html]\r\n\r\n<p>Waiver URL: [webform_submission:values:waiver_url]</p>\r\n\r\n<p>Webform ID: report_graffiti</p>"
+      tags: 'drupal webform graffiti'
+      priority: normal
+      status: new
+      group_id: '4549352062487'
+      assignee_id: ''
+      type: incident
+      collaborators: ''
+      custom_fields: "6353388345367: 'report_graffiti'\r\n5581480390679: '[webform_submission:values:report_location:location_lat]'\r\n5581490332439: '[webform_submission:values:report_location:location_lon]'\r\n1500012743961: '[webform_submission:values:report_location:location_address]'\r\n1500013095781: '[webform_submission:uuid]'\r\n6355783758871: '[webform_submission:values:resolution_url]'\r\n6379451469847: '[webform_submission:values:waiver_url]'"
+      ticket_id_field: report_ticket_id
 variants: {  }
