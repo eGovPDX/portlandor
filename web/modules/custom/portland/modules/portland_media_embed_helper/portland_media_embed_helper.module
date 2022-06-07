@@ -34,27 +34,19 @@ function portland_media_embed_helper_form_entity_embed_dialog_alter(array &$form
       }
     }
   }
+
   if ($hide_fields) {
     if (isset($form['attributes']['data-caption'])) unset($form['attributes']['data-caption']);
     if (isset($form['attributes']['data-align'])) unset($form['attributes']['data-align']);
-  } 
-
-  // KLUDGE ALERT!!!! /////////////////////////////////
-  // Because of a shortcoming/irregularity in how entity_embed handles display modes and image styles,
-  // we need to enable all modes and styles, and then hide the inputs so that the user can't change
-  // away from the defaults. The image mode/style is set by a custom text format filter later in the
-  // processing cycle, so the selected image style is moot here anyway. If the fields aren't present,
-  // the data-entity-embed-display-setttings attribute on the entity-embed tag is empty, which causes
-  // errors that are filling up the log. After POWR-1268 is completed, this kludge should be removed.
-  // See POWR-1252, POWR-1268.
-  if (isset($form['attributes']['data-entity-embed-display-settings'])) {
-    unset($form['attributes']['data-entity-embed-display-settings']);
   }
 
+  // Hide additional fields from entity_embed module
+  $form['attributes']['data-entity-embed-display-settings']['#access'] = false;
 
   // configure align options and add icons
   if (isset($form['attributes']['data-align'])) {
     $img_100 =            "<img src=\"/themes/custom/cloudy/images/icons/img-100.png\" alt=\"100% width\" />";
+    $img_narrow =         "<img src=\"/themes/custom/cloudy/images/icons/img-narrow.png\" alt=\"Narrow\" />";
     $img_50_right_fill =  "<img src=\"/themes/custom/cloudy/images/icons/img-50-fill.png\" alt=\"50% fill\" />";
     $img_50_right_fit =   "<img src=\"/themes/custom/cloudy/images/icons/img-50-fit.png\" alt=\"50% fit\" />";
     $embed_type = $form['attributes']['data-embed-button']['#value'];
@@ -71,10 +63,11 @@ function portland_media_embed_helper_form_entity_embed_dialog_alter(array &$form
     // full width applies to images and videos
     $form['attributes']['data-align']['#options']['responsive-full'] = "Full width<br>$img_100";
 
-    // right fill and fit don't apply to videos
+    // narrow, right fill and fit don't apply to videos
     if ($embed_type == "audio_video_browser" || $embed_type == "map_browser" || $embed_type == "chart_browser") {
       $form['attributes']['data-align']['#options']['responsive-right'] = "50% right<br>$img_50_right_fill";
     } else {
+      $form['attributes']['data-align']['#options']['narrow'] = "Narrow<br>$img_narrow";
       $form['attributes']['data-align']['#options']['responsive-right'] = "50% fill<br>$img_50_right_fill";
       $form['attributes']['data-align']['#options']['right'] = "50% fit<br>$img_50_right_fit";
     }
