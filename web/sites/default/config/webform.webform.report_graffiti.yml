@@ -213,11 +213,13 @@ elements: |-
             'Yes': 'Yes'
             'No': 'No'
             'Not sure': 'Not sure'
+          '#required': true
         report_graffiti_on_mural:
           '#type': radios
           '#title': 'Is the graffiti on a mural?'
           '#options': yes_no
           '#options_display': side_by_side
+          '#required': true
         report_photo:
           '#type': webform_image_file
           '#title': 'Please upload a photo of the graffiti'
@@ -343,17 +345,66 @@ elements: |-
   report_ticket_id:
     '#type': hidden
     '#title': 'Support Ticket ID'
+  ticket_description:
+    '#type': webform_computed_twig
+    '#title': 'Ticket Description'
+    '#display_on': none
+    '#mode': html
+    '#template': |-
+      <p>[webform_submission:values:report_location:html]</p>
+
+      {% if data.report_hate_speech_or_gang %}Is the graffiti hate speech or gang related?&nbsp;{{ data.report_hate_speech_or_gang }}<br><br>{% endif %}
+
+
+      {% if data.report_property_owner_assistance %}What are you requesting?&nbsp;{{ data.report_property_owner_assistance }}<br><br>{% endif %}
+
+
+      {% if data.report_private_property_type %}What type of property is it?&nbsp;{{ data.report_private_property_type }}<br><br>{% endif %}
+
+
+      {% if data.report_corporate_franchise %}Are you a corporate franchise?&nbsp;{{ data.report_corporate_franchise }}<br><br>{% endif %}
+
+
+      {% if data.report_business_employees_amt %}How many employees does the business have?&nbsp;{{ data.report_business_employees_amt }}<br><br>{% endif %}
+
+
+      {% if data.report_building_units_amt %}How many units does the building have?&nbsp;{{ data.report_building_units_amt }}<br><br>{% endif %}
+
+
+      {% if data.report_nonprofit_employees %}How many employees does the non-profit have?&nbsp;{{ data.report_nonprofit_employees }}<br><br>{% endif %}
+
+
+      {% if data.report_tenant_or_neighbor %}Are you a neighbor or tenant?&nbsp;{{ data.report_tenant_or_neighbor }}<br><br>{% endif %}
+
+
+      {% if data.report_above_ground_level %}Is graffiti above ground level?&nbsp;{{ data.report_above_ground_level }}<br><br>{% endif %}
+
+
+      {% if data.report_graffiti_on_mural %}Is graffiti on mural?&nbsp;{{ data.report_graffiti_on_mural }}<br><br>{% endif %}
+
+
+      {% if data.contact_name %}Contact Name:&nbsp;{{ data.contact_name }}<br><br>{% endif %}
+
+
+      {% if data.contact_email %}Contact Email:&nbsp;{{ data.contact_email }}<br><br>{% endif %}
+
+
+      <p>Webform ID: report_graffiti</p>
+    '#ajax': true
   resolution_url:
     '#type': webform_computed_twig
     '#title': 'Resolution URL'
     '#display_on': none
-    '#template': '{{ webform_token(''[site:url]'', webform_submission, [], options) }}form/report-graffiti-resolution?original_submission_key={{ uuid }}&report_ticket_id='
+    '#mode': text
+    '#template': '{{ webform_token(''[site:url]'', webform_submission, [], options) }}form/report-graffiti-resolution?report_location[location_type]={{ data.report_location.location_type }}&report_location[location_park]={{ data.report_location.location_park }}&report_location[place_name]={{ data.report_location.place_name }}&report_location[location_details]={{ data.report_location.location_details }}&report_location[location_address]={{ data.report_location.location_address }}&report_location[location_lat]={{ data.report_location.location_lat }}&report_location[location_lon]={{ data.report_location.location_lon }}&report_private_property_type={{ data.report_private_property_type }}&report_above_ground_level={{ data.report_above_ground_level }}&report_graffiti_on_mural={{ data.report_graffiti_on_mural }}&report_ticket_id='
+    '#whitespace': trim
     '#store': true
     '#ajax': true
   waiver_url:
     '#type': webform_computed_twig
     '#title': 'Waiver URL'
     '#display_on': none
+    '#mode': text
     '#template': '{{ webform_token(''[site:url]'', webform_submission, [], options) }}form/report-graffiti-waiver?original_submission_key={{ uuid }}&property_address={{ data.report_property_address }}&property_type={{ data.report_private_property_type }}&contact_name={{ data.contact_name }}&contact_email={{ data.contact_email }}&report_ticket_id='
     '#store': true
     '#ajax': true
@@ -567,12 +618,12 @@ handlers:
       requester_name: contact_name
       requester_email: contact_email
       subject: 'Graffiti Report'
-      comment: "[webform_submission:values:html]\r\n\r\n<p>Waiver URL: [webform_submission:values:waiver_url]</p>\r\n\r\n<p>Webform ID: report_graffiti</p>"
+      comment: "<h2>Graffiti Report</h2>\r\n\r\n[webform_submission:values:ticket_description]"
       tags: 'drupal webform graffiti'
       priority: normal
       status: new
       group_id: '4549352062487'
-      assignee_id: ''
+      assignee_id: '376597733073'
       type: incident
       collaborators: ''
       custom_fields: "6353388345367: 'report_graffiti'\r\n5581480390679: '[webform_submission:values:report_location:location_lat]'\r\n5581490332439: '[webform_submission:values:report_location:location_lon]'\r\n1500012743961: '[webform_submission:values:report_location:location_address]'\r\n1500013095781: '[webform_submission:uuid]'\r\n6355783758871: '[webform_submission:values:resolution_url]'\r\n6379451469847: '[webform_submission:values:waiver_url]'"

@@ -19,7 +19,7 @@ use Drupal\filter\Render\FilteredMarkup;
 class PortlandMediaEmbedHelperClasses extends FilterBase {
 
   /**
-   * Processes text in the following ways: 
+   * Processes text in the following ways:
    * - Adds classes to entity embed containers that correspond to the media type, so they can be styled
    * - Pre-sets the display mode for images based on the alignment option selected in the embed dialog
    *
@@ -66,6 +66,8 @@ class PortlandMediaEmbedHelperClasses extends FilterBase {
             } else if (!is_null($alignment) && $alignment == "responsive-full") {
               $display = "embedded_100";
               $media_class .= " responsive-full";
+            } else if (!is_null($alignment) && $alignment == "narrow") {
+              $media_class .= " embedded-narrow";
             } else {
               $media_class .= " embedded-right";
             }
