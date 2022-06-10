@@ -8,6 +8,9 @@ config:
   edge: false
   cache: false
   composer_version: 2
+proxy:
+  solr:
+    - solr.lndo.site:8983
 services:
   appserver:
     build_as_root:
@@ -42,6 +45,11 @@ services:
       - /bin/sh -c "adduser www-data dialout"
       - /bin/sh -c "adduser node dialout"
       - /bin/sh -c "chmod -R 777 /var/www"
+  solr:
+    type: solr:8
+    portforward: true
+    config:
+      dir: private/solr-conf
 
 tooling:
   drush:
@@ -166,3 +174,11 @@ tooling:
       - /bin/sh -c "cp /app/cop_ca_*.crt /usr/local/share/ca-certificates/"
       - update-ca-certificates
     user: root
+  reindex:
+    description: CUSTOM Reindex the Solr searcher
+    service: appserver
+    cmd: 
+      - echo "Reindexing the Solr server... (this might take several minutes; use 'lando reindex &' to run the command in the background)"
+      - drush --root=/app/web search-api:reset-tracker 
+      - drush --root=/app/web search-api:index > /dev/null 2>&1
+      - echo "Done reindexing the Solr server."
