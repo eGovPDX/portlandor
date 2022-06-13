@@ -1,50 +1,37 @@
 <?php
 
-namespace Drupal\fitbit_views_example\Plugin\views\query;
+namespace Drupal\portland_zendesk\Plugin\views\query;
 
 use Drupal\views\Plugin\views\query\QueryPluginBase;
 use Drupal\views\ViewExecutable;
 use Drupal\portland_zendesk\Client\ZendeskClient;
 use Drupal\views\ResultRow;
+use Drupal\Core\Form\FormStateInterface;
 
 /**
- * Fitbit views query plugin which wraps calls to the Fitbit API in order to
+ * Zendesk views query plugin which wraps calls to the Zendesk Tickets API in order to
  * expose the results to views.
  *
  * @ViewsQuery(
- *   id = "fitbit",
- *   title = @Translation("Fitbit"),
- *   help = @Translation("Query against the Fitbit API.")
+ *   id = "zendesk",
+ *   title = @Translation("Zendesk"),
+ *   help = @Translation("Query against the Zendeks Tickets API.")
  * )
  */
-class Fitbit extends QueryPluginBase {
+class Zendesk extends QueryPluginBase {
 
   /**
    * {@inheritdoc}
    */
   public function execute(ViewExecutable $view) {
 
-    // if ($access_tokens = $this->fitbitAccessTokenManager->loadMultipleAccessToken()) {
-    //   $index = 0;
-    //   foreach ($access_tokens as $uid => $access_token) {
-    //     if ($data = $this->fitbitClient->getResourceOwner($access_token)) {
-    //       $data = $data->toArray();
-    //       $row['display_name'] = $data['displayName'];
-    //       $row['average_daily_steps'] = $data['averageDailySteps'];
-    //       $row['avatar'] = $data['avatar'];
-    //       $row['height'] = $data['height'];
-    //       // 'index' key is required.
-    //       $row['index'] = $index++;
-    //       $view->result[] = new ResultRow($row);
-    //     }
-    //   }
-    // }
-
     $client = new ZendeskClient();
     // $response_tickets = $client->tickets()->findAll();
     // $response_tickets = $client->tickets()->findAll(['form' => '6499767163543']);
 
-    $response = $client->search()->find('type:ticket status:open form:6499767163543', ['sort_by' => 'updated_at']);
+    $query = $view->query->options['ticket_query'];
+
+    $response = $client->search()->find($query, ['sort_by' => 'updated_at']);
     $tickets = $response->results;
     $index = 0;
 
@@ -75,5 +62,29 @@ class Fitbit extends QueryPluginBase {
   public function addField($table, $field, $alias = '', $params = array()) {
     return $field;
   }
+
+  /**
+   * {@inheritdoc}
+   */
+  protected function defineOptions() {
+    $options = parent::defineOptions();
+    $options['ticket_query'] = ['default' => 'type:ticket status:open form:6499767163543'];
+    return $options;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function buildOptionsForm(&$form, FormStateInterface $form_state) {
+    $form['ticket_query'] = [
+      '#type' => 'textfield',
+      '#title' => $this->t('Zendesk Search API query string'),
+      '#default_value' => $this->options['ticket_query'],
+      '#description' => $this->t('Use the Zendesk Search API query string needed to display the desired results. This query is used in place of view filters. Example: "type:ticket status:open form:6499767163543"'),
+    ];
+    parent::buildOptionsForm($form, $form_state);
+  }
+
+
 
 }
