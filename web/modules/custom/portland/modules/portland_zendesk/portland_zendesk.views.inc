@@ -67,14 +67,14 @@ function portland_zendesk_views_data() {
     'title' => t('Ticket location latitude'),
     'help' => t('The latitude coordinate associated with the ticket.'),
     'field' => [
-      'id' => 'numeric',
+      'id' => 'standard',
     ],
   ];
   $data['zendesk_ticket']['custom_location_lon'] = [
     'title' => t('Ticket location longitude'),
     'help' => t('The longitude coordinate associated with the ticket.'),
     'field' => [
-      'id' => 'numeric',
+      'id' => 'standard',
     ],
   ];
   $data['zendesk_ticket']['custom_address'] = [
