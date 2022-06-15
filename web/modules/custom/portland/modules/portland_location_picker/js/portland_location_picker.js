@@ -26,6 +26,8 @@
         const DEFAULT_ZOOM_VERIFIED = 18;
         const ZOOM_POSITION = 'topright';
         const NOT_A_PARK = "You selected park or natural area as the property type, but no park data was found for the selected location. If you believe this is a valid location, please zoom in to find the park on the map, click to select a location, and continue to submit your report.";
+        const OPEN_ISSUE_MESSAGE = "If this issue is what you came here to report, there's no need to report it again.";
+        const SOLVED_ISSUE_MESSAGE = "This issue was reported as recently resolved. If that's not the case, or the issue has reoccured, please submit a new report.";
   
         var request = new XMLHttpRequest();
         var map;
@@ -207,6 +209,14 @@
               shadowAnchor: [0, 0],  // the same for the shadow
               popupAnchor:  [0, -41] // point from which the popup should open relative to the iconAnchor
             });
+            var marker_solved = L.icon({
+              iconUrl: '/modules/custom/portland/modules/portland_location_picker/images/map_marker_incident_solved.png',
+              iconSize:     [25, 41], // size of the icon
+              shadowSize:   [0, 0], // size of the shadow
+              iconAnchor:   [13, 41], // point of the icon which will correspond to marker's location
+              shadowAnchor: [0, 0],  // the same for the shadow
+              popupAnchor:  [0, -41] // point from which the popup should open relative to the iconAnchor
+            });
             // incident is the default layer type. if layerType might be something else, add logic here
             // to provide the appropriate marker.
   
@@ -215,19 +225,22 @@
               url: url, success: function (response) {
                 geoJsonLayer = L.geoJSON(response, { 
                   pointToLayer: function(feature,latlng){
-                    return L.marker(latlng,{icon: marker});
+                    if (feature.properties.ticket_status == "open") { return L.marker(latlng,{icon: marker}); }
+                    if (feature.properties.ticket_status == "solved") { return L.marker(latlng,{icon: marker_solved}); }
                   },
                   onEachFeature: function (feature, layer) {
                     popupOptions = { maxWidth: 250 };
-                    layer.bindPopup("<p><b>" + feature.properties.name + "</b><br>Status: " + feature.properties.ticket_status + "<br>Reported: " + feature.properties.ticket_created_date + "</p>", popupOptions);
+                    var message = feature.properties.ticket_status == "open" ? OPEN_ISSUE_MESSAGE : SOLVED_ISSUE_MESSAGE;
+                    layer.bindPopup(`<p><b>${feature.properties.name}</b><br>Report ID: ${feature.properties.ticket_id}<br>Status: ${feature.properties.ticket_status}<br>Reported: ${feature.properties.ticket_created_date}</p><p><em>${message}</em></p>`, popupOptions);
                   }
                  });
                  map.on('zoomend', handleZoomEndShowGeoJsonLayer);
               }
             });
           }
-  
         }
+
+        
   
         // EVENT HANDLERS ///////////////////////////////
   
@@ -309,18 +322,17 @@
           if (zoomlevel  < DEFAULT_ZOOM_CLICK-1){
               if (map.hasLayer(geoJsonLayer)) {
                   map.removeLayer(geoJsonLayer);
-              } else {
-                  console.log("no point layer active");
               }
           }
           if (zoomlevel >= DEFAULT_ZOOM_CLICK-1){
-              if (map.hasLayer(geoJsonLayer)){
-                  console.log("layer already added");
-              } else {
+              if (!map.hasLayer(geoJsonLayer)){
                   map.addLayer(geoJsonLayer);
               }
           }
-          console.log("Current Zoom Level =" + zoomlevel)
+        }
+
+        function handleStillThereClick(id) {
+          alert('Still there! ' + id);
         }
   
         // HELPER FUNCTIONS ///////////////////////////////

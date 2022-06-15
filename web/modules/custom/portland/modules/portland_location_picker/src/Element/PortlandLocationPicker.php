@@ -161,6 +161,7 @@ class PortlandLocationPicker extends WebformCompositeBase {
       '#type' => 'markup',
       '#id' => 'location_map',
       '#title' => 'Location marker on map',
+      '#description' => 'Click anywhere on the map to set a marker.',
       '#title_display' => 'invisible',
       '#markup' => '<div id="location_map_container" class="location-map"></div>',
       '#states' => [
