@@ -41,8 +41,8 @@ class Zendesk extends QueryPluginBase {
       $row['ticket_subject'] = $ticket->subject;
       $row['ticket_description'] = $ticket->description;
       $row['ticket_priority'] = $ticket->priority;
-      $row['ticket_created_date'] = $ticket->created_at;
-      $row['ticket_updated_date'] = $ticket->updated_at;
+      $row['ticket_created_date'] = date("U", strtotime($ticket->created_at));
+      $row['ticket_updated_date'] = date("U", strtotime($ticket->updated_at));
 
       $row['custom_location_lat'] = array_column($ticket->custom_fields, null, 'id')['5581480390679']->value;
       $row['custom_location_lon'] = array_column($ticket->custom_fields, null, 'id')['5581490332439']->value;

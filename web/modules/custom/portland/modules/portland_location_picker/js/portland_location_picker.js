@@ -29,6 +29,7 @@
   
         var request = new XMLHttpRequest();
         var map;
+        var geoJsonLayer;
         var marker;
         var locationErrorShown;
         var locateControl;
@@ -54,6 +55,7 @@
   
         var layerUrl = drupalSettings.webform.portland_location_picker.geojson_layer;
         var layerBehavior = drupalSettings.webform.portland_location_picker.geojson_layer_behavior;
+        var layerType = drupalSettings.webform.portland_location_picker.geojson_layer_type;
   
   
         var LocateControl = L.Control.extend({
@@ -200,13 +202,31 @@
             var graffitiJson = '';
             var graffitiLayer = L.geoJSON().addTo(map);
             graffitiLayer.addData(graffitiJson);
+
+            var marker = L.icon({
+              iconUrl: '/modules/custom/portland/modules/portland_location_picker/images/map_marker_incident.png',
+              iconSize:     [25, 41], // size of the icon
+              shadowSize:   [0, 0], // size of the shadow
+              iconAnchor:   [13, 41], // point of the icon which will correspond to marker's location
+              shadowAnchor: [0, 0],  // the same for the shadow
+              popupAnchor:  [-3, -76] // point from which the popup should open relative to the iconAnchor
+            });
+            // incident is the default layer type. if layerType might be something else, add logic here
+            // to provide the appropriate marker.
   
             var url = "/api/tickets/graffiti";
             $.ajax({
               url: url, success: function (response) {
-                var graffitiLayer = L.geoJSON().addTo(map);
-                graffitiLayer.addData(response);
-                L.geoJson(response).addTo(map);
+                geoJsonLayer = L.geoJSON(response, { 
+                  pointToLayer: function(feature,latlng){
+                    return L.marker(latlng,{icon: marker});
+                  },
+                  onEachFeature: function (feature, layer) {
+                    popupOptions = { maxWidth: 250 };
+                    layer.bindPopup("<p><b>" + feature.properties.name + "</b><br>Status: " + feature.properties.ticket_status + "<br>Reported: " + feature.properties.ticket_created_date + "</p>", popupOptions);
+                  }
+                 });
+                 map.on('zoomend', handleZoomEndShowGeoJsonLayer);
               }
             });
           }
@@ -286,6 +306,25 @@
           statusModal.dialog('close');
           showStatusModal(message);
           locateControlContaier.style.backgroundImage = 'url("/modules/custom/portland/modules/portland_location_picker/images/map_locate.png")';
+        }
+
+        function handleZoomEndShowGeoJsonLayer() {
+          var zoomlevel = map.getZoom();
+          if (zoomlevel  < DEFAULT_ZOOM_CLICK){
+              if (map.hasLayer(geoJsonLayer)) {
+                  map.removeLayer(geoJsonLayer);
+              } else {
+                  console.log("no point layer active");
+              }
+          }
+          if (zoomlevel >= DEFAULT_ZOOM_CLICK){
+              if (map.hasLayer(geoJsonLayer)){
+                  console.log("layer already added");
+              } else {
+                  map.addLayer(geoJsonLayer);
+              }
+          }
+          console.log("Current Zoom Level =" + zoomlevel)
         }
   
         // HELPER FUNCTIONS ///////////////////////////////
