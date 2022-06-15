@@ -237,6 +237,14 @@ class PortlandLocationPicker extends WebformCompositeBase {
       '#id' => 'location_lon',
       '#attributes' => ['class' => ['location-lon','visually-hidden']],
     ];
+    $elements['geojson_layer'] = [
+      '#type' => 'hidden',
+      '#id' => 'geojson_layer',
+    ];
+    $elements['geojson_layer_behavior'] = [
+      '#type' => 'hidden',
+      '#id' => 'geojson_layer_behavior',
+    ];
 
     return $elements;
   }
