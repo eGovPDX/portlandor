@@ -26,8 +26,6 @@ class Zendesk extends QueryPluginBase {
   public function execute(ViewExecutable $view) {
 
     $client = new ZendeskClient();
-    // $response_tickets = $client->tickets()->findAll();
-    // $response_tickets = $client->tickets()->findAll(['form' => '6499767163543']);
 
     $query = $view->query->options['ticket_query'];
 

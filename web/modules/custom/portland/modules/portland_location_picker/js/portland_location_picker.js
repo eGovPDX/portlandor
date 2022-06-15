@@ -205,7 +205,7 @@
               shadowSize:   [0, 0], // size of the shadow
               iconAnchor:   [13, 41], // point of the icon which will correspond to marker's location
               shadowAnchor: [0, 0],  // the same for the shadow
-              popupAnchor:  [-3, -76] // point from which the popup should open relative to the iconAnchor
+              popupAnchor:  [0, -41] // point from which the popup should open relative to the iconAnchor
             });
             // incident is the default layer type. if layerType might be something else, add logic here
             // to provide the appropriate marker.
@@ -306,14 +306,14 @@
 
         function handleZoomEndShowGeoJsonLayer() {
           var zoomlevel = map.getZoom();
-          if (zoomlevel  < DEFAULT_ZOOM_CLICK){
+          if (zoomlevel  < DEFAULT_ZOOM_CLICK-1){
               if (map.hasLayer(geoJsonLayer)) {
                   map.removeLayer(geoJsonLayer);
               } else {
                   console.log("no point layer active");
               }
           }
-          if (zoomlevel >= DEFAULT_ZOOM_CLICK){
+          if (zoomlevel >= DEFAULT_ZOOM_CLICK-1){
               if (map.hasLayer(geoJsonLayer)){
                   console.log("layer already added");
               } else {
