@@ -198,10 +198,6 @@
           });
   
           if (layerUrl) {
-            // create graffiti reports layer
-            var graffitiJson = '';
-            var graffitiLayer = L.geoJSON().addTo(map);
-            graffitiLayer.addData(graffitiJson);
 
             var marker = L.icon({
               iconUrl: '/modules/custom/portland/modules/portland_location_picker/images/map_marker_incident.png',
