@@ -182,4 +182,4 @@ if (getenv('IS_DDEV_PROJECT') == 'true' && is_readable($ddev_settings)) {
 $settings['s3fs.use_s3_for_public'] = TRUE;
 $settings['s3fs.upload_as_private'] = TRUE;
 
-$settings['php_storage']['twig']['directory'] = '../storage/php';
+$settings['php_storage']['twig']['directory'] = '/tmp/php';
