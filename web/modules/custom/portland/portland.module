@@ -1142,6 +1142,26 @@ function portland_mail($key, &$message, $params)
       $message['body'][] = $params['message'];
       $message['headers']['Content-Type'] = 'text/html; charset=UTF-8; format=flowed; delsp=yes';
       break;
+    case 'group_admin':
+      $user = \Drupal::currentUser()->getAccount();
+      $user_name = $user->name;
+      $user_email = $user->getEmail();
+      
+      if (array_key_exists('group', $params)) {
+        $group = $params['group'];
+        $group_path = $params['group_path'];
+
+        $body_metadata = "<p><em>Message sent by $user_name via group <a href=\"$group_path\">$group</a></em></p>";
+      } else {
+        $body_metadata = "<p><em>Message sent by $user_name</em></p>";
+      }
+      
+      $message['from'] = \Drupal::config('system.site')->get('mail');
+      $message['subject'] = t('@subject', array('@subject' => $params['subject']), $options);
+      $message['body'][] = $body_metadata . $params['message'];
+      $message['headers']['Reply-To'] = "\"$user_name\" <$user_email>";
+      $message['headers']['Content-Type'] = 'text/html; charset=UTF-8; format=flowed; delsp=yes';
+    break;
   }
 }
 
@@ -1151,20 +1171,22 @@ function portland_mail($key, &$message, $params)
 function portland_mail_alter(&$message)
 {
   // id = module + key
-  if ($message['id'] == "portland_portland_notify_reviewers") {
-    // Make the email appear to be from the current Editor
-    $user = \Drupal::currentUser()->getAccount();
-    if ($user->isAuthenticated()) {
-      $user_name = $user->name;
-      $user_email = $user->getEmail();
-    }
-    // If the user is Anonymouse when running Cron
-    else {
-      $config = \Drupal::config('system.site');
-      $user_name = $config->get('name');
-      $user_email = $config->get('mail');
-    }
-    $message['headers']['Reply-To'] = "\"$user_name\" <$user_email>";
+  switch ($message['id']) {
+    case "portland_portland_notify_reviewers":
+      // Make the email appear to be from the current Editor
+      $user = \Drupal::currentUser()->getAccount();
+      if ($user->isAuthenticated()) {
+        $user_name = $user->name;
+        $user_email = $user->getEmail();
+      }
+      // If the user is Anonymouse when running Cron
+      else {
+        $config = \Drupal::config('system.site');
+        $user_name = $config->get('name');
+        $user_email = $config->get('mail');
+      }
+      $message['headers']['Reply-To'] = "\"$user_name\" <$user_email>";
+      break;
   }
 }
 
