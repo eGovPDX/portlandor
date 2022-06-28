@@ -527,12 +527,15 @@ function portland_set_extended_title_for_group_views(&$vars)
 function portland_generate_extended_title_for_group_views($orig_title, $route_match)
 {
   $site_name = \Drupal::config('system.site')->get('name');
-
   $path = $route_match->getRouteObject()->getPath();
   // If this is a group path, add group name to title
   if ($path != null && (substr_compare($path, "/group", 0, strlen("/group")) === 0)) {
     $group_id = $route_match->getParameter('group') ?? $route_match->getParameter('arg_0'); // sometimes a named group parameter is used in the path, othertimes it's a generic parameter
-    $group_entity = Drupal\group\Entity\Group::load($group_id);
+    // On some group pages (e.g. revisions), the group route param
+    // is actually an instance of the group rather than the ID.
+    $group_entity = $group_id instanceof Drupal\group\Entity\Group
+                      ? $group_id
+                      : Drupal\group\Entity\Group::load($group_id);
     if (isset($group_entity)) {
       $page_title = $orig_title;
       $group_title = $group_entity->label();
@@ -627,7 +630,7 @@ function portland_search_api_solr_query_alter(\Solarium\QueryType\Select\Query\Q
 {
   // Only modify the query for site search
   $search_id = $query->getSearchId();
-  if (strpos($search_id, "search_api_page:search_portland_gov") !== 0 && 
+  if (strpos($search_id, "search_api_page:search_portland_gov") !== 0 &&
   strpos($search_id, "search_api_autocomplete:search_portland_gov") !== 0) {
     return;
   }
@@ -787,7 +790,7 @@ function portland_form_alter(&$form, &$form_state, $form_id)
  */
 function _validate_document(&$form, \Drupal\Core\Form\FormStateInterface $form_state)
 {
-  $is_embedded_document_form_with_efiles = $form_state->hasValue("inline_entity_form") && 
+  $is_embedded_document_form_with_efiles = $form_state->hasValue("inline_entity_form") &&
     ($form_state->getValue("inline_entity_form")["field_efiles_link"] != null);
   if ($form_state->hasValue('field_efiles_link') || $is_embedded_document_form_with_efiles) {
     // DO NOT validate when the user clicks on the remove document button.
@@ -797,7 +800,7 @@ function _validate_document(&$form, \Drupal\Core\Form\FormStateInterface $form_s
     // Get values from the inline entity form
     if($is_embedded_document_form_with_efiles) {
       // Can't have both uploaded document and eFiles
-      if( $form_state->getValue("inline_entity_form")["field_efiles_link"][0]['uri'] && 
+      if( $form_state->getValue("inline_entity_form")["field_efiles_link"][0]['uri'] &&
         count($form_state->getValue("inline_entity_form")["field_document"][0]['fids']) !== 0) {
         $form_state->setErrorByName('field_document', t('Cannot have both uploaded document and eFiles link'));
         return;
@@ -887,8 +890,8 @@ function _validate_document(&$form, \Drupal\Core\Form\FormStateInterface $form_s
     } else {
       $document = $form_state->getValue('field_document');
       // The document field can't be empty when the eFile link is empty
-      if ($is_embedded_document_form_with_efiles) { 
-        if( $form_state->getValue("inline_entity_form")["field_efiles_link"][0]['uri'] == null && 
+      if ($is_embedded_document_form_with_efiles) {
+        if( $form_state->getValue("inline_entity_form")["field_efiles_link"][0]['uri'] == null &&
             count($form_state->getValue("inline_entity_form")["field_document"][0]['fids']) === 0
         ) {
           $form_state->setErrorByName('field_document', t('Please upload a file or add an external file link'));
@@ -1289,7 +1292,7 @@ function portland_preprocess_views_view_field(&$variables)
     if ($variables['view']->id() == 'user_updated_recently') {
       $field = $variables["field"];
       if ($field->field == 'nothing') {
-        // The User EVA to display group memberships is not rendered 
+        // The User EVA to display group memberships is not rendered
         // when sending email notification. Render the view manually here.
         $theview = \Drupal\views\Views::getView('groups_for_a_user');
         // Set the display machine id
