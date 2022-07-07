@@ -68,7 +68,7 @@ describe('SuperAdmin user test', () => {
         await page.goto(`${HOME_PAGE}/admin/config/development/configuration`);
         await page.waitForSelector('.region-content');
         text_content = await page.evaluate(() => document.querySelector('.region-content').textContent);
-        expect(text_content).toEqual(expect.stringContaining('There are no configuration changes to import.'));
+        expect(text_content).toEqual(expect.stringContaining('The staged configuration is identical to the active configuration.'));
       } catch (e) {
         // Capture the screenshot when test fails and re-throw the exception
         await page.screenshot({
