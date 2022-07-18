@@ -220,7 +220,6 @@
             // incident is the default layer type. if layerType might be something else, add logic here
             // to provide the appropriate marker.
   
-            //var url = "/api/tickets/graffiti";
             $.ajax({
               url: layerUrl, success: function (response) {
                 geoJsonLayer = L.geoJSON(response, { 
