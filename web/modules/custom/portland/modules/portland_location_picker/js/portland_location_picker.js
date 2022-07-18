@@ -220,9 +220,8 @@
             // incident is the default layer type. if layerType might be something else, add logic here
             // to provide the appropriate marker.
   
-            var url = "/api/tickets/graffiti";
             $.ajax({
-              url: url, success: function (response) {
+              url: layerUrl, success: function (response) {
                 geoJsonLayer = L.geoJSON(response, { 
                   pointToLayer: function(feature,latlng){
                     if (feature.properties.ticket_status == "open") { return L.marker(latlng,{icon: marker}); }
@@ -231,7 +230,11 @@
                   onEachFeature: function (feature, layer) {
                     popupOptions = { maxWidth: 250 };
                     var message = feature.properties.ticket_status == "open" ? OPEN_ISSUE_MESSAGE : SOLVED_ISSUE_MESSAGE;
-                    layer.bindPopup(`<p><b>${feature.properties.name}</b><br>Report ID: ${feature.properties.ticket_id}<br>Status: ${feature.properties.ticket_status}<br>Reported: ${feature.properties.ticket_created_date}</p><p><em>${message}</em></p>`, popupOptions);
+                    var description = "";
+                    if (feature.properties.custom_graffiti_description) {
+                      description = "<p>Description: " + feature.properties.custom_graffiti_description + "</p>";
+                    }
+                    layer.bindPopup(`<p><b>${feature.properties.name}</b><br>Report ID: ${feature.properties.ticket_id}<br>Status: ${feature.properties.ticket_status}<br>Reported: ${feature.properties.ticket_created_date}</p>${description}<p><em>${message}</em></p>`, popupOptions);
                   }
                  });
                  map.on('zoomend', handleZoomEndShowGeoJsonLayer);
