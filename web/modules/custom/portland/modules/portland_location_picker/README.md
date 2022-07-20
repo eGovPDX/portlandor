@@ -60,3 +60,36 @@ The following sub-fields are available:
 * location_lon
 
 If the address data needs to be parsed further, the widget can be refactored to include hidden sub-fields for more granular data points, such as city, zipcode, jurisdiction, etc.
+
+## Custom configuration
+
+The sub-elements in the location widget can be manipulated using the Custom Properties field in the element's Advanced tab. The widget has some built-in logic for showing/hiding elements that may not be appropriate for all conditions. For example, to always display the clickable map or Address sub-element, they can be forcibly set to be visible. The custom properties are entered in YAML format:
+
+`location_address__states:
+  visible: true
+location_map__states:
+  visible: true`
+
+## Adding custom GeoJSON data layers
+
+This partially completed prototype functionality allows geoJSON features to be displayed in the location widget's map. It's preferable to use a Views geoJSON feed so that the data is cached. 
+
+`geojson_layer: /api/tickets/graffiti
+geojson_layer_behavior: informational
+geojson_layer_type: incident`
+
+In the above example, the **geojson_layer** value is the URL of the geoJSON view that displays open graffiti report tickets. The geojson_layer_behavior and geojson_layer_type values are meant to control how the elements are displayed on the map. However, the widget is currently hard-coded to display graffiti reports. When additional layer types are added, conditional logic will need to be added to appropriately display the new data.
+
+TODO: Finish this functionality. Currently only the geojson_layer value is used. The display of the data is hard coded.
+
+- **geojson_layer** - The URL of the geoJSON data feed
+
+- **geojson_layer_behavior** - Determines how the user interacts with the layer
+  - *informational*
+  - *selection* - Allows user to select a feature as the location being reported
+
+- **geojson_layer_type** - The type of data being displayed
+  - *incident*
+  - *feature*
+
+- **geojson_feature_icon** - The URL of the icon to be used for each instance of the feature

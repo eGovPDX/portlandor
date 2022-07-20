@@ -56,8 +56,15 @@
         });
   
         var layerUrl = drupalSettings.webform.portland_location_picker.geojson_layer;
+
+        // TODO: possible layer behaviors are informational, selection
         var layerBehavior = drupalSettings.webform.portland_location_picker.geojson_layer_behavior;
+
+        // TODO: possible layer types: incident, asset
         var layerType = drupalSettings.webform.portland_location_picker.geojson_layer_type;
+
+        // TODO: additional possible layer properties
+        var featureIcon = drupalSettings.webform.portland_location_picker.geojson_feature_icon;
   
   
         var LocateControl = L.Control.extend({
