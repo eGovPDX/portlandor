@@ -57,7 +57,7 @@
   
         var layerUrl = drupalSettings.webform.portland_location_picker.geojson_layer;
 
-        // TODO: possible layer behaviors are informational, selection
+        // TODO: possible layer behaviors: informational, selection
         var layerBehavior = drupalSettings.webform.portland_location_picker.geojson_layer_behavior;
 
         // TODO: possible layer types: incident, asset
