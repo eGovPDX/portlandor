@@ -52,7 +52,7 @@ class PortlandLocationPicker extends WebformCompositeBase {
         'street' => t('Along ANY street, sidewalk, highway, trail, or other public right-of-way'),
         'private' => t('On private property, such as at a residence or business'),
         'park' => t('Within a public park or natural area'),
-        'waterway' => t('On a river, stream, or other waterway'),
+        'waterway' => t('Along a river, stream, or other waterway'),
         'other' => t('I\'m not sure')
       ],
       '#options_display' => 'one_column',
@@ -161,6 +161,7 @@ class PortlandLocationPicker extends WebformCompositeBase {
       '#type' => 'markup',
       '#id' => 'location_map',
       '#title' => 'Location marker on map',
+      '#description' => 'Click anywhere on the map to set a marker.',
       '#title_display' => 'invisible',
       '#markup' => '<div id="location_map_container" class="location-map"></div>',
       '#states' => [
@@ -236,6 +237,14 @@ class PortlandLocationPicker extends WebformCompositeBase {
       '#title_display' => 'invisible',
       '#id' => 'location_lon',
       '#attributes' => ['class' => ['location-lon','visually-hidden']],
+    ];
+    $elements['geojson_layer'] = [
+      '#type' => 'hidden',
+      '#id' => 'geojson_layer',
+    ];
+    $elements['geojson_layer_behavior'] = [
+      '#type' => 'hidden',
+      '#id' => 'geojson_layer_behavior',
     ];
 
     return $elements;
