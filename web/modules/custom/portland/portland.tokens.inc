@@ -58,9 +58,11 @@ function portland_tokens($type, $tokens, array $data = array(), array $options =
   // Text format tokens.
   if ($type == 'server') {
     foreach ($tokens as $name => $original) {
-      $replacements[$original] = $_SERVER[$name];
-      if ($sanitize) {
-        $replacements[$original] = filter_xss($replacements[$original]);
+      if (array_key_exists($name, $_SERVER)) {
+        $replacements[$original] = $_SERVER[$name];
+        if ($sanitize) {
+          $replacements[$original] = filter_xss($replacements[$original]);
+        }
       }
     }
   }
