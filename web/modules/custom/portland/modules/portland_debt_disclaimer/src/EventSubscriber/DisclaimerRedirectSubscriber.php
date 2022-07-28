@@ -73,7 +73,9 @@ class DisclaimerRedirectSubscriber implements EventSubscriberInterface {
    */
   public static function getSubscribedEvents() {
     return [
-      KernelEvents::REQUEST => "checkForRedirect",
+      // We want to redirect before the dynamic page cache is hit, so we need a priority > 27
+      // https://drupal.stackexchange.com/a/201293
+      KernelEvents::REQUEST => ["checkForRedirect", 28],
     ];
   }
 }
