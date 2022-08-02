@@ -94,14 +94,23 @@ class PortlandLocationPicker extends WebformCompositeBase {
   public function prepare(array &$element, WebformSubmissionInterface $webform_submission = NULL) {
     parent::prepare($element, $webform_submission);
 
-    $layerUrl = $element['#geojson_layer'];
-    $layerBehavior = $element['#geojson_layer_behavior'];
-    $layerType = $element['#geojson_layer_type'];
+    $primaryLayerSource = array_key_exists('#primary_layer_source', $element) ? $element['#primary_layer_source'] : "";
+    $incidentsLayerSource = array_key_exists('#incidents_layer_source', $element) ? $element['#incidents_layer_source'] : "";
+    $primaryLayerBehavior = array_key_exists('#primary_layer_behavior', $element) ? $element['#primary_layer_behavior'] : "";
+    $primaryLayerType = array_key_exists('#primary_layer_type', $element) ? $element['#primary_layer_type'] : "";
+    $primaryMarker = array_key_exists('#primary_marker', $element) ? $element['#primary_marker'] : "";
+    $selectedMarker = array_key_exists('#selected_marker', $element) ? $element['#selected_marker'] : "";
+    $incidentMarker = array_key_exists('#incident_marker', $element) ? $element['#incident_marker'] : "";
+    $disablePopup = array_key_exists('#disable_popup', $element) && $element['#disable_popup'] ? 1 : 0;
 
-    $element['#attached']['drupalSettings']['webform']['portland_location_picker']['geojson_layer'] = $layerUrl;
-    $element['#attached']['drupalSettings']['webform']['portland_location_picker']['geojson_layer_behavior'] = $layerBehavior;
-    $element['#attached']['drupalSettings']['webform']['portland_location_picker']['geojson_layer_type'] = $layerType;
-
+    $element['#attached']['drupalSettings']['webform']['portland_location_picker']['primary_layer_source'] = $primaryLayerSource;
+    $element['#attached']['drupalSettings']['webform']['portland_location_picker']['incidents_layer_source'] = $incidentsLayerSource;
+    $element['#attached']['drupalSettings']['webform']['portland_location_picker']['primary_layer_behavior'] = $primaryLayerBehavior;
+    $element['#attached']['drupalSettings']['webform']['portland_location_picker']['primary_layer_type'] = $primaryLayerType;
+    $element['#attached']['drupalSettings']['webform']['portland_location_picker']['primary_marker'] = $primaryMarker;
+    $element['#attached']['drupalSettings']['webform']['portland_location_picker']['selected_marker'] = $selectedMarker;
+    $element['#attached']['drupalSettings']['webform']['portland_location_picker']['incident_marker'] = $incidentMarker;
+    $element['#attached']['drupalSettings']['webform']['portland_location_picker']['disable_popup'] = $disablePopup;
   }
 
 }
