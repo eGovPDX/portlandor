@@ -160,8 +160,9 @@ class PortlandLocationPicker extends WebformCompositeBase {
     $elements['location_map'] = [
       '#type' => 'markup',
       '#id' => 'location_map',
-      '#title' => 'Location marker on map',
-      '#description' => 'Click anywhere on the map to set a marker.',
+      '#title' => 'Location map',
+      '#description' => '',
+      '#description_display' => 'before',
       '#title_display' => 'invisible',
       '#markup' => '<div id="location_map_container" class="location-map"></div>',
       '#states' => [
@@ -175,6 +176,12 @@ class PortlandLocationPicker extends WebformCompositeBase {
           [':input[name="report_location[location_type]"]' => ['value' => 'other']],
         ],
       ],
+    ];
+    $elements['selected_asset_display'] = [
+      '#type' => 'markup',
+      '#title' => t('Selected Asset'),
+      '#title_display' => 'invisible',
+      '#markup' => '<div id="selected_asset" class="visually-hidden"><span id="selected_asset_label">Selected</span><span id="selected_asset_name"></span></div>',
     ];
     $elements['suggestions_modal'] = [
       '#type' => 'markup',
@@ -237,6 +244,13 @@ class PortlandLocationPicker extends WebformCompositeBase {
       '#title_display' => 'invisible',
       '#id' => 'location_lon',
       '#attributes' => ['class' => ['location-lon','visually-hidden']],
+    ];
+    $elements['location_asset_id'] = [
+      '#type' => 'textfield',
+      '#title' => t('Asset ID'),
+      '#title_display' => 'invisible',
+      '#id' => 'location_asset_id',
+      '#attributes' => ['class' => ['visually-hidden']],
     ];
     $elements['geojson_layer'] = [
       '#type' => 'hidden',

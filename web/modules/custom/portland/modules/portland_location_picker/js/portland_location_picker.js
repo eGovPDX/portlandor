@@ -39,13 +39,14 @@
         var incidentsLayerMarkerGroup;
         var primaryFeatures;
         var incidentsFeatures;
-        var marker;
+        var addressMarker;
         var locationErrorShown;
         var locateControl;
         var locMarker;
         var locCircle;
         var locateControlContaier;
         var clickedMarker;
+        var assetCount;
   
         // var response; // = { "status": "success", "spatialReference": { "wkid": 102100, "latestWkid": 3857 }, "candidates": [{ "location": { "x": -1.3645401627E7, "y": 5708911.764 }, "attributes": { "sp_x": 7669661.490, "sp_y": 694349.134, "city": "PORTLAND", "jurisdiction": "PORTLAND", "state": "OREGON", "lon": -122.57872839300, "id": 40159, "type": "intersection", "lat": 45.55241828270, "county": "MULTNOMAH" }, "address": "NE 82ND AVE AND NE SANDY BLVD", "extent": { "ymin": 5708911.514, "ymax": 5708912.014, "xmin": -1.3645401877E7, "xmax": -1.3645401377E7 } }] };
         var suggestionsModal;
@@ -73,6 +74,8 @@
         var selectedMarker = drupalSettings.webform.portland_location_picker.selected_marker ? drupalSettings.webform.portland_location_picker.selected_marker : '/modules/custom/portland/modules/portland_location_picker/images/map_marker_default_selected.png';
         var incidentMarker = drupalSettings.webform.portland_location_picker.incident_marker ? drupalSettings.webform.portland_location_picker.incident_marker : '/modules/custom/portland/modules/portland_location_picker/images/map_marker_incident.png';
         var disablePopup = drupalSettings.webform.portland_location_picker.disable_popup;
+        var verifyButtonText = drupalSettings.webform.portland_location_picker.verify_button_text ? drupalSettings.webform.portland_location_picker.verify_button_text : 'Verify';
+        var primaryFeatureName = drupalSettings.webform.portland_location_picker.primary_feature_name ? drupalSettings.webform.portland_location_picker.primary_feature_name : 'asset';
   
         var LocateControl = L.Control.extend({
           options: {
@@ -120,6 +123,20 @@
           if (count > 1) {
             console.log("WARNING: More than one location widget detected. Only one location widget per webform is currently supported. Adding multiples will result in unpredictable behavior.");
           }
+
+          // if select-asset behavior, initialize selected asset text
+          if (primaryLayerBehavior == "selection") {
+            $('#selected_asset_label').text('Selected ' + primaryFeatureName + ': ');
+          }
+
+          // disable form submit when pressing enter on address field
+          $('#location_address').on('keydown', function (e) {
+            if (e.keyCode == 13) {
+              $('#location_verify').click();
+              e.preventDefault();
+              return false;
+            }
+          });
   
           // initialize map ///////////////////////////////////
           var zoomcontrols = new L.control.zoom({ position: ZOOM_POSITION });
@@ -160,7 +177,7 @@
           }
   
           // Set up verify button //////////////////////////////////
-          $('.location-picker-address').after('<input class="btn location-verify button js-form-submit form-submit" type="button" id="location_verify" name="op" value="Verify">');
+          $('.location-picker-address').after(`<input class="btn location-verify button js-form-submit form-submit" type="button" id="location_verify" name="op" value="${verifyButtonText}">`);
           $('.location-picker-address').after('<span class="verified-checkmark address invisible" title="Location is verified!">✓</span>');
           $(document).on('click', '#location_verify', function (e) {
             e.preventDefault();
@@ -235,6 +252,8 @@
               url: primaryLayerSource, success: function (primaryResponse) {
 
                 primaryFeatures = primaryResponse.features;
+                assetCount = primaryFeatures.length;
+                console.log(assetCount + " assets found");
 
                 if (incidentsLayerSource) {
                   // there's an incident (tickets) layer. we'll need to retrieve it, and then do a double
@@ -270,11 +289,13 @@
                             //iconSize = [54, 82];
                             classname = "incident";
                             feature.properties.status = incident.properties.status;
+                            feature.properties.date_reported = incident.properties.date_reported;
                             if (feature.properties.status == "Open") {
                               // only set hasIncident if the status is open; this allows solved but recurred incident to be reproted
                               feature.properties.hasIncident = true;
                             } else {
                               classname += " solved"; 
+                              feature.properties.date_resolved = incident.properties.date_resolved;
                             }
                             if (incidentMarker) {
                               markerIcon = incidentMarker;
@@ -285,7 +306,7 @@
                           }
                         }
 
-                        var marker = L.icon({
+                        var newMarker = L.icon({
                           iconUrl:      markerIcon,
                           iconSize:     iconSize, // size of the icon
                           shadowSize:   [0, 0], // size of the shadow
@@ -295,14 +316,14 @@
                           className:    classname
                         });
 
-                        addMarkerToMap(feature, marker);
+                        addMarkerToMap(feature, newMarker);
 
                       }
                     }
                   });
                 } else {
 
-                  var marker = L.icon({
+                  var newMarker = L.icon({
                     iconUrl:      markerIcon,
                     iconSize:     iconSize, // size of the icon
                     shadowSize:   [0, 0], // size of the shadow
@@ -312,73 +333,15 @@
                   });
         
                   for (var j = 0; j < primaryResponse.features.length; j++) {
-                    addMarkerToMap(primaryResponse.features[j], marker);
+                    addMarkerToMap(primaryResponse.features[j], newMarker);
                   }
                 }
               }
             });
-
-            // // configure marker ///////////////////////////
-
-            // // default icon URL
-            // var iconUrl = DEFAULT_FEATURE_ICON_URL;
-            // // if an icon is provided in the element properties, use it
-            // if (featureIcon != "") {
-            //   iconUrl = featureIcon;
-            // };
-
-            // var marker = L.icon({
-            //   iconUrl: iconUrl,
-            //   iconSize:     [25, 41], // size of the icon
-            //   shadowSize:   [0, 0], // size of the shadow
-            //   iconAnchor:   [13, 41], // point of the icon which will correspond to marker's location
-            //   shadowAnchor: [0, 0],  // the same for the shadow
-            //   popupAnchor:  [0, -41]
-            // });
-
-            // var marker_solved = L.icon({
-            //   iconUrl: iconUrl,
-            //   iconSize:     [25, 41], // size of the icon
-            //   shadowSize:   [0, 0], // size of the shadow
-            //   iconAnchor:   [13, 41], // point of the icon which will correspond to marker's location
-            //   shadowAnchor: [0, 0],  // the same for the shadow
-            //   popupAnchor:  [0, -41], // point from which the popup should open relative to the iconAnchor
-            //   className:    "solved"
-            // });
-  
-            // $.ajax({
-            //   url: layerUrl, success: function (assetResponse) {
-            //     $.ajax({
-            //       url: incidentLayerUrl, success: function (incidentResponse) {
-
-            //       }
-            //     });
-
-            //     geoJsonLayer = L.geoJSON(response1, { 
-            //       pointToLayer: function(feature,latlng){
-            //         // solved marker is only used with zendesk tickets
-            //         if (layerType == "incident" && feature.properties.ticket_status == "solved") { return L.marker(latlng,{icon: marker_solved}); }
-            //         return L.marker(latlng,{icon: marker});
-            //       },
-            //       onEachFeature: function (feature, layer) {
-            //         popupOptions = { maxWidth: 250 };
-            //         var message = feature.properties.ticket_status == "open" ? OPEN_ISSUE_MESSAGE : SOLVED_ISSUE_MESSAGE;
-            //         var description = "";
-            //         if (feature.properties.custom_graffiti_description) {
-            //           description = "<p>Description: " + feature.properties.custom_graffiti_description + "</p>";
-            //         }
-            //         layer.bindPopup(`<p><b>${feature.properties.name}</b><br>Report ID: ${feature.properties.ticket_id}<br>Status: ${feature.properties.ticket_status}<br>Reported: ${feature.properties.ticket_created_date}</p>${description}<p><em>${message}</em></p>`, popupOptions);
-            //       }
-            //      });
-            //      map.on('zoomend', handleZoomEndShowGeoJsonLayer);
-            //   }
-            // });
-
-            // handleZoomEndShowGeoJsonLayer();
           }
         }
 
-        function addMarkerToMap(primaryFeature, marker, incidentFeature = null) {
+        function addMarkerToMap(primaryFeature, addMarker, incidentFeature = null) {
           var addToLayer = primaryFeature.properties.hasIncident ? incidentsLayerMarkerGroup : primaryLayerMarkerGroup;
           
           var newFeature = L.geoJSON(primaryFeature, {
@@ -386,17 +349,16 @@
               return new L.LatLng(coords[0], coords[1]);
             },
             pointToLayer: function (feature, latlng) {
-              return L.marker(latlng, { icon: marker });
+              return L.marker(latlng, { icon: addMarker, iconSize: DEFAULT_ICON_SIZE });
             },
             onEachFeature: function(feature, layer) {
               //if (!disablePopup && feature.properties.status) {
                 popupOptions = { maxWidth: 250 };
-                var name = feature.properties.name ? feature.properties.name : "Asset " + feature.properties.id;
-                var incidentStatus = feature.properties.status ? "<p>Status: " + feature.properties.status + "</p>" : "";
-                var dateReported = feature.properties.date_reported ? "<p>Date Reported: " + feature.properties.date_reported + "</p>" : "";
-                var dateSolved = feature.properties.date_solved ? "<p>Date Solved: " + feature.properties.date_solved + "</p>" : "";
-                //var message = feature.properties.status == "Open" ? OPEN_ISSUE_MESSAGE : SOLVED_ISSUE_MESSAGE;
-                var description = feature.properties.custom_graffiti_description ? "<p>Description: " + feature.properties.custom_graffiti_description + "</p>" : "";
+                // var name = feature.properties.name ? feature.properties.name : "Asset " + feature.properties.id;
+                // var incidentStatus = feature.properties.status ? "<p>Status: " + feature.properties.status + "</p>" : "";
+                // var dateReported = feature.properties.date_reported ? "<p>Date Reported: " + feature.properties.date_reported + "</p>" : "";
+                // //var message = feature.properties.status == "Open" ? OPEN_ISSUE_MESSAGE : SOLVED_ISSUE_MESSAGE;
+                // var description = feature.properties.custom_graffiti_description ? "<p>Description: " + feature.properties.custom_graffiti_description + "</p>" : "";
                 layer.bindPopup(generatePopupContent(feature), popupOptions);
               //}
             }
@@ -414,25 +376,37 @@
 
         function generatePopupContent(feature) {
           var name = feature.properties.name ? feature.properties.name : "Asset " + feature.properties.id;
-          var incidentStatus = feature.properties.status ? "<p>Status: " + feature.properties.status + "</p>" : "";
-          var dateReported = feature.properties.date_reported ? "<p>Date Reported: " + feature.properties.date_reported + "</p>" : "";
-          var dateSolved = feature.properties.date_solved ? "<p>Date Solved: " + feature.properties.date_solved + "</p>" : "";
+          
+          var details = feature.properties.status ? "Status: " + feature.properties.status + "<br>" : "";
+          details += feature.properties.date_reported ? "Date Reported: " + feature.properties.date_reported + "<br>" : "";
+          details += feature.properties.date_resolved ? "Date Solved: " + feature.properties.date_resolved + "<br>" : "";
+          if (details) { details = "<p>" + details + "</p>"; }
+
+          // var incidentStatus = feature.properties.status ? "<p>Status: " + feature.properties.status + "</p>" : "";
+          // var dateReported = feature.properties.date_reported ? "<p>Date Reported: " + feature.properties.date_reported + "</p>" : "";
+          // if (feature.properties.date_resolved) {
+          //   var dateSolved = feature.properties.date_resolved ? "<p>Date Solved: " + feature.properties.date_resolved + "</p>" : "";
+          // }
+          //var dateSolved = feature.properties.date_resolved ? "<p>Date Solved: " + feature.properties.date_resolved + "</p>" : "";
+
           var description = feature.properties.custom_graffiti_description ? "<p>Description: " + feature.properties.custom_graffiti_description + "</p>" : "";
-          return `<p><b>${name}</b><p>${description}${incidentStatus}${dateReported}${dateSolved}`;
+          return `<p><b>${name}</b></p>${description}${details}`;
         }
   
         // EVENT HANDLERS ///////////////////////////////
 
         function handleMarkerClick(marker) {
 
+          // remove previous marker from address location/verification
+          if (addressMarker) {
+            map.removeLayer(addressMarker);
+            addressMarker = null;
+          }
+
+          resetSelectedMarker();
+
           // only allow additional click actions if the feature doesn't have an associated open incident
           if (!marker.layer.feature.properties.hasIncident) {
-            if (clickedMarker) {
-              // reset clicked marker's icon to original
-              clickedMarker.layer.setIcon(clickedMarker.originalIcon);
-              L.DomUtil.removeClass(clickedMarker.layer._icon, 'selected');
-            }
-
             // store original marker icon, so we can swap back
             marker.originalIcon = marker.layer.options.icon;
 
@@ -442,7 +416,37 @@
             L.DomUtil.addClass(marker.layer._icon, 'selected');
 
             clickedMarker = marker;
+
+            selectAsset(marker);
+
+            reverseGeolocate(marker.latlng);
+
+          } else {
+            $('#selected_asset_name').text('');
+            $('#selected_asset').addClass('visually-hidden');
+            $('#location_lat').val('');
+            $('#location_lon').val('');
+            
           }
+        }
+
+        function resetSelectedMarker() {
+          if (clickedMarker) {
+            // reset clicked marker's icon to original
+            clickedMarker.layer.setIcon(clickedMarker.originalIcon);
+            L.DomUtil.removeClass(clickedMarker.layer._icon, 'selected');
+            map.closePopup();
+          }
+        }
+
+        function selectAsset(marker) {
+            // copy asset title to holder
+            $('#selected_asset_name').text(marker.layer.feature.properties.name);
+            $('#selected_asset').removeClass('visually-hidden');
+
+            // copy asset coordiantes to lat/lon fields
+            $('#location_lat').val(marker.latlng.lat);
+            $('#location_lon').val(marker.latlng.lng);
         }
   
         function handleLocationTypeClick(radios) {
@@ -522,20 +526,20 @@
           // primaryLayerMarkerGroup
           var zoomlevel = map.getZoom();
           if (zoomlevel < FEATURE_LAYER_VISIBLE_ZOOM){
-            if (map.hasLayer(primaryLayerMarkerGroup)) {
+            if (primaryLayerMarkerGroup && map.hasLayer(primaryLayerMarkerGroup)) {
                 map.removeLayer(primaryLayerMarkerGroup);
             }
-            if (map.hasLayer(incidentsLayerMarkerGroup)) {
+            if (incidentsLayerMarkerGroup && map.hasLayer(incidentsLayerMarkerGroup)) {
               map.removeLayer(incidentsLayerMarkerGroup);
             }
           }
           if (zoomlevel >= FEATURE_LAYER_VISIBLE_ZOOM){
-              if (!map.hasLayer(primaryLayerMarkerGroup)){
-                map.addLayer(primaryLayerMarkerGroup.bringToBack());
-              }
-              if (!map.hasLayer(incidentsLayerMarkerGroup)) {
-                map.addLayer(incidentsLayerMarkerGroup.bringToFront());
-              }
+            if (primaryLayerMarkerGroup && !map.hasLayer(primaryLayerMarkerGroup)){
+              map.addLayer(primaryLayerMarkerGroup);
+            }
+            if (incidentsLayerMarkerGroup && !map.hasLayer(incidentsLayerMarkerGroup)) {
+              map.addLayer(incidentsLayerMarkerGroup);
+            }
           }
           // TODO: if we only want to add markers in the visible area of the map after zooming in to a certain level,
           // use getBounds to get the polygon that represents the map viewport, then check markers to see if they're contained.
@@ -621,15 +625,17 @@
         }
   
         function setMarkerAndZoom(lat, lon, zoom, center, zoomlevel) {
-          // remove previous marker
-          if (marker) {
-            map.removeLayer(marker);
-            marker = null;
+          // remove previous address marker
+          if (addressMarker) {
+            map.removeLayer(addressMarker);
+            addressMarker = null;
           }
+
+          resetSelectedMarker(); // if a marker was used for selection
   
           // set new layer
           var latlon = [lat, lon];
-          marker = L.marker(latlon, { draggable: true, riseOnHover: true }).addTo(map);
+          addressMarker = L.marker(latlon, { draggable: true, riseOnHover: true, iconSize: DEFAULT_ICON_SIZE  }).addTo(map);
           if (center) {
             map.setView(latlon);
           }
@@ -642,9 +648,9 @@
           $('.location-lon').val(lon);
   
           // set dragend event handler on marker
-          marker.on('dragend', function (e) {
+          addressMarker.on('dragend', function (e) {
             // capture new lat/lon values in hidden fields
-            var latlng = marker.getLatLng();
+            var latlng = addressMarker.getLatLng();
             $('.location-lat').val(latlng.lat);
             $('.location-lon').val(latlng.lng);
             reverseGeolocate(latlng);
@@ -745,7 +751,10 @@
         }
   
         function processReverseLocationData(data, lat, lng) {
-          setMarkerAndZoom(lat, lng, true, false, DEFAULT_ZOOM_CLICK);
+          // don't set marker and zoom if primary layer behavior is "selection"
+          if (primaryLayerBehavior != "selection") {
+            setMarkerAndZoom(lat, lng, true, false, DEFAULT_ZOOM_CLICK);
+          }
           var street = data.address.Street;
           var city = data.address.City;
           var state = data.address.State;
