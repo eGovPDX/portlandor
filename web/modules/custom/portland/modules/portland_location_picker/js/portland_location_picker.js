@@ -397,13 +397,11 @@
 
         function handleMarkerClick(marker) {
 
-          // remove previous marker from address location/verification
           if (addressMarker) {
             map.removeLayer(addressMarker);
             addressMarker = null;
           }
-
-          resetSelectedMarker();
+          resetClickedMarker();
 
           // only allow additional click actions if the feature doesn't have an associated open incident
           if (!marker.layer.feature.properties.hasIncident) {
@@ -417,6 +415,7 @@
 
             clickedMarker = marker;
 
+            // set location form fields with asset data
             selectAsset(marker);
 
             reverseGeolocate(marker.latlng);
@@ -430,12 +429,12 @@
           }
         }
 
-        function resetSelectedMarker() {
+        function resetClickedMarker() {
           if (clickedMarker) {
             // reset clicked marker's icon to original
             clickedMarker.layer.setIcon(clickedMarker.originalIcon);
             L.DomUtil.removeClass(clickedMarker.layer._icon, 'selected');
-            map.closePopup();
+            //map.closePopup();
           }
         }
 
@@ -447,6 +446,9 @@
             // copy asset coordiantes to lat/lon fields
             $('#location_lat').val(marker.latlng.lat);
             $('#location_lon').val(marker.latlng.lng);
+
+            // copy asset id to hidden field
+            $('#location_asset_id').val(marker.layer.feature.properties.id);
         }
   
         function handleLocationTypeClick(radios) {
@@ -625,17 +627,27 @@
         }
   
         function setMarkerAndZoom(lat, lon, zoom, center, zoomlevel) {
-          // remove previous address marker
+          //resetClickedMarker(); // if a marker was used for selection
+  
           if (addressMarker) {
+            // remove previous address marker
             map.removeLayer(addressMarker);
             addressMarker = null;
           }
 
-          resetSelectedMarker(); // if a marker was used for selection
-  
           // set new layer
           var latlon = [lat, lon];
-          addressMarker = L.marker(latlon, { draggable: true, riseOnHover: true, iconSize: DEFAULT_ICON_SIZE  }).addTo(map);
+          if (primaryLayerBehavior != "selection") {
+            addressMarker = L.marker(latlon, { draggable: true, riseOnHover: true, iconSize: DEFAULT_ICON_SIZE  }).addTo(map);
+            // if address marker is moved, we want to capture the new coordinates
+            addressMarker.on('dragend', function (e) {
+              // capture new lat/lon values in hidden fields
+              var latlng = addressMarker.getLatLng();
+              $('.location-lat').val(latlng.lat);
+              $('.location-lon').val(latlng.lng);
+              reverseGeolocate(latlng);
+            });
+          }
           if (center) {
             map.setView(latlon);
           }
@@ -647,14 +659,7 @@
           $('.location-lat').val(lat);
           $('.location-lon').val(lon);
   
-          // set dragend event handler on marker
-          addressMarker.on('dragend', function (e) {
-            // capture new lat/lon values in hidden fields
-            var latlng = addressMarker.getLatLng();
-            $('.location-lat').val(latlng.lat);
-            $('.location-lon').val(latlng.lng);
-            reverseGeolocate(latlng);
-          });
+
         }
   
         function reverseGeolocate(latlng) {
