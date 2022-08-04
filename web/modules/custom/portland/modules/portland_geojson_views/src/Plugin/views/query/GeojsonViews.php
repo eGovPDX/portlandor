@@ -33,7 +33,11 @@ class GeojsonViews extends QueryPluginBase {
     $index = 0;
 
     foreach($data['features'] as $feature) {
-      $row['feature_id'] = $feature['id'];
+      // the asset ID for the portlandmaps trash cans feed is stored in the OBJECTID property
+      // TODO: find a way to make this abstract, so it doesn't have to be hard coded for feeds
+      // that use a different property name.
+      $row['feature_id'] = $feature['properties']['OBJECTID'];
+      
       $row['feature_type'] = $feature['geometry']['type'];
       $row['feature_coordinates_lat'] = $feature['geometry']['coordinates'][0];
       $row['feature_coordinates_lon'] = $feature['geometry']['coordinates'][1];

@@ -19,6 +19,7 @@
 
       $('main', context).once('location_picker').each(function () {
 
+        // CONSTANTS //////////
         const DEFAULT_LATITUDE = 45.51;
         const DEFAULT_LONGITUDE = -122.65;
         const DEFAULT_ZOOM = 11;
@@ -32,7 +33,7 @@
         const SOLVED_ISSUE_MESSAGE = "This issue was reported as recently resolved. If that's not the case, or the issue has reoccured, please submit a new report.";
         const DEFAULT_FEATURE_ICON_URL = "/modules/custom/portland/modules/portland_location_picker/images/map_marker_incident.png";
   
-        // var request = new XMLHttpRequest();
+        // GLOBALS //////////
         var map;
         var geoJsonLayer;
         var primaryLayerMarkerGroup;
@@ -47,8 +48,6 @@
         var locateControlContaier;
         var clickedMarker;
         var assetCount;
-  
-        // var response; // = { "status": "success", "spatialReference": { "wkid": 102100, "latestWkid": 3857 }, "candidates": [{ "location": { "x": -1.3645401627E7, "y": 5708911.764 }, "attributes": { "sp_x": 7669661.490, "sp_y": 694349.134, "city": "PORTLAND", "jurisdiction": "PORTLAND", "state": "OREGON", "lon": -122.57872839300, "id": 40159, "type": "intersection", "lat": 45.55241828270, "county": "MULTNOMAH" }, "address": "NE 82ND AVE AND NE SANDY BLVD", "extent": { "ymin": 5708911.514, "ymax": 5708912.014, "xmin": -1.3645401877E7, "xmax": -1.3645401377E7 } }] };
         var suggestionsModal;
         var locationType;
         var statusModal;
@@ -57,15 +56,12 @@
         var isPark;
         var shouldRecenterPark = true;
         var currentView = "base";
-        var baseLayer = L.tileLayer('https://www.portlandmaps.com/arcgis/rest/services/Public/Basemap_Color_Complete/MapServer/tile/{z}/{y}/{x}', {
-          attribution: "PortlandMaps ESRI"
-        });
-        var aerialLayer = L.tileLayer('https://www.portlandmaps.com/arcgis/rest/services/Public/Basemap_Color_Complete_Aerial/MapServer/tile/{z}/{y}/{x}', {
-          attribution: "PortlandMaps ESRI"
-        });
+        var baseLayer = L.tileLayer('https://www.portlandmaps.com/arcgis/rest/services/Public/Basemap_Color_Complete/MapServer/tile/{z}/{y}/{x}', { attribution: "PortlandMaps ESRI" });
+        var aerialLayer = L.tileLayer('https://www.portlandmaps.com/arcgis/rest/services/Public/Basemap_Color_Complete_Aerial/MapServer/tile/{z}/{y}/{x}', { attribution: "PortlandMaps ESRI" });
+        var LocateControl = generateLocateControl();
+        var AerialControl = generateAerialControl();
 
-        // custom widget properties
-
+        // CUSTOM PROPERTIES SET IN WEBFORM CONFIG //////////
         var primaryLayerSource = drupalSettings.webform.portland_location_picker.primary_layer_source;
         var incidentsLayerSource = drupalSettings.webform.portland_location_picker.incidents_layer_source;
         var primaryLayerBehavior = drupalSettings.webform.portland_location_picker.primary_layer_behavior;
@@ -76,70 +72,34 @@
         var disablePopup = drupalSettings.webform.portland_location_picker.disable_popup;
         var verifyButtonText = drupalSettings.webform.portland_location_picker.verify_button_text ? drupalSettings.webform.portland_location_picker.verify_button_text : 'Verify';
         var primaryFeatureName = drupalSettings.webform.portland_location_picker.primary_feature_name ? drupalSettings.webform.portland_location_picker.primary_feature_name : 'asset';
-  
-        var LocateControl = L.Control.extend({
-          options: {
-            position: "bottomright"
-          },
-          onAdd: function (map) {
-            locateControlContaier = L.DomUtil.create('div', 'leaflet-bar locate-control leaflet-control leaflet-control-custom');
-            locateControlContaier.style.backgroundImage = "url(/modules/custom/portland/modules/portland_location_picker/images/map_locate.png)";
-            locateControlContaier.title = 'Locate me';
-            locateControlContaier.onclick = handleLocateButtonClick;
-            return locateControlContaier;
-          }
-        });
-  
-        var AerialControl = L.Control.extend({
-          options: {
-            position: "bottomright"
-          },
-          onAdd: function (map) {
-            aerialControlContainer = L.DomUtil.create('div', 'leaflet-bar locate-control leaflet-control leaflet-control-custom');
-            aerialControlContainer.style.backgroundImage = "url(/modules/custom/portland/modules/portland_location_picker/images/map_aerial.png)";
-            aerialControlContainer.title = 'Aerial view';
-            aerialControlContainer.onclick = handleAerialButtonClick;
-            return aerialControlContainer;
-          }
-        });
-  
-        
+        var featureLayerVisibleZoom = drupalSettings.webform.portland_location_picker.feature_layer_visible_zoom ? drupalSettings.webform.portland_location_picker.feature_layer_visible_zoom : FEATURE_LAYER_VISIBLE_ZOOM;
+
         // if ajax is used in the webform (for computed twig, for example), this script
         // and the initialize function may get called multiple times for some reason.
-        // adding this flag prevents that.
-        if (!initialized) {
-          initialize();
-          initialized = true;
-        }
+        // adding this flag prevents re-initialization of the map.
+        if (!initialized) { initialize(); initialized = true; }
         
-  
         // SETUP FUNCTIONS ///////////////////////////////
   
         function initialize() {
   
-          // count number of map widgets
-          var maps = $('.portland-location-picker--wrapper');
-          var count = maps.length;
-          if (count > 1) {
+          // verify only one map widget in webform; complain if more than one
+          if ($('.portland-location-picker--wrapper').length > 1) {
             console.log("WARNING: More than one location widget detected. Only one location widget per webform is currently supported. Adding multiples will result in unpredictable behavior.");
           }
 
-          // if select-asset behavior, initialize selected asset text
+          // if select-asset behavior, set label for selected asset text. the term "asset" can be overridden in the widget config.
+          // Example selected asset text: "Selected asset: Trash Can 57110"
           if (primaryLayerBehavior == "selection") {
             $('#selected_asset_label').text('Selected ' + primaryFeatureName + ': ');
           }
 
-          // disable form submit when pressing enter on address field
+          // disable form submit when pressing enter on address field and click Verify button instead
           $('#location_address').on('keydown', function (e) {
-            if (e.keyCode == 13) {
-              $('#location_verify').click();
-              e.preventDefault();
-              return false;
-            }
+            if (e.keyCode == 13) { $('#location_verify').click(); e.preventDefault(); return false; }
           });
   
-          // initialize map ///////////////////////////////////
-          var zoomcontrols = new L.control.zoom({ position: ZOOM_POSITION });
+          // INITIALIZE MAP //////////
           map = new L.Map("location_map_container", {
             center: new L.LatLng(DEFAULT_LATITUDE, DEFAULT_LONGITUDE),
             zoomControl: false,
@@ -147,27 +107,22 @@
             gestureHandling: true
           });
           map.addLayer(baseLayer);
-          map.addControl(zoomcontrols);
+          map.addControl(new L.control.zoom({ position: ZOOM_POSITION }));
+          map.addControl(new AerialControl());
+          map.addControl(new LocateControl());
           map.on('locationerror', handleLocationError);
           map.on('locationfound', handleLocationFound);
 
-          // only allow map clicks if primary layer behavior is not "selection."
-          // if it is, only asset markers can be clicked to select a locaiton.
-          if (primaryLayerBehavior != "selection") {
-            map.on('click', handleMapClick);
-          }
+          // only allow map clicks if primary layer behavior is not "selection." if it is, only asset markers can be clicked to select a locaiton.
+          if (primaryLayerBehavior != "selection") { map.on('click', handleMapClick); }
 
-          // primary layer assets/incidents only appear when zoomed to -1 max zoom.
-          // this prevents the map from being visually overloaded when fully zoomed out.
-          // that logic is contained in the event handler function.
+          // set up zoomend handler; we only want to show the primary features/assets layer when zoomed in
+          // so that the map isn't too crowded with markers.
           map.on('zoomend', handleZoomEndShowGeoJsonLayer);
 
           // force a crosshair cursor
           $('.leaflet-container').css('cursor', 'crosshair');
-          aerialControl = new AerialControl();
-          map.addControl(aerialControl);
-          locateControl = new LocateControl();
-          map.addControl(locateControl);
+
           // if there are coordinates in the hidden lat/lon fields, set the map marker.
           // this is likely a submit postback that had validation errors, so we need to re set it.
           var lat = $('#location_lat').val();
@@ -176,20 +131,19 @@
             setMarkerAndZoom(lat, lon, true, true, DEFAULT_ZOOM_CLICK);
           }
   
-          // Set up verify button //////////////////////////////////
+          // Set up address verify button
           $('.location-picker-address').after(`<input class="btn location-verify button js-form-submit form-submit" type="button" id="location_verify" name="op" value="${verifyButtonText}">`);
           $('.location-picker-address').after('<span class="verified-checkmark address invisible" title="Location is verified!">✓</span>');
           $(document).on('click', '#location_verify', function (e) {
             e.preventDefault();
-            var address = $('.location-picker-address').val();
-            // Portland Maps API for location suggestions doesn't work property when an ampersand is used
-            // to identify an intersection. It must be the word "and."
-            address = address.replace("&", "and");
-            if (address.length < 1) {
-              showStatusModal("Please enter an address or cross streets and try again.");
-              return false;
-            }
+            // Portland Maps API for location suggestions doesn't work property when an ampersand is used to identify intersections
+            var address = $('.location-picker-address').val().replace("&", "and");
+            if (address.length < 1) { showStatusModal("Please enter an address or cross streets and try again."); return false; }
             verifyAddressPortlandMaps(address);
+          });
+          // turn off verified checkmark if value changes
+          $('.location-picker-address').on('keyup', function () {
+            setUnverified();
           });
   
           // Set up pick links //////////////////////////////////
@@ -211,13 +165,8 @@
           // this will display error messages, or a status indicator when performing slow ajax operations such as self geolocation
           statusModal = $('#status_modal');
   
-          // set up address field /////////////////////////////
-          // turn off verified checkmark if value changes
-          $('.location-picker-address').on('keyup', function () {
-            setUnverified();
-          });
-  
           // set up location type radios //////////////////////
+          // some of the sub elements need to be shown/hidden depending on the location type
           $('fieldset.location-type input[type="radio"]').on("click", function() {
             handleLocationTypeClick($(this));
           });
@@ -226,22 +175,14 @@
           $('#location_park').after('<span class="verified-checkmark park invisible" title="Location is verified!">✓</span>');
           $('#location_park').select2({
             escapeMarkup: function (markup) { return markup; },
-            language: {
-              noResults: function() {
-                return 'No results found. Please try again, or select one of the other property type options above.';
-              }
-            }
+            language: { noResults: function() { return 'No results found. Please try again, or select one of the other property type options above.'; } }
           });
           $('#location_park').on("change", function() {
-            //if (locationType == 'park') {
               var park = $(this).val();
-              if (park) {
-                locateParkFromSelector(park);
-              }
-            //}
+              if (park) { locateParkFromSelector(park); }
           });
 
-          // retrieve and display assets and incidents on map, if primary layer info is provided
+          // INITIALIZE FEATURE LAYER //////////
           if (primaryLayerSource) {
 
             var markerIcon = primaryMarker ? primaryMarker : DEFAULT_FEATURE_ICON_URL;
@@ -259,15 +200,11 @@
                   // there's an incident (tickets) layer. we'll need to retrieve it, and then do a double
                   // loop to see if any of the incident asset_id values match the asset id values. if so,
                   // we use the incident marker if provided.
-
-                  var iconSize = DEFAULT_ICON_SIZE;
-
-                  incidentsLayerMarkerGroup = L.geoJson();
-
                   $.ajax({
                     url: incidentsLayerSource, success: function (incidentsResponse) {
 
                       incidentsFeatures = incidentsResponse.features;
+                      incidentsLayerMarkerGroup = L.geoJson();
 
                       primaryLoop:
                       for (var i = 0; i < primaryFeatures.length; i++) {
@@ -286,11 +223,15 @@
 
                           // determine the marker icon to use. 
                           if (assetid == ticketassetid) {
-                            //iconSize = [54, 82];
                             classname = "incident";
-                            feature.properties.status = incident.properties.status;
+                            feature.properties.status = incident.properties.status ? incident.properties.status : "";
+                            if (feature.properties.detail) {
+                              feature.properties.detail += incident.properties.detail;
+                            } else {
+                              feature.properties.detail = incident.properties.detail;
+                            }
                             feature.properties.date_reported = incident.properties.date_reported;
-                            if (feature.properties.status == "Open") {
+                            if (feature.properties.status == "open" || feature.properties.status == "new") {
                               // only set hasIncident if the status is open; this allows solved but recurred incident to be reproted
                               feature.properties.hasIncident = true;
                             } else {
@@ -301,14 +242,12 @@
                               markerIcon = incidentMarker;
                             }
                             break secondaryLoop;
-                          } else {
-                            iconSize = DEFAULT_ICON_SIZE;
                           }
                         }
 
                         var newMarker = L.icon({
                           iconUrl:      markerIcon,
-                          iconSize:     iconSize, // size of the icon
+                          iconSize:     DEFAULT_ICON_SIZE, // size of the icon
                           shadowSize:   [0, 0], // size of the shadow
                           iconAnchor:   [13, 41], // point of the icon which will correspond to marker's location
                           shadowAnchor: [0, 0],  // the same for the shadow
@@ -323,9 +262,13 @@
                   });
                 } else {
 
+                  if (primaryLayerType == "incident") {
+                    markerIcon = incidentMarker;
+                  }
+
                   var newMarker = L.icon({
                     iconUrl:      markerIcon,
-                    iconSize:     iconSize, // size of the icon
+                    iconSize:     DEFAULT_ICON_SIZE, // size of the icon
                     shadowSize:   [0, 0], // size of the shadow
                     iconAnchor:   [13, 41], // point of the icon which will correspond to marker's location
                     shadowAnchor: [0, 0],  // the same for the shadow
@@ -349,7 +292,7 @@
               return new L.LatLng(coords[0], coords[1]);
             },
             pointToLayer: function (feature, latlng) {
-              return L.marker(latlng, { icon: addMarker, iconSize: DEFAULT_ICON_SIZE });
+              return L.marker(latlng, { icon: addMarker, iconSize: DEFAULT_ICON_SIZE, bubblingMouseEvents: false });
             },
             onEachFeature: function(feature, layer) {
               //if (!disablePopup && feature.properties.status) {
@@ -374,28 +317,53 @@
           newFeature.addTo(addToLayer);
         }
 
+        function generateLocateControl() {
+          return L.Control.extend({
+            options: {
+              position: "bottomright"
+            },
+            onAdd: function (map) {
+              locateControlContaier = L.DomUtil.create('div', 'leaflet-bar locate-control leaflet-control leaflet-control-custom');
+              locateControlContaier.style.backgroundImage = "url(/modules/custom/portland/modules/portland_location_picker/images/map_locate.png)";
+              locateControlContaier.title = 'Locate me';
+              locateControlContaier.onclick = handleLocateButtonClick;
+              return locateControlContaier;
+            }
+          });
+        }
+
+        function generateAerialControl() {
+          return L.Control.extend({
+            options: {
+              position: "bottomright"
+            },
+            onAdd: function (map) {
+              aerialControlContainer = L.DomUtil.create('div', 'leaflet-bar locate-control leaflet-control leaflet-control-custom');
+              aerialControlContainer.style.backgroundImage = "url(/modules/custom/portland/modules/portland_location_picker/images/map_aerial.png)";
+              aerialControlContainer.title = 'Aerial view';
+              aerialControlContainer.onclick = handleAerialButtonClick;
+              return aerialControlContainer;
+            }
+          });
+        }
+
         function generatePopupContent(feature) {
-          var name = feature.properties.name ? feature.properties.name : "Asset " + feature.properties.id;
-          
-          var details = feature.properties.status ? "Status: " + feature.properties.status + "<br>" : "";
-          details += feature.properties.date_reported ? "Date Reported: " + feature.properties.date_reported + "<br>" : "";
-          details += feature.properties.date_resolved ? "Date Solved: " + feature.properties.date_resolved + "<br>" : "";
-          if (details) { details = "<p>" + details + "</p>"; }
+          var name = feature.properties.name ? feature.properties.name : primaryLayerType == "incident" ? "Incident" : "Asset";
+          var detail = feature.properties.detail ? feature.properties.detail : "";
 
-          // var incidentStatus = feature.properties.status ? "<p>Status: " + feature.properties.status + "</p>" : "";
-          // var dateReported = feature.properties.date_reported ? "<p>Date Reported: " + feature.properties.date_reported + "</p>" : "";
-          // if (feature.properties.date_resolved) {
-          //   var dateSolved = feature.properties.date_resolved ? "<p>Date Solved: " + feature.properties.date_resolved + "</p>" : "";
-          // }
-          //var dateSolved = feature.properties.date_resolved ? "<p>Date Solved: " + feature.properties.date_resolved + "</p>" : "";
-
-          var description = feature.properties.custom_graffiti_description ? "<p>Description: " + feature.properties.custom_graffiti_description + "</p>" : "";
-          return `<p><b>${name}</b></p>${description}${details}`;
+          var message = "";
+          if (feature.properties.status) {
+            message = feature.properties.status == "open" || feature.properties.status == "new" ? OPEN_ISSUE_MESSAGE : SOLVED_ISSUE_MESSAGE;
+            message = "<p><em>" + message + "</em></p>";
+          }
+          return `<p><b>${name}</b></p>${detail}${message}`;
         }
   
         // EVENT HANDLERS ///////////////////////////////
 
         function handleMarkerClick(marker) {
+
+          L.DomEvent.preventDefault(marker);
 
           if (addressMarker) {
             map.removeLayer(addressMarker);
@@ -403,12 +371,36 @@
           }
           resetClickedMarker();
 
-          // only allow additional click actions if the feature doesn't have an associated open incident
-          if (!marker.layer.feature.properties.hasIncident) {
+          // if primaryLayerType = "asset" and primaryLayerBehavior = "informational" then
+          // don't change the icon or zoom in, but do show the popup.
+          
+          // if primaryLayerType = "incident" and primaryLayerBehavior = "informational" then
+          // don't change the icon or zoom in, but do show the popup.
+
+          // if primaryLayerType = "asset" and primaryLayerBehavior = "selection" then
+          // change the icon to show selected state.
+
+          // if primaryLayerType = "incident" and primaryLayerBehavior = "selection" then
+          // change the icon to show selected state. this is a rare case, since we usually
+          // don't want things to be re-reported. DEFERRED.
+
+          if (primaryLayerBehavior == "informational") {
+            // don't change icon or zoom in
+            // don't geolocate
+            // do show popup
+          } 
+          
+          if (primaryLayerBehavior == "selection" ) {
+            // change icon to selected state
+            // geolocate
+          }
+
+          if (primaryLayerBehavior == "selection" && !marker.layer.feature.properties.hasIncident) {
+
             // store original marker icon, so we can swap back
             marker.originalIcon = marker.layer.options.icon;
 
-            // new selected icon
+            // use selected marker icon
             newIcon = L.icon({ iconUrl: selectedMarker });
             marker.layer.setIcon(newIcon);
             L.DomUtil.addClass(marker.layer._icon, 'selected');
@@ -525,9 +517,11 @@
         }
 
         function handleZoomEndShowGeoJsonLayer() {
-          // primaryLayerMarkerGroup
+          // close all popups when zooming
+          map.closePopup();
+          
           var zoomlevel = map.getZoom();
-          if (zoomlevel < FEATURE_LAYER_VISIBLE_ZOOM){
+          if (zoomlevel < featureLayerVisibleZoom){
             if (primaryLayerMarkerGroup && map.hasLayer(primaryLayerMarkerGroup)) {
                 map.removeLayer(primaryLayerMarkerGroup);
             }
@@ -535,7 +529,7 @@
               map.removeLayer(incidentsLayerMarkerGroup);
             }
           }
-          if (zoomlevel >= FEATURE_LAYER_VISIBLE_ZOOM){
+          if (zoomlevel >= featureLayerVisibleZoom){
             if (primaryLayerMarkerGroup && !map.hasLayer(primaryLayerMarkerGroup)){
               map.addLayer(primaryLayerMarkerGroup);
             }
