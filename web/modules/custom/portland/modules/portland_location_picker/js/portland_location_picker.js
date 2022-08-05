@@ -390,12 +390,9 @@
             reverseGeolocate(marker.latlng);
 
           } else {
-            // $('#selected_asset_name').text('');
-            // $('#selected_asset').addClass('visually-hidden');
             $('#place_name').val('');
             $('#location_lat').val('');
             $('#location_lon').val('');
-            
           }
         }
 
