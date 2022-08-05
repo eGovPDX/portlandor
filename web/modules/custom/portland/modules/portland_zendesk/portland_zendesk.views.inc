@@ -98,9 +98,9 @@ function portland_zendesk_views_data() {
       'id' => 'standard',
     ],
   ];
-  $data['zendesk_ticket']['custom_graffiti_description'] = [
-    'title' => t('Graffiti description'),
-    'help' => t('A description of the graffiti, used only by graffiti report tickets.'),
+  $data['zendesk_ticket']['custom_public_description'] = [
+    'title' => t('Public description'),
+    'help' => t('A public-friendly description of the incident.'),
     'field' => [
       'id' => 'standard',
     ],
