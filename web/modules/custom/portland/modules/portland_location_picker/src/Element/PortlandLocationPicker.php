@@ -177,12 +177,6 @@ class PortlandLocationPicker extends WebformCompositeBase {
         ],
       ],
     ];
-    $elements['selected_asset_display'] = [
-      '#type' => 'markup',
-      '#title' => t('Selected Asset'),
-      '#title_display' => 'invisible',
-      '#markup' => '<div id="selected_asset" class="visually-hidden"><span id="selected_asset_label">Selected</span><span id="selected_asset_name"></span></div>',
-    ];
     $elements['suggestions_modal'] = [
       '#type' => 'markup',
       '#title' => 'Suggestions',

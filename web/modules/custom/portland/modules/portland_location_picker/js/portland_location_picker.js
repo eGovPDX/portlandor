@@ -30,7 +30,7 @@
         const ZOOM_POSITION = 'topright';
         const NOT_A_PARK = "You selected park or natural area as the property type, but no park data was found for the selected location. If you believe this is a valid location, please zoom in to find the park on the map, click to select a location, and continue to submit your report.";
         const OPEN_ISSUE_MESSAGE = "If this issue is what you came here to report, there's no need to report it again.";
-        const SOLVED_ISSUE_MESSAGE = "This issue was reported as recently resolved. If that's not the case, or the issue has reoccured, please submit a new report.";
+        const SOLVED_ISSUE_MESSAGE = "This issue was recently solved. If that's not the case, or the issue has reoccured, please submit a new report.";
         const DEFAULT_FEATURE_ICON_URL = "/modules/custom/portland/modules/portland_location_picker/images/map_marker_incident.png";
   
         // GLOBALS //////////
@@ -88,11 +88,11 @@
             console.log("WARNING: More than one location widget detected. Only one location widget per webform is currently supported. Adding multiples will result in unpredictable behavior.");
           }
 
-          // if select-asset behavior, set label for selected asset text. the term "asset" can be overridden in the widget config.
-          // Example selected asset text: "Selected asset: Trash Can 57110"
-          if (primaryLayerBehavior == "selection") {
-            $('#selected_asset_label').text('Selected ' + primaryFeatureName + ': ');
-          }
+          // // if select-asset behavior, set label for selected asset text. the term "asset" can be overridden in the widget config.
+          // // Example selected asset text: "Selected asset: Trash Can 57110"
+          // if (primaryLayerBehavior == "selection") {
+          //   $('#selected_asset_label').text('Selected ' + primaryFeatureName + ': ');
+          // }
 
           // disable form submit when pressing enter on address field and click Verify button instead
           $('#location_address').on('keydown', function (e) {
@@ -281,6 +281,7 @@
                 }
               }
             });
+            handleZoomEndShowGeoJsonLayer();
           }
         }
 
@@ -371,30 +372,6 @@
           }
           resetClickedMarker();
 
-          // if primaryLayerType = "asset" and primaryLayerBehavior = "informational" then
-          // don't change the icon or zoom in, but do show the popup.
-          
-          // if primaryLayerType = "incident" and primaryLayerBehavior = "informational" then
-          // don't change the icon or zoom in, but do show the popup.
-
-          // if primaryLayerType = "asset" and primaryLayerBehavior = "selection" then
-          // change the icon to show selected state.
-
-          // if primaryLayerType = "incident" and primaryLayerBehavior = "selection" then
-          // change the icon to show selected state. this is a rare case, since we usually
-          // don't want things to be re-reported. DEFERRED.
-
-          if (primaryLayerBehavior == "informational") {
-            // don't change icon or zoom in
-            // don't geolocate
-            // do show popup
-          } 
-          
-          if (primaryLayerBehavior == "selection" ) {
-            // change icon to selected state
-            // geolocate
-          }
-
           if (primaryLayerBehavior == "selection" && !marker.layer.feature.properties.hasIncident) {
 
             // store original marker icon, so we can swap back
@@ -413,8 +390,9 @@
             reverseGeolocate(marker.latlng);
 
           } else {
-            $('#selected_asset_name').text('');
-            $('#selected_asset').addClass('visually-hidden');
+            // $('#selected_asset_name').text('');
+            // $('#selected_asset').addClass('visually-hidden');
+            $('#place_name').val('');
             $('#location_lat').val('');
             $('#location_lon').val('');
             
@@ -432,8 +410,7 @@
 
         function selectAsset(marker) {
             // copy asset title to holder
-            $('#selected_asset_name').text(marker.layer.feature.properties.name);
-            $('#selected_asset').removeClass('visually-hidden');
+            $('#place_name').val(marker.layer.feature.properties.name);
 
             // copy asset coordiantes to lat/lon fields
             $('#location_lat').val(marker.latlng.lat);
