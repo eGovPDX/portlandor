@@ -19,27 +19,35 @@
 
       $('main', context).once('location_picker').each(function () {
 
+        // CONSTANTS //////////
         const DEFAULT_LATITUDE = 45.51;
         const DEFAULT_LONGITUDE = -122.65;
         const DEFAULT_ZOOM = 11;
         const DEFAULT_ZOOM_CLICK = 18;
         const DEFAULT_ZOOM_VERIFIED = 18;
+        const DEFAULT_ICON_SIZE = [27, 41];
+        const FEATURE_LAYER_VISIBLE_ZOOM = 16;
         const ZOOM_POSITION = 'topright';
         const NOT_A_PARK = "You selected park or natural area as the property type, but no park data was found for the selected location. If you believe this is a valid location, please zoom in to find the park on the map, click to select a location, and continue to submit your report.";
         const OPEN_ISSUE_MESSAGE = "If this issue is what you came here to report, there's no need to report it again.";
-        const SOLVED_ISSUE_MESSAGE = "This issue was reported as recently resolved. If that's not the case, or the issue has reoccured, please submit a new report.";
+        const SOLVED_ISSUE_MESSAGE = "This issue was recently solved. If that's not the case, or the issue has reoccured, please submit a new report.";
+        const DEFAULT_FEATURE_ICON_URL = "/modules/custom/portland/modules/portland_location_picker/images/map_marker_incident.png";
   
-        var request = new XMLHttpRequest();
+        // GLOBALS //////////
         var map;
         var geoJsonLayer;
-        var marker;
+        var primaryLayerMarkerGroup;
+        var incidentsLayerMarkerGroup;
+        var primaryFeatures;
+        var incidentsFeatures;
+        var addressMarker;
         var locationErrorShown;
         var locateControl;
         var locMarker;
         var locCircle;
         var locateControlContaier;
-  
-        var response; // = { "status": "success", "spatialReference": { "wkid": 102100, "latestWkid": 3857 }, "candidates": [{ "location": { "x": -1.3645401627E7, "y": 5708911.764 }, "attributes": { "sp_x": 7669661.490, "sp_y": 694349.134, "city": "PORTLAND", "jurisdiction": "PORTLAND", "state": "OREGON", "lon": -122.57872839300, "id": 40159, "type": "intersection", "lat": 45.55241828270, "county": "MULTNOMAH" }, "address": "NE 82ND AVE AND NE SANDY BLVD", "extent": { "ymin": 5708911.514, "ymax": 5708912.014, "xmin": -1.3645401877E7, "xmax": -1.3645401377E7 } }] };
+        var clickedMarker;
+        var assetCount;
         var suggestionsModal;
         var locationType;
         var statusModal;
@@ -48,74 +56,50 @@
         var isPark;
         var shouldRecenterPark = true;
         var currentView = "base";
-        var baseLayer = L.tileLayer('https://www.portlandmaps.com/arcgis/rest/services/Public/Basemap_Color_Complete/MapServer/tile/{z}/{y}/{x}', {
-          attribution: "PortlandMaps ESRI"
-        });
-        var aerialLayer = L.tileLayer('https://www.portlandmaps.com/arcgis/rest/services/Public/Basemap_Color_Complete_Aerial/MapServer/tile/{z}/{y}/{x}', {
-          attribution: "PortlandMaps ESRI"
-        });
-  
-        var layerUrl = drupalSettings.webform.portland_location_picker.geojson_layer;
+        var baseLayer = L.tileLayer('https://www.portlandmaps.com/arcgis/rest/services/Public/Basemap_Color_Complete/MapServer/tile/{z}/{y}/{x}', { attribution: "PortlandMaps ESRI" });
+        var aerialLayer = L.tileLayer('https://www.portlandmaps.com/arcgis/rest/services/Public/Basemap_Color_Complete_Aerial/MapServer/tile/{z}/{y}/{x}', { attribution: "PortlandMaps ESRI" });
+        var LocateControl = generateLocateControl();
+        var AerialControl = generateAerialControl();
 
-        // TODO: possible layer behaviors: informational, selection
-        var layerBehavior = drupalSettings.webform.portland_location_picker.geojson_layer_behavior;
+        // CUSTOM PROPERTIES SET IN WEBFORM CONFIG //////////
+        var primaryLayerSource = drupalSettings.webform.portland_location_picker.primary_layer_source;
+        var incidentsLayerSource = drupalSettings.webform.portland_location_picker.incidents_layer_source;
+        var primaryLayerBehavior = drupalSettings.webform.portland_location_picker.primary_layer_behavior;
+        var primaryLayerType = drupalSettings.webform.portland_location_picker.primary_layer_type;
+        var primaryMarker = drupalSettings.webform.portland_location_picker.primary_marker ? drupalSettings.webform.portland_location_picker.primary_marker : '/modules/custom/portland/modules/portland_location_picker/images/map_marker_default.png';
+        var selectedMarker = drupalSettings.webform.portland_location_picker.selected_marker ? drupalSettings.webform.portland_location_picker.selected_marker : '/modules/custom/portland/modules/portland_location_picker/images/map_marker_default_selected.png';
+        var incidentMarker = drupalSettings.webform.portland_location_picker.incident_marker ? drupalSettings.webform.portland_location_picker.incident_marker : '/modules/custom/portland/modules/portland_location_picker/images/map_marker_incident.png';
+        var disablePopup = drupalSettings.webform.portland_location_picker.disable_popup;
+        var verifyButtonText = drupalSettings.webform.portland_location_picker.verify_button_text ? drupalSettings.webform.portland_location_picker.verify_button_text : 'Verify';
+        var primaryFeatureName = drupalSettings.webform.portland_location_picker.primary_feature_name ? drupalSettings.webform.portland_location_picker.primary_feature_name : 'asset';
+        var featureLayerVisibleZoom = drupalSettings.webform.portland_location_picker.feature_layer_visible_zoom ? drupalSettings.webform.portland_location_picker.feature_layer_visible_zoom : FEATURE_LAYER_VISIBLE_ZOOM;
 
-        // TODO: possible layer types: incident, asset
-        var layerType = drupalSettings.webform.portland_location_picker.geojson_layer_type;
-
-        // TODO: additional possible layer properties
-        var featureIcon = drupalSettings.webform.portland_location_picker.geojson_feature_icon;
-  
-  
-        var LocateControl = L.Control.extend({
-          options: {
-            position: "bottomright"
-          },
-          onAdd: function (map) {
-            locateControlContaier = L.DomUtil.create('div', 'leaflet-bar locate-control leaflet-control leaflet-control-custom');
-            locateControlContaier.style.backgroundImage = "url(/modules/custom/portland/modules/portland_location_picker/images/map_locate.png)";
-            locateControlContaier.title = 'Locate me';
-            locateControlContaier.onclick = handleLocateButtonClick;
-            return locateControlContaier;
-          }
-        });
-  
-        var AerialControl = L.Control.extend({
-          options: {
-            position: "bottomright"
-          },
-          onAdd: function (map) {
-            aerialControlContainer = L.DomUtil.create('div', 'leaflet-bar locate-control leaflet-control leaflet-control-custom');
-            aerialControlContainer.style.backgroundImage = "url(/modules/custom/portland/modules/portland_location_picker/images/map_aerial.png)";
-            aerialControlContainer.title = 'Aerial view';
-            aerialControlContainer.onclick = handleAerialButtonClick;
-            return aerialControlContainer;
-          }
-        });
-  
-        
         // if ajax is used in the webform (for computed twig, for example), this script
         // and the initialize function may get called multiple times for some reason.
-        // adding this flag prevents that.
-        if (!initialized) {
-          initialize();
-          initialized = true;
-        }
+        // adding this flag prevents re-initialization of the map.
+        if (!initialized) { initialize(); initialized = true; }
         
-  
         // SETUP FUNCTIONS ///////////////////////////////
   
         function initialize() {
   
-          // count number of map widgets
-          var maps = $('.portland-location-picker--wrapper');
-          var count = maps.length;
-          if (count > 1) {
+          // verify only one map widget in webform; complain if more than one
+          if ($('.portland-location-picker--wrapper').length > 1) {
             console.log("WARNING: More than one location widget detected. Only one location widget per webform is currently supported. Adding multiples will result in unpredictable behavior.");
           }
+
+          // // if select-asset behavior, set label for selected asset text. the term "asset" can be overridden in the widget config.
+          // // Example selected asset text: "Selected asset: Trash Can 57110"
+          // if (primaryLayerBehavior == "selection") {
+          //   $('#selected_asset_label').text('Selected ' + primaryFeatureName + ': ');
+          // }
+
+          // disable form submit when pressing enter on address field and click Verify button instead
+          $('#location_address').on('keydown', function (e) {
+            if (e.keyCode == 13) { $('#location_verify').click(); e.preventDefault(); return false; }
+          });
   
-          // initialize map ///////////////////////////////////
-          var zoomcontrols = new L.control.zoom({ position: ZOOM_POSITION });
+          // INITIALIZE MAP //////////
           map = new L.Map("location_map_container", {
             center: new L.LatLng(DEFAULT_LATITUDE, DEFAULT_LONGITUDE),
             zoomControl: false,
@@ -123,16 +107,22 @@
             gestureHandling: true
           });
           map.addLayer(baseLayer);
-          map.addControl(zoomcontrols);
-          map.on('click', handleMapClick);
+          map.addControl(new L.control.zoom({ position: ZOOM_POSITION }));
+          map.addControl(new AerialControl());
+          map.addControl(new LocateControl());
           map.on('locationerror', handleLocationError);
           map.on('locationfound', handleLocationFound);
+
+          // only allow map clicks if primary layer behavior is not "selection." if it is, only asset markers can be clicked to select a locaiton.
+          if (primaryLayerBehavior != "selection") { map.on('click', handleMapClick); }
+
+          // set up zoomend handler; we only want to show the primary features/assets layer when zoomed in
+          // so that the map isn't too crowded with markers.
+          map.on('zoomend', handleZoomEndShowGeoJsonLayer);
+
           // force a crosshair cursor
           $('.leaflet-container').css('cursor', 'crosshair');
-          aerialControl = new AerialControl();
-          map.addControl(aerialControl);
-          locateControl = new LocateControl();
-          map.addControl(locateControl);
+
           // if there are coordinates in the hidden lat/lon fields, set the map marker.
           // this is likely a submit postback that had validation errors, so we need to re set it.
           var lat = $('#location_lat').val();
@@ -141,20 +131,19 @@
             setMarkerAndZoom(lat, lon, true, true, DEFAULT_ZOOM_CLICK);
           }
   
-          // Set up verify button //////////////////////////////////
-          $('.location-picker-address').after('<input class="btn location-verify button js-form-submit form-submit" type="button" id="location_verify" name="op" value="Verify">');
+          // Set up address verify button
+          $('.location-picker-address').after(`<input class="btn location-verify button js-form-submit form-submit" type="button" id="location_verify" name="op" value="${verifyButtonText}">`);
           $('.location-picker-address').after('<span class="verified-checkmark address invisible" title="Location is verified!">✓</span>');
           $(document).on('click', '#location_verify', function (e) {
             e.preventDefault();
-            var address = $('.location-picker-address').val();
-            // Portland Maps API for location suggestions doesn't work property when an ampersand is used
-            // to identify an intersection. It must be the word "and."
-            address = address.replace("&", "and");
-            if (address.length < 1) {
-              showStatusModal("Please enter an address or cross streets and try again.");
-              return false;
-            }
+            // Portland Maps API for location suggestions doesn't work property when an ampersand is used to identify intersections
+            var address = $('.location-picker-address').val().replace("&", "and");
+            if (address.length < 1) { showStatusModal("Please enter an address or cross streets and try again."); return false; }
             verifyAddressPortlandMaps(address);
+          });
+          // turn off verified checkmark if value changes
+          $('.location-picker-address').on('keyup', function () {
+            setUnverified();
           });
   
           // Set up pick links //////////////////////////////////
@@ -176,13 +165,8 @@
           // this will display error messages, or a status indicator when performing slow ajax operations such as self geolocation
           statusModal = $('#status_modal');
   
-          // set up address field /////////////////////////////
-          // turn off verified checkmark if value changes
-          $('.location-picker-address').on('keyup', function () {
-            setUnverified();
-          });
-  
           // set up location type radios //////////////////////
+          // some of the sub elements need to be shown/hidden depending on the location type
           $('fieldset.location-type input[type="radio"]').on("click", function() {
             handleLocationTypeClick($(this));
           });
@@ -191,68 +175,249 @@
           $('#location_park').after('<span class="verified-checkmark park invisible" title="Location is verified!">✓</span>');
           $('#location_park').select2({
             escapeMarkup: function (markup) { return markup; },
-            language: {
-              noResults: function() {
-                return 'No results found. Please try again, or select one of the other property type options above.';
-              }
-            }
+            language: { noResults: function() { return 'No results found. Please try again, or select one of the other property type options above.'; } }
           });
           $('#location_park').on("change", function() {
-            //if (locationType == 'park') {
               var park = $(this).val();
-              if (park) {
-                locateParkFromSelector(park);
-              }
-            //}
+              if (park) { locateParkFromSelector(park); }
           });
-  
-          if (layerUrl) {
 
-            var marker = L.icon({
-              iconUrl: '/modules/custom/portland/modules/portland_location_picker/images/map_marker_incident.png',
-              iconSize:     [25, 41], // size of the icon
-              shadowSize:   [0, 0], // size of the shadow
-              iconAnchor:   [13, 41], // point of the icon which will correspond to marker's location
-              shadowAnchor: [0, 0],  // the same for the shadow
-              popupAnchor:  [0, -41] // point from which the popup should open relative to the iconAnchor
-            });
-            var marker_solved = L.icon({
-              iconUrl: '/modules/custom/portland/modules/portland_location_picker/images/map_marker_incident_solved.png',
-              iconSize:     [25, 41], // size of the icon
-              shadowSize:   [0, 0], // size of the shadow
-              iconAnchor:   [13, 41], // point of the icon which will correspond to marker's location
-              shadowAnchor: [0, 0],  // the same for the shadow
-              popupAnchor:  [0, -41] // point from which the popup should open relative to the iconAnchor
-            });
-            // incident is the default layer type. if layerType might be something else, add logic here
-            // to provide the appropriate marker.
-  
+          // INITIALIZE FEATURE LAYER //////////
+          if (primaryLayerSource) {
+
+            var markerIcon = primaryMarker ? primaryMarker : DEFAULT_FEATURE_ICON_URL;
+            primaryLayerMarkerGroup = L.geoJson();
+    
+            // get primary layer data
             $.ajax({
-              url: layerUrl, success: function (response) {
-                geoJsonLayer = L.geoJSON(response, { 
-                  pointToLayer: function(feature,latlng){
-                    if (feature.properties.ticket_status == "open") { return L.marker(latlng,{icon: marker}); }
-                    if (feature.properties.ticket_status == "solved") { return L.marker(latlng,{icon: marker_solved}); }
-                  },
-                  onEachFeature: function (feature, layer) {
-                    popupOptions = { maxWidth: 250 };
-                    var message = feature.properties.ticket_status == "open" ? OPEN_ISSUE_MESSAGE : SOLVED_ISSUE_MESSAGE;
-                    var description = "";
-                    if (feature.properties.custom_graffiti_description) {
-                      description = "<p>Description: " + feature.properties.custom_graffiti_description + "</p>";
+              url: primaryLayerSource, success: function (primaryResponse) {
+
+                primaryFeatures = primaryResponse.features;
+                assetCount = primaryFeatures.length;
+                console.log(assetCount + " assets found");
+
+                if (incidentsLayerSource) {
+                  // there's an incident (tickets) layer. we'll need to retrieve it, and then do a double
+                  // loop to see if any of the incident asset_id values match the asset id values. if so,
+                  // we use the incident marker if provided.
+                  $.ajax({
+                    url: incidentsLayerSource, success: function (incidentsResponse) {
+
+                      incidentsFeatures = incidentsResponse.features;
+                      incidentsLayerMarkerGroup = L.geoJson();
+
+                      primaryLoop:
+                      for (var i = 0; i < primaryFeatures.length; i++) {
+
+                        var assetid;
+                        var ticketassetid;
+                        var feature = primaryFeatures[i];
+                        var classname = "";
+
+                        secondaryLoop:
+                        for (var j = 0; j < incidentsFeatures.length; j++) {
+                          markerIcon = primaryMarker;
+                          var incident = incidentsFeatures[j];
+                          assetid = feature.properties.id;
+                          ticketassetid = incident.properties.asset_id;
+
+                          // determine the marker icon to use. 
+                          if (assetid == ticketassetid) {
+                            classname = "incident";
+                            feature.properties.status = incident.properties.status ? incident.properties.status : "";
+                            if (feature.properties.detail) {
+                              feature.properties.detail += incident.properties.detail;
+                            } else {
+                              feature.properties.detail = incident.properties.detail;
+                            }
+                            feature.properties.date_reported = incident.properties.date_reported;
+                            if (feature.properties.status == "open" || feature.properties.status == "new") {
+                              // only set hasIncident if the status is open; this allows solved but recurred incident to be reproted
+                              feature.properties.hasIncident = true;
+                            } else {
+                              classname += " solved"; 
+                              feature.properties.date_resolved = incident.properties.date_resolved;
+                            }
+                            if (incidentMarker) {
+                              markerIcon = incidentMarker;
+                            }
+                            break secondaryLoop;
+                          }
+                        }
+
+                        var newMarker = L.icon({
+                          iconUrl:      markerIcon,
+                          iconSize:     DEFAULT_ICON_SIZE, // size of the icon
+                          shadowSize:   [0, 0], // size of the shadow
+                          iconAnchor:   [13, 41], // point of the icon which will correspond to marker's location
+                          shadowAnchor: [0, 0],  // the same for the shadow
+                          popupAnchor:  [0, -41],
+                          className:    classname
+                        });
+
+                        addMarkerToMap(feature, newMarker);
+
+                      }
                     }
-                    layer.bindPopup(`<p><b>${feature.properties.name}</b><br>Report ID: ${feature.properties.ticket_id}<br>Status: ${feature.properties.ticket_status}<br>Reported: ${feature.properties.ticket_created_date}</p>${description}<p><em>${message}</em></p>`, popupOptions);
+                  });
+                } else {
+
+                  if (primaryLayerType == "incident") {
+                    markerIcon = incidentMarker;
                   }
-                 });
-                 map.on('zoomend', handleZoomEndShowGeoJsonLayer);
+
+                  var newMarker = L.icon({
+                    iconUrl:      markerIcon,
+                    iconSize:     DEFAULT_ICON_SIZE, // size of the icon
+                    shadowSize:   [0, 0], // size of the shadow
+                    iconAnchor:   [13, 41], // point of the icon which will correspond to marker's location
+                    shadowAnchor: [0, 0],  // the same for the shadow
+                    popupAnchor:  [0, -41]
+                  });
+        
+                  for (var j = 0; j < primaryResponse.features.length; j++) {
+                    addMarkerToMap(primaryResponse.features[j], newMarker);
+                  }
+                }
               }
             });
+            handleZoomEndShowGeoJsonLayer();
           }
         }
 
-        
+        function addMarkerToMap(primaryFeature, addMarker, incidentFeature = null) {
+          var addToLayer = primaryFeature.properties.hasIncident ? incidentsLayerMarkerGroup : primaryLayerMarkerGroup;
+          
+          var newFeature = L.geoJSON(primaryFeature, {
+            coordsToLatLng: function (coords) {
+              return new L.LatLng(coords[0], coords[1]);
+            },
+            pointToLayer: function (feature, latlng) {
+              return L.marker(latlng, { icon: addMarker, iconSize: DEFAULT_ICON_SIZE, bubblingMouseEvents: false });
+            },
+            onEachFeature: function(feature, layer) {
+              //if (!disablePopup && feature.properties.status) {
+                popupOptions = { maxWidth: 250 };
+                // var name = feature.properties.name ? feature.properties.name : "Asset " + feature.properties.id;
+                // var incidentStatus = feature.properties.status ? "<p>Status: " + feature.properties.status + "</p>" : "";
+                // var dateReported = feature.properties.date_reported ? "<p>Date Reported: " + feature.properties.date_reported + "</p>" : "";
+                // //var message = feature.properties.status == "Open" ? OPEN_ISSUE_MESSAGE : SOLVED_ISSUE_MESSAGE;
+                // var description = feature.properties.custom_graffiti_description ? "<p>Description: " + feature.properties.custom_graffiti_description + "</p>" : "";
+                layer.bindPopup(generatePopupContent(feature), popupOptions);
+              //}
+            }
+          });
+
+          newFeature.on('click', handleMarkerClick);
+
+          // add click handler to marker if behavior is "selection"; marker click is used to set location.
+          // on click capture location lat/lon (hidden field), asset ID (hidden field), and asset title (address field)
+
+          // how do we dislay the selected location in the widget? Maybe asset title in the address field?
+          
+          newFeature.addTo(addToLayer);
+        }
+
+        function generateLocateControl() {
+          return L.Control.extend({
+            options: {
+              position: "bottomright"
+            },
+            onAdd: function (map) {
+              locateControlContaier = L.DomUtil.create('div', 'leaflet-bar locate-control leaflet-control leaflet-control-custom');
+              locateControlContaier.style.backgroundImage = "url(/modules/custom/portland/modules/portland_location_picker/images/map_locate.png)";
+              locateControlContaier.title = 'Locate me';
+              locateControlContaier.onclick = handleLocateButtonClick;
+              return locateControlContaier;
+            }
+          });
+        }
+
+        function generateAerialControl() {
+          return L.Control.extend({
+            options: {
+              position: "bottomright"
+            },
+            onAdd: function (map) {
+              aerialControlContainer = L.DomUtil.create('div', 'leaflet-bar locate-control leaflet-control leaflet-control-custom');
+              aerialControlContainer.style.backgroundImage = "url(/modules/custom/portland/modules/portland_location_picker/images/map_aerial.png)";
+              aerialControlContainer.title = 'Aerial view';
+              aerialControlContainer.onclick = handleAerialButtonClick;
+              return aerialControlContainer;
+            }
+          });
+        }
+
+        function generatePopupContent(feature) {
+          var name = feature.properties.name ? feature.properties.name : primaryLayerType == "incident" ? "Incident" : "Asset";
+          var detail = feature.properties.detail ? feature.properties.detail : "";
+
+          var message = "";
+          if (feature.properties.status) {
+            message = feature.properties.status == "open" || feature.properties.status == "new" ? OPEN_ISSUE_MESSAGE : SOLVED_ISSUE_MESSAGE;
+            message = "<p><em>" + message + "</em></p>";
+          }
+          return `<p><b>${name}</b></p>${detail}${message}`;
+        }
   
         // EVENT HANDLERS ///////////////////////////////
+
+        function handleMarkerClick(marker) {
+
+          L.DomEvent.preventDefault(marker);
+
+          if (addressMarker) {
+            map.removeLayer(addressMarker);
+            addressMarker = null;
+          }
+          resetClickedMarker();
+
+          if (primaryLayerBehavior == "selection" && !marker.layer.feature.properties.hasIncident) {
+
+            // store original marker icon, so we can swap back
+            marker.originalIcon = marker.layer.options.icon;
+
+            // use selected marker icon
+            newIcon = L.icon({ iconUrl: selectedMarker });
+            marker.layer.setIcon(newIcon);
+            L.DomUtil.addClass(marker.layer._icon, 'selected');
+
+            clickedMarker = marker;
+
+            // set location form fields with asset data
+            selectAsset(marker);
+
+
+          } else {
+            $('#place_name').val('');
+            $('#location_lat').val('');
+            $('#location_lon').val('');
+          }
+          
+          // we want to reverse geolocate even if this isn't a selection marker
+          reverseGeolocate(marker.latlng);
+        }
+
+        function resetClickedMarker() {
+          if (clickedMarker) {
+            // reset clicked marker's icon to original
+            clickedMarker.layer.setIcon(clickedMarker.originalIcon);
+            L.DomUtil.removeClass(clickedMarker.layer._icon, 'selected');
+            //map.closePopup();
+          }
+        }
+
+        function selectAsset(marker) {
+            // copy asset title to holder
+            $('#place_name').val(marker.layer.feature.properties.name);
+
+            // copy asset coordiantes to lat/lon fields
+            $('#location_lat').val(marker.latlng.lat);
+            $('#location_lon').val(marker.latlng.lng);
+
+            // copy asset id to hidden field
+            $('#location_asset_id').val(marker.layer.feature.properties.id);
+        }
   
         function handleLocationTypeClick(radios) {
           // reset park list; it may have been changed
@@ -328,17 +493,30 @@
         }
 
         function handleZoomEndShowGeoJsonLayer() {
+          // close all popups when zooming
+          map.closePopup();
+          
           var zoomlevel = map.getZoom();
-          if (zoomlevel  < DEFAULT_ZOOM_CLICK-1){
-              if (map.hasLayer(geoJsonLayer)) {
-                  map.removeLayer(geoJsonLayer);
-              }
+          if (zoomlevel < featureLayerVisibleZoom){
+            if (primaryLayerMarkerGroup && map.hasLayer(primaryLayerMarkerGroup)) {
+                map.removeLayer(primaryLayerMarkerGroup);
+            }
+            if (incidentsLayerMarkerGroup && map.hasLayer(incidentsLayerMarkerGroup)) {
+              map.removeLayer(incidentsLayerMarkerGroup);
+            }
           }
-          if (zoomlevel >= DEFAULT_ZOOM_CLICK-1){
-              if (!map.hasLayer(geoJsonLayer)){
-                  map.addLayer(geoJsonLayer);
-              }
+          if (zoomlevel >= featureLayerVisibleZoom){
+            if (primaryLayerMarkerGroup && !map.hasLayer(primaryLayerMarkerGroup)){
+              map.addLayer(primaryLayerMarkerGroup);
+            }
+            if (incidentsLayerMarkerGroup && !map.hasLayer(incidentsLayerMarkerGroup)) {
+              map.addLayer(incidentsLayerMarkerGroup);
+            }
           }
+          // TODO: if we only want to add markers in the visible area of the map after zooming in to a certain level,
+          // use getBounds to get the polygon that represents the map viewport, then check markers to see if they're contained.
+          // var bounds = map.getBounds();
+          // console.log(bounds);
         }
 
         function handleStillThereClick(id) {
@@ -419,15 +597,27 @@
         }
   
         function setMarkerAndZoom(lat, lon, zoom, center, zoomlevel) {
-          // remove previous marker
-          if (marker) {
-            map.removeLayer(marker);
-            marker = null;
-          }
+          //resetClickedMarker(); // if a marker was used for selection
   
+          if (addressMarker) {
+            // remove previous address marker
+            map.removeLayer(addressMarker);
+            addressMarker = null;
+          }
+
           // set new layer
           var latlon = [lat, lon];
-          marker = L.marker(latlon, { draggable: true, riseOnHover: true }).addTo(map);
+          if (primaryLayerBehavior != "selection") {
+            addressMarker = L.marker(latlon, { draggable: true, riseOnHover: true, iconSize: DEFAULT_ICON_SIZE  }).addTo(map);
+            // if address marker is moved, we want to capture the new coordinates
+            addressMarker.on('dragend', function (e) {
+              // capture new lat/lon values in hidden fields
+              var latlng = addressMarker.getLatLng();
+              $('.location-lat').val(latlng.lat);
+              $('.location-lon').val(latlng.lng);
+              reverseGeolocate(latlng);
+            });
+          }
           if (center) {
             map.setView(latlon);
           }
@@ -439,14 +629,7 @@
           $('.location-lat').val(lat);
           $('.location-lon').val(lon);
   
-          // set dragend event handler on marker
-          marker.on('dragend', function (e) {
-            // capture new lat/lon values in hidden fields
-            var latlng = marker.getLatLng();
-            $('.location-lat').val(latlng.lat);
-            $('.location-lon').val(latlng.lng);
-            reverseGeolocate(latlng);
-          });
+
         }
   
         function reverseGeolocate(latlng) {
@@ -543,7 +726,10 @@
         }
   
         function processReverseLocationData(data, lat, lng) {
-          setMarkerAndZoom(lat, lng, true, false, DEFAULT_ZOOM_CLICK);
+          // don't set marker and zoom if primary layer behavior is "selection"
+          if (primaryLayerBehavior != "selection") {
+            setMarkerAndZoom(lat, lng, true, false, DEFAULT_ZOOM_CLICK);
+          }
           var street = data.address.Street;
           var city = data.address.City;
           var state = data.address.State;

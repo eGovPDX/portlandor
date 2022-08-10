@@ -51,7 +51,7 @@ class PublishAction extends ViewsBulkOperationsActionBase {
    */
   public function access($object, AccountInterface $account = NULL, $return_as_object = FALSE) {
     if ($object->getEntityTypeId() === 'node' || $object->getEntityTypeId() === 'media') {
-      $access = $object->access('update', $account, TRUE)->andIf($object->access('edit', $account, TRUE));
+      $access = $object->access('update', $account, TRUE)->orIf($object->access('edit', $account, TRUE));
       return $return_as_object ? $access : $access->isAllowed();
     }
 
