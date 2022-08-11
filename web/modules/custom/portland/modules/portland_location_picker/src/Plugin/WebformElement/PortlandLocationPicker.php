@@ -94,9 +94,9 @@ class PortlandLocationPicker extends WebformCompositeBase {
   public function prepare(array &$element, WebformSubmissionInterface $webform_submission = NULL) {
     parent::prepare($element, $webform_submission);
 
-    $layerUrl = $element['#geojson_layer'];
-    $layerBehavior = $element['#geojson_layer_behavior'];
-    $layerType = $element['#geojson_layer_type'];
+    $layerUrl = $element['#geojson_layer'] ?? NULL;
+    $layerBehavior = $element['#geojson_layer_behavior'] ?? NULL;
+    $layerType = $element['#geojson_layer_type'] ?? NULL;
 
     $element['#attached']['drupalSettings']['webform']['portland_location_picker']['geojson_layer'] = $layerUrl;
     $element['#attached']['drupalSettings']['webform']['portland_location_picker']['geojson_layer_behavior'] = $layerBehavior;
