@@ -33,7 +33,7 @@ elements: |-
     '#title': 'Existing Permit'
     '#states':
       visible:
-        ':input[name="wizard_permit_need"]':
+        ':input[name="permit_type"]':
           value: existing_permit
     wizard_existing_permit_situation:
       '#type': radios
@@ -341,8 +341,8 @@ elements: |-
     '#title': '7-Day Permit'
     '#states':
       visible:
-        ':input[name="permit_street_28ft_wide"]':
-          value: 'Yes'
+        ':input[name="permit_type"]':
+          value: 7day
     markup_7day_permit_introduction:
       '#type': processed_text
       '#text': |
@@ -352,7 +352,7 @@ elements: |-
 
         <p>Here are some example signs you may see in areas where this permit Shall Not Be Used:</p>
 
-        <p><img alt="" src="/sites/default/files/styles/responsive_extra/public/2022/apply_tsup-7day_permit.png" /></p>
+        <drupal-entity data-align="narrow" data-embed-button="image_browser" data-entity-embed-display="view_mode:media.banner" data-entity-type="media" data-entity-uuid="4c68b8cf-3bc2-4b03-a35d-a332762dd870"></drupal-entity>
 
         <p><strong>Please read and review the&nbsp;<a href="https://www.portland.gov/sites/default/files/2022/non-metered-parking-reservation-overview-brochure.pdf" target="_blank">Parking Enforcement Reservation Procedure</a>. Parking Enforcement will only enforce your no parking signs if the verification process has been completed. Additional fees apply to complete the verification process.</strong></p>
       '#format': simplified_editor_with_media_embed
@@ -422,26 +422,8 @@ elements: |-
     '#title': 'Simple Permit'
     '#states':
       visible:
-        - ':input[name="permit_amount_20ft_spaces"]':
-            filled: true
-          ':input[name="permit_location_metered"]':
-            value: 'true'
-        - or
-        - ':input[name="permit_amount_20ft_spaces"]':
-            filled: true
-            value:
-              greater: '5'
-        - or
-        - ':input[name="permit_amount_20ft_spaces"]':
-            filled: true
-          ':input[name="permit_date_span"]':
-            value:
-              greater: '7'
-        - or
-        - ':input[name="permit_amount_20ft_spaces"]':
-            filled: true
-          ':input[name="permit_street_28ft_wide"]':
-            value: 'No / Unknown'
+        ':input[name="permit_type"]':
+          value: simple
     markup_simple_permit_introduction:
       '#type': processed_text
       '#text': |
@@ -610,8 +592,8 @@ elements: |-
     '#title': 'Complex Permit'
     '#states':
       visible:
-        ':input[name="wizard_permit_need"]':
-          value: traffic
+        ':input[name="permit_type"]':
+          value: complex
     markup_complex_permit_introduction:
       '#type': processed_text
       '#text': |
@@ -874,12 +856,9 @@ elements: |-
     '#type': webform_wizard_page
     '#title': Permit
     '#states':
-      invisible:
-        - ':input[name="permit_amount_20ft_spaces"]':
-            filled: true
-        - or
-        - ':input[name="wizard_permit_need"]':
-            value: traffic
+      visible:
+        ':input[name="permit_type"]':
+          value: unknown
     '#admin_title': 'Placeholder permit page'
   page_contact_info:
     '#type': webform_wizard_page
@@ -902,6 +881,28 @@ elements: |-
       '#description': 'Primary communication will be done through email, please check your spam folder.'
       '#input_mask': '''alias'': ''email'''
       '#required': true
+  permit_type:
+    '#type': webform_computed_twig
+    '#title': 'Computed permit type'
+    '#display_on': none
+    '#mode': text
+    '#template': |-
+      {% set permit_type = "unknown" %}
+      {% if data.wizard_permit_need == "parking" %}
+        {% set permit_type = "simple" %}
+
+        {% if data.permit_location_metered == "false" and data.permit_street_28ft_wide == "Yes" %}
+          {% set permit_type = "7day" %}
+        {% endif %}
+      {% elseif data.wizard_permit_need == "traffic" %}
+        {% set permit_type = "complex" %}
+      {% elseif data.wizard_permit_need == "existing_permit" %}
+        {% set permit_type = "existing_permit" %}
+      {% endif %}
+
+      {{ permit_type }}
+    '#whitespace': trim
+    '#store': true
 css: ''
 javascript: "function calculateDate() { \r\n\tconst $ = jQuery.bind(jQuery);\r\n\tconst isDateSame = (a, b) =>\r\n\t\ta.getFullYear() === b.getFullYear() &&\r\n\t\ta.getMonth() === b.getMonth() &&\r\n\t\ta.getDate() === b.getDate();\r\n\tconst dayNameToNum = {\r\n\t\t\"sunday\": 0,\r\n\t\t\"monday\": 1,\r\n\t\t\"tuesday\": 2,\r\n\t\t\"wednesday\": 3,\r\n\t\t\"thursday\": 4,\r\n\t\t\"friday\": 5,\r\n\t\t\"saturday\": 6,\r\n\t};\r\n\tconst isMetered = $(\"input[name='permit_metered_value']\").val() === \"true\";\r\n\r\n    const daysOfWeek = $(\"input[name*='permit_date_days_of_week']\")\r\n\t\t.filter(\":checked\")\r\n\t\t.map((_, el) => dayNameToNum[el.value])\r\n\t\t.get();\r\n\tconst startValue = $(\"input[name*='permit_date_start']\").val();\r\n\tconst endValue = $(\"input[name*='permit_date_end']\").val()\r\n\tif (!startValue || !endValue ) return;\r\n\r\n    const startDate = new Date(startValue);\r\n    const endDate = new Date(endValue);\r\n\tif (startDate.getTime() > endDate.getTime()) return;\r\n\r\n\tlet amtDays = 0;\r\n\tif (daysOfWeek.includes(startDate.getDay()) || !isMetered) amtDays++;\r\n\r\n\twhile (!isDateSame(startDate, endDate)) {\r\n\t\tstartDate.setDate(startDate.getDate() + 1);\r\n\r\n\t\tif (daysOfWeek.includes(startDate.getDay()) || !isMetered) amtDays++;\r\n\t}\r\n\r\n\t$(\".days-requested\").text(amtDays === 1 ? \"1 day\" : `${amtDays} days`);\r\n    $(\"input[name='permit_date_span']\").val(amtDays);\r\n\tconst amtWeeks = Math.ceil(amtDays / 7);\r\n\t$(\".weeks-requested\").text(amtWeeks === 1 ? \"1 week\" : `${amtWeeks} weeks`);\r\n}\r\n\r\njQuery(\"input[name*='permit_date_']\").change(calculateDate);"
 settings:
