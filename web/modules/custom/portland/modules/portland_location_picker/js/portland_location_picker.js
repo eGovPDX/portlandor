@@ -387,15 +387,18 @@
             // set location form fields with asset data
             selectAsset(marker);
 
+            reverseGeolocate(marker.latlng);
 
           } else {
             $('#place_name').val('');
             $('#location_lat').val('');
             $('#location_lon').val('');
+
+            if (primaryLayerBehavior == "selection") {
+              reverseGeolocate(marker.latlng);
+            }
           }
           
-          // we want to reverse geolocate even if this isn't a selection marker
-          reverseGeolocate(marker.latlng);
         }
 
         function resetClickedMarker() {
