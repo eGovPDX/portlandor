@@ -31,7 +31,7 @@
         const NOT_A_PARK = "You selected park or natural area as the property type, but no park data was found for the selected location. If you believe this is a valid location, please zoom in to find the park on the map, click to select a location, and continue to submit your report.";
         const OPEN_ISSUE_MESSAGE = "If this issue is what you came here to report, there's no need to report it again.";
         const SOLVED_ISSUE_MESSAGE = "This issue was recently solved. If that's not the case, or the issue has reoccured, please submit a new report.";
-        const DEFAULT_FEATURE_ICON_URL = "/modules/custom/portland/modules/portland_location_picker/images/map_marker_incident.png";
+        const DEFAULT_FEATURE_ICON_URL = "/modules/custom/portland/modules/portland_location_picker/images/map_marker_default.png";
   
         // GLOBALS //////////
         var map;
@@ -73,6 +73,15 @@
         var verifyButtonText = drupalSettings.webform.portland_location_picker.verify_button_text ? drupalSettings.webform.portland_location_picker.verify_button_text : 'Verify';
         var primaryFeatureName = drupalSettings.webform.portland_location_picker.primary_feature_name ? drupalSettings.webform.portland_location_picker.primary_feature_name : 'asset';
         var featureLayerVisibleZoom = drupalSettings.webform.portland_location_picker.feature_layer_visible_zoom ? drupalSettings.webform.portland_location_picker.feature_layer_visible_zoom : FEATURE_LAYER_VISIBLE_ZOOM;
+
+        var defaultSelectedMarkerIcon = L.icon({
+          iconUrl:      selectedMarker,
+          iconSize:     DEFAULT_ICON_SIZE, // size of the icon
+          shadowSize:   [0, 0], // size of the shadow
+          iconAnchor:   [13, 41], // point of the icon which will correspond to marker's location
+          shadowAnchor: [0, 0],  // the same for the shadow
+          popupAnchor:  [0, -41]
+        });
 
         // if ajax is used in the webform (for computed twig, for example), this script
         // and the initialize function may get called multiple times for some reason.
@@ -611,7 +620,7 @@
           // set new layer
           var latlon = [lat, lon];
           if (primaryLayerBehavior != "selection") {
-            addressMarker = L.marker(latlon, { draggable: true, riseOnHover: true, iconSize: DEFAULT_ICON_SIZE  }).addTo(map);
+            addressMarker = L.marker(latlon, { icon: defaultSelectedMarkerIcon, draggable: true, riseOnHover: true, iconSize: DEFAULT_ICON_SIZE  }).addTo(map);
             // if address marker is moved, we want to capture the new coordinates
             addressMarker.on('dragend', function (e) {
               // capture new lat/lon values in hidden fields
