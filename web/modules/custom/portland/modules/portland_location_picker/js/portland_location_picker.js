@@ -31,7 +31,7 @@
         const NOT_A_PARK = "You selected park or natural area as the property type, but no park data was found for the selected location. If you believe this is a valid location, please zoom in to find the park on the map, click to select a location, and continue to submit your report.";
         const OPEN_ISSUE_MESSAGE = "If this issue is what you came here to report, there's no need to report it again.";
         const SOLVED_ISSUE_MESSAGE = "This issue was recently solved. If that's not the case, or the issue has reoccured, please submit a new report.";
-        const DEFAULT_FEATURE_ICON_URL = "/modules/custom/portland/modules/portland_location_picker/images/map_marker_incident.png";
+        const DEFAULT_FEATURE_ICON_URL = "/modules/custom/portland/modules/portland_location_picker/images/map_marker_default.png";
   
         // GLOBALS //////////
         var map;
@@ -73,6 +73,15 @@
         var verifyButtonText = drupalSettings.webform.portland_location_picker.verify_button_text ? drupalSettings.webform.portland_location_picker.verify_button_text : 'Verify';
         var primaryFeatureName = drupalSettings.webform.portland_location_picker.primary_feature_name ? drupalSettings.webform.portland_location_picker.primary_feature_name : 'asset';
         var featureLayerVisibleZoom = drupalSettings.webform.portland_location_picker.feature_layer_visible_zoom ? drupalSettings.webform.portland_location_picker.feature_layer_visible_zoom : FEATURE_LAYER_VISIBLE_ZOOM;
+
+        var defaultSelectedMarkerIcon = L.icon({
+          iconUrl:      selectedMarker,
+          iconSize:     DEFAULT_ICON_SIZE, // size of the icon
+          shadowSize:   [0, 0], // size of the shadow
+          iconAnchor:   [13, 41], // point of the icon which will correspond to marker's location
+          shadowAnchor: [0, 0],  // the same for the shadow
+          popupAnchor:  [0, -41]
+        });
 
         // if ajax is used in the webform (for computed twig, for example), this script
         // and the initialize function may get called multiple times for some reason.
@@ -232,8 +241,8 @@
                             }
                             feature.properties.date_reported = incident.properties.date_reported;
                             if (feature.properties.status == "open" || feature.properties.status == "new") {
-                              // only set hasIncident if the status is open; this allows solved but recurred incident to be reproted
-                              feature.properties.hasIncident = true;
+                              // only set hasOpenIncident if the status is open; this allows solved but recurred incident to be reproted
+                              feature.properties.hasOpenIncident = true;
                             } else {
                               classname += " solved"; 
                               feature.properties.date_resolved = incident.properties.date_resolved;
@@ -276,7 +285,21 @@
                   });
         
                   for (var j = 0; j < primaryResponse.features.length; j++) {
-                    addMarkerToMap(primaryResponse.features[j], newMarker);
+                    if (primaryLayerType == 'incident' && primaryResponse.features[j].properties.hasOwnProperty('status') && primaryResponse.features[j].properties.status == "solved") {
+                      var newSolvedMarker = L.icon({
+                        iconUrl:      markerIcon,
+                        iconSize:     DEFAULT_ICON_SIZE, // size of the icon
+                        shadowSize:   [0, 0], // size of the shadow
+                        iconAnchor:   [13, 41], // point of the icon which will correspond to marker's location
+                        shadowAnchor: [0, 0],  // the same for the shadow
+                        popupAnchor:  [0, -41],
+                        className:    "solved"
+                      });
+                      addMarkerToMap(primaryResponse.features[j], newSolvedMarker);
+                    } else {
+                      newMarker.className = "";
+                      addMarkerToMap(primaryResponse.features[j], newMarker);
+                    }
                   }
                 }
               }
@@ -286,8 +309,8 @@
         }
 
         function addMarkerToMap(primaryFeature, addMarker, incidentFeature = null) {
-          var addToLayer = primaryFeature.properties.hasIncident ? incidentsLayerMarkerGroup : primaryLayerMarkerGroup;
-          
+          var addToLayer = primaryFeature.properties.hasOpenIncident ? incidentsLayerMarkerGroup : primaryLayerMarkerGroup;
+
           var newFeature = L.geoJSON(primaryFeature, {
             coordsToLatLng: function (coords) {
               return new L.LatLng(coords[0], coords[1]);
@@ -372,7 +395,8 @@
           }
           resetClickedMarker();
 
-          if (primaryLayerBehavior == "selection" && !marker.layer.feature.properties.hasIncident) {
+          if ((primaryLayerBehavior == "selection" && !marker.layer.feature.properties.hasOpenIncident)
+               || marker.layer.feature.properties.status == "solved") {
 
             // store original marker icon, so we can swap back
             marker.originalIcon = marker.layer.options.icon;
@@ -387,7 +411,9 @@
             // set location form fields with asset data
             selectAsset(marker);
 
-            reverseGeolocate(marker.latlng);
+            if (marker.layer.feature.properties.status != "solved") {
+              reverseGeolocate(marker.latlng);
+            }
 
           } else {
             $('#place_name').val('');
@@ -611,7 +637,7 @@
           // set new layer
           var latlon = [lat, lon];
           if (primaryLayerBehavior != "selection") {
-            addressMarker = L.marker(latlon, { draggable: true, riseOnHover: true, iconSize: DEFAULT_ICON_SIZE  }).addTo(map);
+            addressMarker = L.marker(latlon, { icon: defaultSelectedMarkerIcon, draggable: true, riseOnHover: true, iconSize: DEFAULT_ICON_SIZE  }).addTo(map);
             // if address marker is moved, we want to capture the new coordinates
             addressMarker.on('dragend', function (e) {
               // capture new lat/lon values in hidden fields
