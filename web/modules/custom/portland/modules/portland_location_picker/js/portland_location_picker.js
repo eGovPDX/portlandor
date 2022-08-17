@@ -241,8 +241,8 @@
                             }
                             feature.properties.date_reported = incident.properties.date_reported;
                             if (feature.properties.status == "open" || feature.properties.status == "new") {
-                              // only set hasIncident if the status is open; this allows solved but recurred incident to be reproted
-                              feature.properties.hasIncident = true;
+                              // only set hasOpenIncident if the status is open; this allows solved but recurred incident to be reproted
+                              feature.properties.hasOpenIncident = true;
                             } else {
                               classname += " solved"; 
                               feature.properties.date_resolved = incident.properties.date_resolved;
@@ -285,7 +285,21 @@
                   });
         
                   for (var j = 0; j < primaryResponse.features.length; j++) {
-                    addMarkerToMap(primaryResponse.features[j], newMarker);
+                    if (primaryLayerType == 'incident' && primaryResponse.features[j].properties.hasOwnProperty('status') && primaryResponse.features[j].properties.status == "solved") {
+                      var newSolvedMarker = L.icon({
+                        iconUrl:      markerIcon,
+                        iconSize:     DEFAULT_ICON_SIZE, // size of the icon
+                        shadowSize:   [0, 0], // size of the shadow
+                        iconAnchor:   [13, 41], // point of the icon which will correspond to marker's location
+                        shadowAnchor: [0, 0],  // the same for the shadow
+                        popupAnchor:  [0, -41],
+                        className:    "solved"
+                      });
+                      addMarkerToMap(primaryResponse.features[j], newSolvedMarker);
+                    } else {
+                      newMarker.className = "";
+                      addMarkerToMap(primaryResponse.features[j], newMarker);
+                    }
                   }
                 }
               }
@@ -295,8 +309,8 @@
         }
 
         function addMarkerToMap(primaryFeature, addMarker, incidentFeature = null) {
-          var addToLayer = primaryFeature.properties.hasIncident ? incidentsLayerMarkerGroup : primaryLayerMarkerGroup;
-          
+          var addToLayer = primaryFeature.properties.hasOpenIncident ? incidentsLayerMarkerGroup : primaryLayerMarkerGroup;
+
           var newFeature = L.geoJSON(primaryFeature, {
             coordsToLatLng: function (coords) {
               return new L.LatLng(coords[0], coords[1]);
@@ -381,7 +395,8 @@
           }
           resetClickedMarker();
 
-          if (primaryLayerBehavior == "selection" && !marker.layer.feature.properties.hasIncident) {
+          if ((primaryLayerBehavior == "selection" && !marker.layer.feature.properties.hasOpenIncident)
+               || marker.layer.feature.properties.status == "solved") {
 
             // store original marker icon, so we can swap back
             marker.originalIcon = marker.layer.options.icon;
@@ -396,7 +411,9 @@
             // set location form fields with asset data
             selectAsset(marker);
 
-            reverseGeolocate(marker.latlng);
+            if (marker.layer.feature.properties.status != "solved") {
+              reverseGeolocate(marker.latlng);
+            }
 
           } else {
             $('#place_name').val('');
