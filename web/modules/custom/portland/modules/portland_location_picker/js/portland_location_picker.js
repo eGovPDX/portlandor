@@ -69,7 +69,7 @@
         var primaryMarker = drupalSettings.webform.portland_location_picker.primary_marker ? drupalSettings.webform.portland_location_picker.primary_marker : '/modules/custom/portland/modules/portland_location_picker/images/map_marker_default.png';
         var selectedMarker = drupalSettings.webform.portland_location_picker.selected_marker ? drupalSettings.webform.portland_location_picker.selected_marker : '/modules/custom/portland/modules/portland_location_picker/images/map_marker_default_selected.png';
         var incidentMarker = drupalSettings.webform.portland_location_picker.incident_marker ? drupalSettings.webform.portland_location_picker.incident_marker : '/modules/custom/portland/modules/portland_location_picker/images/map_marker_incident.png';
-        var disablePopup = drupalSettings.webform.portland_location_picker.disable_popup;
+        var disablePopup = drupalSettings.webform.portland_location_picker.disable_popup ? true : false;
         var verifyButtonText = drupalSettings.webform.portland_location_picker.verify_button_text ? drupalSettings.webform.portland_location_picker.verify_button_text : 'Verify';
         var primaryFeatureName = drupalSettings.webform.portland_location_picker.primary_feature_name ? drupalSettings.webform.portland_location_picker.primary_feature_name : 'asset';
         var featureLayerVisibleZoom = drupalSettings.webform.portland_location_picker.feature_layer_visible_zoom ? drupalSettings.webform.portland_location_picker.feature_layer_visible_zoom : FEATURE_LAYER_VISIBLE_ZOOM;
@@ -387,15 +387,18 @@
             // set location form fields with asset data
             selectAsset(marker);
 
+            reverseGeolocate(marker.latlng);
 
           } else {
             $('#place_name').val('');
             $('#location_lat').val('');
             $('#location_lon').val('');
+
+            if (primaryLayerBehavior == "selection") {
+              reverseGeolocate(marker.latlng);
+            }
           }
           
-          // we want to reverse geolocate even if this isn't a selection marker
-          reverseGeolocate(marker.latlng);
         }
 
         function resetClickedMarker() {
