@@ -1,0 +1,389 @@
+uuid: 956258c2-bbb4-454a-99a3-aa1317917c3e
+langcode: en
+status: open
+dependencies:
+  module:
+    - antibot
+    - honeypot
+    - portland_zendesk
+third_party_settings:
+  antibot:
+    antibot: true
+  honeypot:
+    honeypot: true
+weight: 0
+open: null
+close: null
+uid: 60
+template: false
+archive: false
+id: report_trash_can
+title: 'Report a Problem with a Public Trash Can'
+description: ''
+category: Report
+elements: |-
+  section_report:
+    '#type': webform_section
+    '#title': Report
+    '#title_display': invisible
+    report_location:
+      '#type': portland_location_picker
+      '#title': 'Location of public trash can'
+      '#title_display': before
+      '#required': true
+      '#location_type__access': false
+      '#location_park_container__access': false
+      '#waterway_instructions__access': false
+      '#location_private_owner__access': false
+      '#location_address__title': Address
+      '#location_address__description': 'Enter an address then press the Locate button to find it on the map, or use the +/- zoom controls to zoom in and find the trash can you want to report.'
+      '#location_address__title_display': invisible
+      '#location_map__title': 'Location marker on map'
+      '#location_map__description': '<em>Public trash cans are displayed with a gray marker <img src="/modules/custom/portland/modules/portland_location_picker/images/map_marker_trashcan.png" alt="Trash can map marker icon" class="inline-icon"> when the map is fully zoomed in. Click a trash can to select it. Trash cans that have already been reported are shown with a red marker <img src="/modules/custom/portland/modules/portland_location_picker/images/map_marker_incident.png" alt="Red map marker icon" class="inline-icon">.</em>'
+      '#place_name__title': 'Selected Trash Can'
+      '#place_name__description': 'Select a trash can by clicking it on the map.'
+      '#place_name__required': true
+      '#location_details__access': false
+      '#location_lat__required': true
+      '#location_lon__required': true
+      '#location_asset_id__title': 'Selected Trash Can'
+      '#selected_asset_name__title': 'Selected asset'
+      '#location_address__states':
+        visible: true
+      '#location_map__description_display': after
+      '#location_map__states':
+        visible: true
+      '#place_name__readonly': true
+      '#place_name__description_display': invisible
+      '#primary_layer_source': /api/features/trashcans
+      '#incidents_layer_source': /api/tickets/trashcans
+      '#primary_layer_behavior': selection
+      '#primary_layer_type': asset
+      '#primary_feature_name0': 'trash can'
+      '#primary_marker': /modules/custom/portland/modules/portland_location_picker/images/map_marker_trashcan.png
+      '#verify_button_text': Locate
+      '#feature_layer_visible_zoom': 17
+    report_issue:
+      '#type': radios
+      '#title': 'What is the problem with the trash can?'
+      '#options':
+        Overflowing: Overflowing
+        'Broken lock': 'Broken lock'
+        Damaged: Damaged
+        Graffiti: Graffiti
+        'Door is open': 'Door is open'
+      '#required': true
+  section_contact:
+    '#type': webform_section
+    '#title': 'Your Contact Information'
+    contact_name:
+      '#type': textfield
+      '#title': Name
+    contact_email:
+      '#type': textfield
+      '#title': Email
+      '#description': 'We will use your email to respond to your feedback or request.'
+      '#input_mask': '''alias'': ''email'''
+      '#required': true
+  section_public_records_statement:
+    '#type': webform_section
+    '#title': 'Public Records Statement'
+    public_records_statement_required:
+      '#type': webform_markup
+      '#markup': 'The information you provide in this form is considered a public record under Oregon&rsquo;s <a data-renderer-mark="true" href="https://www.doj.state.or.us/oregon-department-of-justice/public-records/attorney-generals-public-records-and-meetings-manual/i-public-records/#:~:text=Under%20Oregon''s%20Public%20Records%20Law,committee%20of%20the%20Legislative%20Assembly" title="https://www.doj.state.or.us/oregon-department-of-justice/public-records/attorney-generals-public-records-and-meetings-manual/i-public-records/#:~:text=Under%20Oregon''s%20Public%20Records%20Law,committee%20of%20the%20Legislative%20Assembly">Public Records Law</a> and is available to the public on request.'
+  section_agent_use_only:
+    '#type': webform_section
+    '#title': 'Agent Use Only'
+    '#attributes':
+      style: 'padding: 15px; background-color: #cccccc;'
+    '#access_create_roles':
+      - administrator
+      - support_agent
+    '#access_update_roles':
+      - administrator
+      - support_agent
+    '#access_view_roles':
+      - administrator
+      - support_agent
+    agent_email:
+      '#type': textfield
+      '#title': 'Agent Email'
+      '#default_value': '[current-user:display-name] <[current-user:mail]>'
+      '#access_create_roles':
+        - administrator
+        - support_agent
+      '#access_update_roles':
+        - administrator
+        - support_agent
+      '#access_view_roles':
+        - administrator
+        - support_agent
+    agent_ticket_number:
+      '#type': number
+      '#title': 'Ticket Number'
+      '#min': 1000
+      '#max': 999999999
+    agent_action_taken:
+      '#type': radios
+      '#title': 'Action Taken'
+      '#options': action_taken
+      '#options_display': side_by_side
+      '#states':
+        invisible:
+          ':input[name="agent_ticket_number"]':
+            filled: true
+    agent_contact_type:
+      '#type': radios
+      '#title': 'Contact Type'
+      '#options': contact_type
+      '#options_display': side_by_side
+      '#states':
+        invisible:
+          ':input[name="agent_ticket_number"]':
+            filled: true
+    agent_ticket_type:
+      '#type': radios
+      '#title': 'Ticket Type'
+      '#options': ticket_type
+      '#options_display': side_by_side
+      '#default_value': Incident
+    agent_summary:
+      '#type': webform_computed_twig
+      '#title': 'Agent Summary'
+      '#display_on': none
+      '#template': |-
+        {% if uid %}
+        <p><strong>Agent Email:</strong> {{ data.agent_email }}<br>
+        {% if data.agent_ticket_number %}<p><strong>Ticket Number:</strong> {{ data.agent_ticket_number }}<br>{% endif %}
+        {% if data.agent_action_taken %}<p><strong>Action Taken:</strong> {{ data.agent_action_taken }}<br>{% endif %}
+        <strong>Contact Type:</strong> {% if data.agent_contact_type %}{{ data.agent_contact_type }}{% else %}Webform{% endif %}<br>
+        <strong>Ticket Type:</strong> {{ data.agent_ticket_type }}</p>
+        {% endif %}
+      '#store': true
+  report_ticket_id:
+    '#type': hidden
+    '#title': 'Support Ticket ID'
+  actions:
+    '#type': webform_actions
+    '#title': 'Submit button(s)'
+css: ''
+javascript: ''
+settings:
+  ajax: false
+  ajax_scroll_top: form
+  ajax_progress_type: ''
+  ajax_effect: ''
+  ajax_speed: null
+  page: true
+  page_submit_path: ''
+  page_confirm_path: ''
+  page_theme_name: ''
+  form_title: source_entity_webform
+  form_submit_once: false
+  form_open_message: ''
+  form_close_message: ''
+  form_exception_message: ''
+  form_previous_submissions: true
+  form_confidential: false
+  form_confidential_message: ''
+  form_disable_remote_addr: false
+  form_convert_anonymous: false
+  form_prepopulate: false
+  form_prepopulate_source_entity: false
+  form_prepopulate_source_entity_required: false
+  form_prepopulate_source_entity_type: ''
+  form_unsaved: false
+  form_disable_back: false
+  form_submit_back: false
+  form_disable_autocomplete: false
+  form_novalidate: false
+  form_disable_inline_errors: false
+  form_required: true
+  form_autofocus: false
+  form_details_toggle: false
+  form_reset: false
+  form_access_denied: default
+  form_access_denied_title: ''
+  form_access_denied_message: ''
+  form_access_denied_attributes: {  }
+  form_file_limit: ''
+  form_attributes: {  }
+  form_method: ''
+  form_action: ''
+  share: false
+  share_node: false
+  share_theme_name: ''
+  share_title: true
+  share_page_body_attributes: {  }
+  submission_label: ''
+  submission_exception_message: ''
+  submission_locked_message: ''
+  submission_log: false
+  submission_excluded_elements: {  }
+  submission_exclude_empty: false
+  submission_exclude_empty_checkbox: false
+  submission_views: {  }
+  submission_views_replace: {  }
+  submission_user_columns: {  }
+  submission_user_duplicate: false
+  submission_access_denied: default
+  submission_access_denied_title: ''
+  submission_access_denied_message: ''
+  submission_access_denied_attributes: {  }
+  previous_submission_message: ''
+  previous_submissions_message: ''
+  autofill: false
+  autofill_message: ''
+  autofill_excluded_elements: {  }
+  wizard_progress_bar: true
+  wizard_progress_pages: false
+  wizard_progress_percentage: false
+  wizard_progress_link: false
+  wizard_progress_states: false
+  wizard_start_label: ''
+  wizard_preview_link: false
+  wizard_confirmation: true
+  wizard_confirmation_label: ''
+  wizard_auto_forward: true
+  wizard_auto_forward_hide_next_button: false
+  wizard_keyboard: true
+  wizard_track: ''
+  wizard_prev_button_label: ''
+  wizard_next_button_label: ''
+  wizard_toggle: true
+  wizard_toggle_show_label: ''
+  wizard_toggle_hide_label: ''
+  preview: 0
+  preview_label: ''
+  preview_title: ''
+  preview_message: ''
+  preview_attributes: {  }
+  preview_excluded_elements: {  }
+  preview_exclude_empty: true
+  preview_exclude_empty_checkbox: false
+  draft: none
+  draft_multiple: false
+  draft_auto_save: false
+  draft_saved_message: ''
+  draft_loaded_message: ''
+  draft_pending_single_message: ''
+  draft_pending_multiple_message: ''
+  confirmation_type: page
+  confirmation_url: ''
+  confirmation_title: ''
+  confirmation_message: ''
+  confirmation_attributes: {  }
+  confirmation_back: true
+  confirmation_back_label: ''
+  confirmation_back_attributes: {  }
+  confirmation_exclude_query: false
+  confirmation_exclude_token: false
+  confirmation_update: false
+  limit_total: null
+  limit_total_interval: null
+  limit_total_message: ''
+  limit_total_unique: false
+  limit_user: null
+  limit_user_interval: null
+  limit_user_message: ''
+  limit_user_unique: false
+  entity_limit_total: null
+  entity_limit_total_interval: null
+  entity_limit_user: null
+  entity_limit_user_interval: null
+  purge: all
+  purge_days: 14
+  results_disabled: false
+  results_disabled_ignore: false
+  results_customize: false
+  token_view: false
+  token_update: false
+  token_delete: false
+  serial_disabled: false
+access:
+  create:
+    roles:
+      - anonymous
+      - authenticated
+    users: {  }
+    permissions: {  }
+  view_any:
+    roles:
+      - support_agent
+      - administrator
+    users: {  }
+    permissions: {  }
+  update_any:
+    roles:
+      - support_agent
+      - administrator
+    users: {  }
+    permissions: {  }
+  delete_any:
+    roles:
+      - support_agent
+      - administrator
+    users: {  }
+    permissions: {  }
+  purge_any:
+    roles:
+      - administrator
+    users: {  }
+    permissions: {  }
+  view_own:
+    roles:
+      - authenticated
+    users: {  }
+    permissions: {  }
+  update_own:
+    roles:
+      - support_agent
+      - administrator
+    users: {  }
+    permissions: {  }
+  delete_own:
+    roles:
+      - support_agent
+      - administrator
+    users: {  }
+    permissions: {  }
+  administer:
+    roles:
+      - support_agent
+      - administrator
+    users: {  }
+    permissions: {  }
+  test:
+    roles:
+      - support_agent
+      - administrator
+    users: {  }
+    permissions: {  }
+  configuration:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+handlers:
+  zendesk_new_ticket:
+    id: zendesk
+    handler_id: zendesk_new_ticket
+    label: 'Zendesk new ticket'
+    notes: ''
+    status: true
+    conditions: {  }
+    weight: 0
+    settings:
+      requester_name: contact_name
+      requester_email: contact_email
+      subject: 'Trash can report: [webform_submission:values:report_location:location_asset_id] [webform_submission:values:report_issue]'
+      comment: "<h3>Report</h3>\r\n<p><strong>Lat/Lon:</strong> <a href=\"https://www.google.com/maps/place/[webform_submission:values:report_location:location_lat],[webform_submission:values:report_location:location_lon]\">[webform_submission:values:report_location:location_lat],[webform_submission:values:report_location:location_lon]</a><br>\r\n<strong>Approximate address:</strong> <a href=\"https://www.google.com/maps/place/[webform_submission:values:report_location:location_address]\">[webform_submission:values:report_location:location_address]</a><br />\r\n<strong>Asset ID:</strong> [webform_submission:values:report_location:location_asset_id]<br><strong>Problem:</strong> [webform_submission:values:report_issue]</p>\r\n\r\n<h3>Contact</h3>\r\n<p><strong>Name:</strong> [webform_submission:values:contact_name]<br>\r\n<strong>Email:</strong> [webform_submission:values:contact_email]</p>\r\n\r\n<h3>Agent Details</h3>\r\n[webform_submission:values:agent_summary]"
+      tags: 'drupal webform trash'
+      priority: normal
+      status: new
+      group_id: '4549352062487'
+      assignee_id: ''
+      type: problem
+      collaborators: ''
+      custom_fields: "1500012743961: '[webform_submission:values:report_location:location_address]'\r\n1500012801542: '[webform_submission:values:report_location:location_asset_id]'\r\n1500013095781: '[webform_submission:uuid]'\r\n5581480390679: '[webform_submission:values:report_location:location_lat]'\r\n5581490332439: '[webform_submission:values:report_location:location_lon]'\r\n1500012743981: '[webform_submission:values:report_issue]'\r\n6353388345367: 'report_trash_can'"
+      ticket_id_field: report_ticket_id
+variants: {  }

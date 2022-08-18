@@ -63,6 +63,20 @@ function portland_zendesk_views_data() {
       'id' => 'date',
     ],
   ];
+  $data['zendesk_ticket']['custom_asset_id'] = [
+    'title' => t('Ticket asset id'),
+    'help' => t('The asset ID associated with the ticket.'),
+    'field' => [
+      'id' => 'standard',
+    ],
+  ];
+  $data['zendesk_ticket']['custom_reported_issue'] = [
+    'title' => t('Ticket reported issue'),
+    'help' => t('The reported issue associated with the ticket.'),
+    'field' => [
+      'id' => 'standard',
+    ],
+  ];
   $data['zendesk_ticket']['custom_location_lat'] = [
     'title' => t('Ticket location latitude'),
     'help' => t('The latitude coordinate associated with the ticket.'),
@@ -84,9 +98,9 @@ function portland_zendesk_views_data() {
       'id' => 'standard',
     ],
   ];
-  $data['zendesk_ticket']['custom_graffiti_description'] = [
-    'title' => t('Graffiti description'),
-    'help' => t('A description of the graffiti, used only by graffiti report tickets.'),
+  $data['zendesk_ticket']['custom_public_description'] = [
+    'title' => t('Public description'),
+    'help' => t('A public-friendly description of the incident.'),
     'field' => [
       'id' => 'standard',
     ],

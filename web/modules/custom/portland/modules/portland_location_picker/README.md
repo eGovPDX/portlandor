@@ -54,8 +54,11 @@ This default data can be accessed using the token [webform_submission:values:rep
 
 The following sub-fields are available:
 
+* location_type
 * location_address
 * place_name
+* location_details
+* location_asset_id
 * location_lat
 * location_lon
 
@@ -72,24 +75,81 @@ location_map__states:
 
 ## Adding custom GeoJSON data layers
 
-This partially completed prototype functionality allows geoJSON features to be displayed in the location widget's map. It's preferable to use a Views geoJSON feed so that the data is cached. 
+Using the portland_geojson_views module and included views plugin, geoJSON layers can be added to the location picker map. The main useages are to display exising incidents (Zendesk tickets) and/or city assets such as trash cans, park amenities, etc. The preferred method of consuming a geoJSON feed for use as a map layer is to create a geoJSON view that calls external data sources (creating it as a vew allows the data to be cached), and then configuring the Location widget to consume that feed by setting associated custom properties.
 
-`geojson_layer: /api/tickets/graffiti
-geojson_layer_behavior: informational
-geojson_layer_type: incident`
+### GeoJSON layer types and behaviors
 
-In the above example, the **geojson_layer** value is the URL of the geoJSON view that displays open graffiti report tickets. The geojson_layer_behavior and geojson_layer_type values are meant to control how the elements are displayed on the map. However, the widget is currently hard-coded to display graffiti reports. When additional layer types are added, conditional logic will need to be added to appropriately display the new data.
+The two main types of layers are assets and incidents. Assets are city assets such as trash cans or park amenities. Incidents are issues that have been reported by community members and usually represent Zendesk tickets.
 
-TODO: Finish this functionality. Currently only the geojson_layer value is used. The display of the data is hard coded.
+The two main types of behavior for layers are informational and selection. Informational features simply display data about an asset or incident on the map. Selection features are used by the form user to select a precise location; when clicked, a selection feature's location lat/lon coordinates are captured.
 
-- **geojson_layer** - The URL of the geoJSON data feed
+The Location widget supports up to two layers: primary and incidents. The primary layer can display assets or incidents. The incidents layer is used only to display incidents when an assets layer is in use. 
 
-- **geojson_layer_behavior** - Determines how the user interacts with the layer
-  - *informational*
-  - *selection* - Allows user to select a feature as the location being reported
+### Custom properties (in the element's Advanced tab)
 
-- **geojson_layer_type** - The type of data being displayed
-  - *incident*
-  - *feature*
+Data is entered in YAML format.
 
-- **geojson_feature_icon** - The URL of the icon to be used for each instance of the feature
+- ***primary_layer_source*** - Sets the URL path to the geoJSON feed for the primary layer
+
+- ***incidents_layer_source*** - Sets the URL path to the geoJSON feed for the incidents layer
+
+- ***primary_layer_behavior*** - Sets the behavior of the primary layer (informational|selection)
+
+- ***primary_layer_type*** - Sets the type of the primary layer, (asset|informational)
+
+- ***primary_marker*** - The URL path to a custom icon image for features on the primary layer; the default is a basic gray map marker
+
+- ***selected_marker*** - The URL path to a custom icon image that's used for assets after they've been selected by the user, or when they click the map to specify the location of a new issue; the default is a basic blue map marker
+
+- ***incident_marker*** - The URL path to a custom icon image for standalone incidents or assets that have an associated incident; the default is a red map marker with an exclamation point
+
+- ***disable_popup*** - Disables asset and incident popups if any value is set in the property (not currently implemented) 
+
+- ***verify_button_text*** - Overrides the default "Verify" label in the widget used for verifying or finding an address
+
+- ***primary_feature_name*** - Overrides the name/label used to describe features on the primary layer; default is "asset" (not currently implemented)
+
+- ***feature_layer_visible_zoom*** - The minimum zoom level at which geoJSON features are displayed; the map gets laggy if too many are displayed at once; default value is 16 (maximum is 18 for full zoom)
+
+### Example of custom properties
+
+This is the advanced properties configuration used in the Report a Problem with a Public Trash Can reporting form. The first six properties are used to manipulate how the widget and its subelements are rendered. The remaining properties are from the list above and are used to configure the geoJSON layers and how the user interacts with them.
+
+```
+selected_asset_name__title: 'Selected asset'
+location_address__states:
+  visible: true
+location_map__description_display: after
+location_map__states:
+  visible: true
+place_name__readonly: true
+place_name__description_display: invisible
+primary_layer_source: /api/features/trashcans
+incidents_layer_source: /api/tickets/trashcans
+primary_layer_behavior: selection
+primary_layer_type: asset
+primary_feature_name0: 'trash can'
+primary_marker: /modules/custom/portland/modules/portland_location_picker/images/map_marker_trashcan.png
+selected_marker: /modules/custom/portland/modules/portland_location_picker/images/map_marker_trashcan_selected.png
+verify_button_text: Locate
+feature_layer_visible_zoom: 17
+```
+
+## Creating a geoJSON feed using Views
+
+In order to integrate correctly with the Location widget, the geoJSON feed must not only include standard feature and location data, but it must also include a name and detail property that includes additional data and markup about the feature, either asset or incident.
+
+### Asset
+
+- Standard properties
+  - type (geometry type)
+  - coordinates (lat/lon)
+- Custom properties
+  - id
+  - name
+  - detail
+    - *T*his is a custom text field comprised of various Zendesk fields exposed by the views plug-in. It includes markup so that it appears exactly as the user should see it in the popup.*
+
+### Incident
+
+Uses the same format as Asset, but also includes an asset_id custom property if the incident is associated with an asset in the primary layer.
