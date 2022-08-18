@@ -42,10 +42,12 @@ class Zendesk extends QueryPluginBase {
       $row['ticket_created_date'] = date("U", strtotime($ticket->created_at));
       $row['ticket_updated_date'] = date("U", strtotime($ticket->updated_at));
 
+      $row['custom_reported_issue'] = array_column($ticket->custom_fields, null, 'id')['1500012743981']->value;
+      $row['custom_asset_id'] = array_column($ticket->custom_fields, null, 'id')['1500012801542']->value;
       $row['custom_location_lat'] = array_column($ticket->custom_fields, null, 'id')['5581480390679']->value;
       $row['custom_location_lon'] = array_column($ticket->custom_fields, null, 'id')['5581490332439']->value;
       $row['custom_address'] = array_column($ticket->custom_fields, null, 'id')['1500012743961']->value;
-      $row['custom_graffiti_description'] = array_column($ticket->custom_fields, null, 'id')['7557381052311']->value;      
+      $row['custom_public_description'] = array_column($ticket->custom_fields, null, 'id')['7557381052311']->value;      
 
       $row['index'] = $index;
       $index = $index + 1;
