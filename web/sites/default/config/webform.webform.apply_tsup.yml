@@ -297,10 +297,17 @@ elements: |-
           ':input[name="permit_location_metered"]':
             value: 'false'
       '#markup': '<p>You&#39;ve requested <strong class="weeks-requested">0 weeks</strong> of closure.</p>'
+    markup_permit_earliest_start_date:
+      '#type': webform_markup
+      '#markup': '<p><strong>The soonest enforceable start date for your permit would be: </strong><span class="start-date">...</span></p>'
     permit_metered_value:
       '#type': hidden
       '#title': 'Metered (hidden, used for JS)'
       '#default_value': '[webform_submission:values:permit_location_metered]'
+    permit_type_value:
+      '#type': hidden
+      '#title': 'Permit Type (hidden, used for JS)'
+      '#default_value': '[webform_submission:values:permit_type]'
     permit_date_span:
       '#type': hidden
       '#title': 'Date Span (hidden, computed by JS)'
@@ -354,7 +361,7 @@ elements: |-
 
         <drupal-entity data-align="narrow" data-embed-button="image_browser" data-entity-embed-display="view_mode:media.banner" data-entity-type="media" data-entity-uuid="4c68b8cf-3bc2-4b03-a35d-a332762dd870"></drupal-entity>
 
-        <p><strong>Please read and review the&nbsp;<a href="https://www.portland.gov/sites/default/files/2022/non-metered-parking-reservation-overview-brochure.pdf" target="_blank">Parking Enforcement Reservation Procedure</a>. Parking Enforcement will only enforce your no parking signs if the verification process has been completed. Additional fees apply to complete the verification process.</strong></p>
+        <p><strong>Please read and review the&nbsp;<a href="/transportation/permitting/documents/non-metered-parking-reservation-overview" target="_blank">Parking Enforcement Reservation Procedure</a>. Parking Enforcement will only enforce your no parking signs if the verification process has been completed. Additional fees apply to complete the verification process.</strong></p>
       '#format': simplified_editor_with_media_embed
     7day_permit_street_name:
       '#type': textfield
@@ -859,6 +866,8 @@ elements: |-
       visible:
         ':input[name="permit_type"]':
           value: unknown
+        ':input[name="wizard_permit_need"]':
+          '!value': existing_permit
     '#admin_title': 'Placeholder permit page'
   page_contact_info:
     '#type': webform_wizard_page
@@ -884,7 +893,7 @@ elements: |-
   permit_type:
     '#type': webform_computed_twig
     '#title': 'Computed permit type'
-    '#display_on': none
+    '#display_on': form
     '#mode': text
     '#template': |-
       {% set permit_type = "unknown" %}
@@ -897,14 +906,18 @@ elements: |-
       {% elseif data.wizard_permit_need == "traffic" %}
         {% set permit_type = "complex" %}
       {% elseif data.wizard_permit_need == "existing_permit" %}
-        {% set permit_type = "existing_permit" %}
+        {% if data.wizard_existing_permit_situation == "change" %}
+          {% set permit_type = "change_request" %}
+        {% elseif data.wizard_existing_permit_situation == "extend" or data.wizard_existing_permit_situation == "renew" %}
+          {% set permit_type = "renewal_request" %}
+        {% endif %}
       {% endif %}
 
       {{ permit_type }}
     '#whitespace': trim
     '#store': true
-css: ''
-javascript: "function calculateDate() { \r\n\tconst $ = jQuery.bind(jQuery);\r\n\tconst isDateSame = (a, b) =>\r\n\t\ta.getFullYear() === b.getFullYear() &&\r\n\t\ta.getMonth() === b.getMonth() &&\r\n\t\ta.getDate() === b.getDate();\r\n\tconst dayNameToNum = {\r\n\t\t\"sunday\": 0,\r\n\t\t\"monday\": 1,\r\n\t\t\"tuesday\": 2,\r\n\t\t\"wednesday\": 3,\r\n\t\t\"thursday\": 4,\r\n\t\t\"friday\": 5,\r\n\t\t\"saturday\": 6,\r\n\t};\r\n\tconst isMetered = $(\"input[name='permit_metered_value']\").val() === \"true\";\r\n\r\n    const daysOfWeek = $(\"input[name*='permit_date_days_of_week']\")\r\n\t\t.filter(\":checked\")\r\n\t\t.map((_, el) => dayNameToNum[el.value])\r\n\t\t.get();\r\n\tconst startValue = $(\"input[name*='permit_date_start']\").val();\r\n\tconst endValue = $(\"input[name*='permit_date_end']\").val()\r\n\tif (!startValue || !endValue ) return;\r\n\r\n    const startDate = new Date(startValue);\r\n    const endDate = new Date(endValue);\r\n\tif (startDate.getTime() > endDate.getTime()) return;\r\n\r\n\tlet amtDays = 0;\r\n\tif (daysOfWeek.includes(startDate.getDay()) || !isMetered) amtDays++;\r\n\r\n\twhile (!isDateSame(startDate, endDate)) {\r\n\t\tstartDate.setDate(startDate.getDate() + 1);\r\n\r\n\t\tif (daysOfWeek.includes(startDate.getDay()) || !isMetered) amtDays++;\r\n\t}\r\n\r\n\t$(\".days-requested\").text(amtDays === 1 ? \"1 day\" : `${amtDays} days`);\r\n    $(\"input[name='permit_date_span']\").val(amtDays);\r\n\tconst amtWeeks = Math.ceil(amtDays / 7);\r\n\t$(\".weeks-requested\").text(amtWeeks === 1 ? \"1 week\" : `${amtWeeks} weeks`);\r\n}\r\n\r\njQuery(\"input[name*='permit_date_']\").change(calculateDate);"
+css: ".form-item-permit-type {\r\n  display: none;\r\n}"
+javascript: "function calculateDate() { \r\n\tconst $ = jQuery.bind(jQuery);\r\n\tconst isDateSame = (a, b) =>\r\n\t\ta.getFullYear() === b.getFullYear() &&\r\n\t\ta.getMonth() === b.getMonth() &&\r\n\t\ta.getDate() === b.getDate();\r\n\tconst dayNameToNum = {\r\n\t\t\"sunday\": 0,\r\n\t\t\"monday\": 1,\r\n\t\t\"tuesday\": 2,\r\n\t\t\"wednesday\": 3,\r\n\t\t\"thursday\": 4,\r\n\t\t\"friday\": 5,\r\n\t\t\"saturday\": 6,\r\n\t};\r\n\tconst permitType = $(\"input[name='permit_type']\").val();\r\n\tconst isMetered = $(\"input[name='permit_metered_value']\").val() === \"true\";\r\n\tconst startDateOffsetDays = permitType === \"complex\"\r\n\t\t? 10\r\n\t\t: (isMetered ? 3 : 4);\r\n\r\n\r\n    const daysOfWeek = $(\"input[name*='permit_date_days_of_week']\")\r\n\t\t.filter(\":checked\")\r\n\t\t.map((_, el) => dayNameToNum[el.value])\r\n\t\t.get();\r\n\tconst startValue = $(\"input[name*='permit_date_start']\").val();\r\n\tconst endValue = $(\"input[name*='permit_date_end']\").val()\r\n\tif (!startValue || !endValue) return;\r\n\r\n    const startDate = new Date(startValue);\r\n    const endDate = new Date(endValue);\r\n\tif (startDate.getTime() > endDate.getTime()) return;\r\n\r\n\tlet amtDays = 0;\r\n\tif (daysOfWeek.includes(startDate.getDay()) || !isMetered) amtDays++;\r\n\r\n\tconst curDate = new Date(startValue);\r\n\twhile (!isDateSame(curDate, endDate)) {\r\n\t\tcurDate.setDate(curDate.getDate() + 1);\r\n\r\n\t\tif (daysOfWeek.includes(curDate.getDay()) || !isMetered) amtDays++;\r\n\t}\r\n\r\n\tstartDate.setDate(startDate.getDate() + startDateOffsetDays);\r\n\t$(\".start-date\").text(startDate.toLocaleDateString());\r\n\t\r\n    $(\"input[name='permit_date_span']\").val(amtDays);\r\n\t$(\".days-requested\").text(amtDays === 1 ? \"1 day\" : `${amtDays} days`);\r\n\r\n\tconst amtWeeks = Math.ceil(amtDays / 7);\r\n\t$(\".weeks-requested\").text(amtWeeks === 1 ? \"1 week\" : `${amtWeeks} weeks`);\r\n}\r\n\r\njQuery(\"input[name*='permit_date_']\").change(calculateDate);"
 settings:
   ajax: false
   ajax_scroll_top: form
