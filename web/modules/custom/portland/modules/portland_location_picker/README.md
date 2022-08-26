@@ -1,11 +1,11 @@
 # Portland Location Picker widget for webforms
 
-This custom sub-module of the Portland module implements a custom composite element for webforms. It is used for address verification, geolocation, and reverse geolocation.
+This custom sub-module of the Portland module implements a custom composite element for webforms. It is used for address verification, geolocation, and reverse geolocation. It also has the ability to display GeoJSON layers with features such as assets, incidents, and regions. Assets may be informational only or used for selection. Incidents are live Zendesk tickets. Regions are polygons that record the region id when a location is picked inside them.
 
 ## Configuration
 
 IMPORTANT: When placed in a webform, the widget MUST have the machine name "report_location" in order for the built-in
-conditional logic to work. If sub-fields aren't hiding/showing as expect, this is the first thing to check.
+conditional logic to work. If sub-fields aren't hiding/showing as expect, this is the first thing to check.  The Location Picker widget currently only supports a single instance in a webform.
 
 ## Address verification
 
@@ -65,38 +65,54 @@ The following sub-fields are available:
 
 If the address data needs to be parsed further, the widget can be refactored to include hidden sub-fields for more granular data points, such as city, zipcode, jurisdiction, etc.
 
+TODO: Improve output formatting, include region ID field.
+
 ## Custom configuration
 
-The sub-elements in the location widget can be manipulated using the Custom Properties field in the element's Advanced tab. The widget has some built-in logic for showing/hiding elements that may not be appropriate for all conditions. For example, to always display the clickable map or Address sub-element, they can be forcibly set to be visible. The custom properties are entered in YAML format:
+The sub-elements in the location widget can be manipulated using the Custom Properties field in the element's Advanced tab. The widget has some built-in logic for showing/hiding elements that may not be appropriate for all conditions. For example, to always display the clickable map or Address sub-element, they can be forcibly set to be visible. By default the map is not displayed if the user selects Private Property as the location type. The custom properties are entered in YAML format:
 
-`location_address__states:
-  visible: true
-location_map__states:
-  visible: true`
+`location_address__states:`
+`  visible: true`
+`location_map__states:`
+`  visible: true`
 
 ## Adding custom GeoJSON data layers
 
-Using the portland_geojson_views module and included views plugin, geoJSON layers can be added to the location picker map. The main useages are to display exising incidents (Zendesk tickets) and/or city assets such as trash cans, park amenities, etc. The preferred method of consuming a geoJSON feed for use as a map layer is to create a geoJSON view that calls external data sources (creating it as a vew allows the data to be cached), and then configuring the Location widget to consume that feed by setting associated custom properties.
+Using the portland_geojson_views module and included views plugin, GeoJSON layers can be added to the location picker map. There are three main usages: assets, incidents, and regions. In general, we want to use GeoJSON data from a Drupal view, since that allows the query to be cached and requires fewer hits to the data source. This is helpful in cases where rate limits may be an issue.
 
-### GeoJSON layer types and behaviors
+### Types of GeoJSON layers
 
-The two main types of layers are assets and incidents. Assets are city assets such as trash cans or park amenities. Incidents are issues that have been reported by community members and usually represent Zendesk tickets.
+An instance of the Location Picker can support up to three layers. The Primary Layer can support assets, incidents, or regions. As the name implies, the Incidents Layer can only show incidents/tickets, and the Regions Layer can only display regions.
 
-The two main types of behavior for layers are informational and selection. Informational features simply display data about an asset or incident on the map. Selection features are used by the form user to select a precise location; when clicked, a selection feature's location lat/lon coordinates are captured.
+#### Primary Layer
 
-The Location widget supports up to two layers: primary and incidents. The primary layer can display assets or incidents. The incidents layer is used only to display incidents when an assets layer is in use. 
+Assets represent physical objects that are owned and maintained by the city. Examples include park amenities and public trash cans. The asset layer may be informational, or individual assets may be used for selection. For example, a user might click the asset icon for a public trash can to report an issue with it. This will store data about the asset and location, such as asset ID, location lat/lon coordinates, and nearest street address if applicable.
 
-### Custom properties (in the element's Advanced tab)
+### Incidents Layer
 
-Data is entered in YAML format.
+The incidents layer displays the loction of open or recently solved Zendesk tickets, usually generated by the current webform. They may be standalone incidents or may be associated with an asset. For example, graffiti reports may be located anywhere, not just on a city asset. Those markers appear on the map at the location where the user clicks. Alternately, trash can issues can only be located on existing city assets, and the incident uses the asset_id to tie it to an asset. When assets are used for selection and an incident already exists for a given asset, the icon is changed to indicate there is an open ticket for it.
+
+### Regions Layer
+
+The regions layer includes any number of polygons that are displayed as shaded areas. When the user clicks to set an issue marker within a region, the region_id is stored in one of the widget's sub-elements and can be used for conditional logic or calculations. For example, if a user is applying for a Temporary Street Use Permit, and their requested location is within a metered parking zone, that will affect the type of permit they need. Conditional logic can be used to hide or show form elements accordingly. Additional javascript may be added to the webform to perform additional actions if needed.
+
+### GeoJSON layer behaviors
+
+The two types of behavior for assets are informational and selection. At present, incidents cannot be used to select a location; they are informational only, but future development may allow users to select existing reports/incidents to subscribe to them and receive updates, rather than creating a new report. Regions are primarily informational, but can also be used for capturing clicks within a region and geofencing.
+
+### Custom properties
+
+These properties are set in the Advanced tab of the Location Picker element. Data is entered in YAML format.
 
 - ***primary_layer_source*** - Sets the URL path to the geoJSON feed for the primary layer
 
 - ***incidents_layer_source*** - Sets the URL path to the geoJSON feed for the incidents layer
 
-- ***primary_layer_behavior*** - Sets the behavior of the primary layer (informational|selection|geofencing)
+- ***regions_layer_source*** - Sets the URL path to the geoJSON feed for the regions layer
 
 - ***primary_layer_type*** - Sets the type of the primary layer, (asset|informational|region)
+
+- ***primary_layer_behavior*** - Sets the behavior of the primary layer (informational|selection|geofencing)
 
 - ***primary_marker*** - The URL path to a custom icon image for features on the primary layer; the default is a basic gray map marker
 
