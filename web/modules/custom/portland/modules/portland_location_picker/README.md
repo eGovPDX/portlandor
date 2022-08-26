@@ -23,23 +23,23 @@ Sample GET request: https://www.portlandmaps.com/arcgis/rest/services/Public/Geo
 
 Sample JSON response:
 
-{
-  "address": {
-    "Street": "1969 SE LADD AVE",
-    "City": "Portland",
-    "State": "OREGON",
-    "ZIP": "97214",
-    "Loc_name": "address_pdx"
-  },
-  "location": {
-    "x": -122.65025498720404,
-    "y": 45.508273260891066,
-    "spatialReference": {
-      "wkid": 4326,
-      "latestWkid": 4326
-    }
-  }
-}
+`{`
+`  "address": {`
+`    "Street": "1969 SE LADD AVE",`
+`    "City": "Portland",`
+`    "State": "OREGON",`
+`    "ZIP": "97214",`
+`    "Loc_name": "address_pdx"`
+`  },`
+`  "location": {`
+`    "x": -122.65025498720404,`
+`    "y": 45.508273260891066,`
+`    "spatialReference": {`
+`      "wkid": 4326,`
+`      "latestWkid": 4326`
+`    }`
+`  }`
+`}`
 
 ## Results data
 
