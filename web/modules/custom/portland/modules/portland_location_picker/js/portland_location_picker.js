@@ -40,6 +40,7 @@
         var incidentsLayerMarkerGroup;
         var primaryFeatures;
         var incidentsFeatures;
+        var regionsFeatures;
         var addressMarker;
         var locationErrorShown;
         var locateControl;
@@ -89,6 +90,8 @@
         if (!initialized) { initialize(); initialized = true; }
         
         // SETUP FUNCTIONS ///////////////////////////////
+
+        var testPolygonLayer;
   
         function initialize() {
   
@@ -271,34 +274,58 @@
                   });
                 } else {
 
-                  if (primaryLayerType == "incident") {
-                    markerIcon = incidentMarker;
-                  }
+                  
+                  if (primaryLayerType == "region") {
 
-                  var newMarker = L.icon({
-                    iconUrl:      markerIcon,
-                    iconSize:     DEFAULT_ICON_SIZE, // size of the icon
-                    shadowSize:   [0, 0], // size of the shadow
-                    iconAnchor:   [13, 41], // point of the icon which will correspond to marker's location
-                    shadowAnchor: [0, 0],  // the same for the shadow
-                    popupAnchor:  [0, -41]
-                  });
-        
-                  for (var j = 0; j < primaryResponse.features.length; j++) {
-                    if (primaryLayerType == 'incident' && primaryResponse.features[j].properties.hasOwnProperty('status') && primaryResponse.features[j].properties.status == "solved") {
-                      var newSolvedMarker = L.icon({
-                        iconUrl:      markerIcon,
-                        iconSize:     DEFAULT_ICON_SIZE, // size of the icon
-                        shadowSize:   [0, 0], // size of the shadow
-                        iconAnchor:   [13, 41], // point of the icon which will correspond to marker's location
-                        shadowAnchor: [0, 0],  // the same for the shadow
-                        popupAnchor:  [0, -41],
-                        className:    "solved"
-                      });
-                      addMarkerToMap(primaryResponse.features[j], newSolvedMarker);
-                    } else {
-                      newMarker.className = "";
-                      addMarkerToMap(primaryResponse.features[j], newMarker);
+                    for (var k = 0; k < primaryResponse.features.length; k++) {
+                      //primaryResponse.features[k].geometry.coordinates = L.GeoJSON.coordsToLatLngs(primaryResponse.features[k].geometry.coordinates[0]);
+                    }
+
+                    testPolygonLayer = L.geoJson(primaryResponse, {
+                      color: 'blue',
+                      interactive: false
+                    });
+
+                    testPolygonLayer.addTo(map);
+
+                    // for (var i = 0; i < primaryResponse.features.length; i++) {
+                    //   var newCoords = L.GeoJSON.coordsToLatLngs(primaryResponse.features[i].geometry.coordinates, 1, L.GeoJSON.coordsToLatLng);
+                    //   L.polygon(newCoords, {
+                    //     interactive: false,
+                    //     color: 'blue'
+                    //   }).addTo(primaryLayerMarkerGroup);
+                    // }
+
+                  } else {
+                    if (primaryLayerType == "incident") {
+                      markerIcon = incidentMarker;
+                    }
+
+                    var newMarker = L.icon({
+                      iconUrl:      markerIcon,
+                      iconSize:     DEFAULT_ICON_SIZE, // size of the icon
+                      shadowSize:   [0, 0], // size of the shadow
+                      iconAnchor:   [13, 41], // point of the icon which will correspond to marker's location
+                      shadowAnchor: [0, 0],  // the same for the shadow
+                      popupAnchor:  [0, -41]
+                    });
+          
+                    for (var j = 0; j < primaryResponse.features.length; j++) {
+                      if (primaryLayerType == 'incident' && primaryResponse.features[j].properties.hasOwnProperty('status') && primaryResponse.features[j].properties.status == "solved") {
+                        var newSolvedMarker = L.icon({
+                          iconUrl:      markerIcon,
+                          iconSize:     DEFAULT_ICON_SIZE, // size of the icon
+                          shadowSize:   [0, 0], // size of the shadow
+                          iconAnchor:   [13, 41], // point of the icon which will correspond to marker's location
+                          shadowAnchor: [0, 0],  // the same for the shadow
+                          popupAnchor:  [0, -41],
+                          className:    "solved"
+                        });
+                        addMarkerToMap(primaryResponse.features[j], newSolvedMarker);
+                      } else {
+                        newMarker.className = "";
+                        addMarkerToMap(primaryResponse.features[j], newMarker);
+                      }
                     }
                   }
                 }
@@ -313,7 +340,7 @@
 
           var newFeature = L.geoJSON(primaryFeature, {
             coordsToLatLng: function (coords) {
-              return new L.LatLng(coords[0], coords[1]);
+              return new L.LatLng(coords[1], coords[0]);
             },
             pointToLayer: function (feature, latlng) {
               return L.marker(latlng, { icon: addMarker, iconSize: DEFAULT_ICON_SIZE, bubblingMouseEvents: false });
@@ -499,6 +526,16 @@
           // var zoom = locationType == "park" ? DEFAULT_ZOOM_CLICK - 1 : DEFAULT_ZOOM_CLICK;
           // setMarkerAndZoom(e.latlng.lat, e.latlng.lng, true, false, zoom);
           reverseGeolocate(e.latlng);
+
+          // determine whether click is within a region on the primaryLayerMarkerGroup layer
+          if (primaryLayerType == "region") {
+            var newLatLng = L.latLng(45.53172939298581, -122.65960693359376);
+            var inLayer = leafletPip.pointInLayer(e.latlng, testPolygonLayer, false);
+            if (inLayer.length > 0) {
+              alert('Clicked in region ' + inLayer[0].feature.properties.region_id);
+              $('#location_region_id').val(inLayer[0].feature.properties.region_id);
+            }
+          }
         }
   
         function handleLocationFound(e) {
@@ -533,6 +570,9 @@
             if (incidentsLayerMarkerGroup && map.hasLayer(incidentsLayerMarkerGroup)) {
               map.removeLayer(incidentsLayerMarkerGroup);
             }
+            if (testPolygonLayer && map.hasLayer(testPolygonLayer)) {
+              map.removeLayer(testPolygonLayer);
+            }
           }
           if (zoomlevel >= featureLayerVisibleZoom){
             if (primaryLayerMarkerGroup && !map.hasLayer(primaryLayerMarkerGroup)){
@@ -540,6 +580,9 @@
             }
             if (incidentsLayerMarkerGroup && !map.hasLayer(incidentsLayerMarkerGroup)) {
               map.addLayer(incidentsLayerMarkerGroup);
+            }
+            if (testPolygonLayer && !map.hasLayer(testPolygonLayer)) {
+              map.addLayer(testPolygonLayer);
             }
           }
           // TODO: if we only want to add markers in the visible area of the map after zooming in to a certain level,

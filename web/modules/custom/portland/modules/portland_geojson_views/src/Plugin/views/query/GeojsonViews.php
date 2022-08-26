@@ -48,7 +48,7 @@ class GeojsonViews extends QueryPluginBase {
       // any new possible properties need to be hard coded here before use.
       $row['tag_number'] = array_key_exists('tag_number', $feature['properties']) ? $feature['properties']['tag_number'] : "";
       $row['collection_days'] = array_key_exists('collection_days', $feature['properties']) ? $feature['properties']['collection_days'] : "";
-      $row['region_type'] = array_key_exists('TYPE', $feature['properties']) ? $feature['properties']['TYPE'] : "";
+      $row['meter_distr'] = array_key_exists('MeterDistr', $feature['properties']) ? $feature['properties']['MeterDistr'] : "";
       
       $row['index'] = $index;
       $index = $index + 1;

@@ -69,9 +69,9 @@ function portland_geojson_views_views_data() {
     ],
     'type' => 'standard'
   ];
-  $data['geojson_feature']['region_type'] = [
-    'title' => t('Region type'),
-    'help' => t('The type of region (property "TYPE" from geoJSON feed).'),
+  $data['geojson_feature']['meter_distr'] = [
+    'title' => t('Meter district'),
+    'help' => t('The meter district name (property "MeterDistr" from geoJSON feed).'),
     'field' => [
       'id' => 'standard',
     ],

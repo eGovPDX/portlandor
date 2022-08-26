@@ -246,6 +246,13 @@ class PortlandLocationPicker extends WebformCompositeBase {
       '#id' => 'location_asset_id',
       '#attributes' => ['class' => ['visually-hidden']],
     ];
+    $elements['location_region_id'] = [
+      '#type' => 'textfield',
+      '#title' => t('Region ID'),
+      '#title_display' => 'invisible',
+      '#id' => 'location_region_id',
+      '#attributes' => ['class' => ['visually-hidden']],
+    ];
     $elements['geojson_layer'] = [
       '#type' => 'hidden',
       '#id' => 'geojson_layer',

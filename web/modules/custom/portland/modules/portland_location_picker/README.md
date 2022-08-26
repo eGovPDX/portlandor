@@ -59,6 +59,7 @@ The following sub-fields are available:
 * place_name
 * location_details
 * location_asset_id
+* location_region_id
 * location_lat
 * location_lon
 
@@ -93,9 +94,9 @@ Data is entered in YAML format.
 
 - ***incidents_layer_source*** - Sets the URL path to the geoJSON feed for the incidents layer
 
-- ***primary_layer_behavior*** - Sets the behavior of the primary layer (informational|selection)
+- ***primary_layer_behavior*** - Sets the behavior of the primary layer (informational|selection|geofencing)
 
-- ***primary_layer_type*** - Sets the type of the primary layer, (asset|informational)
+- ***primary_layer_type*** - Sets the type of the primary layer, (asset|informational|region)
 
 - ***primary_marker*** - The URL path to a custom icon image for features on the primary layer; the default is a basic gray map marker
 
@@ -146,9 +147,13 @@ In order to integrate correctly with the Location widget, the geoJSON feed must 
   - coordinates (lat/lon)
 - Custom properties
   - id
+    - *The system ID of the asset, not necessarily a number that is useful to the end user. It's used primarily to link tickets to assets.*
   - name
-  - detail
-    - *T*his is a custom text field comprised of various Zendesk fields exposed by the views plug-in. It includes markup so that it appears exactly as the user should see it in the popup.*
+    - *A custom text field that's used as display name/header in the feature popup.*
+  - description
+    - *(Optional) A custom text field comprised of various Zendesk fields exposed by the views plug-in. It includes markup so that it appears exactly as the user should see it in the popup.*
+  - region_id
+    - *(Optional) The field/value that's used to identify the region in which the user's selected location exists. Typically included in a Zendesk ticket or accessed with custom webform javascript and used in conditional logic.*
 
 ### Incident
 
