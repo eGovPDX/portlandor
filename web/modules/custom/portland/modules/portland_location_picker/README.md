@@ -49,7 +49,7 @@ Results from Drupal webforms can be displayed in confirmation messages and deliv
 
 The class Drupal\portland_location_picker\Plugin\WebformElement\PortlandLocationPicker includes functions to format result data for default output. By default, the formatted data is rendered in the format shown below. If the user has provided a Place Name, it's prepended to the address string.
 
-  10333 NE OREGON ST, Portland, OREGON 97220 (45.52834, -122.55596)
+  10333 NE OREGON ST, Portland, OREGON 97220 (45.52834, -122.55596)  
   ABC Company, 1234 NE 102ND AVE, PORTLAND, OREGON 97220 (45.52834, -122.55596)
 
 This default data can be accessed using the token [webform_submission:values:report_location], where report_location is the machine name of the field in the webform. Individual values from sub-fields can be accessed by drilling down further into the composite field. For example, the place name returned by reverse geolocation can be accessed using the token [webform_submission:values:report_location:place_name].
