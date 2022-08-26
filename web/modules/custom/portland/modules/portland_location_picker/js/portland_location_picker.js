@@ -36,8 +36,9 @@
         // GLOBALS //////////
         var map;
         var geoJsonLayer;
-        var primaryLayerMarkerGroup;
-        var incidentsLayerMarkerGroup;
+        var primaryLayer;
+        var incidentsLayer;
+        var regionsLayer;
         var primaryFeatures;
         var incidentsFeatures;
         var regionsFeatures;
@@ -198,7 +199,7 @@
           if (primaryLayerSource) {
 
             var markerIcon = primaryMarker ? primaryMarker : DEFAULT_FEATURE_ICON_URL;
-            primaryLayerMarkerGroup = L.geoJson();
+            primaryLayer = L.geoJson();
     
             // get primary layer data
             $.ajax({
@@ -216,7 +217,7 @@
                     url: incidentsLayerSource, success: function (incidentsResponse) {
 
                       incidentsFeatures = incidentsResponse.features;
-                      incidentsLayerMarkerGroup = L.geoJson();
+                      incidentsLayer = L.geoJson();
 
                       primaryLoop:
                       for (var i = 0; i < primaryFeatures.length; i++) {
@@ -293,7 +294,7 @@
                     //   L.polygon(newCoords, {
                     //     interactive: false,
                     //     color: 'blue'
-                    //   }).addTo(primaryLayerMarkerGroup);
+                    //   }).addTo(primaryLayer);
                     // }
 
                   } else {
@@ -335,8 +336,80 @@
           }
         }
 
+        /**
+         * Retrieves external GeoJSON data and performs any processing, such as matching incidents to assets.
+         */
+        function processGeoJsonData() {
+
+          // if there are any layer in use, the Primary Layer must be used.
+          if (primaryLayerSource) {
+            primaryLayer = L.geoJson(); // can we create this on the fly?
+
+            $.ajax({
+              url: primaryLayerSource, success: function(primaryResponse) {
+                primaryFeatures = primaryResponse.features;
+                console.log(primaryFeatures.length + " features found on primary layer.");
+
+                // pull in incidents layer, if applicable.
+                // since the other layers are dependent on the primaryLayer, they need to be retrieved
+                // in the success function of the primary layer ajax call. otherwise the we'd need to use
+                // synchronous ajax calls, which is not ideal.
+                if (incidentsLayerSource) {
+
+                  $.ajax({
+                    url: incidentsLayerSource, success: function(incidentsResponse) {
+                      incidentsFeatures = incidentsResponse.features;
+                      console.log(incidentsFeatures.length + " incidents found.");
+
+                      // perform double loop between primary and incidents layers
+                      // to link incidents to assets if applicable. we need to do this
+                      // before adding the features to the map. loops are named so we can
+                      // selectively break them.
+                      primaryLoop:
+                      for (var i = 0; i < primaryFeatures.length; i++) {
+
+                        incidentsLoop:
+                        for (var j = 0; j < incidentsFeatures.length; j++) {
+
+                          // is the incident associated with the asset?
+                          if (primaryFeatures[i].properties.id == incidentsFeatures[j].properties.asset_id) {
+                            // add incident details to asset details
+                            primaryFeatures[i].properties.incidentDetail = incidentsFeatures[j].properties.detail;
+                            primaryFeatures[i].properties.date_reported = incidentsFeatures[i].properties.date_reported;
+                            primaryFeatures[i].properties.hasOpenIncident = incidentsFeatures[i].properties.status == "open" || primaryFeatures[i].properties.status == "new";
+                            primaryFeatures[i].properties.hasSolvedIncident = incidentsFeatures[i].properties.status == "solved";
+                            primaryFeatures[i].properties.date_resolved = incidentsFeatures[i].properties.status == "solved" ? incidentsFeatures[i].properties.date_resolved : null;
+                          }
+                        }
+                      }
+                      initializeGeoJsonLayer(primaryFeatures, primaryLayer);
+                      initializeGeoJsonLayer(incidentsfeatures, incidentsLayer);
+                    }
+                  });
+                }
+
+                if (regionsLayerSource) {
+                  $.ajax({
+                    url: regionsLayerSource, success: function(regionsResponse) {
+                      regionsFeatures = regionsResponse.features;
+                      console.log(regionsFeatures.length + " regions found.");
+
+                      initializeGeoJsonLayer(regionsFeatures, regionsLayer);
+                    }
+                  });
+                }
+              }
+            });
+          }
+        }
+
+        function initializeGeoJsonLayer(features, layer) {
+
+        }
+
+
         function addMarkerToMap(primaryFeature, addMarker, incidentFeature = null) {
-          var addToLayer = primaryFeature.properties.hasOpenIncident ? incidentsLayerMarkerGroup : primaryLayerMarkerGroup;
+          var addToLayer = primaryFeature.properties.hasOpenIncident ? incidentsLayer : primaryLayer;
 
           var newFeature = L.geoJSON(primaryFeature, {
             coordsToLatLng: function (coords) {
@@ -527,7 +600,7 @@
           // setMarkerAndZoom(e.latlng.lat, e.latlng.lng, true, false, zoom);
           reverseGeolocate(e.latlng);
 
-          // determine whether click is within a region on the primaryLayerMarkerGroup layer
+          // determine whether click is within a region on the primaryLayer layer
           if (primaryLayerType == "region") {
             var newLatLng = L.latLng(45.53172939298581, -122.65960693359376);
             var inLayer = leafletPip.pointInLayer(e.latlng, testPolygonLayer, false);
@@ -564,22 +637,22 @@
           
           var zoomlevel = map.getZoom();
           if (zoomlevel < featureLayerVisibleZoom){
-            if (primaryLayerMarkerGroup && map.hasLayer(primaryLayerMarkerGroup)) {
-                map.removeLayer(primaryLayerMarkerGroup);
+            if (primaryLayer && map.hasLayer(primaryLayer)) {
+                map.removeLayer(primaryLayer);
             }
-            if (incidentsLayerMarkerGroup && map.hasLayer(incidentsLayerMarkerGroup)) {
-              map.removeLayer(incidentsLayerMarkerGroup);
+            if (incidentsLayer && map.hasLayer(incidentsLayer)) {
+              map.removeLayer(incidentsLayer);
             }
             if (testPolygonLayer && map.hasLayer(testPolygonLayer)) {
               map.removeLayer(testPolygonLayer);
             }
           }
           if (zoomlevel >= featureLayerVisibleZoom){
-            if (primaryLayerMarkerGroup && !map.hasLayer(primaryLayerMarkerGroup)){
-              map.addLayer(primaryLayerMarkerGroup);
+            if (primaryLayer && !map.hasLayer(primaryLayer)){
+              map.addLayer(primaryLayer);
             }
-            if (incidentsLayerMarkerGroup && !map.hasLayer(incidentsLayerMarkerGroup)) {
-              map.addLayer(incidentsLayerMarkerGroup);
+            if (incidentsLayer && !map.hasLayer(incidentsLayer)) {
+              map.addLayer(incidentsLayer);
             }
             if (testPolygonLayer && !map.hasLayer(testPolygonLayer)) {
               map.addLayer(testPolygonLayer);
