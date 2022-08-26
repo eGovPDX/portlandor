@@ -23,23 +23,25 @@ Sample GET request: https://www.portlandmaps.com/arcgis/rest/services/Public/Geo
 
 Sample JSON response:
 
-`{`
-`  "address": {`
-`    "Street": "1969 SE LADD AVE",`
-`    "City": "Portland",`
-`    "State": "OREGON",`
-`    "ZIP": "97214",`
-`    "Loc_name": "address_pdx"`
-`  },`
-`  "location": {`
-`    "x": -122.65025498720404,`
-`    "y": 45.508273260891066,`
-`    "spatialReference": {`
-`      "wkid": 4326,`
-`      "latestWkid": 4326`
-`    }`
-`  }`
-`}`
+```
+{
+  "address": {  
+    "Street": "1969 SE LADD AVE",  
+    "City": "Portland",  
+    "State": "OREGON",  
+    "ZIP": "97214",  
+    "Loc_name": "address_pdx"  
+  },  
+  "location": {  
+    "x": -122.65025498720404,  
+    "y": 45.508273260891066,  
+    "spatialReference": {  
+      "wkid": 4326,  
+      "latestWkid": 4326  
+    }  
+  }  
+}
+```
 
 ## Results data
 
@@ -71,10 +73,12 @@ TODO: Improve output formatting, include region ID field.
 
 The sub-elements in the location widget can be manipulated using the Custom Properties field in the element's Advanced tab. The widget has some built-in logic for showing/hiding elements that may not be appropriate for all conditions. For example, to always display the clickable map or Address sub-element, they can be forcibly set to be visible. By default the map is not displayed if the user selects Private Property as the location type. The custom properties are entered in YAML format:
 
-`location_address__states:`
-`  visible: true`
-`location_map__states:`
-`  visible: true`
+```
+location_address__states:  
+  visible: true  
+location_map__states:  
+  visible: true
+```
 
 ## Adding custom GeoJSON data layers
 
