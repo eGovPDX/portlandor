@@ -23,23 +23,25 @@ Sample GET request: https://www.portlandmaps.com/arcgis/rest/services/Public/Geo
 
 Sample JSON response:
 
+```
 {
-  "address": {
-    "Street": "1969 SE LADD AVE",
-    "City": "Portland",
-    "State": "OREGON",
-    "ZIP": "97214",
-    "Loc_name": "address_pdx"
-  },
-  "location": {
-    "x": -122.65025498720404,
-    "y": 45.508273260891066,
-    "spatialReference": {
-      "wkid": 4326,
-      "latestWkid": 4326
-    }
-  }
+  "address": {  
+    "Street": "1969 SE LADD AVE",  
+    "City": "Portland",  
+    "State": "OREGON",  
+    "ZIP": "97214",  
+    "Loc_name": "address_pdx"  
+  },  
+  "location": {  
+    "x": -122.65025498720404,  
+    "y": 45.508273260891066,  
+    "spatialReference": {  
+      "wkid": 4326,  
+      "latestWkid": 4326  
+    }  
+  }  
 }
+```
 
 ## Results data
 
@@ -47,7 +49,7 @@ Results from Drupal webforms can be displayed in confirmation messages and deliv
 
 The class Drupal\portland_location_picker\Plugin\WebformElement\PortlandLocationPicker includes functions to format result data for default output. By default, the formatted data is rendered in the format shown below. If the user has provided a Place Name, it's prepended to the address string.
 
-  10333 NE OREGON ST, Portland, OREGON 97220 (45.52834, -122.55596)
+  10333 NE OREGON ST, Portland, OREGON 97220 (45.52834, -122.55596)  
   ABC Company, 1234 NE 102ND AVE, PORTLAND, OREGON 97220 (45.52834, -122.55596)
 
 This default data can be accessed using the token [webform_submission:values:report_location], where report_location is the machine name of the field in the webform. Individual values from sub-fields can be accessed by drilling down further into the composite field. For example, the place name returned by reverse geolocation can be accessed using the token [webform_submission:values:report_location:place_name].
@@ -71,10 +73,12 @@ TODO: Improve output formatting, include region ID field.
 
 The sub-elements in the location widget can be manipulated using the Custom Properties field in the element's Advanced tab. The widget has some built-in logic for showing/hiding elements that may not be appropriate for all conditions. For example, to always display the clickable map or Address sub-element, they can be forcibly set to be visible. By default the map is not displayed if the user selects Private Property as the location type. The custom properties are entered in YAML format:
 
-`location_address__states:`
-`  visible: true`
-`location_map__states:`
-`  visible: true`
+```
+location_address__states:  
+  visible: true  
+location_map__states:  
+  visible: true
+```
 
 ## Adding custom GeoJSON data layers
 
@@ -82,7 +86,7 @@ Using the portland_geojson_views module and included views plugin, GeoJSON layer
 
 ### Types of GeoJSON layers
 
-An instance of the Location Picker can support up to three layers. The Primary Layer can support assets, incidents, or regions. As the name implies, the Incidents Layer can only show incidents/tickets, and the Regions Layer can only display regions.
+An instance of the Location Picker can support up to three layers. The Primary Layer can support assets, incidents, or regions. As the name implies, the Incidents Layer can only show incidents/tickets, and the Regions Layer can only display regions. If only one layer is used, it must be the Primary Layer.
 
 #### Primary Layer
 
