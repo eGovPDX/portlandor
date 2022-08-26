@@ -86,7 +86,7 @@ Using the portland_geojson_views module and included views plugin, GeoJSON layer
 
 ### Types of GeoJSON layers
 
-An instance of the Location Picker can support up to three layers. The Primary Layer can support assets, incidents, or regions. As the name implies, the Incidents Layer can only show incidents/tickets, and the Regions Layer can only display regions.
+An instance of the Location Picker can support up to three layers. The Primary Layer can support assets, incidents, or regions. As the name implies, the Incidents Layer can only show incidents/tickets, and the Regions Layer can only display regions. If only one layer is used, it must be the Primary Layer.
 
 #### Primary Layer
 
