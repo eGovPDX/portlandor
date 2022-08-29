@@ -245,6 +245,9 @@ elements: |-
         - or
         - ':input[name="wizard_permit_need"]':
             value: traffic
+    markup_permit_earliest_start_date:
+      '#type': webform_markup
+      '#markup': '<p><strong>The soonest enforceable start date for your permit would be: </strong><span class="earliest-start-date">...</span></p>'
     permit_date_days_of_week:
       '#type': checkboxes
       '#title': 'Days of Week'
@@ -294,14 +297,6 @@ elements: |-
           ':input[name="permit_location_metered"]':
             value: 'false'
       '#markup': '<p>You&#39;ve requested <strong class="weeks-requested">0 weeks</strong> of closure.</p>'
-    markup_permit_earliest_start_date:
-      '#type': webform_markup
-      '#states':
-        visible:
-          ':input[name="permit_date_span"]':
-            value:
-              greater: '0'
-      '#markup': '<p><strong>The soonest enforceable start date for your permit would be: </strong><span class="start-date">...</span></p>'
     permit_metered_value:
       '#type': hidden
       '#title': 'Metered (hidden, used for JS)'
@@ -928,7 +923,7 @@ elements: |-
     '#whitespace': trim
     '#store': true
 css: ".form-item-permit-type {\r\n  display: none;\r\n}"
-javascript: "function calculateDate() { \r\n\tconst $ = jQuery.bind(jQuery);\r\n\tconst isDateSame = (a, b) =>\r\n\t\ta.getFullYear() === b.getFullYear() &&\r\n\t\ta.getMonth() === b.getMonth() &&\r\n\t\ta.getDate() === b.getDate();\r\n\tconst dayNameToNum = {\r\n\t\t\"sunday\": 0,\r\n\t\t\"monday\": 1,\r\n\t\t\"tuesday\": 2,\r\n\t\t\"wednesday\": 3,\r\n\t\t\"thursday\": 4,\r\n\t\t\"friday\": 5,\r\n\t\t\"saturday\": 6,\r\n\t};\r\n\tconst permitType = $(\"input[name='permit_type']\").val();\r\n\tconst isMetered = $(\"input[name='permit_metered_value']\").val() === \"true\";\r\n\tconst startDateOffsetDays = permitType === \"complex\"\r\n\t\t? 10\r\n\t\t: (isMetered ? 3 : 4);\r\n\r\n\r\n    const daysOfWeek = $(\"input[name*='permit_date_days_of_week']\")\r\n\t\t.filter(\":checked\")\r\n\t\t.map((_, el) => dayNameToNum[el.value])\r\n\t\t.get();\r\n\tconst startValue = $(\"input[name*='permit_date_start']\").val();\r\n\tconst endValue = $(\"input[name*='permit_date_end']\").val()\r\n\tif (!startValue || !endValue) return;\r\n\r\n    const startDate = new Date(startValue);\r\n    const endDate = new Date(endValue);\r\n\tif (startDate.getTime() > endDate.getTime()) return;\r\n\r\n\tlet amtDays = 0;\r\n\tif (daysOfWeek.includes(startDate.getDay()) || !isMetered) amtDays++;\r\n\r\n\tconst curDate = new Date(startValue);\r\n\twhile (!isDateSame(curDate, endDate)) {\r\n\t\tcurDate.setDate(curDate.getDate() + 1);\r\n\r\n\t\tif (daysOfWeek.includes(curDate.getDay()) || !isMetered) amtDays++;\r\n\t}\r\n\r\n\tstartDate.setDate(startDate.getDate() + startDateOffsetDays);\r\n\t$(\".start-date\").text(startDate.toLocaleDateString());\r\n\t\r\n    $(\"input[name='permit_date_span']\").val(amtDays);\r\n    $(\"input[name='permit_date_span']\").trigger(\"change\")\r\n\t$(\".days-requested\").text(amtDays === 1 ? \"1 day\" : `${amtDays} days`);\r\n\r\n\tconst amtWeeks = Math.ceil(amtDays / 7);\r\n\t$(\".weeks-requested\").text(amtWeeks === 1 ? \"1 week\" : `${amtWeeks} weeks`);\r\n}\r\n\r\njQuery(\"input[name='permit_date_start'], input[name='permit_date_end'], input[name='permit_date_days_of_week']\").change(calculateDate);"
+javascript: "function calculateDate() { \r\n\tconst $ = jQuery.bind(jQuery);\r\n\tconst isDateSame = (a, b) =>\r\n\t\ta.getFullYear() === b.getFullYear() &&\r\n\t\ta.getMonth() === b.getMonth() &&\r\n\t\ta.getDate() === b.getDate();\r\n\tconst dayNameToNum = {\r\n\t\t\"sunday\": 0,\r\n\t\t\"monday\": 1,\r\n\t\t\"tuesday\": 2,\r\n\t\t\"wednesday\": 3,\r\n\t\t\"thursday\": 4,\r\n\t\t\"friday\": 5,\r\n\t\t\"saturday\": 6,\r\n\t};\r\n\tconst permitType = $(\"input[name='permit_type']\").val();\r\n\tconst isMetered = $(\"input[name='permit_metered_value']\").val() === \"true\";\r\n  \r\n\tconst startDateOffsetDays = permitType === \"complex\"\r\n\t\t? 10\r\n\t\t: (isMetered ? 3 : 4);\r\n    const earliestStartDate = new Date();\r\n\tearliestStartDate.setDate(earliestStartDate.getDate() + startDateOffsetDays);\r\n\t$(\".earliest-start-date\").text(earliestStartDate.toLocaleDateString());\r\n\r\n    const daysOfWeek = $(\"input[name*='permit_date_days_of_week']\")\r\n\t\t.filter(\":checked\")\r\n\t\t.map((_, el) => dayNameToNum[el.value])\r\n\t\t.get();\r\n\tconst startValue = $(\"input[name*='permit_date_start']\").val();\r\n\tconst endValue = $(\"input[name*='permit_date_end']\").val()\r\n\tif (!startValue || !endValue) return;\r\n\r\n    const startDate = new Date(startValue);\r\n    const endDate = new Date(endValue);\r\n\tif (startDate.getTime() > endDate.getTime()) return;\r\n\r\n\tlet amtDays = 0;\r\n\tif (daysOfWeek.includes(startDate.getDay()) || !isMetered) amtDays++;\r\n\r\n\tconst curDate = new Date(startValue);\r\n\twhile (!isDateSame(curDate, endDate)) {\r\n\t\tcurDate.setDate(curDate.getDate() + 1);\r\n\r\n\t\tif (daysOfWeek.includes(curDate.getDay()) || !isMetered) amtDays++;\r\n\t}\r\n\t\r\n    $(\"input[name='permit_date_span']\").val(amtDays);\r\n    $(\"input[name='permit_date_span']\").trigger(\"change\")\r\n\t$(\".days-requested\").text(amtDays === 1 ? \"1 day\" : `${amtDays} days`);\r\n\r\n\tconst amtWeeks = Math.ceil(amtDays / 7);\r\n\t$(\".weeks-requested\").text(amtWeeks === 1 ? \"1 week\" : `${amtWeeks} weeks`);\r\n}\r\n\r\njQuery(\"input[name='permit_date_start'], input[name='permit_date_end'], input[name='permit_date_days_of_week']\").change(calculateDate);\r\ncalculateDate();"
 settings:
   ajax: false
   ajax_scroll_top: form
