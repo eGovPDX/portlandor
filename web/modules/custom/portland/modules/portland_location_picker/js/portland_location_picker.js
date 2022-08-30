@@ -25,13 +25,21 @@
         const DEFAULT_ZOOM = 11;
         const DEFAULT_ZOOM_CLICK = 18;
         const DEFAULT_ZOOM_VERIFIED = 18;
-        const DEFAULT_ICON_SIZE = [27, 41];
         const FEATURE_LAYER_VISIBLE_ZOOM = 16;
+        const DEFAULT_ICON_SIZE = [27, 41];
+        const DEFAULT_ICON_SHADOW_SIZE = [0, 0];
+        const DEFAULT_ICON_ANCHOR = [13, 41];
+        const DEFAULT_ICON_SHADOW_ANCHOR = [0, 0];
+        const DEFAULT_ICON_POPUP_ANCHOR = [0, -41];
+
         const ZOOM_POSITION = 'topright';
         const NOT_A_PARK = "You selected park or natural area as the property type, but no park data was found for the selected location. If you believe this is a valid location, please zoom in to find the park on the map, click to select a location, and continue to submit your report.";
         const OPEN_ISSUE_MESSAGE = "If this issue is what you came here to report, there's no need to report it again.";
         const SOLVED_ISSUE_MESSAGE = "This issue was recently solved. If that's not the case, or the issue has reoccured, please submit a new report.";
         const DEFAULT_FEATURE_ICON_URL = "/modules/custom/portland/modules/portland_location_picker/images/map_marker_default.png";
+        const DEFAULT_INCIDENT_ICON_URL = "/modules/custom/portland/modules/portland_location_picker/images/map_marker_incident.png";
+        const DEFAULT_SOLVED_ICON_URL = "/modules/custom/portland/modules/portland_location_picker/images/map_marker_incident_solved.png";
+        const CITY_LIMITS_BOUNDARY_URL = "https://www.portlandmaps.com/arcgis/rest/services/Public/COP_OpenData_Boundary/MapServer/10/query?where=CITYNAME%20like%20%27Portland%27&outFields=*&outSR=4326&f=geojson";
   
         // GLOBALS //////////
         var map;
@@ -66,9 +74,10 @@
         // CUSTOM PROPERTIES SET IN WEBFORM CONFIG //////////
         var primaryLayerSource = drupalSettings.webform.portland_location_picker.primary_layer_source;
         var incidentsLayerSource = drupalSettings.webform.portland_location_picker.incidents_layer_source;
+        var regionsLayerSource = drupalSettings.webform.portland_location_picker.regions_layer_source;
         var primaryLayerBehavior = drupalSettings.webform.portland_location_picker.primary_layer_behavior;
         var primaryLayerType = drupalSettings.webform.portland_location_picker.primary_layer_type;
-        var primaryMarker = drupalSettings.webform.portland_location_picker.primary_marker ? drupalSettings.webform.portland_location_picker.primary_marker : '/modules/custom/portland/modules/portland_location_picker/images/map_marker_default.png';
+        var primaryMarkerUrl = drupalSettings.webform.portland_location_picker.primary_marker ? drupalSettings.webform.portland_location_picker.primary_marker : '/modules/custom/portland/modules/portland_location_picker/images/map_marker_default.png';
         var selectedMarker = drupalSettings.webform.portland_location_picker.selected_marker ? drupalSettings.webform.portland_location_picker.selected_marker : '/modules/custom/portland/modules/portland_location_picker/images/map_marker_default_selected.png';
         var incidentMarker = drupalSettings.webform.portland_location_picker.incident_marker ? drupalSettings.webform.portland_location_picker.incident_marker : '/modules/custom/portland/modules/portland_location_picker/images/map_marker_incident.png';
         var disablePopup = drupalSettings.webform.portland_location_picker.disable_popup ? true : false;
@@ -195,10 +204,12 @@
               if (park) { locateParkFromSelector(park); }
           });
 
-          // INITIALIZE FEATURE LAYER //////////
-          if (primaryLayerSource) {
+          // INITIALIZE GEOJSON LAYERS //////////
+          processGeoJsonData();
 
-            var markerIcon = primaryMarker ? primaryMarker : DEFAULT_FEATURE_ICON_URL;
+          if (primaryLayerSource && false) {
+
+            var markerIcon = primaryMarkerUrl ? primaryMarkerUrl : DEFAULT_FEATURE_ICON_URL;
             primaryLayer = L.geoJson();
     
             // get primary layer data
@@ -229,7 +240,7 @@
 
                         secondaryLoop:
                         for (var j = 0; j < incidentsFeatures.length; j++) {
-                          markerIcon = primaryMarker;
+                          markerIcon = primaryMarkerUrl;
                           var incident = incidentsFeatures[j];
                           assetid = feature.properties.id;
                           ticketassetid = incident.properties.asset_id;
@@ -382,10 +393,12 @@
                           }
                         }
                       }
-                      initializeGeoJsonLayer(primaryFeatures, primaryLayer);
-                      initializeGeoJsonLayer(incidentsfeatures, incidentsLayer);
+                      initPrimaryLayer(primaryFeatures, primaryLayer);
+                      initIncidentsLayer(incidentsFeatures, incidentsLayer);
                     }
                   });
+                } else {
+                  initPrimaryLayer(primaryFeatures, primaryLayer);
                 }
 
                 if (regionsLayerSource) {
@@ -394,7 +407,7 @@
                       regionsFeatures = regionsResponse.features;
                       console.log(regionsFeatures.length + " regions found.");
 
-                      initializeGeoJsonLayer(regionsFeatures, regionsLayer);
+                      initRegionsLayer(regionsFeatures, regionsLayer);
                     }
                   });
                 }
@@ -403,8 +416,69 @@
           }
         }
 
-        function initializeGeoJsonLayer(features, layer) {
+        function initPrimaryLayer(response, layer) {
+          var zoom = map.getZoom();
+          var markerUrl = primaryMarkerUrl ? primaryMarkerUrl : DEFAULT_FEATURE_ICON_URL;
+          var incidentMarkerUrl = incidentMarkerUrl ? incidentMarkerUrl : DEFAULT_INCIDENT_ICON_URL;
+          var solvedMarkerUrl = solvedMarkerUrl ? solvedMarkerUrl : DEFAULT_SOLVED_ICON_URL;
+          var standardMarker = L.icon({
+            iconUrl:      markerUrl,
+            iconSize:     DEFAULT_ICON_SIZE,
+            shadowSize:   DEFAULT_ICON_SHADOW_SIZE,
+            iconAnchor:   DEFAULT_ICON_ANCHOR,
+            shadowAnchor: DEFAULT_ICON_SHADOW_ANCHOR,
+            popupAnchor:  DEFAULT_ICON_POPUP_ANCHOR
+          });
+          var incidentMarker = L.icon({
+            iconUrl:      incidentMarkerUrl,
+            iconSize:     DEFAULT_ICON_SIZE,
+            shadowSize:   DEFAULT_ICON_SHADOW_SIZE,
+            iconAnchor:   DEFAULT_ICON_ANCHOR,
+            shadowAnchor: DEFAULT_ICON_SHADOW_ANCHOR,
+            popupAnchor:  DEFAULT_ICON_POPUP_ANCHOR
+          });
+          var solvedMarker = L.icon({
+            iconUrl:      solvedMarkerUrl,
+            iconSize:     DEFAULT_ICON_SIZE,
+            shadowSize:   DEFAULT_ICON_SHADOW_SIZE,
+            iconAnchor:   DEFAULT_ICON_ANCHOR,
+            shadowAnchor: DEFAULT_ICON_SHADOW_ANCHOR,
+            popupAnchor:  DEFAULT_ICON_POPUP_ANCHOR
+          });
+          primaryLayer = L.geoJson(response, {
+            pointToLayer: function(feature, latlng) {
+              if (feature.hasOpenIncident) {
+                marker = incidentMarker ;
+              } else if (feature.hasSolvedIncident) {
+                marker = solvedMarker;
+              } else {
+                marker = standardMarker;
+              }
+              return L.marker(latlng, {
+                icon:           marker,
+                draggable:      false,
+                riseOnHover:    true,
+                iconSize:       DEFAULT_ICON_SIZE
+              });
+            },
+            onEachFeature: function(feature, layer) {
+              
+            }
+          });
+          if (zoom >= featureLayerVisibleZoom) {
+            primaryLayer.addTo(map);
+          }
+        }
 
+        function initIncidentsLayer(response, layer) {
+
+        }
+
+        function initRegionsLayer(response, layer) {
+          layer = L.geoJson(response, {
+            color: 'blue',
+            interactive: false
+          }).addTo(map);
         }
 
 
@@ -601,12 +675,18 @@
           reverseGeolocate(e.latlng);
 
           // determine whether click is within a region on the primaryLayer layer
-          if (primaryLayerType == "region") {
-            var newLatLng = L.latLng(45.53172939298581, -122.65960693359376);
-            var inLayer = leafletPip.pointInLayer(e.latlng, testPolygonLayer, false);
+          if (primaryLayerType == "region" || regionsLayerSource) {
+            if (regionsLayer) {
+              testLayer = regionsLayer;
+            } else {
+              testLayer = primaryLayer;
+            }
+            var inLayer = leafletPip.pointInLayer(e.latlng, testLayer, false);
             if (inLayer.length > 0) {
-              alert('Clicked in region ' + inLayer[0].feature.properties.region_id);
               $('#location_region_id').val(inLayer[0].feature.properties.region_id);
+            } else {
+              // clear region_id field
+              $('#location_region_id').val("");
             }
           }
         }

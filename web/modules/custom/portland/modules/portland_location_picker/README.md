@@ -132,6 +132,8 @@ These properties are set in the Advanced tab of the Location Picker element. Dat
 
 - ***feature_layer_visible_zoom*** - The minimum zoom level at which geoJSON features are displayed; the map gets laggy if too many are displayed at once; default value is 16 (maximum is 18 for full zoom)
 
+- ***require_city_limits*** - When TRUE, this property requires locations to be within the Portland city limits. (Not implemented)
+
 ### Example of custom properties
 
 This is the advanced properties configuration used in the Report a Problem with a Public Trash Can reporting form. The first six properties are used to manipulate how the widget and its subelements are rendered. The remaining properties are from the list above and are used to configure the geoJSON layers and how the user interacts with them.
