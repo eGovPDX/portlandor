@@ -45,10 +45,12 @@ class TicketValidationWebformHandler extends WebformHandlerBase {
     $submission_key = !empty($formState->getValue('original_submission_key')) ? $formState->getValue('original_submission_key') : NULL;
     $ticket_id = !empty($formState->getValue('report_ticket_id')) ? $formState->getValue('report_ticket_id') : NULL;
 
-    // Skip empty unique fields or arrays (aka #multiple).
-    if (empty($submission_key) || is_array($submission_key)) {
-      return;
-    }
+    // Don't skip empty submission_key field or array. We want validation to fail
+    // if there's no value or an invalid data type.
+    // // Skip empty unique fields or arrays (aka #multiple).
+    // if (empty($submission_key) || is_array($submission_key)) {
+    //   return;
+    // }
 
     // use zendesk api to get the submission key from the ticket
     // then compare the submission key to the hidden, prepopulated
@@ -65,6 +67,10 @@ class TicketValidationWebformHandler extends WebformHandlerBase {
     } catch (\Exception $e) {
       $formState->setErrorByName('original_submission_key', $this->t('An error occurred while trying to access the specified ticket. Please contact a site administrator.'));
       return;
+    }
+
+    if (!$ticket) {
+      $formState->setErrorByName('report_ticket_id', $this->t('An error occurred while trying to access the specified ticket. Please contact a site administrator.'));
     }
 
     $custom_fields = [];
