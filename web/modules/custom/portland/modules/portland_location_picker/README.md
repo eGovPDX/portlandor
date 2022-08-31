@@ -114,9 +114,9 @@ These properties are set in the Advanced tab of the Location Picker element. Dat
 
 - ***regions_layer_source*** - Sets the URL path to the geoJSON feed for the regions layer
 
-- ***primary_layer_type*** - Sets the type of the primary layer, (asset|informational|region)
+- ***primary_layer_type*** - Sets the type of the primary layer, (asset|incident|region)
 
-- ***primary_layer_behavior*** - Sets the behavior of the primary layer (informational|selection|geofencing)
+- ***primary_layer_behavior*** - Sets the behavior of the primary layer (information|selection|selection-only|geofencing)
 
 - ***primary_marker*** - The URL path to a custom icon image for features on the primary layer; the default is a basic gray map marker
 

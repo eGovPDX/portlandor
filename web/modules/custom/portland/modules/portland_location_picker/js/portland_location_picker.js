@@ -40,7 +40,18 @@
         const DEFAULT_INCIDENT_ICON_URL = "/modules/custom/portland/modules/portland_location_picker/images/map_marker_incident.png";
         const DEFAULT_SOLVED_ICON_URL = "/modules/custom/portland/modules/portland_location_picker/images/map_marker_incident_solved.png";
         const CITY_LIMITS_BOUNDARY_URL = "https://www.portlandmaps.com/arcgis/rest/services/Public/COP_OpenData_Boundary/MapServer/10/query?where=CITYNAME%20like%20%27Portland%27&outFields=*&outSR=4326&f=geojson";
-  
+        const PRIMARY_LAYER_TYPE = {
+          Asset:          "asset",
+          Incident:       "incident",
+          Region:         "region"
+        }
+        const PRIMARY_LAYER_BEHAVIOR = {
+          Selection:      "selection",
+          Information:    "information",
+          SelectionOnly:  "selection-only",
+          GeoFence:       "geofence"
+        }
+
         // GLOBALS //////////
         var map;
         var geoJsonLayer;
@@ -247,7 +258,7 @@
 
                           // determine the marker icon to use. 
                           if (assetid == ticketassetid) {
-                            classname = "incident";
+                            classname = PRIMARY_LAYER_TYPE;
                             feature.properties.status = incident.properties.status ? incident.properties.status : "";
                             if (feature.properties.detail) {
                               feature.properties.detail += incident.properties.detail;
@@ -386,15 +397,18 @@
                           if (primaryFeatures[i].properties.id == incidentsFeatures[j].properties.asset_id) {
                             // add incident details to asset details
                             primaryFeatures[i].properties.incidentDetail = incidentsFeatures[j].properties.detail;
-                            primaryFeatures[i].properties.date_reported = incidentsFeatures[i].properties.date_reported;
-                            primaryFeatures[i].properties.hasOpenIncident = incidentsFeatures[i].properties.status == "open" || primaryFeatures[i].properties.status == "new";
-                            primaryFeatures[i].properties.hasSolvedIncident = incidentsFeatures[i].properties.status == "solved";
-                            primaryFeatures[i].properties.date_resolved = incidentsFeatures[i].properties.status == "solved" ? incidentsFeatures[i].properties.date_resolved : null;
+                            primaryFeatures[i].properties.hasOpenIncident = incidentsFeatures[j].properties.status == "open" || incidentsFeatures[j].properties.status == "new";
+                            primaryFeatures[i].properties.hasSolvedIncident = incidentsFeatures[j].properties.status == "solved";
                           }
                         }
                       }
                       initPrimaryLayer(primaryFeatures, primaryLayer);
-                      initIncidentsLayer(incidentsFeatures, incidentsLayer);
+
+                      // if incidents are in their own layer, initialize them
+                      // this might be the case if the primary layer is not selection-only
+                      if (primaryLayerBehavior != "selection-only") {
+                        initIncidentsLayer(incidentsFeatures, incidentsLayer);
+                      }
                     }
                   });
                 } else {
@@ -419,37 +433,47 @@
         function initPrimaryLayer(response, layer) {
           var zoom = map.getZoom();
           var markerUrl = primaryMarkerUrl ? primaryMarkerUrl : DEFAULT_FEATURE_ICON_URL;
-          var incidentMarkerUrl = incidentMarkerUrl ? incidentMarkerUrl : DEFAULT_INCIDENT_ICON_URL;
-          var solvedMarkerUrl = solvedMarkerUrl ? solvedMarkerUrl : DEFAULT_SOLVED_ICON_URL;
           var standardMarker = L.icon({
             iconUrl:      markerUrl,
             iconSize:     DEFAULT_ICON_SIZE,
             shadowSize:   DEFAULT_ICON_SHADOW_SIZE,
             iconAnchor:   DEFAULT_ICON_ANCHOR,
             shadowAnchor: DEFAULT_ICON_SHADOW_ANCHOR,
-            popupAnchor:  DEFAULT_ICON_POPUP_ANCHOR
+            popupAnchor:  DEFAULT_ICON_POPUP_ANCHOR,
+            className:    "feature"
           });
+          var incidentMarkerUrl = incidentMarkerUrl ? incidentMarkerUrl : DEFAULT_INCIDENT_ICON_URL;
           var incidentMarker = L.icon({
             iconUrl:      incidentMarkerUrl,
             iconSize:     DEFAULT_ICON_SIZE,
             shadowSize:   DEFAULT_ICON_SHADOW_SIZE,
             iconAnchor:   DEFAULT_ICON_ANCHOR,
             shadowAnchor: DEFAULT_ICON_SHADOW_ANCHOR,
-            popupAnchor:  DEFAULT_ICON_POPUP_ANCHOR
+            popupAnchor:  DEFAULT_ICON_POPUP_ANCHOR,
+            className:    "incident"
           });
+          var solvedMarkerUrl = solvedMarkerUrl ? solvedMarkerUrl : DEFAULT_SOLVED_ICON_URL;
           var solvedMarker = L.icon({
             iconUrl:      solvedMarkerUrl,
             iconSize:     DEFAULT_ICON_SIZE,
             shadowSize:   DEFAULT_ICON_SHADOW_SIZE,
             iconAnchor:   DEFAULT_ICON_ANCHOR,
             shadowAnchor: DEFAULT_ICON_SHADOW_ANCHOR,
-            popupAnchor:  DEFAULT_ICON_POPUP_ANCHOR
+            popupAnchor:  DEFAULT_ICON_POPUP_ANCHOR,
+            className:    "incident solved"
           });
+
+          // should the features be clickable? in most cases yes, and the marker click
+          // should be handled. it will usually either open a popup or cause the marker
+          // to be selected as the report location. that logic is handled in the
+          // handleMarkerClick event handler function.
+          var isInteractive = true;
+
           primaryLayer = L.geoJson(response, {
             pointToLayer: function(feature, latlng) {
-              if (feature.hasOpenIncident) {
+              if (feature.properties.hasOpenIncident) {
                 marker = incidentMarker ;
-              } else if (feature.hasSolvedIncident) {
+              } else if (feature.properties.hasSolvedIncident) {
                 marker = solvedMarker;
               } else {
                 marker = standardMarker;
@@ -462,8 +486,11 @@
               });
             },
             onEachFeature: function(feature, layer) {
-              
-            }
+              popupOptions = { maxWidth: 250 };
+              layer.bindPopup(generatePopupContent(feature), popupOptions);
+              layer.on('click', handleMarkerClick);
+            },
+            interactive:        isInteractive
           });
           if (zoom >= featureLayerVisibleZoom) {
             primaryLayer.addTo(map);
@@ -471,6 +498,9 @@
         }
 
         function initIncidentsLayer(response, layer) {
+          // the incidents layer is only used if primary layer isn't a selection-only assets layer.
+          // in other words, users should be able to drop an issue marker anywhere on the, not only
+          // on assets.
 
         }
 
@@ -481,39 +511,38 @@
           }).addTo(map);
         }
 
+        // function addMarkerToMap(primaryFeature, addMarker, incidentFeature = null) {
+        //   var addToLayer = primaryFeature.properties.hasOpenIncident ? incidentsLayer : primaryLayer;
 
-        function addMarkerToMap(primaryFeature, addMarker, incidentFeature = null) {
-          var addToLayer = primaryFeature.properties.hasOpenIncident ? incidentsLayer : primaryLayer;
+        //   var newFeature = L.geoJSON(primaryFeature, {
+        //     coordsToLatLng: function (coords) {
+        //       return new L.LatLng(coords[1], coords[0]);
+        //     },
+        //     pointToLayer: function (feature, latlng) {
+        //       return L.marker(latlng, { icon: addMarker, iconSize: DEFAULT_ICON_SIZE, bubblingMouseEvents: false });
+        //     },
+        //     onEachFeature: function(feature, layer) {
+        //       //if (!disablePopup && feature.properties.status) {
+        //         popupOptions = { maxWidth: 250 };
+        //         // var name = feature.properties.name ? feature.properties.name : "Asset " + feature.properties.id;
+        //         // var incidentStatus = feature.properties.status ? "<p>Status: " + feature.properties.status + "</p>" : "";
+        //         // var dateReported = feature.properties.date_reported ? "<p>Date Reported: " + feature.properties.date_reported + "</p>" : "";
+        //         // //var message = feature.properties.status == "Open" ? OPEN_ISSUE_MESSAGE : SOLVED_ISSUE_MESSAGE;
+        //         // var description = feature.properties.custom_graffiti_description ? "<p>Description: " + feature.properties.custom_graffiti_description + "</p>" : "";
+        //         layer.bindPopup(generatePopupContent(feature), popupOptions);
+        //       //}
+        //     }
+        //   });
 
-          var newFeature = L.geoJSON(primaryFeature, {
-            coordsToLatLng: function (coords) {
-              return new L.LatLng(coords[1], coords[0]);
-            },
-            pointToLayer: function (feature, latlng) {
-              return L.marker(latlng, { icon: addMarker, iconSize: DEFAULT_ICON_SIZE, bubblingMouseEvents: false });
-            },
-            onEachFeature: function(feature, layer) {
-              //if (!disablePopup && feature.properties.status) {
-                popupOptions = { maxWidth: 250 };
-                // var name = feature.properties.name ? feature.properties.name : "Asset " + feature.properties.id;
-                // var incidentStatus = feature.properties.status ? "<p>Status: " + feature.properties.status + "</p>" : "";
-                // var dateReported = feature.properties.date_reported ? "<p>Date Reported: " + feature.properties.date_reported + "</p>" : "";
-                // //var message = feature.properties.status == "Open" ? OPEN_ISSUE_MESSAGE : SOLVED_ISSUE_MESSAGE;
-                // var description = feature.properties.custom_graffiti_description ? "<p>Description: " + feature.properties.custom_graffiti_description + "</p>" : "";
-                layer.bindPopup(generatePopupContent(feature), popupOptions);
-              //}
-            }
-          });
+        //   newFeature.on('click', handleMarkerClick);
 
-          newFeature.on('click', handleMarkerClick);
+        //   // add click handler to marker if behavior is "selection"; marker click is used to set location.
+        //   // on click capture location lat/lon (hidden field), asset ID (hidden field), and asset title (address field)
 
-          // add click handler to marker if behavior is "selection"; marker click is used to set location.
-          // on click capture location lat/lon (hidden field), asset ID (hidden field), and asset title (address field)
-
-          // how do we dislay the selected location in the widget? Maybe asset title in the address field?
+        //   // how do we dislay the selected location in the widget? Maybe asset title in the address field?
           
-          newFeature.addTo(addToLayer);
-        }
+        //   newFeature.addTo(addToLayer);
+        // }
 
         function generateLocateControl() {
           return L.Control.extend({
@@ -546,7 +575,7 @@
         }
 
         function generatePopupContent(feature) {
-          var name = feature.properties.name ? feature.properties.name : primaryLayerType == "incident" ? "Incident" : "Asset";
+          var name = feature.properties.name ? feature.properties.name : "Feature";
           var detail = feature.properties.detail ? feature.properties.detail : "";
 
           var message = "";
@@ -569,23 +598,25 @@
           }
           resetClickedMarker();
 
-          if ((primaryLayerBehavior == "selection" && !marker.layer.feature.properties.hasOpenIncident)
-               || marker.layer.feature.properties.status == "solved") {
+          // check if the marker is a feature with an incident. if so, use it for location selection.
+          // but don't allow markers with open, non-solved incidents to be selected.
+          if ((primaryLayerBehavior == "selection" || primaryLayerBehavior == "selection-only") && 
+              (!marker.target.feature.properties.hasOpenIncident || marker.target.feature.properties.status == "solved")) {
 
             // store original marker icon, so we can swap back
-            marker.originalIcon = marker.layer.options.icon;
+            marker.originalIcon = marker.target.options.icon;
 
             // use selected marker icon
             newIcon = L.icon({ iconUrl: selectedMarker });
-            marker.layer.setIcon(newIcon);
-            L.DomUtil.addClass(marker.layer._icon, 'selected');
+            marker.target.setIcon(newIcon);
+            L.DomUtil.addClass(marker.target._icon, 'selected');
 
             clickedMarker = marker;
 
             // set location form fields with asset data
             selectAsset(marker);
 
-            if (marker.layer.feature.properties.status != "solved") {
+            if (marker.target.feature.properties.status != "solved") {
               reverseGeolocate(marker.latlng);
             }
 
@@ -604,22 +635,22 @@
         function resetClickedMarker() {
           if (clickedMarker) {
             // reset clicked marker's icon to original
-            clickedMarker.layer.setIcon(clickedMarker.originalIcon);
-            L.DomUtil.removeClass(clickedMarker.layer._icon, 'selected');
+            clickedMarker.target.setIcon(clickedMarker.originalIcon);
+            L.DomUtil.removeClass(clickedMarker.target._icon, 'selected');
             //map.closePopup();
           }
         }
 
         function selectAsset(marker) {
             // copy asset title to holder
-            $('#place_name').val(marker.layer.feature.properties.name);
+            $('#place_name').val(marker.target.feature.properties.name);
 
             // copy asset coordiantes to lat/lon fields
             $('#location_lat').val(marker.latlng.lat);
             $('#location_lon').val(marker.latlng.lng);
 
             // copy asset id to hidden field
-            $('#location_asset_id').val(marker.layer.feature.properties.id);
+            $('#location_asset_id').val(marker.target.feature.properties.id);
         }
   
         function handleLocationTypeClick(radios) {
@@ -674,8 +705,10 @@
           // setMarkerAndZoom(e.latlng.lat, e.latlng.lng, true, false, zoom);
           reverseGeolocate(e.latlng);
 
-          // determine whether click is within a region on the primaryLayer layer
-          if (primaryLayerType == "region" || regionsLayerSource) {
+          // determine whether click is within a region on the primaryLayer layer, and store the region_id.
+          // this is done if the primary layer type is Region, or if the regions layer is populated.
+          if (primaryLayerType == PRIMARY_LAYER_TYPE.Region || regionsLayerSource) {
+            var testLayer;
             if (regionsLayer) {
               testLayer = regionsLayer;
             } else {

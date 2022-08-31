@@ -258,7 +258,7 @@ class PortlandLocationPicker extends WebformCompositeBase {
       '#title' => t('Municipality Name'),
       '#title_display' => 'invisible',
       '#id' => 'location_municipality_name',
-      '#attributes' => ['class' => ['visually-hidden']]
+      '#attributes' => ['class' => ['visually-hidden']],
     ];
     $elements['location_is_portland'] = [
       '#type' => 'checkbox',
@@ -268,14 +268,6 @@ class PortlandLocationPicker extends WebformCompositeBase {
       '#attributes' => ['class' => ['visually-hidden']],
       '#default_value' => TRUE
     ];
-    // $elements['geojson_layer'] = [
-    //   '#type' => 'hidden',
-    //   '#id' => 'geojson_layer',
-    // ];
-    // $elements['geojson_layer_behavior'] = [
-    //   '#type' => 'hidden',
-    //   '#id' => 'geojson_layer_behavior',
-    // ];
 
     return $elements;
   }
