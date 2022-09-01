@@ -132,6 +132,15 @@ elements: |-
     '#type': textfield
     '#title': 'Contractor/Company Name'
     '#required': true
+  contact_email:
+    '#type': textfield
+    '#title': 'Contact Email'
+    '#input_mask': '''alias'': ''email'''
+    '#required': true
+    '#states':
+      visible:
+        ':input[name="report_ticket_id"]':
+          empty: true
   report_ticket_id:
     '#type': textfield
     '#title': 'Support Ticket ID'
@@ -142,14 +151,33 @@ elements: |-
       invisible:
         ':input[name="original_submission_key"]':
           empty: true
-      readonly:
-        ':input[name="original_submission_key"]':
-          filled: true
   original_submission_key:
     '#type': hidden
     '#title': 'Original Submission Key'
     '#prepopulate': true
     '#wrapper_attributes': {  }
+  ticket_description:
+    '#type': webform_computed_twig
+    '#title': 'Ticket Description'
+    '#display_on': none
+    '#mode': html
+    '#template': |
+      <p>[webform_submission:values:report_location:html]</p>
+
+      {% if data.report_hate_speech_or_gang %}<p>Is the graffiti hate speech or gang related?&nbsp;{{ data.report_hate_speech_or_gang }}</p>{% endif %}
+
+
+      {% if data.report_private_property_type %}<p>What type of property is it?&nbsp;{{ data.report_private_property_type }}</p>{% endif %}
+
+
+      {% if data.report_above_ground_level %}<p>Is graffiti above ground level?&nbsp;{{ data.report_above_ground_level }}</p>{% endif %}
+
+
+      {% if data.report_graffiti_on_mural %}<p>Is graffiti on mural?&nbsp;{{ data.report_graffiti_on_mural }}</p>{% endif %}
+
+      {% if data.report_repeat_offender %}<p>Have you seen this graffiti or tag before? Is it from a repeat offender?&nbsp;{{ data.report_repeat_offender }}</p>{% endif %}
+
+      <p>Webform ID: report_graffiti</p>
   actions:
     '#type': webform_actions
     '#title': 'Submit button(s)'
@@ -390,4 +418,29 @@ handlers:
           filled: true
     weight: -50
     settings: {  }
+  create_new_zendesk_ticket:
+    id: zendesk
+    handler_id: create_new_zendesk_ticket
+    label: 'Create and resolve new Zendesk ticket'
+    notes: 'Creates a new Zendesk ticket as solved; used for self-reporting and resolution by contractors.'
+    status: true
+    conditions:
+      enabled:
+        ':input[name="report_ticket_id"]':
+          empty: true
+    weight: 0
+    settings:
+      requester_name: resolution_contractor
+      requester_email: contact_email
+      subject: 'Graffiti Report'
+      comment: "<h2>Graffiti Report</h2>\r\n\r\n[webform_submission:values:ticket_description:html]\r\n\r\n<p><strong>The issue has been reported as resolved by the abatement contractor [webform_submission:values:resolution_contractor].</strong></p>\r\n\r\n<p>Resolution: [webform_submission:values:resolution]<br><br>\r\nNotes:<br>[webform_submission:values:resolution_notes]<br><br>\r\nSquare footage of abatement: [webform_submission:values:resolution_square_footage]<br><br>\r\nThis report will be automatically closed after 7 days.</p>"
+      tags: 'drupal webform graffiti'
+      priority: normal
+      status: solved
+      group_id: ''
+      assignee_id: '1505212728301'
+      type: incident
+      collaborators: ''
+      custom_fields: "6353388345367: 'report_graffiti'\r\n5581480390679: '[webform_submission:values:report_location:location_lat]'\r\n5581490332439: '[webform_submission:values:report_location:location_lon]'\r\n1500012743961: '[webform_submission:values:report_location:location_address]'\r\n1500013095781: '[webform_submission:uuid]'\r\n6355783758871: '[webform_submission:values:resolution_url]'\r\n6379451469847: '[webform_submission:values:waiver_url]'\r\n8197855908375: '[webform_submission:values:report_repeat_offender]'"
+      ticket_id_field: support_ticket_id
 variants: {  }
