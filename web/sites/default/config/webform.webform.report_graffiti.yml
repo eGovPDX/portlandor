@@ -85,102 +85,72 @@ elements: |-
             'Removal Kit': 'Request a graffiti removal kit or learn more about the "Clean it Up, Paint it Up" initiative'
           '#required': true
           '#wrapper_type': form_element
-        container_assistance_qualification:
-          '#type': container
+        report_private_property_type:
+          '#type': radios
+          '#title': 'What type of property is it?'
+          '#options': private_property_type
+          '#required': true
           '#states':
             visible:
               ':input[name="report_property_owner_assistance"]':
                 value: Assistance
-              ':input[name="report_hate_speech_or_gang"]':
+        report_corporate_franchise:
+          '#type': radios
+          '#title': 'Are you a corporate franchise?'
+          '#options': yes_no
+          '#required': true
+          '#states':
+            visible:
+              ':input[name="report_private_property_type"]':
+                value: Business
+        report_business_employees_amt:
+          '#type': number
+          '#title': 'How many employees does the business have?'
+          '#required': true
+          '#states':
+            visible:
+              ':input[name="report_corporate_franchise"]':
                 value: 'No'
-          report_private_property_type:
-            '#type': radios
-            '#title': 'What type of property is it?'
-            '#options': private_property_type
-            '#required': true
-          report_corporate_franchise:
-            '#type': radios
-            '#title': 'Are you a corporate franchise?'
-            '#options': yes_no
-            '#required': true
-            '#states':
-              visible:
-                ':input[name="report_private_property_type"]':
-                  value: 'A Small Business'
-          report_business_employees_amt:
-            '#type': number
-            '#title': 'How many employees does the business have?'
-            '#required': true
-            '#states':
-              visible:
-                ':input[name="report_corporate_franchise"]':
-                  value: 'No'
-          report_building_units_amt:
-            '#type': number
-            '#title': 'How many units does the building/complex have?'
-            '#required': true
-            '#states':
-              visible:
-                ':input[name="report_private_property_type"]':
-                  value: 'A Condo or Apartment Building/Complex'
-          report_nonprofit_employees:
-            '#type': number
-            '#title': 'How many employees does the non-profit have?'
-            '#required': true
-            '#states':
-              visible:
-                ':input[name="report_private_property_type"]':
-                  value: 'A non-profit organization, or houses a non-profit organization'
-          report_contractor_text:
-            '#type': webform_markup
-            '#states':
-              visible:
-                - ':input[name="report_corporate_franchise"]':
-                    value: 'Yes'
-                - or
-                - ':input[name="report_business_employees_amt"]':
-                    value:
-                      greater: '10'
-                - or
-                - ':input[name="report_building_units_amt"]':
-                    value:
-                      greater: '10'
-                - or
-                - ':input[name="report_nonprofit_employees"]':
-                    value:
-                      greater: '100'
-            '#admin_title': 'Doesn''t qualify'
-            '#markup': |-
-              <div class="alert alert--info next-steps">
-              <h2>You don&#39;t qualify for graffiti removal assistance [should this be a dead end, or do we still want the user to submit the form?]</h2>
-
-              <p>Contractor information here...</p>
-              </div>
-        report_removal_kit_text:
+        report_building_units_amt:
+          '#type': number
+          '#title': 'How many units does the building/complex have?'
+          '#required': true
+          '#states':
+            visible:
+              ':input[name="report_private_property_type"]':
+                value: 'Condo or apartment'
+        report_nonprofit_employees:
+          '#type': number
+          '#title': 'How many employees does the non-profit have?'
+          '#required': true
+          '#states':
+            visible:
+              ':input[name="report_private_property_type"]':
+                value: Non-profit
+        report_contractor_text:
           '#type': webform_markup
           '#states':
             visible:
-              ':input[name="report_property_owner_assistance"]':
-                value: 'Removal Kit'
+              - ':input[name="report_corporate_franchise"]':
+                  value: 'Yes'
+              - or
+              - ':input[name="report_business_employees_amt"]':
+                  value:
+                    greater: '10'
+              - or
+              - ':input[name="report_building_units_amt"]':
+                  value:
+                    greater: '10'
+              - or
+              - ':input[name="report_nonprofit_employees"]':
+                  value:
+                    greater: '100'
+          '#admin_title': 'Doesn''t qualify'
           '#markup': |-
             <div class="alert alert--info next-steps">
-            <h2>Next Steps [do we want this to be a dead-end or for the user to submit the form?]</h2>
+            <h2>You don&#39;t qualify for graffiti removal assistance.</h2>
 
-            <p>Here&#39;s how to request a kit........</p>
-            </div>
-        markup_qualifies:
-          '#type': webform_markup
-          '#states':
-            visible:
-              ':input[name="report_property_owner_assistance"]':
-                value: Assistance
-              ':input[name="report_hate_speech_or_gang"]':
-                value: 'Yes'
-          '#markup': |-
-            <div class="alert alert--info next-steps">
-            <h2>You may qualify for graffiti removal assistance</h2>
-
-            <p>Please continue filling out this report.</p>
+            <p>Please visit the <a href="/civic/graffiti/request-services">Graffiti Removal Assitance page</a>&nbsp;to find contact information for the names and phone numbers of contractors who can help with removal.</p>
             </div>
       report_tenant_or_neighbor:
         '#type': radios
@@ -209,8 +179,23 @@ elements: |-
         '#type': container
         '#states':
           invisible:
-            ':input[name="report_tenant_or_neighbor"]':
-              value: 'I am a tenant'
+            - ':input[name="report_corporate_franchise"]':
+                value: 'Yes'
+            - or
+            - ':input[name="report_business_employees_amt"]':
+                value:
+                  greater: '10'
+            - or
+            - ':input[name="report_building_units_amt"]':
+                value:
+                  greater: '10'
+            - or
+            - ':input[name="report_nonprofit_employees"]':
+                value:
+                  greater: '100'
+            - or
+            - ':input[name="report_tenant_or_neighbor"]':
+                value: 'I am a tenant'
         report_above_ground_level:
           '#type': radios
           '#title': 'Is the graffiti above ground level (more than 8 feet up)?'
@@ -238,11 +223,8 @@ elements: |-
           '#description_display': before
           '#states':
             required:
-              - ':input[name="report_hate_speech_or_gang"]':
-                  value: 'Yes'
-              - xor
-              - ':input[name="report_hate_speech_or_gang"]':
-                  value: 'Not sure'
+              ':input[name="report_hate_speech_or_gang"]':
+                '!value': 'No'
           '#file_preview': name
           '#max_filesize': '30'
           '#file_extensions': 'gif jpg png svg jpeg'
@@ -364,7 +346,7 @@ elements: |-
           test_submission:
             '#type': checkbox
             '#title': 'Test Submission'
-            '#description': 'Checking this box will add the &quot;development-test&quot; tag to the Zendesk ticket for filtering purposes.'
+            '#description': 'Checking this box will assign the ticket to the Developer Test group instead of the Graffiti Reporting group.'
         actions:
           '#type': webform_actions
           '#title': 'Submit button(s)'
@@ -666,7 +648,7 @@ handlers:
     id: zendesk
     handler_id: create_new_zendesk_ticket_developer_test
     label: 'Create new Zendesk ticket - developer test'
-    notes: 'Creates new Zendesk ticket but puts it in the Developer Test Group and adds the "development-test" tag to it, so it can be filtered out of views and reports.'
+    notes: 'Creates new Zendesk ticket but puts it in the Developer Test Group. This handler gets used if the Test checkbox is ticked in the Developer Use Only section.'
     status: true
     conditions:
       enabled:
