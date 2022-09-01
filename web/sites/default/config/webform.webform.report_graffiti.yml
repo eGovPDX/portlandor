@@ -5,6 +5,7 @@ dependencies:
   module:
     - antibot
     - honeypot
+    - portland_zendesk
 third_party_settings:
   antibot:
     antibot: true
@@ -29,8 +30,25 @@ elements: |-
       '#type': portland_location_picker
       '#title': Location
       '#required': true
+      '#default_value':
+        location_type: street
+        location_park: ''
+        location_address: ''
+        place_name: ''
+        location_details: ''
+        location_lat: ''
+        location_lon: ''
+        location_private_owner: ''
       '#location_type__required': true
-      '#location_private_owner__access': false
+      '#location_map__description': '<em>Existing graffiti reports are displayed with a red marker <img src="/modules/custom/portland/modules/portland_location_picker/images/map_marker_incident.png" alt="Red map marker icon" class="inline-icon"> when the map is fully zoomed in. New reports must be reviewed and may take up to 2 business days to appear on the map.</em>'
+      '#location_address__states':
+        visible: true
+      '#location_map__states':
+        visible: true
+      '#primary_layer_source': /api/tickets/graffiti
+      '#primary_layer_behavior': informational
+      '#primary_layer_type': incident
+      '#feature_layer_visible_zoom': 17
     markup_select_to_continue:
       '#type': webform_markup
       '#states':
@@ -44,22 +62,11 @@ elements: |-
         visible:
           ':input[name="report_location[location_type]"]':
             checked: true
-      container_hate_or_gang:
-        '#type': container
-      report_private_owner:
-        '#type': radios
-        '#title': 'Are you the owner of the property?'
-        '#options': yes_no
-        '#required': true
-        '#states':
-          visible:
-            ':input[name="report_location[location_type]"]':
-              value: private
       container_property_owner:
         '#type': container
         '#states':
           visible:
-            ':input[name="report_private_owner"]':
+            ':input[name="report_location[location_private_owner]"]':
               value: 'Yes'
         report_hate_speech_or_gang:
           '#type': radios
@@ -88,12 +95,8 @@ elements: |-
                 value: 'No'
           report_private_property_type:
             '#type': radios
-            '#title': 'Is the Private Property:'
-            '#options':
-              'A Small Business': 'A Small Business'
-              'A single-family home': 'A single-family home'
-              'A Condo or Apartment Building/Complex': 'A Condo or Apartment Building/Complex'
-              'A non-profit organization, or houses a non-profit organization': 'A non-profit organization, or houses a non-profit organization'
+            '#title': 'What type of property is it?'
+            '#options': private_property_type
             '#required': true
           report_corporate_franchise:
             '#type': radios
@@ -188,7 +191,7 @@ elements: |-
         '#required': true
         '#states':
           visible:
-            ':input[name="report_private_owner"]':
+            ':input[name="report_location[location_private_owner]"]':
               value: 'No'
       report_tenant_text:
         '#type': webform_markup
@@ -210,16 +213,24 @@ elements: |-
               value: 'I am a tenant'
         report_above_ground_level:
           '#type': radios
-          '#title': 'Is the graffiti above ground level?'
+          '#title': 'Is the graffiti above ground level (more than 8 feet up)?'
           '#options':
             'Yes': 'Yes'
             'No': 'No'
             'Not sure': 'Not sure'
+          '#required': true
         report_graffiti_on_mural:
           '#type': radios
           '#title': 'Is the graffiti on a mural?'
           '#options': yes_no
           '#options_display': side_by_side
+          '#required': true
+        report_repeat_offender:
+          '#type': radios
+          '#title': 'Have you seen this graffiti or tag before? Is it from a repeat offender?'
+          '#options': yes_no
+          '#options_display': side_by_side
+          '#required': true
         report_photo:
           '#type': webform_image_file
           '#title': 'Please upload a photo of the graffiti'
@@ -342,6 +353,77 @@ elements: |-
         actions:
           '#type': webform_actions
           '#title': 'Submit button(s)'
+  report_ticket_id:
+    '#type': hidden
+    '#title': 'Support Ticket ID'
+  ticket_description:
+    '#type': webform_computed_twig
+    '#title': 'Ticket Description'
+    '#display_on': none
+    '#mode': html
+    '#template': |-
+      <p>[webform_submission:values:report_location:html]</p>
+
+      {% if data.report_hate_speech_or_gang %}Is the graffiti hate speech or gang related?&nbsp;{{ data.report_hate_speech_or_gang }}<br><br>{% endif %}
+
+
+      {% if data.report_property_owner_assistance %}What are you requesting?&nbsp;{{ data.report_property_owner_assistance }}<br><br>{% endif %}
+
+
+      {% if data.report_private_property_type %}What type of property is it?&nbsp;{{ data.report_private_property_type }}<br><br>{% endif %}
+
+
+      {% if data.report_corporate_franchise %}Are you a corporate franchise?&nbsp;{{ data.report_corporate_franchise }}<br><br>{% endif %}
+
+
+      {% if data.report_business_employees_amt %}How many employees does the business have?&nbsp;{{ data.report_business_employees_amt }}<br><br>{% endif %}
+
+
+      {% if data.report_building_units_amt %}How many units does the building have?&nbsp;{{ data.report_building_units_amt }}<br><br>{% endif %}
+
+
+      {% if data.report_nonprofit_employees %}How many employees does the non-profit have?&nbsp;{{ data.report_nonprofit_employees }}<br><br>{% endif %}
+
+
+      {% if data.report_tenant_or_neighbor %}Are you a neighbor or tenant?&nbsp;{{ data.report_tenant_or_neighbor }}<br><br>{% endif %}
+
+
+      {% if data.report_above_ground_level %}Is graffiti above ground level?&nbsp;{{ data.report_above_ground_level }}<br><br>{% endif %}
+
+
+      {% if data.report_graffiti_on_mural %}Is graffiti on mural?&nbsp;{{ data.report_graffiti_on_mural }}<br><br>{% endif %}
+
+
+      {% if data.report_repeat_offender %}Have you seen this graffiti or tag before? Is it from a repeat offender?&nbsp;{{ data.report_repeat_offender }}<br><br>{% endif %}
+
+
+      {% if data.contact_name %}Contact Name:&nbsp;{{ data.contact_name }}<br><br>{% endif %}
+
+
+      {% if data.contact_email %}Contact Email:&nbsp;{{ data.contact_email }}<br><br>{% endif %}
+
+
+      <p>Webform ID: report_graffiti</p>
+    '#ajax': true
+  resolution_url:
+    '#type': webform_computed_twig
+    '#title': 'Resolution URL'
+    '#display_on': none
+    '#mode': text
+    '#template': '{{ webform_token(''[site:url]'', webform_submission, [], options) }}form/report-graffiti-resolution?report_location[location_type]={{ data.report_location.location_type }}&report_location[location_park]={{ data.report_location.location_park }}&report_location[place_name]={{ data.report_location.place_name }}&report_location[location_details]={{ data.report_location.location_details }}&report_location[location_address]={{ data.report_location.location_address }}&report_location[location_lat]={{ data.report_location.location_lat }}&report_location[location_lon]={{ data.report_location.location_lon }}&report_private_property_type={{ data.report_private_property_type }}&report_above_ground_level={{ data.report_above_ground_level }}&report_graffiti_on_mural={{ data.report_graffiti_on_mural }}&report_ticket_id='
+    '#whitespace': trim
+    '#store': true
+    '#ajax': true
+  waiver_url:
+    '#type': webform_computed_twig
+    '#title': 'Waiver URL'
+    '#display_on': none
+    '#mode': text
+    '#template': |-
+      {% set address = data.report_location.location_address ? data.report_location.location_address : "N/A" %}
+      {{ webform_token('[site:url]', webform_submission, [], options) }}form/report-graffiti-waiver?original_submission_key={{ uuid }}&property_address={{ address }}&property_type={{ data.report_private_property_type }}&contact_name={{ data.contact_name }}&contact_email={{ data.contact_email }}&report_ticket_id=
+    '#store': true
+    '#ajax': true
 css: ''
 javascript: ''
 settings:
@@ -450,7 +532,7 @@ settings:
   confirmation_message: ''
   confirmation_attributes: {  }
   confirmation_back: true
-  confirmation_back_label: ''
+  confirmation_back_label: 'Submit another report'
   confirmation_back_attributes: {  }
   confirmation_exclude_query: false
   confirmation_exclude_token: false
@@ -540,41 +622,26 @@ access:
     users: {  }
     permissions: {  }
 handlers:
-  submit_to_zendesk:
-    id: email
-    handler_id: submit_to_zendesk
-    label: 'Submit to Zendesk'
+  create_new_zendesk_ticket:
+    id: zendesk
+    handler_id: create_new_zendesk_ticket
+    label: 'Create new Zendesk ticket'
     notes: ''
     status: true
     conditions: {  }
     weight: 0
     settings:
-      states:
-        - completed
-      to_mail: 311@portlandoregon.gov
-      to_options: {  }
-      bcc_mail: ''
-      bcc_options: {  }
-      cc_mail: ''
-      cc_options: {  }
-      from_mail: '[webform_submission:values:contact_email:raw]'
-      from_options: {  }
-      from_name: '[webform_submission:values:contact_name:raw]'
-      reply_to: ''
-      return_path: ''
-      sender_mail: ''
-      sender_name: ''
-      subject: _default
-      body: "&nbsp;<br />\r\nSubmitted on [webform_submission:created]<br />\r\n<br />\r\nSubmitted by: [webform_submission:user]<br />\r\n<br />\r\n[webform_submission:values]<br />\r\n<br />\r\n<strong>Agent Use Only:</strong><br />\r\n<br />\r\n[webform_submission:values:agent_summary]<br />\r\n&nbsp;"
-      excluded_elements: {  }
-      ignore_access: false
-      exclude_empty: true
-      exclude_empty_checkbox: false
-      exclude_attachments: false
-      html: true
-      attachments: false
-      twig: false
-      theme_name: ''
-      parameters: {  }
-      debug: false
+      requester_name: contact_name
+      requester_email: contact_email
+      subject: 'Graffiti Report'
+      comment: "<h2>Graffiti Report</h2>\r\n\r\n[webform_submission:values:ticket_description]"
+      tags: 'drupal webform graffiti'
+      priority: normal
+      status: new
+      group_id: '4549352062487'
+      assignee_id: '376597733073'
+      type: incident
+      collaborators: ''
+      custom_fields: "6353388345367: 'report_graffiti'\r\n5581480390679: '[webform_submission:values:report_location:location_lat]'\r\n5581490332439: '[webform_submission:values:report_location:location_lon]'\r\n1500012743961: '[webform_submission:values:report_location:location_address]'\r\n1500013095781: '[webform_submission:uuid]'\r\n6355783758871: '[webform_submission:values:resolution_url]'\r\n6379451469847: '[webform_submission:values:waiver_url]'"
+      ticket_id_field: report_ticket_id
 variants: {  }

@@ -160,7 +160,9 @@ class PortlandLocationPicker extends WebformCompositeBase {
     $elements['location_map'] = [
       '#type' => 'markup',
       '#id' => 'location_map',
-      '#title' => 'Location marker on map',
+      '#title' => 'Location map',
+      '#description' => '',
+      '#description_display' => 'before',
       '#title_display' => 'invisible',
       '#markup' => '<div id="location_map_container" class="location-map"></div>',
       '#states' => [
@@ -236,6 +238,21 @@ class PortlandLocationPicker extends WebformCompositeBase {
       '#title_display' => 'invisible',
       '#id' => 'location_lon',
       '#attributes' => ['class' => ['location-lon','visually-hidden']],
+    ];
+    $elements['location_asset_id'] = [
+      '#type' => 'textfield',
+      '#title' => t('Asset ID'),
+      '#title_display' => 'invisible',
+      '#id' => 'location_asset_id',
+      '#attributes' => ['class' => ['visually-hidden']],
+    ];
+    $elements['geojson_layer'] = [
+      '#type' => 'hidden',
+      '#id' => 'geojson_layer',
+    ];
+    $elements['geojson_layer_behavior'] = [
+      '#type' => 'hidden',
+      '#id' => 'geojson_layer_behavior',
     ];
 
     return $elements;

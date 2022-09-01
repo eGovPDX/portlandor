@@ -47,7 +47,7 @@ class EnableUser extends ActionBase
   {
     /** @var \Drupal\user\UserInterface $object */
     $access = $object->status->access('edit', $account, TRUE)
-      ->andIf($object->access('update', $account, TRUE));
+      ->orIf($object->access('update', $account, TRUE));
 
     return $return_as_object ? $access : $access->isAllowed();
   }

@@ -522,52 +522,25 @@ function portland_set_extended_title_for_group_views(&$vars)
   $route_match = \Drupal::routeMatch();
   $new_title = portland_generate_extended_title_for_group_views($vars['page']['#title'], $route_match);
   $vars['head_title']['title'] = $new_title;
-  $vars['title_override_set'] = true;
 }
 
 function portland_generate_extended_title_for_group_views($orig_title, $route_match)
 {
-  // get the view id from the path
-  $view_id = $route_match->getParameter('view_id');
   $site_name = \Drupal::config('system.site')->get('name');
-  $display_id = $route_match->getParameter('display_id');
-
   $path = $route_match->getRouteObject()->getPath();
   // If this is a group path, add group name to title
   if ($path != null && (substr_compare($path, "/group", 0, strlen("/group")) === 0)) {
-    $group_id = $route_match->getParameter('group') ?? $route_match->getParameter('arg_0'); // sometimes the group object is returned; sometimes just the id string
-    $type = is_string($group_id) ? "string" : get_class($group_id);
-    $group_entity = $type == "Drupal\group\Entity\Group" ? $group_id : Drupal\group\Entity\Group::load($group_id);
+    $group_id = $route_match->getParameter('group') ?? $route_match->getParameter('arg_0'); // sometimes a named group parameter is used in the path, othertimes it's a generic parameter
+    // On some group pages (e.g. revisions), the group route param
+    // is actually an instance of the group rather than the ID.
+    $group_entity = $group_id instanceof Drupal\group\Entity\Group
+                      ? $group_id
+                      : Drupal\group\Entity\Group::load($group_id);
     if (isset($group_entity)) {
       $page_title = $orig_title;
       $group_title = $group_entity->label();
-      return "$page_title | $group_title | $site_name";
+      return "$page_title | $group_title";
     }
-  }
-  switch ($view_id) {
-    case "content_at_location":
-      // Get location title
-      $location_nid = $route_match->getParameter('arg_0');
-      if ($location_nid == null) {
-        break;
-      }
-      $location_node = \Drupal\node\Entity\Node::load($location_nid);
-      if ($location_node == null) {
-        break;
-      }
-      $location_title = $location_node->getTitle();
-      switch ($display_id) {
-        case "page_past_events_at_location":
-          return "Past events | $location_title | $site_name";
-          break;
-        case "page_upcoming_events_at_location":
-          return "Upcoming events | $location_title | $site_name";
-          break;
-        case "page_news_at_location":
-          return "News | $location_title | $site_name";
-          break;
-      }
-      break;
   }
   return "$orig_title | $site_name";
 }
@@ -657,7 +630,7 @@ function portland_search_api_solr_query_alter(\Solarium\QueryType\Select\Query\Q
 {
   // Only modify the query for site search
   $search_id = $query->getSearchId();
-  if (strpos($search_id, "search_api_page:search_portland_gov") !== 0 && 
+  if (strpos($search_id, "search_api_page:search_portland_gov") !== 0 &&
   strpos($search_id, "search_api_autocomplete:search_portland_gov") !== 0) {
     return;
   }
@@ -817,7 +790,7 @@ function portland_form_alter(&$form, &$form_state, $form_id)
  */
 function _validate_document(&$form, \Drupal\Core\Form\FormStateInterface $form_state)
 {
-  $is_embedded_document_form_with_efiles = $form_state->hasValue("inline_entity_form") && 
+  $is_embedded_document_form_with_efiles = $form_state->hasValue("inline_entity_form") &&
     ($form_state->getValue("inline_entity_form")["field_efiles_link"] != null);
   if ($form_state->hasValue('field_efiles_link') || $is_embedded_document_form_with_efiles) {
     // DO NOT validate when the user clicks on the remove document button.
@@ -827,7 +800,7 @@ function _validate_document(&$form, \Drupal\Core\Form\FormStateInterface $form_s
     // Get values from the inline entity form
     if($is_embedded_document_form_with_efiles) {
       // Can't have both uploaded document and eFiles
-      if( $form_state->getValue("inline_entity_form")["field_efiles_link"][0]['uri'] && 
+      if( $form_state->getValue("inline_entity_form")["field_efiles_link"][0]['uri'] &&
         count($form_state->getValue("inline_entity_form")["field_document"][0]['fids']) !== 0) {
         $form_state->setErrorByName('field_document', t('Cannot have both uploaded document and eFiles link'));
         return;
@@ -917,8 +890,8 @@ function _validate_document(&$form, \Drupal\Core\Form\FormStateInterface $form_s
     } else {
       $document = $form_state->getValue('field_document');
       // The document field can't be empty when the eFile link is empty
-      if ($is_embedded_document_form_with_efiles) { 
-        if( $form_state->getValue("inline_entity_form")["field_efiles_link"][0]['uri'] == null && 
+      if ($is_embedded_document_form_with_efiles) {
+        if( $form_state->getValue("inline_entity_form")["field_efiles_link"][0]['uri'] == null &&
             count($form_state->getValue("inline_entity_form")["field_document"][0]['fids']) === 0
         ) {
           $form_state->setErrorByName('field_document', t('Please upload a file or add an external file link'));
@@ -1169,6 +1142,26 @@ function portland_mail($key, &$message, $params)
       $message['body'][] = $params['message'];
       $message['headers']['Content-Type'] = 'text/html; charset=UTF-8; format=flowed; delsp=yes';
       break;
+    case 'group_admin':
+      $user = \Drupal::currentUser()->getAccount();
+      $user_name = $user->name;
+      $user_email = $user->getEmail();
+      
+      if (array_key_exists('group', $params)) {
+        $group = $params['group'];
+        $group_path = $params['group_path'];
+
+        $body_metadata = "<p><em>Message sent by $user_name via group <a href=\"$group_path\">$group</a></em></p>";
+      } else {
+        $body_metadata = "<p><em>Message sent by $user_name</em></p>";
+      }
+      
+      $message['from'] = \Drupal::config('system.site')->get('mail');
+      $message['subject'] = t('@subject', array('@subject' => $params['subject']), $options);
+      $message['body'][] = $body_metadata . $params['message'];
+      $message['headers']['Reply-To'] = "\"$user_name\" <$user_email>";
+      $message['headers']['Content-Type'] = 'text/html; charset=UTF-8; format=flowed; delsp=yes';
+    break;
   }
 }
 
@@ -1178,20 +1171,22 @@ function portland_mail($key, &$message, $params)
 function portland_mail_alter(&$message)
 {
   // id = module + key
-  if ($message['id'] == "portland_portland_notify_reviewers") {
-    // Make the email appear to be from the current Editor
-    $user = \Drupal::currentUser()->getAccount();
-    if ($user->isAuthenticated()) {
-      $user_name = $user->name;
-      $user_email = $user->getEmail();
-    }
-    // If the user is Anonymouse when running Cron
-    else {
-      $config = \Drupal::config('system.site');
-      $user_name = $config->get('name');
-      $user_email = $config->get('mail');
-    }
-    $message['headers']['Reply-To'] = "\"$user_name\" <$user_email>";
+  switch ($message['id']) {
+    case "portland_portland_notify_reviewers":
+      // Make the email appear to be from the current Editor
+      $user = \Drupal::currentUser()->getAccount();
+      if ($user->isAuthenticated()) {
+        $user_name = $user->name;
+        $user_email = $user->getEmail();
+      }
+      // If the user is Anonymouse when running Cron
+      else {
+        $config = \Drupal::config('system.site');
+        $user_name = $config->get('name');
+        $user_email = $config->get('mail');
+      }
+      $message['headers']['Reply-To'] = "\"$user_name\" <$user_email>";
+      break;
   }
 }
 
@@ -1319,7 +1314,7 @@ function portland_preprocess_views_view_field(&$variables)
     if ($variables['view']->id() == 'user_updated_recently') {
       $field = $variables["field"];
       if ($field->field == 'nothing') {
-        // The User EVA to display group memberships is not rendered 
+        // The User EVA to display group memberships is not rendered
         // when sending email notification. Render the view manually here.
         $theview = \Drupal\views\Views::getView('groups_for_a_user');
         // Set the display machine id
