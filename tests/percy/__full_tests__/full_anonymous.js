@@ -38,4 +38,19 @@ describe("Full regression test suite for anonymous", () => {
       // await percySnapshot(page, "Anonymous - Home page");
     }
   );
+ 
+  it(
+    "Search Auto-complete powr",
+    async () => {
+      await page.goto(HOME_PAGE, { waitUntil: "load" });
+      await page.type("#edit-keys", "powr");
+      await page.waitForSelector("#ui-id-1", { visible: true });
+
+      // Get the first autocomplete text
+      const text = await page.evaluate(
+        () => document.querySelector("span.autocomplete-suggestion-label").textContent
+      );
+      expect(text).toBe("Portland Oregon Website Replacement");
+    }
+  ); 
 });
