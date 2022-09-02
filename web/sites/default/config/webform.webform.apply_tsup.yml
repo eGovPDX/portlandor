@@ -1,0 +1,1114 @@
+uuid: 695f4893-8f41-4057-8eb2-9cb64f37899e
+langcode: en
+status: open
+dependencies: {  }
+weight: 0
+open: null
+close: null
+uid: 1
+template: false
+archive: false
+id: apply_tsup
+title: 'Apply for a Temporary Street Use Permit'
+description: ''
+category: Utility
+elements: |-
+  page_assessment:
+    '#type': webform_wizard_page
+    '#title': Assessment
+    wizard_permit_need:
+      '#type': radios
+      '#title': 'What do you need a permit for?'
+      '#options':
+        parking: 'I need to use or reserve parking space(s)'
+        traffic: 'I need to use or close a traffic lane, bike lane, sidewalk, or full street'
+        existing_permit: 'I already have a Temporary Street Use Permit that I want to Change, Update, or Renew'
+      '#options_display': buttons_vertical
+      '#required': true
+  page_existing_permit:
+    '#type': webform_wizard_page
+    '#title': 'Existing Permit'
+    '#states':
+      visible:
+        - ':input[name="permit_type"]':
+            value: change_request
+        - or
+        - ':input[name="permit_type"]':
+            value: existing_permit
+        - or
+        - ':input[name="permit_type"]':
+            value: renewal_request
+    wizard_existing_permit_situation:
+      '#type': radios
+      '#title': 'What option best describes your situation?'
+      '#description': 'I need to...'
+      '#description_display': before
+      '#options':
+        change: 'Change or Update an Existing Permit'
+        extend: 'Extend the dates on an Existing Permit'
+        renew: 'Reissue an Expired Permit'
+      '#options_display': buttons_vertical
+      '#required': true
+    existing_permit_location:
+      '#type': portland_location_picker
+      '#title': 'What is the location of the permit or permit request?'
+      '#states':
+        visible:
+          ':input[name="wizard_existing_permit_situation"]':
+            checked: true
+      '#location_type__access': false
+      '#location_park_container__access': false
+      '#waterway_instructions__access': false
+      '#location_private_owner__access': false
+      '#location_address__title': 'What is the location of the permit or permit request?'
+      '#location_address__description': ''
+      '#location_address__required': true
+      '#place_name__access': false
+      '#location_details__access': false
+      '#geojson_layer__access': false
+      '#geojson_layer_behavior__access': false
+      '#required': true
+    container_change_request:
+      '#type': container
+      '#states':
+        visible:
+          ':input[name="wizard_existing_permit_situation"]':
+            value: change
+      markup_change_request:
+        '#type': webform_markup
+        '#markup': |-
+          <h2>Please submit a Change Request via the below form</h2>
+          For upcoming or active permits, please provide the associated Track-It #, Permit #, or IVR #.<br />
+          <br />
+          For recently submitted applications, please provide the Track-It # included in the automated confirmation email received when submitting your application.<br />
+          <br />
+          <strong><em>Do not include a previous change request Track-It #. We must have the Track-It # from your original application.</em></strong>
+      change_request_items_to_change:
+        '#type': number
+        '#title': 'How many items do you need to make a change to?'
+        '#min': 1
+        '#step': 1
+        '#required': true
+      change_request_id:
+        '#type': textfield
+        '#title': 'Identifying Number (Original Track-It #, Permit #, or IVR #)'
+        '#required': true
+      change_request_change_type:
+        '#type': webform_select_other
+        '#title': 'What kind of change are you requesting?'
+        '#options':
+          Dates: Dates
+          'Number of Spaces': 'Number of Spaces'
+          Cancel: Cancel
+          'Put on Hold': 'Put on Hold'
+        '#other__option_label': Other
+        '#other__placeholder': 'If other, please specify'
+        '#required': true
+      change_request_additional_info:
+        '#type': textarea
+        '#title': 'Additional Info'
+        '#placeholder': 'Please describe in detail what changes you would like to make.'
+        '#required': true
+      change_request_supporting_documents:
+        '#type': webform_document_file
+        '#title': 'Attach any supporting documents.'
+        '#multiple': 3
+        '#file_help': help
+        '#file_extensions': 'pdf jpg jpeg png'
+      change_request_acknowledge_fee:
+        '#type': checkbox
+        '#title': 'I understand that a $30.00 change fee may apply.'
+        '#required': true
+        '#required_error': 'You must acknowledge this.'
+    container_renewal_request:
+      '#type': container
+      '#states':
+        visible:
+          - ':input[name="wizard_existing_permit_situation"]':
+              value: extend
+          - or
+          - ':input[name="wizard_existing_permit_situation"]':
+              value: renew
+      markup_renewal_request:
+        '#type': webform_markup
+        '#markup': '<h2>Please submit a Renewal Request via the below form</h2>'
+      renewal_request_items_to_change:
+        '#type': number
+        '#title': 'How many permits do you need to renew or reissue?'
+        '#min': 1
+        '#step': 1
+        '#required': true
+      renewal_request_permit_date_days_of_week:
+        '#type': checkboxes
+        '#title': 'New Permit Days of Week'
+        '#options':
+          monday: Mon
+          tuesday: Tues
+          wednesday: Wed
+          thursday: Thurs
+          friday: Fri
+          saturday: Sat
+          sunday: Sun
+        '#options_display': side_by_side
+        '#required': true
+      renewal_request_permit_date_start:
+        '#type': date
+        '#title': 'New Permit Start Date'
+        '#description': |-
+          <em>Please account for our 5 business day processing time when picking your start date (10 business days for full street closures).</em><br />
+          <br />
+          <strong>NOTE:</strong> Please make sure the street you are working on is not restricted by a&nbsp;<a href="/transportation/permitting/temporary-street-use-permitting-tsup#toc-moratorium-dates-and-maps">Moratorium</a>.
+        '#required': true
+        '#date_date_min': today
+        '#datepicker': true
+        '#date_date_format': 'l, F j, Y'
+      renewal_request_permit_date_end:
+        '#type': date
+        '#title': 'New Permit End Date'
+        '#required': true
+        '#date_date_min': today
+        '#datepicker': true
+        '#date_date_format': 'l, F j, Y'
+      renewal_request_id:
+        '#type': textfield
+        '#title': 'Please provide the Street Use permit number(s)'
+        '#description': 'You may enter multiple permit numbers if all renewal details are the same for each permit.'
+        '#required': true
+      renewal_request_additional_info:
+        '#type': textarea
+        '#title': 'Additional Info'
+        '#placeholder': 'Please describe in detail what renewals you would like to make.'
+        '#required': true
+      renewal_request_supporting_documents:
+        '#type': webform_document_file
+        '#title': 'Attach any supporting documents.'
+        '#multiple': 3
+        '#file_help': help
+        '#file_extensions': 'pdf jpg jpeg png'
+      renewal_request_acknowledge_fee:
+        '#type': checkbox
+        '#title': 'My insurance information is on file (if required).'
+        '#description': |-
+          If previously required, the City of Portland must have your current insurance information on file before a permit can be renewed.<br />
+          <br />
+          <strong>NOTE:</strong> If you need to submit a new certificate, send insurance certificates to <a href="mailto:insurance@portlandoregon.gov">insurance@portlandoregon.gov</a>.
+        '#required': true
+        '#required_error': 'Your insurance information must be on file if required.'
+      renewal_request_acknowledge_trimet:
+        '#type': checkbox
+        '#title': 'I have notified TriMet, if my work is along a transit route.'
+        '#description': 'If your work is along a TriMet transit route, you are required to notify them at least five business days in advance of your work. Email TriMet at <a href="mailto:foc@trimet.org">foc@trimet.org</a> before you submit this application.'
+        '#required': true
+        '#required_error': 'You must notify TriMet if your work is along a transit route.'
+      renewal_request_acknowledge_conditions:
+        '#type': checkbox
+        '#title': 'I have read and agree with the conditions of this permit (see below).'
+        '#description': |-
+          By applying to obtain this permit from the City of Portland, the permittee agrees to comply with all permit conditions, including, without limitation, the permit conditions stated here:<br />
+          <a href="/transportation/permitting/documents/temporary-street-use-permit-conditions">Conditions of a Permit to Use a Dedicated Street Area</a><br />
+          <a href="/transportation/permitting/documents/non-metered-parking-reservation-overview">Parking Enforcement verification procedure</a><br />
+          <a href="/transportation/permitting/temporary-street-use-permitting-tsup#toc-fees">Change Fee and Refund Policies</a>
+        '#required': true
+        '#required_error': 'You must agree with the permit conditions.'
+  page_location:
+    '#type': webform_wizard_page
+    '#title': Location
+    '#states':
+      visible:
+        - ':input[name="wizard_permit_need"]':
+            value: parking
+        - or
+        - ':input[name="wizard_permit_need"]':
+            value: traffic
+    permit_location:
+      '#type': portland_location_picker
+      '#title': 'Where would this reservation or closure take place?'
+      '#required': true
+      '#location_type__access': false
+      '#location_park_container__access': false
+      '#waterway_instructions__access': false
+      '#location_private_owner__access': false
+      '#location_address__title': 'Where would this reservation or closure take place?'
+      '#location_address__description': ''
+      '#location_address__required': true
+      '#place_name__access': false
+      '#location_details__access': false
+      '#geojson_layer__access': false
+      '#geojson_layer_behavior__access': false
+    permit_location_metered:
+      '#type': radios
+      '#title': Metered
+      '#options':
+        'false': 'false'
+        'true': 'true'
+  page_dates:
+    '#type': webform_wizard_page
+    '#title': Dates
+    '#states':
+      visible:
+        - ':input[name="wizard_permit_need"]':
+            value: parking
+        - or
+        - ':input[name="wizard_permit_need"]':
+            value: traffic
+    markup_permit_earliest_start_date:
+      '#type': webform_markup
+      '#markup': '<p><strong>The soonest enforceable start date for your permit would be: </strong><span class="earliest-start-date">...</span></p>'
+    permit_date_days_of_week:
+      '#type': checkboxes
+      '#title': 'Days of Week'
+      '#options':
+        monday: Mon
+        tuesday: Tues
+        wednesday: Wed
+        thursday: Thurs
+        friday: Fri
+        saturday: Sat
+        sunday: Sun
+      '#options_display': side_by_side
+      '#required': true
+      '#states':
+        invisible:
+          ':input[name="permit_location_metered"]':
+            value: 'false'
+    permit_date_start:
+      '#type': date
+      '#title': 'Start Date'
+      '#description': |-
+        <em>Please account for our 5 business day processing time when picking your start date (10 business days for full street closures).</em><br />
+        <br />
+        <strong>NOTE:</strong> Please make sure the street you are working on is not restricted by a&nbsp;<a href="/transportation/permitting/temporary-street-use-permitting-tsup#toc-moratorium-dates-and-maps">Moratorium</a>.
+      '#required': true
+      '#date_date_min': today
+      '#datepicker': true
+      '#date_date_format': 'l, F j, Y'
+    permit_date_end:
+      '#type': date
+      '#title': 'End Date'
+      '#required': true
+      '#date_date_min': today
+      '#datepicker': true
+      '#date_date_format': 'l, F j, Y'
+    markup_permit_days_calculator:
+      '#type': webform_markup
+      '#states':
+        visible:
+          ':input[name="permit_location_metered"]':
+            value: 'true'
+      '#markup': '<p>You&#39;ve requested <strong class="days-requested">0 days</strong> of closure.</p>'
+    markup_permit_weeks_calculator:
+      '#type': webform_markup
+      '#states':
+        visible:
+          ':input[name="permit_location_metered"]':
+            value: 'false'
+      '#markup': '<p>You&#39;ve requested <strong class="weeks-requested">0 weeks</strong> of closure.</p>'
+    permit_metered_value:
+      '#type': hidden
+      '#title': 'Metered (hidden, used for JS)'
+      '#default_value': '[webform_submission:values:permit_location_metered]'
+    permit_type_value:
+      '#type': hidden
+      '#title': 'Permit Type (hidden, used for JS)'
+      '#default_value': '[webform_submission:values:permit_type]'
+    permit_date_span:
+      '#type': hidden
+      '#title': 'Date Span (hidden, computed by JS)'
+      '#default_value': '0'
+    actions:
+      '#type': webform_actions
+      '#title': 'Submit button(s)'
+      '#states':
+        visible:
+          ':input[name="permit_date_span"]':
+            value:
+              greater: '0'
+  page_parking_spaces:
+    '#type': webform_wizard_page
+    '#title': 'Parking Spaces'
+    '#states':
+      visible:
+        ':input[name="wizard_permit_need"]':
+          value: parking
+    permit_amount_20ft_spaces:
+      '#type': number
+      '#title': 'How many 20ft spaces will you require?'
+      '#field_suffix': ' space(s)'
+      '#required': true
+      '#default_value': '1'
+      '#min': 1
+      '#step': 1
+    permit_street_28ft_wide:
+      '#type': radios
+      '#title': 'Is your street at least 28ft wide?'
+      '#options':
+        'Yes': 'Yes'
+        'No / Unknown': 'No / Unknown'
+      '#required': true
+      '#states':
+        visible:
+          ':input[name="permit_location_metered"]':
+            value: 'false'
+          ':input[name="permit_amount_20ft_spaces"]':
+            value:
+              less_equal: '5'
+          ':input[name="permit_date_span"]':
+            value:
+              less_equal: '7'
+  page_7day_permit:
+    '#type': webform_wizard_page
+    '#title': '7-Day Permit'
+    '#states':
+      visible:
+        ':input[name="permit_type"]':
+          value: 7day
+    markup_7day_permit_introduction:
+      '#type': processed_text
+      '#text': |
+        <h2>You qualify for our 7 Day Permit</h2>
+
+        <p>This permit only allows you to reserve legal parking spaces outside of the <a href="http://pdx.maps.arcgis.com/apps/MapSeries/index.html?appid=ad171d005d4442bba3c640735d070aa3">Metered Parking District.</a> This permit is not valid in the following restricted parking zones: No Parking (all hours or limited hours), Pay To Park, Transit, Car Share.</p>
+
+        <p>Here are some example signs you may see in areas where this permit Shall Not Be Used:</p>
+
+        <drupal-entity data-align="narrow" data-embed-button="image_browser" data-entity-embed-display="view_mode:media.banner" data-entity-type="media" data-entity-uuid="4c68b8cf-3bc2-4b03-a35d-a332762dd870"></drupal-entity>
+
+        <p><strong>Please read and review the&nbsp;<a href="/transportation/permitting/documents/non-metered-parking-reservation-overview" target="_blank">Parking Enforcement Reservation Procedure</a>. Parking Enforcement will only enforce your no parking signs if the verification process has been completed. Additional fees apply to complete the verification process.</strong></p>
+      '#format': simplified_editor_with_media_embed
+    7day_permit_street_name:
+      '#type': textfield
+      '#title': 'What street will you be reserving parking on?'
+      '#placeholder': 'NW Glisan St'
+      '#required': true
+    7day_permit_reason:
+      '#type': select
+      '#title': 'What will the space(s) be used for?'
+      '#options':
+        moving_delivery: 'Moving or Delivery'
+        utility_work: 'Utility Work'
+        construction: Construction
+        property_maintenance: 'Property Maintenance'
+        event: 'Event loading/unloading'
+      '#required': true
+    7day_permit_acknowledge_nonmetered:
+      '#type': checkbox
+      '#title': 'I understand that this permit is NOT valid in Metered Parking Districts.'
+      '#required': true
+      '#required_error': 'You must acknowledge this.'
+      '#states':
+        visible:
+          ':input[name="7day_permit_reason"]':
+            '!value': ''
+    7day_permit_acknowledge_width:
+      '#type': checkbox
+      '#title': 'I understand that this permit is not valid on streets less than 28 feet wide.'
+      '#required': true
+      '#required_error': 'You must acknowledge this.'
+      '#states':
+        visible:
+          ':input[name="7day_permit_acknowledge_nonmetered"]':
+            checked: true
+    7day_permit_acknowledge_nonrefundable:
+      '#type': checkbox
+      '#title': 'I understand that this permit is Non-Refundable.'
+      '#required': true
+      '#required_error': 'You must acknowledge this.'
+      '#states':
+        visible:
+          ':input[name="7day_permit_acknowledge_width"]':
+            checked: true
+    7day_permit_acknowledge_scope:
+      '#type': checkbox
+      '#title': 'I understand that this permit is only for moving, utility work, property maintenance, construction, and event loading/unloading.'
+      '#required': true
+      '#required_error': 'You must acknowledge this.'
+      '#states':
+        visible:
+          ':input[name="7day_permit_acknowledge_nonrefundable"]':
+            checked: true
+    7day_permit_acknowledge_conditions:
+      '#type': checkbox
+      '#title': 'I understand that obtaining this permit does not automatically reserve a specific parking space, nor guarantee availability of a space to reserve.'
+      '#description': 'I understand that I am responsible for reserving parking spaces by posting the appropriate parking reservation signs and following the <a href="/transportation/permitting/documents/non-metered-parking-reservation-overview">Parking Enforcement verification procedure.</a>'
+      '#required': true
+      '#required_error': 'You must acknowledge this.'
+      '#states':
+        visible:
+          ':input[name="7day_permit_acknowledge_scope"]':
+            checked: true
+  page_simple_permit:
+    '#type': webform_wizard_page
+    '#title': 'Simple Permit'
+    '#states':
+      visible:
+        ':input[name="permit_type"]':
+          value: simple
+    markup_simple_permit_introduction:
+      '#type': processed_text
+      '#text': |
+        <h2>Apply for a Parking Reservation</h2>
+
+        <p>This form should be used for parking-only requests. You cannot use this form to request the use or closure of sidewalks, bike/traffic lanes, or streets.<br />
+        This form is intended for the temporary reservation of parking to facilitate things like:</p>
+
+        <ul>
+        	<li>Residential moves</li>
+        	<li>Commercial moves</li>
+        	<li>Loading/unloading for events</li>
+        	<li>Short term construction/utility work</li>
+        	<li>Tree trimming</li>
+        </ul>
+      '#format': simple_editor
+    simple_permit_requested_times:
+      '#type': textfield
+      '#title': 'Requested Start and End times (include AM or PM)'
+      '#placeholder': 'e.g. 7am-4pm or All Hours'
+      '#required': true
+    simple_permit_reason:
+      '#type': textfield
+      '#title': 'Why are you requesting this permit?'
+      '#placeholder': 'e.g. Moving, Construction, Loading/Unloading'
+      '#required': true
+    simple_permit_occupying:
+      '#type': webform_select_other
+      '#title': 'What will you be parking in the spaces?'
+      '#options':
+        moving: 'Moving Van/Truck'
+        storage: 'Storage Container'
+        construction: 'Trucks, Material, and Equipment'
+        dropbox: 'Dropbox / Dumpster'
+      '#empty_option': '-- NO PASSENGER VEHICLES OR SUVS PERMITTED --'
+      '#other__option_label': Other
+      '#other__placeholder': 'If other, please specify'
+      '#required': true
+    simple_permit_street_name:
+      '#type': textfield
+      '#title': 'Name of the street you wish to reserve parking on'
+      '#placeholder': 'NW Glisan St'
+      '#required': true
+      '#states':
+        visible:
+          ':input[name="simple_permit_occupying[select]"]':
+            '!value': ''
+      '#states_clear': false
+    simple_permit_street_side:
+      '#type': select
+      '#title': 'Which side of the street?'
+      '#options':
+        north: North
+        south: South
+        east: East
+        west: West
+        both: 'Both Sides'
+      '#required': true
+      '#states':
+        visible:
+          ':input[name="simple_permit_occupying[select]"]':
+            '!value': ''
+      '#states_clear': false
+    simple_permit_cross_street_left:
+      '#type': textfield
+      '#title': 'If you were standing at the location, facing the street, what would be the nearest cross street on your left?   '
+      '#placeholder': 'NW 11th Ave'
+      '#required': true
+      '#states_clear': false
+      '#states':
+        visible:
+          ':input[name="simple_permit_street_side"]':
+            '!value': ''
+    simple_permit_cross_street_right:
+      '#type': textfield
+      '#title': 'If you were standing at the location, facing the street, what would be the nearest cross street on your right?   '
+      '#placeholder': 'NW 12th Ave'
+      '#required': true
+      '#states_clear': false
+      '#states':
+        visible:
+          ':input[name="simple_permit_cross_street_left"]':
+            filled: true
+    simple_permit_street_confirmation_title:
+      '#type': webform_computed_twig
+      '#title': 'Street confirmation title'
+      '#title_display': none
+      '#states':
+        invisible:
+          - ':input[name="simple_permit_street_confirmation"]':
+              checked: true
+          - or
+          - ':input[name="simple_permit_cross_street_right"]':
+              empty: true
+      '#mode': html
+      '#template': 'So you want to reserve <strong>{{ (20 * data.permit_amount_20ft_spaces)|number_format }} ft</strong> of the <strong>{{ data.simple_permit_street_side }}</strong> side of <strong>{{ data.simple_permit_street_name }}</strong>, between <strong>{{ data.simple_permit_cross_street_left }}</strong> and <strong>{{ data.simple_permit_cross_street_right }}</strong>?'
+      '#ajax': true
+    simple_permit_street_confirmation:
+      '#type': checkbox
+      '#title': 'Yes, that''s correct'
+      '#required': true
+      '#states':
+        invisible:
+          - ':input[name="simple_permit_cross_street_right"]':
+              empty: true
+          - or
+          - ':input[name="simple_permit_street_confirmation"]':
+              checked: true
+      '#states_clear': false
+    simple_permit_location_description:
+      '#type': textfield
+      '#title': 'Please specify exactly where you would like the parking reserved on the street'
+      '#placeholder': 'e.g. ''Closest to NW 12th Ave.'' or ''40 ft west of NW 11th Ave'''
+      '#required': true
+      '#states':
+        visible:
+          ':input[name="simple_permit_street_confirmation"]':
+            checked: true
+    simple_permit_bds_associated:
+      '#type': webform_radios_other
+      '#title': 'Is this request associated with a permit issued by the Bureau of Development services (i.e. building permit, trade permit, etc)?'
+      '#options':
+        'No': 'No'
+      '#options_display': buttons_horizontal
+      '#other__option_label': 'Yes'
+      '#other__title': 'Please provide the permit number or IVR #'
+      '#other__placeholder': ''
+      '#required': true
+      '#states':
+        visible:
+          ':input[name="simple_permit_street_confirmation"]':
+            checked: true
+    simple_permit_additional_info:
+      '#type': textarea
+      '#title': 'Additional Info'
+      '#placeholder': 'Please provide us with any additional information here, such as location, purpose, time, that didn''t fit in anywhere above.'
+      '#states':
+        visible:
+          ':input[name="simple_permit_bds_associated[radios]"]':
+            checked: true
+    simple_permit_attachment:
+      '#type': webform_document_file
+      '#title': 'Optionally, attach a picture, drawing, or map showing where you would like to reserve parking.'
+      '#file_help': help
+      '#file_extensions': 'pdf jpg jpeg png'
+      '#states':
+        visible:
+          ':input[name="simple_permit_bds_associated[radios]"]':
+            checked: true
+    simple_permit_acknowledge_conditions:
+      '#type': checkbox
+      '#title': 'I have read and agree with the conditions of this permit (see below).'
+      '#description': |-
+        By applying to obtain this permit from the City of Portland, the permittee agrees to comply with all permit conditions, including, without limitation, the permit conditions stated here:<br />
+        <a href="/transportation/permitting/documents/temporary-street-use-permit-conditions">Conditions of a Permit to Use a Dedicated Street Area</a><br />
+        <a href="/transportation/permitting/documents/non-metered-parking-reservation-overview">Parking Enforcement verification procedure</a><br />
+        <a href="/transportation/permitting/temporary-street-use-permitting-tsup#toc-fees">Change Fee and Refund Policies</a>
+      '#required': true
+      '#required_error': 'You must agree with the permit conditions.'
+      '#states':
+        visible:
+          ':input[name="simple_permit_bds_associated[radios]"]':
+            checked: true
+  page_complex_permit:
+    '#type': webform_wizard_page
+    '#title': 'Complex Permit'
+    '#states':
+      visible:
+        ':input[name="permit_type"]':
+          value: complex
+    markup_complex_permit_introduction:
+      '#type': processed_text
+      '#text': |
+        <h2>Apply for a permit with Traffic Control</h2>
+
+        <p>This permit is required for the temporary use or closure of a sidewalk, bike/traffic lane, or street, and any associated parking.</p>
+
+        <p><em>Sidewalk use is defined as: Using a portion of the sidewalk while maintaining pedestrian access.</em></p>
+
+        <h3>Required Documents</h3>
+      '#format': simple_editor
+    complex_permit_traffic_documents:
+      '#type': webform_document_file
+      '#title': 'Attach your TCP or WSD'
+      '#description': |-
+        <p>A <strong>Traffic Control Plan (TCP) is required</strong>,&nbsp;showing how your work affects traffic at the jobsite (pedestrian or vehicle) for traffic engineer review. You can attach your TCP in the section below. For more information on what an appropriate TCP looks like, please visit our <a href="/transportation/permitting/temporary-street-use-permitting-tsup#toc-traffic-control-plan-work-space-diagram-requirements">Traffic Control Plan Information Page</a>.</p>
+
+        <p>In some situations, this can be a Work Space Diagram showing your planned area of impact to the right of way. Indicate this area by drawing a box or other polygon on the <a href="https://pdx.maps.arcgis.com/apps/webappviewer/index.html?id=f68278b842164d6784bef5f6cc5c5ae9">PBOT BaseMap</a>.</p>
+
+        <p>Here is an example of a simple work space diagram: <a href="/sites/default/files/2022/work-space-diagram.pdf">Work Space Diagram</a>. Please <a href="/sites/default/files/2022/tcp-flowchart.pdf">see this flowchart for help</a> deciding if a site specific traffic control plan is needed.</p>
+      '#description_display': before
+      '#required': true
+      '#file_help': help
+      '#file_extensions': 'pdf jpg jpeg png'
+    markup_complex_permit_acknowledgements:
+      '#type': webform_markup
+      '#markup': '<h3>Acknowledgements</h3>'
+    complex_permit_acknowledge_supervision:
+      '#type': checkbox
+      '#title': 'By checking this box, I certify that the person implementing traffic control measures will be under the supervision of a competent person experienced and knowledgeable in safely setting up temporary traffic control devices.'
+      '#required': true
+      '#required_error': 'You must certify.'
+    complex_permit_acknowlege_insurance:
+      '#type': checkbox
+      '#title': 'My insurance information is on file'
+      '#description': |-
+        An&nbsp;<strong>Insurance Certificate&nbsp;</strong>must be on file naming the City of Portland as additionally insured.<br/><br/>
+
+        <strong>The City of Portland must have your current insurance information on file before a permit can be issued.</strong> Email insurance documents to&nbsp;<a href="mailto: insurance@portlandoregon.gov">insurance@portlandoregon.gov</a>&nbsp;or call <a href="tel:+1-503-823-7142">503-823-7142</a> with questions.<br/><br/>
+
+        For more information about the insurance requirements, please visit our&nbsp;<a href="/transportation/permitting/insurance-and-bond-requirements-permits-public-right-way">Insurance page</a>.
+      '#required': true
+      '#required_error': 'Your insurance information must be on file.'
+      '#states':
+        visible:
+          ':input[name="complex_permit_acknowledge_supervision"]':
+            checked: true
+    complex_permit_acknowledge_trimet:
+      '#type': checkbox
+      '#title': 'I have notified TriMet, if my work is along a transit route.'
+      '#description': 'If your work is along a TriMet transit route, you are required to notify them at least five business days in advance of your work. Email TriMet at <a href="mailto:foc@trimet.org">foc@trimet.org</a> before you submit this application.'
+      '#required': true
+      '#required_error': 'You must notify TriMet if your work is along a transit route.'
+      '#states':
+        visible:
+          ':input[name="complex_permit_acknowlege_insurance"]':
+            checked: true
+    container_complex_permit_details:
+      '#type': container
+      '#states':
+        visible:
+          ':input[name="complex_permit_acknowledge_trimet"]':
+            checked: true
+      markup_complex_permit_details:
+        '#type': webform_markup
+        '#markup': '<h3>Permit Details</h3>'
+      complex_permit_street_name:
+        '#type': textfield
+        '#title': 'Name of the street you wish to request a permit for'
+        '#placeholder': 'NW Glisan St'
+        '#required': true
+      complex_permit_street_side:
+        '#type': select
+        '#title': 'Which side of the street?'
+        '#options':
+          north: North
+          south: South
+          east: East
+          west: West
+          both: 'Both Sides'
+        '#required': true
+      complex_permit_cross_street_left:
+        '#type': textfield
+        '#title': 'If you were standing at the location, facing the street, what would be the nearest cross street on your left?   '
+        '#placeholder': 'NW 11th Ave'
+        '#required': true
+        '#states_clear': false
+        '#states':
+          visible:
+            ':input[name="complex_permit_street_side"]':
+              '!value': ''
+      complex_permit_cross_street_right:
+        '#type': textfield
+        '#title': 'If you were standing at the location, facing the street, what would be the nearest cross street on your right?   '
+        '#placeholder': 'NW 12th Ave'
+        '#required': true
+        '#states_clear': false
+        '#states':
+          visible:
+            ':input[name="complex_permit_cross_street_left"]':
+              filled: true
+      complex_permit_street_confirmation_title:
+        '#type': webform_computed_token
+        '#title': 'Street confirmation title'
+        '#title_display': none
+        '#states':
+          invisible:
+            - ':input[name="complex_permit_street_confirmation"]':
+                checked: true
+            - or
+            - ':input[name="complex_permit_cross_street_right"]':
+                empty: true
+        '#mode': html
+        '#template': 'So you want to request a permit for the <strong>[webform_submission:values:complex_permit_street_side:raw]</strong> side of <strong>[webform_submission:values:complex_permit_street_name]</strong>, between <strong>[webform_submission:values:complex_permit_cross_street_left]</strong> and <strong>[webform_submission:values:complex_permit_cross_street_right]</strong>?'
+        '#ajax': true
+      complex_permit_street_confirmation:
+        '#type': checkbox
+        '#title': 'Yes, that''s correct'
+        '#required': true
+        '#states_clear': false
+        '#states':
+          invisible:
+            - ':input[name="complex_permit_cross_street_right"]':
+                empty: true
+            - or
+            - ':input[name="complex_permit_street_confirmation"]':
+                checked: true
+      complex_permit_work_type:
+        '#type': webform_select_other
+        '#title': 'What type of work is this request for?'
+        '#options':
+          utility_work: 'Utility Work'
+          building_construction: 'Building Construction'
+          property_maintenance: 'Property Maintenance'
+        '#other__option_label': Other
+        '#other__placeholder': 'If other, please specify'
+        '#required': true
+        '#states':
+          visible:
+            ':input[name="complex_permit_street_confirmation"]':
+              checked: true
+      complex_permit_closure_type:
+        '#type': checkboxes
+        '#title': 'What type of closure(s) are you requesting?'
+        '#options':
+          street: Street
+          bike_lane: 'Bike Lane'
+          lane: Lane
+          sidewalk: Sidewalk
+          sidewalk_use: 'Sidewalk use (4ft clearance)'
+        '#required': true
+        '#states':
+          visible:
+            ':input[name="complex_permit_work_type[select]"]':
+              '!value': ''
+      complex_permit_lanes_affected:
+        '#type': number
+        '#title': 'How many lanes will you be affecting (Bicycle and Travel)?'
+        '#states':
+          visible:
+            - ':input[name="complex_permit_closure_type[bike_lane]"]':
+                checked: true
+            - or
+            - ':input[name="complex_permit_closure_type[lane]"]':
+                checked: true
+        '#min': 1
+        '#step': 1
+        '#required': true
+      complex_permit_parking_spaces_affected:
+        '#type': number
+        '#title': 'How many, if any, parking spaces will you be impacting?'
+        '#description': 'Traffic Engineers require that closures adjacent to Sidewalk, closures of Lanes in metered areas, and Street closures reserve all parking adjacent or within their closures.'
+        '#description_display': before
+        '#states':
+          visible:
+            - ':input[name="complex_permit_closure_type[lane]"]':
+                checked: true
+              ':input[name="permit_location_metered"]':
+                value: 'true'
+            - or
+            - ':input[name="complex_permit_closure_type[street]"]':
+                checked: true
+            - or
+            - ':input[name="complex_permit_closure_type[sidewalk]"]':
+                checked: true
+        '#min': 1
+        '#step': 1
+        '#required': true
+      complex_permit_bds_associated:
+        '#type': webform_radios_other
+        '#title': 'Is this request associated with a permit issued by the Bureau of Development services (i.e. building permit, trade permit, etc)?'
+        '#options':
+          'No': 'No'
+        '#options_display': buttons_horizontal
+        '#other__option_label': 'Yes'
+        '#other__title': 'Please provide the permit number or IVR #'
+        '#other__placeholder': ''
+        '#required': true
+        '#states':
+          visible:
+            ':input[name="complex_permit_work_type[select]"]':
+              '!value': ''
+      complex_permit_requested_times:
+        '#type': textfield
+        '#title': 'Requested Start and End times (include AM or PM)'
+        '#placeholder': 'e.g. 7am-4pm or All Hours'
+        '#required': true
+        '#states':
+          visible:
+            ':input[name="complex_permit_bds_associated[radios]"]':
+              checked: true
+      complex_permit_additional_parking_spaces:
+        '#type': webform_radios_other
+        '#title': 'Will you require any additional parking beyond what is mandated for your closure(s)?'
+        '#options':
+          'No': 'No'
+        '#options_display': buttons_horizontal
+        '#other__type': number
+        '#other__option_label': 'Yes'
+        '#other__title': 'How many?'
+        '#other__placeholder': ''
+        '#other__min': '1'
+        '#other__step': '1'
+        '#required': true
+        '#states':
+          visible:
+            ':input[name="complex_permit_requested_times"]':
+              filled: true
+      complex_permit_additional_parking_spaces_description:
+        '#type': textfield
+        '#title': 'Please describe where you would like this additional parking'
+        '#required': true
+        '#states':
+          visible:
+            ':input[name="complex_permit_additional_parking_spaces[other]"]':
+              filled: true
+      complex_permit_additional_info:
+        '#type': textarea
+        '#title': 'Additional Info'
+        '#placeholder': 'Please provide us with any additional information here, such as location, purpose, time, that didn''t fit in anywhere above.'
+        '#states':
+          visible:
+            ':input[name="complex_permit_additional_parking_spaces[radios]"]':
+              checked: true
+      complex_permit_acknowledge_conditions:
+        '#type': checkbox
+        '#title': 'I have read and agree with the conditions of this permit (see below).'
+        '#description': |-
+          By applying to obtain this permit from the City of Portland, the permittee agrees to comply with all permit conditions, including, without limitation, the permit conditions stated here:<br />
+          <a href="/transportation/permitting/documents/temporary-street-use-permit-conditions">Conditions of a Permit to Use a Dedicated Street Area</a><br />
+          <a href="/transportation/permitting/documents/non-metered-parking-reservation-overview">Parking Enforcement verification procedure</a><br />
+          <a href="/transportation/permitting/temporary-street-use-permitting-tsup#toc-fees">Change Fee and Refund Policies</a>
+        '#required': true
+        '#required_error': 'You must agree with the permit conditions.'
+        '#states':
+          visible:
+            ':input[name="complex_permit_additional_parking_spaces[radios]"]':
+              checked: true
+  page_placeholder_permit:
+    '#type': webform_wizard_page
+    '#title': Permit
+    '#states':
+      visible:
+        ':input[name="permit_type"]':
+          value: unknown
+        ':input[name="wizard_permit_need"]':
+          '!value': existing_permit
+    '#admin_title': 'Placeholder permit page'
+  page_contact_info:
+    '#type': webform_wizard_page
+    '#title': 'Contact Info'
+    contact_full_legal_name:
+      '#type': textfield
+      '#title': 'Full Legal Name'
+      '#required': true
+    contact_company:
+      '#type': textfield
+      '#title': 'Company you are making this request on behalf of (if necessary)'
+    contact_phone:
+      '#type': textfield
+      '#title': 'Best Phone Number to reach you at'
+      '#input_mask': '(999) 999-9999'
+      '#required': true
+    contact_email:
+      '#type': textfield
+      '#title': 'Email Address'
+      '#description': 'Primary communication will be done through email, please check your spam folder.'
+      '#input_mask': '''alias'': ''email'''
+      '#required': true
+  permit_type:
+    '#type': webform_computed_twig
+    '#title': 'Computed permit type'
+    '#display_on': form
+    '#mode': text
+    '#template': |-
+      {% set permit_type = "unknown" %}
+      {% if data.wizard_permit_need == "parking" %}
+        {% set permit_type = "simple" %}
+
+        {% if data.permit_location_metered == "false" and data.permit_street_28ft_wide == "Yes" %}
+          {% set permit_type = "7day" %}
+        {% endif %}
+      {% elseif data.wizard_permit_need == "traffic" %}
+        {% set permit_type = "complex" %}
+      {% elseif data.wizard_permit_need == "existing_permit" %}
+        {% set permit_type = "existing_permit" %}
+        {% if data.wizard_existing_permit_situation == "change" %}
+          {% set permit_type = "change_request" %}
+        {% elseif data.wizard_existing_permit_situation == "extend" or data.wizard_existing_permit_situation == "renew" %}
+          {% set permit_type = "renewal_request" %}
+        {% endif %}
+      {% endif %}
+
+      {{ permit_type }}
+    '#whitespace': trim
+    '#store': true
+css: ".form-item-permit-type {\r\n  display: none;\r\n}"
+javascript: "function calculateDate() { \r\n\tconst $ = jQuery.bind(jQuery);\r\n\tconst isDateSame = (a, b) =>\r\n\t\ta.getFullYear() === b.getFullYear() &&\r\n\t\ta.getMonth() === b.getMonth() &&\r\n\t\ta.getDate() === b.getDate();\r\n\tconst dayNameToNum = {\r\n\t\t\"sunday\": 0,\r\n\t\t\"monday\": 1,\r\n\t\t\"tuesday\": 2,\r\n\t\t\"wednesday\": 3,\r\n\t\t\"thursday\": 4,\r\n\t\t\"friday\": 5,\r\n\t\t\"saturday\": 6,\r\n\t};\r\n\tconst permitType = $(\"input[name='permit_type']\").val();\r\n\tconst isMetered = $(\"input[name='permit_metered_value']\").val() === \"true\";\r\n  \r\n\tconst startDateOffsetDays = permitType === \"complex\"\r\n\t\t? 10\r\n\t\t: (isMetered ? 3 : 4);\r\n    const earliestStartDate = new Date();\r\n\tearliestStartDate.setDate(earliestStartDate.getDate() + startDateOffsetDays);\r\n\t$(\".earliest-start-date\").text(earliestStartDate.toLocaleDateString());\r\n\r\n    const daysOfWeek = $(\"input[name*='permit_date_days_of_week']\")\r\n\t\t.filter(\":checked\")\r\n\t\t.map((_, el) => dayNameToNum[el.value])\r\n\t\t.get();\r\n\tconst startValue = $(\"input[name*='permit_date_start']\").val();\r\n\tconst endValue = $(\"input[name*='permit_date_end']\").val()\r\n\tif (!startValue || !endValue) return;\r\n\r\n    const startDate = new Date(startValue);\r\n    const endDate = new Date(endValue);\r\n\tif (startDate.getTime() > endDate.getTime()) return;\r\n\r\n\tlet amtDays = 0;\r\n\tif (daysOfWeek.includes(startDate.getDay()) || !isMetered) amtDays++;\r\n\r\n\tconst curDate = new Date(startValue);\r\n\twhile (!isDateSame(curDate, endDate)) {\r\n\t\tcurDate.setDate(curDate.getDate() + 1);\r\n\r\n\t\tif (daysOfWeek.includes(curDate.getDay()) || !isMetered) amtDays++;\r\n\t}\r\n\t\r\n    $(\"input[name='permit_date_span']\").val(amtDays);\r\n    $(\"input[name='permit_date_span']\").trigger(\"change\")\r\n\t$(\".days-requested\").text(amtDays === 1 ? \"1 day\" : `${amtDays} days`);\r\n\r\n\tconst amtWeeks = Math.ceil(amtDays / 7);\r\n\t$(\".weeks-requested\").text(amtWeeks === 1 ? \"1 week\" : `${amtWeeks} weeks`);\r\n}\r\n\r\njQuery(\"input[name='permit_date_start'], input[name='permit_date_end'], input[name='permit_date_days_of_week']\").change(calculateDate);\r\ncalculateDate();"
+settings:
+  ajax: false
+  ajax_scroll_top: form
+  ajax_progress_type: ''
+  ajax_effect: ''
+  ajax_speed: null
+  page: true
+  page_submit_path: ''
+  page_confirm_path: ''
+  page_theme_name: ''
+  form_title: source_entity_webform
+  form_submit_once: false
+  form_open_message: ''
+  form_close_message: ''
+  form_exception_message: ''
+  form_previous_submissions: true
+  form_confidential: false
+  form_confidential_message: ''
+  form_disable_remote_addr: false
+  form_convert_anonymous: false
+  form_prepopulate: false
+  form_prepopulate_source_entity: false
+  form_prepopulate_source_entity_required: false
+  form_prepopulate_source_entity_type: ''
+  form_unsaved: false
+  form_disable_back: false
+  form_submit_back: false
+  form_disable_autocomplete: false
+  form_novalidate: false
+  form_disable_inline_errors: false
+  form_required: false
+  form_autofocus: false
+  form_details_toggle: false
+  form_reset: false
+  form_access_denied: default
+  form_access_denied_title: ''
+  form_access_denied_message: ''
+  form_access_denied_attributes: {  }
+  form_file_limit: ''
+  form_attributes: {  }
+  form_method: ''
+  form_action: ''
+  share: false
+  share_node: false
+  share_theme_name: ''
+  share_title: true
+  share_page_body_attributes: {  }
+  submission_label: ''
+  submission_exception_message: ''
+  submission_locked_message: ''
+  submission_log: false
+  submission_excluded_elements: {  }
+  submission_exclude_empty: false
+  submission_exclude_empty_checkbox: false
+  submission_views: {  }
+  submission_views_replace: {  }
+  submission_user_columns: {  }
+  submission_user_duplicate: false
+  submission_access_denied: default
+  submission_access_denied_title: ''
+  submission_access_denied_message: ''
+  submission_access_denied_attributes: {  }
+  previous_submission_message: ''
+  previous_submissions_message: ''
+  autofill: false
+  autofill_message: ''
+  autofill_excluded_elements: {  }
+  wizard_progress_bar: true
+  wizard_progress_pages: false
+  wizard_progress_percentage: false
+  wizard_progress_link: false
+  wizard_progress_states: true
+  wizard_start_label: Assessment
+  wizard_preview_link: false
+  wizard_confirmation: true
+  wizard_confirmation_label: Confirmation
+  wizard_auto_forward: true
+  wizard_auto_forward_hide_next_button: false
+  wizard_keyboard: true
+  wizard_track: name
+  wizard_prev_button_label: ''
+  wizard_next_button_label: ''
+  wizard_toggle: true
+  wizard_toggle_show_label: ''
+  wizard_toggle_hide_label: ''
+  preview: 0
+  preview_label: ''
+  preview_title: ''
+  preview_message: ''
+  preview_attributes: {  }
+  preview_excluded_elements: {  }
+  preview_exclude_empty: true
+  preview_exclude_empty_checkbox: false
+  draft: none
+  draft_multiple: false
+  draft_auto_save: false
+  draft_saved_message: ''
+  draft_loaded_message: ''
+  draft_pending_single_message: ''
+  draft_pending_multiple_message: ''
+  confirmation_type: page
+  confirmation_url: ''
+  confirmation_title: ''
+  confirmation_message: ''
+  confirmation_attributes: {  }
+  confirmation_back: true
+  confirmation_back_label: ''
+  confirmation_back_attributes: {  }
+  confirmation_exclude_query: false
+  confirmation_exclude_token: false
+  confirmation_update: false
+  limit_total: null
+  limit_total_interval: null
+  limit_total_message: ''
+  limit_total_unique: false
+  limit_user: null
+  limit_user_interval: null
+  limit_user_message: ''
+  limit_user_unique: false
+  entity_limit_total: null
+  entity_limit_total_interval: null
+  entity_limit_user: null
+  entity_limit_user_interval: null
+  purge: none
+  purge_days: null
+  results_disabled: false
+  results_disabled_ignore: false
+  results_customize: false
+  token_view: false
+  token_update: false
+  token_delete: false
+  serial_disabled: false
+access:
+  create:
+    roles:
+      - anonymous
+      - authenticated
+    users: {  }
+    permissions: {  }
+  view_any:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  update_any:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  delete_any:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  purge_any:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  view_own:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  update_own:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  delete_own:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  administer:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  test:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  configuration:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+handlers: {  }
+variants: {  }
