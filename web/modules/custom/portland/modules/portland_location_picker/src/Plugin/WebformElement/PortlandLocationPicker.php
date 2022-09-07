@@ -40,6 +40,9 @@ class PortlandLocationPicker extends WebformCompositeBase {
     if ($value['location_type']) {
       $lines[] = 'Location type: ' . $value['location_type'] . '<br>';
     }
+    if ($value['location_private_owner']) {
+      $lines[] = 'Are you the owner? ' . $value['location_private_owner'] . '<br>';
+    }
     if ($value['place_name']) {
       $lines[] = 'Place name: ' . $value['place_name'] . '<br>';
     }
@@ -53,7 +56,10 @@ class PortlandLocationPicker extends WebformCompositeBase {
     if ($value['location_details']) {
       $lines[] = 'Location details: ' . $value['location_details'] . '<br>';
     }
-    return $lines;
+    if ($value['location_asset_id']) {
+      $lines[] = 'Asset ID: ' . $value['location_asset_id'] . '<br>';
+    }
+   return $lines;
   }
 
   /**
@@ -70,6 +76,9 @@ class PortlandLocationPicker extends WebformCompositeBase {
     if ($value['location_type']) {
       $lines[] = 'Location type: ' . $value['location_type'];
     }
+    if ($value['location_private_owner']) {
+      $lines[] = 'Are you the owner? ' . $value['location_private_owner'];
+    }
     if ($value['place_name']) {
       $lines[] = 'Place name: ' . $value['place_name'];
     }
@@ -84,6 +93,9 @@ class PortlandLocationPicker extends WebformCompositeBase {
     }
     if ($value['location_details']) {
       $lines[] = 'Location details: ' . $value['location_details'];
+    }
+    if ($value['location_asset_id']) {
+      $lines[] = 'Asset ID: ' . $value['location_asset_id'];
     }
     return $lines;
   }
