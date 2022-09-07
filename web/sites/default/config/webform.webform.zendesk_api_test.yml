@@ -28,7 +28,7 @@ elements: |-
     '#required': true
   test_description:
     '#type': textarea
-    '#title': 'Test description'
+    '#title': 'Test Description'
     '#description': 'The input provided here will be included in the body/description of the ticket.'
     '#required': true
   contact_name:
@@ -42,27 +42,59 @@ elements: |-
     '#description': 'The new Zendesk ticket will be created as if it had been submitted from this email address.'
     '#input_mask': '''alias'': ''email'''
     '#required': true
-  ticket_type:
-    '#type': radios
-    '#title': 'Ticket Type'
-    '#options':
-      Question: Question
-      Incident: Incident
-      Problem: Problem
-      Task: Task
-    '#options_display': side_by_side
-    '#required': true
-  ticket_id:
-    '#type': textfield
-    '#title': 'Ticket ID'
-    '#description': 'If left blank, a new Zenesk ticket is created, and this field gets auto populated with the ticket ID after submission. If you enter an existing Zendesk ticket ID, the update handler will be invoked to update the existing ticket, adding a private note and marking it as Solved.'
-  suppress_ticket_confirmation:
-    '#type': select
-    '#title': 'Suppress Ticket Confirmation'
-    '#options':
-      'TRUE': 'TRUE'
-      'FALSE': 'FALSE'
-    '#default_value': 'FALSE'
+  agent_use_only:
+    '#type': webform_section
+    '#title': 'Agent Use Only'
+    '#attributes':
+      style: 'padding: 15px; background-color: #cccccc;'
+    '#access_create_roles':
+      - support_agent
+      - administrator
+    '#access_update_roles':
+      - support_agent
+      - administrator
+    '#access_view_roles':
+      - support_agent
+      - administrator
+    agent_email:
+      '#type': textfield
+      '#title': 'Agent Email'
+      '#default_value': '[current-user:display-name] <[current-user:mail]>'
+    agent_ticket_number:
+      '#type': number
+      '#title': 'Agent Ticket Number'
+      '#description': 'If you are completing this webform on behalf of a community member, please enter the Zendesk ticket number of the ticket created to track the interaction. In addition to creating a new ticket for this report, the existing interaction ticket will be updated and linked.'
+      '#min': 1000
+      '#max': 999999999
+    agent_summary:
+      '#type': webform_computed_twig
+      '#title': 'Agent Summary'
+      '#display_on': none
+      '#template': |-
+        {% if uid %}<p>Agent email: {{ data.agent_email }}</p>{% endif %}
+        {% if data.agent_ticket_number %}<p>Agent ticket: <a href="https://portlandoregon.zendesk.com/agent/tickets/{{ data.agent_ticket_number }}">{{ data.agent_ticket_number }}</a></p>{% endif %}
+  developer_use_only:
+    '#type': webform_section
+    '#title': 'Developer Use Only'
+    '#attributes':
+      style: 'padding: 15px; background-color: #cccccc;'
+    '#access_create_roles':
+      - administrator
+    '#access_update_roles':
+      - administrator
+    '#access_view_roles':
+      - administrator
+    report_ticket_id:
+      '#type': textfield
+      '#title': 'Report Ticket ID'
+      '#description': 'If left blank, a new Zenesk ticket is created, and this field gets auto populated with the ticket ID after submission. If you enter an existing Zendesk ticket ID, the update handler will be invoked to update the existing ticket, adding a private note and marking it as Solved.'
+    test_submission:
+      '#type': checkbox
+      '#title': 'Assign to Developer Test group'
+    suppress_ticket_confirmation:
+      '#type': checkbox
+      '#title': 'Suppress ticket confirmation'
+      '#description': 'When checked, the Zendesk new ticket confirmation email will not be sent to the requester (requires that the triggers in Zendesk be configured to honor this setting).'
 css: ''
 javascript: ''
 settings:
@@ -268,7 +300,7 @@ handlers:
     status: true
     conditions:
       enabled:
-        ':input[name="ticket_id"]':
+        ':input[name="agent_ticket_number"]':
           empty: true
     weight: 0
     settings:
@@ -283,7 +315,7 @@ handlers:
       type: incident
       collaborators: ''
       custom_fields: ''
-      ticket_id_field: '[webform_submission:values:ticket_id]'
+      ticket_id_field: '[webform_submission:values:report_ticket_id]'
       group_id: '4549352062487'
   zendesk_update_ticket:
     id: zendesk_update_ticket
@@ -293,7 +325,7 @@ handlers:
     status: true
     conditions:
       enabled:
-        ':input[name="ticket_id"]':
+        ':input[name="agent_ticket_number"]':
           filled: true
     weight: 0
     settings:
@@ -301,11 +333,11 @@ handlers:
       comment_private: 1
       tags: ''
       priority: ''
-      status: solved
+      status: ''
       group_id: '4549352062487'
       type: ''
       collaborators: ''
       custom_fields: ''
-      ticket_id_field: ticket_id
+      ticket_id_field: agent_ticket_id
       assignee_id: ''
 variants: {  }
