@@ -498,8 +498,11 @@ class ZendeskUpdateHandler extends WebformHandlerBase
         }
       }
 
-      // type and priority are required by the API, even for update. if they're not set, set them from
+      // status, type and priority are required by the API, even for update. if they're not set, set them from
       // previous ticket data.
+      if (!isset($request['status']) || $request['status'] == "") {
+        $request['status'] = $ticket->status;
+      }
       if (!isset($request['type']) || $request['type'] == "") {
         $request['type'] = $ticket->type;
       }

@@ -84,10 +84,6 @@ elements: |-
       - administrator
     '#access_view_roles':
       - administrator
-    report_ticket_id:
-      '#type': textfield
-      '#title': 'Report Ticket ID'
-      '#description': 'If left blank, a new Zenesk ticket is created, and this field gets auto populated with the ticket ID after submission. If you enter an existing Zendesk ticket ID, the update handler will be invoked to update the existing ticket, adding a private note and marking it as Solved.'
     test_submission:
       '#type': checkbox
       '#title': 'Assign to Developer Test group'
@@ -95,6 +91,22 @@ elements: |-
       '#type': checkbox
       '#title': 'Suppress ticket confirmation'
       '#description': 'When checked, the Zendesk new ticket confirmation email will not be sent to the requester (requires that the triggers in Zendesk be configured to honor this setting).'
+  report_ticket_id:
+    '#type': number
+    '#title': 'Report Ticket ID'
+    '#wrapper_attributes':
+      class:
+        - visually-hidden
+    '#min': 1000
+    '#max': 9999999
+  report_ticket_number:
+    '#type': number
+    '#title': 'Report Ticket Number'
+    '#wrapper_attributes':
+      class:
+        - visually-hidden
+    '#min': 1000
+    '#max': 9999999
 css: ''
 javascript: ''
 settings:
@@ -300,7 +312,7 @@ handlers:
     status: true
     conditions:
       enabled:
-        ':input[name="agent_ticket_number"]':
+        ':input[name="report_ticket_id"]':
           empty: true
     weight: 0
     settings:
@@ -315,7 +327,7 @@ handlers:
       type: incident
       collaborators: ''
       custom_fields: ''
-      ticket_id_field: '[webform_submission:values:report_ticket_id]'
+      ticket_id_field: report_ticket_number
       group_id: '4549352062487'
   zendesk_update_ticket:
     id: zendesk_update_ticket
@@ -329,15 +341,15 @@ handlers:
           filled: true
     weight: 0
     settings:
-      comment: 'This ticket has been updated by the Zendesk Update Handler from the portland_zendesk module.'
+      comment: "<p>This ticket has been updated by the Zendesk Update Handler from the portland_zendesk module.</p>\r\n\r\n<p>Report Subject: [webform_submission:values:test_subject]</p>\r\n\r\n<p>Report Ticket Number: [webform_submission:values:report_ticket_number]</p>"
       comment_private: 1
       tags: ''
       priority: ''
-      status: ''
+      status: open
       group_id: '4549352062487'
       type: ''
       collaborators: ''
       custom_fields: ''
-      ticket_id_field: agent_ticket_id
+      ticket_id_field: agent_ticket_number
       assignee_id: ''
 variants: {  }
