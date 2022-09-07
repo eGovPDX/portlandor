@@ -40,7 +40,7 @@ elements: |-
         location_lon: ''
         location_private_owner: ''
       '#location_type__required': true
-      '#location_map__description': '<em>Existing graffiti reports are displayed with a red marker <img src="/modules/custom/portland/modules/portland_location_picker/images/map_marker_incident.png" alt="Red map marker icon" class="inline-icon"> when the map is fully zoomed in. New reports must be reviewed and may take up to 2 business days to appear on the map.</em>'
+      '#location_map__description': '<!--<em>Existing graffiti reports are displayed with a red marker <img src="/modules/custom/portland/modules/portland_location_picker/images/map_marker_incident.png" alt="Red map marker icon" class="inline-icon"> when the map is fully zoomed in. New reports must be reviewed and may take up to 2 business days to appear on the map.</em>-->'
       '#location_address__states':
         visible: true
       '#location_map__states':
@@ -85,102 +85,72 @@ elements: |-
             'Removal Kit': 'Request a graffiti removal kit or learn more about the "Clean it Up, Paint it Up" initiative'
           '#required': true
           '#wrapper_type': form_element
-        container_assistance_qualification:
-          '#type': container
+        report_private_property_type:
+          '#type': radios
+          '#title': 'What type of property is it?'
+          '#options': private_property_type
+          '#required': true
           '#states':
             visible:
               ':input[name="report_property_owner_assistance"]':
                 value: Assistance
-              ':input[name="report_hate_speech_or_gang"]':
+        report_corporate_franchise:
+          '#type': radios
+          '#title': 'Are you a corporate franchise?'
+          '#options': yes_no
+          '#required': true
+          '#states':
+            visible:
+              ':input[name="report_private_property_type"]':
+                value: Business
+        report_business_employees_amt:
+          '#type': number
+          '#title': 'How many employees does the business have?'
+          '#required': true
+          '#states':
+            visible:
+              ':input[name="report_corporate_franchise"]':
                 value: 'No'
-          report_private_property_type:
-            '#type': radios
-            '#title': 'What type of property is it?'
-            '#options': private_property_type
-            '#required': true
-          report_corporate_franchise:
-            '#type': radios
-            '#title': 'Are you a corporate franchise?'
-            '#options': yes_no
-            '#required': true
-            '#states':
-              visible:
-                ':input[name="report_private_property_type"]':
-                  value: 'A Small Business'
-          report_business_employees_amt:
-            '#type': number
-            '#title': 'How many employees does the business have?'
-            '#required': true
-            '#states':
-              visible:
-                ':input[name="report_corporate_franchise"]':
-                  value: 'No'
-          report_building_units_amt:
-            '#type': number
-            '#title': 'How many units does the building/complex have?'
-            '#required': true
-            '#states':
-              visible:
-                ':input[name="report_private_property_type"]':
-                  value: 'A Condo or Apartment Building/Complex'
-          report_nonprofit_employees:
-            '#type': number
-            '#title': 'How many employees does the non-profit have?'
-            '#required': true
-            '#states':
-              visible:
-                ':input[name="report_private_property_type"]':
-                  value: 'A non-profit organization, or houses a non-profit organization'
-          report_contractor_text:
-            '#type': webform_markup
-            '#states':
-              visible:
-                - ':input[name="report_corporate_franchise"]':
-                    value: 'Yes'
-                - or
-                - ':input[name="report_business_employees_amt"]':
-                    value:
-                      greater: '10'
-                - or
-                - ':input[name="report_building_units_amt"]':
-                    value:
-                      greater: '10'
-                - or
-                - ':input[name="report_nonprofit_employees"]':
-                    value:
-                      greater: '100'
-            '#admin_title': 'Doesn''t qualify'
-            '#markup': |-
-              <div class="alert alert--info next-steps">
-              <h2>You don&#39;t qualify for graffiti removal assistance [should this be a dead end, or do we still want the user to submit the form?]</h2>
-
-              <p>Contractor information here...</p>
-              </div>
-        report_removal_kit_text:
+        report_building_units_amt:
+          '#type': number
+          '#title': 'How many units does the building/complex have?'
+          '#required': true
+          '#states':
+            visible:
+              ':input[name="report_private_property_type"]':
+                value: 'Condo or apartment'
+        report_nonprofit_employees:
+          '#type': number
+          '#title': 'How many employees does the non-profit have?'
+          '#required': true
+          '#states':
+            visible:
+              ':input[name="report_private_property_type"]':
+                value: Non-profit
+        report_contractor_text:
           '#type': webform_markup
           '#states':
             visible:
-              ':input[name="report_property_owner_assistance"]':
-                value: 'Removal Kit'
+              - ':input[name="report_corporate_franchise"]':
+                  value: 'Yes'
+              - or
+              - ':input[name="report_business_employees_amt"]':
+                  value:
+                    greater: '10'
+              - or
+              - ':input[name="report_building_units_amt"]':
+                  value:
+                    greater: '10'
+              - or
+              - ':input[name="report_nonprofit_employees"]':
+                  value:
+                    greater: '100'
+          '#admin_title': 'Doesn''t qualify'
           '#markup': |-
             <div class="alert alert--info next-steps">
-            <h2>Next Steps [do we want this to be a dead-end or for the user to submit the form?]</h2>
+            <h2>You don&#39;t qualify for graffiti removal assistance.</h2>
 
-            <p>Here&#39;s how to request a kit........</p>
-            </div>
-        markup_qualifies:
-          '#type': webform_markup
-          '#states':
-            visible:
-              ':input[name="report_property_owner_assistance"]':
-                value: Assistance
-              ':input[name="report_hate_speech_or_gang"]':
-                value: 'Yes'
-          '#markup': |-
-            <div class="alert alert--info next-steps">
-            <h2>You may qualify for graffiti removal assistance</h2>
-
-            <p>Please continue filling out this report.</p>
+            <p>Please visit the <a href="/civic/graffiti/request-services">Graffiti Removal Assitance page</a>&nbsp;to find contact information for the names and phone numbers of contractors who can help with removal.</p>
             </div>
       report_tenant_or_neighbor:
         '#type': radios
@@ -209,8 +179,23 @@ elements: |-
         '#type': container
         '#states':
           invisible:
-            ':input[name="report_tenant_or_neighbor"]':
-              value: 'I am a tenant'
+            - ':input[name="report_corporate_franchise"]':
+                value: 'Yes'
+            - or
+            - ':input[name="report_business_employees_amt"]':
+                value:
+                  greater: '10'
+            - or
+            - ':input[name="report_building_units_amt"]':
+                value:
+                  greater: '10'
+            - or
+            - ':input[name="report_nonprofit_employees"]':
+                value:
+                  greater: '100'
+            - or
+            - ':input[name="report_tenant_or_neighbor"]':
+                value: 'I am a tenant'
         report_above_ground_level:
           '#type': radios
           '#title': 'Is the graffiti above ground level (more than 8 feet up)?'
@@ -238,11 +223,8 @@ elements: |-
           '#description_display': before
           '#states':
             required:
-              - ':input[name="report_hate_speech_or_gang"]':
-                  value: 'Yes'
-              - xor
-              - ':input[name="report_hate_speech_or_gang"]':
-                  value: 'Not sure'
+              ':input[name="report_hate_speech_or_gang"]':
+                '!value': 'No'
           '#file_preview': name
           '#max_filesize': '30'
           '#file_extensions': 'gif jpg png svg jpeg'
@@ -258,7 +240,7 @@ elements: |-
           contact_email:
             '#type': textfield
             '#title': Email
-            '#description': 'We will use your email to respond to your feedback or request. It will not be released in public records reports but will be shared with city employees.'
+            '#description': 'We will use your email address to respond to your report or request if needed.'
             '#input_mask': '''alias'': ''email'''
             '#required': true
         section_public_records_statement:
@@ -290,52 +272,13 @@ elements: |-
             '#title': 'Ticket Number'
             '#min': 1000
             '#max': 999999999
-          agent_action_taken:
-            '#type': radios
-            '#title': 'Action Taken'
-            '#options':
-              Resolved: Resolved
-              Referred: Referred
-            '#options_display': side_by_side
-            '#states':
-              invisible:
-                ':input[name="agent_ticket_number"]':
-                  filled: true
-          admin_contact_type:
-            '#type': radios
-            '#title': 'Contact Type'
-            '#options':
-              Phone: Phone
-              'Requested Callback': 'Requested Callback'
-              Email: Email
-              Webform: Webform
-              'In Person': 'In Person'
-              Webchat: Webchat
-              'Social Media': 'Social Media'
-            '#options_display': side_by_side
-            '#states':
-              invisible:
-                ':input[name="agent_ticket_number"]':
-                  filled: true
-          agent_ticket_type:
-            '#type': radios
-            '#title': 'Ticket Type'
-            '#options':
-              Question: Question
-              Incident: Incident
-              Problem: Problem
-              Task: Task
-            '#options_display': side_by_side
           agent_summary:
             '#type': webform_computed_twig
             '#title': 'Agent Summary'
             '#display_on': none
-            '#template': |-
+            '#template': |
               {% if uid %}<p>Agent Email: {{ data.agent_email }}</p>{% endif %}
               {% if data.agent_ticket_number %}<p>Ticket Number: {{ data.agent_ticket_number }}</p>{% endif %}
-              {% if data.agent_action_taken %}<p>Action Taken: {{ data.agent_action_taken }}</p>{% endif %}
-              <p>Contact Type: {% if data.agent_contact_type %}{{ data.agent_contact_type }}{% else %}Webform{% endif %}</p>
-              <p>Ticket Type: {{ data.agent_ticket_type }}</p>
             '#store': true
           computed_priority:
             '#type': webform_computed_twig
@@ -350,58 +293,67 @@ elements: |-
             '#whitespace': trim
             '#store': true
             '#ajax': true
+        developer_use_only:
+          '#type': webform_section
+          '#title': 'Developer Use Only'
+          '#attributes':
+            style: 'padding: 15px; background-color: #cccccc;'
+          '#access_create_roles':
+            - administrator
+          '#access_update_roles':
+            - administrator
+          '#access_view_roles':
+            - administrator
+          test_submission:
+            '#type': checkbox
+            '#title': 'Test Submission'
+            '#description': 'Checking this box will assign the ticket to the Developer Test group instead of the Graffiti Reporting group.'
         actions:
           '#type': webform_actions
           '#title': 'Submit button(s)'
   report_ticket_id:
     '#type': hidden
     '#title': 'Support Ticket ID'
+  portland_maps_url:
+    '#type': webform_computed_token
+    '#title': 'Portland Maps URL'
+    '#display_on': none
+    '#template': 'https://www.portlandmaps.com/search/?query=[webform_submission:values:report_location:location_address]'
   ticket_description:
     '#type': webform_computed_twig
     '#title': 'Ticket Description'
     '#display_on': none
     '#mode': html
-    '#template': |-
+    '#template': |
       <p>[webform_submission:values:report_location:html]</p>
 
-      {% if data.report_hate_speech_or_gang %}Is the graffiti hate speech or gang related?&nbsp;{{ data.report_hate_speech_or_gang }}<br><br>{% endif %}
+      <p><a href="{{ data.portland_maps_url }}">View in PortlandMaps</a></p>
 
+      {% if data.report_hate_speech_or_gang %}<p>Is the graffiti hate speech or gang related?&nbsp;{{ data.report_hate_speech_or_gang }}</p>{% endif %}
 
-      {% if data.report_property_owner_assistance %}What are you requesting?&nbsp;{{ data.report_property_owner_assistance }}<br><br>{% endif %}
+      {% if data.report_property_owner_assistance %}<p>What are you requesting?&nbsp;{{ data.report_property_owner_assistance }}</p>{% endif %}
 
+      {% if data.report_private_property_type %}<p>What type of property is it?&nbsp;{{ data.report_private_property_type }}</p>{% endif %}
 
-      {% if data.report_private_property_type %}What type of property is it?&nbsp;{{ data.report_private_property_type }}<br><br>{% endif %}
+      {% if data.report_corporate_franchise %}<p>Are you a corporate franchise?&nbsp;{{ data.report_corporate_franchise }}</p>{% endif %}
 
+      {% if data.report_business_employees_amt %}<p>How many employees does the business have?&nbsp;{{ data.report_business_employees_amt }}</p>{% endif %}
 
-      {% if data.report_corporate_franchise %}Are you a corporate franchise?&nbsp;{{ data.report_corporate_franchise }}<br><br>{% endif %}
+      {% if data.report_building_units_amt %}<p>How many units does the building have?&nbsp;{{ data.report_building_units_amt }}</p>{% endif %}
 
+      {% if data.report_nonprofit_employees %}<p>How many employees does the non-profit have?&nbsp;{{ data.report_nonprofit_employees }}</p>{% endif %}
 
-      {% if data.report_business_employees_amt %}How many employees does the business have?&nbsp;{{ data.report_business_employees_amt }}<br><br>{% endif %}
+      {% if data.report_tenant_or_neighbor %}<p>Are you a neighbor or tenant?&nbsp;{{ data.report_tenant_or_neighbor }}</p>{% endif %}
 
+      {% if data.report_above_ground_level %}<p>Is graffiti above ground level?&nbsp;{{ data.report_above_ground_level }}</p>{% endif %}
 
-      {% if data.report_building_units_amt %}How many units does the building have?&nbsp;{{ data.report_building_units_amt }}<br><br>{% endif %}
+      {% if data.report_graffiti_on_mural %}<p>Is graffiti on mural?&nbsp;{{ data.report_graffiti_on_mural }}</p>{% endif %}
 
+      {% if data.report_repeat_offender %}<p>Have you seen this graffiti or tag before? Is it from a repeat offender?&nbsp;{{ data.report_repeat_offender }}</p>{% endif %}
 
-      {% if data.report_nonprofit_employees %}How many employees does the non-profit have?&nbsp;{{ data.report_nonprofit_employees }}<br><br>{% endif %}
+      {% if data.contact_name %}<p>Contact Name:&nbsp;{{ data.contact_name }}</p>{% endif %}
 
-
-      {% if data.report_tenant_or_neighbor %}Are you a neighbor or tenant?&nbsp;{{ data.report_tenant_or_neighbor }}<br><br>{% endif %}
-
-
-      {% if data.report_above_ground_level %}Is graffiti above ground level?&nbsp;{{ data.report_above_ground_level }}<br><br>{% endif %}
-
-
-      {% if data.report_graffiti_on_mural %}Is graffiti on mural?&nbsp;{{ data.report_graffiti_on_mural }}<br><br>{% endif %}
-
-
-      {% if data.report_repeat_offender %}Have you seen this graffiti or tag before? Is it from a repeat offender?&nbsp;{{ data.report_repeat_offender }}<br><br>{% endif %}
-
-
-      {% if data.contact_name %}Contact Name:&nbsp;{{ data.contact_name }}<br><br>{% endif %}
-
-
-      {% if data.contact_email %}Contact Email:&nbsp;{{ data.contact_email }}<br><br>{% endif %}
-
+      {% if data.contact_email %}<p>Contact Email:&nbsp;{{ data.contact_email }}</p>{% endif %}
 
       <p>Webform ID: report_graffiti</p>
     '#ajax': true
@@ -410,7 +362,7 @@ elements: |-
     '#title': 'Resolution URL'
     '#display_on': none
     '#mode': text
-    '#template': '{{ webform_token(''[site:url]'', webform_submission, [], options) }}form/report-graffiti-resolution?report_location[location_type]={{ data.report_location.location_type }}&report_location[location_park]={{ data.report_location.location_park }}&report_location[place_name]={{ data.report_location.place_name }}&report_location[location_details]={{ data.report_location.location_details }}&report_location[location_address]={{ data.report_location.location_address }}&report_location[location_lat]={{ data.report_location.location_lat }}&report_location[location_lon]={{ data.report_location.location_lon }}&report_private_property_type={{ data.report_private_property_type }}&report_above_ground_level={{ data.report_above_ground_level }}&report_graffiti_on_mural={{ data.report_graffiti_on_mural }}&report_ticket_id='
+    '#template': '{{ webform_token(''[site:url]'', webform_submission, [], options) }}form/report-graffiti-resolution?report_location[location_type]={{ data.report_location.location_type }}&report_location[location_park]={{ data.report_location.location_park }}&report_location[place_name]={{ data.report_location.place_name }}&report_location[location_details]={{ data.report_location.location_details }}&report_location[location_address]={{ data.report_location.location_address }}&report_location[location_lat]={{ data.report_location.location_lat }}&report_location[location_lon]={{ data.report_location.location_lon }}&report_private_property_type={{ data.report_private_property_type }}&report_above_ground_level={{ data.report_above_ground_level }}&report_graffiti_on_mural={{ data.report_graffiti_on_mural }}&report_repeat_offender={{ data.report_repeat_offender }}&original_submission_key={{ uuid }}&report_ticket_id='
     '#whitespace': trim
     '#store': true
     '#ajax': true
@@ -628,20 +580,48 @@ handlers:
     label: 'Create new Zendesk ticket'
     notes: ''
     status: true
-    conditions: {  }
+    conditions:
+      enabled:
+        ':input[name="test_submission"]':
+          unchecked: true
     weight: 0
     settings:
       requester_name: contact_name
       requester_email: contact_email
       subject: 'Graffiti Report'
-      comment: "<h2>Graffiti Report</h2>\r\n\r\n[webform_submission:values:ticket_description]"
+      comment: "<h2>Graffiti Report</h2>\r\n\r\n[webform_submission:values:ticket_description:html]"
+      tags: 'drupal webform graffiti'
+      priority: normal
+      status: new
+      group_id: '8559017236631'
+      assignee_id: ''
+      type: incident
+      collaborators: ''
+      custom_fields: "6353388345367: 'report_graffiti'\r\n5581480390679: '[webform_submission:values:report_location:location_lat]'\r\n5581490332439: '[webform_submission:values:report_location:location_lon]'\r\n1500012743961: '[webform_submission:values:report_location:location_address]'\r\n1500013095781: '[webform_submission:uuid]'\r\n6355783758871: '[webform_submission:values:resolution_url]'\r\n6379451469847: '[webform_submission:values:waiver_url]'\r\n8197855908375: '[webform_submission:values:report_repeat_offender]'"
+      ticket_id_field: report_ticket_id
+  create_new_zendesk_ticket_developer_test:
+    id: zendesk
+    handler_id: create_new_zendesk_ticket_developer_test
+    label: 'Create new Zendesk ticket - developer test'
+    notes: 'Creates new Zendesk ticket but puts it in the Developer Test Group. This handler gets used if the Test checkbox is ticked in the Developer Use Only section.'
+    status: true
+    conditions:
+      enabled:
+        ':input[name="test_submission"]':
+          checked: true
+    weight: 1
+    settings:
+      requester_name: contact_name
+      requester_email: contact_email
+      subject: 'Graffiti Report'
+      comment: "<h2>Graffiti Report</h2>\r\n\r\n[webform_submission:values:ticket_description:html]"
       tags: 'drupal webform graffiti'
       priority: normal
       status: new
       group_id: '4549352062487'
-      assignee_id: '376597733073'
+      assignee_id: ''
       type: incident
       collaborators: ''
-      custom_fields: "6353388345367: 'report_graffiti'\r\n5581480390679: '[webform_submission:values:report_location:location_lat]'\r\n5581490332439: '[webform_submission:values:report_location:location_lon]'\r\n1500012743961: '[webform_submission:values:report_location:location_address]'\r\n1500013095781: '[webform_submission:uuid]'\r\n6355783758871: '[webform_submission:values:resolution_url]'\r\n6379451469847: '[webform_submission:values:waiver_url]'"
+      custom_fields: "6353388345367: 'report_graffiti'\r\n5581480390679: '[webform_submission:values:report_location:location_lat]'\r\n5581490332439: '[webform_submission:values:report_location:location_lon]'\r\n1500012743961: '[webform_submission:values:report_location:location_address]'\r\n1500013095781: '[webform_submission:uuid]'\r\n6355783758871: '[webform_submission:values:resolution_url]'\r\n6379451469847: '[webform_submission:values:waiver_url]'\r\n8197855908375: '[webform_submission:values:report_repeat_offender]'"
       ticket_id_field: report_ticket_id
 variants: {  }
