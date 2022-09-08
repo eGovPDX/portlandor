@@ -32,6 +32,7 @@
         const OPEN_ISSUE_MESSAGE = "If this issue is what you came here to report, there's no need to report it again.";
         const SOLVED_ISSUE_MESSAGE = "This issue was recently solved. If that's not the case, or the issue has reoccured, please submit a new report.";
         const DEFAULT_FEATURE_ICON_URL = "/modules/custom/portland/modules/portland_location_picker/images/map_marker_default.png";
+        const GEOLOCATION_CACHE_MILLISECONDS = 0;
   
         // GLOBALS //////////
         var map;
@@ -818,7 +819,7 @@
           var t = setTimeout(function () {
             // display status indicator
             showStatusModal("Triangulating on your current location. Please wait...");
-            map.locate({ watch: false, setView: true, maximumAge: 20000, enableHighAccuracy: true });
+            map.locate({ watch: false, setView: true, maximumAge: GEOLOCATION_CACHE_MILLISECONDS, enableHighAccuracy: true });
           }, 500);
         }
   
