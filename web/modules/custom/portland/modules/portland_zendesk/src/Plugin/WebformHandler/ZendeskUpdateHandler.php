@@ -374,6 +374,16 @@ class ZendeskUpdateHandler extends WebformHandlerBase
     //    $form_state->getTriggeringElement()['#submit'][0] == "file_managed_file_submit"
     //    $form_state->getTriggeringElement()['#value']->getUntranslatedString() == "Uplooad"
     if ($form_state->getTriggeringElement() && $form_state->getTriggeringElement()['#value'] === "Submit") {
+
+      // // does it help to put the report_ticket_id in the user input? will that get it to
+      // // be used in token replacement in the 2nd handler? if not, we may need to do some
+      // // manual kerjiggering.
+      // $user_input = $form_state->getUserInput();
+      // if (array_key_exists('report_ticket_id', $user_input)) {
+      //   $user_input['report_ticket_id'] = $form_state->getValue('report_ticket_id');
+      //   $form_state->setUserInput($user_input);
+      // }
+
       $this->sendToZendeskAndValidateNoError($form_state);
     }
   }
@@ -411,6 +421,13 @@ class ZendeskUpdateHandler extends WebformHandlerBase
     // declare working variables
     $request = [];
     $webform_submission = $form_state->getFormObject()->getEntity();
+
+    // manually put the report_ticket_id value in the webform submission object, so that it
+    // gets used in token replacement and in custom field if needed.
+    // NOTE: This will always occur when the ZendeskUpdateHandler is called after ZendeskHandler; the
+    // assumption is that if we're updating a ticket right after creating one, they're related.
+    $webform_submission->setElementData('report_ticket_id', $form_state->getValue('report_ticket_id'));
+
     $submission_fields = $webform_submission->toArray(TRUE);
     $configuration = $this->getTokenManager()->replace($this->configuration, $webform_submission);
 
@@ -538,8 +555,7 @@ class ZendeskUpdateHandler extends WebformHandlerBase
    */
   public function postSave(WebformSubmissionInterface $webform_submission, $update = TRUE)
   {
-
-
+    
   }
 
   /**
