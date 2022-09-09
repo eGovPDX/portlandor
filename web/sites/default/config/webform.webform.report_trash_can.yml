@@ -132,6 +132,16 @@ elements: |-
         {% if uid %}<p>Agent email: {{ data.agent_email }}</p>{% endif %}
         {% if data.agent_ticket_number %}<p>Agent ticket: <a href="https://portlandoregon.zendesk.com/agent/tickets/{{ data.agent_ticket_number }}">{{ data.agent_ticket_number }}</a></p>{% endif %}
       '#store': true
+    test_submission:
+      '#type': checkbox
+      '#title': 'Test Submission'
+      '#description': 'Checking this box will assign the associated ticket to the Developer Test group in Zendesk.'
+      '#access_create_roles':
+        - administrator
+      '#access_update_roles':
+        - administrator
+      '#access_view_roles':
+        - administrator
   report_ticket_id:
     '#type': hidden
     '#title': 'Support Ticket ID'
@@ -342,8 +352,56 @@ handlers:
     label: 'Zendesk new ticket'
     notes: ''
     status: true
+    conditions:
+      enabled:
+        ':input[name="test_submission"]':
+          unchecked: true
+    weight: -50
+    settings:
+      requester_name: contact_name
+      requester_email: contact_email
+      subject: 'Trash can report: [webform_submission:values:report_location:location_asset_id] [webform_submission:values:report_issue]'
+      comment: "<h3>Report</h3>\r\n<p><strong>Lat/Lon:</strong> <a href=\"https://www.google.com/maps/place/[webform_submission:values:report_location:location_lat],[webform_submission:values:report_location:location_lon]\">[webform_submission:values:report_location:location_lat],[webform_submission:values:report_location:location_lon]</a><br>\r\n<strong>Approximate address:</strong> <a href=\"https://www.google.com/maps/place/[webform_submission:values:report_location:location_address]\">[webform_submission:values:report_location:location_address]</a><br />\r\n<strong>Asset ID:</strong> [webform_submission:values:report_location:location_asset_id]<br><strong>Problem:</strong> [webform_submission:values:report_issue]</p>\r\n\r\n<h3>Contact</h3>\r\n<p><strong>Name:</strong> [webform_submission:values:contact_name]<br>\r\n<strong>Email:</strong> [webform_submission:values:contact_email]</p>\r\n\r\n<h3>Agent Details</h3>\r\n[webform_submission:values:agent_summary]"
+      tags: 'drupal webform trash'
+      priority: normal
+      status: new
+      group_id: '4549352062487'
+      assignee_id: ''
+      type: problem
+      collaborators: ''
+      custom_fields: "1500012743961: '[webform_submission:values:report_location:location_address]'\r\n1500012801542: '[webform_submission:values:report_location:location_asset_id]'\r\n1500013095781: '[webform_submission:uuid]'\r\n5581480390679: '[webform_submission:values:report_location:location_lat]'\r\n5581490332439: '[webform_submission:values:report_location:location_lon]'\r\n1500012743981: '[webform_submission:values:report_issue]'\r\n6353388345367: 'report_trash_can'"
+      ticket_id_field: report_ticket_id
+  zendesk_update_interaction_ticket:
+    id: zendesk_update_ticket
+    handler_id: zendesk_update_interaction_ticket
+    label: 'Zendesk update interaction ticket'
+    notes: 'Updates an existing Zendesk "interaction ticket" and links it to the issue ticket. Enabled if an Agent Ticket Number value has been provided.'
+    status: true
     conditions: {  }
-    weight: 0
+    weight: -48
+    settings:
+      comment: "<p><b>Linked Issue Ticket: <a href=\"https://portlandoregon.zendesk.com/agent/tickets/[webform_submission:values:report_ticket_id]\">[webform_submission:values:report_ticket_id]</a></b></p>\r\n\r\n[webform_submission:values:html]\r\n\r\n"
+      comment_private: 1
+      tags: ''
+      priority: ''
+      status: ''
+      group_id: ''
+      assignee_id: ''
+      type: ''
+      collaborators: ''
+      custom_fields: '8692493739543: ''[webform_submission:values:report_ticket_id]'''
+      ticket_id_field: agent_ticket_number
+  zendesk_new_ticket_developer_testing:
+    id: zendesk
+    handler_id: zendesk_new_ticket_developer_testing
+    label: 'Zendesk new ticket - developer testing'
+    notes: ''
+    status: true
+    conditions:
+      enabled:
+        ':input[name="test_submission"]':
+          checked: true
+    weight: -49
     settings:
       requester_name: contact_name
       requester_email: contact_email

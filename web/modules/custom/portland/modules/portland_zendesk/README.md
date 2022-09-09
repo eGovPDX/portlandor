@@ -3,9 +3,21 @@ This module is an extension of the strakez/zendesk-webform module. That module i
 unofficial Drupal module, so we chose to knock it off and customize in place, rather than fork or
 patch the original.
 
-## Conventions
+## Conventions used in association with this module
 
-### Chaining tickets
+### Agent Use Only blocks in webforms
+
+Any webform that 311 agents might complete on behalf of community members has an Agent Use Only block consisting
+of two fields: Agent Email and Agent Ticket Number. The logged in agent's name and email address are automatically
+inserted into the Agent Email field. If there is an associated "interaction ticket" to track the agent's interaction
+with the community member, that ticket number is inserted in the other field when completing the form in order to
+create the "issue ticket." The issue ticket is typcially created using the ZendeskHandler custom webform handler. 
+Each form with a AUO block also has a ZendeskUpdateHandler that updates the initial interaction ticket to link
+the two together. This is done by chaining the handlers as described below.
+
+The webform Zendesk API Test is maintained as a template for how this functionality should be configured.
+
+### Chaining handlers
 
 It's possible to chain together an instance of the ZendeskHandler and ZendeskUpdateHandler in order
 to use the new ticket number from the first handler as a token or custom field value in the second handler.

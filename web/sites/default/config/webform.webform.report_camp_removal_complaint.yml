@@ -5,6 +5,7 @@ dependencies:
   module:
     - antibot
     - honeypot
+    - portland_zendesk
 third_party_settings:
   antibot:
     antibot: true
@@ -234,16 +235,11 @@ elements: |-
           '#title': 'Agent Email'
           '#default_value': '[current-user:display-name] <[current-user:mail]>'
         agent_ticket_number:
-          '#type': textfield
+          '#type': number
           '#title': 'Agent Ticket Number'
           '#description': 'If you are completing this webform on behalf of a community member, please enter the Zendesk ticket number of the ticket created to track the interaction. In addition to creating a new ticket for this report, the existing interaction ticket will be updated and linked.'
-        agent_summary:
-          '#type': webform_computed_twig
-          '#title': 'Agent Summary'
-          '#display_on': none
-          '#template': |-
-            {% if uid %}<p>Agent email: {{ data.agent_email }}</p>{% endif %}
-            {% if data.agent_ticket_number %}<p>Agent ticket: <a href="https://portlandoregon.zendesk.com/agent/tickets/{{ data.agent_ticket_number }}">{{ data.agent_ticket_number }}</a></p>{% endif %}
+          '#min': 999
+          '#max': 9999999999
       actions:
         '#type': webform_actions
         '#title': 'Submit button(s)'
@@ -470,7 +466,7 @@ handlers:
       sender_mail: ''
       sender_name: ''
       subject: _default
-      body: "<p>Submitted on [webform_submission:created]</p>\r\n\r\n<p>Submitted values are:</p>\r\n[webform_submission:values]"
+      body: "<p>Submitted on [webform_submission:created]</p>\r\n\r\n<p>Submitted values are:</p>\r\n[webform_submission:values]<br />\r\n<br />\r\nWebform ID:&nbsp;report_camp_removal_complaint"
       excluded_elements:
         markup_property_collection: markup_property_collection
         markup_ombudsman: markup_ombudsman
@@ -486,4 +482,27 @@ handlers:
       theme_name: ''
       parameters: {  }
       debug: false
+  zendesk_update_ticket:
+    id: zendesk_update_ticket
+    handler_id: zendesk_update_ticket
+    label: 'Zendesk update ticket'
+    notes: 'Updates an existing Zendesk "interaction ticket" and links it to the issue ticket. Enabled if an Agent Ticket Number value has been provided.'
+    status: true
+    conditions:
+      enabled:
+        ':input[name="agent_ticket_number"]':
+          filled: true
+    weight: 0
+    settings:
+      comment: "<p><b>NOTE: There is no linked issue ticket because the report was emailed directly to reportpdx@portlandoregon.gov</b></p>\r\n\r\n[webform_submission:values:html]\r\n\r\n"
+      comment_private: 0
+      tags: ''
+      priority: ''
+      status: ''
+      group_id: ''
+      assignee_id: ''
+      type: ''
+      collaborators: ''
+      custom_fields: '8692493739543: ''[webform_submission:values:report_ticket_id]'''
+      ticket_id_field: agent_ticket_number
 variants: {  }

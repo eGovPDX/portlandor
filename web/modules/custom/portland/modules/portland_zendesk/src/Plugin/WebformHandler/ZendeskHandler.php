@@ -316,7 +316,7 @@ class ZendeskHandler extends WebformHandlerBase
       ];
       if(!empty($groups) ){
         $form['group_id']['#type'] = 'select';
-        $form['group_id']['#options'] = ['' => '-- None --'] + $groups;
+        $form['group_id']['#options'] = ['' => '- None -'] + $groups;
         $form['group_id']['#description'] = $this->t('The group to which the ticket should be assigned. Set either Ticket Group or Ticket Assignee, but not both.');
       }
 
@@ -331,7 +331,7 @@ class ZendeskHandler extends WebformHandlerBase
       ];
       if(! empty($assignees) ){
         $form['assignee_id']['#type'] = 'webform_select_other';
-        $form['assignee_id']['#options'] = ['' => '-- None --'] + $assignees;
+        $form['assignee_id']['#options'] = ['' => '- None -'] + $assignees;
         $form['assignee_id']['#description'] = $this->t('The assignee to which the ticket should be assigned. Set either Ticket Group or Ticket Assignee, but not both. Typically tickets created by webforms should not be assigned to individual users, but tickets that are created as Solved must have an individual assignee. In this case, use the Portland.gov Support service account.');
       }
       else {
