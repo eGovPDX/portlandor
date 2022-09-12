@@ -515,7 +515,7 @@ class ZendeskUpdateHandler extends WebformHandlerBase
         }
       }
 
-      // status, type and priority are required by the API, even for update. if they're not set, set them from
+      // status, type, priority, and group are required by the API, even for update. if they're not set, set them from
       // previous ticket data.
       if (!isset($request['status']) || $request['status'] == "") {
         $request['status'] = $ticket->status;
@@ -525,6 +525,10 @@ class ZendeskUpdateHandler extends WebformHandlerBase
       }
       if (!isset($request['priority']) || $request['priority'] == "") {
         $request['priority'] = $ticket->priority;
+      }
+      // don't send empty group; get it from previous ticket
+      if (!isset($request['group_id']) || $request['group_id'] == "") {
+        $request['group_id'] = $ticket->group_id;
       }
 
       // create ticket
