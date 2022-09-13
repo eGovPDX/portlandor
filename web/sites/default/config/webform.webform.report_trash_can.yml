@@ -120,46 +120,28 @@ elements: |-
         - support_agent
     agent_ticket_number:
       '#type': number
-      '#title': 'Ticket Number'
+      '#title': 'Agent Ticket Number'
+      '#description': 'If you are completing this webform on behalf of a community member, please enter the Zendesk ticket number of the ticket created to track the interaction. In addition to creating a new ticket for this report, the existing interaction ticket will be updated and linked.'
       '#min': 1000
       '#max': 999999999
-    agent_action_taken:
-      '#type': radios
-      '#title': 'Action Taken'
-      '#options': action_taken
-      '#options_display': side_by_side
-      '#states':
-        invisible:
-          ':input[name="agent_ticket_number"]':
-            filled: true
-    agent_contact_type:
-      '#type': radios
-      '#title': 'Contact Type'
-      '#options': contact_type
-      '#options_display': side_by_side
-      '#states':
-        invisible:
-          ':input[name="agent_ticket_number"]':
-            filled: true
-    agent_ticket_type:
-      '#type': radios
-      '#title': 'Ticket Type'
-      '#options': ticket_type
-      '#options_display': side_by_side
-      '#default_value': Incident
     agent_summary:
       '#type': webform_computed_twig
       '#title': 'Agent Summary'
       '#display_on': none
       '#template': |-
-        {% if uid %}
-        <p><strong>Agent Email:</strong> {{ data.agent_email }}<br>
-        {% if data.agent_ticket_number %}<p><strong>Ticket Number:</strong> {{ data.agent_ticket_number }}<br>{% endif %}
-        {% if data.agent_action_taken %}<p><strong>Action Taken:</strong> {{ data.agent_action_taken }}<br>{% endif %}
-        <strong>Contact Type:</strong> {% if data.agent_contact_type %}{{ data.agent_contact_type }}{% else %}Webform{% endif %}<br>
-        <strong>Ticket Type:</strong> {{ data.agent_ticket_type }}</p>
-        {% endif %}
+        {% if uid %}<p>Agent email: {{ data.agent_email }}</p>{% endif %}
+        {% if data.agent_ticket_number %}<p>Agent ticket: <a href="https://portlandoregon.zendesk.com/agent/tickets/{{ data.agent_ticket_number }}">{{ data.agent_ticket_number }}</a></p>{% endif %}
       '#store': true
+    test_submission:
+      '#type': checkbox
+      '#title': 'Test Submission'
+      '#description': 'Checking this box will assign the associated ticket to the Developer Test group in Zendesk.'
+      '#access_create_roles':
+        - administrator
+      '#access_update_roles':
+        - administrator
+      '#access_view_roles':
+        - administrator
   report_ticket_id:
     '#type': hidden
     '#title': 'Support Ticket ID'
@@ -370,8 +352,56 @@ handlers:
     label: 'Zendesk new ticket'
     notes: ''
     status: true
+    conditions:
+      enabled:
+        ':input[name="test_submission"]':
+          unchecked: true
+    weight: -50
+    settings:
+      requester_name: contact_name
+      requester_email: contact_email
+      subject: 'Trash can report: [webform_submission:values:report_location:location_asset_id] [webform_submission:values:report_issue]'
+      comment: "<h3>Report</h3>\r\n<p><strong>Lat/Lon:</strong> <a href=\"https://www.google.com/maps/place/[webform_submission:values:report_location:location_lat],[webform_submission:values:report_location:location_lon]\">[webform_submission:values:report_location:location_lat],[webform_submission:values:report_location:location_lon]</a><br>\r\n<strong>Approximate address:</strong> <a href=\"https://www.google.com/maps/place/[webform_submission:values:report_location:location_address]\">[webform_submission:values:report_location:location_address]</a><br />\r\n<strong>Asset ID:</strong> [webform_submission:values:report_location:location_asset_id]<br><strong>Problem:</strong> [webform_submission:values:report_issue]</p>\r\n\r\n<h3>Contact</h3>\r\n<p><strong>Name:</strong> [webform_submission:values:contact_name]<br>\r\n<strong>Email:</strong> [webform_submission:values:contact_email]</p>\r\n\r\n<h3>Agent Details</h3>\r\n[webform_submission:values:agent_summary]"
+      tags: 'drupal webform trash'
+      priority: normal
+      status: new
+      group_id: '4549352062487'
+      assignee_id: ''
+      type: problem
+      collaborators: ''
+      custom_fields: "1500012743961: '[webform_submission:values:report_location:location_address]'\r\n1500012801542: '[webform_submission:values:report_location:location_asset_id]'\r\n1500013095781: '[webform_submission:uuid]'\r\n5581480390679: '[webform_submission:values:report_location:location_lat]'\r\n5581490332439: '[webform_submission:values:report_location:location_lon]'\r\n1500012743981: '[webform_submission:values:report_issue]'\r\n6353388345367: 'report_trash_can'"
+      ticket_id_field: report_ticket_id
+  zendesk_update_interaction_ticket:
+    id: zendesk_update_ticket
+    handler_id: zendesk_update_interaction_ticket
+    label: 'Zendesk update interaction ticket'
+    notes: 'Updates an existing Zendesk "interaction ticket" and links it to the issue ticket. Enabled if an Agent Ticket Number value has been provided.'
+    status: true
     conditions: {  }
-    weight: 0
+    weight: -48
+    settings:
+      comment: "<h1>Problem with a Public Trash Can</h1>\r\n<p><b>Linked Issue Ticket: <a href=\"https://portlandoregon.zendesk.com/agent/tickets/[webform_submission:values:report_ticket_id]\">[webform_submission:values:report_ticket_id]</a></b></p>\r\n\r\n[webform_submission:values:html]\r\n\r\n"
+      comment_private: 1
+      tags: ''
+      priority: ''
+      status: ''
+      group_id: ''
+      assignee_id: ''
+      type: ''
+      collaborators: ''
+      custom_fields: '8692493739543: ''[webform_submission:values:report_ticket_id]'''
+      ticket_id_field: agent_ticket_number
+  zendesk_new_ticket_developer_testing:
+    id: zendesk
+    handler_id: zendesk_new_ticket_developer_testing
+    label: 'Zendesk new ticket - developer testing'
+    notes: ''
+    status: true
+    conditions:
+      enabled:
+        ':input[name="test_submission"]':
+          checked: true
+    weight: -49
     settings:
       requester_name: contact_name
       requester_email: contact_email
