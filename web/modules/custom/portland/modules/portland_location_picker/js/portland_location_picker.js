@@ -52,6 +52,8 @@
           GeoFence:       "geofence"
         }
 
+        const GEOLOCATION_CACHE_MILLISECONDS = 0;
+  
         // GLOBALS //////////
         var map;
         var geoJsonLayer;
@@ -1047,7 +1049,7 @@
           var t = setTimeout(function () {
             // display status indicator
             showStatusModal("Triangulating on your current location. Please wait...");
-            map.locate({ watch: false, setView: true, maximumAge: 20000, enableHighAccuracy: true });
+            map.locate({ watch: false, setView: true, maximumAge: GEOLOCATION_CACHE_MILLISECONDS, enableHighAccuracy: true });
           }, 500);
         }
   

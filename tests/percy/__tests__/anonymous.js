@@ -54,16 +54,6 @@ describe("Homepage", () => {
   );
 
   it(
-    "Search Auto-complete powr",
-    async () => {
-      await page.goto(HOME_PAGE, { waitUntil: "load" });
-      await page.type("#edit-keys", "powr");
-      await page.waitForSelector("#ui-id-1", { visible: true });
-      await percySnapshot(page, "Anonymous - Home Autocomplete");
-    }
-  );
-
-  it(
     "Take snapshots of Group home pages",
     async () => {
       await page.goto(`${HOME_PAGE}/omf`, { waitUntil: "load" });
