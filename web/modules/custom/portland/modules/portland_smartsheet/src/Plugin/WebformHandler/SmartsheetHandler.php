@@ -22,7 +22,8 @@ use Drupal\webform\Entity\Webform;
 use Drupal\webform\WebformSubmissionForm;
 use Drupal\portland_smartsheet\Client\SmartsheetClient;
 use Drupal\Component\Serialization\Json;
-
+use Drupal\Core\Ajax\AjaxResponse;
+use Drupal\Core\Ajax\ReplaceCommand;
 
 /**
  * Form submission to Smartsheet handler.
@@ -60,8 +61,7 @@ class SmartsheetHandler extends WebformHandlerBase {
   public function defaultConfiguration() {
     return [
       'column_mappings' => [],
-      'sheet_id' => '',
-      'submission_id_column' => '',
+      'sheet_id' => ''
     ];
   }
 
@@ -72,46 +72,65 @@ class SmartsheetHandler extends WebformHandlerBase {
     return array_keys($this->defaultConfiguration());
   }
 
-  /**
-   * {@inheritdoc}
-   */
-  public function buildConfigurationForm(array $form, FormStateInterface $form_state) {
-    $form['sheet_id'] = [
-      '#type' => 'textfield',
-      '#title' => $this->t('Sheet ID'),
-      '#description' => $this->t('Smartsheet sheet ID to use'),
-      '#default_value' => $this->configuration['sheet_id'],
-      '#required' => true
-    ];
+  private function getWebformFields() {
+    $webform_fields = $this->getWebform()->getElementsDecoded();
+    $return_value = [];
+    foreach ($webform_fields as $key => $field) {
+      if (in_array($field['#type'], ['container', 'webform_section'])) {
+        foreach ($field as $subkey => $subfield) {
+          if (!str_starts_with($subkey, '#') && isset($subfield['#type'])) {
+            $return_value[$subkey] = $subfield;
+          }
+        }
+      } else {
+        $return_value[$key] = $field;
+      }
+    }
 
-    $form['submission_id_column'] = [
-      '#type' => 'textfield',
-      '#title' => $this->t('Submission ID column'),
-      '#description' => $this->t('Column to put submission ID in, if any'),
-      '#default_value' => $this->configuration['submission_id_column'],
-      '#required' => false
-    ];
+    return $return_value;
+  }
 
+  public function fetchColumns(array &$form, FormStateInterface $form_state) {
+    $sheet_id = $form_state->getUserInput()['settings']['sheet_id'] ?? $this->configuration["sheet_id"];
+    $form['column_mappings'] = ['#type' => 'value'];
+    $form['column_mappings_container'] = [
+      '#type' => 'details',
+      '#title' => $this->t('Column mappings'),
+      '#prefix' => '<div id="column-mappings">',
+      '#suffix' => '</div>',
+      '#open' => TRUE,
+      'table' => [
+        '#type' => 'table',
+        '#header' => [
+          $this->t('Smartsheet column'),
+          $this->t('Webform field'),
+        ],
+        '#rows' => []
+      ]
+    ];
     try {
-      if (!$this->configuration['sheet_id']) return;
-      $client = new SmartsheetClient($this->configuration['sheet_id']);
+      if ($sheet_id === '') return;
+      $client = new SmartsheetClient($sheet_id);
 
       $columns = $client->listAllColumns();
-      $form['column_mappings'] = [
-        '#type' => 'details',
-        '#title' => $this->t('Column mappings'),
-        'table' => [
-          '#type' => 'table',
-          '#header' => [
-            $this->t('Smartsheet column'),
-            $this->t('Webform field'),
-          ],
-          '#rows' => array_map(fn($col) => [
-            ['data' => ['#markup' => "<strong>{$col->title}</strong>", '#value' => $col->id]],
-            ['data' => ['#type' => 'select', '#options' => ['' => 'None', '1' => "Two"]]]
-          ], $columns),
-        ]
-      ];
+      $webform_fields = $this->getWebformFields();
+      $webform_fields['__submission_id'] = ['#title' => 'Submission ID'];
+      $options = ['' => 'None'];
+      foreach ($webform_fields as $key => $value) {
+        $options[$key] = $value['#admin_title'] ?? $value['#title'];
+      }
+
+      $form['column_mappings_container']['table']['#rows'] = array_map(
+        fn($col) => [
+          ['data' => ['#markup' => "<strong>{$col->title}</strong>"]],
+          ['data' => [
+            '#type' => 'select',
+            '#name' => "settings[column_mappings][{$col->id}]",
+            '#value' => $this->configuration['column_mappings'][$col->id] ?? '',
+            '#options' => $options
+          ]]
+        ], array_filter($columns, fn($col) => !isset($col->formula))
+      );
     } catch (\Exception $e) {
       // Log error message.
       $this->getLogger()->error('@form fetching columns from Smartsheet failed. @exception: @message.', [
@@ -120,26 +139,40 @@ class SmartsheetHandler extends WebformHandlerBase {
         '@message' => $e->getMessage(),
         'link' => $this->getWebform()->toLink($this->t('Edit'), 'handlers')->toString(),
       ]);
+      $form['column_mappings_container']['#prefix'] .= '<div class="messages messages--error"><div class="messages__header"><h2 class="messages__title">Error fetching sheet data. Is the sheet ID correct?</h2></div></div>';
     }
 
+    $res = new AjaxResponse();
+    $res->addCommand(new ReplaceCommand('#column-mappings', $form['column_mappings_container']));
 
+    return $res;
+  }
 
-    $form['column_mapping'] = [
-      '#type' => 'webform_codemirror',
-      '#mode' => 'yaml',
-      '#title' => $this->t('Column mapping'),
-      '#help' => $this->t('Key (field id) -> Smartsheet column id'),
-      '#description' => $this->t(
-        '<div id="help">If a field is not listed, it will be ignored</div>'
-      ),
-      '#default_value' => $this->configuration['column_mapping'],
+  /**
+   * {@inheritdoc}
+   */
+  public function buildConfigurationForm(array $form, FormStateInterface $form_state) {
+    $form['sheet_id'] = [
+      '#type' => 'textfield',
+      '#title' => $this->t('Sheet ID'),
+      '#description' => $this->t('Smartsheet sheet ID to use'),
       '#description_display' => 'before',
-      '#weight' => 90,
-      '#attributes' => [
-        'placeholder' => 'email: 4820834508'
-      ],
-      '#required' => false,
+      '#default_value' => $this->configuration['sheet_id'],
+      '#required' => true,
+      '#ajax' => [
+        'callback' => [$this, 'fetchColumns'],
+        'event' => 'change',
+        'wrapper' => 'sheet_id'
+      ]
     ];
+
+    $form['column_mappings_container'] = [
+      '#type' => 'details',
+      '#title' => $this->t('Column mappings'),
+      '#open' => TRUE
+    ];
+
+    $this->fetchColumns($form, $form_state);
 
     return $this->setSettingsParents($form);
   }
@@ -151,39 +184,32 @@ class SmartsheetHandler extends WebformHandlerBase {
   public function submitConfigurationForm(array &$form, FormStateInterface $form_state) {
     parent::submitConfigurationForm($form, $form_state);
 
-    $submission_value = $form_state->getValues();
-    foreach ($this->configuration as $key => $value) {
-      if (isset($submission_value[$key])) {
-        $this->configuration[$key] = $submission_value[$key];
-      }
-    }
+    $values = $form_state->getUserInput()['settings'];
+    $this->configuration['column_mappings'] = $values['column_mappings'];
+    $this->configuration['sheet_id'] = $values['sheet_id'];
   }
 
   public function postSave(WebformSubmissionInterface $webform_submission, $update = TRUE) {
     $submission_fields = $webform_submission->toArray(TRUE);
+    $submission_id = $submission_fields['sid'] !== '' ? $submission_fields['sid'] : $submission_fields['uuid'];
 
-    $column_mapping = Yaml::decode($this->configuration['column_mapping']);
+    $column_mappings = $this->configuration['column_mappings'];
+    $cells = [];
+    foreach ($column_mappings as $col_id => $field_id) {
+      if ($field_id === "") continue;
+
+
+      $field_data = $field_id === '__submission_id' ? $submission_id : $submission_fields['data'][$field_id];
+
+      array_push($cells, [
+        'columnId' => (int) $col_id,
+        'value' => is_array($field_data) ? join(",", $field_data) : $field_data
+      ]);
+    }
+
     try {
       $client = new SmartsheetClient($this->configuration['sheet_id']);
-
-      $cells = [];
-      foreach ($submission_fields['data'] as $key => $submission_field) {
-        if (!$column_mapping[$key]) continue;
-
-        array_push($cells, [
-          'columnId' => (int) $column_mapping[$key],
-          'value' => is_array($submission_field) ? join(",", $submission_field) : $submission_field
-        ]);
-      }
-
-      if ($this->configuration['submission_id_column']) {
-        array_push($cells, [
-          'columnId' => (int) $this->configuration['submission_id_column'],
-          'value' => $submission_fields["sid"] !== "" ? $submission_fields["sid"] : $submission_fields["uuid"]
-        ]);
-      }
-
-      $response_data = $client->addRow([
+      $client->addRow([
         'cells' => $cells
       ]);
     } catch (\Exception $e) {
@@ -195,5 +221,25 @@ class SmartsheetHandler extends WebformHandlerBase {
         'link' => $this->getWebform()->toLink($this->t('Edit'), 'handlers')->toString(),
       ]);
     }
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getSummary() {
+    $amt_mappings = count(array_filter($this->configuration['column_mappings'], fn($mapping) => $mapping !== ''));
+    $lines = ["{$amt_mappings} column mappings configured"];
+    try {
+      $client = new SmartsheetClient($this->configuration['sheet_id']);
+      $res = $client->getSheet();
+
+      $sheet_link = htmlentities($res->permalink);
+      $sheet_name = htmlentities($res->name);
+      array_push($lines, "<strong>Sheet:</strong> <a href=\"{$sheet_link}\">{$sheet_name}</a>");
+    } catch (\Exception $e) {}
+
+    return [
+      '#markup' => join("<br>", $lines)
+    ];
   }
 }

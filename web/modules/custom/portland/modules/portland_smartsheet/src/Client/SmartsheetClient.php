@@ -36,11 +36,11 @@ class SmartsheetClient {
       throw new \Exception("Smartsheet API: partial success");
     }
     if (isset($body->errorCode)) {
-      $details = json_encode($body->details);
+      $details = isset($body->details) ? json_encode($body->details) : "";
       throw new \Exception("Smartsheet API: error code {$body->errorCode}, {$body->message}, {$details}");
     }
 
-    return $body->result ?? $body->data;
+    return $body->result ?? $body->data ?? $body;
   }
 
   public function addRow($data) {
@@ -49,5 +49,9 @@ class SmartsheetClient {
 
   public function listAllColumns() {
     return $this->handleResponse($this->client->request('GET', 'columns?includeAll=true'));
+  }
+
+  public function getSheet() {
+    return $this->handleResponse($this->client->request('GET', '?rowIds=0&columnIds=0'));
   }
 }
