@@ -59,11 +59,6 @@ class PortlandSupportAgentWidget extends WebformCompositeBase {
       '#id' => 'zendesk_request_number',
       '#description' => 'If you are completing this webform on behalf of a community member, please enter the Zendesk request number of the request created to track the interaction. In addition to creating a new request for this report, the existing interaction request will be updated and linked.',
     ];
-    $elements['support_agent_widget']['test_submission'] = [
-      '#type' => 'checkbox',
-      '#title' => t('Test Submission'),
-      '#id' => 'test_submission',
-    ];
 
     return $elements;
   }

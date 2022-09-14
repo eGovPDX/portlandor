@@ -44,9 +44,6 @@ class PortlandSupportAgentWidget extends WebformCompositeBase {
     if (isset($value['zendesk_request_number']) && $value['zendesk_request_number']) {
       $lines[] = 'Zendesk request number: ' . $value['zendesk_request_number'] . '<br>';
     }
-    if (isset($value['test_submission']) && $value['test_submission']) {
-      $lines[] = 'Test submission? ' . $value['test_submission'] . '<br>';
-    }
     return $lines;
   }
 
@@ -68,41 +65,7 @@ class PortlandSupportAgentWidget extends WebformCompositeBase {
     if (isset($value['zendesk_request_number']) && $value['zendesk_request_number']) {
       $lines[] = 'Zendesk request number: ' . $value['zendesk_request_number'] . '<br>';
     }
-    if (isset($value['test_submission']) && $value['test_submission']) {
-      $lines[] = 'Test submission? ' . $value['test_submission'] . '<br>';
-    }
     return $lines;
   }
-
-  //   /**
-  //  * {@inheritdoc}
-  //  */
-  // public function prepare(array &$element, WebformSubmissionInterface $webform_submission = NULL) {
-  //   parent::prepare($element, $webform_submission);
-
-  //   $primaryLayerSource = array_key_exists('#primary_layer_source', $element) ? $element['#primary_layer_source'] : "";
-  //   $incidentsLayerSource = array_key_exists('#incidents_layer_source', $element) ? $element['#incidents_layer_source'] : "";
-  //   $primaryLayerBehavior = array_key_exists('#primary_layer_behavior', $element) ? $element['#primary_layer_behavior'] : "";
-  //   $primaryLayerType = array_key_exists('#primary_layer_type', $element) ? $element['#primary_layer_type'] : "";
-  //   $primaryMarker = array_key_exists('#primary_marker', $element) ? $element['#primary_marker'] : "";
-  //   $selectedMarker = array_key_exists('#selected_marker', $element) ? $element['#selected_marker'] : "";
-  //   $incidentMarker = array_key_exists('#incident_marker', $element) ? $element['#incident_marker'] : "";
-  //   $disablePopup = array_key_exists('#disable_popup', $element) && $element['#disable_popup'] ? 1 : 0;
-  //   $verifyButtonText = array_key_exists('#verify_button_text', $element) ? $element['#verify_button_text'] : "";
-  //   $primaryFeatureName = array_key_exists('#primary_feature_name', $element) ? $element['#primary_feature_name'] : "";
-  //   $featureLayerVisibleZoom = array_key_exists('#feature_layer_visible_zoom', $element) ? $element['#feature_layer_visible_zoom'] : "";
-
-  //   $element['#attached']['drupalSettings']['webform']['portland_location_picker']['primary_layer_source'] = $primaryLayerSource;
-  //   $element['#attached']['drupalSettings']['webform']['portland_location_picker']['incidents_layer_source'] = $incidentsLayerSource;
-  //   $element['#attached']['drupalSettings']['webform']['portland_location_picker']['primary_layer_behavior'] = $primaryLayerBehavior;
-  //   $element['#attached']['drupalSettings']['webform']['portland_location_picker']['primary_layer_type'] = $primaryLayerType;
-  //   $element['#attached']['drupalSettings']['webform']['portland_location_picker']['primary_marker'] = $primaryMarker;
-  //   $element['#attached']['drupalSettings']['webform']['portland_location_picker']['selected_marker'] = $selectedMarker;
-  //   $element['#attached']['drupalSettings']['webform']['portland_location_picker']['incident_marker'] = $incidentMarker;
-  //   $element['#attached']['drupalSettings']['webform']['portland_location_picker']['disable_popup'] = $disablePopup;
-  //   $element['#attached']['drupalSettings']['webform']['portland_location_picker']['verify_button_text'] = $verifyButtonText;
-  //   $element['#attached']['drupalSettings']['webform']['portland_location_picker']['primary_feature_name'] = $primaryFeatureName;
-  //   $element['#attached']['drupalSettings']['webform']['portland_location_picker']['feature_layer_visible_zoom'] = $featureLayerVisibleZoom;
-  // }
 
 }
