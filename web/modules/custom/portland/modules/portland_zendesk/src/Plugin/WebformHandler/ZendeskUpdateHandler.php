@@ -21,9 +21,9 @@ use Drupal\portland_zendesk\Utils\Utility;
  *
  * @WebformHandler(
  *   id = "zendesk_update_ticket",
- *   label = @Translation("Zendesk update ticket"),
+ *   label = @Translation("Zendesk update request"),
  *   category = @Translation("Zendesk"),
- *   description = @Translation("Updates an existing Zendesk support ticket."),
+ *   description = @Translation("Updates an existing Zendesk support request."),
  *   cardinality = \Drupal\webform\Plugin\WebformHandlerInterface::CARDINALITY_UNLIMITED,
  *   results = \Drupal\webform\Plugin\WebformHandlerInterface::RESULTS_PROCESSED,
  * )

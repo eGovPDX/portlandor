@@ -12,7 +12,7 @@ template: false
 archive: false
 id: zendesk_api_test
 title: 'Zendesk API Test'
-description: 'This form can be used to test the Zendesk API integration. When submitted, it creates a Zendesk ticket in the portlandoregon.zendesk.com instance. Only Administrator and Support Agent roles have access to this form.'
+description: 'This form can be used to test the Zendesk API integration. When submitted, it creates a Zendesk request in the portlandoregon.zendesk.com instance. Only Administrator and Support Agent roles have access to this form.'
 category: Utility
 elements: |-
   intro_text:
@@ -42,55 +42,9 @@ elements: |-
     '#description': 'The new Zendesk ticket will be created as if it had been submitted from this email address.'
     '#input_mask': '''alias'': ''email'''
     '#required': true
-  agent_use_only:
-    '#type': webform_section
-    '#title': 'Agent Use Only'
-    '#attributes':
-      style: 'padding: 15px; background-color: #cccccc;'
-    '#access_create_roles':
-      - support_agent
-      - administrator
-    '#access_update_roles':
-      - support_agent
-      - administrator
-    '#access_view_roles':
-      - support_agent
-      - administrator
-    agent_email:
-      '#type': textfield
-      '#title': 'Agent Email'
-      '#default_value': '[current-user:display-name] <[current-user:mail]>'
-    agent_ticket_number:
-      '#type': number
-      '#title': 'Agent Ticket Number'
-      '#description': 'If you are completing this webform on behalf of a community member, please enter the Zendesk ticket number of the ticket created to track the interaction. In addition to creating a new ticket for this report, the existing interaction ticket will be updated and linked.'
-      '#min': 1000
-      '#max': 999999999
-    agent_summary:
-      '#type': webform_computed_twig
-      '#title': 'Agent Summary'
-      '#display_on': none
-      '#template': |-
-        {% if uid %}<p>Agent email: {{ data.agent_email }}</p>{% endif %}
-        {% if data.agent_ticket_number %}<p>Agent ticket: <a href="https://portlandoregon.zendesk.com/agent/tickets/{{ data.agent_ticket_number }}">{{ data.agent_ticket_number }}</a></p>{% endif %}
-  developer_use_only:
-    '#type': webform_section
-    '#title': 'Developer Use Only'
-    '#attributes':
-      style: 'padding: 15px; background-color: #cccccc;'
-    '#access_create_roles':
-      - administrator
-    '#access_update_roles':
-      - administrator
-    '#access_view_roles':
-      - administrator
-    test_submission:
-      '#type': checkbox
-      '#title': 'Assign to Developer Test group'
-    suppress_ticket_confirmation:
-      '#type': checkbox
-      '#title': 'Suppress ticket confirmation'
-      '#description': 'When checked, the Zendesk new ticket confirmation email will not be sent to the requester (requires that the triggers in Zendesk be configured to honor this setting).'
+  support_agent_use_only:
+    '#type': portland_support_agent_widget
+    '#title': 'Support Agent Use Only'
   report_ticket_id:
     '#type': hidden
     '#title': 'Report Ticket ID'
@@ -294,8 +248,8 @@ handlers:
   zendesk_new_ticket:
     id: zendesk
     handler_id: zendesk_new_ticket
-    label: 'Create Zendesk Ticket'
-    notes: 'Sends a form submission to Zendesk to create a support ticket. This handler must fire after any other validation handlers, and it should not be used for forms that allow users to update their original submission. Updating will create a new Zendesk ticket, which is most likely not the desired behavior. Enabled if no ticket ID is provided.'
+    label: 'Create Zendesk Request'
+    notes: 'Sends a form submission to Zendesk to create a support request. This handler must fire after any other validation handlers, and it should not be used for forms that allow users to update their original submission. Updating will create a new Zendesk request, which is most likely not the desired behavior. Enabled if no request ID is provided.'
     status: true
     conditions:
       enabled:
@@ -313,22 +267,22 @@ handlers:
       assignee_id: ''
       type: incident
       collaborators: ''
-      custom_fields: ''
+      custom_fields: '6353388345367: ''zendesk_api_test'''
       ticket_id_field: report_ticket_id
       group_id: '4549352062487'
   zendesk_update_ticket:
     id: zendesk_update_ticket
     handler_id: zendesk_update_ticket
-    label: 'Update Agent Interaction Ticket'
-    notes: 'Updates an existing Zendesk "interaction ticket" and links it to the issue ticket. Enabled if an Agent Ticket Number value has been provided.'
+    label: 'Zendesk update customer support interaction request'
+    notes: 'Updates an existing Zendesk "interaction request" and links it to the issue request. Enabled if an Zendesk Request Number value has been provided.'
     status: true
     conditions:
       enabled:
-        ':input[name="agent_ticket_number"]':
+        ':input[name="support_agent_use_only[zendesk_request_number]"]':
           filled: true
     weight: 0
     settings:
-      comment: "<h1>Zendesk API Test</h1>\r\n<p><b>Linked Issue Ticket: <a href=\"https://portlandoregon.zendesk.com/agent/tickets/[webform_submission:values:report_ticket_id]\">[webform_submission:values:report_ticket_id]</a></b></p>\r\n\r\n[webform_submission:values:html]\r\n\r\n"
+      comment: "<h1>Zendesk API Test</h1>\r\n<p><b>Linked Issue Request: <a href=\"https://portlandoregon.zendesk.com/agent/tickets/[webform_submission:values:report_ticket_id]\">[webform_submission:values:report_ticket_id]</a></b></p>\r\n\r\n[webform_submission:values:html]\r\n\r\n"
       comment_private: 1
       tags: ''
       priority: ''
@@ -337,6 +291,6 @@ handlers:
       type: ''
       collaborators: ''
       custom_fields: '8692493739543: ''[webform_submission:values:report_ticket_id]'''
-      ticket_id_field: agent_ticket_number
+      ticket_id_field: zendesk_request_number
       assignee_id: ''
 variants: {  }

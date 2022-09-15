@@ -362,48 +362,9 @@ elements: |-
       contact_behalf_name:
         '#type': textfield
         '#title': 'What is their name?'
-    section_agent_use_only:
-      '#type': webform_section
-      '#title': 'Agent Use Only'
-      '#attributes':
-        style: 'padding: 15px; background-color: #cccccc;'
-      '#access_create_roles':
-        - administrator
-        - support_agent
-      '#access_update_roles':
-        - administrator
-        - support_agent
-      '#access_view_roles':
-        - administrator
-        - support_agent
-      agent_email:
-        '#type': textfield
-        '#title': 'Agent Email'
-        '#default_value': '[current-user:display-name] <[current-user:mail]>'
-      agent_ticket_number:
-        '#type': number
-        '#title': 'Agent Ticket Number'
-        '#description': '<section data-drupal-selector="edit-section-agent-use-only" id="edit-section-agent-use-only">If you are completing this webform on behalf of a community member, please enter the Zendesk ticket number of the ticket created to track the interaction. In addition to creating a new ticket for this report, the existing interaction ticket will be updated and linked.</section>'
-        '#min': 1000
-        '#max': 999999999
-      agent_summary:
-        '#type': webform_computed_twig
-        '#title': 'Agent Summary'
-        '#display_on': none
-        '#template': |
-          {% if uid %}<p>Agent Email: {{ data.agent_email }}</p>{% endif %}
-          {% if data.agent_ticket_number %}<p>Ticket Number: {{ data.agent_ticket_number }}</p>{% endif %}
-        '#ajax': true
-      test_submission:
-        '#type': checkbox
-        '#title': 'Test Submission'
-        '#description': 'Checking this box will assign the associated ticket to the Developer Test group in Zendesk.'
-        '#access_create_roles':
-          - administrator
-        '#access_update_roles':
-          - administrator
-        '#access_view_roles':
-          - administrator
+    support_agent_use_only:
+      '#type': portland_support_agent_widget
+      '#title': 'Support Agent Use Only'
     report_ticket_id:
       '#type': hidden
       '#title': 'Report Ticket ID'
@@ -630,12 +591,12 @@ handlers:
   zendesk_new_ticket:
     id: zendesk
     handler_id: zendesk_new_ticket
-    label: 'Zendesk new ticket'
-    notes: 'Creates a new ADA Accommodation Request ticket and assigns it to the 311 group.'
+    label: 'Zendesk new request'
+    notes: 'Creates a new ADA Accommodation Request in Zendesk and assigns it to the 311 group.'
     status: true
     conditions:
       disabled:
-        ':input[name="test_submission"]':
+        ':input[name="support_agent_use_only[test_submission]"]':
           checked: true
     weight: -50
     settings:
@@ -655,16 +616,16 @@ handlers:
   zendesk_update_agent_interaction_ticket:
     id: zendesk_update_ticket
     handler_id: zendesk_update_agent_interaction_ticket
-    label: 'Zendesk update agent interaction ticket'
-    notes: 'Updates an existing Zendesk "interaction ticket" and links it to the issue ticket. Enabled if an Agent Ticket Number value has been provided.'
+    label: 'Zendesk update customer support interaction request'
+    notes: 'Updates an existing Zendesk "interaction request" and links it to the issue request. Enabled if an Zendesk Request Number value has been provided.'
     status: true
     conditions:
       enabled:
-        ':input[name="agent_ticket_number"]':
+        ':input[name="support_agent_use_only[zendesk_request_number]"]':
           filled: true
     weight: -48
     settings:
-      comment: "<h1>ADA Accommodation Request</h1>\r\n<p><b>Linked Issue Ticket: <a href=\"https://portlandoregon.zendesk.com/agent/tickets/[webform_submission:values:report_ticket_id]\">[webform_submission:values:report_ticket_id]</a></b></p>\r\n\r\n[webform_submission:values:html]\r\n\r\n"
+      comment: "<h1>ADA Accommodation Request</h1>\r\n<p><b>Linked Issue Request: <a href=\"https://portlandoregon.zendesk.com/agent/tickets/[webform_submission:values:report_ticket_id]\">[webform_submission:values:report_ticket_id]</a></b></p>\r\n\r\n[webform_submission:values:html]\r\n\r\n"
       comment_private: 1
       tags: ''
       priority: ''
@@ -674,16 +635,16 @@ handlers:
       type: ''
       collaborators: ''
       custom_fields: '8692493739543: ''[webform_submission:values:report_ticket_id]'''
-      ticket_id_field: agent_ticket_number
+      ticket_id_field: zendesk_request_number
   zendesk_new_ticket_developer_testing:
     id: zendesk
     handler_id: zendesk_new_ticket_developer_testing
-    label: 'Zendesk new ticket - developer testing'
-    notes: 'Creates a new ADA Accommodation Request ticket and assigns it to the 311 group.'
+    label: 'Zendesk new request- developer testing'
+    notes: 'Creates a new ADA Accommodation request and assigns it to the 311 group.'
     status: true
     conditions:
       enabled:
-        ':input[name="test_submission"]':
+        ':input[name="support_agent_use_only[test_submission]"]':
           checked: true
     weight: -49
     settings:

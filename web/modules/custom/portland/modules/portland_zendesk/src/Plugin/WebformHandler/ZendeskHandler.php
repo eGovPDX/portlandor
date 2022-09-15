@@ -29,9 +29,9 @@ use Drupal\webform\WebformSubmissionForm;
  *
  * @WebformHandler(
  *   id = "zendesk",
- *   label = @Translation("Zendesk new ticket"),
+ *   label = @Translation("Zendesk new request"),
  *   category = @Translation("Zendesk"),
- *   description = @Translation("Sends a form submission to Zendesk to create a support ticket. This handler must fire after any other validation handlers, and it should not be used for forms that allow users to update their original submission. Updating will create a new Zendesk ticket, which is most likely not the desired behavior."),
+ *   description = @Translation("Sends a form submission to Zendesk to create a support request. This handler must fire after any other validation handlers, and it should not be used for forms that allow users to update their original submission. Updating will create a new Zendesk request, which is most likely not the desired behavior."),
  *   cardinality = \Drupal\webform\Plugin\WebformHandlerInterface::CARDINALITY_UNLIMITED,
  *   results = \Drupal\webform\Plugin\WebformHandlerInterface::RESULTS_PROCESSED,
  * )
