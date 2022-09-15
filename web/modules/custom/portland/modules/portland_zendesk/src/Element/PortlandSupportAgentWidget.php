@@ -14,7 +14,9 @@ use Drupal\webform\Element\WebformCompositeBase;
  * Employee Email (textfield, default = logged-in user name & email)
  * Zendesk Request Number (textfield)
  * Test Submission (checkbox)
- 
+ *
+ * The class fieldset#edit-support-agent-use-only--wrapper has been added to _form.scss
+ * to provide styling for this widget.
  *
  * IMPORTANT:
  * Webform composite can not contain multiple value elements (i.e. checkboxes)
@@ -38,26 +40,39 @@ class PortlandSupportAgentWidget extends WebformCompositeBase {
     $currentUserName = $currentUser->getDisplayName();
 
     $elements = [];
-    $elements['support_agent_widget'] = [
-      '#id' => 'support_agent_widget',
-      '#type' => 'container',
-      '#attributes' => ['style' => ['padding: 15px; background-color: #cccccc;']],
-    ];
-    $elements['support_agent_widget']['title'] = [
+    $elements['support_agent_widget_title'] = [
       '#type' => 'markup',
       '#markup' => '<h2>Customer Service Use Only</h2>',
+      '#access_create_roles' => ['support_agent', 'administrator'],
+      '#access_update_roles' => ['support_agent', 'administrator'],
+      '#access_view_roles' => ['support_agent', 'administrator'],
     ];
-    $elements['support_agent_widget']['employee_email'] = [
+    $elements['employee_email'] = [
       '#type' => 'textfield',
       '#title' => t('Employee Email'),
       '#id' => 'employee_email',
       '#value' => $currentUserName . ' <[' . $currentUserEmail . ']>',
+      '#access_create_roles' => ['support_agent', 'administrator'],
+      '#access_update_roles' => ['support_agent', 'administrator'],
+      '#access_view_roles' => ['support_agent', 'administrator'],
     ];
-    $elements['support_agent_widget']['zendesk_request_number'] = [
+    $elements['zendesk_request_number'] = [
       '#type' => 'number',
       '#title' => t('Zendesk Request Number'),
       '#id' => 'zendesk_request_number',
       '#description' => 'If you are completing this webform on behalf of a community member, please enter the Zendesk request number of the request created to track the interaction. In addition to creating a new request for this report, the existing interaction request will be updated and linked.',
+      '#access_create_roles' => ['support_agent', 'administrator'],
+      '#access_update_roles' => ['support_agent', 'administrator'],
+      '#access_view_roles' => ['support_agent', 'administrator'],
+    ];
+    $elements['test_submission'] = [
+      '#type' => 'checkbox',
+      '#title' => t('Test Submission'),
+      '#id' => 'test_submission',
+      '#description' => 'For administrtor use only. Handlers can be configured to process form submissions differently based on whether this box is checked.',
+      '#access_create_roles' => ['administrator'],
+      '#access_update_roles' => ['administrator'],
+      '#access_view_roles' => ['administrator'],
     ];
 
     return $elements;
