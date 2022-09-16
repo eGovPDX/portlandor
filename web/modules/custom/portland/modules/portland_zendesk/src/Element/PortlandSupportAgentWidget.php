@@ -40,10 +40,11 @@ class PortlandSupportAgentWidget extends WebformCompositeBase {
     $currentUserName = $currentUser->getDisplayName();
 
     $elements = [];
-    $elements['#title'] = ['Portland Support Agent Widget'];
+    $elements['#title'] = ['Support Agent Widget'];
     $elements['support_agent_widget_title'] = [
       '#type' => 'markup',
       '#title' => t('Support Agent Widget'),
+      '#title_display' => 'invisible',
       '#markup' => '<h2>Customer Service Use Only</h2>',
       '#access_create_roles' => ['support_agent', 'administrator'],
       '#access_update_roles' => ['support_agent', 'administrator'],
