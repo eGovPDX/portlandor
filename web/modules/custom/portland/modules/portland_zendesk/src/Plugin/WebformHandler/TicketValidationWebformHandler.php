@@ -64,12 +64,12 @@ class TicketValidationWebformHandler extends WebformHandlerBase {
     try {
       $ticket = $client->tickets()->find($ticket_id)->ticket;
     } catch (\Exception $e) {
-      $formState->setErrorByName('original_submission_key', $this->t('An error occurred while trying to access the specified ticket (' . $ticket_id . '). Please contact a site administrator.'));
+      $formState->setErrorByName('original_submission_key', $this->t('An error occurred while trying to access the specified request in Zendesk (' . $ticket_id . '). Please contact a site administrator.'));
       return;
     }
 
     if (!$ticket) {
-      $formState->setErrorByName('report_ticket_id', $this->t('An error occurred while trying to access the specified ticket (' . $ticket_id . '). Please contact a site administrator.'));
+      $formState->setErrorByName('report_ticket_id', $this->t('An error occurred while trying to access the specified request in Zendesk (' . $ticket_id . '). Please contact a site administrator.'));
     }
 
     $custom_fields = [];
