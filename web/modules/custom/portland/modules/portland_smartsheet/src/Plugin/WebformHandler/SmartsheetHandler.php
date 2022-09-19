@@ -161,15 +161,8 @@ class SmartsheetHandler extends WebformHandlerBase {
       '#required' => true,
       '#ajax' => [
         'callback' => [$this, 'fetchColumns'],
-        'event' => 'change',
-        'wrapper' => 'sheet_id'
+        'event' => 'change'
       ]
-    ];
-
-    $form['column_mappings_container'] = [
-      '#type' => 'details',
-      '#title' => $this->t('Column mappings'),
-      '#open' => TRUE
     ];
 
     $this->fetchColumns($form, $form_state);
@@ -201,10 +194,10 @@ class SmartsheetHandler extends WebformHandlerBase {
 
       $field_data = $field_id === '__submission_id' ? $submission_id : $submission_fields['data'][$field_id];
 
-      array_push($cells, [
+      $cells[] = [
         'columnId' => (int) $col_id,
         'value' => is_array($field_data) ? join(",", $field_data) : $field_data
-      ]);
+      ];
     }
 
     try {
@@ -231,11 +224,11 @@ class SmartsheetHandler extends WebformHandlerBase {
     $lines = ["{$amt_mappings} column mappings configured"];
     try {
       $client = new SmartsheetClient($this->configuration['sheet_id']);
-      $res = $client->getSheet();
+      $res = $client->getSheet(['columnIds' => 0, 'rowIds' => 0]);
 
       $sheet_link = htmlentities($res->permalink);
       $sheet_name = htmlentities($res->name);
-      array_push($lines, "<strong>Sheet:</strong> <a href=\"{$sheet_link}\">{$sheet_name}</a>");
+      $lines[] = "<strong>Sheet:</strong> <a href=\"{$sheet_link}\">{$sheet_name}</a>";
     } catch (\Exception $e) {}
 
     return [
