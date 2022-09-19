@@ -29,7 +29,7 @@ class PortlandSupportAgentWidget extends WebformCompositeBase {
   /**
    * {@inheritdoc}
    * NOTE: custom elements must have a #title attribute. if a value is not set here, it must be set
-   * in the field config. if not, an error is thrown when trying to add an email handler.
+   * in the field config. if not, an error is thrown when trying to add an email handler (why?).
    * 
    * When configuring this element, need to set the access to be Administrator and Support Agent roles only. 
    * 
@@ -41,34 +41,33 @@ class PortlandSupportAgentWidget extends WebformCompositeBase {
     $currentUserEmail = $currentUser->getEmail();
     $currentUserName = $currentUser->getDisplayName();
 
-    $elements = [];
-    $elements['#access'] = ['support_agent', 'administrator'];
-    $elements['#title'] = ['Support Agent Widget'];
-    $elements['support_agent_widget_title'] = [
+    //$element = [];
+    $element['#title'] = ['Support Agent Widget'];
+    $element['support_agent_widget_title'] = [
       '#type' => 'markup',
       '#title' => t('Support Agent Widget'),
       '#title_display' => 'invisible',
       '#markup' => '<h2>Customer Service Use Only</h2>',
     ];
-    $elements['employee_email'] = [
+    $element['employee_email'] = [
       '#type' => 'textfield',
       '#title' => t('Employee Email'),
       '#id' => 'employee_email',
       '#value' => $currentUserName . ' <[' . $currentUserEmail . ']>',
     ];
-    $elements['zendesk_request_number'] = [
+    $element['zendesk_request_number'] = [
       '#type' => 'number',
       '#title' => t('Zendesk Request Number'),
       '#id' => 'zendesk_request_number',
       '#description' => 'If you are completing this webform on behalf of a community member, please enter the Zendesk request number of the request created to track the interaction. In addition to creating a new request for this report, the existing interaction request will be updated and linked.',
     ];
-    $elements['test_submission'] = [
+    $element['test_submission'] = [
       '#type' => 'checkbox',
       '#title' => t('Test Submission'),
       '#id' => 'test_submission',
       '#description' => 'For administrtor use only. Handlers can be configured to process form submissions differently based on whether this box is checked.',
     ];
 
-    return $elements;
+    return $element;
   }
 }
