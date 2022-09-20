@@ -1,7 +1,9 @@
 uuid: ac9ec980-755d-46ac-af77-1701bb9a2b18
 langcode: en
 status: open
-dependencies: {  }
+dependencies:
+  module:
+    - portland_zendesk
 weight: 0
 open: null
 close: null
@@ -57,6 +59,14 @@ elements: |-
   support_agent_use_only:
     '#type': portland_support_agent_widget
     '#title': 'Support Agent Use Only'
+    '#access_create_roles':
+      - authenticated
+    '#access_update_roles':
+      - support_agent
+      - administrator
+    '#access_view_roles':
+      - support_agent
+      - administrator
 css: ''
 javascript: ''
 settings:
@@ -258,7 +268,10 @@ handlers:
     label: 'Submit to 311 by email'
     notes: ''
     status: true
-    conditions: {  }
+    conditions:
+      disabled:
+        ':input[name="support_agent_use_only[test_submission]"]':
+          checked: true
     weight: 0
     settings:
       states:
@@ -277,7 +290,7 @@ handlers:
       sender_mail: ''
       sender_name: ''
       subject: _default
-      body: '<p>[webform_submission:values:html]</p>'
+      body: "<p>[webform_submission:values:html]<br />\r\n<br />\r\nWebform ID: 3_1_1_regional_testing</p>"
       excluded_elements: {  }
       ignore_access: false
       exclude_empty: true
@@ -289,4 +302,27 @@ handlers:
       theme_name: ''
       parameters: {  }
       debug: false
+  zendesk_update_customer_support_interaction_request:
+    id: zendesk_update_ticket
+    handler_id: zendesk_update_customer_support_interaction_request
+    label: 'Zendesk update customer support interaction request'
+    notes: 'Updates an existing Zendesk "interaction request" and links it to the issue request. Enabled if an Zendesk Request Number value has been provided.'
+    status: true
+    conditions:
+      enabled:
+        ':input[name="support_agent_use_only[zendesk_request_number]"]':
+          filled: true
+    weight: 0
+    settings:
+      comment: "<h1>3-1-1 Regional Testing Report</h1>\r\n<p><b>Linked Issue Request: <a href=\"https://portlandoregon.zendesk.com/agent/tickets/[webform_submission:values:report_ticket_id]\">[webform_submission:values:report_ticket_id]</a></b></p>\r\n\r\n[webform_submission:values:html]\r\n\r\n"
+      comment_private: 1
+      tags: ''
+      priority: ''
+      status: ''
+      group_id: ''
+      assignee_id: ''
+      type: ''
+      collaborators: ''
+      custom_fields: '8692493739543: ''[webform_submission:values:report_ticket_id]'''
+      ticket_id_field: zendesk_request_number
 variants: {  }

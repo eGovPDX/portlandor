@@ -66,6 +66,9 @@ class PortlandSupportAgentWidget extends WebformCompositeBase {
       '#title' => t('Test Submission'),
       '#id' => 'test_submission',
       '#description' => 'For administrtor use only. Handlers can be configured to process form submissions differently based on whether this box is checked.',
+      '#access_create_roles' => ['administrator'],
+      '#access_update_roles' => ['administrator'],
+      '#access_view_roles' => ['administrator'],
     ];
 
     return $element;
