@@ -14,9 +14,9 @@ use Drupal\portland_zendesk\Client\ZendeskClient;
  *
  * @WebformHandler(
  *   id = "ticket_validation",
- *   label = @Translation("Zendesk ticket validator"),
+ *   label = @Translation("Zendesk request validator"),
  *   category = @Translation("Validation"),
- *   description = @Translation("Uses the Zendesk API to validate the ticket key."),
+ *   description = @Translation("Uses the Zendesk API to validate the request key."),
  *   cardinality = \Drupal\webform\Plugin\WebformHandlerInterface::CARDINALITY_SINGLE,
  *   results = \Drupal\webform\Plugin\WebformHandlerInterface::RESULTS_PROCESSED,
  *   submission = \Drupal\webform\Plugin\WebformHandlerInterface::SUBMISSION_OPTIONAL,
@@ -64,12 +64,12 @@ class TicketValidationWebformHandler extends WebformHandlerBase {
     try {
       $ticket = $client->tickets()->find($ticket_id)->ticket;
     } catch (\Exception $e) {
-      $formState->setErrorByName('original_submission_key', $this->t('An error occurred while trying to access the specified ticket (' . $ticket_id . '). Please contact a site administrator.'));
+      $formState->setErrorByName('original_submission_key', $this->t('An error occurred while trying to access the specified request in Zendesk (' . $ticket_id . '). Please contact a site administrator.'));
       return;
     }
 
     if (!$ticket) {
-      $formState->setErrorByName('report_ticket_id', $this->t('An error occurred while trying to access the specified ticket (' . $ticket_id . '). Please contact a site administrator.'));
+      $formState->setErrorByName('report_ticket_id', $this->t('An error occurred while trying to access the specified request in Zendesk (' . $ticket_id . '). Please contact a site administrator.'));
     }
 
     $custom_fields = [];
