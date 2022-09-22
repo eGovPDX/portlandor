@@ -51,6 +51,13 @@
           SelectionOnly:  "selection-only",
           GeoFence:       "geofence"
         }
+        const TICKET_STATUS = {
+          New:            "new",
+          Open:           "open",
+          Referred:       "referred",
+          Solved:         "solved",
+          Closed:         "closed"
+        }
 
         const GEOLOCATION_CACHE_MILLISECONDS = 0;
   
@@ -472,10 +479,14 @@
           var isInteractive = true;
 
           primaryLayer = L.geoJson(response, {
+            coordsToLatLng: function (coords) {
+              return new L.LatLng(coords[1], coords[0]);
+            },
             pointToLayer: function(feature, latlng) {
-              if (feature.properties.hasOpenIncident) {
+              if (feature.properties.hasOpenIncident || 
+                  (primaryLayerType == PRIMARY_LAYER_TYPE.Incident && (feature.properties.status == TICKET_STATUS.New || feature.properties.status == TICKET_STATUS.Open))) {
                 marker = incidentMarker ;
-              } else if (feature.properties.hasSolvedIncident) {
+              } else if (feature.properties.hasSolvedIncident || (primaryLayerType == PRIMARY_LAYER_TYPE.Incident && feature.properties.status == TICKET_STATUS.Solved)) {
                 marker = solvedMarker;
               } else {
                 marker = standardMarker;
@@ -494,9 +505,9 @@
             },
             interactive:        isInteractive
           });
-          if (zoom >= featureLayerVisibleZoom) {
+          //if (zoom >= featureLayerVisibleZoom) {
             primaryLayer.addTo(map);
-          }
+          //}
         }
 
         function initIncidentsLayer(response, layer) {
