@@ -156,7 +156,7 @@
           map.on('locationfound', handleLocationFound);
 
           // only allow map clicks if primary layer behavior is not "selection." if it is, only asset markers can be clicked to select a locaiton.
-          if (primaryLayerBehavior != "selection") { map.on('click', handleMapClick); }
+          if (primaryLayerBehavior != PRIMARY_LAYER_BEHAVIOR.SelectionOnly) { map.on('click', handleMapClick); }
 
           // set up zoomend handler; we only want to show the primary features/assets layer when zoomed in
           // so that the map isn't too crowded with markers.
@@ -590,13 +590,18 @@
         function generatePopupContent(feature) {
           var name = feature.properties.name ? feature.properties.name : "Feature";
           var detail = feature.properties.detail ? feature.properties.detail : "";
+          var incidentDetail = feature.properties.incidentDetail ? feature.properties.incidentDetail : "";
+
+          if (feature.properties.incidentDetail) {
+            var test = 1;
+          }
 
           var message = "";
           if (feature.properties.status) {
             message = feature.properties.status == "open" || feature.properties.status == "new" ? OPEN_ISSUE_MESSAGE : SOLVED_ISSUE_MESSAGE;
             message = "<p><em>" + message + "</em></p>";
           }
-          return `<p><b>${name}</b></p>${detail}${message}`;
+          return `<p><b>${name}</b></p>${detail}${incidentDetail}${message}`;
         }
   
         // EVENT HANDLERS ///////////////////////////////
@@ -613,8 +618,8 @@
 
           // check if the marker is a feature with an incident. if so, use it for location selection.
           // but don't allow markers with open, non-solved incidents to be selected.
-          if ((primaryLayerBehavior == "selection" || primaryLayerBehavior == "selection-only") && 
-              (!marker.target.feature.properties.hasOpenIncident || marker.target.feature.properties.status == "solved")) {
+          if ((primaryLayerBehavior == PRIMARY_LAYER_BEHAVIOR.Selection || primaryLayerBehavior == PRIMARY_LAYER_BEHAVIOR.SelectionOnly) && 
+              (!marker.target.feature.properties.hasOpenIncident || marker.target.feature.properties.status == TICKET_STATUS.Solved)) {
 
             // store original marker icon, so we can swap back
             marker.originalIcon = marker.target.options.icon;
@@ -629,16 +634,17 @@
             // set location form fields with asset data
             selectAsset(marker);
 
-            if (marker.target.feature.properties.status != "solved") {
-              reverseGeolocate(marker.latlng);
-            }
+            // don't need to reverse geolocate if this is an asset...or do we?
+            // if (marker.target.feature.properties.status != "solved") {
+            //   reverseGeolocate(marker.latlng);
+            // }
 
           } else {
             $('#place_name').val('');
             $('#location_lat').val('');
             $('#location_lon').val('');
 
-            if (primaryLayerBehavior == "selection") {
+            if (primaryLayerBehavior == PRIMARY_LAYER_BEHAVIOR.Selection) {
               reverseGeolocate(marker.latlng);
             }
           }
@@ -703,6 +709,9 @@
           // and perform a reverse lookup. there are some cases where we may want to 
           // perform additional actions. for example, if location type = park, we also
           // need to do a reverse parks lookup and adjust the park selector accordingly.
+
+          // if primary layer behavior is selection-only, don't allow map clicks
+          if (primaryLayerBehavior == PRIMARY_LAYER_BEHAVIOR.SelectionOnly) return;
   
           // clear place name and park selector fields; they will get reset if appropriate after the click.
           $('.place-name').val("");
@@ -878,7 +887,7 @@
 
           // set new layer
           var latlon = [lat, lon];
-          if (primaryLayerBehavior != "selection") {
+          if (primaryLayerBehavior != PRIMARY_LAYER_BEHAVIOR.SelectionOnly) {
             addressMarker = L.marker(latlon, { icon: defaultSelectedMarkerIcon, draggable: true, riseOnHover: true, iconSize: DEFAULT_ICON_SIZE  }).addTo(map);
             // if address marker is moved, we want to capture the new coordinates
             addressMarker.on('dragend', function (e) {
@@ -998,7 +1007,7 @@
   
         function processReverseLocationData(data, lat, lng) {
           // don't set marker and zoom if primary layer behavior is "selection"
-          if (primaryLayerBehavior != "selection") {
+          if (primaryLayerBehavior != PRIMARY_LAYER_BEHAVIOR.SelectionOnly) {
             setMarkerAndZoom(lat, lng, true, false, DEFAULT_ZOOM_CLICK);
           }
           var street = data.address.Street;
