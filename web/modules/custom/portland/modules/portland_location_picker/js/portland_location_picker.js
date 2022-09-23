@@ -505,9 +505,9 @@
             },
             interactive:        isInteractive
           });
-          //if (zoom >= featureLayerVisibleZoom) {
+          if (zoom >= featureLayerVisibleZoom) {
             primaryLayer.addTo(map);
-          //}
+          }
         }
 
         function initIncidentsLayer(response, layer) {
