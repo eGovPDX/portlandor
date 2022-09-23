@@ -1,7 +1,9 @@
 uuid: 141cf399-e830-4d0e-b32f-67d97f97ea12
 langcode: en
 status: open
-dependencies: {  }
+dependencies:
+  module:
+    - portland_zendesk
 weight: 0
 open: null
 close: null
@@ -13,9 +15,30 @@ title: 'Location Widget Test - Open Requests'
 description: ''
 category: Test
 elements: |-
+  intro_text:
+    '#type': webform_markup
+    '#markup': |-
+      This webform is for testing the Location Picker widget with open/solved Zendesk requests in the primary layer (visible after zooming in 4 levels from default). When submitted, it creates a request in the Developer Test group in Zendesk.&nbsp;<br />
+      <br />
+      <strong>Configuration:</strong><br />
+      <code>primary_layer_source: /api/tickets/test-graffiti<br />
+      primary_layer_behavior: informational<br />
+      primary_layer_type: incident<br />
+      feature_layer_visible_zoom: 15 </code> &nbsp;<br />
+      <br />
+      <strong>Regression Test:</strong>
+      <ul>
+      	<li>Verify new, open, and solved tickets are displayed on the map</li>
+      	<li>Verify a new location can be selected on the map and submitted in the report</li>
+      	<li>Verify a new request is created in Zendesk with correct location information</li>
+      </ul>
+      <p>
+        &nbsp;
+      </p>
   report_location:
     '#type': portland_location_picker
     '#title': 'Report Location'
+    '#title_display': before
     '#location_type__access': false
     '#location_park_container__access': false
     '#waterway_instructions__access': false
@@ -23,7 +46,18 @@ elements: |-
     '#primary_layer_source': /api/tickets/test-graffiti
     '#primary_layer_behavior': informational
     '#primary_layer_type': incident
-    '#feature_layer_visible_zoom': 12
+    '#feature_layer_visible_zoom': 15
+  contact_name:
+    '#type': textfield
+    '#title': 'Contact Name'
+  contact_email:
+    '#type': textfield
+    '#title': 'Contact Email'
+    '#input_mask': '''alias'': ''email'''
+    '#required': true
+  report_ticket_id:
+    '#type': hidden
+    '#title': 'Report Ticket ID'
 css: ''
 javascript: ''
 settings:
@@ -214,5 +248,27 @@ access:
       - administrator
     users: {  }
     permissions: {  }
-handlers: {  }
+handlers:
+  zendesk_new_test_request:
+    id: zendesk
+    handler_id: zendesk_new_test_request
+    label: 'Zendesk new test request'
+    notes: 'Creates a request in Zendesk in the Developer Test group using test data for testing.'
+    status: true
+    conditions: {  }
+    weight: 0
+    settings:
+      requester_name: contact_name
+      requester_email: contact_email
+      subject: 'Location Widget Test'
+      comment: '[webform_submission:values]'
+      tags: 'drupal webform test'
+      priority: normal
+      status: new
+      group_id: '4549352062487'
+      assignee_id: ''
+      type: incident
+      collaborators: ''
+      custom_fields: "6353388345367: 'location_widget_test_open_reques'\r\n5581480390679: '[webform_submission:values:report_location:location_lat]'\r\n5581490332439: '[webform_submission:values:report_location:location_lon]'\r\n1500012743961: '[webform_submission:values:report_location:location_address]'\r\n1500013095781: '[webform_submission:uuid]'"
+      ticket_id_field: report_ticket_id
 variants: {  }
