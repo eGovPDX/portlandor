@@ -7,30 +7,34 @@ patch the original.
 
 ### Agent Use Only blocks in webforms
 
-Any webform that 311 agents might complete on behalf of community members has an Agent Use Only block consisting
-of two fields: Agent Email and Agent Ticket Number. The logged in agent's name and email address are automatically
-inserted into the Agent Email field. If there is an associated "interaction ticket" to track the agent's interaction
-with the community member, that ticket number is inserted in the other field when completing the form in order to
-create the "issue ticket." The issue ticket is typcially created using the ZendeskHandler custom webform handler. 
-Each form with a AUO block also has a ZendeskUpdateHandler that updates the initial interaction ticket to link
+Any webform that 311 agents might complete on behalf of community members has a Customer Service block consisting
+of two fields: Employee Email and Zendesk Request Number. The logged in agent's name and email address are automatically
+inserted into the Agent Email field. If there is an associated "interaction request" to track the agent's interaction
+with the community member, that request number is inserted in the other field when completing the form in order to
+create the "issue request." The issue request is typcially created using the ZendeskHandler custom webform handler. 
+Each form with a AUO block also has a ZendeskUpdateHandler that updates the initial interaction request to link
 the two together. This is done by chaining the handlers as described below.
 
 The webform Zendesk API Test is maintained as a template for how this functionality should be configured.
 
+NOTE: The terms "ticket" and "request" have the same meaning in Portland.gov and may be used interchangeably in contexts
+that will not be seen by community members. However, all public-facing verbiage should refer to tickets as "requests," 
+and avoid use of the term "agent." 
+
 ### Chaining handlers
 
 It's possible to chain together an instance of the ZendeskHandler and ZendeskUpdateHandler in order
-to use the new ticket number from the first handler as a token or custom field value in the second handler.
-To accomplish this, the field in the first ZendeskHandler that captures the new ticket number must be
+to use the new request number from the first handler as a token or custom field value in the second handler.
+To accomplish this, the field in the first ZendeskHandler that captures the new request number must be
 named report_ticket_id. If so, the token [webform_submission:values:report_ticket_id] will be avaialble to 
 any subsequent handlers for use in comments, custom fields, etc.
 
 Portland.gov is currently using this functionality to link interaction and issue tickets when
 a 311 agent completes a webform on behalf of a community member. The workflow is as follows:
 
-1. Agent creates an "interaction ticket" to track the initial interaction with the community member (phone, in person, email, etc).
-2. Agent completes and submits the webform, and includes the ticket number from the interaction ticket in the Agent Ticket Number field.
-3. Since the Zendesk submissions occur during the validation phase, so that API failures are reported as validation errors, the ticket number of the ticket created by the initial ZendeskHandler call has to be manually inserted into the $webform_submission object in order to make it available as a token in subsequent handlers.
+1. Agent creates an "interaction request" to track the initial interaction with the community member (phone, in person, email, etc).
+2. Agent completes and submits the webform, and includes the request number from the interaction request in the Zendesk Request Number field.
+3. Since the Zendesk submissions occur during the validation phase, so that API failures are reported as validation errors, the request number of the request created by the initial ZendeskHandler call has to be manually inserted into the $webform_submission object in order to make it available as a token in subsequent handlers.
 
 
 
@@ -70,11 +74,11 @@ Please see the following link for instructions on [retrieving your Zendesk API K
 ### 3) Add a Zendesk Handler to a Webform
 
 - Navigate to the desired webform's ***Settings -> Email/Handlers*** page, and click **Add Handler**.
-- Specify settings for the Zendesk ticket to be created.
+- Specify settings for the Zendesk request to be created.
 
 ### 4) Test
 
-It is recommend to submit a test submission to confirm your settings. If the ticket is created in Zendesk as desired, 
+It is recommend to submit a test submission to confirm your settings. If the request is created in Zendesk as desired, 
 congrats! You've successfully setup up the handler integration.
 
 ## Additional Notes

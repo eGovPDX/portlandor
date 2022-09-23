@@ -64,7 +64,7 @@ elements: |-
       '#verify_button_text': Locate
       '#feature_layer_visible_zoom': 12
     report_issue:
-      '#type': radios
+      '#type': webform_radios_other
       '#title': 'What is the problem with the trash can?'
       '#options':
         Overflowing: Overflowing
@@ -72,6 +72,9 @@ elements: |-
         Damaged: Damaged
         Graffiti: Graffiti
         'Door is open': 'Door is open'
+        'Trash dumped near can': 'Trash dumped near can'
+      '#other__option_label': 'Something else...'
+      '#other__placeholder': 'Please describe...'
       '#required': true
   section_contact:
     '#type': webform_section
@@ -91,57 +94,17 @@ elements: |-
     public_records_statement_required:
       '#type': webform_markup
       '#markup': 'The information you provide in this form is considered a public record under Oregon&rsquo;s <a data-renderer-mark="true" href="https://www.doj.state.or.us/oregon-department-of-justice/public-records/attorney-generals-public-records-and-meetings-manual/i-public-records/#:~:text=Under%20Oregon''s%20Public%20Records%20Law,committee%20of%20the%20Legislative%20Assembly" title="https://www.doj.state.or.us/oregon-department-of-justice/public-records/attorney-generals-public-records-and-meetings-manual/i-public-records/#:~:text=Under%20Oregon''s%20Public%20Records%20Law,committee%20of%20the%20Legislative%20Assembly">Public Records Law</a> and is available to the public on request.'
-  section_agent_use_only:
-    '#type': webform_section
-    '#title': 'Agent Use Only'
-    '#attributes':
-      style: 'padding: 15px; background-color: #cccccc;'
+  support_agent_use_only:
+    '#type': portland_support_agent_widget
+    '#title': 'Support Agent Use Only'
     '#access_create_roles':
-      - administrator
-      - support_agent
+      - authenticated
     '#access_update_roles':
-      - administrator
       - support_agent
+      - administrator
     '#access_view_roles':
-      - administrator
       - support_agent
-    agent_email:
-      '#type': textfield
-      '#title': 'Agent Email'
-      '#default_value': '[current-user:display-name] <[current-user:mail]>'
-      '#access_create_roles':
-        - administrator
-        - support_agent
-      '#access_update_roles':
-        - administrator
-        - support_agent
-      '#access_view_roles':
-        - administrator
-        - support_agent
-    agent_ticket_number:
-      '#type': number
-      '#title': 'Agent Ticket Number'
-      '#description': 'If you are completing this webform on behalf of a community member, please enter the Zendesk ticket number of the ticket created to track the interaction. In addition to creating a new ticket for this report, the existing interaction ticket will be updated and linked.'
-      '#min': 1000
-      '#max': 999999999
-    agent_summary:
-      '#type': webform_computed_twig
-      '#title': 'Agent Summary'
-      '#display_on': none
-      '#template': |-
-        {% if uid %}<p>Agent email: {{ data.agent_email }}</p>{% endif %}
-        {% if data.agent_ticket_number %}<p>Agent ticket: <a href="https://portlandoregon.zendesk.com/agent/tickets/{{ data.agent_ticket_number }}">{{ data.agent_ticket_number }}</a></p>{% endif %}
-      '#store': true
-    test_submission:
-      '#type': checkbox
-      '#title': 'Test Submission'
-      '#description': 'Checking this box will assign the associated ticket to the Developer Test group in Zendesk.'
-      '#access_create_roles':
-        - administrator
-      '#access_update_roles':
-        - administrator
-      '#access_view_roles':
-        - administrator
+      - administrator
   report_ticket_id:
     '#type': hidden
     '#title': 'Support Ticket ID'
@@ -252,8 +215,8 @@ settings:
   draft_pending_multiple_message: ''
   confirmation_type: page
   confirmation_url: ''
-  confirmation_title: ''
-  confirmation_message: ''
+  confirmation_title: 'Your report has been received'
+  confirmation_message: 'Thank you for submitting a report about a public trash can. Your report has been received and will be addressed as soon as possible.&nbsp;'
   confirmation_attributes: {  }
   confirmation_back: true
   confirmation_back_label: ''
@@ -353,34 +316,37 @@ handlers:
     notes: ''
     status: true
     conditions:
-      enabled:
-        ':input[name="test_submission"]':
-          unchecked: true
+      disabled:
+        ':input[name="support_agent_use_only[test_submission]"]':
+          checked: true
     weight: -50
     settings:
       requester_name: contact_name
       requester_email: contact_email
       subject: 'Trash can report: [webform_submission:values:report_location:location_asset_id] [webform_submission:values:report_issue]'
-      comment: "<h3>Report</h3>\r\n<p><strong>Lat/Lon:</strong> <a href=\"https://www.google.com/maps/place/[webform_submission:values:report_location:location_lat],[webform_submission:values:report_location:location_lon]\">[webform_submission:values:report_location:location_lat],[webform_submission:values:report_location:location_lon]</a><br>\r\n<strong>Approximate address:</strong> <a href=\"https://www.google.com/maps/place/[webform_submission:values:report_location:location_address]\">[webform_submission:values:report_location:location_address]</a><br />\r\n<strong>Asset ID:</strong> [webform_submission:values:report_location:location_asset_id]<br><strong>Problem:</strong> [webform_submission:values:report_issue]</p>\r\n\r\n<h3>Contact</h3>\r\n<p><strong>Name:</strong> [webform_submission:values:contact_name]<br>\r\n<strong>Email:</strong> [webform_submission:values:contact_email]</p>\r\n\r\n<h3>Agent Details</h3>\r\n[webform_submission:values:agent_summary]"
+      comment: "<h3>Report</h3>\r\n<p><strong>Lat/Lon:</strong> <a href=\"https://www.google.com/maps/place/[webform_submission:values:report_location:location_lat],[webform_submission:values:report_location:location_lon]\">[webform_submission:values:report_location:location_lat],[webform_submission:values:report_location:location_lon]</a><br>\r\n<strong>Approximate address:</strong> <a href=\"https://www.google.com/maps/place/[webform_submission:values:report_location:location_address]\">[webform_submission:values:report_location:location_address]</a><br />\r\n<strong>Asset ID:</strong> [webform_submission:values:report_location:location_asset_id]<br><strong>Problem:</strong> [webform_submission:values:report_issue]</p>\r\n\r\n<h3>Contact</h3>\r\n<p><strong>Name:</strong> [webform_submission:values:contact_name]<br>\r\n<strong>Email:</strong> [webform_submission:values:contact_email]</p>\r\n\r\n<h3>Customer Support Details</h3>\r\n[webform_submission:values:support_agent_use_only]"
       tags: 'drupal webform trash'
       priority: normal
       status: new
       group_id: '4549352062487'
       assignee_id: ''
-      type: problem
+      type: incident
       collaborators: ''
       custom_fields: "1500012743961: '[webform_submission:values:report_location:location_address]'\r\n1500012801542: '[webform_submission:values:report_location:location_asset_id]'\r\n1500013095781: '[webform_submission:uuid]'\r\n5581480390679: '[webform_submission:values:report_location:location_lat]'\r\n5581490332439: '[webform_submission:values:report_location:location_lon]'\r\n1500012743981: '[webform_submission:values:report_issue]'\r\n6353388345367: 'report_trash_can'"
       ticket_id_field: report_ticket_id
   zendesk_update_interaction_ticket:
     id: zendesk_update_ticket
     handler_id: zendesk_update_interaction_ticket
-    label: 'Zendesk update interaction ticket'
-    notes: 'Updates an existing Zendesk "interaction ticket" and links it to the issue ticket. Enabled if an Agent Ticket Number value has been provided.'
+    label: 'Zendesk update customer support interaction request'
+    notes: 'Updates an existing Zendesk "interaction request" and links it to the issue request. Enabled if an Zendesk Request Number value has been provided.'
     status: true
-    conditions: {  }
+    conditions:
+      enabled:
+        ':input[name="support_agent_use_only[zendesk_request_number]"]':
+          filled: true
     weight: -48
     settings:
-      comment: "<h1>Problem with a Public Trash Can</h1>\r\n<p><b>Linked Issue Ticket: <a href=\"https://portlandoregon.zendesk.com/agent/tickets/[webform_submission:values:report_ticket_id]\">[webform_submission:values:report_ticket_id]</a></b></p>\r\n\r\n[webform_submission:values:html]\r\n\r\n"
+      comment: "<h1>Problem with a Public Trash Can</h1>\r\n<p><b>Linked Issue Request: <a href=\"https://portlandoregon.zendesk.com/agent/tickets/[webform_submission:values:report_ticket_id]\">[webform_submission:values:report_ticket_id]</a></b></p>\r\n\r\n[webform_submission:values:html]\r\n\r\n"
       comment_private: 1
       tags: ''
       priority: ''
@@ -390,7 +356,7 @@ handlers:
       type: ''
       collaborators: ''
       custom_fields: '8692493739543: ''[webform_submission:values:report_ticket_id]'''
-      ticket_id_field: agent_ticket_number
+      ticket_id_field: zendesk_request_number
   zendesk_new_ticket_developer_testing:
     id: zendesk
     handler_id: zendesk_new_ticket_developer_testing
@@ -399,20 +365,20 @@ handlers:
     status: true
     conditions:
       enabled:
-        ':input[name="test_submission"]':
+        ':input[name="support_agent_use_only[test_submission]"]':
           checked: true
     weight: -49
     settings:
       requester_name: contact_name
       requester_email: contact_email
       subject: 'Trash can report: [webform_submission:values:report_location:location_asset_id] [webform_submission:values:report_issue]'
-      comment: "<h3>Report</h3>\r\n<p><strong>Lat/Lon:</strong> <a href=\"https://www.google.com/maps/place/[webform_submission:values:report_location:location_lat],[webform_submission:values:report_location:location_lon]\">[webform_submission:values:report_location:location_lat],[webform_submission:values:report_location:location_lon]</a><br>\r\n<strong>Approximate address:</strong> <a href=\"https://www.google.com/maps/place/[webform_submission:values:report_location:location_address]\">[webform_submission:values:report_location:location_address]</a><br />\r\n<strong>Asset ID:</strong> [webform_submission:values:report_location:location_asset_id]<br><strong>Problem:</strong> [webform_submission:values:report_issue]</p>\r\n\r\n<h3>Contact</h3>\r\n<p><strong>Name:</strong> [webform_submission:values:contact_name]<br>\r\n<strong>Email:</strong> [webform_submission:values:contact_email]</p>\r\n\r\n<h3>Agent Details</h3>\r\n[webform_submission:values:agent_summary]"
+      comment: "<h3>Report</h3>\r\n<p><strong>Lat/Lon:</strong> <a href=\"https://www.google.com/maps/place/[webform_submission:values:report_location:location_lat],[webform_submission:values:report_location:location_lon]\">[webform_submission:values:report_location:location_lat],[webform_submission:values:report_location:location_lon]</a><br>\r\n<strong>Approximate address:</strong> <a href=\"https://www.google.com/maps/place/[webform_submission:values:report_location:location_address]\">[webform_submission:values:report_location:location_address]</a><br />\r\n<strong>Asset ID:</strong> [webform_submission:values:report_location:location_asset_id]<br><strong>Problem:</strong> [webform_submission:values:report_issue]</p>\r\n\r\n<h3>Contact</h3>\r\n<p><strong>Name:</strong> [webform_submission:values:contact_name]<br>\r\n<strong>Email:</strong> [webform_submission:values:contact_email]</p>\r\n\r\n<h3>Customer Support Details</h3>\r\n[webform_submission:values:support_agent_use_only]"
       tags: 'drupal webform trash'
       priority: normal
       status: new
       group_id: '4549352062487'
       assignee_id: ''
-      type: problem
+      type: incident
       collaborators: ''
       custom_fields: "1500012743961: '[webform_submission:values:report_location:location_address]'\r\n1500012801542: '[webform_submission:values:report_location:location_asset_id]'\r\n1500013095781: '[webform_submission:uuid]'\r\n5581480390679: '[webform_submission:values:report_location:location_lat]'\r\n5581490332439: '[webform_submission:values:report_location:location_lon]'\r\n1500012743981: '[webform_submission:values:report_issue]'\r\n6353388345367: 'report_trash_can'"
       ticket_id_field: report_ticket_id
