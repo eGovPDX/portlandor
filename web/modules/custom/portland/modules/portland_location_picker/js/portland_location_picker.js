@@ -502,6 +502,8 @@
               popupOptions = { maxWidth: 250 };
               layer.bindPopup(generatePopupContent(feature), popupOptions);
               layer.on('click', handleMarkerClick);
+              //layer.on('mouseover', handleMarkerClick);
+              layer.bindToolTip("This is the region");
             },
             interactive:        isInteractive
           });
@@ -712,6 +714,8 @@
 
           // if primary layer behavior is selection-only, don't allow map clicks
           if (primaryLayerBehavior == PRIMARY_LAYER_BEHAVIOR.SelectionOnly) return;
+
+          resetClickedMarker();
   
           // clear place name and park selector fields; they will get reset if appropriate after the click.
           $('.place-name').val("");
