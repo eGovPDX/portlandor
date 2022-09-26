@@ -1,8 +1,9 @@
 
-An opinionated **Link** with emphasis. 
+An opinionated **Link** with emphasis.
 
 ## Props
 
+- `ariaLabel`: string - A custom ARIA label for the link, used if the link text would not make sense to a screen reader
 - `background`: boolean - false (default)
 - `standalone`: boolean - false (default)
 - `icon`: object { name: string, size: string, fontAwesome: boolean, brand: boolean }
