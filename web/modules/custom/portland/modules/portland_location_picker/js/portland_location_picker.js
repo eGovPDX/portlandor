@@ -84,6 +84,7 @@
         var baseLayer;
         var aerialLayer;
         var isPark;
+        var useParks;
         var shouldRecenterPark = true;
         var currentView = "base";
         var baseLayer = L.tileLayer('https://www.portlandmaps.com/arcgis/rest/services/Public/Basemap_Color_Complete/MapServer/tile/{z}/{y}/{x}', { attribution: "PortlandMaps ESRI" });
@@ -129,6 +130,11 @@
           if ($('.portland-location-picker--wrapper').length > 1) {
             console.log("WARNING: More than one location widget detected. Only one location widget per webform is currently supported. Adding multiples will result in unpredictable behavior.");
           }
+
+          // widget can be configured to use the park selector features or not.
+          // if not, we want to disable PortlandMaps parks lookups. this flag
+          // will be used to control that.
+          useParks = $('select.location-park').length > 0 || $('input#edit-report-location-location-type-park').length > 0;
 
           // // if select-asset behavior, set label for selected asset text. the term "asset" can be overridden in the widget config.
           // // Example selected asset text: "Selected asset: Trash Can 57110"
@@ -214,157 +220,20 @@
           });
   
           // set up parks select list /////////////////////////
-          $('#location_park').after('<span class="verified-checkmark park invisible" title="Location is verified!">✓</span>');
-          $('#location_park').select2({
-            escapeMarkup: function (markup) { return markup; },
-            language: { noResults: function() { return 'No results found. Please try again, or select one of the other property type options above.'; } }
-          });
-          $('#location_park').on("change", function() {
-              var park = $(this).val();
-              if (park) { locateParkFromSelector(park); }
-          });
+          if (useParks) {
+            $('#location_park').after('<span class="verified-checkmark park invisible" title="Location is verified!">✓</span>');
+            $('#location_park').select2({
+              escapeMarkup: function (markup) { return markup; },
+              language: { noResults: function() { return 'No results found. Please try again, or select one of the other property type options above.'; } }
+            });
+            $('#location_park').on("change", function() {
+                var park = $(this).val();
+                if (park) { locateParkFromSelector(park); }
+            });
+          }
 
           // INITIALIZE GEOJSON LAYERS //////////
           processGeoJsonData();
-
-          if (primaryLayerSource && false) {
-
-            var markerIcon = primaryMarkerUrl ? primaryMarkerUrl : DEFAULT_FEATURE_ICON_URL;
-            primaryLayer = L.geoJson();
-    
-            // get primary layer data
-            $.ajax({
-              url: primaryLayerSource, success: function (primaryResponse) {
-
-                primaryFeatures = primaryResponse.features;
-                assetCount = primaryFeatures.length;
-                console.log(assetCount + " assets found");
-
-                if (incidentsLayerSource) {
-                  // there's an incident (tickets) layer. we'll need to retrieve it, and then do a double
-                  // loop to see if any of the incident asset_id values match the asset id values. if so,
-                  // we use the incident marker if provided.
-                  $.ajax({
-                    url: incidentsLayerSource, success: function (incidentsResponse) {
-
-                      incidentsFeatures = incidentsResponse.features;
-                      incidentsLayer = L.geoJson();
-
-                      primaryLoop:
-                      for (var i = 0; i < primaryFeatures.length; i++) {
-
-                        var assetid;
-                        var ticketassetid;
-                        var feature = primaryFeatures[i];
-                        var classname = "";
-
-                        secondaryLoop:
-                        for (var j = 0; j < incidentsFeatures.length; j++) {
-                          markerIcon = primaryMarkerUrl;
-                          var incident = incidentsFeatures[j];
-                          assetid = feature.properties.id;
-                          ticketassetid = incident.properties.asset_id;
-
-                          // determine the marker icon to use. 
-                          if (assetid == ticketassetid) {
-                            classname = PRIMARY_LAYER_TYPE;
-                            feature.properties.status = incident.properties.status ? incident.properties.status : "";
-                            if (feature.properties.detail) {
-                              feature.properties.detail += incident.properties.detail;
-                            } else {
-                              feature.properties.detail = incident.properties.detail;
-                            }
-                            feature.properties.date_reported = incident.properties.date_reported;
-                            if (feature.properties.status == "open" || feature.properties.status == "new") {
-                              // only set hasOpenIncident if the status is open; this allows solved but recurred incident to be reproted
-                              feature.properties.hasOpenIncident = true;
-                            } else {
-                              classname += " solved"; 
-                              feature.properties.date_resolved = incident.properties.date_resolved;
-                            }
-                            if (incidentMarker) {
-                              markerIcon = incidentMarker;
-                            }
-                            break secondaryLoop;
-                          }
-                        }
-
-                        var newMarker = L.icon({
-                          iconUrl:      markerIcon,
-                          iconSize:     DEFAULT_ICON_SIZE, // size of the icon
-                          shadowSize:   [0, 0], // size of the shadow
-                          iconAnchor:   [13, 41], // point of the icon which will correspond to marker's location
-                          shadowAnchor: [0, 0],  // the same for the shadow
-                          popupAnchor:  [0, -41],
-                          className:    classname
-                        });
-
-                        addMarkerToMap(feature, newMarker);
-
-                      }
-                    }
-                  });
-                } else {
-
-                  
-                  if (primaryLayerType == "region") {
-
-                    for (var k = 0; k < primaryResponse.features.length; k++) {
-                      //primaryResponse.features[k].geometry.coordinates = L.GeoJSON.coordsToLatLngs(primaryResponse.features[k].geometry.coordinates[0]);
-                    }
-
-                    testPolygonLayer = L.geoJson(primaryResponse, {
-                      color: 'blue',
-                      interactive: false
-                    });
-
-                    testPolygonLayer.addTo(map);
-
-                    // for (var i = 0; i < primaryResponse.features.length; i++) {
-                    //   var newCoords = L.GeoJSON.coordsToLatLngs(primaryResponse.features[i].geometry.coordinates, 1, L.GeoJSON.coordsToLatLng);
-                    //   L.polygon(newCoords, {
-                    //     interactive: false,
-                    //     color: 'blue'
-                    //   }).addTo(primaryLayer);
-                    // }
-
-                  } else {
-                    if (primaryLayerType == "incident") {
-                      markerIcon = incidentMarker;
-                    }
-
-                    var newMarker = L.icon({
-                      iconUrl:      markerIcon,
-                      iconSize:     DEFAULT_ICON_SIZE, // size of the icon
-                      shadowSize:   [0, 0], // size of the shadow
-                      iconAnchor:   [13, 41], // point of the icon which will correspond to marker's location
-                      shadowAnchor: [0, 0],  // the same for the shadow
-                      popupAnchor:  [0, -41]
-                    });
-          
-                    for (var j = 0; j < primaryResponse.features.length; j++) {
-                      if (primaryLayerType == 'incident' && primaryResponse.features[j].properties.hasOwnProperty('status') && primaryResponse.features[j].properties.status == "solved") {
-                        var newSolvedMarker = L.icon({
-                          iconUrl:      markerIcon,
-                          iconSize:     DEFAULT_ICON_SIZE, // size of the icon
-                          shadowSize:   [0, 0], // size of the shadow
-                          iconAnchor:   [13, 41], // point of the icon which will correspond to marker's location
-                          shadowAnchor: [0, 0],  // the same for the shadow
-                          popupAnchor:  [0, -41],
-                          className:    "solved"
-                        });
-                        addMarkerToMap(primaryResponse.features[j], newSolvedMarker);
-                      } else {
-                        newMarker.className = "";
-                        addMarkerToMap(primaryResponse.features[j], newMarker);
-                      }
-                    }
-                  }
-                }
-              }
-            });
-            handleZoomEndShowGeoJsonLayer();
-          }
         }
 
         /**
@@ -415,9 +284,10 @@
 
                       // if incidents are in their own layer, initialize them
                       // this might be the case if the primary layer is not selection-only
-                      if (primaryLayerBehavior != "selection-only") {
-                        initIncidentsLayer(incidentsFeatures, incidentsLayer);
-                      }
+                      // TODO: do we need this?
+                      // if (primaryLayerBehavior != "selection-only") {
+                      //   initIncidentsLayer(incidentsFeatures, incidentsLayer);
+                      // }
                     }
                   });
                 } else {
@@ -499,11 +369,18 @@
               });
             },
             onEachFeature: function(feature, layer) {
-              popupOptions = { maxWidth: 250 };
-              layer.bindPopup(generatePopupContent(feature), popupOptions);
-              layer.on('click', handleMarkerClick);
-              //layer.on('mouseover', handleMarkerClick);
-              layer.bindToolTip("This is the region");
+
+              layer.bindPopup(generatePopupContent(feature), { maxWidth: 250, offset: L.point(0,0) });
+
+              // if region, use mouseover to show popup
+              if (primaryLayerType == PRIMARY_LAYER_TYPE.Region) {
+                layer.on("mouseover", function(e) { layer.openPopup(e.latlng); });
+                layer.on("mousemove", function(e) { layer.openPopup(e.latlng); });
+                layer.on("mouseout",  function(e) { layer.closePopup(); });
+                layer.on("click", handleMapClick);
+              } else {
+                layer.on("click", handleMarkerClick);
+              }
             },
             interactive:        isInteractive
           });
@@ -516,7 +393,8 @@
           // the incidents layer is only used if primary layer isn't a selection-only assets layer.
           // in other words, users should be able to drop an issue marker anywhere on the, not only
           // on assets.
-
+          // TODO: The use case for this is a primary layer that's informational only (not 
+          // selectable assets) plus an incidents layer. This use case isn't realized yet.
         }
 
         function initRegionsLayer(response, layer) {
@@ -525,39 +403,6 @@
             interactive: false
           }).addTo(map);
         }
-
-        // function addMarkerToMap(primaryFeature, addMarker, incidentFeature = null) {
-        //   var addToLayer = primaryFeature.properties.hasOpenIncident ? incidentsLayer : primaryLayer;
-
-        //   var newFeature = L.geoJSON(primaryFeature, {
-        //     coordsToLatLng: function (coords) {
-        //       return new L.LatLng(coords[1], coords[0]);
-        //     },
-        //     pointToLayer: function (feature, latlng) {
-        //       return L.marker(latlng, { icon: addMarker, iconSize: DEFAULT_ICON_SIZE, bubblingMouseEvents: false });
-        //     },
-        //     onEachFeature: function(feature, layer) {
-        //       //if (!disablePopup && feature.properties.status) {
-        //         popupOptions = { maxWidth: 250 };
-        //         // var name = feature.properties.name ? feature.properties.name : "Asset " + feature.properties.id;
-        //         // var incidentStatus = feature.properties.status ? "<p>Status: " + feature.properties.status + "</p>" : "";
-        //         // var dateReported = feature.properties.date_reported ? "<p>Date Reported: " + feature.properties.date_reported + "</p>" : "";
-        //         // //var message = feature.properties.status == "Open" ? OPEN_ISSUE_MESSAGE : SOLVED_ISSUE_MESSAGE;
-        //         // var description = feature.properties.custom_graffiti_description ? "<p>Description: " + feature.properties.custom_graffiti_description + "</p>" : "";
-        //         layer.bindPopup(generatePopupContent(feature), popupOptions);
-        //       //}
-        //     }
-        //   });
-
-        //   newFeature.on('click', handleMarkerClick);
-
-        //   // add click handler to marker if behavior is "selection"; marker click is used to set location.
-        //   // on click capture location lat/lon (hidden field), asset ID (hidden field), and asset title (address field)
-
-        //   // how do we dislay the selected location in the widget? Maybe asset title in the address field?
-          
-        //   newFeature.addTo(addToLayer);
-        // }
 
         function generateLocateControl() {
           return L.Control.extend({
@@ -636,10 +481,10 @@
             // set location form fields with asset data
             selectAsset(marker);
 
-            // don't need to reverse geolocate if this is an asset...or do we?
-            // if (marker.target.feature.properties.status != "solved") {
-            //   reverseGeolocate(marker.latlng);
-            // }
+            // need to call reverseGeolocate in order to capture nearest address
+            if (marker.target.feature.properties.status != "solved") {
+              reverseGeolocate(marker.latlng);
+            }
 
           } else {
             $('#place_name').val('');
@@ -902,9 +747,9 @@
               reverseGeolocate(latlng);
             });
           }
-          if (center) {
-            map.setView(latlon);
-          }
+          // if (center) {
+          //   map.setView(latlon);
+          // }
           if (zoom) {
             map.setView(latlon, zoomlevel);
           }
@@ -927,86 +772,88 @@
           // performs parks reverse geocoding using portlandmaps.com API.
           // the non-parks reverse geocoding is called within the success function,
           // chaining the two calls together.
-          var reverseParksGeocodeUrl = `https://www.portlandmaps.com/arcgis/rest/services/Public/Parks_Misc/MapServer/2/query?geometry=%7B%22x%22%3A${lng}%2C%22y%22%3A${lat}%2C%22spatialReference%22%3A%7B%22wkid%22%3A4326%7D%7D&geometryType=esriGeometryPoint&spacialRel=esriSpatialRelIntersects&returnGeometry=false&returnTrueCurves=false&returnIdsOnly=false&returnCountOnly=false&returnDistinctValues=false&f=pjson`;
-          $.ajax({
-            url: reverseParksGeocodeUrl, success: function (result) {
-              var jsonResult = JSON.parse(result);
-              var lat = latlng.lat;
-              var lng = latlng.lng;
-              
-              if (jsonResult.features && jsonResult.features.length > 0) {
-                // it's a park. process the data from portlandmaps and exit function.
-  
-                setLocationType("park");
-                setMarkerAndZoom(lat, lng, true, false, DEFAULT_ZOOM_CLICK);
-  
-                // attempt to set park selector. if not exact match, set selector
-                // value to "0" (Other/Not found)
-                var parkName = jsonResult.features[0].attributes.NAME;
-                $('#location_park option').filter(function () {
-                  return $(this).text() == parkName;
-                }).prop('selected', true);
-  
-                var parkId = $('#location_park').val();
-                if (!parkId) {
-                  // the park selector could not be set, most likely because there was not an exact name match
-                  // between Portland.gov and PortlandMaps.com. ideally, the names will be synchronized and
-                  // and this condition will never occur.
-                  $('#location_park').val("0"); // this value sets park selector to Other/Not found and keeps the map visible
-                }
-                $('#location_park').trigger('change');
-  
-                // set place name field and mark as verified
-                $('.place-name').val(parkName);
-                setVerified("park");
-  
-                // There shouldn't be an address for a park, so use N/A
-                $('.location-picker-address').val("N/A");
+          if (useParks) {
+            var reverseParksGeocodeUrl = `https://www.portlandmaps.com/arcgis/rest/services/Public/Parks_Misc/MapServer/2/query?geometry=%7B%22x%22%3A${lng}%2C%22y%22%3A${lat}%2C%22spatialReference%22%3A%7B%22wkid%22%3A4326%7D%7D&geometryType=esriGeometryPoint&spacialRel=esriSpatialRelIntersects&returnGeometry=false&returnTrueCurves=false&returnIdsOnly=false&returnCountOnly=false&returnDistinctValues=false&f=pjson`;
+            $.ajax({
+              url: reverseParksGeocodeUrl, success: function (result) {
+                var jsonResult = JSON.parse(result);
+                var lat = latlng.lat;
+                var lng = latlng.lng;
                 
-                return true;
-  
-              } else {
-                // it's not a park and not managed by Parks!
-  
-                // if location type is set to parks, but we got to this point, we want to
-                // switch the type to "other" so that it goes to 311 for triage.
-                if (locationType == "park") {
-                  shouldRecenterPark = true;
-                  setLocationType("other");
-                }
-  
-                $('#location_park').val('0'); // set park selector to 
-                $('#location_park').trigger('change');
-  
-                // now do PortlandMaps ArcGIS reverse geocoding call to get the non-park address for the location
-                // https://www.portlandmaps.com/arcgis/rest/services/Public/Geocoding_PDX/GeocodeServer/reverseGeocode
-                var reverseGeocodeUrl = `https://www.portlandmaps.com/arcgis/rest/services/Public/Geocoding_PDX/GeocodeServer/reverseGeocode?location=%7B%22x%22%3A${lng}%2C+%22y%22%3A${lat}%2C+%22spatialReference%22%3A%7B%22wkid%22+%3A+4326%7D%7D&distance=100&langCode=&locationType=&featureTypes=&outSR=4326&returnIntersection=false&f=json`;
-                // arcgis_reversegeocode_url = `https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer/reverseGeocode?f=json&locationType=street&location=${lng},${lat}`;
-                $.ajax({
-                  url: reverseGeocodeUrl, success: function (response) {
-                    if (response.length < 1 || !response.address || !response.location) {
-                      // portlandmaps doesn't have data for this location.
-                      // set location type to "other" so 311 can triage but still set marker.
-                      // and clear address field; address is not required for "other."
-                      setMarkerAndZoom(lat, lng, true, false, DEFAULT_ZOOM_CLICK);
-                      if (locationType == "park") {
-                        setLocationType("other");
-                      }
-                      var locName = "N/A";
-                      if (jsonResult && jsonResult.features.length > 0 && jsonResult.features[0].attributes && jsonResult.features[0].attributes.NAME) {
-                        var locName = jsonResult.features[0].attributes.NAME;
-                      }
-                      $('#location_address').val(locName);
-                      setUnverified();
-                      return false;
-                      // showStatusModal("There was a problem retrieving data for the selected location.");
-                    }
-                    processReverseLocationData(response, lat, lng);
+                if (jsonResult.features && jsonResult.features.length > 0) {
+                  // it's a park. process the data from portlandmaps and exit function.
+    
+                  setLocationType("park");
+                  setMarkerAndZoom(lat, lng, true, false, DEFAULT_ZOOM_CLICK);
+    
+                  // attempt to set park selector. if not exact match, set selector
+                  // value to "0" (Other/Not found)
+                  var parkName = jsonResult.features[0].attributes.NAME;
+                  $('#location_park option').filter(function () {
+                    return $(this).text() == parkName;
+                  }).prop('selected', true);
+    
+                  var parkId = $('#location_park').val();
+                  if (!parkId) {
+                    // the park selector could not be set, most likely because there was not an exact name match
+                    // between Portland.gov and PortlandMaps.com. ideally, the names will be synchronized and
+                    // and this condition will never occur.
+                    $('#location_park').val("0"); // this value sets park selector to Other/Not found and keeps the map visible
                   }
-                });
+                  $('#location_park').trigger('change');
+    
+                  // set place name field and mark as verified
+                  $('.place-name').val(parkName);
+                  setVerified("park");
+    
+                  // There shouldn't be an address for a park, so use N/A
+                  $('.location-picker-address').val("N/A");
+                  
+                  return true;
+    
+                } else {
+                  // it's not a park and not managed by Parks!
+    
+                  // if location type is set to parks, but we got to this point, we want to
+                  // switch the type to "other" so that it goes to 311 for triage.
+                  if (locationType == "park") {
+                    shouldRecenterPark = true;
+                    setLocationType("other");
+                  }
+    
+                  $('#location_park').val('0'); // set park selector to 
+                  $('#location_park').trigger('change');
+    
+                  // now do PortlandMaps ArcGIS reverse geocoding call to get the non-park address for the location
+                  // https://www.portlandmaps.com/arcgis/rest/services/Public/Geocoding_PDX/GeocodeServer/reverseGeocode
+                  var reverseGeocodeUrl = `https://www.portlandmaps.com/arcgis/rest/services/Public/Geocoding_PDX/GeocodeServer/reverseGeocode?location=%7B%22x%22%3A${lng}%2C+%22y%22%3A${lat}%2C+%22spatialReference%22%3A%7B%22wkid%22+%3A+4326%7D%7D&distance=100&langCode=&locationType=&featureTypes=&outSR=4326&returnIntersection=false&f=json`;
+                  // arcgis_reversegeocode_url = `https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer/reverseGeocode?f=json&locationType=street&location=${lng},${lat}`;
+                  $.ajax({
+                    url: reverseGeocodeUrl, success: function (response) {
+                      if (response.length < 1 || !response.address || !response.location) {
+                        // portlandmaps doesn't have data for this location.
+                        // set location type to "other" so 311 can triage but still set marker.
+                        // and clear address field; address is not required for "other."
+                        setMarkerAndZoom(lat, lng, true, false, DEFAULT_ZOOM_CLICK);
+                        if (locationType == "park") {
+                          setLocationType("other");
+                        }
+                        var locName = "N/A";
+                        if (jsonResult && jsonResult.features.length > 0 && jsonResult.features[0].attributes && jsonResult.features[0].attributes.NAME) {
+                          var locName = jsonResult.features[0].attributes.NAME;
+                        }
+                        $('#location_address').val(locName);
+                        setUnverified();
+                        return false;
+                        // showStatusModal("There was a problem retrieving data for the selected location.");
+                      }
+                      processReverseLocationData(response, lat, lng);
+                    }
+                  });
+                }
               }
-            }
-          });
+            });
+          }
         }
   
         function processReverseLocationData(data, lat, lng) {
