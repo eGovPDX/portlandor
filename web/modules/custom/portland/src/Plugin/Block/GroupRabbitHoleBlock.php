@@ -48,7 +48,7 @@ class GroupRabbitHoleBlock extends BlockBase {
     if(count($output_array) > 0) {
       $gid = $output_array[1];
       $group = \Drupal::entityTypeManager()->getStorage('group')->load($gid);
-      
+
       return self::buildRenderArray($group);
     }
 
@@ -66,6 +66,7 @@ class GroupRabbitHoleBlock extends BlockBase {
     // Set the default
     $render_array = [
       '#theme' => 'portland_group_rabbithole_block',
+      '#group_moderation_state' => $group->moderation_state->value,
       '#rabbithole_action' => self::$rh_action[$node_rh_action],
       '#rabbithole_redirect' => $node_rh_redirect,
     ];
