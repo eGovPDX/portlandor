@@ -110,7 +110,7 @@ class RevisionBlock extends BlockBase {
       '#alert_color' => 'success',
       '#alert_icon' => 'check',
       '#current_revision_state' => t('This revision is') . " $moderation_state_str.",
-      '#revision_link' => "/node/$nid/revisions/$node_latest_vid/view",
+      '#revision_link' => "/node/$nid/latest",
       '#revision_link_text' => t('View latest version'),
       '#rabbithole_action' => self::$rh_action[$node_rh_action],
       '#rabbithole_redirect' => $node_rh_redirect,
