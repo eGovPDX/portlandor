@@ -3,6 +3,7 @@
 namespace Drupal\portland\Plugin\Block;
 
 use Drupal\Core\Block\BlockBase;
+use \Drupal\content_moderation\Entity\ContentModerationState;
 
 /**
  * Provides a 'portland revision' block.
@@ -101,7 +102,7 @@ class RevisionBlock extends BlockBase {
     $node_default_published = $node_default_revision->isPublished();
     $node_rh_action = count($node_current_revision->rh_action) ? $node_current_revision->rh_action[0]->value : 'bundle_default';
     $node_rh_redirect = count($node_current_revision->rh_redirect) ? $node_current_revision->rh_redirect[0]->value : '';
-    $moderation_state_str = self::getModerationStateInString($node_current_revision);
+    $moderation_state_str = self::getModerationStateDescription($node_current_revision);
 
     // Set the default
     $render_array = [
@@ -117,15 +118,24 @@ class RevisionBlock extends BlockBase {
 
     // If viewing the default revision
     if ($node_current_vid == $node_default_vid) {
-      $render_array['#revision_link'] = NULL;
-      $render_array['#revision_link_text'] = NULL;
       $render_array['#alert_color'] = $node_default_published ? 'success' : 'danger';
       $render_array['#alert_icon'] = $node_default_published ? 'check' : 'ban';
+
+      // If a newer revision exists
+      $has_newer_revision = $node_current_vid < $node_latest_vid;
+      if ($has_newer_revision) {
+        $render_array['#alert_color'] = 'warning';
+        $render_array['#alert_icon'] = 'exclamation-triangle';
+      } else {
+        $render_array['#revision_link'] = NULL;
+        $render_array['#revision_link_text'] = NULL;
+      }
+
       $render_array['#current_revision_state'] = [
         '#markup' => '<strong>'
                       . ($node_default_published ? t('Published') : t('Unpublished'))
-                      . '</strong>. '
-                      . t('This page is') . " $moderation_state_str."
+                      . '</strong>' . ($has_newer_revision ? t(', although a newer <strong>@state</strong> revision exists', [ '@state' => self::getModerationStateLabel($node_latest_revision) ]) : '') . '. '
+                      . ($has_newer_revision ? '' : t('This page is @state.', [ '@state' => $moderation_state_str ]))
       ];
     }
     // If latest revision is newer than current revision
@@ -148,7 +158,25 @@ class RevisionBlock extends BlockBase {
   }
 
   /**
-   * Returns a node's moderation state in string format.
+   * Returns a node's moderation state label.
+   *
+   * @param int $node
+   *   The node entity.
+   *
+   * @return
+   *   The label of the moderation state
+   */
+  private static function getModerationStateLabel($node) {
+    $content_moderation_state = ContentModerationState::loadFromModeratedEntity($node);
+    $state_machine_name = $content_moderation_state->get('moderation_state')->value;
+    $workflow = $content_moderation_state->get('workflow')->entity;
+    $state_label = $workflow->get('type_settings')['states'][$state_machine_name]['label'];
+
+    return t($state_label);
+  }
+
+  /**
+   * Returns a node's moderation state description text for display to the user.
    *
    * @param int $node
    *   The node entity.
@@ -156,7 +184,7 @@ class RevisionBlock extends BlockBase {
    * @return
    *   A string description of the moderation state
    */
-  private static function getModerationStateInString($node) {
+  private static function getModerationStateDescription($node) {
     $moderation_state = $node->moderation_state->value;
 
     switch ($moderation_state) {
