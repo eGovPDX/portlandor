@@ -30,11 +30,12 @@ class Smartsheet extends QueryPluginBase {
     $view->initPager();
     try {
       $client = new SmartsheetClient($sheet_id);
+      $items_per_page = $view->pager->getItemsPerPage();
       $sheet = $client->getSheet([
         'exclude' => 'filteredOutRows',
         'filterId' => $this->options['filter_id'],
         'page' => $view->pager->getCurrentPage() + 1,
-        'pageSize' => $view->pager->getItemsPerPage()
+        'pageSize' => $items_per_page === 0 ? 9999 : $items_per_page
       ]);
       $sheet_rows = array_slice($sheet->rows, $view->pager->getOffset());
       foreach ($sheet_rows as $index => $sheet_row) {

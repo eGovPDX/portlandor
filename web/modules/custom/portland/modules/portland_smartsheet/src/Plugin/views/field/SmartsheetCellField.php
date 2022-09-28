@@ -68,6 +68,7 @@ class SmartsheetCellField extends FieldPluginBase {
    * {@inheritdoc}
    */
   public function getValue(ResultRow $row, $field = NULL) {
-    return $row->cells[$this->options['column_id']]->displayValue ?? NULL;
+    $cell = $row->cells[$this->options['column_id']];
+    return $cell->displayValue ?? $cell->value ?? NULL;
   }
 }

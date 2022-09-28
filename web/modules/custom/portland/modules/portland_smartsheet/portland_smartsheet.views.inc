@@ -8,8 +8,8 @@ function portland_smartsheet_views_data() {
   // Base data.
   $data['smartsheet']['table']['group'] = t('Smartsheet');
   $data['smartsheet']['table']['base'] = [
-    'title' => t('Smartsheet sheet'),
-    'help' => t('Data from a Smartsheet sheet'),
+    'title' => t('Smartsheet'),
+    'help' => t('Populate a view using the Smartsheet API'),
     'query_id' => 'smartsheet'
   ];
 
