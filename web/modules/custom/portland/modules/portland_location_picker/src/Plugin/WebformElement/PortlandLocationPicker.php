@@ -37,6 +37,7 @@ class PortlandLocationPicker extends WebformCompositeBase {
     // needed, such as in a handler that is sending data to an external system, the sub-field needs to be
     // specified in the token, such as [webform_submission:values:location:place_name].
     $lines = [];
+    $lines[] = "<p>";
     if (isset($value['location_type']) && $value['location_type']) {
       $lines[] = 'Location type: ' . $value['location_type'] . '<br>';
     }
@@ -59,7 +60,8 @@ class PortlandLocationPicker extends WebformCompositeBase {
     if (isset($value['location_asset_id']) && $value['location_asset_id']) {
       $lines[] = 'Asset ID: ' . $value['location_asset_id'] . '<br>';
     }
-   return $lines;
+    $lines[] = "</p>";
+    return $lines;
   }
 
   /**
