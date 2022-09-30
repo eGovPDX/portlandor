@@ -510,15 +510,15 @@
         }
 
         function selectAsset(marker) {
-            // copy asset title to holder
+            // copy asset title to place name field
             $('#place_name').val(marker.target.feature.properties.name);
 
             // copy asset coordiantes to lat/lon fields
-            $('#location_lat').val(marker.latlng.lat);
-            $('#location_lon').val(marker.latlng.lng);
+            $('input[name=report_location\\[location_lat\\]]').val(marker.latlng.lat);
+            $('input[name=report_location\\[location_lon\\]]').val(marker.latlng.lng);
 
             // copy asset id to hidden field
-            $('#location_asset_id').val(marker.target.feature.properties.id);
+            $('input[name=report_location\\[location_asset_id\\]]').val(marker.target.feature.properties.id);
         }
   
         function handleLocationTypeClick(radios) {
@@ -589,7 +589,7 @@
             }
             var inLayer = leafletPip.pointInLayer(e.latlng, testLayer, false);
             if (inLayer.length > 0) {
-              $('#location_region_id').val(inLayer[0].feature.properties.region_id);
+              $('input[name=report_location\\[location_region_id\\]]').val(inLayer[0].feature.properties.region_id);
             } else {
               // clear region_id field
               $('#location_region_id').val("");

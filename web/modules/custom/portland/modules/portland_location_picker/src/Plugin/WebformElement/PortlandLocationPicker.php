@@ -60,6 +60,9 @@ class PortlandLocationPicker extends WebformCompositeBase {
     if (isset($value['location_asset_id']) && $value['location_asset_id']) {
       $lines[] = 'Asset ID: ' . $value['location_asset_id'] . '<br>';
     }
+    if (isset($value['region_id']) && $value['region_id']) {
+      $lines[] = 'Region ID: ' . $value['region_id'] . '<br>';
+    }
     $lines[] = "</p>";
     return $lines;
   }
@@ -98,6 +101,9 @@ class PortlandLocationPicker extends WebformCompositeBase {
     }
     if (isset($value['location_asset_id']) && $value['location_asset_id']) {
       $lines[] = 'Asset ID: ' . $value['location_asset_id'];
+    }
+    if (isset($value['region_id']) && $value['region_id']) {
+      $lines[] = 'Asset ID: ' . $value['region_id'];
     }
     return $lines;
   }

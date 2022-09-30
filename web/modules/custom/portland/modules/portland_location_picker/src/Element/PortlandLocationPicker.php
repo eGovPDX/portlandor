@@ -226,47 +226,43 @@ class PortlandLocationPicker extends WebformCompositeBase {
       ],
     ];
     $elements['location_lat'] = [
-      '#type' => 'textfield',
+      '#type' => 'hidden',
       '#title' => t('Latitude'),
       '#title_display' => 'invisible',
       '#id' => 'location_lat',
-      '#attributes' => ['class' => ['location-lat','visually-hidden']],
+      '#attributes' => ['class' => ['location-lat']],
     ];
     $elements['location_lon'] = [
-      '#type' => 'textfield',
+      '#type' => 'hidden',
       '#title' => t('Longitude'),
       '#title_display' => 'invisible',
       '#id' => 'location_lon',
-      '#attributes' => ['class' => ['location-lon','visually-hidden']],
+      '#attributes' => ['class' => ['location-lon']],
     ];
     $elements['location_asset_id'] = [
-      '#type' => 'textfield',
+      '#type' => 'hidden',
       '#title' => t('Asset ID'),
       '#title_display' => 'invisible',
       '#id' => 'location_asset_id',
-      '#attributes' => ['class' => ['visually-hidden']],
     ];
     $elements['location_region_id'] = [
-      '#type' => 'textfield',
+      '#type' => 'hidden',
       '#title' => t('Region ID'),
       '#title_display' => 'invisible',
       '#id' => 'location_region_id',
-      '#attributes' => ['class' => ['visually-hidden']],
     ];
     $elements['location_municipality_name'] = [
-      '#type' => 'textfield',
+      '#type' => 'hidden',
       '#title' => t('Municipality Name'),
       '#title_display' => 'invisible',
       '#id' => 'location_municipality_name',
-      '#attributes' => ['class' => ['visually-hidden']],
     ];
     $elements['location_is_portland'] = [
-      '#type' => 'checkbox',
+      '#type' => 'hidden',
       '#title' => t('Within Portland City Limits?'),
       '#title_display' => 'invisible',
       '#id' => 'location_is_portland',
-      '#attributes' => ['class' => ['visually-hidden']],
-      '#default_value' => TRUE
+      '#default_value' => "TRUE"
     ];
     $elements['geojson_layer'] = [
       '#title' => t('GeoJson Layer'),
