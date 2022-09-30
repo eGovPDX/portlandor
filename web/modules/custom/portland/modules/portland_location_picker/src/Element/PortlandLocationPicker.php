@@ -192,7 +192,7 @@ class PortlandLocationPicker extends WebformCompositeBase {
     $elements['place_name'] = [
       '#type' => 'textfield',
       '#id' => 'place_name',
-      '#title' => t('Place Name'),
+      '#title' => t('Location Name'),
       '#attributes' => ['class' => ['place-name']],
       '#description' => t('If this location has a name, such as a business or public building, please enter it here.'),
       '#description_display' => 'before',

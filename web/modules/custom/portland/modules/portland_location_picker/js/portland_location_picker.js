@@ -490,6 +490,7 @@
 
           } else {
             $('#place_name').val('');
+            $('#location_details').val('');
             $('input[name=report_location\\[location_lat\\]]').val('');
             $('input[name=report_location\\[location_lon\\]]').val('');
             $('input[name=report_location\\[location_asset_id\\]]').val('');
@@ -512,17 +513,29 @@
 
         function selectAsset(marker) {
             // copy asset title to place name field
-            $('#place_name').val(marker.target.feature.properties.name);
+            if (marker.target.feature.properties.name) {
+              $('#place_name').val(marker.target.feature.properties.name);
+            }
 
-            // copy asset coordiantes to lat/lon fields
+            // copy asset detail to location details field.
+            // asset detail will be html formatted. strip tags first?
+            if (marker.target.feature.properties.detail) {
+              var detail = marker.target.feature.properties.detail.replace("<br>", "\n");
+              detail = $(detail).text();
+              $('#location_details').val(detail);
+            }
+
+            // fields that are input type="hidden" need to be selected by name attribute; they won't have ids
             $('input[name=report_location\\[location_lat\\]]').val(marker.latlng.lat);
             $('input[name=report_location\\[location_lon\\]]').val(marker.latlng.lng);
-
-            // copy asset id to hidden field
             $('input[name=report_location\\[location_asset_id\\]]').val(marker.target.feature.properties.id);
         }
   
         function handleLocationTypeClick(radios) {
+          // this might get called when the parks list is disabled, do a null check first
+          var select = $('#location_park');
+          if (select.length < 1) return;
+
           // reset park list; it may have been changed
           $('#location_park')[0].selectedIndex = 0;
   
@@ -651,10 +664,6 @@
           // console.log(bounds);
         }
 
-        function handleStillThereClick(id) {
-          alert('Still there! ' + id);
-        }
-  
         // HELPER FUNCTIONS ///////////////////////////////
   
         function setLocationType(type) {

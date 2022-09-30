@@ -45,7 +45,7 @@ class PortlandLocationPicker extends WebformCompositeBase {
       $lines[] = 'Are you the owner? ' . $value['location_private_owner'] . '<br>';
     }
     if (isset($value['place_name']) && $value['place_name']) {
-      $lines[] = 'Place name: ' . $value['place_name'] . '<br>';
+      $lines[] = 'Location name: ' . $value['place_name'] . '<br>';
     }
     if (isset($value['location_address']) && $value['location_address']) {
       $lines[] = 'Address: <a href="https://www.google.com/maps/place/' . $value['location_address'] . '">' . $value['location_address'] . '</a>';
@@ -55,7 +55,7 @@ class PortlandLocationPicker extends WebformCompositeBase {
       $lines[] = 'Lat/lon: <a href="https://www.google.com/maps/place/' . $latlon . '">' . $latlon . '</a><br>';
     }
     if (isset($value['location_details']) && $value['location_details']) {
-      $lines[] = 'Location details: ' . $value['location_details'] . '<br>';
+      $lines[] = 'Details: ' . $value['location_details'] . '<br>';
     }
     if (isset($value['location_asset_id']) && $value['location_asset_id']) {
       $lines[] = 'Asset ID: ' . $value['location_asset_id'] . '<br>';
@@ -85,7 +85,7 @@ class PortlandLocationPicker extends WebformCompositeBase {
       $lines[] = 'Are you the owner? ' . $value['location_private_owner'];
     }
     if (isset($value['place_name']) && $value['place_name']) {
-      $lines[] = 'Place name: ' . $value['place_name'];
+      $lines[] = 'Location name: ' . $value['place_name'];
     }
     if (isset($value['location_address']) && $value['location_address']) {
       $lines[] = 'Address: ' . $value['location_address'];
@@ -97,7 +97,7 @@ class PortlandLocationPicker extends WebformCompositeBase {
       $lines[] = 'Lon: ' . $value['location_lon'];
     }
     if (isset($value['location_details']) && $value['location_details']) {
-      $lines[] = 'Location details: ' . $value['location_details'];
+      $lines[] = 'Details: ' . $value['location_details'];
     }
     if (isset($value['location_asset_id']) && $value['location_asset_id']) {
       $lines[] = 'Asset ID: ' . $value['location_asset_id'];
