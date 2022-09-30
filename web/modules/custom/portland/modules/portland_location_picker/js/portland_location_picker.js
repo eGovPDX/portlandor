@@ -490,8 +490,9 @@
 
           } else {
             $('#place_name').val('');
-            $('#location_lat').val('');
-            $('#location_lon').val('');
+            $('input[name=report_location\\[location_lat\\]]').val('');
+            $('input[name=report_location\\[location_lon\\]]').val('');
+            $('input[name=report_location\\[location_asset_id\\]]').val('');
 
             if (primaryLayerBehavior == PRIMARY_LAYER_BEHAVIOR.Selection) {
               reverseGeolocate(marker.latlng);
