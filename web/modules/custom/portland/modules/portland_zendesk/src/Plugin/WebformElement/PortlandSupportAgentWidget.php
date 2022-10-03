@@ -37,7 +37,6 @@ class PortlandSupportAgentWidget extends WebformCompositeBase {
     // needed, such as in a handler that is sending data to an external system, the sub-field needs to be
     // specified in the token, such as [webform_submission:values:location:place_name].
     $lines = [];
-    $lines[] = "<br><br>";
     $line = "<h2>Customer Service Details</h2>";
     if (isset($value['employee_email']) && $value['employee_email']) {
       $line .= 'Form submitted by: ' . $value['employee_email'];
