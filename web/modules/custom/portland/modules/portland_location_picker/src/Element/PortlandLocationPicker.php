@@ -41,7 +41,7 @@ class PortlandLocationPicker extends WebformCompositeBase {
     $nodes = \Drupal::entityTypeManager()->getStorage('node')->loadByProperties(['type' => 'park_facility', 'status' => 1]);
 
     $elements = [];
-    // no other controls should be visible until user has selected a location type; it determines which controls are required.
+    $elements['#title'] = ['Portland Location Widget'];
     $elements['location_type'] = [
       '#id' => 'location_type',
       '#name' => 'location_type',
@@ -247,10 +247,12 @@ class PortlandLocationPicker extends WebformCompositeBase {
       '#attributes' => ['class' => ['visually-hidden']],
     ];
     $elements['geojson_layer'] = [
+      '#title' => t('GeoJson Layer'),
       '#type' => 'hidden',
       '#id' => 'geojson_layer',
     ];
     $elements['geojson_layer_behavior'] = [
+      '#title' => t('GeoJson Layer Behavior'),
       '#type' => 'hidden',
       '#id' => 'geojson_layer_behavior',
     ];
