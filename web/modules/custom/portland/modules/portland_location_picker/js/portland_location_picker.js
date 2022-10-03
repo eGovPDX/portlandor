@@ -921,6 +921,7 @@
               if (result.length < 1) {
                 showStatusModal(NOT_A_PARK);
                 setUnverified();
+                return;
               }
   
               // the coordinates returned by this call are for park entrances. some may have more than
