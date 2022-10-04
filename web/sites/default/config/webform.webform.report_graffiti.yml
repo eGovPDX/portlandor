@@ -29,7 +29,6 @@ elements: |-
     report_location:
       '#type': portland_location_picker
       '#title': Location
-      '#required': true
       '#default_value':
         location_type: street
         location_park: ''
@@ -40,6 +39,7 @@ elements: |-
         location_lon: ''
         location_private_owner: ''
       '#location_type__required': true
+      '#location_private_owner__title': 'Are you the owner or lessee of the property?'
       '#location_map__description': '<!--<em>Existing graffiti reports are displayed with a red marker <img src="/modules/custom/portland/modules/portland_location_picker/images/map_marker_incident.png" alt="Red map marker icon" class="inline-icon"> when the map is fully zoomed in. New reports must be reviewed and may take up to 2 business days to appear on the map.</em>-->'
       '#location_address__states':
         visible: true
@@ -210,21 +210,12 @@ elements: |-
           '#options': yes_no
           '#options_display': side_by_side
           '#required': true
-        report_repeat_offender:
-          '#type': radios
-          '#title': 'Have you seen this graffiti or tag before? Is it from a repeat offender?'
-          '#options': yes_no
-          '#options_display': side_by_side
-          '#required': true
         report_photo:
           '#type': webform_image_file
           '#title': 'Please upload a photo of the graffiti'
-          '#description': 'A clear photo of the graffiti helps us determine what type of surface it&#39;s located on and what resources might be needed to address it.'
+          '#multiple': 4
+          '#description': 'A clear photo of the graffiti is essential to help us determine the resources needed to address it.&nbsp;We only need one photo for each piece of graffiti at this location. Please do not submit multiple angles of the same graffiti.'
           '#description_display': before
-          '#states':
-            required:
-              ':input[name="report_hate_speech_or_gang"]':
-                '!value': 'No'
           '#file_preview': name
           '#max_filesize': '30'
           '#file_extensions': 'gif jpg png svg jpeg'
@@ -249,71 +240,23 @@ elements: |-
           public_records_statement_standard:
             '#type': webform_markup
             '#markup': 'Information you provide to the City is a public record and may be subject to release under Oregon&rsquo;s <a data-renderer-mark="true" href="https://www.doj.state.or.us/oregon-department-of-justice/public-records/attorney-generals-public-records-and-meetings-manual/i-public-records/#:~:text=Under%20Oregon''s%20Public%20Records%20Law,committee%20of%20the%20Legislative%20Assembly" title="https://www.doj.state.or.us/oregon-department-of-justice/public-records/attorney-generals-public-records-and-meetings-manual/i-public-records/#:~:text=Under%20Oregon''s%20Public%20Records%20Law,committee%20of%20the%20Legislative%20Assembly">Public Records Law</a>. This law classifies certain information as available to the public on request. See our <a data-renderer-mark="true" href="/help/about/privacy" title="https://www.portland.gov/help/about/privacy">privacy statement</a> for more information.'
-        section_agent_use_only:
-          '#type': webform_section
-          '#title': 'Agent Use Only'
-          '#attributes':
-            style: 'padding: 15px; background-color: #cccccc;'
+        support_agent_use_only:
+          '#type': portland_support_agent_widget
+          '#title': 'Support Agent Use Only'
           '#access_create_roles':
-            - support_agent
-            - administrator
+            - authenticated
           '#access_update_roles':
             - support_agent
             - administrator
           '#access_view_roles':
             - support_agent
             - administrator
-          agent_email:
-            '#type': textfield
-            '#title': 'Agent Email'
-            '#default_value': '[current-user:display-name] <[current-user:mail]>'
-          agent_ticket_number:
-            '#type': number
-            '#title': 'Ticket Number'
-            '#min': 1000
-            '#max': 999999999
-          agent_summary:
-            '#type': webform_computed_twig
-            '#title': 'Agent Summary'
-            '#display_on': none
-            '#template': |
-              {% if uid %}<p>Agent Email: {{ data.agent_email }}</p>{% endif %}
-              {% if data.agent_ticket_number %}<p>Ticket Number: {{ data.agent_ticket_number }}</p>{% endif %}
-            '#store': true
-          computed_priority:
-            '#type': webform_computed_twig
-            '#title': Priority
-            '#title_display': none
-            '#template': |-
-              {% if data.report_hate_speech_or_gang == "Yes" %}
-              Priority: High
-              {% else %}
-              Priority: Medium
-              {% endif %}
-            '#whitespace': trim
-            '#store': true
-            '#ajax': true
-        developer_use_only:
-          '#type': webform_section
-          '#title': 'Developer Use Only'
-          '#attributes':
-            style: 'padding: 15px; background-color: #cccccc;'
-          '#access_create_roles':
-            - administrator
-          '#access_update_roles':
-            - administrator
-          '#access_view_roles':
-            - administrator
-          test_submission:
-            '#type': checkbox
-            '#title': 'Test Submission'
-            '#description': 'Checking this box will assign the ticket to the Developer Test group instead of the Graffiti Reporting group.'
         actions:
           '#type': webform_actions
           '#title': 'Submit button(s)'
   report_ticket_id:
     '#type': hidden
-    '#title': 'Support Ticket ID'
+    '#title': 'Report Ticket ID'
   portland_maps_url:
     '#type': webform_computed_token
     '#title': 'Portland Maps URL'
@@ -321,7 +264,7 @@ elements: |-
     '#template': 'https://www.portlandmaps.com/search/?query=[webform_submission:values:report_location:location_address]'
   ticket_description:
     '#type': webform_computed_twig
-    '#title': 'Ticket Description'
+    '#title': 'Request Description'
     '#display_on': none
     '#mode': html
     '#template': |
@@ -349,11 +292,11 @@ elements: |-
 
       {% if data.report_graffiti_on_mural %}<p>Is graffiti on mural?&nbsp;{{ data.report_graffiti_on_mural }}</p>{% endif %}
 
-      {% if data.report_repeat_offender %}<p>Have you seen this graffiti or tag before? Is it from a repeat offender?&nbsp;{{ data.report_repeat_offender }}</p>{% endif %}
-
       {% if data.contact_name %}<p>Contact Name:&nbsp;{{ data.contact_name }}</p>{% endif %}
 
       {% if data.contact_email %}<p>Contact Email:&nbsp;{{ data.contact_email }}</p>{% endif %}
+
+      {{ data.agent_summary }}
 
       <p>Webform ID: report_graffiti</p>
     '#ajax': true
@@ -480,8 +423,8 @@ settings:
   draft_pending_multiple_message: ''
   confirmation_type: page
   confirmation_url: ''
-  confirmation_title: ''
-  confirmation_message: ''
+  confirmation_title: 'Your report has been received'
+  confirmation_message: "Thank you for submitting a graffiti report. Your report has been received and will be addressed as soon as possible.&nbsp;<br />\r\n<br />\r\nPlease note that the City of Portland is currently experiencing a high volume of requests for graffiti removal. As&nbsp;a result of this high demand, our response time may be delayed. Thank you for your patience understanding."
   confirmation_attributes: {  }
   confirmation_back: true
   confirmation_back_label: 'Submit another report'
@@ -577,13 +520,13 @@ handlers:
   create_new_zendesk_ticket:
     id: zendesk
     handler_id: create_new_zendesk_ticket
-    label: 'Create new Zendesk ticket'
+    label: 'Create new Zendesk request'
     notes: ''
     status: true
     conditions:
-      enabled:
-        ':input[name="test_submission"]':
-          unchecked: true
+      disabled:
+        ':input[name="support_agent_use_only[test_submission]"]':
+          checked: true
     weight: 0
     settings:
       requester_name: contact_name
@@ -597,17 +540,17 @@ handlers:
       assignee_id: ''
       type: incident
       collaborators: ''
-      custom_fields: "6353388345367: 'report_graffiti'\r\n5581480390679: '[webform_submission:values:report_location:location_lat]'\r\n5581490332439: '[webform_submission:values:report_location:location_lon]'\r\n1500012743961: '[webform_submission:values:report_location:location_address]'\r\n1500013095781: '[webform_submission:uuid]'\r\n6355783758871: '[webform_submission:values:resolution_url]'\r\n6379451469847: '[webform_submission:values:waiver_url]'\r\n8197855908375: '[webform_submission:values:report_repeat_offender]'"
+      custom_fields: "6353388345367: 'report_graffiti'\r\n5581480390679: '[webform_submission:values:report_location:location_lat]'\r\n5581490332439: '[webform_submission:values:report_location:location_lon]'\r\n1500012743961: '[webform_submission:values:report_location:location_address]'\r\n1500013095781: '[webform_submission:uuid]'\r\n6355783758871: '[webform_submission:values:resolution_url]'\r\n6379451469847: '[webform_submission:values:waiver_url]'\r\n"
       ticket_id_field: report_ticket_id
   create_new_zendesk_ticket_developer_test:
     id: zendesk
     handler_id: create_new_zendesk_ticket_developer_test
-    label: 'Create new Zendesk ticket - developer test'
-    notes: 'Creates new Zendesk ticket but puts it in the Developer Test Group. This handler gets used if the Test checkbox is ticked in the Developer Use Only section.'
+    label: 'Create new Zendesk request - developer test'
+    notes: 'Creates new Zendesk request but puts it in the Developer Test Group. This handler gets used if the Test checkbox is ticked in the Developer Use Only section.'
     status: true
     conditions:
       enabled:
-        ':input[name="test_submission"]':
+        ':input[name="support_agent_use_only[test_submission]"]':
           checked: true
     weight: 1
     settings:
@@ -622,6 +565,29 @@ handlers:
       assignee_id: ''
       type: incident
       collaborators: ''
-      custom_fields: "6353388345367: 'report_graffiti'\r\n5581480390679: '[webform_submission:values:report_location:location_lat]'\r\n5581490332439: '[webform_submission:values:report_location:location_lon]'\r\n1500012743961: '[webform_submission:values:report_location:location_address]'\r\n1500013095781: '[webform_submission:uuid]'\r\n6355783758871: '[webform_submission:values:resolution_url]'\r\n6379451469847: '[webform_submission:values:waiver_url]'\r\n8197855908375: '[webform_submission:values:report_repeat_offender]'"
+      custom_fields: "6353388345367: 'report_graffiti'\r\n5581480390679: '[webform_submission:values:report_location:location_lat]'\r\n5581490332439: '[webform_submission:values:report_location:location_lon]'\r\n1500012743961: '[webform_submission:values:report_location:location_address]'\r\n1500013095781: '[webform_submission:uuid]'\r\n6355783758871: '[webform_submission:values:resolution_url]'\r\n6379451469847: '[webform_submission:values:waiver_url]'\r\n"
       ticket_id_field: report_ticket_id
+  zendesk_update_ticket:
+    id: zendesk_update_ticket
+    handler_id: zendesk_update_ticket
+    label: 'Zendesk update customer support interaction request'
+    notes: 'Updates an existing Zendesk "interaction request" and links it to the issue request. Enabled if an Zendesk Request Number value has been provided.'
+    status: true
+    conditions:
+      enabled:
+        ':input[name="support_agent_use_only[zendesk_request_number]"]':
+          filled: true
+    weight: 2
+    settings:
+      comment: "<h1>Graffiti Report</h1>\r\n<p><b>Linked Issue Request: <a href=\"https://portlandoregon.zendesk.com/agent/tickets/[webform_submission:values:report_ticket_id]\">[webform_submission:values:report_ticket_id]</a></b></p>\r\n\r\n[webform_submission:values:html]\r\n\r\n"
+      comment_private: 1
+      tags: ''
+      priority: ''
+      status: ''
+      group_id: ''
+      assignee_id: ''
+      type: ''
+      collaborators: ''
+      custom_fields: '8692493739543: ''[webform_submission:values:report_ticket_id]'''
+      ticket_id_field: zendesk_request_number
 variants: {  }

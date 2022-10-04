@@ -5,6 +5,7 @@ dependencies:
   module:
     - antibot
     - honeypot
+    - portland_zendesk
 third_party_settings:
   antibot:
     antibot: true
@@ -399,6 +400,17 @@ elements: |-
             '#description': 'Please provide your phone number in case we need additional information.'
             '#description_display': before
             '#input_mask': '(999) 999-9999'
+        support_agent_use_only:
+          '#type': portland_support_agent_widget
+          '#title': 'Support Agent Use Only'
+          '#access_create_roles':
+            - authenticated
+          '#access_update_roles':
+            - support_agent
+            - administrator
+          '#access_view_roles':
+            - support_agent
+            - administrator
         actions:
           '#type': webform_actions
           '#title': 'Submit button(s)'
@@ -408,59 +420,10 @@ elements: |-
     '#default_value': webform
   spacer:
     '#type': webform_markup
-    '#markup': |
+    '#markup': |-
       <br />
       <br />
       &nbsp;
-  section_agent_use_only:
-    '#type': webform_section
-    '#title': 'Agent Use Only'
-    '#attributes':
-      style: 'padding: 15px; background-color: #cccccc;'
-    '#access_create_roles':
-      - support_agent
-      - administrator
-    '#access_update_roles':
-      - support_agent
-      - administrator
-    '#access_view_roles':
-      - support_agent
-      - administrator
-    agent_email:
-      '#type': textfield
-      '#title': 'Agent Email'
-      '#default_value': '[current-user:display-name] <[current-user:mail]>'
-    agent_ticket_number:
-      '#type': number
-      '#title': 'Ticket Number'
-      '#min': 1000
-      '#max': 999999999
-    agent_action_taken:
-      '#type': radios
-      '#title': 'Action Taken'
-      '#options': action_taken
-      '#options_display': side_by_side
-    agent_contact_type:
-      '#type': radios
-      '#title': 'Contact Type'
-      '#options': contact_type
-      '#options_display': side_by_side
-    agent_ticket_type:
-      '#type': radios
-      '#title': 'Ticket Type'
-      '#options': ticket_type
-      '#options_display': side_by_side
-    agent_summary:
-      '#type': webform_computed_twig
-      '#title': 'Agent Summary'
-      '#display_on': none
-      '#template': |-
-        {% if uid %}<p>Agent Email: {{ data.agent_email }}</p>{% endif %}
-        {% if data.agent_ticket_number %}<p>Ticket Number: {{ data.agent_ticket_number }}</p>{% endif %}
-        {% if data.agent_action_taken %}<p>Action Taken: {{ data.agent_action_taken }}</p>{% endif %}
-        <p>Contact Type: {% if data.agent_contact_type %}{{ data.agent_contact_type }}{% else %}Webform{% endif %}</p>
-        <p>Ticket Type: {{ data.agent_ticket_type }}</p>
-      '#ajax': true
 css: ''
 javascript: ''
 settings:
@@ -565,8 +528,8 @@ settings:
   draft_pending_multiple_message: ''
   confirmation_type: page
   confirmation_url: ''
-  confirmation_title: ''
-  confirmation_message: "<p>Thank you! Your report has been received.<br />\r\n<br />\r\nIt is not necessary to submit multiple reports of the same location in one day.&nbsp;The Homelessness and Urban Camping Impact Reduction Program (HUCIRP) recommends submitting a new report of the same site once a week.&nbsp;Not all reports will result in immediate action by the City. Every site is reviewed and analyzed.&nbsp;</p>\r\n\r\n<p>&nbsp;</p>\r\n\r\n<h2>Next Steps</h2>\r\n\r\n<p><strong>Is a vehicle blocking a street, driveway, sidewalk, or bus/MAX/Streetcar stop or lane?</strong></p>\r\n\r\n<p>Please call Parking Enforcement at <a href=\"tel:+15038235195\">503-823-5195</a> to report the vehicle.</p>\r\n\r\n<p><strong>Do you think a vehicle may be stolen?</strong></p>\r\n\r\n<p>Please contact Portland Police Auto Records at <a href=\"tel:+15038230044\">(503) 823-0044</a>&nbsp;to report the vehicle.</p>\r\n\r\n<p><strong>Do you have any additional concerns or questions?</strong></p>\r\n\r\n<p>Please call us at <a href=\"tel:311\">3-1-1</a> or <a href=\"tel:+15038234000\">(503) 823-4000</a> to discuss further.</p>\r\n\r\n<p>&nbsp;</p>"
+  confirmation_title: 'Thank you'
+  confirmation_message: "<p>Your report has been received.<br />\r\n<br />\r\nIt is not necessary to submit multiple reports of the same location in one day.&nbsp;The Homelessness and Urban Camping Impact Reduction Program (HUCIRP) recommends submitting a new report of the same site once a week.&nbsp;Not all reports will result in immediate action by the City. Every site is reviewed and analyzed.&nbsp;</p>\r\n\r\n<p>&nbsp;</p>\r\n\r\n<h2>Next Steps</h2>\r\n\r\n<p><strong>Is a vehicle blocking a street, driveway, sidewalk, or bus/MAX/Streetcar stop or lane?</strong></p>\r\n\r\n<p>Please call Parking Enforcement at <a href=\"tel:+15038235195\">503-823-5195</a> to report the vehicle.</p>\r\n\r\n<p><strong>Do you think a vehicle may be stolen?</strong></p>\r\n\r\n<p>Please contact Portland Police Auto Records at <a href=\"tel:+15038230044\">(503) 823-0044</a>&nbsp;to report the vehicle.</p>\r\n\r\n<p><strong>Do you have any additional concerns or questions?</strong></p>\r\n\r\n<p>Please call us at <a href=\"tel:311\">3-1-1</a> or <a href=\"tel:+15038234000\">(503) 823-4000</a> to discuss further.</p>\r\n\r\n<p>&nbsp;</p>"
   confirmation_attributes: {  }
   confirmation_back: true
   confirmation_back_label: ''
@@ -665,6 +628,8 @@ handlers:
       enabled:
         ':input[name="report_location[location_type]"]':
           value: park
+        ':input[name="support_agent_use_only[test_submission]"]':
+          unchecked: true
     weight: -50
     settings:
       states:
@@ -683,7 +648,7 @@ handlers:
       sender_mail: ''
       sender_name: ''
       subject: _default
-      body: "<p>&nbsp;<br />\r\nSubmitted on [webform_submission:created]<br />\r\n<br />\r\nSubmitted by: [webform_submission:user]<br />\r\n<br />\r\n[webform_submission:values]<br />\r\n<br />\r\n<strong>Agent use only</strong><br />\r\n<br />\r\nAgent email: [webform_submission:values:agent_email]<br />\r\n<br />\r\nTicket number: [webform_submission:values:agent_ticket_number]<br />\r\n<br />\r\nAction taken:&nbsp;[webform_submission:values:agent_action_taken]<br />\r\n<br />\r\nContact type: [webform_submission:values:agent_contact_type]<br />\r\n<br />\r\nReason for contact: [webform_submission:values:agent_reason]<br />\r\n<br />\r\n&nbsp;</p>"
+      body: "<p>[webform_submission:values:html]<br />\r\n<br />\r\nWebform ID: report_campsite_or_vehicle</p>"
       excluded_elements:
         introductory_text: introductory_text
         public_records_statement_standard: public_records_statement_standard
@@ -713,10 +678,7 @@ handlers:
     label: 'Submit to Abandoned Auto group'
     notes: 'Enabled if vehicle appears to be inoperable.'
     status: false
-    conditions:
-      enabled:
-        ':input[name="report_vehicle_inoperable"]':
-          value: 'Yes'
+    conditions: {  }
     weight: -47
     settings:
       states:
@@ -735,7 +697,7 @@ handlers:
       sender_mail: ''
       sender_name: ''
       subject: _default
-      body: "<p>&nbsp;<br />\r\nSubmitted on [webform_submission:created]<br />\r\n<br />\r\nSubmitted by: [webform_submission:user]<br />\r\n<br />\r\n[webform_submission:values]<br />\r\n<br />\r\n<strong>Agent use only</strong><br />\r\n<br />\r\nAgent email: [webform_submission:values:agent_email]<br />\r\n<br />\r\nTicket number: [webform_submission:values:agent_ticket_number]<br />\r\n<br />\r\nAction taken:&nbsp;[webform_submission:values:agent_action_taken]<br />\r\n<br />\r\nContact type: [webform_submission:values:agent_contact_type]<br />\r\n<br />\r\nReason for contact: [webform_submission:values:agent_reason]<br />\r\n&nbsp;</p>"
+      body: "<p>[webform_submission:values:html]<br />\r\n<br />\r\nWebform ID: report_campsite_or_vehicle</p>"
       excluded_elements:
         introductory_text: introductory_text
         public_records_statement_standard: public_records_statement_standard
@@ -771,6 +733,8 @@ handlers:
           value: street
         ':input[name="report_people_living_there"]':
           value: 'Yes'
+        ':input[name="support_agent_use_only[test_submission]"]':
+          unchecked: true
     weight: -49
     settings:
       states:
@@ -789,7 +753,7 @@ handlers:
       sender_mail: ''
       sender_name: ''
       subject: _default
-      body: "<p>&nbsp;<br />\r\nSubmitted on [webform_submission:created]<br />\r\n<br />\r\nSubmitted by: [webform_submission:user]<br />\r\n<br />\r\n[webform_submission:values]<br />\r\n<br />\r\n<strong>Agent use only</strong><br />\r\n<br />\r\nAgent email: [webform_submission:values:agent_email]<br />\r\n<br />\r\nTicket number: [webform_submission:values:agent_ticket_number]<br />\r\n<br />\r\nAction taken:&nbsp;[webform_submission:values:agent_action_taken]<br />\r\n<br />\r\nContact type: [webform_submission:values:agent_contact_type]<br />\r\n<br />\r\nReason for contact: [webform_submission:values:agent_reason]<br />\r\n&nbsp;</p>"
+      body: "<p>[webform_submission:values:html]<br />\r\n<br />\r\nWebform ID: report_campsite_or_vehicle</p>"
       excluded_elements:
         introductory_text: introductory_text
         public_records_statement_standard: public_records_statement_standard
@@ -827,6 +791,8 @@ handlers:
           value: 'Yes'
         ':input[name="report_visible_items[vehicle]"]':
           checked: true
+        ':input[name="support_agent_use_only[test_submission]"]':
+          unchecked: true
     weight: -48
     settings:
       states:
@@ -845,7 +811,7 @@ handlers:
       sender_mail: ''
       sender_name: ''
       subject: _default
-      body: "<p>&nbsp;<br />\r\nSubmitted on [webform_submission:created]<br />\r\n<br />\r\nSubmitted by: [webform_submission:user]<br />\r\n<br />\r\n[webform_submission:values]<br />\r\n<br />\r\n<strong>Agent use only</strong><br />\r\n<br />\r\nAgent email: [webform_submission:values:agent_email]<br />\r\n<br />\r\nTicket number: [webform_submission:values:agent_ticket_number]<br />\r\n<br />\r\nAction taken:&nbsp;[webform_submission:values:agent_action_taken]<br />\r\n<br />\r\nContact type: [webform_submission:values:agent_contact_type]<br />\r\n<br />\r\nReason for contact: [webform_submission:values:agent_reason]<br />\r\n&nbsp;</p>"
+      body: "<p>[webform_submission:values:html]<br />\r\n<br />\r\nWebform ID: report_campsite_or_vehicle</p>"
       excluded_elements:
         introductory_text: introductory_text
         public_records_statement_standard: public_records_statement_standard
@@ -879,9 +845,11 @@ handlers:
       enabled:
         ':input[name="report_location[location_type]"]':
           value: street
-        ':input[name="report_is_vehicle_illegally_parked"]':
+        ':input[name="report_vehicle_illegally_parked"]':
           value: 'Yes'
-    weight: 4
+        ':input[name="support_agent_use_only[test_submission]"]':
+          unchecked: true
+    weight: -46
     settings:
       states:
         - completed
@@ -899,7 +867,7 @@ handlers:
       sender_mail: ''
       sender_name: ''
       subject: _default
-      body: "<p>&nbsp;<br />\r\nSubmitted on [webform_submission:created]<br />\r\n<br />\r\nSubmitted by: [webform_submission:user]<br />\r\n<br />\r\n[webform_submission:values]<br />\r\n<br />\r\n<strong>Agent use only</strong><br />\r\n<br />\r\nAgent email: [webform_submission:values:agent_email]<br />\r\n<br />\r\nTicket number: [webform_submission:values:agent_ticket_number]<br />\r\n<br />\r\nAction taken:&nbsp;[webform_submission:values:agent_action_taken]<br />\r\n<br />\r\nContact type: [webform_submission:values:agent_contact_type]<br />\r\n<br />\r\nReason for contact: [webform_submission:values:agent_reason]<br />\r\n&nbsp;</p>"
+      body: "<p>[webform_submission:values:html]<br />\r\n<br />\r\nWebform ID: report_campsite_or_vehicle</p>"
       excluded_elements:
         introductory_text: introductory_text
         public_records_statement_standard: public_records_statement_standard
@@ -938,7 +906,11 @@ handlers:
         -
           ':input[name="report_location[location_type]"]':
             value: other
-    weight: 6
+        - or
+        -
+          ':input[name="support_agent_use_only[test_submission]"]':
+            unchecked: true
+    weight: -45
     settings:
       states:
         - completed
@@ -956,7 +928,7 @@ handlers:
       sender_mail: ''
       sender_name: ''
       subject: _default
-      body: "<p>&nbsp;<br />\r\nSubmitted on [webform_submission:created]<br />\r\n<br />\r\nSubmitted by: [webform_submission:user]<br />\r\n<br />\r\n[webform_submission:values]<br />\r\n<br />\r\n<strong>Agent use only</strong><br />\r\n<br />\r\nAgent email: [webform_submission:values:agent_email]<br />\r\n<br />\r\nTicket number: [webform_submission:values:agent_ticket_number]<br />\r\n<br />\r\nAction taken:&nbsp;[webform_submission:values:agent_action_taken]<br />\r\n<br />\r\nContact type: [webform_submission:values:agent_contact_type]<br />\r\n<br />\r\nReason for contact: [webform_submission:values:agent_reason]<br />\r\n&nbsp;</p>"
+      body: "<p>[webform_submission:values:html]<br />\r\n<br />\r\nWebform ID: report_campsite_or_vehicle</p>"
       excluded_elements:
         introductory_text: introductory_text
         public_records_statement_standard: public_records_statement_standard
@@ -994,7 +966,9 @@ handlers:
           value: 'No'
         ':input[name="report_visible_items[trash]"]':
           checked: true
-    weight: 7
+        ':input[name="support_agent_use_only[test_submission]"]':
+          unchecked: true
+    weight: -44
     settings:
       states:
         - completed
@@ -1012,7 +986,7 @@ handlers:
       sender_mail: ''
       sender_name: ''
       subject: _default
-      body: "<p>&nbsp;<br />\r\nSubmitted on [webform_submission:created]<br />\r\n<br />\r\nSubmitted by: [webform_submission:user]<br />\r\n<br />\r\n[webform_submission:values]<br />\r\n<br />\r\n<strong>Agent use only</strong><br />\r\n<br />\r\nAgent email: [webform_submission:values:agent_email]<br />\r\n<br />\r\nTicket number: [webform_submission:values:agent_ticket_number]<br />\r\n<br />\r\nAction taken:&nbsp;[webform_submission:values:agent_action_taken]<br />\r\n<br />\r\nContact type: [webform_submission:values:agent_contact_type]<br />\r\n<br />\r\nReason for contact: [webform_submission:values:agent_reason]<br />\r\n&nbsp;</p>"
+      body: "<p>[webform_submission:values:html]<br />\r\n<br />\r\nWebform ID: report_campsite_or_vehicle</p>"
       excluded_elements:
         introductory_text: introductory_text
         public_records_statement_standard: public_records_statement_standard
@@ -1028,6 +1002,81 @@ handlers:
         spacer: spacer
       ignore_access: false
       exclude_empty: true
+      exclude_empty_checkbox: true
+      exclude_attachments: true
+      html: true
+      attachments: true
+      twig: false
+      theme_name: ''
+      parameters: {  }
+      debug: false
+  zendesk_update_interaction_ticket:
+    id: zendesk_update_ticket
+    handler_id: zendesk_update_interaction_ticket
+    label: 'Zendesk update interaction request'
+    notes: 'Updates an existing Zendesk "interaction request" with details of the submitted report. Enabled if an Zendesk Request Number value has been provided.'
+    status: true
+    conditions:
+      enabled:
+        ':input[name="support_agent_use_only[zendesk_request_number]"]':
+          filled: true
+    weight: -42
+    settings:
+      comment: "<h1>Campsite/Abandoned Vehicle Report</h1>\r\n<p><strong>Campsite/Abandoned Vehicle report has been submitted on behalf of the community member.</strong></p>\r\n\r\n[webform_submission:values:html]"
+      comment_private: 1
+      tags: ''
+      priority: ''
+      status: ''
+      group_id: ''
+      assignee_id: ''
+      type: ''
+      collaborators: ''
+      custom_fields: '8692493739543: ''[webform_submission:values:report_ticket_id]'''
+      ticket_id_field: zendesk_request_number
+  submit_test_report_to_e_gov_team:
+    id: email
+    handler_id: submit_test_report_to_e_gov_team
+    label: 'Submit test report to E-Gov team'
+    notes: 'Enabled if Test Submission box is checked'
+    status: true
+    conditions:
+      enabled:
+        ':input[name="support_agent_use_only[test_submission]"]':
+          checked: true
+    weight: -43
+    settings:
+      states:
+        - completed
+      to_mail: gregoryscottclapp+test@gmail.com
+      to_options: {  }
+      bcc_mail: ''
+      bcc_options: {  }
+      cc_mail: ''
+      cc_options: {  }
+      from_mail: '[webform_submission:values:contact_email:raw]'
+      from_options: {  }
+      from_name: '[webform_submission:values:contact_name:raw]'
+      reply_to: ''
+      return_path: ''
+      sender_mail: ''
+      sender_name: ''
+      subject: '[TEST] Webform submission from: [webform_submission:source-title]'
+      body: "<p>[webform_submission:values:html]<br />\r\n<br />\r\nWebform ID: report_campsite_or_vehicle</p>"
+      excluded_elements:
+        introductory_text: introductory_text
+        public_records_statement_standard: public_records_statement_standard
+        report_property_owner_yes_text: report_property_owner_yes_text
+        report_property_owner_no_text: report_property_owner_no_text
+        report_select_visible_to_continue: report_select_visible_to_continue
+        report_illegally_parked_vehicle_text: report_illegally_parked_vehicle_text
+        report_illegally_parked_vehicle_text_stop: report_illegally_parked_vehicle_text_stop
+        report_stolen_vehicle_text: report_stolen_vehicle_text
+        report_stolen_vehicle_text_stop: report_stolen_vehicle_text_stop
+        report_need_more_info_text: report_need_more_info_text
+        report_need_more_info_text_stop: report_need_more_info_text_stop
+        spacer: spacer
+      ignore_access: false
+      exclude_empty: false
       exclude_empty_checkbox: true
       exclude_attachments: true
       html: true

@@ -12,15 +12,15 @@ template: false
 archive: false
 id: zendesk_api_test
 title: 'Zendesk API Test'
-description: 'This form can be used to test the Zendesk API integration. When submitted, it creates a Zendesk ticket in the portlandoregon.zendesk.com instance. Only Administrator and Support Agent roles have access to this form.'
+description: 'This form can be used to test the Zendesk API integration. When submitted, it creates a Zendesk request in the portlandoregon.zendesk.com instance. Only Administrator and Support Agent roles have access to this form.'
 category: Utility
 elements: |-
   intro_text:
     '#type': webform_markup
     '#markup': |-
-      Use this form to verify that the Zendesk API is correctly configured and creating tickets.<br />
+      Use this form to verify that the Zendesk API is correctly configured and creating requests.<br />
       <br />
-      Upon submission, the data from this form is transmitted to the <a href="https://portlandoregon.zendesk.com">portlandoregon.zendesk.com</a> instance using the API and placed in a new ticket, which is marked as an Incident with normal priority and assigned to the service account used with the API (currently&nbsp;bts-egov@portlandoregon.gov).
+      Upon submission, the data from this form is transmitted to the <a href="https://portlandoregon.zendesk.com">portlandoregon.zendesk.com</a> instance using the API and placed in a new request, which is marked as an Incident with normal priority and assigned to the service account used with the API (currently&nbsp;bts-egov@portlandoregon.gov).
   test_subject:
     '#type': textfield
     '#title': 'Test Subject'
@@ -28,7 +28,7 @@ elements: |-
     '#required': true
   test_description:
     '#type': textarea
-    '#title': 'Test description'
+    '#title': 'Test Description'
     '#description': 'The input provided here will be included in the body/description of the ticket.'
     '#required': true
   contact_name:
@@ -42,27 +42,20 @@ elements: |-
     '#description': 'The new Zendesk ticket will be created as if it had been submitted from this email address.'
     '#input_mask': '''alias'': ''email'''
     '#required': true
-  ticket_type:
-    '#type': radios
-    '#title': 'Ticket Type'
-    '#options':
-      Question: Question
-      Incident: Incident
-      Problem: Problem
-      Task: Task
-    '#options_display': side_by_side
-    '#required': true
-  ticket_id:
-    '#type': textfield
-    '#title': 'Ticket ID'
-    '#description': 'If left blank, a new Zenesk ticket is created, and this field gets auto populated with the ticket ID after submission. If you enter an existing Zendesk ticket ID, the update handler will be invoked to update the existing ticket, adding a private note and marking it as Solved.'
-  suppress_ticket_confirmation:
-    '#type': select
-    '#title': 'Suppress Ticket Confirmation'
-    '#options':
-      'TRUE': 'TRUE'
-      'FALSE': 'FALSE'
-    '#default_value': 'FALSE'
+  support_agent_use_only:
+    '#type': portland_support_agent_widget
+    '#title': 'Support Agent Use Only'
+    '#access_create_roles':
+      - authenticated
+    '#access_update_roles':
+      - support_agent
+      - administrator
+    '#access_view_roles':
+      - support_agent
+      - administrator
+  report_ticket_id:
+    '#type': hidden
+    '#title': 'Report Ticket ID'
 css: ''
 javascript: ''
 settings:
@@ -263,12 +256,12 @@ handlers:
   zendesk_new_ticket:
     id: zendesk
     handler_id: zendesk_new_ticket
-    label: 'Zendesk new ticket'
-    notes: 'Sends a form submission to Zendesk to create a support ticket. This handler must fire after any other validation handlers, and it should not be used for forms that allow users to update their original submission. Updating will create a new Zendesk ticket, which is most likely not the desired behavior. Enabled if no ticket ID is provided.'
+    label: 'Create Zendesk Request'
+    notes: 'Sends a form submission to Zendesk to create a support request. This handler must fire after any other validation handlers, and it should not be used for forms that allow users to update their original submission. Updating will create a new Zendesk request, which is most likely not the desired behavior. Enabled if no request ID is provided.'
     status: true
     conditions:
       enabled:
-        ':input[name="ticket_id"]':
+        ':input[name="report_ticket_id"]':
           empty: true
     weight: 0
     settings:
@@ -282,30 +275,30 @@ handlers:
       assignee_id: ''
       type: incident
       collaborators: ''
-      custom_fields: ''
-      ticket_id_field: '[webform_submission:values:ticket_id]'
+      custom_fields: '6353388345367: ''zendesk_api_test'''
+      ticket_id_field: report_ticket_id
       group_id: '4549352062487'
   zendesk_update_ticket:
     id: zendesk_update_ticket
     handler_id: zendesk_update_ticket
-    label: 'Zendesk update ticket'
-    notes: 'Updates an existing Zendesk support ticket. Enabled if a Zendesk ticket ID has been provided.'
+    label: 'Zendesk update customer support interaction request'
+    notes: 'Updates an existing Zendesk "interaction request" and links it to the issue request. Enabled if an Zendesk Request Number value has been provided.'
     status: true
     conditions:
       enabled:
-        ':input[name="ticket_id"]':
+        ':input[name="support_agent_use_only[zendesk_request_number]"]':
           filled: true
     weight: 0
     settings:
-      comment: 'This ticket has been updated by the Zendesk Update Handler from the portland_zendesk module.'
+      comment: "<h1>Zendesk API Test</h1>\r\n<p><b>Linked Issue Request: <a href=\"https://portlandoregon.zendesk.com/agent/tickets/[webform_submission:values:report_ticket_id]\">[webform_submission:values:report_ticket_id]</a></b></p>\r\n\r\n[webform_submission:values:html]\r\n\r\n"
       comment_private: 1
       tags: ''
       priority: ''
-      status: solved
+      status: ''
       group_id: '4549352062487'
       type: ''
       collaborators: ''
-      custom_fields: ''
-      ticket_id_field: ticket_id
+      custom_fields: '8692493739543: ''[webform_submission:values:report_ticket_id]'''
+      ticket_id_field: zendesk_request_number
       assignee_id: ''
 variants: {  }

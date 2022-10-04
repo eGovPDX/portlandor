@@ -302,73 +302,17 @@ elements: |-
         '#type': checkbox
         '#title': 'I agree'
         '#required': true
-    section_agent_use_only:
-      '#type': webform_section
-      '#title': 'Agent Use Only'
-      '#states':
-        visible:
-          ':input[name="report_how_to_complete"]':
-            '!value': 'Call us'
-      '#attributes':
-        style: 'padding: 15px; background-color: #cccccc;'
+    support_agent_use_only:
+      '#type': portland_support_agent_widget
+      '#title': 'Support Agent Use Only'
       '#access_create_roles':
-        - support_agent
-        - administrator
+        - authenticated
       '#access_update_roles':
         - support_agent
         - administrator
       '#access_view_roles':
         - support_agent
         - administrator
-      agent_email:
-        '#type': textfield
-        '#title': 'Agent Email'
-        '#default_value': '[current-user:display-name] <[current-user:mail]>'
-      agent_ticket_number:
-        '#type': number
-        '#title': 'Ticket Number'
-        '#min': 1000
-        '#max': 999999999
-      agent_action_taken:
-        '#type': radios
-        '#title': 'Action Taken'
-        '#options': action_taken
-        '#options_display': side_by_side
-        '#states':
-          invisible:
-            '':
-              '': ''
-      agent_contact_type:
-        '#type': radios
-        '#title': 'Contact Type'
-        '#options': contact_type
-        '#options_display': side_by_side
-        '#states':
-          invisible:
-            ':input[name="agent_ticket_number"]':
-              filled: true
-        '#default_value': Webform
-      agent_ticket_type:
-        '#type': radios
-        '#title': 'Ticket Type'
-        '#disabled': true
-        '#options': ticket_type
-        '#options_display': side_by_side
-        '#default_value': Problem
-      agent_summary:
-        '#type': webform_computed_twig
-        '#title': 'Agent Summary'
-        '#display_on': none
-        '#template': |-
-          {% if uid %}<p>Agent Email: {{ data.agent_email }}</p>{% endif %}
-          {% if data.agent_ticket_number %}<p>Ticket Number: {{ data.agent_ticket_number }}</p>{% endif %}
-          {% if data.agent_action_taken %}<p>Action Taken: {{ data.agent_action_taken }}</p>{% endif %}
-          <p>Contact Type: {% if data.agent_contact_type %}{{ data.agent_contact_type }}{% else %}Webform{% endif %}</p>
-          <p>Ticket Type: {{ data.agent_ticket_type }}</p>
-        '#store': true
-      report_ticket_id:
-        '#type': hidden
-        '#title': 'Report Ticket ID'
     actions:
       '#type': webform_actions
       '#title': 'Submit button(s)'
@@ -378,6 +322,9 @@ elements: |-
             value: 'Call us'
       '#submit__label': Submit
       '#update_hide': true
+  report_ticket_id:
+    '#type': hidden
+    '#title': 'Zendesk Ticket ID'
 css: ''
 javascript: ''
 settings:
@@ -482,8 +429,8 @@ settings:
   draft_pending_multiple_message: ''
   confirmation_type: page
   confirmation_url: ''
-  confirmation_title: ''
-  confirmation_message: ''
+  confirmation_title: 'Thank you'
+  confirmation_message: 'Your report has been received and will be addressed as soon as possible.&nbsp;'
   confirmation_attributes: {  }
   confirmation_back: true
   confirmation_back_label: ''
@@ -563,10 +510,13 @@ handlers:
   zendesk_new_ticket:
     id: zendesk
     handler_id: zendesk_new_ticket
-    label: 'Zendesk new ticket'
-    notes: 'Creates a new Discrimination complaint ticket and assigns it to the 311: ADA and Discrimination group.'
+    label: 'Zendesk new request'
+    notes: 'Creates a new Discrimination complaint request and assigns it to the 311: ADA and Discrimination group.'
     status: true
-    conditions: {  }
+    conditions:
+      disabled:
+        ':input[name="support_agent_use_only[test_submission]"]':
+          checked: true
     weight: 0
     settings:
       requester_name: contact_name
@@ -578,8 +528,56 @@ handlers:
       status: new
       group_id: '4763233132567'
       assignee_id: ''
-      type: problem
+      type: incident
       collaborators: ''
-      custom_fields: "1500012743961: '[webform_submission:values:computed_location_address]'\r\n1900004448725: '[webform_submission:values:computed_location_latlon]'"
+      custom_fields: "6353388345367: 'report_discrimination'\r\n5581480390679: '[webform_submission:values:report_location:location_lat]'\r\n5581490332439: '[webform_submission:values:report_location:location_lon]'\r\n1500012743961: '[webform_submission:values:report_location:location_address]'\r\n1500013095781: '[webform_submission:uuid]'\r\n"
       ticket_id_field: report_ticket_id
+  zendesk_new_request_developer_test:
+    id: zendesk
+    handler_id: zendesk_new_request_developer_test
+    label: 'Zendesk new request - developer test'
+    notes: 'Creates a new Discrimination complaint request and assigns it to the Developer Test group'
+    status: true
+    conditions:
+      enabled:
+        ':input[name="support_agent_use_only[test_submission]"]':
+          checked: true
+    weight: 1
+    settings:
+      requester_name: contact_name
+      requester_email: contact_email
+      subject: 'Discrimination Complaint'
+      comment: '[webform_submission:values:html]'
+      tags: 'drupal webform discrimination'
+      priority: normal
+      status: new
+      group_id: '4549352062487'
+      assignee_id: ''
+      type: incident
+      collaborators: ''
+      custom_fields: "6353388345367: 'report_discrimination'\r\n5581480390679: '[webform_submission:values:report_location:location_lat]'\r\n5581490332439: '[webform_submission:values:report_location:location_lon]'\r\n1500012743961: '[webform_submission:values:report_location:location_address]'\r\n1500013095781: '[webform_submission:uuid]'\r\n"
+      ticket_id_field: report_ticket_id
+  zendesk_update_interaction_request:
+    id: zendesk_update_ticket
+    handler_id: zendesk_update_interaction_request
+    label: 'Zendesk update customer support interaction request'
+    notes: 'Updates an existing Zendesk "interaction request" and links it to the issue request. Enabled if an Zendesk Request Number value has been provided.'
+    status: true
+    conditions:
+      enabled:
+        ':input[name="support_agent_use_only[zendesk_request_number]"]':
+          filled: true
+    weight: 2
+    settings:
+      comment: "<h1>Discrimination Report</h1>\r\n<p><b>Linked Issue Request: <a href=\"https://portlandoregon.zendesk.com/agent/tickets/[webform_submission:values:report_ticket_id]\">[webform_submission:values:report_ticket_id]</a></b></p>\r\n\r\n[webform_submission:values:html]\r\n\r\n"
+      comment_private: 1
+      tags: ''
+      priority: ''
+      status: ''
+      group_id: ''
+      assignee_id: ''
+      type: ''
+      collaborators: ''
+      custom_fields: '8692493739543: ''[webform_submission:values:report_ticket_id]'''
+      ticket_id_field: zendesk_request_number
 variants: {  }

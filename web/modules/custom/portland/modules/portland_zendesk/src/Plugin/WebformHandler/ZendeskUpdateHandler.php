@@ -21,9 +21,9 @@ use Drupal\portland_zendesk\Utils\Utility;
  *
  * @WebformHandler(
  *   id = "zendesk_update_ticket",
- *   label = @Translation("Zendesk update ticket"),
+ *   label = @Translation("Zendesk update request"),
  *   category = @Translation("Zendesk"),
- *   description = @Translation("Updates an existing Zendesk support ticket."),
+ *   description = @Translation("Updates an existing Zendesk support request."),
  *   cardinality = \Drupal\webform\Plugin\WebformHandlerInterface::CARDINALITY_UNLIMITED,
  *   results = \Drupal\webform\Plugin\WebformHandlerInterface::RESULTS_PROCESSED,
  * )
@@ -244,7 +244,7 @@ class ZendeskUpdateHandler extends WebformHandlerBase
     ];
     if(!empty($groups) ){
       $form['group_id']['#type'] = 'select';
-      $form['group_id']['#options'] = ['' => '-- None --'] + $groups;
+      $form['group_id']['#options'] = ['' => '- None/No Change -'] + $groups;
       $form['group_id']['#description'] = $this->t('The group to which the ticket should be assigned. Set either Ticket Group or Ticket Assignee, but not both.');
     }
 
@@ -259,7 +259,7 @@ class ZendeskUpdateHandler extends WebformHandlerBase
     ];
     if(! empty($assignees) ){
       $form['assignee_id']['#type'] = 'webform_select_other';
-      $form['assignee_id']['#options'] = ['' => '-- None --'] + $assignees;
+      $form['assignee_id']['#options'] = ['' => '- None/No Change -'] + $assignees;
       $form['assignee_id']['#description'] = $this->t('The assignee to which the ticket should be assigned. Set either Ticket Group or Ticket Assignee, but not both. Typically tickets created by webforms should not be assigned to individual users, but tickets that are created as Solved must have an individual assignee. In this case, use the Portland.gov Support service account.');
     }
     else {
@@ -374,6 +374,16 @@ class ZendeskUpdateHandler extends WebformHandlerBase
     //    $form_state->getTriggeringElement()['#submit'][0] == "file_managed_file_submit"
     //    $form_state->getTriggeringElement()['#value']->getUntranslatedString() == "Uplooad"
     if ($form_state->getTriggeringElement() && $form_state->getTriggeringElement()['#value'] === "Submit") {
+
+      // // does it help to put the report_ticket_id in the user input? will that get it to
+      // // be used in token replacement in the 2nd handler? if not, we may need to do some
+      // // manual kerjiggering.
+      // $user_input = $form_state->getUserInput();
+      // if (array_key_exists('report_ticket_id', $user_input)) {
+      //   $user_input['report_ticket_id'] = $form_state->getValue('report_ticket_id');
+      //   $form_state->setUserInput($user_input);
+      // }
+
       $this->sendToZendeskAndValidateNoError($form_state);
     }
   }
@@ -411,10 +421,17 @@ class ZendeskUpdateHandler extends WebformHandlerBase
     // declare working variables
     $request = [];
     $webform_submission = $form_state->getFormObject()->getEntity();
+
+    // manually put the report_ticket_id value in the webform submission object, so that it
+    // gets used in token replacement and in custom field if needed.
+    // NOTE: This will always occur when the ZendeskUpdateHandler is called after ZendeskHandler; the
+    // assumption is that if we're updating a ticket right after creating one, they're related.
+    $webform_submission->setElementData('report_ticket_id', $form_state->getValue('report_ticket_id'));
+
     $submission_fields = $webform_submission->toArray(TRUE);
     $configuration = $this->getTokenManager()->replace($this->configuration, $webform_submission);
 
-    $zendesk_ticket_id = $submission_fields['data'][$configuration['ticket_id_field']];
+    $zendesk_ticket_id = $submission_fields['data']['support_agent_use_only'][$configuration['ticket_id_field']];
     $confirm_zendesk_ticket_id = 0; // this will be updated and validated after getting the ticket
 
     // Allow for either values coming from other fields or static/tokens
@@ -498,13 +515,20 @@ class ZendeskUpdateHandler extends WebformHandlerBase
         }
       }
 
-      // type and priority are required by the API, even for update. if they're not set, set them from
+      // status, type, priority, and group are required by the API, even for update. if they're not set, set them from
       // previous ticket data.
+      if (!isset($request['status']) || $request['status'] == "") {
+        $request['status'] = $ticket->status;
+      }
       if (!isset($request['type']) || $request['type'] == "") {
         $request['type'] = $ticket->type;
       }
       if (!isset($request['priority']) || $request['priority'] == "") {
         $request['priority'] = $ticket->priority;
+      }
+      // don't send empty group; get it from previous ticket
+      if (!isset($request['group_id']) || $request['group_id'] == "") {
+        $request['group_id'] = $ticket->group_id;
       }
 
       // create ticket
@@ -535,8 +559,7 @@ class ZendeskUpdateHandler extends WebformHandlerBase
    */
   public function postSave(WebformSubmissionInterface $webform_submission, $update = TRUE)
   {
-
-
+    
   }
 
   /**
