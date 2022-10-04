@@ -11,7 +11,7 @@ use Drupal\webform\WebformSubmissionInterface;
  * @WebformElement(
  *   id = "portland_location_picker",
  *   label = @Translation("Portland location picker"),
- *   description = @Translation("Provides an element for selecting a location by map or address and storing the lat/lon coordiantes. WARNING: Only one instance of a location picker widget is supported in a webform, and the machine name must be 'report_location.'"),
+ *   description = @Translation("Provides an element for selecting a location by map or address and storing the lat/lng coordiantes. WARNING: Only one instance of a location picker widget is supported in a webform, and the machine name must be 'report_location.'"),
  *   category = @Translation("Composite elements"),
  *   multiline = TRUE,
  *   composite = TRUE,
@@ -50,9 +50,9 @@ class PortlandLocationPicker extends WebformCompositeBase {
     if (isset($value['location_address']) && $value['location_address']) {
       $lines[] = 'Address: <a href="https://www.google.com/maps/place/' . $value['location_address'] . '">' . $value['location_address'] . '</a>';
     }
-    if (isset($value['location_lat']) && isset($value['location_lon']) && $value['location_lat']) {
-      $latlon = $value['location_lat'] . ',' . $value['location_lon'];
-      $lines[] = 'Lat/lon: <a href="https://www.google.com/maps/place/' . $latlon . '">' . $latlon . '</a><br>';
+    if (isset($value['location_lat']) && isset($value['location_lng']) && $value['location_lat']) {
+      $latlon = $value['location_lat'] . ',' . $value['location_lng'];
+      $lines[] = 'Lat/lng: <a href="https://www.google.com/maps/place/' . $latlon . '">' . $latlon . '</a><br>';
     }
     if (isset($value['location_details']) && $value['location_details']) {
       $lines[] = 'Details: ' . $value['location_details'] . '<br>';
@@ -93,8 +93,8 @@ class PortlandLocationPicker extends WebformCompositeBase {
     if (isset($value['location_lat']) && $value['location_lat']) {
       $lines[] = 'Lat: ' . $value['location_lat'];
     }
-    if (isset($value['location_lon']) && $value['location_lon']) {
-      $lines[] = 'Lon: ' . $value['location_lon'];
+    if (isset($value['location_lng']) && $value['location_lng']) {
+      $lines[] = 'Lng: ' . $value['location_lng'];
     }
     if (isset($value['location_details']) && $value['location_details']) {
       $lines[] = 'Details: ' . $value['location_details'];

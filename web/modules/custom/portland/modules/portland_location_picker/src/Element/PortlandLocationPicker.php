@@ -232,12 +232,12 @@ class PortlandLocationPicker extends WebformCompositeBase {
       '#id' => 'location_lat',
       '#attributes' => ['class' => ['location-lat']],
     ];
-    $elements['location_lon'] = [
+    $elements['location_lng'] = [
       '#type' => 'hidden',
       '#title' => t('Longitude'),
       '#title_display' => 'invisible',
-      '#id' => 'location_lon',
-      '#attributes' => ['class' => ['location-lon']],
+      '#id' => 'location_lng',
+      '#attributes' => ['class' => ['location-lng']],
     ];
     $elements['location_asset_id'] = [
       '#type' => 'hidden',
