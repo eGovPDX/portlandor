@@ -120,8 +120,12 @@ class GroupRevisionBlock extends BlockBase {
       $render_array['#alert_color'] = $group_default_published ? 'success' : 'danger';
       $render_array['#alert_icon'] = $group_default_published ? 'check' : 'ban';
 
-      // If a newer revision exists
       $has_newer_revision = $group_current_vid < $group_latest_vid;
+      // If published and no newer revision, hide revision block
+      if ($group_default_published && !$has_newer_revision) {
+        return [];
+      }
+
       if ($has_newer_revision) {
         $render_array['#alert_color'] = 'warning';
         $render_array['#alert_icon'] = 'exclamation-triangle';
@@ -189,10 +193,6 @@ class GroupRevisionBlock extends BlockBase {
     switch ($moderation_state) {
       case "review":
         $result = "unpublished and in review";
-        break;
-
-      case "published":
-        $result = "visible to the public";
         break;
 
       case "archived":
