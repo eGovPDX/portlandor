@@ -5,6 +5,7 @@ dependencies:
   module:
     - antibot
     - honeypot
+    - portland_zendesk
 third_party_settings:
   antibot:
     antibot: true
@@ -215,6 +216,17 @@ elements: |-
         public_records_statement_standard:
           '#type': webform_markup
           '#markup': 'Information you provide to the City is a public record and may be subject to release under Oregon&rsquo;s <a data-renderer-mark="true" href="https://www.doj.state.or.us/oregon-department-of-justice/public-records/attorney-generals-public-records-and-meetings-manual/i-public-records/#:~:text=Under%20Oregon''s%20Public%20Records%20Law,committee%20of%20the%20Legislative%20Assembly" title="https://www.doj.state.or.us/oregon-department-of-justice/public-records/attorney-generals-public-records-and-meetings-manual/i-public-records/#:~:text=Under%20Oregon''s%20Public%20Records%20Law,committee%20of%20the%20Legislative%20Assembly">Public Records Law</a>. This law classifies certain information as available to the public on request. See our <a data-renderer-mark="true" href="/help/about/privacy" title="https://www.portland.gov/help/about/privacy">privacy statement</a> for more information.'
+      support_agent_use_only:
+        '#type': portland_support_agent_widget
+        '#title': 'Support Agent Use Only'
+        '#access_create_roles':
+          - authenticated
+        '#access_update_roles':
+          - support_agent
+          - administrator
+        '#access_view_roles':
+          - support_agent
+          - administrator
       actions:
         '#type': webform_actions
         '#title': 'Submit button(s)'
@@ -422,7 +434,10 @@ handlers:
     label: 'Submit report to reportpdx@portlandoregon.gov'
     notes: ''
     status: true
-    conditions: {  }
+    conditions:
+      disabled:
+        ':input[name="support_agent_use_only[test_submission]"]':
+          checked: true
     weight: 0
     settings:
       states:
@@ -441,7 +456,7 @@ handlers:
       sender_mail: ''
       sender_name: ''
       subject: _default
-      body: "<p>Submitted on [webform_submission:created]</p>\r\n\r\n<p>Submitted values are:</p>\r\n[webform_submission:values]"
+      body: "<p>Submitted on [webform_submission:created]</p>\r\n[webform_submission:values:html]<br />\r\n<br />\r\nWebform ID:&nbsp;report_camp_removal_complaint"
       excluded_elements:
         markup_property_collection: markup_property_collection
         markup_ombudsman: markup_ombudsman
@@ -457,4 +472,27 @@ handlers:
       theme_name: ''
       parameters: {  }
       debug: false
+  zendesk_update_ticket:
+    id: zendesk_update_ticket
+    handler_id: zendesk_update_ticket
+    label: 'Zendesk update customer support interaction request'
+    notes: 'Updates an existing Zendesk "interaction request" and links it to the issue request. Enabled if an Zendesk Request Number value has been provided.'
+    status: true
+    conditions:
+      enabled:
+        ':input[name="support_agent_use_only[zendesk_request_number]"]':
+          filled: true
+    weight: 0
+    settings:
+      comment: "<h1>Campsite Removal Complaint</h1>\r\n<p><strong>Campsite removal complaint has been submitted on behalf of the community member.</strong> The requests cannot be automatically linked since the webform either doesn't submit to Zendesk or doesn't use an API handler.</p>\r\n[webform_submission:values:html]\r\n\r\n"
+      comment_private: 1
+      tags: ''
+      priority: ''
+      status: ''
+      group_id: ''
+      assignee_id: ''
+      type: ''
+      collaborators: ''
+      custom_fields: '8692493739543: ''[webform_submission:values:report_ticket_id]'''
+      ticket_id_field: zendesk_request_number
 variants: {  }

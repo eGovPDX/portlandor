@@ -4,6 +4,7 @@ status: open
 dependencies:
   module:
     - honeypot
+    - portland_zendesk
 third_party_settings:
   honeypot:
     honeypot: true
@@ -75,72 +76,17 @@ elements: |-
     public_records_statement:
       '#type': webform_markup
       '#markup': 'The information you provide in this form is considered a public record under Oregon&rsquo;s <a data-renderer-mark="true" href="https://www.doj.state.or.us/oregon-department-of-justice/public-records/attorney-generals-public-records-and-meetings-manual/i-public-records/#:~:text=Under%20Oregon''s%20Public%20Records%20Law,committee%20of%20the%20Legislative%20Assembly" title="https://www.doj.state.or.us/oregon-department-of-justice/public-records/attorney-generals-public-records-and-meetings-manual/i-public-records/#:~:text=Under%20Oregon''s%20Public%20Records%20Law,committee%20of%20the%20Legislative%20Assembly">Public Records Law</a> and is available to the public on request.'
-    section_agent_use_only:
-      '#type': webform_section
-      '#title': 'Agent Use Only'
-      '#attributes':
-        style: 'padding: 15px; background-color: #cccccc;'
+    support_agent_use_only:
+      '#type': portland_support_agent_widget
+      '#title': 'Support Agent Use Only'
       '#access_create_roles':
-        - support_agent
-        - administrator
+        - authenticated
       '#access_update_roles':
         - support_agent
         - administrator
       '#access_view_roles':
         - support_agent
         - administrator
-      agent_email:
-        '#type': textfield
-        '#title': 'Agent Email'
-        '#default_value': '[current-user:display-name] <[current-user:mail]>'
-      agent_ticket_number:
-        '#type': number
-        '#title': 'Ticket Number'
-        '#min': 1000
-        '#max': 999999999
-      agent_action_taken:
-        '#type': radios
-        '#title': 'Action Taken'
-        '#options': action_taken
-        '#options_display': side_by_side
-        '#states':
-          invisible:
-            ':input[name="agent_ticket_number"]':
-              filled: true
-      agent_contact_type:
-        '#type': radios
-        '#title': 'Contact Type'
-        '#options': contact_type
-        '#options_display': side_by_side
-        '#states':
-          invisible:
-            ':input[name="agent_ticket_number"]':
-              filled: true
-      agent_ticket_type:
-        '#type': webform_computed_twig
-        '#title': 'Ticket Type'
-        '#display_on': none
-        '#mode': text
-        '#template': |-
-          {% if data.subject == "I have a question" %}
-          Question
-          {% elseif data.subject == "I cannot find what I'm looking for" or data.subject == "The information looks incorrect" %}
-          Problem
-          {% elseif data.subject == "The page looks broken" %}
-          Incident
-          {% endif %}
-        '#whitespace': spaceless
-      agent_summary:
-        '#type': webform_computed_twig
-        '#title': 'Agent Summary'
-        '#display_on': none
-        '#template': |-
-          {% if uid %}<p>Agent Email: {{ data.agent_email }}</p>{% endif %}
-          {% if data.agent_ticket_number %}<p>Ticket Number: {{ data.agent_ticket_number }}</p>{% endif %}
-          {% if data.agent_action_taken %}<p>Action Taken: {{ data.agent_action_taken }}</p>{% endif %}
-          <p>Contact Type: {% if data.agent_contact_type %}{{ data.agent_contact_type }}{% else %}Webform{% endif %}</p>
-          <p>Ticket Type: {{ data.agent_ticket_type }}</p>
-        '#ajax': true
     actions:
       '#type': webform_actions
       '#title': 'Submit button(s)'
@@ -261,7 +207,7 @@ settings:
   confirmation_type: inline
   confirmation_url: ''
   confirmation_title: ''
-  confirmation_message: "<h2>Thank you for submitting your feedback, we appreciate your help!</h2>\r\nYou should receive an email confirmation in just a moment. You may reply to that email to add additional information or comments to your feedback.<br />\r\n<br />\r\nName:&nbsp;[webform_submission:values:your_name]<br />\r\n<br />\r\nEmail:&nbsp;[webform_submission:values:email_address]<br />\r\n<br />\r\nType of feedback:&nbsp;[webform_submission:values:subject]<br />\r\n<br />\r\nLast page viewed:&nbsp;<a href=\"[webform_submission:values:page_you_last_viewed]\">[webform_submission:values:page_you_last_viewed]</a><br />\r\n<br />\r\nFeedback:&nbsp;[webform_submission:values:feedback]"
+  confirmation_message: "<h2>Thank you for submitting your feedback, we appreciate your help!</h2>\r\nYou should receive an email confirmation in just a moment. You may reply to that email to add additional information or comments.<br />\r\n<br />\r\nName:&nbsp;[webform_submission:values:your_name]<br />\r\n<br />\r\nEmail:&nbsp;[webform_submission:values:email_address]<br />\r\n<br />\r\nType of feedback:&nbsp;[webform_submission:values:subject]<br />\r\n<br />\r\nLast page viewed:&nbsp;<a href=\"[webform_submission:values:page_you_last_viewed]\">[webform_submission:values:page_you_last_viewed]</a><br />\r\n<br />\r\nFeedback:&nbsp;[webform_submission:values:feedback]"
   confirmation_attributes: {  }
   confirmation_back: true
   confirmation_back_label: ''
@@ -378,9 +324,8 @@ handlers:
       sender_mail: ''
       sender_name: ''
       subject: '[webform_submission:values:subject:raw] - [webform_submission:values:feedback]'
-      body: "<p>Subject: [webform_submission:values:subject]</p>\r\n\r\n<p>Feedback: [webform_submission:values:feedback]</p>\r\n\r\n<p>Name: [webform_submission:values:your_name]</p>\r\n\r\n<p>Email: [webform_submission:values:email_address]</p>\r\n\r\n<p>Page last viewed: [webform_submission:values:page_you_last_viewed]</p>\r\n\r\n<p>Submitted on: [webform_submission:created]</p>\r\n\r\n<p>User agent: [server:HTTP_USER_AGENT]</p>\r\n[webform_submission:values:agent_summary]"
-      excluded_elements:
-        agent_summary: agent_summary
+      body: "<p>Subject: [webform_submission:values:subject]</p>\r\n\r\n<p>Feedback: [webform_submission:values:feedback]</p>\r\n\r\n<p>Name: [webform_submission:values:your_name]</p>\r\n\r\n<p>Email: [webform_submission:values:email_address]</p>\r\n\r\n<p>Page last viewed: [webform_submission:values:page_you_last_viewed]</p>\r\n\r\n<p>Submitted on: [webform_submission:created]</p>\r\n\r\n<p>User agent: [server:HTTP_USER_AGENT]</p>\r\n[webform_submission:values:support_agent_use_only]<br />\r\n<br />\r\nWebform ID: website_feedback"
+      excluded_elements: {  }
       ignore_access: false
       exclude_empty: true
       exclude_empty_checkbox: false
@@ -419,7 +364,7 @@ handlers:
       sender_mail: ''
       sender_name: ''
       subject: '[webform_submission:values:subject:raw] - [webform_submission:values:feedback]'
-      body: "<p>Subject: [webform_submission:values:subject]</p>\r\n\r\n<p>Feedback: [webform_submission:values:feedback]</p>\r\n\r\n<p>Name: [webform_submission:values:your_name]</p>\r\n\r\n<p>Email: [webform_submission:values:email_address]</p>\r\n\r\n<p>Page last viewed: [webform_submission:values:page_you_last_viewed]</p>\r\n\r\n<p>Submitted on: [webform_submission:created]</p>\r\n\r\n<p>User agent: [server:HTTP_USER_AGENT]<br />\r\n<br />\r\n[webform_submission:values:agent_summary]</p>"
+      body: "<p>Subject: [webform_submission:values:subject]</p>\r\n\r\n<p>Feedback: [webform_submission:values:feedback]</p>\r\n\r\n<p>Name: [webform_submission:values:your_name]</p>\r\n\r\n<p>Email: [webform_submission:values:email_address]</p>\r\n\r\n<p>Page last viewed: [webform_submission:values:page_you_last_viewed]</p>\r\n\r\n<p>Submitted on: [webform_submission:created]</p>\r\n\r\n<p>User agent: [server:HTTP_USER_AGENT]<br />\r\n<br />\r\n[webform_submission:values:support_agent_use_only]<br />\r\n<br />\r\n​​​​​​​Webform ID: website_feedback</p>"
       excluded_elements: {  }
       ignore_access: false
       exclude_empty: true
@@ -431,4 +376,27 @@ handlers:
       theme_name: cloudy
       parameters: {  }
       debug: false
+  zendesk_update_interaction_ticket:
+    id: zendesk_update_ticket
+    handler_id: zendesk_update_interaction_ticket
+    label: 'Zendesk update customer support interaction request'
+    notes: 'Updates an existing Zendesk "interaction request" and links it to the issue request. Enabled if an Zendesk Request Number value has been provided.'
+    status: true
+    conditions:
+      enabled:
+        ':input[name="support_agent_use_only[zendesk_request_number]"]':
+          filled: true
+    weight: 2
+    settings:
+      comment: "<h1>Website Feedback</h1>\r\n<p><strong>Website Feedback has been submitted on behalf of the community member.</strong> The requests cannot be automatically linked since the feedback form doesn't use an API handler.</p>\r\n\r\n[webform_submission:values:html]"
+      comment_private: 1
+      tags: ''
+      priority: ''
+      status: ''
+      group_id: ''
+      assignee_id: ''
+      type: ''
+      collaborators: ''
+      custom_fields: ''
+      ticket_id_field: zendesk_request_number
 variants: {  }
