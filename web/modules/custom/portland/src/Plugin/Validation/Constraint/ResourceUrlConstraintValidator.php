@@ -14,13 +14,15 @@ class ResourceUrlConstraintValidator extends ConstraintValidator {
    * {@inheritdoc}
    */
   public function validate($entity, Constraint $constraint) {
-    if (!isset($entity) || $entity->bundle() != 'external_resource') {
+    if (!isset($entity) || 
+      $entity->bundle() != 'external_resource' || 
+      empty($entity->field_destination_url)) {
       return;
     }
 
     // Check if any resource has the same value in field_destination_url
     $resources = \Drupal::entityTypeManager()->getStorage('node')->loadByProperties([
-      'field_destination_url' => $entity->field_destination_url[0]->getUrl()->getUri(),
+      'field_destination_url' => $entity->field_destination_url[0]->getValue()['uri'],
     ]);
 
     // Found duplicates
