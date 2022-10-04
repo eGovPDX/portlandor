@@ -35,7 +35,9 @@ elements: |-
         visible:
           ':input[name="report_ticket_id"]':
             empty: true
-      '#markup': 'If this is an organic abatement from the field, please complete this form and include the graffiti details. If a waiver was obtained from the property owner or a delegate, make sure to upload a clear photo of the signed form.'
+      '#markup': |-
+        <p>If this is an organic abatement from the field, please complete this form and include the graffiti details. If a waiver was obtained from the property owner or a delegate, make sure to upload a clear photo of the signed form.</p>
+        <p>To report graffiti without performing abatement, please use the <a href="/form/report-graffiti">Report Graffiti form</a>.</p>
     report_location:
       '#type': portland_location_picker
       '#title': Location
@@ -67,23 +69,26 @@ elements: |-
         'Yes': 'Yes'
         'No': 'No'
         'Not sure': 'Not sure'
-      '#required': true
     report_graffiti_on_mural:
       '#type': radios
       '#title': 'Is the graffiti on a mural?'
       '#prepopulate': true
       '#options': yes_no
-      '#required': true
-    report_photo:
+    report_repeat_offender:
+      '#type': radios
+      '#title': 'Have you seen this graffiti or tag before? Is it from a repeat offender?'
+      '#prepopulate': true
+      '#options': yes_no
+    report_photos:
       '#type': webform_image_file
-      '#title': 'Graffiti Photo'
-      '#description': 'If a waiver was obtained from the property owner or a delegate, upload a clear photo of the document, making sure that the signature is visible.'
-      '#required': true
+      '#title': 'Graffiti Photos'
+      '#multiple': 16
       '#states':
         visible:
           ':input[name="report_ticket_id"]':
             empty: true
       '#file_preview': name
+      '#file_extensions': 'gif jpg png svg jpeg'
       '#file_name': 'report_[webform_submission:sid]'
       '#sanitize': true
       '#attachment_image_style': webform_report_uploaded_image
@@ -96,10 +101,12 @@ elements: |-
           ':input[name="report_ticket_id"]':
             empty: true
       '#file_preview': name
+      '#file_extensions': 'gif jpg png svg jpeg'
       '#attachment_image_style': webform_report_uploaded_image
   resolution:
     '#type': webform_radios_other
     '#title': 'Issue Resolution'
+    '#prepopulate': true
     '#options':
       'Graffiti has been removed': 'Graffiti has been removed'
       'Graffiti was not found at the reported location': 'Graffiti was not found at the reported location'
@@ -109,12 +116,15 @@ elements: |-
   resolution_notes:
     '#type': textarea
     '#title': 'Resolution Notes'
+    '#prepopulate': true
   resolution_square_footage:
     '#type': textfield
     '#title': 'Square footage of abatement'
-  resolution_photo:
+    '#prepopulate': true
+  resolution_photos:
     '#type': webform_image_file
-    '#title': 'Abatement Photo'
+    '#title': 'Abatement Photos'
+    '#multiple': 16
     '#file_preview': name
     '#file_extensions': 'gif jpg png svg jpeg'
     '#file_name': 'report_[webform_submission:sid]_resolved'
@@ -123,18 +133,55 @@ elements: |-
   resolution_contractor:
     '#type': textfield
     '#title': 'Contractor/Company Name'
+    '#prepopulate': true
     '#required': true
+  contact_email:
+    '#type': textfield
+    '#title': 'Contact Email'
+    '#prepopulate': true
+    '#input_mask': '''alias'': ''email'''
+    '#required': true
+    '#states':
+      visible:
+        ':input[name="report_ticket_id"]':
+          empty: true
   report_ticket_id:
     '#type': textfield
     '#title': 'Support Ticket ID'
-    '#description': 'If you click the resolution link in the notification email we sent, this value will be automatically entered. Do not change it.'
+    '#description': 'If you click the resolution link in the notification email we sent, this value will be automatically entered.'
     '#prepopulate': true
     '#required': true
+    '#states':
+      invisible:
+        ':input[name="original_submission_key"]':
+          empty: true
   original_submission_key:
     '#type': hidden
     '#title': 'Original Submission Key'
     '#prepopulate': true
     '#wrapper_attributes': {  }
+  ticket_description:
+    '#type': webform_computed_twig
+    '#title': 'Ticket Description'
+    '#display_on': none
+    '#mode': html
+    '#template': |
+      <p>[webform_submission:values:report_location:html]</p>
+
+      {% if data.report_hate_speech_or_gang %}<p>Is the graffiti hate speech or gang related?&nbsp;{{ data.report_hate_speech_or_gang }}</p>{% endif %}
+
+
+      {% if data.report_private_property_type %}<p>What type of property is it?&nbsp;{{ data.report_private_property_type }}</p>{% endif %}
+
+
+      {% if data.report_above_ground_level %}<p>Is graffiti above ground level?&nbsp;{{ data.report_above_ground_level }}</p>{% endif %}
+
+
+      {% if data.report_graffiti_on_mural %}<p>Is graffiti on mural?&nbsp;{{ data.report_graffiti_on_mural }}</p>{% endif %}
+
+      {% if data.report_repeat_offender %}<p>Have you seen this graffiti or tag before? Is it from a repeat offender?&nbsp;{{ data.report_repeat_offender }}</p>{% endif %}
+
+      <p>Webform ID: report_graffiti</p>
   actions:
     '#type': webform_actions
     '#title': 'Submit button(s)'
@@ -244,10 +291,10 @@ settings:
   confirmation_type: page
   confirmation_url: ''
   confirmation_title: 'Ticket has been updated'
-  confirmation_message: 'Thank you for submitting your resolution report. Your response has been recorded, and the ticket has been updated.'
+  confirmation_message: "Thank you for submitting your resolution report. Your response has been recorded, and the ticket has been updated.<br />\r\n<br />\r\n<a href=\"/form/report-graffiti-resolution?resolution_contractor=[webform_submission:values:resolution_contractor]&contact_email=[webform_submission:values:contact_email]\">Submit another like this</a>"
   confirmation_attributes: {  }
   confirmation_back: true
-  confirmation_back_label: ''
+  confirmation_back_label: 'Submit a new report'
   confirmation_back_attributes: {  }
   confirmation_exclude_query: false
   confirmation_exclude_token: false
@@ -352,21 +399,21 @@ handlers:
       requester_name: ''
       requester_email: ''
       subject: ''
-      comment: "The issue has been reported as resolved by the abatement contractor [webform_submission:values:resolution_contractor].<br><br>\r\nResolution: [webform_submission:values:resolution]<br><br>\r\n[webform_submission:values:resolution_notes]<br><br>\r\nThis report will be automatically closed after 7 days."
+      comment: "The issue has been reported as resolved by the abatement contractor [webform_submission:values:resolution_contractor].<br><br>\r\nResolution: [webform_submission:values:resolution]<br><br>\r\nNotes:<br>[webform_submission:values:resolution_notes]<br><br>\r\nSquare footage of abatement: [webform_submission:values:resolution_square_footage]<br><br>\r\nThis report will be automatically closed after 7 days."
       tags: ''
       priority: ''
       status: solved
-      assignee_id: '376597733073'
+      assignee_id: '1505212728301'
       type: ''
       collaborators: ''
       custom_fields: ''
       ticket_id_field: report_ticket_id
       comment_private: 0
-      group_id: '4549352062487'
+      group_id: ''
   zendesk_ticket_validator:
     id: ticket_validation
     handler_id: zendesk_ticket_validator
-    label: 'Zendesk ticket validator'
+    label: 'Zendesk request validator'
     notes: ''
     status: true
     conditions:
@@ -375,4 +422,29 @@ handlers:
           filled: true
     weight: -50
     settings: {  }
+  create_new_zendesk_ticket:
+    id: zendesk
+    handler_id: create_new_zendesk_ticket
+    label: 'Create and resolve new Zendesk ticket'
+    notes: 'Creates a new Zendesk ticket as solved; used for self-reporting and resolution by contractors.'
+    status: true
+    conditions:
+      enabled:
+        ':input[name="report_ticket_id"]':
+          empty: true
+    weight: 0
+    settings:
+      requester_name: resolution_contractor
+      requester_email: contact_email
+      subject: 'Graffiti Report'
+      comment: "<h2>Graffiti Report</h2>\r\n\r\n[webform_submission:values:ticket_description:html]\r\n\r\n<p><strong>The issue has been reported as resolved by the abatement contractor [webform_submission:values:resolution_contractor].</strong></p>\r\n\r\n<p>Resolution: [webform_submission:values:resolution]<br><br>\r\nNotes:<br>[webform_submission:values:resolution_notes]<br><br>\r\nSquare footage of abatement: [webform_submission:values:resolution_square_footage]<br><br>\r\nThis report will be automatically closed after 7 days.</p>"
+      tags: 'drupal webform graffiti'
+      priority: normal
+      status: solved
+      group_id: ''
+      assignee_id: '1505212728301'
+      type: incident
+      collaborators: ''
+      custom_fields: "6353388345367: 'report_graffiti'\r\n5581480390679: '[webform_submission:values:report_location:location_lat]'\r\n5581490332439: '[webform_submission:values:report_location:location_lon]'\r\n1500012743961: '[webform_submission:values:report_location:location_address]'\r\n1500013095781: '[webform_submission:uuid]'\r\n6355783758871: '[webform_submission:values:resolution_url]'\r\n6379451469847: '[webform_submission:values:waiver_url]'\r\n8197855908375: '[webform_submission:values:report_repeat_offender]'"
+      ticket_id_field: support_ticket_id
 variants: {  }

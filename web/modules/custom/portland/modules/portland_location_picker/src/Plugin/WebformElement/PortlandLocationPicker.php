@@ -37,23 +37,29 @@ class PortlandLocationPicker extends WebformCompositeBase {
     // needed, such as in a handler that is sending data to an external system, the sub-field needs to be
     // specified in the token, such as [webform_submission:values:location:place_name].
     $lines = [];
-    if ($value['location_type']) {
+    if (isset($value['location_type']) && $value['location_type']) {
       $lines[] = 'Location type: ' . $value['location_type'] . '<br>';
     }
-    if ($value['place_name']) {
+    if (isset($value['location_private_owner']) && $value['location_private_owner']) {
+      $lines[] = 'Are you the owner? ' . $value['location_private_owner'] . '<br>';
+    }
+    if (isset($value['place_name']) && $value['place_name']) {
       $lines[] = 'Place name: ' . $value['place_name'] . '<br>';
     }
-    if ($value['location_address']) {
+    if (isset($value['location_address']) && $value['location_address']) {
       $lines[] = 'Address: <a href="https://www.google.com/maps/place/' . $value['location_address'] . '">' . $value['location_address'] . '</a>';
     }
-    if ($value['location_lat'] && $value['location_lon']) {
+    if (isset($value['location_lat']) && isset($value['location_lon']) && $value['location_lat']) {
       $latlon = $value['location_lat'] . ',' . $value['location_lon'];
       $lines[] = 'Lat/lon: <a href="https://www.google.com/maps/place/' . $latlon . '">' . $latlon . '</a><br>';
     }
-    if ($value['location_details']) {
+    if (isset($value['location_details']) && $value['location_details']) {
       $lines[] = 'Location details: ' . $value['location_details'] . '<br>';
     }
-    return $lines;
+    if (isset($value['location_asset_id']) && $value['location_asset_id']) {
+      $lines[] = 'Asset ID: ' . $value['location_asset_id'] . '<br>';
+    }
+   return $lines;
   }
 
   /**
@@ -67,23 +73,29 @@ class PortlandLocationPicker extends WebformCompositeBase {
     // needed, such as in a handler that is sending data to an external system, the sub-field needs to be
     // specified in the token, such as [webform_submission:values:location:place_name].
     $lines = [];
-    if ($value['location_type']) {
+    if (isset($value['location_type']) && $value['location_type']) {
       $lines[] = 'Location type: ' . $value['location_type'];
     }
-    if ($value['place_name']) {
+    if (isset($value['location_private_owner']) && $value['location_private_owner']) {
+      $lines[] = 'Are you the owner? ' . $value['location_private_owner'];
+    }
+    if (isset($value['place_name']) && $value['place_name']) {
       $lines[] = 'Place name: ' . $value['place_name'];
     }
-    if ($value['location_address']) {
+    if (isset($value['location_address']) && $value['location_address']) {
       $lines[] = 'Address: ' . $value['location_address'];
     }
-    if ($value['location_lat']) {
+    if (isset($value['location_lat']) && $value['location_lat']) {
       $lines[] = 'Lat: ' . $value['location_lat'];
     }
-    if ($value['location_lon']) {
+    if (isset($value['location_lon']) && $value['location_lon']) {
       $lines[] = 'Lon: ' . $value['location_lon'];
     }
-    if ($value['location_details']) {
+    if (isset($value['location_details']) && $value['location_details']) {
       $lines[] = 'Location details: ' . $value['location_details'];
+    }
+    if (isset($value['location_asset_id']) && $value['location_asset_id']) {
+      $lines[] = 'Asset ID: ' . $value['location_asset_id'];
     }
     return $lines;
   }
