@@ -160,7 +160,7 @@
           map.addControl(new AerialControl());
           map.addControl(new LocateControl());
           map.on('locationerror', handleLocationError);
-          map.on('locationfound', handleLocationFound);
+          map.on('locationfound', handleLocateMeFound);
 
           // only allow map clicks if primary layer behavior is not "selection." if it is, only asset markers can be clicked to select a locaiton.
           if (primaryLayerBehavior != PRIMARY_LAYER_BEHAVIOR.SelectionOnly) { map.on('click', handleMapClick); }
@@ -177,7 +177,7 @@
           var lat = $('#location_lat').val();
           var lng = $('#location_lng').val();
           if (lat && lng) {
-            setMarker(lat, lng);
+            setLocationMarker(lat, lng);
             zoomAndCenter(lat, lng, DEFAULT_ZOOM_CLICK);
           }
   
@@ -207,7 +207,7 @@
             // locate address on map
             var lat = $(this).data('lat');
             var lng = $(this).data('lng');
-            setMarker(lat, lng);
+            setLocationMarker(lat, lng);
             zoomAndCenter(lat, lng, DEFAULT_ZOOM_CLICK);
             setVerified();
           });
@@ -499,86 +499,27 @@
   
         // EVENT HANDLERS ///////////////////////////////
 
+        // this handler is called for primary layer features and incident layer features,
+        // so the markers might represent assets or incidents, but only assets should be selectable.
         function handleMarkerClick(marker) {
-          // this function is for selection purposes. for informational purposes, clicking any
-          // marker will display its popup by default.
 
           L.DomEvent.preventDefault(marker);
-
-          if (locationMarker) {
-            map.removeLayer(locationMarker);
-            locationMarker = null;
-          }
+          // if there was a previously set marker, reset it...
+          resetLocationMarker();
           resetClickedMarker();
 
-          // only allow selection if selection or selection-only behavior
-          if (primaryLayerBehavior == PRIMARY_LAYER_BEHAVIOR.Selection || primaryLayerBehavior == PRIMARY_LAYER_BEHAVIOR.SelectionOnly) {
-
-            // only allow selection if does not have open incident (!hasOpenIncident) OR status is Solved
-            if ((!marker.target.feature.properties.hasOpenIncident || marker.target.feature.properties.status == TICKET_STATUS.Solved)
-                && (marker.target.feature.properties.status != TICKET_STATUS.New && marker.target.feature.properties.status == TICKET_STATUS.Open)) {
-              // store original marker icon, so we can swap back
-              marker.originalIcon = marker.target.options.icon;
-
-              // use selected marker icon
-              newIcon = L.icon({ iconUrl: selectedMarker });
-              marker.target.setIcon(newIcon);
-              L.DomUtil.addClass(marker.target._icon, 'selected');
-
-              clickedMarker = marker;
-
-              // set location form fields with asset data; don't zoom
-              selectAsset(marker);
-
-              // need to call reverseGeolocate in order to capture nearest address
-              if (marker.target.feature.properties.status != "solved") {
-                reverseGeolocate(marker.latlng, false);
-              }
-
-              return true;
-            }
-          }
-
-          $('#place_name').val('');
-          $('#location_details').val('');
-          $('input[name=report_location\\[location_lat\\]]').val('');
-          $('input[name=report_location\\[location_lng\\]]').val('');
-          $('input[name=report_location\\[location_asset_id\\]]').val('');
-
-          if (primaryLayerBehavior == PRIMARY_LAYER_BEHAVIOR.Selection) {
-            reverseGeolocate(marker.latlng, false);
+          if (isAssetSelectable(marker)) {
+            selectAsset(marker);
+          } else {
+            // user clicked something not selectable; reset data collection fields
+            $('#place_name').val('');
+            $('#location_details').val('');
+            $('input[name=report_location\\[location_lat\\]]').val('');
+            $('input[name=report_location\\[location_lng\\]]').val('');
+            $('input[name=report_location\\[location_asset_id\\]]').val('');
           }
         }
 
-        function resetClickedMarker() {
-          if (clickedMarker) {
-            // reset clicked marker's icon to original
-            clickedMarker.target.setIcon(clickedMarker.originalIcon);
-            L.DomUtil.removeClass(clickedMarker.target._icon, 'selected');
-            //map.closePopup();
-          }
-        }
-
-        function selectAsset(marker) {
-            // copy asset title to place name field
-            if (marker.target.feature.properties.name) {
-              $('#place_name').val(marker.target.feature.properties.name);
-            }
-
-            // copy asset detail to location details field.
-            // asset detail will be html formatted. strip tags first?
-            if (marker.target.feature.properties.detail) {
-              var detail = marker.target.feature.properties.detail.replace("<br>", "\n");
-              detail = $(detail).text();
-              $('#location_details').val(detail);
-            }
-
-            // fields that are input type="hidden" need to be selected by name attribute; they won't have ids
-            $('input[name=report_location\\[location_lat\\]]').val(marker.latlng.lat);
-            $('input[name=report_location\\[location_lng\\]]').val(marker.latlng.lng);
-            $('input[name=report_location\\[location_asset_id\\]]').val(marker.target.feature.properties.id);
-        }
-  
         function handleLocationTypeClick(radios) {
           // this might get called when the parks list is disabled, do a null check first
           var select = $('#location_park');
@@ -635,7 +576,6 @@
             locateControlContaier.style.backgroundImage = 'url("/modules/custom/portland/modules/portland_location_picker/images/map_locate.png")';
           }
   
-          // don't zoom in as far for parks; we don't need to
           reverseGeolocate(e.latlng);
 
           // determine whether click is within a region on the primaryLayer layer, and store the region_id.
@@ -657,13 +597,13 @@
           }
         }
   
-        function handleLocationFound(e) {
+        function handleLocateMeFound(e) {
           if (locCircle) {
             map.removeLayer(locCircle);
           }
           var radius = e.accuracy;
           locCircle = L.circle(e.latlng, radius, { weight: 2, fillOpacity: 0.1 }).addTo(map);
-          // setMarker(lat, lng);
+          // setLocationMarker(lat, lng);
           // zoomAndCenter(lat, lng, DEFAULT_ZOOM_CLICK);
           reverseGeolocate(e.latlng);
           locateControlContaier.style.backgroundImage = 'url("/modules/custom/portland/modules/portland_location_picker/images/map_locate_on.png")';
@@ -712,7 +652,61 @@
         }
 
         // HELPER FUNCTIONS ///////////////////////////////
+
+        function isAssetSelectable(marker) {
+          // defines the criteria under which an asset can be selected
+          if (primaryLayerBehavior != PRIMARY_LAYER_BEHAVIOR.Selection && primaryLayerBehavior != PRIMARY_LAYER_BEHAVIOR.SelectionOnly) {
+            return false;
+          }
+          if (marker.target.feature.properties.hasOpenIncident && marker.target.feature.properties.status != TICKET_STATUS.Solved) {
+            return false;
+          }
+          return true;
+        }
+
+        function selectAsset(marker) {
+          // NOTE: at this time, only assets are selectable. if we got to this point,
+          // we can assume the marker is an asset. no need to handle marker clicks for
+          // non-asset incidents since the popup behavior still occurs by default.
+
+          // IMPORTANT: store original marker icon, so we can swap back
+          // function resetClickedMarker restores the original icon
+          marker.originalIcon = marker.target.options.icon;
+
+          // update asset marker to use use selected marker icon
+          newIcon = L.icon({ iconUrl: selectedMarker });
+          marker.target.setIcon(newIcon);
+          L.DomUtil.addClass(marker.target._icon, 'selected');
+
+          // store a reference to the new marker so we can revert it later if needed
+          clickedMarker = marker;
+
+          // set location form fields with asset data
+          captureSelectedAssetMarkerData(marker);
+
+          // need to call reverseGeolocate in order to capture nearest address,
+          // this is the one instance where we don't want to zoom and center when clicking 
+          // an existing marker (2nd argument = false).
+          reverseGeolocate(marker.latlng, false);
+        }
   
+        function resetLocationMarker() {
+          if (locationMarker) {
+            map.removeLayer(locationMarker);
+            locationMarker = null;
+          }
+        }
+  
+        function resetClickedMarker() {
+          if (clickedMarker) {
+            // reset clicked marker's icon to original
+            clickedMarker.target.setIcon(clickedMarker.originalIcon);
+            L.DomUtil.removeClass(clickedMarker.target._icon, 'selected');
+            //map.closePopup();
+          }
+        }
+
+        // this is the helper function that fires when an asset marker is clicked.
         function setLocationType(type) {
           $("input[name='report_location[location_type]'][value='" + type + "']").click();
         }
@@ -776,7 +770,7 @@
             // put full address in field
             var fulladdress = buildFullAddress(candidates[0]);
             $('.location-picker-address').val(fulladdress);
-            setMarker(lat, lng);
+            setLocationMarker(lat, lng);
             zoomAndCenter(lat, lng, DEFAULT_ZOOM_CLICK);
             setVerified();
           } else {
@@ -789,62 +783,65 @@
           map.setView([lat, lng], zoomLevel);
         }
 
-        function setMarker(lat, lng, marker = null) {
-          // remove previous address marker
+        function captureSelectedAssetMarkerData(marker) {
+          // copy asset title to place name field
+          if (marker.target.feature.properties.name) {
+            $('#place_name').val(marker.target.feature.properties.name);
+          }
+
+          // copy asset detail to location details field.
+          // asset detail will be html formatted. strip tags first?
+          if (marker.target.feature.properties.detail) {
+            var detail = marker.target.feature.properties.detail.replace("<br>", "\n");
+            detail = $(detail).text();
+            $('#location_details').val(detail);
+          }
+
+          // fields that are input type="hidden" need to be selected by name attribute; they won't have ids
+          setLatLngHiddenFields(marker.latlng.lat, marker.latlng.lng);
+          $('input[name=report_location\\[location_asset_id\\]]').val(marker.target.feature.properties.id);
+        }
+
+        function setLatLngHiddenFields(lat, lng) {
+          $('input[name=report_location\\[location_lat\\]]').val(lat);
+          $('input[name=report_location\\[location_lng\\]]').val(lng);
+        }
+
+        // set location marker on map. this is only used with map clicks, not marker clicks.
+        // asset marker clicks are handled by the selectAsset(marker) function.
+        // gets called when:
+        // -  map initialization, if postback and hidden lat/lng are set
+        // -  when an address suggestion is clicked
+        // -  processLocationData(candidates) if only one address selection is returned
+        // -  reverseGeolocate returns a park (reverseGeolocatePark)
+        // -  reverseGeolocate doesn't return a park (reverseGeolocateNotPark)
+        function setLocationMarker(lat, lng) {
+
+          // remove previous location marker
           if (locationMarker) {
             map.removeLayer(locationMarker);
             locationMarker = null;
           }
 
-          // if this is a marker click (as opposed to a map click), marker will be populated with
-          // the marker that was clicked, and we'll replace it with the location selection marker.
-          // otherwise, just plop a marker wherever the user clicked on the map.
-          if (!marker && primaryLayerBehavior != PRIMARY_LAYER_BEHAVIOR.SelectionOnly) {
-            locationMarker = L.marker([lat, lng], { icon: defaultSelectedMarkerIcon, draggable: true, riseOnHover: true, iconSize: DEFAULT_ICON_SIZE  }).addTo(map);
-            $('.location-lat').val(lat);
-            $('.location-lng').val(lng);  
-            // if address marker is moved, we want to capture the new coordinates
-            locationMarker.on('dragend', function (e) {
-              var latlng = locationMarker.getLatLng();
-              $('.location-lat').val(latlng.lat);
-              $('.location-lng').val(latlng.lng);
-              reverseGeolocate(latlng);
-            });
-          }
+          locationMarker = L.marker([lat, lng], { icon: defaultSelectedMarkerIcon, draggable: true, riseOnHover: true, iconSize: DEFAULT_ICON_SIZE  }).addTo(map);
+          setLatLngHiddenFields(lat, lng);
+
+          // if address marker is moved, we want to capture the new coordinates
+          locationMarker.unbind('dragend');
+          locationMarker.on('dragend', function (e) {
+            var latlng = locationMarker.getLatLng();
+            setLatLngHiddenFields(latlng.lat,latlng.lng);
+            reverseGeolocate(latlng);
+          });
         }
-  
-        // function setMarkerAndZoom(lat, lng, zoom, center, zoomlevel) {
-        //   //resetClickedMarker(); // if a marker was used for selection
-  
 
-        //   // set new layer
-        //   var latlon = [lat, lng];
-        //   if (primaryLayerBehavior != PRIMARY_LAYER_BEHAVIOR.SelectionOnly) {
-        //     locationMarker = L.marker([lat, lng], { icon: defaultSelectedMarkerIcon, draggable: true, riseOnHover: true, iconSize: DEFAULT_ICON_SIZE  }).addTo(map);
-        //     // if address marker is moved, we want to capture the new coordinates
-        //     locationMarker.on('dragend', function (e) {
-        //       // capture new lat/lng values in hidden fields
-        //       var latlng = locationMarker.getLatLng();
-        //       $('.location-lat').val(latlng.lat);
-        //       $('.location-lng').val(latlng.lng);
-        //       reverseGeolocate(latlng);
-        //     });
-        //   }
-        //   // if (center) {
-        //   //   map.setView(latlon);
-        //   // }
-        //   if (zoom) {
-        //     map.setView(latlon, zoomlevel);
-        //   }
-  
-        //   // anytime a marker is set or moved, put the latlon in the hidden fields
-        //   $('.location-lat').val(lat);
-        //   $('.location-lng').val(lng);
-  
-
-        // }
-
-        function reverseGeolocate(latlng, setMarker = true) {
+        // takes selected coordinates and performs reverse geolocation using the PortlandMaps API. 
+        // gets called by:
+        // - function handleMapClick(e)
+        // - function handleLocateMeFound(e)
+        // - handleMarkerClick > selectAsset(marker)
+        // - locationMarker.on('dragend')
+        function reverseGeolocate(latlng, zoomAndCenter = true) {
           // this function performs two reverse geocoding lookups. one checks whether the click is inside a park.
           // if it's not, the second lookup is done using the ArcGIS API to find the address/place of the clicked coorodinates.
           var lat = latlng.lat;
@@ -857,13 +854,13 @@
           // chaining the two calls together.
           if (useParks) {
             // the reverseGeolocateParks function also calls reverseGeolocateNotPark
-            reverseGeolocateParks(lat, lng, setMarker);
+            reverseGeolocateParks(lat, lng, zoomAndCenter);
           } else {
-            reverseGeolocateNotPark(lat, lng, setMarker);
+            reverseGeolocateNotPark(lat, lng, zoomAndCenter);
           }
         }
   
-        function reverseGeolocateParks(lat, lng, setMarker = true) {
+        function reverseGeolocateParks(lat, lng, zoomAndCenter = true) {
           var reverseParksGeocodeUrl = PARKS_REVGEOCODE_URL.replace('${lat}', lat).replace('${lng}', lng);
           $.ajax({
             url: reverseParksGeocodeUrl, success: function (result) {
@@ -873,8 +870,8 @@
                 // it's a park. process the data from portlandmaps and exit function.
   
                 setLocationType("park");
-                if (setMarker) {
-                  setMarker(lat, lng);
+                if (zoomAndCenter) {
+                  setLocationMarker(lat, lng);
                   zoomAndCenter(lat, lng, DEFAULT_ZOOM_CLICK);    
                 }
   
@@ -933,7 +930,7 @@
                 // portlandmaps doesn't have data for this location.
                 // set location type to "other" so 311 can triage but still set marker.
                 // and clear address field; address is not required for "other."
-                setMarker(lat, lng);
+                setLocationMarker(lat, lng);
                 if (zoomAndCenter) {
                   zoomAndCenter(lat, lng, DEFAULT_ZOOM_CLICK);    
                 }
@@ -958,7 +955,7 @@
         function processReverseLocationData(data, lat, lng, zoomAndCenter = true) {
           // don't set marker and zoom if primary layer behavior is "selection"
           if (primaryLayerBehavior != PRIMARY_LAYER_BEHAVIOR.SelectionOnly) {
-            setMarker(lat, lng);
+            setLocationMarker(lat, lng);
             if (zoomAndCenter) {
               zoomAndCenter(lat, lng, DEFAULT_ZOOM_CLICK);
             }
@@ -1012,7 +1009,7 @@
               var json = JSON.parse(txt.value);
               var lng = json.coordinates[0];
               var lat = json.coordinates[1];
-              setMarker(lat, lng);
+              setLocationMarker(lat, lng);
               zoomAndCenter(lat, lng, DEFAULT_ZOOM_CLICK);    
               redrawMap();
               setVerified("park");
