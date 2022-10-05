@@ -827,7 +827,7 @@
           setLatLngHiddenFields(lat, lng);
 
           // if address marker is moved, we want to capture the new coordinates
-          locationMarker.unbind('dragend');
+          locationMarker.off();
           locationMarker.on('dragend', function (e) {
             var latlng = locationMarker.getLatLng();
             setLatLngHiddenFields(latlng.lat,latlng.lng);
