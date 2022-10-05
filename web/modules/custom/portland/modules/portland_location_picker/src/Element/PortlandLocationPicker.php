@@ -234,11 +234,14 @@ class PortlandLocationPicker extends WebformCompositeBase {
       '#id' => 'location_lat',
       '#attributes' => ['class' => ['location-lat']],
     ];
-    $elements['location_lng'] = [
+    // we're using "lng" everywhere else since that's what Leaflet uses, but this field is already
+    // referenced in too many config files from webform handlers, so this is the one place it will
+    // remain "lon"...
+    $elements['location_lon'] = [
       '#type' => 'hidden',
       '#title' => t('Longitude'),
       '#title_display' => 'invisible',
-      '#id' => 'location_lng',
+      '#id' => 'location_lon',
       '#attributes' => ['class' => ['location-lng']],
     ];
     $elements['location_asset_id'] = [

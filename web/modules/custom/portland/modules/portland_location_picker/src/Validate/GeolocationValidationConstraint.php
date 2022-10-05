@@ -32,7 +32,7 @@ class GeolocationValidationConstraint {
     // are always required if a location_type has been selected and the report_location
     // field is present.
     $lat = $value['location_lat'];
-    $lng = $value['location_lng'];
+    $lng = $value['location_lon'];
     $invalid = $loctype && $loctype != "private" && (!$lat || !$lng);
 
     if ($invalid) {

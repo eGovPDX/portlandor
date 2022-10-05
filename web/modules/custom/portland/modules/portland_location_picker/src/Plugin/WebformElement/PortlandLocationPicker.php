@@ -50,8 +50,8 @@ class PortlandLocationPicker extends WebformCompositeBase {
     if (isset($value['location_address']) && $value['location_address']) {
       $lines[] = 'Address: <a href="https://www.google.com/maps/place/' . $value['location_address'] . '">' . $value['location_address'] . '</a>';
     }
-    if (isset($value['location_lat']) && isset($value['location_lng']) && $value['location_lat']) {
-      $latlon = $value['location_lat'] . ',' . $value['location_lng'];
+    if (isset($value['location_lat']) && isset($value['location_lon']) && $value['location_lat']) {
+      $latlon = $value['location_lat'] . ',' . $value['location_lon'];
       $lines[] = 'Lat/lng: <a href="https://www.google.com/maps/place/' . $latlon . '">' . $latlon . '</a><br>';
     }
     if (isset($value['location_details']) && $value['location_details']) {
@@ -93,8 +93,8 @@ class PortlandLocationPicker extends WebformCompositeBase {
     if (isset($value['location_lat']) && $value['location_lat']) {
       $lines[] = 'Lat: ' . $value['location_lat'];
     }
-    if (isset($value['location_lng']) && $value['location_lng']) {
-      $lines[] = 'Lng: ' . $value['location_lng'];
+    if (isset($value['location_lon']) && $value['location_lon']) {
+      $lines[] = 'Lng: ' . $value['location_lon'];
     }
     if (isset($value['location_details']) && $value['location_details']) {
       $lines[] = 'Details: ' . $value['location_details'];

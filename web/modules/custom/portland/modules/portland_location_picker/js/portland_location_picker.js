@@ -174,11 +174,11 @@
 
           // if there are coordinates in the hidden lat/lng fields, set the map marker.
           // this is likely a submit postback that had validation errors, so we need to re set it.
-          var lat = $('#location_lat').val();
-          var lng = $('#location_lng').val();
+          var lat = $('input[name=report_location\\[location_lat\\]]').val();
+          var lng = $('input[name=report_location\\[location_lon\\]]').val();
           if (lat && lng) {
             setLocationMarker(lat, lng);
-            zoomAndCenter(lat, lng, DEFAULT_ZOOM_CLICK);
+            doZoomAndCenter(lat, lng);
           }
   
           // Set up address verify button
@@ -208,7 +208,7 @@
             var lat = $(this).data('lat');
             var lng = $(this).data('lng');
             setLocationMarker(lat, lng);
-            zoomAndCenter(lat, lng, DEFAULT_ZOOM_CLICK);
+            doZoomAndCenter(lat, lng);
             setVerified();
           });
   
@@ -492,7 +492,7 @@
           var message = "";
           if (feature.properties.status) {
             message = feature.properties.status == "open" || feature.properties.status == "new" ? OPEN_ISSUE_MESSAGE : SOLVED_ISSUE_MESSAGE;
-            message = "<p><em>" + message + "</em></p>";
+            message = "<medium><em>" + message + "</em></medium>";
           }
           return `<p><b>${name}</b></p>${detail}${incidentDetail}${message}`;
         }
@@ -515,7 +515,7 @@
             $('#place_name').val('');
             $('#location_details').val('');
             $('input[name=report_location\\[location_lat\\]]').val('');
-            $('input[name=report_location\\[location_lng\\]]').val('');
+            $('input[name=report_location\\[location_lon\\]]').val('');
             $('input[name=report_location\\[location_asset_id\\]]').val('');
           }
         }
@@ -534,13 +534,15 @@
             redrawMap();
           }
   
-          // if type is street or other, show location name field
-          var placeNameContainer = $('#place_name').parent();
-          if (locationType == "street" || locationType == "other") {
-            placeNameContainer.removeClass('visually-hidden');
-          } else {
-            placeNameContainer.addClass('visually-hidden');
-          }
+          // don't use js to handle this logic. add advanced custom properties to the element
+          // in the webform: set state to visible depending on location type if needed.
+          // // if type is street or other, show location name field
+          // var placeNameContainer = $('#place_name').parent();
+          // if (locationType == "street" || locationType == "other") {
+          //   placeNameContainer.removeClass('visually-hidden');
+          // } else {
+          //   placeNameContainer.addClass('visually-hidden');
+          // }
   
         }
   
@@ -604,7 +606,7 @@
           var radius = e.accuracy;
           locCircle = L.circle(e.latlng, radius, { weight: 2, fillOpacity: 0.1 }).addTo(map);
           // setLocationMarker(lat, lng);
-          // zoomAndCenter(lat, lng, DEFAULT_ZOOM_CLICK);
+          // doZoomAndCenter(lat, lng);
           reverseGeolocate(e.latlng);
           locateControlContaier.style.backgroundImage = 'url("/modules/custom/portland/modules/portland_location_picker/images/map_locate_on.png")';
   
@@ -771,7 +773,7 @@
             var fulladdress = buildFullAddress(candidates[0]);
             $('.location-picker-address').val(fulladdress);
             setLocationMarker(lat, lng);
-            zoomAndCenter(lat, lng, DEFAULT_ZOOM_CLICK);
+            doZoomAndCenter(lat, lng);
             setVerified();
           } else {
             // no matches found
@@ -779,7 +781,7 @@
           }
         }
 
-        function zoomAndCenter(lat, lng, zoomLevel = DEFAULT_ZOOM) {
+        function doZoomAndCenter(lat, lng, zoomLevel = DEFAULT_ZOOM_CLICK) {
           map.setView([lat, lng], zoomLevel);
         }
 
@@ -804,7 +806,7 @@
 
         function setLatLngHiddenFields(lat, lng) {
           $('input[name=report_location\\[location_lat\\]]').val(lat);
-          $('input[name=report_location\\[location_lng\\]]').val(lng);
+          $('input[name=report_location\\[location_lon\\]]').val(lng);
         }
 
         // set location marker on map. this is only used with map clicks, not marker clicks.
@@ -872,7 +874,7 @@
                 setLocationType("park");
                 if (zoomAndCenter) {
                   setLocationMarker(lat, lng);
-                  zoomAndCenter(lat, lng, DEFAULT_ZOOM_CLICK);    
+                  doZoomAndCenter(lat, lng);    
                 }
   
                 // attempt to set park selector. if not exact match, set selector
@@ -932,7 +934,7 @@
                 // and clear address field; address is not required for "other."
                 setLocationMarker(lat, lng);
                 if (zoomAndCenter) {
-                  zoomAndCenter(lat, lng, DEFAULT_ZOOM_CLICK);    
+                  doZoomAndCenter(lat, lng);    
                 }
                 if (locationType == "park") {
                   setLocationType("other");
@@ -957,7 +959,7 @@
           if (primaryLayerBehavior != PRIMARY_LAYER_BEHAVIOR.SelectionOnly) {
             setLocationMarker(lat, lng);
             if (zoomAndCenter) {
-              zoomAndCenter(lat, lng, DEFAULT_ZOOM_CLICK);
+              doZoomAndCenter(lat, lng);
             }
           }
           var street = data.address.Street;
@@ -1010,7 +1012,7 @@
               var lng = json.coordinates[0];
               var lat = json.coordinates[1];
               setLocationMarker(lat, lng);
-              zoomAndCenter(lat, lng, DEFAULT_ZOOM_CLICK);    
+              doZoomAndCenter(lat, lng);    
               redrawMap();
               setVerified("park");
             }
