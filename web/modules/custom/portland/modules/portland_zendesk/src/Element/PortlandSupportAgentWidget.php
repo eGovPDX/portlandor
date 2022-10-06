@@ -41,8 +41,8 @@ class PortlandSupportAgentWidget extends WebformCompositeBase {
     $currentUserEmail = $currentUser->getEmail();
     $currentUserName = $currentUser->getDisplayName();
 
-    //$element = [];
     $element['#title'] = ['Support Agent Widget'];
+    
     $element['support_agent_widget_title'] = [
       '#type' => 'markup',
       '#title' => t('Support Agent Widget'),
@@ -65,7 +65,7 @@ class PortlandSupportAgentWidget extends WebformCompositeBase {
       '#type' => 'checkbox',
       '#title' => t('Test Submission'),
       '#id' => 'test_submission',
-      '#description' => 'For administrtor use only. Handlers can be configured to process form submissions differently based on whether this box is checked.',
+      '#description' => 'For administrtor use only. Handlers can be configured to process form submissions differently based on whether this box is checked. Typically configured to place tickets in the Developer Test Group in Zendesk.',
       '#access_create_roles' => ['administrator'],
       '#access_update_roles' => ['administrator'],
       '#access_view_roles' => ['administrator'],
