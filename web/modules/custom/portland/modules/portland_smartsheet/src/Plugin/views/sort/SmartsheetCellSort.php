@@ -1,47 +1,25 @@
 <?php
 
-namespace Drupal\portland_smartsheet\Plugin\views\field;
+namespace Drupal\portland_smartsheet\Plugin\views\sort;
 
 use Drupal\Component\Utility\Xss;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\views\Render\ViewsRenderPipelineMarkup;
-use Drupal\views\Plugin\views\field\FieldPluginBase;
+use Drupal\views\Plugin\views\sort\SortPluginBase;
 use Drupal\views\ResultRow;
 use Drupal\portland_smartsheet\Client\SmartsheetClient;
 
 /**
- * Provide a Smartsheet cell data field on Smartsheet views
+ * Provide a Smartsheet cell data sort plugin on Smartsheet views
  *
- * @ViewsField("smartsheet_cell")
+ * @ViewsSort("smartsheet_cell")
  */
-class SmartsheetCellField extends FieldPluginBase {
+class SmartsheetCellSort extends SortPluginBase {
   /**
-   * {@inheritdoc}
-   */
-  public function usesGroupBy() {
-    return FALSE;
-  }
-
-  /**
-   * {@inheritdoc}
+   * Called to add the sort to a query.
    */
   public function query() {
-    // do nothing -- to override the parent query.
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function clickSort($order) {
-    $this->query->addSort($this->options['column_id'], $order);
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function getValue(ResultRow $row, $field = NULL) {
-    $cell = $row->cells[$this->options['column_id']];
-    return $cell->displayValue ?? $cell->value ?? NULL;
+    $this->query->addSort($this->options['column_id'], $this->options['order']);
   }
 
   /**
@@ -72,7 +50,7 @@ class SmartsheetCellField extends FieldPluginBase {
     $form['column_id'] = [
       '#type' => 'select',
       '#title' => $this->t('Column ID'),
-      '#description' => $this->t('The column ID from which to show the cell data'),
+      '#description' => $this->t('The column ID from which to sort the rows'),
       '#default_value' => $this->options['column_id'],
       '#options' => $options,
       '#required' => TRUE

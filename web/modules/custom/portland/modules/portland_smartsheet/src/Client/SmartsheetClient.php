@@ -23,7 +23,7 @@ class SmartsheetClient {
       'headers' => [
         'Authorization' => "Bearer {$access_token}"
       ],
-      'http_errors' => FALSE
+      'http_errors' => FALSE,
     ]);
   }
 

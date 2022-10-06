@@ -10,7 +10,7 @@ function portland_smartsheet_views_data() {
   $data['smartsheet']['table']['base'] = [
     'title' => t('Smartsheet'),
     'help' => t('Populate a view using the Smartsheet API'),
-    'query_id' => 'smartsheet'
+    'query_id' => 'smartsheet',
   ];
 
   // Fields.
@@ -19,7 +19,10 @@ function portland_smartsheet_views_data() {
     'help' => t('Data from a cell in current row of the sheet'),
     'field' => [
       'id' => 'smartsheet_cell'
-    ]
+    ],
+    'sort' => [
+      'id' => 'smartsheet_cell'
+    ],
   ];
 
   return $data;

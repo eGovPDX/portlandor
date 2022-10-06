@@ -20,6 +20,8 @@ use Drupal\Core\Ajax\HtmlCommand;
  * )
  */
 class Smartsheet extends QueryPluginBase {
+  private $sorts = [];
+
   /**
    * {@inheritdoc}
    */
@@ -37,9 +39,20 @@ class Smartsheet extends QueryPluginBase {
         'page' => $view->pager->getCurrentPage() + 1,
         'pageSize' => $items_per_page === 0 ? 9999 : $items_per_page
       ]);
-      $sheet_rows = array_slice($sheet->rows, $view->pager->getOffset());
-      foreach ($sheet_rows as $index => $sheet_row) {
-        $result_row['cells'] = array_column($sheet_row->cells, NULL, 'columnId');
+      $sheet_raw_rows = array_slice($sheet->rows, $view->pager->getOffset());
+      $rows = [];
+      foreach ($sheet_raw_rows as $sheet_row) {
+        $rows[] = array_column($sheet_row->cells, NULL, 'columnId');
+      }
+
+      // Sort according to any added sort plugins
+      foreach ($this->sorts as $column_id => $order) {
+        $column = array_map(fn($el) => $el->displayValue ?? $el->value ?? NULL, array_column($rows, $column_id));
+        array_multisort($column, $order, $rows);
+      }
+
+      foreach ($rows as $index => $row) {
+        $result_row['cells'] = $row;
         $result_row['index'] = $index;
         $view->result[] = new ResultRow($result_row);
       }
@@ -51,12 +64,8 @@ class Smartsheet extends QueryPluginBase {
     }
   }
 
-  public function ensureTable($table, $relationship = NULL) {
-    return '';
-  }
-
-  public function addField($table, $field, $alias = '', $params = array()) {
-    return $field;
+  public function addSort($column_id, $direction) {
+    $this->sorts[$column_id] = strtolower($direction) === 'asc' ? SORT_ASC : SORT_DESC;
   }
 
   /**
