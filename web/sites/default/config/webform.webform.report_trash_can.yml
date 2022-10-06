@@ -31,7 +31,6 @@ elements: |-
       '#title': 'Location of public trash can'
       '#title_display': before
       '#required': true
-      '#location_type__access': false
       '#location_park_container__access': false
       '#waterway_instructions__access': false
       '#location_private_owner__access': false
@@ -39,32 +38,38 @@ elements: |-
       '#location_address__description': 'Enter an address then press the Locate button to find it on the map, or use the +/- zoom controls to zoom in and find the trash can you want to report.'
       '#location_address__title_display': invisible
       '#location_map__title': 'Location marker on map'
-      '#location_map__description': '<em>Public trash cans are displayed with a gray marker <img src="/modules/custom/portland/modules/portland_location_picker/images/map_marker_trashcan.png" alt="Trash can map marker icon" class="inline-icon"> when the map is fully zoomed in. Click a trash can to select it. Trash cans that have already been reported are shown with a red marker <img src="/modules/custom/portland/modules/portland_location_picker/images/map_marker_incident.png" alt="Red map marker icon" class="inline-icon">.</em>'
-      '#place_name__title': 'Selected Trash Can'
-      '#place_name__description': 'Select a trash can by clicking it on the map.'
-      '#place_name__required': true
-      '#location_details__access': false
+      '#location_map__description': |-
+        Public trash cans owned by the city are displayed with a gray marker <img src="/modules/custom/portland/modules/portland_location_picker/images/map_marker_trashcan.png" alt="Trash can map marker icon" class="inline-icon"> when the map is fully zoomed in. Click a trash can to select it. Trash cans that have already been reported are shown with a red marker <img src="/modules/custom/portland/modules/portland_location_picker/images/map_marker_incident.png" alt="Red map marker icon" class="inline-icon">.
+
+        If you are reporting a trash can not displayed on the map, please click its exact location.
+      '#place_name__title': 'Location name'
+      '#location_details__title': Details
       '#location_lat__required': true
-      '#location_lon__required': true
       '#location_asset_id__title': 'Selected Trash Can'
-      '#selected_asset_name__title': 'Selected asset'
+      '#location_lon__required': true
+      '#primary_layer_source': /api/features/trashcans
+      '#primary_layer_behavior': selection
+      '#primary_layer_type': assets
+      '#primary_marker': /modules/custom/portland/modules/portland_location_picker/images/map_marker_trashcan.png
+      '#feature_layer_visible_zoom': 16
+      '#incidents_layer_source': /api/tickets/trashcans
       '#location_address__states':
         visible: true
-      '#location_map__description_display': after
       '#location_map__states':
         visible: true
-      '#place_name__readonly': true
-      '#place_name__description_display': invisible
-      '#primary_layer_source': /api/features/trashcans
-      '#incidents_layer_source': /api/tickets/trashcans
-      '#primary_layer_behavior': selection
-      '#primary_layer_type': asset
-      '#primary_feature_name0': 'trash can'
-      '#primary_marker': /modules/custom/portland/modules/portland_location_picker/images/map_marker_trashcan.png
-      '#verify_button_text': Locate
-      '#feature_layer_visible_zoom': 17
-    report_issue:
-      '#type': webform_radios_other
+      '#location_asset_id__states':
+        visible: true
+      '#location_type__wrapper_attributes':
+        class:
+          - visually-hidden
+      '#place_name__wrapper_attributes':
+        class:
+          - visually-hidden
+      '#location_details__wrapper_attributes':
+        class:
+          - visually-hidden
+    report_problem:
+      '#type': webform_checkboxes_other
       '#title': 'What is the problem with the trash can?'
       '#options':
         Overflowing: Overflowing
@@ -75,19 +80,47 @@ elements: |-
         'Trash dumped near can': 'Trash dumped near can'
       '#other__option_label': 'Something else...'
       '#other__placeholder': 'Please describe...'
-      '#required': true
+    report_hate_speech_or_gang:
+      '#type': radios
+      '#title': 'Is this graffiti hate speech or gang related?'
+      '#options':
+        'Yes': 'Yes'
+        'No': 'No'
+        'Not sure': 'Not sure'
+      '#options_display': side_by_side
+      '#states':
+        visible:
+          ':input[name="report_problem[checkboxes][Graffiti]"]':
+            checked: true
+    report_photo:
+      '#type': webform_image_file
+      '#title': 'Please upload a photo of the trash can issue'
+      '#description': 'Optional. A clear photo of the trash can may help us determine the resources needed to address the issue.&nbsp;'
+      '#file_preview': name
+      '#max_filesize': '30'
+      '#file_extensions': 'gif jpg png svg jpeg'
+      '#file_name': 'report_[webform_submission:sid]'
+      '#sanitize': true
+      '#attachment_image_style': webform_report_uploaded_image
   section_contact:
     '#type': webform_section
     '#title': 'Your Contact Information'
     contact_name:
       '#type': textfield
       '#title': Name
+      '#prepopulate': true
     contact_email:
       '#type': textfield
       '#title': Email
       '#description': 'We will use your email to respond to your feedback or request.'
+      '#prepopulate': true
       '#input_mask': '''alias'': ''email'''
       '#required': true
+    contact_phone:
+      '#type': textfield
+      '#title': 'Phone Number'
+      '#description': 'You do not need to provide a phone number, but sometimes it&#39;s helpful if we have questions about your report.'
+      '#prepopulate': true
   section_public_records_statement:
     '#type': webform_section
     '#title': 'Public Records Statement'
@@ -96,7 +129,7 @@ elements: |-
       '#markup': 'The information you provide in this form is considered a public record under Oregon&rsquo;s <a data-renderer-mark="true" href="https://www.doj.state.or.us/oregon-department-of-justice/public-records/attorney-generals-public-records-and-meetings-manual/i-public-records/#:~:text=Under%20Oregon''s%20Public%20Records%20Law,committee%20of%20the%20Legislative%20Assembly" title="https://www.doj.state.or.us/oregon-department-of-justice/public-records/attorney-generals-public-records-and-meetings-manual/i-public-records/#:~:text=Under%20Oregon''s%20Public%20Records%20Law,committee%20of%20the%20Legislative%20Assembly">Public Records Law</a> and is available to the public on request.'
   support_agent_use_only:
     '#type': portland_support_agent_widget
-    '#title': 'Support Agent Use Only'
+    '#title': 'Customer Service Use Only'
     '#access_create_roles':
       - authenticated
     '#access_update_roles':
@@ -105,6 +138,7 @@ elements: |-
     '#access_view_roles':
       - support_agent
       - administrator
+    '#title__access': false
   report_ticket_id:
     '#type': hidden
     '#title': 'Support Ticket ID'
@@ -323,8 +357,8 @@ handlers:
     settings:
       requester_name: contact_name
       requester_email: contact_email
-      subject: 'Trash can report: [webform_submission:values:report_location:location_asset_id] [webform_submission:values:report_issue]'
-      comment: "<h3>Report</h3>\r\n<p><strong>Lat/Lon:</strong> <a href=\"https://www.google.com/maps/place/[webform_submission:values:report_location:location_lat],[webform_submission:values:report_location:location_lon]\">[webform_submission:values:report_location:location_lat],[webform_submission:values:report_location:location_lon]</a><br>\r\n<strong>Approximate address:</strong> <a href=\"https://www.google.com/maps/place/[webform_submission:values:report_location:location_address]\">[webform_submission:values:report_location:location_address]</a><br />\r\n<strong>Asset ID:</strong> [webform_submission:values:report_location:location_asset_id]<br><strong>Problem:</strong> [webform_submission:values:report_issue]</p>\r\n\r\n<h3>Contact</h3>\r\n<p><strong>Name:</strong> [webform_submission:values:contact_name]<br>\r\n<strong>Email:</strong> [webform_submission:values:contact_email]</p>\r\n\r\n<h3>Customer Support Details</h3>\r\n[webform_submission:values:support_agent_use_only]"
+      subject: 'Trash can report: [webform_submission:values:report_problem]'
+      comment: '[webform_submission:values:html]'
       tags: 'drupal webform trash'
       priority: normal
       status: new
@@ -332,8 +366,9 @@ handlers:
       assignee_id: ''
       type: incident
       collaborators: ''
-      custom_fields: "1500012743961: '[webform_submission:values:report_location:location_address]'\r\n1500012801542: '[webform_submission:values:report_location:location_asset_id]'\r\n1500013095781: '[webform_submission:uuid]'\r\n5581480390679: '[webform_submission:values:report_location:location_lat]'\r\n5581490332439: '[webform_submission:values:report_location:location_lon]'\r\n1500012743981: '[webform_submission:values:report_issue]'\r\n6353388345367: 'report_trash_can'"
+      custom_fields: "1500012743961: '[webform_submission:values:report_location:location_address]'\r\n1500012801542: '[webform_submission:values:report_location:location_asset_id]'\r\n1500013095781: '[webform_submission:uuid]'\r\n5581480390679: '[webform_submission:values:report_location:location_lat]'\r\n5581490332439: '[webform_submission:values:report_location:location_lon]'\r\n1500012743981: '[webform_submission:values:report_problem]'\r\n6353388345367: 'report_trash_can'"
       ticket_id_field: report_ticket_id
+      ticket_form_id: '9255846536983'
   zendesk_update_interaction_ticket:
     id: zendesk_update_ticket
     handler_id: zendesk_update_interaction_ticket
@@ -357,6 +392,7 @@ handlers:
       collaborators: ''
       custom_fields: '8692493739543: ''[webform_submission:values:report_ticket_id]'''
       ticket_id_field: zendesk_request_number
+      ticket_form_id: ''
   zendesk_new_ticket_developer_testing:
     id: zendesk
     handler_id: zendesk_new_ticket_developer_testing
@@ -371,8 +407,8 @@ handlers:
     settings:
       requester_name: contact_name
       requester_email: contact_email
-      subject: 'Trash can report: [webform_submission:values:report_location:location_asset_id] [webform_submission:values:report_issue]'
-      comment: "<h3>Report</h3>\r\n<p><strong>Lat/Lon:</strong> <a href=\"https://www.google.com/maps/place/[webform_submission:values:report_location:location_lat],[webform_submission:values:report_location:location_lon]\">[webform_submission:values:report_location:location_lat],[webform_submission:values:report_location:location_lon]</a><br>\r\n<strong>Approximate address:</strong> <a href=\"https://www.google.com/maps/place/[webform_submission:values:report_location:location_address]\">[webform_submission:values:report_location:location_address]</a><br />\r\n<strong>Asset ID:</strong> [webform_submission:values:report_location:location_asset_id]<br><strong>Problem:</strong> [webform_submission:values:report_issue]</p>\r\n\r\n<h3>Contact</h3>\r\n<p><strong>Name:</strong> [webform_submission:values:contact_name]<br>\r\n<strong>Email:</strong> [webform_submission:values:contact_email]</p>\r\n\r\n<h3>Customer Support Details</h3>\r\n[webform_submission:values:support_agent_use_only]"
+      subject: 'Trash can report: [webform_submission:values:report_problem]'
+      comment: '[webform_submission:values:html]'
       tags: 'drupal webform trash'
       priority: normal
       status: new
@@ -380,6 +416,7 @@ handlers:
       assignee_id: ''
       type: incident
       collaborators: ''
-      custom_fields: "1500012743961: '[webform_submission:values:report_location:location_address]'\r\n1500012801542: '[webform_submission:values:report_location:location_asset_id]'\r\n1500013095781: '[webform_submission:uuid]'\r\n5581480390679: '[webform_submission:values:report_location:location_lat]'\r\n5581490332439: '[webform_submission:values:report_location:location_lon]'\r\n1500012743981: '[webform_submission:values:report_issue]'\r\n6353388345367: 'report_trash_can'"
+      custom_fields: "1500012743961: '[webform_submission:values:report_location:location_address]'\r\n1500012801542: '[webform_submission:values:report_location:location_asset_id]'\r\n1500013095781: '[webform_submission:uuid]'\r\n5581480390679: '[webform_submission:values:report_location:location_lat]'\r\n5581490332439: '[webform_submission:values:report_location:location_lon]'\r\n1500012743981: '[webform_submission:values:report_problem]'\r\n6353388345367: 'report_trash_can'"
       ticket_id_field: report_ticket_id
+      ticket_form_id: '9255846536983'
 variants: {  }
