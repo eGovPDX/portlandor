@@ -37,13 +37,14 @@ class PortlandSupportAgentWidget extends WebformCompositeBase {
     // needed, such as in a handler that is sending data to an external system, the sub-field needs to be
     // specified in the token, such as [webform_submission:values:location:place_name].
     $lines = [];
-    $lines[] = "<h2>Customer Service Details</h2>";
+    $line = "<h2>Customer Service Details</h2>";
     if (isset($value['employee_email']) && $value['employee_email']) {
-      $lines[] = 'Form submitted by: ' . $value['employee_email'] . '<br>';
+      $line .= 'Form submitted by: ' . $value['employee_email'];
     }
     if (isset($value['zendesk_request_number']) && $value['zendesk_request_number']) {
-      $lines[] = 'Zendesk request number: ' . $value['zendesk_request_number'] . '<br>';
+      $line .= 'Zendesk request number: ' . $value['zendesk_request_number'];
     }
+    $lines[] = $line;
     return $lines;
   }
 
@@ -60,10 +61,10 @@ class PortlandSupportAgentWidget extends WebformCompositeBase {
     $lines = [];
     $lines[] = "Customer Service Details:";
     if (isset($value['employee_email']) && $value['employee_email']) {
-      $lines[] = 'Form submitted by: ' . $value['employee_email'] . '<br>';
+      $lines[] = 'Form submitted by: ' . $value['employee_email'];
     }
     if (isset($value['zendesk_request_number']) && $value['zendesk_request_number']) {
-      $lines[] = 'Zendesk request number: ' . $value['zendesk_request_number'] . '<br>';
+      $lines[] = 'Zendesk request number: ' . $value['zendesk_request_number'];
     }
     return $lines;
   }
