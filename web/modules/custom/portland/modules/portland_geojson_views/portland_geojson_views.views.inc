@@ -35,6 +35,7 @@ function portland_geojson_views_views_data() {
     'field' => [
       'id' => 'numeric',
     ],
+    'type' => 'numeric'
   ];
   $data['geojson_feature']['feature_type'] = [
     'title' => t('Feature type'),
@@ -42,27 +43,39 @@ function portland_geojson_views_views_data() {
     'field' => [
       'id' => 'standard',
     ],
+    'type' => 'standard'
   ];
-  $data['geojson_feature']['feature_coordinates'] = [
-    'title' => t('Feature coordinates'),
-    'help' => t('The coordinates associated with the geoJSON feature.'),
+  $data['geojson_feature']['feature_geometry'] = [
+    'title' => t('Feature geometry'),
+    'help' => t('The geometry data associated with the geoJSON feature.'),
     'field' => [
       'id' => 'standard',
     ],
+    'type' => 'standard'
   ];
-  $data['geojson_feature']['feature_coordinates_lat'] = [
-    'title' => t('Feature coordinates latitude'),
-    'help' => t('The latitude coordinate associated with the geoJSON point feature.'),
+  $data['geojson_feature']['tag_number'] = [
+    'title' => t('Trash can tag number'),
+    'help' => t('The tag number associated with the trash can (property "tag_number" from geoJSON feed).'),
     'field' => [
       'id' => 'standard',
     ],
+    'type' => 'standard'
   ];
-  $data['geojson_feature']['feature_coordinates_lon'] = [
-    'title' => t('Feature coordinates longitude'),
-    'help' => t('The longitude coordinate associated with the geoJSON point feature.'),
+  $data['geojson_feature']['collection_days'] = [
+    'title' => t('Trash can collection days'),
+    'help' => t('The days of the week that the trash can is collected (property "collection_days" from geoJSON feed).'),
     'field' => [
       'id' => 'standard',
     ],
+    'type' => 'standard'
+  ];
+  $data['geojson_feature']['meter_distr'] = [
+    'title' => t('Meter district'),
+    'help' => t('The meter district name (property "MeterDistr" from geoJSON feed).'),
+    'field' => [
+      'id' => 'standard',
+    ],
+    'type' => 'standard'
   ];
 
   return $data;

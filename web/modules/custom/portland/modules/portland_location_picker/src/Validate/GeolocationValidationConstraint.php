@@ -28,12 +28,12 @@ class GeolocationValidationConstraint {
     $loctype = $value['location_type'];
 
     // we need to validate that the user has selected a location and that the
-    // lat/lon values have been provided. We don't always need an address, but lat/lon
+    // lat/lng values have been provided. We don't always need an address, but lat/lng
     // are always required if a location_type has been selected and the report_location
     // field is present.
     $lat = $value['location_lat'];
-    $lon = $value['location_lon'];
-    $invalid = $loctype && $loctype != "private" && (!$lat || !$lon);
+    $lng = $value['location_lon'];
+    $invalid = $loctype && $loctype != "private" && (!$lat || !$lng);
 
     if ($invalid) {
       // location is required but not provided

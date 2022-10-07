@@ -431,7 +431,7 @@ class ZendeskUpdateHandler extends WebformHandlerBase
     $submission_fields = $webform_submission->toArray(TRUE);
     $configuration = $this->getTokenManager()->replace($this->configuration, $webform_submission);
 
-    $zendesk_ticket_id = $submission_fields['data']['support_agent_use_only'][$configuration['ticket_id_field']];
+    $zendesk_ticket_id = $submission_fields['data'][$configuration['ticket_id_field']];
     $confirm_zendesk_ticket_id = 0; // this will be updated and validated after getting the ticket
 
     // Allow for either values coming from other fields or static/tokens
