@@ -25,8 +25,13 @@ class ResourceUrlConstraintValidator extends ConstraintValidator {
       'field_destination_url' => $entity->field_destination_url[0]->getValue()['uri'],
     ]);
 
+    // For existing Resource, remove itself from the query result array
+    if( !$entity->isNew() ) {
+      unset($resources[$entity->id()]);
+    }
+
     // Found duplicates
-    if( count($resources) > 0) {
+    if( count($resources) > 0 ) {
       $resource_urls = [];
       foreach(array_values($resources) as $resource) {
         $resource_urls []= "<a href=\"" . $resource->toUrl()->toString() . "\">" . $resource->getTitle() . "</a>";
