@@ -178,6 +178,7 @@ function portland_entity_type_alter(array &$entity_types)
 {
   $node = $entity_types['node'];
   $node->addConstraint('EventDateTime', []);
+  $node->addConstraint('ResourceUrl', []);
 }
 
 /**
@@ -197,6 +198,17 @@ function portland_node_presave($node)
       $node->field_end_date->value == $node->field_start_date->value
     ) {
       $node->set('field_end_date', null);
+    }
+  }
+  else if ($node->bundle() == 'external_resource') {
+    // If it's a PGOV URL, make it to the current host
+    $link_uri = $node->field_destination_url[0]->getValue()['uri'];
+    $sitenames_to_remove = ['https://www.portland.gov', 'https://portland.gov'];
+    foreach($sitenames_to_remove as $sitename_to_remove) {
+      if(str_starts_with($link_uri, $sitename_to_remove) ) {
+        $new_link_uri = 'https://' . \Drupal::request()->getHost() . substr($link_uri, strlen($sitename_to_remove));
+        $node->field_destination_url[0]->setValue(['uri'=>$new_link_uri]);
+      }
     }
   }
 
