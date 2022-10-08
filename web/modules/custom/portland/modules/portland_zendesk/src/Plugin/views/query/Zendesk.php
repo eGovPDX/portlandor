@@ -78,7 +78,7 @@ class Zendesk extends QueryPluginBase {
    */
   public function buildOptionsForm(&$form, FormStateInterface $form_state) {
     $form['ticket_query'] = [
-      '#type' => 'textfield',
+      '#type' => 'textarea',
       '#title' => $this->t('Zendesk Search API query string'),
       '#default_value' => $this->options['ticket_query'],
       '#description' => $this->t('Use the Zendesk Search API query string needed to display the desired results. This query is used in place of view filters. Example: "type:ticket status:open form:6499767163543"'),
