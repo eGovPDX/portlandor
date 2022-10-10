@@ -11,7 +11,6 @@ function portland_zendesk_views_data() {
     'title' => t('Zendesk ticket'),
     'help' => t('Zendesk ticket data provided by the Zendesk Tickets API.'),
     'query_id' => 'zendesk',
-    'type' => '',
   ];
 
   // Fields.
@@ -21,7 +20,6 @@ function portland_zendesk_views_data() {
     'field' => [
       'id' => 'numeric',
     ],
-    'type' => 'numeric',
   ];
   $data['zendesk_ticket']['ticket_status'] = [
     'title' => t('Ticket status'),
@@ -29,7 +27,6 @@ function portland_zendesk_views_data() {
     'field' => [
       'id' => 'standard',
     ],
-    'type' => 'standard',
   ];
   $data['zendesk_ticket']['ticket_subject'] = [
     'title' => t('Ticket subject'),
@@ -37,7 +34,6 @@ function portland_zendesk_views_data() {
     'field' => [
       'id' => 'standard',
     ],
-    'type' => 'standard',
   ];
   $data['zendesk_ticket']['ticket_description'] = [
     'title' => t('Ticket description'),
@@ -45,7 +41,6 @@ function portland_zendesk_views_data() {
     'field' => [
       'id' => 'standard',
     ],
-    'type' => 'standard',
   ];
   $data['zendesk_ticket']['ticket_priority'] = [
     'title' => t('Ticket priority'),
@@ -53,7 +48,6 @@ function portland_zendesk_views_data() {
     'field' => [
       'id' => 'standard',
     ],
-    'type' => 'standard',
   ];
   $data['zendesk_ticket']['ticket_created_date'] = [
     'title' => t('Ticket creation date'),
@@ -61,7 +55,6 @@ function portland_zendesk_views_data() {
     'field' => [
       'id' => 'date',
     ],
-    'type' => 'date',
   ];
   $data['zendesk_ticket']['ticket_updated_date'] = [
     'title' => t('Ticket last updated date'),
@@ -69,7 +62,6 @@ function portland_zendesk_views_data() {
     'field' => [
       'id' => 'date',
     ],
-    'type' => 'date',
   ];
   $data['zendesk_ticket']['custom_asset_id'] = [
     'title' => t('Ticket asset id'),
@@ -77,7 +69,6 @@ function portland_zendesk_views_data() {
     'field' => [
       'id' => 'standard',
     ],
-    'type' => 'standard',
   ];
   $data['zendesk_ticket']['custom_reported_issue'] = [
     'title' => t('Ticket reported issue'),
@@ -85,14 +76,12 @@ function portland_zendesk_views_data() {
     'field' => [
       'id' => 'standard',
     ],
-    'type' => 'standard',
   ];
   $data['zendesk_ticket']['custom_location_lat'] = [
     'title' => t('Ticket location latitude'),
     'help' => t('The latitude coordinate associated with the ticket.'),
     'field' => [
       'id' => 'standard',
-    'type' => 'standard',
     ],
   ];
   $data['zendesk_ticket']['custom_location_lon'] = [
@@ -100,7 +89,6 @@ function portland_zendesk_views_data() {
     'help' => t('The longitude coordinate associated with the ticket.'),
     'field' => [
       'id' => 'standard',
-    'type' => 'standard',
     ],
   ];
   $data['zendesk_ticket']['custom_address'] = [
@@ -108,7 +96,6 @@ function portland_zendesk_views_data() {
     'help' => t('The street address associated with the ticket.'),
     'field' => [
       'id' => 'standard',
-    'type' => 'standard',
     ],
   ];
   $data['zendesk_ticket']['custom_public_description'] = [
@@ -117,7 +104,6 @@ function portland_zendesk_views_data() {
     'field' => [
       'id' => 'standard',
     ],
-    'type' => 'standard',
   ];
 
 
