@@ -38,12 +38,20 @@ class GeojsonViews extends QueryPluginBase {
       // that use a different property name.
       $row['feature_id'] = $feature['properties']['OBJECTID'];
       
+      // geometry
+      // these properties are universal across all geoJSON feeds.
       $row['feature_type'] = $feature['geometry']['type'];
-      $row['feature_coordinates_lat'] = $feature['geometry']['coordinates'][0];
-      $row['feature_coordinates_lon'] = $feature['geometry']['coordinates'][1];
+      $row['feature_geometry'] = json_encode($feature['geometry']);
 
-      $index = $index + 1;
+      // properties
+      // not all properties are applicable to all geoJSON feeds that this module might consume.
+      // any new possible properties need to be hard coded here before use.
+      $row['tag_number'] = array_key_exists('tag_number', $feature['properties']) ? $feature['properties']['tag_number'] : "";
+      $row['collection_days'] = array_key_exists('collection_days', $feature['properties']) ? $feature['properties']['collection_days'] : "";
+      $row['meter_distr'] = array_key_exists('MeterDistr', $feature['properties']) ? $feature['properties']['MeterDistr'] : "";
+      
       $row['index'] = $index;
+      $index = $index + 1;
       $view->result[] = new ResultRow($row);
     }
 

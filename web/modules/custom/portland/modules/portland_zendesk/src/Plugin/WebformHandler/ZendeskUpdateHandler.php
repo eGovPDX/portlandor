@@ -27,13 +27,18 @@ use Drupal\portland_zendesk\Utils\Utility;
  *   cardinality = \Drupal\webform\Plugin\WebformHandlerInterface::CARDINALITY_UNLIMITED,
  *   results = \Drupal\webform\Plugin\WebformHandlerInterface::RESULTS_PROCESSED,
  * )
- * 
+ *
  * The handler also validates that the right ticket is being updated. Each ticket includes the original report webform UUID.
  * The UUID is passed into a hidden field in the resolution form when the company agent click the link in their notification email.
  * Before updating the ticket, the updte handler queries the ticket identified by the ticket_id field and verifies that the
  * UUID is a match. This prevents a company agent from somehow changing the ticket ID value in the link URL, or a malicious actor
  * from getting ahold of the link and updating multiple unrelated tickets by changing the ticket ID value and resubmitting.
- * 
+ *
+ * When using this handler to update an "interaction ticket" created by a 311 agent, which uses the zendesk_request_number
+ * sub-element of the Support Agent Widget, it needs to be accessed a little differently from the data array since it's nested.
+ * Logic has been added to this handler to look for zendesk_request_number under the support_agent_use_only element. Note that
+ * this approach requires that the widget always be named support_agent_use_only.
+ *
  */
 class ZendeskUpdateHandler extends WebformHandlerBase
 {
@@ -44,19 +49,27 @@ class ZendeskUpdateHandler extends WebformHandlerBase
   protected $token_manager;
 
   /**
+   * The webform element plugin manager.
+   *
+   * @var \Drupal\webform\Plugin\WebformElementManagerInterface
+   */
+  protected $element_manager;
+
+  /**
    * {@inheritdoc}
    */
   public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition) {
 
-      /**
-       * @var WebformTokenManagerInterface $webform_token_manager
-       */
+    /**
+     * @var WebformTokenManagerInterface $webform_token_manager
+     */
 
-      $static = parent::create($container, $configuration, $plugin_id, $plugin_definition);
-      $webform_token_manager = $container->get('webform.token_manager');
-      $static->setTokenManager( $webform_token_manager );
+    $static = parent::create($container, $configuration, $plugin_id, $plugin_definition);
+    $webform_token_manager = $container->get('webform.token_manager');
+    $static->setTokenManager( $webform_token_manager );
+    $static->element_manager = $container->get('plugin.manager.webform.element');
 
-      return $static;
+    return $static;
   }
 
   /**
@@ -85,7 +98,7 @@ class ZendeskUpdateHandler extends WebformHandlerBase
    */
   public function defaultConfigurationNames()
   {
-      return array_keys( $this->defaultConfiguration() );
+    return array_keys( $this->defaultConfiguration() );
   }
 
   /**
@@ -118,7 +131,7 @@ class ZendeskUpdateHandler extends WebformHandlerBase
       // in case there is an urgent change required. However, if tickets are to be
       // creatd as Solved, they need to have an individual assignee. Using the
       // service account would be acceptable and necessary in this case.
-      
+
       $client = new ZendeskClient();
 
       // get list of all groups
@@ -391,7 +404,7 @@ class ZendeskUpdateHandler extends WebformHandlerBase
    /**
    * Submit ticket update to Zendesk API and validate there were no errors. If an error occurs,
    * fail the webform validation and don't allow the form to be submitted.
-   * 
+   *
    * By submitting to the API during the validate phase, we can interrupt the form submission,
    * prevent the email handlers from firing, and display an error message to the user. Validation
    * in a custom handler is performed after all the built-in webform validation, so this is a
@@ -408,7 +421,7 @@ class ZendeskUpdateHandler extends WebformHandlerBase
       }
     }
   }
- 
+
   public function sendToZendesk(FormStateInterface $form_state)
   {
     // NOTE: This will run for both new and update webform submissions, so this handler should only
@@ -431,7 +444,14 @@ class ZendeskUpdateHandler extends WebformHandlerBase
     $submission_fields = $webform_submission->toArray(TRUE);
     $configuration = $this->getTokenManager()->replace($this->configuration, $webform_submission);
 
-    $zendesk_ticket_id = $submission_fields['data']['support_agent_use_only'][$configuration['ticket_id_field']];
+    // if the update handler is configured to use the ticket id field zendesk_request_number,
+    // it's a sub-element of the support agent widget, so it needs to be retrieved differently...
+    if ($configuration['ticket_id_field'] == "zendesk_request_number") {
+      $zendesk_ticket_id = $submission_fields['data']['support_agent_use_only'][$configuration['ticket_id_field']];
+    } else {
+      $zendesk_ticket_id = $submission_fields['data'][$configuration['ticket_id_field']];
+    }
+
     $confirm_zendesk_ticket_id = 0; // this will be updated and validated after getting the ticket
 
     // Allow for either values coming from other fields or static/tokens
@@ -442,8 +462,6 @@ class ZendeskUpdateHandler extends WebformHandlerBase
       }
     }
 
-    // clean up tags
-    $request['tags'] = Utility::cleanTags( $request['tags'] );
     $request['collaborators'] = preg_split("/[^a-z0-9_\-@\.']+/i", $request['collaborators'] );
 
     if(!isset($request['comment']['body'])){
@@ -515,6 +533,45 @@ class ZendeskUpdateHandler extends WebformHandlerBase
         }
       }
 
+      $attachments = [];
+      $elements = $this->getWebform()->getElementsInitializedAndFlattened();
+      $element_attachments = $this->getWebform()->getElementsAttachments();
+      foreach ($element_attachments as $element_attachment) {
+        $element = $elements[$element_attachment];
+        $element_plugin = $this->element_manager->getElementInstance($element);
+        $attachments = $element_plugin->getEmailAttachments($element, $webform_submission);
+        // skip empty attachments
+        if (count($attachments) < 1 || !$attachments[0]['filemime'] || !$attachments[0]['filecontent']) continue;
+
+        $attachment = $attachments[0];
+
+        // add uploads key to Zendesk comment, if not already present
+        if (!array_key_exists('uploads', $request['comment'])) {
+          $request['comment']['uploads'] = [];
+        }
+
+        // PDF attachment uses filecontent, but the Zendesk SDK only takes file paths,
+        // so we write to a temp file and delete after upload
+        $temp_file = \Drupal::service('file_system')->getTempDirectory() . '/' . $submission_fields['uuid'] . $attachment['filename'];
+        $stream = fopen($temp_file, 'w+');
+        fwrite($stream, $attachment['filecontent']);
+        fclose($stream);
+
+        // upload file and get response
+        $attachment = $client->attachments()->upload([
+          'file' => $temp_file,
+          'type' => $attachment['filemime'],
+          'name' => $attachment['filename'],
+        ]);
+
+        unlink($temp_file);
+
+        // add upload token to comment
+        if ($attachment && isset($attachment->upload->token)) {
+          $request['comment']['uploads'][] = $attachment->upload->token;
+        }
+      }
+
       // status, type, priority, and group are required by the API, even for update. if they're not set, set them from
       // previous ticket data.
       if (!isset($request['status']) || $request['status'] == "") {
@@ -549,7 +606,7 @@ class ZendeskUpdateHandler extends WebformHandlerBase
         'link' => $this->getWebform()->toLink($this->t('Edit'), 'handlers')->toString(),
       ]);
     }
-    
+
     return $zendesk_ticket_id == $confirm_zendesk_ticket_id;
   }
 
@@ -559,7 +616,7 @@ class ZendeskUpdateHandler extends WebformHandlerBase
    */
   public function postSave(WebformSubmissionInterface $webform_submission, $update = TRUE)
   {
-    
+
   }
 
   /**
@@ -612,7 +669,7 @@ class ZendeskUpdateHandler extends WebformHandlerBase
   /**
    * @param array $field
    * @return bool
-   * @deprecated 
+   * @deprecated
    */
   protected function checkIsNameField( array $field ){
     return Utility::checkIsNameField($field);

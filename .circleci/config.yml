@@ -3,10 +3,10 @@
 
 #Jobs
 
-## Job to run the update path and tests.
+## Job to build and deploy to Pantheon
 build_and_deploy: &build_and_deploy
   docker:
-    - image: cimg/php:8.0-node
+    - image: cimg/php:8.1-node
       auth:
         username: egovpdx
         password: $DOCKERHUB_PASSWORD
@@ -124,7 +124,7 @@ build_and_deploy: &build_and_deploy
           terminus connection:set $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV git
           git push -f pantheon $CIRCLE_BRANCH
           echo "Waiting for the workflow: Sync code on $PANTHEON_ENV..."
-          terminus build:workflow:wait $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV "Sync code on \"$PANTHEON_ENV\""
+          terminus build:workflow:wait $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV "Sync code on $PANTHEON_ENV"
 
           echo "Rebuilding cache..."
           terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- cr
@@ -192,7 +192,7 @@ build_and_deploy: &build_and_deploy
 
 visual_regression: &visual_regression
   docker:
-    - image: cimg/php:8.0-browsers
+    - image: cimg/php:8.1-browsers
       auth:
         username: egovpdx
         password: $DOCKERHUB_PASSWORD
@@ -283,7 +283,7 @@ visual_regression: &visual_regression
 
 full_regression: &full_regression
   docker:
-    - image: cimg/php:8.0-browsers
+    - image: cimg/php:8.1-browsers
       auth:
         username: egovpdx
         password: $DOCKERHUB_PASSWORD
