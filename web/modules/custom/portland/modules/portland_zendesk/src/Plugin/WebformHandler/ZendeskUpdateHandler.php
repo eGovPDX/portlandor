@@ -34,6 +34,11 @@ use Drupal\portland_zendesk\Utils\Utility;
  * UUID is a match. This prevents a company agent from somehow changing the ticket ID value in the link URL, or a malicious actor
  * from getting ahold of the link and updating multiple unrelated tickets by changing the ticket ID value and resubmitting.
  *
+ * When using this handler to update an "interaction ticket" created by a 311 agent, which uses the zendesk_request_number
+ * sub-element of the Support Agent Widget, it needs to be accessed a little differently from the data array since it's nested.
+ * Logic has been added to this handler to look for zendesk_request_number under the support_agent_use_only element. Note that
+ * this approach requires that the widget always be named support_agent_use_only.
+ *
  */
 class ZendeskUpdateHandler extends WebformHandlerBase
 {
@@ -439,7 +444,14 @@ class ZendeskUpdateHandler extends WebformHandlerBase
     $submission_fields = $webform_submission->toArray(TRUE);
     $configuration = $this->getTokenManager()->replace($this->configuration, $webform_submission);
 
-    $zendesk_ticket_id = $submission_fields['data'][$configuration['ticket_id_field']] ?: $submission_fields['data']['support_agent_use_only'][$configuration['ticket_id_field']];
+    // if the update handler is configured to use the ticket id field zendesk_request_number,
+    // it's a sub-element of the support agent widget, so it needs to be retrieved differently...
+    if ($configuration['ticket_id_field'] == "zendesk_request_number") {
+      $zendesk_ticket_id = $submission_fields['data']['support_agent_use_only'][$configuration['ticket_id_field']];
+    } else {
+      $zendesk_ticket_id = $submission_fields['data'][$configuration['ticket_id_field']];
+    }
+
     $confirm_zendesk_ticket_id = 0; // this will be updated and validated after getting the ticket
 
     // Allow for either values coming from other fields or static/tokens

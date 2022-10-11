@@ -146,6 +146,10 @@ class GroupRevisionBlock extends BlockBase {
       $render_array['#alert_color'] = 'warning';
       $render_array['#alert_icon'] = 'exclamation-triangle';
       $render_array['#current_revision_state'] = t('You are viewing an outdated revision.');
+      // If the latest revision is default, link to the base group url
+      if ($group_latest_vid === $group_default_vid) {
+        $render_array['#revision_link'] = "/group/$gid";
+      }
     }
     // If not viewing default revision
     elseif ($group_current_vid != $group_default_vid) {
