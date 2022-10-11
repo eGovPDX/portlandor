@@ -439,7 +439,7 @@ class ZendeskUpdateHandler extends WebformHandlerBase
     $submission_fields = $webform_submission->toArray(TRUE);
     $configuration = $this->getTokenManager()->replace($this->configuration, $webform_submission);
 
-    $zendesk_ticket_id = $submission_fields['data'][$configuration['ticket_id_field']];
+    $zendesk_ticket_id = $submission_fields['data'][$configuration['ticket_id_field']] ?: $submission_fields['data']['support_agent_use_only'][$configuration['ticket_id_field']];
     $confirm_zendesk_ticket_id = 0; // this will be updated and validated after getting the ticket
 
     // Allow for either values coming from other fields or static/tokens
@@ -529,7 +529,7 @@ class ZendeskUpdateHandler extends WebformHandlerBase
         $element_plugin = $this->element_manager->getElementInstance($element);
         $attachments = $element_plugin->getEmailAttachments($element, $webform_submission);
         // skip empty attachments
-        if (count($attachments) < 1 || !$attachments[0]['filemime']) continue;
+        if (count($attachments) < 1 || !$attachments[0]['filemime'] || !$attachments[0]['filecontent']) continue;
 
         $attachment = $attachments[0];
 
@@ -538,6 +538,8 @@ class ZendeskUpdateHandler extends WebformHandlerBase
           $request['comment']['uploads'] = [];
         }
 
+        // PDF attachment uses filecontent, but the Zendesk SDK only takes file paths,
+        // so we write to a temp file and delete after upload
         $temp_file = \Drupal::service('file_system')->getTempDirectory() . '/' . $submission_fields['uuid'] . $attachment['filename'];
         $stream = fopen($temp_file, 'w+');
         fwrite($stream, $attachment['filecontent']);

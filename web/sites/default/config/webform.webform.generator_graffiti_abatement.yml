@@ -8,9 +8,9 @@ dependencies:
 third_party_settings:
   webform_entity_print:
     template:
-      header: ''
-      footer: ''
-      css: ".header, .footer {\r\n  display: -webkit-box;\r\n  -webkit-box-pack: justify;\r\n}\r\n\r\n.header__column {\r\n  white-space: nowrap;\r\n}\r\n\r\n.header__logo {\r\n  width: 50%;\r\n}\r\n\r\n.footer__logo {\r\n  margin-right: 4rem;\r\n}\r\n\r\n.letter__address {\r\n  font-weight: bold;\r\n  margin: 2rem 0;\r\n  white-space: pre-wrap;\r\n}\r\n\r\n.letter__body {\r\n  margin: 2rem 0;\r\n  margin-left: 1rem;\r\n}"
+      header: "<header class=\"header\">\r\n<div class=\"header__column\"><img alt=\"\" class=\"header__logo\" src=\"https://www.portland.gov/sites/default/files/2022/civic-graffiti-program.png\" /></div>\r\n\r\n<div class=\"header__column\">\r\n<p><strong>Jo Ann Hardesty</strong>, Commissioner<br />\r\n<strong>Michael Montoya</strong>, Interim Director</p>\r\n\r\n<p>1120 SW 5th Avenue, Suite 114<br />\r\nPortland, OR 97204<br />\r\n503-823-4519<br />\r\nportland.gov/civic/graffiti</p>\r\n</div>\r\n</header>"
+      footer: "<footer class=\"footer\">\r\n<div class=\"footer__column\"><img alt=\"\" class=\"footer__logo\" src=\"https://www.portland.gov/themes/custom/cloudy/images/city-seal.png\" /></div>\r\n\r\n<div class=\"footer__column\">\r\n<p>The City of Portland is committed to providing meaningful access. To request translation, interpretation, modifications, accommodations, or other auxiliary aids or services, contact 503-823-4000, Relay: 711.</p>\r\n\r\n<p>503-823-4000: Traducci&oacute;n o interpretaci&oacute;n | Chuyển Ngữ hoặc Phi&ecirc;n Dịch | 翻译或传译| Письменный или устный перевод | Traducere sau Interpretare | Письмовий або усний переклад | 翻訳または通訳| Turjumida ama Fasiraadda | ການແປພາສາ ຫືຼ ການອະທິ ບາຍ | اﻟﺸﻔﮭﯿﺔ أو اﻟﺘﺤﺮﯾﺮﯾﺔ اﻟﺘﺮﺟﻤﺔ</p>\r\n</div>\r\n</footer>"
+      css: ".header, .footer {\r\n  display: -webkit-box;\r\n  -webkit-box-pack: justify;\r\n}\r\n\r\n.header__column {\r\n  white-space: nowrap;\r\n}\r\n\r\n.header__logo {\r\n  width: 50%;\r\n}\r\n\r\n.footer__logo {\r\n  margin-right: 4rem;\r\n}\r\n\r\n.letter__address {\r\n  font-weight: bold;\r\n  margin: 2rem 0;\r\n  white-space: pre-wrap;\r\n}\r\n\r\n.letter__body {\r\n  margin: 2rem 0;\r\n}"
     export_types:
       pdf:
         enabled: false
@@ -27,47 +27,63 @@ title: 'Graffiti Abatement Letter'
 description: ''
 category: Generator
 elements: |-
+  letter_type:
+    '#type': radios
+    '#title': 'Letter Type'
+    '#prepopulate': true
+    '#options':
+      initial: 'Initial abatement letter'
+      escalated: 'Escalated abatement letter'
+    '#options_display': buttons_vertical
+    '#required': true
+  agent_info:
+    '#type': container
+    '#title': 'Agent Info'
+    '#states':
+      visible:
+        ':input[name="letter_type"]':
+          value: escalated
+    agent_name:
+      '#type': textfield
+      '#title': 'Agent Name'
+      '#description': 'Name to display on the letter'
+      '#required': true
+      '#default_value': '[current-user:display-name]'
+    agent_phone_number:
+      '#type': textfield
+      '#title': 'Agent Phone Number'
+      '#description': 'Phone number to display on the letter'
+      '#input_mask': '(999) 999-9999'
+      '#required': true
+      '#default_value': '5038'
   letter_addressee:
     '#type': textarea
     '#title': 'Letter Addressee'
+    '#description': |-
+      Mailing address for the letter<br />
+      <a href="https://www.portlandmaps.com/search/?query=[webform_submission:values:property_address:urlencode]">View property in PortlandMaps</a>
+    '#help_display': title_after
     '#prepopulate': true
     '#required': true
   property_address:
     '#type': textfield
     '#title': 'Property Address'
+    '#description': 'Location of the nuisance'
     '#size': 200
     '#prepopulate': true
     '#required': true
-  attachment_pdf:
+  attachment_letter_initial:
     '#type': 'webform_entity_print_attachment:pdf'
-    '#title': 'PDF Attachment'
+    '#title': 'PDF - Initial abatement letter'
+    '#states':
+      enabled:
+        ':input[name="letter_type"]':
+          value: initial
     '#filename': graffiti-abatement-letter.pdf
     '#link_title': 'Generated Letter'
     '#download': true
     '#view_mode': twig
     '#template': |-
-      <header class="header">
-        <div class="header__column">
-          <img class="header__logo" src="https://www.portland.gov/sites/default/files/2022/civic-graffiti-program.png" />
-        </div>
-        <div class="header__column">
-          <p>
-            <strong>Jo Ann Hardesty</strong>, Commissioner
-            <br>
-            <strong>Michael Montoya</strong>, Interim Director
-          </p>
-          <p>
-            1120 SW 5th Avenue, Suite 114
-            <br>
-            Portland, OR 97204
-            <br>
-            503-823-4519
-            <br>
-            portland.gov/civic/graffiti
-          </p>
-        </div>
-      </header>
-
       <main class="letter">
         <section class="letter__heading">
           <p class="letter__date">{{ "now"|date("m/d/Y") }}</p>
@@ -76,17 +92,17 @@ elements: |-
         </section>
         <section class="letter__body">
           <p>The City’s records indicate that the Property on <strong>{{ data.property_address }}</strong> is owned by the addressee(s) listed above. A report has recently been received that graffiti vandalism occurred at the property address listed.</p>
-          
+
           <p>This letter serves primarily as a reminder of Portland City Code 14B.80.040, which requires that property owner(s) remove graffiti within <strong>10 days</strong> from receipt of this notification. The code also states that the property owner(s) may appeal this notice within <strong>10 days</strong> of receipt or contact the <strong>Graffiti Abatement Program</strong> to collaborate on an <strong>Abatement Plan</strong> if the property owner(s) needs longer than <strong>10 days</strong>. The consequence of not removing graffiti could result in coordination with Multnomah County Court to obtain an administrative warrant to enter upon the premises for cleanup, and subsequently impose a lien upon the property. The amount of the lien includes all costs of clean up or removal, a 25% administration charge, and a $250 civil penalty. We hope that you will work with us to keep the neighborhood clean.</p>
-          
+
           <p>We know that being vandalized, and the subsequent removal of it is a nuisance. However, graffiti tends to multiply by attracting more graffiti. In some circumstances, environmental design changes to your property can help reduce chronic graffiti issues. Lighting changes, adding hostile vegetation, or putting up a mural can all deter graffiti successfully. Please contact our office for more information about crime prevention strategies.</p>
-          
+
           <p>If you have already performed cleanup of the property, please contact the Graffiti Program.</p>
-          
+
           <p><em>**If you as the owner, or your tenant would like assistance removing the graffiti, please go to: <a href="https://www.portland.gov/civic/graffiti/request-services">portland.gov/civic/graffiti/request-services</a>, download the Graffiti Removal Service Agreement form, sign, scan and return it to: <a href="mailto:graffiti@portlandoregon.gov">graffiti@portlandoregon.gov</a>. You may also request a form be mailed to you. This service is offered if program budget allows and is limited to small businesses with ten or fewer employees, residences, and non-profit organizations. We cannot guarantee removal assistance. Please note that property owners and tenants are expected to perform graffiti removals on their properties in accordance with the graffiti nuisance code. This service is not an ongoing graffiti removal maintenance program.**</em></p>
-          
+
           <p>Thank you,</p>
-          
+
           <p>
             <strong>The City of Portland Graffiti Program</strong>
             <br>
@@ -94,16 +110,48 @@ elements: |-
           </p>
         </section>
       </main>
+  attachment_letter_escalated:
+    '#type': 'webform_entity_print_attachment:pdf'
+    '#title': 'PDF - Escalated abatement letter'
+    '#states':
+      enabled:
+        ':input[name="letter_type"]':
+          value: escalated
+    '#filename': graffiti-abatement-letter.pdf
+    '#link_title': 'Generated Letter'
+    '#download': true
+    '#view_mode': twig
+    '#template': |-
+      <main class="letter">
+        <section class="letter__heading">
+          <p class="letter__date">{{ "now"|date("m/d/Y") }}</p>
+          <p class="letter__address">{{ data.letter_addressee }}</p>
+          <p class="letter__subject">Re: <strong>GRAFFITI NUISANCE BUILDING NOTIFICATION</strong></p>
+        </section>
+        <section class="letter__body">
+          <p>This notice is to advise you as the property owner, that the structure at <strong>{{ data.property_address }}</strong> has become a graffiti nuisance building per City Code 14B.80.040.</p>
+          
+          <p>We have had multiple reports of graffiti at this site and graffiti tends to multiply by attracting more graffiti, as is clearly indicated by the scale of graffiti vandalism at <strong>{{ data.property_address }}</strong>. This graffiti in turn attracts other crimes, negatively impacting the livability for residents and businesses alike.</p>
 
-      <footer class="footer">
-        <div class="footer__column">
-          <img class="footer__logo" src="https://www.portland.gov/themes/custom/cloudy/images/city-seal.png">
-        </div>
-        <div class="footer__column">
-          <p>The City of Portland is committed to providing meaningful access. To request translation, interpretation, modifications, accommodations, or other auxiliary aids or services, contact 503-823-4000, Relay: 711.</p>
-          <p>503-823-4000: Traducción o interpretación | Chuyển Ngữ hoặc Phiên Dịch | 翻译或传译| Письменный или устный перевод | Traducere sau Interpretare | Письмовий або усний переклад | 翻訳または通訳| Turjumida ama Fasiraadda | ການແປພາສາ ຫືຼ ການອະທິ ບາຍ | اﻟﺸﻔﮭﯿﺔ أو اﻟﺘﺤﺮﯾﺮﯾﺔ اﻟﺘﺮﺟﻤﺔ</p
-        </div>
-      </footer>
+          <p>On Wednesday, May 11th, 2022, Mayor Wheeler’s fourth Emergency Declaration went into effect and identifies graffiti as an important focus. You can access that declaration in whole at: <a href="https://www.portland.gov/wheeler/emergency-declarations">portland.gov/wheeler/emergency-declarations</a></p>
+
+          <p>Portland City Code 14B.80.040, states that property owners are responsible to clean up the graffiti whether you do the work yourself or hire somebody else to do it. Portland City Code 14B.80.040 can be read in its’ entirety at: <a href="https://www.portland.gov/code/14/b80/040">portland.gov/code/14/b80/040</a></p>
+
+          <p>The consequence of not removing all the graffiti can result in coordination with Multnomah County Court to obtain an administrative warrant to enter upon the premises for a one-time cleaning, and subsequently to impose a lien upon the property. The amount of the lien is the cost of labor and materials to cover or remove the graffiti, plus 25% administration charge and $250 civil penalty.</p>
+
+          <p>Please provide a response to this notification by contacting me directly to avoid these actions. My number is {{ data.agent_phone_number }}.</p>
+
+          <p>Thank you,</p>
+
+          <p>
+            {{ data.agent_name }}
+            <br>
+            <strong>The City of Portland Graffiti Program</strong>
+            <br>
+            <strong><a href="mailto:graffiti@portlandoregon.gov">graffiti@portlandoregon.gov</a></strong>
+          </p>
+        </section>
+      </main>
   support_agent_use_only:
     '#type': portland_support_agent_widget
     '#title': 'Support Agent Use Only'
@@ -116,6 +164,12 @@ elements: |-
     '#access_view_roles':
       - support_agent
       - administrator
+    '#test_submission__access': false
+  test:
+    '#type': text_format
+    '#title': test
+    '#allowed_formats':
+      rich_text: rich_text
 css: ''
 javascript: ''
 settings:
@@ -221,7 +275,7 @@ settings:
   confirmation_type: inline
   confirmation_url: ''
   confirmation_title: ''
-  confirmation_message: "<p>Letter attached to request #[webform_submission:values:support_agent_use_only:zendesk_request_number]</p>\r\n<a class=\"btn-cta\" href=\"/webform/[webform:id]/submissions/[webform_submission:sid]/attachment/attachment_pdf/[webform:element:attachment_pdf:filename]\">Download PDF</a>"
+  confirmation_message: '<p>Letter attached to request #[webform_submission:values:support_agent_use_only:zendesk_request_number]</p>'
   confirmation_attributes: {  }
   confirmation_back: true
   confirmation_back_label: ''
@@ -241,9 +295,9 @@ settings:
   entity_limit_total_interval: null
   entity_limit_user: null
   entity_limit_user_interval: null
-  purge: none
-  purge_days: null
-  results_disabled: false
+  purge: completed
+  purge_days: 1
+  results_disabled: true
   results_disabled_ignore: false
   results_customize: false
   token_view: false
