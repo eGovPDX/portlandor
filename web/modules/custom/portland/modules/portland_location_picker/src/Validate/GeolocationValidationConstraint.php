@@ -27,13 +27,24 @@ class GeolocationValidationConstraint {
 
     $loctype = $value['location_type'];
 
-    // we need to validate that the user has selected a location and that the
-    // lat/lng values have been provided. We don't always need an address, but lat/lng
-    // are always required if a location_type has been selected and the report_location
-    // field is present.
-    $lat = $value['location_lat'];
-    $lng = $value['location_lon'];
-    $invalid = $loctype && $loctype != "private" && (!$lat || !$lng);
+    // we need to validate that the user has selected a location and that at minimum
+    // either lat/lng or address have been provided. this was changed to not require lat/lng
+    // due to a bug in the portlandmaps suggest API that causes lat/lng to be null if only
+    // a single suggestion is returned.
+
+    if ($loctype && $loctype == "private") {
+      $invalid = false;
+    } else {
+      $lat = $value['location_lat'];
+      $lng = $value['location_lon'];
+      $address = $value['location_address'];
+
+      if (($lat && $lat != "0" && $lng && $lng != "0") || $address) {
+        $invalid = false;
+      } else {
+        $invalid = true;
+      }
+    }
 
     if ($invalid) {
       // location is required but not provided
