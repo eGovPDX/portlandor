@@ -176,7 +176,7 @@
           // this is likely a submit postback that had validation errors, so we need to re set it.
           var lat = $('input[name=report_location\\[location_lat\\]]').val();
           var lng = $('input[name=report_location\\[location_lon\\]]').val();
-          if (lat && lng) {
+          if (lat && lng && lat !== "0" && lng !== "0") {
             setLocationMarker(lat, lng);
             doZoomAndCenter(lat, lng);
           }
@@ -784,7 +784,7 @@
             } else {
               setLatLngHiddenFields(0, 0);
             }
-            
+
             setVerified();
           } else {
             // no matches found
