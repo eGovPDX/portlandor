@@ -750,7 +750,7 @@
             for (var i = 0; i < candidates.length; i++) {
               var c = candidates[i];
               var fulladdress = buildFullAddress(c);
-              listMarkup += '<li><a href="#" class="pick" data-lat="' + c.attributes.lat + '" data-lng="' + c.attributes.lng + '" data-pick-address="' + fulladdress + '">' + fulladdress.toUpperCase() + '</a></li>';
+              listMarkup += '<li><a href="#" class="pick" data-lat="' + c.attributes.lat + '" data-lng="' + c.attributes.lon + '" data-pick-address="' + fulladdress + '">' + fulladdress.toUpperCase() + '</a></li>';
             }
             listMarkup += "</ul>";
             suggestionsModal.html(listMarkup);
