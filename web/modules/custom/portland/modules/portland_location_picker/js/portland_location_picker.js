@@ -772,8 +772,19 @@
             // put full address in field
             var fulladdress = buildFullAddress(candidates[0]);
             $('.location-picker-address').val(fulladdress);
-            setLocationMarker(lat, lng);
-            doZoomAndCenter(lat, lng);
+
+            // there is currently a bug in the json provided by PortlandMaps when a singular address is
+            // returned by the address verification query. the lat and lon are null in that case. as a
+            // temporary workaround, only set the location marker if the values are present, and populate
+            // the required lat/lon fields with zeroes so that the form can still be submitted. at least
+            // it will capture the address, and the report will still be usable.
+            if (lat && lng) {
+              setLocationMarker(lat, lng);
+              doZoomAndCenter(lat, lng);
+            } else {
+              setLatLngHiddenFields(0, 0);
+            }
+            
             setVerified();
           } else {
             // no matches found
