@@ -807,6 +807,7 @@
         function setLatLngHiddenFields(lat, lng) {
           $('input[name=report_location\\[location_lat\\]]').val(lat);
           $('input[name=report_location\\[location_lon\\]]').val(lng);
+          console.log('Set coordinates: ' + $('input[name=report_location\\[location_lat\\]]').val() + ', ' + $('input[name=report_location\\[location_lon\\]]').val());
         }
 
         // set location marker on map. this is only used with map clicks, not marker clicks.
