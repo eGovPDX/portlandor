@@ -768,7 +768,7 @@
           } else if (candidates.length == 1) {
             // if only one candidate, immediately locate it on the map
             var lat = candidates[0]["attributes"]["lat"];
-            var lng = candidates[0]["attributes"]["lng"];
+            var lng = candidates[0]["attributes"]["lon"];
             // put full address in field
             var fulladdress = buildFullAddress(candidates[0]);
             $('.location-picker-address').val(fulladdress);
