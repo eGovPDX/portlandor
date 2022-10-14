@@ -46,18 +46,28 @@ class Smartsheet extends QueryPluginBase {
       }
 
       // Sort according to any added sort plugins
+      $multisort_args = [];
       foreach ($this->sorts as $column_id => $order) {
         $column = array_map(fn($el) => $el->displayValue ?? $el->value ?? NULL, array_column($rows, $column_id));
-        array_multisort($column, $order, $rows);
+
+        $multisort_args[] = $column;
+        $multisort_args[] = $order;
       }
 
-      foreach ($rows as $index => $row) {
-        $result_row['cells'] = $row;
-        $result_row['index'] = $index;
-        $view->result[] = new ResultRow($result_row);
-      }
+      $multisort_args[] = &$rows;
+      array_multisort(...$multisort_args);
 
-      $view->pager->total_items = $sheet->totalRowCount;
+      // Add final filtered/sorted rows to view
+      $view->result = array_map(
+        fn($k, $v) => new ResultRow([
+          'index' => $k,
+          'cells' => $v,
+        ]),
+        array_keys($rows),
+        $rows
+      );
+
+      $view->pager->total_items = $sheet->filteredRowCount ?? $sheet->totalRowCount;
       $view->pager->updatePageInfo();
     } catch (\Exception $e) {
       return;
