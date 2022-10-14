@@ -176,7 +176,7 @@
           // this is likely a submit postback that had validation errors, so we need to re set it.
           var lat = $('input[name=report_location\\[location_lat\\]]').val();
           var lng = $('input[name=report_location\\[location_lon\\]]').val();
-          if (lat && lng) {
+          if (lat && lng && lat !== "0" && lng !== "0") {
             setLocationMarker(lat, lng);
             doZoomAndCenter(lat, lng);
           }
@@ -750,7 +750,7 @@
             for (var i = 0; i < candidates.length; i++) {
               var c = candidates[i];
               var fulladdress = buildFullAddress(c);
-              listMarkup += '<li><a href="#" class="pick" data-lat="' + c.attributes.lat + '" data-lng="' + c.attributes.lng + '" data-pick-address="' + fulladdress + '">' + fulladdress.toUpperCase() + '</a></li>';
+              listMarkup += '<li><a href="#" class="pick" data-lat="' + c.attributes.lat + '" data-lng="' + c.attributes.lon + '" data-pick-address="' + fulladdress + '">' + fulladdress.toUpperCase() + '</a></li>';
             }
             listMarkup += "</ul>";
             suggestionsModal.html(listMarkup);
@@ -768,12 +768,23 @@
           } else if (candidates.length == 1) {
             // if only one candidate, immediately locate it on the map
             var lat = candidates[0]["attributes"]["lat"];
-            var lng = candidates[0]["attributes"]["lng"];
+            var lng = candidates[0]["attributes"]["lon"];
             // put full address in field
             var fulladdress = buildFullAddress(candidates[0]);
             $('.location-picker-address').val(fulladdress);
-            setLocationMarker(lat, lng);
-            doZoomAndCenter(lat, lng);
+
+            // there is currently a bug in the json provided by PortlandMaps when a singular address is
+            // returned by the address verification query. the lat and lon are null in that case. as a
+            // temporary workaround, only set the location marker if the values are present, and populate
+            // the required lat/lon fields with zeroes so that the form can still be submitted. at least
+            // it will capture the address, and the report will still be usable.
+            if (lat && lng) {
+              setLocationMarker(lat, lng);
+              doZoomAndCenter(lat, lng);
+            } else {
+              setLatLngHiddenFields(0, 0);
+            }
+
             setVerified();
           } else {
             // no matches found
@@ -807,6 +818,7 @@
         function setLatLngHiddenFields(lat, lng) {
           $('input[name=report_location\\[location_lat\\]]').val(lat);
           $('input[name=report_location\\[location_lon\\]]').val(lng);
+          console.log('Set coordinates: ' + $('input[name=report_location\\[location_lat\\]]').val() + ', ' + $('input[name=report_location\\[location_lon\\]]').val());
         }
 
         // set location marker on map. this is only used with map clicks, not marker clicks.
