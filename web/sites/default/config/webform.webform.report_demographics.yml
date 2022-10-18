@@ -1,7 +1,9 @@
 uuid: 2f421091-6aab-4558-a85f-435e4f7dbd1d
 langcode: en
 status: open
-dependencies: {  }
+dependencies:
+  module:
+    - portland_smartsheet
 weight: 0
 open: null
 close: null
@@ -14,63 +16,169 @@ description: ''
 category: Report
 elements: |-
   report_race_ethnicity:
-    '#type': webform_checkboxes_other
+    '#type': webform_computed_twig
     '#title': 'Race and Ethnicity'
-    '#description': '<p>Which of the following describes your racial or ethnic identity? Please select ALL that apply.</p>'
+    '#display_on': none
+    '#template': '{{ data.report_race_ethnicity_prefer_not_disclose ? "I prefer not to disclose" : data.report_race_ethnicity_value|join(";") }}'
+    '#whitespace': trim
+  report_race_ethnicity_value:
+    '#type': webform_checkboxes_other
+    '#title': 'Which of the following describes your racial or ethnic identity? Please select ALL that apply.'
     '#description_display': before
     '#options': ethnicity
-    '#options_none': true
-    '#options_none_text': 'I prefer not to disclose'
-    '#other__option_label': 'I prefer to describe my race/ethnicity'
+    '#options_none_text': ''
+    '#other__option_label': 'Not listed above, please describe'
     '#other__placeholder': 'Please describe'
+    '#states':
+      disabled:
+        ':input[name="report_race_ethnicity_prefer_not_disclose"]':
+          checked: true
+    '#admin_title': 'Race and Ethnicity - Value'
+  report_race_ethnicity_prefer_not_disclose:
+    '#type': checkbox
+    '#title': 'I prefer not to disclose'
+    '#admin_title': 'Race and Ethnicity - Prefer not to disclose'
   report_gender:
-    '#type': webform_radios_other
+    '#type': webform_computed_twig
     '#title': Gender
-    '#description': |-
-      <p>
-        How do you identify your gender? Please select ONE that best represents your gender.
-      </p>
+    '#display_on': none
+    '#template': '{{ data.report_gender_prefer_not_disclose ? "I prefer not to disclose" : data.report_gender_value|join(";") }}'
+    '#whitespace': trim
+  report_gender_value:
+    '#type': webform_checkboxes_other
+    '#title': 'How do you identify your gender? Please select ALL that apply.'
     '#description_display': before
     '#options': gender
     '#other__option_label': 'I prefer to describe my gender'
     '#other__placeholder': 'Please describe'
+    '#states':
+      disabled:
+        ':input[name="report_gender_prefer_not_disclose"]':
+          checked: true
+    '#admin_title': 'Gender - Value'
+  report_gender_prefer_not_disclose:
+    '#type': checkbox
+    '#title': 'I prefer not to disclose'
+    '#admin_title': 'Gender - Prefer not to disclose'
   report_annual_household_income:
-    '#type': radios
+    '#type': webform_computed_twig
     '#title': 'Annual Household Income'
-    '#description': |-
-      <p>
-        What is your total household income? (Those who dwell under the same roof and compose a family). Please select one.
-      </p>
+    '#display_on': none
+    '#template': '{{ data.report_annual_household_income_prefer_not_disclose ? "Don''t know / I prefer not to disclose" : data.report_annual_household_income_value }}'
+    '#whitespace': trim
+  report_annual_household_income_value:
+    '#type': radios
+    '#title': 'What is your total household income? (Those who dwell together and/or compose a family). Please select one.'
     '#description_display': before
     '#options': household_income
+    '#states':
+      disabled:
+        ':input[name="report_annual_household_income_prefer_not_disclose"]':
+          checked: true
+    '#admin_title': 'Annual Household Income - Value'
+  report_annual_household_income_prefer_not_disclose:
+    '#type': checkbox
+    '#title': 'Don''t know / I prefer not to disclose'
+    '#admin_title': 'Annual Household Income - Prefer not to disclose'
   report_household_size:
-    '#type': number
+    '#type': webform_computed_twig
     '#title': 'Household Size'
-    '#description': '<p>How many people live in your household? (Those who dwell under the same roof and compose a family).</p>'
+    '#display_on': none
+    '#template': '{{ data.report_household_size_prefer_not_disclose ? "I prefer not to disclose" : data.report_household_size_value }}'
+    '#whitespace': trim
+  report_household_size_value:
+    '#type': number
+    '#title': 'How many people live in your household? (Those who dwell together and/or compose a family).'
     '#description_display': before
+    '#states':
+      disabled:
+        ':input[name="report_household_size_prefer_not_disclose"]':
+          checked: true
+    '#admin_title': 'Household Size - Value'
     '#min': 1
     '#step': 1
+  report_household_size_prefer_not_disclose:
+    '#type': checkbox
+    '#title': 'I prefer not to disclose'
+    '#admin_title': 'Household Size - Prefer not to disclose'
   report_age:
-    '#type': number
+    '#type': webform_computed_twig
     '#title': Age
-    '#description': '<p>What is your year of birth?</p>'
+    '#display_on': none
+    '#template': '{{ data.report_age_prefer_not_disclose ? "I prefer not to disclose" : data.report_age_value }}'
+    '#whitespace': trim
+  report_age_value:
+    '#type': number
+    '#title': 'Year of birth:'
     '#description_display': before
+    '#states':
+      disabled:
+        ':input[name="report_age_prefer_not_disclose"]':
+          checked: true
+    '#admin_title': 'Age - Value'
     '#min': 1900
     '#max': 9999
     '#step': 1
+  report_age_prefer_not_disclose:
+    '#type': checkbox
+    '#title': 'I prefer not to disclose'
+    '#admin_title': 'Age - Prefer not to disclose'
   report_disabilities:
-    '#type': radios
+    '#type': webform_computed_twig
     '#title': Disabilities
-    '#description': '<p>Do you identify with having or living with a disability? Please select one.</p>'
+    '#display_on': none
+    '#template': '{{ data.report_disabilities_prefer_not_disclose ? "I prefer not to disclose" : data.report_disabilities_value }}'
+    '#whitespace': trim
+  report_disabilities_value:
+    '#type': radios
+    '#title': 'Do you identify with having or living with a disability? Please select one.'
     '#description_display': before
-    '#options':
-      'Yes': 'Yes'
-      'No': 'No'
-      'I prefer not to disclose': 'I prefer not to disclose'
-  report_service_identifier:
+    '#options': disabilities
+    '#states':
+      disabled:
+        ':input[name="report_disabilities_prefer_not_disclose"]':
+          checked: true
+    '#admin_title': 'Disabilities - Value'
+  report_disabilities_prefer_not_disclose:
+    '#type': checkbox
+    '#title': 'I prefer not to disclose'
+    '#admin_title': 'Disabilities - Prefer not to disclose'
+  report_zip_code:
+    '#type': webform_computed_twig
+    '#title': 'ZIP code'
+    '#display_on': none
+    '#template': '{{ data.report_zip_code_prefer_not_disclose ? "I prefer not to disclose" : data.report_zip_code_value }}'
+    '#whitespace': trim
+  report_zip_code_value:
+    '#type': textfield
+    '#title': 'What is the zip code of your primary residence?'
+    '#description_display': before
+    '#size': 15
+    '#input_mask': '99999[-9999]'
+    '#states':
+      disabled:
+        ':input[name="report_zip_code_prefer_not_disclose"]':
+          checked: true
+    '#admin_title': 'ZIP code - Value'
+  report_zip_code_prefer_not_disclose:
+    '#type': checkbox
+    '#title': 'I prefer not to disclose'
+    '#admin_title': 'ZIP code - Prefer not to disclose'
+  report_suggestions:
+    '#type': textarea
+    '#title': '(Optional) How could we improve the [webform_submission:values:report_form_title] form you completed?'
+    '#description': 'Your comments are appreciated, but as this is an anonymous survey we will not be able to respond. If you had any issues filling out the form, <a href="/311/contact-311">please contact 311.</a>'
+    '#description_display': after
+    '#admin_title': 'Form suggestions'
+  report_form_title:
     '#type': hidden
-    '#title': 'Service Identifier'
-    '#default_value': '[server:HTTP_REFERER]'
+    '#title': 'Form Title'
+    '#default_value': ' '
+    '#prepopulate': true
+  report_form_id:
+    '#type': hidden
+    '#title': 'Form ID'
+    '#prepopulate': true
 css: ''
 javascript: ''
 settings:
@@ -83,7 +191,7 @@ settings:
   page_submit_path: ''
   page_confirm_path: ''
   page_theme_name: ''
-  form_title: both
+  form_title: source_entity_webform
   form_submit_once: false
   form_open_message: ''
   form_close_message: ''
@@ -155,7 +263,7 @@ settings:
   wizard_track: ''
   wizard_prev_button_label: ''
   wizard_next_button_label: ''
-  wizard_toggle: false
+  wizard_toggle: true
   wizard_toggle_show_label: ''
   wizard_toggle_hide_label: ''
   preview: 0
@@ -176,9 +284,9 @@ settings:
   confirmation_type: page
   confirmation_url: ''
   confirmation_title: ''
-  confirmation_message: ''
+  confirmation_message: 'Thank you for taking the time to complete the optional demographic survey.'
   confirmation_attributes: {  }
-  confirmation_back: true
+  confirmation_back: false
   confirmation_back_label: ''
   confirmation_back_attributes: {  }
   confirmation_exclude_query: false
@@ -198,7 +306,7 @@ settings:
   entity_limit_user_interval: null
   purge: none
   purge_days: null
-  results_disabled: false
+  results_disabled: true
   results_disabled_ignore: false
   results_customize: false
   token_view: false
@@ -252,5 +360,26 @@ access:
     roles: {  }
     users: {  }
     permissions: {  }
-handlers: {  }
+handlers:
+  smartsheet_add_row_to_existing_sheet:
+    id: smartsheet_add_row
+    handler_id: smartsheet_add_row_to_existing_sheet
+    label: 'Smartsheet: add row to existing sheet'
+    notes: ''
+    status: true
+    conditions: {  }
+    weight: 0
+    settings:
+      sheet_id: '5651392804218756'
+      column_mappings:
+        5906210767562628: __submission_id
+        857686929631108: report_form_id
+        839661186770820: report_race_ethnicity
+        5343260814141316: report_gender
+        3091461000456068: report_annual_household_income
+        2954311722395524: report_household_size
+        7457911349766020: report_age
+        1828411815552900: report_disabilities
+        6978614094784388: report_zip_code
+        1349114560571268: report_suggestions
 variants: {  }
