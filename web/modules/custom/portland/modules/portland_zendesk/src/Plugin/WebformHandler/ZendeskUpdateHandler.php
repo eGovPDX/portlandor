@@ -472,7 +472,7 @@ class ZendeskUpdateHandler extends WebformHandlerBase
     // clean up tags
     $request['tags'] = Utility::cleanTags( $request['tags'] );
     $request['collaborators'] = preg_split("/[^a-z0-9_\-@\.']+/i", $request['collaborators'] );
-    $request['ticket_form_id'] = $this->configuration['ticket_form_id'];
+    if (!empty($request['ticket_form_id'])) $request['ticket_form_id'] = $this->configuration['ticket_form_id'];
 
     if(!isset($request['comment']['body'])){
       $comment = $request['comment'];
