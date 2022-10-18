@@ -85,6 +85,7 @@ class ZendeskHandler extends WebformHandlerBase
       'collaborators' => '',
       'custom_fields' => '',
       'ticket_id_field' => '',
+      'ticket_form_id' => '',
     ];
   }
 
@@ -153,6 +154,7 @@ class ZendeskHandler extends WebformHandlerBase
 
       $assignees = [];
       $groups = [];
+      $ticket_forms = [];
 
       try {
         // Get available groups and assignees from zendesk.
@@ -161,7 +163,7 @@ class ZendeskHandler extends WebformHandlerBase
         // in case there is an urgent change required. However, if tickets are to be
         // creatd as Solved, they need to have an individual assignee. Using the
         // service account would be acceptable and necessary in this case.
-        
+
         $client = new ZendeskClient();
 
         // get list of all groups
@@ -201,6 +203,8 @@ class ZendeskHandler extends WebformHandlerBase
         // order ticket fields by name
         asort($form_ticket_fields);
 
+        // Get all active ticket forms from Zendesk
+        $ticket_forms = $client->get("ticket_forms?active=true")->ticket_forms;
       }
       catch( \Exception $e ){
         // Encode HTML entities to prevent broken markup from breaking the page.
@@ -350,6 +354,17 @@ class ZendeskHandler extends WebformHandlerBase
         '#required' => false
       ];
 
+      $form['ticket_form_id'] = [
+        '#title' => $this->t('Ticket Form'),
+        '#default_value' => $this->configuration['ticket_form_id'],
+        '#required' => false
+      ];
+      if(!empty($ticket_forms) ){
+        $form['ticket_form_id']['#type'] = 'select';
+        $form['ticket_form_id']['#options'] = ['' => '- None -'] + array_column($ticket_forms, 'name', 'id');
+        $form['ticket_form_id']['#description'] = $this->t('The form to use on the ticket');
+      }
+
       $form['custom_fields'] = [
         '#type' => 'webform_codemirror',
         '#mode' => 'yaml',
@@ -418,7 +433,7 @@ class ZendeskHandler extends WebformHandlerBase
 
   /**
    * Submit report to Zendesk API and validate the ticket was successfully created.
-   * 
+   *
    * By submitting to the API during the validate phase, we can interrupt the form submission,
    * prevent the email handlers from firing, and display an error message to the user. Validation
    * in a custom handler is performed after all the built-in webform validation, so this is a
@@ -463,6 +478,7 @@ class ZendeskHandler extends WebformHandlerBase
     // clean up tags
     $request['tags'] = Utility::cleanTags( $request['tags'] );
     $request['collaborators'] = preg_split("/[^a-z0-9_\-@\.']+/i", $request['collaborators'] );
+    $request['ticket_form_id'] = $this->configuration['ticket_form_id'];
 
     // restructure requester
     if(!isset($request['requester'])){
@@ -551,7 +567,7 @@ class ZendeskHandler extends WebformHandlerBase
 
       // retrieve the name of the field in which to store the created Zendesk Ticket ID
       $zendesk_ticket_id_field_name = $configuration['ticket_id_field'];
-      
+
       // retrieve submission data
       $data = $webform_submission->getData();
 
@@ -633,7 +649,7 @@ class ZendeskHandler extends WebformHandlerBase
   /**
    * @param array $field
    * @return bool
-   * @deprecated 
+   * @deprecated
    */
   protected function checkIsNameField( array $field ){
     return Utility::checkIsNameField($field);
