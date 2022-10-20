@@ -123,7 +123,7 @@ function mapZoomedOrMovedByUser(e) {
 var mapLoaded = false;
 jQuery(document)
 .on('leaflet.feature', function (e, lFeature, feature, leafletMap){
-  // Drupal adds the same fill style to all shapes. Even lines gets the 
+  // Drupal adds the same fill style to all shapes. Even lines gets the
   // shadow. We remove the fill explicitly here.
   if(lFeature.getLayers) {
     var lFeature_layers = lFeature.getLayers();
@@ -139,7 +139,7 @@ jQuery(document)
   if( jQuery('div.leaflet-control-satellite').length === 0 ) {
     jQuery('div.leaflet-top.leaflet-right')
       .append('<div class="leaflet-control-satellite leaflet-bar leaflet-control"><a class="leaflet-control-satellite-button leaflet-bar-part" href="#" title="Toggle View"><i class="fas fa-globe"></i></a></div>');
-  
+
     jQuery('.leaflet-control-satellite-button').on('click', function(e) {
       var mapIcon = jQuery(this).find('i.fas');
       if(mapIcon) {
@@ -155,13 +155,25 @@ jQuery(document)
         }
         e.preventDefault();
       }
-    })  
+    })
   }
 
   // Prevent double loading
   // if(mapLoaded) return; mapLoaded = true;
 
   drupalSettings.map = lMap;
+
+  // Recalculate map size when Leaflet map is inside a details element
+  jQuery('details').on('toggle', function(e) {
+    // Check if details element contains the Leaflet map
+    if (!e.target.contains(drupalSettings.map._container)) return;
+
+    // We need to reset the map at the end of the event loop, after the element is opened
+    setTimeout(function() {
+      drupalSettings.map.invalidateSize();
+      drupalSettings.map.setView(drupalSettings.map.options.center, drupalSettings.map.options.zoom);
+    }, 0);
+  });
 
   var satelliteView = L.esri.tiledMapLayer({
     url: 'https://www.portlandmaps.com/arcgis/rest/services/Public/Basemap_Color_Complete_Aerial/MapServer'
