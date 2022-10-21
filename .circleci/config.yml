@@ -117,7 +117,6 @@ build_and_deploy: &build_and_deploy
               echo "Creating new multidev site cloned from $BASE. Please wait."
               terminus multidev:create $CIRCLE_PROJECT_REPONAME.$BASE $PANTHEON_ENV >/dev/null
             fi
-            rm -rf ./env_list.txt
           fi
 
           # Set the connection type to GIT and force push
@@ -134,6 +133,21 @@ build_and_deploy: &build_and_deploy
           terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- cim -y -vvv
           echo "Rebuilding cache..."
           terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- cr
+
+          if [[ $CIRCLE_BRANCH != "master" ]]; then
+            # Begin indexing the Solr server. For new multidevs, indexing will take some time
+            # and will continue running after the CircleCI build finishes.
+            if grep -Fxq "$PANTHEON_ENV" ./env_list.txt; then
+              echo "Multidev already exists, no need to reset index tracker"
+            else
+              echo "Reseting index tracker because index is empty on new multidev"
+              terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- search-api:reset-tracker
+            fi
+            echo "Begin indexing the Solr server"
+            terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- search-api:index full_index &
+            sleep 20
+            rm -rf ./env_list.txt
+          fi
 
           # When commit on a permanent branch or master, delete the multi-dev site with name like "powr-1234a"
           if [[ $PANTHEON_ENV = "dev" ]]; then
