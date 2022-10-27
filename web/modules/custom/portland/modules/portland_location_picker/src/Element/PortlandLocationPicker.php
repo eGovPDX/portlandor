@@ -232,7 +232,7 @@ class PortlandLocationPicker extends WebformCompositeBase {
       '#title' => t('Latitude'),
       '#title_display' => 'invisible',
       '#id' => 'location_lat',
-      '#attributes' => ['class' => ['location-lat, visually-hidden']],
+      '#attributes' => ['class' => ['location-lat', 'visually-hidden']],
       '#required_error' => 'Please select a location by clicking the map, or by entering an address or cross streets above and clicking the Verify button.',
     ];
     // we're using "lng" everywhere else since that's what Leaflet uses, but this field is already
@@ -243,7 +243,7 @@ class PortlandLocationPicker extends WebformCompositeBase {
       '#title' => t('Longitude'),
       '#title_display' => 'invisible',
       '#id' => 'location_lon',
-      '#attributes' => ['class' => ['location-lng, visually-hidden']],
+      '#attributes' => ['class' => ['location-lng', 'visually-hidden']],
     ];
     $elements['location_asset_id'] = [
       '#type' => 'hidden',
