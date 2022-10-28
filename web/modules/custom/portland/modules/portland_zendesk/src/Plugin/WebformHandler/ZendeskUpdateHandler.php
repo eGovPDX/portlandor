@@ -27,18 +27,18 @@ use Drupal\portland_zendesk\Utils\Utility;
  *   cardinality = \Drupal\webform\Plugin\WebformHandlerInterface::CARDINALITY_UNLIMITED,
  *   results = \Drupal\webform\Plugin\WebformHandlerInterface::RESULTS_PROCESSED,
  * )
- * 
+ *
  * The handler also validates that the right ticket is being updated. Each ticket includes the original report webform UUID.
  * The UUID is passed into a hidden field in the resolution form when the company agent click the link in their notification email.
  * Before updating the ticket, the updte handler queries the ticket identified by the ticket_id field and verifies that the
  * UUID is a match. This prevents a company agent from somehow changing the ticket ID value in the link URL, or a malicious actor
  * from getting ahold of the link and updating multiple unrelated tickets by changing the ticket ID value and resubmitting.
- * 
+ *
  * When using this handler to update an "interaction ticket" created by a 311 agent, which uses the zendesk_request_number
  * sub-element of the Support Agent Widget, it needs to be accessed a little differently from the data array since it's nested.
  * Logic has been added to this handler to look for zendesk_request_number under the support_agent_use_only element. Note that
  * this approach requires that the widget always be named support_agent_use_only.
- * 
+ *
  */
 class ZendeskUpdateHandler extends WebformHandlerBase
 {
@@ -82,6 +82,7 @@ class ZendeskUpdateHandler extends WebformHandlerBase
       'collaborators' => '',
       'custom_fields' => '',
       'ticket_id_field' => '',
+      'ticket_form_id' => '',
     ];
   }
 
@@ -115,6 +116,7 @@ class ZendeskUpdateHandler extends WebformHandlerBase
 
     $assignees = [];
     $groups = [];
+    $ticket_forms = [];
 
     try {
       // Get available groups and assignees from zendesk.
@@ -123,7 +125,7 @@ class ZendeskUpdateHandler extends WebformHandlerBase
       // in case there is an urgent change required. However, if tickets are to be
       // creatd as Solved, they need to have an individual assignee. Using the
       // service account would be acceptable and necessary in this case.
-      
+
       $client = new ZendeskClient();
 
       // get list of all groups
@@ -163,6 +165,8 @@ class ZendeskUpdateHandler extends WebformHandlerBase
       // order ticket fields by name
       asort($form_ticket_fields);
 
+      // Get all active ticket forms from Zendesk
+      $ticket_forms = $client->get("ticket_forms?active=true")->ticket_forms;
     }
     catch( \Exception $e ){
         // Encode HTML entities to prevent broken markup from breaking the page.
@@ -283,6 +287,17 @@ class ZendeskUpdateHandler extends WebformHandlerBase
       '#required' => false
     ];
 
+    $form['ticket_form_id'] = [
+      '#title' => $this->t('Ticket Form'),
+      '#default_value' => $this->configuration['ticket_form_id'],
+      '#required' => false
+    ];
+    if(!empty($ticket_forms) ){
+      $form['ticket_form_id']['#type'] = 'select';
+      $form['ticket_form_id']['#options'] = ['' => '- None -'] + array_column($ticket_forms, 'name', 'id');
+      $form['ticket_form_id']['#description'] = $this->t('The form to use on the ticket');
+    }
+
     $form['comment'] = [
       '#type' => 'textarea',
       '#title' => $this->t('Ticket Comment'),
@@ -396,7 +411,7 @@ class ZendeskUpdateHandler extends WebformHandlerBase
    /**
    * Submit ticket update to Zendesk API and validate there were no errors. If an error occurs,
    * fail the webform validation and don't allow the form to be submitted.
-   * 
+   *
    * By submitting to the API during the validate phase, we can interrupt the form submission,
    * prevent the email handlers from firing, and display an error message to the user. Validation
    * in a custom handler is performed after all the built-in webform validation, so this is a
@@ -413,7 +428,7 @@ class ZendeskUpdateHandler extends WebformHandlerBase
       }
     }
   }
- 
+
   public function sendToZendesk(FormStateInterface $form_state)
   {
     // NOTE: This will run for both new and update webform submissions, so this handler should only
@@ -436,7 +451,7 @@ class ZendeskUpdateHandler extends WebformHandlerBase
     $submission_fields = $webform_submission->toArray(TRUE);
     $configuration = $this->getTokenManager()->replace($this->configuration, $webform_submission);
 
-    // if the update handler is configured to use the ticket id field zendesk_request_number, 
+    // if the update handler is configured to use the ticket id field zendesk_request_number,
     // it's a sub-element of the support agent widget, so it needs to be retrieved differently...
     if ($configuration['ticket_id_field'] == "zendesk_request_number") {
       $zendesk_ticket_id = $submission_fields['data']['support_agent_use_only'][$configuration['ticket_id_field']];
@@ -457,6 +472,7 @@ class ZendeskUpdateHandler extends WebformHandlerBase
     // clean up tags
     $request['tags'] = Utility::cleanTags( $request['tags'] );
     $request['collaborators'] = preg_split("/[^a-z0-9_\-@\.']+/i", $request['collaborators'] );
+    if (!empty($request['ticket_form_id'])) $request['ticket_form_id'] = $this->configuration['ticket_form_id'];
 
     if(!isset($request['comment']['body'])){
       $comment = $request['comment'];
@@ -561,7 +577,7 @@ class ZendeskUpdateHandler extends WebformHandlerBase
         'link' => $this->getWebform()->toLink($this->t('Edit'), 'handlers')->toString(),
       ]);
     }
-    
+
     return $zendesk_ticket_id == $confirm_zendesk_ticket_id;
   }
 
@@ -571,7 +587,7 @@ class ZendeskUpdateHandler extends WebformHandlerBase
    */
   public function postSave(WebformSubmissionInterface $webform_submission, $update = TRUE)
   {
-    
+
   }
 
   /**
@@ -624,7 +640,7 @@ class ZendeskUpdateHandler extends WebformHandlerBase
   /**
    * @param array $field
    * @return bool
-   * @deprecated 
+   * @deprecated
    */
   protected function checkIsNameField( array $field ){
     return Utility::checkIsNameField($field);
