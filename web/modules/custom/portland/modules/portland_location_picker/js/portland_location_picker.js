@@ -174,6 +174,7 @@
 
           // if there are coordinates in the hidden lat/lng fields, set the map marker.
           // this is likely a submit postback that had validation errors, so we need to re set it.
+          // NOTE: The following code would be problematic if we allow multiple copies of the widget or alternate naming conventions.
           var lat = $('input[name=report_location\\[location_lat\\]]').val();
           var lng = $('input[name=report_location\\[location_lon\\]]').val();
           if (lat && lng && lat !== "0" && lng !== "0") {
@@ -514,6 +515,7 @@
             // user clicked something not selectable; reset data collection fields
             $('#place_name').val('');
             $('#location_details').val('');
+            // NOTE: The following code would be problematic if we allow multiple copies of the widget or alternate naming conventions.
             $('input[name=report_location\\[location_lat\\]]').val('');
             $('input[name=report_location\\[location_lon\\]]').val('');
             $('input[name=report_location\\[location_asset_id\\]]').val('');
@@ -591,6 +593,7 @@
             }
             var inLayer = leafletPip.pointInLayer(e.latlng, testLayer, false);
             if (inLayer.length > 0) {
+              // NOTE: The following code would be problematic if we allow multiple copies of the widget or alternate naming conventions.
               $('input[name=report_location\\[location_region_id\\]]').val(inLayer[0].feature.properties.region_id);
             } else {
               // clear region_id field
@@ -710,6 +713,7 @@
 
         // this is the helper function that fires when an asset marker is clicked.
         function setLocationType(type) {
+          // NOTE: The following code would be problematic if we allow multiple copies of the widget or alternate naming conventions.
           $("input[name='report_location[location_type]'][value='" + type + "']").click();
         }
   
@@ -812,12 +816,14 @@
 
           // fields that are input type="hidden" need to be selected by name attribute; they won't have ids
           setLatLngHiddenFields(marker.latlng.lat, marker.latlng.lng);
+          // NOTE: The following code would be problematic if we allow multiple copies of the widget or alternate naming conventions.
           $('input[name=report_location\\[location_asset_id\\]]').val(marker.target.feature.properties.id);
         }
 
         function setLatLngHiddenFields(lat, lng) {
           if (!lat) lat = "0";
           if (!lng) lng = "0";
+          // NOTE: The following code would be problematic if we allow multiple copies of the widget or alternate naming conventions.
           $('input[name=report_location\\[location_lat\\]]').val(lat);
           $('input[name=report_location\\[location_lon\\]]').val(lng);
           console.log('Set coordinates: ' + $('input[name=report_location\\[location_lat\\]]').val() + ', ' + $('input[name=report_location\\[location_lon\\]]').val());
