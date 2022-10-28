@@ -66,6 +66,12 @@ build_and_deploy: &build_and_deploy
         when: on_success
         no_output_timeout: 15m # allow 15 minutes instead of 10 minute default for script to complete
         command: |
+          # Add ssh-rsa to the accepted algorithms
+          # https://pantheon.io/docs/ssh-keys#connections-fail-with-no-matching-host-key-type-found-their-offer-ssh-rsa
+          echo "Host *.drush.in" > ~/.ssh/config
+          echo "    HostkeyAlgorithms +ssh-rsa" >> ~/.ssh/config
+          echo "    PubkeyAcceptedAlgorithms +ssh-rsa" >> ~/.ssh/config
+
           # Add terminus into path
           export PATH=/tmp/vendor/bin:/home/circleci/app/vendor/bin:$PATH && cd /home/circleci/app
 
@@ -117,7 +123,6 @@ build_and_deploy: &build_and_deploy
               echo "Creating new multidev site cloned from $BASE. Please wait."
               terminus multidev:create $CIRCLE_PROJECT_REPONAME.$BASE $PANTHEON_ENV >/dev/null
             fi
-            rm -rf ./env_list.txt
           fi
 
           # Set the connection type to GIT and force push
@@ -134,6 +139,21 @@ build_and_deploy: &build_and_deploy
           terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- cim -y -vvv
           echo "Rebuilding cache..."
           terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- cr
+
+          if [[ $CIRCLE_BRANCH != "master" ]]; then
+            # Begin indexing the Solr server. For new multidevs, indexing will take some time
+            # and will continue running after the CircleCI build finishes.
+            if grep -Fxq "$PANTHEON_ENV" ./env_list.txt; then
+              echo "Multidev already exists, no need to reset index tracker"
+            else
+              echo "Reseting index tracker because index is empty on new multidev"
+              terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- search-api:reset-tracker
+            fi
+            echo "Begin indexing the Solr server"
+            terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- search-api:index full_index &
+            sleep 20
+            rm -rf ./env_list.txt
+          fi
 
           # When commit on a permanent branch or master, delete the multi-dev site with name like "powr-1234a"
           if [[ $PANTHEON_ENV = "dev" ]]; then
@@ -241,6 +261,12 @@ visual_regression: &visual_regression
     - run:
         name: Run Percy tests
         command: |
+          # Add ssh-rsa to the accepted algorithms
+          # https://pantheon.io/docs/ssh-keys#connections-fail-with-no-matching-host-key-type-found-their-offer-ssh-rsa
+          echo "Host *.drush.in" > ~/.ssh/config
+          echo "    HostkeyAlgorithms +ssh-rsa" >> ~/.ssh/config
+          echo "    PubkeyAcceptedAlgorithms +ssh-rsa" >> ~/.ssh/config
+
           export PATH=/home/circleci/app/tests/vendor/bin:/tmp/vendor/pantheon-systems/terminus/bin:$PATH
 
           # Log in via terminus first. Required for tests that require user login.
@@ -333,6 +359,12 @@ full_regression: &full_regression
     - run:
         name: Run full regression tests
         command: |
+          # Add ssh-rsa to the accepted algorithms
+          # https://pantheon.io/docs/ssh-keys#connections-fail-with-no-matching-host-key-type-found-their-offer-ssh-rsa
+          echo "Host *.drush.in" > ~/.ssh/config
+          echo "    HostkeyAlgorithms +ssh-rsa" >> ~/.ssh/config
+          echo "    PubkeyAcceptedAlgorithms +ssh-rsa" >> ~/.ssh/config
+          
           export PATH=/home/circleci/app/tests/vendor/bin:/tmp/vendor/pantheon-systems/terminus/bin:$PATH
 
           # Skip test if there is no new commit since the last run
