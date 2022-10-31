@@ -3,6 +3,8 @@ langcode: en
 status: true
 dependencies:
   config:
+    - field.storage.group.field_enable_bids_and_proposals
+    - field.storage.group.field_enable_past_meetings
     - field.storage.group.field_group_path
     - field.storage.node.field_event_status
     - field.storage.node.field_event_type
@@ -10,7 +12,6 @@ dependencies:
     - search_api.index.full_index
     - system.menu.main
     - taxonomy.vocabulary.event_type
-    - views.view.group_events_menu
   content:
     - 'taxonomy_term:event_type:0258c2c6-008f-4c55-9211-a99c9c456d10'
     - 'taxonomy_term:event_type:0f1c2341-9d14-4c7a-a83d-7e353e760e1e'
@@ -237,7 +238,7 @@ display:
           order: ASC
           expose:
             label: ''
-            field_identifier: field_start_date
+            field_identifier: ''
           exposed: false
         field_start_time:
           id: field_start_time
@@ -429,8 +430,8 @@ display:
       relationships: {  }
       css_class: ''
       header:
-        view:
-          id: view
+        view_1:
+          id: view_1
           table: views
           field: view
           relationship: none
@@ -438,7 +439,7 @@ display:
           admin_label: ''
           plugin_id: view
           empty: false
-          view_to_insert: 'group_events_menu:block_events_menu'
+          view_to_insert: 'events_index:block_group_events_menu'
           inherit_arguments: true
         result:
           id: result
@@ -462,11 +463,197 @@ display:
         - user.permissions
       tags:
         - 'config:search_api.index.full_index'
+  block_events_menu:
+    id: block_events_menu
+    display_title: 'Block: Events Menu'
+    display_plugin: block
+    position: 5
+    display_options:
+      title: 'Events Menu'
+      fields:
+        language_path:
+          id: language_path
+          table: views
+          field: nothing
+          relationship: none
+          group_type: group
+          admin_label: 'Language Path'
+          plugin_id: custom
+          label: 'Language Path'
+          exclude: true
+          alter:
+            alter_text: true
+            text: '{% if drupal_token(''current-page:interface-language:prefix'')|length %}/{{ drupal_token(''current-page:interface-language:prefix'') }}{% endif %}'
+            make_link: false
+            path: ''
+            absolute: false
+            external: false
+            replace_spaces: false
+            path_case: none
+            trim_whitespace: false
+            alt: ''
+            rel: ''
+            link_class: ''
+            prefix: ''
+            suffix: ''
+            target: ''
+            nl2br: false
+            max_length: 0
+            word_boundary: true
+            ellipsis: true
+            more_link: false
+            more_link_text: ''
+            more_link_path: ''
+            strip_tags: false
+            trim: false
+            preserve_tags: ''
+            html: false
+          element_type: ''
+          element_class: ''
+          element_label_type: ''
+          element_label_class: ''
+          element_label_colon: true
+          element_wrapper_type: ''
+          element_wrapper_class: ''
+          element_default_classes: true
+          empty: ''
+          hide_empty: false
+          empty_zero: false
+          hide_alter_empty: false
+        nothing:
+          id: nothing
+          table: views
+          field: nothing
+          relationship: none
+          group_type: group
+          admin_label: ''
+          plugin_id: custom
+          label: ''
+          exclude: false
+          alter:
+            alter_text: true
+            text: "<div class=\"sr-only\">Event Menu</div>\r\n<ul class=\"nav nav-group-menu\">\r\n<li class=\"nav-item\"><a href=\"{{ language_path }}/events\" class=\"nav-link{% if path('<current>') matches '[events$]' %} active{% endif %}\">Events</a></li>\r\n<li class=\"nav-item\"><a href=\"{{ language_path }}/events/past\" class=\"nav-link{% if path('<current>') matches '[events/past$]' %} active{% endif %}\">Past Events</a></li>\r\n<li class=\"nav-item\"><a href=\"{{ language_path }}/events/meetings\" class=\"nav-link{% if path('<current>') matches '[events/meetings$]' %} active{% endif %}\">Past Meetings and Hearings</a></li>\r\n<li class=\"nav-item\"><a href=\"{{ language_path }}/events/bids\" class=\"nav-link{% if path('<current>') matches '[events/bids$]' %} active{% endif %}\">Open Bids and Proposals</a></li>\r\n</ul>"
+            make_link: false
+            path: ''
+            absolute: false
+            external: false
+            replace_spaces: false
+            path_case: none
+            trim_whitespace: false
+            alt: ''
+            rel: ''
+            link_class: ''
+            prefix: ''
+            suffix: ''
+            target: ''
+            nl2br: false
+            max_length: 0
+            word_boundary: true
+            ellipsis: true
+            more_link: false
+            more_link_text: ''
+            more_link_path: ''
+            strip_tags: false
+            trim: false
+            preserve_tags: ''
+            html: false
+          element_type: ''
+          element_class: ''
+          element_label_type: ''
+          element_label_class: ''
+          element_label_colon: false
+          element_wrapper_type: ''
+          element_wrapper_class: ''
+          element_default_classes: true
+          empty: ''
+          hide_empty: false
+          empty_zero: false
+          hide_alter_empty: false
+      pager:
+        type: some
+        options:
+          offset: 0
+          items_per_page: 1
+      cache:
+        type: none
+        options: {  }
+      empty: {  }
+      sorts: {  }
+      filters:
+        content_type:
+          id: content_type
+          table: search_api_index_full_index
+          field: content_type
+          relationship: none
+          group_type: group
+          admin_label: ''
+          plugin_id: search_api_options
+          operator: or
+          value:
+            event: event
+          group: 1
+          exposed: false
+          expose:
+            operator_id: ''
+            label: ''
+            description: ''
+            use_operator: false
+            operator: ''
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: ''
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+            reduce: false
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
+          reduce_duplicates: false
+      filter_groups:
+        operator: AND
+        groups:
+          1: AND
+      defaults:
+        empty: false
+        cache: false
+        title: false
+        pager: false
+        fields: false
+        sorts: false
+        filters: false
+        filter_groups: false
+        header: false
+      display_description: ''
+      header: {  }
+      display_extenders:
+        metatag_display_extender:
+          metatags: {  }
+          tokenize: false
+    cache_metadata:
+      max-age: -1
+      contexts:
+        - 'languages:language_interface'
+        - 'user.node_grants:view'
+        - user.permissions
+      tags:
+        - 'config:search_api.index.full_index'
   block_group_events:
     id: block_group_events
     display_title: 'Block: Group Events'
     display_plugin: block
-    position: 1
+    position: 11
     display_options:
       title: Events
       fields:
@@ -899,11 +1086,531 @@ display:
         - user.permissions
       tags:
         - 'config:search_api.index.full_index'
+  block_group_events_menu:
+    id: block_group_events_menu
+    display_title: 'Block: Group Events Menu'
+    display_plugin: block
+    position: 10
+    display_options:
+      title: 'Group: Events Menu'
+      fields:
+        language_path:
+          id: language_path
+          table: views
+          field: nothing
+          relationship: none
+          group_type: group
+          admin_label: 'Language Path'
+          plugin_id: custom
+          label: 'Language Path'
+          exclude: true
+          alter:
+            alter_text: true
+            text: '{% if drupal_token(''current-page:interface-language:prefix'')|length %}/{{ drupal_token(''current-page:interface-language:prefix'') }}{% endif %}'
+            make_link: false
+            path: ''
+            absolute: false
+            external: false
+            replace_spaces: false
+            path_case: none
+            trim_whitespace: false
+            alt: ''
+            rel: ''
+            link_class: ''
+            prefix: ''
+            suffix: ''
+            target: ''
+            nl2br: false
+            max_length: 0
+            word_boundary: true
+            ellipsis: true
+            more_link: false
+            more_link_text: ''
+            more_link_path: ''
+            strip_tags: false
+            trim: false
+            preserve_tags: ''
+            html: false
+          element_type: ''
+          element_class: ''
+          element_label_type: ''
+          element_label_class: ''
+          element_label_colon: true
+          element_wrapper_type: ''
+          element_wrapper_class: ''
+          element_default_classes: true
+          empty: ''
+          hide_empty: false
+          empty_zero: false
+          hide_alter_empty: false
+        group_title:
+          id: group_title
+          table: search_api_index_full_index
+          field: group_title
+          relationship: none
+          group_type: group
+          admin_label: ''
+          plugin_id: search_api_field
+          label: ''
+          exclude: true
+          alter:
+            alter_text: false
+            text: ''
+            make_link: false
+            path: ''
+            absolute: false
+            external: false
+            replace_spaces: false
+            path_case: none
+            trim_whitespace: false
+            alt: ''
+            rel: ''
+            link_class: ''
+            prefix: ''
+            suffix: ''
+            target: ''
+            nl2br: false
+            max_length: 0
+            word_boundary: true
+            ellipsis: true
+            more_link: false
+            more_link_text: ''
+            more_link_path: ''
+            strip_tags: false
+            trim: false
+            preserve_tags: ''
+            html: false
+          element_type: ''
+          element_class: ''
+          element_label_type: ''
+          element_label_class: ''
+          element_label_colon: false
+          element_wrapper_type: ''
+          element_wrapper_class: ''
+          element_default_classes: true
+          empty: ''
+          hide_empty: false
+          empty_zero: false
+          hide_alter_empty: true
+          click_sort_column: value
+          type: string
+          settings:
+            link_to_entity: false
+          group_column: value
+          group_columns: {  }
+          group_rows: true
+          delta_limit: 0
+          delta_offset: 0
+          delta_reversed: false
+          delta_first_last: false
+          multi_type: separator
+          separator: ', '
+          field_api_classes: false
+          field_rendering: true
+          fallback_handler: search_api
+          fallback_options:
+            link_to_item: false
+            use_highlighting: false
+            multi_type: separator
+            multi_separator: ', '
+        field_group_path:
+          id: field_group_path
+          table: search_api_datasource_full_index_entity_group
+          field: field_group_path
+          relationship: none
+          group_type: group
+          admin_label: ''
+          entity_type: group
+          plugin_id: search_api_field
+          label: ''
+          exclude: true
+          alter:
+            alter_text: false
+            text: ''
+            make_link: false
+            path: ''
+            absolute: false
+            external: false
+            replace_spaces: false
+            path_case: none
+            trim_whitespace: false
+            alt: ''
+            rel: ''
+            link_class: ''
+            prefix: ''
+            suffix: ''
+            target: ''
+            nl2br: false
+            max_length: 0
+            word_boundary: true
+            ellipsis: true
+            more_link: false
+            more_link_text: ''
+            more_link_path: ''
+            strip_tags: false
+            trim: false
+            preserve_tags: ''
+            html: false
+          element_type: ''
+          element_class: ''
+          element_label_type: ''
+          element_label_class: ''
+          element_label_colon: false
+          element_wrapper_type: ''
+          element_wrapper_class: ''
+          element_default_classes: true
+          empty: ''
+          hide_empty: false
+          empty_zero: false
+          hide_alter_empty: true
+          click_sort_column: value
+          type: string
+          settings:
+            link_to_entity: false
+          group_column: value
+          group_columns: {  }
+          group_rows: true
+          delta_limit: 0
+          delta_offset: 0
+          delta_reversed: false
+          delta_first_last: false
+          multi_type: separator
+          separator: ', '
+          field_api_classes: false
+          field_rendering: true
+          fallback_handler: search_api
+          fallback_options:
+            link_to_item: false
+            use_highlighting: false
+            multi_type: separator
+            multi_separator: ', '
+        field_enable_past_meetings:
+          id: field_enable_past_meetings
+          table: search_api_datasource_full_index_entity_group
+          field: field_enable_past_meetings
+          relationship: none
+          group_type: group
+          admin_label: ''
+          entity_type: group
+          plugin_id: search_api_field
+          label: ''
+          exclude: true
+          alter:
+            alter_text: true
+            text: '{% if field_enable_past_meetings__value %}<li class="nav-item"><a href="{{ language_path }}/{{ field_group_path|render|striptags|trim }}/events/meetings" class="nav-link{% if path(''<current>'') matches ''[events/meetings$]'' %} active{% endif %}">{{ ''Past Meetings and Hearings''|t }}</a></li>{% endif %}'
+            make_link: false
+            path: ''
+            absolute: false
+            external: false
+            replace_spaces: false
+            path_case: none
+            trim_whitespace: false
+            alt: ''
+            rel: ''
+            link_class: ''
+            prefix: ''
+            suffix: ''
+            target: ''
+            nl2br: false
+            max_length: 0
+            word_boundary: true
+            ellipsis: true
+            more_link: false
+            more_link_text: ''
+            more_link_path: ''
+            strip_tags: false
+            trim: false
+            preserve_tags: ''
+            html: false
+          element_type: ''
+          element_class: ''
+          element_label_type: ''
+          element_label_class: ''
+          element_label_colon: false
+          element_wrapper_type: ''
+          element_wrapper_class: ''
+          element_default_classes: true
+          empty: ''
+          hide_empty: false
+          empty_zero: false
+          hide_alter_empty: true
+          click_sort_column: value
+          type: boolean
+          settings:
+            format: boolean
+            format_custom_false: ''
+            format_custom_true: ''
+          group_column: value
+          group_columns: {  }
+          group_rows: true
+          delta_limit: 0
+          delta_offset: 0
+          delta_reversed: false
+          delta_first_last: false
+          multi_type: separator
+          separator: ', '
+          field_api_classes: false
+          field_rendering: true
+          fallback_handler: search_api_boolean
+          fallback_options:
+            type: yes-no
+            type_custom_true: ''
+            type_custom_false: ''
+            not: false
+            link_to_item: false
+            use_highlighting: false
+            multi_type: separator
+            multi_separator: ', '
+        field_enable_bids_and_proposals:
+          id: field_enable_bids_and_proposals
+          table: search_api_datasource_full_index_entity_group
+          field: field_enable_bids_and_proposals
+          relationship: none
+          group_type: group
+          admin_label: ''
+          entity_type: group
+          plugin_id: search_api_field
+          label: ''
+          exclude: true
+          alter:
+            alter_text: true
+            text: '{% if field_enable_bids_and_proposals__value %}<li class="nav-item"><a href="{{ language_path }}/{{ field_group_path|render|striptags|trim }}/events/bids" class="nav-link{% if path(''<current>'') matches ''[events/bids$]'' %} active{% endif %}">{{ ''Bids and Proposals''|t }}</a></li>{% endif %}'
+            make_link: false
+            path: ''
+            absolute: false
+            external: false
+            replace_spaces: false
+            path_case: none
+            trim_whitespace: false
+            alt: ''
+            rel: ''
+            link_class: ''
+            prefix: ''
+            suffix: ''
+            target: ''
+            nl2br: false
+            max_length: 0
+            word_boundary: true
+            ellipsis: true
+            more_link: false
+            more_link_text: ''
+            more_link_path: ''
+            strip_tags: false
+            trim: false
+            preserve_tags: ''
+            html: false
+          element_type: ''
+          element_class: ''
+          element_label_type: ''
+          element_label_class: ''
+          element_label_colon: false
+          element_wrapper_type: ''
+          element_wrapper_class: ''
+          element_default_classes: true
+          empty: ''
+          hide_empty: false
+          empty_zero: false
+          hide_alter_empty: true
+          click_sort_column: value
+          type: boolean
+          settings:
+            format: boolean
+            format_custom_false: ''
+            format_custom_true: ''
+          group_column: value
+          group_columns: {  }
+          group_rows: true
+          delta_limit: 0
+          delta_offset: 0
+          delta_reversed: false
+          delta_first_last: false
+          multi_type: separator
+          separator: ', '
+          field_api_classes: false
+          field_rendering: true
+          fallback_handler: search_api_boolean
+          fallback_options:
+            type: yes-no
+            type_custom_true: ''
+            type_custom_false: ''
+            not: false
+            link_to_item: false
+            use_highlighting: false
+            multi_type: separator
+            multi_separator: ', '
+        nothing:
+          id: nothing
+          table: views
+          field: nothing
+          relationship: none
+          group_type: group
+          admin_label: ''
+          plugin_id: custom
+          label: ''
+          exclude: false
+          alter:
+            alter_text: true
+            text: "<div class=\"sr-only\">{{ group_title }} Event Menu</div>\r\n<ul class=\"nav nav-group-menu\">\r\n<li class=\"nav-item\"><a href=\"{{ language_path }}/{{ field_group_path|render|striptags|trim }}/events\" class=\"nav-link{% if path('<current>') matches '[events$]' %} active{% endif %}\">{{ 'Current and Upcoming Events'|t }}</a></li>\r\n<li class=\"nav-item\"><a href=\"{{ language_path }}/{{ field_group_path|render|striptags|trim }}/events/past\" class=\"nav-link{% if path('<current>') matches '[events/past$]' %} active{% endif %}\">{{ 'Past Events'|t }}</a></li>\r\n{{ field_enable_past_meetings }}\r\n{{ field_enable_bids_and_proposals }}\r\n</ul>"
+            make_link: false
+            path: ''
+            absolute: false
+            external: false
+            replace_spaces: false
+            path_case: none
+            trim_whitespace: false
+            alt: ''
+            rel: ''
+            link_class: ''
+            prefix: ''
+            suffix: ''
+            target: ''
+            nl2br: false
+            max_length: 0
+            word_boundary: true
+            ellipsis: true
+            more_link: false
+            more_link_text: ''
+            more_link_path: ''
+            strip_tags: false
+            trim: false
+            preserve_tags: ''
+            html: false
+          element_type: ''
+          element_class: ''
+          element_label_type: ''
+          element_label_class: ''
+          element_label_colon: false
+          element_wrapper_type: ''
+          element_wrapper_class: ''
+          element_default_classes: true
+          empty: ''
+          hide_empty: false
+          empty_zero: false
+          hide_alter_empty: false
+      pager:
+        type: some
+        options:
+          offset: 0
+          items_per_page: 1
+      cache:
+        type: none
+        options: {  }
+      empty: {  }
+      sorts: {  }
+      arguments:
+        group_id:
+          id: group_id
+          table: search_api_index_full_index
+          field: group_id
+          relationship: none
+          group_type: group
+          admin_label: ''
+          plugin_id: search_api
+          default_action: default
+          exception:
+            value: all
+            title_enable: false
+            title: All
+          title_enable: false
+          title: ''
+          default_argument_type: group_id_from_url
+          default_argument_options: {  }
+          default_argument_skip_url: false
+          summary_options: {  }
+          summary:
+            sort_order: asc
+            number_of_records: 0
+            format: default_summary
+          specify_validation: false
+          validate:
+            type: none
+            fail: 'not found'
+          validate_options: {  }
+          break_phrase: false
+          not: false
+      filters:
+        type:
+          id: type
+          table: search_api_index_full_index
+          field: type
+          relationship: none
+          group_type: group
+          admin_label: ''
+          plugin_id: search_api_options
+          operator: 'not empty'
+          value: {  }
+          group: 1
+          exposed: false
+          expose:
+            operator_id: ''
+            label: ''
+            description: ''
+            use_operator: false
+            operator: ''
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: ''
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+            reduce: false
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
+          reduce_duplicates: false
+      filter_groups:
+        operator: AND
+        groups:
+          1: AND
+      defaults:
+        empty: false
+        cache: false
+        title: false
+        pager: false
+        relationships: false
+        fields: false
+        sorts: false
+        arguments: false
+        filters: false
+        filter_groups: false
+        header: false
+      relationships: {  }
+      display_description: ''
+      header: {  }
+      display_extenders:
+        metatag_display_extender:
+          metatags: {  }
+          tokenize: false
+    cache_metadata:
+      max-age: -1
+      contexts:
+        - 'languages:language_content'
+        - 'languages:language_interface'
+        - route
+        - url
+        - 'user.node_grants:view'
+        - user.permissions
+      tags:
+        - 'config:field.storage.group.field_enable_bids_and_proposals'
+        - 'config:field.storage.group.field_enable_past_meetings'
+        - 'config:field.storage.group.field_group_path'
+        - 'config:search_api.index.full_index'
   block_group_past_meetings:
     id: block_group_past_meetings
     display_title: 'Block: Group Past Meetings'
     display_plugin: block
-    position: 1
+    position: 12
     display_options:
       title: 'Past Meetings and Hearings'
       fields:
@@ -1736,7 +2443,7 @@ display:
     id: events_open_bids
     display_title: 'Bids and Proposals'
     display_plugin: page
-    position: 1
+    position: 4
     display_options:
       title: 'Bids and Proposals'
       filters:
@@ -2068,17 +2775,17 @@ display:
         header: false
       display_description: ''
       header:
-        area_text_custom:
-          id: area_text_custom
+        view:
+          id: view
           table: views
-          field: area_text_custom
+          field: view
           relationship: none
           group_type: group
           admin_label: ''
-          plugin_id: text_custom
+          plugin_id: view
           empty: false
-          content: "<div class=\"sr-only\">{{ portland_content_type_name_field }} Menu</div>\r\n<ul class=\"nav nav-group-menu nav-group-menu\">\r\n<li class=\"nav-item\"><a href=\"/events\" class=\"nav-link{% if path('<current>') matches '[events$]' %} active{% endif %}\">Events</a></li>\r\n<li class=\"nav-item\"><a href=\"/events/past\" class=\"nav-link{% if path('<current>') matches '[events/past$]' %} active{% endif %}\">Past Events</a></li>\r\n<li class=\"nav-item\"><a href=\"/events/meetings\" class=\"nav-link{% if path('<current>') matches '[events/meetings$]' %} active{% endif %}\">Past Meetings and Hearings</a></li>\r\n<li class=\"nav-item\"><a href=\"/events/bids\" class=\"nav-link{% if path('<current>') matches '[events/bids$]' %} active{% endif %}\">Open Bids and Proposals</a></li>\r\n</ul>\r\n"
-          tokenize: true
+          view_to_insert: 'events_index:block_events_menu'
+          inherit_arguments: false
         result:
           id: result
           table: views
@@ -2119,7 +2826,7 @@ display:
     id: events_past_index
     display_title: 'Past Events'
     display_plugin: page
-    position: 1
+    position: 2
     display_options:
       title: 'Past Events'
       sorts:
@@ -2479,17 +3186,17 @@ display:
         header: false
       display_description: ''
       header:
-        area_text_custom:
-          id: area_text_custom
+        view:
+          id: view
           table: views
-          field: area_text_custom
+          field: view
           relationship: none
           group_type: group
           admin_label: ''
-          plugin_id: text_custom
+          plugin_id: view
           empty: false
-          content: "<div class=\"sr-only\">{{ portland_content_type_name_field }} Menu</div>\r\n<ul class=\"nav nav-group-menu nav-group-menu\">\r\n<li class=\"nav-item\"><a href=\"/events\" class=\"nav-link{% if path('<current>') matches '[events$]' %} active{% endif %}\">Events</a></li>\r\n<li class=\"nav-item\"><a href=\"/events/past\" class=\"nav-link{% if path('<current>') matches '[events/past$]' %} active{% endif %}\">Past Events</a></li>\r\n<li class=\"nav-item\"><a href=\"/events/meetings\" class=\"nav-link{% if path('<current>') matches '[events/meetings$]' %} active{% endif %}\">Past Meetings and Hearings</a></li>\r\n<li class=\"nav-item\"><a href=\"/events/bids\" class=\"nav-link{% if path('<current>') matches '[events/bids$]' %} active{% endif %}\">Open Bids and Proposals</a></li>\r\n</ul>\r\n"
-          tokenize: true
+          view_to_insert: 'events_index:block_events_menu'
+          inherit_arguments: false
         result:
           id: result
           table: views
@@ -2538,7 +3245,7 @@ display:
     id: events_past_meetings
     display_title: 'Past Meetings'
     display_plugin: page
-    position: 1
+    position: 3
     display_options:
       title: 'Past Meetings and Hearings'
       sorts:
@@ -2924,17 +3631,17 @@ display:
         header: false
       display_description: ''
       header:
-        area_text_custom:
-          id: area_text_custom
+        view:
+          id: view
           table: views
-          field: area_text_custom
+          field: view
           relationship: none
           group_type: group
           admin_label: ''
-          plugin_id: text_custom
+          plugin_id: view
           empty: false
-          content: "<div class=\"sr-only\">{{ portland_content_type_name_field }} Menu</div>\r\n<ul class=\"nav nav-group-menu nav-group-menu\">\r\n<li class=\"nav-item\"><a href=\"/events\" class=\"nav-link{% if path('<current>') matches '[events$]' %} active{% endif %}\">Events</a></li>\r\n<li class=\"nav-item\"><a href=\"/events/past\" class=\"nav-link{% if path('<current>') matches '[events/past$]' %} active{% endif %}\">Past Events</a></li>\r\n<li class=\"nav-item\"><a href=\"/events/meetings\" class=\"nav-link{% if path('<current>') matches '[events/meetings$]' %} active{% endif %}\">Past Meetings and Hearings</a></li>\r\n<li class=\"nav-item\"><a href=\"/events/bids\" class=\"nav-link{% if path('<current>') matches '[events/bids$]' %} active{% endif %}\">Open Bids and Proposals</a></li>\r\n</ul>\r\n"
-          tokenize: true
+          view_to_insert: 'events_index:block_events_menu'
+          inherit_arguments: false
         result:
           id: result
           table: views
@@ -3316,17 +4023,17 @@ display:
         header: false
       display_description: ''
       header:
-        area_text_custom:
-          id: area_text_custom
+        view:
+          id: view
           table: views
-          field: area_text_custom
+          field: view
           relationship: none
           group_type: group
           admin_label: ''
-          plugin_id: text_custom
+          plugin_id: view
           empty: false
-          content: "<div class=\"sr-only\">{{ portland_content_type_name_field }} Menu</div>\r\n<ul class=\"nav nav-group-menu nav-group-menu\">\r\n<li class=\"nav-item\"><a href=\"/events\" class=\"nav-link{% if path('<current>') matches '[events$]' %} active{% endif %}\">Events</a></li>\r\n<li class=\"nav-item\"><a href=\"/events/past\" class=\"nav-link{% if path('<current>') matches '[events/past$]' %} active{% endif %}\">Past Events</a></li>\r\n<li class=\"nav-item\"><a href=\"/events/meetings\" class=\"nav-link{% if path('<current>') matches '[events/meetings$]' %} active{% endif %}\">Past Meetings and Hearings</a></li>\r\n<li class=\"nav-item\"><a href=\"/events/bids\" class=\"nav-link{% if path('<current>') matches '[events/bids$]' %} active{% endif %}\">Open Bids and Proposals</a></li>\r\n</ul>\r\n"
-          tokenize: true
+          view_to_insert: 'events_index:block_events_menu'
+          inherit_arguments: false
         result:
           id: result
           table: views
@@ -3376,7 +4083,7 @@ display:
     id: page_group_bids
     display_title: 'Group Bids'
     display_plugin: page
-    position: 1
+    position: 9
     display_options:
       title: 'Bids and Proposals'
       fields:
@@ -3912,7 +4619,7 @@ display:
     id: page_group_events
     display_title: 'Group Events'
     display_plugin: page
-    position: 1
+    position: 6
     display_options:
       title: Events
       fields:
@@ -4406,7 +5113,7 @@ display:
     id: page_group_past_events
     display_title: 'Group Past Events'
     display_plugin: page
-    position: 1
+    position: 7
     display_options:
       title: 'Past Events'
       fields:
@@ -4883,7 +5590,7 @@ display:
     id: page_group_past_meetings
     display_title: 'Group Past Meetings'
     display_plugin: page
-    position: 1
+    position: 8
     display_options:
       title: 'Past Meetings and Hearings'
       fields:
