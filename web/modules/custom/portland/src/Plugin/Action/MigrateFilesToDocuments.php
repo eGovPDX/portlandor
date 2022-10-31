@@ -50,9 +50,7 @@ class MigrateFilesToDocuments extends ViewsBulkOperationsActionBase
 
     // Loop through all files
     foreach($entity->get($original_documents_field_name) as $fileItem) {
-
       $file = File::load($fileItem->target_id);
-      // TODO: log empty files
       if(empty($file)) continue;
 
       // Create a new Document entity based on the file
@@ -60,7 +58,7 @@ class MigrateFilesToDocuments extends ViewsBulkOperationsActionBase
         'bundle' => 'document',
         'uid' => 1,
         'langcode' => \Drupal::languageManager()->getDefaultLanguage()->getId(),
-        'name' => $file->getFilename(),
+        'name' => (empty($fileItem->description)) ? $file->getFilename() : $fileItem->description,
         'status' => 1,
         'field_document' => [
           'target_id' => $fileItem->target_id,
