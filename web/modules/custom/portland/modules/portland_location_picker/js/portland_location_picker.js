@@ -94,6 +94,7 @@
         var AerialControl = generateAerialControl();
 
         // CUSTOM PROPERTIES SET IN WEBFORM CONFIG //////////
+        var elementId = drupalSettings.webform.portland_location_picker.element_id;
         var primaryLayerSource = drupalSettings.webform.portland_location_picker.primary_layer_source;
         var incidentsLayerSource = drupalSettings.webform.portland_location_picker.incidents_layer_source;
         var regionsLayerSource = drupalSettings.webform.portland_location_picker.regions_layer_source;
@@ -175,8 +176,8 @@
           // if there are coordinates in the hidden lat/lng fields, set the map marker.
           // this is likely a submit postback that had validation errors, so we need to re set it.
           // NOTE: The following code would be problematic if we allow multiple copies of the widget or alternate naming conventions.
-          var lat = $('input[name=report_location\\[location_lat\\]]').val();
-          var lng = $('input[name=report_location\\[location_lon\\]]').val();
+          var lat = $('input[name=' + elementId + '\\[location_lat\\]]').val();
+          var lng = $('input[name=' + elementId + '\\[location_lon\\]]').val();
           if (lat && lng && lat !== "0" && lng !== "0") {
             setLocationMarker(lat, lng);
             doZoomAndCenter(lat, lng);
@@ -208,8 +209,10 @@
             // locate address on map
             var lat = $(this).data('lat');
             var lng = $(this).data('lng');
-            setLocationMarker(lat, lng);
-            doZoomAndCenter(lat, lng);
+            var latlng = new L.LatLng(lat, lng);
+            doMapClick(latlng);
+            // setLocationMarker(lat, lng);
+            // doZoomAndCenter(lat, lng);
             setVerified();
           });
   
@@ -516,9 +519,9 @@
             $('#place_name').val('');
             $('#location_details').val('');
             // NOTE: The following code would be problematic if we allow multiple copies of the widget or alternate naming conventions.
-            $('input[name=report_location\\[location_lat\\]]').val('');
-            $('input[name=report_location\\[location_lon\\]]').val('');
-            $('input[name=report_location\\[location_asset_id\\]]').val('');
+            $('input[name=' + elementId + '\\[location_lat\\]]').val('');
+            $('input[name=' + elementId + '\\[location_lon\\]]').val('');
+            $('input[name=' + elementId + '\\[location_asset_id\\]]').val('');
           }
         }
 
@@ -559,8 +562,8 @@
           locationErrorShown = false;
           toggleAerialView();
         }
-  
-        function handleMapClick(e) {
+
+        function doMapClick(latlng) {
           // normally when the map is clicked, we want to zoom to the clicked location
           // and perform a reverse lookup. there are some cases where we may want to 
           // perform additional actions. for example, if location type = park, we also
@@ -580,7 +583,7 @@
             locateControlContaier.style.backgroundImage = 'url("/modules/custom/portland/modules/portland_location_picker/images/map_locate.png")';
           }
   
-          reverseGeolocate(e.latlng);
+          reverseGeolocate(latlng);
 
           // determine whether click is within a region on the primaryLayer layer, and store the region_id.
           // this is done if the primary layer type is Region, or if the regions layer is populated.
@@ -591,15 +594,19 @@
             } else {
               testLayer = primaryLayer;
             }
-            var inLayer = leafletPip.pointInLayer(e.latlng, testLayer, false);
+            var inLayer = leafletPip.pointInLayer(latlng, testLayer, false);
             if (inLayer.length > 0) {
               // NOTE: The following code would be problematic if we allow multiple copies of the widget or alternate naming conventions.
-              $('input[name=report_location\\[location_region_id\\]]').val(inLayer[0].feature.properties.region_id);
+              $('input[name=' + elementId + '\\[location_region_id\\]]').val(inLayer[0].feature.properties.region_id);
             } else {
               // clear region_id field
               $('#location_region_id').val("");
             }
           }
+        }
+  
+        function handleMapClick(e) {
+          doMapClick(e.latlng);
         }
   
         function handleLocateMeFound(e) {
@@ -714,7 +721,7 @@
         // this is the helper function that fires when an asset marker is clicked.
         function setLocationType(type) {
           // NOTE: The following code would be problematic if we allow multiple copies of the widget or alternate naming conventions.
-          $("input[name='report_location[location_type]'][value='" + type + "']").click();
+          $("input[name='' + elementId + '[location_type]'][value='" + type + "']").click();
         }
   
         function redrawMap() {
@@ -817,16 +824,16 @@
           // fields that are input type="hidden" need to be selected by name attribute; they won't have ids
           setLatLngHiddenFields(marker.latlng.lat, marker.latlng.lng);
           // NOTE: The following code would be problematic if we allow multiple copies of the widget or alternate naming conventions.
-          $('input[name=report_location\\[location_asset_id\\]]').val(marker.target.feature.properties.id);
+          $('input[name=' + elementId + '\\[location_asset_id\\]]').val(marker.target.feature.properties.id);
         }
 
         function setLatLngHiddenFields(lat, lng) {
           if (!lat) lat = "0";
           if (!lng) lng = "0";
           // NOTE: The following code would be problematic if we allow multiple copies of the widget or alternate naming conventions.
-          $('input[name=report_location\\[location_lat\\]]').val(lat);
-          $('input[name=report_location\\[location_lon\\]]').val(lng);
-          console.log('Set coordinates: ' + $('input[name=report_location\\[location_lat\\]]').val() + ', ' + $('input[name=report_location\\[location_lon\\]]').val());
+          $('input[name=' + elementId + '\\[location_lat\\]]').val(lat);
+          $('input[name=' + elementId + '\\[location_lon\\]]').val(lng);
+          console.log('Set coordinates: ' + $('input[name=' + elementId + '\\[location_lat\\]]').val() + ', ' + $('input[name=' + elementId + '\\[location_lon\\]]').val());
         }
 
         // set location marker on map. this is only used with map clicks, not marker clicks.
