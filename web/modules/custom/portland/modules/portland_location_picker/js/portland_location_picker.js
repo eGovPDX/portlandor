@@ -721,7 +721,7 @@
         // this is the helper function that fires when an asset marker is clicked.
         function setLocationType(type) {
           // NOTE: The following code would be problematic if we allow multiple copies of the widget or alternate naming conventions.
-          $("input[name='' + elementId + '[location_type]'][value='" + type + "']").click();
+          $("input[name='" + elementId + "[location_type]'][value='" + type + "']").click();
         }
   
         function redrawMap() {
