@@ -227,7 +227,7 @@ class PortlandLocationPicker extends WebformCompositeBase {
     ];
     $element['location_lat'] = [
       '#type' => 'textfield',
-      '#title' => t('Latitude'),
+      '#title' => t('Location'),
       '#title_display' => 'invisible',
       '#id' => 'location_lat',
       '#attributes' => ['class' => ['location-lat', 'visually-hidden']],
@@ -244,25 +244,25 @@ class PortlandLocationPicker extends WebformCompositeBase {
       '#attributes' => ['class' => ['location-lng', 'visually-hidden']],
     ];
     $element['location_asset_id'] = [
-      '#type' => 'hidden',
+      '#type' => 'textfield',
       '#title' => t('Asset ID'),
       '#title_display' => 'invisible',
       '#id' => 'location_asset_id',
     ];
     $element['location_region_id'] = [
-      '#type' => 'hidden',
+      '#type' => 'textfield',
       '#title' => t('Region ID'),
       '#title_display' => 'invisible',
       '#id' => 'location_region_id',
     ];
     $element['location_municipality_name'] = [
-      '#type' => 'hidden',
+      '#type' => 'textfield',
       '#title' => t('Municipality Name'),
       '#title_display' => 'invisible',
       '#id' => 'location_municipality_name',
     ];
     $element['location_is_portland'] = [
-      '#type' => 'hidden',
+      '#type' => 'textfield',
       '#title' => t('Within Portland City Limits?'),
       '#title_display' => 'invisible',
       '#id' => 'location_is_portland',
@@ -270,12 +270,12 @@ class PortlandLocationPicker extends WebformCompositeBase {
     ];
     $element['geojson_layer'] = [
       '#title' => t('GeoJson Layer'),
-      '#type' => 'hidden',
+      '#type' => 'textfield',
       '#id' => 'geojson_layer',
     ];
     $element['geojson_layer_behavior'] = [
       '#title' => t('GeoJson Layer Behavior'),
-      '#type' => 'hidden',
+      '#type' => 'textfield',
       '#id' => 'geojson_layer_behavior',
     ];
 

@@ -563,48 +563,6 @@
           toggleAerialView();
         }
 
-        function doMapClick(latlng) {
-          // normally when the map is clicked, we want to zoom to the clicked location
-          // and perform a reverse lookup. there are some cases where we may want to 
-          // perform additional actions. for example, if location type = park, we also
-          // need to do a reverse parks lookup and adjust the park selector accordingly.
-
-          // if primary layer behavior is selection-only, don't allow map clicks
-          if (primaryLayerBehavior == PRIMARY_LAYER_BEHAVIOR.SelectionOnly) return;
-
-          resetClickedMarker();
-  
-          // clear place name and park selector fields; they will get reset if appropriate after the click.
-          $('.place-name').val("");
-          $('#location_park').val("");
-  
-          if (locCircle) {
-            map.removeLayer(locCircle);
-            locateControlContaier.style.backgroundImage = 'url("/modules/custom/portland/modules/portland_location_picker/images/map_locate.png")';
-          }
-  
-          reverseGeolocate(latlng);
-
-          // determine whether click is within a region on the primaryLayer layer, and store the region_id.
-          // this is done if the primary layer type is Region, or if the regions layer is populated.
-          if (primaryLayerType == PRIMARY_LAYER_TYPE.Region || regionsLayerSource) {
-            var testLayer;
-            if (regionsLayer) {
-              testLayer = regionsLayer;
-            } else {
-              testLayer = primaryLayer;
-            }
-            var inLayer = leafletPip.pointInLayer(latlng, testLayer, false);
-            if (inLayer.length > 0) {
-              // NOTE: The following code would be problematic if we allow multiple copies of the widget or alternate naming conventions.
-              $('input[name=' + elementId + '\\[location_region_id\\]]').val(inLayer[0].feature.properties.region_id);
-            } else {
-              // clear region_id field
-              $('#location_region_id').val("");
-            }
-          }
-        }
-  
         function handleMapClick(e) {
           doMapClick(e.latlng);
         }
@@ -665,6 +623,48 @@
 
         // HELPER FUNCTIONS ///////////////////////////////
 
+        function doMapClick(latlng) {
+          // normally when the map is clicked, we want to zoom to the clicked location
+          // and perform a reverse lookup. there are some cases where we may want to 
+          // perform additional actions. for example, if location type = park, we also
+          // need to do a reverse parks lookup and adjust the park selector accordingly.
+
+          // if primary layer behavior is selection-only, don't allow map clicks
+          if (primaryLayerBehavior == PRIMARY_LAYER_BEHAVIOR.SelectionOnly) return;
+
+          resetClickedMarker();
+  
+          // clear place name and park selector fields; they will get reset if appropriate after the click.
+          $('.place-name').val("");
+          $('#location_park').val("");
+  
+          if (locCircle) {
+            map.removeLayer(locCircle);
+            locateControlContaier.style.backgroundImage = 'url("/modules/custom/portland/modules/portland_location_picker/images/map_locate.png")';
+          }
+  
+          reverseGeolocate(latlng);
+
+          // determine whether click is within a region on the primaryLayer layer, and store the region_id.
+          // this is done if the primary layer type is Region, or if the regions layer is populated.
+          if (primaryLayerType == PRIMARY_LAYER_TYPE.Region || regionsLayerSource) {
+            var testLayer;
+            if (regionsLayer) {
+              testLayer = regionsLayer;
+            } else {
+              testLayer = primaryLayer;
+            }
+            var inLayer = leafletPip.pointInLayer(latlng, testLayer, false);
+            if (inLayer.length > 0) {
+              // NOTE: The following code would be problematic if we allow multiple copies of the widget or alternate naming conventions.
+              $('input[name=' + elementId + '\\[location_region_id\\]]').val(inLayer[0].feature.properties.region_id);
+            } else {
+              // clear region_id field
+              $('#location_region_id').val("");
+            }
+          }
+        }
+  
         function isAssetSelectable(marker) {
           // defines the criteria under which an asset can be selected
           if (primaryLayerBehavior != PRIMARY_LAYER_BEHAVIOR.Selection && primaryLayerBehavior != PRIMARY_LAYER_BEHAVIOR.SelectionOnly) {
@@ -967,8 +967,8 @@
                   setLocationType("other");
                 }
                 var locName = "N/A";
-                if (jsonResult && jsonResult.features.length > 0 && jsonResult.features[0].attributes && jsonResult.features[0].attributes.NAME) {
-                  var locName = jsonResult.features[0].attributes.NAME;
+                if (response && response.features.length > 0 && response.features[0].attributes && response.features[0].attributes.NAME) {
+                  var locName = response.features[0].attributes.NAME;
                 }
                 $('#location_address').val(locName);
                 setUnverified();
