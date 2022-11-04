@@ -36,6 +36,7 @@
         const NOT_A_PARK = "You selected park or natural area as the property type, but no park data was found for the selected location. If you believe this is a valid location, please zoom in to find the park on the map, click to select a location, and continue to submit your report.";
         const OPEN_ISSUE_MESSAGE = "If this issue is what you came here to report, there's no need to report it again.";
         const SOLVED_ISSUE_MESSAGE = "This issue was recently solved. If that's not the case, or the issue has reoccured, please submit a new report.";
+        const ASSET_ONLY_SELECTION_MESSAGE = "We have zoomed in on the address you provided, but this map only allows you to select existing asset markers. Click one to select it. There may not be any selectable assets in the current view.";
         const DEFAULT_FEATURE_ICON_URL = "/modules/custom/portland/modules/portland_location_picker/images/map_marker_default.png";
         const DEFAULT_INCIDENT_ICON_URL = "/modules/custom/portland/modules/portland_location_picker/images/map_marker_incident.png";
         const DEFAULT_SOLVED_ICON_URL = "/modules/custom/portland/modules/portland_location_picker/images/map_marker_incident_solved.png";
@@ -210,10 +211,9 @@
             var lat = $(this).data('lat');
             var lng = $(this).data('lng');
             var latlng = new L.LatLng(lat, lng);
-            doMapClick(latlng);
-            // setLocationMarker(lat, lng);
-            // doZoomAndCenter(lat, lng);
-            setVerified();
+            if (doMapClick(latlng)) {
+              setVerified();
+            }
           });
   
           // set up status modal ///////////////////////////////
@@ -378,7 +378,7 @@
             },
             onEachFeature: function(feature, layer) {
 
-              layer.bindPopup(generatePopupContent(feature), { maxWidth: 250, offset: L.point(0,0) });
+              layer.bindPopup(generatePopupContent(feature), { maxWidth: 250, offset: L.point(0,0), autoPan: false });
 
               // if region, use mouseover to show popup
               if (primaryLayerType == PRIMARY_LAYER_TYPE.Region) {
@@ -629,8 +629,9 @@
           // perform additional actions. for example, if location type = park, we also
           // need to do a reverse parks lookup and adjust the park selector accordingly.
 
-          // if primary layer behavior is selection-only, don't allow map clicks
-          if (primaryLayerBehavior == PRIMARY_LAYER_BEHAVIOR.SelectionOnly) return;
+          // if primary layer behavior is selection-only, we don't allow map clicks, but we
+          // still want to zoom in on that location.
+          // if (primaryLayerBehavior == PRIMARY_LAYER_BEHAVIOR.SelectionOnly) return false;
 
           resetClickedMarker();
   
@@ -790,8 +791,12 @@
             // the required lat/lon fields with zeroes so that the form can still be submitted. at least
             // it will capture the address, and the report will still be usable.
             if (lat && lng) {
-              setLocationMarker(lat, lng);
               doZoomAndCenter(lat, lng);
+              if (primaryLayerBehavior != PRIMARY_LAYER_BEHAVIOR.SelectionOnly) {
+                setLocationMarker(lat, lng);
+              } else {
+                showStatusModal(ASSET_ONLY_SELECTION_MESSAGE);
+              }
             } else {
               setLatLngHiddenFields(0, 0);
             }
@@ -900,8 +905,12 @@
   
                 setLocationType("park");
                 if (zoomAndCenter) {
-                  setLocationMarker(lat, lng);
                   doZoomAndCenter(lat, lng);    
+                  if (primaryLayerBehavior != PRIMARY_LAYER_BEHAVIOR.SelectionOnly) {
+                    setLocationMarker(lat, lng);
+                  } else {
+                    showStatusModal(ASSET_ONLY_SELECTION_MESSAGE);
+                  }
                 }
   
                 // attempt to set park selector. if not exact match, set selector
@@ -959,15 +968,19 @@
                 // portlandmaps doesn't have data for this location.
                 // set location type to "other" so 311 can triage but still set marker.
                 // and clear address field; address is not required for "other."
-                setLocationMarker(lat, lng);
                 if (zoomAndCenter) {
                   doZoomAndCenter(lat, lng);    
+                  if (primaryLayerBehavior != PRIMARY_LAYER_BEHAVIOR.SelectionOnly) {
+                    setLocationMarker(lat, lng);
+                  } else {
+                    showStatusModal(ASSET_ONLY_SELECTION_MESSAGE);
+                  }
                 }
                 if (locationType == "park") {
                   setLocationType("other");
                 }
                 var locName = "N/A";
-                if (response && response.features.length > 0 && response.features[0].attributes && response.features[0].attributes.NAME) {
+                if (response && response.features && response.features[0].attributes && response.features[0].attributes.NAME) {
                   var locName = response.features[0].attributes.NAME;
                 }
                 $('#location_address').val(locName);
@@ -983,12 +996,16 @@
 
         function processReverseLocationData(data, lat, lng, zoomAndCenter = true) {
           // don't set marker and zoom if primary layer behavior is "selection"
-          if (primaryLayerBehavior != PRIMARY_LAYER_BEHAVIOR.SelectionOnly) {
-            setLocationMarker(lat, lng);
-            if (zoomAndCenter) {
-              doZoomAndCenter(lat, lng);
+          //if (primaryLayerBehavior != PRIMARY_LAYER_BEHAVIOR.SelectionOnly) {
+          if (zoomAndCenter) {
+            doZoomAndCenter(lat, lng);    
+            if (primaryLayerBehavior != PRIMARY_LAYER_BEHAVIOR.SelectionOnly) {
+              setLocationMarker(lat, lng);
+            } else {
+              showStatusModal(ASSET_ONLY_SELECTION_MESSAGE);
             }
           }
+          //}
           var street = data.address.Street;
           var city = data.address.City;
           var state = data.address.State;

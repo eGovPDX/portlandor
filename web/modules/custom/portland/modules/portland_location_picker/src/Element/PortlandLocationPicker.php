@@ -40,6 +40,12 @@ class PortlandLocationPicker extends WebformCompositeBase {
 
     $nodes = \Drupal::entityTypeManager()->getStorage('node')->loadByProperties(['type' => 'park_facility', 'status' => 1]);
 
+    $element_id = "report_location";
+    
+    if (array_key_exists("#webform_key", $element)) {
+      $element_id = $element['#webform_key'];
+    }
+
     $element['location_type'] = [
       '#id' => 'location_type',
       '#name' => 'location_type',
@@ -77,7 +83,7 @@ class PortlandLocationPicker extends WebformCompositeBase {
       '#attributes' => ['class' => ['location-park']],
       '#states' => [
         'visible' => [
-          ':input[name="report_location[location_type]"]' => [
+          ':input[name="' . $element_id . '[location_type]"]' => [
             'value' => 'park'
           ],
         ],
@@ -90,8 +96,8 @@ class PortlandLocationPicker extends WebformCompositeBase {
       '#markup' => '<p class="webform-element-description description">Please move the marker to the exact spot in the park where the issue was observed.</p>',
       '#states' => [
         'visible' => [
-          ':input[name="report_location[location_park]"]' => ['filled' => TRUE],
-          ':input[name="report_location[location_type]"]' => ['value' => 'park'],
+          ':input[name="' . $element_id . '[location_park]"]' => ['filled' => TRUE],
+          ':input[name="' . $element_id . '[location_type]"]' => ['value' => 'park'],
         ],
       ],
     ];
@@ -104,12 +110,12 @@ class PortlandLocationPicker extends WebformCompositeBase {
       '#options_display' => 'side_by_side',
       '#states' => [
         'visible' => [
-          ':input[name="report_location[location_type]"]' => [
+          ':input[name="' . $element_id . '[location_type]"]' => [
             'value' => 'private'
           ],
         ],
         'required' => [
-          ':input[name="report_location[location_type]"]' => [
+          ':input[name="' . $element_id . '[location_type]"]' => [
             'value' => 'private'
           ],
         ],
@@ -187,6 +193,33 @@ class PortlandLocationPicker extends WebformCompositeBase {
       '#title_display' => 'invisible',
       '#markup' => '<div id="status_modal" class="visually-hidden"></div>',
     ];
+
+    $location_required_error = "Please select a location by clicking the map, or by entering an address or cross streets above and clicking the Verify button.";
+    $primaryLayerBehavior = array_key_exists('#primary_layer_behavior', $element) ? $element['#primary_layer_behavior'] : "";
+    $primaryLayerType = array_key_exists('#primary_layer_type', $element) ? $element['#primary_layer_type'] : "";
+
+    if ($primaryLayerBehavior == "selection-only" && $primaryLayerType == "assets") {
+      $location_required_error = "Please select an asset on the map that you'd like to report. You may need to zoom in to see asset markers, or there may not be any reportable assets within view.";
+    }
+
+    $element['location_lat'] = [
+      '#type' => 'textfield',
+      '#title' => t('Location'),
+      '#title_display' => 'invisible',
+      '#id' => 'location_lat',
+      '#attributes' => ['class' => ['location-lat', 'visually-hidden']],
+      '#required_error' => $location_required_error,
+    ];
+    // we're using "lng" everywhere else since that's what Leaflet uses, but this field is already
+    // referenced in too many config files from webform handlers, so this is the one place it will
+    // remain "lon"...
+    $element['location_lon'] = [
+      '#type' => 'textfield',
+      '#title' => t('Longitude'),
+      '#title_display' => 'invisible',
+      '#id' => 'location_lon',
+      '#attributes' => ['class' => ['location-lng', 'visually-hidden']],
+    ];
     $element['place_name'] = [
       '#type' => 'textfield',
       '#id' => 'place_name',
@@ -225,44 +258,26 @@ class PortlandLocationPicker extends WebformCompositeBase {
       //   ],
       // ],
     ];
-    $element['location_lat'] = [
-      '#type' => 'textfield',
-      '#title' => t('Location'),
-      '#title_display' => 'invisible',
-      '#id' => 'location_lat',
-      '#attributes' => ['class' => ['location-lat', 'visually-hidden']],
-      '#required_error' => 'Please select a location by clicking the map, or by entering an address or cross streets above and clicking the Verify button.',
-    ];
-    // we're using "lng" everywhere else since that's what Leaflet uses, but this field is already
-    // referenced in too many config files from webform handlers, so this is the one place it will
-    // remain "lon"...
-    $element['location_lon'] = [
-      '#type' => 'textfield',
-      '#title' => t('Longitude'),
-      '#title_display' => 'invisible',
-      '#id' => 'location_lon',
-      '#attributes' => ['class' => ['location-lng', 'visually-hidden']],
-    ];
     $element['location_asset_id'] = [
-      '#type' => 'textfield',
+      '#type' => 'hidden',
       '#title' => t('Asset ID'),
       '#title_display' => 'invisible',
       '#id' => 'location_asset_id',
     ];
     $element['location_region_id'] = [
-      '#type' => 'textfield',
+      '#type' => 'hidden',
       '#title' => t('Region ID'),
       '#title_display' => 'invisible',
       '#id' => 'location_region_id',
     ];
     $element['location_municipality_name'] = [
-      '#type' => 'textfield',
+      '#type' => 'hidden',
       '#title' => t('Municipality Name'),
       '#title_display' => 'invisible',
       '#id' => 'location_municipality_name',
     ];
     $element['location_is_portland'] = [
-      '#type' => 'textfield',
+      '#type' => 'hidden',
       '#title' => t('Within Portland City Limits?'),
       '#title_display' => 'invisible',
       '#id' => 'location_is_portland',
@@ -270,12 +285,12 @@ class PortlandLocationPicker extends WebformCompositeBase {
     ];
     $element['geojson_layer'] = [
       '#title' => t('GeoJson Layer'),
-      '#type' => 'textfield',
+      '#type' => 'hidden',
       '#id' => 'geojson_layer',
     ];
     $element['geojson_layer_behavior'] = [
       '#title' => t('GeoJson Layer Behavior'),
-      '#type' => 'textfield',
+      '#type' => 'hidden',
       '#id' => 'geojson_layer_behavior',
     ];
 
