@@ -861,7 +861,7 @@
           }
 
           setLatLngHiddenFields(lat, lng);
-          
+
           // there is a small bug in PortlandMaps that sometimes causes lat/lng to not be provided.
           // we use zeroes instead, but don't want to set a marker or zoom in to 0,0 (also known as Null Island).
           if (lat == "0" && lng == "0") {
@@ -989,11 +989,14 @@
                 if (locationType == "park") {
                   setLocationType("other");
                 }
-                if (response && response.features && response.features[0].attributes && response.features[0].attributes.NAME) {
+                if (response.error) {
+                  $('#location_address').val("N/A");
+                  setUnverified();
+                } else if (response && response.features && response.features[0].attributes && response.features[0].attributes.NAME) {
                   var locName = response.features[0].attributes.NAME;
                   $('#location_address').val(locName);
                   setUnverified();
-                }
+                };
                 return false;
                 // showStatusModal("There was a problem retrieving data for the selected location.");
               }
