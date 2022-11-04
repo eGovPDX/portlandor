@@ -809,7 +809,10 @@
         }
 
         function doZoomAndCenter(lat, lng, zoomLevel = DEFAULT_ZOOM_CLICK) {
-          map.setView([lat, lng], zoomLevel);
+          if (lat != "0" && lng != "0") {
+            map.setView([lat, lng], zoomLevel);
+          }
+          
         }
 
         function captureSelectedAssetMarkerData(marker) {
@@ -857,8 +860,15 @@
             locationMarker = null;
           }
 
-          locationMarker = L.marker([lat, lng], { icon: defaultSelectedMarkerIcon, draggable: true, riseOnHover: true, iconSize: DEFAULT_ICON_SIZE  }).addTo(map);
           setLatLngHiddenFields(lat, lng);
+          
+          // there is a small bug in PortlandMaps that sometimes causes lat/lng to not be provided.
+          // we use zeroes instead, but don't want to set a marker or zoom in to 0,0 (also known as Null Island).
+          if (lat == "0" && lng == "0") {
+            return false;
+          }
+
+          locationMarker = L.marker([lat, lng], { icon: defaultSelectedMarkerIcon, draggable: true, riseOnHover: true, iconSize: DEFAULT_ICON_SIZE  }).addTo(map);
 
           // if address marker is moved, we want to capture the new coordinates
           locationMarker.off();
@@ -967,7 +977,7 @@
               if (response.length < 1 || !response.address || !response.location) {
                 // portlandmaps doesn't have data for this location.
                 // set location type to "other" so 311 can triage but still set marker.
-                // and clear address field; address is not required for "other."
+                // address field may be required by the form, so something needs to go there.
                 if (zoomAndCenter) {
                   doZoomAndCenter(lat, lng);    
                   if (primaryLayerBehavior != PRIMARY_LAYER_BEHAVIOR.SelectionOnly) {
@@ -979,12 +989,11 @@
                 if (locationType == "park") {
                   setLocationType("other");
                 }
-                var locName = "N/A";
                 if (response && response.features && response.features[0].attributes && response.features[0].attributes.NAME) {
                   var locName = response.features[0].attributes.NAME;
+                  $('#location_address').val(locName);
+                  setUnverified();
                 }
-                $('#location_address').val(locName);
-                setUnverified();
                 return false;
                 // showStatusModal("There was a problem retrieving data for the selected location.");
               }
