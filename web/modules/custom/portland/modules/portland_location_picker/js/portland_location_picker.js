@@ -37,6 +37,7 @@
         const OPEN_ISSUE_MESSAGE = "If this issue is what you came here to report, there's no need to report it again.";
         const SOLVED_ISSUE_MESSAGE = "This issue was recently solved. If that's not the case, or the issue has reoccured, please submit a new report.";
         const ASSET_ONLY_SELECTION_MESSAGE = "We have zoomed in on the address you provided, but this map only allows you to select existing asset markers. Click one to select it. There may not be any selectable assets in the current view.";
+        const VERIFIED_NO_COORDS = "The address you entered is verified, but an error occurred, and it can't be shown on the map. Please zoom in and find the desired location, then click it to set a marker.";
         const DEFAULT_FEATURE_ICON_URL = "/modules/custom/portland/modules/portland_location_picker/images/map_marker_default.png";
         const DEFAULT_INCIDENT_ICON_URL = "/modules/custom/portland/modules/portland_location_picker/images/map_marker_incident.png";
         const DEFAULT_SOLVED_ICON_URL = "/modules/custom/portland/modules/portland_location_picker/images/map_marker_incident_solved.png";
@@ -211,7 +212,12 @@
             var lat = $(this).data('lat');
             var lng = $(this).data('lng');
             var latlng = new L.LatLng(lat, lng);
-            if (doMapClick(latlng)) {
+            if (latlng.lat && latlng.lng) {
+              doMapClick(latlng);
+              setVerified();
+            } else {
+              showStatusModal(VERIFIED_NO_COORDS);
+              setLatLngHiddenFields(latlng.lat, latlng.lng);
               setVerified();
             }
           });
@@ -799,6 +805,7 @@
               }
             } else {
               setLatLngHiddenFields(0, 0);
+              showStatusModal(VERIFIED_NO_COORDS);
             }
 
             setVerified();
