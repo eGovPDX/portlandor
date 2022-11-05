@@ -384,7 +384,9 @@
             },
             onEachFeature: function(feature, layer) {
 
-              layer.bindPopup(generatePopupContent(feature), { maxWidth: 250, offset: L.point(0,0), autoPan: false });
+              // if this is a region, disable autopan. otherwise we want it on.
+              var autoPanValue = primaryLayerType == PRIMARY_LAYER_TYPE.Region ? false : true;
+              layer.bindPopup(generatePopupContent(feature), { maxWidth: 250, offset: L.point(0,0), autoPan: autoPanValue });
 
               // if region, use mouseover to show popup
               if (primaryLayerType == PRIMARY_LAYER_TYPE.Region) {
@@ -396,7 +398,7 @@
                 layer.on("click", handleMarkerClick);
               }
             },
-            interactive:        isInteractive
+            interactive: isInteractive
           });
           if (zoom >= featureLayerVisibleZoom) {
             primaryLayer.addTo(map);
