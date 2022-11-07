@@ -547,16 +547,6 @@
             redrawMap();
           }
   
-          // don't use js to handle this logic. add advanced custom properties to the element
-          // in the webform: set state to visible depending on location type if needed.
-          // // if type is street or other, show location name field
-          // var placeNameContainer = $('#place_name').parent();
-          // if (locationType == "street" || locationType == "other") {
-          //   placeNameContainer.removeClass('visually-hidden');
-          // } else {
-          //   placeNameContainer.addClass('visually-hidden');
-          // }
-  
         }
   
         function handleLocateButtonClick(e) {
@@ -581,8 +571,6 @@
           }
           var radius = e.accuracy;
           locCircle = L.circle(e.latlng, radius, { weight: 2, fillOpacity: 0.1 }).addTo(map);
-          // setLocationMarker(lat, lng);
-          // doZoomAndCenter(lat, lng);
           reverseGeolocate(e.latlng);
           locateControlContaier.style.backgroundImage = 'url("/modules/custom/portland/modules/portland_location_picker/images/map_locate_on.png")';
   
