@@ -63,11 +63,11 @@ class RouteSubscriber extends RouteSubscriberBase {
       in_array($_ENV['PANTHEON_ENVIRONMENT'], [
         // uncomment this line for local testing
         //'lando', 
-        'pgov-563', 'demo', 'dev', 'test', 'live'])
+        'pgov-744', 'demo', 'dev', 'test', 'live'])
     ) {
       // only log in with an OpenID provider
       if ($route = $collection->get('user.login')) {
-        $route->setDefault('_form', 'Drupal\openid_connect\Form\LoginForm');
+        $route->setPath('/saml/login');
       }
       // don't accept POSTs to a login route
       if ($route = $collection->get('user.login.http')) {
