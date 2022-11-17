@@ -1,2 +1,0 @@
-!function(){var a;a=jQuery,Drupal.behaviors.cloudyHideSearchPlaceholder={attach:function(e,t){a(e).find("#edit-keys.ui-autocomplete-input[data-search-api-autocomplete-search]").once("search-clear").on("focusin focusout",(function(){var e=a(this);e.attr("placeholder").length&&e.data("placeholder",e.attr("placeholder")),e.attr("placeholder")===e.data("placeholder")?e.attr("placeholder",""):e.attr("placeholder",e.data("placeholder"))}))}}}();
-//# sourceMappingURL=search-field.bundle.js.map

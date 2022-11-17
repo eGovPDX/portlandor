@@ -1,2 +1,0 @@
-!function(){var o;o=jQuery,Drupal.behaviors.cloudySearchAutocomplete={attach:function(e,t){o(e).find("#edit-keys").once("header-search-autocomplete").autocomplete({position:{my:"left top-1",at:"left bottom",of:"#search-api-page-block-form-search-portland-gov",collision:"none"},appendTo:".cloudy-search-form"})}}}();
-//# sourceMappingURL=search-autocomplete.bundle.js.map

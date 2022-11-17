@@ -1,5 +1,6 @@
 const sass = require('sass');
 const path = require('path');
+const CopyPlugin = require('copy-webpack-plugin');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 
 const isProd = process.env.NODE_ENV === 'production';
@@ -47,6 +48,11 @@ const config = {
     new MiniCssExtractPlugin({
       filename: '[name].bundle.css',
       chunkFilename: '[id].bundle.css',
+    }),
+    new CopyPlugin({
+      patterns: [
+        { from: 'node_modules/@fortawesome/fontawesome-free/webfonts' },
+      ],
     }),
   ],
   module: {
