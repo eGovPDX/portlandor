@@ -252,6 +252,22 @@ elements: |-
 
       {% if data.contact_email %}<strong>Contact Email:</strong>&nbsp;{{ data.contact_email }}<br>{% endif %}
     '#ajax': true
+  computed_confirmation_message:
+    '#type': webform_computed_twig
+    '#title': 'Computed confirmation message'
+    '#display_on': none
+    '#mode': html
+    '#template': |+
+      {% if data.resolution == "graffiti_deferred" %}
+      <h2>The graffiti has been logged for future cleaning</h2>
+      <p>A request has been created in our tracking system, and a work order has been sent to the email address provided. When the work is complete, please use the resolution link in the email to report the updated status.</p>
+      {% else %}
+      <h2>The graffiti request has been updated</h2>
+      <p>Thank you for submitting your resolution report. Your response has been recorded, and the ticket has been updated.</p>
+      {% endif %}
+
+
+    '#ajax': true
   actions:
     '#type': webform_actions
     '#title': 'Submit button(s)'
@@ -360,8 +376,8 @@ settings:
   draft_pending_multiple_message: ''
   confirmation_type: page
   confirmation_url: ''
-  confirmation_title: 'Ticket has been updated'
-  confirmation_message: "Thank you for submitting your resolution report. Your response has been recorded, and the ticket has been updated.<br />\r\n<br />\r\n<a href=\"/form/report-graffiti-resolution?resolution_contractor=[webform_submission:values:resolution_contractor]&amp;contact_email=[webform_submission:values:contact_email]\">Submit another like this</a>"
+  confirmation_title: ''
+  confirmation_message: "[webform_submission:values:computed_confirmation_message]\r\n<br />\r\n<a href=\"/form/report-graffiti-resolution?resolution_contractor=[webform_submission:values:resolution_contractor]&amp;contact_email=[webform_submission:values:contact_email]\">Submit another like this</a>"
   confirmation_attributes: {  }
   confirmation_back: false
   confirmation_back_label: 'Submit a new report'
@@ -480,7 +496,7 @@ handlers:
       ticket_id_field: report_ticket_id
       comment_private: 0
       group_id: ''
-      ticket_form_id: ''
+      ticket_form_id: '6499767163543'
   zendesk_ticket_validator:
     id: ticket_validation
     handler_id: zendesk_ticket_validator
@@ -519,8 +535,8 @@ handlers:
       type: incident
       collaborators: ''
       custom_fields: "6353388345367: 'report_graffiti'\r\n5581480390679: '[webform_submission:values:report_location:location_lat]'\r\n5581490332439: '[webform_submission:values:report_location:location_lon]'\r\n1500012743961: '[webform_submission:values:report_location:location_address]'\r\n1500013095781: '[webform_submission:uuid]'\r\n6355783758871: '[webform_submission:values:resolution_url]'\r\n6379451469847: '[webform_submission:values:waiver_url]'\r\n8197855908375: '[webform_submission:values:report_repeat_offender]'\r\n9205221816983: '[webform_submission:values:report_location:location_type:raw]'\r\n10101857240855: '[webform_submission:values:resolution:raw]'\r\n10120341881367: '[webform_submission:values:resolution_other]'\r\n10101859348375: '[webform_submission:values:resolution_square_footage]'"
-      ticket_id_field: support_ticket_id
-      ticket_form_id: ''
+      ticket_id_field: report_ticket_id
+      ticket_form_id: '6499767163543'
   create_pending_request_in_zendesk_for_a_future_clean_:
     id: zendesk
     handler_id: create_pending_request_in_zendesk_for_a_future_clean_
@@ -549,4 +565,25 @@ handlers:
       custom_fields: "6353388345367: 'report_graffiti'\r\n5581480390679: '[webform_submission:values:report_location:location_lat]'\r\n5581490332439: '[webform_submission:values:report_location:location_lon]'\r\n1500012743961: '[webform_submission:values:report_location:location_address]'\r\n1500013095781: '[webform_submission:uuid]'\r\n6355783758871: '[webform_submission:values:resolution_url]'\r\n6379451469847: '[webform_submission:values:waiver_url]'\r\n9205221816983: '[webform_submission:values:report_location:location_type:raw]'\r\n10101857240855: '[webform_submission:values:resolution:raw]'\r\n8197855908375: '[webform_submission:values:report_repeat_offender]'\r\n6586776052759: '[webform_submission:values:report_hate_speech_or_gang]'\r\n10074777716119: '10074777716119_pending_contractor_resolution'"
       ticket_id_field: report_ticket_id
       ticket_form_id: '6499767163543'
+  update_pending_future_clean_request_with_resolution_url_in_priva:
+    id: zendesk_update_ticket
+    handler_id: update_pending_future_clean_request_with_resolution_url_in_priva
+    label: 'Update Pending "future clean" request with resolution URL in private note'
+    notes: ''
+    status: true
+    conditions: {  }
+    weight: 0
+    settings:
+      comment: 'Resolution URL: <a href="https://[webform_submission:values:resolution_url]">https://[webform_submission:values:resolution_url]</a>'
+      comment_private: 1
+      tags: ''
+      priority: ''
+      status: ''
+      group_id: ''
+      assignee_id: ''
+      type: ''
+      collaborators: ''
+      custom_fields: ''
+      ticket_id_field: report_ticket_id
+      ticket_form_id: ''
 variants: {  }
