@@ -1,7 +1,6 @@
 const sass = require('sass');
 const path = require('path');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
-const babelConfig = require('./babel.config');
 
 const isProd = process.env.NODE_ENV === 'production';
 
@@ -30,6 +29,10 @@ const config = {
     Drupal: 'Drupal',
     drupal: 'Drupal',
   },
+  performance: {
+    // Disable performance hints. Currently not anything we can do to reduce bundle size.
+    hints: false,
+  },
   devtool: isProd ? 'source-map' : 'cheap-module-source-map',
   mode: isProd ? 'production' : 'development',
   watchOptions: {
@@ -38,9 +41,7 @@ const config = {
       'dist/**/*.*',
       'templates/**/*.*',
       'node_modules',
-    ],
-    poll: 100,
-    aggregateTimeout: 100,
+    ]
   },
   plugins: [
     new MiniCssExtractPlugin({
@@ -48,17 +49,12 @@ const config = {
       chunkFilename: '[id].bundle.css',
     }),
   ],
-  stats: {
-    // removes needless `mini-css-extract-plugin` noisy output
-    children: false,
-  },
   module: {
     rules: [
       {
         test: /\.js$/,
         use: {
-          loader: 'babel-loader',
-          options: babelConfig,
+          loader: 'swc-loader'
         },
       },
       {
@@ -68,48 +64,26 @@ const config = {
           {
             loader: 'css-loader',
             options: {
-              sourceMap: true,
               url: false,
             },
           },
           {
             loader: 'postcss-loader',
             options: {
-              sourceMap: true,
+              postcssOptions: {
+                plugins: [
+                  "postcss-preset-env",
+                ],
+              },
             },
-          },
-          {
-            loader: 'resolve-url-loader',
           },
           {
             loader: 'sass-loader',
-            options: {
-              sourceMap: true,
-              implementation: sass,
-              sassOptions: {
-                fiber: false,
-              },
-            },
           },
         ],
       },
     ],
   },
 };
-
-if (isProd) {
-  config.performance = {
-    maxAssetSize: 250000,
-    assetFilter(assetFilename) {
-      // don't warn about Source Maps
-      if (assetFilename.endsWith('.map')) return false;
-      return true;
-    },
-  };
-
-  config.optimization = {
-    minimize: true,
-  };
-}
 
 module.exports = config;
