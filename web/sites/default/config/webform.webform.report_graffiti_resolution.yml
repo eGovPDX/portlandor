@@ -479,13 +479,15 @@ handlers:
   resolve_ticket:
     id: zendesk_update_ticket
     handler_id: resolve_ticket
-    label: 'Resolve graffiti request in Zendesk'
-    notes: 'Resolves an open graffiti request in Zendesk when the resolution link is used by an abatement contractor. Only enabled for resolving existing tickets (report_ticket_id must be filled).'
+    label: 'Resolve open request'
+    notes: 'Resolves an open graffiti request in Zendesk when the resolution link is used by an abatement contractor. Enabled if ticket ID is provided and resolution is not deferred.'
     status: true
     conditions:
       enabled:
         ':input[name="report_ticket_id"]':
           filled: true
+        ':input[name="resolution"]':
+          '!value': graffiti_deferred
     weight: -49
     settings:
       requester_name: ''
@@ -498,7 +500,7 @@ handlers:
       assignee_id: '1505212728301'
       type: ''
       collaborators: ''
-      custom_fields: "9205221816983: '[webform_submission:values:report_location:location_type:raw]'\r\n10101857240855: '[webform_submission:values:resolution:raw]'\r\n10120341881367: '[webform_submission:values:resolution_other]'\r\n10101859348375: '[webform_submission:values:resolution_square_footage]'\r\n10148668334871: '[webform_submission:values:resolution_ssl]'\r\n10074777716119: '10074777716119_solved_cleaned_by_contractor'"
+      custom_fields: "9205221816983: '[webform_submission:values:report_location:location_type:raw]'\r\n10101857240855: '[webform_submission:values:resolution:raw]'\r\n10101859348375: '[webform_submission:values:resolution_square_footage]'\r\n10148668334871: '[webform_submission:values:resolution_ssl]'\r\n10074777716119: '10074777716119_solved_cleaned_by_contractor'"
       ticket_id_field: report_ticket_id
       comment_private: 0
       group_id: ''
@@ -518,8 +520,8 @@ handlers:
   create_new_zendesk_ticket:
     id: zendesk
     handler_id: create_new_zendesk_ticket
-    label: 'Create Solved request in Zendesk'
-    notes: 'Creates a new Zendesk request as solved; used for self-reporting and resolution by contractors working in the field. Only enabled if a request does not exist (report_ticket_id is empty).'
+    label: 'Create Solved request'
+    notes: 'Creates a new Zendesk request as solved; used for self-reporting and resolution by contractors working in the field. Enabled if no ticket ID and resolution is not deferred.'
     status: true
     conditions:
       enabled:
@@ -529,7 +531,7 @@ handlers:
           '!value': graffiti_deferred
         ':input[name="support_agent_use_only[test_submission]"]':
           unchecked: true
-    weight: -48
+    weight: -47
     settings:
       requester_name: resolution_contractor
       requester_email: contact_email
@@ -548,8 +550,8 @@ handlers:
   create_pending_request_in_zendesk_for_a_future_clean_:
     id: zendesk
     handler_id: create_pending_request_in_zendesk_for_a_future_clean_
-    label: 'Create Pending request in Zendesk for a "future clean"'
-    notes: 'When contractors self-report graffiti for future abatement, this handler creates a request in Zendesk with a Pending status, and a notification that includes the details is sent to the contractor by Zendesk.'
+    label: 'Create Pending request'
+    notes: 'When contractors self-report graffiti for future abatement, this handler creates a request in Zendesk with a Pending status, and a work order is immediately sent to the contractor by Zendesk. Enabled if ticket ID is not filled and resolution is deferred.'
     status: true
     conditions:
       enabled:
@@ -559,7 +561,7 @@ handlers:
           empty: true
         ':input[name="support_agent_use_only[test_submission]"]':
           unchecked: true
-    weight: -46
+    weight: -45
     settings:
       requester_name: resolution_contractor
       requester_email: contact_email
@@ -578,11 +580,14 @@ handlers:
   update_pending_future_clean_request_with_resolution_url_in_priva:
     id: zendesk_update_ticket
     handler_id: update_pending_future_clean_request_with_resolution_url_in_priva
-    label: 'Update Pending "future clean" request with resolution URL in private note'
-    notes: ''
+    label: 'Add resolution URL to a pending request'
+    notes: 'This has to be done in a follow-up handler because the ticket ID is needed for the URL and isn''t available until after the ticket is created.'
     status: true
-    conditions: {  }
-    weight: -44
+    conditions:
+      enabled:
+        ':input[name="resolution"]':
+          value: graffiti_deferred
+    weight: -43
     settings:
       comment: 'Resolution URL: <a href="https://[webform_submission:values:resolution_url]">https://[webform_submission:values:resolution_url]</a>'
       comment_private: 1
@@ -599,7 +604,7 @@ handlers:
   create_solved_request_in_zendesk_developer_test:
     id: zendesk
     handler_id: create_solved_request_in_zendesk_developer_test
-    label: 'Create Solved request in Zendesk - Developer Test'
+    label: 'Create Solved request - developer test'
     notes: 'Creates a new Zendesk request as solved in the Developer Test Group'
     status: true
     conditions:
@@ -610,7 +615,7 @@ handlers:
           '!value': graffiti_deferred
         ':input[name="support_agent_use_only[test_submission]"]':
           checked: true
-    weight: -47
+    weight: -46
     settings:
       requester_name: resolution_contractor
       requester_email: contact_email
@@ -629,7 +634,7 @@ handlers:
   create_pending_request_in_zendesk_for_a_future_clean_developer_t:
     id: zendesk
     handler_id: create_pending_request_in_zendesk_for_a_future_clean_developer_t
-    label: 'Create Pending request in Zendesk for a "future clean" - Developer Test'
+    label: 'Create Pending request - developer test'
     notes: 'When contractors self-report graffiti for future abatement, this handler creates a request in Zendesk with a Pending status in the Developer Test Group.'
     status: true
     conditions:
@@ -640,7 +645,7 @@ handlers:
           empty: true
         ':input[name="support_agent_use_only[test_submission]"]':
           checked: true
-    weight: -45
+    weight: -44
     settings:
       requester_name: resolution_contractor
       requester_email: contact_email
@@ -655,5 +660,34 @@ handlers:
       collaborators: ''
       custom_fields: "6353388345367: 'report_graffiti'\r\n5581480390679: '[webform_submission:values:report_location:location_lat]'\r\n5581490332439: '[webform_submission:values:report_location:location_lon]'\r\n1500012743961: '[webform_submission:values:report_location:location_address]'\r\n1500013095781: '[webform_submission:uuid]'\r\n6355783758871: '[webform_submission:values:resolution_url]'\r\n6379451469847: '[webform_submission:values:waiver_url]'\r\n9205221816983: '[webform_submission:values:report_location:location_type:raw]'\r\n10101857240855: '[webform_submission:values:resolution:raw]'\r\n8197855908375: '[webform_submission:values:report_repeat_offender]'\r\n6586776052759: '[webform_submission:values:report_hate_speech_or_gang]'\r\n10074777716119: '10074777716119_pending_contractor_resolution'"
       ticket_id_field: report_ticket_id
+      ticket_form_id: '6499767163543'
+  make_open_request_pending:
+    id: zendesk_update_ticket
+    handler_id: make_open_request_pending
+    label: 'Make open request pending'
+    notes: 'If contractor selects future clean option on an open request, this handler changes it to Pending. Enabled if ticket ID is filled and resolution is deferred.'
+    status: true
+    conditions:
+      enabled:
+        ':input[name="report_ticket_id"]':
+          filled: true
+        ':input[name="resolution"]':
+          '!value': graffiti_deferred
+    weight: -48
+    settings:
+      requester_name: ''
+      requester_email: ''
+      subject: ''
+      comment: 'The issue has been marked for later cleaning by the abatement contractor [webform_submission:values:resolution_contractor].'
+      tags: ''
+      priority: ''
+      status: pending
+      assignee_id: ''
+      type: ''
+      collaborators: ''
+      custom_fields: "9205221816983: '[webform_submission:values:report_location:location_type:raw]'\r\n10101857240855: '[webform_submission:values:resolution:raw]'\r\n10101859348375: '[webform_submission:values:resolution_square_footage]'\r\n10148668334871: '[webform_submission:values:resolution_ssl]'\r\n10074777716119: '10074777716119_pending_contractor_resolution'"
+      ticket_id_field: report_ticket_id
+      comment_private: 0
+      group_id: '8559017236631'
       ticket_form_id: '6499767163543'
 variants: {  }
