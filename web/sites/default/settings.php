@@ -94,7 +94,7 @@ if (isset($_ENV['PANTHEON_ENVIRONMENT']) && php_sapi_name() != 'cli') {
   }
 }
 
-// $config['samlauth.authentication']['sp_entity_id'] = $primary_domain;
+$config['samlauth.authentication']['sp_entity_id'] = $primary_domain;
 
 // Enable/disable config_split configurations based on the current environment
 $config['config_split.config_split.config_multidev']['status'] = FALSE;
