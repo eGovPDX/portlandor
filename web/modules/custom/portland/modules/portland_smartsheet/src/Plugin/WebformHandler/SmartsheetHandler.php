@@ -73,21 +73,7 @@ class SmartsheetHandler extends WebformHandlerBase {
   }
 
   private function getWebformFields() {
-    $webform_fields = $this->getWebform()->getElementsDecoded();
-    $return_value = [];
-    foreach ($webform_fields as $key => $field) {
-      if (in_array($field['#type'], ['container', 'webform_section'])) {
-        foreach ($field as $subkey => $subfield) {
-          if (!str_starts_with($subkey, '#') && isset($subfield['#type'])) {
-            $return_value[$subkey] = $subfield;
-          }
-        }
-      } else {
-        $return_value[$key] = $field;
-      }
-    }
-
-    return $return_value;
+    return $this->getWebform()->getElementsInitializedFlattenedAndHasValue();
   }
 
   public function fetchColumns(array &$form, FormStateInterface $form_state) {
@@ -117,7 +103,10 @@ class SmartsheetHandler extends WebformHandlerBase {
       $webform_fields['__submission_id'] = ['#title' => 'Submission ID'];
       $options = ['' => 'None'];
       foreach ($webform_fields as $key => $value) {
-        $options[$key] = $value['#admin_title'] ?? $value['#title'];
+        $title = $value['#admin_title'] ?? $value['#title'] ?? NULL;
+        if (empty($title)) continue;
+
+        $options[$key] = $title;
       }
 
       $form['column_mappings_container']['table']['#rows'] = array_map(
@@ -191,9 +180,7 @@ class SmartsheetHandler extends WebformHandlerBase {
     foreach ($column_mappings as $col_id => $field_id) {
       if ($field_id === "") continue;
 
-
       $field_data = $field_id === '__submission_id' ? $submission_id : $submission_fields['data'][$field_id];
-
       $cells[] = [
         'columnId' => (int) $col_id,
         'value' => is_array($field_data) ? join(",", $field_data) : $field_data
