@@ -1096,9 +1096,6 @@
         }
   
         function buildFullAddress(c){
-          if (c.attributes.type == "intersection") {
-            return c.address;
-          }
           var address = c.address;
           var city = c.attributes.city;
           var state = c.attributes.state;
