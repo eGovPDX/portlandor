@@ -1096,11 +1096,10 @@
         }
   
         function buildFullAddress(c){
-          var address = c.address;
-          var city = c.attributes.city;
-          var state = c.attributes.state;
-          var zip = c.attributes.zip_code;
-          return address + ', ' + city + ', ' + state + ' ' + zip;
+          return [c.address, c.attributes.city, c.attributes.state]
+                  .filter(Boolean)
+                  .join(', ')
+                  + ' ' + c.attributes.zip_code;
         }
   
         function showStatusModal(message) {
