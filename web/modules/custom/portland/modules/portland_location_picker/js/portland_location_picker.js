@@ -1099,7 +1099,7 @@
           return [c.address, c.attributes.city, c.attributes.state]
                   .filter(Boolean)
                   .join(', ')
-                  + ' ' + c.attributes.zip_code;
+                  + ' ' + (c.attributes.zip_code || '');
         }
   
         function showStatusModal(message) {
