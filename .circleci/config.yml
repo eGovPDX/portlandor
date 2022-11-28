@@ -420,6 +420,129 @@ full_regression: &full_regression
     #     # mentions: '<@U8XXXXXXX>, @UserName'
     #     template: basic_fail_1
 
+clone_live_database: &clone_live_database
+  docker:
+    - image: cimg/php:8.1-browsers
+      auth:
+        username: egovpdx
+        password: $DOCKERHUB_PASSWORD
+  parallelism: 5
+  working_directory: /home/circleci/app
+  steps:
+    - restore_cache:
+        name: Retore Git cache before checkout
+        keys:
+          - jest-source-v1-{{ .Branch }}-{{ .Revision }}
+          - jest-source-v1-{{ .Branch }}-
+          - jest-source-v1-
+    - checkout
+    - run: git gc
+    - save_cache:
+        name: Save Git cache after checkout
+        key: jest-source-v1-{{ .Branch }}-{{ .Revision }}
+        paths:
+          - ".git"
+    - run:
+        name: Install Terminus
+        command: |
+          if [ ! -f "/tmp/vendor/pantheon-systems/terminus/bin/terminus" ]; then
+            cd /tmp && composer require pantheon-systems/terminus:^3
+            # Temporary workaround to https://github.com/pantheon-systems/terminus/issues/2336
+            cd /tmp && composer require league/container:3.4.1
+            /tmp/vendor/bin/terminus self:plugin:install terminus-build-tools-plugin
+          fi
+    - restore_cache:
+        name: Restore Jest and Percy dependencies cache
+        keys:
+          - jest-{{ checksum "tests/percy/yarn.lock" }}-v2
+    - run:
+        name: Install Jest and Percy dependencies
+        command: |
+          cd /home/circleci/app/tests/percy
+          export PERCY_POSTINSTALL_BROWSER=true
+          yarn install --frozen-lockfile
+    - save_cache:
+        name: Save Jest and Percy dependencies cache
+        key: jest-{{ checksum "tests/percy/yarn.lock" }}-v2
+        paths:
+          - "tests/percy/node_modules"
+    - run:
+        name: Clone database from Live
+        when: on_success
+        no_output_timeout: 15m # allow 15 minutes instead of 10 minute default for script to complete
+        command: |
+          # Add ssh-rsa to the accepted algorithms
+          # https://pantheon.io/docs/ssh-keys#connections-fail-with-no-matching-host-key-type-found-their-offer-ssh-rsa
+          echo "Host *.drush.in" > ~/.ssh/config
+          echo "    HostkeyAlgorithms +ssh-rsa" >> ~/.ssh/config
+          echo "    PubkeyAcceptedAlgorithms +ssh-rsa" >> ~/.ssh/config
+
+          # Add terminus into path
+          export PATH=/tmp/vendor/bin:/home/circleci/app/vendor/bin:$PATH && cd /home/circleci/app
+
+          # Don't check for host key for Pantheon sites
+          echo -e "host *.drush.in\n    StrictHostKeyChecking no" >> ~/.ssh/config
+
+          # Terminus log in with the user email that will be displayed as the commit user in Pantheon Git repo
+          terminus auth:login --machine-token="$eGov_Terminus" --email="$eGov_Email"
+
+          echo "export PANTHEON_ENV=$CIRCLE_BRANCH" >> $BASH_ENV && source $BASH_ENV
+          
+          echo "Cloning DB from Live to $PANTHEON_ENV..."
+          terminus env:clone-content $CIRCLE_PROJECT_REPONAME.live $PANTHEON_ENV --db-only
+          terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV deploy
+
+          # echo "Rebuilding cache..."
+          # terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- cr
+          # echo "Running database updates..."
+          # terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- updb -y
+          # echo "Importing config..."
+          # terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- cim -y -vvv
+          # echo "Rebuilding cache..."
+          # terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- cr
+
+          # Reindex the Solr server. Indexing will take some time
+          # and will continue running after the CircleCI build finishes.
+          echo "Begin indexing the Solr server"
+          terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- search-api:index full_index &
+          sleep 20
+    - run:
+        name: Run Percy tests
+        command: |
+          # Add ssh-rsa to the accepted algorithms
+          # https://pantheon.io/docs/ssh-keys#connections-fail-with-no-matching-host-key-type-found-their-offer-ssh-rsa
+          echo "Host *.drush.in" > ~/.ssh/config
+          echo "    HostkeyAlgorithms +ssh-rsa" >> ~/.ssh/config
+          echo "    PubkeyAcceptedAlgorithms +ssh-rsa" >> ~/.ssh/config
+
+          export PATH=/home/circleci/app/tests/vendor/bin:/tmp/vendor/pantheon-systems/terminus/bin:$PATH
+
+          # Log in via terminus first. Required for tests that require user login.
+          terminus auth:login --quiet --machine-token="$eGov_Terminus" --email="$eGov_Email" && terminus aliases
+
+          # Prepare environment variables to be used by Percy
+          if [[ $CIRCLE_BRANCH = "master" ]]; then
+            echo 'export SITE_NAME="dev"' > $BASH_ENV && source $BASH_ENV
+          else
+            echo 'export SITE_NAME=${CIRCLE_BRANCH}' > $BASH_ENV && source $BASH_ENV
+          fi
+
+          mkdir /home/circleci/artifacts
+          cd /home/circleci/app/tests/percy
+
+          # Start Percy sandbox tests 
+          TESTFILES=$(circleci tests glob "__sandbox_tests__/*.js" | circleci tests split)
+          for TESTFILE in $TESTFILES
+          do
+            # Generate one time login link for tests
+            echo 'export SUPERADMIN_LOGIN=$(terminus drush portlandor.${SITE_NAME} -- uli --name superAdmin)' > $BASH_ENV && source $BASH_ENV
+            npm run jest-sandbox -- ${TESTFILE}
+          done
+    - store_artifacts:
+        path: /home/circleci/artifacts
+        destination: /
+
+
 # Declare all of the jobs we should run.
 version: 2.1
 jobs:
@@ -429,6 +552,8 @@ jobs:
     <<: *visual_regression
   full_regression:
     <<: *full_regression
+  clone_live_database:
+    <<: *clone_live_database
 
 orbs:
   percy: percy/agent@0.1.2
@@ -438,6 +563,9 @@ orbs:
 workflows:
   version: 2
   deploy_and_test:
+    when:
+      not:
+        equal: [ scheduled_pipeline, << pipeline.trigger_source >> ]
     jobs:
       - deploy
       - visual_regression:
@@ -451,6 +579,17 @@ workflows:
             branches:
               only:
                 - master
+  # The update database workflow runs when the scheduled pipeline named "Update Sandbox
+  # Database" runs. Scheduled pipelines are configured in the CircleCI web UI at
+  # https://app.circleci.com/settings/project/github/eGovPDX/portlandor/triggers
+  update_database:
+    when:
+      and:
+        - equal: [ scheduled_pipeline, << pipeline.trigger_source >> ]
+        - equal: [ "Update Sandbox Database", << pipeline.schedule.name >> ]
+    jobs:
+      - clone_live_database
+
 
   # daily:
   #   jobs:

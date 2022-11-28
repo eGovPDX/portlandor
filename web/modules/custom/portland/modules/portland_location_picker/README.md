@@ -4,12 +4,25 @@ This custom sub-module of the Portland module implements a custom composite elem
 
 ## Configuration
 
-IMPORTANT: When placed in a webform, the widget MUST have the machine name "report_location" in order for the built-in
-conditional logic to work. If sub-fields aren't hiding/showing as expect, this is the first thing to check.  The Location Picker widget currently only supports a single instance in a webform.
+IMPORTANT: Only one Location widget can be placed in a form page; it must be the only one on the currently viewed page. Multiple instances can be used if they're placed on different pages within the form (using the multi-page form format).
+
+To support the widest array of applicaitons, by default all sub-elements are enabled and none are required. Other sub-elements can be disabled if not needed. A common default pattern was not coded into the custom element plugin, because overriding that pattern would require using arcane YAML code in the custom properties field. Though this requires more initial configuration, it consists of checking boxes in the UI, which is much simpler than figuring out the YAML custom properties.
+
+In practice, at minimum the location_address and location_lat fields should usually be marked required in the element configuration panel. The address field should always be populated after a map click; if a location with no address is used, then "N/A" is put in the field so that it passes required field validation. If the location_lat field has a value, it can be assumed that the location_lon field has one. Though hidden, the location_lat field has the label "Location," so that's the label that's displayed in the error message if no coordates have been selected.
+
+When fields are marked as required in the UI, instead of the custom code for the widget, they'yre not required if disabled/hidden by conditional logic. If field requirements are hard coded in the module, Drupal still thinks they're required even if they're not enabled/visible. This is one of the reasons no fields are required by default in the module code.
+
+KNOWN ISSUE: If the parent Location element is marked as required (for display purposes only), some of the sub-elements are incorrectly marked as required even when they are not. The exact steps to reproduce this behavior are TBD, but it may occur when some of the visible sub-elements are hidden type fields.
+
+## Conditional logic
+
+Any of the sub-fields may be used in conditional logic. For example, if "Private property" is selected for location_type, a conditional text block can 
 
 ## Address verification
 
 Uses the PortlandMaps.com API for address verification and suggestions.
+
+KNOWN ISSUE: As of 11/03/2022, there is a bug in PortlandMaps that causes some single-result suggestions to not include lat/lon coordinates. For example, if you search for "10333," a list of addresses will be returned, and each includes lat/lon that are used to recenter the map when clicked. If you search for "10333 NE Russell," only one suggested address will be returned. This particular address does not include lat/lon. The full verified address is returned, but the map can't center on it. In instances like this where there are no lat/lon coordiantes, but there is a verified address, zeroes are passed into the lat/lon fields so that the form can still be submitted. No other addresses without coordinates are known, and the CGIS team is at a loss as to why this occurs.
 
 ## Geolocation
 
