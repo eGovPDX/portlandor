@@ -1,5 +1,5 @@
-const sass = require('sass');
 const path = require('path');
+const webpack = require('webpack');
 const CopyPlugin = require('copy-webpack-plugin');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 
@@ -33,9 +33,21 @@ const config = {
   performance: {
     // Disable performance hints. Currently not anything we can do to reduce bundle size.
     hints: false,
+    maxAssetSize: 60000000,
   },
   devtool: isProd ? 'source-map' : 'cheap-module-source-map',
   mode: isProd ? 'production' : 'development',
+  stats: {
+    assets: true,
+    assetsSpace: 50,
+    excludeAssets: [
+      /\.ttf/,
+      /\.woff2/,
+    ],
+    groupAssetsByChunk: false,
+    groupAssetsByEmitStatus: false,
+    modules: false,
+  },
   watchOptions: {
     ignored: [
       'images/**/*.*',
@@ -45,6 +57,7 @@ const config = {
     ]
   },
   plugins: [
+    new webpack.ProgressPlugin(),
     new MiniCssExtractPlugin({
       filename: '[name].bundle.css',
       chunkFilename: '[id].bundle.css',
