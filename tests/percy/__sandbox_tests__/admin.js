@@ -20,7 +20,7 @@ describe('SuperAdmin user test', () => {
 
     if (process.env.CIRCLECI) {
       // On CI, the CI script will call terminus to retrieve login URL
-      login_url = process.env.KEVIN_LOGIN;
+      login_url = process.env.SUPERADMIN_LOGIN;
       await page.goto(login_url);
     }
     else {
