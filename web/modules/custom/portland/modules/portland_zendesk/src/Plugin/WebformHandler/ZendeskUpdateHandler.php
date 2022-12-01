@@ -90,6 +90,7 @@ class ZendeskUpdateHandler extends WebformHandlerBase
       'collaborators' => '',
       'custom_fields' => '',
       'ticket_id_field' => '',
+      'ticket_form_id' => '',
     ];
   }
 
@@ -123,6 +124,7 @@ class ZendeskUpdateHandler extends WebformHandlerBase
 
     $assignees = [];
     $groups = [];
+    $ticket_forms = [];
 
     try {
       // Get available groups and assignees from zendesk.
@@ -171,6 +173,8 @@ class ZendeskUpdateHandler extends WebformHandlerBase
       // order ticket fields by name
       asort($form_ticket_fields);
 
+      // Get all active ticket forms from Zendesk
+      $ticket_forms = $client->get("ticket_forms?active=true")->ticket_forms;
     }
     catch( \Exception $e ){
         // Encode HTML entities to prevent broken markup from breaking the page.
@@ -290,6 +294,17 @@ class ZendeskUpdateHandler extends WebformHandlerBase
       '#multiple' => true,
       '#required' => false
     ];
+
+    $form['ticket_form_id'] = [
+      '#title' => $this->t('Ticket Form'),
+      '#default_value' => $this->configuration['ticket_form_id'],
+      '#required' => false
+    ];
+    if(!empty($ticket_forms) ){
+      $form['ticket_form_id']['#type'] = 'select';
+      $form['ticket_form_id']['#options'] = ['' => '- None -'] + array_column($ticket_forms, 'name', 'id');
+      $form['ticket_form_id']['#description'] = $this->t('The form to use on the ticket');
+    }
 
     $form['comment'] = [
       '#type' => 'textarea',
@@ -463,6 +478,7 @@ class ZendeskUpdateHandler extends WebformHandlerBase
     }
 
     $request['collaborators'] = preg_split("/[^a-z0-9_\-@\.']+/i", $request['collaborators'] );
+    if (!empty($request['ticket_form_id'])) $request['ticket_form_id'] = $this->configuration['ticket_form_id'];
 
     if(!isset($request['comment']['body'])){
       $comment = $request['comment'];

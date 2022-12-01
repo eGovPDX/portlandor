@@ -40,9 +40,13 @@ class PortlandLocationPicker extends WebformCompositeBase {
 
     $nodes = \Drupal::entityTypeManager()->getStorage('node')->loadByProperties(['type' => 'park_facility', 'status' => 1]);
 
-    $elements = [];
-    $elements['#title'] = ['Portland Location Widget'];
-    $elements['location_type'] = [
+    $element_id = "report_location";
+    
+    if (array_key_exists("#webform_key", $element)) {
+      $element_id = $element['#webform_key'];
+    }
+
+    $element['location_type'] = [
       '#id' => 'location_type',
       '#name' => 'location_type',
       '#type' => 'radios',
@@ -59,12 +63,12 @@ class PortlandLocationPicker extends WebformCompositeBase {
       '#default_value' => 'street',
       '#attributes' => ['class' => ['location-type']],
     ];
-    $elements['location_park_container'] = [
+    $element['location_park_container'] = [
       '#id' => 'location_park_container',
       '#title' => t('Parks list container'),
       '#type' => 'container',
     ];
-    $elements['location_park_container']['location_park'] = [
+    $element['location_park_container']['location_park'] = [
       '#id' => 'location_park',
       '#title' => t('Which park or natural area?'),
       '#type' => 'webform_entity_select',
@@ -79,36 +83,25 @@ class PortlandLocationPicker extends WebformCompositeBase {
       '#attributes' => ['class' => ['location-park']],
       '#states' => [
         'visible' => [
-          ':input[name="report_location[location_type]"]' => [
+          ':input[name="' . $element_id . '[location_type]"]' => [
             'value' => 'park'
           ],
         ],
       ],
     ];
-    $elements['location_park_container']['park_instructions'] = [
+    $element['location_park_container']['park_instructions'] = [
       '#type' => 'markup',
       '#title' => 'Park instructions',
       '#title_display' => 'invisible',
       '#markup' => '<p class="webform-element-description description">Please move the marker to the exact spot in the park where the issue was observed.</p>',
       '#states' => [
         'visible' => [
-          ':input[name="report_location[location_park]"]' => ['filled' => TRUE],
-          ':input[name="report_location[location_type]"]' => ['value' => 'park'],
+          ':input[name="' . $element_id . '[location_park]"]' => ['filled' => TRUE],
+          ':input[name="' . $element_id . '[location_type]"]' => ['value' => 'park'],
         ],
       ],
     ];
-    $elements['waterway_instructions'] = [
-      '#type' => 'markup',
-      '#title' => 'Waterway instructions',
-      '#title_display' => 'invisible',
-      '#markup' => '<p class="webform-element-description description">Please use the map to indicate the location of the issue you want to report. Click to set a marker.</p>',
-      '#states' => [
-        'visible' => [
-          ':input[name="report_location[location_type]"]' => ['value' => 'waterway'],
-        ],
-      ],
-    ];
-    $elements['location_private_owner'] = [
+    $element['location_private_owner'] = [
       '#id' => 'location_private_owner',
       '#type' => 'radios',
       '#title' => t('Are you the owner of the property?'),
@@ -117,47 +110,26 @@ class PortlandLocationPicker extends WebformCompositeBase {
       '#options_display' => 'side_by_side',
       '#states' => [
         'visible' => [
-          ':input[name="report_location[location_type]"]' => [
+          ':input[name="' . $element_id . '[location_type]"]' => [
             'value' => 'private'
           ],
         ],
         'required' => [
-          ':input[name="report_location[location_type]"]' => [
+          ':input[name="' . $element_id . '[location_type]"]' => [
             'value' => 'private'
           ],
         ],
       ],
     ];
-    $elements['location_address'] = [
+    $element['location_address'] = [
       '#type' => 'textfield',
       '#id' => 'location_address',
       '#title' => t('Address or Cross Streets'),
       '#attributes' => ['class' => ['location-picker-address']],
       '#description' => t('Enter an address or cross streets of the issue being reported, then click the button to verify the location. Alternately, you may click the map to set the location.'),
       '#description_display' => 'before',
-      '#states' => [
-        'visible' => [
-          [':input[name="report_location[location_type]"]' => ['value' => 'street']],
-          'or',
-          [':input[name="report_location[location_type]"]' => ['value' => 'other']],
-        ],
-        'required' => [
-          [':input[name="report_location[location_type]"]' => ['value' => 'street']],
-        ],
-        'optional' => [
-          [':input[name="report_location[location_type]"]' => ['value' => 'park']],
-          'or',
-          [':input[name="report_location[location_type]"]' => ['value' => 'waterway']],
-           'or',
-          [':input[name="report_location[location_type]"]' => ['value' => 'private']],
-           'or',
-          [':input[name="report_location[location_type]"]' => ['value' => 'other']],
-           'or',
-          [':input[name="report_location[location_type]"]' => ['checked' => FALSE]],
-       ],
-      ],
     ];
-    $elements['location_map'] = [
+    $element['location_map'] = [
       '#type' => 'markup',
       '#id' => 'location_map',
       '#title' => 'Location map',
@@ -165,121 +137,98 @@ class PortlandLocationPicker extends WebformCompositeBase {
       '#description_display' => 'before',
       '#title_display' => 'invisible',
       '#markup' => '<div id="location_map_container" class="location-map"></div>',
-      '#states' => [
-        'visible' => [
-          [':input[name="report_location[location_type]"]' => ['value' => 'street']],
-          'or',
-          [':input[name="report_location[location_type]"]' => ['value' => 'park']],
-          'or',
-          [':input[name="report_location[location_type]"]' => ['value' => 'waterway']],
-          'or',
-          [':input[name="report_location[location_type]"]' => ['value' => 'other']],
-        ],
-      ],
     ];
-    $elements['suggestions_modal'] = [
+    $element['suggestions_modal'] = [
       '#type' => 'markup',
       '#title' => 'Suggestions',
       '#title_display' => 'invisible',
       '#markup' => '<div id="suggestions_modal" class="visually-hidden"></div>',
     ];
-    $elements['status_modal'] = [
+    $element['status_modal'] = [
       '#type' => 'markup',
       '#title' => 'Status indicator',
       '#title_display' => 'invisible',
       '#markup' => '<div id="status_modal" class="visually-hidden"></div>',
     ];
-    $elements['place_name'] = [
+
+    $location_required_error = "Please select a location by clicking the map, or by entering an address or cross streets above and clicking the Verify button.";
+    $primaryLayerBehavior = array_key_exists('#primary_layer_behavior', $element) ? $element['#primary_layer_behavior'] : "";
+    $primaryLayerType = array_key_exists('#primary_layer_type', $element) ? $element['#primary_layer_type'] : "";
+
+    if ($primaryLayerBehavior == "selection-only" && $primaryLayerType == "assets") {
+      $location_required_error = "Please select an asset on the map that you'd like to report. You may need to zoom in to see asset markers, or there may not be any reportable assets within view.";
+    }
+
+    $element['location_lat'] = [
+      '#type' => 'textfield',
+      '#title' => t('Location'),
+      '#title_display' => 'invisible',
+      '#id' => 'location_lat',
+      '#attributes' => ['class' => ['location-lat', 'visually-hidden']],
+      '#required_error' => $location_required_error,
+    ];
+    // we're using "lng" everywhere else since that's what Leaflet uses, but this field is already
+    // referenced in too many config files from webform handlers, so this is the one place it will
+    // remain "lon"...
+    $element['location_lon'] = [
+      '#type' => 'textfield',
+      '#title' => t('Longitude'),
+      '#title_display' => 'invisible',
+      '#id' => 'location_lon',
+      '#attributes' => ['class' => ['location-lng', 'visually-hidden']],
+    ];
+    $element['place_name'] = [
       '#type' => 'textfield',
       '#id' => 'place_name',
       '#title' => t('Location Name'),
       '#attributes' => ['class' => ['place-name']],
       '#description' => t('If this location has a name, such as a business or public building, please enter it here.'),
       '#description_display' => 'before',
-      // '#states' => [
-      //   'visible' => [
-      //     [':input[name="report_location[location_type]"]' => ['value' => 'street']],
-      //     'or',
-      //     [':input[name="report_location[location_type]"]' => ['value' => 'private']],
-      //     'or',
-      //     [':input[name="report_location[location_type]"]' => ['value' => 'park']],
-      //     'or',
-      //     [':input[name="report_location[location_type]"]' => ['value' => 'other']],
-      //   ],
-      // ],
     ];
-    $elements['location_details'] = [
+    $element['location_details'] = [
       '#type' => 'textarea',
       '#id' => 'location_details',
       '#title' => t('Location Details'),
       '#attributes' => ['class' => ['location-details']],
       '#description' => t('Please provide any other details that might help us locate the site you are reporting.'),
       '#description_display' => 'before',
-      // '#states' => [
-      //   'visible' => [
-      //     [':input[name="report_location[location_type]"]' => ['value' => 'street']],
-      //     'or',
-      //     [':input[name="report_location[location_type]"]' => ['value' => 'park']],
-      //     'or',
-      //     [':input[name="report_location[location_type]"]' => ['value' => 'waterway']],
-      //     'or',
-      //     [':input[name="report_location[location_type]"]' => ['value' => 'other']],
-      //   ],
-      // ],
     ];
-    $elements['location_lat'] = [
-      '#type' => 'hidden',
-      '#title' => t('Latitude'),
-      '#title_display' => 'invisible',
-      '#id' => 'location_lat',
-      '#attributes' => ['class' => ['location-lat']],
-    ];
-    // we're using "lng" everywhere else since that's what Leaflet uses, but this field is already
-    // referenced in too many config files from webform handlers, so this is the one place it will
-    // remain "lon"...
-    $elements['location_lon'] = [
-      '#type' => 'hidden',
-      '#title' => t('Longitude'),
-      '#title_display' => 'invisible',
-      '#id' => 'location_lon',
-      '#attributes' => ['class' => ['location-lng']],
-    ];
-    $elements['location_asset_id'] = [
+    $element['location_asset_id'] = [
       '#type' => 'hidden',
       '#title' => t('Asset ID'),
       '#title_display' => 'invisible',
       '#id' => 'location_asset_id',
     ];
-    $elements['location_region_id'] = [
+    $element['location_region_id'] = [
       '#type' => 'hidden',
       '#title' => t('Region ID'),
       '#title_display' => 'invisible',
       '#id' => 'location_region_id',
     ];
-    $elements['location_municipality_name'] = [
+    $element['location_municipality_name'] = [
       '#type' => 'hidden',
       '#title' => t('Municipality Name'),
       '#title_display' => 'invisible',
       '#id' => 'location_municipality_name',
     ];
-    $elements['location_is_portland'] = [
+    $element['location_is_portland'] = [
       '#type' => 'hidden',
       '#title' => t('Within Portland City Limits?'),
       '#title_display' => 'invisible',
       '#id' => 'location_is_portland',
       '#default_value' => "TRUE"
     ];
-    $elements['geojson_layer'] = [
+    $element['geojson_layer'] = [
       '#title' => t('GeoJson Layer'),
       '#type' => 'hidden',
       '#id' => 'geojson_layer',
     ];
-    $elements['geojson_layer_behavior'] = [
+    $element['geojson_layer_behavior'] = [
       '#title' => t('GeoJson Layer Behavior'),
       '#type' => 'hidden',
       '#id' => 'geojson_layer_behavior',
     ];
 
-    return $elements;
+    return $element;
   }
 }

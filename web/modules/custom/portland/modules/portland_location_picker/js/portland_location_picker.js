@@ -36,6 +36,8 @@
         const NOT_A_PARK = "You selected park or natural area as the property type, but no park data was found for the selected location. If you believe this is a valid location, please zoom in to find the park on the map, click to select a location, and continue to submit your report.";
         const OPEN_ISSUE_MESSAGE = "If this issue is what you came here to report, there's no need to report it again.";
         const SOLVED_ISSUE_MESSAGE = "This issue was recently solved. If that's not the case, or the issue has reoccured, please submit a new report.";
+        const ASSET_ONLY_SELECTION_MESSAGE = "We have zoomed in on the address you provided, but this map only allows you to select existing asset markers. Click one to select it. There may not be any selectable assets in the current view.";
+        const VERIFIED_NO_COORDS = "The address you entered is verified, but an error occurred, and it can't be shown on the map. Please zoom in and find the desired location, then click it to set a marker.";
         const DEFAULT_FEATURE_ICON_URL = "/modules/custom/portland/modules/portland_location_picker/images/map_marker_default.png";
         const DEFAULT_INCIDENT_ICON_URL = "/modules/custom/portland/modules/portland_location_picker/images/map_marker_incident.png";
         const DEFAULT_SOLVED_ICON_URL = "/modules/custom/portland/modules/portland_location_picker/images/map_marker_incident_solved.png";
@@ -94,6 +96,7 @@
         var AerialControl = generateAerialControl();
 
         // CUSTOM PROPERTIES SET IN WEBFORM CONFIG //////////
+        var elementId = drupalSettings.webform.portland_location_picker.element_id;
         var primaryLayerSource = drupalSettings.webform.portland_location_picker.primary_layer_source;
         var incidentsLayerSource = drupalSettings.webform.portland_location_picker.incidents_layer_source;
         var regionsLayerSource = drupalSettings.webform.portland_location_picker.regions_layer_source;
@@ -174,8 +177,9 @@
 
           // if there are coordinates in the hidden lat/lng fields, set the map marker.
           // this is likely a submit postback that had validation errors, so we need to re set it.
-          var lat = $('input[name=report_location\\[location_lat\\]]').val();
-          var lng = $('input[name=report_location\\[location_lon\\]]').val();
+          // NOTE: The following code would be problematic if we allow multiple copies of the widget or alternate naming conventions.
+          var lat = $('input[name=' + elementId + '\\[location_lat\\]]').val();
+          var lng = $('input[name=' + elementId + '\\[location_lon\\]]').val();
           if (lat && lng && lat !== "0" && lng !== "0") {
             setLocationMarker(lat, lng);
             doZoomAndCenter(lat, lng);
@@ -207,9 +211,15 @@
             // locate address on map
             var lat = $(this).data('lat');
             var lng = $(this).data('lng');
-            setLocationMarker(lat, lng);
-            doZoomAndCenter(lat, lng);
-            setVerified();
+            var latlng = new L.LatLng(lat, lng);
+            if (latlng.lat && latlng.lng) {
+              doMapClick(latlng);
+              setVerified();
+            } else {
+              showStatusModal(VERIFIED_NO_COORDS);
+              setLatLngHiddenFields(latlng.lat, latlng.lng);
+              setVerified();
+            }
           });
   
           // set up status modal ///////////////////////////////
@@ -374,7 +384,9 @@
             },
             onEachFeature: function(feature, layer) {
 
-              layer.bindPopup(generatePopupContent(feature), { maxWidth: 250, offset: L.point(0,0) });
+              // if this is a region, disable autopan. otherwise we want it on.
+              var autoPanValue = primaryLayerType == PRIMARY_LAYER_TYPE.Region ? false : true;
+              layer.bindPopup(generatePopupContent(feature), { maxWidth: 250, offset: L.point(0,0), autoPan: autoPanValue });
 
               // if region, use mouseover to show popup
               if (primaryLayerType == PRIMARY_LAYER_TYPE.Region) {
@@ -386,7 +398,7 @@
                 layer.on("click", handleMarkerClick);
               }
             },
-            interactive:        isInteractive
+            interactive: isInteractive
           });
           if (zoom >= featureLayerVisibleZoom) {
             primaryLayer.addTo(map);
@@ -514,9 +526,10 @@
             // user clicked something not selectable; reset data collection fields
             $('#place_name').val('');
             $('#location_details').val('');
-            $('input[name=report_location\\[location_lat\\]]').val('');
-            $('input[name=report_location\\[location_lon\\]]').val('');
-            $('input[name=report_location\\[location_asset_id\\]]').val('');
+            // NOTE: The following code would be problematic if we allow multiple copies of the widget or alternate naming conventions.
+            $('input[name=' + elementId + '\\[location_lat\\]]').val('');
+            $('input[name=' + elementId + '\\[location_lon\\]]').val('');
+            $('input[name=' + elementId + '\\[location_asset_id\\]]').val('');
           }
         }
 
@@ -534,16 +547,6 @@
             redrawMap();
           }
   
-          // don't use js to handle this logic. add advanced custom properties to the element
-          // in the webform: set state to visible depending on location type if needed.
-          // // if type is street or other, show location name field
-          // var placeNameContainer = $('#place_name').parent();
-          // if (locationType == "street" || locationType == "other") {
-          //   placeNameContainer.removeClass('visually-hidden');
-          // } else {
-          //   placeNameContainer.addClass('visually-hidden');
-          // }
-  
         }
   
         function handleLocateButtonClick(e) {
@@ -557,46 +560,9 @@
           locationErrorShown = false;
           toggleAerialView();
         }
-  
+
         function handleMapClick(e) {
-          // normally when the map is clicked, we want to zoom to the clicked location
-          // and perform a reverse lookup. there are some cases where we may want to 
-          // perform additional actions. for example, if location type = park, we also
-          // need to do a reverse parks lookup and adjust the park selector accordingly.
-
-          // if primary layer behavior is selection-only, don't allow map clicks
-          if (primaryLayerBehavior == PRIMARY_LAYER_BEHAVIOR.SelectionOnly) return;
-
-          resetClickedMarker();
-  
-          // clear place name and park selector fields; they will get reset if appropriate after the click.
-          $('.place-name').val("");
-          $('#location_park').val("");
-  
-          if (locCircle) {
-            map.removeLayer(locCircle);
-            locateControlContaier.style.backgroundImage = 'url("/modules/custom/portland/modules/portland_location_picker/images/map_locate.png")';
-          }
-  
-          reverseGeolocate(e.latlng);
-
-          // determine whether click is within a region on the primaryLayer layer, and store the region_id.
-          // this is done if the primary layer type is Region, or if the regions layer is populated.
-          if (primaryLayerType == PRIMARY_LAYER_TYPE.Region || regionsLayerSource) {
-            var testLayer;
-            if (regionsLayer) {
-              testLayer = regionsLayer;
-            } else {
-              testLayer = primaryLayer;
-            }
-            var inLayer = leafletPip.pointInLayer(e.latlng, testLayer, false);
-            if (inLayer.length > 0) {
-              $('input[name=report_location\\[location_region_id\\]]').val(inLayer[0].feature.properties.region_id);
-            } else {
-              // clear region_id field
-              $('#location_region_id').val("");
-            }
-          }
+          doMapClick(e.latlng);
         }
   
         function handleLocateMeFound(e) {
@@ -605,8 +571,6 @@
           }
           var radius = e.accuracy;
           locCircle = L.circle(e.latlng, radius, { weight: 2, fillOpacity: 0.1 }).addTo(map);
-          // setLocationMarker(lat, lng);
-          // doZoomAndCenter(lat, lng);
           reverseGeolocate(e.latlng);
           locateControlContaier.style.backgroundImage = 'url("/modules/custom/portland/modules/portland_location_picker/images/map_locate_on.png")';
   
@@ -655,6 +619,49 @@
 
         // HELPER FUNCTIONS ///////////////////////////////
 
+        function doMapClick(latlng) {
+          // normally when the map is clicked, we want to zoom to the clicked location
+          // and perform a reverse lookup. there are some cases where we may want to 
+          // perform additional actions. for example, if location type = park, we also
+          // need to do a reverse parks lookup and adjust the park selector accordingly.
+
+          // if primary layer behavior is selection-only, we don't allow map clicks, but we
+          // still want to zoom in on that location.
+          // if (primaryLayerBehavior == PRIMARY_LAYER_BEHAVIOR.SelectionOnly) return false;
+
+          resetClickedMarker();
+  
+          // clear place name and park selector fields; they will get reset if appropriate after the click.
+          $('.place-name').val("");
+          $('#location_park').val("");
+  
+          if (locCircle) {
+            map.removeLayer(locCircle);
+            locateControlContaier.style.backgroundImage = 'url("/modules/custom/portland/modules/portland_location_picker/images/map_locate.png")';
+          }
+  
+          reverseGeolocate(latlng);
+
+          // determine whether click is within a region on the primaryLayer layer, and store the region_id.
+          // this is done if the primary layer type is Region, or if the regions layer is populated.
+          if (primaryLayerType == PRIMARY_LAYER_TYPE.Region || regionsLayerSource) {
+            var testLayer;
+            if (regionsLayer) {
+              testLayer = regionsLayer;
+            } else {
+              testLayer = primaryLayer;
+            }
+            var inLayer = leafletPip.pointInLayer(latlng, testLayer, false);
+            if (inLayer.length > 0) {
+              // NOTE: The following code would be problematic if we allow multiple copies of the widget or alternate naming conventions.
+              $('input[name=' + elementId + '\\[location_region_id\\]]').val(inLayer[0].feature.properties.region_id);
+            } else {
+              // clear region_id field
+              $('#location_region_id').val("");
+            }
+          }
+        }
+  
         function isAssetSelectable(marker) {
           // defines the criteria under which an asset can be selected
           if (primaryLayerBehavior != PRIMARY_LAYER_BEHAVIOR.Selection && primaryLayerBehavior != PRIMARY_LAYER_BEHAVIOR.SelectionOnly) {
@@ -710,7 +717,8 @@
 
         // this is the helper function that fires when an asset marker is clicked.
         function setLocationType(type) {
-          $("input[name='report_location[location_type]'][value='" + type + "']").click();
+          // NOTE: The following code would be problematic if we allow multiple copies of the widget or alternate naming conventions.
+          $("input[name='" + elementId + "[location_type]'][value='" + type + "']").click();
         }
   
         function redrawMap() {
@@ -779,10 +787,15 @@
             // the required lat/lon fields with zeroes so that the form can still be submitted. at least
             // it will capture the address, and the report will still be usable.
             if (lat && lng) {
-              setLocationMarker(lat, lng);
               doZoomAndCenter(lat, lng);
+              if (primaryLayerBehavior != PRIMARY_LAYER_BEHAVIOR.SelectionOnly) {
+                setLocationMarker(lat, lng);
+              } else {
+                showStatusModal(ASSET_ONLY_SELECTION_MESSAGE);
+              }
             } else {
               setLatLngHiddenFields(0, 0);
+              showStatusModal(VERIFIED_NO_COORDS);
             }
 
             setVerified();
@@ -793,7 +806,10 @@
         }
 
         function doZoomAndCenter(lat, lng, zoomLevel = DEFAULT_ZOOM_CLICK) {
-          map.setView([lat, lng], zoomLevel);
+          if (lat != "0" && lng != "0") {
+            map.setView([lat, lng], zoomLevel);
+          }
+          
         }
 
         function captureSelectedAssetMarkerData(marker) {
@@ -812,13 +828,17 @@
 
           // fields that are input type="hidden" need to be selected by name attribute; they won't have ids
           setLatLngHiddenFields(marker.latlng.lat, marker.latlng.lng);
-          $('input[name=report_location\\[location_asset_id\\]]').val(marker.target.feature.properties.id);
+          // NOTE: The following code would be problematic if we allow multiple copies of the widget or alternate naming conventions.
+          $('input[name=' + elementId + '\\[location_asset_id\\]]').val(marker.target.feature.properties.id);
         }
 
         function setLatLngHiddenFields(lat, lng) {
-          $('input[name=report_location\\[location_lat\\]]').val(lat);
-          $('input[name=report_location\\[location_lon\\]]').val(lng);
-          console.log('Set coordinates: ' + $('input[name=report_location\\[location_lat\\]]').val() + ', ' + $('input[name=report_location\\[location_lon\\]]').val());
+          if (!lat) lat = "0";
+          if (!lng) lng = "0";
+          // NOTE: The following code would be problematic if we allow multiple copies of the widget or alternate naming conventions.
+          $('input[name=' + elementId + '\\[location_lat\\]]').val(lat);
+          $('input[name=' + elementId + '\\[location_lon\\]]').val(lng);
+          console.log('Set coordinates: ' + $('input[name=' + elementId + '\\[location_lat\\]]').val() + ', ' + $('input[name=' + elementId + '\\[location_lon\\]]').val());
         }
 
         // set location marker on map. this is only used with map clicks, not marker clicks.
@@ -837,8 +857,15 @@
             locationMarker = null;
           }
 
-          locationMarker = L.marker([lat, lng], { icon: defaultSelectedMarkerIcon, draggable: true, riseOnHover: true, iconSize: DEFAULT_ICON_SIZE  }).addTo(map);
           setLatLngHiddenFields(lat, lng);
+
+          // there is a small bug in PortlandMaps that sometimes causes lat/lng to not be provided.
+          // we use zeroes instead, but don't want to set a marker or zoom in to 0,0 (also known as Null Island).
+          if (lat == "0" && lng == "0") {
+            return false;
+          }
+
+          locationMarker = L.marker([lat, lng], { icon: defaultSelectedMarkerIcon, draggable: true, riseOnHover: true, iconSize: DEFAULT_ICON_SIZE  }).addTo(map);
 
           // if address marker is moved, we want to capture the new coordinates
           locationMarker.off();
@@ -885,8 +912,12 @@
   
                 setLocationType("park");
                 if (zoomAndCenter) {
-                  setLocationMarker(lat, lng);
                   doZoomAndCenter(lat, lng);    
+                  if (primaryLayerBehavior != PRIMARY_LAYER_BEHAVIOR.SelectionOnly) {
+                    setLocationMarker(lat, lng);
+                  } else {
+                    showStatusModal(ASSET_ONLY_SELECTION_MESSAGE);
+                  }
                 }
   
                 // attempt to set park selector. if not exact match, set selector
@@ -943,20 +974,26 @@
               if (response.length < 1 || !response.address || !response.location) {
                 // portlandmaps doesn't have data for this location.
                 // set location type to "other" so 311 can triage but still set marker.
-                // and clear address field; address is not required for "other."
-                setLocationMarker(lat, lng);
+                // address field may be required by the form, so something needs to go there.
                 if (zoomAndCenter) {
                   doZoomAndCenter(lat, lng);    
+                  if (primaryLayerBehavior != PRIMARY_LAYER_BEHAVIOR.SelectionOnly) {
+                    setLocationMarker(lat, lng);
+                  } else {
+                    showStatusModal(ASSET_ONLY_SELECTION_MESSAGE);
+                  }
                 }
                 if (locationType == "park") {
                   setLocationType("other");
                 }
-                var locName = "N/A";
-                if (jsonResult && jsonResult.features.length > 0 && jsonResult.features[0].attributes && jsonResult.features[0].attributes.NAME) {
-                  var locName = jsonResult.features[0].attributes.NAME;
-                }
-                $('#location_address').val(locName);
-                setUnverified();
+                if (response.error) {
+                  $('#location_address').val("N/A");
+                  setUnverified();
+                } else if (response && response.features && response.features[0].attributes && response.features[0].attributes.NAME) {
+                  var locName = response.features[0].attributes.NAME;
+                  $('#location_address').val(locName);
+                  setUnverified();
+                };
                 return false;
                 // showStatusModal("There was a problem retrieving data for the selected location.");
               }
@@ -968,12 +1005,16 @@
 
         function processReverseLocationData(data, lat, lng, zoomAndCenter = true) {
           // don't set marker and zoom if primary layer behavior is "selection"
-          if (primaryLayerBehavior != PRIMARY_LAYER_BEHAVIOR.SelectionOnly) {
-            setLocationMarker(lat, lng);
-            if (zoomAndCenter) {
-              doZoomAndCenter(lat, lng);
+          //if (primaryLayerBehavior != PRIMARY_LAYER_BEHAVIOR.SelectionOnly) {
+          if (zoomAndCenter) {
+            doZoomAndCenter(lat, lng);    
+            if (primaryLayerBehavior != PRIMARY_LAYER_BEHAVIOR.SelectionOnly) {
+              setLocationMarker(lat, lng);
+            } else {
+              showStatusModal(ASSET_ONLY_SELECTION_MESSAGE);
             }
           }
+          //}
           var street = data.address.Street;
           var city = data.address.City;
           var state = data.address.State;
@@ -1055,14 +1096,10 @@
         }
   
         function buildFullAddress(c){
-          if (c.attributes.type == "intersection") {
-            return c.address;
-          }
-          var address = c.address;
-          var city = c.attributes.city;
-          var state = c.attributes.state;
-          var zip = c.attributes.zip_code;
-          return address + ', ' + city + ', ' + state + ' ' + zip;
+          return [c.address, c.attributes.city, c.attributes.state]
+                  .filter(Boolean)
+                  .join(', ')
+                  + ' ' + (c.attributes.zip_code || '');
         }
   
         function showStatusModal(message) {

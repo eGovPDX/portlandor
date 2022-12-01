@@ -4,6 +4,7 @@ use Drupal\redirect\Entity\Redirect;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Field\BaseFieldDefinition;
 use Drupal\Core\Field\FieldStorageDefinitionInterface;
+use Drupal\Core\Language\LanguageInterface;
 
 /**
  * Implements hook_entity_base_field_info().
@@ -18,8 +19,8 @@ function portland_legacy_redirects_entity_base_field_info($entity_type) {
     // TODO: this adds the field to EVERY node, even ones we don't want the Legacy Path for.
     //       it's not harmful except that it adds extra processing. it basically runs through
     //       the validation routines but does nothing if not valid on a form where the field
-    //       is disabled/hidden. the only way I can think of to prevent this is to create and 
-    //       maintain a list of content types that it applies to; or maybe there's a way to 
+    //       is disabled/hidden. the only way I can think of to prevent this is to create and
+    //       maintain a list of content types that it applies to; or maybe there's a way to
     //       determine whether the field is enabled in form view?
     $fields['field_redirects'] = BaseFieldDefinition::create('string')
       ->setName('field_redirects')
@@ -36,5 +37,21 @@ function portland_legacy_redirects_entity_base_field_info($entity_type) {
       ->addConstraint('relative_path', []);;
 
     return $fields;
+  }
+}
+
+/**
+ * Implements hook_form_BASE_FORM_ID_alter().
+ *
+ * The legacy path field is actually just a reference to the Drupal redirect table, not a field stored
+ * on the node itself. That means we can't choose to hide it for translations like a normal field.
+ *
+ * This piece of custom code detects when the editor is editing a non-English translation and hides the
+ * legacy paths field, because the field isn't actually translatable.
+ */
+function portland_legacy_redirects_form_node_form_alter(&$form) {
+  $current_lang = \Drupal::languageManager()->getCurrentLanguage(LanguageInterface::TYPE_CONTENT)->getId();
+  if ($current_lang !== 'en') {
+    $form['field_redirects']['#access'] = FALSE;
   }
 }

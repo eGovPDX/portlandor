@@ -1231,11 +1231,33 @@ function _should_overwrite_council_document_title($node)
 
 /**
  * Implements hook_form_FORM_ID_alter().
+ * 
+ * Override the user login form to use the SAML login
  */
-function portland_form_openid_connect_login_form_alter(&$form, &$form_state)
+function portland_form_user_login_form_alter(&$form, &$form_state)
 {
-  // Override the default label of the submit button
-  $form["openid_connect_client_windows_aad_login"]["#value"] = t('Log in with City of Portland network account');
+  if(
+    isset($_ENV['PANTHEON_ENVIRONMENT']) &&
+    in_array($_ENV['PANTHEON_ENVIRONMENT'], [
+      'pgov-769', 'sandbox', 'demo', 'dev', 'test', 'live'])
+  ) {
+    $destination = \Drupal::request()->get('destination');
+    $query = empty($destination) ? "?destination=/" : "?destination=$destination";
+    // Override the default label of the submit button
+    unset($form['name']);
+    unset($form['pass']);
+    unset($form['actions']);
+    $form['saml'] = [
+      '#type' => "button",
+      '#value' => t('Log in with City of Portland network account'),
+      '#name' => t('saml_login'),
+      '#attributes' => [
+        'class' => ['button'],
+        'id' => 'saml_login',
+        'onclick' => 'location.href="/saml/login'.$query.'";return false;',
+      ],
+    ];
+  }
 }
 
 /**
@@ -1370,4 +1392,25 @@ function portland_search_api_solr_config_files_alter(array &$files, string $luce
   }
   */
 
+}
+
+/**
+ * Implements hook_webform_third_party_settings_form_alter().
+ *
+ * Adds our custom third-party settings to webform config form.
+ */
+function portland_webform_third_party_settings_form_alter(&$form, FormStateInterface $form_state) {
+  $webform = $form_state->getFormObject()->getEntity();
+
+  $form['third_party_settings']['portland'] = [
+    '#type' => 'details',
+    '#title' => t('Portland'),
+    '#open' => TRUE,
+  ];
+
+  $form['third_party_settings']['portland']['disable_demographic_form_prompt'] = [
+    '#type' => 'checkbox',
+    '#title' => t('Disable demographic form prompt on confirmation page'),
+    '#default_value' => $webform->getThirdPartySetting('portland', 'disable_demographic_form_prompt'),
+  ];
 }
