@@ -49,25 +49,6 @@ elements: |-
         renew: 'Reissue an Expired Permit'
       '#options_display': buttons_vertical
       '#required': true
-    existing_permit_location:
-      '#type': portland_location_picker
-      '#title': 'What is the location of the permit or permit request?'
-      '#states':
-        visible:
-          ':input[name="wizard_existing_permit_situation"]':
-            checked: true
-      '#location_type__access': false
-      '#location_park_container__access': false
-      '#waterway_instructions__access': false
-      '#location_private_owner__access': false
-      '#location_address__title': 'What is the location of the permit or permit request?'
-      '#location_address__description': ''
-      '#location_address__required': true
-      '#place_name__access': false
-      '#location_details__access': false
-      '#geojson_layer__access': false
-      '#geojson_layer_behavior__access': false
-      '#required': true
     container_change_request:
       '#type': container
       '#states':
@@ -210,6 +191,14 @@ elements: |-
           <a href="/transportation/permitting/temporary-street-use-permitting-tsup#toc-fees">Change Fee and Refund Policies</a>
         '#required': true
         '#required_error': 'You must agree with the permit conditions.'
+  permit_location_metered:
+    '#type': webform_computed_twig
+    '#title': 'Location Metered'
+    '#display_on': none
+    '#mode': text
+    '#template': '{{ data.permit_location.location_region_id ? "true" : "false" }}'
+    '#whitespace': spaceless
+    '#store': true
   page_location:
     '#type': webform_wizard_page
     '#title': Location
@@ -233,14 +222,10 @@ elements: |-
       '#location_address__required': true
       '#place_name__access': false
       '#location_details__access': false
-      '#geojson_layer__access': false
-      '#geojson_layer_behavior__access': false
-    permit_location_metered:
-      '#type': radios
-      '#title': Metered
-      '#options':
-        'false': 'false'
-        'true': 'true'
+      '#primary_layer_source': /api/features/meteredparkingzones
+      '#primary_layer_behavior': informational
+      '#primary_layer_type': region
+      '#feature_layer_visible_zoom': 1
   page_dates:
     '#type': webform_wizard_page
     '#title': Dates
@@ -315,14 +300,6 @@ elements: |-
       '#type': hidden
       '#title': 'Date Span (hidden, computed by JS)'
       '#default_value': '0'
-    actions:
-      '#type': webform_actions
-      '#title': 'Submit button(s)'
-      '#states':
-        visible:
-          ':input[name="permit_date_span"]':
-            value:
-              greater: '0'
   page_parking_spaces:
     '#type': webform_wizard_page
     '#title': 'Parking Spaces'
