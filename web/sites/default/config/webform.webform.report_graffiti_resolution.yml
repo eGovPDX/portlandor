@@ -54,10 +54,30 @@ elements: |-
       '#primary_layer_type': incident
       '#feature_layer_visible_zoom': 17
     report_private_property_type:
-      '#type': webform_radios_other
-      '#title': 'What type of property is it?'
+      '#type': radios
+      '#title': 'What type of private property is it?'
       '#prepopulate': true
-      '#options': private_property_type
+      '#options':
+        Business: Business
+        'Single-family home': 'Single-family home'
+        'Condo or apartment building/complex': 'Condo or apartment building/complex'
+        'A non-profit organization, or houses a non-profit organization': 'A non-profit organization, or houses a non-profit organization'
+        'Something else...': 'Something else...'
+      '#other__option_label': ''
+      '#other__placeholder': ''
+      '#states':
+        visible:
+          ':input[name="report_location[location_type]"]':
+            value: private
+    report_private_property_type_other:
+      '#type': textfield
+      '#title': 'Other private property type'
+      '#title_display': invisible
+      '#placeholder': 'Please describe...'
+      '#states':
+        visible:
+          ':input[name="report_private_property_type"]':
+            value: 'Something else...'
     report_above_ground_level:
       '#type': radios
       '#title': 'Is the graffiti above ground level?'
@@ -65,17 +85,13 @@ elements: |-
       '#options':
         'Yes': 'Yes'
         'No': 'No'
-        'Not sure': 'Not sure'
+      '#options_display': side_by_side
     report_graffiti_on_mural:
       '#type': radios
       '#title': 'Is the graffiti on a mural?'
       '#prepopulate': true
       '#options': yes_no
-    report_repeat_offender:
-      '#type': radios
-      '#title': 'Have you seen this graffiti or tag before? Is it from a repeat offender?'
-      '#prepopulate': true
-      '#options': yes_no
+      '#options_display': side_by_side
     report_photos:
       '#type': webform_image_file
       '#title': 'Graffiti Photos'
@@ -88,7 +104,6 @@ elements: |-
       '#file_extensions': 'gif jpg png svg jpeg'
       '#file_name': 'report_[webform_submission:sid]'
       '#sanitize': true
-      '#max_resolution': 1280x720
       '#attachment_image_style': webform_report_uploaded_image
     waiver_photo:
       '#type': webform_image_file
@@ -102,18 +117,55 @@ elements: |-
       '#file_extensions': 'gif jpg png svg jpeg'
       '#attachment_image_style': webform_report_uploaded_image
   resolution:
-    '#type': webform_radios_other
+    '#type': radios
     '#title': 'Issue Resolution'
     '#prepopulate': true
     '#options':
-      'Graffiti has been removed': 'Graffiti has been removed'
-      'Graffiti was not found at the reported location': 'Graffiti was not found at the reported location'
-    '#other__option_label': 'Something else...'
-    '#other__placeholder': 'Please describe...'
+      graffiti_removed: 'Graffiti has been removed'
+      graffiti_not_found: 'Graffiti was not found at the reported location'
+      graffiti_deferred: 'Graffiti will be removed later'
+      graffiti_other: 'Something else'
+    '#other__option_label': ''
+    '#other__placeholder': ''
     '#required': true
+  report_hate_speech_or_gang:
+    '#type': radios
+    '#title': 'Is the graffiti hate speech or gang related?'
+    '#options':
+      'Yes': 'Yes'
+      'No': 'No'
+      'Not sure': 'Not sure'
+    '#options_display': side_by_side
+  report_repeat_offender:
+    '#type': radios
+    '#title': 'Have you seen this graffiti or tag before? Is it from a repeat offender?'
+    '#prepopulate': true
+    '#options': yes_no
+    '#options_display': side_by_side
+  resolution_ssl:
+    '#type': radios
+    '#title': 'PBOT Signs and Streetlights (SSL) asset'
+    '#prepopulate': true
+    '#options': yes_no
+    '#options_display': side_by_side
+  resolution_other:
+    '#type': textfield
+    '#title': 'Resolution - other'
+    '#title_display': invisible
+    '#placeholder': 'Please describe...'
+    '#states':
+      visible:
+        ':input[name="resolution"]':
+          value: graffiti_other
+  report_resolution_other_value:
+    '#type': webform_computed_twig
+    '#title': 'Report Resolution Other Value'
+    '#display_on': none
+    '#template': '{% if data.resolution_other %} -- {{ data.resolution_other }}{% endif %}'
+    '#ajax': true
   resolution_notes:
     '#type': textarea
-    '#title': 'Resolution Notes'
+    '#title': 'Abatement Notes'
     '#prepopulate': true
   resolution_square_footage:
     '#type': textfield
@@ -127,13 +179,16 @@ elements: |-
     '#file_extensions': 'gif jpg png svg jpeg'
     '#file_name': 'report_[webform_submission:sid]_resolved'
     '#sanitize': true
-    '#max_resolution': 1280x720
     '#attachment_image_style': webform_report_uploaded_image
   resolution_contractor:
-    '#type': textfield
-    '#title': 'Contractor/Company Name'
-    '#prepopulate': true
+    '#type': radios
+    '#title': 'Graffiti Contractor'
+    '#options':
+      graffiti_removal_services_grs: 'Graffiti Removal Services (GRS)'
+      portland_graffiti_removal_pgr: 'Portland Graffiti Removal (PGR)'
+      metal_acoustic_commercial_kraft_mack: 'Metal Acoustic Commercial Kraft (MACK)'
     '#required': true
+    '#default_value': graffiti_removal_services_grs
   contact_email:
     '#type': textfield
     '#title': 'Contact Email'
@@ -159,28 +214,83 @@ elements: |-
     '#title': 'Original Submission Key'
     '#prepopulate': true
     '#wrapper_attributes': {  }
-  ticket_description:
+  resolution_url:
     '#type': webform_computed_twig
-    '#title': 'Ticket Description'
+    '#title': 'Resolution URL'
     '#display_on': none
-    '#mode': html
-    '#template': |
+    '#mode': text
+    '#template': '{{ webform_token(''[site:url-brief]'', webform_submission, [], options) }}/form/report-graffiti-resolution?report_location[location_type]={{ data.report_location.location_type }}&report_location[location_park]={{ data.report_location.location_park }}&report_location[place_name]={{ data.report_location.place_name }}&report_location[location_details]={{ data.report_location.location_details }}&report_location[location_address]={{ data.report_location.location_address }}&report_location[location_private_owner]={{ data.report_location.location_private_owner }}&report_location[location_lat]={{ data.report_location.location_lat }}&report_location[location_lon]={{ data.report_location.location_lon }}&report_private_property_type={{ data.report_private_property_type.raw }}&report_above_ground_level={{ data.report_above_ground_level }}&report_graffiti_on_mural={{ data.report_graffiti_on_mural }}&report_repeat_offender={{ data.report_repeat_offender }}&original_submission_key={{ uuid }}&resolution_ssl={{ data.resolution_ssl }}&report_ticket_id='
+    '#whitespace': trim
+    '#store': true
+    '#ajax': true
+  request_description:
+    '#type': webform_computed_twig
+    '#title': 'Request Description'
+    '#display_on': view
+    '#template': |-
+      <h2>Graffiti Report</h2>
+
+      <h3>Location</h3>
       <p>[webform_submission:values:report_location:html]</p>
 
-      {% if data.report_hate_speech_or_gang %}<p>Is the graffiti hate speech or gang related?&nbsp;{{ data.report_hate_speech_or_gang }}</p>{% endif %}
+      {% if data.report_private_property_type %}<p><strong>What type of private property is it?</strong>&nbsp;{{ data.report_private_property_type }} {{ data.report_private_property_type_other }}</p>{% endif %}
+
+      <p><a href="{{ data.portland_maps_url }}">View in PortlandMaps</a></p>
+
+      <h3>Additional Details</h3>
+      <p>
+      {% if data.report_above_ground_level %}<strong>Is graffiti above ground level?</strong>&nbsp;{{ data.report_above_ground_level }}<br>{% endif %}
+
+      {% if data.report_graffiti_on_mural %}<strong>Is graffiti on mural?</strong>&nbsp;{{ data.report_graffiti_on_mural }}<br>{% endif %}
+
+      {% if data.report_hate_speech_or_gang %}<strong>Is the graffiti hate speech or gang related?</strong>&nbsp;{{ data.report_hate_speech_or_gang }}<br>{% endif %}
+
+      {% if data.report_repeat_offender %}<strong>Is this a repeat offender?</strong>&nbsp;{{ data.report_repeat_offender }}<br>{% endif %}
+
+      <strong>Webform ID:</strong> report_graffiti
+      </p>
+
+      <h3>Abatement</h3>
+
+      <p><strong>Resoultion:</strong>&nbsp;
+      {% if data.resolution == "graffiti_removed" %}Graffiti has been removed{% endif %}
+      {% if data.resolution == "graffiti_not_found" %}Graffiti was not found at the reported location{% endif %}
+      {% if data.resolution == "graffiti_deferred" %}Graffiti will be removed later{% endif %}
+      {% if data.resolution == "graffiti_other" %}Something else{% endif %}
+      {% if data.resolution_other %} &#151; {{ data.resolution_other }}{% endif %}<br>
+
+      {% if data.resolution_notes %}<strong>Abatement Notes:</strong>&nbsp;{{ data.resolution_notes }}<br>{% endif %}
+
+      {% if data.resolution_square_footage %}<strong>Square Footage:</strong>&nbsp;{{ data.resolution_square_footage }}<br>{% endif %}
+
+      {% if data.resolution_ssl %}<strong>PBOT SSL Asset</strong> {{ data.resolution_ssl }}<br>{% endif %}
+
+      {% if data.resolution_contractor %}<strong>Contractor/Company Name:</strong>&nbsp;{{ data.resolution_contractor }}<br>{% endif %}
+
+      {% if data.contact_email %}<strong>Contact Email:</strong>&nbsp;{{ data.contact_email }}<br>{% endif %}
+    '#ajax': true
+  computed_confirmation_message:
+    '#type': webform_computed_twig
+    '#title': 'Computed confirmation message'
+    '#display_on': none
+    '#mode': html
+    '#template': |+
+      {% if data.resolution == "graffiti_deferred" %}
+      <h2>The graffiti has been logged for future cleaning</h2>
+      <p>A request has been created in our tracking system, and a work order has been sent to the email address provided. When the work is complete, please use the resolution link in the email to report the updated status.</p>
+      {% else %}
+      <h2>The graffiti request has been updated</h2>
+      <p>Thank you for submitting your resolution report. Your response has been recorded, and the ticket has been updated.</p>
+      {% endif %}
 
 
-      {% if data.report_private_property_type %}<p>What type of property is it?&nbsp;{{ data.report_private_property_type }}</p>{% endif %}
-
-
-      {% if data.report_above_ground_level %}<p>Is graffiti above ground level?&nbsp;{{ data.report_above_ground_level }}</p>{% endif %}
-
-
-      {% if data.report_graffiti_on_mural %}<p>Is graffiti on mural?&nbsp;{{ data.report_graffiti_on_mural }}</p>{% endif %}
-
-      {% if data.report_repeat_offender %}<p>Have you seen this graffiti or tag before? Is it from a repeat offender?&nbsp;{{ data.report_repeat_offender }}</p>{% endif %}
-
-      <p>Webform ID: report_graffiti</p>
+    '#ajax': true
+  support_agent_use_only:
+    '#type': portland_support_agent_widget
+    '#title': 'Support Agent Use Only'
+    '#support_agent_widget_title__access': false
+    '#employee_email__access': false
+    '#zendesk_request_number__access': false
   actions:
     '#type': webform_actions
     '#title': 'Submit button(s)'
@@ -289,8 +399,8 @@ settings:
   draft_pending_multiple_message: ''
   confirmation_type: page
   confirmation_url: ''
-  confirmation_title: 'Ticket has been updated'
-  confirmation_message: "Thank you for submitting your resolution report. Your response has been recorded, and the ticket has been updated.<br />\r\n<br />\r\n<a href=\"/form/report-graffiti-resolution?resolution_contractor=[webform_submission:values:resolution_contractor]&amp;contact_email=[webform_submission:values:contact_email]\">Submit another like this</a>"
+  confirmation_title: ''
+  confirmation_message: "[webform_submission:values:computed_confirmation_message]\r\n<br />\r\n<a href=\"/form/report-graffiti-resolution?resolution_contractor=[webform_submission:values:resolution_contractor]&amp;contact_email=[webform_submission:values:contact_email]\">Submit another like this</a>"
   confirmation_attributes: {  }
   confirmation_back: false
   confirmation_back_label: 'Submit a new report'
@@ -386,35 +496,37 @@ handlers:
   resolve_ticket:
     id: zendesk_update_ticket
     handler_id: resolve_ticket
-    label: 'Resolve ticket'
-    notes: ''
+    label: 'Resolve open request'
+    notes: 'Resolves an open graffiti request in Zendesk when the resolution link is used by an abatement contractor. Enabled if ticket ID is provided and resolution is not deferred.'
     status: true
     conditions:
       enabled:
         ':input[name="report_ticket_id"]':
           filled: true
+        ':input[name="resolution"]':
+          '!value': graffiti_deferred
     weight: -49
     settings:
       requester_name: ''
       requester_email: ''
       subject: ''
-      comment: "The issue has been reported as resolved by the abatement contractor [webform_submission:values:resolution_contractor].<br><br>\r\nResolution: [webform_submission:values:resolution]<br><br>\r\nNotes:<br>[webform_submission:values:resolution_notes]<br><br>\r\nSquare footage of abatement: [webform_submission:values:resolution_square_footage]<br><br>\r\nThis report will be automatically closed after 7 days."
+      comment: "The issue has been reported as resolved by the abatement contractor [webform_submission:values:resolution_contractor].<br><br>\r\nResolution: [webform_submission:values:resolution] [webform_submission:values:report_resolution_other_value]<br><br>\r\nNotes:<br>[webform_submission:values:resolution_notes]<br><br>\r\nSquare footage of abatement: [webform_submission:values:resolution_square_footage]<br><br>\r\nThis report will be automatically closed after 7 days."
       tags: ''
       priority: ''
       status: solved
       assignee_id: '1505212728301'
       type: ''
       collaborators: ''
-      custom_fields: '9205221816983: ''[webform_submission:values:report_location:location_type:raw]'''
+      custom_fields: "9205221816983: '[webform_submission:values:report_location:location_type:raw]'\r\n10101857240855: '[webform_submission:values:resolution:raw]'\r\n10101859348375: '[webform_submission:values:resolution_square_footage]'\r\n10148668334871: '[webform_submission:values:resolution_ssl]'\r\n10074777716119: '10074777716119_solved_cleaned_by_contractor'\r\n10333166173079: '[webform_submission:values:report_above_ground_level]'\r\n10333167883159: '[webform_submission:values:report_graffiti_on_mural]'\r\n6586776052759: '[webform_submission:values:report_hate_speech_or_gang]'\r\n8197855908375: '[webform_submission:values:report_repeat_offender]'\r\n10249202452887: '[webform_submission:values:resolution_contractor:raw]'"
       ticket_id_field: report_ticket_id
       comment_private: 0
       group_id: ''
-      ticket_form_id: ''
+      ticket_form_id: '6499767163543'
   zendesk_ticket_validator:
     id: ticket_validation
     handler_id: zendesk_ticket_validator
     label: 'Zendesk request validator'
-    notes: ''
+    notes: 'Uses the Zendesk API to validate the request key. Only enabled for resolving existing requests (report_ticket_id must be filled).'
     status: true
     conditions:
       enabled:
@@ -425,19 +537,23 @@ handlers:
   create_new_zendesk_ticket:
     id: zendesk
     handler_id: create_new_zendesk_ticket
-    label: 'Create and resolve new Zendesk ticket'
-    notes: 'Creates a new Zendesk ticket as solved; used for self-reporting and resolution by contractors.'
+    label: 'Create Solved request'
+    notes: 'Creates a new Zendesk request as solved; used for self-reporting and resolution by contractors working in the field. Enabled if no ticket ID and resolution is not deferred.'
     status: true
     conditions:
       enabled:
         ':input[name="report_ticket_id"]':
           empty: true
-    weight: 0
+        ':input[name="resolution"]':
+          '!value': graffiti_deferred
+        ':input[name="support_agent_use_only[test_submission]"]':
+          unchecked: true
+    weight: -47
     settings:
       requester_name: resolution_contractor
       requester_email: contact_email
       subject: 'Graffiti Report'
-      comment: "<h2>Graffiti Report</h2>\r\n\r\n[webform_submission:values:ticket_description:html]\r\n\r\n<p><strong>The issue has been reported as resolved by the abatement contractor [webform_submission:values:resolution_contractor].</strong></p>\r\n\r\n<p>Resolution: [webform_submission:values:resolution]<br><br>\r\nNotes:<br>[webform_submission:values:resolution_notes]<br><br>\r\nSquare footage of abatement: [webform_submission:values:resolution_square_footage]<br><br>\r\nThis report will be automatically closed after 7 days.</p>"
+      comment: "<p><strong>The issue has been reported as resolved by [webform_submission:values:resolution_contractor] ([webform_submission:values:contact_email]).</strong></p>\r\n\r\n[webform_submission:values:request_description:html]\r\n"
       tags: 'drupal webform graffiti'
       priority: normal
       status: solved
@@ -445,7 +561,150 @@ handlers:
       assignee_id: '1505212728301'
       type: incident
       collaborators: ''
-      custom_fields: "6353388345367: 'report_graffiti'\r\n5581480390679: '[webform_submission:values:report_location:location_lat]'\r\n5581490332439: '[webform_submission:values:report_location:location_lon]'\r\n1500012743961: '[webform_submission:values:report_location:location_address]'\r\n1500013095781: '[webform_submission:uuid]'\r\n6355783758871: '[webform_submission:values:resolution_url]'\r\n6379451469847: '[webform_submission:values:waiver_url]'\r\n8197855908375: '[webform_submission:values:report_repeat_offender]'\r\n9205221816983: '[webform_submission:values:report_location:location_type:raw]'"
-      ticket_id_field: support_ticket_id
-      ticket_form_id: ''
+      custom_fields: "6353388345367: 'report_graffiti'\r\n5581480390679: '[webform_submission:values:report_location:location_lat]'\r\n5581490332439: '[webform_submission:values:report_location:location_lon]'\r\n1500012743961: '[webform_submission:values:report_location:location_address]'\r\n1500013095781: '[webform_submission:uuid]'\r\n6355783758871: '[webform_submission:values:resolution_url]'\r\n6379451469847: '[webform_submission:values:waiver_url]'\r\n9205221816983: '[webform_submission:values:report_location:location_type:raw]'\r\n10101857240855: '[webform_submission:values:resolution:raw]'\r\n10101859348375: '[webform_submission:values:resolution_square_footage]'\r\n10333166173079: '[webform_submission:values:report_above_ground_level]'\r\n10333167883159: '[webform_submission:values:report_graffiti_on_mural]'\r\n6586776052759: '[webform_submission:values:report_hate_speech_or_gang]'\r\n8197855908375: '[webform_submission:values:report_repeat_offender]'\r\n10074777716119: '10074777716119_solved_cleaned_by_contractor'\r\n10249202452887: '[webform_submission:values:resolution_contractor:raw]'\r\n10148668334871: '[webform_submission:values:resolution_ssl]'"
+      ticket_id_field: report_ticket_id
+      ticket_form_id: '6499767163543'
+  create_pending_request_in_zendesk_for_a_future_clean_:
+    id: zendesk
+    handler_id: create_pending_request_in_zendesk_for_a_future_clean_
+    label: 'Create Pending request'
+    notes: 'When contractors self-report graffiti for future abatement, this handler creates a request in Zendesk with a Pending status, and a work order is immediately sent to the contractor by Zendesk. Enabled if ticket ID is not filled and resolution is deferred.'
+    status: true
+    conditions:
+      enabled:
+        ':input[name="resolution"]':
+          value: graffiti_deferred
+        ':input[name="report_ticket_id"]':
+          empty: true
+        ':input[name="support_agent_use_only[test_submission]"]':
+          unchecked: true
+    weight: -45
+    settings:
+      requester_name: resolution_contractor
+      requester_email: contact_email
+      subject: 'Graffiti Report - logged for future abatement'
+      comment: '[webform_submission:values:request_description:html]'
+      tags: 'drupal webform'
+      priority: normal
+      status: pending
+      group_id: '8559017236631'
+      assignee_id: ''
+      type: incident
+      collaborators: ''
+      custom_fields: "6353388345367: 'report_graffiti'\r\n5581480390679: '[webform_submission:values:report_location:location_lat]'\r\n5581490332439: '[webform_submission:values:report_location:location_lon]'\r\n1500012743961: '[webform_submission:values:report_location:location_address]'\r\n1500013095781: '[webform_submission:uuid]'\r\n6355783758871: '[webform_submission:values:resolution_url]'\r\n6379451469847: '[webform_submission:values:waiver_url]'\r\n9205221816983: '[webform_submission:values:report_location:location_type:raw]'\r\n10101857240855: '[webform_submission:values:resolution:raw]'\r\n10074777716119: '10074777716119_pending_contractor_resolution'\r\n10333166173079: '[webform_submission:values:report_above_ground_level]'\r\n10333167883159: '[webform_submission:values:report_graffiti_on_mural]'\r\n6586776052759: '[webform_submission:values:report_hate_speech_or_gang]'\r\n8197855908375: '[webform_submission:values:report_repeat_offender]'\r\n10249202452887: '[webform_submission:values:resolution_contractor:raw]'\r\n10148668334871: '[webform_submission:values:resolution_ssl]'"
+      ticket_id_field: report_ticket_id
+      ticket_form_id: '6499767163543'
+  update_pending_future_clean_request_with_resolution_url_in_priva:
+    id: zendesk_update_ticket
+    handler_id: update_pending_future_clean_request_with_resolution_url_in_priva
+    label: 'Update Pending "future clean" request with resolution URL in private note'
+    notes: 'Enabled when the future clean resolution option is selected.'
+    status: true
+    conditions:
+      enabled:
+        ':input[name="resolution"]':
+          value: graffiti_deferred
+    weight: -43
+    settings:
+      comment: 'Resolution URL: <a href="https://[webform_submission:values:resolution_url][webform_submission:values:report_ticket_id]">https://[webform_submission:values:resolution_url][webform_submission:values:report_ticket_id]</a>'
+      comment_private: 1
+      tags: ''
+      priority: ''
+      status: ''
+      group_id: ''
+      assignee_id: ''
+      type: ''
+      collaborators: ''
+      custom_fields: "9205221816983: '[webform_submission:values:report_location:location_type:raw]'\r\n10101857240855: '[webform_submission:values:resolution:raw]'\r\n10074777716119: '10074777716119_pending_contractor_resolution'\r\n10333166173079: '[webform_submission:values:report_above_ground_level]'\r\n10333167883159: '[webform_submission:values:report_graffiti_on_mural]'\r\n6586776052759: '[webform_submission:values:report_hate_speech_or_gang]'\r\n8197855908375: '[webform_submission:values:report_repeat_offender]'\r\n10148668334871: '[webform_submission:values:resolution_ssl]'\r\n10249202452887: '[webform_submission:values:resolution_contractor:raw]'"
+      ticket_id_field: report_ticket_id
+      ticket_form_id: '6499767163543'
+  create_solved_request_in_zendesk_developer_test:
+    id: zendesk
+    handler_id: create_solved_request_in_zendesk_developer_test
+    label: 'Create Solved request - developer test'
+    notes: 'Creates a new Zendesk request as solved in the Developer Test Group'
+    status: true
+    conditions:
+      enabled:
+        ':input[name="report_ticket_id"]':
+          empty: true
+        ':input[name="resolution"]':
+          '!value': graffiti_deferred
+        ':input[name="support_agent_use_only[test_submission]"]':
+          checked: true
+    weight: -46
+    settings:
+      requester_name: resolution_contractor
+      requester_email: contact_email
+      subject: 'Graffiti Report'
+      comment: "<p><strong>The issue has been reported as resolved by [webform_submission:values:resolution_contractor] ([webform_submission:values:contact_email]).</strong></p>\r\n\r\n[webform_submission:values:request_description:html]\r\n"
+      tags: 'drupal webform graffiti'
+      priority: normal
+      status: solved
+      group_id: '4421577497495'
+      assignee_id: '1505212728301'
+      type: incident
+      collaborators: ''
+      custom_fields: "6353388345367: 'report_graffiti'\r\n5581480390679: '[webform_submission:values:report_location:location_lat]'\r\n5581490332439: '[webform_submission:values:report_location:location_lon]'\r\n1500012743961: '[webform_submission:values:report_location:location_address]'\r\n1500013095781: '[webform_submission:uuid]'\r\n6355783758871: '[webform_submission:values:resolution_url]'\r\n6379451469847: '[webform_submission:values:waiver_url]'\r\n9205221816983: '[webform_submission:values:report_location:location_type:raw]'\r\n10101857240855: '[webform_submission:values:resolution:raw]'\r\n10101859348375: '[webform_submission:values:resolution_square_footage]'\r\n10333166173079: '[webform_submission:values:report_above_ground_level]'\r\n10333167883159: '[webform_submission:values:report_graffiti_on_mural]'\r\n6586776052759: '[webform_submission:values:report_hate_speech_or_gang]'\r\n8197855908375: '[webform_submission:values:report_repeat_offender]'\r\n10074777716119: '10074777716119_solved_cleaned_by_contractor'\r\n10249202452887: '[webform_submission:values:resolution_contractor:raw]'\r\n10148668334871: '[webform_submission:values:resolution_ssl]'\r\n"
+      ticket_id_field: report_ticket_id
+      ticket_form_id: '6499767163543'
+  create_pending_request_in_zendesk_for_a_future_clean_developer_t:
+    id: zendesk
+    handler_id: create_pending_request_in_zendesk_for_a_future_clean_developer_t
+    label: 'Create Pending request - developer test'
+    notes: 'When contractors self-report graffiti for future abatement, this handler creates a request in Zendesk with a Pending status in the Developer Test Group.'
+    status: true
+    conditions:
+      enabled:
+        ':input[name="resolution"]':
+          value: graffiti_deferred
+        ':input[name="report_ticket_id"]':
+          empty: true
+        ':input[name="support_agent_use_only[test_submission]"]':
+          checked: true
+    weight: -44
+    settings:
+      requester_name: resolution_contractor
+      requester_email: contact_email
+      subject: 'Graffiti Report - logged for future abatement'
+      comment: '[webform_submission:values:request_description:html]'
+      tags: 'drupal webform'
+      priority: normal
+      status: pending
+      group_id: '4549352062487'
+      assignee_id: ''
+      type: incident
+      collaborators: ''
+      custom_fields: "6353388345367: 'report_graffiti'\r\n5581480390679: '[webform_submission:values:report_location:location_lat]'\r\n5581490332439: '[webform_submission:values:report_location:location_lon]'\r\n1500012743961: '[webform_submission:values:report_location:location_address]'\r\n1500013095781: '[webform_submission:uuid]'\r\n6355783758871: '[webform_submission:values:resolution_url]'\r\n6379451469847: '[webform_submission:values:waiver_url]'\r\n9205221816983: '[webform_submission:values:report_location:location_type:raw]'\r\n10101857240855: '[webform_submission:values:resolution:raw]'\r\n10074777716119: '10074777716119_pending_contractor_resolution'\r\n10333166173079: '[webform_submission:values:report_above_ground_level]'\r\n10333167883159: '[webform_submission:values:report_graffiti_on_mural]'\r\n6586776052759: '[webform_submission:values:report_hate_speech_or_gang]'\r\n8197855908375: '[webform_submission:values:report_repeat_offender]'\r\n10148668334871: '[webform_submission:values:resolution_ssl]'"
+      ticket_id_field: report_ticket_id
+      ticket_form_id: '6499767163543'
+  make_open_request_pending:
+    id: zendesk_update_ticket
+    handler_id: make_open_request_pending
+    label: 'Make open request pending'
+    notes: 'If contractor selects future clean option on an open request, this handler changes it to Pending. Enabled if ticket ID is filled and resolution is deferred.'
+    status: true
+    conditions:
+      enabled:
+        ':input[name="report_ticket_id"]':
+          filled: true
+        ':input[name="resolution"]':
+          value: graffiti_deferred
+    weight: -48
+    settings:
+      requester_name: ''
+      requester_email: ''
+      subject: ''
+      comment: "The issue has been marked for later cleaning by the abatement contractor.<br><br>\r\n\r\n[webform_submission:values:resolution_notes]"
+      tags: ''
+      priority: ''
+      status: pending
+      assignee_id: ''
+      type: ''
+      collaborators: ''
+      custom_fields: "10148668334871: '[webform_submission:values:resolution_ssl]'\r\n10074777716119: '10074777716119_pending_contractor_resolution'\r\n5581480390679: '[webform_submission:values:report_location:location_lat]'\r\n5581490332439: '[webform_submission:values:report_location:location_lon]'\r\n1500012743961: '[webform_submission:values:report_location:location_address]'\r\n9205221816983: '[webform_submission:values:report_location:location_type:raw]'\r\n10101857240855: '[webform_submission:values:resolution:raw]'\r\n10101859348375: '[webform_submission:values:resolution_square_footage]'\r\n10333166173079: '[webform_submission:values:report_above_ground_level]'\r\n10333167883159: '[webform_submission:values:report_graffiti_on_mural]'\r\n6586776052759: '[webform_submission:values:report_hate_speech_or_gang]'\r\n8197855908375: '[webform_submission:values:report_repeat_offender]'\r\n10249202452887: '[webform_submission:values:resolution_contractor:raw]'\r\n1500013095781: '[webform_submission:uuid]'\r\n6355783758871: '[webform_submission:values:resolution_url]'\r\n"
+      ticket_id_field: report_ticket_id
+      comment_private: 0
+      group_id: '8559017236631'
+      ticket_form_id: '6499767163543'
 variants: {  }
