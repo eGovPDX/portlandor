@@ -1,10 +1,4 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: Steven
- * Date: 2019-05-18
- * Time: 10:05 AM
- */
 
 namespace Drupal\portland_smartsheet\Plugin\WebformHandler;
 use Drupal\Core\Config\ConfigFactoryInterface;
@@ -19,6 +13,7 @@ use Drupal\webform\WebformTokenManagerInterface;
 use Drupal\Core\Serialization\Yaml;
 use Drupal\file\Entity\File;
 use Drupal\webform\Entity\Webform;
+use Drupal\webform\WebformMessageManagerInterface;
 use Drupal\webform\WebformSubmissionForm;
 use Drupal\portland_smartsheet\Client\SmartsheetClient;
 use Drupal\Component\Serialization\Json;
@@ -46,11 +41,19 @@ class SmartsheetHandler extends WebformHandlerBase {
   protected $token_manager;
 
   /**
+   * The webform message manager.
+   *
+   * @var \Drupal\webform\WebformMessageManagerInterface
+   */
+  protected $message_manager;
+
+  /**
    * {@inheritdoc}
    */
   public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition) {
     $instance = parent::create($container, $configuration, $plugin_id, $plugin_definition);
     $instance->token_manager = $container->get('webform.token_manager');
+    $instance->message_manager = $container->get('webform.message_manager');
     return $instance;
   }
 
@@ -172,6 +175,8 @@ class SmartsheetHandler extends WebformHandlerBase {
   }
 
   public function postSave(WebformSubmissionInterface $webform_submission, $update = TRUE) {
+    $this->message_manager->setWebformSubmission($webform_submission);
+
     $submission_fields = $webform_submission->toArray(TRUE);
     $submission_id = $submission_fields['sid'] !== '' ? $submission_fields['sid'] : $submission_fields['uuid'];
 
@@ -194,12 +199,16 @@ class SmartsheetHandler extends WebformHandlerBase {
       ]);
     } catch (\Exception $e) {
       // Log error message.
-      $this->getLogger()->error('@form webform submission to Smartsheet failed. @exception: @message.', [
+      $this->getLogger()->error('@form webform submission to Smartsheet (@handler_id) failed. @exception: @message.', [
         '@exception' => get_class($e),
         '@form' => $this->getWebform()->label(),
         '@message' => $e->getMessage(),
+        '@handler_id' => $this->getHandlerId(),
         'link' => $this->getWebform()->toLink($this->t('Edit'), 'handlers')->toString(),
       ]);
+
+      // Display error to user.
+      $this->message_manager->display(WebformMessageManagerInterface::SUBMISSION_EXCEPTION_MESSAGE, 'error');
     }
   }
 
