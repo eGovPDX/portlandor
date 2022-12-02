@@ -3,7 +3,11 @@ langcode: en
 status: open
 dependencies:
   module:
+    - portland
     - portland_smartsheet
+third_party_settings:
+  portland:
+    disable_demographic_form_prompt: 0
 weight: 0
 open: null
 close: null
@@ -15,11 +19,35 @@ title: 'Council Testimony Registration Form'
 description: ''
 category: ''
 elements: |-
+  markup_form_intro:
+    '#type': webform_markup
+    '#markup': |-
+      <p>Complete this form to provide testimony on agenda items during City Council meetings. Please call <a href="tel:311">311</a> if you need registration assistance.</p>
+
+      <p>Testimony is not taken on communications, second readings of ordinances, proclamations, or presentations in accordance with City Code 3.02.040 F. and G. To pull an item from the Consent Agenda for discussion, email your name and the agenda item number to <a href="mailto:councilclerk@portlandoregon.gov">councilclerk@portlandoregon.gov</a>.</p>
+
+      <p><strong>Written Testimony:</strong> If you would like to provide written testimony, please email it to <a href="mailto:cctestimony@portlandoregon.gov">cctestimony@portlandoregon.gov</a>. Your testimony will be shared with Council and included as part of the official record.</p>
+  contact_first_name:
+    '#type': textfield
+    '#title': 'First Name'
+    '#required': true
+  contact_last_name:
+    '#type': textfield
+    '#title': 'Last Name'
+    '#required': true
+  testimony_type:
+    '#type': radios
+    '#title': 'I will be joining the City Council meeting:'
+    '#options':
+      Virtually: Virtually
+      In-person: 'In-person at City Hall'
+    '#required': true
   agenda_item:
     '#type': webform_entity_select
     '#title': 'Agenda Item'
     '#description': 'Please select the agenda item on which you wish to testify.'
     '#description_display': before
+    '#prepopulate': true
     '#required': true
     '#format': raw
     '#target_type': relation
@@ -29,18 +57,16 @@ elements: |-
         view_name: reference_agenda_item
         display_name: entity_reference_1
         arguments: {  }
-  markup_location:
-    '#type': webform_markup
-    '#markup': |-
-      <strong>Location</strong><br />
-      Please indicate the general area/neighborhood where you live. You do not need to reveal your exact address.
   location:
     '#type': portland_location_picker
     '#title': Location
+    '#required': true
     '#location_type__access': false
     '#location_park_container__access': false
     '#location_private_owner__access': false
-    '#location_address__access': false
+    '#location_address__title': Location
+    '#location_address__description': 'Please indicate the general area/neighborhood where you live. You do not need to reveal your exact address.'
+    '#location_address__required': true
     '#suggestions_modal__access': false
     '#place_name__access': false
     '#location_details__access': false
@@ -50,18 +76,12 @@ elements: |-
     '#location_is_portland__access': false
     '#geojson_layer__access': false
     '#geojson_layer_behavior__access': false
-  section_contact:
-    '#type': webform_section
-    '#title': 'Your Contact Information'
-    contact_name:
-      '#type': textfield
-      '#title': Name
-      '#required': true
-    contact_email:
-      '#type': textfield
-      '#title': Email
-      '#input_mask': '''alias'': ''email'''
-      '#required': true
+  race_and_ethnicity:
+    '#type': checkboxes
+    '#title': 'Race and Ethnicity (Optional)'
+    '#description': 'The Auditor&#39;s Office promotes and fosters a culture of racial equity, diversity, and inclusion. Basic demographic information is used only to identify and address issues of equitable access. Please check all that apply:'
+    '#description_display': before
+    '#options': ethnicity
   computed_location_lat:
     '#type': webform_computed_twig
     '#title': 'Computed - Location Lat'
@@ -79,8 +99,8 @@ elements: |-
     '#title': 'Computed - Agenda Item'
     '#display_on': none
     '#mode': text
-    '#template': '{{ drupal_field(''field_agenda_item_number'', ''relation'', data.agenda_item ?? 0, { ''type'': ''basic_string'', ''label'': ''hidden'' })|render|striptags|trim }}'
-css: ''
+    '#template': '{{ webform_token(''[webform_submission:values:agenda_item:entity:field_agenda_item_number]'', webform_submission) }} - {{ webform_token(''[webform_submission:values:agenda_item:entity:field_council_document]'', webform_submission)|render|striptags }}'
+css: ".form-item-location-location-address .location-picker-address,\r\n.form-item-location-location-address .location-verify,\r\n.form-item-location-location-address .address {\r\n  display: none !important;\r\n}"
 javascript: ''
 settings:
   ajax: false
@@ -89,7 +109,7 @@ settings:
   ajax_effect: ''
   ajax_speed: null
   page: true
-  page_submit_path: ''
+  page_submit_path: /council/agenda/testimony-registration
   page_confirm_path: ''
   page_theme_name: ''
   form_title: both
@@ -182,13 +202,13 @@ settings:
   draft_loaded_message: ''
   draft_pending_single_message: ''
   draft_pending_multiple_message: ''
-  confirmation_type: page
+  confirmation_type: inline
   confirmation_url: ''
   confirmation_title: ''
-  confirmation_message: ''
+  confirmation_message: 'Thank you for registering to provide testimony on <strong>Agenda Item [webform_submission:values:agenda_item:entity:field_agenda_item_number]</strong> - [webform_submission:values:agenda_item:entity:field_council_document].'
   confirmation_attributes: {  }
-  confirmation_back: true
-  confirmation_back_label: ''
+  confirmation_back: false
+  confirmation_back_label: 'Back to agenda'
   confirmation_back_attributes: {  }
   confirmation_exclude_query: false
   confirmation_exclude_token: false
@@ -207,7 +227,7 @@ settings:
   entity_limit_user_interval: null
   purge: none
   purge_days: null
-  results_disabled: false
+  results_disabled: true
   results_disabled_ignore: false
   results_customize: false
   token_view: false
@@ -272,10 +292,12 @@ handlers:
     weight: 0
     settings:
       column_mappings:
-        6681077722965892: contact_name
-        4429277909280644: contact_email
+        6681077722965892: contact_first_name
+        4963020357035908: contact_last_name
+        4429277909280644: testimony_type
         8932877536651140: computed_agenda_item
         136784514443140: computed_location_lat
         4640384141813636: computed_location_lng
+        2711220543350660: race_and_ethnicity
       sheet_id: '4217323172194180'
 variants: {  }
