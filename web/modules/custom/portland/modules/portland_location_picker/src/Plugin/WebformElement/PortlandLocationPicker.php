@@ -37,33 +37,33 @@ class PortlandLocationPicker extends WebformCompositeBase {
     // needed, such as in a handler that is sending data to an external system, the sub-field needs to be
     // specified in the token, such as [webform_submission:values:location:place_name].
     $lines = [];
-    $lines[] = "<p>";
+    // $lines[] = "<p>";
     if (isset($value['location_type']) && $value['location_type']) {
-      $lines[] = 'Location type: ' . $value['location_type'] . '<br>';
+      $lines[] = '<strong>Location type:</strong> ' . $value['location_type'];
     }
     if (isset($value['location_private_owner']) && $value['location_private_owner']) {
-      $lines[] = 'Are you the owner? ' . $value['location_private_owner'] . '<br>';
+      $lines[] = '<strong>Are you the owner?</strong> ' . $value['location_private_owner'];
     }
     if (isset($value['place_name']) && $value['place_name']) {
-      $lines[] = 'Location name: ' . $value['place_name'] . '<br>';
+      $lines[] = '<strong>Location name:</strong> ' . $value['place_name'];
     }
     if (isset($value['location_address']) && $value['location_address']) {
-      $lines[] = 'Address: <a href="https://www.google.com/maps/place/' . $value['location_address'] . '">' . $value['location_address'] . '</a>';
+      $lines[] = '<strong>Address:</strong> <a href="https://www.google.com/maps/place/' . $value['location_address'] . '">' . $value['location_address'] . '</a>';
     }
     if (isset($value['location_lat']) && isset($value['location_lon']) && $value['location_lat']) {
       $latlon = $value['location_lat'] . ',' . $value['location_lon'];
-      $lines[] = 'Lat/lng: <a href="https://www.google.com/maps/place/' . $latlon . '">' . $latlon . '</a><br>';
+      $lines[] = '<strong>Lat/lng:</strong> <a href="https://www.google.com/maps/place/' . $latlon . '">' . $latlon . '</a>';
     }
     if (isset($value['location_details']) && $value['location_details']) {
-      $lines[] = 'Details: ' . $value['location_details'] . '<br>';
+      $lines[] = '<strong>Location Details:</strong> ' . $value['location_details'];
     }
     if (isset($value['location_asset_id']) && $value['location_asset_id']) {
-      $lines[] = 'Asset ID: ' . $value['location_asset_id'] . '<br>';
+      $lines[] = '<strong>Asset ID:</strong> ' . $value['location_asset_id'];
     }
     if (isset($value['location_region_id']) && $value['location_region_id']) {
-      $lines[] = 'Region ID: ' . $value['location_region_id'] . '<br>';
+      $lines[] = '<strong>Region ID:</strong> ' . $value['location_region_id'];
     }
-    $lines[] = "</p>";
+    // $lines[] = "</p>";
     return $lines;
   }
 

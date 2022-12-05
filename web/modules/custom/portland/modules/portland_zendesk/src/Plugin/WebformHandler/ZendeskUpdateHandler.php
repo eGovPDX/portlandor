@@ -487,6 +487,14 @@ class ZendeskUpdateHandler extends WebformHandlerBase
     $request['custom_fields'] = [];
     if($custom_fields) {
       foreach ($custom_fields as $key => $value) {
+        // KLUGE: this is a kludge to prevent querystring ampersands from being escaped in the resolution_url custom field,
+        // which prevents the URL from being usable in Zendesk emails, since it doesn't unescape them in triggers. For the
+        // Portland instance, the resolution_url field should always have this key, but other url custom fields may need
+        // to be added in the future.
+        if ($key == "6355783758871") {
+          $value = str_replace("&amp;", "&", $value);
+        } // END KLUGE
+
         $request['custom_fields'][] = [
           'id' => $key,
           'value' => $value
