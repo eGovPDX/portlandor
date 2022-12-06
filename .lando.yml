@@ -31,20 +31,21 @@ services:
         DRUSH_OPTIONS_URI: "https://portlandor.lndo.site"
   node:
     type: node:custom
-    globals:
-      yarn: latest
     overrides:
-      image: cimg/php:8.0-browsers
+      image: node:18
       environment:
         NODE_EXTRA_CA_CERTS: /app/cop_ca.pem
     build_as_root:
-      - /bin/sh -c "mkdir /home/node"
       - /bin/sh -c "chmod -R 777 /home/node"
     run_as_root:
       - /bin/sh -c "adduser www-data node"
       - /bin/sh -c "adduser www-data dialout"
       - /bin/sh -c "adduser node dialout"
       - /bin/sh -c "chmod -R 777 /var/www"
+    build:
+      - echo "Installing Node.js dependencies and building theme..."
+      - npm -C /app/web/themes/custom/cloudy install
+      - npm -C /app/web/themes/custom/cloudy run build
   solr:
     type: solr:8
     portforward: true
@@ -64,10 +65,10 @@ tooling:
     service: appserver
     cmd: "/app/vendor/bin/phpcbf --standard=Drupal"
     description: Automatically fix Drupal coding standards suggestions.
-  yarn:
-    description: CUSTOM Run yarn commands
+  npm:
+    description: CUSTOM Run npm commands within cloudy
     service: node
-    cmd: yarn --cwd /app/web/themes/custom/cloudy
+    cmd: npm -C /app/web/themes/custom/cloudy
   yarn-percy:
     description: CUSTOM Run yarn commands
     service: node
@@ -95,10 +96,6 @@ tooling:
     cmd:
       - appserver: drush uli > superAdmin_uli.log
       - node: npm run jest-sandbox
-  yarn-rebuild:
-    description: CUSTOM Install Cloudy dependencies, rebuild Cloudy theme including pattern labs files
-    service: node
-    cmd: "cd /app/web/themes/custom/cloudy && yarn install --ignore-engines --frozen-lockfile && yarn run build"
   node:
     description: CUSTOM Run node commands
     service: node
@@ -148,7 +145,8 @@ tooling:
       - appserver: echo "=====Timestamp===== Drupal Config Refresh Done, Starting Theme Rebuild"
       - appserver: date +"%T"
       - node: echo "Building theme asset files..."
-      - node: cd /app/web/themes/custom/cloudy && yarn install && yarn run build
+      - node: npm -C /app/web/themes/custom/cloudy install
+      - node: npm -C /app/web/themes/custom/cloudy run build
       - node: echo "=====Timestamp===== Theme Rebuild Done"
       - node: date +"%T"
   cupex:
@@ -183,8 +181,8 @@ tooling:
   reindex:
     description: CUSTOM Reindex the Solr searcher
     service: appserver
-    cmd: 
+    cmd:
       - echo "Reindexing the Solr server... (this might take several minutes; use 'lando reindex &' to run the command in the background)"
-      - drush --root=/app/web search-api:reset-tracker 
+      - drush --root=/app/web search-api:reset-tracker
       - drush --root=/app/web search-api:index > /dev/null 2>&1
       - echo "Done reindexing the Solr server."
