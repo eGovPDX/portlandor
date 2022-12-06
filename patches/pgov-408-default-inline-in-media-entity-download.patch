@@ -1,0 +1,34 @@
+diff --git a/src/Controller/DownloadController.php b/src/Controller/DownloadController.php
+index 6b7c0ce..639bafe 100644
+--- a/src/Controller/DownloadController.php
++++ b/src/Controller/DownloadController.php
+@@ -147,11 +147,11 @@ class DownloadController extends ControllerBase {
+       // $public parameter to make sure we don't change the headers.
+       $response = new BinaryFileResponse($uri, Response::HTTP_OK, $headers, $scheme !== 'private');
+       if (empty($headers['Content-Disposition'])) {
+-        if ($request_query->has(ResponseHeaderBag::DISPOSITION_INLINE)) {
+-          $disposition = ResponseHeaderBag::DISPOSITION_INLINE;
++        if ($request_query->has(ResponseHeaderBag::DISPOSITION_ATTACHMENT)) {
++          $disposition = ResponseHeaderBag::DISPOSITION_ATTACHMENT;
+         }
+         else {
+-          $disposition = ResponseHeaderBag::DISPOSITION_ATTACHMENT;
++          $disposition = ResponseHeaderBag::DISPOSITION_INLINE;
+         }
+         $response->setContentDisposition($disposition);
+       }
+diff --git a/src/Plugin/Field/FieldFormatter/DownloadLinkFieldFormatter.php b/src/Plugin/Field/FieldFormatter/DownloadLinkFieldFormatter.php
+index d40f636..fe28028 100644
+--- a/src/Plugin/Field/FieldFormatter/DownloadLinkFieldFormatter.php
++++ b/src/Plugin/Field/FieldFormatter/DownloadLinkFieldFormatter.php
+@@ -106,7 +106,9 @@ class DownloadLinkFieldFormatter extends LinkFormatter {
+       ];
+ 
+       // Add download variant.
+-      $url_options['query'][$settings['disposition']] = NULL;
++      if($settings['disposition'] != 'inline') {
++        $url_options['query'][$settings['disposition']] = NULL;
++      }
+       if ($settings['disposition'] == ResponseHeaderBag::DISPOSITION_INLINE) {
+         if (!empty($settings['target'])) {
+           // Link target only relevant for inline downloads (attachment

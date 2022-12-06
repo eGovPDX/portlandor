@@ -95,6 +95,9 @@ if (isset($_ENV['PANTHEON_ENVIRONMENT']) && php_sapi_name() != 'cli') {
 }
 
 // Override the SP Entity ID value for each environment
+if(empty($primary_domain)) {
+  $primary_domain = "portlandor.lndo.site";
+}
 $config['samlauth.authentication']['sp_entity_id'] = $primary_domain;
 
 // Enable/disable config_split configurations based on the current environment
