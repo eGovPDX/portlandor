@@ -2,7 +2,7 @@ const puppeteer = require('puppeteer')
 var fs = require('fs');
 
 const SITE_NAME = process.env.SITE_NAME;
-const HOME_PAGE = (SITE_NAME) ? `https://${SITE_NAME}-portlandor.pantheonsite.io` : 'https://portlandor.lndo.site';
+const HOME_PAGE = (SITE_NAME) ? `https://sandbox.portland.gov` : 'https://portlandor.lndo.site';
 const ARTIFACTS_FOLDER = (SITE_NAME) ? `/home/circleci/artifacts/` : `./`;
 
 var BROWSER_OPTION = {
@@ -20,7 +20,7 @@ describe('SuperAdmin user test', () => {
 
     if (process.env.CIRCLECI) {
       // On CI, the CI script will call terminus to retrieve login URL
-      login_url = process.env.KEVIN_LOGIN;
+      login_url = process.env.SUPERADMIN_LOGIN;
       await page.goto(login_url);
     }
     else {
