@@ -49,8 +49,7 @@ class ExcludeEntity extends ProcessorPluginBase {
       // on the entity before fetching the value to avoid
       // InvalidArgumentException exceptions.
       if ($object !== null && $object->hasField('field_do_not_index')) {
-        $value = $object->get('field_do_not_index')->getValue();
-        if ($value[0]['value']) {
+        if ($object->field_do_not_index->value) {
           unset($items[$item_id]);
           continue;
         }
