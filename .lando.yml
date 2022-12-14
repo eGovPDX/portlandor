@@ -139,6 +139,14 @@ tooling:
       - appserver: echo "Run drush cim -y..."
       - appserver: drush cim -y
       - appserver: date +"%T"
+      - appserver: echo "Import interface translations..."
+      - appserver: drush locale:check > /dev/null
+      - appserver: drush locale:update > /dev/null
+      - appserver: drush locale:import es ../translations/custom-translations.es.po --type=customized --override=all 2> /dev/null
+      - appserver: drush locale:import ru ../translations/custom-translations.ru.po --type=customized --override=all 2> /dev/null
+      - appserver: drush locale:import vi ../translations/custom-translations.vi.po --type=customized --override=all 2> /dev/null
+      - appserver: drush locale:import zh-hans ../translations/custom-translations.zh-hans.po --type=customized --override=all 2> /dev/null
+      - appserver: date +"%T"
       - appserver: echo "Clearing cache..."
       - appserver: drush cr -y
       - appserver: date +"%T"
@@ -187,10 +195,21 @@ tooling:
       - drush --root=/app/web search-api:index > /dev/null 2>&1
       - echo "Done reindexing the Solr server."
   update-core:
-    description: Updates Drupal core to latest version
+    description: CUSTOM Updates Drupal core to latest version
     cmd:
       - appserver: composer update "drupal/core-*" --with-all-dependencies
       - appserver: drush cr -y
       - appserver: drush updb -y
       - appserver: drush cex -y
       - appserver: drush cr -y
+  update-interface-translations:
+    description: CUSTOM Downloads and imports updated interface translations for core, contributed modules, and custom modules. Exports customized translations.
+    cmd:
+      - appserver: drush cset locale.settings translation.use_source remote_and_local -y
+      - appserver: drush locale:check
+      - appserver: drush locale:update
+      - appserver: drush locale:export es --types=customized > translations/custom-translations.es.po
+      - appserver: drush locale:export ru --types=customized > translations/custom-translations.ru.po
+      - appserver: drush locale:export vi --types=customized > translations/custom-translations.vi.po
+      - appserver: drush locale:export zh-hans --types=customized > translations/custom-translations.zh-hans.po
+      - appserver: drush cset locale.settings translation.use_source local -y
