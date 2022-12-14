@@ -1414,3 +1414,20 @@ function portland_webform_third_party_settings_form_alter(&$form, FormStateInter
     '#default_value' => $webform->getThirdPartySetting('portland', 'disable_demographic_form_prompt'),
   ];
 }
+
+/**
+ * Implement hook_ENTITY_TYPE_presave
+ */
+function portland_user_presave(Drupal\Core\Entity\EntityInterface $entity) {
+  if($entity->bundle() != 'user') return;
+
+  // The user name from ADFS is "LAST, FIRST". Convert into "FIRST LAST"
+  $username = $entity->name->value;
+  $first_comma_pos = strpos($username, ',');
+  if($first_comma_pos !== false) {
+    $last_name = trim(substr($username, 0, $first_comma_pos));
+    $first_name = trim(substr($username, $first_comma_pos + 1, strlen($username) -  $first_comma_pos + 1));
+    $new_username = $first_name . ' ' . $last_name;
+    $entity->name->value = $new_username;
+  }
+}
