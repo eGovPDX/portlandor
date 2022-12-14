@@ -1421,13 +1421,21 @@ function portland_webform_third_party_settings_form_alter(&$form, FormStateInter
 function portland_user_presave(Drupal\Core\Entity\EntityInterface $entity) {
   if($entity->bundle() != 'user') return;
 
-  // The user name from ADFS is "LAST, FIRST". Convert into "FIRST LAST"
+  // Convert name in email address into "FIRST LAST"
   $username = $entity->name->value;
-  $first_comma_pos = strpos($username, ',');
-  if($first_comma_pos !== false) {
-    $last_name = trim(substr($username, 0, $first_comma_pos));
-    $first_name = trim(substr($username, $first_comma_pos + 1, strlen($username) -  $first_comma_pos + 1));
-    $new_username = $first_name . ' ' . $last_name;
+  $first_at_pos = strpos($username, '@');
+  // Only convert if the user name is an email address
+  if($first_at_pos !== false) {
+    $username = substr($username, 0, $first_at_pos);
+    $parts = explode('.', $username);
+    $parts_count = count($parts);
+    // If there is no '.', use the email name as user name
+    if($parts_count === 0) {
+      $new_username = $username;
+    }
+    else {
+      $new_username = $parts[0] . ' ' . $parts[$parts_count - 1];
+    }
     $entity->name->value = $new_username;
   }
 }
