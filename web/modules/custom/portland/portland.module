@@ -1416,30 +1416,8 @@ function portland_webform_third_party_settings_form_alter(&$form, FormStateInter
 }
 
 /**
- * Implement hook_ENTITY_TYPE_presave
+ * Implement hook_user_format_name_alter
  */
-function portland_user_presave(Drupal\Core\Entity\EntityInterface $entity) {
-  if($entity->bundle() != 'user') return;
-
-  // Convert name in email address into "FIRST LAST"
-  $username = $entity->name->value;
-  $first_at_pos = strpos($username, '@');
-  // Only convert if the user name is an email address
-  if($first_at_pos !== false) {
-    $username = substr($username, 0, $first_at_pos);
-    $parts = explode('.', $username);
-    $parts_count = count($parts);
-    // If there is no '.', use the email name as user name
-    if($parts_count === 0) {
-      $new_username = $username;
-    }
-    else {
-      $new_username = $parts[0] . ' ' . $parts[$parts_count - 1];
-    }
-    $entity->name->value = $new_username;
-  }
-}
-
 function portland_user_format_name_alter(&$name, $account) {
   $account = \Drupal\user\Entity\User::load($account->id());
   $username = $account->name->value;
