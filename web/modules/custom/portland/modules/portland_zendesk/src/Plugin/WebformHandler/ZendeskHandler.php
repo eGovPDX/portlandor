@@ -22,7 +22,6 @@ use Drupal\file\Entity\File;
 use Drupal\portland_zendesk\Utils\Utility;
 use Drupal\webform\Entity\Webform;
 use Drupal\webform\WebformSubmissionForm;
-use Drupal\Component\Render\PlainTextOutput;
 
 
 /**
@@ -518,10 +517,6 @@ class ZendeskHandler extends WebformHandlerBase
           $value = str_replace("&#039;", '\'', $value);
         } // END KLUGE
 
-        if ($key == "6355783758871") {
-          $test = "stop here";
-        }
-        
         $request['custom_fields'][] = [
           'id' => $key,
           'value' => $value
