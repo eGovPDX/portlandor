@@ -514,8 +514,9 @@ class ZendeskHandler extends WebformHandlerBase
         // to be added in the future.
         if ($key == "6355783758871") {
           $value = str_replace("&amp;", "&", $value);
+          $value = str_replace("&#039;", '\'', $value);
         } // END KLUGE
-        
+
         $request['custom_fields'][] = [
           'id' => $key,
           'value' => $value
