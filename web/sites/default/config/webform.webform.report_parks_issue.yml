@@ -21,10 +21,12 @@ title: 'Report a Parks Maintenance or Safety Issue'
 description: ''
 category: Report
 elements: |-
-  section_report:
+  section_public:
     '#type': webform_section
-    '#title': Report
+    '#title': Public
     '#title_display': invisible
+    '#access_create_roles':
+      - anonymous
     report_urgent:
       '#type': radios
       '#title': 'Is this an urgent issue?'
@@ -245,99 +247,161 @@ elements: |-
           '#file_name': 'report_[webform_submission:sid]'
           '#sanitize': true
           '#attachment_image_style': max_1024w
-    container_submit:
-      '#type': container
+      container_submit:
+        '#type': container
+        '#states':
+          visible:
+            ':input[name="report_is_park"]':
+              value: 'Park or natural area'
+        section_contact:
+          '#type': webform_section
+          '#title': 'Your Contact Information'
+          contact_name:
+            '#type': textfield
+            '#title': Name
+          contact_email:
+            '#type': textfield
+            '#title': Email
+            '#description': 'We will use your email to respond to your feedback or request.'
+            '#input_mask': '''alias'': ''email'''
+            '#required': true
+        section_public_records_statement:
+          '#type': webform_section
+          '#title': 'Public Records Statement'
+          public_records_statement_standard:
+            '#type': webform_markup
+            '#markup': 'Information you provide to the City is a public record and may be subject to release under Oregon&rsquo;s <a data-renderer-mark="true" href="https://www.doj.state.or.us/oregon-department-of-justice/public-records/attorney-generals-public-records-and-meetings-manual/i-public-records/#:~:text=Under%20Oregon''s%20Public%20Records%20Law,committee%20of%20the%20Legislative%20Assembly" title="https://www.doj.state.or.us/oregon-department-of-justice/public-records/attorney-generals-public-records-and-meetings-manual/i-public-records/#:~:text=Under%20Oregon''s%20Public%20Records%20Law,committee%20of%20the%20Legislative%20Assembly">Public Records Law</a>. This law classifies certain information as available to the public on request. See our <a data-renderer-mark="true" href="/help/about/privacy" title="https://www.portland.gov/help/about/privacy">privacy statement</a> for more information.'
+          actions:
+            '#type': webform_actions
+            '#title': 'Submit button(s)'
+  section_dispatch:
+    '#type': webform_section
+    '#title': Dispatch
+    '#title_display': invisible
+    '#access_create_roles':
+      - support_agent
+      - administrator
+    markup_dispatch:
+      '#type': webform_markup
+      '#markup': '<strong>You are viewing the form as an employee.</strong>'
+    dispatch_issue_type:
+      '#type': webform_radios_other
+      '#title': 'What type of issue are you reporting?'
+      '#options':
+        'Urgent fire or medical issue': 'Urgent fire or medical issue'
+        'llegal activity': 'llegal activity'
+        'Alarm going off (either audible or visual)': 'Alarm going off (either audible or visual)'
+        Camping: Camping
+        'Park rule violation': 'Park rule violation'
+        'Dog or animal related issue': 'Dog or animal related issue'
+        'Maintenance issue': 'Maintenance issue'
+        'Parking or traffic issue': 'Parking or traffic issue'
+        'Someone is locked in/out of a facility or needs an escort': 'Someone is locked in/out of a facility or needs an escort'
+        'Lost/Found property': 'Lost/Found property'
+      '#other__option_label': Other
+      '#required': true
+    dispatch_danger:
+      '#type': radios
+      '#title': 'Is someone in danger? Or is there an active threat to someone’s life or property?'
+      '#options': yes_no
+    dispatch_fire_medical_type:
+      '#type': webform_radios_other
+      '#title': 'Type of fire or medical issue'
+      '#options':
+        'Medical assistance needed': 'Medical assistance needed'
+        Fires/fireworks: Fires/fireworks
+        'Threatening behavior, weapon involved': 'Threatening behavior, weapon involved'
+        'Missing-separated person': 'Missing-separated person'
+        'Wellness check': 'Wellness check '
+        'Harassment or Bias': 'Harassment or Bias'
+        'Fire alarm going off': 'Fire alarm going off'
+      '#other__option_label': Other
+    dispatch_alarm_type:
+      '#type': radios
+      '#title': 'Type of alarm'
+      '#options':
+        'Building - fire alarm': 'Building - fire alarm'
+        'Building - security alarm': 'Building - security alarm'
+        'Building - other type of alarm (e.g. door held open)': 'Building - other type of alarm (e.g. door held open)'
+        'Service box (pump box, electrical box)': 'Service box (pump box, electrical box)'
+    dispatch_policy_violation_type:
+      '#type': webform_radios_other
+      '#title': 'Type of policy violation or issue'
+      '#options':
+        Skateboard-Scooters: Skateboard-Scooters
+        'Permit issues (picnic, events, field reservations)': 'Permit issues (picnic, events, field reservations)'
+        Smoking: Smoking
+        'Drugs or Alcohol use': 'Drugs or Alcohol use'
+        Noise: Noise
+        'Trash / Illegal dumping': 'Trash / Illegal dumping'
+      '#other__option_label': Other
+    dispatch_animal_issue_type:
+      '#type': webform_radios_other
+      '#title': 'Type of dog or animal issue'
+      '#options':
+        'Dog off-leash': 'Dog off-leash'
+        'Aggressive dog/animal': 'Aggressive dog/animal'
+        'Deceased/dying animal': 'Deceased/dying animal'
+        'Animal in vehicle': 'Animal in vehicle'
+      '#other__option_label': Other
+    dispatch_parking_traffic_type:
+      '#type': webform_radios_other
+      '#title': 'Type of parking or traffic issue'
+      '#options':
+        'Parking meters': 'Parking meters'
+        'Traffic issues': 'Traffic issues'
+        'Abandoned vehicle': 'Abandoned vehicle'
+        'Illegally parked vehicle': 'Illegally parked vehicle'
+      '#other__option_label': Other
+    dispatch_issue_description:
+      '#type': textarea
+      '#title': 'Description of issue'
+      '#required': true
+    dispatch_issue_location:
+      '#type': portland_location_picker
+      '#title': 'Location of issue'
+      '#location_type__access': false
+      '#location_private_owner__access': false
+      '#place_name__access': false
+      '#location_details__access': false
+      '#location_asset_id__access': false
+      '#location_region_id__access': false
+      '#location_municipality_name__access': false
+      '#location_is_portland__access': false
+    dispatch_issue_happening_now:
+      '#type': radios
+      '#title': 'Is the issue or problem happening now?'
+      '#options': yes_no
+    dispatch_issue_date:
+      '#type': datetime
+      '#title': 'When did the issue happen?'
       '#states':
         visible:
-          ':input[name="report_is_park"]':
-            value: 'Park or natural area'
-      section_contact:
-        '#type': webform_section
-        '#title': 'Your Contact Information'
-        contact_name:
-          '#type': textfield
-          '#title': Name
-        contact_email:
-          '#type': textfield
-          '#title': Email
-          '#description': 'We will use your email to respond to your feedback or request.'
-          '#input_mask': '''alias'': ''email'''
-          '#required': true
-      section_public_records_statement:
-        '#type': webform_section
-        '#title': 'Public Records Statement'
-        public_records_statement_standard:
-          '#type': webform_markup
-          '#markup': 'Information you provide to the City is a public record and may be subject to release under Oregon&rsquo;s <a data-renderer-mark="true" href="https://www.doj.state.or.us/oregon-department-of-justice/public-records/attorney-generals-public-records-and-meetings-manual/i-public-records/#:~:text=Under%20Oregon''s%20Public%20Records%20Law,committee%20of%20the%20Legislative%20Assembly" title="https://www.doj.state.or.us/oregon-department-of-justice/public-records/attorney-generals-public-records-and-meetings-manual/i-public-records/#:~:text=Under%20Oregon''s%20Public%20Records%20Law,committee%20of%20the%20Legislative%20Assembly">Public Records Law</a>. This law classifies certain information as available to the public on request. See our <a data-renderer-mark="true" href="/help/about/privacy" title="https://www.portland.gov/help/about/privacy">privacy statement</a> for more information.'
-      section_agent_use_only:
-        '#type': webform_section
-        '#title': 'Agent Use Only'
-        '#attributes':
-          style: 'padding: 15px; background-color: #cccccc;'
-        '#access_create_roles':
-          - administrator
-          - support_agent
-        '#access_update_roles':
-          - administrator
-          - support_agent
-        '#access_view_roles':
-          - administrator
-          - support_agent
-        agent_email:
-          '#type': textfield
-          '#title': 'Agent Email'
-          '#default_value': '[current-user:display-name] <[current-user:mail]>'
-          '#access_create_roles':
-            - administrator
-            - support_agent
-          '#access_update_roles':
-            - administrator
-            - support_agent
-          '#access_view_roles':
-            - administrator
-            - support_agent
-        agent_ticket_number:
-          '#type': number
-          '#title': 'Ticket Number'
-          '#min': 1000
-          '#max': 999999999
-        agent_action_taken:
-          '#type': radios
-          '#title': 'Action Taken'
-          '#options': action_taken
-          '#options_display': side_by_side
-          '#states':
-            invisible:
-              ':input[name="agent_ticket_number"]':
-                filled: true
-        agent_contact_type:
-          '#type': radios
-          '#title': 'Contact Type'
-          '#options': contact_type
-          '#options_display': side_by_side
-          '#states':
-            invisible:
-              ':input[name="agent_ticket_number"]':
-                filled: true
-        agent_ticket_type:
-          '#type': radios
-          '#title': 'Ticket Type'
-          '#options': ticket_type
-          '#options_display': side_by_side
-        agent_summary:
-          '#type': webform_computed_twig
-          '#title': 'Agent Summary'
-          '#display_on': none
-          '#template': |-
-            {% if uid %}<p>Agent Email: {{ data.agent_email }}</p>{% endif %}
-            {% if data.agent_ticket_number %}<p>Ticket Number: {{ data.agent_ticket_number }}</p>{% endif %}
-            {% if data.agent_action_taken %}<p>Action Taken: {{ data.agent_action_taken }}</p>{% endif %}
-            <p>Contact Type: {% if data.agent_contact_type %}{{ data.agent_contact_type }}{% else %}Webform{% endif %}</p>
-            <p>Ticket Type: {{ data.agent_ticket_type }}</p>
-          '#store': true
-      actions:
-        '#type': webform_actions
-        '#title': 'Submit button(s)'
+          ':input[name="dispatch_issue_happening_now"]':
+            value: 'No'
+      '#date_date_element': datetime-local
+      '#date_year_range': ''
+    dispatch_person_description:
+      '#type': textarea
+      '#title': 'Description of person creating issue, if known.'
+    section_dispatch_reporter_contact_info:
+      '#type': webform_section
+      '#title': 'Contact info for reporting party'
+      dispatch_reporter_name:
+        '#type': textfield
+        '#title': Name
+      dispatch_reporter_email:
+        '#type': textfield
+        '#title': Email
+        '#input_mask': '''alias'': ''email'''
+        '#required': true
+      dispatch_reporter_phone:
+        '#type': textfield
+        '#title': Phone
+        '#input_mask': '(999) 999-9999'
+  actions2:
+    '#type': webform_actions
+    '#title': 'Submit button(s)'
 css: ''
 javascript: ''
 settings:
@@ -475,6 +539,7 @@ settings:
 access:
   create:
     roles:
+      - anonymous
       - authenticated
     users: {  }
     permissions: {  }
