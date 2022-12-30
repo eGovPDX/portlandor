@@ -91,6 +91,24 @@ elements: |-
           '#location_private_owner__access': false
           '#location_address__access': false
           '#place_name__access': false
+        report_issue:
+          '#type': webform_radios_other
+          '#title': 'What is the issue?'
+          '#options':
+            'Something is missing, broken or needs repair': 'Something is missing, broken or needs repair'
+            'There is graffiti or tagging': 'There is graffiti or tagging'
+            'There is trash or it needs to be cleaned': 'There is trash or it needs to be cleaned'
+            'There are user conflicts or safety concerns': 'There are user conflicts or safety concerns'
+          '#other__option_label': 'Something else...'
+          '#other__placeholder': 'Please describe'
+          '#required': true
+        report_safety_access_concern:
+          '#type': textarea
+          '#title': 'What are the conflicts / concerns?'
+          '#states':
+            visible:
+              ':input[name="report_issue[radios]"]':
+                value: 'There are user conflicts or safety concerns'
         report_what_needs_attention:
           '#type': radios
           '#title': 'What physical "thing" needs attention?'
@@ -103,6 +121,10 @@ elements: |-
             'Unpaved trail, soft-surface path or beach': 'Unpaved trail, soft-surface path or beach'
             'Water feature, pools, splash pads and decorative fountains': 'Water feature, pools, splash pads and decorative fountains'
           '#required': true
+          '#states':
+            invisible:
+              ':input[name="report_issue[radios]"]':
+                value: 'There are user conflicts or safety concerns'
         report_basic_amenity:
           '#type': webform_radios_other
           '#title': 'Please choose from the following'
@@ -219,17 +241,6 @@ elements: |-
               ':input[name="report_what_needs_attention"]':
                 value: 'Water feature, pools, splash pads and decorative fountains'
           '#required': true
-        report_issue:
-          '#type': webform_radios_other
-          '#title': 'What is the issue?'
-          '#options':
-            'Something is missing, broken or needs repair': 'Something is missing, broken or needs repair'
-            'There is graffiti or tagging': 'There is graffiti or tagging'
-            'There is trash or it needs to be cleaned': 'There is trash or it needs to be cleaned'
-            'There are user conflicts or safety concerns': 'There are user conflicts or safety concerns'
-          '#other__option_label': 'Something else...'
-          '#other__placeholder': 'Please describe'
-          '#required': true
         report_ada_issue:
           '#type': radios
           '#title': 'Is there an ADA component? Is this preventing access?'
@@ -300,10 +311,38 @@ elements: |-
         'Lost/Found property': 'Lost/Found property'
       '#other__option_label': Other
       '#required': true
+    markup_urgent:
+      '#type': webform_markup
+      '#states':
+        visible:
+          ':input[name="dispatch_issue_type[radios]"]':
+            value: 'Urgent fire or medical issue'
+      '#markup': |-
+        <div class="alert alert--warning next-steps">
+        <h2>Urgent fire or medical issue</h2>
+
+        <p>Ask what&rsquo;s happening &amp; which park location, instruct caller to hang up and dial 9-1-1. Radio rangers with location.</p>
+        </div>
     dispatch_danger:
       '#type': radios
       '#title': 'Is someone in danger? Or is there an active threat to someone’s life or property?'
       '#options': yes_no
+      '#states':
+        visible:
+          - ':input[name="dispatch_issue_type[radios]"]':
+              value: 'llegal activity'
+          - or
+          - ':input[name="dispatch_issue_type[radios]"]':
+              value: 'Urgent fire or medical issue'
+          - or
+          - ':input[name="dispatch_issue_type[radios]"]':
+              value: 'Alarm going off (either audible or visual)'
+          - or
+          - ':input[name="dispatch_issue_type[radios]"]':
+              value: 'Dog or animal related issue'
+          - or
+          - ':input[name="dispatch_issue_type[radios]"]':
+              value: 'Someone is locked in/out of a facility or needs an escort'
     dispatch_fire_medical_type:
       '#type': webform_radios_other
       '#title': 'Type of fire or medical issue'
@@ -316,6 +355,26 @@ elements: |-
         'Harassment or Bias': 'Harassment or Bias'
         'Fire alarm going off': 'Fire alarm going off'
       '#other__option_label': Other
+      '#states':
+        visible:
+          ':input[name="dispatch_issue_type[radios]"]':
+            value: 'Urgent fire or medical issue'
+    dispatch_illegal_activity_type:
+      '#type': webform_radios_other
+      '#title': 'Type of illegal activity'
+      '#options':
+        'Disorderly conduct or nuisance behavior (no threats/weapons)': 'Disorderly conduct or nuisance behavior (no threats/weapons)'
+        'Crimes/PPB issues': 'Crimes/PPB issues'
+        Fires/fireworks: Fires/fireworks
+        'Vehicle break-in or damage': 'Vehicle break-in or damage'
+        'Trespassing - Park Closed': 'Trespassing - Park Closed'
+        'Damage or Vandalism': 'Damage or Vandalism'
+        Graffiti: Graffiti
+      '#other__option_label': Other
+      '#states':
+        visible:
+          ':input[name="dispatch_issue_type[radios]"]':
+            value: 'llegal activity'
     dispatch_alarm_type:
       '#type': radios
       '#title': 'Type of alarm'
@@ -324,6 +383,10 @@ elements: |-
         'Building - security alarm': 'Building - security alarm'
         'Building - other type of alarm (e.g. door held open)': 'Building - other type of alarm (e.g. door held open)'
         'Service box (pump box, electrical box)': 'Service box (pump box, electrical box)'
+      '#states':
+        visible:
+          ':input[name="dispatch_issue_type[radios]"]':
+            value: 'Alarm going off (either audible or visual)'
     dispatch_policy_violation_type:
       '#type': webform_radios_other
       '#title': 'Type of policy violation or issue'
@@ -335,6 +398,10 @@ elements: |-
         Noise: Noise
         'Trash / Illegal dumping': 'Trash / Illegal dumping'
       '#other__option_label': Other
+      '#states':
+        visible:
+          ':input[name="dispatch_issue_type[radios]"]':
+            value: 'Park rule violation'
     dispatch_animal_issue_type:
       '#type': webform_radios_other
       '#title': 'Type of dog or animal issue'
@@ -344,6 +411,10 @@ elements: |-
         'Deceased/dying animal': 'Deceased/dying animal'
         'Animal in vehicle': 'Animal in vehicle'
       '#other__option_label': Other
+      '#states':
+        visible:
+          ':input[name="dispatch_issue_type[radios]"]':
+            value: 'Dog or animal related issue'
     dispatch_parking_traffic_type:
       '#type': webform_radios_other
       '#title': 'Type of parking or traffic issue'
@@ -353,6 +424,10 @@ elements: |-
         'Abandoned vehicle': 'Abandoned vehicle'
         'Illegally parked vehicle': 'Illegally parked vehicle'
       '#other__option_label': Other
+      '#states':
+        visible:
+          ':input[name="dispatch_issue_type[radios]"]':
+            value: 'Parking or traffic issue'
     dispatch_issue_description:
       '#type': textarea
       '#title': 'Description of issue'
@@ -394,7 +469,6 @@ elements: |-
         '#type': textfield
         '#title': Email
         '#input_mask': '''alias'': ''email'''
-        '#required': true
       dispatch_reporter_phone:
         '#type': textfield
         '#title': Phone
@@ -599,42 +673,5 @@ access:
     roles: {  }
     users: {  }
     permissions: {  }
-handlers:
-  submit_to_zendesk:
-    id: email
-    handler_id: submit_to_zendesk
-    label: 'Submit to Zendesk'
-    notes: ''
-    status: false
-    conditions: {  }
-    weight: 0
-    settings:
-      states:
-        - completed
-      to_mail: 311@portlandoregon.gov
-      to_options: {  }
-      bcc_mail: ''
-      bcc_options: {  }
-      cc_mail: ''
-      cc_options: {  }
-      from_mail: '[webform_submission:values:contact_email:raw]'
-      from_options: {  }
-      from_name: '[webform_submission:values:contact_name:raw]'
-      reply_to: ''
-      return_path: ''
-      sender_mail: ''
-      sender_name: ''
-      subject: _default
-      body: "&nbsp;<br />\r\nSubmitted on [webform_submission:created]<br />\r\n<br />\r\nSubmitted by: [webform_submission:user]<br />\r\n<br />\r\n[webform_submission:values]<br />\r\n<br />\r\n<strong>Agent Use Only:</strong><br />\r\n<br />\r\n[webform_submission:values:agent_summary]<br />\r\n&nbsp;"
-      excluded_elements: {  }
-      ignore_access: false
-      exclude_empty: true
-      exclude_empty_checkbox: false
-      exclude_attachments: false
-      html: true
-      attachments: false
-      twig: false
-      theme_name: ''
-      parameters: {  }
-      debug: false
+handlers: {  }
 variants: {  }
