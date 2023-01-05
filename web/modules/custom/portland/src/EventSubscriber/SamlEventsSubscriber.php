@@ -32,9 +32,11 @@ class SamlEventsSubscriber implements EventSubscriberInterface {
    */
   public function on_user_sync(SamlauthUserSyncEvent $event) {
     $user = $event->getAccount();
+    $attributes = $event->getAttributes();
+
     // Update the user's full name before saving
-    $first_name = $user->field_first_name->value;
-    $last_name = $user->field_last_name->value;
+    $first_name = $attributes['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/givenname'][0];
+    $last_name = $attributes['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/surname'][0];
     if( !empty($first_name) && !empty($last_name)) {
       $user->field_full_name->value = $first_name . ' ' . $last_name;
     }
