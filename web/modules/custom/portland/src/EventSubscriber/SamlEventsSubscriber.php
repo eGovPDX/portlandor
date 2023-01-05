@@ -31,10 +31,15 @@ class SamlEventsSubscriber implements EventSubscriberInterface {
    * @param Drupal\feeds\Event\SamlauthUserSyncEvent $event
    */
   public function on_user_sync(SamlauthUserSyncEvent $event) {
-    $user = $event->getAccount();
     $attributes = $event->getAttributes();
+    // If the attribute names are missing, skip this step
+    if( !isset($attributes['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/givenname']) ||
+      !isset($attributes['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/givenname']) ) {
+      return;
+    }
 
     // Update the user's full name before saving
+    $user = $event->getAccount();
     $first_name = $attributes['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/givenname'][0];
     $last_name = $attributes['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/surname'][0];
     if( !empty($first_name) && !empty($last_name)) {
