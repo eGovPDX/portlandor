@@ -34,16 +34,18 @@ class SamlEventsSubscriber implements EventSubscriberInterface {
     $user = $event->getAccount();
     $attributes = $event->getAttributes();
 
+    \Drupal::logger('user')->warning(print_r($user));
+    \Drupal::logger('user')->warning(print_r($attributes));
     // Update the user's full name before saving
     $first_name = $attributes['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/givenname'][0];
     $last_name = $attributes['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/surname'][0];
     if( !empty($first_name) && !empty($last_name)) {
       $user->field_full_name->value = $first_name . ' ' . $last_name;
     }
-    else if( !empty($first_name)) {
+    elseif( !empty($first_name)) {
       $user->field_full_name->value = $first_name;
     }
-    else if( !empty($last_name)) {
+    elseif( !empty($last_name)) {
       $user->field_full_name->value = $last_name;
     }
   }
