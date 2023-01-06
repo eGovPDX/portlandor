@@ -34,7 +34,7 @@ class SamlEventsSubscriber implements EventSubscriberInterface {
     $attributes = $event->getAttributes();
     // If the attribute names are missing, skip this step
     if( !isset($attributes['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/givenname']) ||
-      !isset($attributes['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/givenname']) ) {
+      !isset($attributes['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/surname']) ) {
       return;
     }
 
