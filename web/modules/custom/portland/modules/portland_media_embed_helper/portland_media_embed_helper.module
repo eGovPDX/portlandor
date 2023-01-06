@@ -35,6 +35,49 @@ function portland_media_embed_helper_form_entity_embed_dialog_alter(array &$form
     }
   }
 
+  // When inserting a newly selected item, check if it's iframe and display aspect ratio radio buttons.
+  // check $form_state->getUserInput()["entity_browser"]["entity_ids"]. Format is media:ID
+  // When editing a previously inserted item, get the saved aspect ratio from $form_state->getUserInput()['editor_object']
+  $user_input = $form_state->getUserInput();
+  $is_iframe = false;
+  $has_editor_object = isset($user_input['editor_object']);
+  if( $has_editor_object && isset($user_input['editor_object']['data-entity-uuid']) ) {
+    $is_iframe = $user_input['editor_object']['data-embed-button'] == 'insert_iframe';
+  }
+  else if(isset($user_input["entity_browser"]) && isset($user_input["entity_browser"]["entity_ids"])) {
+    $media_id = substr($user_input["entity_browser"]["entity_ids"], 6); // Format is media:ID
+    $media = \Drupal::entityTypeManager()->getStorage('media')->load($media_id);
+    $is_iframe = (empty($media)) ? false : ($media->bundle() == 'iframe_embed');
+  }
+  else if ( isset($user_input["attributes"]["data-aspect-ratio"]) ) {
+    $is_iframe = true;
+  }
+
+  // Only show the aspect ratio radio buttons for iframe
+  if($is_iframe) {
+    // Default aspect ratio is 16/9.
+    // When editing an item, get value from "data-aspect-ratio" attribute
+    $default_aspect_ratio = '16/9';
+    if($has_editor_object && isset($user_input['editor_object']['data-aspect-ratio'])) {
+      $default_aspect_ratio = $user_input['editor_object']['data-aspect-ratio'];
+    }
+    $form['attributes']['data-aspect-ratio'] = [
+      '#title' => t('Aspect ratio'),
+      '#type' => 'radios',
+      '#options' => [
+        '16/9' => t('16x9'),
+        '4/3' => t('4x3'),
+        '1/1' => t('1x1'),
+        '9/16' => t('9x16'),
+      ],
+      '#step' => '1',
+      '#default_value' => $default_aspect_ratio,
+      '#parents' => ['attributes', 'data-aspect-ratio'],
+      // Make radio buttons inline
+      '#attributes' => ['class' => ['container-inline']],
+    ];
+  }
+
   if ($hide_fields) {
     if (isset($form['attributes']['data-caption'])) unset($form['attributes']['data-caption']);
     if (isset($form['attributes']['data-align'])) unset($form['attributes']['data-align']);
