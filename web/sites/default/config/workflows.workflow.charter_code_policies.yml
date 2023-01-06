@@ -15,22 +15,32 @@ type_settings:
   states:
     archived:
       label: Unpublished
-      weight: 1
+      weight: 2
       published: false
       default_revision: true
+    bureau_review:
+      label: 'Bureau review'
+      weight: -1
+      published: false
+      default_revision: false
+    council_clerk_review:
+      label: 'Council clerk review'
+      weight: 0
+      published: false
+      default_revision: false
     draft:
       label: Draft
-      weight: -2
+      weight: -3
       published: false
       default_revision: false
     published:
       label: Published
-      weight: 0
+      weight: 1
       published: true
       default_revision: true
     review:
       label: 'In review'
-      weight: -1
+      weight: -2
       published: false
       default_revision: false
   transitions:
@@ -38,37 +48,56 @@ type_settings:
       label: 'Create New Draft'
       from:
         - archived
+        - bureau_review
+        - draft
+        - published
+      to: draft
+      weight: -3
+    move_to_bureau_review:
+      label: 'Move to bureau review'
+      from:
+        - bureau_review
         - draft
         - published
         - review
-      to: draft
+      to: bureau_review
       weight: -2
+    move_to_council_clerk_review:
+      label: 'Move to council clerk review'
+      from:
+        - archived
+        - bureau_review
+        - council_clerk_review
+        - draft
+        - published
+        - review
+      to: council_clerk_review
+      weight: -1
     publish:
       label: Publish
       from:
         - archived
-        - draft
+        - council_clerk_review
         - published
-        - review
       to: published
-      weight: 0
-    send_to_review:
-      label: 'Send to review'
+      weight: 1
+    request_changes_by_bureau:
+      label: 'Request changes by bureau'
       from:
         - archived
-        - draft
-        - published
-        - review
-      to: review
-      weight: -1
+        - council_clerk_review
+      to: bureau_review
+      weight: 0
     unpublish:
       label: Unpublish
       from:
+        - archived
+        - bureau_review
+        - council_clerk_review
         - draft
         - published
-        - review
       to: archived
-      weight: 1
+      weight: 2
   entity_types:
     node:
       - change_set
