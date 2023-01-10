@@ -4,6 +4,7 @@ status: true
 dependencies:
   config:
     - field.storage.media.field_file_size
+    - field.storage.media.field_mime_type
   module:
     - eva
     - media
@@ -140,21 +141,19 @@ display:
           text: view
           output_url_as_text: true
           absolute: false
-        name:
-          id: name
-          table: media_field_data
-          field: name
+        field_mime_type:
+          id: field_mime_type
+          table: media__field_mime_type
+          field: field_mime_type
           relationship: none
           group_type: group
           admin_label: ''
-          entity_type: media
-          entity_field: name
           plugin_id: field
           label: ''
-          exclude: false
+          exclude: true
           alter:
             alter_text: true
-            text: '<a href="{{ view_media }}/download">{{ name }}</a>'
+            text: "{% set icon_map = {\r\n  'application/pdf': {\r\n    icon: 'fa-file-pdf',\r\n    desc: 'Download PDF file'|t,\r\n  },\r\n  'application/msword': {\r\n    icon: 'fa-file-word',\r\n    desc: 'Download Word file'|t,\r\n  },\r\n  'application/vnd.openxmlformats-officedocument.wordprocessingml.document': {\r\n    icon: 'fa-file-word',\r\n    desc: 'Download Word file'|t,\r\n  },\r\n  'application/vnd.ms-excel': {\r\n    icon: 'fa-file-excel',\r\n    desc: 'Download Excel file'|t,\r\n  },\r\n  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': {\r\n    icon: 'fa-file-excel',\r\n    desc: 'Download Excel file'|t,\r\n  },\r\n  'application/vnd.ms-powerpoint': {\r\n    icon: 'fa-file-powerpoint',\r\n    desc: 'Download PowerPoint'|t,\r\n  },\r\n  'application/vnd.openxmlformats-officedocument.presentationml.presentation': {\r\n    icon: 'fa-file-powerpoint',\r\n    desc: 'Download PowerPoint file'|t,\r\n  },\r\n} %}\r\n\r\n{% set icon_name = icon_map[field_mime_type__value].icon ?? 'fa-file-alt' %}\r\n{% set file_desc = icon_map[field_mime_type__value].desc ?? 'Download file'|t %}\r\n\r\n{%- include '@elements/icon/fa.twig' with {\r\n      name: icon_name,\r\n    } only -%}"
             make_link: false
             path: ''
             absolute: false
@@ -186,7 +185,7 @@ display:
           element_label_colon: false
           element_wrapper_type: ''
           element_wrapper_class: ''
-          element_default_classes: true
+          element_default_classes: false
           empty: ''
           hide_empty: false
           empty_zero: false
@@ -216,10 +215,10 @@ display:
           entity_field: langcode
           plugin_id: field
           label: ''
-          exclude: false
+          exclude: true
           alter:
-            alter_text: true
-            text: ' ({{ langcode }}) {{ field_file_size|render|striptags|format_size }}'
+            alter_text: false
+            text: ''
             make_link: false
             path: ''
             absolute: false
@@ -261,6 +260,137 @@ display:
           settings:
             link_to_entity: false
             native_language: false
+          group_column: value
+          group_columns: {  }
+          group_rows: true
+          delta_limit: 0
+          delta_offset: 0
+          delta_reversed: false
+          delta_first_last: false
+          multi_type: separator
+          separator: ', '
+          field_api_classes: false
+        langcode_1:
+          id: langcode_1
+          table: media_field_data
+          field: langcode
+          relationship: none
+          group_type: group
+          admin_label: 'Language code'
+          entity_type: media
+          entity_field: langcode
+          plugin_id: field
+          label: ''
+          exclude: true
+          alter:
+            alter_text: true
+            text: '{{ langcode_1__value }}'
+            make_link: false
+            path: ''
+            absolute: false
+            external: false
+            replace_spaces: false
+            path_case: none
+            trim_whitespace: false
+            alt: ''
+            rel: ''
+            link_class: ''
+            prefix: ''
+            suffix: ''
+            target: ''
+            nl2br: false
+            max_length: 0
+            word_boundary: true
+            ellipsis: true
+            more_link: false
+            more_link_text: ''
+            more_link_path: ''
+            strip_tags: false
+            trim: false
+            preserve_tags: ''
+            html: false
+          element_type: ''
+          element_class: ''
+          element_label_type: ''
+          element_label_class: ''
+          element_label_colon: false
+          element_wrapper_type: ''
+          element_wrapper_class: ''
+          element_default_classes: true
+          empty: ''
+          hide_empty: false
+          empty_zero: false
+          hide_alter_empty: true
+          click_sort_column: value
+          type: language
+          settings:
+            link_to_entity: false
+            native_language: false
+          group_column: value
+          group_columns: {  }
+          group_rows: true
+          delta_limit: 0
+          delta_offset: 0
+          delta_reversed: false
+          delta_first_last: false
+          multi_type: separator
+          separator: ', '
+          field_api_classes: false
+        name:
+          id: name
+          table: media_field_data
+          field: name
+          relationship: none
+          group_type: group
+          admin_label: ''
+          entity_type: media
+          entity_field: name
+          plugin_id: field
+          label: ''
+          exclude: false
+          alter:
+            alter_text: true
+            text: '<span aria-hidden="true"><a href="{{ view_media }}/download" lang="{{ langcode_1 }}">{{ field_mime_type }}{{ name }}</a> ({{ langcode }}) {{ field_file_size|render|striptags|format_size }}</span>'
+            make_link: false
+            path: ''
+            absolute: false
+            external: false
+            replace_spaces: false
+            path_case: none
+            trim_whitespace: false
+            alt: ''
+            rel: ''
+            link_class: ''
+            prefix: ''
+            suffix: ''
+            target: ''
+            nl2br: false
+            max_length: 0
+            word_boundary: true
+            ellipsis: true
+            more_link: false
+            more_link_text: ''
+            more_link_path: ''
+            strip_tags: false
+            trim: false
+            preserve_tags: ''
+            html: false
+          element_type: ''
+          element_class: ''
+          element_label_type: ''
+          element_label_class: ''
+          element_label_colon: false
+          element_wrapper_type: ''
+          element_wrapper_class: ''
+          element_default_classes: true
+          empty: ''
+          hide_empty: false
+          empty_zero: false
+          hide_alter_empty: true
+          click_sort_column: value
+          type: string
+          settings:
+            link_to_entity: false
           group_column: value
           group_columns: {  }
           group_rows: true
@@ -391,17 +521,13 @@ display:
         type: default
         options:
           grouping: {  }
-          row_class: py-2
+          row_class: mb-4
           default_row_class: false
       row:
         type: fields
         options:
-          default_field_elements: true
-          inline:
-            name: name
-            field_mime_type: field_mime_type
-            field_file_size: field_file_size
-            langcode: langcode
+          default_field_elements: false
+          inline: {  }
           separator: ''
           hide_empty: false
       query:
@@ -413,7 +539,7 @@ display:
           replica: false
           query_tags: {  }
       relationships: {  }
-      css_class: 'border-left border-secondary ml-2 pl-3'
+      css_class: mt-4
       header: {  }
       footer: {  }
       display_extenders: {  }
@@ -426,6 +552,7 @@ display:
         - user.permissions
       tags:
         - 'config:field.storage.media.field_file_size'
+        - 'config:field.storage.media.field_mime_type'
   eva_translations_for_document:
     id: eva_translations_for_document
     display_title: 'Translations on Documents'
@@ -452,3 +579,4 @@ display:
         - user.permissions
       tags:
         - 'config:field.storage.media.field_file_size'
+        - 'config:field.storage.media.field_mime_type'
