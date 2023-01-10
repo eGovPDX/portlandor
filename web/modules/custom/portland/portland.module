@@ -1241,7 +1241,7 @@ function portland_form_user_login_form_alter(&$form, &$form_state)
   if(
     isset($_ENV['PANTHEON_ENVIRONMENT']) &&
     in_array($_ENV['PANTHEON_ENVIRONMENT'], [
-      'pgov-769', 'sandbox', 'demo', 'dev', 'test', 'live'])
+      'pgov-779', 'sandbox', 'demo', 'dev', 'test', 'live'])
   ) {
     $destination = \Drupal::request()->get('destination');
     $query = empty($destination) ? "?destination=/" : "?destination=$destination";
@@ -1415,4 +1415,54 @@ function portland_webform_third_party_settings_form_alter(&$form, FormStateInter
     '#title' => t('Disable demographic form prompt on confirmation page'),
     '#default_value' => $webform->getThirdPartySetting('portland', 'disable_demographic_form_prompt'),
   ];
+}
+
+/**
+ * Implement hook_user_format_name_alter
+ */
+function portland_user_format_name_alter(&$name, $account) {
+  $account = \Drupal\user\Entity\User::load($account->id());
+  $username = $account->name->value;
+  $first_at_pos = strpos($username, '@');
+  // Only convert if the user name is an email address
+  if($first_at_pos !== false) {
+    $first_name = $account->field_first_name->value;
+    $last_name =  $account->field_last_name->value;
+    // If there is no last name or first name, try to build one out of the email address.
+    if( empty($first_name) || empty($last_name)) {
+      $name = str_replace('.', ' ', substr($username, 0, $first_at_pos));
+    }
+    else {
+      $name = $account->field_first_name->value . ' ' . $account->field_last_name->value;
+    }
+  }
+}
+
+/**
+ * Implements hook_user_presave().
+ */
+function portland_user_presave($user)
+{
+  // Update the user's full name before saving
+  $first_name = $user->field_first_name->value;
+  $last_name = $user->field_last_name->value;
+  if( !empty($first_name) && !empty($last_name)) {
+    $user->field_full_name->value = $first_name . ' ' . $last_name;
+  }
+  else if( !empty($first_name)) {
+    $user->field_full_name->value = $first_name;
+  }
+  else if( !empty($last_name)) {
+    $user->field_full_name->value = $last_name;
+  }
+}
+
+/**
+ * Implements hook_user_presave().
+ */
+function portland_form_user_form_alter(&$form, FormStateInterface $form_state) {
+  // Hide the SAML notice message and SAML link to change password
+  if( isset($form['account']['saml_notice']) ) {
+    unset($form['account']['saml_notice']);
+  }
 }
