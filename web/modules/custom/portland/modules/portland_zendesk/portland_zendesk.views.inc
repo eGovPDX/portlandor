@@ -119,6 +119,14 @@ function portland_zendesk_views_data() {
     ],
     'type' => 'standard',
   ];
+  $data['zendesk_ticket']['custom_attachments'] = [
+    'title' => t('Ticket attachments'),
+    'help' => t('Space delimited list of attachment URLs of indeterminate file type.'),
+    'field' => [
+      'id' => 'standard',
+    ],
+    'type' => 'standard',
+  ];
 
 
   return $data;
