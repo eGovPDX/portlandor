@@ -1233,7 +1233,7 @@ function _should_overwrite_council_document_title($node)
 
 /**
  * Implements hook_form_FORM_ID_alter().
- * 
+ *
  * Override the user login form to use the SAML login
  */
 function portland_form_user_login_form_alter(&$form, &$form_state)
@@ -1241,24 +1241,28 @@ function portland_form_user_login_form_alter(&$form, &$form_state)
   if(
     isset($_ENV['PANTHEON_ENVIRONMENT']) &&
     in_array($_ENV['PANTHEON_ENVIRONMENT'], [
-      'pgov-779', 'sandbox', 'demo', 'dev', 'test', 'live'])
+      'pgov-796', 'sandbox', 'demo', 'dev', 'test', 'live'])
   ) {
     $destination = \Drupal::request()->get('destination');
-    $query = empty($destination) ? "?destination=/" : "?destination=$destination";
-    // Override the default label of the submit button
+
+    // Remove the default Drupal login form elements
     unset($form['name']);
     unset($form['pass']);
     unset($form['actions']);
-    $form['saml'] = [
-      '#type' => "button",
-      '#value' => t('Log in with City of Portland network account'),
-      '#name' => t('saml_login'),
+
+    $form['saml_login'] = [
+      '#type' => 'link',
+      '#title' => t('Log in with City of Portland network account'),
+      '#url' => \Drupal\Core\Url::fromUri('internal:/saml/login', [
+        'query' => ['destination' => $destination ?? '/']
+      ]),
       '#attributes' => [
-        'class' => ['button'],
-        'id' => 'saml_login',
-        'onclick' => 'location.href="/saml/login'.$query.'";return false;',
+        'class' => ['btn btn-light'],
       ],
     ];
+
+    // Vary cache depending on redirect query param
+    $form['#cache']['contexts'][] = 'url.query_args';
   }
 }
 
