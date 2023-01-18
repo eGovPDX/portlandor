@@ -94,6 +94,12 @@ if (isset($_ENV['PANTHEON_ENVIRONMENT']) && php_sapi_name() != 'cli') {
   }
 }
 
+// Override the SP Entity ID value for each environment
+if(empty($primary_domain)) {
+  $primary_domain = "portlandor.lndo.site";
+}
+$config['samlauth.authentication']['sp_entity_id'] = $primary_domain;
+
 // Enable/disable config_split configurations based on the current environment
 $config['config_split.config_split.config_multidev']['status'] = FALSE;
 $config['config_split.config_split.config_dev']['status'] = FALSE;
@@ -166,7 +172,7 @@ if (isset($_ENV['PANTHEON_ENVIRONMENT']) && $_ENV['PANTHEON_ENVIRONMENT'] !== 'l
 
   $settings['redis_compress_length'] = 100;
   $settings['redis_compress_level'] = 1;
-  
+
   $settings['cache']['default'] = 'cache.backend.redis'; // Use Redis as the default cache.
   $settings['cache_prefix']['default'] = 'pantheon-redis';
 
