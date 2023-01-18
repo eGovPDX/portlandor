@@ -212,6 +212,13 @@ function portland_node_presave($node)
     }
   }
 
+  // PGOV-651: Prevent duplicate reviewers
+  if (isset($node->field_reviewer)) {
+    // SORT_REGULAR flag is needed to compare equality of sub-arrays
+    $unique_reviewers = array_unique($node->field_reviewer->getValue(), SORT_REGULAR);
+    $node->field_reviewer->setValue($unique_reviewers);
+  }
+
   // If the Save is from a cron job, add a revision log
   $current_path = \Drupal::service('path.current')->getPath();
   // Start cron by loading URL or clicking button
