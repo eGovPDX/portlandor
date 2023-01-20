@@ -311,30 +311,30 @@ function portland_entity_update($entity)
     if ($origstate != $newstate) {
       _get_active_alerts_count(true);
     }
-  } else if ($entity->bundle() == 'document') {
-    // Get the file ID of the latest revision
-    $media_storage = \Drupal::entityTypeManager()->getStorage('media');
-    $latest_revision_id = $media_storage->getLatestRevisionId($entity->id());
-    $latest_file_id = $media_storage->loadRevision($latest_revision_id)->field_document->target_id;
+  // } else if ($entity->bundle() == 'document') {
+  //   // Get the file ID of the latest revision
+  //   $media_storage = \Drupal::entityTypeManager()->getStorage('media');
+  //   $latest_revision_id = $media_storage->getLatestRevisionId($entity->id());
+  //   $latest_file_id = $media_storage->loadRevision($latest_revision_id)->field_document->target_id;
 
-    // Load all revisions and their file IDs
-    $conn = \Drupal\Core\Database\Database::getConnection();
-    $query = $conn->select('media_revision__field_document', 'media_revision__field_document');
-    $query->condition('media_revision__field_document.entity_id', $entity->id(), '=');
-    $query->fields('media_revision__field_document', ['revision_id', 'field_document_target_id']);
-    $result = $query->execute();
+  //   // Load all revisions and their file IDs
+  //   $conn = \Drupal\Core\Database\Database::getConnection();
+  //   $query = $conn->select('media_revision__field_document', 'media_revision__field_document');
+  //   $query->condition('media_revision__field_document.entity_id', $entity->id(), '=');
+  //   $query->fields('media_revision__field_document', ['revision_id', 'field_document_target_id']);
+  //   $result = $query->execute();
 
-    // Delete all but the latest revision
-    foreach ($result as $row) {
-      if ($row->revision_id == $latest_revision_id) continue;
-      // Delete the associated file if it's not used in the latest revision
-      if ($row->field_document_target_id != $latest_file_id) {
-        $file_storage = \Drupal::entityTypeManager()->getStorage('file');
-        $file = $file_storage->load($row->field_document_target_id);
-        if($file) $file_storage->delete([$file]);
-      }
-      $media_storage->deleteRevision($row->revision_id);
-    }
+  //   // Delete all but the latest revision
+  //   foreach ($result as $row) {
+  //     if ($row->revision_id == $latest_revision_id) continue;
+  //     // Delete the associated file if it's not used in the latest revision
+  //     if ($row->field_document_target_id != $latest_file_id) {
+  //       $file_storage = \Drupal::entityTypeManager()->getStorage('file');
+  //       $file = $file_storage->load($row->field_document_target_id);
+  //       if($file) $file_storage->delete([$file]);
+  //     }
+  //     $media_storage->deleteRevision($row->revision_id);
+  //   }
   }
   _notify_reviewer($entity, 'updated');
 }
