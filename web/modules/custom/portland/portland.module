@@ -1503,7 +1503,7 @@ function portland_media_presave($media)
       try {
         $headers = get_headers($external_file_url, 1);
       } catch (Exception $e) {
-        // $form_state->setErrorByName('field_efiles_link', 'Cannot retrieve file size and mimetype from this link.');
+        \Drupal::logger('media')->notice('Cannot retrieve file size and mimetype from eFiles link ' . $external_file_url );
         return;
       }
 
@@ -1515,15 +1515,13 @@ function portland_media_presave($media)
       ) {
         $file_size = isset($headers['Content-Length']) ? (int)$headers['Content-Length'] : 0;
         if ($file_size === 0) {
-          // $form_state->setErrorByName('field_efiles_link', t('The linked file is empty.'));
+          \Drupal::logger('media')->notice('The eFiles link file is empty: ' . $external_file_url );
           return;
         }
         // Content-Type header can be "text/html; charset=utf-8"
         $content_type_array = explode(';', $headers['Content-Type']);
-        // If content type is text/HTML, it's not a file
+        // If content type is text/HTML, it's not a file. Could be a eFiles folder link.
         if (empty($content_type_array) || $content_type_array[0] === "text/html") {
-          // Commented this line out to support existing documents that are linked to an eFiles folder
-          // $form_state->setErrorByName('field_efiles_link', t('The linked file is an HTML page. Please use External Resource instead.'));
           return;
         }
 
