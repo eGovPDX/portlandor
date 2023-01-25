@@ -827,7 +827,7 @@ function _validate_document(&$form, \Drupal\Core\Form\FormStateInterface $form_s
 
     // PGOV-809 Validate document and efiles link fields
     if( ( empty($efiles_link[0]["uri"]) && empty($document[0]["fids"]) ) ) {
-      $form_state->setErrorByName('field_document', t('Must have an uploaded document and an eFiles link'));
+      $form_state->setErrorByName('field_document', t('Must have either an uploaded document or an eFiles link'));
       return;
     }
     else if ( ( !empty($efiles_link[0]["uri"]) && !empty($document[0]["fids"]) ) ) {
@@ -872,14 +872,6 @@ function _validate_document(&$form, \Drupal\Core\Form\FormStateInterface $form_s
           $form_state->setErrorByName('field_efiles_link', t('The linked file is empty.'));
           return;
         }
-        // Content-Type header can be "text/html; charset=utf-8"
-        $content_type_array = explode(';', $headers['Content-Type']);
-        // If content type is text/HTML, it's not a file
-        if (empty($content_type_array) || $content_type_array[0] === "text/html") {
-          // Commented this line out to support existing documents that are linked to an eFiles folder
-          // $form_state->setErrorByName('field_efiles_link', t('The linked file is an HTML page. Please use External Resource instead.'));
-          return;
-        }
       } else {
         // Verify it's a valid eFiles folder
         try {
@@ -898,19 +890,6 @@ function _validate_document(&$form, \Drupal\Core\Form\FormStateInterface $form_s
         ) {
           $form_state->setErrorByName('field_efiles_link', t('Please verify the eFiles link is valid.'));
         }
-      }
-    } else {
-      $document = $form_state->getValue('field_document');
-      // The document field can't be empty when the eFile link is empty
-      if ($is_embedded_document_form_with_efiles) {
-        if( $form_state->getValue("inline_entity_form")["field_efiles_link"][0]['uri'] == null &&
-            count($form_state->getValue("inline_entity_form")["field_document"][0]['fids']) === 0
-        ) {
-          $form_state->setErrorByName('field_document', t('Please upload a file or add an external file link'));
-        }
-      }
-      else if (empty($document) || empty($document[0]["fids"])) {
-        $form_state->setErrorByName('field_document', t('Please upload a file or add an external file link'));
       }
     }
   }
