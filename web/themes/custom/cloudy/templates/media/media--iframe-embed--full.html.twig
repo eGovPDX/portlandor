@@ -1,0 +1,44 @@
+{#
+/**
+ * @file
+ * Theme override to display a media item.
+ *
+ * Available variables:
+ * - name: Name of the media.
+ * - content: Media content.
+ *
+ * @see template_preprocess_media()
+ *
+ * @ingroup themeable
+ */
+#}
+{% set margin = margin|default('2') %}
+{%
+  set classes = classes|default([
+    'media',
+    'media--type-' ~ media.bundle()|clean_class,
+    view_mode ? 'media--view-mode-' ~ view_mode|clean_class,
+    'h-100',
+  ])
+%}
+{%
+  set badge_classes = badge_classes|default([
+    'badge',
+    'badge-danger',
+    'mb-' ~ margin,
+  ])
+%}
+
+{% apply spaceless %}
+  <div{{ attributes.addClass(classes).setAttribute('style', 'aspect-ratio:16/9') }}>
+    {% block status %}
+      {% if not media.isPublished() %}
+        {% set published_attributes = create_attribute() %}
+        <span{{ published_attributes.addClass(badge_classes) }}>{{ 'unpublished'|t|capitalize }}</span>
+      {% endif %}
+    {% endblock %}
+    {% block content %}
+      {{ content }}
+    {% endblock %}
+  </div>
+{% endapply %}
