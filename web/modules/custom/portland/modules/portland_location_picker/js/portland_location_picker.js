@@ -504,9 +504,9 @@
           var message = "";
           if (feature.properties.status) {
             message = feature.properties.status == "open" || feature.properties.status == "new" ? OPEN_ISSUE_MESSAGE : SOLVED_ISSUE_MESSAGE;
-            message = "<medium><em>" + message + "</em></medium>";
+            message = "<p class=\"small mb-0\"><medium><em>" + message + "</em></medium></p>";
           }
-          return `<p class="font-weight-bold">${name}</p>${detail}${incidentDetail}${message}`;
+          return `<p class="font-weight-bold my-0">${name}</p>${detail}${incidentDetail}${message}`;
         }
   
         // EVENT HANDLERS ///////////////////////////////
