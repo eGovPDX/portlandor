@@ -41,6 +41,7 @@ class PortlandDocumentLinkText extends FilterBase
       $anchors = $elem->getElementsByTagName('a');
       foreach ($anchors as $anchor) {
         foreach ($anchor->childNodes as $child_node) {
+          if (!str_contains($anchor->getAttribute('class'), 'document--download')) continue;
           if ($child_node->nodeType === XML_TEXT_NODE) {
             $child_node->nodeValue = trim($alt_link_text);
           }
