@@ -1,5 +1,5 @@
 import $ from 'jquery';
-import Drupal from 'Drupal';
+// import Drupal from 'Drupal';
 
 Drupal.behaviors.cloudyBackToTop = {
   attach: function(context, settings) {
