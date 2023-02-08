@@ -105,7 +105,7 @@ class MigratePolicyCategories extends ProcessPluginBase {
     if ($parent_term_id != null) {
       $properties['parent.target_id'] = $parent_term_id;
     }
-    $terms = \Drupal::entityManager()->getStorage('taxonomy_term')->loadByProperties($properties);
+    $terms = \Drupal::entityTypeManager()->getStorage('taxonomy_term')->loadByProperties($properties);
     return $terms;
   }
 

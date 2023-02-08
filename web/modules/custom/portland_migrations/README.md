@@ -72,6 +72,8 @@ If you want to place the files in a different location, you need to update the p
 
 For some of the content migrations, the exported data may have been massaged to avoid complex migration routines. The necessary updates are described in the migrations sections below.
 
+NOTICE: Excel has a maximum cell length of 32767 characters. Google sheets has a maximum cell length of 50000 characters. Beware of long pages whose HTML may exceed these limits. Both applications will silently truncate text or simply drop cell values that exceed these limits.
+
 Windows users: When manually editing CSV files beware of file encodings. UTF-8 is the standard encoding, but Excel exports a CSV with the encoding "UTF-8 with BOM" which can cause errors during the import such as:
 
 ```
@@ -105,31 +107,6 @@ Redirects migrations write entities to the redirects table. This is used for cre
 Group content migrations are used to add content to a group by creating a group content entity. These migrations are named with the suffix "_group_content." *Example: eudaly_news_group_content*. Alternatively, a default value in "field_display_groups" will add content to the group_id you provide.
 
 ### Migrations in this module
-
-- eudaly_news - imports content from the included eudaly_news.csv source into the news entity
-- category_documents - imports content from the included category_documents.csv source into the document media entity for the Eudaly news migration
-- parks - imports parks.csv. Creates Park Facility content items that other parks migrations depend on.
-- park_amenities - import park amenities into three taxonomy vocabularies in POWR: Park Location Type, Park amenities/activities, Reservations Available.
-- park_photos - download images and associate them with the matching park.
-- park_documents - download documents and associate them with the matching park.
-- city_charter_chapters
-- city_charter_articles
-- city_charter_sections
-- city_code_titles
-- city_code_chapters
-- city_code_sections
-- policies_categories - imports taxonomy categories for city policies
-- policies_types - imports taxonomy policy types
-- policies
-- wheeler_blog - Mayor Wheeler blog migration
-- wheeler_press_releases - Mayor Wheeler press releases migration
-- parks_news
-- bds_news
-- bds_service_updates
-- bds_plans_examiner
-- pbot_news
-- ppb_directives
-- oehr_news
 
 #### Eudaly news
 ##### Local
@@ -356,12 +333,22 @@ lando terminus drush portlandor.powr-[ID] -- migrate:import pbot_news_redirects
 #### Police Directives
 
 ##### Modifications to ppb_directives.csv
-* Rename column CATEGORY_NAME to CATEGORY_NAME_RAW. Create new column to the right named CATEGORY_NAME and use forumula `=REPLACE(A2, 1, 7, "")` for data values.
+* Warning: Edit the file in Google Sheets because some directives are too long for Excel's character cell limit. But there are two directives that are even too long for Google Sheets so the HTML text will need to be manually copied into those cells from the original CSV after making the modifications below.
+* Rename column CATEGORY_NAME to CATEGORY_NAME_RAW. Create new column to the right named CATEGORY_NAME and use forumula `=REGEXREPLACE(A2,"(\d+) - (.+)","$2 ($1)")` for data values.
 * Create new column to the right of CONTENT_NAME, name it POLICY_NUMBER, and use formula `="ARB-PPB-" & LEFT(D2, 7)` for data values.
 * Create a new column to the right of POLICY_NUMBER, name it NUMERIC_ORDER, and use formula `=LEFT(D2, 7)` for data values.
+* Search and replace:
+  * `style=""padding-left: 30px;""` => `class=""indent-1""`
+  * `style=""padding-left: 60px;""` => `class=""indent-2""`
+  * `style=""padding-left: 90px;""` => `class=""indent-3""`
+  * `style=""padding-left: 120px;""` => `class=""indent-4""`
+  * `style=""padding-left: 150px;""` => `class=""indent-5""`
+  * `style=""padding-left: 180px;""` => `class=""indent-6""` (this class isn't actually defined)
+  * `&nbsp;` => " " (single space)
+  * "&nbsp;&nbsp;" (two spaces) => " " (single space)
 
 ##### Supplemental file: ppb_directives_categories.csv
-This is a simple list of 2nd level categories in its own csv file. The list was manually generated due to the relatively low number of items and the difficulty in generating it dynamically. The list is not expected to change prior to final migration. The 3rd level categories are included in the main policies datafile and are created as children of their parent 2nd level categories and linked to the content using a custom process plugin.
+This is a simple list of 2nd level categories in its own csv file. The list was manually generated due to the relatively low number of items and the difficulty of generating it dynamically. The list is not expected to change prior to final migration. The 3rd level categories are included in the main policies datafile and are created as children of their parent 2nd level categories and linked to the content using a custom process plugin.
 
 ##### Local
 ```
