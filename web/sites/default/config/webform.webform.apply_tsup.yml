@@ -1,7 +1,12 @@
 uuid: 695f4893-8f41-4057-8eb2-9cb64f37899e
 langcode: en
 status: open
-dependencies: {  }
+dependencies:
+  module:
+    - portland
+third_party_settings:
+  portland:
+    disable_demographic_form_prompt: 1
 weight: 0
 open: null
 close: null
@@ -49,25 +54,6 @@ elements: |-
         renew: 'Reissue an Expired Permit'
       '#options_display': buttons_vertical
       '#required': true
-    existing_permit_location:
-      '#type': portland_location_picker
-      '#title': 'What is the location of the permit or permit request?'
-      '#states':
-        visible:
-          ':input[name="wizard_existing_permit_situation"]':
-            checked: true
-      '#location_type__access': false
-      '#location_park_container__access': false
-      '#waterway_instructions__access': false
-      '#location_private_owner__access': false
-      '#location_address__title': 'What is the location of the permit or permit request?'
-      '#location_address__description': ''
-      '#location_address__required': true
-      '#place_name__access': false
-      '#location_details__access': false
-      '#geojson_layer__access': false
-      '#geojson_layer_behavior__access': false
-      '#required': true
     container_change_request:
       '#type': container
       '#states':
@@ -78,11 +64,9 @@ elements: |-
         '#type': webform_markup
         '#markup': |-
           <h2>Please submit a Change Request via the below form</h2>
-          For upcoming or active permits, please provide the associated Track-It #, Permit #, or IVR #.<br />
+          For upcoming or active permits, please provide the associated permit number/request ID.<br />
           <br />
-          For recently submitted applications, please provide the Track-It # included in the automated confirmation email received when submitting your application.<br />
-          <br />
-          <strong><em>Do not include a previous change request Track-It #. We must have the Track-It # from your original application.</em></strong>
+          For recently submitted applications, please provide the request ID included in the automated confirmation email received when submitting your application.<br />
       change_request_items_to_change:
         '#type': number
         '#title': 'How many items do you need to make a change to?'
@@ -91,7 +75,7 @@ elements: |-
         '#required': true
       change_request_id:
         '#type': textfield
-        '#title': 'Identifying Number (Original Track-It #, Permit #, or IVR #)'
+        '#title': 'Identifying Number (Original Request ID, Permit #, or IVR #)'
         '#required': true
       change_request_change_type:
         '#type': webform_select_other
@@ -108,7 +92,6 @@ elements: |-
         '#type': textarea
         '#title': 'Additional Info'
         '#placeholder': 'Please describe in detail what changes you would like to make.'
-        '#required': true
       change_request_supporting_documents:
         '#type': webform_document_file
         '#title': 'Attach any supporting documents.'
@@ -139,16 +122,11 @@ elements: |-
         '#step': 1
         '#required': true
       renewal_request_permit_date_days_of_week:
-        '#type': checkboxes
+        '#type': radios
         '#title': 'New Permit Days of Week'
         '#options':
-          monday: Mon
-          tuesday: Tues
-          wednesday: Wed
-          thursday: Thurs
-          friday: Fri
-          saturday: Sat
-          sunday: Sun
+          mon_fri: Mon-Fri
+          all_days: 'All Days'
         '#options_display': side_by_side
         '#required': true
       renewal_request_permit_date_start:
@@ -160,25 +138,20 @@ elements: |-
           <strong>NOTE:</strong> Please make sure the street you are working on is not restricted by a&nbsp;<a href="/transportation/permitting/temporary-street-use-permitting-tsup#toc-moratorium-dates-and-maps">Moratorium</a>.
         '#required': true
         '#date_date_min': today
-        '#datepicker': true
-        '#date_date_format': 'l, F j, Y'
       renewal_request_permit_date_end:
         '#type': date
         '#title': 'New Permit End Date'
         '#required': true
         '#date_date_min': today
-        '#datepicker': true
-        '#date_date_format': 'l, F j, Y'
       renewal_request_id:
         '#type': textfield
-        '#title': 'Please provide the Street Use permit number(s)'
-        '#description': 'You may enter multiple permit numbers if all renewal details are the same for each permit.'
+        '#title': 'Please provide the permit/request number(s)'
+        '#description': 'You may enter multiple numbers if all renewal details are the same for each permit.'
         '#required': true
       renewal_request_additional_info:
         '#type': textarea
         '#title': 'Additional Info'
         '#placeholder': 'Please describe in detail what renewals you would like to make.'
-        '#required': true
       renewal_request_supporting_documents:
         '#type': webform_document_file
         '#title': 'Attach any supporting documents.'
@@ -210,6 +183,17 @@ elements: |-
           <a href="/transportation/permitting/temporary-street-use-permitting-tsup#toc-fees">Change Fee and Refund Policies</a>
         '#required': true
         '#required_error': 'You must agree with the permit conditions.'
+  permit_location_metered:
+    '#type': webform_computed_twig
+    '#title': 'Computed location metered boolean'
+    '#wrapper_attributes':
+      class:
+        - d-none
+    '#display_on': form
+    '#mode': text
+    '#template': '{{ data.permit_location.location_region_id ? "true" : "false" }}'
+    '#whitespace': spaceless
+    '#store': true
   page_location:
     '#type': webform_wizard_page
     '#title': Location
@@ -233,14 +217,10 @@ elements: |-
       '#location_address__required': true
       '#place_name__access': false
       '#location_details__access': false
-      '#geojson_layer__access': false
-      '#geojson_layer_behavior__access': false
-    permit_location_metered:
-      '#type': radios
-      '#title': Metered
-      '#options':
-        'false': 'false'
-        'true': 'true'
+      '#primary_layer_source': /api/features/meteredparkingzones
+      '#primary_layer_behavior': informational
+      '#primary_layer_type': region
+      '#feature_layer_visible_zoom': 1
   page_dates:
     '#type': webform_wizard_page
     '#title': Dates
@@ -255,22 +235,13 @@ elements: |-
       '#type': webform_markup
       '#markup': '<p><strong>The soonest enforceable start date for your permit would be: </strong><span class="earliest-start-date">...</span></p>'
     permit_date_days_of_week:
-      '#type': checkboxes
+      '#type': radios
       '#title': 'Days of Week'
       '#options':
-        monday: Mon
-        tuesday: Tues
-        wednesday: Wed
-        thursday: Thurs
-        friday: Fri
-        saturday: Sat
-        sunday: Sun
+        mon_fri: Mon-Fri
+        all_days: 'All Days'
       '#options_display': side_by_side
       '#required': true
-      '#states':
-        invisible:
-          ':input[name="permit_location_metered"]':
-            value: 'false'
     permit_date_start:
       '#type': date
       '#title': 'Start Date'
@@ -280,15 +251,12 @@ elements: |-
         <strong>NOTE:</strong> Please make sure the street you are working on is not restricted by a&nbsp;<a href="/transportation/permitting/temporary-street-use-permitting-tsup#toc-moratorium-dates-and-maps">Moratorium</a>.
       '#required': true
       '#date_date_min': today
-      '#datepicker': true
-      '#date_date_format': 'l, F j, Y'
+      '#date_date_format': ''
     permit_date_end:
       '#type': date
       '#title': 'End Date'
       '#required': true
       '#date_date_min': today
-      '#datepicker': true
-      '#date_date_format': 'l, F j, Y'
     markup_permit_days_calculator:
       '#type': webform_markup
       '#states':
@@ -303,10 +271,6 @@ elements: |-
           ':input[name="permit_location_metered"]':
             value: 'false'
       '#markup': '<p>You&#39;ve requested <strong class="weeks-requested">0 weeks</strong> of closure.</p>'
-    permit_metered_value:
-      '#type': hidden
-      '#title': 'Metered (hidden, used for JS)'
-      '#default_value': '[webform_submission:values:permit_location_metered]'
     permit_type_value:
       '#type': hidden
       '#title': 'Permit Type (hidden, used for JS)'
@@ -315,14 +279,6 @@ elements: |-
       '#type': hidden
       '#title': 'Date Span (hidden, computed by JS)'
       '#default_value': '0'
-    actions:
-      '#type': webform_actions
-      '#title': 'Submit button(s)'
-      '#states':
-        visible:
-          ':input[name="permit_date_span"]':
-            value:
-              greater: '0'
   page_parking_spaces:
     '#type': webform_wizard_page
     '#title': 'Parking Spaces'
@@ -537,8 +493,9 @@ elements: |-
           - or
           - ':input[name="simple_permit_cross_street_right"]':
               empty: true
+      '#display_on': form
       '#mode': html
-      '#template': 'So you want to reserve <strong>{{ (20 * data.permit_amount_20ft_spaces)|number_format }} ft</strong> of the <strong>{{ data.simple_permit_street_side }}</strong> side of <strong>{{ data.simple_permit_street_name }}</strong>, between <strong>{{ data.simple_permit_cross_street_left }}</strong> and <strong>{{ data.simple_permit_cross_street_right }}</strong>?'
+      '#template': 'So you want to reserve <strong>{{ (20 * data.permit_amount_20ft_spaces|default(0))|number_format }} ft</strong> of the <strong>{{ data.simple_permit_street_side }}</strong> side of <strong>{{ data.simple_permit_street_name }}</strong>, between <strong>{{ data.simple_permit_cross_street_left }}</strong> and <strong>{{ data.simple_permit_cross_street_right }}</strong>?'
       '#ajax': true
     simple_permit_street_confirmation:
       '#type': checkbox
@@ -725,6 +682,7 @@ elements: |-
             - or
             - ':input[name="complex_permit_cross_street_right"]':
                 empty: true
+        '#display_on': form
         '#mode': html
         '#template': 'So you want to request a permit for the <strong>[webform_submission:values:complex_permit_street_side:raw]</strong> side of <strong>[webform_submission:values:complex_permit_street_name]</strong>, between <strong>[webform_submission:values:complex_permit_cross_street_left]</strong> and <strong>[webform_submission:values:complex_permit_cross_street_right]</strong>?'
         '#ajax': true
@@ -890,7 +848,8 @@ elements: |-
       '#required': true
     contact_company:
       '#type': textfield
-      '#title': 'Company you are making this request on behalf of (if necessary)'
+      '#title': 'Company name (if applicable)'
+      '#description': 'You must either work for this company or be authorized to represent them. The permit will be issued with this company as the permit holder, and the permit holder is the liable party for any damages. If your permit requires an insurance certificate, the company name on that certificate much exactly match the company name provided on this permit application.'
     contact_phone:
       '#type': textfield
       '#title': 'Best Phone Number to reach you at'
@@ -905,6 +864,9 @@ elements: |-
   permit_type:
     '#type': webform_computed_twig
     '#title': 'Computed permit type'
+    '#wrapper_attributes':
+      class:
+        - d-none
     '#display_on': form
     '#mode': text
     '#template': |-
@@ -929,8 +891,39 @@ elements: |-
       {{ permit_type }}
     '#whitespace': trim
     '#store': true
-css: ".form-item-permit-type {\r\n  display: none;\r\n}"
-javascript: "function calculateDate() { \r\n\tconst $ = jQuery.bind(jQuery);\r\n\tconst isDateSame = (a, b) =>\r\n\t\ta.getFullYear() === b.getFullYear() &&\r\n\t\ta.getMonth() === b.getMonth() &&\r\n\t\ta.getDate() === b.getDate();\r\n\tconst dayNameToNum = {\r\n\t\t\"sunday\": 0,\r\n\t\t\"monday\": 1,\r\n\t\t\"tuesday\": 2,\r\n\t\t\"wednesday\": 3,\r\n\t\t\"thursday\": 4,\r\n\t\t\"friday\": 5,\r\n\t\t\"saturday\": 6,\r\n\t};\r\n\tconst permitType = $(\"input[name='permit_type']\").val();\r\n\tconst isMetered = $(\"input[name='permit_metered_value']\").val() === \"true\";\r\n  \r\n\tconst startDateOffsetDays = permitType === \"complex\"\r\n\t\t? 10\r\n\t\t: (isMetered ? 3 : 4);\r\n    const earliestStartDate = new Date();\r\n\tearliestStartDate.setDate(earliestStartDate.getDate() + startDateOffsetDays);\r\n\t$(\".earliest-start-date\").text(earliestStartDate.toLocaleDateString());\r\n\r\n    const daysOfWeek = $(\"input[name*='permit_date_days_of_week']\")\r\n\t\t.filter(\":checked\")\r\n\t\t.map((_, el) => dayNameToNum[el.value])\r\n\t\t.get();\r\n\tconst startValue = $(\"input[name*='permit_date_start']\").val();\r\n\tconst endValue = $(\"input[name*='permit_date_end']\").val()\r\n\tif (!startValue || !endValue) return;\r\n\r\n    const startDate = new Date(startValue);\r\n    const endDate = new Date(endValue);\r\n\tif (startDate.getTime() > endDate.getTime()) return;\r\n\r\n\tlet amtDays = 0;\r\n\tif (daysOfWeek.includes(startDate.getDay()) || !isMetered) amtDays++;\r\n\r\n\tconst curDate = new Date(startValue);\r\n\twhile (!isDateSame(curDate, endDate)) {\r\n\t\tcurDate.setDate(curDate.getDate() + 1);\r\n\r\n\t\tif (daysOfWeek.includes(curDate.getDay()) || !isMetered) amtDays++;\r\n\t}\r\n\t\r\n    $(\"input[name='permit_date_span']\").val(amtDays);\r\n    $(\"input[name='permit_date_span']\").trigger(\"change\")\r\n\t$(\".days-requested\").text(amtDays === 1 ? \"1 day\" : `${amtDays} days`);\r\n\r\n\tconst amtWeeks = Math.ceil(amtDays / 7);\r\n\t$(\".weeks-requested\").text(amtWeeks === 1 ? \"1 week\" : `${amtWeeks} weeks`);\r\n}\r\n\r\njQuery(\"input[name='permit_date_start'], input[name='permit_date_end'], input[name='permit_date_days_of_week']\").change(calculateDate);\r\ncalculateDate();"
+  computed_confirmation_message:
+    '#type': webform_computed_twig
+    '#title': 'Computed confirmation message'
+    '#display_on': none
+    '#mode': html
+    '#template': |-
+      <h2>Thank you for your submission</h2>
+
+      {% if data.permit_type == "simple" %}
+        <p>Thank you for your request. We will contact you shortly with the price and next steps.</p>
+        <p>To make a change to this request, please submit another Change Request form.</p>
+        <p>If you have not heard back from us about this submission within 5 business days, please first check your SPAM folder, and then contact us at <a href="mailto:CPAC@portlandoregon.gov">CPAC@portlandoregon.gov</a> or <a href="tel:+1-503-823-7365">503-823-7365</a>.</p>
+      {% elseif data.permit_type == "7day" %}
+        <p>Thank you for submitting a 7 Day Non-Metered Parking Use application. You will receive an email with your Item # and a link to the online invoice. Once the invoice has been paid, you will be able to access the PERMIT ID CARD and NO PARKING SIGNS.</p>
+        <p>If you have any questions, please contact us at <a href="mailto:CPAC@portlandoregon.gov">CPAC@portlandoregon.gov</a> or <a href="tel:+1-503-823-7365">503-823-7365</a>.</p>
+      {% elseif data.permit_type == "complex" %}
+        <p>Your Complex TSUP Application has been submitted, we will contact you shortly with a price and payment date. If the application is incomplete, you will be contacted for additional information.</p>
+        <p>If you are impacting a Sidewalk or Lane and your work is along a TriMet transit route, you are required to notify them at least five business days in advance of your work. Email TriMet at <a href="mailto:foc@trimet.org">foc@trimet.org</a> or call them at <a href="tel:+1-503-962-4949">503-962-4949</a>.</p>
+        <p><strong>Due to processing times and parking enforcement logistics, your permit may not be valid for up to 15 business days. If the application is incomplete, you will be contacted for additional information.</strong></p>
+        <p>To cancel or make changes to your application, please submit a Change Request form.. We will do our best to accommodate your change request.</p>
+        <p>If you have not heard back from us about this submission within 5 business days, please first check your SPAM folder, and then contact us at <a href="mailto:CPAC@portlandoregon.gov">CPAC@portlandoregon.gov</a> or <a href="tel:+1-503-823-7365">503-823-7365</a>.</p>
+      {% elseif data.permit_type == "change_request" %}
+        <p>Thank you for your submission, we will do our best to accommodate your change request. A member of our staff should respond to your request within 2 business days.</p>
+        <p>To make a change to this request, please submit another Change Request form.</p>
+        <p>If you have not heard back from us about this submission within 2 business days, please first check your SPAM folder, and then contact us at <a href="mailto:CPAC@portlandoregon.gov">CPAC@portlandoregon.gov</a> or <a href="tel:+1-503-823-7365">503-823-7365</a>.</p>
+      {% elseif data.permit_type == "renewal_request" %}
+        <p>Thank you for your renewal request. We will contact you shortly with the price and next steps.</p>
+        <p>If you are impacting a Sidewalk or Lane and your work is along a TriMet transit route, you are required to notify them at least five business days in advance of your work. Email TriMet at <a href="mailto:foc@trimet.org">foc@trimet.org</a> or call them at <a href="tel:+1-503-962-4949">503-962-4949</a>.</p>
+        <p>To cancel or make changes to your application, please submit a Change Request form. We will do our best to accommodate your change request.</p>
+        <p>If you have not heard back from us about this submission within 5 business days, please first check your SPAM folder, and then contact us at <a href="mailto:CPAC@portlandoregon.gov">CPAC@portlandoregon.gov</a> or <a href="tel:+1-503-823-7365">503-823-7365</a>.</p>
+      {% endif %}
+css: ''
+javascript: "function calculateDate() { \r\n\tconst $ = jQuery.bind(jQuery);\r\n\tconst isDateSame = (a, b) =>\r\n\t\ta.getFullYear() === b.getFullYear() &&\r\n\t\ta.getMonth() === b.getMonth() &&\r\n\t\ta.getDate() === b.getDate();\r\n\tconst mapOfRadioOptionToDayNums = {\r\n\t\t\"mon_fri\": [1, 2, 3, 4, 5],\r\n\t\t\"all_days\": [0, 1, 2, 3, 4, 5, 6],\r\n\t};\r\n\tconst permitType = $(\"input[name='permit_type']\").val();\r\n\tconst isMetered = $(\"input[name='permit_location_metered']\").val() === \"true\";\r\n  \r\n\tconst startDateOffsetDays = permitType === \"complex\"\r\n\t\t? 10\r\n\t\t: (isMetered ? 3 : 4);\r\n    const earliestStartDate = new Date();\r\n\tearliestStartDate.setDate(earliestStartDate.getDate() + startDateOffsetDays);\r\n\t$(\".earliest-start-date\").text(earliestStartDate.toLocaleDateString());\r\n\r\n    const daysOfWeek = mapOfRadioOptionToDayNums[$(\"input[name*='permit_date_days_of_week']:checked\").val()] || [];\r\n\tconst startValue = $(\"input[name*='permit_date_start']\").val();\r\n\tconst endValue = $(\"input[name*='permit_date_end']\").val()\r\n\tif (!startValue || !endValue) return;\r\n\r\n    const startDate = new Date(startValue + \"T00:00\");\r\n    const endDate = new Date(endValue + \"T00:00\");\r\n\tif (startDate.getTime() > endDate.getTime()) return;\r\n\r\n\tlet amtDays = 0;\r\n\tif (!isMetered || daysOfWeek.includes(startDate.getDay())) amtDays++;\r\n\r\n\tconst curDate = new Date(startValue + \"T00:00\");\r\n\twhile (!isDateSame(curDate, endDate)) {\r\n\t\tcurDate.setDate(curDate.getDate() + 1);\r\n\r\n\t\tif (!isMetered || daysOfWeek.includes(curDate.getDay())) amtDays++;\r\n\t}\r\n\t\r\n    $(\"input[name='permit_date_span']\").val(amtDays);\r\n    $(\"input[name='permit_date_span']\").trigger(\"change\")\r\n\t$(\".days-requested\").text(amtDays === 1 ? \"1 day\" : `${amtDays} days`);\r\n\r\n\tconst amtWeeks = Math.ceil(amtDays / 7);\r\n\t$(\".weeks-requested\").text(amtWeeks === 1 ? \"1 week\" : `${amtWeeks} weeks`);\r\n}\r\n\r\njQuery(\"input[name='permit_date_start'], input[name='permit_date_end'], input[name='permit_date_days_of_week']\").change(calculateDate);\r\ncalculateDate();"
 settings:
   ajax: false
   ajax_scroll_top: form
@@ -1016,6 +1009,8 @@ settings:
   wizard_toggle: true
   wizard_toggle_show_label: ''
   wizard_toggle_hide_label: ''
+  wizard_page_type: container
+  wizard_page_title_tag: h2
   preview: 0
   preview_label: ''
   preview_title: ''
@@ -1034,10 +1029,10 @@ settings:
   confirmation_type: page
   confirmation_url: ''
   confirmation_title: ''
-  confirmation_message: ''
+  confirmation_message: '[webform_submission:values:computed_confirmation_message:raw]'
   confirmation_attributes: {  }
   confirmation_back: true
-  confirmation_back_label: ''
+  confirmation_back_label: 'Submit another application'
   confirmation_back_attributes: {  }
   confirmation_exclude_query: false
   confirmation_exclude_token: false
