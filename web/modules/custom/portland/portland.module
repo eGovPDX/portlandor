@@ -17,8 +17,6 @@ use Drupal\views\Render\ViewsRenderPipelineMarkup;
 // This file concerns itself with setting up tokens with hooks
 include 'portland.tokens.inc';
 
-const ALERTS_COUNTER_CACHE_KEY = 'portland.active.alerts';
-
 /**
  * Get the parent group IDs of an entity.
  * See https://drupal.stackexchange.com/questions/238755/how-to-get-group-ids-by-ids-of-elements-of-group-content
@@ -242,37 +240,11 @@ function portland_form_views_exposed_form_alter(&$form, &$form_state)
 }
 
 /**
- * Implements hook_preprocess_HOOK().
- */
-function portland_preprocess_menu(&$vars)
-{
-  // find main menu and modify the Alerts link text to display number of alerts,
-  // or remove the Alerts item if count is zero.
-  if (array_key_exists('menu_name', $vars) && $vars['menu_name'] == 'main') {
-    foreach ($vars['items'] as $key => &$item) {
-      if ($item['title'] == 'Alerts') {
-        $alertCount = _get_active_alerts_count();
-        if ($alertCount < 1) {
-          unset($vars['items'][$key]);
-          return;
-        }
-        $item['title'] = Drupal\Core\Render\Markup::create('Alerts <span class="badge badge-dark">' . $alertCount . '</span>');
-        break;
-      }
-    }
-  }
-}
-
-/**
  * Implements hook_entity_insert().
  */
 function portland_entity_insert($entity)
 {
   switch ($entity->bundle()) {
-    case 'alert':
-      // alert has been inserted, update alerts count in cache
-      _get_active_alerts_count(true);
-      break;
     case 'park_facility':
       // Add this new Park Facility node to the Parks menu
       $menu_link_service = \Drupal::service('plugin.manager.menu.link');
@@ -304,14 +276,7 @@ function portland_entity_insert($entity)
  */
 function portland_entity_update($entity)
 {
-  if ($entity->bundle() == 'alert') {
-    // if moderation state has changed, update alerts count in cache
-    $origstate = $entity->original->get('moderation_state')->getString();
-    $newstate = $entity->get('moderation_state')->getString();
-    if ($origstate != $newstate) {
-      _get_active_alerts_count(true);
-    }
-  // } else if ($entity->bundle() == 'document') {
+  // if ($entity->bundle() == 'document') {
   //   // Get the file ID of the latest revision
   //   $media_storage = \Drupal::entityTypeManager()->getStorage('media');
   //   $latest_revision_id = $media_storage->getLatestRevisionId($entity->id());
@@ -335,7 +300,7 @@ function portland_entity_update($entity)
   //     }
   //     $media_storage->deleteRevision($row->revision_id);
   //   }
-  }
+  // }
   _notify_reviewer($entity, 'updated');
 }
 
@@ -370,9 +335,6 @@ function _build_log_message($entity)
 function portland_entity_delete($entity)
 {
   switch ($entity->bundle()) {
-    case 'alert':
-      _get_active_alerts_count(true);
-      break;
     case 'park_facility':
       // Delete the menu link for this park
       \Drupal::service('menu.tree_storage')->delete('park-' . $entity->id());
@@ -396,27 +358,6 @@ function portland_entity_delete($entity)
       // Skip other deletion events: redirect, group, etc.
       break;
   }
-}
-
-/**
- * Retrieves the number of active alerts. Uses caching.
- */
-function _get_active_alerts_count($reset = false)
-{
-  $alertCount = 0;
-  if (!$reset && $cache = \Drupal::cache()->get(ALERTS_COUNTER_CACHE_KEY)) {
-    $alertCount = $cache->data;
-  } else {
-    // invalidate main menu block in cache to show current alerts
-    \Drupal\Core\Cache\Cache::invalidateTags(['config:block.block.cloudy_main_menu']);
-    $query = \Drupal::entityQuery('node')
-      ->condition('type', 'alert')
-      ->condition('status', 1);
-    $nids = $query->execute();
-    $alertCount = count($nids);
-    \Drupal::cache()->set(ALERTS_COUNTER_CACHE_KEY, $alertCount);
-  }
-  return $alertCount;
 }
 
 /**
@@ -1260,7 +1201,7 @@ function portland_views_pre_render(\Drupal\views\ViewExecutable $view)
 {
   if (
     $view->id() == 'admin_content_with_legacy_path' ||
-    (($view->id() == 'group_nodes' || $view->id() == 'admin_group_content_revision') && (strpos($view->current_display, 'redirects') !== false))
+    ($view->id() == 'manage_group_content_revision' && (strpos($view->current_display, 'redirects') !== false))
   ) {
     // Have to call redirect.repository service to find which row has redirects
     foreach ($view->result as $key => $value) {
