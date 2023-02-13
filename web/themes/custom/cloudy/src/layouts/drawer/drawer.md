@@ -3,7 +3,7 @@
 ## Props
 
 - `content`: content of the drawer
-- `position`: left (default), right - Does the drawer sit on the left or right. On larger screen, is it a left or right column.
+- `position`: start (default), end - Does the drawer sit on the start or end of the page (left/right for LTR languages). On larger screens, is it a start or end column.
 - `open_text`: string - defaults to "Open"
 - `open_info`: string - defaults to "Open Drawer"
 - `close_text`: string - defaults to "Close"
@@ -15,6 +15,6 @@
 ```twig
 {% include "@layouts/drawer/drawer.twig" with {
   content: content,
-  position: 'left',
+  position: 'start',
 } only %}
 ```
