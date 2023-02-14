@@ -1,7 +1,5 @@
 (function ($, Drupal, drupalSettings) {
 
-  var initialized = false;
-
   // Here's how to reverse geolocate a park. Note the x/y values in the geometry parameter:
   // https://www.portlandmaps.com/arcgis/rest/services/Public/Parks_Misc/MapServer/2/query?geometry=%7B%22x%22%3A-122.55203425884248%2C%22y%22%3A45.53377174783918%2C%22spatialReference%22%3A%7B%22wkid%22%3A4326%7D%7D&geometryType=esriGeometryPoint&spacialRel=esriSpatialRelIntersects&returnGeometry=false&returnTrueCurves=false&returnIdsOnly=false&returnCountOnly=false&returnDistinctValues=false&f=pjson"
   // returns an object that includes the park name. 
@@ -17,7 +15,7 @@
    Drupal.behaviors.portland_location_picker = {
     attach: function (context, settings) {
 
-      $('main', context).once('location_picker').each(function () {
+      $(context).once('location_picker').each(function () {
 
         // CONSTANTS //////////
         const DEFAULT_LATITUDE = 45.51;
@@ -119,10 +117,7 @@
           popupAnchor:  [0, -41]
         });
 
-        // if ajax is used in the webform (for computed twig, for example), this script
-        // and the initialize function may get called multiple times for some reason.
-        // adding this flag prevents re-initialization of the map.
-        if (!initialized) { initialize(); initialized = true; }
+        initialize()
         
         // SETUP FUNCTIONS ///////////////////////////////
 
