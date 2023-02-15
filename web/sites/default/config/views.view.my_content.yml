@@ -5,6 +5,10 @@ dependencies:
   config:
     - field.storage.group.field_group_path
     - field.storage.node.field_display_groups
+    - node.type.city_service
+    - node.type.contact
+    - node.type.external_resource
+    - node.type.page
     - system.menu.editor-toolbar
     - user.role.authenticated
     - workflows.workflow.editorial
@@ -1679,7 +1683,7 @@ display:
             changed: changed
             operations: operations
             field_group_path: field_group_path
-          default: changed
+          default: '-1'
           info:
             node_bulk_form:
               align: ''
@@ -1741,6 +1745,8 @@ display:
               empty_column: false
               responsive: ''
             field_reviewer__revision_id:
+              sortable: false
+              default_sort_order: asc
               align: ''
               separator: ''
               empty_column: false
@@ -7034,6 +7040,23 @@ display:
     position: 1
     display_options:
       title: Stale
+      sorts:
+        changed:
+          id: changed
+          table: node_field_revision
+          field: changed
+          relationship: none
+          group_type: group
+          admin_label: ''
+          entity_type: node
+          entity_field: changed
+          plugin_id: date
+          order: ASC
+          expose:
+            label: ''
+            field_identifier: ''
+          exposed: false
+          granularity: second
       filters:
         latest_translation_affected_revision:
           id: latest_translation_affected_revision
@@ -7129,9 +7152,13 @@ display:
           entity_field: type
           plugin_id: bundle
           operator: in
-          value: {  }
+          value:
+            contact: contact
+            page: page
+            external_resource: external_resource
+            city_service: city_service
           group: 1
-          exposed: true
+          exposed: false
           expose:
             operator_id: type_op
             label: Type
@@ -7601,14 +7628,14 @@ display:
           entity_type: node
           entity_field: changed
           plugin_id: date
-          operator: '<='
+          operator: '='
           value:
             min: ''
             max: ''
-            value: '-1 year'
-            type: offset
+            value: ''
+            type: date
           group: 1
-          exposed: false
+          exposed: true
           expose:
             operator_id: changed_op
             label: Changed
@@ -7626,29 +7653,49 @@ display:
             min_placeholder: null
             max_placeholder: null
             placeholder: null
-          is_grouped: false
+          is_grouped: true
           group_info:
-            label: ''
+            label: Changed
             description: ''
-            identifier: ''
+            identifier: changed
             optional: true
             widget: select
             multiple: false
             remember: false
-            default_group: All
+            default_group: '1'
             default_group_multiple: {  }
-            group_items: {  }
+            group_items:
+              1:
+                title: 'between 1 and 2 years ago'
+                operator: between
+                value:
+                  min: '-2 year'
+                  max: '-1 year'
+                  value: ''
+                  type: offset
       filter_groups:
         operator: AND
         groups:
           1: AND
       defaults:
         title: false
+        sorts: false
         filters: false
         filter_groups: false
         header: false
       display_description: ''
       header:
+        area_text_custom:
+          id: area_text_custom
+          table: views
+          field: area_text_custom
+          relationship: none
+          group_type: group
+          admin_label: ''
+          plugin_id: text_custom
+          empty: true
+          content: "<p>This will help users identify static content which hasn't been updated in 2 years ago (default), 1 year ago, and 6 months ago.</p>\r\n<p>Please review for broken links, outdated content, outdated contacts, etc.</p>\r\n<p>After careful review, be sure to add a Revision log message and save to indicate review and removal from this list.</p>"
+          tokenize: false
         result:
           id: result
           table: views
@@ -7659,17 +7706,6 @@ display:
           plugin_id: result
           empty: true
           content: '@total results found'
-        area_text_custom:
-          id: area_text_custom
-          table: views
-          field: area_text_custom
-          relationship: none
-          group_type: group
-          admin_label: ''
-          plugin_id: text_custom
-          empty: true
-          content: '<p>This page lists content that hasn''t been updated in at least a year. This will help users identify content that should be reviewed.</p>'
-          tokenize: false
       display_extenders:
         metatag_display_extender:
           metatags: {  }
