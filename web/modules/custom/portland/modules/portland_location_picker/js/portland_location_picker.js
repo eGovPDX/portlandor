@@ -618,6 +618,26 @@
         }
 
         // HELPER FUNCTIONS ///////////////////////////////
+        function checkRegion(latlng) {
+          // determine whether click is within a region on the primaryLayer layer, and store the region_id.
+          // this is done if the primary layer type is Region, or if the regions layer is populated.
+          if (primaryLayerType == PRIMARY_LAYER_TYPE.Region || regionsLayerSource) {
+            var testLayer;
+            if (regionsLayer) {
+              testLayer = regionsLayer;
+            } else {
+              testLayer = primaryLayer;
+            }
+            var inLayer = leafletPip.pointInLayer(latlng, testLayer, false);
+            if (inLayer.length > 0) {
+              // NOTE: The following code would be problematic if we allow multiple copies of the widget or alternate naming conventions.
+              $('input[name=' + elementId + '\\[location_region_id\\]]').val(inLayer[0].feature.properties.region_id);
+            } else {
+              // clear region_id field
+              $('input[name=' + elementId + '\\[location_region_id\\]]').val("");
+            }
+          }
+        }
 
         function doMapClick(latlng) {
           // normally when the map is clicked, we want to zoom to the clicked location
@@ -641,25 +661,7 @@
           }
   
           reverseGeolocate(latlng);
-
-          // determine whether click is within a region on the primaryLayer layer, and store the region_id.
-          // this is done if the primary layer type is Region, or if the regions layer is populated.
-          if (primaryLayerType == PRIMARY_LAYER_TYPE.Region || regionsLayerSource) {
-            var testLayer;
-            if (regionsLayer) {
-              testLayer = regionsLayer;
-            } else {
-              testLayer = primaryLayer;
-            }
-            var inLayer = leafletPip.pointInLayer(latlng, testLayer, false);
-            if (inLayer.length > 0) {
-              // NOTE: The following code would be problematic if we allow multiple copies of the widget or alternate naming conventions.
-              $('input[name=' + elementId + '\\[location_region_id\\]]').val(inLayer[0].feature.properties.region_id);
-            } else {
-              // clear region_id field
-              $('#location_region_id').val("");
-            }
-          }
+          checkRegion(latlng);
         }
   
         function isAssetSelectable(marker) {
@@ -788,6 +790,7 @@
             // it will capture the address, and the report will still be usable.
             if (lat && lng) {
               doZoomAndCenter(lat, lng);
+              checkRegion(new L.LatLng(lat, lng));
               if (primaryLayerBehavior != PRIMARY_LAYER_BEHAVIOR.SelectionOnly) {
                 setLocationMarker(lat, lng);
               } else {
