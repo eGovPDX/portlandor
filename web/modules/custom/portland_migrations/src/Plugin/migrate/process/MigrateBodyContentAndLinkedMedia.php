@@ -48,8 +48,8 @@ class MigrateBodyContentAndLinkedMedia extends ProcessPluginBase {
       $download_dir_uri = $this->prepareDownloadDirectory();
 
       // reusable db connection
-      if (is_null($_SESSION['drupal_dbConn'])) {
-        $_SESSION['drupal_dbConn'] = \Drupal::database();
+      if (!isset($_REQUEST['drupal_dbConn'])) {
+        $_REQUEST['drupal_dbConn'] = \Drupal::database();
       }
 
       // look for links with an href and save the linked file
@@ -85,15 +85,15 @@ class MigrateBodyContentAndLinkedMedia extends ProcessPluginBase {
 
         // build filename/uri
         $arr_filename = $this->buildPogFilename($url);
-        $filename = $arr_filename[0];
-        $content_id = $arr_filename[1];
-
         // if buildPogFilename returns false, that means either the URL didn't have a
         // Content-Disposition header (not a binary file), the URL returned 404, or it was
         // a link to the homepage/root.
         if ($arr_filename === false) {
           continue;
         }
+        $filename = $arr_filename[0];
+        $content_id = $arr_filename[1];
+
         $destination_uri = $download_dir_uri . "/" . $filename;
 
         $media_type = $this->getMediaType($filename);
@@ -121,7 +121,7 @@ class MigrateBodyContentAndLinkedMedia extends ProcessPluginBase {
           if ($key !== false) {
             // use existing file. glob only returns path; we need to get fid and load file entity.
             $query = "SELECT fid FROM file_managed FM where uri = '" . $destination_uri . "'";
-            $query = $_SESSION['drupal_dbConn']->query($query);
+            $query = $_REQUEST['drupal_dbConn']->query($query);
             $result = $query->fetchAll();
             if (is_array($result) && count($result) > 1) {
               // duplicate document media entities exist! log it, but then use the first one found.

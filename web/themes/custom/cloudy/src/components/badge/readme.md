@@ -24,6 +24,6 @@
 {% include '@components/badge/badge.twig' with {
   text: 'Badge',
   type: 'danger',
-  ml: 2
+  ms: 2
 } only %}
 ```

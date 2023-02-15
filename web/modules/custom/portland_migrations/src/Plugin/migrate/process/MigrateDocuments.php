@@ -27,8 +27,8 @@ class MigrateDocuments extends ProcessPluginBase {
   public function transform($value, MigrateExecutableInterface $migrate_executable, Row $row, $destination_property) {
 
     // reusable db connection
-    if (is_null($_SESSION['policies_dbConn'])) {
-      $_SESSION['policies_dbConn'] = \Drupal::database();
+    if (!isset($_REQUEST['drupal_dbConn'])) {
+      $_REQUEST['drupal_dbConn'] = \Drupal::database();
     }
 
     $return_value = [];
@@ -77,7 +77,7 @@ class MigrateDocuments extends ProcessPluginBase {
         $destination_uri = $download_dir_uri . "/" . $filename;
 
         $query = "SELECT fid FROM file_managed WHERE uri = '$destination_uri'";
-        $query = $_SESSION['policies_dbConn']->query($query);
+        $query = $_REQUEST['drupal_dbConn']->query($query);
         $result = $query->fetchAll();
         if (is_array($result) && count($result) > 1) {
           // duplicate document media entities exist! log it, but then use the first one found.
