@@ -133,9 +133,12 @@ class BatchCommands extends DrushCommands
         $new_uuid = $new_iframe->uuid->value;
         $new_text = "<drupal-entity data-aspect-ratio=\"16/9\" data-embed-button=\"insert_iframe\" data-entity-embed-display=\"view_mode:media.embedded\" data-entity-type=\"media\" data-entity-uuid=\"$new_uuid\" data-langcode=\"en\"></drupal-entity>";
 
-        $node->field_body_content->value = str_replace($orig_text, $new_text, $node->field_body_content->value);
-        $node->save();
-        $node_urls []= $base_url . '/node/' . $node->nid->value;
+        // Only update the body text if the original text can be found
+        if( str_contains($node->field_body_content->value, $orig_text) ) {
+          $node->field_body_content->value = str_replace($orig_text, $new_text, $node->field_body_content->value);
+          $node->save();
+          $node_urls []= $base_url . '/node/' . $node->nid->value;
+        }
       }
 
       echo $base_url . '/media/'. $chart->mid->value . ',' . $base_url . '/media/'. $new_iframe->mid->value . ',' . implode(',', $node_urls) . PHP_EOL;
