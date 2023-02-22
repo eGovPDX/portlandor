@@ -5,27 +5,20 @@ dependencies:
   config:
     - field.storage.node.field_destination_url
     - field.storage.node.field_online_application
-    - field.storage.paragraph.field_service_modes
     - node.type.city_service
     - node.type.external_resource
-    - taxonomy.vocabulary.city_service_modes
     - taxonomy.vocabulary.community_actions
     - taxonomy.vocabulary.topics
+    - user.role.administrator
+    - user.role.support_agent
     - workflows.workflow.editorial
-  content:
-    - 'taxonomy_term:city_service_modes:139348d7-8ac8-4abc-9276-3cf70df7ff8f'
-    - 'taxonomy_term:city_service_modes:4d91a80b-d07e-47f3-912d-fb7718e30e55'
-    - 'taxonomy_term:city_service_modes:b3a72fbe-697b-46f8-acf7-a7608d59a02c'
-    - 'taxonomy_term:city_service_modes:c03c3ba3-1abc-4389-b8f8-de35c134b184'
-    - 'taxonomy_term:city_service_modes:c206825e-752a-45b5-ba48-ff0c0881cb85'
-    - 'taxonomy_term:city_service_modes:db48e9ad-b3d3-4466-8b7a-59ca7910300a'
   module:
     - content_moderation
     - csv_serialization
     - group
     - link
     - node
-    - paragraphs
+    - options
     - rest
     - serialization
     - taxonomy
@@ -2486,7 +2479,6 @@ display:
       displays:
         services: services
         default: '0'
-        services_by_mode: '0'
       filename: 'services-export-[current-date:html_date].csv'
       automatic_download: false
       store_in_public_file_directory: false
@@ -3207,6 +3199,12 @@ display:
           empty_zero: false
           hide_alter_empty: true
           destination: true
+      access:
+        type: role
+        options:
+          role:
+            support_agent: support_agent
+            administrator: administrator
       filters:
         title:
           id: title
@@ -3523,7 +3521,7 @@ display:
             operator_id: field_topics_target_id_op
             label: Topics
             description: ''
-            use_operator: true
+            use_operator: false
             operator: field_topics_target_id_op
             operator_limit_selection: true
             operator_list:
@@ -3533,7 +3531,7 @@ display:
             identifier: topic_id
             required: false
             remember: false
-            multiple: true
+            multiple: false
             remember_roles:
               authenticated: authenticated
               anonymous: '0'
@@ -3545,11 +3543,14 @@ display:
               council_clerk: '0'
               budget: '0'
               park_editor: '0'
+              code_author: '0'
               code_editor: '0'
               group_creator: '0'
+              translator: '0'
               alert_editor: '0'
               neighborhood_editor: '0'
               sitewide_editor: '0'
+              support_agent: '0'
               administrator: '0'
             reduce: false
           is_grouped: false
@@ -3584,9 +3585,9 @@ display:
           exposed: true
           expose:
             operator_id: field_community_actions_target_id_op
-            label: Action
+            label: 'Service type'
             description: ''
-            use_operator: true
+            use_operator: false
             operator: field_community_actions_target_id_op
             operator_limit_selection: false
             operator_list: {  }
@@ -3605,11 +3606,14 @@ display:
               council_clerk: '0'
               budget: '0'
               park_editor: '0'
+              code_author: '0'
               code_editor: '0'
               group_creator: '0'
+              translator: '0'
               alert_editor: '0'
               neighborhood_editor: '0'
               sitewide_editor: '0'
+              support_agent: '0'
               administrator: '0'
             reduce: false
           is_grouped: false
@@ -3630,6 +3634,55 @@ display:
           hierarchy: true
           limit: true
           error_message: true
+        field_community_actions_target_id_1:
+          id: field_community_actions_target_id_1
+          table: node__field_community_actions
+          field: field_community_actions_target_id
+          relationship: none
+          group_type: group
+          admin_label: ''
+          plugin_id: taxonomy_index_tid
+          operator: or
+          value: {  }
+          group: 1
+          exposed: true
+          expose:
+            operator_id: field_community_actions_target_id_1_op
+            label: 'Service Type (Community Action) (field_community_actions)'
+            description: null
+            use_operator: false
+            operator: field_community_actions_target_id_1_op
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: field_community_actions_target_id_1
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+            reduce: false
+          is_grouped: true
+          group_info:
+            label: 'Has service type'
+            description: ''
+            identifier: has_service_type
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items:
+              2:
+                title: 'Has no service type'
+                operator: empty
+                value: {  }
+          reduce_duplicates: false
+          vid: community_actions
+          type: select
+          hierarchy: false
+          limit: true
+          error_message: true
         label:
           id: label
           table: groups_field_data
@@ -3646,16 +3699,16 @@ display:
           exposed: true
           expose:
             operator_id: label_op
-            label: Group
+            label: 'Group contains'
             description: ''
-            use_operator: true
+            use_operator: false
             operator: label_op
             operator_limit_selection: true
             operator_list:
               contains: contains
               empty: empty
               'not empty': 'not empty'
-            identifier: label
+            identifier: group
             required: false
             remember: false
             multiple: false
@@ -3670,10 +3723,14 @@ display:
               council_clerk: '0'
               budget: '0'
               park_editor: '0'
+              code_author: '0'
               code_editor: '0'
               group_creator: '0'
+              translator: '0'
               alert_editor: '0'
+              neighborhood_editor: '0'
               sitewide_editor: '0'
+              support_agent: '0'
               administrator: '0'
             placeholder: ''
           is_grouped: false
@@ -3688,6 +3745,75 @@ display:
             default_group: All
             default_group_multiple: {  }
             group_items: {  }
+        field_editor_experience_value:
+          id: field_editor_experience_value
+          table: node__field_editor_experience
+          field: field_editor_experience_value
+          relationship: none
+          group_type: group
+          admin_label: ''
+          plugin_id: list_field
+          operator: or
+          value:
+            all: all
+          group: 1
+          exposed: true
+          expose:
+            operator_id: field_editor_experience_value_op
+            label: 'Editor experience'
+            description: ''
+            use_operator: false
+            operator: field_editor_experience_value_op
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: editor_experience
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+              anonymous: '0'
+              publisher: '0'
+              policy_author: '0'
+              policy_editor: '0'
+              attorney: '0'
+              council_author: '0'
+              council_clerk: '0'
+              budget: '0'
+              park_editor: '0'
+              code_author: '0'
+              code_editor: '0'
+              group_creator: '0'
+              translator: '0'
+              alert_editor: '0'
+              neighborhood_editor: '0'
+              sitewide_editor: '0'
+              support_agent: '0'
+              administrator: '0'
+            reduce: false
+          is_grouped: true
+          group_info:
+            label: 'Editor experience'
+            description: ''
+            identifier: editor_experience
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items:
+              1:
+                title: 'Body content (preferred)'
+                operator: and
+                value:
+                  body: body
+              2:
+                title: 'Service modes (deprecated)'
+                operator: and
+                value:
+                  modes: modes
+          reduce_duplicates: false
         status:
           id: status
           table: node_field_data
@@ -3900,13 +4026,16 @@ display:
         groups:
           1: AND
       defaults:
+        access: false
         show_admin_links: true
         fields: false
         filters: false
         filter_groups: false
       display_description: ''
       display_extenders:
-        metatag_display_extender: {  }
+        metatag_display_extender:
+          metatags: {  }
+          tokenize: false
       path: admin/content/services
       menu:
         type: tab
@@ -3931,845 +4060,8 @@ display:
         - url.query_args
         - user
         - 'user.node_grants:view'
-        - user.permissions
+        - user.roles
       tags:
         - 'config:field.storage.node.field_destination_url'
         - 'config:field.storage.node.field_online_application'
-        - 'config:workflow_list'
-  services_by_mode:
-    id: services_by_mode
-    display_title: 'Services by mode'
-    display_plugin: page
-    position: 2
-    display_options:
-      fields:
-        title:
-          id: title
-          table: node_field_data
-          field: title
-          relationship: none
-          group_type: group
-          admin_label: ''
-          entity_type: node
-          entity_field: title
-          plugin_id: field
-          label: Title
-          exclude: false
-          alter:
-            alter_text: false
-            text: ''
-            make_link: false
-            path: ''
-            absolute: false
-            external: false
-            replace_spaces: false
-            path_case: none
-            trim_whitespace: false
-            alt: ''
-            rel: ''
-            link_class: ''
-            prefix: ''
-            suffix: ''
-            target: ''
-            nl2br: false
-            max_length: 0
-            word_boundary: true
-            ellipsis: true
-            more_link: false
-            more_link_text: ''
-            more_link_path: ''
-            strip_tags: false
-            trim: false
-            preserve_tags: ''
-            html: false
-          element_type: ''
-          element_class: ''
-          element_label_type: ''
-          element_label_class: ''
-          element_label_colon: true
-          element_wrapper_type: ''
-          element_wrapper_class: ''
-          element_default_classes: true
-          empty: ''
-          hide_empty: false
-          empty_zero: false
-          hide_alter_empty: true
-          click_sort_column: value
-          type: string
-          settings:
-            link_to_entity: true
-          group_column: entity_id
-          group_columns: {  }
-          group_rows: true
-          delta_limit: 0
-          delta_offset: 0
-          delta_reversed: false
-          delta_first_last: false
-          multi_type: separator
-          separator: ', '
-          field_api_classes: false
-        gid:
-          id: gid
-          table: group_content_field_data
-          field: gid
-          relationship: group_content
-          group_type: group
-          admin_label: ''
-          entity_type: group_content
-          entity_field: gid
-          plugin_id: field
-          label: Group
-          exclude: false
-          alter:
-            alter_text: false
-            text: ''
-            make_link: false
-            path: ''
-            absolute: false
-            external: false
-            replace_spaces: false
-            path_case: none
-            trim_whitespace: false
-            alt: ''
-            rel: ''
-            link_class: ''
-            prefix: ''
-            suffix: ''
-            target: ''
-            nl2br: false
-            max_length: 0
-            word_boundary: true
-            ellipsis: true
-            more_link: false
-            more_link_text: ''
-            more_link_path: ''
-            strip_tags: false
-            trim: false
-            preserve_tags: ''
-            html: false
-          element_type: ''
-          element_class: ''
-          element_label_type: ''
-          element_label_class: ''
-          element_label_colon: true
-          element_wrapper_type: ''
-          element_wrapper_class: ''
-          element_default_classes: true
-          empty: ''
-          hide_empty: false
-          empty_zero: false
-          hide_alter_empty: true
-          click_sort_column: target_id
-          type: entity_reference_label
-          settings:
-            link: true
-          group_column: target_id
-          group_columns: {  }
-          group_rows: true
-          delta_limit: 0
-          delta_offset: 0
-          delta_reversed: false
-          delta_first_last: false
-          multi_type: separator
-          separator: ', '
-          field_api_classes: false
-        field_service_modes:
-          id: field_service_modes
-          table: paragraph__field_service_modes
-          field: field_service_modes
-          relationship: field_service_mode
-          group_type: group
-          admin_label: ''
-          plugin_id: field
-          label: 'How can community members access this service'
-          exclude: false
-          alter:
-            alter_text: false
-            text: ''
-            make_link: false
-            path: ''
-            absolute: false
-            external: false
-            replace_spaces: false
-            path_case: none
-            trim_whitespace: false
-            alt: ''
-            rel: ''
-            link_class: ''
-            prefix: ''
-            suffix: ''
-            target: ''
-            nl2br: false
-            max_length: 0
-            word_boundary: true
-            ellipsis: true
-            more_link: false
-            more_link_text: ''
-            more_link_path: ''
-            strip_tags: false
-            trim: false
-            preserve_tags: ''
-            html: false
-          element_type: ''
-          element_class: ''
-          element_label_type: ''
-          element_label_class: ''
-          element_label_colon: true
-          element_wrapper_type: ''
-          element_wrapper_class: ''
-          element_default_classes: true
-          empty: ''
-          hide_empty: false
-          empty_zero: false
-          hide_alter_empty: true
-          click_sort_column: target_id
-          type: entity_reference_label
-          settings:
-            link: true
-          group_column: target_id
-          group_columns: {  }
-          group_rows: true
-          delta_limit: 0
-          delta_offset: 0
-          delta_reversed: false
-          delta_first_last: false
-          multi_type: separator
-          separator: ', '
-          field_api_classes: false
-        name:
-          id: name
-          table: users_field_data
-          field: name
-          relationship: uid
-          entity_type: user
-          entity_field: name
-          plugin_id: field
-          label: Author
-          exclude: false
-          alter:
-            alter_text: false
-          element_class: ''
-          element_default_classes: true
-          empty: ''
-          hide_empty: false
-          empty_zero: false
-          hide_alter_empty: true
-          type: user_name
-        changed:
-          id: changed
-          table: node_field_data
-          field: changed
-          entity_type: node
-          entity_field: changed
-          plugin_id: field
-          label: Updated
-          exclude: false
-          alter:
-            alter_text: false
-          element_class: ''
-          element_default_classes: true
-          empty: ''
-          hide_empty: false
-          empty_zero: false
-          hide_alter_empty: true
-          type: timestamp
-          settings:
-            date_format: short
-            custom_date_format: ''
-            timezone: ''
-        moderation_state:
-          id: moderation_state
-          table: content_moderation_state_field_data
-          field: moderation_state
-          relationship: none
-          group_type: group
-          admin_label: 'Moderation state'
-          entity_type: content_moderation_state
-          entity_field: moderation_state
-          plugin_id: moderation_state_field
-          label: 'Moderation state'
-          exclude: false
-          alter:
-            alter_text: false
-            text: ''
-            make_link: false
-            path: ''
-            absolute: false
-            external: false
-            replace_spaces: false
-            path_case: none
-            trim_whitespace: false
-            alt: ''
-            rel: ''
-            link_class: ''
-            prefix: ''
-            suffix: ''
-            target: ''
-            nl2br: false
-            max_length: 0
-            word_boundary: true
-            ellipsis: true
-            more_link: false
-            more_link_text: ''
-            more_link_path: ''
-            strip_tags: false
-            trim: false
-            preserve_tags: ''
-            html: false
-          element_type: ''
-          element_class: ''
-          element_label_type: ''
-          element_label_class: ''
-          element_label_colon: true
-          element_wrapper_type: ''
-          element_wrapper_class: ''
-          element_default_classes: true
-          empty: N/A
-          hide_empty: false
-          empty_zero: false
-          hide_alter_empty: true
-          click_sort_column: value
-          type: string
-          settings:
-            link_to_entity: false
-          group_column: value
-          group_columns: {  }
-          group_rows: true
-          delta_limit: 0
-          delta_offset: 0
-          delta_reversed: false
-          delta_first_last: false
-          multi_type: separator
-          separator: ', '
-          field_api_classes: false
-        operations:
-          id: operations
-          table: node
-          field: operations
-          relationship: none
-          group_type: group
-          admin_label: ''
-          plugin_id: entity_operations
-          label: Operations
-          exclude: false
-          alter:
-            alter_text: false
-            text: ''
-            make_link: false
-            path: ''
-            absolute: false
-            external: false
-            replace_spaces: false
-            path_case: none
-            trim_whitespace: false
-            alt: ''
-            rel: ''
-            link_class: ''
-            prefix: ''
-            suffix: ''
-            target: ''
-            nl2br: false
-            max_length: 0
-            word_boundary: true
-            ellipsis: true
-            more_link: false
-            more_link_text: ''
-            more_link_path: ''
-            strip_tags: false
-            trim: false
-            preserve_tags: ''
-            html: false
-          element_type: ''
-          element_class: ''
-          element_label_type: ''
-          element_label_class: ''
-          element_label_colon: true
-          element_wrapper_type: ''
-          element_wrapper_class: ''
-          element_default_classes: true
-          empty: ''
-          hide_empty: false
-          empty_zero: false
-          hide_alter_empty: true
-          destination: true
-      filters:
-        title:
-          id: title
-          table: node_field_data
-          field: title
-          relationship: none
-          group_type: group
-          admin_label: ''
-          entity_type: node
-          entity_field: title
-          plugin_id: string
-          operator: contains
-          value: ''
-          group: 1
-          exposed: true
-          expose:
-            operator_id: title_op
-            label: 'Title contains'
-            description: ''
-            use_operator: false
-            operator: title_op
-            operator_limit_selection: false
-            operator_list: {  }
-            identifier: title
-            required: false
-            remember: false
-            multiple: false
-            remember_roles:
-              authenticated: authenticated
-              anonymous: '0'
-              administrator: '0'
-            placeholder: ''
-          is_grouped: false
-          group_info:
-            label: ''
-            description: ''
-            identifier: ''
-            optional: true
-            widget: select
-            multiple: false
-            remember: false
-            default_group: All
-            default_group_multiple: {  }
-            group_items: {  }
-        label:
-          id: label
-          table: groups_field_data
-          field: label
-          relationship: gid
-          group_type: group
-          admin_label: ''
-          entity_type: group
-          entity_field: label
-          plugin_id: string
-          operator: contains
-          value: ''
-          group: 1
-          exposed: true
-          expose:
-            operator_id: label_op
-            label: 'Group title contains'
-            description: ''
-            use_operator: false
-            operator: label_op
-            operator_limit_selection: false
-            operator_list: {  }
-            identifier: label
-            required: false
-            remember: false
-            multiple: false
-            remember_roles:
-              authenticated: authenticated
-              anonymous: '0'
-              administrator: '0'
-            placeholder: ''
-          is_grouped: false
-          group_info:
-            label: ''
-            description: ''
-            identifier: ''
-            optional: true
-            widget: select
-            multiple: false
-            remember: false
-            default_group: All
-            default_group_multiple: {  }
-            group_items: {  }
-        moderation_state:
-          id: moderation_state
-          table: node_field_data
-          field: moderation_state
-          relationship: none
-          group_type: group
-          admin_label: ''
-          entity_type: node
-          plugin_id: moderation_state_filter
-          operator: in
-          value:
-            all: all
-            editorial-draft: editorial-draft
-            editorial-review: editorial-review
-            editorial-published: editorial-published
-            editorial-archived: editorial-archived
-          group: 1
-          exposed: true
-          expose:
-            operator_id: moderation_state_op
-            label: 'Moderation state'
-            description: ''
-            use_operator: false
-            operator: moderation_state_op
-            operator_limit_selection: false
-            operator_list: {  }
-            identifier: moderation_state
-            required: false
-            remember: false
-            multiple: false
-            remember_roles:
-              authenticated: authenticated
-              anonymous: '0'
-              administrator: '0'
-              page_creator: '0'
-              layout_manager: '0'
-              page_reviewer: '0'
-              landing_page_creator: '0'
-              landing_page_reviewer: '0'
-              media_creator: '0'
-              media_manager: '0'
-            reduce: false
-          is_grouped: false
-          group_info:
-            label: ''
-            description: ''
-            identifier: ''
-            optional: true
-            widget: select
-            multiple: false
-            remember: false
-            default_group: All
-            default_group_multiple: {  }
-            group_items: {  }
-        type:
-          id: type
-          table: node_field_data
-          field: type
-          relationship: none
-          group_type: group
-          admin_label: ''
-          entity_type: node
-          entity_field: type
-          plugin_id: bundle
-          operator: in
-          value:
-            city_service: city_service
-          group: 1
-          exposed: false
-          expose:
-            operator_id: type_op
-            label: 'Content type'
-            description: ''
-            use_operator: false
-            operator: type_op
-            operator_limit_selection: false
-            operator_list: {  }
-            identifier: type
-            required: false
-            remember: false
-            multiple: false
-            remember_roles:
-              authenticated: authenticated
-              anonymous: '0'
-              administrator: '0'
-            argument: null
-            reduce: false
-          is_grouped: false
-          group_info:
-            label: ''
-            description: ''
-            identifier: ''
-            optional: true
-            widget: select
-            multiple: false
-            remember: false
-            default_group: All
-            default_group_multiple: {  }
-            group_items: {  }
-        field_service_modes_target_id:
-          id: field_service_modes_target_id
-          table: paragraph__field_service_modes
-          field: field_service_modes_target_id
-          relationship: field_service_mode
-          group_type: group
-          admin_label: ''
-          plugin_id: taxonomy_index_tid
-          operator: or
-          value:
-            23: 23
-            28: 28
-            26: 26
-            24: 24
-            27: 27
-            25: 25
-          group: 1
-          exposed: true
-          expose:
-            operator_id: field_service_modes_target_id_op
-            label: Mode
-            description: ''
-            use_operator: false
-            operator: field_service_modes_target_id_op
-            operator_limit_selection: false
-            operator_list: {  }
-            identifier: service_mode_id
-            required: true
-            remember: false
-            multiple: false
-            remember_roles:
-              authenticated: authenticated
-              anonymous: '0'
-              administrator: '0'
-            reduce: false
-          is_grouped: false
-          group_info:
-            label: ''
-            description: ''
-            identifier: ''
-            optional: true
-            widget: select
-            multiple: false
-            remember: false
-            default_group: All
-            default_group_multiple: {  }
-            group_items: {  }
-          reduce_duplicates: false
-          vid: city_service_modes
-          type: select
-          hierarchy: false
-          limit: true
-          error_message: true
-        langcode:
-          id: langcode
-          table: groups_field_data
-          field: langcode
-          relationship: gid
-          group_type: group
-          admin_label: ''
-          entity_type: group
-          entity_field: langcode
-          plugin_id: language
-          operator: in
-          value:
-            '***LANGUAGE_site_default***': '***LANGUAGE_site_default***'
-          group: 1
-          exposed: false
-          expose:
-            operator_id: ''
-            label: ''
-            description: ''
-            use_operator: false
-            operator: ''
-            operator_limit_selection: false
-            operator_list: {  }
-            identifier: ''
-            required: false
-            remember: false
-            multiple: false
-            remember_roles:
-              authenticated: authenticated
-            reduce: false
-          is_grouped: false
-          group_info:
-            label: ''
-            description: ''
-            identifier: ''
-            optional: true
-            widget: select
-            multiple: false
-            remember: false
-            default_group: All
-            default_group_multiple: {  }
-            group_items: {  }
-        langcode_1:
-          id: langcode_1
-          table: node_field_data
-          field: langcode
-          relationship: none
-          group_type: group
-          admin_label: ''
-          entity_type: node
-          entity_field: langcode
-          plugin_id: language
-          operator: in
-          value:
-            en: en
-          group: 1
-          exposed: true
-          expose:
-            operator_id: langcode_1_op
-            label: Language
-            description: ''
-            use_operator: false
-            operator: langcode_1_op
-            operator_limit_selection: false
-            operator_list: {  }
-            identifier: langcode
-            required: false
-            remember: false
-            multiple: false
-            remember_roles:
-              authenticated: authenticated
-              anonymous: '0'
-              publisher: '0'
-              policy_author: '0'
-              policy_editor: '0'
-              attorney: '0'
-              council_author: '0'
-              council_clerk: '0'
-              budget: '0'
-              park_editor: '0'
-              code_editor: '0'
-              group_creator: '0'
-              translator: '0'
-              alert_editor: '0'
-              neighborhood_editor: '0'
-              sitewide_editor: '0'
-              support_agent: '0'
-              administrator: '0'
-            reduce: false
-          is_grouped: false
-          group_info:
-            label: ''
-            description: ''
-            identifier: ''
-            optional: true
-            widget: select
-            multiple: false
-            remember: false
-            default_group: All
-            default_group_multiple: {  }
-            group_items: {  }
-        langcode_2:
-          id: langcode_2
-          table: paragraphs_item_field_data
-          field: langcode
-          relationship: field_service_mode
-          group_type: group
-          admin_label: ''
-          entity_type: paragraph
-          entity_field: langcode
-          plugin_id: language
-          operator: in
-          value:
-            '***LANGUAGE_site_default***': '***LANGUAGE_site_default***'
-          group: 1
-          exposed: false
-          expose:
-            operator_id: ''
-            label: ''
-            description: ''
-            use_operator: false
-            operator: ''
-            operator_limit_selection: false
-            operator_list: {  }
-            identifier: ''
-            required: false
-            remember: false
-            multiple: false
-            remember_roles:
-              authenticated: authenticated
-            reduce: false
-          is_grouped: false
-          group_info:
-            label: ''
-            description: ''
-            identifier: ''
-            optional: true
-            widget: select
-            multiple: false
-            remember: false
-            default_group: All
-            default_group_multiple: {  }
-            group_items: {  }
-      filter_groups:
-        operator: AND
-        groups:
-          1: AND
-      defaults:
-        relationships: false
-        fields: false
-        filters: false
-        filter_groups: false
-      relationships:
-        uid:
-          id: uid
-          table: node_field_data
-          field: uid
-          admin_label: author
-          plugin_id: standard
-          required: true
-        group_content:
-          id: group_content
-          table: node_field_data
-          field: group_content
-          relationship: none
-          group_type: group
-          admin_label: 'Content group content'
-          entity_type: node
-          plugin_id: group_content_to_entity_reverse
-          required: false
-          group_content_plugins:
-            'group_node:city_service': 'group_node:city_service'
-            'group_node:alert': '0'
-            'group_node:change_set': '0'
-            'group_node:city_charter': '0'
-            'group_node:city_code': '0'
-            'group_node:construction_project': '0'
-            'group_node:contact': '0'
-            'group_node:council_agenda': '0'
-            'group_node:council_document': '0'
-            'group_node:event': '0'
-            'group_node:external_resource': '0'
-            'group_node:location': '0'
-            'group_node:news': '0'
-            'group_node:notification': '0'
-            'group_node:page': '0'
-            'group_node:park_facility': '0'
-            'group_node:policy': '0'
-            'group_node:room': '0'
-            'group_node:service_location': '0'
-            'group_node:top_search': '0'
-        gid:
-          id: gid
-          table: group_content_field_data
-          field: gid
-          relationship: group_content
-          group_type: group
-          admin_label: Group
-          entity_type: group_content
-          entity_field: gid
-          plugin_id: standard
-          required: false
-        field_service_mode:
-          id: field_service_mode
-          table: node__field_service_mode
-          field: field_service_mode
-          relationship: none
-          group_type: group
-          admin_label: 'field_service_mode: Paragraph'
-          plugin_id: standard
-          required: true
-      display_description: ''
-      display_extenders:
-        metatag_display_extender: {  }
-      path: admin/content/services-by-mode
-      menu:
-        type: tab
-        title: 'Services by mode'
-        description: ''
-        weight: -5
-        expanded: false
-        menu_name: admin
-        parent: ''
-        context: '0'
-      tab_options:
-        type: normal
-        title: Content
-        description: 'Find and manage content'
-        weight: -10
-    cache_metadata:
-      max-age: -1
-      contexts:
-        - 'languages:language_content'
-        - 'languages:language_interface'
-        - url
-        - url.query_args
-        - user
-        - 'user.node_grants:view'
-        - user.permissions
-      tags:
-        - 'config:field.storage.paragraph.field_service_modes'
         - 'config:workflow_list'
