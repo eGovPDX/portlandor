@@ -578,6 +578,13 @@ function portland_search_api_query_alter(\Drupal\search_api\Query\QueryInterface
  */
 function portland_search_api_solr_query_alter(\Solarium\QueryType\Select\Query\Query $solarium_query, \Drupal\search_api\Query\QueryInterface $query)
 {
+  // Only modify the query for site search
+  $search_id = $query->getSearchId();
+  if (strpos($search_id, "search_api_page:search_portland_gov") !== 0 &&
+  strpos($search_id, "search_api_autocomplete:search_portland_gov") !== 0) {
+    return;
+  }
+
   // Must get the original keys
   $keys = trim($query->getOriginalKeys());
   // Convert "OR" at the start or end to lower case
@@ -601,13 +608,6 @@ function portland_search_api_solr_query_alter(\Solarium\QueryType\Select\Query\Q
   }
   else {
     $query->keys($keys);
-  }
-
-  // Only modify the query for site search
-  $search_id = $query->getSearchId();
-  if (strpos($search_id, "search_api_page:search_portland_gov") !== 0 &&
-  strpos($search_id, "search_api_autocomplete:search_portland_gov") !== 0) {
-    return;
   }
 
   $date_field_name = 'aggregated_sorting_date'; // This can be any UNIX timestamp field
