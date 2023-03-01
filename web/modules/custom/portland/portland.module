@@ -572,23 +572,26 @@ function portland_search_api_query_alter(\Drupal\search_api\Query\QueryInterface
 
 
 /**
- * Implements hook_search_api_solr_query_alter() boost based on recently
- * published date.
+ * Implements hook_search_api_solr_query_alter() to boost score based on recently
+ * published date and filter out input that will cause WSOD.
  * See https://atendesigngroup.com/blog/drupal-8-apache-solr-boost-search-term-relevance-publish-date
  */
 function portland_search_api_solr_query_alter(\Solarium\QueryType\Select\Query\Query $solarium_query, \Drupal\search_api\Query\QueryInterface $query)
 {
   // Must get the original keys
-  $keys = $query->getOriginalKeys();
-  // OR and AND in upper case are reseved keywords of Solr
-  $keys = strtolower($keys);
-  // "or" normally means "oregon"
-  $keys = preg_replace("/\bor\b/", "oregon", $keys);
-  // https://lucene.apache.org/core/8_7_0/queryparser/org/apache/lucene/queryparser/classic/package-summary.html#Escaping_Special_Characters
-  // Remove all Solr special characters
-  $keys = trim(preg_replace("/[\+\-\|\!\(\)\{\}\[\]\^\~\*\?\:\\\\\/]/", "", $keys));
-  // Allow query like "pay and contest"
-  $keys = str_replace("&", " and ", $keys);
+  $keys = trim($query->getOriginalKeys());
+  // Convert "OR" at the start or end to lower case
+  $keys = preg_replace("/(\bOR$|^OR\b)/", "or", $keys);
+  // Convert "AND" at the start or end to lower case
+  $keys = preg_replace("/(\bAND$|^AND\b)/", "and", $keys);
+  // Remove whole word || at the start and end
+  $keys = preg_replace("/(\b\|\|$|^\|\|\b)/", "", $keys);
+  // + and - can't be at the end as whole word
+  $keys = preg_replace("/\b(\+|\-)$/", "", $keys);
+  // ^ has to be appended immediately before a number. Also can't be the only character
+  $keys = preg_replace("/\^([^0-9\.]+|$)/", "", $keys);
+  // If keywords only contain &, or if it's ||, remove it
+  $keys = preg_replace("/(\&+|^\|\|$)/", "", $keys);
   if(empty($keys)) {
     if(\Drupal::routeMatch()->getRouteName() === "search_api_page.ar.search_portland_gov") {
       $url = Drupal\Core\Url::fromRoute('search_api_page.ar.search_portland_gov');
