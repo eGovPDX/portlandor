@@ -585,22 +585,29 @@ function portland_search_api_solr_query_alter(\Solarium\QueryType\Select\Query\Q
     return;
   }
 
-  // Must get the original keys
   $keys = trim($query->getKeys());
-  // If keys only contains "@", assume it means "at"
-  if($keys === "@") $keys = "at";
-  // Convert "OR" at the start or end to lower case
-  $keys = preg_replace("/(\bOR$|^OR\b)/", "or", $keys);
-  // Convert "AND" at the start or end to lower case
-  $keys = preg_replace("/(\bAND$|^AND\b)/", "and", $keys);
-  // Remove whole word "||" at the start and end
-  $keys = preg_replace("/(\b\|\|$|^\|\|\b)/", "", $keys);
-  // "+" and "-" can't be at the end as whole word
-  $keys = preg_replace("/\b(\+|\-)$/", "", $keys);
-  // "^" has to be appended immediately before a number. Also can't be the only character
-  $keys = preg_replace("/\^([^0-9\.]+|$)/", "", $keys);
-  // If keywords only contain "&", or if it's exactly "||", remove it
-  $keys = preg_replace("/(\&+|^\|\|$)/", "", $keys);
+  $keys = preg_replace([
+    // Convert "OR" and "||" at the start or end to "or"
+    "/^OR\b|\bOR$/",
+    "/^\|\|(?!\w)|(?!\w)\|\|$/",
+    // Convert "AND" and "&&" at the start or end to "and"
+    "/^AND\b|\bAND$/",
+    "/^\&\&(?!\w)|(?!\w)\&\&$/",
+    // "+" and "-" can't be at the end with space in any combination
+    "/\s[\+\- \"]+$/",
+    // "^" has to be appended immediately before a number
+    "/\^[^0-9\.]+/",
+    // If keywords only contain special characters and space, clear it
+    "/^[ @\+\-\&\|\!\(\)\{\}\[\]\^\"\'\~\*\?\:\\\\\/]+$/",
+  ], [
+    "or",
+    "or",
+    "and",
+    "and",
+    // See https://www.php.net/manual/en/function.preg-replace.php
+    // If there are fewer elements in the replacement array than in the pattern array, any extra patterns will be replaced by an empty string. 
+  ], $keys);
+
   if(empty($keys)) {
     if(\Drupal::routeMatch()->getRouteName() === "search_api_page.ar.search_portland_gov") {
       $url = Drupal\Core\Url::fromRoute('search_api_page.ar.search_portland_gov');
