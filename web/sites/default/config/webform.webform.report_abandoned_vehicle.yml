@@ -41,7 +41,7 @@ elements: |-
         <div class="alert alert--info next-steps">
         <h2>Next Steps</h2>
 
-        <p>Please use our <a href="/311/ada-request">Request an ADA Accommodation</a> form to sumbit your request.</p>
+        <p>Please use our <a href="/311/ada-request">Request an ADA Accommodation</a> form to submit your request.</p>
         </div>
   section_confidentiality:
     '#type': webform_section
@@ -81,7 +81,6 @@ elements: |-
     report_location:
       '#type': portland_location_picker
       '#title': Location
-      '#required': true
       '#default_value':
         location_type: street
         location_park: ''
@@ -94,7 +93,7 @@ elements: |-
       '#location_type__required': true
       '#location_address__required': true
       '#location_lat__required': true
-      '#location_details__access': false
+      '#place_name__access': false
       '#location_asset_id__access': false
       '#location_region_id__access': false
       '#location_municipality_name__access': false
@@ -150,37 +149,44 @@ elements: |-
           - or
           - ':input[name="report_location[location_type]"]':
               unchecked: true
-      report_people_living_there:
-        '#type': radios
-        '#title': 'Do there appear to be people living at the site?'
-        '#prepopulate': true
-        '#options': yes_no
-        '#options_display': side_by_side
-        '#required': true
-      report_visible_items:
-        '#type': checkboxes
-        '#title': 'Are any of the following items visible at the site?'
-        '#description': 'Check all that apply, or none.'
-        '#description_display': before
-        '#prepopulate': true
-        '#options':
-          tent_structure: 'Tent or other structure'
-          trash: 'Trash or debris'
-          vehicle: 'A vehicle such as a car, truck, RV, trailer, motorcycle, or boat'
-        '#options_none': true
-      report_select_visible_to_continue:
-        '#type': webform_markup
+      container_campsite:
+        '#type': container
         '#states':
-          visible:
-            ':input[name="report_visible_items[tent_structure]"]':
-              unchecked: true
-            ':input[name="report_visible_items[vehicle]"]':
-              unchecked: true
-            ':input[name="report_visible_items[trash]"]':
-              unchecked: true
-            ':input[name="report_visible_items[none]"]':
-              unchecked: true
-        '#markup': 'Select an option above to continue.'
+          invisible:
+            ':input[name="abandoned_auto"]':
+              '!value': ''
+        report_people_living_there:
+          '#type': radios
+          '#title': 'Do there appear to be people living at the site?'
+          '#prepopulate': true
+          '#options': yes_no
+          '#options_display': side_by_side
+          '#required': true
+        report_visible_items:
+          '#type': checkboxes
+          '#title': 'Are any of the following items visible at the site?'
+          '#description': 'Check all that apply, or none.'
+          '#description_display': before
+          '#prepopulate': true
+          '#options':
+            tent_structure: 'Tent or other structure'
+            vehicle: 'A vehicle, such as a car, truck, RV, trailer, motorcycle, or boat'
+            trash: 'Trash or debris'
+          '#options_none': true
+          '#required': true
+        report_select_visible_to_continue:
+          '#type': webform_markup
+          '#states':
+            visible:
+              ':input[name="report_visible_items[tent_structure]"]':
+                unchecked: true
+              ':input[name="report_visible_items[vehicle]"]':
+                unchecked: true
+              ':input[name="report_visible_items[trash]"]':
+                unchecked: true
+              ':input[name="report_visible_items[none]"]':
+                unchecked: true
+          '#markup': 'Select an option above to continue.'
       container_none_of_the_above:
         '#type': container
         '#states':
@@ -202,105 +208,77 @@ elements: |-
         '#type': container
         '#states':
           visible:
-            ':input[name="report_visible_items[vehicle]"]':
-              checked: true
-        report_vehicle_make_model:
-          '#type': textfield
-          '#title': 'What is the make and model of the vehicle?'
-        report_vehicle_license_plate:
-          '#type': textfield
-          '#title': 'What is the vehicle license plate?'
-          '#description': 'Please include the state, if visible.'
+            - ':input[name="report_visible_items[vehicle]"]':
+                checked: true
+            - or
+            - ':input[name="abandoned_auto"]':
+                '!value': ''
         report_vehicle_illegally_parked:
           '#type': radios
-          '#title': 'Is the vehicle illegally parked?'
+          '#title': 'Is the vehicle illegally parked or blocking a street/driveway?'
           '#options': yes_no
+          '#options_display': side_by_side
           '#required': true
-        report_vehicle_blocking:
-          '#type': radios
-          '#title': 'Is the vehicle blocking a street, driveway, sidewalk, or bus/MAX/Street car stop or lane??'
-          '#options': yes_no
-          '#required': true
-          '#states':
-            visible:
-              ':input[name="report_vehicle_illegally_parked"]':
-                value: 'Yes'
         container_vehicle_blocking:
           '#type': container
           '#states':
             visible:
-              ':input[name="report_vehicle_blocking"]':
+              ':input[name="report_vehicle_illegally_parked"]':
                 value: 'Yes'
-          report_illegally_parked_vehicle_text:
-            '#type': webform_markup
-            '#states':
-              visible:
-                - ':input[name="report_visible_items[tent_structure]"]':
-                    checked: true
-                - or
-                - ':input[name="report_visible_items[trash]"]':
-                    checked: true
-            '#admin_notes': 'Should be displayed if visible includes any item besides vehicle and illegally parked = Yes.'
-            '#markup': |-
-              <div class="next-steps">
-              <p>In addition to submitting this form, please call Parking Enforcement at <a href="tel:+15038235195">503-823-5195</a> to report the vehicle that is blocking.</p>
-              </div>
           report_illegally_parked_vehicle_text_stop:
             '#type': webform_markup
-            '#states':
-              visible:
-                ':input[name="report_visible_items[tent_structure]"]':
-                  unchecked: true
-                ':input[name="report_visible_items[trash]"]':
-                  unchecked: true
             '#admin_notes': '<p>Should be displayed if visible only includes vehicle and illegally parked = Yes.</p>'
-            '#markup': |
+            '#markup': |-
               <div class="alert alert--info next-steps">
               <h2>Next Steps</h2>
 
-              <p>Please call Parking Enforcement at <a href="tel:+15038235195">503-823-5195</a> to report the vehicle that is blocking.</p>
+              <p>Please call Parking Enforcement at <a href="tel:+15038235195">503-823-5195</a> to report this issue.</p>
               </div>
         container_vehicle_not_blocking:
           '#type': container
           '#states':
             visible:
-              - ':input[name="report_vehicle_illegally_parked"]':
-                  value: 'No'
-              - or
-              - ':input[name="report_vehicle_blocking"]':
-                  value: 'No'
+              ':input[name="report_vehicle_illegally_parked"]':
+                value: 'No'
+          report_vehicle_inoperable:
+            '#type': radios
+            '#title': 'Does the vehicle appear inoperable?'
+            '#description': |-
+              For example, does it have:
+              <ul>
+              	<li>Severe fire damage</li>
+              	<li>Severe damage from a crash</li>
+              	<li>Missing engine</li>
+              	<li>Missing or severely shattered windshield</li>
+              	<li>Missing parts or other damage that makes it appear inoperable</li>
+              	<li>One or more flat tires</li>
+              	<li>The frame on blocks or jacks</li>
+              	<li>No license plate or trip permit</li>
+              	<li>Registration or trip permit expired more than six months</li>
+              </ul>
+            '#description_display': before
+            '#options': yes_no
+            '#options_display': side_by_side
+            '#required': true
+            '#states_clear': false
           report_is_vehicle_stolen:
             '#type': radios
-            '#title': 'Do you think the vehicle may be stolen?'
+            '#title': 'Do you think that the vehicle may be stolen?'
             '#options': yes_no
+            '#options_display': side_by_side
             '#required': true
+            '#states':
+              invisible:
+                ':input[name="report_vehicle_inoperable"]':
+                  value: 'Yes'
           container_stolen:
             '#type': container
             '#states':
               visible:
                 ':input[name="report_is_vehicle_stolen"]':
                   value: 'Yes'
-            report_stolen_vehicle_text:
-              '#type': webform_markup
-              '#states':
-                visible:
-                  - ':input[name="report_visible_items[tent_structure]"]':
-                      checked: true
-                  - or
-                  - ':input[name="report_visible_items[trash]"]':
-                      checked: true
-              '#markup': |-
-                <div class="alert alert--info next-steps">
-                <p>In addition to submitting this form, please contact Portland Police Auto Records at <a href="tel:+15038230044">(503) 823-0044</a>&nbsp;to report a vehicle that might be stolen.</p>
-                </div>
             report_stolen_vehicle_text_stop:
               '#type': webform_markup
-              '#states':
-                visible:
-                  ':input[name="report_visible_items[tent_structure]"]':
-                    unchecked: true
-                  ':input[name="report_visible_items[trash]"]':
-                    unchecked: true
               '#markup': |-
                 <div class="alert alert--info">
                   <h2>
@@ -313,61 +291,16 @@ elements: |-
             '#states':
               visible:
                 ':input[name="report_is_vehicle_stolen"]':
-                  value: 'No'
-            report_vehicle_inoperable:
-              '#type': radios
-              '#title': 'Does the vehicle appear inoperable?'
-              '#description': |
-                For example, does it have:
-                <ul>
-                	<li>Severe fire damage</li>
-                	<li>Severe damage from a crash</li>
-                	<li>Missing engine</li>
-                	<li>Missing or severely shattered windshield</li>
-                	<li>Missing parts or other damage that makes it appear inoperable</li>
-                	<li>One or more flat tires</li>
-                	<li>The frame on blocks or jacks</li>
-                	<li>No license plate or trip permit</li>
-                	<li>Registration or trip permit expired more than six months</li>
-                </ul>
-              '#description_display': before
-              '#options': yes_no
-              '#options_display': side_by_side
-              '#required': true
-              '#states_clear': false
+                  '!value': 'Yes'
             container_not_inoperable:
               '#type': container
               '#states':
                 visible:
                   ':input[name="report_vehicle_inoperable"]':
                     value: 'No'
-              report_need_more_info_text:
-                '#type': webform_markup
-                '#states':
-                  visible:
-                    - ':input[name="report_visible_items[tent_structure]"]':
-                        checked: true
-                    - or
-                    - ':input[name="report_visible_items[trash]"]':
-                        checked: true
-                    - or
-                    - ':input[name="report_visible_items[none]"]':
-                        checked: true
-                '#markup': |-
-                  <div class="alert alert--info next-steps">
-                  <p>In addition to submitting this form, please call <a href="tel:311">3-1-1</a> or <a href="tel:+15038234000">(503) 823-4000</a> to discuss further. We need more information to determine if we can address your concerns about the vehicle in your report.</p>
-                  </div>
               report_need_more_info_text_stop:
                 '#type': webform_markup
-                '#states':
-                  visible:
-                    ':input[name="report_visible_items[tent_structure]"]':
-                      unchecked: true
-                    ':input[name="report_visible_items[trash]"]':
-                      unchecked: true
-                    ':input[name="report_visible_items[none]"]':
-                      unchecked: true
-                '#markup': |
+                '#markup': |-
                   <div class="alert alert--info next-steps">
                     <h2>
                       Next Steps
@@ -380,38 +313,65 @@ elements: |-
                 visible:
                   ':input[name="report_vehicle_inoperable"]':
                     value: 'Yes'
-              markup_01:
-                '#type': webform_markup
-                '#states':
-                  visible:
-                    - ':input[name="report_visible_items[tent_structure]"]':
-                        checked: true
-                    - or
-                    - ':input[name="report_visible_items[trash]"]':
-                        checked: true
-                    - or
-                    - ':input[name="report_visible_items[none]"]':
-                        checked: true
-                '#markup': |-
-                  <div class="alert alert--info next-steps">
-                  <p>You are trying to report an <a href="/transportation/parking/abandoned-auto">abandoned vehicle</a>. In addition to submitting this form, please call <a href="tel:+15038237309">(503) 823-7309</a> anytime to make this report.</p>
-                  </div>
-              markup:
-                '#type': webform_markup
-                '#states':
-                  visible:
-                    ':input[name="report_visible_items[tent_structure]"]':
-                      unchecked: true
-                    ':input[name="report_visible_items[trash]"]':
-                      unchecked: true
-                    ':input[name="report_visible_items[none]"]':
-                      unchecked: true
-                '#markup': |-
-                  <div class="alert alert--info next-steps">
-                  <h2>Next Steps</h2>
-
-                  <p>You are trying to report an <a href="/transportation/parking/abandoned-auto">abandoned vehicle</a>. Please call <a href="tel:+15038237309">(503) 823-7309</a> anytime to make this report.</p>
-                  </div>
+              report_vehicle_type:
+                '#type': select
+                '#title': 'Vehicle type'
+                '#options':
+                  '2 Door': '2 Door'
+                  '4 Door': '4 Door'
+                  '5th Wheel': '5th Wheel'
+                  Boat: Boat
+                  'Boat on Trailer': 'Boat on Trailer'
+                  'Boat Trailer': 'Boat Trailer'
+                  'Box Truck': 'Box Truck'
+                  Bus: Bus
+                  Camper: Camper
+                  Canopy: Canopy
+                  'Cargo Trailer': 'Cargo Trailer'
+                  Dropbox: Dropbox
+                  Dumpster: Dumpster
+                  'Flatbed trailer': 'Flatbed trailer'
+                  Motorcycle: Motorcycle
+                  Motorhome: Motorhome
+                  Pickup: Pickup
+                  'Pickup with Trailer': 'Pickup with Trailer'
+                  Pod: Pod
+                  'Semi Cab': 'Semi Cab'
+                  'Semi Trailer': 'Semi Trailer'
+                  'Station Wagon': 'Station Wagon'
+                  'Step Van': 'Step Van'
+                  'Storage Container': 'Storage Container'
+                  SUV: SUV
+                  'Tractor Trailer': 'Tractor Trailer'
+                  Trailer: Trailer
+                  'Travel Trailer': 'Travel Trailer'
+                  Truck: Truck
+                  'Utility Trailer': 'Utility Trailer'
+                  Van: Van
+                '#required': true
+              report_vehicle_make:
+                '#type': select
+                '#title': 'Vehicle make'
+                '#options':
+                  test: test
+                '#required': true
+              report_vehicle_color:
+                '#type': select
+                '#title': 'Color of vehicle'
+                '#options':
+                  test: test
+                '#required': true
+              report_vehicle_license_plate_state:
+                '#type': select
+                '#title': 'License plate state'
+                '#description': 'What state is indicated on the vehicle&rsquo;s license plate (if no plates, please leave blank)'
+                '#options':
+                  test: test
+              report_vehicle_license_plate_number:
+                '#type': textfield
+                '#title': 'License plate number'
+                '#description': 'What is the vehicle&rsquo;s license plate number? (if no plates, please leave blank)'
+                '#maxlength': 8
       container_submit:
         '#type': container
         '#states':
@@ -423,6 +383,9 @@ elements: |-
                 checked: true
             - or
             - ':input[name="report_people_living_there"]':
+                value: 'Yes'
+            - or
+            - ':input[name="report_vehicle_inoperable"]':
                 value: 'Yes'
         report_photo:
           '#type': webform_image_file
@@ -471,19 +434,13 @@ elements: |-
         actions:
           '#type': webform_actions
           '#title': 'Submit button(s)'
-  webform_identifier:
-    '#type': hidden
-    '#title': 'Webform ID'
-    '#default_value': report_campsite_or_vehicle
   report_ticket_id:
     '#type': hidden
     '#title': 'Report Ticket ID'
-  spacer:
-    '#type': webform_markup
-    '#markup': |-
-      <br />
-      <br />
-      &nbsp;
+  abandoned_auto:
+    '#type': hidden
+    '#title': 'Abandoned Auto Toggle'
+    '#prepopulate': true
 css: ''
 javascript: ''
 settings:
@@ -976,7 +933,7 @@ handlers:
     handler_id: submit_to_zendesk_irp
     label: 'Submit to Zendesk/IRP'
     notes: 'Creates a request in Zendesk, which is then pulled into the IRP processes and dashboards using a SQL connector for Zendesk. Ticket is created as New, but is immediately changed to Solved using a Zendesk trigger, due to issues with solving tickets through the API. All submissions from this from go to IRP regardless of any additional routing, unless the Develper Test box is checked, in which case the ticket is created in the Developer Test Group.'
-    status: true
+    status: false
     conditions:
       disabled:
         ':input[name="support_agent_use_only[test_submission]"]':
