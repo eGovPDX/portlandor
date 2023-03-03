@@ -233,7 +233,10 @@ class BatchCommands extends DrushCommands
     $matches = [];
     preg_match('/^(<style>\.embed-container [^>]+<\/style><div class="embed-container">)?<iframe [^>]+ src="(https?:)?(?<url>\/\/[^\/]+\.maps\.arcgis\.com\/apps\/Embed\/index.html\?webmap=[^"]+)".+<\/iframe>(<\/div>)?$/', trim($input), $matches);
     if (isset($matches['url'])) {
-      return $matches['url'];
+      if(str_starts_with($matches['url'], "//"))
+        return "https:" . $matches['url'];
+      else
+        return $matches['url'];
     }
     preg_match('/^<iframe [^>]+ src="(?<url>https:\/\/arcg.is\/[^"]+)".+<\/iframe>$/', trim($input), $matches);
     if (isset($matches['url'])) {
