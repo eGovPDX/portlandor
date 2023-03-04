@@ -1,7 +1,9 @@
 const path = require('path');
 const webpack = require('webpack');
 const CopyPlugin = require('copy-webpack-plugin');
+const CssMinimizerPlugin = require("css-minimizer-webpack-plugin");
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
+const RTLCSSPlugin = require('rtlcss-webpack-plugin');
 
 const isProd = process.env.NODE_ENV === 'production';
 
@@ -67,13 +69,19 @@ const config = {
         { from: 'node_modules/@fortawesome/fontawesome-free/webfonts' },
       ],
     }),
+    new RTLCSSPlugin('cloudy-rtl.bundle.css'),
   ],
+  optimization: {
+    minimizer: [
+      new CssMinimizerPlugin(),
+    ],
+  },
   module: {
     rules: [
       {
         test: /\.js$/,
         use: {
-          loader: 'swc-loader'
+          loader: 'swc-loader',
         },
       },
       {
@@ -91,13 +99,19 @@ const config = {
             options: {
               postcssOptions: {
                 plugins: [
-                  "postcss-preset-env",
+                  'postcss-preset-env',
                 ],
               },
             },
           },
           {
             loader: 'sass-loader',
+            options: {
+              sassOptions: {
+                // Needed to preserve comments for RTLCSS
+                outputStyle: 'expanded',
+              },
+            },
           },
         ],
       },
