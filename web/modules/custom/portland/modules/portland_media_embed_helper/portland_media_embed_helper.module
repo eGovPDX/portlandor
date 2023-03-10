@@ -137,10 +137,13 @@ function portland_media_embed_helper_form_entity_embed_dialog_alter(array &$form
     $entity = $form_state->get('entity');
     $entity_translations = $entity->getTranslationLanguages(FALSE);
     $entity_translation_names = array_map(fn($lang) => $lang->getName(), $entity_translations);
+    $user_can_translate = \Drupal::currentUser()->hasPermission('translate editable entities');
     $form['attributes']['data-translate-media'] = [
       '#type' => 'item',
       '#title' => t('Translate this media item'),
-      '#markup' => '<a target="_blank" href="/media/' . $entity->id(). '/translations">Translate</a>',
+      '#markup' => $user_can_translate
+        ? '<a target="_blank" href="/media/' . $entity->id(). '/translations">Translate</a>'
+        : 'You do not have the translator role.',
       '#description' => (count($entity_translations) > 0
         ? 'Already translated in: ' .  join(', ', $entity_translation_names)
         : 'This media currently has no translations.'),
