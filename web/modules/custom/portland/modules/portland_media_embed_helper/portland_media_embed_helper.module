@@ -88,7 +88,7 @@ function portland_media_embed_helper_form_entity_embed_dialog_alter(array &$form
   }
 
   // Hide additional fields (e.g. alt text) from entity_embed module
-  $form['attributes']['data-entity-embed-display-settings']['#access'] = FALSE;
+  $form['attributes']['data-entity-embed-display-settings']['#access'] = false;
   // Move view mode selection to bottom
   $form['attributes']['data-entity-embed-display']['#weight'] = 99;
 
@@ -130,24 +130,28 @@ function portland_media_embed_helper_form_entity_embed_dialog_alter(array &$form
     $form['attributes']['data-start-cue']['#description'] = "Provide the start time in seconds";
   }
 
-  // if this is the embed dialog, add translation link
+  // if this is within the embed dialog
   if (array_key_exists('data-embed-button', $form['attributes'])) {
     $entity = $form_state->get('entity');
-    $entity_translations = $entity->getTranslationLanguages(FALSE);
-    $entity_translation_names = array_map(fn($lang) => $lang->getName(), $entity_translations);
-    $user_can_translate = \Drupal::currentUser()->hasPermission('translate editable entities');
-    $form['attributes']['data-translate-media'] = [
-      '#type' => 'item',
-      '#title' => t('Translate this media item'),
-      '#markup' => $user_can_translate
-        ? '<a target="_blank" href="/media/' . $entity->id(). '/translations">Translate</a>'
-        : 'You do not have the translator role.',
-      '#description' => (count($entity_translations) > 0
-        ? 'Already translated in: ' .  join(', ', $entity_translation_names)
-        : 'This media currently has no translations.'),
-    ];
+    // if media type is translatable, add translate link
+    if ($entity->isTranslatable()) {
+      $entity_translations = $entity->getTranslationLanguages(FALSE);
+      $entity_translation_names = array_map(fn($lang) => $lang->getName(), $entity_translations);
+      $user_can_translate = \Drupal::currentUser()->hasPermission('translate editable entities');
+      $form['attributes']['data-translate-media'] = [
+        '#type' => 'item',
+        '#title' => t('Translate this media item'),
+        '#weight' => 0,
+        '#markup' => $user_can_translate
+          ? '<a target="_blank" href="/media/' . $entity->id(). '/translations">Translate</a>'
+          : 'You do not have the translator role.',
+        '#description' => (count($entity_translations) > 0
+          ? 'Already translated in: ' .  join(', ', $entity_translation_names)
+          : 'This media currently has no translations.'),
+      ];
+    }
 
-    // additionally if document, add alt link text
+    // if document, add alt link text
     $embed_type = $form['attributes']['data-embed-button']['#value'];
     if (isset($embed_type) && $embed_type == "document_browser") {
       $entity_element = $form_state->get('entity_element');
