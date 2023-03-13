@@ -17,8 +17,6 @@ use Drupal\views\Render\ViewsRenderPipelineMarkup;
 // This file concerns itself with setting up tokens with hooks
 include 'portland.tokens.inc';
 
-const ALERTS_COUNTER_CACHE_KEY = 'portland.active.alerts';
-
 /**
  * Get the parent group IDs of an entity.
  * See https://drupal.stackexchange.com/questions/238755/how-to-get-group-ids-by-ids-of-elements-of-group-content
@@ -242,37 +240,11 @@ function portland_form_views_exposed_form_alter(&$form, &$form_state)
 }
 
 /**
- * Implements hook_preprocess_HOOK().
- */
-function portland_preprocess_menu(&$vars)
-{
-  // find main menu and modify the Alerts link text to display number of alerts,
-  // or remove the Alerts item if count is zero.
-  if (array_key_exists('menu_name', $vars) && $vars['menu_name'] == 'main') {
-    foreach ($vars['items'] as $key => &$item) {
-      if ($item['title'] == 'Alerts') {
-        $alertCount = _get_active_alerts_count();
-        if ($alertCount < 1) {
-          unset($vars['items'][$key]);
-          return;
-        }
-        $item['title'] = Drupal\Core\Render\Markup::create('Alerts <span class="badge badge-dark">' . $alertCount . '</span>');
-        break;
-      }
-    }
-  }
-}
-
-/**
  * Implements hook_entity_insert().
  */
 function portland_entity_insert($entity)
 {
   switch ($entity->bundle()) {
-    case 'alert':
-      // alert has been inserted, update alerts count in cache
-      _get_active_alerts_count(true);
-      break;
     case 'park_facility':
       // Add this new Park Facility node to the Parks menu
       $menu_link_service = \Drupal::service('plugin.manager.menu.link');
@@ -304,14 +276,7 @@ function portland_entity_insert($entity)
  */
 function portland_entity_update($entity)
 {
-  if ($entity->bundle() == 'alert') {
-    // if moderation state has changed, update alerts count in cache
-    $origstate = $entity->original->get('moderation_state')->getString();
-    $newstate = $entity->get('moderation_state')->getString();
-    if ($origstate != $newstate) {
-      _get_active_alerts_count(true);
-    }
-  // } else if ($entity->bundle() == 'document') {
+  // if ($entity->bundle() == 'document') {
   //   // Get the file ID of the latest revision
   //   $media_storage = \Drupal::entityTypeManager()->getStorage('media');
   //   $latest_revision_id = $media_storage->getLatestRevisionId($entity->id());
@@ -335,7 +300,7 @@ function portland_entity_update($entity)
   //     }
   //     $media_storage->deleteRevision($row->revision_id);
   //   }
-  }
+  // }
   _notify_reviewer($entity, 'updated');
 }
 
@@ -370,9 +335,6 @@ function _build_log_message($entity)
 function portland_entity_delete($entity)
 {
   switch ($entity->bundle()) {
-    case 'alert':
-      _get_active_alerts_count(true);
-      break;
     case 'park_facility':
       // Delete the menu link for this park
       \Drupal::service('menu.tree_storage')->delete('park-' . $entity->id());
@@ -396,27 +358,6 @@ function portland_entity_delete($entity)
       // Skip other deletion events: redirect, group, etc.
       break;
   }
-}
-
-/**
- * Retrieves the number of active alerts. Uses caching.
- */
-function _get_active_alerts_count($reset = false)
-{
-  $alertCount = 0;
-  if (!$reset && $cache = \Drupal::cache()->get(ALERTS_COUNTER_CACHE_KEY)) {
-    $alertCount = $cache->data;
-  } else {
-    // invalidate main menu block in cache to show current alerts
-    \Drupal\Core\Cache\Cache::invalidateTags(['config:block.block.cloudy_main_menu']);
-    $query = \Drupal::entityQuery('node')
-      ->condition('type', 'alert')
-      ->condition('status', 1);
-    $nids = $query->execute();
-    $alertCount = count($nids);
-    \Drupal::cache()->set(ALERTS_COUNTER_CACHE_KEY, $alertCount);
-  }
-  return $alertCount;
 }
 
 /**
@@ -631,8 +572,8 @@ function portland_search_api_query_alter(\Drupal\search_api\Query\QueryInterface
 
 
 /**
- * Implements hook_search_api_solr_query_alter() boost based on recently
- * published date.
+ * Implements hook_search_api_solr_query_alter() to boost score based on recently
+ * published date and filter out input that will cause WSOD.
  * See https://atendesigngroup.com/blog/drupal-8-apache-solr-boost-search-term-relevance-publish-date
  */
 function portland_search_api_solr_query_alter(\Solarium\QueryType\Select\Query\Query $solarium_query, \Drupal\search_api\Query\QueryInterface $query)
@@ -642,6 +583,42 @@ function portland_search_api_solr_query_alter(\Solarium\QueryType\Select\Query\Q
   if (strpos($search_id, "search_api_page:search_portland_gov") !== 0 &&
   strpos($search_id, "search_api_autocomplete:search_portland_gov") !== 0) {
     return;
+  }
+
+  $keys = trim($query->getKeys());
+  $keys = preg_replace([
+    // Convert "OR" and "||" at the start or end to "or"
+    "/^OR\b|\bOR$/",
+    "/^\|\|(?!\w)|(?!\w)\|\|$/",
+    // Convert "AND" and "&&" at the start or end to "and"
+    "/^AND\b|\bAND$/",
+    "/^\&\&(?!\w)|(?!\w)\&\&$/",
+    // "+", "\"" and "-" can't be at the end with blank space in any combination
+    "/\s[\+\- \"]+$/",
+    // "^" has to be appended immediately before a number
+    "/\^[^0-9\.]+/",
+    // "^" can't be at the start even when followed by a number
+    "/^\^[0-9\.]+/",
+    // If keywords only contain special characters and space, clear it
+    "/^[ @\+\-\&\|\!\(\)\{\}\[\]\^\"\'\~\*\?\:\\\\\/]+$/",
+  ], [
+    "or",
+    "or",
+    "and",
+    "and",
+    // See https://www.php.net/manual/en/function.preg-replace.php
+    // If there are fewer elements in the replacement array than in the pattern array, any extra patterns will be replaced by an empty string. 
+  ], $keys);
+
+  if(empty($keys)) {
+    if(\Drupal::routeMatch()->getRouteName() === "search_api_page.ar.search_portland_gov") {
+      $url = Drupal\Core\Url::fromRoute('search_api_page.ar.search_portland_gov');
+      $redirect = new Symfony\Component\HttpFoundation\RedirectResponse($url->toString());
+      $redirect->send();
+    }
+  }
+  else {
+    $query->keys($keys);
   }
 
   $date_field_name = 'aggregated_sorting_date'; // This can be any UNIX timestamp field
@@ -824,10 +801,20 @@ function _validate_document(&$form, \Drupal\Core\Form\FormStateInterface $form_s
       $efiles_link = $form_state->getValue('field_efiles_link');
       $document = $form_state->getValue('field_document');
     }
+
+    // PGOV-809 Validate document and efiles link fields
+    if( empty($efiles_link[0]["uri"]) && empty($document[0]["fids"]) ) {
+      $form_state->setErrorByName('field_document', t('Must have either an uploaded document or an eFiles link'));
+      return;
+    }
+    else if ( !empty($efiles_link[0]["uri"]) && !empty($document[0]["fids"]) ) {
+      $form_state->setErrorByName('field_document', t('Cannot have both uploaded document and eFiles link'));
+      return;
+    }
+
     // If the eFiles link has value
     if (!empty($efiles_link) && !empty($efiles_link[0]['uri'])) {
-      $user_input_file_url = strtolower($efiles_link[0]['uri']);
-      $external_file_url = $user_input_file_url;
+      $external_file_url = strtolower($efiles_link[0]['uri']);
       // Validate the file URL is an eFiles link
       $efiles_url_regex = '/^https:\/\/efiles.portlandoregon.gov\/(.*)/i';
       if (!preg_match($efiles_url_regex, $external_file_url)) {
@@ -861,28 +848,10 @@ function _validate_document(&$form, \Drupal\Core\Form\FormStateInterface $form_s
           $form_state->setErrorByName('field_efiles_link', t('The linked file is empty.'));
           return;
         }
-        // Content-Type header can be "text/html; charset=utf-8"
-        $content_type_array = explode(';', $headers['Content-Type']);
-        // If content type is text/HTML, it's not a file
-        if (empty($content_type_array) || $content_type_array[0] === "text/html") {
-          // Commented this line out to support existing documents that are linked to an eFiles folder
-          // $form_state->setErrorByName('field_efiles_link', t('The linked file is an HTML page. Please use External Resource instead.'));
-          return;
-        }
-        if($is_embedded_document_form_with_efiles) {
-          $form_state->getValue("inline_entity_form")["field_file_size"] = [["value" => $file_size]];
-          $form["#entity"]->field_file_size->value = $file_size;
-          $form_state->getValue("inline_entity_form")["field_mime_type"] = [["value" => $content_type_array[0]]];
-          $form["#entity"]->field_mime_type->value = $content_type_array[0];
-        }
-        else {
-          $form_state->setValue('field_file_size', [["value" => $file_size]]);
-          $form_state->setValue('field_mime_type', [["value" => $content_type_array[0]]]);
-        }
       } else {
         // Verify it's a valid eFiles folder
         try {
-          $headers = get_headers($user_input_file_url, 1);
+          $headers = get_headers($external_file_url, 1);
         } catch (Exception $e) {
           $form_state->setErrorByName('field_efiles_link', 'Please verify the eFiles link is valid.');
           return;
@@ -897,19 +866,6 @@ function _validate_document(&$form, \Drupal\Core\Form\FormStateInterface $form_s
         ) {
           $form_state->setErrorByName('field_efiles_link', t('Please verify the eFiles link is valid.'));
         }
-      }
-    } else {
-      $document = $form_state->getValue('field_document');
-      // The document field can't be empty when the eFile link is empty
-      if ($is_embedded_document_form_with_efiles) {
-        if( $form_state->getValue("inline_entity_form")["field_efiles_link"][0]['uri'] == null &&
-            count($form_state->getValue("inline_entity_form")["field_document"][0]['fids']) === 0
-        ) {
-          $form_state->setErrorByName('field_document', t('Please upload a file or add an external file link'));
-        }
-      }
-      else if (empty($document) || empty($document[0]["fids"])) {
-        $form_state->setErrorByName('field_document', t('Please upload a file or add an external file link'));
       }
     }
   }
@@ -1281,7 +1237,7 @@ function portland_views_pre_render(\Drupal\views\ViewExecutable $view)
 {
   if (
     $view->id() == 'admin_content_with_legacy_path' ||
-    (($view->id() == 'group_nodes' || $view->id() == 'admin_group_content_revision') && (strpos($view->current_display, 'redirects') !== false))
+    ($view->id() == 'manage_group_content_revision' && (strpos($view->current_display, 'redirects') !== false))
   ) {
     // Have to call redirect.repository service to find which row has redirects
     foreach ($view->result as $key => $value) {
@@ -1476,5 +1432,57 @@ function portland_form_user_form_alter(&$form, FormStateInterface $form_state) {
   // Hide the SAML notice message and SAML link to change password
   if( isset($form['account']['saml_notice']) ) {
     unset($form['account']['saml_notice']);
+  }
+}
+
+/**
+ * Implements hook_media_presave().
+ */
+function portland_media_presave($media)
+{
+  // Get file size and mime type from eFiles link
+  if($media->hasField('field_efiles_link')) {
+    if (!empty($media->field_efiles_link) && !empty($media->field_efiles_link[0]->uri)) {
+      $efiles_link = $media->field_efiles_link[0]->uri;
+      $external_file_url = strtolower($efiles_link);
+
+      // Append "/file/document" if it's missing on an eFiles link in order to retrieve mime type and file size
+      if (
+        strpos($external_file_url, 'https://efiles.portlandoregon.gov/') === 0 &&
+        !(substr_compare($external_file_url, "/file/document", -strlen("/file/document")) === 0)
+      ) {
+        $external_file_url .= "/file/document";
+      }
+
+      // Get eFiles file size and MIME type
+      try {
+        $headers = get_headers($external_file_url, 1);
+      } catch (Exception $e) {
+        \Drupal::logger('media')->notice('Cannot retrieve file size and mimetype from eFiles link ' . $external_file_url );
+        return;
+      }
+
+      if (
+        !empty($headers) &&
+        (substr_compare($headers[0], "200 OK", -strlen("200 OK")) === 0) &&
+        array_key_exists('Content-Type', $headers) &&
+        array_key_exists('Content-Length', $headers)
+      ) {
+        $file_size = isset($headers['Content-Length']) ? (int)$headers['Content-Length'] : 0;
+        if ($file_size === 0) {
+          \Drupal::logger('media')->notice('The eFiles link file is empty: ' . $external_file_url );
+          return;
+        }
+        // Content-Type header can be "text/html; charset=utf-8"
+        $content_type_array = explode(';', $headers['Content-Type']);
+        // If content type is text/HTML, it's not a file. Could be a eFiles folder link.
+        if (empty($content_type_array) || $content_type_array[0] === "text/html") {
+          return;
+        }
+
+        $media->field_file_size = $file_size;
+        $media->field_mime_type = $content_type_array[0];
+      }
+    }
   }
 }
