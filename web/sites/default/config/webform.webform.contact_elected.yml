@@ -81,30 +81,6 @@ elements: |-
     feedback_topic_other:
       '#type': textfield
       '#title': 'Other topic not listed above'
-    feedback_recipients_entity_all:
-      '#type': webform_entity_checkboxes
-      '#title': 'To whom should we send your comment or feedback'
-      '#options_display': two_columns
-      '#options_all_text': 'I''m not sure'
-      '#default_value':
-        - '71'
-        - '353'
-        - '75'
-        - '352'
-        - '331'
-        - '44'
-      '#wrapper_attributes':
-        class:
-          - visually-hidden
-        style: 'display: none'
-      '#access': false
-      '#target_type': group
-      '#selection_handler': views
-      '#selection_settings':
-        view:
-          view_name: electeds
-          display_name: entity_reference_1
-          arguments: {  }
   section_request_meeting:
     '#type': webform_section
     '#title': 'Request a meeting with an elected official or ask them to speak at an event'
@@ -121,7 +97,7 @@ elements: |-
       '#selection_settings':
         view:
           view_name: electeds
-          display_name: entity_reference_1
+          display_name: active_elected_reference
           arguments: {  }
     meeting_event_type:
       '#type': webform_radios_other
@@ -199,7 +175,7 @@ elements: |-
       '#selection_settings':
         view:
           view_name: electeds
-          display_name: entity_reference_1
+          display_name: active_elected_reference
           arguments: {  }
     feedback_specific_not_sure:
       '#type': checkbox
@@ -314,99 +290,39 @@ elements: |-
       '#markup': 'Information you provide to the City is a public record and may be subject to release under Oregon&rsquo;s <a data-renderer-mark="true" href="https://www.doj.state.or.us/oregon-department-of-justice/public-records/attorney-generals-public-records-and-meetings-manual/i-public-records/#:~:text=Under%20Oregon''s%20Public%20Records%20Law,committee%20of%20the%20Legislative%20Assembly" title="https://www.doj.state.or.us/oregon-department-of-justice/public-records/attorney-generals-public-records-and-meetings-manual/i-public-records/#:~:text=Under%20Oregon''s%20Public%20Records%20Law,committee%20of%20the%20Legislative%20Assembly">Public Records Law</a>. This law classifies certain information as available to the public on request. See our <a data-renderer-mark="true" href="/help/about/privacy" title="https://www.portland.gov/help/about/privacy">privacy statement</a> for more information.'
   hidden_container:
     '#type': container
-    '#attributes':
-      class:
-        - visually-hidden
-    voting_electeds_entity:
-      '#type': webform_entity_checkboxes
-      '#title': 'Voting electeds'
-      '#default_value':
-        - '71'
-        - '353'
-        - '331'
-        - '75'
-        - '352'
-      '#wrapper_attributes':
-        class:
-          - visually-hidden
-      '#access_create_roles': {  }
-      '#access_update_roles': {  }
-      '#access_view_roles': {  }
-      '#access': false
-      '#target_type': group
-      '#selection_handler': views
-      '#selection_settings':
-        view:
-          view_name: electeds
-          display_name: voting_elected_reference
-          arguments: {  }
     computed_recipient_list:
       '#type': webform_computed_twig
       '#title': 'Recipient list'
-      '#title_display': invisible
-      '#description_display': invisible
-      '#access': false
-      '#display_on': form
+      '#display_on': none
       '#mode': text
-      '#template': |
+      '#template': |-
         {% if data.purpose and data.purpose == "provide_feedback_specific_elected" %}
-
           {% if data.feedback_specific_not_sure == "1" %}
             311@portlandoregon.gov
           {% else %}
-
-        {{ webform_token('[webform_submission:values:feedback_recipients_entity:0:entity:field_routing_email]', webform_submission) }},
-
-        {{ webform_token('[webform_submission:values:feedback_recipients_entity:1:entity:field_routing_email]', webform_submission) }},
-
-        {{ webform_token('[webform_submission:values:feedback_recipients_entity:2:entity:field_routing_email]', webform_submission) }},
-
-        {{ webform_token('[webform_submission:values:feedback_recipients_entity:3:entity:field_routing_email]', webform_submission) }},
-
-        {{ webform_token('[webform_submission:values:feedback_recipients_entity:4:entity:field_routing_email]', webform_submission) }},
-
-        {{ webform_token('[webform_submission:values:feedback_recipients_entity:5:entity:field_routing_email]', webform_submission) }}
-
+            {{ data.feedback_recipients_entity
+                |map(gid => drupal_field('field_routing_email', 'group', gid, { label: 'hidden' })|render|striptags|trim)
+                |join(',') }},
           {% endif %}
-
         {% elseif data.purpose and data.purpose == "request_meeting" %}
-
           {% if webform_token('[webform_submission:values:meeting_recipients_entity]', webform_submission) != null %}
-          {{ webform_token('[webform_submission:values:meeting_recipients_entity:entity:field_routing_email]', webform_submission) }}
+            {{ webform_token('[webform_submission:values:meeting_recipients_entity:entity:field_routing_email]', webform_submission) }}
           {% endif %}
-
         {% elseif data.purpose and data.purpose == "provide_feedback" %}
-
-          {{ webform_token('[webform_submission:values:feedback_recipients_entity_all:0:entity:field_routing_email]', webform_submission) }},
-
-          {{ webform_token('[webform_submission:values:feedback_recipients_entity_all:1:entity:field_routing_email]', webform_submission) }},
-
-          {{ webform_token('[webform_submission:values:feedback_recipients_entity_all:2:entity:field_routing_email]', webform_submission) }},
-
-          {{ webform_token('[webform_submission:values:feedback_recipients_entity_all:3:entity:field_routing_email]', webform_submission) }},
-
-          {{ webform_token('[webform_submission:values:feedback_recipients_entity_all:4:entity:field_routing_email]', webform_submission) }},
-
-          {{ webform_token('[webform_submission:values:feedback_recipients_entity_all:5:entity:field_routing_email]', webform_submission) }}
-
+          {{ drupal_view_result('electeds', 'active_elected_reference')
+              |map(row => row._entity.field_routing_email.0.value)
+              |join(',') }}
         {% elseif data.purpose and data.purpose == "provide_feedback_council" %}
-          {{ webform_token('[webform_submission:values:voting_electeds_entity:0:entity:field_routing_email]', webform_submission) }},
-          {{ webform_token('[webform_submission:values:voting_electeds_entity:1:entity:field_routing_email]', webform_submission) }},
-          {{ webform_token('[webform_submission:values:voting_electeds_entity:2:entity:field_routing_email]', webform_submission) }},
-          {{ webform_token('[webform_submission:values:voting_electeds_entity:3:entity:field_routing_email]', webform_submission) }},
-          {{ webform_token('[webform_submission:values:voting_electeds_entity:4:entity:field_routing_email]', webform_submission) }},
-
+          {{ drupal_view_result('electeds', 'voting_elected_reference')
+              |map(row => row._entity.field_routing_email.0.value)
+              |join(',') }}
         {% endif %}
       '#whitespace': spaceless
       '#store': true
-      '#ajax': true
     computed_subject:
       '#type': webform_computed_twig
       '#title': Subject
-      '#title_display': invisible
-      '#description_display': invisible
-      '#access': false
-      '#display_on': form
+      '#display_on': none
       '#mode': text
       '#template': |
         {% if data.purpose == "request_meeting" %}
@@ -416,11 +332,10 @@ elements: |-
         {% endif %}
       '#whitespace': spaceless
       '#store': true
-      '#ajax': true
     computed_confirmation_message:
       '#type': webform_computed_twig
       '#title': 'Computed Confirmation Message'
-      '#access': false
+      '#display_on': none
       '#mode': html
       '#template': |-
         <p>We appreciate your feedback.</p>
@@ -429,8 +344,6 @@ elements: |-
         <p>If you requested a meeting with an elected official, and the request is approved, someone will reach out to you to schedule the meeting.</p>
         {% endif %}
       '#whitespace': trim
-  final_text:
-    '#type': webform_markup
   actions:
     '#type': webform_actions
     '#title': 'Submit button(s)'
