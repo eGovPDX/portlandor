@@ -572,8 +572,8 @@ function portland_search_api_query_alter(\Drupal\search_api\Query\QueryInterface
 
 
 /**
- * Implements hook_search_api_solr_query_alter() boost based on recently
- * published date.
+ * Implements hook_search_api_solr_query_alter() to boost score based on recently
+ * published date and filter out input that will cause WSOD.
  * See https://atendesigngroup.com/blog/drupal-8-apache-solr-boost-search-term-relevance-publish-date
  */
 function portland_search_api_solr_query_alter(\Solarium\QueryType\Select\Query\Query $solarium_query, \Drupal\search_api\Query\QueryInterface $query)
@@ -583,6 +583,42 @@ function portland_search_api_solr_query_alter(\Solarium\QueryType\Select\Query\Q
   if (strpos($search_id, "search_api_page:search_portland_gov") !== 0 &&
   strpos($search_id, "search_api_autocomplete:search_portland_gov") !== 0) {
     return;
+  }
+
+  $keys = trim($query->getKeys());
+  $keys = preg_replace([
+    // Convert "OR" and "||" at the start or end to "or"
+    "/^OR\b|\bOR$/",
+    "/^\|\|(?!\w)|(?!\w)\|\|$/",
+    // Convert "AND" and "&&" at the start or end to "and"
+    "/^AND\b|\bAND$/",
+    "/^\&\&(?!\w)|(?!\w)\&\&$/",
+    // "+", "\"" and "-" can't be at the end with blank space in any combination
+    "/\s[\+\- \"]+$/",
+    // "^" has to be appended immediately before a number
+    "/\^[^0-9\.]+/",
+    // "^" can't be at the start even when followed by a number
+    "/^\^[0-9\.]+/",
+    // If keywords only contain special characters and space, clear it
+    "/^[ @\+\-\&\|\!\(\)\{\}\[\]\^\"\'\~\*\?\:\\\\\/]+$/",
+  ], [
+    "or",
+    "or",
+    "and",
+    "and",
+    // See https://www.php.net/manual/en/function.preg-replace.php
+    // If there are fewer elements in the replacement array than in the pattern array, any extra patterns will be replaced by an empty string. 
+  ], $keys);
+
+  if(empty($keys)) {
+    if(\Drupal::routeMatch()->getRouteName() === "search_api_page.ar.search_portland_gov") {
+      $url = Drupal\Core\Url::fromRoute('search_api_page.ar.search_portland_gov');
+      $redirect = new Symfony\Component\HttpFoundation\RedirectResponse($url->toString());
+      $redirect->send();
+    }
+  }
+  else {
+    $query->keys($keys);
   }
 
   $date_field_name = 'aggregated_sorting_date'; // This can be any UNIX timestamp field
