@@ -91,15 +91,9 @@ class BatchCommands extends DrushCommands
     echo 'chart,iframe,page_using_media' . PHP_EOL;
     $base_url = \Drupal::request()->getSchemeAndHttpHost();
 
-    // Load the entity type manager service.
     $entityTypeManager = \Drupal::entityTypeManager();
-
-    // Load all nodes of the 'article' content type.
     $charts = $entityTypeManager->getStorage('media')->loadByProperties(['bundle' => 'chart']);
 
-
-    // Loop through the nodes and do something with each one.
-    // $count = 3; // For test only
     foreach ($charts as $chart) {
       $chart_redirects = $chart->field_redirects->getValue();
       if(!empty($chart_redirects)) {
@@ -132,23 +126,19 @@ class BatchCommands extends DrushCommands
       foreach($nodes_using_chart as $node_using_chart) {
         $node = \Drupal\node\Entity\Node::load($node_using_chart);
         $orig_uuid = $chart->uuid->value;
-        $orig_text = "<drupal-entity data-align=\"responsive-full\" data-embed-button=\"chart_browser\" data-entity-embed-display=\"view_mode:media.embedded\" data-entity-type=\"media\" data-entity-uuid=\"$orig_uuid\" data-langcode=\"en\"></drupal-entity>";
+        // Extract the alignment value: full or right
+        $orig_text_regex = '/<drupal-entity data-align="responsive-(\w+)" data-embed-button="chart_browser" data-entity-embed-display="view_mode:media.embedded" data-entity-type="media" data-entity-uuid="' .$orig_uuid.'" data-langcode="en"><\/drupal-entity>/';
+        $replacement = "<drupal-entity data-align==\"responsive-$1\" data-embed-button=\"insert_iframe\" data-entity-embed-display=\"view_mode:media.embedded\" data-entity-type=\"media\" data-entity-uuid=\"$new_uuid\" data-langcode=\"en\"></drupal-entity>";
 
-        $new_uuid = $new_iframe->uuid->value;
-        $new_text = "<drupal-entity data-aspect-ratio=\"16/9\" data-embed-button=\"insert_iframe\" data-entity-embed-display=\"view_mode:media.embedded\" data-entity-type=\"media\" data-entity-uuid=\"$new_uuid\" data-langcode=\"en\"></drupal-entity>";
+        $new_node_body = preg_replace($orig_text_regex, $replacement, $node->field_body_content->value);
 
-        // Only update the body text if the original text can be found
-        if( str_contains($node->field_body_content->value, $orig_text) ) {
-          $node->field_body_content->value = str_replace($orig_text, $new_text, $node->field_body_content->value);
-          $node->save();
-          $node_urls []= $base_url . '/node/' . $node->nid->value;
-        }
+        // Do nothing if the pattern is not found.
+        if( $new_node_body == $node->field_body_content->value) continue;
+        $node->save();
+        $node_urls []= $base_url . '/node/' . $node->nid->value;
       }
 
       echo $base_url . '/media/'. $chart->mid->value . ',' . $base_url . '/media/'. $new_iframe->mid->value . ',' . implode(',', $node_urls) . PHP_EOL;
-
-      // $count--;
-      // if($count === 0) break;
     }
   }
 
@@ -211,17 +201,16 @@ class BatchCommands extends DrushCommands
       foreach($nodes_using_map as $node_using_map) {
         $node = \Drupal\node\Entity\Node::load($node_using_map);
         $orig_uuid = $map->uuid->value;
-        $orig_text = "<drupal-entity data-align=\"responsive-full\" data-embed-button=\"map_browser\" data-entity-embed-display=\"view_mode:media.embedded\" data-entity-type=\"media\" data-entity-uuid=\"$orig_uuid\" data-langcode=\"en\"></drupal-entity>";
+        // Extract the alignment value: full or right
+        $orig_text_regex = '/<drupal-entity data-align="responsive-(\w+)" data-embed-button="map_browser" data-entity-embed-display="view_mode:media.embedded" data-entity-type="media" data-entity-uuid="' .$orig_uuid.'" data-langcode="en"><\/drupal-entity>/';
+        $replacement = "<drupal-entity data-align==\"responsive-$1\" data-embed-button=\"insert_iframe\" data-entity-embed-display=\"view_mode:media.embedded\" data-entity-type=\"media\" data-entity-uuid=\"$new_uuid\" data-langcode=\"en\"></drupal-entity>";
 
-        $new_uuid = $new_iframe->uuid->value;
-        $new_text = "<drupal-entity data-aspect-ratio=\"16/9\" data-embed-button=\"insert_iframe\" data-entity-embed-display=\"view_mode:media.embedded\" data-entity-type=\"media\" data-entity-uuid=\"$new_uuid\" data-langcode=\"en\"></drupal-entity>";
+        $new_node_body = preg_replace($orig_text_regex, $replacement, $node->field_body_content->value);
 
-        // Only update the body text if the original text can be found
-        if( str_contains($node->field_body_content->value, $orig_text) ) {
-          $node->field_body_content->value = str_replace($orig_text, $new_text, $node->field_body_content->value);
-          $node->save();
-          $node_urls []= $base_url . '/node/' . $node->nid->value;
-        }
+        // Do nothing if the pattern is not found.
+        if( $new_node_body == $node->field_body_content->value) continue;
+        $node->save();
+        $node_urls []= $base_url . '/node/' . $node->nid->value;
       }
 
       echo $base_url . '/media/'. $map->mid->value . ',' . $base_url . '/media/'. $new_iframe->mid->value . ',' . implode(',', $node_urls) . PHP_EOL;
@@ -281,18 +270,19 @@ class BatchCommands extends DrushCommands
    */
   public function copy_printable_map()
   {
-    echo 'Migrating Map image to Image, please save the output to a CSV file to validate the results' . PHP_EOL;
+    echo 'Migrating Printable Map to Image or Document, please save the output to a CSV file to validate the results' . PHP_EOL;
     echo 'map,image_or_document,page_using_media' . PHP_EOL;
     $base_url = \Drupal::request()->getSchemeAndHttpHost();
 
-    // Load the entity type manager service.
+    // Load all printable maps
     $entityTypeManager = \Drupal::entityTypeManager();
-
-    // Load all nodes of the 'article' content type.
     $maps = $entityTypeManager->getStorage('media')->loadByProperties(['bundle' => 'map', 'field_map_type' => 'print']);
 
-    // Loop through the nodes and do something with each one.
+    //
+    $maps = $entityTypeManager->getStorage('media')->loadByProperties(['bundle' => 'map', 'mid' => '25826']);
+
     $new_media = null;
+    $is_document = false;
     foreach ($maps as $map) {
       // If there is no map file, copy the preview into a new Image
       if( empty($map->field_map_file[0]) ) {
@@ -360,6 +350,7 @@ class BatchCommands extends DrushCommands
             'field_file_size' => $file_size,
           ]);
           $new_media->save();
+          $is_document = true;
         }
       }
 
@@ -370,16 +361,25 @@ class BatchCommands extends DrushCommands
       foreach($nodes_using_map as $node_using_map) {
         $node = \Drupal\node\Entity\Node::load($node_using_map);
         $orig_uuid = $map->uuid->value;
-        $orig_text = "<drupal-entity data-align=\"responsive-full\" data-embed-button=\"map_browser\" data-entity-embed-display=\"view_mode:media.embedded\" data-entity-type=\"media\" data-entity-uuid=\"$orig_uuid\" data-langcode=\"en\"></drupal-entity>";
 
-        $new_uuid = $new_media->uuid->value;
-        $new_text = "<drupal-entity data-aspect-ratio=\"16/9\" data-embed-button=\"insert_iframe\" data-entity-embed-display=\"view_mode:media.embedded\" data-entity-type=\"media\" data-entity-uuid=\"$new_uuid\" data-langcode=\"en\"></drupal-entity>";
+        // Extract the alignment value: full or right
+        $orig_text_regex = '/<drupal-entity data-align="responsive-(\w+)" data-embed-button="map_browser" data-entity-embed-display="view_mode:media.embedded" data-entity-type="media" data-entity-uuid="' .$orig_uuid.'" data-langcode="en"><\/drupal-entity>/';
+        if(preg_match($orig_text_regex, $node->field_body_content->value, $matches)) {
+          if(count($matches) == 2) {
+            // Item 0 is drupal-entity, item 1 is full or right
+            $new_uuid = $new_media->uuid->value;
+            if($is_document){
+              $display_mode = ($matches[1] == 'full') ? 'view_mode:media.embedded_with_preview' : 'view_mode:media.embedded_with_thumbnail';
+              $new_text = "<drupal-entity data-align==\"responsive-$matches[1]\" data-embed-button=\"document_browser\" data-entity-embed-display=\"$display_mode\" data-entity-type=\"media\" data-entity-uuid=\"$new_uuid\" data-langcode=\"en\"></drupal-entity>";
+            }
+            else {
+              $new_text = "<drupal-entity data-align==\"responsive-$matches[1]\" data-embed-button=\"image_browser\" data-entity-embed-display=\"view_mode:media.embedded\" data-entity-type=\"media\" data-entity-uuid=\"$new_uuid\" data-langcode=\"en\"></drupal-entity>";
+            }
 
-        // Only update the body text if the original text can be found
-        if( str_contains($node->field_body_content->value, $orig_text) ) {
-          $node->field_body_content->value = str_replace($orig_text, $new_text, $node->field_body_content->value);
-          $node->save();
-          $node_urls []= $base_url . '/node/' . $node->nid->value;
+            $node->field_body_content->value = str_replace($matches[0], $new_text, $node->field_body_content->value);
+            $node->save();
+            $node_urls []= $base_url . '/node/' . $node->nid->value;
+          }
         }
       }
 

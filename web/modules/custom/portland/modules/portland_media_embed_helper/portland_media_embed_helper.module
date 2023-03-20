@@ -57,34 +57,9 @@ function portland_media_embed_helper_form_entity_embed_dialog_alter(array &$form
     if(!$hide_fields) $hide_fields = $is_iframe;
   }
 
-  // Only show the aspect ratio radio buttons for iframe
-  if($is_iframe) {
-    // Default aspect ratio is 16/9.
-    // When editing an item, get value from "data-aspect-ratio" attribute
-    $default_aspect_ratio = '16/9';
-    if($has_editor_object && isset($user_input['editor_object']['data-aspect-ratio'])) {
-      $default_aspect_ratio = $user_input['editor_object']['data-aspect-ratio'];
-    }
-    $form['attributes']['data-aspect-ratio'] = [
-      '#title' => t('Aspect ratio'),
-      '#type' => 'radios',
-      '#options' => [
-        '16/9' => t('16x9'),
-        '4/3' => t('4x3'),
-        '1/1' => t('1x1'),
-        '9/16' => t('9x16'),
-      ],
-      '#step' => '1',
-      '#default_value' => $default_aspect_ratio,
-      '#parents' => ['attributes', 'data-aspect-ratio'],
-      // Make radio buttons inline
-      '#attributes' => ['class' => ['container-inline']],
-    ];
-  }
-
   if ($hide_fields) {
     if (isset($form['attributes']['data-caption'])) unset($form['attributes']['data-caption']);
-    if (isset($form['attributes']['data-align'])) unset($form['attributes']['data-align']);
+    if (isset($form['attributes']['data-align']) && !$is_iframe) unset($form['attributes']['data-align']);
   }
 
   // Hide additional fields (e.g. alt text) from entity_embed module
@@ -113,7 +88,7 @@ function portland_media_embed_helper_form_entity_embed_dialog_alter(array &$form
     $form['attributes']['data-align']['#options']['responsive-full'] = "Full width<br>$img_100";
 
     // narrow, right fill and fit don't apply to videos
-    if ($embed_type == "audio_video_browser" || $embed_type == "map_browser" || $embed_type == "chart_browser") {
+    if ($embed_type == "audio_video_browser" || $embed_type == "map_browser" || $embed_type == "chart_browser" || $is_iframe) {
       $form['attributes']['data-align']['#options']['responsive-right'] = "50% right<br>$img_50_right_fill";
     } else {
       $form['attributes']['data-align']['#options']['narrow'] = "Narrow<br>$img_narrow";
@@ -128,6 +103,31 @@ function portland_media_embed_helper_form_entity_embed_dialog_alter(array &$form
     $form['attributes']['data-start-cue']['#title'] = "Video start cue time (optional)";
     $form['attributes']['data-start-cue']['#placeholder'] = "0";
     $form['attributes']['data-start-cue']['#description'] = "Provide the start time in seconds";
+  }
+
+  // Only show the aspect ratio radio buttons for iframe
+  if($is_iframe) {
+    // Default aspect ratio is 16/9.
+    // When editing an item, get value from "data-aspect-ratio" attribute
+    $default_aspect_ratio = '16/9';
+    if($has_editor_object && isset($user_input['editor_object']['data-aspect-ratio'])) {
+      $default_aspect_ratio = $user_input['editor_object']['data-aspect-ratio'];
+    }
+    $form['attributes']['data-aspect-ratio'] = [
+      '#title' => t('Aspect ratio'),
+      '#type' => 'radios',
+      '#options' => [
+        '16/9' => t('16x9'),
+        '4/3' => t('4x3'),
+        '1/1' => t('1x1'),
+        '9/16' => t('9x16'),
+      ],
+      '#step' => '1',
+      '#default_value' => $default_aspect_ratio,
+      '#parents' => ['attributes', 'data-aspect-ratio'],
+      // Make radio buttons inline
+      '#attributes' => ['class' => ['container-inline']],
+    ];
   }
 
   // if this is within the embed dialog
