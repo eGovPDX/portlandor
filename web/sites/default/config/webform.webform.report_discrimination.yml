@@ -51,14 +51,62 @@ elements: |-
           value: 'Yes'
     container_request:
       '#type': container
+      report_who:
+        '#type': radios
+        '#title': 'Who are you making this report for?'
+        '#options':
+          Myself: 'Myself -- By selecting this option, I am attesting that I have a disability covered by the Americans with Disabilities Act and that the information I’m providing in this form is true, to the best of my knowledge and belief.'
+          'Someone else': 'Someone else -- By selecting this option, I am attesting that the person for whom I am making this request or complaint for has a disability covered by the Americans with Disabilities Act and that the information I’m providing in this form is true, to the best of my knowledge and belief.'
+          'Neither of these apply to me': 'Neither of these apply to me -- This selection would be used if you are trying to report an observation, issue or concern that you believe may affect or pose a threat to the general public, especially those living with a disability.'
+        '#required': true
+      report_on_behalf_of_permission:
+        '#type': radios
+        '#title': 'Have you obtained permission from them to file this complaint? Or, do you have a legal relationship that allows you to make a complaint on their behalf?'
+        '#options': yes_no
+        '#required': true
+        '#states':
+          visible:
+            ':input[name="report_who"]':
+              value: 'Someone else'
+      report_on_behalf_of_name:
+        '#type': textfield
+        '#title': 'What is their name?'
+        '#states':
+          visible:
+            ':input[name="report_on_behalf_of_permission"]':
+              value: 'Yes'
+      report_on_behalf_of_permission_text_stop:
+        '#type': webform_markup
+        '#states':
+          visible:
+            ':input[name="report_on_behalf_of_permission"]':
+              value: 'No'
+        '#markup': |-
+          <div class="webform-alert alert alert--info">
+          <h2>Next Steps</h2>
+
+          <p>Please obtain their permission before submitting this form.</p>
+          </div>
       report_how_to_complete:
         '#type': radios
-        '#title': 'How would you like to complete your request or report?'
+        '#title': 'How would you like to complete your report?'
         '#options':
           'Call us': 'Call us'
           'We contact you': 'We can contact you'
           'Continue online': 'Continue online'
-        '#default_value': 'Continue online'
+        '#states':
+          visible:
+            - ':input[name="report_who"]':
+                value: Myself
+            - or
+            - ':input[name="report_who"]':
+                value: 'Neither of these apply to me'
+            - or
+            - ':input[name="report_who"]':
+                value: 'Someone else'
+              ':input[name="report_on_behalf_of_permission"]':
+                value: 'Yes'
+        '#required': true
       markup_contact_us_text_stop:
         '#type': webform_markup
         '#states':
@@ -205,50 +253,15 @@ elements: |-
         report_discrimination_filed_complaint_other_agency_contact_phone:
           '#type': textfield
           '#title': 'Agency or court contact phone'
-      report_discrimination_on_behalf_of:
-        '#type': radios
-        '#title': 'Who are you making this request or complaint for?'
-        '#options':
-          Myself: Myself
-          'Someone else': 'Someone else'
-        '#options_display': side_by_side
-        '#required': true
-      container_on_behalf_of:
-        '#type': container
-        '#states':
-          visible:
-            ':input[name="report_discrimination_on_behalf_of"]':
-              value: 'Someone else'
-        report_discrimination_on_behalf_of_name:
-          '#type': textfield
-          '#title': 'What is their name?'
-        report_discrimination_on_behalf_of_relationship:
-          '#type': textfield
-          '#title': 'What is your relationship to them?'
-        report_discrimination_on_behalf_of_permission:
-          '#type': radios
-          '#title': 'Have you obtained permission from them to file this complaint? Or, do you have a legal relationship that allows you to make a complaint on their behalf?'
-          '#options': yes_no
-          '#options_display': side_by_side
-          '#required': true
-        report_discrimination_on_behalf_of_permission_text_stop:
-          '#type': webform_markup
-          '#states':
-            visible:
-              ':input[name="report_discrimination_on_behalf_of_permission"]':
-                value: 'No'
-          '#markup': |-
-            <div class="webform-alert alert alert--info">
-            <h2>Next Steps</h2>
-
-            <p>Please obtain their permission before submitting this form.</p>
-            </div>
     container_contact:
       '#type': container
       '#states':
         invisible:
           ':input[name="report_how_to_complete"]':
             value: 'Call us'
+        visible:
+          ':input[name="report_how_to_complete"]':
+            checked: true
       contact_name:
         '#type': textfield
         '#title': 'Your Name'
@@ -294,6 +307,9 @@ elements: |-
         invisible:
           ':input[name="report_how_to_complete"]':
             '!value': 'Continue online'
+        visible:
+          ':input[name="report_how_to_complete"]':
+            checked: true
       markup_complainant_acknowledgement_text:
         '#type': webform_markup
         '#markup': |-
@@ -304,26 +320,22 @@ elements: |-
         '#type': checkbox
         '#title': 'I agree'
         '#required': true
-    support_agent_use_only:
-      '#type': portland_support_agent_widget
-      '#title': 'Support Agent Use Only'
-      '#access_create_roles':
-        - authenticated
-      '#access_update_roles':
-        - support_agent
-        - administrator
-      '#access_view_roles':
-        - support_agent
-        - administrator
-    actions:
-      '#type': webform_actions
-      '#title': 'Submit button(s)'
-      '#states':
-        invisible:
-          ':input[name="report_how_to_complete"]':
-            value: 'Call us'
-      '#submit__label': Submit
-      '#update_hide': true
+      support_agent_use_only:
+        '#type': portland_support_agent_widget
+        '#title': 'Support Agent Use Only'
+        '#access_create_roles':
+          - authenticated
+        '#access_update_roles':
+          - support_agent
+          - administrator
+        '#access_view_roles':
+          - support_agent
+          - administrator
+      actions:
+        '#type': webform_actions
+        '#title': 'Submit button(s)'
+        '#submit__label': Submit
+        '#update_hide': true
   report_ticket_id:
     '#type': hidden
     '#title': 'Zendesk Ticket ID'
