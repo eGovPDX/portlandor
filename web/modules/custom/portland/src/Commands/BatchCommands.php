@@ -126,14 +126,16 @@ class BatchCommands extends DrushCommands
       foreach($nodes_using_chart as $node_using_chart) {
         $node = \Drupal\node\Entity\Node::load($node_using_chart);
         $orig_uuid = $chart->uuid->value;
+        $new_uuid = $new_iframe->uuid->value;
         // Extract the alignment value: full or right
         $orig_text_regex = '/<drupal-entity data-align="responsive-(\w+)" data-embed-button="chart_browser" data-entity-embed-display="view_mode:media.embedded" data-entity-type="media" data-entity-uuid="' .$orig_uuid.'" data-langcode="en"><\/drupal-entity>/';
-        $replacement = "<drupal-entity data-align==\"responsive-$1\" data-embed-button=\"insert_iframe\" data-entity-embed-display=\"view_mode:media.embedded\" data-entity-type=\"media\" data-entity-uuid=\"$new_uuid\" data-langcode=\"en\"></drupal-entity>";
+        $replacement = "<drupal-entity data-align=\"responsive-$1\" data-embed-button=\"insert_iframe\" data-entity-embed-display=\"view_mode:media.embedded\" data-entity-type=\"media\" data-entity-uuid=\"$new_uuid\" data-langcode=\"en\"></drupal-entity>";
 
         $new_node_body = preg_replace($orig_text_regex, $replacement, $node->field_body_content->value);
 
         // Do nothing if the pattern is not found.
         if( $new_node_body == $node->field_body_content->value) continue;
+        $node->field_body_content->value = $new_node_body;
         $node->save();
         $node_urls []= $base_url . '/node/' . $node->nid->value;
       }
@@ -201,14 +203,16 @@ class BatchCommands extends DrushCommands
       foreach($nodes_using_map as $node_using_map) {
         $node = \Drupal\node\Entity\Node::load($node_using_map);
         $orig_uuid = $map->uuid->value;
+        $new_uuid = $new_iframe->uuid->value;
         // Extract the alignment value: full or right
         $orig_text_regex = '/<drupal-entity data-align="responsive-(\w+)" data-embed-button="map_browser" data-entity-embed-display="view_mode:media.embedded" data-entity-type="media" data-entity-uuid="' .$orig_uuid.'" data-langcode="en"><\/drupal-entity>/';
-        $replacement = "<drupal-entity data-align==\"responsive-$1\" data-embed-button=\"insert_iframe\" data-entity-embed-display=\"view_mode:media.embedded\" data-entity-type=\"media\" data-entity-uuid=\"$new_uuid\" data-langcode=\"en\"></drupal-entity>";
+        $replacement = "<drupal-entity data-align=\"responsive-$1\" data-aspect-ratio=\"16/9\" data-embed-button=\"insert_iframe\" data-entity-embed-display=\"view_mode:media.embedded\" data-entity-type=\"media\" data-entity-uuid=\"$new_uuid\" data-langcode=\"en\"></drupal-entity>";
 
         $new_node_body = preg_replace($orig_text_regex, $replacement, $node->field_body_content->value);
 
         // Do nothing if the pattern is not found.
         if( $new_node_body == $node->field_body_content->value) continue;
+        $node->field_body_content->value = $new_node_body;
         $node->save();
         $node_urls []= $base_url . '/node/' . $node->nid->value;
       }
@@ -277,9 +281,6 @@ class BatchCommands extends DrushCommands
     // Load all printable maps
     $entityTypeManager = \Drupal::entityTypeManager();
     $maps = $entityTypeManager->getStorage('media')->loadByProperties(['bundle' => 'map', 'field_map_type' => 'print']);
-
-    //
-    $maps = $entityTypeManager->getStorage('media')->loadByProperties(['bundle' => 'map', 'mid' => '25826']);
 
     $new_media = null;
     $is_document = false;
@@ -370,10 +371,10 @@ class BatchCommands extends DrushCommands
             $new_uuid = $new_media->uuid->value;
             if($is_document){
               $display_mode = ($matches[1] == 'full') ? 'view_mode:media.embedded_with_preview' : 'view_mode:media.embedded_with_thumbnail';
-              $new_text = "<drupal-entity data-align==\"responsive-$matches[1]\" data-embed-button=\"document_browser\" data-entity-embed-display=\"$display_mode\" data-entity-type=\"media\" data-entity-uuid=\"$new_uuid\" data-langcode=\"en\"></drupal-entity>";
+              $new_text = "<drupal-entity data-align=\"responsive-$matches[1]\" data-embed-button=\"document_browser\" data-entity-embed-display=\"$display_mode\" data-entity-type=\"media\" data-entity-uuid=\"$new_uuid\" data-langcode=\"en\"></drupal-entity>";
             }
             else {
-              $new_text = "<drupal-entity data-align==\"responsive-$matches[1]\" data-embed-button=\"image_browser\" data-entity-embed-display=\"view_mode:media.embedded\" data-entity-type=\"media\" data-entity-uuid=\"$new_uuid\" data-langcode=\"en\"></drupal-entity>";
+              $new_text = "<drupal-entity data-align=\"responsive-$matches[1]\" data-embed-button=\"image_browser\" data-entity-embed-display=\"view_mode:media.embedded\" data-entity-type=\"media\" data-entity-uuid=\"$new_uuid\" data-langcode=\"en\"></drupal-entity>";
             }
 
             $node->field_body_content->value = str_replace($matches[0], $new_text, $node->field_body_content->value);
@@ -386,5 +387,4 @@ class BatchCommands extends DrushCommands
       echo $base_url . '/media/'. $map->mid->value . ',' . $base_url . '/media/'. $new_media->mid->value . ',' . implode(',', $node_urls) . PHP_EOL;
     }
   }
- 
 }
