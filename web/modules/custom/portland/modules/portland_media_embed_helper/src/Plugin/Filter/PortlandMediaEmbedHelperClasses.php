@@ -98,7 +98,6 @@ class PortlandMediaEmbedHelperClasses extends FilterBase {
               $media_class .= " responsive-right";
             }
             break;
-
           
           case "insert_iframe":
             if (!is_null($alignment)) {
