@@ -302,6 +302,7 @@ class BatchCommands extends DrushCommands
           'image' => $map->image->getValue(), // the preview image
         ]);
         $new_media->save();
+        $is_document = false;
       }
       else {
         // If there is a map file, copy PDF into Document, and non-PDF into Image
@@ -327,6 +328,7 @@ class BatchCommands extends DrushCommands
             ],
           ]);
           $new_media->save();
+          $is_document = false;
         }
         else {
           $new_media = Media::create([
