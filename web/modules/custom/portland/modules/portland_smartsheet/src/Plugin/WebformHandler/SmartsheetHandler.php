@@ -254,8 +254,10 @@ class SmartsheetHandler extends WebformHandlerBase {
     $rows = [];
     // if multi-row is enabled, we have to get a new row for each element in the field
     if ($multiple_rows_enable && array_key_exists($multiple_rows_field, $fields)) {
-      $exploded_field = explode($multiple_rows_separator, $fields[$multiple_rows_field]);
-      foreach ($exploded_field as $multiple_rows_field_data) {
+      $field = $fields[$multiple_rows_field];
+      // if the field data is an array, just use that. if not, we need to split it using the provided separator
+      $field_arr = is_array($field) ? $field : explode($multiple_rows_separator, $field);
+      foreach ($field_arr as $multiple_rows_field_data) {
         // copy the fields array, but overwrite the multi-row field with the current array element
         $fields_for_this_row = [
           ...$fields,
