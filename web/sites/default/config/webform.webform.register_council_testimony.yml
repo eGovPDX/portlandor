@@ -15,107 +15,195 @@ uid: 628
 template: false
 archive: false
 id: register_council_testimony
-title: 'Council Testimony Registration Form'
+title: 'Council Testimony Registration'
 description: ''
 category: ''
 elements: |-
-  markup_form_intro:
+  markup_session_closed:
     '#type': webform_markup
-    '#markup': |-
-      <p>Complete this form to provide testimony on agenda items during City Council meetings. Please call <a href="tel:311">311</a> if you need registration assistance.</p>
+    '#states':
+      visible:
+        ':input[name="session_status"]':
+          '!value': ''
+    '#markup': '<p>Testimony is no longer open for this session. Please go back to the <a href="/council/agenda"> main council agenda page.</a></p>'
+  container_testimony:
+    '#type': container
+    '#states':
+      invisible:
+        ':input[name="session_status"]':
+          '!value': ''
+    markup_form_intro:
+      '#type': webform_markup
+      '#markup': |-
+        <p>Complete this form to provide testimony on agenda items during City Council meetings. Please call <a href="tel:311">311</a> if you need registration assistance.</p>
 
-      <p>Testimony is not taken on communications, second readings of ordinances, proclamations, or presentations in accordance with City Code 3.02.040 F. and G. To pull an item from the Consent Agenda for discussion, email your name and the agenda item number to <a href="mailto:councilclerk@portlandoregon.gov">councilclerk@portlandoregon.gov</a>.</p>
+        <p>Testimony is not taken on communications, second readings of ordinances, proclamations, or presentations in accordance with City Code 3.02.040 F. and G. To pull an item from the Consent Agenda for discussion, email your name and the agenda item number to <a href="mailto:councilclerk@portlandoregon.gov">councilclerk@portlandoregon.gov</a>.</p>
 
-      <p><strong>Written Testimony:</strong> If you would like to provide written testimony, please email it to <a href="mailto:cctestimony@portlandoregon.gov">cctestimony@portlandoregon.gov</a>. Your testimony will be shared with Council and included as part of the official record.</p>
-  contact_first_name:
-    '#type': textfield
-    '#title': 'First Name'
-    '#required': true
-  contact_last_name:
-    '#type': textfield
-    '#title': 'Last Name'
-    '#required': true
-  testimony_type:
-    '#type': radios
-    '#title': 'I will be joining the City Council meeting:'
-    '#options':
-      Virtually: Virtually
-      In-person: 'In-person at City Hall'
-    '#required': true
-  agenda_item:
-    '#type': webform_entity_select
-    '#title': 'Agenda Item'
-    '#description': 'Please select the agenda item on which you wish to testify.'
-    '#description_display': before
-    '#prepopulate': true
-    '#required': true
-    '#format': raw
-    '#target_type': relation
-    '#selection_handler': views
-    '#selection_settings':
-      view:
-        view_name: reference_agenda_item
-        display_name: entity_reference_agenda_item_for_testimony
-        arguments: {  }
-  location:
-    '#type': portland_location_picker
-    '#title': Location
-    '#required': true
-    '#location_type__access': false
-    '#location_park_container__access': false
-    '#location_private_owner__access': false
-    '#location_address__title': Location
-    '#location_address__description': 'Please indicate the general area/neighborhood where you live. You do not need to reveal your exact address.'
-    '#location_address__required': true
-    '#suggestions_modal__access': false
-    '#place_name__access': false
-    '#location_details__access': false
-    '#location_asset_id__access': false
-    '#location_region_id__access': false
-    '#location_municipality_name__access': false
-    '#location_is_portland__access': false
-    '#geojson_layer__access': false
-    '#geojson_layer_behavior__access': false
-  race_and_ethnicity:
-    '#type': webform_checkboxes_other
-    '#title': 'Race and Ethnicity (Optional)'
-    '#description': 'The Auditor&#39;s Office promotes and fosters a culture of racial equity, diversity, and inclusion. Basic demographic information is used only to identify and address issues of equitable access. Please check all that apply:'
-    '#description_display': before
-    '#options': ethnicity
-    '#other__option_label': 'Not listed above, please describe'
-    '#other__placeholder': 'Please describe'
-  horizontal_rule:
-    '#type': webform_horizontal_rule
-  acknowledge_public_record:
-    '#type': checkbox
-    '#title': '<strong>I understand information entered in this form is public record.</strong>'
-    '#required': true
-    '#required_error': 'You must acknowledge that this information is public record.'
-  markup_accommodations:
-    '#type': webform_markup
-    '#markup': |-
-      <h2>Accommodations</h2>
+        <p><strong>Written Testimony:</strong> If you would like to provide written testimony, please email it to <a href="mailto:cctestimony@portlandoregon.gov">cctestimony@portlandoregon.gov</a>. Your testimony will be shared with Council and included as part of the official record.</p>
+    testimony_type_gt_1hr_before:
+      '#type': radios
+      '#title': 'I will be joining the City Council meeting:'
+      '#options':
+        Virtually: Virtually
+        In-person: 'In-person at City Hall'
+      '#required': true
+      '#states':
+        invisible:
+          ':input[name="is_gt_1hr_before"]':
+            value: 'false'
+    testimony_type_lt_1hr_before:
+      '#type': radios
+      '#title': 'I will be joining the City Council meeting:'
+      '#description': 'Registration for virtual testimony closes 1 hour prior to the Council meeting.'
+      '#options':
+        In-person: 'In-person at City Hall'
+      '#required': true
+      '#states':
+        visible:
+          ':input[name="is_gt_1hr_before"]':
+            value: 'false'
+      '#default_value': In-person
+    agenda_items:
+      '#type': webform_entity_checkboxes
+      '#title': 'Agenda Items'
+      '#description': 'Please select the agenda item on which you wish to testify.'
+      '#description_display': before
+      '#prepopulate': true
+      '#required': true
+      '#format': raw
+      '#target_type': relation
+      '#selection_handler': views
+      '#selection_settings':
+        view:
+          view_name: reference_agenda_item
+          display_name: entity_reference_agenda_item_for_testimony
+          arguments: {  }
+    in_portland_metro:
+      '#type': radios
+      '#title': 'Do you live within the Portland metro area?'
+      '#options': yes_no
+      '#required': true
+    location:
+      '#type': portland_location_picker
+      '#title': Location
+      '#required': true
+      '#states':
+        visible:
+          ':input[name="in_portland_metro"]':
+            value: 'Yes'
+      '#location_type__access': false
+      '#location_park_container__access': false
+      '#location_private_owner__access': false
+      '#location_address__title': Location
+      '#location_address__description': 'Please enter your address below and then Verify, or click on the map to indicate the general area/neighborhood where you live.'
+      '#location_address__required': true
+      '#suggestions_modal__access': false
+      '#place_name__access': false
+      '#location_details__access': false
+      '#location_asset_id__access': false
+      '#location_region_id__access': false
+      '#location_municipality_name__access': false
+      '#location_is_portland__access': false
+      '#geojson_layer__access': false
+      '#geojson_layer_behavior__access': false
+    section_contact:
+      '#type': webform_section
+      '#title': 'Your Contact Information'
+      contact_first_name:
+        '#type': textfield
+        '#title': 'First Name'
+        '#required': true
+      contact_last_name:
+        '#type': textfield
+        '#title': 'Last Name'
+        '#required': true
+      contact_email:
+        '#type': textfield
+        '#title': Email
+        '#description': 'We will use your email to contact you before the meeting if necessary.'
+        '#states':
+          required:
+            ':input[name="testimony_type_gt_1hr_before"]':
+              value: Virtually
+          invisible:
+            ':input[name="is_gt_1hr_before"]':
+              value: 'false'
+      contact_phone:
+        '#type': textfield
+        '#title': 'Phone Number (optional)'
+        '#input_mask': '(999) 999-9999'
+    horizontal_rule:
+      '#type': webform_horizontal_rule
+    container_submit:
+      '#type': container
+      markup_public_records_statement:
+        '#type': webform_markup
+        '#markup': |-
+          <h2>Public Records Statement</h2>
 
-      <p>The City of Portland ensures meaningful access to City programs, services, and activities to comply with Civil Rights Title VI and ADA Title II laws and reasonably provides: translation, interpretation, modifications, accommodations, alternative formats, auxiliary aids and services. To request these services, contact the Office of the Council Clerk at <a href="tel:+1-503-823-4085">503-823-4085</a> or <a href="mailto:CouncilClerk@portlandoregon.gov">CouncilClerk@portlandoregon.gov</a>. Please make your request at least 72 hours in advance of the meeting.</p>
+          <p>The information you provide in this form is considered a public record under Oregon&rsquo;s <a data-renderer-mark="true" href="https://www.doj.state.or.us/oregon-department-of-justice/public-records/attorney-generals-public-records-and-meetings-manual/i-public-records/#:~:text=Under%20Oregon''s%20Public%20Records%20Law,committee%20of%20the%20Legislative%20Assembly" title="https://www.doj.state.or.us/oregon-department-of-justice/public-records/attorney-generals-public-records-and-meetings-manual/i-public-records/#:~:text=Under%20Oregon''s%20Public%20Records%20Law,committee%20of%20the%20Legislative%20Assembly">Public Records Law</a> and is available to the public on request.</p>
+      markup_accommodations:
+        '#type': webform_markup
+        '#markup': |-
+          <h2>Accommodations</h2>
+
+          <p>The City of Portland ensures meaningful access to City programs, services, and activities to comply with Civil Rights Title VI and ADA Title II laws and reasonably provides: translation, interpretation, modifications, accommodations, alternative formats, auxiliary aids and services. To request these services, contact the Office of the Council Clerk at <a href="tel:+1-503-823-4085">503-823-4085</a> or <a href="mailto:CouncilClerk@portlandoregon.gov">CouncilClerk@portlandoregon.gov</a>. Please make your request at least 72 hours in advance of the meeting.</p>
+      actions:
+        '#type': webform_actions
+        '#title': 'Submit button(s)'
+  computed_testimony_type:
+    '#type': webform_computed_twig
+    '#title': 'Computed - Testimony Type'
+    '#display_on': none
+    '#mode': text
+    '#template': '{{ data.testimony_type_gt_1hr_before ?? data.testimony_type_lt_1hr_before }}'
+  computed_agenda_items:
+    '#type': webform_computed_twig
+    '#title': 'Computed - Agenda Items'
+    '#display_on': none
+    '#mode': text
+    '#template': '{{ data.agenda_items|map(relation_id => drupal_field(''field_agenda_item_number'', ''relation'', relation_id, { label: ''hidden'' })|render|striptags|trim)|join(''||SEP||'') }}'
   computed_location_lat:
     '#type': webform_computed_twig
     '#title': 'Computed - Location Lat'
     '#display_on': none
     '#mode': text
-    '#template': '{{ data.location.location_lat|round(3, ''floor'') }}'
+    '#template': '{{ data.location.location_lat }}'
   computed_location_lng:
     '#type': webform_computed_twig
     '#title': 'Computed - Location Lng'
     '#display_on': none
     '#mode': text
-    '#template': '{{ data.location.location_lon|round(3, ''floor'') }}'
-  computed_agenda_item:
+    '#template': '{{ data.location.location_lon }}'
+  is_gt_1hr_before:
     '#type': webform_computed_twig
-    '#title': 'Computed - Agenda Item'
-    '#display_on': none
-    '#mode': text
-    '#template': '{{ webform_token(''[webform_submission:values:agenda_item:entity:field_agenda_item_number]'', webform_submission) }} - {{ webform_token(''[webform_submission:values:agenda_item:entity:field_council_document]'', webform_submission)|render|striptags }}'
-css: ".form-item-location-location-address .location-picker-address,\r\n.form-item-location-location-address .location-verify,\r\n.form-item-location-location-address .address {\r\n  display: none !important;\r\n}"
+    '#title': 'Computed - Greater than 1 hour before session'
+    '#title_display': none
+    '#wrapper_attributes':
+      class:
+        - d-none
+    '#display_on': form
+    '#template': |-
+      {% if data.session_id %}
+      {% set session_start = drupal_field('field_session_start_datetime', 'relation', data.session_id, { label: 'hidden', type: 'datetime_custom', settings: { date_format: 'U' } })|render|striptags|trim %}
+      {{ (session_start - 'now'|date('U')) > 3600 ? 'true' : 'false' }}
+      {% endif %}
+    '#whitespace': spaceless
+  session_status:
+    '#type': webform_computed_twig
+    '#title': 'Computed - Session Status'
+    '#title_display': none
+    '#wrapper_attributes':
+      class:
+        - d-none
+    '#display_on': form
+    '#template': '{{ drupal_field(''field_session_status'', ''relation'', data.session_id ?? 0, { label: ''hidden'' })|render|striptags|trim }}'
+    '#whitespace': spaceless
+  session_id:
+    '#type': hidden
+    '#title': 'Council Session ID'
+    '#prepopulate': true
+css: ''
 javascript: ''
 settings:
   ajax: false
@@ -202,6 +290,8 @@ settings:
   wizard_toggle: false
   wizard_toggle_show_label: ''
   wizard_toggle_hide_label: ''
+  wizard_page_type: container
+  wizard_page_title_tag: h2
   preview: 0
   preview_label: ''
   preview_title: ''
@@ -220,7 +310,7 @@ settings:
   confirmation_type: inline
   confirmation_url: ''
   confirmation_title: ''
-  confirmation_message: 'Thank you for registering to provide testimony on <strong>Agenda Item [webform_submission:values:agenda_item:entity:field_agenda_item_number]</strong> - [webform_submission:values:agenda_item:entity:field_council_document].'
+  confirmation_message: 'Thank you for registering to provide testimony. If you signed up to testify virtually, we will email you the link before the meeting.'
   confirmation_attributes: {  }
   confirmation_back: false
   confirmation_back_label: 'Back to agenda'
@@ -309,10 +399,14 @@ handlers:
       column_mappings:
         6681077722965892: contact_first_name
         4963020357035908: contact_last_name
-        4429277909280644: testimony_type
-        8932877536651140: computed_agenda_item
+        4429277909280644: computed_testimony_type
+        8932877536651140: computed_agenda_items
         136784514443140: computed_location_lat
         4640384141813636: computed_location_lng
-        2711220543350660: race_and_ethnicity
+        2711220543350660: contact_email
+        2138213344667524: contact_phone
       sheet_id: '4217323172194180'
+      multiple_rows_enable: '1'
+      multiple_rows_field: computed_agenda_items
+      multiple_rows_separator: '||SEP||'
 variants: {  }
