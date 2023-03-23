@@ -45,7 +45,7 @@ class SmartsheetClient {
     return $body->result ?? $body->data ?? $body;
   }
 
-  public function addRow($data) {
+  public function addRows($data) {
     return $this->handleResponse($this->client->request('POST', 'rows', ['json' => $data]));
   }
 
