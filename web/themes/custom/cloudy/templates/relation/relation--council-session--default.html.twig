@@ -63,18 +63,10 @@
     <h2 class="border-bottom border-primary">{{ content.field_session_start_datetime.0 }}</h2>
     {{ content.field_council_session_video }}
     {{ content.field_session_status }}
-    {% if date(content.field_session_registration_close.0["#attributes"]["datetime"]) > date('now') %}
-      {{ content.field_session_registration_text }}
-      {% if content.field_session_registration_link.0['#url'] %}
-        {{ content.field_session_registration_link }}
-      {% else %}
-        <p class="d-print-none"><a class="btn btn-primary" href="/council/agenda/testimony-registration?session_id={{ relation.id() }}">{{ 'Register for testimony'|t }}</a></p>
-      {% endif %}
-      <p class="d-print-none">{{ 'Registration closes on @date'|t({ '@date': content.field_session_registration_close.0|render }) }}</p>
-    {% else %}
-      {{ content.field_session_closed_text }}
-      {% if content.field_session_registration_close.0 %}
-        <p class="d-print-none"><strong>{{ 'Registration closed on @date to provide testimony at this session.'|t({ '@date': content.field_session_registration_close.0|render }) }}</strong></p>
+    {% if not content.field_session_status.0 %}
+      {% set has_testifiable_agenda_items = drupal_view_result('reference_agenda_item', 'entity_reference_agenda_item_for_testimony', relation.id())|length > 0 %}
+      {% if has_testifiable_agenda_items %}
+        <p class="d-print-none"><a class="btn btn-primary mt-2" href="/council/agenda/testimony-registration?session_id={{ relation.id() }}">{{ 'Testimony registration'|t }}</a></p>
       {% endif %}
     {% endif %}
     {{ content.field_council_in_attendance }}
@@ -83,12 +75,9 @@
   {{ content|without(
     'field_session_start_datetime',
     'field_session_status',
-    'field_session_registration_close',
-    'field_session_registration_link',
     'field_council_in_attendance',
     'field_session_notes',
     'field_council_session_video',
-    'field_session_registration_text',
     'field_session_closed_text'
   ) }}
 </div>
