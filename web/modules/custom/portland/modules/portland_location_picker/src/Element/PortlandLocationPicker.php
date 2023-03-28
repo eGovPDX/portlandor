@@ -177,6 +177,20 @@ class PortlandLocationPicker extends WebformCompositeBase {
       '#id' => 'location_lon',
       '#attributes' => ['class' => ['location-lng', 'visually-hidden']],
     ];
+    $element['location_x'] = [
+      '#type' => 'textfield',
+      '#title' => t('Web Mercator x coordinate'),
+      '#title_display' => 'invisible',
+      '#id' => 'location_x',
+      '#attributes' => ['class' => ['location-x', 'visually-hidden']],
+    ];
+    $element['location_y'] = [
+      '#type' => 'textfield',
+      '#title' => t('Web Mercator y coordinate'),
+      '#title_display' => 'invisible',
+      '#id' => 'location_y',
+      '#attributes' => ['class' => ['location-y', 'visually-hidden']],
+    ];
     $element['place_name'] = [
       '#type' => 'textfield',
       '#id' => 'place_name',
