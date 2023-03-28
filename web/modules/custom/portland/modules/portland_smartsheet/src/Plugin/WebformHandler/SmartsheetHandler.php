@@ -117,7 +117,7 @@ class SmartsheetHandler extends WebformHandlerBase {
 
       $form['column_mappings_container']['table']['#rows'] = array_map(
         fn($col) => [
-          ['data' => ['#markup' => "<strong>{$col->title}</strong>"]],
+          ['data' => ['#markup' => '<strong>' . htmlentities($col->title) . '</strong>']],
           ['data' => [
             '#type' => 'select',
             '#name' => "settings[column_mappings][{$col->id}]",
