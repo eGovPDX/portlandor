@@ -1,4 +1,4 @@
-FROM cimg/php:7.3-browsers
+FROM cimg/php:8.1-browsers
 
 USER root
 
@@ -14,7 +14,7 @@ RUN apt install -y \
     libfontconfig1 \
     libgcc1 \
     # libgconf-2-4 \
-    libgdk-pixbuf2.0-0 \
+    libgdk-pixbuf-2.0-0 \
     libglib2.0-0 \
     libgtk-3-0 \
     libnspr4 \
@@ -32,7 +32,7 @@ RUN apt install -y \
     libxi6 \
     libxrandr2 \
     libxrender1 \
-    libxss1 \
+    # libxss1 \
     libxtst6 \
     ca-certificates \
     fonts-liberation \
