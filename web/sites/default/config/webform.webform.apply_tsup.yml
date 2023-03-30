@@ -4,6 +4,7 @@ status: open
 dependencies:
   module:
     - portland
+    - portland_zendesk
 third_party_settings:
   portland:
     disable_demographic_form_prompt: 1
@@ -863,6 +864,11 @@ elements: |-
       '#description': 'Primary communication will be done through email, please check your spam folder.'
       '#input_mask': '''alias'': ''email'''
       '#required': true
+    support_agent_use_only:
+      '#type': portland_support_agent_widget
+      '#title': 'Support Agent Use Only'
+      '#wrapper_attributes':
+        style: 'background-color: #ccc; padding: 15px;'
   permit_type:
     '#type': webform_computed_twig
     '#title': 'Computed permit type'
@@ -924,6 +930,9 @@ elements: |-
         <p>To cancel or make changes to your application, please submit a Change Request form. We will do our best to accommodate your change request.</p>
         <p>If you have not heard back from us about this submission within 5 business days, please first check your SPAM folder, and then contact us at <a href="mailto:CPAC@portlandoregon.gov">CPAC@portlandoregon.gov</a> or <a href="tel:+1-503-823-7365">503-823-7365</a>.</p>
       {% endif %}
+  report_ticket_id:
+    '#type': hidden
+    '#title': 'Report Ticket Id'
 css: ''
 javascript: "(function($, Drupal) {\r\n    Drupal.behaviors.tsupDateCalculator = {\r\n        attach() {\r\n            function calculateDate() { \r\n\t\t\t\tconst isDateSame = (a, b) =>\r\n\t\t\t\t\ta.getFullYear() === b.getFullYear() &&\r\n\t\t\t\t\ta.getMonth() === b.getMonth() &&\r\n\t\t\t\t\ta.getDate() === b.getDate();\r\n\t\t\t\tconst mapOfRadioOptionToDayNums = {\r\n\t\t\t\t\t\"mon_fri\": [1, 2, 3, 4, 5],\r\n\t\t\t\t\t\"all_days\": [0, 1, 2, 3, 4, 5, 6],\r\n\t\t\t\t};\r\n\t\t\t\tconst permitType = $(\"input[name='permit_type']\").val();\r\n\t\t\t\tconst isMetered = $(\"input[name='permit_location_metered']\").val() === \"true\";\r\n\t\t\t  \r\n\t\t\t\tconst startDateOffsetDays = permitType === \"complex\"\r\n\t\t\t\t\t? 10\r\n\t\t\t\t\t: (isMetered ? 3 : 4);\r\n\t\t\t\tconst earliestStartDate = new Date();\r\n\t\t\t\tearliestStartDate.setDate(earliestStartDate.getDate() + startDateOffsetDays);\r\n\t\t\t\t$(\".earliest-start-date\").text(earliestStartDate.toLocaleDateString());\r\n\t\t\t\r\n\t\t\t\tconst daysOfWeek = mapOfRadioOptionToDayNums[$(\"input[name*='permit_date_days_of_week']:checked\").val()] || [];\r\n\t\t\t\tconst startValue = $(\"input[name='permit_date_start']\").val();\r\n\t\t\t\tconst endValue = $(\"input[name='permit_date_end']\").val()\r\n\t\t\t\tif (!startValue || !endValue) return;\r\n\t\t\t\r\n\t\t\t\tconst startDate = new Date(startValue + \"T00:00\");\r\n\t\t\t\tconst endDate = new Date(endValue + \"T00:00\");\r\n\t\t\t\tif (startDate.getTime() > endDate.getTime()) return;\r\n\t\t\t\r\n\t\t\t\tlet amtDays = 0;\r\n\t\t\t\tif (!isMetered || daysOfWeek.includes(startDate.getDay())) amtDays++;\r\n\t\t\t\r\n\t\t\t\tconst curDate = new Date(startValue + \"T00:00\");\r\n\t\t\t\twhile (!isDateSame(curDate, endDate)) {\r\n\t\t\t\t\tcurDate.setDate(curDate.getDate() + 1);\r\n\t\t\t\r\n\t\t\t\t\tif (!isMetered || daysOfWeek.includes(curDate.getDay())) amtDays++;\r\n\t\t\t\t}\r\n\t\t\t\t\r\n\t\t\t\t$(\"input[name='permit_date_span']\").val(amtDays);\r\n\t\t\t\t$(\"input[name='permit_date_span']\").trigger(\"change\")\r\n\t\t\t\t$(\".days-requested\").text(amtDays === 1 ? \"1 day\" : `${amtDays} days`);\r\n\t\t\t\r\n\t\t\t\tconst amtWeeks = Math.ceil(amtDays / 7);\r\n\t\t\t\t$(\".weeks-requested\").text(amtWeeks === 1 ? \"1 week\" : `${amtWeeks} weeks`);\r\n\t\t\t}\r\n\t\t\t\r\n\t\t\t$(document).ajaxComplete(function() {\r\n\t\t\t\t$(\"input[name='permit_date_start'], input[name='permit_date_end'], input[name='permit_date_days_of_week']\").change(calculateDate);\r\n\t\t\t\tcalculateDate();\r\n\t\t\t});\r\n\t\t}\r\n    };\r\n})(jQuery, Drupal);\r\n"
 settings:
@@ -1107,5 +1116,57 @@ access:
     roles: {  }
     users: {  }
     permissions: {  }
-handlers: {  }
+handlers:
+  create_new_zendesk_request:
+    id: zendesk
+    handler_id: create_new_zendesk_request
+    label: 'Create new Zendesk request'
+    notes: ''
+    status: true
+    conditions:
+      disabled:
+        ':input[name="support_agent_use_only[test_submission]"]':
+          checked: true
+    weight: 0
+    settings:
+      requester_name: contact_full_legal_name
+      requester_email: contact_email
+      subject: 'New TSUP application'
+      comment: '[webform_submission:values:html]'
+      tags: 'drupal webform tsup'
+      priority: normal
+      status: new
+      group_id: '12281750992407'
+      assignee_id: ''
+      type: incident
+      collaborators: ''
+      custom_fields: "6353388345367: 'apply_tsup'\r\n1500013095781: '[webform_submission:uuid]'\r\n12281632679959: '12281632679959_[webform_submission:values:permit_type]'\r\n1900004448785: '[webform_submission:values:contact_company]'\r\n12280609857559: '[webform_submission:values:change_request_id]'\r\n12280802285079: ''\r\n12281351917847: '[webform_submission:values:simple_permit_reason]'\r\n5581480390679: '[webform_submission:values:permit_location:location_lat]'\r\n5581490332439: '[webform_submission:values:permit_location:location_lon]'\r\n1500012743961: '[webform_submission:values:permit_location:location_address]'\r\n9205221816983: '[webform_submission:values:permit_location:location_type:raw]'\r\n12281548831383: '[webform_submission:values:complex_permit_closure_type]'\r\n"
+      ticket_id_field: report_ticket_id
+      ticket_form_id: '12280613877783'
+  create_new_zendesk_request_developer_test:
+    id: zendesk
+    handler_id: create_new_zendesk_request_developer_test
+    label: 'Create new Zendesk request - developer test'
+    notes: ''
+    status: true
+    conditions:
+      enabled:
+        ':input[name="support_agent_use_only[test_submission]"]':
+          checked: true
+    weight: 1
+    settings:
+      requester_name: contact_full_legal_name
+      requester_email: contact_email
+      subject: 'New TSUP application'
+      comment: '[webform_submission:values:html]'
+      tags: 'drupal webform tsup'
+      priority: normal
+      status: new
+      group_id: '4549352062487'
+      assignee_id: ''
+      type: incident
+      collaborators: ''
+      custom_fields: "6353388345367: 'apply_tsup'\r\n1500013095781: '[webform_submission:uuid]'\r\n12281632679959: '12281632679959_[webform_submission:values:permit_type]'\r\n1900004448785: '[webform_submission:values:contact_company]'\r\n12280609857559: '[webform_submission:values:change_request_id]'\r\n12280802285079: ''\r\n12281351917847: '[webform_submission:values:simple_permit_reason]'\r\n5581480390679: '[webform_submission:values:permit_location:location_lat]'\r\n5581490332439: '[webform_submission:values:permit_location:location_lon]'\r\n1500012743961: '[webform_submission:values:permit_location:location_address]'\r\n9205221816983: '[webform_submission:values:permit_location:location_type:raw]'\r\n12281548831383: '[webform_submission:values:complex_permit_closure_type]'\r\n"
+      ticket_id_field: report_ticket_id
+      ticket_form_id: '12280613877783'
 variants: {  }
