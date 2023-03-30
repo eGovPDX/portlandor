@@ -833,10 +833,14 @@
         function setLatLngHiddenFields(lat, lng) {
           if (!lat) lat = "0";
           if (!lng) lng = "0";
-          // NOTE: The following code would be problematic if we allow multiple copies of the widget or alternate naming conventions.
           $('input[name=' + elementId + '\\[location_lat\\]]').val(lat);
           $('input[name=' + elementId + '\\[location_lon\\]]').val(lng);
           console.log('Set coordinates: ' + $('input[name=' + elementId + '\\[location_lat\\]]').val() + ', ' + $('input[name=' + elementId + '\\[location_lon\\]]').val());
+
+          var sphericalMerc = L.Projection.SphericalMercator.project(L.latLng(lat,lng));
+          $('input[name=' + elementId + '\\[location_x\\]]').val(sphericalMerc.x);
+          $('input[name=' + elementId + '\\[location_y\\]]').val(sphericalMerc.y);
+          console.log('Set spherical mercator coordinates: ' + $('input[name=' + elementId + '\\[location_x\\]]').val() + ', ' + $('input[name=' + elementId + '\\[location_y\\]]').val());
         }
 
         // set location marker on map. this is only used with map clicks, not marker clicks.
