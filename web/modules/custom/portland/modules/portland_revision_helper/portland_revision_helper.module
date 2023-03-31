@@ -21,19 +21,17 @@ use \Drupal\Core\Access\AccessResult;
  */
 function portland_revision_helper_form_alter(&$form, $form_state, $form_id)
 {
-  if (array_key_exists('revision_log',$form) && array_key_exists('revision', $form)) {
+  // Hide "Create new revision" checkbox
+  if (array_key_exists('revision', $form)) {
     $form['revision']['#access'] = false;
-    $form['revision_log']['#group'] = 'footer';
   }
 
-  // Group all the revision and review content together.
-  if (array_key_exists('field_reviewer', $form)) {
-    $form['field_reviewer']['#group'] = 'footer';
-  }
-
-  // PGOV-853 - move revision log message to footer on media
-  if (array_key_exists('revision_log_message', $form)) {
-    $form['revision_log_message']['#group'] = 'footer';
+  // Form fields to move to the footer group
+  $footer_fields = ['field_reviewer', 'revision_log', 'revision_log_message'];
+  foreach ($footer_fields as $field_name) {
+    if (array_key_exists($field_name, $form)) {
+      $form[$field_name]['#group'] = 'footer';
+    }
   }
 }
 
