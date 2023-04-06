@@ -70,9 +70,11 @@
         var primaryLayer;
         var incidentsLayer;
         var regionsLayer;
+        var cityBoundaryLayer;
         var primaryFeatures;
         var incidentsFeatures;
         var regionsFeatures;
+        var cityBoundaryFeatures;
         var locationMarker;
         var locationErrorShown;
         var locateControl;
@@ -245,8 +247,27 @@
             });
           }
 
+          initializeCityLimitsLayer();
+
           // INITIALIZE GEOJSON LAYERS //////////
           processGeoJsonData();
+        }
+
+        function initializeCityLimitsLayer() {
+          // CITY_LIMITS_BOUNDARY_URL
+          $.ajax({
+            url: CITY_LIMITS_BOUNDARY_URL, success: function(cityBoundaryResponse) {
+              cityBoundaryFeatures = cityBoundaryResponse.features;
+              console.log(cityBoundaryFeatures.length + " city boundary regions found.");
+              cityBoundaryLayer = L.geoJson(cityBoundaryFeatures, {
+                color: 'red',
+                fillOpacity: 0,
+                weight: 1,
+                dashArray: "2 4",
+                interactive: false
+              }).addTo(map);
+            }
+          });
         }
 
         /**
