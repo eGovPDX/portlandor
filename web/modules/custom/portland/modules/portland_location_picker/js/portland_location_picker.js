@@ -1041,6 +1041,7 @@
                 // portlandmaps doesn't have data for this location.
                 // set location type to "other" so 311 can triage but still set marker.
                 // address field may be required by the form, so something needs to go there.
+                if (!handleCityLimits(L.latLng(lat, lng))) return false;
                 if (zoomAndCenter) {
                   doZoomAndCenter(lat, lng);    
                   if (primaryLayerBehavior != PRIMARY_LAYER_BEHAVIOR.SelectionOnly) {
