@@ -122,7 +122,7 @@
             fillOpacity: 0,
             weight: 1,
             dashArray: "2 4",
-            interactive: true
+            interactive: false
           }
         }
 
