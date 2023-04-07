@@ -44,6 +44,7 @@
         const DEFAULT_SOLVED_ICON_URL = "/modules/custom/portland/modules/portland_location_picker/images/map_marker_incident_solved.png";
         const CITY_LIMITS_BOUNDARY_URL = "https://www.portlandmaps.com/arcgis/rest/services/Public/COP_OpenData_Boundary/MapServer/10/query?where=CITYNAME%20like%20%27Portland%27&outFields=*&outSR=4326&f=geojson";
         // for all area municipalities, use this url: https://www.portlandmaps.com/arcgis/rest/services/Public/COP_OpenData_Boundary/MapServer/10/query?outFields=*&where=1%3D1&f=geojson
+        // TODO: if the multi-municipality geojson is used, we'll need to extend the city limits functionaltiy. right now it assumes the only feature is Portland.
         const PARKS_REVGEOCODE_URL = "https://www.portlandmaps.com/arcgis/rest/services/Public/Parks_Misc/MapServer/2/query?geometry=%7B%22x%22%3A${lng}%2C%22y%22%3A${lat}%2C%22spatialReference%22%3A%7B%22wkid%22%3A4326%7D%7D&geometryType=esriGeometryPoint&spacialRel=esriSpatialRelIntersects&returnGeometry=false&returnTrueCurves=false&returnIdsOnly=false&returnCountOnly=false&returnDistinctValues=false&f=pjson";
         const REVGEOCODE_URL = "https://www.portlandmaps.com/arcgis/rest/services/Public/Geocoding_PDX/GeocodeServer/reverseGeocode?location=%7B%22x%22%3A${lng}%2C+%22y%22%3A${lat}%2C+%22spatialReference%22%3A%7B%22wkid%22+%3A+4326%7D%7D&distance=100&langCode=&locationType=&featureTypes=&outSR=4326&returnIntersection=false&f=json";
         const PRIMARY_LAYER_TYPE = {
@@ -277,6 +278,7 @@
               cityBoundaryFeatures = cityBoundaryResponse.features;
               console.log(cityBoundaryFeatures.length + " city boundary regions found.");
               cityBoundaryLayer = L.geoJson(cityBoundaryFeatures, cityLimitsProperties).addTo(map);
+              cityBoundaryLayer.municipality = cityBoundaryFeatures[0].properties.CITYNAME;
             }
           });
         }
@@ -656,6 +658,13 @@
             if (inLayer.length <= 0) {
               showStatusModal(CITY_LIMITS_MESSAGE);
               return false;
+            } else {
+              // TODO: If/when we start supporting clicks in other municipalities, this will need to be more dynamic.
+              // right now it only supports Portland city limits.
+              if (cityBoundaryLayer.municipality == "Portland") {
+                $('#location_is_portland').val("Yes");
+                $('#location_municipality_name').val(cityBoundaryLayer.municipality);
+              }
             }
           }
           return true;
@@ -751,7 +760,7 @@
         }
   
         function resetClickedMarker() {
-          if (clickedMarker) {
+          if (clickedMarker && clickedMarker.target && clickedMarker.target._icon) {
             // reset clicked marker's icon to original
             clickedMarker.target.setIcon(clickedMarker.originalIcon);
             L.DomUtil.removeClass(clickedMarker.target._icon, 'selected');
