@@ -1,7 +1,9 @@
 uuid: 6bdb3b2e-e9c9-42a5-bf45-3fbcf27f8444
 langcode: en
 status: open
-dependencies: {  }
+dependencies:
+  module:
+    - portland_zendesk
 weight: 0
 open: null
 close: null
@@ -15,7 +17,11 @@ category: Report
 elements: |-
   markup:
     '#type': webform_markup
-    '#markup': 'If you have experienced damage to your vehicle as a result of a pothole, sinkhole, or other hazard on the road, you may be eligible to file a claim against the city. For more information and to file a claim, please visit the following webpage: <a href="https://www.portland.gov/omf/brfs/risk/rm-liability/file-claim-against-city">File a claim against the City</a>.'
+    '#wrapper_attributes':
+      style: 'background-color: #e1e5ea; padding: 1.5rem;'
+    '#markup': |-
+      <strong>Vehicle Damage</strong><br />
+      If you have experienced damage to your vehicle as a result of a pothole, sinkhole, or other hazard on the road, you may be eligible to file a claim against the city. For more information and to file a claim, please visit the following webpage: <a href="https://www.portland.gov/omf/brfs/risk/rm-liability/file-claim-against-city">File a claim against the City</a>.
   report_type:
     '#type': radios
     '#title': 'Please select your report type'
@@ -59,35 +65,35 @@ elements: |-
         ':input[name="report_have_photo"]':
           value: 'Yes'
     '#attachment_image_style': webform_report_uploaded_image
+  report_defect_size:
+    '#type': radios
+    '#title': 'What would you say is the approximate size of the defect?'
+    '#options':
+      Small: 'Small -- Like the size of a golf ball, smartphone, or coffee cup lid'
+      Medium: 'Medium -- Like the size of a baseball, frisbee, or dinner plate'
+      Large: 'Large -- Like the size of a basketball, car tire, or maintenance hole cover'
+    '#states':
+      visible:
+        ':input[name="report_type"]':
+          value: 'Damage to the roadway surface'
+  report_defect_shape:
+    '#type': webform_radios_other
+    '#title': 'How would you describe the shape of the defect?'
+    '#options':
+      'Circular or mostly circular': 'Circular or mostly circular'
+      'Linear or mostly in a line down or across the roadway': 'Linear or mostly in a line down or across the roadway'
+      'Square or rectangular': 'Square or rectangular'
+    '#other__placeholder': 'Please describe...'
+    '#states':
+      visible:
+        ':input[name="report_type"]':
+          value: 'Damage to the roadway surface'
   container_no_photo:
     '#type': container
     '#states':
       visible:
         ':input[name="report_have_photo"]':
           value: 'No'
-    report_defect_size:
-      '#type': radios
-      '#title': 'What would you say is the approximate size of the defect?'
-      '#options':
-        Small: 'Small -- Like the size of a golf ball, smartphone, or coffee cup lid'
-        Medium: 'Medium -- Like the size of a baseball, frisbee, or dinner plate'
-        Large: 'Large -- Like the size of a basketball, car tire, or maintenance hole cover'
-      '#states':
-        visible:
-          ':input[name="report_type"]':
-            value: 'Damage to the roadway surface'
-    report_defect_shape:
-      '#type': webform_radios_other
-      '#title': 'How would you describe the shape of the defect?'
-      '#options':
-        'Circular or mostly circular': 'Circular or mostly circular'
-        'Linear or mostly in a line down or across the roadway': 'Linear or mostly in a line down or across the roadway'
-        'Square or rectangular': 'Square or rectangular'
-      '#other__placeholder': 'Please describe...'
-      '#states':
-        visible:
-          ':input[name="report_type"]':
-            value: 'Damage to the roadway surface'
   report_location:
     '#type': portland_location_picker
     '#title': 'Location of the defect or object'
@@ -107,6 +113,49 @@ elements: |-
     '#type': textfield
     '#title': Email
     '#input_mask': '''alias'': ''email'''
+    '#required': true
+  computed_issue_type:
+    '#type': webform_computed_twig
+    '#title': 'Computed Issue Type'
+    '#mode': text
+    '#template': |
+      {% if data.report_sinkhole %}sinkhole
+
+      {%- elseif data.report_type == "An object or other hazard in the roadway" or data.report_type == "Other" %}object_or_other_hazard
+
+      {%- elseif data.report_defect_size == "Small" %}delamination
+
+      {%- elseif data.report_defect_size == "Medium" and data.report_defect_shape != "Square or rectangular" %}pothole
+
+      {%- elseif (data.report_defect_size == "Medium" or data.report_defect_size == "Large") and data.report_defect_shape == "Square or rectangular" %}utility_cut
+
+      {%- elseif data.report_defect_size == "Large" and data.report_defet_shape != "Square or rectangular" %}pothole{% endif %}
+    '#whitespace': trim
+    '#ajax': true
+  computed_priority:
+    '#type': webform_computed_twig
+    '#title': 'Computed Priority'
+    '#mode': text
+    '#template': |
+      {% if data.report_sinkhole %}priority_urgent
+
+      {%- elseif data.report_type == "An object or other hazard in the roadway" or data.report_type == "Other" %}priority_normal
+
+      {%- elseif data.report_defect_size == "Small" %}priority_low
+
+      {%- elseif data.report_defect_size == "Medium" and data.report_defect_shape != "Square or rectangular" %}priority_normal
+
+      {%- elseif (data.report_defect_size == "Medium" or data.report_defect_size == "Large") and data.report_defect_shape == "Square or rectangular" %}priority_normal
+
+      {%- elseif data.report_defect_size == "Large" and data.report_defet_shape != "Square or rectangular" %}priority_high{% endif %}
+    '#whitespace': trim
+    '#ajax': true
+  support_agent_use_only:
+    '#type': portland_support_agent_widget
+    '#title': 'Support Agent Use Only'
+  report_ticket_id:
+    '#type': hidden
+    '#title': 'Report Ticket Id'
 css: ''
 javascript: ''
 settings:
@@ -290,5 +339,28 @@ access:
     roles: {  }
     users: {  }
     permissions: {  }
-handlers: {  }
+handlers:
+  zendesk_new_request:
+    id: zendesk
+    handler_id: zendesk_new_request
+    label: 'Zendesk new request'
+    notes: ''
+    status: true
+    conditions: {  }
+    weight: 0
+    settings:
+      requester_name: contact_name
+      requester_email: contact_email
+      subject: 'New Street Issue Report'
+      comment: '[webform_submission:values:html]'
+      tags: 'drupal webform'
+      priority: normal
+      status: new
+      group_id: '13673642085527'
+      assignee_id: ''
+      type: question
+      collaborators: ''
+      custom_fields: "6353388345367: 'report_pothole'\r\n5581480390679: '[webform_submission:values:report_location:location_lat]'\r\n5581490332439: '[webform_submission:values:report_location:location_lon]'\r\n13407901552407: '[webform_submission:values:report_location:location_x]'\r\n13407918835095: '[webform_submission:values:report_location:location_y]'\r\n1500012743961: '[webform_submission:values:report_location:location_address]'\r\n1500013095781: '[webform_submission:uuid]'\r\n13797389302935: '[webform_submission:values:computed_issue_type]'\r\n13178808571927: '[webform_submission:values:computed_priority]'"
+      ticket_id_field: report_ticket_id
+      ticket_form_id: '13796628711191'
 variants: {  }
