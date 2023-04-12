@@ -135,7 +135,7 @@ class PortlandLocationPicker extends WebformCompositeBase {
     $verifyButtonText = array_key_exists('#verify_button_text', $element) ? $element['#verify_button_text'] : "";
     $primaryFeatureName = array_key_exists('#primary_feature_name', $element) ? $element['#primary_feature_name'] : "";
     $featureLayerVisibleZoom = array_key_exists('#feature_layer_visible_zoom', $element) ? $element['#feature_layer_visible_zoom'] : "";
-    $requireCityLimits = array_key_exists('#require_city_limits', $element) ? $element['#require_city_limits'] : TRUE;
+    $requireCityLimits = array_key_exists('#require_city_limits', $element) ? $element['#require_city_limits'] : FALSE;
     $displayCityLimits = array_key_exists('#display_city_limits', $element) ? $element['#display_city_limits'] : TRUE;
 
     $element['#attached']['drupalSettings']['webform']['portland_location_picker']['element_id'] = $elementId;
