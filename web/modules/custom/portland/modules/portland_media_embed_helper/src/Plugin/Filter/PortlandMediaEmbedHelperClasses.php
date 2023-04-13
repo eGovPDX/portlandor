@@ -54,6 +54,9 @@ class PortlandMediaEmbedHelperClasses extends FilterBase {
         switch ($embed_button) {
           case "document_browser":
             $media_class = "embed-document";
+            if($node->getAttribute('data-entity-embed-display') == 'view_mode:media.embedded_with_thumbnail') {
+              $media_class .= ' responsive-right';
+            }
             break;
 
           case "image_browser":
@@ -93,6 +96,12 @@ class PortlandMediaEmbedHelperClasses extends FilterBase {
             $media_class = "embed-chart";
             if (!is_null($alignment) && $alignment == "responsive-right") {
               $media_class .= " responsive-right";
+            }
+            break;
+          
+          case "insert_iframe":
+            if (!is_null($alignment)) {
+              $media_class .= " $alignment";
             }
             break;
         }
