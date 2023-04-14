@@ -147,7 +147,7 @@ These properties are set in the Advanced tab of the Location Picker element. Dat
 
 - ***display_city_limits*** - When TRUE, the city limits border is displayed. Default is TRUE.
 
-- ***require_city_limits*** - When TRUE, selected locations are required to be within the Portland city limits. Clicks outside the permiter will result in a Javascript alert, and the click will not be registered. Default is TRUE.
+- ***require_city_limits*** - When TRUE, selected locations are required to be within the Portland city limits. Clicks outside the permiter will result in a Javascript alert, and the click will not be registered. Default is FALSE.
 
 ### Example of custom properties
 
