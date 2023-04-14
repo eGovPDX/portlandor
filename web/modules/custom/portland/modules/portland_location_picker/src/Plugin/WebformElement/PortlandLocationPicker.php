@@ -64,6 +64,12 @@ class PortlandLocationPicker extends WebformCompositeBase {
     if (isset($value['location_region_id']) && $value['location_region_id']) {
       $lines[] = '<strong>Region ID:</strong> ' . $value['location_region_id'];
     }
+    if (isset($value['location_municipality_name']) && $value['location_municipality_name']) {
+      $lines[] = '<strong>Municipality:</strong> ' . $value['location_municipality_name'];
+    }
+    if (isset($value['location_is_portland']) && $value['location_is_portland']) {
+      $lines[] = '<strong>Is Portland:</strong> ' . $value['location_is_portland'];
+    }
     // $lines[] = "</p>";
     return $lines;
   }
@@ -111,6 +117,12 @@ class PortlandLocationPicker extends WebformCompositeBase {
     }
     if (isset($value['location_region_id']) && $value['location_region_id']) {
       $lines[] = 'Region ID: ' . $value['location_region_id'];
+    }
+    if (isset($value['location_municipality_name']) && $value['location_municipality_name']) {
+      $lines[] = 'Municipality: ' . $value['location_municipality_name'];
+    }
+    if (isset($value['location_is_portland']) && $value['location_is_portland']) {
+      $lines[] = 'Is Portland: ' . $value['location_is_portland'];
     }
     return $lines;
   }
