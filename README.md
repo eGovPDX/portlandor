@@ -1,6 +1,6 @@
 [![CircleCI](https://circleci.com/gh/eGovPDX/portlandor.svg?style=svg)](https://circleci.com/gh/eGovPDX/portlandor)
 
-# Portland.gov Drupal Site
+# Portland.gov Drupal Site for PCI Pen Test
 
 ## Get the code
 
