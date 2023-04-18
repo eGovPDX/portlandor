@@ -92,13 +92,6 @@ class PortlandMediaEmbedHelperClasses extends FilterBase {
             }
             break;
 
-          case "chart_browser":
-            $media_class = "embed-chart";
-            if (!is_null($alignment) && $alignment == "responsive-right") {
-              $media_class .= " responsive-right";
-            }
-            break;
-          
           case "insert_iframe":
             if (!is_null($alignment)) {
               $media_class .= " $alignment";
