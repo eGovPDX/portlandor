@@ -7,6 +7,7 @@ use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Logger\LoggerChannelFactoryInterface;
 use Drupal\user\Entity\User;
 use Drupal\media\Entity\Media;
+use Drupal\file\Entity\File;
 
 /**
  * Custom drush command file.
@@ -78,7 +79,7 @@ class BatchCommands extends DrushCommands
   }
 
   /**
-   * Drush command to set user's administration pages language setting to English.
+   * Drush command to copy chart into iframe.
    *
    * @command portland:copy_chart_to_iframe
    * @aliases portland-copy-chart-to-iframe
@@ -90,15 +91,9 @@ class BatchCommands extends DrushCommands
     echo 'chart,iframe,page_using_media' . PHP_EOL;
     $base_url = \Drupal::request()->getSchemeAndHttpHost();
 
-    // Load the entity type manager service.
     $entityTypeManager = \Drupal::entityTypeManager();
-
-    // Load all nodes of the 'article' content type.
     $charts = $entityTypeManager->getStorage('media')->loadByProperties(['bundle' => 'chart']);
 
-
-    // Loop through the nodes and do something with each one.
-    // $count = 3; // For test only
     foreach ($charts as $chart) {
       $chart_redirects = $chart->field_redirects->getValue();
       if(!empty($chart_redirects)) {
@@ -108,6 +103,7 @@ class BatchCommands extends DrushCommands
 
       $new_iframe = Media::create([
         'name' => $chart->name->value,
+        'status' => $chart->status->value,
         'bundle' => 'iframe_embed',
         'langcode' => $chart->langcode->value,
         'uid' => $chart->uid->target_id,
@@ -130,28 +126,26 @@ class BatchCommands extends DrushCommands
       foreach($nodes_using_chart as $node_using_chart) {
         $node = \Drupal\node\Entity\Node::load($node_using_chart);
         $orig_uuid = $chart->uuid->value;
-        $orig_text = "<drupal-entity data-align=\"responsive-full\" data-embed-button=\"chart_browser\" data-entity-embed-display=\"view_mode:media.embedded\" data-entity-type=\"media\" data-entity-uuid=\"$orig_uuid\" data-langcode=\"en\"></drupal-entity>";
-
         $new_uuid = $new_iframe->uuid->value;
-        $new_text = "<drupal-entity data-aspect-ratio=\"16/9\" data-embed-button=\"insert_iframe\" data-entity-embed-display=\"view_mode:media.embedded\" data-entity-type=\"media\" data-entity-uuid=\"$new_uuid\" data-langcode=\"en\"></drupal-entity>";
+        // Extract the alignment value: full or right
+        $orig_text_regex = '/<drupal-entity data-align="responsive-(\w+)" data-embed-button="chart_browser" data-entity-embed-display="view_mode:media.embedded" data-entity-type="media" data-entity-uuid="' .$orig_uuid.'" data-langcode="en"><\/drupal-entity>/';
+        $replacement = "<drupal-entity data-align=\"responsive-$1\" data-embed-button=\"insert_iframe\" data-entity-embed-display=\"view_mode:media.embedded\" data-entity-type=\"media\" data-entity-uuid=\"$new_uuid\" data-langcode=\"en\"></drupal-entity>";
 
-        // Only update the body text if the original text can be found
-        if( str_contains($node->field_body_content->value, $orig_text) ) {
-          $node->field_body_content->value = str_replace($orig_text, $new_text, $node->field_body_content->value);
-          $node->save();
-          $node_urls []= $base_url . '/node/' . $node->nid->value;
-        }
+        $new_node_body = preg_replace($orig_text_regex, $replacement, $node->field_body_content->value);
+
+        // Do nothing if the pattern is not found.
+        if( $new_node_body == $node->field_body_content->value) continue;
+        $node->field_body_content->value = $new_node_body;
+        $node->save();
+        $node_urls []= $base_url . '/node/' . $node->nid->value;
       }
 
       echo $base_url . '/media/'. $chart->mid->value . ',' . $base_url . '/media/'. $new_iframe->mid->value . ',' . implode(',', $node_urls) . PHP_EOL;
-
-      // $count--;
-      // if($count === 0) break;
     }
   }
 
   /**
-   * Drush command to set user's administration pages language setting to English.
+   * Drush command to copy remote map into iframe.
    *
    * @command portland:copy_map_to_iframe
    * @aliases portland-copy-map-to-iframe
@@ -186,6 +180,7 @@ class BatchCommands extends DrushCommands
 
       $new_iframe = Media::create([
         'name' => $map->name->value,
+        'status' => $map->status->value,
         'bundle' => 'iframe_embed',
         'langcode' => $map->langcode->value,
         'uid' => $map->uid->target_id,
@@ -208,17 +203,18 @@ class BatchCommands extends DrushCommands
       foreach($nodes_using_map as $node_using_map) {
         $node = \Drupal\node\Entity\Node::load($node_using_map);
         $orig_uuid = $map->uuid->value;
-        $orig_text = "<drupal-entity data-align=\"responsive-full\" data-embed-button=\"map_browser\" data-entity-embed-display=\"view_mode:media.embedded\" data-entity-type=\"media\" data-entity-uuid=\"$orig_uuid\" data-langcode=\"en\"></drupal-entity>";
-
         $new_uuid = $new_iframe->uuid->value;
-        $new_text = "<drupal-entity data-aspect-ratio=\"16/9\" data-embed-button=\"insert_iframe\" data-entity-embed-display=\"view_mode:media.embedded\" data-entity-type=\"media\" data-entity-uuid=\"$new_uuid\" data-langcode=\"en\"></drupal-entity>";
+        // Extract the alignment value: full or right
+        $orig_text_regex = '/<drupal-entity data-align="responsive-(\w+)" data-embed-button="map_browser" data-entity-embed-display="view_mode:media.embedded" data-entity-type="media" data-entity-uuid="' .$orig_uuid.'" data-langcode="en"><\/drupal-entity>/';
+        $replacement = "<drupal-entity data-align=\"responsive-$1\" data-aspect-ratio=\"16/9\" data-embed-button=\"insert_iframe\" data-entity-embed-display=\"view_mode:media.embedded\" data-entity-type=\"media\" data-entity-uuid=\"$new_uuid\" data-langcode=\"en\"></drupal-entity>";
 
-        // Only update the body text if the original text can be found
-        if( str_contains($node->field_body_content->value, $orig_text) ) {
-          $node->field_body_content->value = str_replace($orig_text, $new_text, $node->field_body_content->value);
-          $node->save();
-          $node_urls []= $base_url . '/node/' . $node->nid->value;
-        }
+        $new_node_body = preg_replace($orig_text_regex, $replacement, $node->field_body_content->value);
+
+        // Do nothing if the pattern is not found.
+        if( $new_node_body == $node->field_body_content->value) continue;
+        $node->field_body_content->value = $new_node_body;
+        $node->save();
+        $node_urls []= $base_url . '/node/' . $node->nid->value;
       }
 
       echo $base_url . '/media/'. $map->mid->value . ',' . $base_url . '/media/'. $new_iframe->mid->value . ',' . implode(',', $node_urls) . PHP_EOL;
@@ -267,5 +263,130 @@ class BatchCommands extends DrushCommands
 
     // Provided input was URL so just return input
     return $input;
+  }
+
+  /**
+   * Drush command to copy printable map into Image (non-PDF) or Document(PDF).
+   *
+   * @command portland:copy_printable_map
+   * @aliases portland-copy-printable-map
+   * @usage portland:copy_printable_map
+   */
+  public function copy_printable_map()
+  {
+    echo 'Migrating Printable Map to Image or Document, please save the output to a CSV file to validate the results' . PHP_EOL;
+    echo 'map,image_or_document,page_using_media' . PHP_EOL;
+    $base_url = \Drupal::request()->getSchemeAndHttpHost();
+
+    // Load all printable maps
+    $entityTypeManager = \Drupal::entityTypeManager();
+    $maps = $entityTypeManager->getStorage('media')->loadByProperties(['bundle' => 'map', 'field_map_type' => 'print']);
+
+    $new_media = null;
+    $is_document = false;
+    foreach ($maps as $map) {
+      // If there is no map file, copy the preview into a new Image
+      if( empty($map->field_map_file[0]) ) {
+        $new_media = Media::create([
+          'name' => $map->name->value,
+          'status' => $map->status->value,
+          'bundle' => 'image',
+          'langcode' => $map->langcode->value,
+          'uid' => $map->uid->target_id,
+          'created' => $map->created->value,
+          'changed' => $map->changed->value,
+          'moderation_state' => $map->moderation_state->value,
+          'thumbnail' => $map->thumbnail->target_id,
+          'field_display_groups' => $map->field_display_groups->getValue(), // Copy the item list
+          'field_media_in_library' => $map->field_media_in_library->value,
+          'image' => $map->image->getValue(), // the preview image
+        ]);
+        $new_media->save();
+        $is_document = false;
+      }
+      else {
+        // If there is a map file, copy PDF into Document, and non-PDF into Image
+        $mime_type = File::load($map->field_map_file[0]->target_id)->getMimeType();
+        $file_size = File::load($map->field_map_file[0]->target_id)->getSize();
+        if(str_starts_with($mime_type, "image")) {
+          $new_media = Media::create([
+            'name' => $map->name->value,
+            'status' => $map->status->value,
+            'bundle' => 'image',
+            'langcode' => $map->langcode->value,
+            'uid' => $map->uid->target_id,
+            'created' => $map->created->value,
+            'changed' => $map->changed->value,
+            'moderation_state' => $map->moderation_state->value,
+            'thumbnail' => $map->thumbnail->target_id,
+            'field_display_groups' => $map->field_display_groups->getValue(), // Copy the item list
+            'field_media_in_library' => $map->field_media_in_library->value,
+            'image' => [
+              'target_id' => $map->field_map_file[0]->target_id,
+              // If the alt text for the preview is empty, use the map name
+              'alt' => (empty($map->image->alt)) ? $map->name->value : $map->image->alt,
+            ],
+          ]);
+          $new_media->save();
+          $is_document = false;
+        }
+        else {
+          $new_media = Media::create([
+            'name' => $map->name->value,
+            'status' => $map->status->value,
+            'bundle' => 'document',
+            'langcode' => $map->langcode->value,
+            'uid' => $map->uid->target_id,
+            'created' => $map->created->value,
+            'changed' => $map->changed->value,
+            'moderation_state' => $map->moderation_state->value,
+            'thumbnail' => $map->thumbnail->target_id,
+            'field_display_groups' => $map->field_display_groups->getValue(), // Copy the item list
+            'field_media_in_library' => $map->field_media_in_library->value,
+            'field_document' => $map->field_map_file[0]->getValue(),
+            'field_preview_image' => [
+              'target_id' => $map->image->target_id,
+              // If the alt text for the preview is empty, use the map name
+              'alt' => (empty($map->image->alt)) ? $map->name->value : $map->image->alt,
+            ],
+            'field_mime_type' => $mime_type,
+            'field_file_size' => $file_size,
+          ]);
+          $new_media->save();
+          $is_document = true;
+        }
+      }
+
+      if(empty($new_media)) continue;
+      // Update media UUID in Body
+      $nodes_using_map = array_keys(\Drupal::service('entity_usage.usage')->listUsage($map)['node'] ?? []);
+      $node_urls = [];
+      foreach($nodes_using_map as $node_using_map) {
+        $node = \Drupal\node\Entity\Node::load($node_using_map);
+        $orig_uuid = $map->uuid->value;
+
+        // Extract the alignment value: full or right
+        $orig_text_regex = '/<drupal-entity data-align="responsive-(\w+)" data-embed-button="map_browser" data-entity-embed-display="view_mode:media.embedded" data-entity-type="media" data-entity-uuid="' .$orig_uuid.'" data-langcode="en"><\/drupal-entity>/';
+        if(preg_match($orig_text_regex, $node->field_body_content->value, $matches)) {
+          if(count($matches) == 2) {
+            // Item 0 is drupal-entity, item 1 is full or right
+            $new_uuid = $new_media->uuid->value;
+            if($is_document){
+              $display_mode = ($matches[1] == 'full') ? 'view_mode:media.embedded_with_preview' : 'view_mode:media.embedded_with_thumbnail';
+              $new_text = "<drupal-entity data-align=\"responsive-$matches[1]\" data-embed-button=\"document_browser\" data-entity-embed-display=\"$display_mode\" data-entity-type=\"media\" data-entity-uuid=\"$new_uuid\" data-langcode=\"en\"></drupal-entity>";
+            }
+            else {
+              $new_text = "<drupal-entity data-align=\"responsive-$matches[1]\" data-embed-button=\"image_browser\" data-entity-embed-display=\"view_mode:media.embedded\" data-entity-type=\"media\" data-entity-uuid=\"$new_uuid\" data-langcode=\"en\"></drupal-entity>";
+            }
+
+            $node->field_body_content->value = str_replace($matches[0], $new_text, $node->field_body_content->value);
+            $node->save();
+            $node_urls []= $base_url . '/node/' . $node->nid->value;
+          }
+        }
+      }
+
+      echo $base_url . '/media/'. $map->mid->value . ',' . $base_url . '/media/'. $new_media->mid->value . ',' . implode(',', $node_urls) . PHP_EOL;
+    }
   }
 }
