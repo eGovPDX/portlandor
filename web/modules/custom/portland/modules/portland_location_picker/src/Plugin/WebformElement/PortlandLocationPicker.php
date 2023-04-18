@@ -64,6 +64,12 @@ class PortlandLocationPicker extends WebformCompositeBase {
     if (isset($value['location_region_id']) && $value['location_region_id']) {
       $lines[] = '<strong>Region ID:</strong> ' . $value['location_region_id'];
     }
+    if (isset($value['location_municipality_name']) && $value['location_municipality_name']) {
+      $lines[] = '<strong>Municipality:</strong> ' . $value['location_municipality_name'];
+    }
+    if (isset($value['location_is_portland']) && $value['location_is_portland']) {
+      $lines[] = '<strong>Is Portland:</strong> ' . $value['location_is_portland'];
+    }
     // $lines[] = "</p>";
     return $lines;
   }
@@ -112,6 +118,12 @@ class PortlandLocationPicker extends WebformCompositeBase {
     if (isset($value['location_region_id']) && $value['location_region_id']) {
       $lines[] = 'Region ID: ' . $value['location_region_id'];
     }
+    if (isset($value['location_municipality_name']) && $value['location_municipality_name']) {
+      $lines[] = 'Municipality: ' . $value['location_municipality_name'];
+    }
+    if (isset($value['location_is_portland']) && $value['location_is_portland']) {
+      $lines[] = 'Is Portland: ' . $value['location_is_portland'];
+    }
     return $lines;
   }
 
@@ -135,7 +147,8 @@ class PortlandLocationPicker extends WebformCompositeBase {
     $verifyButtonText = array_key_exists('#verify_button_text', $element) ? $element['#verify_button_text'] : "";
     $primaryFeatureName = array_key_exists('#primary_feature_name', $element) ? $element['#primary_feature_name'] : "";
     $featureLayerVisibleZoom = array_key_exists('#feature_layer_visible_zoom', $element) ? $element['#feature_layer_visible_zoom'] : "";
-    $requireCityLimits = array_key_exists('#require_city_limits', $element) ? $element['#require_city_limits'] : TRUE;
+    $requireCityLimits = array_key_exists('#require_city_limits', $element) ? $element['#require_city_limits'] : FALSE;
+    $displayCityLimits = array_key_exists('#display_city_limits', $element) ? $element['#display_city_limits'] : TRUE;
 
     $element['#attached']['drupalSettings']['webform']['portland_location_picker']['element_id'] = $elementId;
     $element['#attached']['drupalSettings']['webform']['portland_location_picker']['primary_layer_source'] = $primaryLayerSource;
@@ -151,6 +164,7 @@ class PortlandLocationPicker extends WebformCompositeBase {
     $element['#attached']['drupalSettings']['webform']['portland_location_picker']['primary_feature_name'] = $primaryFeatureName;
     $element['#attached']['drupalSettings']['webform']['portland_location_picker']['feature_layer_visible_zoom'] = $featureLayerVisibleZoom;
     $element['#attached']['drupalSettings']['webform']['portland_location_picker']['require_city_limits'] = $requireCityLimits;
+    $element['#attached']['drupalSettings']['webform']['portland_location_picker']['display_city_limits'] = $displayCityLimits;
   }
 
 }
