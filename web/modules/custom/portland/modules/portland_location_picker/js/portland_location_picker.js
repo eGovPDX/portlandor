@@ -275,6 +275,31 @@
           // CITY_LIMITS_BOUNDARY_URL
           $.ajax({
             url: CITY_LIMITS_BOUNDARY_URL, success: function(cityBoundaryResponse) {
+
+              var earthPolygon = L.polygon([[-90,-180], [-90,180], [90,180], [90,-180]], {
+                color: 'transparent',
+                fillColor: '#000',
+                fillOpacity: 1
+              });
+
+              var layerGroup = L.layerGroup([earthPolygon, cityBoundaryResponse.features[0]]);
+              layerGroup.addTo(map);
+              
+              return;
+
+              //var holePolygonData = cityBoundaryResponse.features[0];
+
+              // Add the hole polygon data to the outer polygon data
+              outerPolygonData.geometry.holes = [holePolygonData.geometry.coordinates];
+
+              // Create the GeoJSON layer for the polygon with the hole
+              var polygonWithHoleLayer = L.geoJSON(outerPolygonData);
+
+              // Add the polygon with the hole layer to the map
+              polygonWithHoleLayer.addTo(map);
+
+              return;
+
               cityBoundaryFeatures = cityBoundaryResponse.features;
               console.log(cityBoundaryFeatures.length + " city boundary regions found.");
               cityBoundaryLayer = L.geoJson(cityBoundaryFeatures, cityLimitsProperties).addTo(map);
@@ -643,8 +668,8 @@
           }
           // TODO: if we only want to add markers in the visible area of the map after zooming in to a certain level,
           // use getBounds to get the polygon that represents the map viewport, then check markers to see if they're contained.
-          // var bounds = map.getBounds();
-          // console.log(bounds);
+          var bounds = map.getBounds();
+          console.log(bounds);
         }
 
         // HELPER FUNCTIONS ///////////////////////////////
