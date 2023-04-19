@@ -42,9 +42,6 @@
         const DEFAULT_FEATURE_ICON_URL = "/modules/custom/portland/modules/portland_location_picker/images/map_marker_default.png";
         const DEFAULT_INCIDENT_ICON_URL = "/modules/custom/portland/modules/portland_location_picker/images/map_marker_incident.png";
         const DEFAULT_SOLVED_ICON_URL = "/modules/custom/portland/modules/portland_location_picker/images/map_marker_incident_solved.png";
-        const CITY_LIMITS_BOUNDARY_URL = "https://www.portlandmaps.com/arcgis/rest/services/Public/COP_OpenData_Boundary/MapServer/10/query?where=CITYNAME%20like%20%27Portland%27&outFields=*&outSR=4326&f=geojson";
-        // for all area municipalities, use this url: https://www.portlandmaps.com/arcgis/rest/services/Public/COP_OpenData_Boundary/MapServer/10/query?outFields=*&where=1%3D1&f=geojson
-        // TODO: if the multi-municipality geojson is used, we'll need to extend the city limits functionaltiy. right now it assumes the only feature is Portland.
         const PARKS_REVGEOCODE_URL = "https://www.portlandmaps.com/arcgis/rest/services/Public/Parks_Misc/MapServer/2/query?geometry=%7B%22x%22%3A${lng}%2C%22y%22%3A${lat}%2C%22spatialReference%22%3A%7B%22wkid%22%3A4326%7D%7D&geometryType=esriGeometryPoint&spacialRel=esriSpatialRelIntersects&returnGeometry=false&returnTrueCurves=false&returnIdsOnly=false&returnCountOnly=false&returnDistinctValues=false&f=pjson";
         const REVGEOCODE_URL = "https://www.portlandmaps.com/arcgis/rest/services/Public/Geocoding_PDX/GeocodeServer/reverseGeocode?location=%7B%22x%22%3A${lng}%2C+%22y%22%3A${lat}%2C+%22spatialReference%22%3A%7B%22wkid%22+%3A+4326%7D%7D&distance=100&langCode=&locationType=&featureTypes=&outSR=4326&returnIntersection=false&f=json";
         const PRIMARY_LAYER_TYPE = {
@@ -68,16 +65,25 @@
 
         const GEOLOCATION_CACHE_MILLISECONDS = 0;
   
+        // this is a static, modified version of the city limits geoJSON data. it includes a whole-earth polygon as the first polygon,
+        // so that the city limits become a hole and everything else can be shaded. this will require us to change how we detect clicks
+        // with in the city limits. 
+        // original geoJSON: https://www.portlandmaps.com/arcgis/rest/services/Public/COP_OpenData_Boundary/MapServer/10/query?where=CITYNAME%20like%20%27Portland%27&outFields=*&outSR=4326&f=geojson
+        // for all area municipalities geoJSON: https://www.portlandmaps.com/arcgis/rest/services/Public/COP_OpenData_Boundary/MapServer/10/query?outFields=*&where=1%3D1&f=geojson
+        // TODO: if the multi-municipality geojson is used, we'll need to extend the city limits functionaltiy. right now it assumes the only feature is Portland.
+        const CITY_LIMITS_BOUNDARY_URL = "/modules/custom/portland/modules/portland_location_picker/js/cityboundary.json";
+        const MUNICIPALITIES_BOUNDARY_URL = "https://www.portlandmaps.com/arcgis/rest/services/Public/COP_OpenData_Boundary/MapServer/10/query?outFields=*&where=1%3D1&f=geojson";
+
         // GLOBALS //////////
         var map;
         var primaryLayer;
         var incidentsLayer;
         var regionsLayer;
         var cityBoundaryLayer;
+        var municipalitiesLayer;
         var primaryFeatures;
         var incidentsFeatures;
         var regionsFeatures;
-        var cityBoundaryFeatures;
         var locationMarker;
         var locationErrorShown;
         var locateControl;
@@ -117,8 +123,18 @@
         var requireCityLimits = drupalSettings.webform.portland_location_picker.require_city_limits === false ? false : true;
         var displayCityLimits = drupalSettings.webform.portland_location_picker.display_city_limits === false ? false : true;
 
-        // properties for the city limits polygon
-        if (displayCityLimits) {
+        // properties for the city limits polygon; if geofencing is required, the city limits are shown
+        // as a clear cutout of a shaded global polygon.
+        if (displayCityLimits && requireCityLimits) {
+          var cityLimitsProperties = {
+            color: 'red',
+            fillColor: 'black',
+            fillOpacity: 0.1,
+            weight: 1,
+            dashArray: "2 4",
+            interactive: false
+          }
+        } else if (displayCityLimits && !requireCityLimits) {
           var cityLimitsProperties = {
             color: 'red',
             fillOpacity: 0,
@@ -144,8 +160,6 @@
         
         // SETUP FUNCTIONS ///////////////////////////////
 
-        var testPolygonLayer;
-  
         function initialize() {
   
           // verify only one map widget in webform; complain if more than one
@@ -263,6 +277,7 @@
             });
           }
 
+          // ASSUMPTION: city boundary will always be displayed if geofencing is enabled.
           if (displayCityLimits) {
             initializeCityLimitsLayer();
           }
@@ -272,38 +287,29 @@
         }
 
         function initializeCityLimitsLayer() {
-          // CITY_LIMITS_BOUNDARY_URL
+          // NOTE: this is currently using a static copy of the city boundaries geoJSON data, in which a whole-earth
+          // polygon has been inserted as the first polygon, so that the city boundary is shown as a hole, with additional
+          // holes within a hole. if the boundaries ever change, that file will need to be updated, or we'll need to
+          // pull in the file from portlandmaps.com and figure out how to update it dynamically.
           $.ajax({
             url: CITY_LIMITS_BOUNDARY_URL, success: function(cityBoundaryResponse) {
-
-              var earthPolygon = L.polygon([[-90,-180], [-90,180], [90,180], [90,-180]], {
-                color: 'transparent',
-                fillColor: '#000',
-                fillOpacity: 1
-              });
-
-              var layerGroup = L.layerGroup([earthPolygon, cityBoundaryResponse.features[0]]);
-              layerGroup.addTo(map);
-              
-              return;
-
-              //var holePolygonData = cityBoundaryResponse.features[0];
-
-              // Add the hole polygon data to the outer polygon data
-              outerPolygonData.geometry.holes = [holePolygonData.geometry.coordinates];
-
-              // Create the GeoJSON layer for the polygon with the hole
-              var polygonWithHoleLayer = L.geoJSON(outerPolygonData);
-
-              // Add the polygon with the hole layer to the map
-              polygonWithHoleLayer.addTo(map);
-
-              return;
-
-              cityBoundaryFeatures = cityBoundaryResponse.features;
-              console.log(cityBoundaryFeatures.length + " city boundary regions found.");
+              var cityBoundaryFeatures = cityBoundaryResponse.features;
               cityBoundaryLayer = L.geoJson(cityBoundaryFeatures, cityLimitsProperties).addTo(map);
               cityBoundaryLayer.municipality = cityBoundaryFeatures[0].properties.CITYNAME;
+              console.log("City boundary layer loaded.");
+
+              if (requireCityLimits) {
+                // NOTE: this is using geojson data from PortlandMaps, which is presumably cached in the browser to avoid
+                // pummelling the server. it's a much larger file than the city limits, so it's only called in the rare
+                // case that the widget has been configured for geofencing.
+                $.ajax({
+                  url: MUNICIPALITIES_BOUNDARY_URL, success: function(municipalitiesResponse) {
+                    municipalitiesFeatures = municipalitiesResponse.features;
+                    municipalitiesLayer = L.geoJson(municipalitiesFeatures);
+                    console.log("Municipality boundaries layer loaded.");
+                  }
+                });
+              }
             }
           });
         }
@@ -651,9 +657,6 @@
             if (incidentsLayer && map.hasLayer(incidentsLayer)) {
               map.removeLayer(incidentsLayer);
             }
-            if (testPolygonLayer && map.hasLayer(testPolygonLayer)) {
-              map.removeLayer(testPolygonLayer);
-            }
           }
           if (zoomlevel >= featureLayerVisibleZoom){
             if (primaryLayer && !map.hasLayer(primaryLayer)){
@@ -662,14 +665,11 @@
             if (incidentsLayer && !map.hasLayer(incidentsLayer)) {
               map.addLayer(incidentsLayer);
             }
-            if (testPolygonLayer && !map.hasLayer(testPolygonLayer)) {
-              map.addLayer(testPolygonLayer);
-            }
           }
           // TODO: if we only want to add markers in the visible area of the map after zooming in to a certain level,
           // use getBounds to get the polygon that represents the map viewport, then check markers to see if they're contained.
-          var bounds = map.getBounds();
-          console.log(bounds);
+          // var bounds = map.getBounds();
+          // console.log("Bounds: " + bounds);
         }
 
         // HELPER FUNCTIONS ///////////////////////////////
@@ -677,20 +677,27 @@
         function handleCityLimits(latlng) {
           // we want to call this late in the event handling process, so that previously collected coordinates
           // or address values are cleared first.
+
           if (requireCityLimits) {
-            // check if click is within city limits. if not, use js alert to show error message and return null.
-            var inLayer = leafletPip.pointInLayer(latlng, cityBoundaryLayer, false);
-            if (inLayer.length <= 0) {
+            // check if click is within Portland city limits. if not, use js alert to show error message and return null.
+            var inLayer = leafletPip.pointInLayer(latlng, municipalitiesLayer, false);
+            if (inLayer.length > 0) {
+              var municipalityName = inLayer[0].feature.properties.CITYNAME;
+              if (municipalityName != "Portland") {
+                console.log("Clicked in " + municipalityName + ".");
+                showStatusModal(CITY_LIMITS_MESSAGE);
+                return false;
+              }
+            } else {
+              console.log("Clicked other area.");
               showStatusModal(CITY_LIMITS_MESSAGE);
               return false;
-            } else {
-              // TODO: If/when we start supporting clicks in other municipalities, this will need to be more dynamic.
-              // right now it only supports Portland city limits.
-              if (cityBoundaryLayer.municipality == "Portland") {
-                $('#location_is_portland').val("Yes");
-                $('#location_municipality_name').val(cityBoundaryLayer.municipality);
-              }
             }
+
+            $('#location_is_portland').val("Yes");
+            console.log("Is Portland: " + $('#location_is_portland').val());
+            $('#location_municipality_name').val(cityBoundaryLayer.municipality);
+            console.log("Municipality name: " + $('#location_municipality_name').val());
           }
           return true;
         }
@@ -932,7 +939,7 @@
           if (!lng) lng = "0";
           $('input[name=' + elementId + '\\[location_lat\\]]').val(lat);
           $('input[name=' + elementId + '\\[location_lon\\]]').val(lng);
-          console.log('Set coordinates: ' + $('input[name=' + elementId + '\\[location_lat\\]]').val() + ', ' + $('input[name=' + elementId + '\\[location_lon\\]]').val());
+          console.log('Set lat/lon: ' + $('input[name=' + elementId + '\\[location_lat\\]]').val() + ', ' + $('input[name=' + elementId + '\\[location_lon\\]]').val());
 
           var sphericalMerc = L.Projection.SphericalMercator.project(L.latLng(lat,lng));
           $('input[name=' + elementId + '\\[location_x\\]]').val(sphericalMerc.x);
