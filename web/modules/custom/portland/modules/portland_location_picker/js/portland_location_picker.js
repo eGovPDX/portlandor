@@ -664,7 +664,7 @@
           // we want to call this late in the event handling process, so that previously collected coordinates
           // or address values are cleared first.
 
-          if (requireCityLimits) {
+          if (requireCityLimits && displayCityLimits) {
             // check if click is within Portland city limits. if not, use js alert to show error message and return null.
             var inLayer = leafletPip.pointInLayer(latlng, municipalitiesLayer, false);
             if (inLayer.length > 0) {
