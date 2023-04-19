@@ -68,9 +68,7 @@
         // this is a static, modified version of the city limits geoJSON data. it includes a whole-earth polygon as the first polygon,
         // so that the city limits become a hole and everything else can be shaded. this will require us to change how we detect clicks
         // with in the city limits. 
-        // original geoJSON: https://www.portlandmaps.com/arcgis/rest/services/Public/COP_OpenData_Boundary/MapServer/10/query?where=CITYNAME%20like%20%27Portland%27&outFields=*&outSR=4326&f=geojson
-        // for all area municipalities geoJSON: https://www.portlandmaps.com/arcgis/rest/services/Public/COP_OpenData_Boundary/MapServer/10/query?outFields=*&where=1%3D1&f=geojson
-        // TODO: if the multi-municipality geojson is used, we'll need to extend the city limits functionaltiy. right now it assumes the only feature is Portland.
+        // original city boundaries geoJSON: https://www.portlandmaps.com/arcgis/rest/services/Public/COP_OpenData_Boundary/MapServer/10/query?where=CITYNAME%20like%20%27Portland%27&outFields=*&outSR=4326&f=geojson
         const CITY_LIMITS_BOUNDARY_URL = "/modules/custom/portland/modules/portland_location_picker/js/cityboundary.json";
         const MUNICIPALITIES_BOUNDARY_URL = "https://www.portlandmaps.com/arcgis/rest/services/Public/COP_OpenData_Boundary/MapServer/10/query?outFields=*&where=1%3D1&f=geojson";
 
@@ -162,11 +160,6 @@
 
         function initialize() {
   
-          // verify only one map widget in webform; complain if more than one
-          if ($('.portland-location-picker--wrapper').length > 1) {
-            console.log("WARNING: More than one location widget detected. Only one location widget per webform is currently supported. Adding multiples will result in unpredictable behavior.");
-          }
-
           // widget can be configured to use the park selector features or not.
           // if not, we want to disable PortlandMaps parks lookups. this flag
           // will be used to control that.
@@ -208,8 +201,7 @@
           $('.leaflet-container').css('cursor', 'crosshair');
 
           // if there are coordinates in the hidden lat/lng fields, set the map marker.
-          // this is likely a submit postback that had validation errors, so we need to re set it.
-          // NOTE: The following code would be problematic if we allow multiple copies of the widget or alternate naming conventions.
+          // this may be a submit postback that had validation errors, so we need to re set it.
           var lat = $('input[name=' + elementId + '\\[location_lat\\]]').val();
           var lng = $('input[name=' + elementId + '\\[location_lon\\]]').val();
           if (lat && lng && lat !== "0" && lng !== "0") {
@@ -314,12 +306,9 @@
           });
         }
 
-        /**
-         * Retrieves external GeoJSON data and performs any processing, such as matching incidents to assets.
-         */
         function processGeoJsonData() {
 
-          // if there are any layer in use, the Primary Layer must be used.
+          // if there are any layer in use, the Primary Layer must be used first.
           if (primaryLayerSource) {
             primaryLayer = L.geoJson(); // can we create this on the fly?
 
@@ -666,10 +655,7 @@
               map.addLayer(incidentsLayer);
             }
           }
-          // TODO: if we only want to add markers in the visible area of the map after zooming in to a certain level,
-          // use getBounds to get the polygon that represents the map viewport, then check markers to see if they're contained.
           // var bounds = map.getBounds();
-          // console.log("Bounds: " + bounds);
         }
 
         // HELPER FUNCTIONS ///////////////////////////////
@@ -883,9 +869,8 @@
             var fulladdress = buildFullAddress(candidates[0]);
             $('.location-picker-address').val(fulladdress);
 
-            // there is currently a bug in the json provided by PortlandMaps when a singular address is
-            // returned by the address verification query. the lat and lon are null in that case. as a
-            // temporary workaround, only set the location marker if the values are present, and populate
+            // in some rare cases, the lat and lon are null in json provided by PortlandMaps. as a
+            // workaround, only set the location marker if the values are present, and populate
             // the required lat/lon fields with zeroes so that the form can still be submitted. at least
             // it will capture the address, and the report will still be usable.
             if (lat && lng) {
@@ -1262,13 +1247,8 @@
           }).observe(element);
         }
         onVisible(document.querySelector("#location_map_container"), () => redrawMap());
-  
-
-
-
 
       });
-
     }
   };
 })(jQuery, Drupal, drupalSettings);
