@@ -757,7 +757,7 @@ $settings['entity_update_batch_size'] = 50;
  * well as the original entity type and field storage definitions should be
  * retained after a successful entity update process.
  */
-$settings['entity_update_backup'] = FALSE;
+$settings['entity_update_backup'] = TRUE;
 
 /**
  * Node migration type.
