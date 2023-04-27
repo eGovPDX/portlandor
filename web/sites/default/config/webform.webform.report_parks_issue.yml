@@ -5,6 +5,7 @@ dependencies:
   module:
     - antibot
     - honeypot
+    - portland_zendesk
 third_party_settings:
   antibot:
     antibot: true
@@ -183,10 +184,10 @@ elements: |-
       </div>
   report_is_park:
     '#type': radios
-    '#title': 'Is the issue at a park or natural area, or at a recreation center?'
+    '#title': 'Is the issue at a park or natural area, or at a community center?'
     '#options':
       park_or_natural: 'Park or natural area'
-      recreation_center: 'Recreation center'
+      recreation_center: 'Community center'
     '#required': true
     '#states':
       visible:
@@ -212,6 +213,7 @@ elements: |-
             value: 'Yes'
           ':input[name="user_role"]':
             value: authenticated
+    '#default_value': park_or_natural
   markup_recreation_center:
     '#type': webform_markup
     '#states':
@@ -224,7 +226,7 @@ elements: |-
       <div class="alert alert--info next-steps">
       <h2>Next Steps</h2>
 
-      <p>Please report problems, questions, or concerns directly to the Recreation and Community Center <a href="/parks/search?f%5B0%5D=%3A93&f%5B1%5D=type%3A93">using the search tool here.</a></p>
+      <p>Please report problems, questions, or concerns directly to the community center. <a href="/parks/search?f%5B0%5D=%3A93&amp;f%5B1%5D=type%3A93">View the list of community centers</a>.</p>
       </div>
   container_not_rec_center:
     '#type': container
@@ -256,6 +258,7 @@ elements: |-
       '#place_name__access': false
       '#location_details__access': false
       '#waterway_instructions__access': false
+      '#require_city_limits': true
     report_lost_found_property_description:
       '#type': textfield
       '#title': 'Please describe the lost/found property.'
@@ -660,6 +663,7 @@ elements: |-
         contact_name:
           '#type': textfield
           '#title': Name
+          '#required': true
         contact_email:
           '#type': textfield
           '#title': Email
@@ -667,6 +671,10 @@ elements: |-
           '#input_mask': '''alias'': ''email'''
           '#required': true
           '#default_value': '[current-user:mail]'
+        telephone:
+          '#type': textfield
+          '#title': Telephone
+          '#input_mask': '(999) 999-9999'
       section_public_records_statement:
         '#type': webform_section
         '#title': 'Public Records Statement'
@@ -712,6 +720,41 @@ elements: |-
       {% else %}
       Unknown
       {% endif %}
+  computed_priority:
+    '#type': webform_computed_twig
+    '#title': 'Computed Priority'
+    '#description': 'This value is displayed for debugging purposes only. It will be hidden in the live site.'
+    '#description_display': before
+    '#mode': text
+    '#template': |-
+      {% set priority = 'Normal' %}
+
+      {# HIGHEST #}
+      {% if 
+          (data.report_issue_type == 'illegal_activity' and
+            (data.report_staff_issue_type_illegal == 'Disorderly conduct or nuisance behavior (no threats/weapons)' or 
+            data.report_staff_issue_type_illegal == 'Crimes / PPB issues' or 
+            data.report_staff_issue_type_illegal == 'Fires / Fireworks'))
+          or data.report_issue_type == 'alarm'
+          or (data.report_issue_type == 'rule_violation' and data.report_issue_type_policy == "Nuisance / Disorderly behavior") %}
+      {% set priority = 'Urgent' %}
+      {% elseif
+          (data.report_issue_type == 'illegal_activity' and data.report_staff_issue_type_illegal == 'Graffiti') or
+          (data.report_issue_type == 'rule_violation' and
+            (data.report_issue_type_policy == 'Skateboards / Scooters' or
+             data.report_issue_type_policy == 'Smoking / Vaping' or
+             data.report_issue_type_policy == 'Trash / Illegal dumping' or
+             data.report_issue_type_policy == 'Restroom issue')) or
+           data.report_issue_type == 'parking_traffic' %}
+      {% set priority = 'Low' %}
+      {% endif %}
+      {{ priority }}
+    '#whitespace': spaceless
+    '#store': true
+    '#ajax': true
+  report_ticket_id:
+    '#type': hidden
+    '#title': 'Report Ticket Id'
 css: ''
 javascript: ''
 settings:
@@ -909,5 +952,28 @@ access:
     roles: {  }
     users: {  }
     permissions: {  }
-handlers: {  }
+handlers:
+  zendesk_new_request:
+    id: zendesk
+    handler_id: zendesk_new_request
+    label: 'Zendesk new request'
+    notes: ''
+    status: true
+    conditions: {  }
+    weight: 0
+    settings:
+      requester_name: contact_name
+      requester_email: contact_email
+      subject: 'Park Maintenance Request'
+      comment: '[webform_submission:values:html]'
+      tags: 'drupal webform parks'
+      priority: normal
+      status: pending
+      group_id: '12927681093399'
+      assignee_id: ''
+      type: incident
+      collaborators: ''
+      custom_fields: "6353388345367: 'report_park_maintenance'\r\n5581480390679: '[webform_submission:values:report_location:location_lat]'\r\n5581490332439: '[webform_submission:values:report_location:location_lon]'\r\n13407901552407: '[webform_submission:values:report_location:location_x]'\r\n13407918835095: '[webform_submission:values:report_location:location_y]'\r\n1500012743961: '[webform_submission:values:report_location:location_address]'\r\n1500013095781: '[webform_submission:uuid]'\r\n9205221816983: '[webform_submission:values:report_location:location_type:raw]'\r\n13178808571927: 'priority_low'"
+      ticket_id_field: report_ticket_id
+      ticket_form_id: '13176953771287'
 variants: {  }
