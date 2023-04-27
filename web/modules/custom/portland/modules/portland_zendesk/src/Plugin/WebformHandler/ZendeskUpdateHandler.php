@@ -49,19 +49,27 @@ class ZendeskUpdateHandler extends WebformHandlerBase
   protected $token_manager;
 
   /**
+   * The webform element plugin manager.
+   *
+   * @var \Drupal\webform\Plugin\WebformElementManagerInterface
+   */
+  protected $element_manager;
+
+  /**
    * {@inheritdoc}
    */
   public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition) {
 
-      /**
-       * @var WebformTokenManagerInterface $webform_token_manager
-       */
+    /**
+     * @var WebformTokenManagerInterface $webform_token_manager
+     */
 
-      $static = parent::create($container, $configuration, $plugin_id, $plugin_definition);
-      $webform_token_manager = $container->get('webform.token_manager');
-      $static->setTokenManager( $webform_token_manager );
+    $static = parent::create($container, $configuration, $plugin_id, $plugin_definition);
+    $webform_token_manager = $container->get('webform.token_manager');
+    $static->setTokenManager( $webform_token_manager );
+    $static->element_manager = $container->get('plugin.manager.webform.element');
 
-      return $static;
+    return $static;
   }
 
   /**
@@ -91,7 +99,7 @@ class ZendeskUpdateHandler extends WebformHandlerBase
    */
   public function defaultConfigurationNames()
   {
-      return array_keys( $this->defaultConfiguration() );
+    return array_keys( $this->defaultConfiguration() );
   }
 
   /**
@@ -469,8 +477,6 @@ class ZendeskUpdateHandler extends WebformHandlerBase
       }
     }
 
-    // clean up tags
-    $request['tags'] = Utility::cleanTags( $request['tags'] );
     $request['collaborators'] = preg_split("/[^a-z0-9_\-@\.']+/i", $request['collaborators'] );
     if (!empty($request['ticket_form_id'])) $request['ticket_form_id'] = $this->configuration['ticket_form_id'];
 
@@ -548,6 +554,45 @@ class ZendeskUpdateHandler extends WebformHandlerBase
               $request['comment']['uploads'][] = $attachment->upload->token;
             }
           }
+        }
+      }
+
+      $attachments = [];
+      $elements = $this->getWebform()->getElementsInitializedAndFlattened();
+      $element_attachments = $this->getWebform()->getElementsAttachments();
+      foreach ($element_attachments as $element_attachment) {
+        $element = $elements[$element_attachment];
+        $element_plugin = $this->element_manager->getElementInstance($element);
+        $attachments = $element_plugin->getEmailAttachments($element, $webform_submission);
+        // skip empty attachments
+        if (count($attachments) < 1 || !$attachments[0]['filemime'] || !$attachments[0]['filecontent']) continue;
+
+        $attachment = $attachments[0];
+
+        // add uploads key to Zendesk comment, if not already present
+        if (!array_key_exists('uploads', $request['comment'])) {
+          $request['comment']['uploads'] = [];
+        }
+
+        // PDF attachment uses filecontent, but the Zendesk SDK only takes file paths,
+        // so we write to a temp file and delete after upload
+        $temp_file = \Drupal::service('file_system')->getTempDirectory() . '/' . $submission_fields['uuid'] . $attachment['filename'];
+        $stream = fopen($temp_file, 'w+');
+        fwrite($stream, $attachment['filecontent']);
+        fclose($stream);
+
+        // upload file and get response
+        $attachment = $client->attachments()->upload([
+          'file' => $temp_file,
+          'type' => $attachment['filemime'],
+          'name' => $attachment['filename'],
+        ]);
+
+        unlink($temp_file);
+
+        // add upload token to comment
+        if ($attachment && isset($attachment->upload->token)) {
+          $request['comment']['uploads'][] = $attachment->upload->token;
         }
       }
 
