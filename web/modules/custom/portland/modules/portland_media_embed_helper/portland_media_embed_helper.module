@@ -57,6 +57,54 @@ function portland_media_embed_helper_form_entity_embed_dialog_alter(array &$form
     if(!$hide_fields) $hide_fields = $is_iframe;
   }
 
+  if ($hide_fields) {
+    if (isset($form['attributes']['data-caption'])) unset($form['attributes']['data-caption']);
+    if (isset($form['attributes']['data-align']) && !$is_iframe) unset($form['attributes']['data-align']);
+  }
+
+  // Hide additional fields (e.g. alt text) from entity_embed module
+  $form['attributes']['data-entity-embed-display-settings']['#access'] = false;
+  // Move view mode selection to bottom
+  $form['attributes']['data-entity-embed-display']['#weight'] = 99;
+
+  // configure align options and add icons
+  if (isset($form['attributes']['data-align'])) {
+    $img_100 =            "<img src=\"/themes/custom/cloudy/images/icons/img-100.png\" alt=\"100% width\" />";
+    $img_narrow =         "<img src=\"/themes/custom/cloudy/images/icons/img-narrow.png\" alt=\"Narrow\" />";
+    $img_50_right_fill =  "<img src=\"/themes/custom/cloudy/images/icons/img-50-fill.png\" alt=\"50% fill\" />";
+    $img_50_right_fit =   "<img src=\"/themes/custom/cloudy/images/icons/img-50-fit.png\" alt=\"50% fit\" />";
+    $embed_type = $form['attributes']['data-embed-button']['#value'];
+
+    // clear default alignment options
+    unset($form['attributes']['data-align']['#options']['left']);
+    unset($form['attributes']['data-align']['#options']['right']);
+    unset($form['attributes']['data-align']['#options']['center']);
+    unset($form['attributes']['data-align']['#options']['']);
+
+    $form['attributes']['data-align']['#title'] = "Alignment";
+    $form['attributes']['data-align']['#default_value'] = $user_input['editor_object']['data-align'] ?? "responsive-full";
+
+    // full width applies to images and videos
+    $form['attributes']['data-align']['#options']['responsive-full'] = "Full width<br>$img_100";
+
+    // narrow, right fill and fit don't apply to videos
+    if ($embed_type == "audio_video_browser" || $embed_type == "map_browser" || $embed_type == "chart_browser" || $is_iframe) {
+      $form['attributes']['data-align']['#options']['responsive-right'] = "50% right<br>$img_50_right_fill";
+    } else {
+      $form['attributes']['data-align']['#options']['narrow'] = "Narrow<br>$img_narrow";
+      $form['attributes']['data-align']['#options']['responsive-right'] = "50% fill<br>$img_50_right_fill";
+      $form['attributes']['data-align']['#options']['right'] = "50% fit<br>$img_50_right_fit";
+    }
+  }
+
+  // if this is the video browser, and the caption field is set, then insert the start time field
+  if (isset($form['attributes']['data-caption']) && isset($embed_type) && $embed_type == "audio_video_browser") {
+    $form['attributes']['data-start-cue']['#type'] = "textfield";
+    $form['attributes']['data-start-cue']['#title'] = "Video start cue time (optional)";
+    $form['attributes']['data-start-cue']['#placeholder'] = "0";
+    $form['attributes']['data-start-cue']['#description'] = "Provide the start time in seconds";
+  }
+
   // Only show the aspect ratio radio buttons for iframe
   if($is_iframe) {
     // Default aspect ratio is 16/9.
@@ -82,72 +130,38 @@ function portland_media_embed_helper_form_entity_embed_dialog_alter(array &$form
     ];
   }
 
-  if ($hide_fields) {
-    if (isset($form['attributes']['data-caption'])) unset($form['attributes']['data-caption']);
-    if (isset($form['attributes']['data-align'])) unset($form['attributes']['data-align']);
-  }
-
-  // Hide additional fields from entity_embed module
-  $form['attributes']['data-entity-embed-display-settings']['#access'] = false;
-
-  // configure align options and add icons
-  if (isset($form['attributes']['data-align'])) {
-    $img_100 =            "<img src=\"/themes/custom/cloudy/images/icons/img-100.png\" alt=\"100% width\" />";
-    $img_narrow =         "<img src=\"/themes/custom/cloudy/images/icons/img-narrow.png\" alt=\"Narrow\" />";
-    $img_50_right_fill =  "<img src=\"/themes/custom/cloudy/images/icons/img-50-fill.png\" alt=\"50% fill\" />";
-    $img_50_right_fit =   "<img src=\"/themes/custom/cloudy/images/icons/img-50-fit.png\" alt=\"50% fit\" />";
-    $embed_type = $form['attributes']['data-embed-button']['#value'];
-
-    // clear default alignment options
-    unset($form['attributes']['data-align']['#options']['left']);
-    unset($form['attributes']['data-align']['#options']['right']);
-    unset($form['attributes']['data-align']['#options']['center']);
-    unset($form['attributes']['data-align']['#options']['']);
-
-    $form['attributes']['data-align']['#title'] = "Alignment";
-    $form['attributes']['data-align']['#default_value'] = "responsive-full";
-
-    // full width applies to images and videos
-    $form['attributes']['data-align']['#options']['responsive-full'] = "Full width<br>$img_100";
-
-    // narrow, right fill and fit don't apply to videos
-    if ($embed_type == "audio_video_browser" || $embed_type == "map_browser" || $embed_type == "chart_browser") {
-      $form['attributes']['data-align']['#options']['responsive-right'] = "50% right<br>$img_50_right_fill";
-    } else {
-      $form['attributes']['data-align']['#options']['narrow'] = "Narrow<br>$img_narrow";
-      $form['attributes']['data-align']['#options']['responsive-right'] = "50% fill<br>$img_50_right_fill";
-      $form['attributes']['data-align']['#options']['right'] = "50% fit<br>$img_50_right_fit";
+  // if this is within the embed dialog
+  if (array_key_exists('data-embed-button', $form['attributes'])) {
+    $entity = $form_state->get('entity');
+    // if media type is translatable, add translate link
+    if ($entity->isTranslatable()) {
+      $entity_translations = $entity->getTranslationLanguages(FALSE);
+      $entity_translation_names = array_map(fn($lang) => $lang->getName(), $entity_translations);
+      $user_can_translate = \Drupal::currentUser()->hasPermission('translate editable entities');
+      $form['attributes']['data-translate-media'] = [
+        '#type' => 'item',
+        '#title' => t('Translate this media item'),
+        '#weight' => 0,
+        '#markup' => $user_can_translate
+          ? '<a target="_blank" href="/media/' . $entity->id(). '/translations">Translate</a>'
+          : 'You do not have the translator role.',
+        '#description' => (count($entity_translations) > 0
+          ? 'Already translated in: ' .  join(', ', $entity_translation_names)
+          : 'This media currently has no translations.'),
+      ];
     }
-  }
 
-  // if this is the video browser, and the caption field is set, then insert the start time field
-  if (isset($form['attributes']['data-caption']) && isset($embed_type) && $embed_type == "audio_video_browser") {
-    $form['attributes']['data-start-cue']['#type'] = "textfield";
-    $form['attributes']['data-start-cue']['#title'] = "Video start cue time (optional)";
-    $form['attributes']['data-start-cue']['#placeholder'] = "0";
-    $form['attributes']['data-start-cue']['#description'] = "Provide the start time in seconds";
-  }
-
-  // if this is the document browser, insert the alternative link text field
-  if( array_key_exists('data-embed-button', $form['attributes'])) {
-    // TODO: Figure out how to display a translate link on media embed dialog
-    // $id = $form_state->getformObject()->getEntity()->id();
+    // if document, add alt link text
     $embed_type = $form['attributes']['data-embed-button']['#value'];
     if (isset($embed_type) && $embed_type == "document_browser") {
       $entity_element = $form_state->get('entity_element');
-      if( $entity_element !== null ) {
+      if ($entity_element !== null) {
         $form['attributes']['data-alt-link-text'] = [
+          '#type' => 'textfield',
           '#title' => t('Link text'),
           '#description' => t('Provide an alternative link text to the document.  Leave blank to use the document\'s display name.'),
-          '#type' => 'textfield',
-          '#default_value' => isset($entity_element['data-alt-link-text']) ? $entity_element['data-alt-link-text'] : '',
+          '#default_value' => $entity_element['data-alt-link-text'] ?? '',
         ];
-      // TODO: Figure out how to display a translate link on media embed dialog
-      //   $form['attributes']['data-translate-media'] = [
-      //     '#title' => t('Translate media:'),
-      //     '#type' => 'item',
-      //     '#description' => '<a target="_blank" href="/media/' . $id . '/translations">Translate</a>',
-      //   ];
       }
     }
   }
@@ -208,7 +222,7 @@ function portland_media_embed_helper_preprocess_media__map(&$variables) {
 function portland_media_embed_helper_media_presave($media) {
   // Copy Preview Image file into Thumbnail. Do nothing if Preview Image is empty.
   if($media->hasField('field_preview_image') &&
-      $media->hasField('thumbnail') && 
+      $media->hasField('thumbnail') &&
       ! empty($media->field_preview_image->target_id)) {
     $media->thumbnail->target_id = $media->field_preview_image->target_id;
   }

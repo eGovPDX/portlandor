@@ -572,8 +572,8 @@ function portland_search_api_query_alter(\Drupal\search_api\Query\QueryInterface
 
 
 /**
- * Implements hook_search_api_solr_query_alter() boost based on recently
- * published date.
+ * Implements hook_search_api_solr_query_alter() to boost score based on recently
+ * published date and filter out input that will cause WSOD.
  * See https://atendesigngroup.com/blog/drupal-8-apache-solr-boost-search-term-relevance-publish-date
  */
 function portland_search_api_solr_query_alter(\Solarium\QueryType\Select\Query\Query $solarium_query, \Drupal\search_api\Query\QueryInterface $query)
@@ -583,6 +583,42 @@ function portland_search_api_solr_query_alter(\Solarium\QueryType\Select\Query\Q
   if (strpos($search_id, "search_api_page:search_portland_gov") !== 0 &&
   strpos($search_id, "search_api_autocomplete:search_portland_gov") !== 0) {
     return;
+  }
+
+  $keys = trim($query->getKeys());
+  $keys = preg_replace([
+    // Convert "OR" and "||" at the start or end to "or"
+    "/^OR\b|\bOR$/",
+    "/^\|\|(?!\w)|(?!\w)\|\|$/",
+    // Convert "AND" and "&&" at the start or end to "and"
+    "/^AND\b|\bAND$/",
+    "/^\&\&(?!\w)|(?!\w)\&\&$/",
+    // "+", "\"" and "-" can't be at the end with blank space in any combination
+    "/\s[\+\- \"]+$/",
+    // "^" has to be appended immediately before a number
+    "/\^[^0-9\.]+/",
+    // "^" can't be at the start even when followed by a number
+    "/^\^[0-9\.]+/",
+    // If keywords only contain special characters and space, clear it
+    "/^[ @\+\-\&\|\!\(\)\{\}\[\]\^\"\'\~\*\?\:\\\\\/]+$/",
+  ], [
+    "or",
+    "or",
+    "and",
+    "and",
+    // See https://www.php.net/manual/en/function.preg-replace.php
+    // If there are fewer elements in the replacement array than in the pattern array, any extra patterns will be replaced by an empty string. 
+  ], $keys);
+
+  if(empty($keys)) {
+    if(\Drupal::routeMatch()->getRouteName() === "search_api_page.ar.search_portland_gov") {
+      $url = Drupal\Core\Url::fromRoute('search_api_page.ar.search_portland_gov');
+      $redirect = new Symfony\Component\HttpFoundation\RedirectResponse($url->toString());
+      $redirect->send();
+    }
+  }
+  else {
+    $query->keys($keys);
   }
 
   $date_field_name = 'aggregated_sorting_date'; // This can be any UNIX timestamp field
@@ -779,6 +815,7 @@ function _validate_document(&$form, \Drupal\Core\Form\FormStateInterface $form_s
     // If the eFiles link has value
     if (!empty($efiles_link) && !empty($efiles_link[0]['uri'])) {
       $external_file_url = strtolower($efiles_link[0]['uri']);
+      $orig_external_file_url = $external_file_url;
       // Validate the file URL is an eFiles link
       $efiles_url_regex = '/^https:\/\/efiles.portlandoregon.gov\/(.*)/i';
       if (!preg_match($efiles_url_regex, $external_file_url)) {
@@ -807,6 +844,12 @@ function _validate_document(&$form, \Drupal\Core\Form\FormStateInterface $form_s
         array_key_exists('Content-Type', $headers) &&
         array_key_exists('Content-Length', $headers)
       ) {
+        // When the link is invalid, eFiles return a HTML page
+        $content_type = isset($headers['Content-Type']) ? $headers['Content-Type'] : 'text/html';
+        if ($content_type === 'text/html') {
+          $form_state->setErrorByName('field_efiles_link', t('The linked file is not found.'));
+          return;
+        }
         $file_size = isset($headers['Content-Length']) ? (int)$headers['Content-Length'] : 0;
         if ($file_size === 0) {
           $form_state->setErrorByName('field_efiles_link', t('The linked file is empty.'));
@@ -815,7 +858,7 @@ function _validate_document(&$form, \Drupal\Core\Form\FormStateInterface $form_s
       } else {
         // Verify it's a valid eFiles folder
         try {
-          $headers = get_headers($external_file_url, 1);
+          $headers = get_headers($orig_external_file_url, 1);
         } catch (Exception $e) {
           $form_state->setErrorByName('field_efiles_link', 'Please verify the eFiles link is valid.');
           return;
@@ -1446,6 +1489,10 @@ function portland_media_presave($media)
 
         $media->field_file_size = $file_size;
         $media->field_mime_type = $content_type_array[0];
+      }
+      else {
+        $media->field_file_size = 0;
+        $media->field_mime_type = '';
       }
     }
   }

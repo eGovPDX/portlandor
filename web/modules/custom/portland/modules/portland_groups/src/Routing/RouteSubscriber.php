@@ -51,14 +51,21 @@ class RouteSubscriber extends RouteSubscriberBase {
   protected function alterRoutes(RouteCollection $collection) {
     // override routes from the Group gnode and groupmedia modules to set our own controller::method
     if ($route = $collection->get('entity.group_content.group_node_add_page')) {
-        $route->setDefault('_controller', '\Drupal\portland_groups\Controller\PortlandGroupContentController::addPage');
+      $route->setDefault('_controller', '\Drupal\portland_groups\Controller\PortlandGroupContentController::addPage');
     }
     if ($route = $collection->get('entity.group_content.group_media_add_page')) {
-        $route->setDefault('_controller', '\Drupal\portland_groups\Controller\PortlandGroupMediaController::addPage');
+      $route->setDefault('_controller', '\Drupal\portland_groups\Controller\PortlandGroupMediaController::addPage');
     }
     // override group create content route to set our own title callback so we can customize it
     if ($route = $collection->get('entity.group_content.create_form')) {
-        $route->setDefault('_title_callback', '\Drupal\portland_groups\Controller\PortlandGroupContentController::createFormTitle');
+      $route->setDefault('_title_callback', '\Drupal\portland_groups\Controller\PortlandGroupContentController::createFormTitle');
+    }
+    // make group revisions tab and revert page use the admin theme
+    if ($route = $collection->get('entity.group.version_history')) {
+      $route->setOption('_admin_route', true);
+    }
+    if ($route = $collection->get('entity.group.revision_revert_form')) {
+      $route->setOption('_admin_route', true);
     }
   }
 }
