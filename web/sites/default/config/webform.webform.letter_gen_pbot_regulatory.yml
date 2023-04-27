@@ -1,0 +1,338 @@
+uuid: 4bd566b3-ad98-4819-a340-242474fe0ae9
+langcode: en
+status: open
+dependencies:
+  module:
+    - portland
+    - portland_zendesk
+    - webform_entity_print
+third_party_settings:
+  webform_entity_print:
+    template:
+      header: '<header class="header"><img alt="" src="https://www.portland.gov/sites/default/files/2023/chrome_2023-04-27_12-36-48.png" /></header>'
+      footer: "<footer class=\"footer\">\r\n<div><img alt=\"\" src=\"https://www.portland.gov/themes/custom/cloudy/images/city-seal.png\" /></div>\r\n\r\n<div>\r\n<p>It is the policy of the City of Portland that no person shall be excluded from participation in, denied the benefits of, or be subjected to discrimination in any city program, service, or activity on the grounds of race, color, national origin, disability, or other protected class status. Adhering to Civil Rights Title VI and ADA Title II civil rights laws, the City of Portland ensures meaningful access to City programs, services, and activities by reasonably providing: translation and interpretation, modifications, accommodations, alternative formats, and auxiliary aids and services. To request these services, contact the Portland Bureau of Transportation at 311 (503-823-4000), for Relay Service &amp; TTY: 711.</p>\r\n</div>\r\n</footer>"
+      css: ".footer {\r\n  display: -webkit-box;\r\n  -webkit-box-align: center;\r\n  font-size: 0.9rem;\r\n  width: 85%;\r\n}\r\n\r\n.footer img {\r\n  margin-right: 1rem;\r\n}\r\n\r\n.header {\r\n  width: 100%;\r\n  display: -webkit-box;\r\n  -webkit-box-pack: center;\r\n}\r\n\r\n.header img {\r\n  width: 400px;\r\n}\r\n\r\n.letter__body {\r\n  margin: 2rem 0;\r\n}"
+    export_types:
+      pdf:
+        enabled: false
+        link_text: ''
+        link_attributes: {  }
+  portland:
+    disable_demographic_form_prompt: 0
+weight: 0
+open: null
+close: null
+uid: 1
+template: false
+archive: false
+id: letter_gen_pbot_regulatory
+title: 'PBOT Regulatory Letter Generation'
+description: ''
+category: Utility
+elements: |-
+  letter_type:
+    '#type': radios
+    '#title': 'Letter Type'
+    '#prepopulate': true
+    '#options':
+      rfi: 'Request for Information'
+    '#options_display': buttons_vertical
+    '#required': true
+    '#default_value': rfi
+  letter_content_rfi:
+    '#type': text_format
+    '#title': 'Letter Content'
+    '#required': true
+    '#states':
+      visible:
+        ':input[name="letter_type"]':
+          value: rfi
+    '#default_value':
+      value: |
+        <p>TowDATE</p>
+
+        <p>[webform_submission:values:report_tow_company]</p>
+
+        <p>Attn: ADDRESSEE</p>
+
+        <p>ADDRESSEE EMAIL</p>
+
+        <p><strong>Request for Information on Tow [webform_submission:values:report_tow_number]</strong></p>
+
+        <p>Dear ADDRESSEE,</p>
+
+        <p>We received a complaint on Tow [webform_submission:values:report_tow_number]. The vehicle towed was a VEH INFO and was towed on TOW DATE. The alleged violation is TOW COMPLAINT DETAILS i.e. overcharge and rudeness and inability to provide information requested.</p>
+
+        <p>Here is the full text of their complaint:</p>
+
+
+
+        <p><strong>Please investigate this matter with your staff and send your written response no later than 10 BUSINESS DAYS FROM THIS LETTER.</strong> Please be sure to respond to each request of this letter. Incomplete information may result in a determination made based on the information available to us, and a partial or complete refund to the registered owner or reversal of the towing and storage fees. Your response should include:</p>
+
+        <ul>
+        	<li>Copy of tow slip</li>
+        	<li>Towing Agreement</li>
+        	<li>Written authorization received from the property owner at the time of tow</li>
+        	<li>Pictures taken at the time of the tow</li>
+        	<li>Any other relevant information you would like to add regarding the tow or allegations</li>
+        </ul>
+
+        <p>Please note that failure to respond or late response for this request may result in civil penalties.</p>
+
+        <p>Sincerely,</p>
+
+        <p>&nbsp;</p>
+      format: webform_rich_text
+    '#admin_title': 'Letter Content - RFI'
+    '#allowed_formats':
+      webform_rich_text: webform_rich_text
+    '#hide_help': true
+  attachment_letter:
+    '#type': 'webform_entity_print_attachment:pdf'
+    '#title': 'PDF Letter'
+    '#states':
+      enabled:
+        ':input[name="letter_type"]':
+          value: initial
+    '#filename': '[webform_submission:values:letter_type]-letter.pdf'
+    '#link_title': 'Generated Letter'
+    '#download': true
+    '#view_mode': twig
+    '#template': |-
+      <main class="letter">
+        <section class="letter__body">
+          {{ data["letter_content_#{data.letter_type}"].value|raw }}
+        </section>
+      </main>
+  support_agent_use_only:
+    '#type': portland_support_agent_widget
+    '#title': 'Support Agent Use Only'
+    '#prepopulate': true
+    '#access_create_roles':
+      - authenticated
+    '#access_update_roles':
+      - support_agent
+      - administrator
+    '#access_view_roles':
+      - support_agent
+      - administrator
+    '#test_submission__access': false
+  report_tow_company:
+    '#type': hidden
+    '#title': report_tow_company
+    '#prepopulate': true
+  report_tow_number:
+    '#type': hidden
+    '#title': report_tow_number
+    '#prepopulate': true
+css: ''
+javascript: ''
+settings:
+  ajax: false
+  ajax_scroll_top: form
+  ajax_progress_type: ''
+  ajax_effect: ''
+  ajax_speed: null
+  page: true
+  page_submit_path: ''
+  page_confirm_path: ''
+  page_theme_name: ''
+  form_title: source_entity_webform
+  form_submit_once: false
+  form_open_message: ''
+  form_close_message: ''
+  form_exception_message: ''
+  form_previous_submissions: false
+  form_confidential: false
+  form_confidential_message: ''
+  form_disable_remote_addr: false
+  form_convert_anonymous: false
+  form_prepopulate: false
+  form_prepopulate_source_entity: false
+  form_prepopulate_source_entity_required: false
+  form_prepopulate_source_entity_type: ''
+  form_unsaved: false
+  form_disable_back: false
+  form_submit_back: false
+  form_disable_autocomplete: false
+  form_novalidate: false
+  form_disable_inline_errors: false
+  form_required: false
+  form_autofocus: false
+  form_details_toggle: false
+  form_reset: false
+  form_access_denied: default
+  form_access_denied_title: ''
+  form_access_denied_message: ''
+  form_access_denied_attributes: {  }
+  form_file_limit: ''
+  form_attributes: {  }
+  form_method: ''
+  form_action: ''
+  share: false
+  share_node: false
+  share_theme_name: ''
+  share_title: true
+  share_page_body_attributes: {  }
+  submission_label: ''
+  submission_exception_message: ''
+  submission_locked_message: ''
+  submission_log: false
+  submission_excluded_elements: {  }
+  submission_exclude_empty: false
+  submission_exclude_empty_checkbox: false
+  submission_views: {  }
+  submission_views_replace: {  }
+  submission_user_columns: {  }
+  submission_user_duplicate: false
+  submission_access_denied: default
+  submission_access_denied_title: ''
+  submission_access_denied_message: ''
+  submission_access_denied_attributes: {  }
+  previous_submission_message: ''
+  previous_submissions_message: ''
+  autofill: false
+  autofill_message: ''
+  autofill_excluded_elements: {  }
+  wizard_progress_bar: true
+  wizard_progress_pages: false
+  wizard_progress_percentage: false
+  wizard_progress_link: false
+  wizard_progress_states: false
+  wizard_start_label: ''
+  wizard_preview_link: false
+  wizard_confirmation: true
+  wizard_confirmation_label: ''
+  wizard_auto_forward: true
+  wizard_auto_forward_hide_next_button: false
+  wizard_keyboard: true
+  wizard_track: ''
+  wizard_prev_button_label: ''
+  wizard_next_button_label: ''
+  wizard_toggle: true
+  wizard_toggle_show_label: ''
+  wizard_toggle_hide_label: ''
+  wizard_page_type: container
+  wizard_page_title_tag: h2
+  preview: 0
+  preview_label: ''
+  preview_title: ''
+  preview_message: ''
+  preview_attributes: {  }
+  preview_excluded_elements: {  }
+  preview_exclude_empty: true
+  preview_exclude_empty_checkbox: false
+  draft: none
+  draft_multiple: false
+  draft_auto_save: false
+  draft_saved_message: ''
+  draft_loaded_message: ''
+  draft_pending_single_message: ''
+  draft_pending_multiple_message: ''
+  confirmation_type: inline
+  confirmation_url: ''
+  confirmation_title: ''
+  confirmation_message: "<p>Letter attached to request #[webform_submission:values:support_agent_use_only:zendesk_request_number]</p>\r\n<a class=\"btn-cta-outline\" download=\"\" href=\"/webform/[webform:id]/submissions/[webform_submission:sid]/attachment/attachment_letter/[webform:element:attachment_letter:filename]\">Download PDF</a>"
+  confirmation_attributes: {  }
+  confirmation_back: false
+  confirmation_back_label: ''
+  confirmation_back_attributes: {  }
+  confirmation_exclude_query: false
+  confirmation_exclude_token: false
+  confirmation_update: false
+  limit_total: null
+  limit_total_interval: null
+  limit_total_message: ''
+  limit_total_unique: false
+  limit_user: null
+  limit_user_interval: null
+  limit_user_message: ''
+  limit_user_unique: false
+  entity_limit_total: null
+  entity_limit_total_interval: null
+  entity_limit_user: null
+  entity_limit_user_interval: null
+  purge: completed
+  purge_days: 1
+  results_disabled: false
+  results_disabled_ignore: false
+  results_customize: false
+  token_view: false
+  token_update: false
+  token_delete: false
+  serial_disabled: false
+access:
+  create:
+    roles:
+      - support_agent
+      - administrator
+    users: {  }
+    permissions: {  }
+  view_any:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  update_any:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  delete_any:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  purge_any:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  view_own:
+    roles:
+      - support_agent
+      - administrator
+    users: {  }
+    permissions: {  }
+  update_own:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  delete_own:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  administer:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  test:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  configuration:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+handlers:
+  zendesk_update_request:
+    id: zendesk_update_ticket
+    handler_id: zendesk_update_request
+    label: 'Zendesk update request'
+    notes: ''
+    status: true
+    conditions:
+      enabled:
+        ':input[name="support_agent_use_only[zendesk_request_number]"]':
+          filled: true
+    weight: 0
+    settings:
+      comment: 'Letter generated:'
+      comment_private: 1
+      tags: ''
+      priority: ''
+      status: ''
+      group_id: ''
+      assignee_id: ''
+      type: ''
+      collaborators: ''
+      custom_fields: ''
+      ticket_id_field: zendesk_request_number
+      ticket_form_id: ''
+variants: {  }
