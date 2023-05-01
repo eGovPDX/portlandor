@@ -134,6 +134,7 @@ elements: |-
             park_or_natural: 'Park or natural area'
             recreation_center: 'Community center'
           '#required': true
+          '#default_value': park_or_natural
         markup_recreation_center:
           '#type': webform_markup
           '#states':
@@ -558,38 +559,28 @@ elements: |-
                 - or
                 - ':input[name="report_landscaping[radios]"]':
                     value: 'Bushes, flower beds, or natural areas'
-          container_location:
-            '#type': container
-            report_location:
-              '#type': portland_location_picker
-              '#title': 'Location of Issue'
-              '#required': true
-              '#states':
-                visible:
-                  - ':input[name="report_issue_type[radios]"]':
-                      value:
-                        pattern: '^((?!camping|illegal_activity).)*$'
-                    ':input[name="customer_service_use_only[employee_email]"]':
-                      filled: false
-                  - or
-                  - ':input[name="report_issue_type[radios]"]':
-                      value:
-                        pattern: '^((?!camping).)*$'
-                    ':input[name="customer_service_use_only[employee_email]"]':
-                      filled: true
-              '#location_type__access': false
-              '#location_private_owner__access': false
-              '#location_address__access': false
-              '#place_name__access': false
-              '#location_details__access': false
-              '#waterway_instructions__access': false
           container_submit:
             '#type': container
             '#states':
               visible:
-                ':input[name="report_issue_type[radios]"]':
-                  value:
-                    pattern: '^((?!camping|illegal_activity).)*$'
+                - ':input[name="user_role"]':
+                    value: authenticated
+                - or
+                - ':input[name="report_issue_type[radios]"]':
+                    value:
+                      '!pattern': camping
+            container_location:
+              '#type': container
+              report_location:
+                '#type': portland_location_picker
+                '#title': 'Location of Issue'
+                '#required': true
+                '#location_type__access': false
+                '#location_private_owner__access': false
+                '#location_address__access': false
+                '#place_name__access': false
+                '#location_details__access': false
+                '#waterway_instructions__access': false
             report_comments:
               '#type': textarea
               '#title': 'Any additional comments that may help to address your report?'
@@ -645,9 +636,11 @@ elements: |-
               '#title': 'Submit button(s)'
   computed_group:
     '#type': webform_computed_twig
-    '#title': 'Computed group routing'
-    '#display_on': none
-    '#template': |-
+    '#title': 'TESTING: Computed group routing'
+    '#wrapper_attributes':
+      style: 'background-color: #ffffcc; padding: 15px;'
+    '#mode': text
+    '#template': |
       {% if data.report_basic_amenity == 'Art/Mural/Monument/Sculpture' %}
       Land Steward Coordinator
       {% elseif data.report_structure_feature == 'Toilet paper, soap, or other items' %}
@@ -679,13 +672,18 @@ elements: |-
       {% else %}
       Unknown
       {% endif %}
+    '#whitespace': spaceless
+    '#store': true
+    '#ajax': true
   computed_priority:
     '#type': webform_computed_twig
-    '#title': 'Computed Priority'
+    '#title': 'TESTING: Computed Priority'
     '#description_display': before
+    '#wrapper_attributes':
+      style: 'background-color: #ffffcc; padding: 15px;'
     '#mode': text
     '#template': |-
-      {% set priority = 'Normal' %}
+      {% set priority = 'priority_normal' %}
 
       {# HIGHEST #}
       {% if 
@@ -695,7 +693,7 @@ elements: |-
             data.report_staff_issue_type_illegal == 'Fires / Fireworks'))
           or data.report_issue_type == 'alarm'
           or (data.report_issue_type == 'rule_violation' and data.report_issue_type_policy == "Nuisance / Disorderly behavior") %}
-      {% set priority = 'Urgent' %}
+      {% set priority = 'priority_urgent' %}
       {% elseif
           (data.report_issue_type == 'illegal_activity' and data.report_staff_issue_type_illegal == 'Graffiti') or
           (data.report_issue_type == 'rule_violation' and
@@ -704,7 +702,7 @@ elements: |-
              data.report_issue_type_policy == 'Trash / Illegal dumping' or
              data.report_issue_type_policy == 'Restroom issue')) or
            data.report_issue_type == 'parking_traffic' %}
-      {% set priority = 'Low' %}
+      {% set priority = 'priority_low' %}
       {% endif %}
       {{ priority }}
     '#whitespace': spaceless
@@ -918,10 +916,13 @@ handlers:
   zendesk_new_request:
     id: zendesk
     handler_id: zendesk_new_request
-    label: 'Zendesk new request'
+    label: 'Zendesk new request - LOW priority'
     notes: ''
     status: true
-    conditions: {  }
+    conditions:
+      enabled:
+        ':input[name="computed_priority"]':
+          value: priority_low
     weight: 0
     settings:
       requester_name: contact_name
@@ -929,13 +930,65 @@ handlers:
       subject: 'Park Maintenance Request'
       comment: '[webform_submission:values:html]'
       tags: 'drupal webform parks'
-      priority: normal
-      status: pending
+      priority: low
+      status: new
       group_id: '12927681093399'
       assignee_id: ''
       type: incident
       collaborators: ''
-      custom_fields: "6353388345367: 'report_park_maintenance'\r\n5581480390679: '[webform_submission:values:report_location:location_lat]'\r\n5581490332439: '[webform_submission:values:report_location:location_lon]'\r\n13407901552407: '[webform_submission:values:report_location:location_x]'\r\n13407918835095: '[webform_submission:values:report_location:location_y]'\r\n1500012743961: '[webform_submission:values:report_location:location_address]'\r\n1500013095781: '[webform_submission:uuid]'\r\n9205221816983: '[webform_submission:values:report_location:location_type:raw]'\r\n13178808571927: 'priority_low'"
+      custom_fields: "6353388345367: 'report_park_maintenance'\r\n5581480390679: '[webform_submission:values:report_location:location_lat]'\r\n5581490332439: '[webform_submission:values:report_location:location_lon]'\r\n13407901552407: '[webform_submission:values:report_location:location_x]'\r\n13407918835095: '[webform_submission:values:report_location:location_y]'\r\n1500012743961: '[webform_submission:values:report_location:location_address]'\r\n1500013095781: '[webform_submission:uuid]'\r\n9205221816983: '[webform_submission:values:report_location:location_type:raw]'\r\n13178808571927: '[webform_submission:computed_priority]'\r\n"
+      ticket_id_field: report_ticket_id
+      ticket_form_id: '13176953771287'
+  zendesk_new_request_normal_priority:
+    id: zendesk
+    handler_id: zendesk_new_request_normal_priority
+    label: 'Zendesk new request - NORMAL priority'
+    notes: ''
+    status: true
+    conditions:
+      enabled:
+        ':input[name="computed_priority"]':
+          value: priority_normal
+    weight: 1
+    settings:
+      requester_name: contact_name
+      requester_email: contact_email
+      subject: 'Park Maintenance Request'
+      comment: '[webform_submission:values:html]'
+      tags: 'drupal webform parks'
+      priority: normal
+      status: new
+      group_id: '12927681093399'
+      assignee_id: ''
+      type: incident
+      collaborators: ''
+      custom_fields: "6353388345367: 'report_park_maintenance'\r\n5581480390679: '[webform_submission:values:report_location:location_lat]'\r\n5581490332439: '[webform_submission:values:report_location:location_lon]'\r\n13407901552407: '[webform_submission:values:report_location:location_x]'\r\n13407918835095: '[webform_submission:values:report_location:location_y]'\r\n1500012743961: '[webform_submission:values:report_location:location_address]'\r\n1500013095781: '[webform_submission:uuid]'\r\n9205221816983: '[webform_submission:values:report_location:location_type:raw]'\r\n13178808571927: '[webform_submission:computed_priority]'\r\n"
+      ticket_id_field: report_ticket_id
+      ticket_form_id: '13176953771287'
+  zendesk_new_request_urgent_priority:
+    id: zendesk
+    handler_id: zendesk_new_request_urgent_priority
+    label: 'Zendesk new request - URGENT priority'
+    notes: ''
+    status: true
+    conditions:
+      enabled:
+        ':input[name="computed_priority"]':
+          value: priority_urgent
+    weight: 2
+    settings:
+      requester_name: contact_name
+      requester_email: contact_email
+      subject: 'Park Maintenance Request'
+      comment: '[webform_submission:values:html]'
+      tags: 'drupal webform parks'
+      priority: urgent
+      status: new
+      group_id: '12927681093399'
+      assignee_id: ''
+      type: incident
+      collaborators: ''
+      custom_fields: "6353388345367: 'report_park_maintenance'\r\n5581480390679: '[webform_submission:values:report_location:location_lat]'\r\n5581490332439: '[webform_submission:values:report_location:location_lon]'\r\n13407901552407: '[webform_submission:values:report_location:location_x]'\r\n13407918835095: '[webform_submission:values:report_location:location_y]'\r\n1500012743961: '[webform_submission:values:report_location:location_address]'\r\n1500013095781: '[webform_submission:uuid]'\r\n9205221816983: '[webform_submission:values:report_location:location_type:raw]'\r\n13178808571927: '[webform_submission:computed_priority]'\r\n"
       ticket_id_field: report_ticket_id
       ticket_form_id: '13176953771287'
 variants: {  }
