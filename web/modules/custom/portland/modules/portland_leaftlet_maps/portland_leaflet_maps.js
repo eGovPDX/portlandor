@@ -127,11 +127,13 @@ jQuery(document)
   // shadow. We remove the fill explicitly here.
   if(lFeature.getLayers) {
     var lFeature_layers = lFeature.getLayers();
-    feature.component.forEach(function(geo_shape, i) {
-      if(geo_shape.type == 'linestring') {
-        lFeature_layers[i].setStyle({fill:false})
-      }
-    })
+    if(feature.component) {
+      feature.component.forEach(function(geo_shape, i) {
+        if(geo_shape.type == 'linestring') {
+          lFeature_layers[i].setStyle({fill:false})
+        }
+      })
+    }
   }
 })
 .on('leaflet.map', function (e, settings, lMap, mapid) {

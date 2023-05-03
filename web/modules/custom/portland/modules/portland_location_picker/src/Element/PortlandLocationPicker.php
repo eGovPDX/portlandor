@@ -160,22 +160,32 @@ class PortlandLocationPicker extends WebformCompositeBase {
     }
 
     $element['location_lat'] = [
-      '#type' => 'textfield',
+      '#type' => 'hidden',
       '#title' => t('Location'),
       '#title_display' => 'invisible',
-      '#id' => 'location_lat',
-      '#attributes' => ['class' => ['location-lat', 'visually-hidden']],
+      '#attributes' => ['class' => ['location-lat'], 'id' => 'location_lat'],
       '#required_error' => $location_required_error,
     ];
     // we're using "lng" everywhere else since that's what Leaflet uses, but this field is already
     // referenced in too many config files from webform handlers, so this is the one place it will
     // remain "lon"...
     $element['location_lon'] = [
-      '#type' => 'textfield',
+      '#type' => 'hidden',
       '#title' => t('Longitude'),
       '#title_display' => 'invisible',
-      '#id' => 'location_lon',
-      '#attributes' => ['class' => ['location-lng', 'visually-hidden']],
+      '#attributes' => ['class' => ['location-lng'], 'id' => 'location_lon'],
+    ];
+    $element['location_x'] = [
+      '#type' => 'hidden',
+      '#title' => t('Web Mercator x coordinate'),
+      '#title_display' => 'invisible',
+      '#attributes' => ['class' => ['location-x'], 'id' => 'location_x'],
+    ];
+    $element['location_y'] = [
+      '#type' => 'hidden',
+      '#title' => t('Web Mercator y coordinate'),
+      '#title_display' => 'invisible',
+      '#attributes' => ['class' => ['location-y'], 'id' => 'location_y'],
     ];
     $element['place_name'] = [
       '#type' => 'textfield',
@@ -197,25 +207,26 @@ class PortlandLocationPicker extends WebformCompositeBase {
       '#type' => 'hidden',
       '#title' => t('Asset ID'),
       '#title_display' => 'invisible',
-      '#id' => 'location_asset_id',
+      '#attributes' => ['class' => ['location-asset-id'], 'id' => 'location_asset_id'],
     ];
     $element['location_region_id'] = [
       '#type' => 'hidden',
       '#title' => t('Region ID'),
       '#title_display' => 'invisible',
-      '#id' => 'location_region_id',
+      '#attributes' => ['class' => ['location-region-id'], 'id' => 'location_region_id'],
     ];
+    // not currently in use. might be used if multiple municipalities are valid, such as for the water bureau.
     $element['location_municipality_name'] = [
       '#type' => 'hidden',
       '#title' => t('Municipality Name'),
       '#title_display' => 'invisible',
-      '#id' => 'location_municipality_name',
+      '#attributes' => ['class' => ['location-municipality-name'], 'id' => 'location_municipality_name'],
     ];
     $element['location_is_portland'] = [
       '#type' => 'hidden',
       '#title' => t('Within Portland City Limits?'),
       '#title_display' => 'invisible',
-      '#id' => 'location_is_portland',
+      '#attributes' => ['class' => ['location-is-portland'], 'id' => 'location_is_portland'],
       '#default_value' => "TRUE"
     ];
     $element['geojson_layer'] = [

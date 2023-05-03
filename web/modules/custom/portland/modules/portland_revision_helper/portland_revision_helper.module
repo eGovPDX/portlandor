@@ -4,12 +4,12 @@ use \Drupal\Core\Access\AccessResult;
 
 /**
  * Implements hook_form_alter().
- * 
+ *
  * For all forms with revision_log field:
  * - Hide disabled revision checkbox (defaults to new revision).
  * - Move revision_log to footer, right above submit.
  * - Add a callback to a validation function that makes revision_log required.
- * 
+ *
  * NOTE: There is no documentation or information available online about making
  *       the revision log message required. This would be a good candidate for
  *       an entry level contrib module.
@@ -21,19 +21,17 @@ use \Drupal\Core\Access\AccessResult;
  */
 function portland_revision_helper_form_alter(&$form, $form_state, $form_id)
 {
-  if (array_key_exists('revision_log',$form) && array_key_exists('revision', $form)) {
+  // Hide "Create new revision" checkbox
+  if (array_key_exists('revision', $form)) {
     $form['revision']['#access'] = false;
-    $form['revision_log']['#group'] = 'footer';
   }
 
-  // Group all the revision and review content together.
-  if (array_key_exists('field_reviewer', $form)) {
-    $form['field_reviewer']['#group'] = 'footer';
-  }
-  // POWR-602 - more intuitive media publishing
-  // hide revision information fields for media, since there is currently no way to display it.
-  if (substr($form_id, 0, 6) == "media_" && array_key_exists("revision_information", $form)) {
-    $form['revision_information']['#access'] = false;
+  // Form fields to move to the footer group
+  $footer_fields = ['field_reviewer', 'revision_log', 'revision_log_message'];
+  foreach ($footer_fields as $field_name) {
+    if (array_key_exists($field_name, $form)) {
+      $form[$field_name]['#group'] = 'footer';
+    }
   }
 }
 
@@ -50,9 +48,9 @@ function portland_revision_helper_local_tasks_alter(&$local_tasks) {
 
 /**
  * Implements hook_entity_field_access().
- * 
+ *
  * Grant access to the revision_log field.
- * 
+ *
  */
 function portland_revision_helper_entity_field_access($operation, \Drupal\Core\Field\FieldDefinitionInterface $field_definition, \Drupal\Core\Session\AccountInterface $account, \Drupal\Core\Field\FieldItemListInterface $items = null)
 {

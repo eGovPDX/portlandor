@@ -844,6 +844,12 @@ function _validate_document(&$form, \Drupal\Core\Form\FormStateInterface $form_s
         array_key_exists('Content-Type', $headers) &&
         array_key_exists('Content-Length', $headers)
       ) {
+        // When the link is invalid, eFiles return a HTML page
+        $content_type = isset($headers['Content-Type']) ? $headers['Content-Type'] : 'text/html';
+        if ($content_type === 'text/html') {
+          $form_state->setErrorByName('field_efiles_link', t('The linked file is not found.'));
+          return;
+        }
         $file_size = isset($headers['Content-Length']) ? (int)$headers['Content-Length'] : 0;
         if ($file_size === 0) {
           $form_state->setErrorByName('field_efiles_link', t('The linked file is empty.'));
@@ -1483,6 +1489,10 @@ function portland_media_presave($media)
 
         $media->field_file_size = $file_size;
         $media->field_mime_type = $content_type_array[0];
+      }
+      else {
+        $media->field_file_size = 0;
+        $media->field_mime_type = '';
       }
     }
   }
