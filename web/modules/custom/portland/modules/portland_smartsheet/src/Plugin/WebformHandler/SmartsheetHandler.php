@@ -67,6 +67,7 @@ class SmartsheetHandler extends WebformHandlerBase {
       'multiple_rows_enable' => false,
       'multiple_rows_field' => '',
       'multiple_rows_separator' => '',
+      'row_location' => 'toBottom',
       'sheet_id' => '',
     ];
   }
@@ -194,6 +195,18 @@ class SmartsheetHandler extends WebformHandlerBase {
       ],
     ];
 
+    $form['row_location'] = [
+      '#type' => 'select',
+      '#title' => $this->t('Row location'),
+      '#description' => $this->t('Should the row be added to the bottom or top of the sheet?'),
+      '#description_display' => 'before',
+      '#default_value' => $this->configuration['row_location'],
+      '#options' => [
+        'toBottom' => 'To Bottom',
+        'toTop' => 'To Top',
+      ],
+    ];
+
     $this->fetchColumns($form, $form_state);
 
     return $this->setSettingsParents($form);
@@ -211,11 +224,13 @@ class SmartsheetHandler extends WebformHandlerBase {
     $this->configuration['multiple_rows_enable'] = $values['multiple_rows_enable'];
     $this->configuration['multiple_rows_field'] = $values['multiple_rows_field'];
     $this->configuration['multiple_rows_separator'] = $values['multiple_rows_separator'];
+    $this->configuration['row_location'] = $values['row_location'];
     $this->configuration['sheet_id'] = $values['sheet_id'];
   }
 
   private function getRowData(array $fields) {
     $column_mappings = $this->configuration['column_mappings'];
+    $row_location = $this->configuration['row_location'];
     $cells = [];
     foreach ($column_mappings as $col_id => $field_id) {
       // skip empty mappings
@@ -230,7 +245,7 @@ class SmartsheetHandler extends WebformHandlerBase {
 
     return [
       'cells' => $cells,
-      'toBottom' => true,
+      $row_location => true,
     ];
   }
 

@@ -23,15 +23,21 @@ elements: |-
     '#type': webform_markup
     '#states':
       visible:
-        ':input[name="session_status"]':
-          '!value': ''
+        - ':input[name="session_id"]':
+            empty: true
+        - or
+        - ':input[name="session_status"]':
+            '!value': ''
     '#markup': '<p>Testimony is no longer open for this session. Please go back to the <a href="/council/agenda"> main council agenda page.</a></p>'
   container_testimony:
     '#type': container
     '#states':
       invisible:
-        ':input[name="session_status"]':
-          '!value': ''
+        - ':input[name="session_id"]':
+            empty: true
+        - or
+        - ':input[name="session_status"]':
+            '!value': ''
     testimony_type_gt_1hr_before:
       '#type': radios
       '#title': 'I will be joining the City Council meeting:'
@@ -55,10 +61,48 @@ elements: |-
           ':input[name="is_gt_1hr_before"]':
             value: 'false'
       '#default_value': In-person
+    contact_first_name:
+      '#type': textfield
+      '#title': 'First Name'
+      '#required': true
+    contact_last_name:
+      '#type': textfield
+      '#title': 'Last Name'
+      '#required': true
+    contact_email:
+      '#type': textfield
+      '#title': Email
+      '#states':
+        required:
+          ':input[name="testimony_type_gt_1hr_before"]':
+            value: Virtually
+        invisible:
+          ':input[name="is_gt_1hr_before"]':
+            value: 'false'
+    markup_email_virtual:
+      '#type': webform_markup
+      '#states':
+        visible:
+          ':input[name="testimony_type_gt_1hr_before"]':
+            value: Virtually
+      '#markup': '<p>You must provide an email address to join the meeting virtually.</p>'
+    markup_email_in_person:
+      '#type': webform_markup
+      '#states':
+        visible:
+          - ':input[name="testimony_type_gt_1hr_before"]':
+              value: In-person
+          - or
+          - ':input[name="is_gt_1hr_before"]':
+              value: 'false'
+      '#markup': '<p>Plans change! Provide your email address to also receive a Zoom link to join the meeting virtually. One hour prior to the meeting, virtual invites will no longer be provided.</p>'
+    contact_phone:
+      '#type': textfield
+      '#title': 'Phone Number (optional)'
+      '#input_mask': '(999) 999-9999'
     agenda_items:
-      '#type': webform_entity_checkboxes
-      '#title': 'Agenda Items'
-      '#description': 'Please select the agenda item on which you wish to testify.'
+      '#type': webform_entity_radios
+      '#title': 'Agenda Item'
       '#description_display': before
       '#prepopulate': true
       '#required': true
@@ -70,76 +114,66 @@ elements: |-
           view_name: reference_agenda_item
           display_name: entity_reference_agenda_item_for_testimony
           arguments: {  }
-    in_portland_metro:
-      '#type': radios
-      '#title': 'Do you live within the Portland metro area?'
-      '#options': yes_no
-      '#required': true
-    location:
-      '#type': portland_location_picker
-      '#title': Location
-      '#required': true
-      '#states':
-        visible:
-          ':input[name="in_portland_metro"]':
-            value: 'Yes'
-      '#location_type__access': false
-      '#location_park_container__access': false
-      '#location_private_owner__access': false
-      '#location_address__title': Location
-      '#location_address__description': 'Please enter your address below and then Verify, or click on the map to indicate the general area/neighborhood where you live.'
-      '#location_address__required': true
-      '#suggestions_modal__access': false
-      '#place_name__access': false
-      '#location_details__access': false
-      '#location_asset_id__access': false
-      '#location_region_id__access': false
-      '#location_municipality_name__access': false
-      '#location_is_portland__access': false
-      '#geojson_layer__access': false
-      '#geojson_layer_behavior__access': false
-    section_contact:
-      '#type': webform_section
-      '#title': 'Your Contact Information'
-      contact_first_name:
-        '#type': textfield
-        '#title': 'First Name'
+    container_location:
+      '#type': container
+      in_portland_metro:
+        '#type': radios
+        '#title': 'Do you live within the Portland metro area?'
+        '#options': yes_no
         '#required': true
-      contact_last_name:
-        '#type': textfield
-        '#title': 'Last Name'
+      location:
+        '#type': portland_location_picker
+        '#title': Location
         '#required': true
-      contact_email:
-        '#type': textfield
-        '#title': Email
-        '#description': 'We will use your email to contact you before the meeting if necessary.'
         '#states':
-          required:
-            ':input[name="testimony_type_gt_1hr_before"]':
-              value: Virtually
-          invisible:
-            ':input[name="is_gt_1hr_before"]':
-              value: 'false'
-      contact_phone:
+          visible:
+            ':input[name="in_portland_metro"]':
+              value: 'Yes'
+        '#location_type__access': false
+        '#location_park_container__access': false
+        '#location_private_owner__access': false
+        '#location_address__title': Location
+        '#location_address__description': 'Please enter your address below and then select Verify. You may select a nearby landmark or park on the map instead of an address to indicate the general area/neighborhood where you live. We collect location information to learn which neighborhoods are represented in public testimony.'
+        '#location_address__required': true
+        '#suggestions_modal__access': false
+        '#place_name__access': false
+        '#location_details__access': false
+        '#location_asset_id__access': false
+        '#location_region_id__access': false
+        '#location_municipality_name__access': false
+        '#location_is_portland__access': false
+        '#geojson_layer__access': false
+        '#geojson_layer_behavior__access': false
+      contact_zip_code:
         '#type': textfield
-        '#title': 'Phone Number (optional)'
-        '#input_mask': '(999) 999-9999'
+        '#title': 'Zip/Postal Code'
+        '#input_mask': '99999[-9999]'
+        '#states':
+          visible:
+            ':input[name="in_portland_metro"]':
+              value: 'No'
+    race_ethnicity:
+      '#type': webform_checkboxes_other
+      '#title': 'Race and Ethnicity'
+      '#description': 'The Auditor&#39;s Office promotes and fosters a culture of racial equity, diversity, and inclusion. Basic demographic information is used only to identify and address issues of equitable access. Check all that apply:'
+      '#description_display': before
+      '#options': ethnicity
+      '#other__option_label': 'Not listed above, please describe'
+      '#other__placeholder': 'Please describe'
     horizontal_rule:
       '#type': webform_horizontal_rule
     container_submit:
       '#type': container
-      markup_public_records_statement:
-        '#type': webform_markup
-        '#markup': |-
-          <h2>Public Records Statement</h2>
-
-          <p>The information you provide in this form is considered a public record under Oregon&rsquo;s <a data-renderer-mark="true" href="https://www.doj.state.or.us/oregon-department-of-justice/public-records/attorney-generals-public-records-and-meetings-manual/i-public-records/#:~:text=Under%20Oregon''s%20Public%20Records%20Law,committee%20of%20the%20Legislative%20Assembly" title="https://www.doj.state.or.us/oregon-department-of-justice/public-records/attorney-generals-public-records-and-meetings-manual/i-public-records/#:~:text=Under%20Oregon''s%20Public%20Records%20Law,committee%20of%20the%20Legislative%20Assembly">Public Records Law</a> and is available to the public on request.</p>
+      acknowledge_public_record:
+        '#type': checkbox
+        '#title': '<strong>I understand information entered in this form is public record.</strong>'
+        '#required': true
       markup_accommodations:
         '#type': webform_markup
         '#markup': |-
           <h2>Accommodations</h2>
 
-          <p>The City of Portland ensures meaningful access to City programs, services, and activities to comply with Civil Rights Title VI and ADA Title II laws and reasonably provides: translation, interpretation, modifications, accommodations, alternative formats, auxiliary aids and services. To request these services, contact the Office of the Council Clerk at <a href="tel:+1-503-823-4085">503-823-4085</a> or <a href="mailto:CouncilClerk@portlandoregon.gov">CouncilClerk@portlandoregon.gov</a>. Please make your request at least 72 hours in advance of the meeting.</p>
+          <p>The City of Portland ensures meaningful access to City programs, services, and activities to comply with Civil Rights Title VI and ADA Title II laws and reasonably provides: translation, interpretation, modifications, accommodations, alternative formats, auxiliary aids and services. <a href="/311/ada-request">Request an accommodation online</a> or call <a href="tel:+1-503-823-4000">503-823-4000</a>. Please make your request at least 5 days in advance of the meeting.</p>
       actions:
         '#type': webform_actions
         '#title': 'Submit button(s)'
@@ -387,19 +421,38 @@ handlers:
     notes: ''
     status: true
     conditions: {  }
-    weight: 0
+    weight: -50
     settings:
       column_mappings:
         6681077722965892: contact_first_name
         4963020357035908: contact_last_name
         4429277909280644: computed_testimony_type
         8932877536651140: computed_agenda_items
-        136784514443140: computed_location_lat
-        4640384141813636: computed_location_lng
         2711220543350660: contact_email
         2138213344667524: contact_phone
+        136784514443140: computed_location_lat
+        4640384141813636: computed_location_lng
+        8865636012740484: contact_zip_code
       sheet_id: '4217323172194180'
-      multiple_rows_enable: '1'
-      multiple_rows_field: computed_agenda_items
-      multiple_rows_separator: '||SEP||'
+      multiple_rows_enable: null
+      multiple_rows_field: ''
+      multiple_rows_separator: ''
+      row_location: toTop
+  add_row_to_demographics_smartsheet:
+    id: smartsheet_add_row
+    handler_id: add_row_to_demographics_smartsheet
+    label: 'Add row to demographics Smartsheet'
+    notes: ''
+    status: true
+    conditions: {  }
+    weight: -49
+    settings:
+      column_mappings:
+        1356927225253764: computed_testimony_type
+        6566033213050756: race_ethnicity
+      multiple_rows_enable: null
+      multiple_rows_field: ''
+      multiple_rows_separator: ''
+      sheet_id: '232216974020484'
+      row_location: toBottom
 variants: {  }
