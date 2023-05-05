@@ -47,7 +47,7 @@ class PortlandSupportAgentWidget extends WebformCompositeBase {
       '#type' => 'markup',
       '#title' => t('Support Agent Widget'),
       '#title_display' => 'invisible',
-      '#markup' => '<h2>Customer Service Use Only</h2>',
+      '#markup' => '<h2>Customer Service Use Only</h2><div><strong>You are viewing this form as an employee. To submit a report as a community member, please log out.</strong></div>',
     ];
     $element['employee_email'] = [
       '#type' => 'textfield',
