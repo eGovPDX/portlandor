@@ -98,8 +98,18 @@ elements: |-
     urgent_contact_telephone:
       '#type': textfield
       '#title': 'Contact Telephone'
+      '#description': 'Please provide the best telephone number to reach the requester. If the location is a community center, the best number may be an individual cell phone or direct line, not be the center&#39;s main contact phone number.'
+      '#description_display': before
       '#access_create_roles':
         - authenticated
+    urgent_contact_telephone_instructions:
+      '#type': textfield
+      '#title': 'Telephone Instructions'
+      '#description': 'Please provide any additional instructions for reaching the requester, such as dialing an extension or navigating a phone tree.'
+      '#description_display': before
+    urgent_callback_requested:
+      '#type': checkbox
+      '#title': 'Callback requested'
     urgent_submit:
       '#type': webform_actions
       '#title': Submit
@@ -166,6 +176,15 @@ elements: |-
               ':input[name="report_is_park"]':
                 value: recreation_center
           '#required': true
+        report_community_center_location_details:
+          '#type': textarea
+          '#title': 'Location Details'
+          '#description': 'Please describe where the problem is at the community center.'
+          '#description_display': before
+          '#states':
+            visible:
+              ':input[name="report_is_park"]':
+                value: recreation_center
         report_issue_type:
           '#type': webform_radios_other
           '#title': 'What type of issue are you reporting?'
@@ -582,12 +601,17 @@ elements: |-
                       '!pattern': camping
             container_location:
               '#type': container
+              '#states':
+                visible:
+                  ':input[name="report_is_park"]':
+                    '!value': recreation_center
               report_location:
                 '#type': portland_location_picker
                 '#title': 'Location of Issue'
                 '#location_type__access': false
                 '#location_private_owner__access': false
                 '#location_address__access': false
+                '#location_map__description': 'Please place the marker as close to the incident or issue as possible. You may click or drag it to any location on the map.'
                 '#waterway_instructions__access': false
             report_comments:
               '#type': textarea
@@ -610,7 +634,7 @@ elements: |-
               '#attachment_image_style': webform_report_uploaded_image
             section_contact:
               '#type': webform_section
-              '#title': 'Your Contact Information'
+              '#title': 'Contact Information'
               contact_name:
                 '#type': textfield
                 '#title': Name
@@ -621,11 +645,18 @@ elements: |-
                 '#description': 'We will use your email to respond to your feedback or request.'
                 '#input_mask': '''alias'': ''email'''
                 '#required': true
-                '#default_value': '[current-user:mail]'
               telephone:
                 '#type': textfield
                 '#title': Telephone
                 '#input_mask': '(999) 999-9999'
+              cocntact_telephone_instructions:
+                '#type': textfield
+                '#title': 'Telephone Instructions'
+                '#description': 'Please provide any additional instructions for reaching you by phone, such as dialing an extension or navigating a phone tree.'
+                '#description_display': before
+              contact_callback_requested:
+                '#type': checkbox
+                '#title': 'Callback requested'
             section_public_records_statement:
               '#type': webform_section
               '#title': 'Public Records Statement'
@@ -635,7 +666,7 @@ elements: |-
             actions:
               '#type': webform_actions
               '#title': 'Submit button(s)'
-  customer_service_use_only:
+  support_agent_use_only:
     '#type': portland_support_agent_widget
     '#title': 'Customer Service Use Only'
     '#wrapper_attributes':
@@ -1019,4 +1050,28 @@ handlers:
       custom_fields: "6353388345367: 'report_park_issue'\r\n5581480390679: '[webform_submission:values:report_location:location_lat]'\r\n5581490332439: '[webform_submission:values:report_location:location_lon]'\r\n13407901552407: '[webform_submission:values:report_location:location_x]'\r\n13407918835095: '[webform_submission:values:report_location:location_y]'\r\n1500012743961: '[webform_submission:values:report_location:place_name]'\r\n1500013095781: '[webform_submission:uuid]'\r\n9205221816983: '[webform_submission:values:report_location:location_type:raw]'\r\n13178808571927: '[webform_submission:computed_priority]'\r\n5873224754071: '[webform_submission:values:report_location:location_details]'\r\n"
       ticket_id_field: report_ticket_id
       ticket_form_id: '13176953771287'
+  zendesk_update_customer_support_interaction_request_handler:
+    id: zendesk_update_ticket
+    handler_id: zendesk_update_customer_support_interaction_request_handler
+    label: 'Zendesk update customer support interaction request handler'
+    notes: 'Updates an existing Zendesk "interaction request" and links it to the issue request. Enabled if an Zendesk Request Number value has been provided.'
+    status: true
+    conditions:
+      enabled:
+        ':input[name="customer_service_use_only[zendesk_request_number]"]':
+          filled: true
+    weight: 2
+    settings:
+      comment: "<h1>[webform_submission:values:computed_subject]</h1>\r\n<p><b>Linked Issue Request: <a href=\"https://portlandoregon.zendesk.com/agent/tickets/[webform_submission:values:report_ticket_id]\">[webform_submission:values:report_ticket_id]</a></b></p>\r\n\r\n[webform_submission:values:html]\r\n\r\n"
+      comment_private: 1
+      tags: ''
+      priority: ''
+      status: ''
+      group_id: ''
+      assignee_id: ''
+      type: ''
+      collaborators: ''
+      custom_fields: '8692493739543: ''[webform_submission:values:report_ticket_id]'''
+      ticket_id_field: zendesk_request_number
+      ticket_form_id: ''
 variants: {  }
