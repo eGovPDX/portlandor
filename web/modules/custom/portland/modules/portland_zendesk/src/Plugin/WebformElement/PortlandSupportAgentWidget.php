@@ -44,6 +44,9 @@ class PortlandSupportAgentWidget extends WebformCompositeBase {
     if (isset($value['zendesk_request_number']) && $value['zendesk_request_number']) {
       $line .= 'Zendesk request number: ' . $value['zendesk_request_number'];
     }
+    if (isset($value['employee_notes_panel']['employee_notes']) && $value['employee_notes_panel']['employee_notes']) {
+      $line .= 'Employee notes: ' . $value['employee_notes_panel']['employee_notes'];
+    }
     $lines[] = $line;
     return $lines;
   }
@@ -65,6 +68,9 @@ class PortlandSupportAgentWidget extends WebformCompositeBase {
     }
     if (isset($value['zendesk_request_number']) && $value['zendesk_request_number']) {
       $lines[] = 'Zendesk request number: ' . $value['zendesk_request_number'];
+    }
+    if (isset($value['employee_notes_panel']['employee_notes']) && $value['employee_notes_panel']['employee_notes']) {
+      $line .= 'Employee notes: ' . $value['employee_notes_panel']['employee_notes'];
     }
     return $lines;
   }

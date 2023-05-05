@@ -61,6 +61,17 @@ class PortlandSupportAgentWidget extends WebformCompositeBase {
       '#id' => 'zendesk_request_number',
       '#description' => 'If you are completing this webform on behalf of a community member, please enter the Zendesk request number of the request created to track the interaction. In addition to creating a new request for this report, the existing interaction request will be updated and linked.',
     ];
+    $element['employee_notes_panel'] = [
+      '#type' => 'details',
+      '#title' => 'Employee Notes',
+      '#format' => 'details-closed',
+    ];
+    $element['employee_notes_panel']['employee_notes'] = [
+      '#type' => 'textarea',
+      '#title' => 'Employee Notes',
+      '#title_display' => 'invisible',
+      '#description' => 'Use this area as a scratch pad or as a field to add additional notes to the request. Anything submitted in this field will be included in the request description and may be visible to the requester.'
+    ];
     $element['test_submission'] = [
       '#type' => 'checkbox',
       '#title' => t('Test Submission'),
