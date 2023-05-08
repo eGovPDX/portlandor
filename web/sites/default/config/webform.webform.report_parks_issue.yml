@@ -282,6 +282,21 @@ elements: |-
               visible:
                 ':input[name="report_issue_type[radios]"]':
                   value: illegal_activity
+          report_hate_speech_or_gang:
+            '#type': radios
+            '#title': 'Is this graffiti hate speech or gang related?'
+            '#options':
+              'Yes': 'Yes'
+              'No': 'No'
+              'Not sure': 'Not sure'
+            '#options_display': side_by_side
+            '#states':
+              visible:
+                ':input[name="report_issue_type[radios]"]':
+                  value: illegal_activity
+                ':input[name="report_staff_issue_type_illegal[radios]"]':
+                  value: Graffiti
+            '#required': true
           markup_illegal_staff:
             '#type': webform_markup
             '#access_create_roles':
@@ -766,6 +781,14 @@ elements: |-
       {% endif %}
     '#whitespace': spaceless
     '#ajax': true
+  resolution_url:
+    '#type': webform_computed_twig
+    '#title': 'Resolution URL'
+    '#display_on': none
+    '#mode': text
+    '#template': '{{ webform_token(''[site:url-brief]'', webform_submission, [], options) }}/form/report-graffiti-resolution?report_location[location_type]={{ data.report_location.location_type }}&report_location[location_park]={{ data.report_location.location_park }}&report_location[place_name]={{ data.report_location.place_name|url_encode }}&report_location[location_details]={{ data.report_location.location_details|url_encode }}&report_location[location_address]={{ data.report_location.location_address }}&report_location[location_lat]={{ data.report_location.location_lat }}&report_location[location_lon]={{ data.report_location.location_lon }}&original_submission_key={{ uuid }}&report_ticket_id='
+    '#store': true
+    '#ajax': true
 css: ''
 javascript: ''
 settings:
@@ -1066,4 +1089,32 @@ handlers:
       custom_fields: '8692493739543: ''[webform_submission:values:report_ticket_id]'''
       ticket_id_field: zendesk_request_number
       ticket_form_id: ''
+  zendesk_new_graffiti_report:
+    id: zendesk
+    handler_id: zendesk_new_graffiti_report
+    label: 'Zendesk new graffiti report'
+    notes: ''
+    status: true
+    conditions:
+      enabled:
+        ':input[name="report_issue_type[radios]"]':
+          value: illegal_activity
+        ':input[name="report_staff_issue_type_illegal[radios]"]':
+          value: Graffiti
+    weight: 5
+    settings:
+      requester_name: contact_name
+      requester_email: contact_email
+      subject: 'Park Graffiti Report'
+      comment: '[webform_submission:values:html]'
+      tags: 'drupal webform parks graffiti'
+      priority: normal
+      status: new
+      group_id: '8559017236631'
+      assignee_id: ''
+      type: incident
+      collaborators: ''
+      custom_fields: "6353388345367: 'report_graffiti'\r\n5581480390679: '[webform_submission:values:report_location:location_lat]'\r\n5581490332439: '[webform_submission:values:report_location:location_lon]'\r\n13407901552407: '[webform_submission:values:report_location:location_x]'\r\n13407918835095: '[webform_submission:values:report_location:location_y]'\r\n1500012743961: '[webform_submission:values:report_location:location_address]'\r\n1500013095781: '[webform_submission:uuid]'\r\n6355783758871: '[webform_submission:values:resolution_url]'\r\n6379451469847: '[webform_submission:values:waiver_url]'\r\n9205221816983: '[webform_submission:values:report_location:location_type:raw]'\r\n6586776052759: '[webform_submission:values:report_hate_speech_or_gang]'"
+      ticket_id_field: report_ticket_id
+      ticket_form_id: '6499767163543'
 variants: {  }
