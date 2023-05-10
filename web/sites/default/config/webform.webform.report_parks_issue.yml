@@ -789,6 +789,13 @@ elements: |-
     '#template': '{{ webform_token(''[site:url-brief]'', webform_submission, [], options) }}/form/report-graffiti-resolution?report_location[location_type]={{ data.report_location.location_type }}&report_location[location_park]={{ data.report_location.location_park }}&report_location[place_name]={{ data.report_location.place_name|url_encode }}&report_location[location_details]={{ data.report_location.location_details|url_encode }}&report_location[location_address]={{ data.report_location.location_address }}&report_location[location_lat]={{ data.report_location.location_lat }}&report_location[location_lon]={{ data.report_location.location_lon }}&original_submission_key={{ uuid }}&report_ticket_id='
     '#store': true
     '#ajax': true
+  computed_tags:
+    '#type': webform_computed_token
+    '#title': 'Computed Tags'
+    '#display_on': none
+    '#mode': text
+    '#template': '{% if data.user_role != "anonymous" %}ranger_dispatch{% endif %}'
+    '#ajax': true
 css: ''
 javascript: ''
 settings:
@@ -997,13 +1004,15 @@ handlers:
       enabled:
         ':input[name="computed_priority"]':
           value: priority_low
+        ':input[name="report_issue_type[radios]"]':
+          '!value': maintenance
     weight: 0
     settings:
       requester_name: contact_name
       requester_email: contact_email
       subject: '[webform_submission:values:computed_subject]'
       comment: '[webform_submission:values:html]'
-      tags: 'drupal webform parks'
+      tags: 'drupal webform parks [webform_submission:values:computed_tags]'
       priority: low
       status: new
       group_id: '12927681093399'
@@ -1023,13 +1032,15 @@ handlers:
       enabled:
         ':input[name="computed_priority"]':
           value: priority_normal
+        ':input[name="report_issue_type[radios]"]':
+          '!value': maintenance
     weight: 1
     settings:
       requester_name: contact_name
       requester_email: contact_email
       subject: '[webform_submission:values:computed_subject]'
       comment: '[webform_submission:values:html]'
-      tags: 'drupal webform parks'
+      tags: 'drupal webform parks [webform_submission:values:computed_tags]'
       priority: normal
       status: new
       group_id: '12927681093399'
@@ -1049,13 +1060,15 @@ handlers:
       enabled:
         ':input[name="computed_priority"]':
           value: priority_urgent
+        ':input[name="report_issue_type[radios]"]':
+          '!value': maintenance
     weight: 2
     settings:
       requester_name: contact_name
       requester_email: contact_email
       subject: '[webform_submission:values:computed_subject]'
       comment: '[webform_submission:values:html]'
-      tags: 'drupal webform parks'
+      tags: 'drupal webform parks [webform_submission:values:computed_tags]'
       priority: urgent
       status: new
       group_id: '12927681093399'
@@ -1107,7 +1120,7 @@ handlers:
       requester_email: contact_email
       subject: 'Park Graffiti Report'
       comment: '[webform_submission:values:html]'
-      tags: 'drupal webform parks graffiti'
+      tags: 'drupal webform parks graffiti [webform_submission:values:computed_tags]'
       priority: normal
       status: new
       group_id: '8559017236631'
@@ -1117,4 +1130,32 @@ handlers:
       custom_fields: "6353388345367: 'report_graffiti'\r\n5581480390679: '[webform_submission:values:report_location:location_lat]'\r\n5581490332439: '[webform_submission:values:report_location:location_lon]'\r\n13407901552407: '[webform_submission:values:report_location:location_x]'\r\n13407918835095: '[webform_submission:values:report_location:location_y]'\r\n1500012743961: '[webform_submission:values:report_location:location_address]'\r\n1500013095781: '[webform_submission:uuid]'\r\n6355783758871: '[webform_submission:values:resolution_url]'\r\n6379451469847: '[webform_submission:values:waiver_url]'\r\n9205221816983: '[webform_submission:values:report_location:location_type:raw]'\r\n6586776052759: '[webform_submission:values:report_hate_speech_or_gang]'"
       ticket_id_field: report_ticket_id
       ticket_form_id: '6499767163543'
+  zendesk_new_park_maintenance_request_testing_only:
+    id: zendesk
+    handler_id: zendesk_new_park_maintenance_request_testing_only
+    label: 'Zendesk new Park Maintenance request - testing only'
+    notes: 'This handler assigns all maintenance requests to the PP&R: General group, for testing purposes until detailed routing is set up.'
+    status: true
+    conditions:
+      enabled:
+        ':input[name="computed_priority"]':
+          value: priority_urgent
+        ':input[name="report_issue_type[radios]"]':
+          '!value': maintenance
+    weight: 5
+    settings:
+      requester_name: contact_name
+      requester_email: contact_email
+      subject: '[webform_submission:values:computed_subject]'
+      comment: '[webform_submission:values:html]'
+      tags: 'drupal webform parks maintenance [webform_submission:values:computed_tags]'
+      priority: normal
+      status: new
+      group_id: '14482054292375'
+      assignee_id: ''
+      type: incident
+      collaborators: ''
+      custom_fields: "6353388345367: 'report_park_issue'\r\n5581480390679: '[webform_submission:values:report_location:location_lat]'\r\n5581490332439: '[webform_submission:values:report_location:location_lon]'\r\n13407901552407: '[webform_submission:values:report_location:location_x]'\r\n13407918835095: '[webform_submission:values:report_location:location_y]'\r\n1500012743961: '[webform_submission:values:report_location:place_name]'\r\n1500013095781: '[webform_submission:uuid]'\r\n9205221816983: '[webform_submission:values:report_location:location_type:raw]'\r\n13178808571927: '[webform_submission:computed_priority]'\r\n5873224754071: '[webform_submission:values:report_location:location_details]'\r\n"
+      ticket_id_field: report_ticket_id
+      ticket_form_id: '13176953771287'
 variants: {  }
