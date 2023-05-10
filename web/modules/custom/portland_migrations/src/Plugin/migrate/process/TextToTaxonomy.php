@@ -9,7 +9,7 @@ use Drupal\taxonomy\Entity\Term;
 use Drupal\Core\Language\LanguageInterface;
 
 /**
- * This plugin creates a new paragraph entity based on the source.
+ * This plugin looks up a taxonomy term (or creates a new one if necessary) based on the source text.
  * https://boylesoftware.com/blog/drupal-8-migration-taxonomy-term-lookups/
  *
  * @MigrateProcessPlugin(
@@ -89,7 +89,7 @@ class TextToTaxonomy extends ProcessPluginBase {
       }
       return $term;
     }
-    // Fallback, create a new paragraph.
+    // Fallback, create a new taxonomy term.
     $term = Term::create($properties);
     if ($row->getDestinationProperty('langcode')) {
       $term->langcode = $row->getDestinationProperty('langcode');
