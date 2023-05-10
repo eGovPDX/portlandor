@@ -24,11 +24,12 @@ elements: |-
     '#title': Assessment
     wizard_permit_need:
       '#type': radios
-      '#title': 'What do you need a permit for?'
+      '#title': 'What do you need?'
       '#options':
         parking: 'I need to use or reserve parking space(s)'
         traffic: 'I need to use or close a traffic lane, bike lane, sidewalk, or full street'
         existing_permit: 'I already have a Temporary Street Use Permit that I want to Change, Update, or Renew'
+        general: 'General Comment/Questions'
       '#options_display': buttons_vertical
       '#required': true
   page_existing_permit:
@@ -832,15 +833,26 @@ elements: |-
           visible:
             ':input[name="complex_permit_additional_parking_spaces[radios]"]':
               checked: true
+  page_general:
+    '#type': webform_wizard_page
+    '#title': 'General Comment/Question'
+    '#states':
+      visible:
+        ':input[name="wizard_permit_need"]':
+          value: general
+    general_comment_details:
+      '#type': textarea
+      '#title': 'How can we help you?'
+      '#required': true
   page_placeholder_permit:
     '#type': webform_wizard_page
     '#title': Permit
     '#states':
       visible:
+        ':input[name="wizard_permit_need"]':
+          '!value': general
         ':input[name="permit_type"]':
           value: unknown
-        ':input[name="wizard_permit_need"]':
-          '!value': existing_permit
     '#admin_title': 'Placeholder permit page'
   page_contact_info:
     '#type': webform_wizard_page
@@ -1125,8 +1137,13 @@ handlers:
     status: true
     conditions:
       disabled:
-        ':input[name="support_agent_use_only[test_submission]"]':
-          checked: true
+        -
+          ':input[name="wizard_permit_need"]':
+            value: general
+        - or
+        -
+          ':input[name="support_agent_use_only[test_submission]"]':
+            checked: true
     weight: 0
     settings:
       requester_name: contact_full_legal_name
@@ -1151,6 +1168,8 @@ handlers:
     status: true
     conditions:
       enabled:
+        ':input[name="wizard_permit_need"]':
+          '!value': general
         ':input[name="support_agent_use_only[test_submission]"]':
           checked: true
     weight: 1
@@ -1169,4 +1188,63 @@ handlers:
       custom_fields: "6353388345367: 'apply_tsup'\r\n1500013095781: '[webform_submission:uuid]'\r\n12281632679959: '12281632679959_[webform_submission:values:permit_type]'\r\n1900004448785: '[webform_submission:values:contact_company]'\r\n12280609857559: '[webform_submission:values:change_request_id]'\r\n12280802285079: ''\r\n12281351917847: '[webform_submission:values:simple_permit_reason]'\r\n5581480390679: '[webform_submission:values:permit_location:location_lat]'\r\n5581490332439: '[webform_submission:values:permit_location:location_lon]'\r\n1500012743961: '[webform_submission:values:permit_location:location_address]'\r\n9205221816983: '[webform_submission:values:permit_location:location_type:raw]'\r\n12281548831383: '[webform_submission:values:complex_permit_closure_type]'\r\n"
       ticket_id_field: report_ticket_id
       ticket_form_id: '12280613877783'
+  zendesk_general:
+    id: zendesk
+    handler_id: zendesk_general
+    label: 'Create new Zendesk request - General Comment/Question'
+    notes: ''
+    status: true
+    conditions:
+      disabled:
+        -
+          ':input[name="wizard_permit_need"]':
+            '!value': general
+        - or
+        -
+          ':input[name="support_agent_use_only[test_submission]"]':
+            checked: true
+    weight: 2
+    settings:
+      requester_name: contact_full_legal_name
+      requester_email: contact_email
+      subject: 'General Comment/Question'
+      comment: '[webform_submission:values:html]'
+      tags: 'drupal webform tsup'
+      priority: normal
+      status: new
+      group_id: '12281750992407'
+      assignee_id: ''
+      type: question
+      collaborators: ''
+      custom_fields: "6353388345367: 'apply_tsup'\r\n1500013095781: '[webform_submission:uuid]'\r\n1900004448785: '[webform_submission:values:contact_company]'\r\n"
+      ticket_id_field: report_ticket_id
+      ticket_form_id: '9791802547607'
+  zendesk_general_dev:
+    id: zendesk
+    handler_id: zendesk_general_dev
+    label: 'Create new Zendesk request - General Comment/Question - Developer Test'
+    notes: ''
+    status: true
+    conditions:
+      enabled:
+        ':input[name="wizard_permit_need"]':
+          value: general
+        ':input[name="support_agent_use_only[test_submission]"]':
+          checked: true
+    weight: 3
+    settings:
+      requester_name: contact_full_legal_name
+      requester_email: contact_email
+      subject: 'General Comment/Question'
+      comment: '[webform_submission:values:html]'
+      tags: 'drupal webform tsup'
+      priority: normal
+      status: new
+      group_id: '4549352062487'
+      assignee_id: ''
+      type: question
+      collaborators: ''
+      custom_fields: "6353388345367: 'apply_tsup'\r\n1500013095781: '[webform_submission:uuid]'\r\n1900004448785: '[webform_submission:values:contact_company]'\r\n"
+      ticket_id_field: report_ticket_id
+      ticket_form_id: '9791802547607'
 variants: {  }
