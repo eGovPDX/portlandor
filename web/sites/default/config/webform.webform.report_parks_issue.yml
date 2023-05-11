@@ -646,13 +646,19 @@ elements: |-
               contact_name:
                 '#type': textfield
                 '#title': Name
-                '#required': true
+                '#states':
+                  optional:
+                    ':input[name="report_urgent"]':
+                      value: 'Yes'
               contact_email:
                 '#type': textfield
                 '#title': Email
                 '#description': 'We will use your email to respond to your feedback or request.'
                 '#input_mask': '''alias'': ''email'''
-                '#required': true
+                '#states':
+                  optional:
+                    ':input[name="report_urgent"]':
+                      value: 'Yes'
               telephone:
                 '#type': textfield
                 '#title': Telephone
@@ -730,7 +736,7 @@ elements: |-
     '#description_display': before
     '#wrapper_attributes':
       style: 'background-color: #ffffcc; padding: 15px;'
-    '#display_on': none
+    '#display_on': form
     '#mode': text
     '#template': |
       {% set priority = 'priority_normal' %}
@@ -795,6 +801,31 @@ elements: |-
     '#display_on': none
     '#mode': text
     '#template': '{% if data.user_role != "anonymous" %}ranger_dispatch{% endif %}'
+    '#ajax': true
+  computed_requester:
+    '#type': webform_computed_token
+    '#title': 'Computed Requester'
+    '#display_on': form
+    '#mode': text
+    '#template': |-
+      {% if data.report_urgent == "Yes" %}
+      {{ data.support_agent_use_only.employee_email }}
+      {% else %}
+      {{ data.contact_email }}
+      {% endif %}
+    '#ajax': true
+  test_requester:
+    '#type': webform_computed_twig
+    '#title': 'Test Requester'
+    '#display_on': form
+    '#mode': text
+    '#template': |-
+      {% if data.report_urgent == "Yes" %}
+      {{ webform_token('[current-user:mail]', webform_submission, [], options) }}
+      {% else %}
+      {{ data.contact_email }}
+      {% endif %}
+    '#whitespace': spaceless
     '#ajax': true
 css: ''
 javascript: ''
@@ -1019,7 +1050,7 @@ handlers:
       assignee_id: ''
       type: incident
       collaborators: ''
-      custom_fields: "6353388345367: 'report_park_issue'\r\n5581480390679: '[webform_submission:values:report_location:location_lat]'\r\n5581490332439: '[webform_submission:values:report_location:location_lon]'\r\n13407901552407: '[webform_submission:values:report_location:location_x]'\r\n13407918835095: '[webform_submission:values:report_location:location_y]'\r\n1500012743961: '[webform_submission:values:report_location:place_name]'\r\n1500013095781: '[webform_submission:uuid]'\r\n9205221816983: '[webform_submission:values:report_location:location_type:raw]'\r\n13178808571927: '[webform_submission:computed_priority]'\r\n5873224754071: '[webform_submission:values:report_location:location_details]'\r\n"
+      custom_fields: "6353388345367: 'report_park_issue'\r\n5581480390679: '[webform_submission:values:report_location:location_lat|default(\"\")]'\r\n5581490332439: '[webform_submission:values:report_location:location_lon|default(\"\")]'\r\n13407901552407: '[webform_submission:values:report_location:location_x|default(\"\")]'\r\n13407918835095: '[webform_submission:values:report_location:location_y|default(\"\")]'\r\n1500012743961: '[webform_submission:values:report_location:place_name|default([webform_submission:values:report_community_center|default(\"\")])]'\r\n1500013095781: '[webform_submission:uuid]'\r\n9205221816983: '[webform_submission:values:report_location:location_type:raw|default(\"\")]'\r\n13178808571927: '[webform_submission:computed_priority]'\r\n5873224754071: '[webform_submission:values:report_location:location_details|default(\"\")]'"
       ticket_id_field: report_ticket_id
       ticket_form_id: '13176953771287'
   zendesk_new_request_normal_priority:
@@ -1047,7 +1078,7 @@ handlers:
       assignee_id: ''
       type: incident
       collaborators: ''
-      custom_fields: "6353388345367: 'report_park_issue'\r\n5581480390679: '[webform_submission:values:report_location:location_lat]'\r\n5581490332439: '[webform_submission:values:report_location:location_lon]'\r\n13407901552407: '[webform_submission:values:report_location:location_x]'\r\n13407918835095: '[webform_submission:values:report_location:location_y]'\r\n1500012743961: '[webform_submission:values:report_location:place_name]'\r\n1500013095781: '[webform_submission:uuid]'\r\n9205221816983: '[webform_submission:values:report_location:location_type:raw]'\r\n13178808571927: '[webform_submission:computed_priority]'\r\n5873224754071: '[webform_submission:values:report_location:location_details]'\r\n"
+      custom_fields: "6353388345367: 'report_park_issue'\r\n5581480390679: '[webform_submission:values:report_location:location_lat|default(\"\")]'\r\n5581490332439: '[webform_submission:values:report_location:location_lon|default(\"\")]'\r\n13407901552407: '[webform_submission:values:report_location:location_x|default(\"\")]'\r\n13407918835095: '[webform_submission:values:report_location:location_y|default(\"\")]'\r\n1500012743961: '[webform_submission:values:report_location:place_name|default([webform_submission:values:report_community_center|default(\"\")])]'\r\n1500013095781: '[webform_submission:uuid]'\r\n9205221816983: '[webform_submission:values:report_location:location_type:raw|default(\"\")]'\r\n13178808571927: '[webform_submission:computed_priority]'\r\n5873224754071: '[webform_submission:values:report_location:location_details|default(\"\")]'"
       ticket_id_field: report_ticket_id
       ticket_form_id: '13176953771287'
   zendesk_new_request_urgent_priority:
@@ -1075,7 +1106,7 @@ handlers:
       assignee_id: ''
       type: incident
       collaborators: ''
-      custom_fields: "6353388345367: 'report_park_issue'\r\n5581480390679: '[webform_submission:values:report_location:location_lat]'\r\n5581490332439: '[webform_submission:values:report_location:location_lon]'\r\n13407901552407: '[webform_submission:values:report_location:location_x]'\r\n13407918835095: '[webform_submission:values:report_location:location_y]'\r\n1500012743961: '[webform_submission:values:report_location:place_name]'\r\n1500013095781: '[webform_submission:uuid]'\r\n9205221816983: '[webform_submission:values:report_location:location_type:raw]'\r\n13178808571927: '[webform_submission:computed_priority]'\r\n5873224754071: '[webform_submission:values:report_location:location_details]'\r\n"
+      custom_fields: "6353388345367: 'report_park_issue'\r\n5581480390679: '[webform_submission:values:report_location:location_lat|default(\"\")]'\r\n5581490332439: '[webform_submission:values:report_location:location_lon|default(\"\")]'\r\n13407901552407: '[webform_submission:values:report_location:location_x|default(\"\")]'\r\n13407918835095: '[webform_submission:values:report_location:location_y|default(\"\")]'\r\n1500012743961: '[webform_submission:values:report_location:place_name|default([webform_submission:values:report_community_center|default(\"\")])]'\r\n1500013095781: '[webform_submission:uuid]'\r\n9205221816983: '[webform_submission:values:report_location:location_type:raw|default(\"\")]'\r\n13178808571927: '[webform_submission:computed_priority]'\r\n5873224754071: '[webform_submission:values:report_location:location_details|default(\"\")]'"
       ticket_id_field: report_ticket_id
       ticket_form_id: '13176953771287'
   zendesk_update_customer_support_interaction_request_handler:
@@ -1138,10 +1169,8 @@ handlers:
     status: true
     conditions:
       enabled:
-        ':input[name="computed_priority"]':
-          value: priority_urgent
         ':input[name="report_issue_type[radios]"]':
-          '!value': maintenance
+          value: maintenance
     weight: 5
     settings:
       requester_name: contact_name
@@ -1155,7 +1184,7 @@ handlers:
       assignee_id: ''
       type: incident
       collaborators: ''
-      custom_fields: "6353388345367: 'report_park_issue'\r\n5581480390679: '[webform_submission:values:report_location:location_lat]'\r\n5581490332439: '[webform_submission:values:report_location:location_lon]'\r\n13407901552407: '[webform_submission:values:report_location:location_x]'\r\n13407918835095: '[webform_submission:values:report_location:location_y]'\r\n1500012743961: '[webform_submission:values:report_location:place_name]'\r\n1500013095781: '[webform_submission:uuid]'\r\n9205221816983: '[webform_submission:values:report_location:location_type:raw]'\r\n13178808571927: '[webform_submission:computed_priority]'\r\n5873224754071: '[webform_submission:values:report_location:location_details]'\r\n"
+      custom_fields: "6353388345367: 'report_park_issue'\r\n5581480390679: '[webform_submission:values:report_location:location_lat|default(\"\")]'\r\n5581490332439: '[webform_submission:values:report_location:location_lon|default(\"\")]'\r\n13407901552407: '[webform_submission:values:report_location:location_x|default(\"\")]'\r\n13407918835095: '[webform_submission:values:report_location:location_y|default(\"\")]'\r\n1500012743961: '[webform_submission:values:report_location:place_name|default([webform_submission:values:report_community_center|default(\"\")])]'\r\n1500013095781: '[webform_submission:uuid]'\r\n9205221816983: '[webform_submission:values:report_location:location_type:raw|default(\"\")]'\r\n13178808571927: '[webform_submission:computed_priority]'\r\n5873224754071: '[webform_submission:values:report_location:location_details|default(\"\")]'"
       ticket_id_field: report_ticket_id
       ticket_form_id: '13176953771287'
 variants: {  }
