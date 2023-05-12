@@ -13,6 +13,7 @@ use Drupal\Core\Mail\MailManagerInterface;
 use Drupal\Component\Utility\SafeMarkup;
 use Drupal\Component\Utility\Html;
 use Drupal\views\Render\ViewsRenderPipelineMarkup;
+use Drupal\Core\Language\LanguageInterface;
 
 // This file concerns itself with setting up tokens with hooks
 include 'portland.tokens.inc';
@@ -61,7 +62,7 @@ function portland_group_presave(GroupInterface $group)
     }
     $alias = "/$cleangroup_path";
     $gid = $group->id();
-    $lang = \Drupal::languageManager()->getCurrentLanguage()->getId();
+    $lang = \Drupal::languageManager()->getCurrentLanguage(LanguageInterface::TYPE_CONTENT)->getId();
     // Update the group path when we have alias conflict
     \Drupal::service("pathauto.alias_uniquifier")->uniquify($alias, "/group/$gid", $lang);
     $group->set('field_group_path', substr($alias, 1)); // Remove the first character "/"
@@ -282,6 +283,8 @@ function portland_entity_insert($entity)
  * @see PGOV-880
  */
 function _remove_file_usage_from_previous_revision($entity) {
+  // Get the language of the content that the editor is modifying
+  $langcode = \Drupal::languageManager()->getCurrentLanguage(LanguageInterface::TYPE_CONTENT)->getId();
   $entity_type_id = $entity->getEntityTypeId();
   // We only want to affect revisionable nodes & media
   if (($entity_type_id !== 'node' && $entity_type_id !== 'media')
@@ -295,7 +298,9 @@ function _remove_file_usage_from_previous_revision($entity) {
       ->sort('vid', 'DESC')
       ->range(1, 1)
       ->execute());
-  $previous_revision = $entity_storage->loadRevision($previous_vid);
+  if (empty($previous_vid)) return;
+
+  $previous_revision = $entity_storage->loadRevision($previous_vid)->getTranslation($langcode);
   foreach ($previous_revision->getFields() as $field) {
     if ($field instanceof \Drupal\file\Plugin\Field\FieldType\FileFieldItemList) {
       foreach ($field as $item) {
