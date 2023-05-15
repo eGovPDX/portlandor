@@ -13,6 +13,8 @@ use Drupal\Core\Mail\MailManagerInterface;
 use Drupal\Component\Utility\SafeMarkup;
 use Drupal\Component\Utility\Html;
 use Drupal\views\Render\ViewsRenderPipelineMarkup;
+use Drupal\Core\Language\LanguageInterface;
+use Drupal\file\Plugin\Field\FieldType\FileFieldItemList;
 
 // This file concerns itself with setting up tokens with hooks
 include 'portland.tokens.inc';
@@ -61,7 +63,7 @@ function portland_group_presave(GroupInterface $group)
     }
     $alias = "/$cleangroup_path";
     $gid = $group->id();
-    $lang = \Drupal::languageManager()->getCurrentLanguage()->getId();
+    $lang = \Drupal::languageManager()->getCurrentLanguage(LanguageInterface::TYPE_CONTENT)->getId();
     // Update the group path when we have alias conflict
     \Drupal::service("pathauto.alias_uniquifier")->uniquify($alias, "/group/$gid", $lang);
     $group->set('field_group_path', substr($alias, 1)); // Remove the first character "/"
@@ -272,35 +274,54 @@ function portland_entity_insert($entity)
 }
 
 /**
+ * Background: when an entity is revisionable, the files from any past revisions count
+ * towards the usage for that file. In our use-case, this behavior is undesirable. We want
+ * to purge the files from any old revisions in order to save storage space.
+ * Revisions should only be used to view content changes and see the authoring user/time.
+ *
+ * By purging the usage from files in past revisions, we ensure they get marked as temporary.
+ *
+ * @see PGOV-880
+ */
+function _remove_file_usage_from_previous_revision($entity) {
+  // Get the language of the content that the editor is modifying
+  $langcode = \Drupal::languageManager()->getCurrentLanguage(LanguageInterface::TYPE_CONTENT)->getId();
+  $entity_type_id = $entity->getEntityTypeId();
+  // We only want to affect revisionable nodes & media
+  if (($entity_type_id !== 'node' && $entity_type_id !== 'media')
+    || !$entity->getEntityType()->isRevisionable()) return;
+
+  $entity_storage = \Drupal::entityTypeManager()->getStorage($entity_type_id);
+  // Retrieve the revision before this one
+  $previous_vid = key($entity_storage->getQuery()
+      ->allRevisions()
+      ->condition($entity_type_id === 'node' ? 'nid' : 'mid', $entity->id())
+      ->sort('vid', 'DESC')
+      ->range(1, 1)
+      ->execute());
+  if (empty($previous_vid)) return;
+
+  $previous_revision = $entity_storage->loadRevision($previous_vid)->getTranslation($langcode);
+  foreach ($previous_revision->getFields() as $field) {
+    if ($field instanceof FileFieldItemList) {
+      foreach ($field as $item) {
+        $file = $item->entity;
+        // Remove 1 usage count from the old revision's file.
+        // If the new revision still uses the old file, the new revision will be the source of usage for the file.
+        // If the new revision uses a new file, the old revision will no longer be a source of usage,
+        // allowing the file to be marked as temporary and get deleted.
+        if ($file) \Drupal::service('file.usage')->delete($file, 'file', $entity_type_id, $entity->id(), 1);
+      }
+    }
+  }
+}
+
+/**
  * Implements hook_entity_update().
  */
 function portland_entity_update($entity)
 {
-  // if ($entity->bundle() == 'document') {
-  //   // Get the file ID of the latest revision
-  //   $media_storage = \Drupal::entityTypeManager()->getStorage('media');
-  //   $latest_revision_id = $media_storage->getLatestRevisionId($entity->id());
-  //   $latest_file_id = $media_storage->loadRevision($latest_revision_id)->field_document->target_id;
-
-  //   // Load all revisions and their file IDs
-  //   $conn = \Drupal\Core\Database\Database::getConnection();
-  //   $query = $conn->select('media_revision__field_document', 'media_revision__field_document');
-  //   $query->condition('media_revision__field_document.entity_id', $entity->id(), '=');
-  //   $query->fields('media_revision__field_document', ['revision_id', 'field_document_target_id']);
-  //   $result = $query->execute();
-
-  //   // Delete all but the latest revision
-  //   foreach ($result as $row) {
-  //     if ($row->revision_id == $latest_revision_id) continue;
-  //     // Delete the associated file if it's not used in the latest revision
-  //     if ($row->field_document_target_id != $latest_file_id) {
-  //       $file_storage = \Drupal::entityTypeManager()->getStorage('file');
-  //       $file = $file_storage->load($row->field_document_target_id);
-  //       if($file) $file_storage->delete([$file]);
-  //     }
-  //     $media_storage->deleteRevision($row->revision_id);
-  //   }
-  // }
+  _remove_file_usage_from_previous_revision($entity);
   _notify_reviewer($entity, 'updated');
 }
 
@@ -607,7 +628,7 @@ function portland_search_api_solr_query_alter(\Solarium\QueryType\Select\Query\Q
     "and",
     "and",
     // See https://www.php.net/manual/en/function.preg-replace.php
-    // If there are fewer elements in the replacement array than in the pattern array, any extra patterns will be replaced by an empty string. 
+    // If there are fewer elements in the replacement array than in the pattern array, any extra patterns will be replaced by an empty string.
   ], $keys);
 
   if(empty($keys)) {
