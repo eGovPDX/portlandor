@@ -619,7 +619,8 @@ elements: |-
     '#states':
       visible:
         ':input[name="permit_type"]':
-          value: complex
+          value:
+            pattern: complex
     '#admin_title': 'Complex Permit'
     markup_complex_permit_introduction:
       '#type': processed_text
@@ -961,6 +962,9 @@ elements: |-
             '!value': unknown
     '#wrapper_attributes':
       style: 'background-color: #ccc; padding: 15px;'
+    '#access_create_roles':
+      - support_agent
+      - administrator
   permit_type:
     '#type': webform_computed_twig
     '#title': 'Computed permit type'
@@ -978,7 +982,11 @@ elements: |-
           {% set permit_type = "7day" %}
         {% endif %}
       {% elseif data.wizard_permit_need == "traffic" %}
-        {% set permit_type = "complex" %}
+        {% if data.permit_date_span >= 28 %}
+          {% set permit_type = "lt_complex" %}
+        {% else %}
+          {% set permit_type = "complex" %}
+        {% endif %}
       {% elseif data.wizard_permit_need == "existing_permit" %}
         {% set permit_type = "existing_permit" %}
         {% if data.wizard_existing_permit_situation == "change" %}
@@ -1006,7 +1014,7 @@ elements: |-
       {% elseif data.permit_type == "7day" %}
         <p>Thank you for submitting a 7 Day Non-Metered Parking Use application. You will receive an email with your Item # and a link to the online invoice. Once the invoice has been paid, you will be able to access the PERMIT ID CARD and NO PARKING SIGNS.</p>
         <p>If you have any questions, please contact us at <a href="mailto:CPAC@portlandoregon.gov">CPAC@portlandoregon.gov</a> or <a href="tel:+1-503-823-7365">503-823-7365</a>.</p>
-      {% elseif data.permit_type == "complex" %}
+      {% elseif data.permit_type == "complex" or data.permit_type == "lt_complex" %}
         <p>Your Complex TSUP Application has been submitted, we will contact you shortly with a price and payment date. If the application is incomplete, you will be contacted for additional information.</p>
         <p>If you are impacting a Sidewalk or Lane and your work is along a TriMet transit route, you are required to notify them at least five business days in advance of your work. Email TriMet at <a href="mailto:foc@trimet.org">foc@trimet.org</a> or call them at <a href="tel:+1-503-962-4949">503-962-4949</a>.</p>
         <p><strong>Due to processing times and parking enforcement logistics, your permit may not be valid for up to 15 business days. If the application is incomplete, you will be contacted for additional information.</strong></p>
@@ -1022,11 +1030,43 @@ elements: |-
         <p>To cancel or make changes to your application, please submit a Change Request form. We will do our best to accommodate your change request.</p>
         <p>If you have not heard back from us about this submission within 5 business days, please first check your SPAM folder, and then contact us at <a href="mailto:CPAC@portlandoregon.gov">CPAC@portlandoregon.gov</a> or <a href="tel:+1-503-823-7365">503-823-7365</a>.</p>
       {% endif %}
+  computed_num_spaces:
+    '#type': webform_computed_twig
+    '#title': 'Computed number of parking spaces'
+    '#display_on': none
+    '#mode': text
+    '#template': '{{ data.complex_permit_parking_spaces_affected|default(permit_amount_20ft_spaces) }}'
+    '#whitespace': trim
+    '#store': true
+  computed_date_start:
+    '#type': webform_computed_twig
+    '#title': 'Computed date start'
+    '#display_on': none
+    '#mode': text
+    '#template': '{{ (data.permit_date_start or data.renewal_request_permit_date_start) ? data.permit_date_start|default(data.renewal_request_permit_date_start)|date(''Y-m-d'') : '''' }}'
+    '#whitespace': trim
+    '#store': true
+  computed_ivr_number:
+    '#type': webform_computed_twig
+    '#title': 'Computed IVR number'
+    '#display_on': none
+    '#mode': text
+    '#template': '{{ data.complex_permit_bds_associated|default(data.simple_permit_bds_associated)|default(data.change_request_id) }}'
+    '#whitespace': trim
+    '#store': true
   report_ticket_id:
     '#type': hidden
     '#title': 'Report Ticket Id'
+  computed_date_end:
+    '#type': webform_computed_twig
+    '#title': 'Computed date end'
+    '#display_on': none
+    '#mode': text
+    '#template': '{{ (data.permit_date_end or data.renewal_request_permit_date_end) ? data.permit_date_end|default(data.renewal_request_permit_date_end)|date(''Y-m-d'') : '''' }}'
+    '#whitespace': trim
+    '#store': true
 css: ''
-javascript: "(function($, Drupal) {\r\n    Drupal.behaviors.tsupDateCalculator = {\r\n        attach() {\r\n            function calculateDate() { \r\n\t\t\t\tconst isDateSame = (a, b) =>\r\n\t\t\t\t\ta.getFullYear() === b.getFullYear() &&\r\n\t\t\t\t\ta.getMonth() === b.getMonth() &&\r\n\t\t\t\t\ta.getDate() === b.getDate();\r\n\t\t\t\tconst mapOfRadioOptionToDayNums = {\r\n\t\t\t\t\t\"mon_fri\": [1, 2, 3, 4, 5],\r\n\t\t\t\t\t\"all_days\": [0, 1, 2, 3, 4, 5, 6],\r\n\t\t\t\t};\r\n\t\t\t\tconst permitType = $(\"input[name='permit_type']\").val();\r\n\t\t\t\tconst isMetered = $(\"input[name='permit_location_metered']\").val() === \"true\";\r\n\t\t\t  \r\n\t\t\t\tconst startDateOffsetDays = permitType === \"complex\"\r\n\t\t\t\t\t? 12\r\n\t\t\t\t\t: (isMetered ? 3 : 4);\r\n\t\t\t\tconst earliestStartDate = new Date();\r\n\t\t\t\tearliestStartDate.setDate(earliestStartDate.getDate() + startDateOffsetDays);\r\n\t\t\t\t$(\".earliest-start-date\").text(earliestStartDate.toLocaleDateString());\r\n                \r\n                // the input \"min\" attribute needs to be in yyyy-mm-dd format, this gives us the ISO string in that format, in the user's current timezone\r\n                const earliestStartDateMinValue = new Date(earliestStartDate.getTime() - earliestStartDate.getTimezoneOffset() * 60000).toISOString().split(\"T\")[0];\r\n                $(\"input[name='permit_date_start'], input[name='permit_date_end']\").attr(\"min\", earliestStartDateMinValue);\r\n\t\t\t\r\n\t\t\t\tconst daysOfWeek = mapOfRadioOptionToDayNums[$(\"input[name*='permit_date_days_of_week']:checked\").val()] || [];\r\n\t\t\t\tconst startValue = $(\"input[name='permit_date_start']\").val();\r\n\t\t\t\tconst endValue = $(\"input[name='permit_date_end']\").val()\r\n\t\t\t\tif (!startValue || !endValue) return;\r\n\t\t\t\r\n\t\t\t\tconst startDate = new Date(startValue + \"T00:00\");\r\n\t\t\t\tconst endDate = new Date(endValue + \"T00:00\");\r\n\t\t\t\tif (startDate.getTime() > endDate.getTime()) return;\r\n\t\t\t\r\n\t\t\t\tlet amtDays = 0;\r\n\t\t\t\tif (!isMetered || daysOfWeek.includes(startDate.getDay())) amtDays++;\r\n\t\t\t\r\n\t\t\t\tconst curDate = new Date(startValue + \"T00:00\");\r\n\t\t\t\twhile (!isDateSame(curDate, endDate)) {\r\n\t\t\t\t\tcurDate.setDate(curDate.getDate() + 1);\r\n\t\t\t\r\n\t\t\t\t\tif (!isMetered || daysOfWeek.includes(curDate.getDay())) amtDays++;\r\n\t\t\t\t}\r\n\t\t\t\t\r\n\t\t\t\t$(\"input[name='permit_date_span']\").val(amtDays);\r\n\t\t\t\t$(\"input[name='permit_date_span']\").trigger(\"change\")\r\n\t\t\t\t$(\".days-requested\").text(amtDays === 1 ? \"1 day\" : `${amtDays} days`);\r\n\t\t\t\r\n\t\t\t\tconst amtWeeks = Math.ceil(amtDays / 7);\r\n\t\t\t\t$(\".weeks-requested\").text(amtWeeks === 1 ? \"1 week\" : `${amtWeeks} weeks`);\r\n\t\t\t}\r\n\t\t\t\r\n\t\t\t$(document).ajaxComplete(function() {\r\n\t\t\t\t$(\"input[name='permit_date_start'], input[name='permit_date_end'], input[name='permit_date_days_of_week']\").change(calculateDate);\r\n\t\t\t\tcalculateDate();\r\n\t\t\t});\r\n\t\t}\r\n    };\r\n})(jQuery, Drupal);\r\n"
+javascript: "(function($, Drupal) {\r\n    Drupal.behaviors.tsupDateCalculator = {\r\n        attach() {\r\n            const isDateSame = (a, b) =>\r\n                a.getFullYear() === b.getFullYear() &&\r\n                a.getMonth() === b.getMonth() &&\r\n                a.getDate() === b.getDate();\r\n            const mapOfRadioOptionToDayNums = {\r\n                \"mon_fri\": [1, 2, 3, 4, 5],\r\n                \"all_days\": [0, 1, 2, 3, 4, 5, 6],\r\n            };\r\n          \r\n            function calculateDate() { \r\n\t\t\t\tconst permitType = $(\"input[name='permit_type']\").val();\r\n\t\t\t\tconst isMetered = $(\"input[name='permit_location_metered']\").val() === \"true\";\r\n\t\t\t  \r\n\t\t\t\tconst startDateOffsetDays = permitType.includes(\"complex\")\r\n\t\t\t\t\t? 12\r\n\t\t\t\t\t: (isMetered ? 3 : 4);\r\n\t\t\t\tconst earliestStartDate = new Date();\r\n\t\t\t\tearliestStartDate.setDate(earliestStartDate.getDate() + startDateOffsetDays);\r\n\t\t\t\t$(\".earliest-start-date\").text(earliestStartDate.toLocaleDateString());\r\n                \r\n                // the input \"min\" attribute needs to be in yyyy-mm-dd format, this gives us the ISO string in that format, in the user's current timezone\r\n                const earliestStartDateMinValue = new Date(earliestStartDate.getTime() - earliestStartDate.getTimezoneOffset() * 60000).toISOString().split(\"T\")[0];\r\n                $(\"input[name='permit_date_start'], input[name='permit_date_end']\").attr(\"min\", earliestStartDateMinValue);\r\n\t\t\t\r\n\t\t\t\tconst daysOfWeek = mapOfRadioOptionToDayNums[$(\"input[name*='permit_date_days_of_week']:checked\").val()] || [];\r\n\t\t\t\tconst startValue = $(\"input[name='permit_date_start']\").val();\r\n\t\t\t\tconst endValue = $(\"input[name='permit_date_end']\").val()\r\n\t\t\t\tif (!startValue || !endValue) return;\r\n\t\t\t\r\n\t\t\t\tconst startDate = new Date(startValue + \"T00:00\");\r\n\t\t\t\tconst endDate = new Date(endValue + \"T00:00\");\r\n\t\t\t\tif (startDate.getTime() > endDate.getTime()) return;\r\n\t\t\t\r\n\t\t\t\tlet amtDays = 0;\r\n\t\t\t\tif (!isMetered || daysOfWeek.includes(startDate.getDay())) amtDays++;\r\n\t\t\t\r\n\t\t\t\tconst curDate = new Date(startValue + \"T00:00\");\r\n\t\t\t\twhile (!isDateSame(curDate, endDate)) {\r\n\t\t\t\t\tcurDate.setDate(curDate.getDate() + 1);\r\n\t\t\t\r\n\t\t\t\t\tif (!isMetered || daysOfWeek.includes(curDate.getDay())) amtDays++;\r\n\t\t\t\t}\r\n\t\t\t\t\r\n\t\t\t\t$(\"input[name='permit_date_span']\").val(amtDays);\r\n\t\t\t\t$(\"input[name='permit_date_span']\").trigger(\"change\")\r\n\t\t\t\t$(\".days-requested\").text(amtDays === 1 ? \"1 day\" : `${amtDays} days`);\r\n\t\t\t\r\n\t\t\t\tconst amtWeeks = Math.ceil(amtDays / 7);\r\n\t\t\t\t$(\".weeks-requested\").text(amtWeeks === 1 ? \"1 week\" : `${amtWeeks} weeks`);\r\n\t\t\t}\r\n\t\t\t\r\n\t\t\t$(document).ajaxComplete(function() {\r\n\t\t\t\t$(\"input[name='permit_date_start'], input[name='permit_date_end'], input[name='permit_date_days_of_week']\").change(calculateDate);\r\n\t\t\t\tcalculateDate();\r\n\t\t\t});\r\n\t\t}\r\n    };\r\n})(jQuery, Drupal);\r\n"
 settings:
   ajax: true
   ajax_scroll_top: form
@@ -1237,7 +1277,7 @@ handlers:
       assignee_id: ''
       type: incident
       collaborators: ''
-      custom_fields: "6353388345367: 'apply_tsup'\r\n1500013095781: '[webform_submission:uuid]'\r\n12281632679959: '12281632679959_[webform_submission:values:permit_type]'\r\n1900004448785: '[webform_submission:values:contact_company]'\r\n12280609857559: '[webform_submission:values:change_request_id]'\r\n12280802285079: ''\r\n12281351917847: '[webform_submission:values:simple_permit_reason]'\r\n5581480390679: '[webform_submission:values:permit_location:location_lat]'\r\n5581490332439: '[webform_submission:values:permit_location:location_lon]'\r\n1500012743961: '[webform_submission:values:permit_location:location_address]'\r\n9205221816983: '[webform_submission:values:permit_location:location_type:raw]'\r\n12281548831383: '[webform_submission:values:complex_permit_closure_type]'\r\n"
+      custom_fields: "6353388345367: 'apply_tsup'\r\n1500013095781: '[webform_submission:uuid]'\r\n12281632679959: '12281632679959_[webform_submission:values:permit_type]'\r\n1900004448785: '[webform_submission:values:contact_company]'\r\n12280609857559: '[webform_submission:values:computed_ivr_number]'\r\n12281140173719: '[webform_submission:values:computed_num_spaces]'\r\n12280733221015: '[webform_submission:values:computed_date_start]'\r\n12280737894935: '[webform_submission:values:computed_date_end]'\r\n12281351917847: '12281351917847_[webform_submission:values:7day_permit_reason]'\r\n5581480390679: '[webform_submission:values:permit_location:location_lat]'\r\n5581490332439: '[webform_submission:values:permit_location:location_lon]'\r\n13407901552407: '[webform_submission:values:permit_location:location_x]'\r\n13407918835095: '[webform_submission:values:permit_location:location_y]'\r\n1500012743961: '[webform_submission:values:permit_location:location_address]'\r\n9205221816983: '[webform_submission:values:permit_location:location_type:raw]'\r\n12281548831383: '[webform_submission:values:complex_permit_closure_type]'\r\n14564469123095: '[webform_submission:values:permit_location_metered]'\r\n\r\n"
       ticket_id_field: report_ticket_id
       ticket_form_id: '12280613877783'
   create_new_zendesk_request_developer_test:
@@ -1265,7 +1305,7 @@ handlers:
       assignee_id: ''
       type: incident
       collaborators: ''
-      custom_fields: "6353388345367: 'apply_tsup'\r\n1500013095781: '[webform_submission:uuid]'\r\n12281632679959: '12281632679959_[webform_submission:values:permit_type]'\r\n1900004448785: '[webform_submission:values:contact_company]'\r\n12280609857559: '[webform_submission:values:change_request_id]'\r\n12280802285079: ''\r\n12281351917847: '[webform_submission:values:simple_permit_reason]'\r\n5581480390679: '[webform_submission:values:permit_location:location_lat]'\r\n5581490332439: '[webform_submission:values:permit_location:location_lon]'\r\n1500012743961: '[webform_submission:values:permit_location:location_address]'\r\n9205221816983: '[webform_submission:values:permit_location:location_type:raw]'\r\n12281548831383: '[webform_submission:values:complex_permit_closure_type]'\r\n"
+      custom_fields: "6353388345367: 'apply_tsup'\r\n1500013095781: '[webform_submission:uuid]'\r\n12281632679959: '12281632679959_[webform_submission:values:permit_type]'\r\n1900004448785: '[webform_submission:values:contact_company]'\r\n12280609857559: '[webform_submission:values:computed_ivr_number]'\r\n12281140173719: '[webform_submission:values:computed_num_spaces]'\r\n12280733221015: '[webform_submission:values:computed_date_start]'\r\n12280737894935: '[webform_submission:values:computed_date_end]'\r\n12281351917847: '12281351917847_[webform_submission:values:7day_permit_reason]'\r\n5581480390679: '[webform_submission:values:permit_location:location_lat]'\r\n5581490332439: '[webform_submission:values:permit_location:location_lon]'\r\n13407901552407: '[webform_submission:values:permit_location:location_x]'\r\n13407918835095: '[webform_submission:values:permit_location:location_y]'\r\n1500012743961: '[webform_submission:values:permit_location:location_address]'\r\n9205221816983: '[webform_submission:values:permit_location:location_type:raw]'\r\n12281548831383: '[webform_submission:values:complex_permit_closure_type]'\r\n14564469123095: '[webform_submission:values:permit_location_metered]'\r\n\r\n"
       ticket_id_field: report_ticket_id
       ticket_form_id: '12280613877783'
   zendesk_general:
