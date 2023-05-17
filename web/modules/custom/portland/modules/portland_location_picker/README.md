@@ -121,29 +121,31 @@ The two types of behavior for assets are informational and selection. At present
 
 These properties are set in the Advanced tab of the Location Picker element. Data is entered in YAML format.
 
-- ***primary_layer_source*** - Sets the URL path to the geoJSON feed for the primary layer
+- ***address_behavior*** - Determines the behavior of the address field; default is verify (verify|find). Verify behavior causes the verified address to be centered and zoomed on the map, with a pin auto-set. Find centers and zooms on the map but does not set a pin; validation requires user to then click to set the pin.
 
-- ***incidents_layer_source*** - Sets the URL path to the geoJSON feed for the incidents layer
+- ***primary_layer_source*** - Sets the URL path to the geoJSON feed for the primary layer.
 
-- ***regions_layer_source*** - Sets the URL path to the geoJSON feed for the regions layer
+- ***incidents_layer_source*** - Sets the URL path to the geoJSON feed for the incidents layer.
 
-- ***primary_layer_type*** - Sets the type of the primary layer, (asset|incident|region)
+- ***regions_layer_source*** - Sets the URL path to the geoJSON feed for the regions layer.
 
-- ***primary_layer_behavior*** - Sets the behavior of the primary layer (information|selection|selection-only|geofencing)
+- ***primary_layer_type*** - Sets the type of the primary layer, (asset|incident|region).
 
-- ***primary_marker*** - The URL path to a custom icon image for features on the primary layer; the default is a basic gray map marker
+- ***primary_layer_behavior*** - Sets the behavior of the primary layer (information|selection|selection-only|geofencing).
 
-- ***selected_marker*** - The URL path to a custom icon image that's used for assets after they've been selected by the user, or when they click the map to specify the location of a new issue; the default is a basic blue map marker
+- ***primary_marker*** - The URL path to a custom icon image for features on the primary layer; the default is a basic gray map marker.
 
-- ***incident_marker*** - The URL path to a custom icon image for standalone incidents or assets that have an associated incident; the default is a red map marker with an exclamation point
+- ***selected_marker*** - The URL path to a custom icon image that's used for assets after they've been selected by the user, or when they click the map to specify the location of a new issue; the default is a basic blue map marker.
 
-- ***disable_popup*** - Disables asset and incident popups if any value is set in the property (not currently implemented) 
+- ***incident_marker*** - The URL path to a custom icon image for standalone incidents or assets that have an associated incident; the default is a red map marker with an exclamation point.
 
-- ***verify_button_text*** - Overrides the default "Verify" label in the widget used for verifying or finding an address
+- ***disable_popup*** - Disables asset and incident popups if any value is set in the property (not currently implemented).
 
-- ***primary_feature_name*** - Overrides the name/label used to describe features on the primary layer; default is "asset" (not currently implemented)
+- ***verify_button_text*** - Overrides the default "Verify" label in the widget used for verifying or finding an address.
 
-- ***feature_layer_visible_zoom*** - The minimum zoom level at which geoJSON features are displayed; the map gets laggy if too many are displayed at once; default value is 16 (maximum is 18 for full zoom)
+- ***primary_feature_name*** - Overrides the name/label used to describe features on the primary layer; default is "asset" (not currently implemented).
+
+- ***feature_layer_visible_zoom*** - The minimum zoom level at which geoJSON features are displayed; the map gets laggy if too many are displayed at once; default value is 16 (maximum is 18 for full zoom).
 
 - ***display_city_limits*** - When TRUE, the city limits border is displayed. Default is TRUE.
 

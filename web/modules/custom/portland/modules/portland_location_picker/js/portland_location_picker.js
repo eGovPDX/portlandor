@@ -105,6 +105,7 @@
         var AerialControl = generateAerialControl();
 
         // CUSTOM PROPERTIES SET IN WEBFORM CONFIG //////////
+        var addressBehavior = drupalSettings.webform.portland_location_picker.address_behavior ? drupalSettings.webform.portland_location_picker.address_behavior : 'Verify';
         var elementId = drupalSettings.webform.portland_location_picker.element_id;
         var primaryLayerSource = drupalSettings.webform.portland_location_picker.primary_layer_source;
         var incidentsLayerSource = drupalSettings.webform.portland_location_picker.incidents_layer_source;
@@ -115,7 +116,7 @@
         var selectedMarker = drupalSettings.webform.portland_location_picker.selected_marker ? drupalSettings.webform.portland_location_picker.selected_marker : '/modules/custom/portland/modules/portland_location_picker/images/map_marker_default_selected.png';
         var incidentMarker = drupalSettings.webform.portland_location_picker.incident_marker ? drupalSettings.webform.portland_location_picker.incident_marker : '/modules/custom/portland/modules/portland_location_picker/images/map_marker_incident.png';
         var disablePopup = drupalSettings.webform.portland_location_picker.disable_popup ? true : false;
-        var verifyButtonText = drupalSettings.webform.portland_location_picker.verify_button_text ? drupalSettings.webform.portland_location_picker.verify_button_text : 'Verify';
+        var verifyButtonText = drupalSettings.webform.portland_location_picker.verify_button_text ? drupalSettings.webform.portland_location_picker.verify_button_text : addressBehavior; // addressBehavior values are Verify or Find, so just use that as label text
         var primaryFeatureName = drupalSettings.webform.portland_location_picker.primary_feature_name ? drupalSettings.webform.portland_location_picker.primary_feature_name : 'asset';
         var featureLayerVisibleZoom = drupalSettings.webform.portland_location_picker.feature_layer_visible_zoom ? drupalSettings.webform.portland_location_picker.feature_layer_visible_zoom : FEATURE_LAYER_VISIBLE_ZOOM;
         var requireCityLimits = drupalSettings.webform.portland_location_picker.require_city_limits === false ? false : true;
@@ -210,8 +211,17 @@
           }
   
           // Set up address verify button
-          $('.location-picker-address').after(`<input class="btn location-verify button js-form-submit form-submit" type="button" id="location_verify" name="op" value="${verifyButtonText}">`);
+          if (addressBehavior == "Verify") {
+            // if address behavior is Verify, output the standard Verify button.
+            $('.location-picker-address').after(`<input class="btn location-verify button js-form-submit form-submit" type="button" id="location_verify" name="location-verify" value="${verifyButtonText}">`);
+          } else {
+            // if address behavior is Find, output the button as Find for sighted users, and Verify for non-sighted users
+            $('.location-picker-address').after(`<input class="btn location-verify button js-form-submit form-submit" type="button" id="location_verify" name="location-verify" aria-hidden="true" value="${verifyButtonText}">`);
+            $('.location-picker-address').after(`<input class="btn location-verify button js-form-submit form-submit visually-hidden" type="button" id="location_verify_sr" name="location-verify-sr" value="${verifyButtonText}">`);
+          }
           $('.location-picker-address').after('<span class="verified-checkmark address invisible" title="Location is verified!">✓</span>');
+
+          // click handlers for the location_verify and location_verify_sr buttons; alternate behaviors are defined in verifyAddressPortlandMaps(address);
           $(document).on('click', '#location_verify', function (e) {
             e.preventDefault();
             // Portland Maps API for location suggestions doesn't work property when an ampersand is used to identify intersections
@@ -219,6 +229,15 @@
             if (address.length < 1) { showStatusModal("Please enter an address or cross streets and try again."); return false; }
             verifyAddressPortlandMaps(address);
           });
+          // TODO: condense this inefficient duplication
+          $(document).on('click', '#location_verify_sr', function (e) {
+            e.preventDefault();
+            // Portland Maps API for location suggestions doesn't work property when an ampersand is used to identify intersections
+            var address = $('.location-picker-address').val().replace("&", "and");
+            if (address.length < 1) { showStatusModal("Please enter an address or cross streets and try again."); return false; }
+            verifyAddressPortlandMaps(address);
+          });
+
           // turn off verified checkmark if value changes
           $('.location-picker-address').on('keyup', function () {
             setUnverified();
@@ -876,7 +895,10 @@
             if (lat && lng) {
               doZoomAndCenter(lat, lng);
               if (primaryLayerBehavior != PRIMARY_LAYER_BEHAVIOR.SelectionOnly) {
-                setLocationMarker(lat, lng);
+                if (addressBehavior == "Verify") {
+                  setLocationMarker(lat, lng);
+                  setVerified();
+                }
               } else {
                 showStatusModal(ASSET_ONLY_SELECTION_MESSAGE);
               }
@@ -885,7 +907,6 @@
               showStatusModal(VERIFIED_NO_COORDS);
             }
 
-            setVerified();
           } else {
             // no matches found
             showStatusModal("No matches found. Please try again.");

@@ -135,6 +135,7 @@ class PortlandLocationPicker extends WebformCompositeBase {
 
     $elementId = $element['#webform_key'];
 
+    $addressBehavior = array_key_exists('#address_behavior', $element) ? $element['#address_behavior'] : "";
     $primaryLayerSource = array_key_exists('#primary_layer_source', $element) ? $element['#primary_layer_source'] : "";
     $incidentsLayerSource = array_key_exists('#incidents_layer_source', $element) ? $element['#incidents_layer_source'] : "";
     $regionsLayerSource = array_key_exists('#regions_layer_source', $element) ? $element['#regions_layer_source'] : "";
@@ -150,6 +151,7 @@ class PortlandLocationPicker extends WebformCompositeBase {
     $requireCityLimits = array_key_exists('#require_city_limits', $element) ? $element['#require_city_limits'] : FALSE;
     $displayCityLimits = array_key_exists('#display_city_limits', $element) ? $element['#display_city_limits'] : TRUE;
 
+    $element['#attached']['drupalSettings']['webform']['portland_location_picker']['address_behavior'] = $addressBehavior;
     $element['#attached']['drupalSettings']['webform']['portland_location_picker']['element_id'] = $elementId;
     $element['#attached']['drupalSettings']['webform']['portland_location_picker']['primary_layer_source'] = $primaryLayerSource;
     $element['#attached']['drupalSettings']['webform']['portland_location_picker']['incidents_layer_source'] = $incidentsLayerSource;

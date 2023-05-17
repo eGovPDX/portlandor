@@ -93,7 +93,7 @@ class PortlandLocationPicker extends WebformCompositeBase {
       '#type' => 'markup',
       '#title' => 'Park instructions',
       '#title_display' => 'invisible',
-      '#markup' => '<p class="webform-element-description description">Please move the marker to the exact spot in the park where the issue was observed.</p>',
+      '#markup' => '<p class="webform-element-description description">Please move the marker to the exact spot in the park you want to report.</p>',
       '#states' => [
         'visible' => [
           ':input[name="' . $element_id . '[location_park]"]' => ['filled' => TRUE],
@@ -126,9 +126,16 @@ class PortlandLocationPicker extends WebformCompositeBase {
       '#id' => 'location_address',
       '#title' => t('Address or Cross Streets'),
       '#attributes' => ['class' => ['location-picker-address'], 'autocomplete' => 'off'],
-      '#description' => t('Enter an address or cross streets of the issue being reported, then click the button to verify the location. Alternately, you may click the map to set the location.'),
+      '#description' => t('Tap/click to set a marker on the map. Please be as accurate as possible.'),
       '#description_display' => 'before',
     ];
+    // $element['location_address_help'] = [
+    //   '#type' => 'markup',
+    //   '#id' => 'location_address_help',
+    //   '#title' => t('Address help text'),
+    //   '#title_display' => 'invisible',
+    //   '#markup' => '<p><strong>IMPORTANT:</strong> Click the map or drag the marker to the desired location.</p>',
+    // ];
     $element['location_map'] = [
       '#type' => 'markup',
       '#id' => 'location_map',
@@ -151,7 +158,7 @@ class PortlandLocationPicker extends WebformCompositeBase {
       '#markup' => '<div id="status_modal" class="visually-hidden"></div>',
     ];
 
-    $location_required_error = "Please select a location by clicking the map, or by entering an address or cross streets above and clicking the Verify button.";
+    $location_required_error = "Please select a location by clicking the map.";
     $primaryLayerBehavior = array_key_exists('#primary_layer_behavior', $element) ? $element['#primary_layer_behavior'] : "";
     $primaryLayerType = array_key_exists('#primary_layer_type', $element) ? $element['#primary_layer_type'] : "";
 
