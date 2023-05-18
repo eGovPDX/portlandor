@@ -13,7 +13,7 @@ use Drupal\filter\Render\FilteredMarkup;
  *   id = "portland_media_embed_helper_filter",
  *   title = @Translation("Portland Media Embed Helper Filter"),
  *   description = @Translation("Adds classes to entity embed containers and pre-selects image display mode based on alignment selections. This filter must be executed before Align, Caption, or Display Embedded Entities."),
- *   type = Drupal\filter\Plugin\FilterInterface::TYPE_MARKUP_LANGUAGE,
+ *   type = Drupal\filter\Plugin\FilterInterface::TYPE_TRANSFORM_IRREVERSIBLE,
  * )
  */
 class PortlandMediaEmbedHelperClasses extends FilterBase {
@@ -34,14 +34,19 @@ class PortlandMediaEmbedHelperClasses extends FilterBase {
     if (stristr($text, 'data-embed-button') !== false) {
       $dom = Html::load($text);
       $xpath = new \DOMXPath($dom);
+      $called_by_ckeditor = false;
+      if (str_starts_with($text, "<drupal-entity ") && str_ends_with($text, "</drupal-entity>") && strlen($text) < 255) {
+        $called_by_ckeditor = true;
+        $display = "embedded";
+      }
       foreach ($xpath->query('//*[@data-embed-button]') as $node) {
         // Read the data-caption attribute's value; this is used to determine media type
         $embed_button = Html::escape($node->getAttribute('data-embed-button'));
 
         // alignment is used to determine image display mode
         $alignment = Html::escape($node->getAttribute('data-align'));
-        // if empty, default is responsive-right/embedded_100
-        if (!$alignment) {
+        // if empty, default is responsive-full/embedded_100
+        if (!$alignment && !$called_by_ckeditor) {
           $alignment = "responsive-full";
         }
 
@@ -62,17 +67,20 @@ class PortlandMediaEmbedHelperClasses extends FilterBase {
           case "image_browser":
             $media_class = "embed-image";
             // for images, set the display mode based on alignment
-            $display = "embedded";
-            if (!is_null($alignment) && $alignment == "responsive-right") {
-              $display = "embedded_50";
-              $media_class .= " responsive-right";
-            } else if (!is_null($alignment) && $alignment == "responsive-full") {
-              $display = "embedded_100";
-              $media_class .= " responsive-full";
-            } else if (!is_null($alignment) && $alignment == "narrow") {
-              $media_class .= " embedded-narrow";
-            } else {
-              $media_class .= " embedded-right";
+            if ($alignment) {
+              if ($alignment == "responsive-right") {
+                $display = "embedded_50";
+                $media_class .= " responsive-right";
+              } else if ($alignment == "responsive-full") {
+                $display = "embedded_100";
+                $media_class .= " responsive-full";
+              } else if ($alignment == "narrow") {
+                $display = "embedded";
+                $media_class .= " embedded-narrow";
+              } else {
+                $display = "embedded";
+                $media_class .= " embedded-right";
+              }
             }
             // change value of data-entity-embed-display="view_mode:media.embedded"
             $node->setAttribute("data-entity-embed-display", "view_mode:media." . $display);
