@@ -93,7 +93,7 @@ class PortlandLocationPicker extends WebformCompositeBase {
       '#type' => 'markup',
       '#title' => 'Park instructions',
       '#title_display' => 'invisible',
-      '#markup' => '<p class="webform-element-description description">Please move the marker to the exact spot in the park where the issue was observed.</p>',
+      '#markup' => '<p class="p webform-element-description description"><strong>IMPORTANT:</strong> Click/tap or drag the marker to the precise location in the park.</p>',
       '#states' => [
         'visible' => [
           ':input[name="' . $element_id . '[location_park]"]' => ['filled' => TRUE],
@@ -121,13 +121,23 @@ class PortlandLocationPicker extends WebformCompositeBase {
         ],
       ],
     ];
-    $element['location_address'] = [
+    $element['location_address_container'] = [
+      '#type' => 'container',
+      '#attributes' => ['id' => 'location_address_wrapper'],
+    ];
+    $element['location_address_container']['location_address'] = [
       '#type' => 'textfield',
-      '#id' => 'location_address',
       '#title' => t('Address or Cross Streets'),
+      '#id' => 'location_address',
       '#attributes' => ['class' => ['location-picker-address'], 'autocomplete' => 'off'],
-      '#description' => t('Enter an address or cross streets of the issue being reported, then click the button to verify the location. Alternately, you may click the map to set the location.'),
+      '#description' => t('Search by address or cross streets. Or click/tap the map to select a location.'),
       '#description_display' => 'before',
+    ];
+    $element['precision_text'] = [
+      '#type' => 'markup',
+      '#title' => 'Precision',
+      '#title_display' => 'invisible',
+      '#markup' => '<div class="visually-hidden" aria-hidden="true" id="precision_text"><p class="p"><strong>IMPORTANT:</strong> Click/tap or drag the marker to the precise location.</p></div>',
     ];
     $element['location_map'] = [
       '#type' => 'markup',

@@ -135,6 +135,7 @@ class PortlandLocationPicker extends WebformCompositeBase {
 
     $elementId = $element['#webform_key'];
 
+    $verifiedAddresses = array_key_exists('#verified_addresses', $element) ? $element['#verified_addresses'] : FALSE;
     $primaryLayerSource = array_key_exists('#primary_layer_source', $element) ? $element['#primary_layer_source'] : "";
     $incidentsLayerSource = array_key_exists('#incidents_layer_source', $element) ? $element['#incidents_layer_source'] : "";
     $regionsLayerSource = array_key_exists('#regions_layer_source', $element) ? $element['#regions_layer_source'] : "";
@@ -144,12 +145,13 @@ class PortlandLocationPicker extends WebformCompositeBase {
     $selectedMarker = array_key_exists('#selected_marker', $element) ? $element['#selected_marker'] : "";
     $incidentMarker = array_key_exists('#incident_marker', $element) ? $element['#incident_marker'] : "";
     $disablePopup = array_key_exists('#disable_popup', $element) && $element['#disable_popup'] ? 1 : 0;
-    $verifyButtonText = array_key_exists('#verify_button_text', $element) ? $element['#verify_button_text'] : "";
+    $verifyButtonText = array_key_exists('#verify_button_text', $element) ? $element['#verify_button_text'] : ($verifiedAddresses ? "Verify" : "Find");
     $primaryFeatureName = array_key_exists('#primary_feature_name', $element) ? $element['#primary_feature_name'] : "";
     $featureLayerVisibleZoom = array_key_exists('#feature_layer_visible_zoom', $element) ? $element['#feature_layer_visible_zoom'] : "";
     $requireCityLimits = array_key_exists('#require_city_limits', $element) ? $element['#require_city_limits'] : FALSE;
     $displayCityLimits = array_key_exists('#display_city_limits', $element) ? $element['#display_city_limits'] : TRUE;
 
+    $element['#attached']['drupalSettings']['webform']['portland_location_picker']['verified_addresses'] = $verifiedAddresses;
     $element['#attached']['drupalSettings']['webform']['portland_location_picker']['element_id'] = $elementId;
     $element['#attached']['drupalSettings']['webform']['portland_location_picker']['primary_layer_source'] = $primaryLayerSource;
     $element['#attached']['drupalSettings']['webform']['portland_location_picker']['incidents_layer_source'] = $incidentsLayerSource;

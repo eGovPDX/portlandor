@@ -39,6 +39,7 @@
         const ASSET_ONLY_SELECTION_MESSAGE = "We have zoomed in on the address you provided, but this map only allows you to select existing asset markers. Click one to select it. There may not be any selectable assets in the current view.";
         const VERIFIED_NO_COORDS = "The address you entered is verified, but an error occurred, and it can't be shown on the map. Please zoom in and find the desired location, then click it to set a marker.";
         const CITY_LIMITS_MESSAGE = "The location you selected is not within the Portland city limits. Please try again."
+        const VERIFY_ADDRESS_TEXT = "Enter an address and cross streets, then click the button to verify and view the location. Or click the map to select a location and determine the verified address.";
         const DEFAULT_FEATURE_ICON_URL = "/modules/custom/portland/modules/portland_location_picker/images/map_marker_default.png";
         const DEFAULT_INCIDENT_ICON_URL = "/modules/custom/portland/modules/portland_location_picker/images/map_marker_incident.png";
         const DEFAULT_SOLVED_ICON_URL = "/modules/custom/portland/modules/portland_location_picker/images/map_marker_incident_solved.png";
@@ -105,6 +106,7 @@
         var AerialControl = generateAerialControl();
 
         // CUSTOM PROPERTIES SET IN WEBFORM CONFIG //////////
+        var verifiedAddresses = drupalSettings.webform.portland_location_picker.verified_addresses;
         var elementId = drupalSettings.webform.portland_location_picker.element_id;
         var primaryLayerSource = drupalSettings.webform.portland_location_picker.primary_layer_source;
         var incidentsLayerSource = drupalSettings.webform.portland_location_picker.incidents_layer_source;
@@ -115,7 +117,7 @@
         var selectedMarker = drupalSettings.webform.portland_location_picker.selected_marker ? drupalSettings.webform.portland_location_picker.selected_marker : '/modules/custom/portland/modules/portland_location_picker/images/map_marker_default_selected.png';
         var incidentMarker = drupalSettings.webform.portland_location_picker.incident_marker ? drupalSettings.webform.portland_location_picker.incident_marker : '/modules/custom/portland/modules/portland_location_picker/images/map_marker_incident.png';
         var disablePopup = drupalSettings.webform.portland_location_picker.disable_popup ? true : false;
-        var verifyButtonText = drupalSettings.webform.portland_location_picker.verify_button_text ? drupalSettings.webform.portland_location_picker.verify_button_text : 'Verify';
+        var verifyButtonText = drupalSettings.webform.portland_location_picker.verify_button_text;
         var primaryFeatureName = drupalSettings.webform.portland_location_picker.primary_feature_name ? drupalSettings.webform.portland_location_picker.primary_feature_name : 'asset';
         var featureLayerVisibleZoom = drupalSettings.webform.portland_location_picker.feature_layer_visible_zoom ? drupalSettings.webform.portland_location_picker.feature_layer_visible_zoom : FEATURE_LAYER_VISIBLE_ZOOM;
         var requireCityLimits = drupalSettings.webform.portland_location_picker.require_city_limits === false ? false : true;
@@ -209,19 +211,22 @@
             doZoomAndCenter(lat, lng);
           }
   
-          // Set up address verify button
+          // Set up address verify button and help text
           $('.location-picker-address').after(`<input class="btn location-verify button js-form-submit form-submit" type="button" id="location_verify" name="op" value="${verifyButtonText}">`);
-          $('.location-picker-address').after('<span class="verified-checkmark address invisible" title="Location is verified!">✓</span>');
+          if (verifiedAddresses) {
+            $('.location-picker-address').after('<span class="verified-checkmark address invisible" title="Location is verified!">✓</span>');
+            // turn off verified checkmark if value changes
+            $('.location-picker-address').on('keyup', function () {
+              setUnverified();
+            });
+            $('#location_address--description').text(VERIFY_ADDRESS_TEXT);
+          }
           $(document).on('click', '#location_verify', function (e) {
             e.preventDefault();
             // Portland Maps API for location suggestions doesn't work property when an ampersand is used to identify intersections
             var address = $('.location-picker-address').val().replace("&", "and");
             if (address.length < 1) { showStatusModal("Please enter an address or cross streets and try again."); return false; }
             verifyAddressPortlandMaps(address);
-          });
-          // turn off verified checkmark if value changes
-          $('.location-picker-address').on('keyup', function () {
-            setUnverified();
           });
   
           // Set up pick links //////////////////////////////////
@@ -590,9 +595,18 @@
 
           // reset park list; it may have been changed
           $('#location_park')[0].selectedIndex = 0;
-  
+
+          // unhide address field
+          $("#location_address_wrapper").removeClass('visually-hidden');
+
           // if type is not private, the map is exposed but needs to be redrawn
           locationType = radios.val();
+
+          // if type is park, hide address field container
+          if (locationType == 'park') {
+            $("#location_address_wrapper").addClass('visually-hidden');
+          }
+  
           if (locationType != 'private') {
             redrawMap();
           }
@@ -875,6 +889,12 @@
             // it will capture the address, and the report will still be usable.
             if (lat && lng) {
               doZoomAndCenter(lat, lng);
+
+              if (!verifiedAddresses) {
+                // show precision text
+                $('#precision_text').removeClass('visually-hidden');
+              }
+
               if (primaryLayerBehavior != PRIMARY_LAYER_BEHAVIOR.SelectionOnly) {
                 setLocationMarker(lat, lng);
               } else {
@@ -886,6 +906,7 @@
             }
 
             setVerified();
+
           } else {
             // no matches found
             showStatusModal("No matches found. Please try again.");
@@ -896,7 +917,6 @@
           if (lat != "0" && lng != "0") {
             map.setView([lat, lng], zoomLevel);
           }
-          
         }
 
         function captureSelectedAssetMarkerData(marker) {
@@ -1220,8 +1240,10 @@
         }
   
         function setVerified(type = "address") {
-          $('.verified-checkmark.' + type).removeClass('invisible');
-          $('.location-verify.' + type).prop('disabled', true);
+          if (verifiedAddresses) {
+            $('.verified-checkmark.' + type).removeClass('invisible');
+            $('.location-verify.' + type).prop('disabled', true);
+          }
         }
   
         function setUnverified(type = "address") {

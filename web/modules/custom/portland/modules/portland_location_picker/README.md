@@ -121,6 +121,8 @@ The two types of behavior for assets are informational and selection. At present
 
 These properties are set in the Advanced tab of the Location Picker element. Data is entered in YAML format.
 
+- ***verified_addresses*** - When true, configures the widget to use the address field for verification, not just searching; default is FALSE
+
 - ***primary_layer_source*** - Sets the URL path to the geoJSON feed for the primary layer
 
 - ***incidents_layer_source*** - Sets the URL path to the geoJSON feed for the incidents layer
@@ -139,7 +141,7 @@ These properties are set in the Advanced tab of the Location Picker element. Dat
 
 - ***disable_popup*** - Disables asset and incident popups if any value is set in the property (not currently implemented) 
 
-- ***verify_button_text*** - Overrides the default "Verify" label in the widget used for verifying or finding an address
+- ***verify_button_text*** - Overrides the default "Verify" or "Find" label in the widget used for verifying or finding an address
 
 - ***primary_feature_name*** - Overrides the name/label used to describe features on the primary layer; default is "asset" (not currently implemented)
 
