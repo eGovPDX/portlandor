@@ -93,7 +93,7 @@ class PortlandLocationPicker extends WebformCompositeBase {
       '#type' => 'markup',
       '#title' => 'Park instructions',
       '#title_display' => 'invisible',
-      '#markup' => '<p class="p webform-element-description description"><strong>IMPORTANT:</strong> Click/tap or drag the marker to the precise location in the park.</p>',
+      '#markup' => '<div class="alert alert--info next-steps"><strong>IMPORTANT:</strong> Click, tap, or drag the marker to the precise location in the park. In order to provide better service, we need accurate location data.</div>',
       '#states' => [
         'visible' => [
           ':input[name="' . $element_id . '[location_park]"]' => ['filled' => TRUE],
