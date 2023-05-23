@@ -137,7 +137,7 @@ class PortlandLocationPicker extends WebformCompositeBase {
       '#type' => 'markup',
       '#title' => 'Precision',
       '#title_display' => 'invisible',
-      '#markup' => '<div class="visually-hidden" aria-hidden="true" id="precision_text"><p class="p"><strong>IMPORTANT:</strong> Click/tap or drag the marker to the precise location.</p></div>',
+      '#markup' => '<div class="alert alert--info next-steps"><strong>IMPORTANT:</strong> Click, tap, or drag the marker to the precise location. In order to provide better service, we need accurate location data.</div>',
     ];
     $element['location_map'] = [
       '#type' => 'markup',
