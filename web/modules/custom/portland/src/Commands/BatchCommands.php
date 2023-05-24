@@ -77,4 +77,66 @@ class BatchCommands extends DrushCommands
       echo "Admin language for $user_email set to $user_pal\n";
     }
   }
+
+  /**
+   * Drush command to copy Audio into Video.
+   *
+   * @command portland:copy_audio_to_video
+   * @aliases portland-copy-audio-to-video
+   * @usage portland:copy_audio_to_video
+   */
+  public function copy_audio_to_video()
+  {
+    echo 'Migrating Audio to Video, please save the output to a CSV file to validate the results' . PHP_EOL;
+    echo 'audio,video,page_using_media' . PHP_EOL;
+    $base_url = \Drupal::request()->getSchemeAndHttpHost();
+
+    $entityTypeManager = \Drupal::entityTypeManager();
+    $audios = $entityTypeManager->getStorage('media')->loadByProperties(['bundle' => 'audio']);
+
+    foreach ($audios as $audio) {
+      $audio_redirects = $audio->field_redirects->getValue();
+      if(!empty($audio_redirects)) {
+        $audio->field_redirects = [];
+        $audio->save();
+      }
+
+      $new_video = Media::create([
+        'name' => $audio->name->value,
+        'status' => $audio->status->value,
+        'bundle' => 'video',
+        'langcode' => $audio->langcode->value,
+        'uid' => $audio->uid->target_id,
+        'created' => $audio->created->value,
+        'changed' => $audio->changed->value,
+        'moderation_state' => $audio->moderation_state->value,
+        'thumbnail' => $audio->thumbnail->target_id,
+        'field_display_groups' => $audio->field_display_groups->getValue(), // Copy the item list
+        'field_media_in_library' => $audio->field_media_in_library->value,
+        'field_media_video_embed_field' => $audio->field_media_video_embed_field->getValue(),
+        'field_caption' => $audio->field_caption->value,
+        'field_license' => $audio->field_license->getValue(),
+        'field_creator' => $audio->field_creator->value,
+        'field_source' => $audio->field_source->value,
+        'field_title' => $audio->field_title->value,
+        'field_transcript' => $audio->field_transcript->value,
+      ]);
+      $new_video->save();
+
+      // Update media UUID in Body
+      $nodes_using_audio = array_keys(\Drupal::service('entity_usage.usage')->listUsage($audio)['node'] ?? []);
+      $node_urls = [];
+      foreach($nodes_using_audio as $node_using_audio) {
+        $node = \Drupal\node\Entity\Node::load($node_using_audio);
+        $orig_uuid = $audio->uuid->value;
+        $new_uuid = $new_video->uuid->value;
+        $node->field_body_content->value = str_replace($orig_uuid, $new_uuid, $node->field_body_content->value);
+        $node->save();
+        $node_urls []= $base_url . '/node/' . $node->nid->value;
+      }
+
+      echo $base_url . '/media/'. $audio->mid->value . ',' . $base_url . '/media/'. $new_video->mid->value . ',' . implode(',', $node_urls) . PHP_EOL;
+    }
+  }
+
 }
