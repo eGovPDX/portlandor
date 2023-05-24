@@ -33,7 +33,7 @@
         const DEFAULT_ICON_POPUP_ANCHOR = [0, -41];
 
         const ZOOM_POSITION = 'topright';
-        const NOT_A_PARK = "You selected park or natural area as the property type, but no park data was found for the selected location. If you believe this is a valid location, please zoom in to find the park on the map, click to select a location, and continue to submit your report.";
+        const NOT_A_PARK = "You selected park or natural area as the property type, but no park data was found for the selected location. If you believe this is a valid location, please zoom in to find the park on the map, tap or click to select a location, and continue to submit your report.";
         const OPEN_ISSUE_MESSAGE = "If this issue is what you came here to report, there's no need to report it again.";
         const SOLVED_ISSUE_MESSAGE = "This issue was recently solved. If that's not the case, or the issue has reoccured, please submit a new report.";
         const ASSET_ONLY_SELECTION_MESSAGE = "We have zoomed in on the address you provided, but this map only allows you to select existing asset markers. Click one to select it. There may not be any selectable assets in the current view.";
@@ -212,7 +212,10 @@
           }
   
           // Set up address verify button and help text
-          $('.location-picker-address').after(`<input class="btn location-verify button js-form-submit form-submit" type="button" id="location_verify" name="op" value="${verifyButtonText}">`);
+          $('.location-picker-address').after(`<input class="button button--primary location-verify js-form-submit form-submit" type="button" id="location_verify" name="op" value="${verifyButtonText}">`);
+          $('.location-picker-address').on('keyup', function () {
+            showVerifyButton();
+          });
           if (verifiedAddresses) {
             $('.location-picker-address').after('<span class="verified-checkmark address invisible" title="Location is verified!">✓</span>');
             // turn off verified checkmark if value changes
@@ -892,7 +895,8 @@
 
               if (!verifiedAddresses) {
                 // show precision text
-                $('#precision_text').removeClass('visually-hidden');
+                showPrecisionText();
+                hideVerifyButton();
               }
 
               if (primaryLayerBehavior != PRIMARY_LAYER_BEHAVIOR.SelectionOnly) {
@@ -917,6 +921,19 @@
           if (lat != "0" && lng != "0") {
             map.setView([lat, lng], zoomLevel);
           }
+        }
+
+        function hideVerifyButton() {
+          $('#location_verify').addClass('disabled');
+          showPrecisionText();
+        }
+
+        function showVerifyButton() {
+          $('#location_verify').removeClass('disabled');
+        }
+
+        function showPrecisionText() {
+          $('#precision_text').removeClass('visually-hidden');
         }
 
         function captureSelectedAssetMarkerData(marker) {
@@ -969,6 +986,7 @@
           }
 
           setLatLngHiddenFields(lat, lng);
+          hideVerifyButton();
 
           // there is a small bug in PortlandMaps that sometimes causes lat/lng to not be provided.
           // we use zeroes instead, but don't want to set a marker or zoom in to 0,0 (also known as Null Island).
@@ -1093,6 +1111,8 @@
                   doZoomAndCenter(lat, lng);    
                   if (primaryLayerBehavior != PRIMARY_LAYER_BEHAVIOR.SelectionOnly) {
                     setLocationMarker(lat, lng);
+                    $('#location_verify').addClass('visually-hidden');
+                    alert('hide find button'); // TODO
                   } else {
                     showStatusModal(ASSET_ONLY_SELECTION_MESSAGE);
                   }
@@ -1110,7 +1130,6 @@
                   setUnverified();
                 };
                 return false;
-                // showStatusModal("There was a problem retrieving data for the selected location.");
               }
 
               if (handleCityLimits(L.latLng(lat,lng))) {
@@ -1179,7 +1198,8 @@
               var lng = json.coordinates[0];
               var lat = json.coordinates[1];
               setLocationMarker(lat, lng);
-              doZoomAndCenter(lat, lng);    
+              doZoomAndCenter(lat, lng);
+              showPrecisionText();
               redrawMap();
               setVerified("park");
             }

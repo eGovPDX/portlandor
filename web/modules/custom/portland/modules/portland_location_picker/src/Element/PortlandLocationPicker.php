@@ -93,13 +93,13 @@ class PortlandLocationPicker extends WebformCompositeBase {
       '#type' => 'markup',
       '#title' => 'Park instructions',
       '#title_display' => 'invisible',
-      '#markup' => '<div class="alert alert--info next-steps"><strong>IMPORTANT:</strong> Click, tap, or drag the marker to the precise location in the park. In order to provide better service, we need accurate location data.</div>',
-      '#states' => [
-        'visible' => [
-          ':input[name="' . $element_id . '[location_park]"]' => ['filled' => TRUE],
-          ':input[name="' . $element_id . '[location_type]"]' => ['value' => 'park'],
-        ],
-      ],
+      '#markup' => '<div class="alert alert--info next-steps visually-hidden precision-text" aria-hidden="true" id="precision_text_parks"><strong>IMPORTANT:</strong> To help us provide better service, please click, tap, or drag the marker to the precise location on the map.</div>',
+      // '#states' => [
+      //   'visible' => [
+      //     ':input[name="' . $element_id . '[location_park]"]' => ['filled' => TRUE],
+      //     ':input[name="' . $element_id . '[location_type]"]' => ['value' => 'park'],
+      //   ],
+      // ],
     ];
     $element['location_private_owner'] = [
       '#id' => 'location_private_owner',
@@ -137,7 +137,7 @@ class PortlandLocationPicker extends WebformCompositeBase {
       '#type' => 'markup',
       '#title' => 'Precision',
       '#title_display' => 'invisible',
-      '#markup' => '<div class="alert alert--info next-steps"><strong>IMPORTANT:</strong> Click, tap, or drag the marker to the precise location. In order to provide better service, we need accurate location data.</div>',
+      '#markup' => '<div class="alert alert--info next-steps visually-hidden precision_text" aria-hidden="true" id="precision_text"><strong>IMPORTANT:</strong> To help us provide better service, please click, tap, or drag the marker to the precise location on the map.</div>',
     ];
     $element['location_map'] = [
       '#type' => 'markup',
