@@ -301,8 +301,11 @@ function _remove_file_usage_from_previous_revision($entity) {
       ->execute());
   if (empty($previous_vid)) return;
 
-  $previous_revision = $entity_storage->loadRevision($previous_vid)->getTranslation($langcode);
-  foreach ($previous_revision->getFields() as $field) {
+  $previous_revision = $entity_storage->loadRevision($previous_vid);
+  if (!$previous_revision->hasTranslation($langcode)) return;
+
+  $previous_revision_translated = $previous_revision->getTranslation($langcode);
+  foreach ($previous_revision_translated->getFields() as $field) {
     if ($field instanceof FileFieldItemList) {
       foreach ($field as $item) {
         $file = $item->entity;
