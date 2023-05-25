@@ -213,8 +213,10 @@
   
           // Set up address verify button and help text
           $('.location-picker-address').after(`<input class="button button--primary location-verify js-form-submit form-submit" type="button" id="location_verify" name="op" value="${verifyButtonText}">`);
-          $('.location-picker-address').on('keyup', function () {
-            showVerifyButton();
+          $('.location-picker-address').on('keyup', function (e) {
+            if (e.keyCode != 13) {
+              showVerifyButton();
+            }
           });
           if (verifiedAddresses) {
             $('.location-picker-address').after('<span class="verified-checkmark address invisible" title="Location is verified!">✓</span>');
@@ -605,9 +607,10 @@
           // if type is not private, the map is exposed but needs to be redrawn
           locationType = radios.val();
 
-          // if type is park, hide address field container
+          // if type is park, hide address field container, and hide precision text
           if (locationType == 'park') {
             $("#location_address_wrapper").addClass('visually-hidden');
+            hidePrecisionText();
           }
   
           if (locationType != 'private') {
@@ -896,7 +899,6 @@
               if (!verifiedAddresses) {
                 // show precision text
                 showPrecisionText();
-                hideVerifyButton();
               }
 
               if (primaryLayerBehavior != PRIMARY_LAYER_BEHAVIOR.SelectionOnly) {
@@ -934,6 +936,10 @@
 
         function showPrecisionText() {
           $('#precision_text').removeClass('visually-hidden');
+        }
+
+        function hidePrecisionText() {
+          $('#precision_text').addClass('visually-hidden');
         }
 
         function captureSelectedAssetMarkerData(marker) {
@@ -1177,12 +1183,11 @@
             return false;
           }
           var url = '/api/parks/locationpicker/' + id; // this is a drupal view that returns json about the park
-          // this lookup uses the Park Finder view, which is a search view.
-          // if there is a problem with the search index, in particular in
-          // a local environment, it will not return results but should still
-          // work in a multidev or Live.
+          // this lookup uses the Park Finder view, which is a search view. if there is a problem with the search index, in particular in
+          // a local environment, it will not return results but should still work in a multidev or Live.
           $.ajax({
             url: url, success: function (result) {
+              showPrecisionText();
               if (result.length < 1) {
                 showStatusModal(NOT_A_PARK);
                 setUnverified();
@@ -1199,7 +1204,6 @@
               var lat = json.coordinates[1];
               setLocationMarker(lat, lng);
               doZoomAndCenter(lat, lng);
-              showPrecisionText();
               redrawMap();
               setVerified("park");
             }
