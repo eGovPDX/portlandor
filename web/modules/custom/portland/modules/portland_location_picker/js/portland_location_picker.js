@@ -104,6 +104,7 @@
         var aerialLayer = L.tileLayer('https://www.portlandmaps.com/arcgis/rest/services/Public/Basemap_Color_Complete_Aerial/MapServer/tile/{z}/{y}/{x}', { attribution: "PortlandMaps ESRI" });
         var LocateControl = generateLocateControl();
         var AerialControl = generateAerialControl();
+        var verifyHidden = false;
 
         // CUSTOM PROPERTIES SET IN WEBFORM CONFIG //////////
         var verifiedAddresses = drupalSettings.webform.portland_location_picker.verified_addresses;
@@ -175,7 +176,13 @@
 
           // disable form submit when pressing enter on address field and click Verify button instead
           $('#location_address').on('keydown', function (e) {
-            if (e.keyCode == 13) { $('#location_verify').click(); e.preventDefault(); return false; }
+            if (e.keyCode == 13) { 
+              e.preventDefault();
+              if (!verifyHidden) {
+                $('#location_verify').click();
+              }
+              return false; 
+            }
           });
   
           // INITIALIZE MAP //////////
@@ -927,11 +934,13 @@
 
         function hideVerifyButton() {
           $('#location_verify').addClass('disabled');
+          verifyHidden = true;
           showPrecisionText();
         }
 
         function showVerifyButton() {
           $('#location_verify').removeClass('disabled');
+          verifyHidden = false;
         }
 
         function showPrecisionText() {
@@ -1118,7 +1127,7 @@
                   if (primaryLayerBehavior != PRIMARY_LAYER_BEHAVIOR.SelectionOnly) {
                     setLocationMarker(lat, lng);
                     $('#location_verify').addClass('visually-hidden');
-                    alert('hide find button'); // TODO
+                    hideVerifyButton();
                   } else {
                     showStatusModal(ASSET_ONLY_SELECTION_MESSAGE);
                   }
