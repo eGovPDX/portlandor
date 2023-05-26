@@ -41,21 +41,19 @@ class GlobalLanguageSwitcherBlock extends BlockBase implements ContainerFactoryP
    * {@inheritdoc}
    */
   public function build() {
+    $current_langcode = $this->languageManager->getCurrentLanguage(LanguageInterface::TYPE_CONTENT)->getId();
     // get the English version of the current URL. we'll always want to translate *from* English for best accuracy.
-    $current_url = preg_replace("/portlandor.lndo.site/", "portland.gov", Url::fromRoute('<current>', [], [
-      'absolute' => true,
-      'language' => $this->languageManager->getDefaultLanguage(),
-    ])->toString());
+    $current_url = \Drupal::request()->getSchemeAndHttpHost() . \Drupal::request()->getRequestUri();
     $languages = array_map(fn ($lang) => [
       'id' => $lang->getId(),
       'label' => $lang->getName(),
-      'url' => "https://translate.google.com/translate?sl=en&tl={$lang->getId()}&u={$current_url}"
+      'url' => "https://translate.google.com/translate?sl=en&tl={$lang->getId()}&u={$current_url}",
     ], $this->languageManager->getNativeLanguages());
 
-    return array(
+    return [
       '#theme' => 'portland_global_language_switcher_block',
       '#current_langcode' => $this->languageManager->getCurrentLanguage(LanguageInterface::TYPE_CONTENT)->getId(),
       '#languages' => $languages,
-    );
+    ];
   }
 }
