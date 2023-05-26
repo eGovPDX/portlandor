@@ -224,9 +224,6 @@ class LeafletDefaultFormatter extends FormatterBase implements ContainerFactoryP
     // Generate the Leaflet Map General Settings.
     $this->generateMapGeneralSettings($elements, $settings);
 
-    // Generate the Leaflet Map Reset Control.
-    $this->setResetMapControl($elements, $settings);
-
     // Generate the Leaflet Map Position Form Element.
     $map_position_options = $settings['map_position'];
     $elements['map_position'] = $this->generateMapPositionElement($map_position_options);
