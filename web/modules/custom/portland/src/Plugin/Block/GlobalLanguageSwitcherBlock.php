@@ -1,0 +1,61 @@
+<?php
+
+namespace Drupal\portland\Plugin\Block;
+
+use Drupal\Core\Block\BlockBase;
+use Drupal\Core\Language\LanguageInterface;
+use Drupal\Core\Language\LanguageManagerInterface;
+use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
+use Drupal\Core\Url;
+use Symfony\Component\DependencyInjection\ContainerInterface;
+
+/**
+ * Provides a 'portland global language switcher' block.
+ *
+ * @Block(
+ *   id = "portland_global_language_switcher_block",
+ *   admin_label = @Translation("Portland Global Language Switcher"),
+ * )
+ */
+class GlobalLanguageSwitcherBlock extends BlockBase implements ContainerFactoryPluginInterface {
+  private LanguageManagerInterface $languageManager;
+
+  public function __construct(array $configuration, $plugin_id, $plugin_definition, LanguageManagerInterface $language_manager) {
+    parent::__construct($configuration, $plugin_id, $plugin_definition);
+    $this->languageManager = $language_manager;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition) {
+    return new static(
+      $configuration,
+      $plugin_id,
+      $plugin_definition,
+      $container->get('language_manager'),
+    );
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function build() {
+    // get the English version of the current URL. we'll always want to translate *from* English for best accuracy.
+    $current_url = preg_replace("/portlandor.lndo.site/", "portland.gov", Url::fromRoute('<current>', [], [
+      'absolute' => true,
+      'language' => $this->languageManager->getDefaultLanguage(),
+    ])->toString());
+    $languages = array_map(fn ($lang) => [
+      'id' => $lang->getId(),
+      'label' => $lang->getName(),
+      'url' => "https://translate.google.com/translate?sl=en&tl={$lang->getId()}&u={$current_url}"
+    ], $this->languageManager->getNativeLanguages());
+
+    return array(
+      '#theme' => 'portland_global_language_switcher_block',
+      '#current_langcode' => $this->languageManager->getCurrentLanguage(LanguageInterface::TYPE_CONTENT)->getId(),
+      '#languages' => $languages,
+    );
+  }
+}

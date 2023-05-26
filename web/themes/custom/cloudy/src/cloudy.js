@@ -1,4 +1,5 @@
 import './js/libs/jquery-plugin-fitvids';
+import './js/language-switcher';
 import './components/dialog/dialog';
 import './components/tabs/tabs';
 import './components/notification/notification';
