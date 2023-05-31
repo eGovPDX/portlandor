@@ -81,6 +81,38 @@ class BatchCommands extends DrushCommands
   /**
    * Drush command to copy Audio into Video.
    *
+   * @command portland:remove_audio
+   * @aliases portland-remove-audio
+   * @usage portland:remove_audio
+   */
+  public function remove_audio()
+  {
+    // Load all groups
+    $groups = \Drupal\group\Entity\Group::loadMultiple();
+    foreach ($groups as $group) {
+      $group_type_id = $group->getGroupType()->id();
+      if($group_type_id == "program") {
+        echo "Process program " . $group->label() . PHP_EOL;
+
+        $audio_contents = $group->getContent(null, ["type"=>"program-group_media-audio"]);
+        foreach($audio_contents as $audio_content) {
+          echo "Delete group audio " . $audio_content->label() . PHP_EOL;
+          $audio_content->delete();
+        }
+      }
+      else if($group_type_id == "project") {
+        echo "Process project " . $group->label() . PHP_EOL;
+        $audio_contents = $group->getContent(null, ["type"=>"project-group_media-audio"]);
+        foreach($audio_contents as $audio_content) {
+          echo "Delete group audio " . $audio_content->label() . PHP_EOL;
+          $audio_content->delete();
+        }
+      }
+    }
+  }
+  /**
+   * Drush command to copy Audio into Video.
+   *
    * @command portland:copy_audio_to_video
    * @aliases portland-copy-audio-to-video
    * @usage portland:copy_audio_to_video
