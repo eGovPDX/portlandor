@@ -130,7 +130,7 @@ class PortlandLocationPicker extends WebformCompositeBase {
       '#title' => t('Address or Cross Streets'),
       '#id' => 'location_address',
       '#attributes' => ['class' => ['location-picker-address'], 'autocomplete' => 'off'],
-      '#description' => t('Search by address or cross streets. Or click/tap the map to select a location.'),
+      '#description' => t('Search by address or cross streets, or click/tap the map to select a precise location.'),
       '#description_display' => 'before',
     ];
     $element['precision_text'] = [
