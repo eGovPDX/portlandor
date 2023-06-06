@@ -67,7 +67,7 @@
         // so that the city limits become a hole and everything else can be shaded. this will require us to change how we detect clicks
         // with in the city limits. 
         // original city boundaries geoJSON: https://www.portlandmaps.com/arcgis/rest/services/Public/COP_OpenData_Boundary/MapServer/10/query?where=CITYNAME%20like%20%27Portland%27&outFields=*&outSR=4326&f=geojson
-        const CITY_LIMITS_BOUNDARY_URL = "/modules/custom/portland/modules/portland_location_picker/js/cityboundary.json";
+        const CITY_LIMITS_BOUNDARY_URL = "/modules/custom/portland/modules/portland_location_picker/js/layers/cityboundary.json";
         const MUNICIPALITIES_BOUNDARY_URL = "https://www.portlandmaps.com/arcgis/rest/services/Public/COP_OpenData_Boundary/MapServer/10/query?outFields=*&where=1%3D1&f=geojson";
 
         // GLOBALS //////////
