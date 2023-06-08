@@ -57,8 +57,11 @@ class GlobalLanguageSwitcherBlock extends BlockBase implements ContainerFactoryP
     return [
       '#theme' => 'portland_global_language_switcher_block',
       '#current_langcode' => $this->languageManager->getCurrentLanguage(LanguageInterface::TYPE_CONTENT)->getId(),
-      '#google_widget' => str_contains($current_url, '?google_widget=1'),
+      '#google_widget' => \Drupal::request()->query->get('google_widget'),
       '#languages' => $languages,
+      '#cache' => [
+        'contexts' => ['url.query_args'],
+      ],
     ];
   }
 }
