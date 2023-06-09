@@ -61,7 +61,7 @@ class GlobalLanguageSwitcherBlock extends BlockBase implements ContainerFactoryP
       $path = "/";
       $domain = \Drupal::request()->getHost();
       $secure = true;
-      $httponly = true;
+      $httponly = false;
       setcookie('STYXKEY_google_widget', $value, $expire, $path, $domain, $secure, $httponly);
       $google_widget = $value;
     }
@@ -69,7 +69,6 @@ class GlobalLanguageSwitcherBlock extends BlockBase implements ContainerFactoryP
     return [
       '#theme' => 'portland_global_language_switcher_block',
       '#current_langcode' => $this->languageManager->getCurrentLanguage(LanguageInterface::TYPE_CONTENT)->getId(),
-      '#google_widget' => $google_widget,
       '#languages' => $languages,
       '#cache' => [
         'contexts' => ['cookies', 'url.query_args'],

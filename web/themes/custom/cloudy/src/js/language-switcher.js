@@ -8,3 +8,8 @@ const observer = new MutationObserver((mutationList) => {
 });
 
 observer.observe(document.documentElement, { attributes: true });
+
+if (document.cookie.includes("STYXKEY_google_widget=1")) {
+  document.querySelector(".google-widget").classList.remove("d-none");
+  document.querySelector(".language-menu").classList.add("d-none");
+}
