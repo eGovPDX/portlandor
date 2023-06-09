@@ -72,7 +72,7 @@ class GlobalLanguageSwitcherBlock extends BlockBase implements ContainerFactoryP
       '#google_widget' => $google_widget,
       '#languages' => $languages,
       '#cache' => [
-        'contexts' => ['url.query_args'],
+        'contexts' => ['cookies', 'url.query_args'],
       ],
     ];
   }
