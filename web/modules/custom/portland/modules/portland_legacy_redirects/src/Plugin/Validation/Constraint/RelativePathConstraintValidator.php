@@ -102,10 +102,11 @@ class RelativePathConstraintValidator extends ConstraintValidator {
   function validateUniquePathInForm($path, $delta, $field) {
     // verify that path is unique within all the deltas of the field.
     // if not, both duplicated fields will be highlighted with validation errors.
+    $path_without_trailing_slash = rtrim($path, "/");
     foreach ($field as $delta2 => $value) {
       $path2 = $value->value;
       if ($delta == $delta2) continue;
-      if ($path == $path2) return false;
+      if ($path_without_trailing_slash == $path2) return false;
     }
     return true;
   }
