@@ -54,10 +54,22 @@ class GlobalLanguageSwitcherBlock extends BlockBase implements ContainerFactoryP
     // Chuukese is not supported by Google Translate
     unset($languages['chk']);
 
+    $google_widget = \Drupal::request()->cookies->get('STYXKEY_google_widget');
+    if (\Drupal::request()->query->has('google_widget')) {
+      $value = \Drupal::request()->query->get('google_widget');
+      $expire = \Drupal::time()->getRequestTime() + 24 * 60 * 60;
+      $path = "/";
+      $domain = \Drupal::request()->getHost();
+      $secure = true;
+      $httponly = true;
+      setcookie('STYXKEY_google_widget', $value, $expire, $path, $domain, $secure, $httponly);
+      $google_widget = $value;
+    }
+
     return [
       '#theme' => 'portland_global_language_switcher_block',
       '#current_langcode' => $this->languageManager->getCurrentLanguage(LanguageInterface::TYPE_CONTENT)->getId(),
-      '#google_widget' => \Drupal::request()->query->get('google_widget'),
+      '#google_widget' => $google_widget,
       '#languages' => $languages,
       '#cache' => [
         'contexts' => ['url.query_args'],
