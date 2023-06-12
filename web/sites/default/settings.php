@@ -7,6 +7,15 @@ $settings['container_yamls'][] = __DIR__ . '/services.yml';
 $settings['container_yamls'][] = __DIR__ . '/monolog.services.yml';
 
 /**
+ * Entity update backup.
+ *
+ * This is used to inform the entity storage handler that the backup tables as
+ * well as the original entity type and field storage definitions should be
+ * retained after a successful entity update process.
+ */
+$settings['entity_update_backup'] = FALSE;
+
+/**
  * Include the Pantheon-specific settings file.
  *
  * n.b. The settings.pantheon.php file makes some changes
