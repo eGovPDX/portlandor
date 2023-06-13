@@ -57,18 +57,18 @@ class BatchCommands extends DrushCommands
   public function set_admin_langguage($uid = 0)
   {
     $user_storage = $this->entityTypeManager->getStorage('user');
-    
+
     if ($uid === 0) {
       $users = $user_storage->getQuery()->condition('preferred_admin_langcode', null, 'is')->execute();
     } else {
       $users = [ $uid ];
     }
-    
+
     foreach ($users as $uid) {
       $user = $user_storage->load($uid);
       $user_email = $user->get('mail')->__get('value');
       $user_pal = $user->get('preferred_admin_langcode')->__get('value');
-      
+
       if ($user_pal === null) {
         $user = $user->set('preferred_admin_langcode', 'en');
         $user->save();
