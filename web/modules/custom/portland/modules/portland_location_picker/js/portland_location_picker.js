@@ -2,8 +2,8 @@
 
   // Here's how to reverse geolocate a park. Note the x/y values in the geometry parameter:
   // https://www.portlandmaps.com/arcgis/rest/services/Public/Parks_Misc/MapServer/2/query?geometry=%7B%22x%22%3A-122.55203425884248%2C%22y%22%3A45.53377174783918%2C%22spatialReference%22%3A%7B%22wkid%22%3A4326%7D%7D&geometryType=esriGeometryPoint&spacialRel=esriSpatialRelIntersects&returnGeometry=false&returnTrueCurves=false&returnIdsOnly=false&returnCountOnly=false&returnDistinctValues=false&f=pjson"
-  // returns an object that includes the park name. 
-  
+  // returns an object that includes the park name.
+
   /**
    * Attach the machine-readable name form element behavior.
    *
@@ -62,10 +62,10 @@
         }
 
         const GEOLOCATION_CACHE_MILLISECONDS = 0;
-  
+
         // this is a static, modified version of the city limits geoJSON data. it includes a whole-earth polygon as the first polygon,
         // so that the city limits become a hole and everything else can be shaded. this will require us to change how we detect clicks
-        // with in the city limits. 
+        // with in the city limits.
         // original city boundaries geoJSON: https://www.portlandmaps.com/arcgis/rest/services/Public/COP_OpenData_Boundary/MapServer/10/query?where=CITYNAME%20like%20%27Portland%27&outFields=*&outSR=4326&f=geojson
         const CITY_LIMITS_BOUNDARY_URL = "/modules/custom/portland/modules/portland_location_picker/js/layers/cityboundary.json";
         const MUNICIPALITIES_BOUNDARY_URL = "https://www.portlandmaps.com/arcgis/rest/services/Public/COP_OpenData_Boundary/MapServer/10/query?outFields=*&where=1%3D1&f=geojson";
@@ -150,11 +150,11 @@
         });
 
         initialize()
-        
+
         // SETUP FUNCTIONS ///////////////////////////////
 
         function initialize() {
-  
+
           // widget can be configured to use the park selector features or not.
           // if not, we want to disable PortlandMaps parks lookups. this flag
           // will be used to control that.
@@ -170,7 +170,7 @@
           $('#location_address').on('keydown', function (e) {
             if (e.keyCode == 13) { $('#location_verify').click(); e.preventDefault(); return false; }
           });
-  
+
           // INITIALIZE MAP //////////
           map = new L.Map("location_map_container", {
             center: new L.LatLng(DEFAULT_LATITUDE, DEFAULT_LONGITUDE),
@@ -203,7 +203,7 @@
             setLocationMarker(lat, lng);
             doZoomAndCenter(lat, lng);
           }
-  
+
           // Set up address verify button
           $('.location-picker-address').after(`<input class="btn location-verify button js-form-submit form-submit" type="button" id="location_verify" name="op" value="${verifyButtonText}">`);
           $('.location-picker-address').after('<span class="verified-checkmark address invisible" title="Location is verified!">✓</span>');
@@ -218,7 +218,7 @@
           $('.location-picker-address').on('keyup', function () {
             setUnverified();
           });
-  
+
           // Set up pick links //////////////////////////////////
           $(document).on('click', 'a.pick', function (e) {
             e.preventDefault();
@@ -240,17 +240,17 @@
               setVerified();
             }
           });
-  
+
           // set up status modal ///////////////////////////////
           // this will display error messages, or a status indicator when performing slow ajax operations such as self geolocation
           statusModal = $('#status_modal');
-  
+
           // set up location type radios //////////////////////
           // some of the sub elements need to be shown/hidden depending on the location type
           $('fieldset.location-type input[type="radio"]').on("click", function() {
             handleLocationTypeClick($(this));
           });
-  
+
           // set up parks select list /////////////////////////
           if (useParks) {
             $('#location_park').after('<span class="verified-checkmark park invisible" title="Location is verified!">✓</span>');
@@ -332,7 +332,7 @@
 
                         incidentsLoop:
                         // loop backwards becasue we're going to remove incidents that are attached to assets
-                        // and move the incident 
+                        // and move the incident
                         for (var j = incidentsFeatures.length - 1; j >= 0; j--) {
 
                           // is the incident associated with the asset?
@@ -416,7 +416,7 @@
               return new L.LatLng(coords[1], coords[0]);
             },
             pointToLayer: function(feature, latlng) {
-              if (feature.properties.hasOpenIncident || 
+              if (feature.properties.hasOpenIncident ||
                   (primaryLayerType == PRIMARY_LAYER_TYPE.Incident && (feature.properties.status == TICKET_STATUS.New || feature.properties.status == TICKET_STATUS.Open))) {
                 marker = incidentMarker ;
               } else if (feature.properties.hasSolvedIncident || (primaryLayerType == PRIMARY_LAYER_TYPE.Incident && feature.properties.status == TICKET_STATUS.Solved)) {
@@ -557,7 +557,7 @@
           }
           return `<p><b>${name}</b></p>${detail}${incidentDetail}${message}`;
         }
-  
+
         // EVENT HANDLERS ///////////////////////////////
 
         // this handler is called for primary layer features and incident layer features,
@@ -585,21 +585,21 @@
 
           // reset park list; it may have been changed
           $('#location_park')[0].selectedIndex = 0;
-  
+
           // if type is not private, the map is exposed but needs to be redrawn
           locationType = radios.val();
           if (locationType != 'private') {
             redrawMap();
           }
-  
+
         }
-  
+
         function handleLocateButtonClick(e) {
           cancelEventBubble(e);
           locationErrorShown = false;
           selfLocateBrowser();
         }
-  
+
         function handleAerialButtonClick(e) {
           cancelEventBubble(e);
           locationErrorShown = false;
@@ -609,7 +609,7 @@
         function handleMapClick(e) {
           doMapClick(e.latlng);
         }
-  
+
         function handleLocateMeFound(e) {
           if (locCircle) {
             map.removeLayer(locCircle);
@@ -618,10 +618,10 @@
           locCircle = L.circle(e.latlng, radius, { weight: 2, fillOpacity: 0.1 }).addTo(map);
           reverseGeolocate(e.latlng);
           locateControlContaier.style.backgroundImage = 'url("/modules/custom/portland/modules/portland_location_picker/images/map_locate_on.png")';
-  
+
           closeStatusModal();
         }
-  
+
         function handleLocationError(e) {
           var message = e.message;
           statusModal.dialog('close');
@@ -632,7 +632,7 @@
         function handleZoomEndShowGeoJsonLayer() {
           // close all popups when zooming
           map.closePopup();
-          
+
           var zoomlevel = map.getZoom();
           if (zoomlevel < featureLayerVisibleZoom){
             if (primaryLayer && map.hasLayer(primaryLayer)) {
@@ -705,7 +705,7 @@
 
         function doMapClick(latlng) {
           // normally when the map is clicked, we want to zoom to the clicked location
-          // and perform a reverse lookup. there are some cases where we may want to 
+          // and perform a reverse lookup. there are some cases where we may want to
           // perform additional actions. for example, if location type = park, we also
           // need to do a reverse parks lookup and adjust the park selector accordingly.
 
@@ -716,20 +716,20 @@
           resetClickedMarker();
           resetLocationMarker();
           clearLocationFields();
-  
+
           // clear place name and park selector fields; they will get reset if appropriate after the click.
           $('.place-name').val("");
           $('#location_park').val("");
-  
+
           if (locCircle) {
             map.removeLayer(locCircle);
             locateControlContaier.style.backgroundImage = 'url("/modules/custom/portland/modules/portland_location_picker/images/map_locate.png")';
           }
-  
+
           reverseGeolocate(latlng);
           checkRegion(latlng);
         }
-  
+
         function isAssetSelectable(marker) {
           // defines the criteria under which an asset can be selected
           if (primaryLayerBehavior != PRIMARY_LAYER_BEHAVIOR.Selection && primaryLayerBehavior != PRIMARY_LAYER_BEHAVIOR.SelectionOnly) {
@@ -762,18 +762,18 @@
           captureSelectedAssetMarkerData(marker);
 
           // need to call reverseGeolocate in order to capture nearest address,
-          // this is the one instance where we don't want to zoom and center when clicking 
+          // this is the one instance where we don't want to zoom and center when clicking
           // an existing marker (2nd argument = false).
           reverseGeolocate(marker.latlng, false);
         }
-  
+
         function resetLocationMarker() {
           if (locationMarker) {
             map.removeLayer(locationMarker);
             locationMarker = null;
           }
         }
-  
+
         function resetClickedMarker() {
           if (clickedMarker && clickedMarker.target && clickedMarker.target._icon) {
             // reset clicked marker's icon to original
@@ -805,14 +805,14 @@
           // NOTE: The following code would be problematic if we allow multiple copies of the widget or alternate naming conventions.
           $("input[name='" + elementId + "[location_type]'][value='" + type + "']").click();
         }
-  
+
         function redrawMap() {
           // if map is initialized while hidden, this function needs to be called when the map is
           // exposed, so it can redraw the tiles.
           //map.invalidateSize();
           setTimeout(function () { map.invalidateSize(); }, 200);
         }
-  
+
         function verifyAddressPortlandMaps(address) {
           var encodedAddress = encodeURI(address);
           // API documentation: https://www.portlandmaps.com/development/#suggest
@@ -831,11 +831,11 @@
               processLocationData(response.candidates);
             }
           });
-  
+
         }
-  
+
         function processLocationData(candidates) {
-  
+
           if (candidates.length > 1) {
             // multiple candidates, how to handle? how about a modal dialog?
             suggestionsModal = $('#suggestions_modal');
@@ -894,7 +894,7 @@
           if (lat != "0" && lng != "0") {
             map.setView([lat, lng], zoomLevel);
           }
-          
+
         }
 
         function captureSelectedAssetMarkerData(marker) {
@@ -965,7 +965,7 @@
           });
         }
 
-        // takes selected coordinates and performs reverse geolocation using the PortlandMaps API. 
+        // takes selected coordinates and performs reverse geolocation using the PortlandMaps API.
         // gets called by:
         // - function handleMapClick(e)
         // - function handleLocateMeFound(e)
@@ -982,7 +982,7 @@
           // clear fields
           $('#location_address').val();
 
-  
+
           // performs parks reverse geocoding using portlandmaps.com API.
           // the non-parks reverse geocoding is called within the success function,
           // chaining the two calls together.
@@ -993,33 +993,33 @@
             reverseGeolocateNotPark(lat, lng, zoomAndCenter);
           }
         }
-  
+
         function reverseGeolocateParks(lat, lng, zoomAndCenter = true) {
           var reverseParksGeocodeUrl = PARKS_REVGEOCODE_URL.replace('${lat}', lat).replace('${lng}', lng);
           $.ajax({
             url: reverseParksGeocodeUrl, success: function (result) {
               var jsonResult = JSON.parse(result);
-              
+
               if (jsonResult.features && jsonResult.features.length > 0) {
                 // it's a park. process the data from portlandmaps and exit function.
-  
+
                 setLocationType("park");
                 if (zoomAndCenter) {
-                  doZoomAndCenter(lat, lng);    
+                  doZoomAndCenter(lat, lng);
                   if (primaryLayerBehavior != PRIMARY_LAYER_BEHAVIOR.SelectionOnly) {
                     setLocationMarker(lat, lng);
                   } else {
                     showStatusModal(ASSET_ONLY_SELECTION_MESSAGE);
                   }
                 }
-  
+
                 // attempt to set park selector. if not exact match, set selector
                 // value to "0" (Other/Not found)
                 var parkName = jsonResult.features[0].attributes.NAME;
                 $('#location_park option').filter(function () {
                   return $(this).text() == parkName;
                 }).prop('selected', true);
-  
+
                 var parkId = $('#location_park').val();
                 if (!parkId) {
                   // the park selector could not be set, most likely because there was not an exact name match
@@ -1028,34 +1028,34 @@
                   $('#location_park').val("0"); // this value sets park selector to Other/Not found and keeps the map visible
                 }
                 $('#location_park').trigger('change');
-  
+
                 // set place name field and mark as verified
                 $('.place-name').val(parkName);
                 setVerified("park");
-  
+
                 // There shouldn't be an address for a park, so use N/A
                 $('.location-picker-address').val("N/A");
 
               } else {
                 // it's not a park and not managed by Parks!
-  
+
                 // if location type is set to parks, but we got to this point, we want to
                 // switch the type to "other" so that it goes to 311 for triage.
                 if (locationType == "park") {
                   zoomAndCenter = true;
                   setLocationType("other");
                 }
-  
-                $('#location_park').val('0'); // set park selector to 
+
+                $('#location_park').val('0'); // set park selector to
                 $('#location_park').trigger('change');
 
                 reverseGeolocateNotPark(lat, lng, zoomAndCenter);
-  
+
               }
             }
           });
         }
-  
+
         function reverseGeolocateNotPark(lat, lng, zoomAndCenter = true) {
           // now do PortlandMaps ArcGIS reverse geocoding call to get the non-park address for the location
           // https://www.portlandmaps.com/arcgis/rest/services/Public/Geocoding_PDX/GeocodeServer/reverseGeocode
@@ -1068,7 +1068,7 @@
                 // address field may be required by the form, so something needs to go there.
                 if (!handleCityLimits(L.latLng(lat, lng))) return false;
                 if (zoomAndCenter) {
-                  doZoomAndCenter(lat, lng);    
+                  doZoomAndCenter(lat, lng);
                   if (primaryLayerBehavior != PRIMARY_LAYER_BEHAVIOR.SelectionOnly) {
                     setLocationMarker(lat, lng);
                   } else {
@@ -1079,7 +1079,7 @@
                   setLocationType("other");
                 }
                 if (response.error) {
-                  
+
                   $('#location_address').val("N/A");
                   setUnverified();
                 } else if (response && response.features && response.features[0].attributes && response.features[0].attributes.NAME) {
@@ -1100,7 +1100,7 @@
 
         function processReverseLocationData(data, lat, lng, zoomAndCenter = true) {
           if (zoomAndCenter) {
-            doZoomAndCenter(lat, lng);    
+            doZoomAndCenter(lat, lng);
             if (primaryLayerBehavior != PRIMARY_LAYER_BEHAVIOR.SelectionOnly) {
               setLocationMarker(lat, lng);
             } else {
@@ -1115,18 +1115,18 @@
           $('.location-picker-address').val(addressLabel);
           setVerified();
         }
-  
+
         function locateParkFromSelector(id) {
           // this function is triggered by the parks selector onchange. when user selects a park, look up the
           // lat/lng and show it on the map. HOWEVER, the selector might get updated if the user clicks into a
           // park on the map. in that case, we skip the onchange park geolocation.
           // this function uses a view in Drupal to return parks data using the node id as a parameter.
-          
+
           if (!shouldRecenterPark) {
             shouldRecenterPark = true;
             return false;
           }
-  
+
           // if user selected the "Other/Not found" option (value = "0"), don't do the lookup,
           // but do unhide the map and redraw it.
           if (id === "0") {
@@ -1147,7 +1147,7 @@
                 setUnverified();
                 return;
               }
-  
+
               // the coordinates returned by this call are for park entrances. some may have more than
               // one entrance, such as large parks like Washington Park. we use the first one in the array.
               // the geolocaiton data needs to be escaped; best way is in a textarea element (kludgey but works).
@@ -1157,13 +1157,13 @@
               var lng = json.coordinates[0];
               var lat = json.coordinates[1];
               setLocationMarker(lat, lng);
-              doZoomAndCenter(lat, lng);    
+              doZoomAndCenter(lat, lng);
               redrawMap();
               setVerified("park");
             }
           });
         }
-  
+
         function selfLocateBrowser() {
           var t = setTimeout(function () {
             // display status indicator
@@ -1171,7 +1171,7 @@
             map.locate({ watch: false, setView: true, maximumAge: GEOLOCATION_CACHE_MILLISECONDS, enableHighAccuracy: true });
           }, 500);
         }
-  
+
         function toggleAerialView() {
           if (currentView != "aerial") {
             map.removeLayer(baseLayer);
@@ -1186,14 +1186,14 @@
             aerialControlContainer.style.background = 'url("/modules/custom/portland/modules/portland_location_picker/images/map_aerial.png")';
           }
         }
-  
+
         function buildFullAddress(c){
           return [c.address, c.attributes.city, c.attributes.state]
                   .filter(Boolean)
                   .join(', ')
                   + ' ' + (c.attributes.zip_code || '');
         }
-  
+
         function showStatusModal(message) {
           statusModal.html('<p class="status-message">' + message + '</p>');
           Drupal.dialog(statusModal, {
@@ -1207,32 +1207,32 @@
           }).showModal();
           statusModal.removeClass('visually-hidden');
         }
-  
+
         function closeStatusModal() {
           statusModal.dialog('close');
         }
-  
+
         function showErrorModal(message) {
           message = message + '<br><br>Please try again in a few moments. If the error persists, please <a href="/feedback">contact us</a>.';
           showStatusModal(message);
         }
-  
+
         function setVerified(type = "address") {
           $('.verified-checkmark.' + type).removeClass('invisible');
           $('.location-verify.' + type).prop('disabled', true);
         }
-  
+
         function setUnverified(type = "address") {
           $('.verified-checkmark').addClass('invisible');
           $('.location-verify').prop('disabled', false);
         }
-  
+
         function cancelEventBubble(e) {
           var evt = e ? e : window.event;
           if (evt.stopPropagation) evt.stopPropagation();
           if (evt.cancelBubble != null) evt.cancelBubble = true;
         }
-  
+
         // this function monitors our map div and fires redrawMap function if visibility changes.
         function onVisible(element, callback) {
           new IntersectionObserver((entries, observer) => {
