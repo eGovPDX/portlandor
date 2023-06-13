@@ -131,15 +131,14 @@ elements: |-
           '#options_display': side_by_side
         report_is_ada:
           '#type': radios
-          '#title': 'Are you personally affected by this obstruction, and would like to request ADA accommodation?'
+          '#title': 'Do you have a disability that is affected by this obstruction?'
           '#options':
-            'yes': 'Yes, I have a disability covered under the Americans with Disabilities Act (ADA).'
+            'yes': 'Yes, and I would like to request an accommodation'
             'no': 'No'
           '#states':
             visible:
               ':input[name="report_blocking_pedestrians"]':
                 value: 'Yes'
-          '#default_value': 'No'
         report_is_ada_text:
           '#type': webform_markup
           '#states':
@@ -148,9 +147,9 @@ elements: |-
                 value: 'yes'
           '#markup': |-
             <div class="alert alert--info next-steps">
-            <h2>Information</h2>
+            <h2>You&#39;ve requested an accommodation</h2>
 
-            <p>After submitting this form, an ADA coordinator from the City will contact you to process your accommodation request.&nbsp;</p>
+            <p>After submitting this report, an ADA Coordinator from the City will be contacting you to learn more and process your accommodation request.&nbsp;</p>
             </div>
         report_visible_items:
           '#type': checkboxes
@@ -266,12 +265,27 @@ elements: |-
           '#attachment_image_style': webform_report_uploaded_image
         section_contact:
           '#type': webform_section
-          '#title': 'Your Contact Information'
-          '#title_display': invisible
+          '#title': 'Your contact information'
+          '#title_tag': h3
+          contact_name:
+            '#type': textfield
+            '#title': Name
+            '#states':
+              visible:
+                ':input[name="report_is_ada"]':
+                  value: 'yes'
+          contact_phone:
+            '#type': textfield
+            '#title': Phone
+            '#input_mask': '(999) 999-9999'
+            '#states':
+              visible:
+                ':input[name="report_is_ada"]':
+                  value: 'yes'
           contact_email:
             '#type': textfield
-            '#title': 'Your Email'
-            '#description': 'We will use your email to confirm your submission and respond if necessary.'
+            '#title': Email
+            '#description': 'We will use your email to confirm your submission.'
             '#description_display': before
             '#input_mask': '''alias'': ''email'''
             '#required': true
@@ -495,223 +509,6 @@ access:
     users: {  }
     permissions: {  }
 handlers:
-  email_parks:
-    id: email
-    handler_id: email_parks
-    label: 'Submit to PP&R'
-    notes: 'Enabled if property type = park'
-    status: true
-    conditions:
-      enabled:
-        ':input[name="report_location[location_type]"]':
-          value: park
-        ':input[name="support_agent_use_only[test_submission]"]':
-          unchecked: true
-    weight: -48
-    settings:
-      states:
-        - completed
-      to_mail: gregoryscottclapp+parks@gmail.com
-      to_options: {  }
-      bcc_mail: ''
-      bcc_options: {  }
-      cc_mail: ''
-      cc_options: {  }
-      from_mail: '[webform_submission:values:contact_email:raw]'
-      from_options: {  }
-      from_name: '[webform_submission:values:contact_name:raw]'
-      reply_to: ''
-      return_path: ''
-      sender_mail: ''
-      sender_name: ''
-      subject: _default
-      body: "<p>[webform_submission:values:html]<br />\r\n<br />\r\nWebform ID: report_campsite_or_vehicle</p>"
-      excluded_elements:
-        introductory_text: introductory_text
-        public_records_statement_standard: public_records_statement_standard
-        report_property_owner_yes_text: report_property_owner_yes_text
-        report_property_owner_no_text: report_property_owner_no_text
-        report_select_visible_to_continue: report_select_visible_to_continue
-        report_illegally_parked_vehicle_text: report_illegally_parked_vehicle_text
-        report_illegally_parked_vehicle_text_stop: report_illegally_parked_vehicle_text_stop
-        report_stolen_vehicle_text: report_stolen_vehicle_text
-        report_stolen_vehicle_text_stop: report_stolen_vehicle_text_stop
-        report_need_more_info_text: report_need_more_info_text
-        report_need_more_info_text_stop: report_need_more_info_text_stop
-        spacer: spacer
-      ignore_access: false
-      exclude_empty: false
-      exclude_empty_checkbox: true
-      exclude_attachments: true
-      html: true
-      attachments: true
-      twig: false
-      theme_name: ''
-      parameters: {  }
-      debug: false
-  email_abandoned_auto_group:
-    id: email
-    handler_id: email_abandoned_auto_group
-    label: 'Submit to Abandoned Auto group'
-    notes: 'Enabled if vehicle appears to be inoperable.'
-    status: false
-    conditions: {  }
-    weight: -46
-    settings:
-      states:
-        - completed
-      to_mail: gregoryscottclapp+abandoned@gmail.com
-      to_options: {  }
-      bcc_mail: ''
-      bcc_options: {  }
-      cc_mail: ''
-      cc_options: {  }
-      from_mail: '[webform_submission:values:contact_email:raw]'
-      from_options: {  }
-      from_name: '[webform_submission:values:contact_name:raw]'
-      reply_to: ''
-      return_path: ''
-      sender_mail: ''
-      sender_name: ''
-      subject: _default
-      body: "<p>[webform_submission:values:html]<br />\r\n<br />\r\nWebform ID: report_campsite_or_vehicle</p>"
-      excluded_elements:
-        introductory_text: introductory_text
-        public_records_statement_standard: public_records_statement_standard
-        report_property_owner_yes_text: report_property_owner_yes_text
-        report_property_owner_no_text: report_property_owner_no_text
-        report_select_visible_to_continue: report_select_visible_to_continue
-        report_illegally_parked_vehicle_text: report_illegally_parked_vehicle_text
-        report_illegally_parked_vehicle_text_stop: report_illegally_parked_vehicle_text_stop
-        report_stolen_vehicle_text: report_stolen_vehicle_text
-        report_stolen_vehicle_text_stop: report_stolen_vehicle_text_stop
-        report_need_more_info_text: report_need_more_info_text
-        report_need_more_info_text_stop: report_need_more_info_text_stop
-        spacer: spacer
-      ignore_access: false
-      exclude_empty: true
-      exclude_empty_checkbox: true
-      exclude_attachments: true
-      html: true
-      attachments: true
-      twig: false
-      theme_name: ''
-      parameters: {  }
-      debug: false
-  email_pbot_vehicle_inspection:
-    id: email
-    handler_id: email_pbot_vehicle_inspection
-    label: 'Submit to PBOT Vehicle Inspection'
-    notes: 'Enabled if property type = street, people are living at site, and vehicle is visible.'
-    status: false
-    conditions:
-      enabled:
-        ':input[name="report_location[location_type]"]':
-          value: street
-        ':input[name="report_people_living_there"]':
-          value: 'Yes'
-        ':input[name="report_visible_items[vehicle]"]':
-          checked: true
-        ':input[name="support_agent_use_only[test_submission]"]':
-          unchecked: true
-    weight: -47
-    settings:
-      states:
-        - completed
-      to_mail: gregoryscottclapp+pbotvehicleinspection@gmail.com
-      to_options: {  }
-      bcc_mail: ''
-      bcc_options: {  }
-      cc_mail: ''
-      cc_options: {  }
-      from_mail: '[webform_submission:values:contact_email:raw]'
-      from_options: {  }
-      from_name: '[webform_submission:values:contact_name:raw]'
-      reply_to: ''
-      return_path: ''
-      sender_mail: ''
-      sender_name: ''
-      subject: _default
-      body: "<p>[webform_submission:values:html]<br />\r\n<br />\r\nWebform ID: report_campsite_or_vehicle</p>"
-      excluded_elements:
-        introductory_text: introductory_text
-        public_records_statement_standard: public_records_statement_standard
-        report_property_owner_yes_text: report_property_owner_yes_text
-        report_property_owner_no_text: report_property_owner_no_text
-        report_select_visible_to_continue: report_select_visible_to_continue
-        report_illegally_parked_vehicle_text: report_illegally_parked_vehicle_text
-        report_illegally_parked_vehicle_text_stop: report_illegally_parked_vehicle_text_stop
-        report_stolen_vehicle_text: report_stolen_vehicle_text
-        report_stolen_vehicle_text_stop: report_stolen_vehicle_text_stop
-        report_need_more_info_text: report_need_more_info_text
-        report_need_more_info_text_stop: report_need_more_info_text_stop
-        spacer: spacer
-      ignore_access: false
-      exclude_empty: true
-      exclude_empty_checkbox: true
-      exclude_attachments: true
-      html: true
-      attachments: true
-      twig: false
-      theme_name: ''
-      parameters: {  }
-      debug: false
-  email_parking_enforcement:
-    id: email
-    handler_id: email_parking_enforcement
-    label: 'Submit to Parking Enforcement'
-    notes: 'Enabled if a vehicle appears to be illegally parked.'
-    status: false
-    conditions:
-      enabled:
-        ':input[name="report_location[location_type]"]':
-          value: street
-        ':input[name="report_vehicle_illegally_parked"]':
-          value: 'Yes'
-        ':input[name="support_agent_use_only[test_submission]"]':
-          unchecked: true
-    weight: -45
-    settings:
-      states:
-        - completed
-      to_mail: gregoryscottclapp+parkingenforcement@gmail.com
-      to_options: {  }
-      bcc_mail: ''
-      bcc_options: {  }
-      cc_mail: ''
-      cc_options: {  }
-      from_mail: '[webform_submission:values:contact_email:raw]'
-      from_options: {  }
-      from_name: '[webform_submission:values:contact_name:raw]'
-      reply_to: ''
-      return_path: ''
-      sender_mail: ''
-      sender_name: ''
-      subject: _default
-      body: "<p>[webform_submission:values:html]<br />\r\n<br />\r\nWebform ID: report_campsite_or_vehicle</p>"
-      excluded_elements:
-        introductory_text: introductory_text
-        public_records_statement_standard: public_records_statement_standard
-        report_property_owner_yes_text: report_property_owner_yes_text
-        report_property_owner_no_text: report_property_owner_no_text
-        report_select_visible_to_continue: report_select_visible_to_continue
-        report_illegally_parked_vehicle_text: report_illegally_parked_vehicle_text
-        report_illegally_parked_vehicle_text_stop: report_illegally_parked_vehicle_text_stop
-        report_stolen_vehicle_text: report_stolen_vehicle_text
-        report_stolen_vehicle_text_stop: report_stolen_vehicle_text_stop
-        report_need_more_info_text: report_need_more_info_text
-        report_need_more_info_text_stop: report_need_more_info_text_stop
-        spacer: spacer
-      ignore_access: false
-      exclude_empty: true
-      exclude_empty_checkbox: true
-      exclude_attachments: true
-      html: true
-      attachments: true
-      twig: false
-      theme_name: ''
-      parameters: {  }
-      debug: false
   zendesk_update_interaction_ticket:
     id: zendesk_update_ticket
     handler_id: zendesk_update_interaction_ticket
@@ -733,67 +530,15 @@ handlers:
       assignee_id: ''
       type: ''
       collaborators: ''
-      custom_fields: "8692493739543: '[webform_submission:values:report_ticket_id]'\r\n9205221816983: '[webform_submission:values:report_location:location_type:raw]'"
+      custom_fields: ''
       ticket_id_field: zendesk_request_number
       ticket_form_id: ''
-  submit_test_report_to_e_gov_team:
-    id: email
-    handler_id: submit_test_report_to_e_gov_team
-    label: 'Submit test report to E-Gov team'
-    notes: 'Enabled if Test Submission box is checked'
-    status: false
-    conditions:
-      enabled:
-        ':input[name="support_agent_use_only[test_submission]"]':
-          checked: true
-    weight: -43
-    settings:
-      states:
-        - completed
-      to_mail: gregoryscottclapp+test@gmail.com
-      to_options: {  }
-      bcc_mail: ''
-      bcc_options: {  }
-      cc_mail: ''
-      cc_options: {  }
-      from_mail: '[webform_submission:values:contact_email:raw]'
-      from_options: {  }
-      from_name: '[webform_submission:values:contact_name:raw]'
-      reply_to: ''
-      return_path: ''
-      sender_mail: ''
-      sender_name: ''
-      subject: '[TEST] Webform submission from: [webform_submission:source-title]'
-      body: "<p>[webform_submission:values:html]<br />\r\n<br />\r\nWebform ID: report_campsite_or_vehicle</p>"
-      excluded_elements:
-        introductory_text: introductory_text
-        public_records_statement_standard: public_records_statement_standard
-        report_property_owner_yes_text: report_property_owner_yes_text
-        report_property_owner_no_text: report_property_owner_no_text
-        report_select_visible_to_continue: report_select_visible_to_continue
-        report_illegally_parked_vehicle_text: report_illegally_parked_vehicle_text
-        report_illegally_parked_vehicle_text_stop: report_illegally_parked_vehicle_text_stop
-        report_stolen_vehicle_text: report_stolen_vehicle_text
-        report_stolen_vehicle_text_stop: report_stolen_vehicle_text_stop
-        report_need_more_info_text: report_need_more_info_text
-        report_need_more_info_text_stop: report_need_more_info_text_stop
-        spacer: spacer
-      ignore_access: false
-      exclude_empty: false
-      exclude_empty_checkbox: true
-      exclude_attachments: true
-      html: true
-      attachments: true
-      twig: false
-      theme_name: ''
-      parameters: {  }
-      debug: false
   submit_to_zendesk_irp:
     id: zendesk
     handler_id: submit_to_zendesk_irp
     label: 'Submit to Zendesk/IRP'
     notes: 'Creates a request in Zendesk, which is then pulled into the IRP processes and dashboards using a SQL connector for Zendesk. Ticket is created as New, but is immediately changed to Solved using a Zendesk trigger, due to issues with solving tickets through the API. All submissions from this from go to IRP regardless of any additional routing, unless the Develper Test box is checked, in which case the ticket is created in the Developer Test Group.'
-    status: false
+    status: true
     conditions:
       disabled:
         ':input[name="support_agent_use_only[test_submission]"]':
@@ -804,14 +549,14 @@ handlers:
       requester_email: contact_email
       subject: 'Campsite Report'
       comment: '[webform_submission:values:html]'
-      tags: 'drupal webform campsite test_ticket'
+      tags: 'drupal webform campsite'
       priority: normal
       status: new
       group_id: '11597151250071'
       assignee_id: ''
       type: incident
       collaborators: ''
-      custom_fields: "6353388345367: '[webform_submission:values:webform_identifier]'\r\n5581480390679: '[webform_submission:values:report_location:location_lat]'\r\n5581490332439: '[webform_submission:values:report_location:location_lon]'\r\n13407901552407: '[webform_submission:values:report_location:location_x]'\r\n13407918835095: '[webform_submission:values:report_location:location_y]'\r\n1500012743961: '[webform_submission:values:report_location:location_address]'\r\n1500013095781: '[webform_submission:uuid]'\r\n9205221816983: '[webform_submission:values:report_location:location_type:raw]'\r\n5873270225303: '[webform_submission:values:report_visible_items:checked:vehicle]'\r\n5873293014679: '[webform_submission:values:report_vehicle_make_model]'\r\n5873310799383: '[webform_submission:values:report_vehicle_license_plate]'"
+      custom_fields: "6353388345367: 'report_campsite'\r\n5581480390679: '[webform_submission:values:report_location:location_lat]'\r\n5581490332439: '[webform_submission:values:report_location:location_lon]'\r\n13407901552407: '[webform_submission:values:report_location:location_x]'\r\n13407918835095: '[webform_submission:values:report_location:location_y]'\r\n1500012743961: '[webform_submission:values:report_location:location_address]'\r\n1500013095781: '[webform_submission:uuid]'\r\n9205221816983: '[webform_submission:values:report_location:location_type:raw]'\r\n5873270225303: '[webform_submission:values:report_visible_items:checked:vehicle]'\r\n14971313641239: '[webform_submission:values:report_vehicle_color]'\r\n14971350075799: '[webform_submission:values:report_vehicle_type]'\r\n5873293014679: '[webform_submission:values:report_vehicle_make]'\r\n5873310799383: '[webform_submission:values:report_vehicle_license_plate_number]'"
       ticket_id_field: report_ticket_id
       ticket_form_id: '5873307855767'
   submit_to_zendesk_irp_developer_test:
@@ -837,7 +582,7 @@ handlers:
       assignee_id: ''
       type: incident
       collaborators: ''
-      custom_fields: "6353388345367: '[webform_submission:values:webform_identifier]'\r\n5581480390679: '[webform_submission:values:report_location:location_lat]'\r\n5581490332439: '[webform_submission:values:report_location:location_lon]'\r\n13407901552407: '[webform_submission:values:report_location:location_x]'\r\n13407918835095: '[webform_submission:values:report_location:location_y]'\r\n1500012743961: '[webform_submission:values:report_location:location_address]'\r\n1500013095781: '[webform_submission:uuid]'\r\n9205221816983: '[webform_submission:values:report_location:location_type:raw]'\r\n5873270225303: '[webform_submission:values:report_visible_items:checked:vehicle]'\r\n5873293014679: '[webform_submission:values:report_vehicle_make_model]'\r\n5873310799383: '[webform_submission:values:report_vehicle_license_plate]'"
+      custom_fields: "6353388345367: 'report_campsite'\r\n5581480390679: '[webform_submission:values:report_location:location_lat]'\r\n5581490332439: '[webform_submission:values:report_location:location_lon]'\r\n13407901552407: '[webform_submission:values:report_location:location_x]'\r\n13407918835095: '[webform_submission:values:report_location:location_y]'\r\n1500012743961: '[webform_submission:values:report_location:location_address]'\r\n1500013095781: '[webform_submission:uuid]'\r\n9205221816983: '[webform_submission:values:report_location:location_type:raw]'\r\n5873270225303: '[webform_submission:values:report_visible_items:checked:vehicle]'\r\n14971313641239: '[webform_submission:values:report_vehicle_color]'\r\n14971350075799: '[webform_submission:values:report_vehicle_type]'\r\n5873293014679: '[webform_submission:values:report_vehicle_make]'\r\n5873310799383: '[webform_submission:values:report_vehicle_license_plate_number]'"
       ticket_id_field: report_ticket_id
       ticket_form_id: '5873307855767'
 variants: {  }
