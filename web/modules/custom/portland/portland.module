@@ -301,8 +301,11 @@ function _remove_file_usage_from_previous_revision($entity) {
       ->execute());
   if (empty($previous_vid)) return;
 
-  $previous_revision = $entity_storage->loadRevision($previous_vid)->getTranslation($langcode);
-  foreach ($previous_revision->getFields() as $field) {
+  $previous_revision = $entity_storage->loadRevision($previous_vid);
+  if (!$previous_revision->hasTranslation($langcode)) return;
+
+  $previous_revision_translated = $previous_revision->getTranslation($langcode);
+  foreach ($previous_revision_translated->getFields() as $field) {
     if ($field instanceof FileFieldItemList) {
       foreach ($field as $item) {
         $file = $item->entity;
@@ -442,7 +445,6 @@ function portland_preprocess_paragraph(&$vars)
       };
       break;
     case 'video':
-    case 'audio':
       // NOTE: audio files also use a YouTube video player and re-uses field_video_alignment
       $video = $vars['paragraph'];
       if (
@@ -740,7 +742,6 @@ function portland_form_alter(&$form, &$form_state, $form_id)
     'node_service_location_form',
     'node_service_location_edit_form',
     'media_image_add_form',
-    'media_audio_add_form',
     'media_video_add_form',
     'media_document_add_form',
     'media_map_add_form'
