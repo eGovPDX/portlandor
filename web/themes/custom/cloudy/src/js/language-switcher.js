@@ -13,3 +13,9 @@ if (document.cookie.includes("STYXKEY_google_widget=1")) {
   document.querySelector(".google-widget").classList.remove("d-none");
   document.querySelector(".language-menu").classList.add("d-none");
 }
+
+document.addEventListener("DOMContentLoaded", () => {
+  if (location.pathname === "/") {
+    document.querySelector(".cloudy-header__toggle--menu").click();
+  }
+});
