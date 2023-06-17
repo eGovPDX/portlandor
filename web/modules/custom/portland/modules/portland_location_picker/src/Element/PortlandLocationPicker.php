@@ -46,60 +46,97 @@ class PortlandLocationPicker extends WebformCompositeBase {
       $element_id = $element['#webform_key'];
     }
 
+    // $element['location_park_container'] = [
+    //   '#id' => 'location_park_container',
+    //   '#title' => t('Parks list container'),
+    //   '#type' => 'container',
+    // ];
+    // $element['location_park_container']['location_park'] = [
+    //   '#id' => 'location_park',
+    //   '#title' => t('Which park or natural area?'),
+    //   '#type' => 'webform_entity_select',
+    //   '#description' => t('If you can\'t find the park in the list, choose "Other / I\'m not sure" then find the location by searching for an address or using the map.'),
+    //   "#description_display" => 'before',
+    //   '#target_type' => 'node',
+    //   '#selection_handler' => 'views',
+    //   '#selection_settings' => [
+    //     'view' => ['view_name' => 'entity_browser_park_facilities', 'display_name' => 'location_picker_parks_list'],
+    //   ],
+    //   '#empty_option' => t('Select...'),
+    //   '#attributes' => ['class' => ['location-park']],
+    //   '#states' => [
+    //     'visible' => [
+    //       ':input[name="' . $element_id . '[location_type]"]' => [
+    //         'value' => 'park'
+    //       ],
+    //     ],
+    //   ],
+    // ];
+    // $element['location_park_container']['park_instructions'] = [
+    //   '#type' => 'markup',
+    //   '#title' => 'Park instructions',
+    //   '#title_display' => 'invisible',
+    //   '#markup' => '<div class="alert alert--info next-steps visually-hidden precision-text" aria-hidden="true" id="precision_text_parks"><strong>IMPORTANT:</strong> To help us provide better service, please click, tap, or drag the marker to the precise location on the map.</div>',
+    //   // '#states' => [
+    //   //   'visible' => [
+    //   //     ':input[name="' . $element_id . '[location_park]"]' => ['filled' => TRUE],
+    //   //     ':input[name="' . $element_id . '[location_type]"]' => ['value' => 'park'],
+    //   //   ],
+    //   // ],
+    // ];
+    $element['location_address_container'] = [
+      '#type' => 'container',
+      '#attributes' => ['id' => 'location_address_wrapper'],
+    ];
+    $element['location_address_container']['location_address'] = [
+      '#type' => 'textfield',
+      '#title' => t('Location Search'),
+      '#id' => 'location_address',
+      '#attributes' => ['class' => ['location-picker-address'], 'autocomplete' => 'off'],
+      '#description' => t('Search by address, cross streets, park name, community center or other landmark. Or click/tap the map to select a precise location.'),
+      '#description_display' => 'before',
+    ];
+    $element['precision_text'] = [
+      '#type' => 'markup',
+      '#title' => 'Precision',
+      '#title_display' => 'invisible',
+      '#markup' => '<div class="alert alert--info next-steps visually-hidden precision_text" aria-hidden="true" id="precision_text"><strong>IMPORTANT:</strong> To help us provide better service, please click, tap, or drag the marker to the precise location on the map.</div>',
+    ];
+    $element['location_map'] = [
+      '#type' => 'markup',
+      '#id' => 'location_map',
+      '#title' => 'Location map',
+      '#description' => '',
+      '#description_display' => 'before',
+      '#title_display' => 'invisible',
+      '#markup' => '<div id="location_map_container" class="location-map"></div>',
+    ];
     $element['location_type'] = [
       '#id' => 'location_type',
       '#name' => 'location_type',
       '#type' => 'radios',
-      '#title' => t('On what type of property is the issue located?'),
+      '#title' => t('What type of location is this?'),
       '#title_display' => 'before',
       '#options' => [
-        'street' => t('Along ANY street, sidewalk, highway, trail, or other public right-of-way'),
-        'private' => t('On private property, such as at a residence or business'),
-        'park' => t('Within a public park or natural area'),
-        'waterway' => t('Along a river, stream, or other waterway'),
+        'street' => t('Street, sidewalk, highway, trail, or other public right-of-way'),
+        'private' => t('Private property, public building, or location with an address'),
+        'park' => t('A public park or natural area'),
+        'waterway' => t('Ariver, stream, or other waterway'),
         'other' => t('I\'m not sure')
       ],
       '#options_display' => 'one_column',
       '#default_value' => 'street',
       '#attributes' => ['class' => ['location-type']],
+      '#required' => TRUE
     ];
-    $element['location_park_container'] = [
-      '#id' => 'location_park_container',
-      '#title' => t('Parks list container'),
-      '#type' => 'container',
-    ];
-    $element['location_park_container']['location_park'] = [
-      '#id' => 'location_park',
-      '#title' => t('Which park or natural area?'),
-      '#type' => 'webform_entity_select',
-      '#description' => t('If you can\'t find the park in the list, choose "Other / I\'m not sure" then find the location by searching for an address or using the map.'),
-      "#description_display" => 'before',
-      '#target_type' => 'node',
-      '#selection_handler' => 'views',
-      '#selection_settings' => [
-        'view' => ['view_name' => 'entity_browser_park_facilities', 'display_name' => 'location_picker_parks_list'],
-      ],
-      '#empty_option' => t('Select...'),
-      '#attributes' => ['class' => ['location-park']],
-      '#states' => [
-        'visible' => [
-          ':input[name="' . $element_id . '[location_type]"]' => [
-            'value' => 'park'
-          ],
-        ],
-      ],
-    ];
-    $element['location_park_container']['park_instructions'] = [
-      '#type' => 'markup',
-      '#title' => 'Park instructions',
+    // since CGIS won't allow us to set the location type based on map clicks
+    // without better reverse geocoding, we're setting a hidden field that can
+    // be used for routing.
+    $element['location_type_hidden'] = [
+      '#type' => 'hidden',
+      '#title' => t('Location type from reverse geocoding.'),
       '#title_display' => 'invisible',
-      '#markup' => '<div class="alert alert--info next-steps visually-hidden precision-text" aria-hidden="true" id="precision_text_parks"><strong>IMPORTANT:</strong> To help us provide better service, please click, tap, or drag the marker to the precise location on the map.</div>',
-      // '#states' => [
-      //   'visible' => [
-      //     ':input[name="' . $element_id . '[location_park]"]' => ['filled' => TRUE],
-      //     ':input[name="' . $element_id . '[location_type]"]' => ['value' => 'park'],
-      //   ],
-      // ],
+      '#attributes' => ['class' => ['location-type-hidden'], 'id' => 'location_type_hidden'],
     ];
     $element['location_private_owner'] = [
       '#id' => 'location_private_owner',
@@ -121,33 +158,6 @@ class PortlandLocationPicker extends WebformCompositeBase {
         ],
       ],
     ];
-    $element['location_address_container'] = [
-      '#type' => 'container',
-      '#attributes' => ['id' => 'location_address_wrapper'],
-    ];
-    $element['location_address_container']['location_address'] = [
-      '#type' => 'textfield',
-      '#title' => t('Address or Cross Streets'),
-      '#id' => 'location_address',
-      '#attributes' => ['class' => ['location-picker-address'], 'autocomplete' => 'off'],
-      '#description' => t('Search by address or cross streets, or click/tap the map to select a precise location.'),
-      '#description_display' => 'before',
-    ];
-    $element['precision_text'] = [
-      '#type' => 'markup',
-      '#title' => 'Precision',
-      '#title_display' => 'invisible',
-      '#markup' => '<div class="alert alert--info next-steps visually-hidden precision_text" aria-hidden="true" id="precision_text"><strong>IMPORTANT:</strong> To help us provide better service, please click, tap, or drag the marker to the precise location on the map.</div>',
-    ];
-    $element['location_map'] = [
-      '#type' => 'markup',
-      '#id' => 'location_map',
-      '#title' => 'Location map',
-      '#description' => '',
-      '#description_display' => 'before',
-      '#title_display' => 'invisible',
-      '#markup' => '<div id="location_map_container" class="location-map"></div>',
-    ];
     $element['suggestions_modal'] = [
       '#type' => 'markup',
       '#title' => 'Suggestions',
@@ -161,7 +171,7 @@ class PortlandLocationPicker extends WebformCompositeBase {
       '#markup' => '<div id="status_modal" class="visually-hidden"></div>',
     ];
 
-    $location_required_error = "Please select a location by clicking the map, or by entering an address or cross streets above and clicking the Verify button.";
+    $location_required_error = "Location is required. Please select a location by searching or clicking the map.";
     $primaryLayerBehavior = array_key_exists('#primary_layer_behavior', $element) ? $element['#primary_layer_behavior'] : "";
     $primaryLayerType = array_key_exists('#primary_layer_type', $element) ? $element['#primary_layer_type'] : "";
 
