@@ -320,7 +320,7 @@ class LeafletDefaultFormatter extends FormatterBase implements ContainerFactoryP
       // Generate the weight feature property (falls back to natural result ordering).
       $feature['weight'] = !empty($settings['weight']) ? intval(str_replace(["\n", "\r"], "", $this->token->replace($settings['weight'], $tokens))) : $delta;
 
-      $file_url = file_create_url($item->entity->uri->value);
+      $file_url = \Drupal::service('file_url_generator')->generateAbsoluteString($item->entity->uri->value);
       if (substr($item->entity->uri->value, -strlen('.zip')) === '.zip') {
         $file_type = 'shapefile';
       } else {

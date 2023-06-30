@@ -20,9 +20,9 @@ services:
     build:
       - "/app/vendor/bin/phpcs --config-set installed_paths /app/vendor/drupal/coder/coder_sniffer"
       - terminus self:update
+      - terminus self:plugin:reload
     run_as_root:
       - /bin/sh -c "if [ ! -d /var/www/.terminus/plugins/terminus-secrets-plugin ]; then { mkdir -p /var/www/.terminus/plugins; composer create-project -d /var/www/.terminus/plugins pantheon-systems/terminus-secrets-plugin:~1; chown -R www-data:www-data /var/www/.terminus; } fi"
-      - ln -sf /usr/local/bin/composer /app/vendor/bin/composer
     xdebug: false
     config:
       php: xdebug.ini
@@ -30,6 +30,8 @@ services:
       environment:
         XDEBUG_MODE:
         DRUSH_OPTIONS_URI: "https://portlandor.lndo.site"
+        # Move /app/vendor/bin from the start of the path to the end so that `composer` executes /usr/local/bin/composer
+        PATH: /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/var/www/.composer/vendor/bin:/srv/bin:/app/vendor/bin
   node:
     type: node:custom
     overrides:
@@ -133,7 +135,6 @@ tooling:
   refresh:
     description: CUSTOM Refresh branch by installing Composer dependencies and importing Drupal config, etc. Run after every merge from master.
     cmd:
-      - appserver: ln -sf /usr/local/bin/composer /app/vendor/bin/composer
       - appserver: /bin/bash -c "if [[ \$(composer install --dry-run -d /app --no-interaction 2>&1 | grep -oPc 'Removing drupal/\S+') -gt 0 ]]; then { echo Composer is about to remove one or more modules... Let\'s disable them in Drupal first.; for module in \$(composer install --dry-run -d /app --no-interaction 2>&1 | grep -oP 'Removing drupal/\K\S+'); do { echo Disabling \$module...; drush pmu \$module -y;} done } fi || true"
       - appserver: echo "Installing Composer dependencies..."
       - appserver: composer install -d /app
