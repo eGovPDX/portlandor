@@ -1,4 +1,4 @@
-(function ($, Drupal, drupalSettings) {
+(function ($, Drupal, drupalSettings, L) {
 
   var initialized = false;
 
@@ -36,8 +36,8 @@
         const NOT_A_PARK = "You selected park or natural area as the property type, but no park data was found for the selected location. If you believe this is a valid location, please zoom in to find the park on the map, tap or click to select a location, and continue to submit your report.";
         const OPEN_ISSUE_MESSAGE = "If this issue is what you came here to report, there's no need to report it again.";
         const SOLVED_ISSUE_MESSAGE = "This issue was recently solved. If that's not the case, or the issue has reoccured, please submit a new report.";
-        const ASSET_ONLY_SELECTION_MESSAGE = "We have zoomed in on the address you provided, but this map only allows you to select existing asset markers. Click one to select it. There may not be any selectable assets in the current view.";
-        const VERIFIED_NO_COORDS = "The address you entered is verified, but an error occurred, and it can't be shown on the map. Please zoom in and find the desired location, then click it to set a marker.";
+        const ASSET_ONLY_SELECTION_MESSAGE = "We have zoomed in on the address you provided, but this map only allows you to select existing asset markers. There may not be any in the current view. Please search again or use the Locate Me button in the lower-right corner of the map.";
+        const VERIFIED_NO_COORDS = "The address you entered is valid, but an error occurred, and it can't be shown on the map. Please zoom in and find the desired location, then click it to set a marker.";
         const CITY_LIMITS_MESSAGE = "The location you selected is not within the Portland city limits. Please try again."
         const VERIFY_ADDRESS_TEXT = "Enter an address, then click the button to verify the location. Or click the map to select a location and determine the verified address.";
         const DEFAULT_FEATURE_ICON_URL = "/modules/custom/portland/modules/portland_location_picker/images/map_marker_default.png";
@@ -327,13 +327,24 @@
               address += ui.item.attributes.state ? ", " + ui.item.attributes.state : "";
               address += ui.item.attributes.zip_code ? "  " + ui.item.attributes.zip_code : "";
               $(this).val(address);
+              $('#place_name').val("");
+              if (ui.item.attributes.location_type == "PARK") {
+                $('#place_name').val(address);
+              }
               var lat = ui.item.attributes.lat;
               var lon = ui.item.attributes.lon;
-              setLocationMarker(lat, lon);
-              doZoomAndCenter(lat, lon);
+              municipalitiesLayer = L.geoJson(municipalitiesFeatures);
+              if (handleCityLimits([lat,lon], municipalitiesLayer)) {
+                if (doZoomAndCenter(lat, lon)) {
+                  setLocationMarker(lat, lon);
+                }
+              } else {
+                return false;
+              }
               var locationType = ui.item.attributes.location_type ?? ui.item.attributes.type;
               setHiddenLocationType(locationType);
               $(this).autocomplete('close');
+              $('.verified-checkmark.address').removeClass('invisible');
               return false; // returning true causes the field to be cleared
             },
             response: function (event, ui) {
@@ -613,7 +624,7 @@
             onAdd: function (map) {
               locateControlContaier = L.DomUtil.create('div', 'leaflet-bar locate-control leaflet-control leaflet-control-custom');
               locateControlContaier.style.backgroundImage = "url(/modules/custom/portland/modules/portland_location_picker/images/map_locate.png)";
-              locateControlContaier.title = 'Locate me';
+              locateControlContaier.title = 'Locate Me';
               locateControlContaier.onclick = handleLocateButtonClick;
               return locateControlContaier;
             }
@@ -760,13 +771,13 @@
 
         // HELPER FUNCTIONS ///////////////////////////////
 
-        function handleCityLimits(latlng) {
+        function handleCityLimits(latlng, muniLayer = municipalitiesLayer) {
           // we want to call this late in the event handling process, so that previously collected coordinates
           // or address values are cleared first.
 
           if (requireCityLimits && displayCityLimits) {
             // check if click is within Portland city limits. if not, use js alert to show error message and return null.
-            var inLayer = leafletPip.pointInLayer(latlng, municipalitiesLayer, false);
+            var inLayer = leafletPip.pointInLayer(latlng, muniLayer, false);
             if (inLayer.length > 0) {
               var municipalityName = inLayer[0].feature.properties.CITYNAME;
               if (municipalityName != "Portland") {
@@ -776,6 +787,7 @@
               }
             } else {
               console.log("Clicked other area.");
+              console.log('Coordinates:' + latlng[0] + ', ' + latlng[1])
               showStatusModal(CITY_LIMITS_MESSAGE);
               return false;
             }
@@ -981,6 +993,11 @@
             var fulladdress = buildFullAddress(candidates[0]);
             $('.location-picker-address').val(fulladdress);
 
+            // put park name in place_name field
+            if (candidates[0].attributes.location_type == "PARK") {
+              $('#place_name').val(fulladdress);
+            }
+
             // in some rare cases, the lat and lon are null in json provided by PortlandMaps. as a
             // workaround, only set the location marker if the values are present, and populate
             // the required lat/lon fields with zeroes so that the form can still be submitted. at least
@@ -995,8 +1012,6 @@
 
               if (primaryLayerBehavior != PRIMARY_LAYER_BEHAVIOR.SelectionOnly) {
                 setLocationMarker(lat, lng);
-              } else {
-                showStatusModal(ASSET_ONLY_SELECTION_MESSAGE);
               }
             } else {
               setLatLngHiddenFields(0, 0);
@@ -1012,9 +1027,14 @@
         }
 
         function doZoomAndCenter(lat, lng, zoomLevel = DEFAULT_ZOOM_CLICK) {
-          if (lat != "0" && lng != "0") {
+          if (lat && lng && lat != "0" && lng != "0") {
             map.setView([lat, lng], zoomLevel);
+            return true;
+          } else {
+            console.log("Location could not be set (lat:" + lat + ", lon:" + lng + ")");
+            showStatusModal(VERIFIED_NO_COORDS);
           }
+          return false;
         }
 
         function hideVerifyButton() {
@@ -1029,7 +1049,9 @@
         }
 
         function showPrecisionText() {
-          $('#precision_text').removeClass('visually-hidden');
+          if (!verifiedAddresses) {
+            $('#precision_text').removeClass('visually-hidden');
+          }
         }
 
         function hidePrecisionText() {
@@ -1078,6 +1100,15 @@
         // -  reverseGeolocate returns a park (reverseGeolocatePark)
         // -  reverseGeolocate doesn't return a park (reverseGeolocateNotPark)
         function setLocationMarker(lat, lng) {
+
+          // only do this if widget config allows
+          if (primaryLayerBehavior == PRIMARY_LAYER_BEHAVIOR.SelectionOnly) {
+            // Don't set marker if behavior is selection only. But do we want to show a help popup?
+            //showStatusModal(ASSET_ONLY_SELECTION_MESSAGE);
+            return false;
+          }
+
+          hideVerifyButton();
 
           // remove previous location marker
           if (locationMarker) {
@@ -1149,8 +1180,6 @@
                   doZoomAndCenter(lat, lng);
                   if (primaryLayerBehavior != PRIMARY_LAYER_BEHAVIOR.SelectionOnly) {
                     setLocationMarker(lat, lng);
-                  } else {
-                    showStatusModal(ASSET_ONLY_SELECTION_MESSAGE);
                   }
                 }
 
@@ -1213,8 +1242,6 @@
                     setLocationMarker(lat, lng);
                     //$('#location_verify').addClass('visually-hidden');
                     hideVerifyButton();
-                  } else {
-                    showStatusModal(ASSET_ONLY_SELECTION_MESSAGE);
                   }
                 }
                 //if (locationType == "park") {
@@ -1245,8 +1272,6 @@
             doZoomAndCenter(lat, lng);
             if (primaryLayerBehavior != PRIMARY_LAYER_BEHAVIOR.SelectionOnly) {
               setLocationMarker(lat, lng);
-            } else {
-              showStatusModal(ASSET_ONLY_SELECTION_MESSAGE);
             }
           }
           var street = data.address.Street;
@@ -1392,4 +1417,4 @@
       });
     }
   };
-})(jQuery, Drupal, drupalSettings);
+})(jQuery, Drupal, drupalSettings, L);
