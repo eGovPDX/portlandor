@@ -2,6 +2,7 @@
 
 namespace Drupal\portland_openid_connect\Plugin\Action;
 
+use GuzzleHttp\Client;
 use Drupal\Core\Action\ActionBase;
 use Drupal\Core\Session\AccountInterface;
 use GuzzleHttp\Exception\RequestException;
@@ -72,7 +73,7 @@ class SyncUserStatusWithAD extends ActionBase
     if (empty($access_token) || empty($email)) return;
 
     /* @var \GuzzleHttp\ClientInterface $client */
-    $client = new \GuzzleHttp\Client();
+    $client = new Client();
     // Perform the request.
     $options = [
       'method' => 'GET',
@@ -163,7 +164,7 @@ class SyncUserStatusWithAD extends ActionBase
     ];
 
     /* @var \GuzzleHttp\ClientInterface $client */
-    $client = new \GuzzleHttp\Client();
+    $client = new Client();
 
     try {
       $response = $client->post("https://login.microsoftonline.com/$tenant_id/oauth2/v2.0/token", $request_options);

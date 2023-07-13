@@ -1,6 +1,7 @@
 <?php
 
 namespace Drupal\portland_zendesk\Client;
+use GuzzleHttp\Client;
 use Zendesk\API\HttpClient;
 
 /**
@@ -18,7 +19,7 @@ class ZendeskClient extends HttpClient
      * @param \GuzzleHttp\Client|null $guzzle
      * @throws \Zendesk\API\Exceptions\AuthException
      */
-    public function __construct($scheme = "https", $hostname = "zendesk.com", $port = 443, \GuzzleHttp\Client $guzzle = null)
+    public function __construct($scheme = "https", $hostname = "zendesk.com", $port = 443, Client $guzzle = null)
     {
         $config = \Drupal::config('portland_zendesk.adminsettings');
 

@@ -102,7 +102,7 @@ class MigrateDocuments extends ProcessPluginBase {
   protected function getDownloadDirectoryUri() {
     // prepare download directory
     $folder_name = date("Y-m");
-    $folder_uri = file_build_uri($folder_name);
+    $folder_uri = \Drupal::service('stream_wrapper_manager')->normalizeUri(\Drupal::config('system.file')->get('default_scheme') . ('://' . $folder_name));
     return $folder_uri;
   }
 
