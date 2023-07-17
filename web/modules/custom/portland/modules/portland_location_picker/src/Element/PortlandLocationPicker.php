@@ -86,6 +86,7 @@ class PortlandLocationPicker extends WebformCompositeBase {
     // ];
     $element['location_address_container'] = [
       '#type' => 'container',
+      '#title' => 'location address container',
       '#attributes' => ['id' => 'location_address_wrapper'],
     ];
     $element['location_address_container']['location_address'] = [
@@ -111,32 +112,67 @@ class PortlandLocationPicker extends WebformCompositeBase {
       '#title_display' => 'invisible',
       '#markup' => '<div id="location_map_container" class="location-map"></div>',
     ];
-    $element['location_type'] = [
-      '#id' => 'location_type',
-      '#name' => 'location_type',
-      '#type' => 'radios',
-      '#title' => t('What type of location is this?'),
-      '#title_display' => 'before',
-      '#options' => [
-        'street' => t('Street, sidewalk, highway, trail, or other public right-of-way'),
-        'private' => t('Private property, public building, or location with an address'),
-        'park' => t('A public park, natural area, or city-operated community center'),
-        'waterway' => t('Ariver, stream, or other waterway'),
-        'other' => t('I\'m not sure')
-      ],
-      '#options_display' => 'one_column',
-      '#default_value' => 'street',
-      '#attributes' => ['class' => ['location-type']],
-      '#required' => TRUE
-    ];
+    // $element['location_type'] = [
+    //   '#id' => 'location_type',
+    //   '#name' => 'location_type',
+    //   '#type' => 'radios',
+    //   '#title' => t('What type of location is this?'),
+    //   '#title_display' => 'before',
+    //   '#options' => [
+    //     'street' => t('Street, sidewalk, highway, trail, or other public right-of-way'),
+    //     'private' => t('Private property, public building, or other location with an address'),
+    //     'park' => t('A public park, natural area, or city-operated community center'),
+    //     'waterway' => t('A river, stream, or other waterway'),
+    //     'other' => t('I\'m not sure')
+    //   ],
+    //   '#options_display' => 'one_column',
+    //   '#default_value' => 'street',
+    //   '#attributes' => ['class' => ['location-type']],
+    //   '#required' => TRUE
+    // ];
     // since CGIS won't allow us to set the location type based on map clicks
     // without better reverse geocoding, we're setting a hidden field that can
     // be used for routing.
-    $element['location_type_hidden'] = [
+    $element['location_type'] = [
       '#type' => 'hidden',
-      '#title' => t('Location type from reverse geocoding.'),
-      '#title_display' => 'invisible',
-      '#attributes' => ['class' => ['location-type-hidden'], 'id' => 'location_type_hidden'],
+      '#title' => t('Location type'),
+      '#attributes' => ['id' => 'location_type'],
+    ];
+
+    $element['location_type_taxlot'] = [
+      '#type' => 'hidden',
+      '#title' => 'Taxlot',
+      '#attributes' => ['id' => 'location_type_taxlot'],
+    ];
+    $element['location_type_park'] = [
+      '#type' => 'hidden',
+      '#title' => 'Park',
+      '#attributes' => ['id' => 'location_type_park'],
+    ];
+    $element['location_type_waterbody'] = [
+      '#type' => 'hidden',
+      '#title' => 'Waterbody',
+      '#attributes' => ['id' => 'location_type_waterbody'],
+    ];
+    $element['location_type_trail'] = [
+      '#type' => 'hidden',
+      '#title' => 'Trail',
+      '#attributes' => ['id' => 'location_type_trail'],
+    ];
+    $element['location_type_stream'] = [
+      '#type' => 'hidden',
+      '#title' => 'Stream',
+      '#attributes' => ['id' => 'location_type_stream'],
+    ];
+    $element['location_type_street'] = [
+      '#type' => 'hidden',
+      '#title' => 'Street',
+      '#attributes' => ['id' => 'location_type_street'],
+    ];
+    $element['location_type_row'] = [
+      '#type' => 'hidden',
+      '#title' => 'ROW',
+      '#attributes' => ['id' => 'location_type_row'],
     ];
     $element['location_private_owner'] = [
       '#id' => 'location_private_owner',
@@ -147,13 +183,13 @@ class PortlandLocationPicker extends WebformCompositeBase {
       '#options_display' => 'side_by_side',
       '#states' => [
         'visible' => [
-          ':input[name="' . $element_id . '[location_type]"]' => [
-            'value' => 'private'
+          ':input[name="' . $element_id . '[location_type_taxlot]"]' => [
+            'value' => '1'
           ],
         ],
         'required' => [
-          ':input[name="' . $element_id . '[location_type]"]' => [
-            'value' => 'private'
+          ':input[name="' . $element_id . '[location_type_taxlot]"]' => [
+            'value' => '1'
           ],
         ],
       ],
@@ -222,6 +258,12 @@ class PortlandLocationPicker extends WebformCompositeBase {
       '#attributes' => ['class' => ['location-details']],
       '#description' => t('Please provide any other details that might help us locate the site you are reporting.'),
       '#description_display' => 'before',
+    ];
+    $element['location_details_internal'] = [
+      '#type' => 'hidden',
+      '#title' => t('Location Details (internal)'),
+      '#title_display' => 'invisible',
+      '#attributes' => ['class' => ['location-details_internal'], 'id' => 'location_details_internal'],
     ];
     $element['location_asset_id'] = [
       '#type' => 'hidden',
