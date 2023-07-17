@@ -86,7 +86,7 @@ describe('Ally Admin user test', () => {
       await page.goto(`${HOME_PAGE}${remove_link}`);
 
       text_content = await page.evaluate(() => document.querySelector('.page-title').textContent);
-      expect(text_content).toEqual(expect.stringContaining('Are you sure you want to delete'));
+      expect(text_content).toEqual(expect.stringContaining('Are you sure you want to remove'));
       selector = 'input#edit-submit';
       await page.evaluate((selector) => document.querySelector(selector).click(), selector);
       await page.waitForNavigation();
