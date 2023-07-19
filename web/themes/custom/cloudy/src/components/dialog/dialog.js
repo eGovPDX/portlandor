@@ -4,9 +4,7 @@ import Drupal from 'Drupal';
 Drupal.behaviors.dialog_handler = {
   attach(context, settings) {
     $(window).on('dialogcreate', function(e, dialog) {
-      $('body')
-        .find('.ui-dialog-titlebar-close')
-        .once('fa-close-added')
+      $(once('fa-close-added', 'body .ui-dialog-titlebar-close'))
         .each(function() {
           $(this).append('<i class="fa fa-window-close"></i>');
         });
