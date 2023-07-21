@@ -31,19 +31,13 @@
 
     // feature.entity_id is the map ID: "1371"
     var mapid = "leaflet-map-media-map-"+ feature.entity_id +"-field-geo-file";
-    var map = null;
-
-    for(var property in Drupal.Leaflet) {
-      if (Drupal.Leaflet.hasOwnProperty(property)) {
-        // All map using the same map file has similar ID. Find the first one that doesn't have feature loaded
-        if(property.indexOf("leaflet-map-media-map-"+ feature.entity_id) === 0) {
-          map = Drupal.Leaflet[property].lMap;
-          if(map.featureAdded) continue;
-        }
-      }
+    
+    let div_selector = "div#leaflet-map-media-map-" + feature.entity_id + "-field-geo-file";
+    var map = jQuery(div_selector).data('leaflet').lMap;
+    if( !map ) {
+      console.error("Cannot find Leaflet map within " + div_selector);
+      return;
     }
-
-    if( !map ) return;
 
     // Handle the custom geo file
     var featureLayer = L.geoJSON(null);
@@ -127,11 +121,13 @@ jQuery(document)
   // shadow. We remove the fill explicitly here.
   if(lFeature.getLayers) {
     var lFeature_layers = lFeature.getLayers();
-    feature.component.forEach(function(geo_shape, i) {
-      if(geo_shape.type == 'linestring') {
-        lFeature_layers[i].setStyle({fill:false})
-      }
-    })
+    if(feature.component) {
+      feature.component.forEach(function(geo_shape, i) {
+        if(geo_shape.type == 'linestring') {
+          lFeature_layers[i].setStyle({fill:false})
+        }
+      })
+    }
   }
 })
 .on('leaflet.map', function (e, settings, lMap, mapid) {

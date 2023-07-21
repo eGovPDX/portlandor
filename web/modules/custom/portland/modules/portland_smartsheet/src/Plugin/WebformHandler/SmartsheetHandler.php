@@ -1,10 +1,4 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: Steven
- * Date: 2019-05-18
- * Time: 10:05 AM
- */
 
 namespace Drupal\portland_smartsheet\Plugin\WebformHandler;
 use Drupal\Core\Config\ConfigFactoryInterface;
@@ -19,6 +13,7 @@ use Drupal\webform\WebformTokenManagerInterface;
 use Drupal\Core\Serialization\Yaml;
 use Drupal\file\Entity\File;
 use Drupal\webform\Entity\Webform;
+use Drupal\webform\WebformMessageManagerInterface;
 use Drupal\webform\WebformSubmissionForm;
 use Drupal\portland_smartsheet\Client\SmartsheetClient;
 use Drupal\Component\Serialization\Json;
@@ -46,11 +41,19 @@ class SmartsheetHandler extends WebformHandlerBase {
   protected $token_manager;
 
   /**
+   * The webform message manager.
+   *
+   * @var \Drupal\webform\WebformMessageManagerInterface
+   */
+  protected $message_manager;
+
+  /**
    * {@inheritdoc}
    */
   public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition) {
     $instance = parent::create($container, $configuration, $plugin_id, $plugin_definition);
     $instance->token_manager = $container->get('webform.token_manager');
+    $instance->message_manager = $container->get('webform.message_manager');
     return $instance;
   }
 
@@ -61,7 +64,11 @@ class SmartsheetHandler extends WebformHandlerBase {
   public function defaultConfiguration() {
     return [
       'column_mappings' => [],
-      'sheet_id' => ''
+      'multiple_rows_enable' => false,
+      'multiple_rows_field' => '',
+      'multiple_rows_separator' => '',
+      'row_location' => 'toBottom',
+      'sheet_id' => '',
     ];
   }
 
@@ -73,21 +80,7 @@ class SmartsheetHandler extends WebformHandlerBase {
   }
 
   private function getWebformFields() {
-    $webform_fields = $this->getWebform()->getElementsDecoded();
-    $return_value = [];
-    foreach ($webform_fields as $key => $field) {
-      if (in_array($field['#type'], ['container', 'webform_section'])) {
-        foreach ($field as $subkey => $subfield) {
-          if (!str_starts_with($subkey, '#') && isset($subfield['#type'])) {
-            $return_value[$subkey] = $subfield;
-          }
-        }
-      } else {
-        $return_value[$key] = $field;
-      }
-    }
-
-    return $return_value;
+    return $this->getWebform()->getElementsInitializedFlattenedAndHasValue();
   }
 
   public function fetchColumns(array &$form, FormStateInterface $form_state) {
@@ -117,12 +110,15 @@ class SmartsheetHandler extends WebformHandlerBase {
       $webform_fields['__submission_id'] = ['#title' => 'Submission ID'];
       $options = ['' => 'None'];
       foreach ($webform_fields as $key => $value) {
-        $options[$key] = $value['#admin_title'] ?? $value['#title'];
+        $title = $value['#admin_title'] ?? $value['#title'] ?? NULL;
+        if (empty($title)) continue;
+
+        $options[$key] = $title;
       }
 
       $form['column_mappings_container']['table']['#rows'] = array_map(
         fn($col) => [
-          ['data' => ['#markup' => "<strong>{$col->title}</strong>"]],
+          ['data' => ['#markup' => '<strong>' . htmlentities($col->title) . '</strong>']],
           ['data' => [
             '#type' => 'select',
             '#name' => "settings[column_mappings][{$col->id}]",
@@ -165,6 +161,52 @@ class SmartsheetHandler extends WebformHandlerBase {
       ]
     ];
 
+    $form['multiple_rows_enable'] = [
+      '#type' => 'checkbox',
+      '#title' => $this->t('Create multiple rows'),
+      '#description' => $this->t('If checked, you can choose a field which will be the key when creating multiple rows.'),
+      '#description_display' => 'before',
+      '#default_value' => $this->configuration['multiple_rows_enable'],
+    ];
+
+    $form['multiple_rows_field'] = [
+      '#type' => 'textfield',
+      '#title' => $this->t('Multiple rows field'),
+      '#description' => $this->t('This field will be used to decide whether to create multiple rows. If it contains more than one element, a new row will be created for each element.'),
+      '#description_display' => 'before',
+      '#default_value' => $this->configuration['multiple_rows_field'],
+      '#states' => [
+        'visible' => [
+          ':input[name="settings[multiple_rows_enable]"]' => ['checked' => true],
+        ],
+      ],
+    ];
+
+    $form['multiple_rows_separator'] = [
+      '#type' => 'textfield',
+      '#title' => $this->t('Multiple rows separator'),
+      '#description' => $this->t('If the field is NOT an array, this separator will be used to split the data into an array.'),
+      '#description_display' => 'before',
+      '#default_value' => $this->configuration['multiple_rows_separator'],
+      '#states' => [
+        'visible' => [
+          ':input[name="settings[multiple_rows_enable]"]' => ['checked' => true],
+        ],
+      ],
+    ];
+
+    $form['row_location'] = [
+      '#type' => 'select',
+      '#title' => $this->t('Row location'),
+      '#description' => $this->t('Should the row be added to the bottom or top of the sheet?'),
+      '#description_display' => 'before',
+      '#default_value' => $this->configuration['row_location'],
+      '#options' => [
+        'toBottom' => 'To Bottom',
+        'toTop' => 'To Top',
+      ],
+    ];
+
     $this->fetchColumns($form, $form_state);
 
     return $this->setSettingsParents($form);
@@ -179,40 +221,87 @@ class SmartsheetHandler extends WebformHandlerBase {
 
     $values = $form_state->getUserInput()['settings'];
     $this->configuration['column_mappings'] = $values['column_mappings'];
+    $this->configuration['multiple_rows_enable'] = $values['multiple_rows_enable'];
+    $this->configuration['multiple_rows_field'] = $values['multiple_rows_field'];
+    $this->configuration['multiple_rows_separator'] = $values['multiple_rows_separator'];
+    $this->configuration['row_location'] = $values['row_location'];
     $this->configuration['sheet_id'] = $values['sheet_id'];
   }
 
-  public function postSave(WebformSubmissionInterface $webform_submission, $update = TRUE) {
-    $submission_fields = $webform_submission->toArray(TRUE);
-    $submission_id = $submission_fields['sid'] !== '' ? $submission_fields['sid'] : $submission_fields['uuid'];
-
+  private function getRowData(array $fields) {
     $column_mappings = $this->configuration['column_mappings'];
+    $row_location = $this->configuration['row_location'];
     $cells = [];
     foreach ($column_mappings as $col_id => $field_id) {
+      // skip empty mappings
       if ($field_id === "") continue;
 
-
-      $field_data = $field_id === '__submission_id' ? $submission_id : $submission_fields['data'][$field_id];
-
+      $field_data = $fields[$field_id];
       $cells[] = [
         'columnId' => (int) $col_id,
-        'value' => is_array($field_data) ? join(",", $field_data) : $field_data
+        'value' => is_array($field_data) ? join(',', $field_data) : $field_data,
       ];
+    }
+
+    return [
+      'cells' => $cells,
+      $row_location => true,
+    ];
+  }
+
+  public function validateForm(array &$form, FormStateInterface $form_state, WebformSubmissionInterface $webform_submission) {
+    // By submitting to the API during the validate phase, we can interrupt the form submission if any errors happen.
+    // But we need to check that the validation was triggered by the submit button, and that there were also no validation errors.
+    if ($form_state->hasAnyErrors() || !$form_state->getTriggeringElement() || $form_state->getTriggeringElement()['#type'] !== "submit") return;
+
+    $this->message_manager->setWebformSubmission($webform_submission);
+
+    $submission_arr = $webform_submission->toArray(TRUE);
+    $submission_id = $submission_arr['sid'] !== '' ? $submission_arr['sid'] : $submission_arr['uuid'];
+    $fields = [
+      ...$submission_arr['data'],
+      '__submission_id' => $submission_id,
+    ];
+
+    $multiple_rows_enable = $this->configuration['multiple_rows_enable'];
+    $multiple_rows_field = $this->configuration['multiple_rows_field'];
+    $multiple_rows_separator = $this->configuration['multiple_rows_separator'];
+    $rows = [];
+    // if multi-row is enabled, we have to get a new row for each element in the field
+    if ($multiple_rows_enable && array_key_exists($multiple_rows_field, $fields)) {
+      $field = $fields[$multiple_rows_field];
+      // if the field data is an array, just use that. if not, we need to split it using the provided separator
+      $field_arr = is_array($field) ? $field : explode($multiple_rows_separator, $field);
+      foreach ($field_arr as $multiple_rows_field_data) {
+        // copy the fields array, but overwrite the multi-row field with the current array element
+        $fields_for_this_row = [
+          ...$fields,
+          $multiple_rows_field => $multiple_rows_field_data,
+        ];
+        $rows[] = $this->getRowData($fields_for_this_row);
+      }
+    } else {
+      $rows[] = $this->getRowData($fields);
     }
 
     try {
       $client = new SmartsheetClient($this->configuration['sheet_id']);
-      $client->addRow([
-        'cells' => $cells
-      ]);
+      $client->addRows($rows);
     } catch (\Exception $e) {
       // Log error message.
-      $this->getLogger()->error('@form webform submission to Smartsheet failed. @exception: @message.', [
+      $this->getLogger()->error('@form webform submission to Smartsheet (@handler_id) failed. @exception: @message.', [
         '@exception' => get_class($e),
         '@form' => $this->getWebform()->label(),
         '@message' => $e->getMessage(),
+        '@handler_id' => $this->getHandlerId(),
         'link' => $this->getWebform()->toLink($this->t('Edit'), 'handlers')->toString(),
       ]);
+
+      // Display error to user.
+      $this->message_manager->display(WebformMessageManagerInterface::SUBMISSION_EXCEPTION_MESSAGE, 'error');
+
+      // Add validation error to prevent submission.
+      $form_state->setErrorByName('');
     }
   }
 

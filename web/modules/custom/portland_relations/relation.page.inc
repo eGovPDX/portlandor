@@ -21,7 +21,7 @@ use Drupal\Core\Render\Element;
  */
 function template_preprocess_relation(array &$variables) {
   // Fetch Relation Entity Object.
-  $relation = $variables['elements']['#relation'];
+  $variables['relation'] = $variables['elements']['#relation'];
 
   // Helpful $content variable for templates.
   foreach (Element::children($variables['elements']) as $key) {

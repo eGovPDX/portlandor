@@ -1,0 +1,57 @@
+diff --git a/src/Plugin/OpenIDConnectClient/WindowsAad.php b/src/Plugin/OpenIDConnectClient/WindowsAad.php
+index 5429fd5..15edcbd 100644
+--- a/src/Plugin/OpenIDConnectClient/WindowsAad.php
++++ b/src/Plugin/OpenIDConnectClient/WindowsAad.php
+@@ -260,6 +260,18 @@ as the mapping between Azure AD accounts and Drupal users.<br/>
+         'language' => $this->languageManager->getLanguage(LanguageInterface::LANGCODE_NOT_APPLICABLE),
+       ])->toString(),
+     ];
++ 
++    $form['override_name'] = [
++      '#title' => $this->t('Override default name'),
++      '#type' => 'radios',
++      '#options' => [
++        0 => $this->t('Use default name'),
++        1 => $this->t('Use combination of givenName and surname'),
++        2 => $this->t('Use combination of surname and givenName')
++      ],
++      '#default_value' => !empty($this->configuration['override_name']) ? $this->configuration['override_name'] : 0,
++      '#description' => $this->t('By default, the user name will be assigned according to the "name" value. As an alternative, it is possible to concatenate "givenName" and "surname" values.'),
++    ];
+ 
+     return $form;
+   }
+@@ -310,6 +322,8 @@ as the mapping between Azure AD accounts and Drupal users.<br/>
+     $request_options = $this->getRequestOptions($authorization_code, $redirect_uri);
+ 
+     // Add a Graph API as resource if an option is selected.
++    // "scope" replaced "resource" parameter in Azure AD v2
++    // https://joonasw.net/view/azure-ad-v2-and-msal-from-dev-pov
+     switch ($this->configuration['userinfo_graph_api_wa']) {
+       case 1:
+         $request_options['form_params']['resource'] = 'https://graph.windows.net';
+@@ -320,6 +334,7 @@ as the mapping between Azure AD accounts and Drupal users.<br/>
+         if (!$v2) {
+           $request_options['form_params']['resource'] = 'https://graph.microsoft.com';
+         }
++        $request_options['form_params']['scope'] = 'User.Read';
+         break;
+     }
+ 
+@@ -397,6 +412,16 @@ as the mapping between Azure AD accounts and Drupal users.<br/>
+       $userinfo['groups'] = $this->retrieveGroupInfo($access_token);
+     }
+ 
++    // Optionally, override the default name and use a combination of first and last name.
++    switch ($this->configuration['override_name']) {
++      case 1:
++        $userinfo['name'] = $userinfo['givenName'] . ' ' . $userinfo['surname'];
++        break;
++      case 2:
++        $userinfo['name'] = $userinfo['surname'] . ' ' . $userinfo['givenName'];
++        break;
++    }
++    
+     return $userinfo;
+   }
+ 

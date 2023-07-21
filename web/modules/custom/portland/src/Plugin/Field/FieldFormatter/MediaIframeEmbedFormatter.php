@@ -74,9 +74,10 @@ class MediaIframeEmbedFormatter extends MediaRemoteFormatterBase {
         continue;
       }
       $elements[$delta] = [
-        '#theme' => 'media_embed_iframe',
-        '#url' =>  $item->value,
+        '#type' => 'html_tag',
+        '#tag' => 'iframe',
         '#attributes' => [
+          'src' =>  $item->value,
           'width' => '100%',
           'height' => '100%',
           'frameborder' => '0',

@@ -56,6 +56,11 @@ class RouteSubscriber extends RouteSubscriberBase {
       $this->loggerFactory->get('portland')
         ->warning('@message', $variables);
     }
-  }
 
+    // mark the entity embed dialog as an admin route - this makes it use the user's admin page language
+    // instead of the content's language, so editors see it in English
+    if ($route = $collection->get('entity_embed.dialog')) {
+      $route->setOption('_admin_route', true);
+    }
+  }
 }
