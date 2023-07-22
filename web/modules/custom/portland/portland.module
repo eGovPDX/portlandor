@@ -1436,21 +1436,25 @@ function portland_user_format_name_alter(&$name, $account) {
 }
 
 /**
- * Implements hook_user_presave().
+ * Implements hook_ENTITY_TYPE_presave().
  */
-function portland_user_presave($user)
-{
+function portland_user_presave($user) {
   // Update the user's full name before saving
   $first_name = $user->field_first_name->value;
   $last_name = $user->field_last_name->value;
-  if( !empty($first_name) && !empty($last_name)) {
+  if (!empty($first_name) && !empty($last_name)) {
     $user->field_full_name->value = $first_name . ' ' . $last_name;
   }
-  else if( !empty($first_name)) {
+  else if (!empty($first_name)) {
     $user->field_full_name->value = $first_name;
   }
-  else if( !empty($last_name)) {
+  else if (!empty($last_name)) {
     $user->field_full_name->value = $last_name;
+  }
+
+  // Ensure their admin language preference defaults to English if not set.
+  if (empty($user->preferred_admin_langcode->first())) {
+    $user->set('preferred_admin_langcode', \Drupal::service('language_manager')->getDefaultLanguage()->getId());
   }
 }
 
