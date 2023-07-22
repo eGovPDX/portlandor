@@ -825,6 +825,37 @@ function portland_form_entity_browser_form_alter(&$form, &$form_state, $form_id)
 }
 
 /**
+ * Implements hook_form_BASE_FORM_ID_alter().
+ *
+ * Override the node edit form to show a warning when editing the default translation, if there are translated versions.
+ */
+function portland_form_node_form_alter(&$form, &$form_state) {
+  $node = $form_state->getFormObject()->getEntity();
+  // false = exclude default language
+  $translation_langs = $node->getTranslationLanguages(false);
+  $translation_langs_friendly = join(', ', array_map(fn($lang) => $lang->getName(), $translation_langs));
+
+  $has_other_translations = !empty($translation_langs);
+  $t = 't';
+  if ($node->isDefaultTranslation() && $has_other_translations) {
+    $form['footer']['portland_translation_warning'] = [
+      '#markup' => "<div class=\"messages messages--warning\">
+        <div class=\"messages__header\">
+          <h2 class=\"messages__title\">{$t('Make sure to update translations')}</h2>
+        </div>
+        <div class=\"messages__content\">
+          <p>{$t('This content is translated into the following other languages:')}
+          <br>
+          <em>{$translation_langs_friendly}</em></p>
+          <p>{$t('If you are making substantial edits, you may want to ensure that they are updated as well.')}</p>
+        </div>
+      ",
+      '#weight' => 99,
+    ];
+  }
+}
+
+/**
  * A helper function to validate document.
  */
 function _validate_document(&$form, \Drupal\Core\Form\FormStateInterface $form_state)
