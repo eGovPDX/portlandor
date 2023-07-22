@@ -796,6 +796,35 @@ function portland_form_alter(&$form, &$form_state, $form_id)
 }
 
 /**
+ * Implements hook_form_BASE_FORM_ID_alter().
+ *
+ * Override the entity browser to show some custom help text when embedding on a translated page.
+ */
+function portland_form_entity_browser_form_alter(&$form, &$form_state, $form_id) {
+  $forms_to_alter = [
+    'entity_browser_audio_video_browser_embed_form',
+    'entity_browser_document_browser_embed_form',
+    'entity_browser_image_browser_embed_form',
+    'entity_browser_map_browser_embed_form',
+  ];
+  if (!in_array($form_id, $forms_to_alter)) return;
+
+  $default_lang = \Drupal::languageManager()->getDefaultLanguage();
+  $current_lang = \Drupal::languageManager()->getCurrentLanguage(LanguageInterface::TYPE_CONTENT);
+  if ($current_lang !== $default_lang) {
+    $form['portland_help_text'] = [
+      '#markup' => '<p>'
+        . t(
+            'Select an item to embed below. If it has been translated into @lang, the translated version will automatically be used for this page.',
+            [ '@lang' => $current_lang->getName() ],
+          )
+        . '</p>',
+      '#weight' => -99,
+    ];
+  }
+}
+
+/**
  * A helper function to validate document.
  */
 function _validate_document(&$form, \Drupal\Core\Form\FormStateInterface $form_state)
@@ -1454,7 +1483,7 @@ function portland_user_presave($user) {
 
   // Ensure their admin language preference defaults to English if not set.
   if (empty($user->preferred_admin_langcode->first())) {
-    $user->set('preferred_admin_langcode', \Drupal::service('language_manager')->getDefaultLanguage()->getId());
+    $user->set('preferred_admin_langcode', \Drupal::languageManager()->getDefaultLanguage()->getId());
   }
 }
 
