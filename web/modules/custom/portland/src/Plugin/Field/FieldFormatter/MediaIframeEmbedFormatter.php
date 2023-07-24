@@ -36,8 +36,10 @@ class MediaIframeEmbedFormatter extends MediaRemoteFormatterBase {
       '^https?:\/\/www\.portlandoregon\.gov\/bes\/bigpipe\/\w+\.cfm$',
       // Tableau
       '^https?:\/\/(online|public)\.tableau\.com\/(.*)$',
-      // Smartsheet
-      "^https?:\/\/(app|publish)\.smartsheet\.com\/(.*)$",
+      // Smartsheet form
+      "^https?:\/\/app\.smartsheet\.com\/b\/form\/.+$",
+      // Smartsheet publish
+      "^https?:\/\/publish\.smartsheet\.com\/.+$",
     ];
 
     return "/" . join("|", $patterns) . "/";
