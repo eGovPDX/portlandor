@@ -49,7 +49,7 @@ class MediaIframeEmbedFormatter extends MediaRemoteFormatterBase {
    * {@inheritdoc}
    */
   public static function getValidUrlExampleStrings(): array {
-    return ['Only supports embeddable links from arcg.is, arcgis.com, pdx.maps.arcgis.com, Google Maps, PortlandMaps.com, PortlandOregon.gov, Tableau, and Smartsheet. If you would like to request a new service, please contact website@portlandoregon.gov for review.'];
+    return ['Only supports embeddable links from arcg.is, arcgis.com, pdx.maps.arcgis.com, Google Maps, PortlandMaps.com, PortlandOregon.gov, Tableau, and Smartsheet (links starting with app.smartsheet.com/b/form or publish.smartsheet.com). If you would like to request a new service, please contact website@portlandoregon.gov for review.'];
   }
 
   /**
