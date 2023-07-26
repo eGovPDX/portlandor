@@ -134,7 +134,7 @@ class PortlandLocationPicker extends WebformCompositeBase {
     // without better reverse geocoding, we're setting a hidden field that can
     // be used for routing.
     $element['location_type'] = [
-      '#type' => 'hidden',
+      '#type' => 'textfield',
       '#title' => t('Location type'),
       '#attributes' => ['id' => 'location_type'],
     ];
@@ -186,10 +186,16 @@ class PortlandLocationPicker extends WebformCompositeBase {
           ':input[name="' . $element_id . '[location_type_taxlot]"]' => [
             'value' => '1'
           ],
+          ':input[name="' . $element_id . '[location_type_park]"]' => [
+            '!value' => '1'
+          ],
         ],
         'required' => [
           ':input[name="' . $element_id . '[location_type_taxlot]"]' => [
             'value' => '1'
+          ],
+          ':input[name="' . $element_id . '[location_type_park]"]' => [
+            '!value' => '1'
           ],
         ],
       ],

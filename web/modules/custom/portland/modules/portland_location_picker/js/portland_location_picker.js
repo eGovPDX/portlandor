@@ -64,6 +64,15 @@
           Solved: "solved",
           Closed: "closed"
         }
+        // the hidden location_type field should only have one of these values; these match the old
+        // radio buttons that have been replaced by the location type service.
+        const LOCATION_TYPE = {
+          Street: "street",
+          Private: "private",
+          Park: "park",
+          Waterway: "waterway",
+          Other: "other"
+        }
 
         const GEOLOCATION_CACHE_MILLISECONDS = 0;
 
@@ -128,6 +137,8 @@
         var requireCityLimits = drupalSettings.webform.portland_location_picker.require_city_limits === false ? false : true;
         var displayCityLimits = drupalSettings.webform.portland_location_picker.display_city_limits === false ? false : true;
         var locationTypes = drupalSettings.webform.portland_location_picker.location_types === false ? false : true;
+
+        var locationType;
 
         // properties for the city limits polygon; if geofencing is required, the city limits are shown
         // as a clear cutout of a shaded global polygon.
@@ -1009,7 +1020,7 @@
               }
               if (results.row) {
                 $('input[name=' + elementId + '\\[location_type_row\\]]').val("1");
-                $('input[name=' + elementId + '\\[location_type\\]]').val($('input[name=' + elementId + '\\[location_type\\]]').val() + 'row,');
+                // $('input[name=' + elementId + '\\[location_type\\]]').val($('input[name=' + elementId + '\\[location_type\\]]').val() + 'row,');
                 location_type += "row,";
                 var tl_type = results.feature_detail.row[0].tl_type;
                 internal_details += "TL Type: " + tl_type + ', ';
@@ -1021,13 +1032,14 @@
               internal_details = removeTrailingComma(internal_details);
 
               $('input[name=' + elementId + '\\[place_name\\]]').val(place_name);
-              $('input[name=' + elementId + '\\[location_type\\]]').val(location_type);
+              $('input[name=' + elementId + '\\[location_type\\]]').val(calculateLocationType(results));
               $('input[name=' + elementId + '\\[location_details_internal\\]]').val(internal_details);
 
               console.log('Place name: ' + place_name);
               console.log('Location type: ' + location_type);
               console.log('Internal details: ' + internal_details);
 
+              $('input[name=' + elementId + '\\[location_type\\]]').trigger('change');
               $('input[name=' + elementId + '\\[location_type_taxlot\\]]').trigger('change');
               $('input[name=' + elementId + '\\[location_type_park\\]]').trigger('change');
               $('input[name=' + elementId + '\\[location_type_waterbody\\]]').trigger('change');
@@ -1051,6 +1063,24 @@
             }
           });
 
+        }
+
+        function calculateLocationType(results) {
+          // parks are also taxlots!
+
+          // private
+          if (results.taxlot && !results.park) {
+            locationType = LOCATION_TYPE.Private;
+          } else if (results.park) {
+            locationType = LOCATION_TYPE.Park;
+          } else if (results.waterbody && results.row) {
+            locationType = LOCATION_TYPE.Waterway;
+          } else if (results.street || (results.row && results.feature_detail.row[0].tl_type == "ROAD")) {
+            locationType = LOCATION_TYPE.Street;
+          } else {
+            locationType = LOCATION_TYPE.Other;
+          }
+          return locationType;
         }
 
         function removeTrailingComma(myStr) {
