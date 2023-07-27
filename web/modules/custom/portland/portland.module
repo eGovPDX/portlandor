@@ -809,6 +809,66 @@ function portland_form_alter(&$form, &$form_state, $form_id)
 }
 
 /**
+ * Implements hook_form_BASE_FORM_ID_alter().
+ *
+ * Override the entity browser to show some custom help text when embedding on a translated page.
+ */
+function portland_form_entity_browser_form_alter(&$form, &$form_state, $form_id) {
+  $forms_to_alter = [
+    'entity_browser_audio_video_browser_embed_form',
+    'entity_browser_document_browser_embed_form',
+    'entity_browser_image_browser_embed_form',
+    'entity_browser_map_browser_embed_form',
+  ];
+  if (!in_array($form_id, $forms_to_alter)) return;
+
+  $default_lang = \Drupal::languageManager()->getDefaultLanguage();
+  $current_lang = \Drupal::languageManager()->getCurrentLanguage(LanguageInterface::TYPE_CONTENT);
+  if ($current_lang !== $default_lang) {
+    $form['portland_help_text'] = [
+      '#markup' => '<p>'
+        . t(
+            'Select an item to embed below. If it has been translated into @lang, the translated version will automatically be used after being embedded.',
+            [ '@lang' => $current_lang->getName() ],
+          )
+        . '</p>',
+      '#weight' => -99,
+    ];
+  }
+}
+
+/**
+ * Implements hook_form_BASE_FORM_ID_alter().
+ *
+ * Override the node edit form to show a warning when editing the default translation, if there are translated versions.
+ */
+function portland_form_node_form_alter(&$form, &$form_state) {
+  $node = $form_state->getFormObject()->getEntity();
+  // false = exclude default language
+  $translation_langs = $node->getTranslationLanguages(false);
+  $translation_langs_friendly = join(', ', array_map(fn($lang) => $lang->getName(), $translation_langs));
+
+  $has_other_translations = !empty($translation_langs);
+  $t = 't';
+  if ($node->isDefaultTranslation() && $has_other_translations) {
+    $form['footer']['portland_translation_warning'] = [
+      '#markup' => "<div class=\"messages messages--warning\">
+        <div class=\"messages__header\">
+          <h2 class=\"messages__title\">{$t('Make sure to update translations')}</h2>
+        </div>
+        <div class=\"messages__content\">
+          <p>{$t('This content is translated into the following other languages:')}
+          <br>
+          <em>{$translation_langs_friendly}</em></p>
+          <p>{$t('If you are making substantial edits, you may want to ensure that they are updated as well.')}</p>
+        </div>
+      ",
+      '#weight' => 99,
+    ];
+  }
+}
+
+/**
  * A helper function to validate document.
  */
 function _validate_document(&$form, FormStateInterface $form_state)
@@ -1449,21 +1509,25 @@ function portland_user_format_name_alter(&$name, $account) {
 }
 
 /**
- * Implements hook_user_presave().
+ * Implements hook_ENTITY_TYPE_presave().
  */
-function portland_user_presave($user)
-{
+function portland_user_presave($user) {
   // Update the user's full name before saving
   $first_name = $user->field_first_name->value;
   $last_name = $user->field_last_name->value;
-  if( !empty($first_name) && !empty($last_name)) {
+  if (!empty($first_name) && !empty($last_name)) {
     $user->field_full_name->value = $first_name . ' ' . $last_name;
   }
-  else if( !empty($first_name)) {
+  else if (!empty($first_name)) {
     $user->field_full_name->value = $first_name;
   }
-  else if( !empty($last_name)) {
+  else if (!empty($last_name)) {
     $user->field_full_name->value = $last_name;
+  }
+
+  // Ensure their admin language preference defaults to English if not set.
+  if (empty($user->preferred_admin_langcode->first())) {
+    $user->set('preferred_admin_langcode', \Drupal::languageManager()->getDefaultLanguage()->getId());
   }
 }
 
