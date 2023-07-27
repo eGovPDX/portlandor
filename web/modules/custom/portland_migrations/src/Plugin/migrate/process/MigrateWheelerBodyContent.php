@@ -2,6 +2,7 @@
 
 namespace Drupal\portland_migrations\Plugin\migrate\process;
 
+use Drupal\group\Entity\Group;
 use Drupal\migrate\MigrateException;
 use Drupal\migrate\MigrateExecutableInterface;
 use Drupal\migrate\ProcessPluginBase;
@@ -102,7 +103,7 @@ class MigrateWheelerBodyContent extends ProcessPluginBase {
         if (!isset($result) || !is_array($result) || count($result) < 1) {
           // before saving new file, search for possible duplicates.
           // search criteria: same filename (sans POG contentid), same filesize
-          $realpath_dir = drupal_realpath($download_dir_uri);
+          $realpath_dir = \Drupal::service('file_system')->realpath($download_dir_uri);
           $filename_search = str_replace($content_id, '*', $filename);
 
           $files = glob($realpath_dir . '/' . $filename_search);
@@ -172,7 +173,7 @@ class MigrateWheelerBodyContent extends ProcessPluginBase {
             // now create group content entity to link this media item to a group.
             // Mayor Wheeler is group 71.
             // TODO: Is there a good way to dynamically get the group?
-            $group = \Drupal\group\Entity\Group::load(71);
+            $group = Group::load(71);
             $group->addContent($media, $plugin_id);
           }
         } else {
@@ -183,7 +184,7 @@ class MigrateWheelerBodyContent extends ProcessPluginBase {
 
         if ($downloaded_file && $media_type == "document") {
           $file_uri = $media->get('field_document')->entity->getFileUri();
-          $file_url = file_url_transform_relative(file_create_url($file_uri));
+          $file_url = \Drupal::service('file_url_generator')->generateString($file_uri);
           $link->setAttribute("href", $file_url);
         }
 
@@ -206,7 +207,7 @@ class MigrateWheelerBodyContent extends ProcessPluginBase {
   protected function generateDownloadDirectoryUri() {
     // prepare download directory
     $folder_name = date("Y-m") ;
-    $folder_uri = file_build_uri($folder_name);
+    $folder_uri = \Drupal::service('stream_wrapper_manager')->normalizeUri(\Drupal::config('system.file')->get('default_scheme') . ('://' . $folder_name));
     return $folder_uri;
   }
 

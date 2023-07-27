@@ -2,7 +2,7 @@
 
 namespace Drupal\portland\EventSubscriber;
 
-use Symfony\Component\HttpKernel\Event\FilterResponseEvent;
+use Symfony\Component\HttpKernel\Event\ResponseEvent;
 use Symfony\Component\HttpKernel\KernelEvents;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
@@ -10,7 +10,7 @@ use Symfony\Component\EventDispatcher\EventSubscriberInterface;
  * Add custom headers.
  */
 class FileHeadersSubscriber implements EventSubscriberInterface {
-  public function onRespond(FilterResponseEvent $event) {
+  public function onRespond(ResponseEvent $event) {
     $response = $event->getResponse();
 
     if ($response->headers->has('content-disposition')) {
