@@ -92,6 +92,7 @@ class PortlandLocationPicker extends WebformCompositeBase {
     $element['location_address_container']['location_address'] = [
       '#type' => 'textfield',
       '#title' => t('Location Search'),
+      '#title_display' => 'invisible',
       '#id' => 'location_address',
       '#attributes' => ['class' => ['location-picker-address'], 'autocomplete' => 'off'],
       '#description' => t('Search by address, cross streets, park name, community center or other landmark. Or click/tap the map to select a precise location.'),
@@ -136,7 +137,7 @@ class PortlandLocationPicker extends WebformCompositeBase {
     $element['location_type'] = [
       '#type' => 'textfield',
       '#title' => t('Location type'),
-      '#attributes' => ['id' => 'location_type'],
+      '#attributes' => ['id' => 'location_type', 'disabled' => 'disabled'],
     ];
 
     $element['location_type_taxlot'] = [

@@ -233,6 +233,7 @@
           if (lat && lng && lat !== "0" && lng !== "0") {
             setLocationMarker(lat, lng);
             doZoomAndCenter(lat, lng);
+            setLocationType(lat, lng)
           }
 
           // Set up address verify button, autocomplete, and help text
