@@ -12,42 +12,48 @@ Drupal.behaviors.drawer = {
     const closeButton = $('.drawer__close');
 
     // Add open to drawers
-    $(document, context).once('drawerOpenHandlers').on('click', '.drawer__open', function(event) {
-      event.preventDefault();
-      event.stopPropagation();
+    $(once('drawerOpenHandlers', document, context)).each(function () {
+        $(this).on('click', '.drawer__open', function(event) { 
+        event.preventDefault();
+        event.stopPropagation();
 
-      const target = $(this).data('target');
+        const target = $(this).data('target');
 
-      $(openButton).attr('aria-pressed', 'true');
-      $(openButton).attr('aria-expanded', 'true');
-      $(closeButton).attr('aria-pressed', 'false');
-      $(target).addClass('is-active');
+        $(openButton).attr('aria-pressed', 'true');
+        $(openButton).attr('aria-expanded', 'true');
+        $(closeButton).attr('aria-pressed', 'false');
+        $(target).addClass('is-active');
+      });
     });
 
     // Add close to drawers
-    $(document, context).once('drawerCloseHandlers').on('click', '.drawer__close', function(event) {
-      event.preventDefault();
-      event.stopPropagation();
+    $(once('drawerCloseHandlers', document, context)).each(function () {
+        $(this).on('click', '.drawer__close', function(event) { 
+        event.preventDefault();
+        event.stopPropagation();
 
-      const target = $(this).data('target');
+        const target = $(this).data('target');
 
-      $(openButton).attr('aria-pressed', 'false');
-      $(openButton).attr('aria-expanded', 'false');
-      $(closeButton).attr('aria-pressed', 'true');
-      $(target).removeClass('is-active');
+        $(openButton).attr('aria-pressed', 'false');
+        $(openButton).attr('aria-expanded', 'false');
+        $(closeButton).attr('aria-pressed', 'true');
+        $(target).removeClass('is-active');
+      });
     });
 
     // Add close to overlay clicks
-    $(document, context).once('drawerOverlayHandlers').on('click', '.drawer__overlay', function(event) {
-      event.preventDefault();
-      event.stopPropagation();
+    $(once('drawerOverlayHandlers', document, context)).each(function () {
+        $(this).on('click', '.drawer__overlay', function(event) { 
+        event.preventDefault();
+        event.stopPropagation();
 
-      const target = $(this).data('target');
+        const target = $(this).data('target');
 
-      $(openButton).attr('aria-pressed', 'false');
-      $(openButton).attr('aria-expanded', 'false');
-      $(closeButton).attr('aria-pressed', 'true');
-      $(target).removeClass('is-active');
+        $(openButton).attr('aria-pressed', 'false');
+        $(openButton).attr('aria-expanded', 'false');
+        $(closeButton).attr('aria-pressed', 'true');
+        $(target).removeClass('is-active');
+      });
     });
   }
 };

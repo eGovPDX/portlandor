@@ -11,12 +11,12 @@ Drupal.behaviors.notificatin_handler = {
   attach(context, settings) {
     // Compare each server side alert changed time with browser cookie values.
     // If the changed time doesn't match for that alert, display the alert.
-    $('.cloudy-notification').once('alert-processed').each(function() {
+    $(once('alert-processed', '.cloudy-notification')).each(function() {
       // If this alert has no nid it is not dismissible and did not set a cookie
       if (!$(this).data('nid')) return;
 
       const nid = $(this).data('nid');
-      const cookieChangedTimestamp = $.cookie(COOKIE_PREFIX + nid);
+      const cookieChangedTimestamp = Cookies.get(COOKIE_PREFIX + nid);
       const alertChangedTimestamp = $(this).data('changed');
       if (cookieChangedTimestamp != alertChangedTimestamp) {
         // Only show the alert if dismiss button has not been clicked. The
@@ -38,7 +38,7 @@ Drupal.behaviors.notificatin_handler = {
       const nid = alertElement.data('nid');
       const lastChangedTimestamp = alertElement.data('changed');
       const path = (drupalSettings && drupalSettings.path && drupalSettings.path.baseUrl) || '/';
-      $.cookie(
+      Cookies.set(
         COOKIE_PREFIX + nid,
         lastChangedTimestamp,
         {
