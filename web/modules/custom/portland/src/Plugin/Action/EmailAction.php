@@ -49,7 +49,7 @@ class EmailAction extends ViewsBulkOperationsActionBase implements PluginFormInt
     }
     $combined_result = implode(",", $results);
 
-    
+
     $mailManager = \Drupal::service('plugin.manager.mail');
     $module = 'portland';
     $key = 'group_admin';

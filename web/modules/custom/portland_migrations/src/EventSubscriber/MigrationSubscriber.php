@@ -2,6 +2,7 @@
 
 namespace Drupal\portland_migrations\EventSubscriber;
 
+use Drupal\Core\File\FileSystemInterface;
 use Drupal\migrate\Event\MigrateEvents;
 use Drupal\migrate\Event\MigrateImportEvent;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
@@ -36,10 +37,10 @@ class MigrationSubscriber implements EventSubscriberInterface {
     if ($event->getMigration()->getBaseId() == 'policies') {
       // prepare policies media download directory
       $folder_name = date("Y-m") ;
-      $folder_uri = file_build_uri($folder_name);
-      $public_path = \Drupal::service('file_system')->realpath(file_default_scheme() . "://");
+      $folder_uri = \Drupal::service('stream_wrapper_manager')->normalizeUri(\Drupal::config('system.file')->get('default_scheme') . ('://' . $folder_name));
+      $public_path = \Drupal::service('file_system')->realpath(\Drupal::config('system.file')->get('default_scheme') . "://");
       $download_path = $public_path . "/" . $folder_name;
-      $dir = file_prepare_directory($download_path, FILE_CREATE_DIRECTORY);
+      $dir = \Drupal::service('file_system')->prepareDirectory($download_path, FileSystemInterface::CREATE_DIRECTORY);
     }
   }
 

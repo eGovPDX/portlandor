@@ -1,5 +1,6 @@
 <?php
 
+use Drupal\group\Entity\Group;
 use Drupal\Core\Render\BubbleableMetadata;
 use Drupal\group\Entity\GroupContent;
 
@@ -102,7 +103,7 @@ function portland_tokens($type, $tokens, array $data = array(), array $options =
             $group_id = $route_match->getParameter('view')->getExecutable()->args[0];
           }
           if (isset($group_id)) {
-            $group_entity = Drupal\group\Entity\Group::load($group_id);
+            $group_entity = Group::load($group_id);
             if (isset($group_entity)) {
               $group_title = $group_entity->label();
               $replacements[$original] = $group_title;

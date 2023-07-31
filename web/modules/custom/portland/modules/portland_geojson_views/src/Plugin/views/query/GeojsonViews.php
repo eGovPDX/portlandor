@@ -37,7 +37,7 @@ class GeojsonViews extends QueryPluginBase {
       // TODO: find a way to make this abstract, so it doesn't have to be hard coded for feeds
       // that use a different property name.
       $row['feature_id'] = $feature['properties']['OBJECTID'];
-      
+
       // geometry
       // these properties are universal across all geoJSON feeds.
       $row['feature_type'] = $feature['geometry']['type'];
@@ -49,7 +49,7 @@ class GeojsonViews extends QueryPluginBase {
       $row['tag_number'] = array_key_exists('tag_number', $feature['properties']) ? $feature['properties']['tag_number'] : "";
       $row['collection_days'] = array_key_exists('collection_days', $feature['properties']) ? $feature['properties']['collection_days'] : "";
       $row['meter_distr'] = array_key_exists('MeterDistr', $feature['properties']) ? $feature['properties']['MeterDistr'] : "";
-      
+
       $row['index'] = $index;
       $index = $index + 1;
       $view->result[] = new ResultRow($row);
