@@ -5,7 +5,9 @@
  *
  * All maps support zoom levels 0..18, except where stated otherwise.
  */
-
+use Drupal\Core\Entity\EntityInterface;
+use Drupal\Core\Entity\Display\EntityViewDisplayInterface;
+use Solarium\Core\Query\QueryInterface;
 use Drupal\Component\Utility\Unicode;
 use Drupal\views\ViewExecutable;
 
@@ -120,8 +122,8 @@ function _portland_leaflet_maps_assemble_default_map_info(&$map_info, $default_s
  * Implements hook_entity_view_alter.
  */
 function portland_leaflet_maps_entity_view_alter(array &$build,
-                            \Drupal\Core\Entity\EntityInterface $entity,
-                            \Drupal\Core\Entity\Display\EntityViewDisplayInterface $display) {
+                            EntityInterface $entity,
+                            EntityViewDisplayInterface $display) {
   // Abort if this function is called for a "related" item on a page
   if ($display->getMode() == "related") return;
   
@@ -144,7 +146,7 @@ function portland_leaflet_maps_entity_view_alter(array &$build,
  * Implements hook_search_api_solr_query_alter.
  */
 // Alter the Solr query to add filter query for bounding box if it's in the query string
-function portland_leaflet_maps_search_api_solr_query_alter(\Solarium\Core\Query\QueryInterface $solarium_query, \Drupal\search_api\Query\QueryInterface $query) {
+function portland_leaflet_maps_search_api_solr_query_alter(QueryInterface $solarium_query, \Drupal\search_api\Query\QueryInterface $query) {
   // If the bounding box (bbox) is in the query string
   if (isset($_GET['bbox'])) {
     // Get the left, top, right and bottom from the url.
@@ -180,7 +182,7 @@ function portland_leaflet_maps_search_api_query_alter(\Drupal\search_api\Query\Q
 /**
  * Implements hook_views_pre_render().
  */
-function portland_leaflet_maps_views_pre_render(\Drupal\views\ViewExecutable $view) {
+function portland_leaflet_maps_views_pre_render(ViewExecutable $view) {
   if ($view->id() == 'construction_map') {
     // Get the values for portlandmaps_id and portlandmaps_layer
     $layer_list = [];

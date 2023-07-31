@@ -2,6 +2,8 @@
 
 namespace Drupal\portland\Commands;
 
+use Drupal\group\Entity\Group;
+use Drupal\node\Entity\Node;
 use Drush\Commands\DrushCommands;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Logger\LoggerChannelFactoryInterface;
@@ -59,7 +61,9 @@ class BatchCommands extends DrushCommands
     $user_storage = $this->entityTypeManager->getStorage('user');
     
     if ($uid === 0) {
-      $users = $user_storage->getQuery()->condition('preferred_admin_langcode', null, 'is')->execute();
+      $users = $user_storage->getQuery()->condition('preferred_admin_langcode', null, 'is')
+        ->accessCheck()
+        ->execute();
     } else {
       $users = [ $uid ];
     }
@@ -88,7 +92,7 @@ class BatchCommands extends DrushCommands
   public function remove_audio()
   {
     // Load all groups
-    $groups = \Drupal\group\Entity\Group::loadMultiple();
+    $groups = Group::loadMultiple();
     foreach ($groups as $group) {
       $group_type_id = $group->getGroupType()->id();
       if($group_type_id == "program") {
@@ -156,10 +160,10 @@ class BatchCommands extends DrushCommands
       $new_video->save();
 
       // Update media UUID in Body
-      $nodes_using_audio = array_keys(\Drupal::service('entity_usage.usage')->listUsage($audio)['node'] ?? []);
+      $nodes_using_audio = array_keys(\Drupal::service('entity_usage.usage')->listSources($audio)['node'] ?? []);
       $node_urls = [];
       foreach($nodes_using_audio as $node_using_audio) {
-        $node = \Drupal\node\Entity\Node::load($node_using_audio);
+        $node = Node::load($node_using_audio);
         $orig_uuid = $audio->uuid->value;
         $new_uuid = $new_video->uuid->value;
         $node->field_body_content->value = str_replace($orig_uuid, $new_uuid, $node->field_body_content->value);

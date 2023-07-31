@@ -1,5 +1,6 @@
 <?php
 
+use GuzzleHttp\Client;
 use Drupal\user\Entity\User;
 use Drupal\Core\Language\LanguageInterface;
 use GuzzleHttp\Exception\RequestException;
@@ -13,7 +14,7 @@ use Drupal\datetime\Plugin\Field\FieldType\DateTimeItemInterface;
 function portland_openid_connect_user_presave($user) {
   // If this is an existing user and the status is updated
   if( $user->original !== null && $user->status->value !== $user->original->status->value) {
-    $now = new Drupal\Core\Datetime\DrupalDateTime('now', 'UTC');
+    $now = new DrupalDateTime('now', 'UTC');
     $user->set('field_status_updated_on', $now->format('Y-m-d\TH:i:s'));
   }
 }
@@ -114,7 +115,7 @@ function _get_user_profile_by_email($access_token, $user_email)
   if (strlen($access_token) === 0 || strlen($user_email) === 0) return [];
 
   /* @var \GuzzleHttp\ClientInterface $client */
-  $client = new \GuzzleHttp\Client();
+  $client = new Client();
   // Perform the request.
   $options = [
     'method' => 'GET',
@@ -185,7 +186,7 @@ function _get_all_users($access_token)
   $system_state = \Drupal::state();
 
   /* @var \GuzzleHttp\ClientInterface $client */
-  $client = new \GuzzleHttp\Client();
+  $client = new Client();
   // Perform the request.
   $options = [
     'method' => 'GET',
@@ -246,7 +247,7 @@ function _get_all_users($access_token)
  */
 function _get_access_token()
 {
-  $windows_aad_config = \Drupal::config('openid_connect.settings.windows_aad');
+  $windows_aad_config = \Drupal::config('openid_connect.client.windows_aad');
   $client_id = $windows_aad_config->get('settings.client_id');
   $tenant_id = '636d7808-73c9-41a7-97aa-8c4733642141';
 
@@ -261,7 +262,7 @@ function _get_access_token()
   ];
 
   /* @var \GuzzleHttp\ClientInterface $client */
-  $client = new \GuzzleHttp\Client();
+  $client = new Client();
 
   try {
     $response = $client->post("https://login.microsoftonline.com/$tenant_id/oauth2/v2.0/token", $request_options);

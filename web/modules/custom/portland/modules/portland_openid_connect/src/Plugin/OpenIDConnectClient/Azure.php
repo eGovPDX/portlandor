@@ -234,7 +234,7 @@ class Azure extends OpenIDConnectClientBase {
         'access_token' => $response_data['access_token'],
       ];
       if (array_key_exists('expires_in', $response_data)) {
-        $tokens['expire'] = REQUEST_TIME + $response_data['expires_in'];
+        $tokens['expire'] = \Drupal::time()->getRequestTime() + $response_data['expires_in'];
       }
       return $tokens;
     }
