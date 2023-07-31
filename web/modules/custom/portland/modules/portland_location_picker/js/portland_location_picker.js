@@ -301,7 +301,7 @@
             });
             $('#location_park').on("change", function () {
               var park = $(this).val();
-              if (park) { locateParkFromSelector(park); }
+              //if (park) { locateParkFromSelector(park); }
             });
           }
 
@@ -353,6 +353,7 @@
               if (handleCityLimits(new L.LatLng(lat,lon), municipalitiesLayer)) {
                 if (doZoomAndCenter(lat, lon)) {
                   setLocationMarker(lat, lon);
+                  setLocationType(lat, lon);
                 }
               } else {
                 return false;
@@ -972,7 +973,7 @@
               $('input[name=' + elementId + '\\[location_type_stream\\]]').val("");
               $('input[name=' + elementId + '\\[location_type_street\\]]').val("");
               $('input[name=' + elementId + '\\[location_type_row\\]]').val("");
-              $('input[name=' + elementId + '\\[location_type\\]]').val("");
+              $('input[name=' + elementId + '\\[location_type_hidden\\]]').val("");
               $('input[name=' + elementId + '\\[location_details_internal\\]]').val("");
 
               // TODO: need to manually display location_private_owner radios if taxlog
@@ -1033,14 +1034,25 @@
               internal_details = removeTrailingComma(internal_details);
 
               $('input[name=' + elementId + '\\[place_name\\]]').val(place_name);
-              $('input[name=' + elementId + '\\[location_type\\]]').val(calculateLocationType(results));
+              $('input[name=' + elementId + '\\[location_type_hidden\\]]').val(location_type);
               $('input[name=' + elementId + '\\[location_details_internal\\]]').val(internal_details);
+
+              // set location radio button
+              // report_location[location_type]
+              var radioInputs = $('input[name="report_location[location_type]"]');
+              var radioValue = calculateLocationType(results);
+              for (var i = 0; i < radioInputs.length; i++) {
+                if (radioInputs[i].value == radioValue) {
+                  radioInputs[i].click();
+                  break;
+                }
+              }
 
               console.log('Place name: ' + place_name);
               console.log('Location type: ' + location_type);
               console.log('Internal details: ' + internal_details);
 
-              $('input[name=' + elementId + '\\[location_type\\]]').trigger('change');
+              // $('input[name=' + elementId + '\\[location_type\\]]').trigger('change');
               $('input[name=' + elementId + '\\[location_type_taxlot\\]]').trigger('change');
               $('input[name=' + elementId + '\\[location_type_park\\]]').trigger('change');
               $('input[name=' + elementId + '\\[location_type_waterbody\\]]').trigger('change');

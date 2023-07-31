@@ -84,12 +84,7 @@ class PortlandLocationPicker extends WebformCompositeBase {
     //   //   ],
     //   // ],
     // ];
-    $element['location_address_container'] = [
-      '#type' => 'container',
-      '#title' => 'location address container',
-      '#attributes' => ['id' => 'location_address_wrapper'],
-    ];
-    $element['location_address_container']['location_address'] = [
+    $element['location_address'] = [
       '#type' => 'textfield',
       '#title' => t('Location Search'),
       '#title_display' => 'invisible',
@@ -113,31 +108,31 @@ class PortlandLocationPicker extends WebformCompositeBase {
       '#title_display' => 'invisible',
       '#markup' => '<div id="location_map_container" class="location-map"></div>',
     ];
-    // $element['location_type'] = [
-    //   '#id' => 'location_type',
-    //   '#name' => 'location_type',
-    //   '#type' => 'radios',
-    //   '#title' => t('What type of location is this?'),
-    //   '#title_display' => 'before',
-    //   '#options' => [
-    //     'street' => t('Street, sidewalk, highway, trail, or other public right-of-way'),
-    //     'private' => t('Private property, public building, or other location with an address'),
-    //     'park' => t('A public park, natural area, or city-operated community center'),
-    //     'waterway' => t('A river, stream, or other waterway'),
-    //     'other' => t('I\'m not sure')
-    //   ],
-    //   '#options_display' => 'one_column',
-    //   '#default_value' => 'street',
-    //   '#attributes' => ['class' => ['location-type']],
-    //   '#required' => TRUE
-    // ];
+    $element['location_type'] = [
+      '#id' => 'location_type',
+      '#name' => 'location_type',
+      '#type' => 'radios',
+      '#title' => t('What type of location is this?'),
+      '#title_display' => 'before',
+      '#options' => [
+        'street' => t('Street, sidewalk, highway, trail, or other public right-of-way'),
+        'private' => t('Private property, public building, or other location with an address'),
+        'park' => t('A public park, natural area, or city-operated community center'),
+        'waterway' => t('A river, stream, or other waterway'),
+        'other' => t('I\'m not sure')
+      ],
+      '#options_display' => 'one_column',
+      '#default_value' => 'street',
+      '#attributes' => ['class' => ['location-type','visually-hidden-x']],
+      '#required' => TRUE
+    ];
     // since CGIS won't allow us to set the location type based on map clicks
     // without better reverse geocoding, we're setting a hidden field that can
     // be used for routing.
-    $element['location_type'] = [
+    $element['location_type_hidden'] = [
       '#type' => 'textfield',
       '#title' => t('Location type'),
-      '#attributes' => ['id' => 'location_type', 'disabled' => 'disabled'],
+      '#attributes' => ['id' => 'location_type_hidden', 'disabled' => 'disabled'],
     ];
 
     $element['location_type_taxlot'] = [
