@@ -17,8 +17,12 @@ archive: false
 id: report_demographics
 title: 'Optional Demographic Form'
 description: ''
-category: Report
+categories:
+  - Report
 elements: |-
+  markup_public_records_disclosure:
+    '#type': webform_markup
+    '#markup': '<p><strong>Public Records Disclosure Clause:</strong> The information you are providing on this form is available to the public through a public records request. Please do not include confidential or sensitive information.</p>'
   report_race_ethnicity:
     '#type': webform_computed_twig
     '#title': 'Race and Ethnicity'
@@ -40,7 +44,7 @@ elements: |-
     '#admin_title': 'Race and Ethnicity - Value'
   report_race_ethnicity_prefer_not_disclose:
     '#type': checkbox
-    '#title': 'I prefer not to disclose'
+    '#title': 'I prefer not to answer'
     '#admin_title': 'Race and Ethnicity - Prefer not to disclose'
   report_gender:
     '#type': webform_computed_twig
@@ -62,7 +66,7 @@ elements: |-
     '#admin_title': 'Gender - Value'
   report_gender_prefer_not_disclose:
     '#type': checkbox
-    '#title': 'I prefer not to disclose'
+    '#title': 'I prefer not to answer'
     '#admin_title': 'Gender - Prefer not to disclose'
   report_annual_household_income:
     '#type': webform_computed_twig
@@ -82,7 +86,7 @@ elements: |-
     '#admin_title': 'Annual Household Income - Value'
   report_annual_household_income_prefer_not_disclose:
     '#type': checkbox
-    '#title': 'Don''t know / I prefer not to disclose'
+    '#title': 'Don''t know / I prefer not to answer'
     '#admin_title': 'Annual Household Income - Prefer not to disclose'
   report_household_size:
     '#type': webform_computed_twig
@@ -100,10 +104,11 @@ elements: |-
           checked: true
     '#admin_title': 'Household Size - Value'
     '#min': 1
+    '#max': 9999
     '#step': 1
   report_household_size_prefer_not_disclose:
     '#type': checkbox
-    '#title': 'I prefer not to disclose'
+    '#title': 'I prefer not to answer'
     '#admin_title': 'Household Size - Prefer not to disclose'
   report_age:
     '#type': webform_computed_twig
@@ -125,8 +130,28 @@ elements: |-
     '#step': 1
   report_age_prefer_not_disclose:
     '#type': checkbox
-    '#title': 'I prefer not to disclose'
+    '#title': 'I prefer not to answer'
     '#admin_title': 'Age - Prefer not to disclose'
+  report_languages:
+    '#type': webform_computed_twig
+    '#title': Languages
+    '#display_on': none
+    '#template': '{{ data.report_languages_prefer_not_disclose ? "I prefer not to disclose" : data.report_languages_value }}'
+    '#whitespace': trim
+  report_languages_value:
+    '#type': textfield
+    '#title': 'Language(s) spoken or signed at home:'
+    '#description_display': before
+    '#states':
+      disabled:
+        ':input[name="report_languages_prefer_not_disclose"]':
+          checked: true
+    '#admin_title': 'Languages - Value'
+    '#size': 15
+  report_languages_prefer_not_disclose:
+    '#type': checkbox
+    '#title': 'I prefer not to answer'
+    '#admin_title': 'Languages - Prefer not to disclose'
   report_disabilities:
     '#type': webform_computed_twig
     '#title': Disabilities
@@ -145,8 +170,68 @@ elements: |-
     '#admin_title': 'Disabilities - Value'
   report_disabilities_prefer_not_disclose:
     '#type': checkbox
-    '#title': 'I prefer not to disclose'
+    '#title': 'I prefer not to answer'
     '#admin_title': 'Disabilities - Prefer not to disclose'
+  report_disability_details:
+    '#type': webform_computed_twig
+    '#title': 'Disability Details'
+    '#display_on': none
+    '#template': '{{ data.report_disability_details_prefer_not_disclose ? "I prefer not to disclose" : (data.report_disability_details_value.other is defined ? "" : data.report_disability_details_value|join(";")) }}'
+    '#whitespace': trim
+  report_disability_details_value:
+    '#type': webform_checkboxes_other
+    '#title': 'Please describe the nature of your disability. Please select ALL that apply.'
+    '#description_display': before
+    '#options': disability_details
+    '#options_none_text': ''
+    '#other__option_label': 'Not listed above, please describe'
+    '#other__placeholder': 'Please describe'
+    '#states':
+      visible:
+        ':input[name="report_disabilities_value"]':
+          value: 'Yes'
+      disabled:
+        ':input[name="report_disability_details_prefer_not_disclose"]':
+          checked: true
+    '#admin_title': 'Disability Details - Value'
+  report_disability_details_prefer_not_disclose:
+    '#type': checkbox
+    '#title': 'I prefer not to answer'
+    '#admin_title': 'Disability Details - Prefer not to disclose'
+    '#states':
+      visible:
+        ':input[name="report_disabilities_value"]':
+          value: 'Yes'
+  report_tribal_affiliation:
+    '#type': webform_computed_twig
+    '#title': 'Tribal Affiliation'
+    '#display_on': none
+    '#template': '{{ data.report_tribal_affiliation_prefer_not_disclose ? "I prefer not to disclose" : data.report_tribal_affiliation_value ~ ";" ~ data.report_tribal_affiliation_details }}'
+    '#whitespace': trim
+  report_tribal_affiliation_value:
+    '#type': radios
+    '#title': 'Are you an enrolled member, and/or a descendant, of a Federal or State recognized American Indian Tribe or Alaskan Native Village/Corporation? Mark and describe all that applies.'
+    '#description_display': before
+    '#options': tribal_affiliation
+    '#states':
+      disabled:
+        ':input[name="report_tribal_affiliation_prefer_not_disclose"]':
+          checked: true
+    '#admin_title': 'Tribal Affiliation - Value'
+  report_tribal_affiliation_prefer_not_disclose:
+    '#type': checkbox
+    '#title': 'I prefer not to answer'
+    '#admin_title': 'Tribal Affiliation - Prefer not to disclose'
+  report_tribal_affiliation_details:
+    '#type': textfield
+    '#title': 'Tribal Affiliation(s):'
+    '#states':
+      visible:
+        ':input[name="report_tribal_affiliation_value"]':
+          value:
+            pattern: 'Enrolled Member|Descendant'
+        ':input[name="report_tribal_affiliation_prefer_not_disclose"]':
+          unchecked: true
   report_zip_code:
     '#type': webform_computed_twig
     '#title': 'ZIP code'
@@ -157,8 +242,8 @@ elements: |-
     '#type': textfield
     '#title': 'What is the zip code of your primary residence?'
     '#description_display': before
-    '#size': 15
-    '#input_mask': '99999[-9999]'
+    '#size': 10
+    '#input_mask': '99999'
     '#states':
       disabled:
         ':input[name="report_zip_code_prefer_not_disclose"]':
@@ -166,7 +251,7 @@ elements: |-
     '#admin_title': 'ZIP code - Value'
   report_zip_code_prefer_not_disclose:
     '#type': checkbox
-    '#title': 'I prefer not to disclose'
+    '#title': 'I prefer not to answer'
     '#admin_title': 'ZIP code - Prefer not to disclose'
   report_suggestions:
     '#type': textarea
@@ -270,6 +355,8 @@ settings:
   wizard_toggle: true
   wizard_toggle_show_label: ''
   wizard_toggle_hide_label: ''
+  wizard_page_type: container
+  wizard_page_title_tag: h2
   preview: 0
   preview_label: ''
   preview_title: ''
@@ -386,7 +473,11 @@ handlers:
         1828411815552900: report_disabilities
         6978614094784388: report_zip_code
         1349114560571268: report_suggestions
-      multiple_rows_enable: false
+        7014782091612036: report_disability_details
+        4159241006829444: report_languages
+        3875800948363140: report_tribal_affiliation
+        8482598244640644: ''
+      multiple_rows_enable: null
       multiple_rows_field: ''
       multiple_rows_separator: ''
       row_location: toBottom
