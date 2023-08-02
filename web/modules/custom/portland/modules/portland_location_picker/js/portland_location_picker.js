@@ -17,7 +17,7 @@
   Drupal.behaviors.portland_location_picker = {
     attach: function (context, settings) {
 
-      $('main', context).once('location_picker').each(function () {
+      $(once('location_picker', 'main', context)).each(function () {
 
         // CONSTANTS //////////
         const DEFAULT_LATITUDE = 45.54;
@@ -961,7 +961,7 @@
               console.log("Street: " + results.street);
               console.log("Row: " + results.row);
               var location_type = "";
-              var place_name = "";
+              var place_name = $('input[name=' + elementId + '\\[place_name\\]]').val();
               var internal_details = "";
               var type_count = 0;
 
@@ -1033,7 +1033,7 @@
               location_type = removeTrailingComma(location_type);
               internal_details = removeTrailingComma(internal_details);
 
-              $('input[name=' + elementId + '\\[place_name\\]]').val(place_name);
+              //$('input[name=' + elementId + '\\[place_name\\]]').val(place_name);
               $('input[name=' + elementId + '\\[location_type_hidden\\]]').val(location_type);
               $('input[name=' + elementId + '\\[location_details_internal\\]]').val(internal_details);
 
