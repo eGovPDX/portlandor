@@ -9,8 +9,9 @@ let text_content = '', selector = '';
 
 var BROWSER_OPTION = {
   ignoreHTTPSErrors: true,
-  args: ["--no-sandbox"],
+  args: ["--no-sandbox", "--disabled-setupid-sandbox"],
   defaultViewport: null,
+  headless: "new",
 };
 
 describe('Ally Admin user test', () => {
