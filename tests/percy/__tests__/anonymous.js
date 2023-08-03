@@ -65,6 +65,16 @@ describe("Homepage", () => {
       await page.goto(`${HOME_PAGE}/omf/toc`, { waitUntil: "load" });
       await percySnapshot(page, "Anonymous - Advisory \"Technology Oversight\"");
       await page.goto(`${HOME_PAGE}/mayor`, { waitUntil: "load" });
+
+      // Hide dynamic content
+      await page.evaluate(() => {
+        let contact_block = document.querySelector('div.elected--contact')
+        if(contact_block) contact_block.style.display = 'none';
+        let events_block = document.querySelector('div.view-events-index');
+        if(events_block) events_block.style.display = 'none';
+        let news_block = document.querySelector('div.view-news-index');
+        if(news_block) news_block.style.display = 'none';
+      });
       await percySnapshot(page, "Anonymous - Elected \"Mayor\"");
     }
   );
