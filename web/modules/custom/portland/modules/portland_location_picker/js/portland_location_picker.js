@@ -930,7 +930,7 @@
           $('input[name=' + elementId + '\\[location_region_id\\]]').val('');
           $('input[name=' + elementId + '\\[location_municipality_name\\]]').val('');
           $('input[name=' + elementId + '\\[location_is_portland\\]]').val('');
-          $('input[name=' + elementId + '\\[location_details_internal\\]]').val('');
+          $('input[name=' + elementId + '\\[location_attributes\\]]').val('');
         }
 
         // this is the helper function that fires when an asset marker is clicked.
@@ -974,7 +974,7 @@
               $('input[name=' + elementId + '\\[location_type_street\\]]').val("");
               $('input[name=' + elementId + '\\[location_type_row\\]]').val("");
               $('input[name=' + elementId + '\\[location_type_hidden\\]]').val("");
-              $('input[name=' + elementId + '\\[location_details_internal\\]]').val("");
+              $('input[name=' + elementId + '\\[location_attributes\\]]').val("");
 
               // TODO: need to manually display location_private_owner radios if taxlog
               if (results.taxlot) {
@@ -1035,7 +1035,7 @@
 
               //$('input[name=' + elementId + '\\[place_name\\]]').val(place_name);
               $('input[name=' + elementId + '\\[location_type_hidden\\]]').val(location_type);
-              $('input[name=' + elementId + '\\[location_details_internal\\]]').val(internal_details);
+              $('input[name=' + elementId + '\\[location_attributes\\]]').val(internal_details);
 
               // set location radio button
               // report_location[location_type]

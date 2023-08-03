@@ -46,51 +46,13 @@ class PortlandLocationPicker extends WebformCompositeBase {
       $element_id = $element['#webform_key'];
     }
 
-    // $element['location_park_container'] = [
-    //   '#id' => 'location_park_container',
-    //   '#title' => t('Parks list container'),
-    //   '#type' => 'container',
-    // ];
-    // $element['location_park_container']['location_park'] = [
-    //   '#id' => 'location_park',
-    //   '#title' => t('Which park or natural area?'),
-    //   '#type' => 'webform_entity_select',
-    //   '#description' => t('If you can\'t find the park in the list, choose "Other / I\'m not sure" then find the location by searching for an address or using the map.'),
-    //   "#description_display" => 'before',
-    //   '#target_type' => 'node',
-    //   '#selection_handler' => 'views',
-    //   '#selection_settings' => [
-    //     'view' => ['view_name' => 'entity_browser_park_facilities', 'display_name' => 'location_picker_parks_list'],
-    //   ],
-    //   '#empty_option' => t('Select...'),
-    //   '#attributes' => ['class' => ['location-park']],
-    //   '#states' => [
-    //     'visible' => [
-    //       ':input[name="' . $element_id . '[location_type]"]' => [
-    //         'value' => 'park'
-    //       ],
-    //     ],
-    //   ],
-    // ];
-    // $element['location_park_container']['park_instructions'] = [
-    //   '#type' => 'markup',
-    //   '#title' => 'Park instructions',
-    //   '#title_display' => 'invisible',
-    //   '#markup' => '<div class="alert alert--info next-steps visually-hidden precision-text" aria-hidden="true" id="precision_text_parks"><strong>IMPORTANT:</strong> To help us provide better service, please click, tap, or drag the marker to the precise location on the map.</div>',
-    //   // '#states' => [
-    //   //   'visible' => [
-    //   //     ':input[name="' . $element_id . '[location_park]"]' => ['filled' => TRUE],
-    //   //     ':input[name="' . $element_id . '[location_type]"]' => ['value' => 'park'],
-    //   //   ],
-    //   // ],
-    // ];
     $element['location_address'] = [
       '#type' => 'textfield',
       '#title' => t('Location Search'),
       '#title_display' => 'invisible',
       '#id' => 'location_address',
       '#attributes' => ['class' => ['location-picker-address'], 'autocomplete' => 'off'],
-      '#description' => t('Search by address, cross streets, park name, community center or other landmark. Or click/tap the map to select a precise location.'),
+      '#description' => t('Search by address, cross streets, park name, community center or other landmark. Or use the Locate Me button or click/tap the map to select a precise location.'),
       '#description_display' => 'before',
     ];
     $element['precision_text'] = [
@@ -131,7 +93,7 @@ class PortlandLocationPicker extends WebformCompositeBase {
     // be used for routing.
     $element['location_type_hidden'] = [
       '#type' => 'textfield',
-      '#title' => t('Location type'),
+      '#title' => t('Location types'),
       '#attributes' => ['id' => 'location_type_hidden', 'disabled' => 'disabled'],
     ];
 
@@ -261,11 +223,10 @@ class PortlandLocationPicker extends WebformCompositeBase {
       '#description' => t('Please provide any other details that might help us locate the site you are reporting.'),
       '#description_display' => 'before',
     ];
-    $element['location_details_internal'] = [
+    $element['location_attributes'] = [
       '#type' => 'hidden',
-      '#title' => t('Location Details (internal)'),
-      '#title_display' => 'invisible',
-      '#attributes' => ['class' => ['location-details_internal'], 'id' => 'location_details_internal'],
+      '#title' => t('Location Attributes'),
+      '#attributes' => ['class' => ['location-attributes'], 'id' => 'location_attributes'],
     ];
     $element['location_asset_id'] = [
       '#type' => 'hidden',
