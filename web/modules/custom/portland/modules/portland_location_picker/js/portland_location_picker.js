@@ -120,23 +120,23 @@
         var locationTypeHelpText = $('#location_details--description').text();
 
         // CUSTOM PROPERTIES SET IN WEBFORM CONFIG //////////
-        var verifiedAddresses = drupalSettings.webform.portland_location_picker.verified_addresses;
-        var elementId = drupalSettings.webform.portland_location_picker.element_id;
-        var primaryLayerSource = drupalSettings.webform.portland_location_picker.primary_layer_source;
-        var incidentsLayerSource = drupalSettings.webform.portland_location_picker.incidents_layer_source;
-        var regionsLayerSource = drupalSettings.webform.portland_location_picker.regions_layer_source;
-        var primaryLayerBehavior = drupalSettings.webform.portland_location_picker.primary_layer_behavior;
-        var primaryLayerType = drupalSettings.webform.portland_location_picker.primary_layer_type;
-        var primaryMarkerUrl = drupalSettings.webform.portland_location_picker.primary_marker ? drupalSettings.webform.portland_location_picker.primary_marker : '/modules/custom/portland/modules/portland_location_picker/images/map_marker_default.png';
-        var selectedMarker = drupalSettings.webform.portland_location_picker.selected_marker ? drupalSettings.webform.portland_location_picker.selected_marker : '/modules/custom/portland/modules/portland_location_picker/images/map_marker_default_selected.png';
-        var incidentMarker = drupalSettings.webform.portland_location_picker.incident_marker ? drupalSettings.webform.portland_location_picker.incident_marker : '/modules/custom/portland/modules/portland_location_picker/images/map_marker_incident.png';
-        var disablePopup = drupalSettings.webform.portland_location_picker.disable_popup ? true : false;
-        var verifyButtonText = drupalSettings.webform.portland_location_picker.verify_button_text;
-        var primaryFeatureName = drupalSettings.webform.portland_location_picker.primary_feature_name ? drupalSettings.webform.portland_location_picker.primary_feature_name : 'asset';
-        var featureLayerVisibleZoom = drupalSettings.webform.portland_location_picker.feature_layer_visible_zoom ? drupalSettings.webform.portland_location_picker.feature_layer_visible_zoom : FEATURE_LAYER_VISIBLE_ZOOM;
-        var requireCityLimits = drupalSettings.webform.portland_location_picker.require_city_limits === false ? false : true;
-        var displayCityLimits = drupalSettings.webform.portland_location_picker.display_city_limits === false ? false : true;
-        var locationTypes = drupalSettings.webform.portland_location_picker.location_types === false ? false : true;
+        var verifiedAddresses = drupalSettings.webform ? drupalSettings.webform.portland_location_picker.verified_addresses : "";
+        var elementId = drupalSettings.webform ? drupalSettings.webform.portland_location_picker.element_id : "";
+        var primaryLayerSource = drupalSettings.webform ? drupalSettings.webform.portland_location_picker.primary_layer_source : "";
+        var incidentsLayerSource = drupalSettings.webform ? drupalSettings.webform.portland_location_picker.incidents_layer_source : "";
+        var regionsLayerSource = drupalSettings.webform ? drupalSettings.webform.portland_location_picker.regions_layer_source : "";
+        var primaryLayerBehavior = drupalSettings.webform ? drupalSettings.webform.portland_location_picker.primary_layer_behavior : "";
+        var primaryLayerType = drupalSettings.webform ? drupalSettings.webform.portland_location_picker.primary_layer_type : "";
+        var primaryMarkerUrl = drupalSettings.webform && drupalSettings.webform.portland_location_picker.primary_marker ? drupalSettings.webform.portland_location_picker.primary_marker : '/modules/custom/portland/modules/portland_location_picker/images/map_marker_default.png';
+        var selectedMarker = drupalSettings.webform && drupalSettings.webform.portland_location_picker.selected_marker ? drupalSettings.webform.portland_location_picker.selected_marker : '/modules/custom/portland/modules/portland_location_picker/images/map_marker_default_selected.png';
+        var incidentMarker = drupalSettings.webform && drupalSettings.webform.portland_location_picker.incident_marker ? drupalSettings.webform.portland_location_picker.incident_marker : '/modules/custom/portland/modules/portland_location_picker/images/map_marker_incident.png';
+        var disablePopup = drupalSettings.webform && drupalSettings.webform.portland_location_picker.disable_popup ? true : false;
+        var verifyButtonText = drupalSettings.webform ? drupalSettings.webform.portland_location_picker.verify_button_text : "";
+        var primaryFeatureName = drupalSettings.webform && drupalSettings.webform.portland_location_picker.primary_feature_name ? drupalSettings.webform.portland_location_picker.primary_feature_name : 'asset';
+        var featureLayerVisibleZoom = drupalSettings.webform && drupalSettings.webform.portland_location_picker.feature_layer_visible_zoom ? drupalSettings.webform.portland_location_picker.feature_layer_visible_zoom : FEATURE_LAYER_VISIBLE_ZOOM;
+        var requireCityLimits = drupalSettings.webform && drupalSettings.webform.portland_location_picker.require_city_limits === false ? false : true;
+        var displayCityLimits = drupalSettings.webform && drupalSettings.webform.portland_location_picker.display_city_limits === false ? false : true;
+        var locationTypes = drupalSettings.webform && drupalSettings.webform.portland_location_picker.location_types === false ? false : true;
 
         var locationType;
 
@@ -203,6 +203,7 @@
           });
 
           // INITIALIZE MAP //////////
+          var findContainer = $('#location_map_container');
           map = new L.Map("location_map_container", {
             center: new L.LatLng(DEFAULT_LATITUDE, DEFAULT_LONGITUDE),
             zoomControl: false,
