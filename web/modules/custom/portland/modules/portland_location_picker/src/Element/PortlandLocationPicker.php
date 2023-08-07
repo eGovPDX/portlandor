@@ -46,10 +46,12 @@ class PortlandLocationPicker extends WebformCompositeBase {
       $element_id = $element['#webform_key'];
     }
 
+    $element['#prefix'] = '<div class="location_widget">';
+    $element['#suffix'] = '</div>';
+
     $element['location_address'] = [
       '#type' => 'textfield',
       '#title' => t('Location Search'),
-      '#title_display' => 'invisible',
       '#id' => 'location_address',
       '#attributes' => ['class' => ['location-picker-address'], 'autocomplete' => 'off'],
       '#description' => t('Search by address, cross streets, park name, community center or other landmark. Or use the Locate Me button or click/tap the map to select a precise location.'),

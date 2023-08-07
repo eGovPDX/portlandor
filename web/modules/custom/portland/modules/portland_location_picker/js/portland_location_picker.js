@@ -1,6 +1,7 @@
 (function ($, Drupal, drupalSettings, L) {
 
   var initialized = false;
+  var map;
 
   // Here's how to reverse geolocate a park. Note the x/y values in the geometry parameter:
   // https://www.portlandmaps.com/arcgis/rest/services/Public/Parks_Misc/MapServer/2/query?geometry=%7B%22x%22%3A-122.55203425884248%2C%22y%22%3A45.53377174783918%2C%22spatialReference%22%3A%7B%22wkid%22%3A4326%7D%7D&geometryType=esriGeometryPoint&spacialRel=esriSpatialRelIntersects&returnGeometry=false&returnTrueCurves=false&returnIdsOnly=false&returnCountOnly=false&returnDistinctValues=false&f=pjson"
@@ -15,9 +16,12 @@
    *   Attaches machine-name behaviors.
    */
   Drupal.behaviors.portland_location_picker = {
-    attach: function (context, settings) {
+    attach: function (context) {
 
-      $(once('location_picker', 'main', context)).each(function () {
+      var test = $('main');
+
+      //$(context).once('location_picker').each(function () {
+      $(once('location_picker', 'div.location_widget', context)).each(function () {
 
         // CONSTANTS //////////
         const DEFAULT_LATITUDE = 45.54;
@@ -84,7 +88,6 @@
         const MUNICIPALITIES_BOUNDARY_URL = "https://www.portlandmaps.com/arcgis/rest/services/Public/COP_OpenData_Boundary/MapServer/10/query?outFields=*&where=1%3D1&f=geojson";
 
         // GLOBALS //////////
-        var map;
         var primaryLayer;
         var incidentsLayer;
         var regionsLayer;
@@ -173,7 +176,8 @@
         // if ajax is used in the webform (for computed twig, for example), this script
         // and the initialize function may get called multiple times for some reason.
         // adding this flag prevents re-initialization of the map.
-        if (!initialized) { initialize(); initialized = true; }
+        // if (!initialized) { initialize(); initialized = true; }
+        initialized = initialize();
 
         // SETUP FUNCTIONS ///////////////////////////////
 
@@ -203,7 +207,13 @@
           });
 
           // INITIALIZE MAP //////////
-          var findContainer = $('#location_map_container');
+          if (map) {
+            map.off();
+            map.remove();
+            map = undefined;
+          }
+          var test = $('#location_map_container');
+          if (test.length < 1) return false;
           map = new L.Map("location_map_container", {
             center: new L.LatLng(DEFAULT_LATITUDE, DEFAULT_LONGITUDE),
             zoomControl: false,
@@ -842,7 +852,11 @@
           }
 
           reverseGeolocate(latlng);
+          checkRegion(latlng);
 
+        }
+
+        function checkRegion(latlng) {
           // determine whether click is within a region on the primaryLayer layer, and store the region_id.
           // this is done if the primary layer type is Region, or if the regions layer is populated.
           if (primaryLayerType == PRIMARY_LAYER_TYPE.Region || regionsLayerSource) {
@@ -858,7 +872,7 @@
               $('input[name=' + elementId + '\\[location_region_id\\]]').val(inLayer[0].feature.properties.region_id);
             } else {
               // clear region_id field
-              $('#location_region_id').val("");
+              $('input[name=' + elementId + '\\[location_region_id\\]]').val("");
             }
           }
         }
@@ -1098,6 +1112,7 @@
         }
 
         function removeTrailingComma(myStr) {
+          if (!myStr) return false;
           myStr = myStr.trim();
           if (myStr.endsWith(',')) {
             return myStr.substring(0, myStr.length-1);
@@ -1184,6 +1199,7 @@
             // it will capture the address, and the report will still be usable.
             if (lat && lng) {
               doZoomAndCenter(lat, lng);
+              checkRegion(new L.LatLng(lat, lng));
 
               if (!verifiedAddresses) {
                 // show precision text
@@ -1593,7 +1609,7 @@
             });
           }).observe(element);
         }
-        onVisible(document.querySelector("#location_map_container"), () => redrawMap());
+        //onVisible(document.querySelector("#location_map_container"), () => redrawMap());
 
       });
     }
