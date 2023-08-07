@@ -1,7 +1,17 @@
 const { promisify } = require('util');
-const path = require ('path');
+const path = require('path');
 
-exports.masqueradeAs = async function(email, page, HOME_PAGE) {
+exports.removeDynamicContent = async function (page) {
+  // Hide dynamic content
+  await page.evaluate(() => {
+    let events_block = document.querySelector('div.view-events-index');
+    if (events_block) events_block.style.display = 'none';
+    let news_block = document.querySelector('div.view-news-index');
+    if (news_block) news_block.style.display = 'none';
+  });
+}
+
+exports.masqueradeAs = async function (email, page, HOME_PAGE) {
   var encodedEmail = encodeURI(email);
   // Find the user in people list
   await page.goto(`${HOME_PAGE}/admin/people/list?user=${encodedEmail}&status=All&role=All&permission=All`);
@@ -9,20 +19,20 @@ exports.masqueradeAs = async function(email, page, HOME_PAGE) {
   await page.goto(`${HOME_PAGE}${link}`);
 }
 
-exports.unmasquerade = async function(page, HOME_PAGE) {
+exports.unmasquerade = async function (page, HOME_PAGE) {
   await page.goto(`${HOME_PAGE}/my-groups`);
   var link = await page.evaluate(() => document.querySelector('div.toolbar-tab a[href^="/unmasquerade').getAttribute('href'));
   await page.goto(`${HOME_PAGE}${link}`);
 }
 
 exports.ContentTester = {
-  init: function ( testSettings ) {
+  init: function (testSettings) {
     this.entityType = testSettings.entityType; // node or media
     this.contentType = testSettings.contentType; // page, city_service, document, etc.
     this.page = testSettings.page; // Puppeteer page object
     this.fieldLabelArray = testSettings.fieldLabelArray; // Field labels to be verified
     this.homepageUrl = testSettings.homepageUrl, // The site URL
-    this.testGroupPath = testSettings.testGroupPath // URL path to the group created for testing
+      this.testGroupPath = testSettings.testGroupPath // URL path to the group created for testing
   },
   runTest: async function () {
     await this.gotoContentCreatePage();
@@ -30,14 +40,14 @@ exports.ContentTester = {
     await this.verifyFieldLabels();
     await this.inputFieldValues();
     let contentUrl = await this.submitForm();
-    if(contentUrl.indexOf(this.homepageUrl) != 0) contentUrl = this.homepageUrl + contentUrl;
+    if (contentUrl.indexOf(this.homepageUrl) != 0) contentUrl = this.homepageUrl + contentUrl;
     await this.editContent(`${contentUrl}/edit`);
     contentUrl = await this.submitForm();
-    if(contentUrl.indexOf(this.homepageUrl) != 0) contentUrl = this.homepageUrl + contentUrl;
+    if (contentUrl.indexOf(this.homepageUrl) != 0) contentUrl = this.homepageUrl + contentUrl;
     await this.deleteContent(`${contentUrl}/delete`);
     await this.submitForm();
   },
-  gotoContentCreatePage: async function() {
+  gotoContentCreatePage: async function () {
     // Add content
     await this.page.goto(
       `${this.homepageUrl}/${this.testGroupPath}/content/create/group_${this.entityType}:${this.contentType}`,
@@ -82,9 +92,9 @@ exports.ContentTester = {
     let contentUrl = await this.page.evaluate(
       () => {
         // Get the URL to the media
-        if(document.querySelector("div.messages__content a"))
+        if (document.querySelector("div.messages__content a"))
           return document.querySelector("div.messages__content a").getAttribute('href');
-        return ;
+        return;
       }
     );
     return contentUrl ? contentUrl : this.page.url();
@@ -93,7 +103,7 @@ exports.ContentTester = {
   editContent: async function (editContentUrl) {
     // Edit the newly created page
     await this.page.goto(editContentUrl);
-    if(this.entityType == "media") {
+    if (this.entityType == "media") {
       await this.page.type("#edit-revision-log-message-0-value", "Full regression test revision message");
     }
     else {
@@ -108,8 +118,8 @@ exports.ContentTester = {
     let deleteFormId = `#${this.entityType}-${this.contentType.replace("_", "-")}-delete-form`;
     // console.log(deleteFormId);
     text_content = await this.page.evaluate((deleteFormId) => {
-        return document.querySelector(deleteFormId).textContent
-      },
+      return document.querySelector(deleteFormId).textContent
+    },
       deleteFormId
     );
     expect(text_content).toEqual(
