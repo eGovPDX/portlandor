@@ -8,7 +8,7 @@ use GuzzleHttp\Client;
  * @package Drupal\portland_smartsheet\Client
  */
 class SmartsheetClient {
-  private \GuzzleHttp\Client $client;
+  private Client $client;
   private string $sheet_id;
 
   public function __construct($sheet_id) {

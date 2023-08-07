@@ -13,7 +13,7 @@ function waitForCleave(callback) {
   Drupal.behaviors.cleaveTelephone = {
     attach: function (context, drupalSettings) {
       if (drupalSettings['cleave_telephone']) {
-        $(context).find('.cleave-telephone').once('cleave-processed').each(function (index, element) {
+        $(once('cleave-processed', '.cleave-telephone', context)).each(function (index, element) {
           var id = $(element).attr('id');
           var settings = drupalSettings['cleave_telephone'][id];
 

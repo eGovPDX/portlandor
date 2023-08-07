@@ -2,6 +2,7 @@
 
 namespace Drupal\portland\Plugin\search_api\processor;
 
+use Drupal\node\Entity\NodeType;
 use Drupal\search_api\Datasource\DatasourceInterface;
 use Drupal\search_api\Item\ItemInterface;
 use Drupal\search_api\Processor\ProcessorPluginBase;
@@ -54,7 +55,7 @@ class AddContentTypeName extends ProcessorPluginBase {
 
     if($indexedEntity->getEntityTypeId() == 'node') {
       $node = $indexedEntity;
-      $type_name = \Drupal\node\Entity\NodeType::load($node->bundle())->label();
+      $type_name = NodeType::load($node->bundle())->label();
 
       $fields = $item->getFields(FALSE);
       $fields = $this->getFieldsHelper()

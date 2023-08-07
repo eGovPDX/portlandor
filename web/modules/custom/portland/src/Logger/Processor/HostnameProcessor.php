@@ -2,10 +2,11 @@
 
 namespace Drupal\portland\Logger\Processor;
 
+use Drupal\monolog\Logger\Processor\AbstractRequestProcessor;
 /**
  * Class HostnameProcessor.php
  */
-class HostnameProcessor extends \Drupal\monolog\Logger\Processor\AbstractRequestProcessor {
+class HostnameProcessor extends AbstractRequestProcessor {
 
   /**
    * @param array $record
