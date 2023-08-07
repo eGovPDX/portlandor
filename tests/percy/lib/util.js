@@ -4,8 +4,6 @@ const path = require('path');
 exports.removeDynamicContent = async function (page) {
   // Hide dynamic content
   await page.evaluate(() => {
-    let contact_block = document.querySelector('div.elected--contact')
-    if (contact_block) contact_block.style.display = 'none';
     let events_block = document.querySelector('div.view-events-index');
     if (events_block) events_block.style.display = 'none';
     let news_block = document.querySelector('div.view-news-index');
