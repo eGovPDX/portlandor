@@ -1,0 +1,36 @@
+# Github action to rebase sandbox with master
+name: rebase-sandbox-with-master
+
+on:
+  # Run every Monday at 12:30 UTC (5:30pm Sunday PDT)
+  schedule:
+    - cron: '30 0 * * Mon'
+  # Test the job below
+  push:
+    branches: 
+      - 'pgov-963'
+
+jobs:
+  rebase-and-push:
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: Check out from Github
+        uses: actions/checkout@v3
+        with:
+          ref: sandbox
+
+      # - name: Set up SSH key for Pantheon
+      #   uses: webfactory/ssh-agent@v0.7.0
+      #   with:
+      #     ssh-private-key: ${{ secrets.DEPLOY_TO_PANTHEON_KEY }}
+
+      - name: Update sandbox on Pantheon
+        run: |
+          git fetch --all
+          git switch master
+          git checkout sandbox
+          git config --global user.name "BTS eGov"
+          git config --global user.email BTS-eGov@portlandoregon.gov
+          git rebase -X ours origin/master
+          git push -f
