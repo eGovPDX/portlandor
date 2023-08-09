@@ -158,15 +158,13 @@ describe('Marty Member user test', () => {
       // Click on the first delete dropdown button. Assume the first media item is the new Video just created
       selector = 'ul.dropbutton li.delete a';
       await page.evaluate((selector) => document.querySelector(selector).click(), selector);
-      await page.waitForNavigation();
+      // Wait for the deletion confirmation dialog
+      await page.waitForSelector('div.ui-dialog', {visible: true})
 
-      // Confirm deletion
-      text_content = await page.evaluate(() => document.querySelector('h1.page-title').textContent);
-      expect(text_content).toEqual(expect.stringContaining('Are you sure you want to delete the media item'));
-
-      selector = 'input#edit-submit';
+      selector = 'div.ui-dialog  button.button--primary';
       await page.evaluate((selector) => document.querySelector(selector).click(), selector);
-      await page.waitForNavigation();
+      // Wait for the result message title
+      await page.waitForSelector('#message-status-title', {visible: true})
 
       // Verify deletion message
       text_content = await page.evaluate(() => document.querySelector('div.messages--status').textContent);
