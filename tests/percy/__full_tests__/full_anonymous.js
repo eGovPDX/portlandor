@@ -10,6 +10,7 @@ var BROWSER_OPTION = {
   ignoreHTTPSErrors: true,
   args: ["--no-sandbox"],
   defaultViewport: null,
+  headless: "new",
 };
 
 describe("Full regression test suite for anonymous", () => {
