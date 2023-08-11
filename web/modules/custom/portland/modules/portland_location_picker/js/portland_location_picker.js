@@ -140,6 +140,7 @@
         var requireCityLimits = drupalSettings.webform && drupalSettings.webform.portland_location_picker.require_city_limits === false ? false : true;
         var displayCityLimits = drupalSettings.webform && drupalSettings.webform.portland_location_picker.display_city_limits === false ? false : true;
         var locationTypes = drupalSettings.webform && drupalSettings.webform.portland_location_picker.location_types === false ? false : true;
+        var apiKey = drupalSettings.portlandmaps_api_key;
 
         var locationType;
 
@@ -332,7 +333,6 @@
           $('.location-picker-address').autocomplete({
             source: function (request, response) {
               const searchTerm = request.term;
-              var apiKey = drupalSettings.portlandmaps_api_key;
               var apiUrl = `https://www.portlandmaps.com/api/suggest/?intersections=1&landmarks=1&alt_coords=1&api_key=${apiKey}&query=${searchTerm}`;
 
               $.ajax({
@@ -961,6 +961,7 @@
           $('input[name=' + elementId + '\\[location_y\\]]').val(sphericalMerc.y);
 
           var apiUrl = LOCATION_TYPE_LOOKUP_URL + "x=" + sphericalMerc.x + "&y=" + sphericalMerc.y;
+          apiUrl += "&api_key=" + apiKey;
           // if row=true and street=false, this is a sidewalk or other easement
           // street and taxlot might both be true for bridges/overpasses/viaducts
 
