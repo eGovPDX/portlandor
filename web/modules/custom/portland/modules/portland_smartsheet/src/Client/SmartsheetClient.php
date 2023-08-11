@@ -8,7 +8,7 @@ use GuzzleHttp\Client;
  * @package Drupal\portland_smartsheet\Client
  */
 class SmartsheetClient {
-  private \GuzzleHttp\Client $client;
+  private Client $client;
   private string $sheet_id;
 
   public function __construct($sheet_id) {
@@ -45,7 +45,7 @@ class SmartsheetClient {
     return $body->result ?? $body->data ?? $body;
   }
 
-  public function addRow($data) {
+  public function addRows($data) {
     return $this->handleResponse($this->client->request('POST', 'rows', ['json' => $data]));
   }
 

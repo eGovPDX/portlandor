@@ -1,5 +1,17 @@
 <?php
 
+use Drupal\pathauto\PathautoState;
+use Drupal\group\Entity\Group;
+use Drupal\search_api\IndexInterface;
+use Drupal\search_api\Query\QueryInterface;
+use Solarium\QueryType\Select\Query\Query;
+use Drupal\Core\Url;
+use Symfony\Component\HttpFoundation\RedirectResponse;
+use Drupal\Core\Breadcrumb\Breadcrumb;
+use Drupal\Core\Routing\RouteMatchInterface;
+use Drupal\views\Views;
+use Drupal\views\ViewExecutable;
+use Drupal\user\Entity\User;
 use Drupal\group\GroupMembershipLoaderInterface;
 use Drupal\group\Entity\GroupInterface;
 use Drupal\group\Entity\GroupTypeInterface;
@@ -13,6 +25,8 @@ use Drupal\Core\Mail\MailManagerInterface;
 use Drupal\Component\Utility\SafeMarkup;
 use Drupal\Component\Utility\Html;
 use Drupal\views\Render\ViewsRenderPipelineMarkup;
+use Drupal\Core\Language\LanguageInterface;
+use Drupal\file\Plugin\Field\FieldType\FileFieldItemList;
 
 // This file concerns itself with setting up tokens with hooks
 include 'portland.tokens.inc';
@@ -61,7 +75,7 @@ function portland_group_presave(GroupInterface $group)
     }
     $alias = "/$cleangroup_path";
     $gid = $group->id();
-    $lang = \Drupal::languageManager()->getCurrentLanguage()->getId();
+    $lang = \Drupal::languageManager()->getCurrentLanguage(LanguageInterface::TYPE_CONTENT)->getId();
     // Update the group path when we have alias conflict
     \Drupal::service("pathauto.alias_uniquifier")->uniquify($alias, "/group/$gid", $lang);
     $group->set('field_group_path', substr($alias, 1)); // Remove the first character "/"
@@ -114,7 +128,7 @@ function _clean_group_group_path(&$group_group_path)
 function portland_group_insert(GroupInterface $group)
 {
   // Workaround for Drupal bug: https://www.drupal.org/project/inline_entity_form/issues/2966933
-  $group->path->pathauto = Drupal\pathauto\PathautoState::CREATE;
+  $group->path->pathauto = PathautoState::CREATE;
 
   // <TODO:>LOW PRIORITY: Generate URL aliases for group action links using group path (ie. /bds/content, /bds/members)</TODO:>
 }
@@ -272,35 +286,58 @@ function portland_entity_insert($entity)
 }
 
 /**
+ * Background: when an entity is revisionable, the files from any past revisions count
+ * towards the usage for that file. In our use-case, this behavior is undesirable. We want
+ * to purge the files from any old revisions in order to save storage space.
+ * Revisions should only be used to view content changes and see the authoring user/time.
+ *
+ * By purging the usage from files in past revisions, we ensure they get marked as temporary.
+ *
+ * @see PGOV-880
+ */
+function _remove_file_usage_from_previous_revision($entity) {
+  // Get the language of the content that the editor is modifying
+  $langcode = \Drupal::languageManager()->getCurrentLanguage(LanguageInterface::TYPE_CONTENT)->getId();
+  $entity_type_id = $entity->getEntityTypeId();
+  // We only want to affect revisionable nodes & media
+  if (($entity_type_id !== 'node' && $entity_type_id !== 'media')
+    || !$entity->getEntityType()->isRevisionable()) return;
+
+  $entity_storage = \Drupal::entityTypeManager()->getStorage($entity_type_id);
+  // Retrieve the revision before this one
+  $previous_vid = key($entity_storage->getQuery()
+      ->allRevisions()
+      ->condition($entity_type_id === 'node' ? 'nid' : 'mid', $entity->id())
+      ->sort('vid', 'DESC')
+      ->range(1, 1)
+      ->accessCheck()
+      ->execute());
+  if (empty($previous_vid)) return;
+
+  $previous_revision = $entity_storage->loadRevision($previous_vid);
+  if (!$previous_revision->hasTranslation($langcode)) return;
+
+  $previous_revision_translated = $previous_revision->getTranslation($langcode);
+  foreach ($previous_revision_translated->getFields() as $field) {
+    if ($field instanceof FileFieldItemList) {
+      foreach ($field as $item) {
+        $file = $item->entity;
+        // Remove 1 usage count from the old revision's file.
+        // If the new revision still uses the old file, the new revision will be the source of usage for the file.
+        // If the new revision uses a new file, the old revision will no longer be a source of usage,
+        // allowing the file to be marked as temporary and get deleted.
+        if ($file) \Drupal::service('file.usage')->delete($file, 'file', $entity_type_id, $entity->id(), 1);
+      }
+    }
+  }
+}
+
+/**
  * Implements hook_entity_update().
  */
 function portland_entity_update($entity)
 {
-  // if ($entity->bundle() == 'document') {
-  //   // Get the file ID of the latest revision
-  //   $media_storage = \Drupal::entityTypeManager()->getStorage('media');
-  //   $latest_revision_id = $media_storage->getLatestRevisionId($entity->id());
-  //   $latest_file_id = $media_storage->loadRevision($latest_revision_id)->field_document->target_id;
-
-  //   // Load all revisions and their file IDs
-  //   $conn = \Drupal\Core\Database\Database::getConnection();
-  //   $query = $conn->select('media_revision__field_document', 'media_revision__field_document');
-  //   $query->condition('media_revision__field_document.entity_id', $entity->id(), '=');
-  //   $query->fields('media_revision__field_document', ['revision_id', 'field_document_target_id']);
-  //   $result = $query->execute();
-
-  //   // Delete all but the latest revision
-  //   foreach ($result as $row) {
-  //     if ($row->revision_id == $latest_revision_id) continue;
-  //     // Delete the associated file if it's not used in the latest revision
-  //     if ($row->field_document_target_id != $latest_file_id) {
-  //       $file_storage = \Drupal::entityTypeManager()->getStorage('file');
-  //       $file = $file_storage->load($row->field_document_target_id);
-  //       if($file) $file_storage->delete([$file]);
-  //     }
-  //     $media_storage->deleteRevision($row->revision_id);
-  //   }
-  // }
+  _remove_file_usage_from_previous_revision($entity);
   _notify_reviewer($entity, 'updated');
 }
 
@@ -421,7 +458,6 @@ function portland_preprocess_paragraph(&$vars)
       };
       break;
     case 'video':
-    case 'audio':
       // NOTE: audio files also use a YouTube video player and re-uses field_video_alignment
       $video = $vars['paragraph'];
       if (
@@ -483,9 +519,9 @@ function portland_generate_extended_title_for_group_views($orig_title, $route_ma
     $group_id = $route_match->getParameter('group') ?? $route_match->getParameter('arg_0'); // sometimes a named group parameter is used in the path, othertimes it's a generic parameter
     // On some group pages (e.g. revisions), the group route param
     // is actually an instance of the group rather than the ID.
-    $group_entity = $group_id instanceof Drupal\group\Entity\Group
+    $group_entity = $group_id instanceof Group
                       ? $group_id
-                      : Drupal\group\Entity\Group::load($group_id);
+                      : Group::load($group_id);
     if (isset($group_entity)) {
       $page_title = $orig_title;
       $group_title = $group_entity->label();
@@ -530,7 +566,7 @@ function portland_diff_layout_builder_info_alter(array &$diff_layouts)
 /**
  * Implements hook_search_api_solr_documents_alter().
  */
-function portland_search_api_solr_documents_alter(array &$documents, \Drupal\search_api\IndexInterface $index, array $items)
+function portland_search_api_solr_documents_alter(array &$documents, IndexInterface $index, array $items)
 {
   foreach ($documents as $document) {
     if ($document->ss_content_type == 'news') {
@@ -549,7 +585,7 @@ function portland_search_api_solr_documents_alter(array &$documents, \Drupal\sea
 /**
  * Implements hook_search_api_query_alter()
  */
-function portland_search_api_query_alter(\Drupal\search_api\Query\QueryInterface &$query)
+function portland_search_api_query_alter(QueryInterface &$query)
 {
   // Let the view attachment to share the page's facet settings
   // See https://www.drupal.org/project/facets/issues/3116236
@@ -576,7 +612,7 @@ function portland_search_api_query_alter(\Drupal\search_api\Query\QueryInterface
  * published date and filter out input that will cause WSOD.
  * See https://atendesigngroup.com/blog/drupal-8-apache-solr-boost-search-term-relevance-publish-date
  */
-function portland_search_api_solr_query_alter(\Solarium\QueryType\Select\Query\Query $solarium_query, \Drupal\search_api\Query\QueryInterface $query)
+function portland_search_api_solr_query_alter(Query $solarium_query, QueryInterface $query)
 {
   // Only modify the query for site search
   $search_id = $query->getSearchId();
@@ -607,13 +643,13 @@ function portland_search_api_solr_query_alter(\Solarium\QueryType\Select\Query\Q
     "and",
     "and",
     // See https://www.php.net/manual/en/function.preg-replace.php
-    // If there are fewer elements in the replacement array than in the pattern array, any extra patterns will be replaced by an empty string. 
+    // If there are fewer elements in the replacement array than in the pattern array, any extra patterns will be replaced by an empty string.
   ], $keys);
 
   if(empty($keys)) {
     if(\Drupal::routeMatch()->getRouteName() === "search_api_page.ar.search_portland_gov") {
-      $url = Drupal\Core\Url::fromRoute('search_api_page.ar.search_portland_gov');
-      $redirect = new Symfony\Component\HttpFoundation\RedirectResponse($url->toString());
+      $url = Url::fromRoute('search_api_page.ar.search_portland_gov');
+      $redirect = new RedirectResponse($url->toString());
       $redirect->send();
     }
   }
@@ -656,7 +692,7 @@ function _get_solr_field_name($query, $index_field_name)
 /**
  * Implements hook_system_breadcrumb_alter().
  */
-function portland_system_breadcrumb_alter(\Drupal\Core\Breadcrumb\Breadcrumb &$breadcrumb, \Drupal\Core\Routing\RouteMatchInterface $route_match, array $context)
+function portland_system_breadcrumb_alter(Breadcrumb &$breadcrumb, RouteMatchInterface $route_match, array $context)
 {
   // For breadcrumb "policy/category1/category2" or "policy/category1",
   // set the category name to taxonomy term name.
@@ -719,7 +755,6 @@ function portland_form_alter(&$form, &$form_state, $form_id)
     'node_service_location_form',
     'node_service_location_edit_form',
     'media_image_add_form',
-    'media_audio_add_form',
     'media_video_add_form',
     'media_document_add_form',
     'media_map_add_form'
@@ -774,9 +809,69 @@ function portland_form_alter(&$form, &$form_state, $form_id)
 }
 
 /**
+ * Implements hook_form_BASE_FORM_ID_alter().
+ *
+ * Override the entity browser to show some custom help text when embedding on a translated page.
+ */
+function portland_form_entity_browser_form_alter(&$form, &$form_state, $form_id) {
+  $forms_to_alter = [
+    'entity_browser_audio_video_browser_embed_form',
+    'entity_browser_document_browser_embed_form',
+    'entity_browser_image_browser_embed_form',
+    'entity_browser_map_browser_embed_form',
+  ];
+  if (!in_array($form_id, $forms_to_alter)) return;
+
+  $default_lang = \Drupal::languageManager()->getDefaultLanguage();
+  $current_lang = \Drupal::languageManager()->getCurrentLanguage(LanguageInterface::TYPE_CONTENT);
+  if ($current_lang !== $default_lang) {
+    $form['portland_help_text'] = [
+      '#markup' => '<p>'
+        . t(
+            'Select an item to embed below. If it has been translated into @lang, the translated version will automatically be used after being embedded.',
+            [ '@lang' => $current_lang->getName() ],
+          )
+        . '</p>',
+      '#weight' => -99,
+    ];
+  }
+}
+
+/**
+ * Implements hook_form_BASE_FORM_ID_alter().
+ *
+ * Override the node edit form to show a warning when editing the default translation, if there are translated versions.
+ */
+function portland_form_node_form_alter(&$form, &$form_state) {
+  $node = $form_state->getFormObject()->getEntity();
+  // false = exclude default language
+  $translation_langs = $node->getTranslationLanguages(false);
+  $translation_langs_friendly = join(', ', array_map(fn($lang) => $lang->getName(), $translation_langs));
+
+  $has_other_translations = !empty($translation_langs);
+  $t = 't';
+  if ($node->isDefaultTranslation() && $has_other_translations) {
+    $form['footer']['portland_translation_warning'] = [
+      '#markup' => "<div class=\"messages messages--warning\">
+        <div class=\"messages__header\">
+          <h2 class=\"messages__title\">{$t('Make sure to update translations')}</h2>
+        </div>
+        <div class=\"messages__content\">
+          <p>{$t('This content is translated into the following other languages:')}
+          <br>
+          <em>{$translation_langs_friendly}</em></p>
+          <p>{$t('If you are making substantial edits, you may want to ensure that they are updated as well.')}</p>
+        </div>
+      ",
+      '#weight' => 99,
+    ];
+  }
+}
+
+/**
  * A helper function to validate document.
  */
-function _validate_document(&$form, \Drupal\Core\Form\FormStateInterface $form_state)
+function _validate_document(&$form, FormStateInterface $form_state)
 {
   $is_embedded_document_form_with_efiles = $form_state->hasValue("inline_entity_form") &&
     ($form_state->getValue("inline_entity_form")["field_efiles_link"] != null);
@@ -881,7 +976,7 @@ function _validate_document(&$form, \Drupal\Core\Form\FormStateInterface $form_s
 /**
  * A helper function to validate group path.
  */
-function _validate_group_group_path(&$form, \Drupal\Core\Form\FormStateInterface $form_state)
+function _validate_group_group_path(&$form, FormStateInterface $form_state)
 {
   if ($form_state->hasValue('field_group_path')) {
     $group_group_path = $form_state->getValue('field_group_path')[0]['value'];
@@ -943,7 +1038,7 @@ function portland_cron()
 
     foreach ($views as $view) {
       // Get the view by machine id
-      $theview = \Drupal\views\Views::getView($view['view_id']);
+      $theview = Views::getView($view['view_id']);
       // Set the display machine id
       $theview->setDisplay($view['block_id']);
       $theview->preExecute();
@@ -1224,7 +1319,7 @@ function portland_form_user_login_form_alter(&$form, &$form_state)
     $form['saml_login'] = [
       '#type' => 'link',
       '#title' => t('Log in with City of Portland network account'),
-      '#url' => \Drupal\Core\Url::fromUri('internal:/saml/login', [
+      '#url' => Url::fromUri('internal:/saml/login', [
         'query' => ['destination' => $destination ?? '/']
       ]),
       '#attributes' => [
@@ -1240,7 +1335,7 @@ function portland_form_user_login_form_alter(&$form, &$form_state)
 /**
  * Implements hook_views_pre_render().
  */
-function portland_views_pre_render(\Drupal\views\ViewExecutable $view)
+function portland_views_pre_render(ViewExecutable $view)
 {
   if (
     $view->id() == 'admin_content_with_legacy_path' ||
@@ -1317,7 +1412,7 @@ function portland_preprocess_views_view_field(&$variables)
       if ($field->field == 'nothing') {
         // The User EVA to display group memberships is not rendered
         // when sending email notification. Render the view manually here.
-        $theview = \Drupal\views\Views::getView('groups_for_a_user');
+        $theview = Views::getView('groups_for_a_user');
         // Set the display machine id
         $theview->setDisplay('entity_view_1');
         $theview->setArguments([$variables["row"]->uid]);
@@ -1396,7 +1491,7 @@ function portland_webform_third_party_settings_form_alter(&$form, FormStateInter
  * Implement hook_user_format_name_alter
  */
 function portland_user_format_name_alter(&$name, $account) {
-  $account = \Drupal\user\Entity\User::load($account->id());
+  $account = User::load($account->id());
   $username = $account->name->value;
   $first_at_pos = strpos($username, '@');
   // Only convert if the user name is an email address
@@ -1414,21 +1509,25 @@ function portland_user_format_name_alter(&$name, $account) {
 }
 
 /**
- * Implements hook_user_presave().
+ * Implements hook_ENTITY_TYPE_presave().
  */
-function portland_user_presave($user)
-{
+function portland_user_presave($user) {
   // Update the user's full name before saving
   $first_name = $user->field_first_name->value;
   $last_name = $user->field_last_name->value;
-  if( !empty($first_name) && !empty($last_name)) {
+  if (!empty($first_name) && !empty($last_name)) {
     $user->field_full_name->value = $first_name . ' ' . $last_name;
   }
-  else if( !empty($first_name)) {
+  else if (!empty($first_name)) {
     $user->field_full_name->value = $first_name;
   }
-  else if( !empty($last_name)) {
+  else if (!empty($last_name)) {
     $user->field_full_name->value = $last_name;
+  }
+
+  // Ensure their admin language preference defaults to English if not set.
+  if (empty($user->preferred_admin_langcode->first())) {
+    $user->set('preferred_admin_langcode', \Drupal::languageManager()->getDefaultLanguage()->getId());
   }
 }
 
@@ -1496,4 +1595,22 @@ function portland_media_presave($media)
       }
     }
   }
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ * Add lightning_media browser CSS to the image browser embed form.
+ * See web/modules/contrib/lightning_media/modules/lightning_media_image/lightning_media_image.module
+ */
+function portland_form_entity_browser_image_browser_embed_form_alter(array &$form, FormStateInterface $form_state) {
+  $form['#attached']['library'][] = 'lightning_media/browser.styling';
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ * Add lightning_media browser CSS to the image browser embed form.
+ * See web/modules/contrib/lightning_media/modules/lightning_media_image/lightning_media_image.module
+ */
+function portland_form_entity_browser_featured_image_form_alter(array &$form, FormStateInterface $form_state) {
+  $form['#attached']['library'][] = 'lightning_media/browser.styling';
 }

@@ -2,6 +2,7 @@
 
 namespace Drupal\portland_openid_connect\Plugin\Action;
 
+use GuzzleHttp\Client;
 use Drupal\Core\Action\ActionBase;
 use Drupal\Core\Session\AccountInterface;
 use GuzzleHttp\Exception\RequestException;
@@ -72,7 +73,7 @@ class SyncUserStatusWithAD extends ActionBase
     if (empty($access_token) || empty($email)) return;
 
     /* @var \GuzzleHttp\ClientInterface $client */
-    $client = new \GuzzleHttp\Client();
+    $client = new Client();
     // Perform the request.
     $options = [
       'method' => 'GET',
@@ -148,7 +149,7 @@ class SyncUserStatusWithAD extends ActionBase
     // If the token has not expired, return the previous token
     if (time() < $token_expire_time) return $tokens;
 
-    $windows_aad_config = \Drupal::config('openid_connect.settings.windows_aad');
+    $windows_aad_config = \Drupal::config('openid_connect.client.windows_aad');
     $client_id = $windows_aad_config->get('settings.client_id');
     $tenant_id = '636d7808-73c9-41a7-97aa-8c4733642141';
 
@@ -163,7 +164,7 @@ class SyncUserStatusWithAD extends ActionBase
     ];
 
     /* @var \GuzzleHttp\ClientInterface $client */
-    $client = new \GuzzleHttp\Client();
+    $client = new Client();
 
     try {
       $response = $client->post("https://login.microsoftonline.com/$tenant_id/oauth2/v2.0/token", $request_options);

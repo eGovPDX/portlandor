@@ -36,8 +36,10 @@ class MediaIframeEmbedFormatter extends MediaRemoteFormatterBase {
       '^https?:\/\/www\.portlandoregon\.gov\/bes\/bigpipe\/\w+\.cfm$',
       // Tableau
       '^https?:\/\/(online|public)\.tableau\.com\/(.*)$',
-      // Smartsheet
-      "^https?:\/\/(app|publish)\.smartsheet\.com\/(.*)$",
+      // Smartsheet form
+      "^https?:\/\/app\.smartsheet\.com\/b\/form\/.+$",
+      // Smartsheet publish
+      "^https?:\/\/publish\.smartsheet\.com\/.+$",
     ];
 
     return "/" . join("|", $patterns) . "/";
@@ -47,7 +49,7 @@ class MediaIframeEmbedFormatter extends MediaRemoteFormatterBase {
    * {@inheritdoc}
    */
   public static function getValidUrlExampleStrings(): array {
-    return ['Only supports embeddable links from arcg.is, arcgis.com, pdx.maps.arcgis.com, Google Maps, PortlandMaps.com, PortlandOregon.gov, Tableau, and Smartsheet. If you would like to request a new service, please contact website@portlandoregon.gov for review.'];
+    return ['Only supports embeddable links from arcg.is, arcgis.com, pdx.maps.arcgis.com, Google Maps, PortlandMaps.com, PortlandOregon.gov, Tableau, and Smartsheet (links starting with app.smartsheet.com/b/form or publish.smartsheet.com). If you would like to request a new service, please contact website@portlandoregon.gov for review.'];
   }
 
   /**

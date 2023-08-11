@@ -1,5 +1,93 @@
 # CircleCI integration with Drupal 8.
-# Touch config file to restart the build after CircleCI outage. - Kevin 9/22
+version: 2.1
+
+# Common tasks defined as commands
+commands:
+  checkout_source:
+    steps:
+      - restore_cache:
+          name: Retore Git cache before checkout
+          keys:
+            - source-v2-{{ .Branch }}-{{ .Revision }}
+            - source-v2-{{ .Branch }}-
+            - source-v2-
+      - checkout
+      - run: git gc
+      - save_cache:
+          name: Save Git cache after checkout
+          key: source-v2-{{ .Branch }}-{{ .Revision }}
+          paths:
+            - ".git"
+  install_terminus_and_login:
+    steps:
+      - restore_cache:
+          name: Restore Terminus Cache
+          keys:
+            - terminus-cache-{{ .Environment.CIRCLE_BRANCH }}-v3
+            - ~/.terminus
+      - run:
+          name: Install Terminus
+          command: |
+            if [ ! -f "/tmp/vendor/pantheon-systems/terminus/bin/terminus" ]; then
+              cd /tmp && composer require pantheon-systems/terminus:^3
+              # Temporary workaround to https://github.com/pantheon-systems/terminus/issues/2336
+              cd /tmp && composer require league/container:3.4.1
+              /tmp/vendor/bin/terminus self:plugin:install terminus-build-tools-plugin
+            fi
+      - save_cache:
+          name: Save Terminus cache
+          key: terminus-cache-{{ .Environment.CIRCLE_BRANCH }}-v3
+          paths:
+            - "/tmp/vendor"
+            - ~/.terminus
+      - run:
+          name: Authenticate Terminus
+          command: |
+            echo 'export PATH=/tmp/vendor/bin:/home/circleci/app/vendor/bin:$PATH' >> $BASH_ENV && source $BASH_ENV
+            terminus auth:login || terminus auth:login  --machine-token="$eGov_Terminus" --email="$eGov_Email"
+  install_jest_and_percy:
+    steps:
+      - restore_cache:
+          name: Restore Jest and Percy dependencies cache
+          keys:
+            - jest-{{ checksum "tests/percy/yarn.lock" }}-v2
+      - run:
+          name: Install Jest and Percy dependencies
+          command: |
+            cd /home/circleci/app/tests/percy
+            export PERCY_POSTINSTALL_BROWSER=true
+            yarn install --frozen-lockfile
+            node node_modules/puppeteer/install.js
+      - save_cache:
+          name: Save Jest and Percy dependencies cache
+          key: jest-{{ checksum "tests/percy/yarn.lock" }}-v2
+          paths:
+            - "tests/percy/node_modules"
+  run_common_prep_tasks:
+    steps:
+      - run:
+          name: Run common prep tasks before jobs
+          command: |
+            # Add ssh-rsa to the accepted algorithms
+            # https://pantheon.io/docs/ssh-keys#connections-fail-with-no-matching-host-key-type-found-their-offer-ssh-rsa
+            echo "Host *.drush.in" > ~/.ssh/config
+            echo "    HostkeyAlgorithms +ssh-rsa" >> ~/.ssh/config
+            echo "    PubkeyAcceptedAlgorithms +ssh-rsa" >> ~/.ssh/config
+
+            # Add terminus into path
+            echo 'export PATH=/tmp/vendor/bin:/home/circleci/app/vendor/bin:$PATH' >> $BASH_ENV && source $BASH_ENV
+            terminus aliases
+
+            # Don't check for host key for Pantheon sites
+            echo -e "host *.drush.in\n    StrictHostKeyChecking no" >> ~/.ssh/config
+
+            # Prepare environment variables to be used by Percy
+            if [[ $CIRCLE_BRANCH = "master" ]]; then
+              echo 'export SITE_NAME="dev"' >> $BASH_ENV && source $BASH_ENV
+            else
+              echo 'export SITE_NAME=${CIRCLE_BRANCH}' >> $BASH_ENV && source $BASH_ENV
+            fi
+            cd /home/circleci/app
 
 #Jobs
 
@@ -12,28 +100,8 @@ build_and_deploy: &build_and_deploy
         password: $DOCKERHUB_PASSWORD
   working_directory: /home/circleci/app
   steps:
-    - restore_cache:
-        name: Retore Git cache before checkout
-        keys:
-          - source-v2-{{ .Branch }}-{{ .Revision }}
-          - source-v2-{{ .Branch }}-
-          - source-v2-
-    - checkout
-    - run: git gc
-    - save_cache:
-        name: Save Git cache after checkout
-        key: source-v2-{{ .Branch }}-{{ .Revision }}
-        paths:
-          - ".git"
-    - run:
-        name: Install Terminus
-        command: |
-          if [ ! -f "/tmp/vendor/pantheon-systems/terminus/bin/terminus" ]; then
-            cd /tmp && composer require pantheon-systems/terminus:^3
-            # Temporary workaround to https://github.com/pantheon-systems/terminus/issues/2336
-            cd /tmp && composer require league/container:3.4.1
-            /tmp/vendor/bin/terminus self:plugin:install terminus-build-tools-plugin
-          fi
+    - checkout_source
+    - install_terminus_and_login
     - restore_cache:
         name: Restore theme dependencies cache
         keys:
@@ -80,28 +148,14 @@ build_and_deploy: &build_and_deploy
         name: Build theme
         command: |
           npm -C web/themes/custom/cloudy run build
+    - run_common_prep_tasks
     - run:
         name: Deploy to Pantheon
         when: on_success
-        no_output_timeout: 15m # allow 15 minutes instead of 10 minute default for script to complete
+        no_output_timeout: 20m # allow 20 minutes instead of 10 minute default for script to complete
         command: |
-          # Add ssh-rsa to the accepted algorithms
-          # https://pantheon.io/docs/ssh-keys#connections-fail-with-no-matching-host-key-type-found-their-offer-ssh-rsa
-          echo "Host *.drush.in" > ~/.ssh/config
-          echo "    HostkeyAlgorithms +ssh-rsa" >> ~/.ssh/config
-          echo "    PubkeyAcceptedAlgorithms +ssh-rsa" >> ~/.ssh/config
-
-          # Add terminus into path
-          export PATH=/tmp/vendor/bin:/home/circleci/app/vendor/bin:$PATH && cd /home/circleci/app
-
           # Don't check the repo host key
           export GIT_SSH_COMMAND="ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no"
-
-          # Don't check for host key for Pantheon sites
-          echo -e "host *.drush.in\n    StrictHostKeyChecking no" >> ~/.ssh/config
-
-          # Terminus log in with the user email that will be displayed as the commit user in Pantheon Git repo
-          terminus auth:login --machine-token="$eGov_Terminus" --email="$eGov_Email"
 
           # Git operations
           # Set the git commit user name and email address so it's clear in Pantheon log who made the change
@@ -113,6 +167,23 @@ build_and_deploy: &build_and_deploy
           # Before force-adding, remove large folders we don't need on Pantheon
           cd /home/circleci/app && find ./web/modules -name .git -type d -prune -exec rm -rf "{}" \;
           rm -rf /home/circleci/app/web/themes/custom/cloudy/node_modules
+
+          # Fetch the remote branch
+          echo 'export NO_REMOTE_BRANCH=0' >> "$BASH_ENV" && source $BASH_ENV
+          git fetch pantheon $CIRCLE_BRANCH || echo 'export NO_REMOTE_BRANCH=1' >> "$BASH_ENV" && source $BASH_ENV
+
+          # Get the last commit hash on a remote branch for the folder "translations"
+          echo 'export PANTHEON_TRANSLATION_HASH="0"' >> "$BASH_ENV" && source $BASH_ENV
+          if [ $NO_REMOTE_BRANCH -ne 1 ]; then
+            echo 'export PANTHEON_TRANSLATION_HASH=$(git log --format=format:%H -1 pantheon/$CIRCLE_BRANCH  -- translations)' >> "$BASH_ENV" && source $BASH_ENV
+          fi
+
+          echo 'export ORIGIN_TRANSLATION_HASH=$(git log --format=format:%H -1 origin/$CIRCLE_BRANCH  -- translations)' >> "$BASH_ENV" && source $BASH_ENV
+          echo 'export HAS_TRANSLATION_CHANGES=1' >> "$BASH_ENV" && source $BASH_ENV
+          if [ $ORIGIN_TRANSLATION_HASH == $PANTHEON_TRANSLATION_HASH ]; then
+            echo 'export HAS_TRANSLATION_CHANGES=0' >> "$BASH_ENV" && source $BASH_ENV
+          fi
+          
           git add -f /home/circleci/app
           # Pantheon site will use the wrong DB if the local is kept
           git rm --cache  web/sites/default/settings.local.php --ignore-unmatch
@@ -157,14 +228,19 @@ build_and_deploy: &build_and_deploy
           echo "Running database updates..."
           terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- updb -y
           echo "Importing config..."
-          terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- cim -y -vvv
-          echo "Importing interface translations..."
-          terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- locale:check
-          terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- locale:update
-          terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- locale:import es ../translations/custom-translations.es.po --type=customized --override=all
-          terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- locale:import ru ../translations/custom-translations.ru.po --type=customized --override=all
-          terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- locale:import vi ../translations/custom-translations.vi.po --type=customized --override=all
-          terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- locale:import zh-hans ../translations/custom-translations.zh-hans.po --type=customized --override=all
+          # Retry config import once if it fails
+          terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- cim -y || terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- cim -y
+          if [ $HAS_TRANSLATION_CHANGES -eq 1 ]; then
+            echo "Importing interface translations..."
+            terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- locale:check
+            terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- locale:update
+            terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- locale:import es ../translations/custom-translations.es.po --type=customized --override=all
+            terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- locale:import ru ../translations/custom-translations.ru.po --type=customized --override=all
+            terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- locale:import vi ../translations/custom-translations.vi.po --type=customized --override=all
+            terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- locale:import zh-hans ../translations/custom-translations.zh-hans.po --type=customized --override=all
+          else
+            echo "There is no new translation config to be imported"
+          fi
           echo "Rebuilding cache..."
           terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- cr
 
@@ -250,63 +326,13 @@ visual_regression: &visual_regression
   parallelism: 5
   working_directory: /home/circleci/app
   steps:
-    - restore_cache:
-        name: Retore Git cache before checkout
-        keys:
-          - jest-source-v1-{{ .Branch }}-{{ .Revision }}
-          - jest-source-v1-{{ .Branch }}-
-          - jest-source-v1-
-    - checkout
-    - run: git gc
-    - save_cache:
-        name: Save Git cache after checkout
-        key: jest-source-v1-{{ .Branch }}-{{ .Revision }}
-        paths:
-          - ".git"
-    - run:
-        name: Install Terminus
-        command: |
-          if [ ! -f "/tmp/vendor/pantheon-systems/terminus/bin/terminus" ]; then
-            cd /tmp && composer require pantheon-systems/terminus:^3
-            # Temporary workaround to https://github.com/pantheon-systems/terminus/issues/2336
-            cd /tmp && composer require league/container:3.4.1
-          fi
-    - restore_cache:
-        name: Restore Jest and Percy dependencies cache
-        keys:
-          - jest-{{ checksum "tests/percy/yarn.lock" }}-v2
-    - run:
-        name: Install Jest and Percy dependencies
-        command: |
-          cd /home/circleci/app/tests/percy
-          export PERCY_POSTINSTALL_BROWSER=true
-          yarn install --frozen-lockfile
-    - save_cache:
-        name: Save Jest and Percy dependencies cache
-        key: jest-{{ checksum "tests/percy/yarn.lock" }}-v2
-        paths:
-          - "tests/percy/node_modules"
+    - checkout_source
+    - install_terminus_and_login
+    - install_jest_and_percy
+    - run_common_prep_tasks
     - run:
         name: Run Percy tests
         command: |
-          # Add ssh-rsa to the accepted algorithms
-          # https://pantheon.io/docs/ssh-keys#connections-fail-with-no-matching-host-key-type-found-their-offer-ssh-rsa
-          echo "Host *.drush.in" > ~/.ssh/config
-          echo "    HostkeyAlgorithms +ssh-rsa" >> ~/.ssh/config
-          echo "    PubkeyAcceptedAlgorithms +ssh-rsa" >> ~/.ssh/config
-
-          export PATH=/home/circleci/app/tests/vendor/bin:/tmp/vendor/pantheon-systems/terminus/bin:$PATH
-
-          # Log in via terminus first. Required for tests that require user login.
-          terminus auth:login --quiet --machine-token="$eGov_Terminus" --email="$eGov_Email" && terminus aliases
-
-          # Prepare environment variables to be used by Percy
-          if [[ $CIRCLE_BRANCH = "master" ]]; then
-            echo 'export SITE_NAME="dev"' > $BASH_ENV && source $BASH_ENV
-          else
-            echo 'export SITE_NAME=${CIRCLE_BRANCH}' > $BASH_ENV && source $BASH_ENV
-          fi
-
           mkdir /home/circleci/artifacts
           cd /home/circleci/app/tests/percy
 
@@ -343,58 +369,17 @@ full_regression: &full_regression
         password: $DOCKERHUB_PASSWORD
   working_directory: /home/circleci/app
   steps:
-    - restore_cache:
-        name: Retore Git cache before checkout
-        keys:
-          - jest-source-v1-{{ .Branch }}-{{ .Revision }}
-          - jest-source-v1-{{ .Branch }}-
-          - jest-source-v1-
-    - checkout
-    - run: git gc
-    - save_cache:
-        name: Save Git cache after checkout
-        key: jest-source-v1-{{ .Branch }}-{{ .Revision }}
-        paths:
-          - ".git"
-    - run:
-        name: Install Terminus
-        command: |
-          if [ ! -f "/tmp/vendor/pantheon-systems/terminus/bin/terminus" ]; then
-            cd /tmp && composer require pantheon-systems/terminus:^3
-            # Temporary workaround to https://github.com/pantheon-systems/terminus/issues/2336
-            cd /tmp && composer require league/container:3.4.1
-          fi
-    - restore_cache:
-        name: Restore Jest and Percy dependencies cache
-        keys:
-          - jest-{{ checksum "tests/percy/yarn.lock" }}-v2
-    - run:
-        name: Install Jest and Percy dependencies
-        command: |
-          cd /home/circleci/app/tests/percy
-          export PERCY_POSTINSTALL_BROWSER=true
-          yarn install --frozen-lockfile
-    - save_cache:
-        name: Save Jest and Percy dependencies cache
-        key: jest-{{ checksum "tests/percy/yarn.lock" }}-v2
-        paths:
-          - "tests/percy/node_modules"
-
+    - checkout_source
+    - install_terminus_and_login
+    - install_jest_and_percy
     - restore_cache:
         name: Restore last git commit file
         keys:
           - git-commit-{{ .Revision }}-v1
+    - run_common_prep_tasks
     - run:
         name: Run full regression tests
         command: |
-          # Add ssh-rsa to the accepted algorithms
-          # https://pantheon.io/docs/ssh-keys#connections-fail-with-no-matching-host-key-type-found-their-offer-ssh-rsa
-          echo "Host *.drush.in" > ~/.ssh/config
-          echo "    HostkeyAlgorithms +ssh-rsa" >> ~/.ssh/config
-          echo "    PubkeyAcceptedAlgorithms +ssh-rsa" >> ~/.ssh/config
-
-          export PATH=/home/circleci/app/tests/vendor/bin:/tmp/vendor/pantheon-systems/terminus/bin:$PATH
-
           # Skip test if there is no new commit since the last run
           echo "Current commit: $CIRCLE_SHA1"
           if [ -s "./last_commit_hash.txt" ]
@@ -412,16 +397,6 @@ full_regression: &full_regression
           if [ ! -f ./last_commit_hash.txt ]; then
             echo "$CIRCLE_SHA1" > ./last_commit_hash.txt
             # cat ./last_commit_hash.txt
-          fi
-
-          # Log in via terminus first. Required for tests that require user login.
-          terminus auth:login --quiet --machine-token="$eGov_Terminus" --email="$eGov_Email" && terminus aliases
-
-          # Prepare environment variables to be used by Percy
-          if [[ $CIRCLE_BRANCH = "master" ]]; then
-            echo 'export SITE_NAME="dev"' > $BASH_ENV && source $BASH_ENV
-          else
-            echo 'export SITE_NAME=${CIRCLE_BRANCH}' > $BASH_ENV && source $BASH_ENV
           fi
 
           mkdir /home/circleci/artifacts
@@ -456,77 +431,19 @@ clone_live_database: &clone_live_database
         password: $DOCKERHUB_PASSWORD
   working_directory: /home/circleci/app
   steps:
-    - restore_cache:
-        name: Retore Git cache before checkout
-        keys:
-          - jest-source-v1-{{ .Branch }}-{{ .Revision }}
-          - jest-source-v1-{{ .Branch }}-
-          - jest-source-v1-
-    - checkout
-    - run: git gc
-    - save_cache:
-        name: Save Git cache after checkout
-        key: jest-source-v1-{{ .Branch }}-{{ .Revision }}
-        paths:
-          - ".git"
-    - run:
-        name: Install Terminus
-        command: |
-          if [ ! -f "/tmp/vendor/pantheon-systems/terminus/bin/terminus" ]; then
-            cd /tmp && composer require pantheon-systems/terminus:^3
-            # Temporary workaround to https://github.com/pantheon-systems/terminus/issues/2336
-            cd /tmp && composer require league/container:3.4.1
-            /tmp/vendor/bin/terminus self:plugin:install terminus-build-tools-plugin
-          fi
-    - restore_cache:
-        name: Restore Jest and Percy dependencies cache
-        keys:
-          - jest-{{ checksum "tests/percy/yarn.lock" }}-v2
-    - run:
-        name: Install Jest and Percy dependencies
-        command: |
-          cd /home/circleci/app/tests/percy
-          export PERCY_POSTINSTALL_BROWSER=true
-          yarn install --frozen-lockfile
-    - save_cache:
-        name: Save Jest and Percy dependencies cache
-        key: jest-{{ checksum "tests/percy/yarn.lock" }}-v2
-        paths:
-          - "tests/percy/node_modules"
+    - checkout_source
+    - install_terminus_and_login
+    - install_jest_and_percy
+    - run_common_prep_tasks
     - run:
         name: Clone database from Live
         when: on_success
         no_output_timeout: 45m # allow 45 minutes instead of 10 minute default for script to complete
         command: |
-          # Add ssh-rsa to the accepted algorithms
-          # https://pantheon.io/docs/ssh-keys#connections-fail-with-no-matching-host-key-type-found-their-offer-ssh-rsa
-          echo "Host *.drush.in" > ~/.ssh/config
-          echo "    HostkeyAlgorithms +ssh-rsa" >> ~/.ssh/config
-          echo "    PubkeyAcceptedAlgorithms +ssh-rsa" >> ~/.ssh/config
-
-          # Add terminus into path
-          export PATH=/tmp/vendor/bin:/home/circleci/app/vendor/bin:$PATH && cd /home/circleci/app
-
-          # Don't check for host key for Pantheon sites
-          echo -e "host *.drush.in\n    StrictHostKeyChecking no" >> ~/.ssh/config
-
-          # Terminus log in with the user email that will be displayed as the commit user in Pantheon Git repo
-          terminus auth:login --machine-token="$eGov_Terminus" --email="$eGov_Email"
-
           echo "export PANTHEON_ENV=$CIRCLE_BRANCH" >> $BASH_ENV && source $BASH_ENV
-
           echo "Cloning DB from Live to $PANTHEON_ENV..."
           terminus env:clone-content $CIRCLE_PROJECT_REPONAME.live $PANTHEON_ENV --db-only -y
           terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV deploy
-
-          # echo "Rebuilding cache..."
-          # terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- cr
-          # echo "Running database updates..."
-          # terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- updb -y
-          # echo "Importing config..."
-          # terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- cim -y -vvv
-          # echo "Rebuilding cache..."
-          # terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- cr
 
           # Reindex the Solr server. Indexing will take some time
           # and will continue running after the CircleCI build finishes.
@@ -536,24 +453,6 @@ clone_live_database: &clone_live_database
     - run:
         name: Run Percy tests
         command: |
-          # Add ssh-rsa to the accepted algorithms
-          # https://pantheon.io/docs/ssh-keys#connections-fail-with-no-matching-host-key-type-found-their-offer-ssh-rsa
-          echo "Host *.drush.in" > ~/.ssh/config
-          echo "    HostkeyAlgorithms +ssh-rsa" >> ~/.ssh/config
-          echo "    PubkeyAcceptedAlgorithms +ssh-rsa" >> ~/.ssh/config
-
-          export PATH=/home/circleci/app/tests/vendor/bin:/tmp/vendor/pantheon-systems/terminus/bin:$PATH
-
-          # Log in via terminus first. Required for tests that require user login.
-          terminus auth:login --quiet --machine-token="$eGov_Terminus" --email="$eGov_Email" && terminus aliases
-
-          # Prepare environment variables to be used by Percy
-          if [[ $CIRCLE_BRANCH = "master" ]]; then
-            echo 'export SITE_NAME="dev"' > $BASH_ENV && source $BASH_ENV
-          else
-            echo 'export SITE_NAME=${CIRCLE_BRANCH}' > $BASH_ENV && source $BASH_ENV
-          fi
-
           mkdir /home/circleci/artifacts
           cd /home/circleci/app/tests/percy
 
@@ -571,7 +470,6 @@ clone_live_database: &clone_live_database
 
 
 # Declare all of the jobs we should run.
-version: 2.1
 jobs:
   deploy:
     <<: *build_and_deploy
@@ -616,7 +514,6 @@ workflows:
         - equal: [ "Update Sandbox Database", << pipeline.schedule.name >> ]
     jobs:
       - clone_live_database
-
 
   # daily:
   #   jobs:

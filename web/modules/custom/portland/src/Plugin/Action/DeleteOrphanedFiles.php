@@ -2,6 +2,7 @@
 
 namespace Drupal\portland\Plugin\Action;
 
+use Drupal\Core\Database\Database;
 use Drupal\views_bulk_operations\Action\ViewsBulkOperationsActionBase;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
@@ -36,7 +37,7 @@ class DeleteOrphanedFiles extends ViewsBulkOperationsActionBase
     $latest_file_id = $media_storage->loadRevision($latest_revision_id)->field_document->target_id;
 
     // Load all revisions and their file IDs
-    $conn = \Drupal\Core\Database\Database::getConnection();
+    $conn = Database::getConnection();
     $query = $conn->select('media_revision__field_document', 'media_revision__field_document');
     $query->condition('media_revision__field_document.entity_id', $entity->id(), '=');
     $query->fields('media_revision__field_document', ['revision_id', 'field_document_target_id']);

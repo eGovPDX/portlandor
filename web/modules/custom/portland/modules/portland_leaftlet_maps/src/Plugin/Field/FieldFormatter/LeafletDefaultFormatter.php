@@ -224,9 +224,6 @@ class LeafletDefaultFormatter extends FormatterBase implements ContainerFactoryP
     // Generate the Leaflet Map General Settings.
     $this->generateMapGeneralSettings($elements, $settings);
 
-    // Generate the Leaflet Map Reset Control.
-    $this->setResetMapControl($elements, $settings);
-
     // Generate the Leaflet Map Position Form Element.
     $map_position_options = $settings['map_position'];
     $elements['map_position'] = $this->generateMapPositionElement($map_position_options);
@@ -323,7 +320,7 @@ class LeafletDefaultFormatter extends FormatterBase implements ContainerFactoryP
       // Generate the weight feature property (falls back to natural result ordering).
       $feature['weight'] = !empty($settings['weight']) ? intval(str_replace(["\n", "\r"], "", $this->token->replace($settings['weight'], $tokens))) : $delta;
 
-      $file_url = file_create_url($item->entity->uri->value);
+      $file_url = \Drupal::service('file_url_generator')->generateAbsoluteString($item->entity->uri->value);
       if (substr($item->entity->uri->value, -strlen('.zip')) === '.zip') {
         $file_type = 'shapefile';
       } else {
