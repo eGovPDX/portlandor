@@ -1610,7 +1610,7 @@
             });
           }).observe(element);
         }
-        //onVisible(document.querySelector("#location_map_container"), () => redrawMap());
+        onVisible(document.querySelector("#location_map_container"), () => redrawMap());
 
       });
     }
