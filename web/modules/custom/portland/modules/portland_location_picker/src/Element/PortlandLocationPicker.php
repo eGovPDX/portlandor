@@ -24,8 +24,8 @@ class PortlandLocationPicker extends WebformCompositeBase {
 
   /**
    * {@inheritdoc}
-   * NOTE: custom elements must have a #title attribute. if a value is not set here, it must be set
-   * in the field config. if not, an error is thrown when trying to add an email handler.
+   * //NOTE: custom elements must have a #title attribute. if a value is not set here, it must be set
+   * //in the field config. if not, an error is thrown when trying to add an email handler.
    * 
    * Location types:
    *  street - location_address, location_map
@@ -45,9 +45,6 @@ class PortlandLocationPicker extends WebformCompositeBase {
     if (array_key_exists("#webform_key", $element)) {
       $element_id = $element['#webform_key'];
     }
-
-    $element['#prefix'] = '<div class="location_widget">';
-    $element['#suffix'] = '</div>';
 
     $element['location_address'] = [
       '#type' => 'textfield',

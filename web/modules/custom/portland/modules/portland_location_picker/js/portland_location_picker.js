@@ -21,7 +21,7 @@
       var test = $('main');
 
       //$(context).once('location_picker').each(function () {
-      $(once('location_picker', 'div.location_widget', context)).each(function () {
+      $(once('location_picker', 'fieldset.portland-location-picker--wrapper', context)).each(function () {
 
         // CONSTANTS //////////
         const DEFAULT_LATITUDE = 45.54;
