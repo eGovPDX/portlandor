@@ -39,7 +39,7 @@ class PortlandLocationPicker extends WebformCompositeBase {
     $lines = [];
     $lines[] = '<br>';
     if (isset($value['location_type']) && $value['location_type']) {
-      $lines[] = '<strong>Location type:</strong> ' . $value['location_type'];
+      $lines[] = '<strong>Selected location type:</strong> ' . $value['location_type'];
     }
     if (isset($value['place_name']) && $value['place_name']) {
       $lines[] = '<strong>Location name:</strong> ' . $value['place_name'];
@@ -57,8 +57,9 @@ class PortlandLocationPicker extends WebformCompositeBase {
       $lines[] = '<strong>Location details:</strong> ' . $value['location_attributes'];
     }
     if (isset($value['location_type_hidden']) && $value['location_type_hidden']) {
-      $lines[] = '<strong>Combined location types:</strong> ' . $value['location_type_hidden'];
-    }    if (isset($value['location_asset_id']) && $value['location_asset_id']) {
+      $lines[] = '<strong>Location type code(s):</strong> ' . $value['location_type_hidden'];
+    }    
+    if (isset($value['location_asset_id']) && $value['location_asset_id']) {
       $lines[] = '<strong>Asset ID:</strong> ' . $value['location_asset_id'];
     }
     if (isset($value['location_region_id']) && $value['location_region_id']) {
@@ -93,7 +94,7 @@ class PortlandLocationPicker extends WebformCompositeBase {
     $lines = [];
     $lines[] = '';
     if (isset($value['location_type']) && $value['location_type']) {
-      $lines[] = 'Location type: ' . $value['location_type'];
+      $lines[] = 'Selected location type: ' . $value['location_type'];
     }
     if (isset($value['place_name']) && $value['place_name']) {
       $lines[] = 'Location name: ' . $value['place_name'];
@@ -112,8 +113,9 @@ class PortlandLocationPicker extends WebformCompositeBase {
       $lines[] = 'Location details: ' . $value['location_attributes'];
     }
     if (isset($value['location_type_hidden']) && $value['location_type_hidden']) {
-      $lines[] = 'Combined location types: ' . $value['location_type_hidden'];
-    }    if (isset($value['location_asset_id']) && $value['location_asset_id']) {
+      $lines[] = 'Location type code(s): ' . $value['location_type_hidden'];
+    }    
+    if (isset($value['location_asset_id']) && $value['location_asset_id']) {
       $lines[] = 'Asset ID: ' . $value['location_asset_id'];
     }
     if (isset($value['location_region_id']) && $value['location_region_id']) {

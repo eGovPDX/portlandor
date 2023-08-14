@@ -51,7 +51,7 @@ class PortlandLocationPicker extends WebformCompositeBase {
       '#title' => t('Location Search'),
       '#id' => 'location_address',
       '#attributes' => ['class' => ['location-picker-address'], 'autocomplete' => 'off'],
-      '#description' => t('Search by address, cross streets, park name, community center or other landmark. Or use the Locate Me button or click/tap the map to select a precise location.'),
+      '#description' => t('Search by address, cross streets, park name, or community center. Or use the Locate Me button or click/tap the map to select a precise location.'),
       '#description_display' => 'before',
     ];
     $element['precision_text'] = [
@@ -87,15 +87,11 @@ class PortlandLocationPicker extends WebformCompositeBase {
       '#attributes' => ['class' => ['location-type','visually-hidden-x']],
       '#required' => TRUE
     ];
-    // since CGIS won't allow us to set the location type based on map clicks
-    // without better reverse geocoding, we're setting a hidden field that can
-    // be used for routing.
     $element['location_type_hidden'] = [
-      '#type' => 'textfield',
+      '#type' => 'hidden',
       '#title' => t('Location types'),
-      '#attributes' => ['id' => 'location_type_hidden', 'disabled' => 'disabled'],
+      '#attributes' => ['id' => 'location_type_hidden'],
     ];
-
     $element['location_type_taxlot'] = [
       '#type' => 'hidden',
       '#title' => 'Taxlot',
