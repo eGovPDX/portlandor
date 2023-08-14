@@ -317,6 +317,16 @@
             });
           }
 
+          // KLUGE: couldn't get complex conditional logic to work in the custom element definition,
+          // so we're kludging it in with javascript. if the privatep property radio button is selected,
+          // then we need to show the ownership question. only fires if elements are present.
+          $('input[name=' + elementId + '\\[location_type\\]]').on("click", function() {
+            var typeValue = $(this).val();
+            var ownerQuestion = $('#location_private_owner--wrapper');
+            if (typeValue == "private") ownerQuestion.show();
+            else ownerQuestion.hide();
+          });
+
           // ASSUMPTION: city boundary will always be displayed if geofencing is enabled.
           if (displayCityLimits) {
             initializeCityLimitsLayer();
