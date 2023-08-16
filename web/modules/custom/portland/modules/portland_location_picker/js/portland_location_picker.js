@@ -17,7 +17,7 @@
    Drupal.behaviors.portland_location_picker = {
     attach: function (context, settings) {
 
-      $('main', context).once('location_picker').each(function () {
+    $(once('location_picker', 'main', context)).each(function () {
 
         // CONSTANTS //////////
         const DEFAULT_LATITUDE = 45.54;
