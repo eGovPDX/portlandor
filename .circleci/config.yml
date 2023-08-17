@@ -440,7 +440,13 @@ clone_live_database: &clone_live_database
         when: on_success
         no_output_timeout: 45m # allow 45 minutes instead of 10 minute default for script to complete
         command: |
-          echo "export PANTHEON_ENV=$CIRCLE_BRANCH" >> $BASH_ENV && source $BASH_ENV
+          # On Master branch, clone to Dev
+          if [[ $CIRCLE_BRANCH = "master" ]]; then
+            echo 'export PANTHEON_ENV="dev"' >> $BASH_ENV && source $BASH_ENV
+          else
+            echo 'export PANTHEON_ENV=${CIRCLE_BRANCH}' >> $BASH_ENV && source $BASH_ENV
+          fi
+
           echo "Cloning DB from Live to $PANTHEON_ENV..."
           terminus env:clone-content $CIRCLE_PROJECT_REPONAME.live $PANTHEON_ENV --db-only -y
           terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV deploy
@@ -511,7 +517,9 @@ workflows:
     when:
       and:
         - equal: [ scheduled_pipeline, << pipeline.trigger_source >> ]
-        - equal: [ "Update Sandbox Database", << pipeline.schedule.name >> ]
+        - or: 
+          - equal: [ "Update Sandbox Database", << pipeline.schedule.name >> ]
+          - equal: [ "Update Dev Database", << pipeline.schedule.name >> ]
     jobs:
       - clone_live_database
 

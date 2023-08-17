@@ -1,0 +1,27 @@
+# Github action to rebase sandbox with master
+name: rebase-sandbox-with-master
+
+# Run every Monday at 00:30 UTC (5:30pm Sunday PDT)
+on:
+  schedule:
+    - cron: '30 0 * * Mon'
+
+jobs:
+  rebase-and-push:
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: Check out the Sandbox branch from Github
+        uses: actions/checkout@v3
+        with:
+          ref: sandbox
+
+      - name: Rebase the Sandbox branch on Github
+        run: |
+          git fetch --all --quiet
+          git switch master
+          git checkout sandbox
+          git config --global user.name "BTS eGov"
+          git config --global user.email BTS-eGov@portlandoregon.gov
+          git rebase -X ours origin/master
+          git push -f
