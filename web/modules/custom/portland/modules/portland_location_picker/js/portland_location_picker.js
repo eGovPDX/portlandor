@@ -1065,7 +1065,7 @@
 
               // set location radio button
               // report_location[location_type]
-              var radioInputs = $('input[name=' + elementId + '\\[location_type\\]]');
+              var radioInputs = $('input[name=' + elementId + '\\[location_type\\]]'); 
               var radioValue = calculateLocationType(results);
               for (var i = 0; i < radioInputs.length; i++) {
                 if (radioInputs[i].value == radioValue) {
