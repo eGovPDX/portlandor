@@ -1,7 +1,9 @@
 uuid: b358287d-4d34-4278-8882-015ac6bb18d2
 langcode: en
 status: open
-dependencies: {  }
+dependencies:
+  module:
+    - portland_zendesk
 weight: 0
 open: null
 close: null
@@ -79,6 +81,11 @@ elements: |-
     contact_phone:
       '#type': textfield
       '#title': 'Your Phone Number'
+      '#prepopulate': true
+      '#required': true
+    report_ticket_id:
+      '#type': textfield
+      '#title': 'Support Request ID'
       '#prepopulate': true
       '#required': true
   resolution_details:
@@ -294,5 +301,38 @@ access:
     roles: {  }
     users: {  }
     permissions: {  }
-handlers: {  }
+handlers:
+  zendesk_request_validator:
+    id: ticket_validation
+    handler_id: zendesk_request_validator
+    label: 'Zendesk request validator'
+    notes: ''
+    status: true
+    conditions:
+      enabled:
+        ':input[name="report_ticket_id"]':
+          filled: true
+    weight: -50
+    settings: {  }
+  resolve_open_request:
+    id: zendesk_update_ticket
+    handler_id: resolve_open_request
+    label: 'Resolve open request'
+    notes: ''
+    status: true
+    conditions: {  }
+    weight: -49
+    settings:
+      comment: "The issue has been reported resolved by the cable company representative [webform_submission:values:company_representative].<br><br>\r\nResolution: [webform_submission:values:resolution_details] [webform_submission:values:report_resolution_other_value]<br><br>\r\n[webform_submission:values:explanation_for_non_resolution]"
+      comment_private: 0
+      tags: ''
+      priority: ''
+      status: solved
+      group_id: ''
+      assignee_id: ''
+      type: ''
+      collaborators: ''
+      custom_fields: ''
+      ticket_id_field: report_ticket_id
+      ticket_form_id: ''
 variants: {  }

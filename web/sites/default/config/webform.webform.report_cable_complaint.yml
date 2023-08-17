@@ -55,13 +55,6 @@ elements: |-
       'Service Quality (other)': 'Service Quality (other)'
       Other: Other
     '#required': true
-  contact_zip_code:
-    '#type': textfield
-    '#title': 'Your Zip Code'
-    '#description': 'The MHCRC tracks issues and concerns by zip code for reporting purposes.'
-    '#maxlength': 5
-    '#required': true
-    '#pattern': '^[0-9]{5}$'
   report_issue_description:
     '#type': textarea
     '#title': 'Description of Issue or Concern'
@@ -76,6 +69,13 @@ elements: |-
     '#type': textfield
     '#title': 'Your Phone Number'
     '#required': true
+  contact_zip_code:
+    '#type': textfield
+    '#title': 'Your Zip Code'
+    '#description': 'The MHCRC tracks issues and concerns by zip code for reporting purposes.'
+    '#maxlength': 5
+    '#required': true
+    '#pattern': '^[0-9]{5}$'
   support_agent_use_only:
     '#type': portland_support_agent_widget
     '#title': 'Support Agent Use Only'
@@ -87,7 +87,7 @@ elements: |-
     '#title': 'Resolution URL'
     '#display_on': form
     '#mode': text
-    '#template': '{{ webform_token(''[site:url-brief]'', webform_submission, [], options) }}/form/cable-complaint-resolution?report_service_provider={{ data.report_service_provider }}&report_account_number={{ data.report_account_number }}&report_issue_type={{ data.report_issue_type }}&contact_zip_code={{ data.contact_zip_code }}&report_issue_description={{ data.report_issue_description }}&contact_name={{ data.contact_name }}&contact_email={{ data.contact_email }}&contact_phone={{ data.contact_phone }}&original_submission_key={{ data.uuid }}&report_ticket_id='
+    '#template': '{{ webform_token(''[site:url-brief]'', webform_submission, [], options) }}/form/cable-complaint-resolution?report_service_provider={{ data.report_service_provider }}&report_account_number={{ data.report_account_number }}&report_issue_type={{ data.report_issue_type }}&contact_zip_code={{ data.contact_zip_code }}&report_issue_description={{ data.report_issue_description }}&contact_name={{ data.contact_name }}&contact_email={{ data.contact_email }}&contact_phone={{ data.contact_phone }}'
     '#whitespace': trim
     '#store': true
     '#ajax': true
@@ -117,7 +117,10 @@ elements: |-
     '#type': webform_computed_twig
     '#title': 'Computed Request Description'
     '#display_on': none
+    '#mode': html
     '#template': |
+      <h2>Cable Complaint</h2>
+
       <p><strong>Service Provider:</strong> {{ data.report_service_provider is iterable ? '' : webform_token('[webform_submission:values:report_service_provider]', webform_submission) }}<br>
       <strong>Contact:</strong> {{ data.computed_recipient }}</p>
 
@@ -141,8 +144,7 @@ elements: |-
 
       <p><strong>Phone:</strong> {{ data.contact_phone }}</p>
 
-      <p><strong>Webform ID:</strong> {{ data.webform_id }}</p>
-    '#whitespace': trim
+      <p><i>Webform ID: {{ data.webform_id }}</i></p>
     '#ajax': true
   computed_subject:
     '#type': webform_computed_twig
@@ -351,11 +353,11 @@ handlers:
       requester_name: contact_name
       requester_email: contact_email
       subject: '[webform_submission:values:computed_subject]'
-      comment: '[webform_submission:values:computed_description]'
+      comment: '[webform_submission:values:computed_description:html]'
       tags: 'drupal webform [webform_submission:values:webform_id]'
       priority: normal
       status: new
-      group_id: '4549352062487'
+      group_id: '16849233417623'
       assignee_id: ''
       type: incident
       collaborators: ''
@@ -434,7 +436,7 @@ handlers:
       sender_mail: ''
       sender_name: ''
       subject: '[webform_submission:values:computed_subject:raw]'
-      body: '[webform_submission:values:computed_description:value]'
+      body: "<p>[webform_submission:values:computed_description:html]</p>\r\n\r\n<hr />\r\n<p>Please use this link to report resolution of the issue: <a href=\"https://[webform_submission:values:resolution_url]&report_ticket_id=[webform_submission:values:report_ticket_id]&original_submission_key=[webform_submission:uuid]\">https://[webform_submission:values:resolution_url]&report_ticket_id=[webform_submission:values:report_ticket_id]&original_submission_key=[webform_submission:uuid]</a></p>"
       excluded_elements:
         computed_description: computed_description
         computed_subject: computed_subject
