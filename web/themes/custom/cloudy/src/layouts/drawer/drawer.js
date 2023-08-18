@@ -12,8 +12,8 @@ Drupal.behaviors.drawer = {
     const closeButton = $('.drawer__close');
 
     // Add open to drawers
-    $(once('drawerOpenHandlers', document, context)).each(function () {
-        $(this).on('click', '.drawer__open', function(event) { 
+    $(once('drawerOpenHandlers', '.drawer__open', context)).each(function () {
+        $(this).on('click', function(event) { 
         event.preventDefault();
         event.stopPropagation();
 
@@ -27,8 +27,8 @@ Drupal.behaviors.drawer = {
     });
 
     // Add close to drawers
-    $(once('drawerCloseHandlers', document, context)).each(function () {
-        $(this).on('click', '.drawer__close', function(event) { 
+    $(once('drawerCloseHandlers', '.drawer__close', context)).each(function () {
+        $(this).on('click', function(event) { 
         event.preventDefault();
         event.stopPropagation();
 
@@ -42,12 +42,12 @@ Drupal.behaviors.drawer = {
     });
 
     // Add close to overlay clicks
-    $(once('drawerOverlayHandlers', document, context)).each(function () {
-        $(this).on('click', '.drawer__overlay', function(event) { 
+    $(once('drawerOverlayHandlers', '.drawer__overlay', context)).each(function () {
+        $(this).on('click', function(event) { 
         event.preventDefault();
         event.stopPropagation();
 
-        const target = $(this).data('target');
+        const target = $(this).data('bs-target');
 
         $(openButton).attr('aria-pressed', 'false');
         $(openButton).attr('aria-expanded', 'false');
