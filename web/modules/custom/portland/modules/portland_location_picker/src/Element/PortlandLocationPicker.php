@@ -24,8 +24,8 @@ class PortlandLocationPicker extends WebformCompositeBase {
 
   /**
    * {@inheritdoc}
-   * NOTE: custom elements must have a #title attribute. if a value is not set here, it must be set
-   * in the field config. if not, an error is thrown when trying to add an email handler.
+   * //NOTE: custom elements must have a #title attribute. if a value is not set here, it must be set
+   * //in the field config. if not, an error is thrown when trying to add an email handler.
    * 
    * Location types:
    *  street - location_address, location_map
@@ -46,60 +46,86 @@ class PortlandLocationPicker extends WebformCompositeBase {
       $element_id = $element['#webform_key'];
     }
 
+    $element['location_address'] = [
+      '#type' => 'textfield',
+      '#title' => t('Location Search'),
+      '#id' => 'location_address',
+      '#attributes' => ['class' => ['location-picker-address'], 'autocomplete' => 'off'],
+      '#description' => t('Search by address, cross streets, park name, or community center. Or use the Locate Me button or click/tap the map to select a precise location.'),
+      '#description_display' => 'before',
+    ];
+    $element['precision_text'] = [
+      '#type' => 'markup',
+      '#title' => 'Precision',
+      '#title_display' => 'invisible',
+      '#markup' => '<div class="alert alert--info next-steps visually-hidden precision_text" aria-hidden="true" id="precision_text"><strong>IMPORTANT:</strong> To help us provide better service, please click, tap, or drag the marker to the precise location on the map.</div>',
+    ];
+    $element['location_map'] = [
+      '#type' => 'markup',
+      '#id' => 'location_map',
+      '#title' => 'Location map',
+      '#description' => '',
+      '#description_display' => 'before',
+      '#title_display' => 'invisible',
+      '#markup' => '<div id="location_map_container" class="location-map"></div>',
+    ];
     $element['location_type'] = [
       '#id' => 'location_type',
       '#name' => 'location_type',
       '#type' => 'radios',
-      '#title' => t('On what type of property is the issue located?'),
+      '#title' => t('What type of location is this?'),
       '#title_display' => 'before',
       '#options' => [
-        'street' => t('Along ANY street, sidewalk, highway, trail, or other public right-of-way'),
-        'private' => t('On private property, such as at a residence or business'),
-        'park' => t('Within a public park or natural area'),
-        'waterway' => t('Along a river, stream, or other waterway'),
+        'street' => t('Street, sidewalk, highway, trail, or other public right-of-way'),
+        'private' => t('Private property, public building, or other location with an address'),
+        'park' => t('A public park, natural area, or city-operated community center'),
+        'waterway' => t('A river, stream, or other waterway'),
         'other' => t('I\'m not sure')
       ],
       '#options_display' => 'one_column',
       '#default_value' => 'street',
-      '#attributes' => ['class' => ['location-type']],
+      '#attributes' => ['class' => ['location-type','visually-hidden-x']],
+      '#required' => TRUE
     ];
-    $element['location_park_container'] = [
-      '#id' => 'location_park_container',
-      '#title' => t('Parks list container'),
-      '#type' => 'container',
+    $element['location_type_hidden'] = [
+      '#type' => 'hidden',
+      '#title' => t('Location types'),
+      '#attributes' => ['id' => 'location_type_hidden'],
     ];
-    $element['location_park_container']['location_park'] = [
-      '#id' => 'location_park',
-      '#title' => t('Which park or natural area?'),
-      '#type' => 'webform_entity_select',
-      '#description' => t('If you can\'t find the park in the list, choose "Other / I\'m not sure" then find the location by searching for an address or using the map.'),
-      "#description_display" => 'before',
-      '#target_type' => 'node',
-      '#selection_handler' => 'views',
-      '#selection_settings' => [
-        'view' => ['view_name' => 'entity_browser_park_facilities', 'display_name' => 'location_picker_parks_list'],
-      ],
-      '#empty_option' => t('Select...'),
-      '#attributes' => ['class' => ['location-park']],
-      '#states' => [
-        'visible' => [
-          ':input[name="' . $element_id . '[location_type]"]' => [
-            'value' => 'park'
-          ],
-        ],
-      ],
+    $element['location_type_taxlot'] = [
+      '#type' => 'hidden',
+      '#title' => 'Taxlot',
+      '#attributes' => ['id' => 'location_type_taxlot'],
     ];
-    $element['location_park_container']['park_instructions'] = [
-      '#type' => 'markup',
-      '#title' => 'Park instructions',
-      '#title_display' => 'invisible',
-      '#markup' => '<p class="webform-element-description description">Please move the marker to the exact spot in the park where the issue was observed.</p>',
-      '#states' => [
-        'visible' => [
-          ':input[name="' . $element_id . '[location_park]"]' => ['filled' => TRUE],
-          ':input[name="' . $element_id . '[location_type]"]' => ['value' => 'park'],
-        ],
-      ],
+    $element['location_type_park'] = [
+      '#type' => 'hidden',
+      '#title' => 'Park',
+      '#attributes' => ['id' => 'location_type_park'],
+    ];
+    $element['location_type_waterbody'] = [
+      '#type' => 'hidden',
+      '#title' => 'Waterbody',
+      '#attributes' => ['id' => 'location_type_waterbody'],
+    ];
+    $element['location_type_trail'] = [
+      '#type' => 'hidden',
+      '#title' => 'Trail',
+      '#attributes' => ['id' => 'location_type_trail'],
+    ];
+    $element['location_type_stream'] = [
+      '#type' => 'hidden',
+      '#title' => 'Stream',
+      '#attributes' => ['id' => 'location_type_stream'],
+    ];
+    $element['location_type_street'] = [
+      '#type' => 'hidden',
+      '#title' => 'Street',
+      '#attributes' => ['id' => 'location_type_street'],
+    ];
+    $element['location_type_row'] = [
+      '#type' => 'hidden',
+      '#title' => 'ROW',
+      '#attributes' => ['id' => 'location_type_row'],
     ];
     $element['location_private_owner'] = [
       '#id' => 'location_private_owner',
@@ -110,33 +136,22 @@ class PortlandLocationPicker extends WebformCompositeBase {
       '#options_display' => 'side_by_side',
       '#states' => [
         'visible' => [
-          ':input[name="' . $element_id . '[location_type]"]' => [
-            'value' => 'private'
+          ':input[name="' . $element_id . '[location_type_taxlot]"]' => [
+            'value' => '1'
+          ],
+          ':input[name="' . $element_id . '[location_type_park]"]' => [
+            '!value' => '1'
           ],
         ],
         'required' => [
-          ':input[name="' . $element_id . '[location_type]"]' => [
-            'value' => 'private'
+          ':input[name="' . $element_id . '[location_type_taxlot]"]' => [
+            'value' => '1'
+          ],
+          ':input[name="' . $element_id . '[location_type_park]"]' => [
+            '!value' => '1'
           ],
         ],
       ],
-    ];
-    $element['location_address'] = [
-      '#type' => 'textfield',
-      '#id' => 'location_address',
-      '#title' => t('Address or Cross Streets'),
-      '#attributes' => ['class' => ['location-picker-address'], 'autocomplete' => 'off'],
-      '#description' => t('Enter an address or cross streets of the issue being reported, then click the button to verify the location. Alternately, you may click the map to set the location.'),
-      '#description_display' => 'before',
-    ];
-    $element['location_map'] = [
-      '#type' => 'markup',
-      '#id' => 'location_map',
-      '#title' => 'Location map',
-      '#description' => '',
-      '#description_display' => 'before',
-      '#title_display' => 'invisible',
-      '#markup' => '<div id="location_map_container" class="location-map"></div>',
     ];
     $element['suggestions_modal'] = [
       '#type' => 'markup',
@@ -151,7 +166,7 @@ class PortlandLocationPicker extends WebformCompositeBase {
       '#markup' => '<div id="status_modal" class="visually-hidden"></div>',
     ];
 
-    $location_required_error = "Please select a location by clicking the map, or by entering an address or cross streets above and clicking the Verify button.";
+    $location_required_error = "Location is required. Please select a location by searching or clicking the map.";
     $primaryLayerBehavior = array_key_exists('#primary_layer_behavior', $element) ? $element['#primary_layer_behavior'] : "";
     $primaryLayerType = array_key_exists('#primary_layer_type', $element) ? $element['#primary_layer_type'] : "";
 
@@ -202,6 +217,11 @@ class PortlandLocationPicker extends WebformCompositeBase {
       '#attributes' => ['class' => ['location-details']],
       '#description' => t('Please provide any other details that might help us locate the site you are reporting.'),
       '#description_display' => 'before',
+    ];
+    $element['location_attributes'] = [
+      '#type' => 'hidden',
+      '#title' => t('Location Attributes'),
+      '#attributes' => ['class' => ['location-attributes'], 'id' => 'location_attributes'],
     ];
     $element['location_asset_id'] = [
       '#type' => 'hidden',
