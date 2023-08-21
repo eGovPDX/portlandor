@@ -92,11 +92,11 @@ elements: |-
     '#type': webform_radios_other
     '#title': 'Resolution Details'
     '#options':
-      'Issue was resolved - customer satisfied': 'Issue was resolved - customer satisfied'
-      'Issue resolved - customer not satisfied': 'Issue resolved - customer not satisfied'
+      'Issue was resolved': 'Issue was resolved'
       'Issue cannot be resolved': 'Issue cannot be resolved'
     '#other__option_label': 'Something else...'
     '#other__placeholder': 'Please describe...'
+    '#required': true
   explanation_for_non_resolution:
     '#type': textarea
     '#title': 'Explanation for non-resolution'
@@ -118,6 +118,18 @@ elements: |-
     '#type': hidden
     '#title': 'Original Submission Key'
     '#prepopulate': true
+  computed_resolution:
+    '#type': webform_computed_twig
+    '#title': 'Computed Resolution'
+    '#display_on': form
+    '#mode': text
+    '#template': |-
+      {{ data.resolution_details is iterable ? '' : webform_token('[webform_submission:values:resolution_details]', webform_submission) }}
+      {% if data.explanation_for_non_resolution %}
+      - {{ webform_token('[webform_submission:values:explanation_for_non_resolution]', webform_submission) }}
+      {% endif %}
+    '#whitespace': trim
+    '#ajax': true
 css: ''
 javascript: ''
 settings:
@@ -323,7 +335,7 @@ handlers:
     conditions: {  }
     weight: -49
     settings:
-      comment: "The issue has been reported resolved by the cable company representative [webform_submission:values:company_representative].<br><br>\r\nResolution: [webform_submission:values:resolution_details] [webform_submission:values:report_resolution_other_value]<br><br>\r\n[webform_submission:values:explanation_for_non_resolution]"
+      comment: "The issue has been reported resolved by the cable company representative [webform_submission:values:company_representative].<br><br>\r\nResolution: [webform_submission:values:computed_resolution]"
       comment_private: 0
       tags: ''
       priority: ''
