@@ -31,6 +31,16 @@ function portland_smartsheet_views_data() {
       'id' => 'smartsheet_cell',
     ],
   ];
+  $data['smartsheet']['row_id'] = [
+    'title' => t('Row ID'),
+    'help' => t('ID of the current row'),
+    'argument' => [
+      'id' => 'smartsheet_row_id',
+    ],
+    'field' => [
+      'id' => 'smartsheet_row_id',
+    ],
+  ];
 
   return $data;
 }
