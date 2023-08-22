@@ -62,7 +62,7 @@ class ArchiveAction extends ViewsBulkOperationsActionBase {
     $entity->setNewRevision(TRUE);
     if($entity->hasField('revision_log'))
       $entity->revision_log = 'Bulk operation: unpublished by '. $user_display_name;
-    $entity->setRevisionCreationTime(REQUEST_TIME);
+    $entity->setRevisionCreationTime(\Drupal::time()->getRequestTime());
     $entity->setRevisionUserId(\Drupal::currentUser()->id());
     $entity->save();
     // Don't return anything for a default completion message, otherwise return translatable markup.

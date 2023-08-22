@@ -18,6 +18,7 @@ var BROWSER_OPTION = {
   ignoreHTTPSErrors: true,
   args: ['--no-sandbox'],
   defaultViewport: null,
+  headless: "new",
   // To watch tests locally on MacOS:
   // 1. Uncomment these two settings below
   // 2. In CLI, go into folder "tests/percy"

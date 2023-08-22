@@ -38,7 +38,7 @@ class PublishAction extends ViewsBulkOperationsActionBase {
     if($entity->hasField('revision_log'))
       $entity->revision_log = 'Bulk operation: published by '. $user_display_name;
     $entity->setNewRevision(TRUE);
-    $entity->setRevisionCreationTime(REQUEST_TIME);
+    $entity->setRevisionCreationTime(\Drupal::time()->getRequestTime());
     $entity->setRevisionUserId(\Drupal::currentUser()->id());
     $entity->save();
 

@@ -17,7 +17,7 @@ archive: false
 id: apply_tsup
 title: 'Apply for a Temporary Street Use Permit'
 description: ''
-category: Utility
+categories: {  }
 elements: |-
   page_assessment:
     '#type': webform_wizard_page
@@ -221,30 +221,30 @@ elements: |-
         - or
         - ':input[name="wizard_permit_need"]':
             value: traffic
-    markup_location_info:
-      '#type': webform_markup
-      '#markup': |-
-        <p>You can only close/reserve one street per application. If you will be working on more than one street, you&#39;ll need to submit a new application for each street.</p>
-
-        <p><strong>NOTE:</strong> Please make sure the street you are working on is not restricted by a&nbsp;<a href="/transportation/permitting/temporary-street-use-permitting-tsup#toc-moratorium-dates-and-maps" target="_blank">Moratorium</a>.</p>
     permit_location:
       '#type': portland_location_picker
       '#title': 'Permit Location'
       '#required': true
-      '#location_type__access': false
-      '#location_park_container__access': false
-      '#location_private_owner__access': false
       '#location_address__title': 'Where will this closure or reservation take place?'
       '#location_address__description': 'Enter an address or cross streets, then click Verify and <strong>move the pin to the exact area of your closure/reservation.</strong>'
       '#location_address__required': true
+      '#location_type__access': false
+      '#location_park_container__access': false
+      '#waterway_instructions__access': false
+      '#location_private_owner__access': false
+      '#location_address__title': 'Where would this reservation or closure take place?'
+      '#location_address__description': ''
+      '#location_address__required': true
       '#place_name__access': false
       '#location_details__access': false
-      '#waterway_instructions__access': false
-      '#primary_layer_source': /modules/custom/portland/modules/portland_location_picker/js/layers/tsup-metered-zones.json
-      '#primary_layer_behavior': informational
-      '#primary_layer_type': region
-      '#feature_layer_visible_zoom': 1
-      '#require_city_limits': true
+      '#geojson_layer__access': false
+      '#geojson_layer_behavior__access': false
+    permit_location_metered:
+      '#type': radios
+      '#title': Metered
+      '#options':
+        'false': 'false'
+        'true': 'true'
   page_dates:
     '#type': webform_wizard_page
     '#title': Dates
@@ -819,73 +819,82 @@ elements: |-
             visible:
               ':input[name="complex_permit_closure_type[sidewalk]"]':
                 checked: true
-          '#markup': |-
-            <strong>For sidewalk closures:</strong><br />
-            <br />
-            If there is on-street parking adjacent to the sidewalk you are closing, you are required to reserve it. Please make sure your application includes these spaces.
-        complex_permit_parking_spaces_affected:
-          '#type': number
-          '#title': 'How many parking spaces will you be impacting?'
-          '#description_display': before
-          '#required': true
-          '#min': 0
-          '#step': 1
-        complex_permit_additional_parking_spaces_description:
-          '#type': textfield
-          '#title': 'Please describe where you would like any additional parking'
-        complex_permit_bds_associated:
-          '#type': webform_radios_other
-          '#title': 'Is this request associated with a permit issued by the Bureau of Development services (i.e. building permit, trade permit, etc)?'
-          '#options':
-            'No': 'No'
-          '#options_display': buttons_horizontal
-          '#other__option_label': 'Yes'
-          '#other__title': 'Please provide the permit number or IVR #'
-          '#other__placeholder': ''
-          '#required': true
-        complex_permit_requested_times:
-          '#type': textfield
-          '#title': 'Requested Start and End times (include AM or PM)'
-          '#placeholder': 'e.g. 7am-4pm or All Hours'
-          '#required': true
-        complex_permit_additional_info:
-          '#type': textarea
-          '#title': 'Additional Info'
-          '#placeholder': 'Please provide us with any additional information here, such as location, purpose, time, that didn''t fit in anywhere above.'
-        complex_permit_acknowledge_conditions:
-          '#type': checkbox
-          '#title': 'I have read and agree with the conditions of this permit (see below).'
-          '#description': |-
-            By applying to obtain this permit from the City of Portland, the permittee agrees to comply with all permit conditions, including, without limitation, the permit conditions stated here:<br />
-            <a target="_blank" href="/transportation/permitting/documents/temporary-street-use-permit-conditions">Conditions of a Permit to Use a Dedicated Street Area</a><br />
-            <a target="_blank" href="/transportation/permitting/documents/non-metered-parking-reservation-overview">Parking Enforcement verification procedure</a><br />
-            <a target="_blank" href="/transportation/permitting/temporary-street-use-permitting-tsup#toc-fees">Change Fee and Refund Policies</a>
-          '#required': true
-          '#required_error': 'You must agree with the permit conditions.'
-  page_general:
-    '#type': webform_wizard_page
-    '#title': Question
-    '#states':
-      visible:
-        ':input[name="wizard_permit_need"]':
-          value: general
-    '#admin_title': 'General Permit Question'
-    general_comment_details:
-      '#type': textarea
-      '#title': 'How can we help you?'
-      '#required': true
-    general_email:
-      '#type': textfield
-      '#title': 'Email Address'
-      '#description': 'We will use this to respond to your question.'
-      '#description_display': before
-      '#input_mask': '''alias'': ''email'''
-      '#required': true
-    general_permit_number:
-      '#type': textfield
-      '#title': 'Permit/Application Number (Optional)'
-      '#description': 'If you already have a permit or a pending application, please provide the number so we can better assist you.'
-      '#description_display': before
+            - or
+            - ':input[name="complex_permit_closure_type[sidewalk]"]':
+                checked: true
+        '#min': 1
+        '#step': 1
+        '#required': true
+      complex_permit_bds_associated:
+        '#type': webform_radios_other
+        '#title': 'Is this request associated with a permit issued by the Bureau of Development services (i.e. building permit, trade permit, etc)?'
+        '#options':
+          'No': 'No'
+        '#options_display': buttons_horizontal
+        '#other__option_label': 'Yes'
+        '#other__title': 'Please provide the permit number or IVR #'
+        '#other__placeholder': ''
+        '#required': true
+        '#states':
+          visible:
+            ':input[name="complex_permit_work_type[select]"]':
+              '!value': ''
+      complex_permit_requested_times:
+        '#type': textfield
+        '#title': 'Requested Start and End times (include AM or PM)'
+        '#placeholder': 'e.g. 7am-4pm or All Hours'
+        '#required': true
+        '#states':
+          visible:
+            ':input[name="complex_permit_bds_associated[radios]"]':
+              checked: true
+      complex_permit_additional_parking_spaces:
+        '#type': webform_radios_other
+        '#title': 'Will you require any additional parking beyond what is mandated for your closure(s)?'
+        '#options':
+          'No': 'No'
+        '#options_display': buttons_horizontal
+        '#other__type': number
+        '#other__option_label': 'Yes'
+        '#other__title': 'How many?'
+        '#other__placeholder': ''
+        '#other__min': '1'
+        '#other__step': '1'
+        '#required': true
+        '#states':
+          visible:
+            ':input[name="complex_permit_requested_times"]':
+              filled: true
+      complex_permit_additional_parking_spaces_description:
+        '#type': textfield
+        '#title': 'Please describe where you would like this additional parking'
+        '#required': true
+        '#states':
+          visible:
+            ':input[name="complex_permit_additional_parking_spaces[other]"]':
+              filled: true
+      complex_permit_additional_info:
+        '#type': textarea
+        '#title': 'Additional Info'
+        '#placeholder': 'Please provide us with any additional information here, such as location, purpose, time, that didn''t fit in anywhere above.'
+        '#states':
+          visible:
+            ':input[name="complex_permit_additional_parking_spaces[radios]"]':
+              checked: true
+      complex_permit_acknowledge_conditions:
+        '#type': checkbox
+        '#title': 'I have read and agree with the conditions of this permit (see below).'
+        '#description': |-
+          By applying to obtain this permit from the City of Portland, the permittee agrees to comply with all permit conditions, including, without limitation, the permit conditions stated here:<br />
+          <a href="/transportation/permitting/documents/temporary-street-use-permit-conditions">Conditions of a Permit to Use a Dedicated Street Area</a><br />
+          <a href="/transportation/permitting/documents/non-metered-parking-reservation-overview">Parking Enforcement verification procedure</a><br />
+          <a href="/transportation/permitting/temporary-street-use-permitting-tsup#toc-fees">Change Fee and Refund Policies</a>
+        '#required': true
+        '#required_error': 'You must agree with the permit conditions.'
+        '#states':
+          visible:
+            ':input[name="complex_permit_additional_parking_spaces[radios]"]':
+              checked: true
   page_placeholder_permit:
     '#type': webform_wizard_page
     '#title': Permit
@@ -927,24 +936,8 @@ elements: |-
       '#type': textfield
       '#title': 'Email Address'
       '#description': 'Primary communication will be done through email, please check your spam folder.'
-      '#description_display': before
       '#input_mask': '''alias'': ''email'''
       '#required': true
-  support_agent_use_only:
-    '#type': portland_support_agent_widget
-    '#title': 'Support Agent Use Only'
-    '#states':
-      visible:
-        - ':input[name="wizard_permit_need"]':
-            value: general
-        - or
-        - ':input[name="permit_type"]':
-            '!value': unknown
-    '#wrapper_attributes':
-      style: 'background-color: #ccc; padding: 15px;'
-    '#access_create_roles':
-      - support_agent
-      - administrator
   permit_type:
     '#type': webform_computed_twig
     '#title': 'Computed permit type'

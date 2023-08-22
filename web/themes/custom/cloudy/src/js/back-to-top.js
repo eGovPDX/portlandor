@@ -11,7 +11,7 @@
       var showHeight = viewHeight * 1.5;
       var isAttached = false;
 
-      $(window).once('backToTopShowButtonHandler').on('scroll', function() {
+      $(window).on('scroll', function() {
         var scrollPos = $(document).scrollTop();
         if (scrollPos > showHeight && !isAttached) {
           var buttonText = Drupal.t('Back to top');
@@ -23,9 +23,11 @@
         }
       });
 
-      $('#back-to-top', context).once('backToTopClickHandler').on('click', function() {
-        $(this).remove();
-        isAttached = false;
+      $(once('backToTopClickHandler', '#back-to-top', context)).each(function () {
+        $(this).on('click', function() {
+          $(this).remove();
+          isAttached = false;
+        });
       });
     }
   };
