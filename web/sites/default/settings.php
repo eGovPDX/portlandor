@@ -79,7 +79,7 @@ if (isset($_ENV['PANTHEON_ENVIRONMENT']) && php_sapi_name() != 'cli') {
     $primary_domain = 'sandbox.portland.gov';
     $config['environment_indicator.indicator']['bg_color'] = '#3455eb';
     $config['environment_indicator.indicator']['fg_color'] = '#ffffff';
-    $config['environment_indicator.indicator']['name'] = 'Dev';
+    $config['environment_indicator.indicator']['name'] = 'Sandbox';
   }
   else {
     // Redirect to HTTPS on every Pantheon environment.
