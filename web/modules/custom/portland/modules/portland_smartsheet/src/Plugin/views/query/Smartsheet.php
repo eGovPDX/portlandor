@@ -25,24 +25,37 @@ class Smartsheet extends QueryPluginBase {
   /**
    * {@inheritdoc}
    */
+  public function build(ViewExecutable $view) {
+    $view->initPager();
+  }
+
+  /**
+   * {@inheritdoc}
+   */
   public function execute(ViewExecutable $view) {
     $sheet_id = $view->query->options['sheet_id'];
     if ($sheet_id === "") return;
 
-    $view->initPager();
     try {
       $client = new SmartsheetClient($sheet_id);
       $items_per_page = $view->pager->getItemsPerPage();
       $sheet = $client->getSheet([
         'exclude' => 'filteredOutRows',
         'filterId' => $this->options['filter_id'],
+        'include' => 'attachments',
         'page' => $view->pager->getCurrentPage() + 1,
-        'pageSize' => $items_per_page === 0 ? 9999 : $items_per_page
+        'pageSize' => $items_per_page === 0 ? 9999 : $items_per_page,
       ]);
       $sheet_raw_rows = array_slice($sheet->rows, $view->pager->getOffset());
       $rows = [];
       foreach ($sheet_raw_rows as $sheet_row) {
-        $rows[] = array_column($sheet_row->cells, NULL, 'columnId');
+        $row_to_add = array_column($sheet_row->cells, NULL, 'columnId');
+
+        // add special '_data' column with the row metadata
+        unset($sheet_row->cells);
+        $row_to_add['_data'] = $sheet_row;
+
+        $rows[] = $row_to_add;
       }
 
       // Sort according to any added sort plugins
@@ -68,6 +81,7 @@ class Smartsheet extends QueryPluginBase {
       );
 
       $view->pager->total_items = $sheet->filteredRowCount ?? $sheet->totalRowCount;
+      $view->total_rows = $view->pager->total_items;
       $view->pager->updatePageInfo();
     } catch (\Exception $e) {
       return;
