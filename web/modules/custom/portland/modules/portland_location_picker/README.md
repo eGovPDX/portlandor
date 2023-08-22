@@ -1,12 +1,12 @@
 # Portland Location Picker widget for webforms
 
-This custom sub-module of the Portland module implements a custom composite element for webforms. It is used for address verification, geolocation, and reverse geolocation. It also has the ability to display GeoJSON layers with features such as assets, incidents, and regions. Assets may be informational only or used for selection. Incidents are live Zendesk tickets. Regions are polygons that record the region id when a location is picked inside them.
+This custom sub-module of the Portland module implements a custom composite element for webforms. It is used for geolocation and reverse geolocation, and can be used to search for and verify addresses. It also has the ability to display GeoJSON layers with features such as assets, incidents, and regions. Assets may be informational only or used for selection. Incidents are live Zendesk tickets. Regions are polygons that record the region id when a location is picked inside them.
+
+NOTE: The widget was updated in 8/2023 with new functionality, and this readme may not be fully up to date. Major refactoring and optimization is planned for the near future, at which time the documentation will be fully updated.
 
 ## Configuration
 
 IMPORTANT: Only one Location widget can be placed in a form page; it must be the only one on the currently viewed page. Multiple instances can be used if they're placed on different pages within the form (using the multi-page form format).
-
-To support the widest array of applicaitons, by default all sub-elements are enabled and none are required. Other sub-elements can be disabled if not needed. A common default pattern was not coded into the custom element plugin, because overriding that pattern would require using arcane YAML code in the custom properties field. Though this requires more initial configuration, it consists of checking boxes in the UI, which is much simpler than figuring out the YAML custom properties.
 
 In practice, at minimum the location_address and location_lat fields should usually be marked required in the element configuration panel. The address field should always be populated after a map click; if a location with no address is used, then "N/A" is put in the field so that it passes required field validation. If the location_lat field has a value, it can be assumed that the location_lon field has one. Though hidden, the location_lat field has the label "Location," so that's the label that's displayed in the error message if no coordates have been selected.
 
@@ -22,7 +22,9 @@ Any of the sub-fields may be used in conditional logic. For example, if "Private
 
 Uses the PortlandMaps.com API for address verification and suggestions.
 
-KNOWN ISSUE: As of 11/03/2022, there is a bug in PortlandMaps that causes some single-result suggestions to not include lat/lon coordinates. For example, if you search for "10333," a list of addresses will be returned, and each includes lat/lon that are used to recenter the map when clicked. If you search for "10333 NE Russell," only one suggested address will be returned. This particular address does not include lat/lon. The full verified address is returned, but the map can't center on it. In instances like this where there are no lat/lon coordiantes, but there is a verified address, zeroes are passed into the lat/lon fields so that the form can still be submitted. No other addresses without coordinates are known, and the CGIS team is at a loss as to why this occurs.
+## Location type verification
+
+Uses an endpoint of the PortlandMaps.com API to provide loacation type and other data based on coordinates.
 
 ## Geolocation
 
@@ -67,16 +69,7 @@ The class Drupal\portland_location_picker\Plugin\WebformElement\PortlandLocation
 
 This default data can be accessed using the token [webform_submission:values:report_location], where report_location is the machine name of the field in the webform. Individual values from sub-fields can be accessed by drilling down further into the composite field. For example, the place name returned by reverse geolocation can be accessed using the token [webform_submission:values:report_location:place_name].
 
-The following sub-fields are available:
-
-* location_type
-* location_address
-* place_name
-* location_details
-* location_asset_id
-* location_region_id
-* location_lat
-* location_lon
+See src/Element/PortlandLocationPicker.php for a full list of sub-elements and their types. Most field sub-elements can be used in conditional logic and widget output.
 
 If the address data needs to be parsed further, the widget can be refactored to include hidden sub-fields for more granular data points, such as city, zipcode, jurisdiction, etc.
 
@@ -121,6 +114,8 @@ The two types of behavior for assets are informational and selection. At present
 
 These properties are set in the Advanced tab of the Location Picker element. Data is entered in YAML format.
 
+- ***verified_addresses*** - When true, configures the widget to use the address field for verification, not just searching; default is FALSE
+
 - ***primary_layer_source*** - Sets the URL path to the geoJSON feed for the primary layer
 
 - ***incidents_layer_source*** - Sets the URL path to the geoJSON feed for the incidents layer
@@ -139,7 +134,7 @@ These properties are set in the Advanced tab of the Location Picker element. Dat
 
 - ***disable_popup*** - Disables asset and incident popups if any value is set in the property (not currently implemented) 
 
-- ***verify_button_text*** - Overrides the default "Verify" label in the widget used for verifying or finding an address
+- ***verify_button_text*** - Overrides the default "Verify" or "Find" label in the widget used for verifying or finding an address
 
 - ***primary_feature_name*** - Overrides the name/label used to describe features on the primary layer; default is "asset" (not currently implemented)
 
@@ -148,6 +143,8 @@ These properties are set in the Advanced tab of the Location Picker element. Dat
 - ***display_city_limits*** - When TRUE, the city limits border is displayed. Default is TRUE.
 
 - ***require_city_limits*** - When TRUE, selected locations are required to be within the Portland city limits. Clicks outside the permiter will result in a Javascript alert, and the click will not be registered. Default is FALSE.
+
+- ***location_types*** - NOT IMPLEMENTED. Configurable to contain a list of location type codes that are used by the parent form. Can be used to inform widget functionaltiy. For example, if only "park" is included, only parks-specific functionality is enabled.
 
 ### Example of custom properties
 

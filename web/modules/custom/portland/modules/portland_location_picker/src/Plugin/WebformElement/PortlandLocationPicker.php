@@ -37,12 +37,9 @@ class PortlandLocationPicker extends WebformCompositeBase {
     // needed, such as in a handler that is sending data to an external system, the sub-field needs to be
     // specified in the token, such as [webform_submission:values:location:place_name].
     $lines = [];
-    // $lines[] = "<p>";
+    $lines[] = '<br>';
     if (isset($value['location_type']) && $value['location_type']) {
-      $lines[] = '<strong>Location type:</strong> ' . $value['location_type'];
-    }
-    if (isset($value['location_private_owner']) && $value['location_private_owner']) {
-      $lines[] = '<strong>Are you the owner?</strong> ' . $value['location_private_owner'];
+      $lines[] = '<strong>Selected location type:</strong> ' . $value['location_type'];
     }
     if (isset($value['place_name']) && $value['place_name']) {
       $lines[] = '<strong>Location name:</strong> ' . $value['place_name'];
@@ -50,14 +47,18 @@ class PortlandLocationPicker extends WebformCompositeBase {
     if (isset($value['location_address']) && $value['location_address']) {
       $lines[] = '<strong>Address:</strong> <a href="https://www.google.com/maps/place/' . $value['location_address'] . '">' . $value['location_address'] . '</a>';
     }
-    if (isset($value['location_lat']) && isset($value['location_lon']) && $value['location_lat']) {
-      $latlon = $value['location_lat'] . ',' . $value['location_lon'];
-      $lines[] = '<strong>Lat/lng:</strong> <a href="https://www.google.com/maps/place/' . $latlon . '">' . $latlon . '</a>';
-      $lines[] = '<strong>X/Y Coords:</strong> ' . $value['location_x'] . ' / ' . $value['location_y'];
+    if (isset($value['location_private_owner']) && $value['location_private_owner']) {
+      $lines[] = '<strong>Are you the owner?</strong> ' . $value['location_private_owner'];
     }
     if (isset($value['location_details']) && $value['location_details']) {
-      $lines[] = '<strong>Location Details:</strong> ' . $value['location_details'];
+      $lines[] = '<strong>Location details:</strong> ' . $value['location_details'];
     }
+    if (isset($value['location_attributes']) && $value['location_attributes']) {
+      $lines[] = '<strong>Location details:</strong> ' . $value['location_attributes'];
+    }
+    if (isset($value['location_type_hidden']) && $value['location_type_hidden']) {
+      $lines[] = '<strong>Location type code(s):</strong> ' . $value['location_type_hidden'];
+    }    
     if (isset($value['location_asset_id']) && $value['location_asset_id']) {
       $lines[] = '<strong>Asset ID:</strong> ' . $value['location_asset_id'];
     }
@@ -70,7 +71,13 @@ class PortlandLocationPicker extends WebformCompositeBase {
     if (isset($value['location_is_portland']) && $value['location_is_portland']) {
       $lines[] = '<strong>Is Portland:</strong> ' . $value['location_is_portland'];
     }
-    // $lines[] = "</p>";
+    if (isset($value['location_lat']) && isset($value['location_lon']) && $value['location_lat']) {
+      $latlon = $value['location_lat'] . ',' . $value['location_lon'];
+      $lines[] = '<strong>Lat/lng:</strong> <a href="https://www.google.com/maps/place/' . $latlon . '">' . $latlon . '</a>';
+    }
+    if (isset($value['location_x']) && isset($value['location_y']) && $value['location_y']) {
+      $lines[] = '<strong>X/Y coords:</strong> ' . $value['location_x'] . ' / ' . $value['location_y'];
+    }
     return $lines;
   }
 
@@ -85,33 +92,29 @@ class PortlandLocationPicker extends WebformCompositeBase {
     // needed, such as in a handler that is sending data to an external system, the sub-field needs to be
     // specified in the token, such as [webform_submission:values:location:place_name].
     $lines = [];
+    $lines[] = '';
     if (isset($value['location_type']) && $value['location_type']) {
-      $lines[] = 'Location type: ' . $value['location_type'];
-    }
-    if (isset($value['location_private_owner']) && $value['location_private_owner']) {
-      $lines[] = 'Are you the owner? ' . $value['location_private_owner'];
+      $lines[] = 'Selected location type: ' . $value['location_type'];
     }
     if (isset($value['place_name']) && $value['place_name']) {
       $lines[] = 'Location name: ' . $value['place_name'];
     }
     if (isset($value['location_address']) && $value['location_address']) {
       $lines[] = 'Address: ' . $value['location_address'];
+      $lines[] = 'Map link: https://www.google.com/maps/place/' . $value['location_address'];
     }
-    if (isset($value['location_lat']) && $value['location_lat']) {
-      $lines[] = 'Lat: ' . $value['location_lat'];
-    }
-    if (isset($value['location_lon']) && $value['location_lon']) {
-      $lines[] = 'Lng: ' . $value['location_lon'];
-    }
-    if (isset($value['location_x']) && $value['location_x']) {
-      $lines[] = 'X: ' . $value['location_x'];
-    }
-    if (isset($value['location_y']) && $value['location_y']) {
-      $lines[] = 'Y: ' . $value['location_y'];
+    if (isset($value['location_private_owner']) && $value['location_private_owner']) {
+      $lines[] = 'Are you the owner? ' . $value['location_private_owner'];
     }
     if (isset($value['location_details']) && $value['location_details']) {
-      $lines[] = 'Details: ' . $value['location_details'];
+      $lines[] = 'Location details: ' . $value['location_details'];
     }
+    if (isset($value['location_attributes']) && $value['location_attributes']) {
+      $lines[] = 'Location details: ' . $value['location_attributes'];
+    }
+    if (isset($value['location_type_hidden']) && $value['location_type_hidden']) {
+      $lines[] = 'Location type code(s): ' . $value['location_type_hidden'];
+    }    
     if (isset($value['location_asset_id']) && $value['location_asset_id']) {
       $lines[] = 'Asset ID: ' . $value['location_asset_id'];
     }
@@ -124,6 +127,14 @@ class PortlandLocationPicker extends WebformCompositeBase {
     if (isset($value['location_is_portland']) && $value['location_is_portland']) {
       $lines[] = 'Is Portland: ' . $value['location_is_portland'];
     }
+    if (isset($value['location_lat']) && isset($value['location_lon']) && $value['location_lat']) {
+      $latlon = $value['location_lat'] . ',' . $value['location_lon'];
+      $lines[] = 'Lat/lng: ' . $latlon;
+      $lines[] = 'Map link: https://www.google.com/maps/place/' . $latlon;
+    }
+    if (isset($value['location_x']) && isset($value['location_y']) && $value['location_y']) {
+      $lines[] = 'X/Y coords: ' . $value['location_x'] . ' / ' . $value['location_y'];
+    }
     return $lines;
   }
 
@@ -135,6 +146,7 @@ class PortlandLocationPicker extends WebformCompositeBase {
 
     $elementId = $element['#webform_key'];
 
+    $verifiedAddresses = array_key_exists('#verified_addresses', $element) ? $element['#verified_addresses'] : FALSE;
     $primaryLayerSource = array_key_exists('#primary_layer_source', $element) ? $element['#primary_layer_source'] : "";
     $incidentsLayerSource = array_key_exists('#incidents_layer_source', $element) ? $element['#incidents_layer_source'] : "";
     $regionsLayerSource = array_key_exists('#regions_layer_source', $element) ? $element['#regions_layer_source'] : "";
@@ -144,12 +156,14 @@ class PortlandLocationPicker extends WebformCompositeBase {
     $selectedMarker = array_key_exists('#selected_marker', $element) ? $element['#selected_marker'] : "";
     $incidentMarker = array_key_exists('#incident_marker', $element) ? $element['#incident_marker'] : "";
     $disablePopup = array_key_exists('#disable_popup', $element) && $element['#disable_popup'] ? 1 : 0;
-    $verifyButtonText = array_key_exists('#verify_button_text', $element) ? $element['#verify_button_text'] : "";
+    $verifyButtonText = array_key_exists('#verify_button_text', $element) ? $element['#verify_button_text'] : ($verifiedAddresses ? "Verify" : "Find");
     $primaryFeatureName = array_key_exists('#primary_feature_name', $element) ? $element['#primary_feature_name'] : "";
     $featureLayerVisibleZoom = array_key_exists('#feature_layer_visible_zoom', $element) ? $element['#feature_layer_visible_zoom'] : "";
     $requireCityLimits = array_key_exists('#require_city_limits', $element) ? $element['#require_city_limits'] : FALSE;
     $displayCityLimits = array_key_exists('#display_city_limits', $element) ? $element['#display_city_limits'] : TRUE;
+    $locationTypes = array_key_exists('#location_types', $element) ? $element['#location_types'] : 'park,row,stream,street,taxlot,trail,waterbody';
 
+    $element['#attached']['drupalSettings']['webform']['portland_location_picker']['verified_addresses'] = $verifiedAddresses;
     $element['#attached']['drupalSettings']['webform']['portland_location_picker']['element_id'] = $elementId;
     $element['#attached']['drupalSettings']['webform']['portland_location_picker']['primary_layer_source'] = $primaryLayerSource;
     $element['#attached']['drupalSettings']['webform']['portland_location_picker']['incidents_layer_source'] = $incidentsLayerSource;
@@ -165,6 +179,7 @@ class PortlandLocationPicker extends WebformCompositeBase {
     $element['#attached']['drupalSettings']['webform']['portland_location_picker']['feature_layer_visible_zoom'] = $featureLayerVisibleZoom;
     $element['#attached']['drupalSettings']['webform']['portland_location_picker']['require_city_limits'] = $requireCityLimits;
     $element['#attached']['drupalSettings']['webform']['portland_location_picker']['display_city_limits'] = $displayCityLimits;
+    $element['#attached']['drupalSettings']['webform']['portland_location_picker']['location_types'] = $locationTypes;
   }
 
 }
