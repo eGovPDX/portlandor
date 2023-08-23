@@ -1,5 +1,6 @@
 const percySnapshot = require("@percy/puppeteer");
 const puppeteer = require("puppeteer");
+const util = require('../lib/util');
 
 const SITE_NAME = process.env.SITE_NAME;
 const HOME_PAGE = SITE_NAME
@@ -8,8 +9,9 @@ const HOME_PAGE = SITE_NAME
 
 var BROWSER_OPTION = {
   ignoreHTTPSErrors: true,
-  args: ["--no-sandbox"],
+  args: ["--no-sandbox", "--disabled-setupid-sandbox"],
   defaultViewport: null,
+  headless: "new",
 };
 
 describe("Homepage", () => {
@@ -57,6 +59,9 @@ describe("Homepage", () => {
     "Take snapshots of Group home pages",
     async () => {
       await page.goto(`${HOME_PAGE}/omf`, { waitUntil: "load" });
+
+      // Hide dynamic content
+      await util.removeDynamicContent(page);
       await percySnapshot(page, "Anonymous - Bureau \"Mangagement and Finance\"");
       await page.goto(`${HOME_PAGE}/powr`, { waitUntil: "load" });
       await percySnapshot(page, "Anonymous - Project \"POWR\"");
@@ -65,6 +70,9 @@ describe("Homepage", () => {
       await page.goto(`${HOME_PAGE}/omf/toc`, { waitUntil: "load" });
       await percySnapshot(page, "Anonymous - Advisory \"Technology Oversight\"");
       await page.goto(`${HOME_PAGE}/mayor`, { waitUntil: "load" });
+
+      // Hide dynamic content
+      await util.removeDynamicContent(page);
       await percySnapshot(page, "Anonymous - Elected \"Mayor\"");
     }
   );
@@ -72,9 +80,9 @@ describe("Homepage", () => {
   it(
     "Take snapshots of search results and content pages",
     async () => {
-      await page.goto(`${HOME_PAGE}/search?keys=tax&op=`, { waitUntil: "load" });
-      await percySnapshot(page, "Anonymous - Search \"tax\"");
-      await page.goto(`${HOME_PAGE}/search?keys=powr-test&op=`, { waitUntil: "load" });
+      // await page.goto(`${HOME_PAGE}/search?keys=tax&op=`, { waitUntil: "load" });
+      // await percySnapshot(page, "Anonymous - Search \"tax\"");
+      await page.goto(`${HOME_PAGE}/search?keys=powr-test-1234&op=`, { waitUntil: "load" });
       await percySnapshot(page, "Anonymous - 404 \"powr-test\"");
       await page.goto(`${HOME_PAGE}/police/report-or-record-request`, { waitUntil: "load" });
       await percySnapshot(page, "Anonymous - Service \"Police Report or Record\"");

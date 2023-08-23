@@ -9,6 +9,7 @@ var BROWSER_OPTION = {
   ignoreHTTPSErrors: true,
   args: ["--no-sandbox"],
   defaultViewport: null,
+  headless: "new",
 };
 
 describe('SuperAdmin user test', () => {

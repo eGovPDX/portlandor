@@ -7,11 +7,9 @@
 (function($, Drupal) {
   Drupal.behaviors.cloudySearchAutocomplete = {
     attach: function(context, settings) {
-      $(context)
-        // find search autocomplete input
-        .find("#edit-keys")
-        .once("header-search-autocomplete")
-        .autocomplete({
+      // find search autocomplete input
+      $(once('header-search-autocomplete', '#edit-keys', context)).each(function () {
+        $(this).autocomplete({
           // set position relative to element
           position: {
             my: "left top-1",
@@ -21,6 +19,7 @@
           },
           appendTo: ".cloudy-search-form"
         });
+      });
     }
   };
 })(jQuery, Drupal);

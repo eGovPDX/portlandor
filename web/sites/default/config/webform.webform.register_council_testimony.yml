@@ -3,11 +3,15 @@ langcode: en
 status: open
 dependencies:
   module:
+    - honeypot
     - portland
     - portland_smartsheet
 third_party_settings:
   portland:
     disable_demographic_form_prompt: 1
+  honeypot:
+    honeypot: true
+    time_restriction: true
 weight: 0
 open: null
 close: null
@@ -17,7 +21,7 @@ archive: false
 id: register_council_testimony
 title: 'Council Testimony Registration'
 description: ''
-category: ''
+categories: {  }
 elements: |-
   markup_session_closed:
     '#type': webform_markup
@@ -76,9 +80,11 @@ elements: |-
       '#type': textfield
       '#title': Email
       '#description': |-
-        You must provide an email address to join the meeting virtually.<br />
-        If you will testify in person, you may still provide your email address to receive a link to the Zoom meeting to join virtually, in case your plans change.
+        <p>You must provide an email address to join the meeting virtually.<br />
+        If you will testify in person, you may still provide your email address to receive a link to the Zoom meeting to join virtually, in case your plans change.</p>
       '#description_display': before
+      '#pattern': '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+      '#pattern_error': 'Please enter a correctly formatted email address, such as myname@example.com.'
       '#states':
         required:
           ':input[name="testimony_type_gt_1hr_before"]':
@@ -125,12 +131,14 @@ elements: |-
           visible:
             ':input[name="in_portland_metro"]':
               value: 'Yes'
-        '#location_type__access': false
-        '#location_park_container__access': false
-        '#location_private_owner__access': false
         '#location_address__title': Location
-        '#location_address__description': 'Please enter your address below and then select Verify. You may select a nearby landmark or park on the map instead of an address to indicate the general area/neighborhood where you live. We collect location information to learn which neighborhoods are represented in public testimony.'
+        '#location_address__description': |-
+          Please select your location. You can search by address or zoom in and find your location on the map.
+
+          To preserve your privacy, you may select a nearby landmark or park instead of an address to indicate the general area/neighborhood where you live. We collect location information to learn which neighborhoods are represented in public testimony.
         '#location_address__required': true
+        '#location_type__access': false
+        '#location_private_owner__access': false
         '#suggestions_modal__access': false
         '#place_name__access': false
         '#location_details__access': false
@@ -140,6 +148,7 @@ elements: |-
         '#location_is_portland__access': false
         '#geojson_layer__access': false
         '#geojson_layer_behavior__access': false
+        '#location_park_container__access': false
       contact_zip_code:
         '#type': textfield
         '#title': 'Zip/Postal Code'
@@ -185,7 +194,10 @@ elements: |-
     '#title': 'Computed - Agenda Items'
     '#display_on': none
     '#mode': text
-    '#template': '{{ webform_token(''[webform_submission:values:agenda_items:entity:field_agenda_item_number]'', webform_submission) }}'
+    '#template': |-
+      {% set sub_item_number = webform_token('[webform_submission:values:agenda_items:entity:field_agenda_sub_item_number]', webform_submission) %}
+      {{ webform_token('[webform_submission:values:agenda_items:entity:field_agenda_item_number]', webform_submission) ~ (sub_item_number matches '/\\d+/' ? ('-' ~ sub_item_number) : '') }}
+    '#whitespace': trim
   computed_location_lat:
     '#type': webform_computed_twig
     '#title': 'Computed - Location Lat'
@@ -330,16 +342,16 @@ settings:
   draft_loaded_message: ''
   draft_pending_single_message: ''
   draft_pending_multiple_message: ''
-  confirmation_type: inline
+  confirmation_type: page
   confirmation_url: ''
-  confirmation_title: ''
+  confirmation_title: 'Your registration has been received'
   confirmation_message: "<p>Thank you for registering to testify at an upcoming Portland City Council meeting.</p>\r\n\r\n<p>If you signed up for virtual testimony, your personalized Zoom invite will be emailed to you no later than 30 minutes prior to the start of the meeting (please check your spam or junk folder if you are unable to locate your invite).</p>\r\n\r\n<p>Council Chamber doors open to the public 15 minutes before the meeting starts. <a href=\"/council-clerk/city-hall\">Learn more about visiting City Hall to attend a Council Meeting.</a></p>\r\n\r\n<hr />\r\n<p><a href=\"/council-clerk/testimonyorder\">View the testimony order</a></p>\r\n\r\n<p><a href=\"/council-clerk/resources/sign-receive-weekly-agenda-updates\">Subscribe to receive City Council agenda notifications</a></p>"
   confirmation_attributes: {  }
   confirmation_back: false
   confirmation_back_label: ''
   confirmation_back_attributes:
     href: /council/agenda
-  confirmation_exclude_query: false
+  confirmation_exclude_query: true
   confirmation_exclude_token: false
   confirmation_update: false
   limit_total: null
@@ -418,7 +430,7 @@ handlers:
     notes: ''
     status: true
     conditions: {  }
-    weight: -50
+    weight: -49
     settings:
       column_mappings:
         6681077722965892: contact_first_name
@@ -434,15 +446,15 @@ handlers:
       multiple_rows_enable: null
       multiple_rows_field: ''
       multiple_rows_separator: ''
-      row_location: toTop
+      row_location: toBottom
   add_row_to_demographics_smartsheet:
     id: smartsheet_add_row
     handler_id: add_row_to_demographics_smartsheet
     label: 'Add row to demographics Smartsheet'
     notes: ''
-    status: true
+    status: false
     conditions: {  }
-    weight: -49
+    weight: -48
     settings:
       column_mappings:
         1356927225253764: computed_testimony_type
@@ -452,4 +464,15 @@ handlers:
       multiple_rows_separator: ''
       sheet_id: '232216974020484'
       row_location: toBottom
+  portland_error_message_override:
+    id: portland_error_message_override_handler
+    handler_id: portland_error_message_override
+    label: 'Portland: Error message override'
+    notes: ''
+    status: true
+    conditions: {  }
+    weight: -50
+    settings:
+      element_id: agenda_items
+      error_message: 'The agenda item you selected is no longer available for testimony.'
 variants: {  }

@@ -2,10 +2,13 @@
 
 namespace Drupal\portland;
 
+use Twig\Extension\AbstractExtension;
+use Twig\TwigFunction;
+
 /**
  * Class FileIconExtension.
  */
-class FileIconExtension extends \Twig_Extension {
+class FileIconExtension extends AbstractExtension {
 
   /**
    * {@inheritdoc}
@@ -23,7 +26,7 @@ class FileIconExtension extends \Twig_Extension {
   public function getFunctions()
   {
     return array(
-      new \Twig_SimpleFunction('file_icon_markup', array($this, 'file_icon_markup'), array('is_safe' => array('html'))),
+      new TwigFunction('file_icon_markup', array($this, 'file_icon_markup'), array('is_safe' => array('html'))),
     );
   }
 
