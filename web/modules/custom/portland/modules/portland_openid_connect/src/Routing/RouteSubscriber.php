@@ -64,9 +64,9 @@ class RouteSubscriber extends RouteSubscriberBase {
         'pgov-779', 'sandbox', 'demo', 'dev', 'test', 'live'])
     ) {
       // only log in with an OpenID provider
-      // if ($route = $collection->get('user.login')) {
-      //   $route->setDefault('_form', 'Drupal\openid_connect\Form\LoginForm');
-      // }
+      if ($route = $collection->get('user.login')) {
+        $route->setDefault('_form', 'Drupal\openid_connect\Form\OpenIDConnectLoginForm');
+      }
       // don't accept POSTs to a login route
       if ($route = $collection->get('user.login.http')) {
         $route->setRequirement('_access', 'FALSE');
