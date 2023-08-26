@@ -1,7 +1,16 @@
-import LocationPickerModel from '../models/locationPickerModel.js';
-import LocationPickerView from '../views/locationPickerView.js';
 
+/**
+ * Represents a Location Picker Controller.
+ * This controller manages the interaction between the model and view
+ * for selecting and displaying locations.
+ *
+ * @class
+ */
 class LocationPickerController {
+  /**
+   * Creates a new LocationPickerController instance.
+   * @constructor
+   */
   constructor() {
     this.model = new LocationPickerModel();
     this.view = new LocationPickerView(this);
@@ -18,16 +27,9 @@ class LocationPickerController {
     this.model.toggleTodo(index);
     this.view.renderTodos(this.model.todos);
   }
+
+  getTestMessage(appendedMessage) {
+    return MESSAGE_CONSTANTS.OPEN_ISSUE_MESSAGE + " " + appendedMessage;
+  }
 }
 
-Drupal.behaviors.locationPicker = {
-  attach: (context, settings) => {
-    if (context === document) {
-      // Create an instance of the controller and interact with it as needed.
-      const controller = new LocationPickerController();
-      // Attach event listeners and interact with the controller.
-    }
-  }
-};
-
-export default LocationPickerController;

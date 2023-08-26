@@ -1,3 +1,4 @@
+
 class LocationPickerView {
   constructor(controller) {
     this.controller = controller;
@@ -20,4 +21,4 @@ class LocationPickerView {
   }
 }
 
-export default LocationPickerView;
+
