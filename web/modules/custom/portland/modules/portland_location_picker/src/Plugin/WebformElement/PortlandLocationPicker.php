@@ -152,9 +152,9 @@ class PortlandLocationPicker extends WebformCompositeBase {
     $regionsLayerSource = array_key_exists('#regions_layer_source', $element) ? $element['#regions_layer_source'] : "";
     $primaryLayerBehavior = array_key_exists('#primary_layer_behavior', $element) ? $element['#primary_layer_behavior'] : "";
     $primaryLayerType = array_key_exists('#primary_layer_type', $element) ? $element['#primary_layer_type'] : "";
-    $primaryMarker = array_key_exists('#primary_marker', $element) ? $element['#primary_marker'] : "";
-    $selectedMarker = array_key_exists('#selected_marker', $element) ? $element['#selected_marker'] : "";
-    $incidentMarker = array_key_exists('#incident_marker', $element) ? $element['#incident_marker'] : "";
+    $primaryMarker = array_key_exists('#primary_marker', $element) ? $element['#primary_marker'] : '/modules/custom/portland/modules/portland_location_picker/images/map_marker_default.png';
+    $selectedMarker = array_key_exists('#selected_marker', $element) ? $element['#selected_marker'] : '/modules/custom/portland/modules/portland_location_picker/images/map_marker_default_selected.png';
+    $incidentMarker = array_key_exists('#incident_marker', $element) ? $element['#incident_marker'] : '/modules/custom/portland/modules/portland_location_picker/images/map_marker_incident.png';
     $disablePopup = array_key_exists('#disable_popup', $element) && $element['#disable_popup'] ? 1 : 0;
     $verifyButtonText = array_key_exists('#verify_button_text', $element) ? $element['#verify_button_text'] : ($verifiedAddresses ? "Verify" : "Find");
     $primaryFeatureName = array_key_exists('#primary_feature_name', $element) ? $element['#primary_feature_name'] : "";

@@ -178,7 +178,7 @@
         // and the initialize function may get called multiple times for some reason.
         // adding this flag prevents re-initialization of the map.
         // if (!initialized) { initialize(); initialized = true; }
-        initialized = initialize();
+        //initialized = initialize();
 
         // SETUP FUNCTIONS ///////////////////////////////
 
