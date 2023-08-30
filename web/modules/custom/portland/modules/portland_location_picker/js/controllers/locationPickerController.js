@@ -1,4 +1,4 @@
-(function ($) {
+(function ($, Drupal, drupalSettings, L) {
   /**
    * Represents a Location Picker Controller.
    * This controller manages the interaction between the model and view
@@ -11,8 +11,9 @@
      * Creates a new LocationPickerController instance.
      * @constructor
      */
-    constructor(formSettings) {
-      this.formSettings = formSettings;
+    constructor() {
+      //this.formSettings = formSettings;
+      var test = drupalSettings;
       this.model = new LocationPickerModel(this);
       this.view = new LocationPickerView(this);
 
@@ -54,4 +55,4 @@
 
   // Export the controller class
   window.LocationPickerController = LocationPickerController;
-})(jQuery);
+})(jQuery, Drupal, drupalSettings, L);

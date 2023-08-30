@@ -3,6 +3,10 @@ const DEFAULT_LATITUDE = 45.54;
 const DEFAULT_LONGITUDE = -122.65;
 const DEFAULT_ZOOM = 11;
 const ZOOM_POSITION = 'topright';
+const BASEMAP_DEFAULT_URL = "https://www.portlandmaps.com/arcgis/rest/services/Public/Basemap_Color_Complete/MapServer/tile/{z}/{y}/{x}";
+const BASEMAP_DEFAULT_ATTRIBUTION = "PortlandMaps ESRI";
+const BASEMAP_AERIAL_URL = "https://www.portlandmaps.com/arcgis/rest/services/Public/Basemap_Color_Complete_Aerial/MapServer/tile/{z}/{y}/{x}'";
+const BASEMAP_AERIAL_ATTRIBUTION = "PortlandMaps ESRI";
 
 const MAP_CONSTANTS = {
   DEFAULT_LATITUDE: 45.54,

@@ -1,12 +1,8 @@
-(function ($) {
+(function ($, Drupal, drupalSettings, L) {
   /**
    * Represents a Location Picker Model.
    * This model defines the objects used by the location picker.
    * 
-   * Map
-   * 
-   *
-   * @class
    */
   class LocationPickerModel {
 
@@ -14,14 +10,16 @@
       this.controller = controller;
       // custom form properties
       // this.locationTypes = formSettings.locationTypes;
-      this.selectedMarker = controller.formSettings.selected_marker;
-      this.requireCityLimits = controller.formSettings.require_city_limits;
-      this.displayCityLimits = controller.formSettings.display_city_limits;
+      this.selectedMarker = drupalSettings.selected_marker;
+      this.requireCityLimits = drupalSettings.require_city_limits;
+      this.displayCityLimits = drupalSettings.display_city_limits;
 
 
       this.locationMap = [];
       this.mapLayers = [];
     }
+
+    // #region ----- Static classes used to create a model of a GeoJSON map layer -----
 
     /**
      * Represents a GeoJSON feature
@@ -72,6 +70,11 @@
       }
     }
 
+    // ----- END static classes used to create a model of a GeoJSON map layer ----- //
+    // #endregion
+
+    // #region ----- Model functions -----
+
     addTodo(text) {
       // this.locationMap.push({ text, completed: false });
     }
@@ -79,8 +82,10 @@
     toggleTodo(index) {
       // this.locationMap[index].completed = !this.locationMap[index].completed;
     }
+
+    // #endregion
   }
 
   // Export the model class
   window.LocationPickerModel = LocationPickerModel;
-})(jQuery);
+})(jQuery, Drupal, drupalSettings, L);
