@@ -51,6 +51,21 @@
     getTestMessage(appendedMessage) {
       return MESSAGE_CONSTANTS.OPEN_ISSUE_MESSAGE + " " + appendedMessage;
     }
+
+    selfLocateBrowser() {
+      const self = this;
+      var t = setTimeout(function () {
+        // display status indicator
+        self.view.showStatusModal("Triangulating on your current location. Please wait...");
+        self.view.map.locate({ watch: false, setView: true, maximumAge: GEOLOCATION_CACHE_MILLISECONDS, enableHighAccuracy: true });
+      }, 500);
+    }
+
+    cancelEventBubble(event) {
+      event.stopPropagation?.(); // Use optional chaining to call stopPropagation if available
+      event.cancelBubble = true; // Always set cancelBubble for older browsers
+    }
+
   }
 
   // Export the controller class

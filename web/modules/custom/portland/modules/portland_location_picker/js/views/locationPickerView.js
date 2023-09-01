@@ -14,6 +14,7 @@
       this.aerialControlContainer;
       this.locateControlContaier;
       this.currentView = "base";
+      this.statusModal = $('#status_modal');
 
       this.initializeMap();
 
@@ -42,6 +43,9 @@
       });
       this.map.addLayer(this.baseLayer);
       this.map.addControl(new L.control.zoom({ position: ZOOM_POSITION }));
+      this.map.on('locationerror', this.handleLocationError);
+      this.map.on('locationfound', this.handleLocateMeFound);
+
 
       // this.aerialLayer = L.tileLayer(BASEMAP_AERIAL_URL, {
       //   attribution: BASEMAP_AERIAL_ATTRIBUTION
@@ -50,30 +54,8 @@
       var aerialControl = this.generateAerialControl();
       aerialControl.addTo(this.map);
 
-      this.initLocateControl();
-      //locateControl.addTo(this.map);
-
-
-      // aerialControl.onAdd = function (map) {
-
-      //   this.aerialControlContainer = L.DomUtil.create('div', 'leaflet-bar locate-control leaflet-control leaflet-control-custom');
-      //   this.aerialControlContainer.style.backgroundImage = "url(/modules/custom/portland/modules/portland_location_picker/images/map_aerial.png)";
-      //   this.aerialControlContainer.title = 'Toggle aerial view';
-      //   L.DomEvent.disableClickPropagation(this.aerialControlContainer);
-
-      //   this.aerialControlContainer.onclick = function(e) {
-      //     if (SELF.currentView == "aerial") {
-      //       SELF.map.removeLayer(SELF.aerialLayer);
-      //       SELF.currentView = "base";
-      //       e.currentTarget.style.background = 'url("/modules/custom/portland/modules/portland_location_picker/images/map_aerial.png")';
-      //     } else {
-      //       SELF.map.addLayer(SELF.aerialLayer);
-      //       SELF.currentView = "aerial";
-      //       e.currentTarget.style.background = 'url("/modules/custom/portland/modules/portland_location_picker/images/map_base.png")';
-      //     }
-      //   };
-      //   return this.aerialControlContainer;
-      // };
+      var locateControl = this.generateLocateControl();
+      locateControl.addTo(this.map);
 
     }
 
@@ -81,17 +63,56 @@
 
     }
 
-    initLocateControl() {
+    // #region ----- Event handlers -----
+
+    handleLocateButtonClick(e) {
+      cancelEventBubble(e);
+      locationErrorShown = false;
+      this.controller.selfLocateBrowser();
+    }
+
+    handleLocateMeFound(e) {
+      alert('location found!');
+      // if (locCircle) {
+      //   map.removeLayer(locCircle);
+      // }
+      // var radius = e.accuracy;
+      // locCircle = L.circle(e.latlng, radius, { weight: 2, fillOpacity: 0.1 }).addTo(map);
+      // reverseGeolocate(e.latlng);
+      // locateControlContaier.style.backgroundImage = 'url("/modules/custom/portland/modules/portland_location_picker/images/map_locate_on.png")';
+
+      closeStatusModal();
+    }
+
+    handleLocationError(e) {
+      alert('location error!');
+      // var message = e.message;
+      // statusModal.dialog('close');
+      // showStatusModal(message);
+      // locateControlContaier.style.backgroundImage = 'url("/modules/custom/portland/modules/portland_location_picker/images/map_locate.png")';
+    }
+
+    // #endregion
+
+    // #region ----- Helper functions -----
+
+    generateLocateControl() {
       const SELF = this;
-      var locateControl = L.control({ position: 'botomright' });
-      locateControl.addTo(this.map);;
+      var locateControl = L.control({ position: 'bottomright' });
       locateControl.onAdd = function() {
-        SELF.locateControlContaier = L.DomUtil.create('div', 'leaflet-bar locate-control leaflet-control leaflet-control-custom');
-        SELF.locateControlContaier.style.backgroundImage = "url(/modules/custom/portland/modules/portland_location_picker/images/map_locate.png)";
-        SELF.locateControlContaier.title = 'Locate Me';
-        //locateControlContaier.onclick = handleLocateButtonClick;
-        return SELF.locateControlContaier;
+        this.locateControlContainer = L.DomUtil.create('div', 'leaflet-bar locate-control leaflet-control leaflet-control-custom');
+        this.locateControlContainer.style.backgroundImage = "url(/modules/custom/portland/modules/portland_location_picker/images/map_locate.png)";
+        this.locateControlContainer.title = 'Find my location';
+        L.DomEvent.disableClickPropagation(this.locateControlContainer);
+
+        this.locateControlContainer.onclick = function(event) {
+          SELF.controller.cancelEventBubble(event);
+          //locationErrorShown = false;
+          SELF.controller.selfLocateBrowser();
+        };
+        return this.locateControlContainer;
       };
+      return locateControl;
     }
 
     generateAerialControl() {
@@ -119,13 +140,25 @@
       return aerialControl;
     }
 
-    handleAerialButtonClick(e) {
-      cancelEventBubble(e);
-      locationErrorShown = false;
-      //toggleAerialView();
-      alert('toggle view');
+    showStatusModal(message) {
+      this.statusModal.html('<p class="status-message">' + message + '</p>');
+      Drupal.dialog(this.statusModal, {
+        width: '600px',
+        buttons: [{
+          text: 'Close',
+          click: function () {
+            $(this).dialog('close');
+          }
+        }]
+      }).showModal();
+      this.statusModal.removeClass('visually-hidden');
     }
 
+    closeStatusModal() {
+      this.statusModal.dialog('close');
+    }
+
+      // #endregion
 
   }
 

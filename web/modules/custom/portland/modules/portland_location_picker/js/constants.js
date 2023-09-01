@@ -7,6 +7,7 @@ const BASEMAP_DEFAULT_URL = "https://www.portlandmaps.com/arcgis/rest/services/P
 const BASEMAP_DEFAULT_ATTRIBUTION = "PortlandMaps ESRI";
 const BASEMAP_AERIAL_URL = "https://www.portlandmaps.com/arcgis/rest/services/Public/Basemap_Color_Complete_Aerial/MapServer/tile/{z}/{y}/{x}";
 const BASEMAP_AERIAL_ATTRIBUTION = "PortlandMaps ESRI";
+const GEOLOCATION_CACHE_MILLISECONDS = 0;
 
 const MAP_CONSTANTS = {
   DEFAULT_LATITUDE: 45.54,
