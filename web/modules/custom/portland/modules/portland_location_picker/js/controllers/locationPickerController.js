@@ -34,6 +34,7 @@
     }
 
     // ----- utilities ----- //
+    
     logError(text) {
       console.log(text);
     }

@@ -8,6 +8,7 @@ const BASEMAP_DEFAULT_ATTRIBUTION = "PortlandMaps ESRI";
 const BASEMAP_AERIAL_URL = "https://www.portlandmaps.com/arcgis/rest/services/Public/Basemap_Color_Complete_Aerial/MapServer/tile/{z}/{y}/{x}";
 const BASEMAP_AERIAL_ATTRIBUTION = "PortlandMaps ESRI";
 const GEOLOCATION_CACHE_MILLISECONDS = 0;
+const DEFAULT_ICON_SIZE = [27, 41];
 
 const MAP_CONSTANTS = {
   DEFAULT_LATITUDE: 45.54,
@@ -19,6 +20,8 @@ const MAP_CONSTANTS = {
 const MESSAGE_CONSTANTS = {
   OPEN_ISSUE_MESSAGE: "If this issue is what you came here to report, there's no need to report it again.",
   SOLVED_ISSUE_MESSAGE: "This issue was recently solved. If that's not the case, or the issue has reoccured, please submit a new report.",
+  LOCATION_ACCURACY: "WARNING: Location accuracy is low. Please zoom in and refine your location",
+  TRY_AGAIN: "Please try again. If the error persists, please <a href=\"/feedback\">contact us</a>.",
 }
 
 const GEOMETRY_TYPES = {

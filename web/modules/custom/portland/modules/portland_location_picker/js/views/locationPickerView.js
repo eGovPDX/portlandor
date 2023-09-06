@@ -11,10 +11,14 @@
       this.baseLayer = L.tileLayer(BASEMAP_DEFAULT_URL, { attribution: BASEMAP_DEFAULT_ATTRIBUTION });
       this.aerialLayer = L.tileLayer(BASEMAP_AERIAL_URL, { attribution: BASEMAP_AERIAL_ATTRIBUTION });
       this.map;
+      this.locationCircle;
+      this.locationMarker;
+      this.defaultSelectedMarkerIcon;
       this.aerialControlContainer;
-      this.locateControlContaier;
+      this.locateControlContainer;
       this.currentView = "base";
       this.statusModal = $('#status_modal');
+      this.settings = drupalSettings.webform.portland_location_picker;
 
       this.initializeMap();
 
@@ -43,8 +47,8 @@
       });
       this.map.addLayer(this.baseLayer);
       this.map.addControl(new L.control.zoom({ position: ZOOM_POSITION }));
-      this.map.on('locationerror', this.handleLocationError);
-      this.map.on('locationfound', this.handleLocateMeFound);
+      this.map.on('locationerror', this.handleLocationError.bind(this));
+      this.map.on('locationfound', this.handleLocateMeFound.bind(this));
 
 
       // this.aerialLayer = L.tileLayer(BASEMAP_AERIAL_URL, {
@@ -56,6 +60,16 @@
 
       var locateControl = this.generateLocateControl();
       locateControl.addTo(this.map);
+
+      this.defaultSelectedMarkerIcon = L.icon({
+        iconUrl: this.settings.selected_marker,
+        iconSize: DEFAULT_ICON_SIZE, // size of the icon
+        shadowSize: [0, 0], // size of the shadow
+        iconAnchor: [13, 41], // point of the icon which will correspond to marker's location
+        shadowAnchor: [0, 0],  // the same for the shadow
+        popupAnchor: [0, -41]
+      });
+
 
     }
 
@@ -72,24 +86,33 @@
     }
 
     handleLocateMeFound(e) {
-      alert('location found!');
-      // if (locCircle) {
-      //   map.removeLayer(locCircle);
-      // }
-      // var radius = e.accuracy;
-      // locCircle = L.circle(e.latlng, radius, { weight: 2, fillOpacity: 0.1 }).addTo(map);
-      // reverseGeolocate(e.latlng);
-      // locateControlContaier.style.backgroundImage = 'url("/modules/custom/portland/modules/portland_location_picker/images/map_locate_on.png")';
+      if (this.locationCircle) {
+        this.map.removeLayer(this.locationCircle);
+      }
+      var radius = e.accuracy;
+      var roundedRadius = Math.round(radius * 3.28084);
+      this.locationCircle = L.circle(e.latlng, radius, { weight: 2, fillOpacity: 0.1 }).addTo(this.map);
+      
+      if (radius > 100) {
+        var message = MESSAGE_CONSTANTS.LOCATION_ACCURACY;
+        this.closeStatusModal();
+        this.showStatusModal(message);
+      } else {
+        this.setMarker(e.latlng);
+        this.locateControlContainer.style.backgroundImage = 'url("/modules/custom/portland/modules/portland_location_picker/images/map_locate_on.png")';
+        this.closeStatusModal();
+      }
 
-      closeStatusModal();
+      
+      // adjust map view to fit accuracy circle
+      var bounds = this.locationCircle.getBounds();
+      this.map.fitBounds(bounds);
     }
 
     handleLocationError(e) {
-      alert('location error!');
-      // var message = e.message;
-      // statusModal.dialog('close');
-      // showStatusModal(message);
-      // locateControlContaier.style.backgroundImage = 'url("/modules/custom/portland/modules/portland_location_picker/images/map_locate.png")';
+      this.closeStatusModal();
+      this.showErrorModal(e.message);
+      this.locateControlContainer.style.backgroundImage = 'url("/modules/custom/portland/modules/portland_location_picker/images/map_locate.png")';
     }
 
     // #endregion
@@ -100,17 +123,16 @@
       const SELF = this;
       var locateControl = L.control({ position: 'bottomright' });
       locateControl.onAdd = function() {
-        this.locateControlContainer = L.DomUtil.create('div', 'leaflet-bar locate-control leaflet-control leaflet-control-custom');
-        this.locateControlContainer.style.backgroundImage = "url(/modules/custom/portland/modules/portland_location_picker/images/map_locate.png)";
-        this.locateControlContainer.title = 'Find my location';
-        L.DomEvent.disableClickPropagation(this.locateControlContainer);
+        SELF.locateControlContainer = L.DomUtil.create('div', 'leaflet-bar locate-control leaflet-control leaflet-control-custom');
+        SELF.locateControlContainer.style.backgroundImage = "url(/modules/custom/portland/modules/portland_location_picker/images/map_locate.png)";
+        SELF.locateControlContainer.title = 'Find my location';
+        L.DomEvent.disableClickPropagation(SELF.locateControlContainer);
 
-        this.locateControlContainer.onclick = function(event) {
+        SELF.locateControlContainer.onclick = function(event) {
           SELF.controller.cancelEventBubble(event);
-          //locationErrorShown = false;
           SELF.controller.selfLocateBrowser();
         };
-        return this.locateControlContainer;
+        return SELF.locateControlContainer;
       };
       return locateControl;
     }
@@ -158,7 +180,36 @@
       this.statusModal.dialog('close');
     }
 
-      // #endregion
+    showErrorModal(message) {
+      message = message + '<br><br>' + MESSAGE_CONSTANTS.TRY_AGAIN;
+      this.showStatusModal(message);
+    }
+
+    setMarker(latLng) {
+      if (this.locationMarker) {
+        this.map.removeLayer(this.locationMarker);
+        this.locationMarker = null;
+      }
+
+      // set lat/lng fields
+      this.locationMarker = L.marker(latLng, { icon: this.defaultSelectedMarkerIcon, draggable: true, riseOnHover: true, iconSize: DEFAULT_ICON_SIZE }).addTo(this.map);
+
+      // if address marker is moved, we want to capture the new coordinates
+      this.locationMarker.off();
+      this.locationMarker.on('dragend', function (e) {
+        var latlng = this.locationMarker.getLatLng();
+        //setLatLngHiddenFields(latlng.lat, latlng.lng);
+        //reverseGeolocate(latlng);
+      });
+
+
+    }
+
+    generateMarker(latLng, markerIcon, draggable = true) {
+      return L.marker(latlng, { icon: markerIcon, draggable: draggable, riseOnHover: true, iconSize: DEFAULT_ICON_SIZE });
+    }
+
+    // #endregion
 
   }
 

@@ -175,7 +175,7 @@ class PortlandLocationPicker extends WebformCompositeBase {
     }
 
     $element['location_lat'] = [
-      '#type' => 'hidden',
+      '#type' => 'textfield',
       '#title' => t('Location'),
       '#title_display' => 'invisible',
       '#attributes' => ['class' => ['location-lat'], 'id' => 'location_lat'],
@@ -185,19 +185,19 @@ class PortlandLocationPicker extends WebformCompositeBase {
     // referenced in too many config files from webform handlers, so this is the one place it will
     // remain "lon"...
     $element['location_lon'] = [
-      '#type' => 'hidden',
+      '#type' => 'textfield',
       '#title' => t('Longitude'),
       '#title_display' => 'invisible',
       '#attributes' => ['class' => ['location-lng'], 'id' => 'location_lon'],
     ];
     $element['location_x'] = [
-      '#type' => 'hidden',
+      '#type' => 'textfield',
       '#title' => t('Web Mercator x coordinate'),
       '#title_display' => 'invisible',
       '#attributes' => ['class' => ['location-x'], 'id' => 'location_x'],
     ];
     $element['location_y'] = [
-      '#type' => 'hidden',
+      '#type' => 'textfield',
       '#title' => t('Web Mercator y coordinate'),
       '#title_display' => 'invisible',
       '#attributes' => ['class' => ['location-y'], 'id' => 'location_y'],
