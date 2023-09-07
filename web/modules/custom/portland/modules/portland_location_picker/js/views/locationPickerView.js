@@ -20,7 +20,10 @@
       this.statusModal = $('#status_modal');
       this.settings = drupalSettings.webform.portland_location_picker;
 
+      
+
       this.initializeMap();
+      this.loadMapData();
 
 
     }

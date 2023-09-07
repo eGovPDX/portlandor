@@ -75,6 +75,10 @@
 
     // #region ----- Model functions -----
 
+    loadLayers() {
+      // get layers from config
+    }
+
     addTodo(text) {
       // this.locationMap.push({ text, completed: false });
     }
