@@ -162,24 +162,26 @@ class PortlandLocationPicker extends WebformCompositeBase {
     $requireCityLimits = array_key_exists('#require_city_limits', $element) ? $element['#require_city_limits'] : FALSE;
     $displayCityLimits = array_key_exists('#display_city_limits', $element) ? $element['#display_city_limits'] : TRUE;
     $locationTypes = array_key_exists('#location_types', $element) ? $element['#location_types'] : 'park,row,stream,street,taxlot,trail,waterbody';
+    $featureLayers = array_key_exists('#feature_layers', $element) ? $element['#feature_layers'] : [];
 
-    $element['#attached']['drupalSettings']['webform']['portland_location_picker']['verified_addresses'] = $verifiedAddresses;
-    $element['#attached']['drupalSettings']['webform']['portland_location_picker']['element_id'] = $elementId;
-    $element['#attached']['drupalSettings']['webform']['portland_location_picker']['primary_layer_source'] = $primaryLayerSource;
-    $element['#attached']['drupalSettings']['webform']['portland_location_picker']['incidents_layer_source'] = $incidentsLayerSource;
-    $element['#attached']['drupalSettings']['webform']['portland_location_picker']['regions_layer_source'] = $regionsLayerSource;
-    $element['#attached']['drupalSettings']['webform']['portland_location_picker']['primary_layer_behavior'] = $primaryLayerBehavior;
-    $element['#attached']['drupalSettings']['webform']['portland_location_picker']['primary_layer_type'] = $primaryLayerType;
-    $element['#attached']['drupalSettings']['webform']['portland_location_picker']['primary_marker'] = $primaryMarker;
-    $element['#attached']['drupalSettings']['webform']['portland_location_picker']['selected_marker'] = $selectedMarker;
-    $element['#attached']['drupalSettings']['webform']['portland_location_picker']['incident_marker'] = $incidentMarker;
-    $element['#attached']['drupalSettings']['webform']['portland_location_picker']['disable_popup'] = $disablePopup;
-    $element['#attached']['drupalSettings']['webform']['portland_location_picker']['verify_button_text'] = $verifyButtonText;
-    $element['#attached']['drupalSettings']['webform']['portland_location_picker']['primary_feature_name'] = $primaryFeatureName;
-    $element['#attached']['drupalSettings']['webform']['portland_location_picker']['feature_layer_visible_zoom'] = $featureLayerVisibleZoom;
-    $element['#attached']['drupalSettings']['webform']['portland_location_picker']['require_city_limits'] = $requireCityLimits;
-    $element['#attached']['drupalSettings']['webform']['portland_location_picker']['display_city_limits'] = $displayCityLimits;
-    $element['#attached']['drupalSettings']['webform']['portland_location_picker']['location_types'] = $locationTypes;
+    $element['#attached']['drupalSettings']['verified_addresses'] = $verifiedAddresses;
+    $element['#attached']['drupalSettings']['element_id'] = $elementId;
+    $element['#attached']['drupalSettings']['primary_layer_source'] = $primaryLayerSource;
+    $element['#attached']['drupalSettings']['incidents_layer_source'] = $incidentsLayerSource;
+    $element['#attached']['drupalSettings']['regions_layer_source'] = $regionsLayerSource;
+    $element['#attached']['drupalSettings']['primary_layer_behavior'] = $primaryLayerBehavior;
+    $element['#attached']['drupalSettings']['primary_layer_type'] = $primaryLayerType;
+    $element['#attached']['drupalSettings']['primary_marker'] = $primaryMarker;
+    $element['#attached']['drupalSettings']['selected_marker'] = $selectedMarker;
+    $element['#attached']['drupalSettings']['incident_marker'] = $incidentMarker;
+    $element['#attached']['drupalSettings']['disable_popup'] = $disablePopup;
+    $element['#attached']['drupalSettings']['verify_button_text'] = $verifyButtonText;
+    $element['#attached']['drupalSettings']['primary_feature_name'] = $primaryFeatureName;
+    $element['#attached']['drupalSettings']['feature_layer_visible_zoom'] = $featureLayerVisibleZoom;
+    $element['#attached']['drupalSettings']['require_city_limits'] = $requireCityLimits;
+    $element['#attached']['drupalSettings']['display_city_limits'] = $displayCityLimits;
+    $element['#attached']['drupalSettings']['location_types'] = $locationTypes;
+    $element['#attached']['drupalSettings']['feature_layers'] = $featureLayers;
   }
 
 }

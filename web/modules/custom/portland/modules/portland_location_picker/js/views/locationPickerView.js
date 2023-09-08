@@ -18,12 +18,15 @@
       this.locateControlContainer;
       this.currentView = "base";
       this.statusModal = $('#status_modal');
-      this.settings = drupalSettings.webform.portland_location_picker;
 
-      
+      // this.mapReadyPromise = new Promise((resolve) => {
+      //   this.initializeMap();
+      //   this.map.on('load', () => {
+      //     resolve(this.map);
+      //   })
+      // });
 
-      this.initializeMap();
-      this.loadMapData();
+      // this.loadMapData();
 
 
     }
@@ -65,7 +68,7 @@
       locateControl.addTo(this.map);
 
       this.defaultSelectedMarkerIcon = L.icon({
-        iconUrl: this.settings.selected_marker,
+        iconUrl: drupalSettings.selected_marker,
         iconSize: DEFAULT_ICON_SIZE, // size of the icon
         shadowSize: [0, 0], // size of the shadow
         iconAnchor: [13, 41], // point of the icon which will correspond to marker's location
@@ -76,9 +79,9 @@
 
     }
 
-    loadMapData() {
+    // loadMapData() {
 
-    }
+    // }
 
     // #region ----- Event handlers -----
 
@@ -121,6 +124,12 @@
     // #endregion
 
     // #region ----- Helper functions -----
+
+    displayFeatureLayer(geoJsonData) {
+      var test = geoJsonData;
+      var dataObject = JSON.parse(geoJsonData);
+      var test2 = dataObject;
+    }
 
     generateLocateControl() {
       const SELF = this;

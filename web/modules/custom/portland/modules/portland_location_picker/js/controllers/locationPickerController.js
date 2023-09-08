@@ -13,11 +13,11 @@
      */
     constructor() {
       //this.formSettings = formSettings;
-      var test = drupalSettings;
       this.model = new LocationPickerModel(this);
       this.view = new LocationPickerView(this);
 
-      // this.view.renderTodos(this.model.todos);
+      this.view.initializeMap();
+      this.featureLayers = this.loadFeatureLayers();
 
       // ----- attach event handlers ----- //
 
@@ -35,18 +35,21 @@
 
     // ----- utilities ----- //
     
+    loadFeatureLayers() {
+      var featureLayerConfig = drupalSettings.feature_layers;
+      if (featureLayerConfig.length < 1) return false;
+
+      for (var i = 0; i < featureLayerConfig.length; i++) {
+        this.model.loadFeatureLayerData(featureLayerConfig[i].geojson_url, (geoJSONData) => {
+          // Pass the data to the view for rendering on the map
+          this.view.displayFeatureLayer(geoJSONData);
+        });
+      }
+
+    }
+
     logError(text) {
       console.log(text);
-    }
-
-    addTodoItem(text) {
-      this.model.addTodo(text);
-      this.view.renderTodos(this.model.todos);
-    }
-
-    toggleTodoItem(index) {
-      this.model.toggleTodo(index);
-      this.view.renderTodos(this.model.todos);
     }
 
     getTestMessage(appendedMessage) {
