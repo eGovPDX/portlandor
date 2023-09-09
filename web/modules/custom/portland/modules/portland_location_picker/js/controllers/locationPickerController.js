@@ -17,6 +17,10 @@
       this.view = new LocationPickerView(this);
 
       this.view.initializeMap();
+
+      // load feature layers from element custom configuration.
+      // this needs to be done after the map is fully loaded by initializeMap(). if this function is moved
+      // out of the controller, a promise may need to be used to ensure the map is fully loaded.
       this.featureLayers = this.loadFeatureLayers();
 
       // ----- attach event handlers ----- //
@@ -40,12 +44,12 @@
       if (featureLayerConfig.length < 1) return false;
 
       for (var i = 0; i < featureLayerConfig.length; i++) {
-        this.model.loadFeatureLayerData(featureLayerConfig[i].geojson_url, (geoJSONData) => {
+        const thisLayerConfig = featureLayerConfig[i];
+        this.model.loadFeatureLayerData(thisLayerConfig, (featureLayerDataObj) => {
           // Pass the data to the view for rendering on the map
-          this.view.displayFeatureLayer(geoJSONData);
+          this.view.displayFeatureLayer(featureLayerDataObj);
         });
       }
-
     }
 
     logError(text) {

@@ -51,21 +51,16 @@
         zoom: DEFAULT_ZOOM,
         gestureHandling: true
       });
+
+      // add base layer and controls to map
       this.map.addLayer(this.baseLayer);
       this.map.addControl(new L.control.zoom({ position: ZOOM_POSITION }));
+      this.map.addControl(this.generateAerialControl());
+      this.map.addControl(this.generateLocateControl());
+
+      // add event handlers to map
       this.map.on('locationerror', this.handleLocationError.bind(this));
       this.map.on('locationfound', this.handleLocateMeFound.bind(this));
-
-
-      // this.aerialLayer = L.tileLayer(BASEMAP_AERIAL_URL, {
-      //   attribution: BASEMAP_AERIAL_ATTRIBUTION
-      // });//.addTo(map);
-
-      var aerialControl = this.generateAerialControl();
-      aerialControl.addTo(this.map);
-
-      var locateControl = this.generateLocateControl();
-      locateControl.addTo(this.map);
 
       this.defaultSelectedMarkerIcon = L.icon({
         iconUrl: drupalSettings.selected_marker,
@@ -125,10 +120,28 @@
 
     // #region ----- Helper functions -----
 
-    displayFeatureLayer(geoJsonData) {
-      var test = geoJsonData;
-      var dataObject = JSON.parse(geoJsonData);
-      var test2 = dataObject;
+    /**
+     * Generates a feature layer. The layer gets shown immediately if the map is at the appropriate
+     * zoom level. Otherwise, it's shown using the zoomend event handler when the appropriate zoom
+     * level is reached. We don't want to overload the map when zoomed out.
+     * TODO: filter the feature layer by extent.
+     *  
+     * @param {*} featureLayerData - geoJson that includes features and layer config
+     */
+    displayFeatureLayer(featureLayerDataObj) {
+      var features = featureLayerDataObj.features;
+      console.log(featureLayerDataObj.name + " features found: " + features.length);
+      var layer = L.geoJson(features, {
+        coordsToLatLng: function (coords) {
+          // need to reverse the coords for Leaflet
+          return new L.LatLng(coords[1], coords[0]);
+        },
+        pointToLayer: function (feature, latlng) {
+          // need to create a marker for every feature.
+          var markerObj = new LocationPickerModel.MapMarker(featureLayerDataObj, feature);
+          var test = markerObj;
+        }
+      });
     }
 
     generateLocateControl() {
@@ -217,8 +230,32 @@
 
     }
 
-    generateMarker(latLng, markerIcon, draggable = true) {
-      return L.marker(latlng, { icon: markerIcon, draggable: draggable, riseOnHover: true, iconSize: DEFAULT_ICON_SIZE });
+    /**
+     * Generates and returns a Leaflet marker object.
+     * 
+     * @param {MapMarker} mapMarker 
+     * @returns L.marker
+     */
+    static GenerateMarker(mapMarker, mapMarkerDataObj) {
+      var markerIcon = LocationPickerView.GenerateIcon(mapMarkerDataObj);
+      return L.marker(mapMarker.latlng, { 
+        icon: markerIcon, 
+        draggable: mapMarkerDataObj.draggable, 
+        riseOnHover: mapMarkerDataObj.riseOnHover, 
+        iconSize: mapMarkerDataObj.iconSize, 
+      });
+    }
+
+    static GenerateIcon(mapMarkerDataObj) {
+      return L.icon({
+        iconUrl: mapMarkerDataObj.iconUrl,
+        iconSize: mapMarkerDataObj.iconsize,
+        shadowSize: mapMarkerDataObj.shadowSize,
+        iconAnchor: mapMarkerDataObj.iconAnchor,
+        shadowAnchor: mapMarkerDataObj.shadowAnchor,
+        popupAnchor: mapMarkerDataObj.popupAnchor,
+        className: mapMarkerDataObj.className
+      });
     }
 
     // #endregion

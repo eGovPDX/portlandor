@@ -46,6 +46,24 @@ const LAYER_BEHAVIOR = {
   GEOFENCE: "geofence"
 }
 
+const FEATURE_LAYER_DEFAULTS = {
+  TYPE: LAYER_TYPE.ASSET,
+  BEHAVIOR: LAYER_BEHAVIOR.SELECTION,
+  ICON_URL: "/modules/custom/portland/modules/portland_location_picker/map_marker_default.png",
+  ICON_SELECTED_URL: '/modules/custom/portland/modules/portland_location_picker/map_marker_default_selected.png'
+}
+
+const MAP_MARKER_DEFAULTS = {
+  ICON_URL: FEATURE_LAYER_DEFAULTS.ICON_URL,
+  ICON_SIZE: [27, 41],
+  SHADOW_SIZE: [0, 0],
+  ICON_ANCHOR: [13, 41],
+  SHADOW_ANCHOR: [0, 0],
+  POPUP_ANCHOR: [0, -41],
+  DRAGGABLE: false,
+  RISE_ON_HOVER: true,
+}
+
 const TICKET_STATUS = {
   NEW: "new",
   OPEN: "open",

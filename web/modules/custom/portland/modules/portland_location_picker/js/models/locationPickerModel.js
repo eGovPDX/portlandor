@@ -57,16 +57,63 @@
     }
 
     /**
-     * Represents a map layer. The most common type will be an asset layer that allows assets to
+     * Represents a map feature layer. The most common type will be an asset layer that allows assets to
      * be selected, as well as arbitrary map points, so those are set as defaults.
      * // TODO: Do we even need this? Might be better to use Leaflet's layer-from-json functionality.
      */
-    static MapLayer = class {
-      constructor(name, features = [], type = LAYER_TYPE.ASSET, behavior = LAYER_BEHAVIOR.SELECTION) {
+    static FeatureLayer = class {
+      constructor(name, jsonUrl, type = FEATURE_LAYER_DEFAULTS.TYPE,
+        behavior = FEATURE_LAYER_DEFAULTS.BEHAVIOR, iconUrl = FEATURE_LAYER_DEFAULTS.ICON_URL,
+        iconSelectedUrl = FEATURE_LAYER_DEFAULTS.ICON_SELECTED_URL) {
+
         this.name = name;
-        this.features = features;
+        this.jsonUrl = jsonUrl;
         this.type = type;
         this.behavior = behavior;
+        this.iconUrl = iconUrl;
+        this.iconSelectedUrl = iconSelectedUrl
+        this.features = [];
+        this.mapLayers = [];
+      }
+    }
+
+    /**
+     * Represents a map marker object. By default, with only the feature config and latLng,
+     * the constructor will instantiate an object that includes a generated asset marker 
+     * using the default icon and sizing. The asset marker is referenced using the
+     * [object].marker property.
+     * 
+     * Example:
+     *    var marker = new LocationPickerModel.MapMarker(featureConfig, latLng);
+     */
+    static MapMarker = class {
+      constructor(featureConfig, latLng, 
+        iconUrl = MAP_MARKER_DEFAULTS.ICON_URL, 
+        iconSize = MAP_MARKER_DEFAULTS.ICON_SIZE, 
+        shadowSize = MAP_MARKER_DEFAULTS.SHADOW_SIZE, 
+        iconAnchor = MAP_MARKER_DEFAULTS.ICON_ANCHOR, 
+        shadowAnchor = MAP_MARKER_DEFAULTS.SHADOW_ANCHOR,
+        popupAnchor = MAP_MARKER_DEFAULTS.POPUP_ANCHOR,
+        draggable = MAP_MARKER_DEFAULTS.DRAGGABLE, 
+        riseOnHover = MAP_MARKER_DEFAULTS.RISE_ON_HOVER) {
+
+        this.featureConfig = featureConfig;
+        this.latLng = latLng;
+        this.iconUrl = iconUrl;
+        this.iconSize = iconSize;
+        this.shadowSize = shadowSize;
+        this.iconAnchor = iconAnchor;
+        this.shadowAnchor = shadowAnchor;
+        this.popupAnchor = popupAnchor;
+        this.draggable = draggable;
+        this.riseOnHover = riseOnHover;
+
+        // set properties
+        this.className = featureConfig.type;
+        
+        // can i pass "this" in the constructor?
+        this.marker = LocationPickerView.GenerateMarker(latLng, this)
+
       }
     }
 
@@ -75,11 +122,32 @@
 
     // #region ----- Model functions -----
 
-    loadFeatureLayerData(url, callback) {
-      // get layers from config
-      var json = '{"type":"FeatureCollection","features":[{"type":"Feature","geometry":{"type":"Point","coordinates":[-122.6544,45.50962]},"properties":{"name":"Graffiti Report","description":"Graffiti Report","id":18236,"status":"open","detail":"<p><em>&quot;Slak&quot; &quot;homie tv&quot; &quot;Sgm&quot; &quot;pxf&quot; &quot;denial&quot; on martial arts business.<\/em><br>\nIncident 18236<br>\nReported 10\/18\/22 6:31 pm<br>\n<\/p>"}},{"type":"Feature","geometry":{"type":"Point","coordinates":[-122.6887866854668,45.53532225336351]},"properties":{"name":"Graffiti Report","description":"Graffiti Report","id":16335,"status":"solved","detail":"<p><em>&quot;lonely days&quot; +blue and white bubble tag<\/em><br>\nIncident 16335<br>\nReported 9\/29\/22 3:09 pm<br>\nUpdated 8\/10\/23 12:00 pm<br>\n<\/p>"}},{"type":"Feature","geometry":{"type":"Point","coordinates":[-122.68618,45.58221]},"properties":{"name":"Graffiti Report","description":"Graffiti Report","id":17122,"status":"solved","detail":"<p><em>smiley face and scribbles.<\/em><br>\nIncident 17122<br>\nReported 10\/6\/22 10:40 am<br>\nUpdated 8\/15\/23 10:44 am<br>\n<\/p>"}}]}';
-
-      callback(json);
+    loadFeatureLayerData(layerConfig, callback) {
+      fetch(layerConfig.geojson_url)
+        .then((response) => {
+          // Check if the response status indicates success (e.g., status code 200)
+          if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+          }
+          // Parse the response body as JSON
+          return response.json();
+        })
+        .then((jsonData) => {
+          // Call the callback function with the parsed JSON data and the layerConfig from the outer scope
+          // add layer config data as property of the json object for convenience.
+          jsonData.layerConfig = layerConfig;
+          var featureLayerDataObj = new LocationPickerModel.FeatureLayer(layerConfig.name, layerConfig.geojson_url, 
+            layerConfig.type, layerConfig.behavior, layerConfig.icon_url, layerConfig.icon_url_selected,
+            jsonData.features);
+            featureLayerDataObj.features = jsonData.features;
+          // store this in the model? no, store the rendered feature layer so it can be turned on/off depending on zoom level.
+          callback(featureLayerDataObj);
+        })
+        .catch((error) => {
+          // Handle any errors that occurred during the fetch or parsing
+          this.controller.view.showErrorModal("Could not load feature layer " + layerConfig.name + "<br><br>" + error);
+          console.error('Error fetching JSON:', error);
+        });
     }
 
     addTodo(text) {
