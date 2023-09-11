@@ -11,6 +11,7 @@ feature_layers:
     behavior: 'selection'
     icon_url: '/modules/custom/portland/modules/portland_location_picker/map_marker_trashcan.png'
     icon_url_selected: '/modules/custom/portland/modules/portland_location_picker/map_marker_trashcan_selected.png'
+    visible_zoom: 16
   - name: 'Graffiti Reports'
     geojson_url: '/api/tickets/graffiti'
     type: 'incident'

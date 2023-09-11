@@ -64,16 +64,17 @@
     static FeatureLayer = class {
       constructor(name, jsonUrl, type = FEATURE_LAYER_DEFAULTS.TYPE,
         behavior = FEATURE_LAYER_DEFAULTS.BEHAVIOR, iconUrl = FEATURE_LAYER_DEFAULTS.ICON_URL,
-        iconSelectedUrl = FEATURE_LAYER_DEFAULTS.ICON_SELECTED_URL) {
+        iconSelectedUrl = FEATURE_LAYER_DEFAULTS.ICON_SELECTED_URL,
+        visibleZoom = FEATURE_LAYER_DEFAULTS.VISIBLE_ZOOM) {
 
         this.name = name;
         this.jsonUrl = jsonUrl;
         this.type = type;
         this.behavior = behavior;
         this.iconUrl = iconUrl;
-        this.iconSelectedUrl = iconSelectedUrl
+        this.iconSelectedUrl = iconSelectedUrl;
+        this.visibleZoom = visibleZoom;
         this.features = [];
-        this.mapLayers = [];
       }
     }
 
@@ -86,36 +87,36 @@
      * Example:
      *    var marker = new LocationPickerModel.MapMarker(featureConfig, latLng);
      */
-    static MapMarker = class {
-      constructor(featureConfig, latLng, 
-        iconUrl = MAP_MARKER_DEFAULTS.ICON_URL, 
-        iconSize = MAP_MARKER_DEFAULTS.ICON_SIZE, 
-        shadowSize = MAP_MARKER_DEFAULTS.SHADOW_SIZE, 
-        iconAnchor = MAP_MARKER_DEFAULTS.ICON_ANCHOR, 
-        shadowAnchor = MAP_MARKER_DEFAULTS.SHADOW_ANCHOR,
-        popupAnchor = MAP_MARKER_DEFAULTS.POPUP_ANCHOR,
-        draggable = MAP_MARKER_DEFAULTS.DRAGGABLE, 
-        riseOnHover = MAP_MARKER_DEFAULTS.RISE_ON_HOVER) {
+    // static MapMarker = class {
+    //   constructor(featureConfig, latLng, 
+    //     iconUrl = MAP_MARKER_DEFAULTS.ICON_URL, 
+    //     iconSize = MAP_MARKER_DEFAULTS.ICON_SIZE, 
+    //     shadowSize = MAP_MARKER_DEFAULTS.SHADOW_SIZE, 
+    //     iconAnchor = MAP_MARKER_DEFAULTS.ICON_ANCHOR, 
+    //     shadowAnchor = MAP_MARKER_DEFAULTS.SHADOW_ANCHOR,
+    //     popupAnchor = MAP_MARKER_DEFAULTS.POPUP_ANCHOR,
+    //     draggable = MAP_MARKER_DEFAULTS.DRAGGABLE, 
+    //     riseOnHover = MAP_MARKER_DEFAULTS.RISE_ON_HOVER) {
 
-        this.featureConfig = featureConfig;
-        this.latLng = latLng;
-        this.iconUrl = iconUrl;
-        this.iconSize = iconSize;
-        this.shadowSize = shadowSize;
-        this.iconAnchor = iconAnchor;
-        this.shadowAnchor = shadowAnchor;
-        this.popupAnchor = popupAnchor;
-        this.draggable = draggable;
-        this.riseOnHover = riseOnHover;
+    //     this.featureConfig = featureConfig;
+    //     this.latLng = latLng;
+    //     this.iconUrl = iconUrl;
+    //     this.iconSize = iconSize;
+    //     this.shadowSize = shadowSize;
+    //     this.iconAnchor = iconAnchor;
+    //     this.shadowAnchor = shadowAnchor;
+    //     this.popupAnchor = popupAnchor;
+    //     this.draggable = draggable;
+    //     this.riseOnHover = riseOnHover;
 
-        // set properties
-        this.className = featureConfig.type;
+    //     // set properties
+    //     this.className = featureConfig.type;
         
-        // can i pass "this" in the constructor?
-        this.marker = LocationPickerView.GenerateMarker(latLng, this)
+    //     // can i pass "this" in the constructor?
+    //     this.marker = LocationPickerView.GenerateMarker(latLng, this)
 
-      }
-    }
+    //   }
+    // }
 
     // ----- END static classes used to create a model of a GeoJSON map layer ----- //
     // #endregion
@@ -138,7 +139,7 @@
           jsonData.layerConfig = layerConfig;
           var featureLayerDataObj = new LocationPickerModel.FeatureLayer(layerConfig.name, layerConfig.geojson_url, 
             layerConfig.type, layerConfig.behavior, layerConfig.icon_url, layerConfig.icon_url_selected,
-            jsonData.features);
+            layerConfig.visible_zoom);
             featureLayerDataObj.features = jsonData.features;
           // store this in the model? no, store the rendered feature layer so it can be turned on/off depending on zoom level.
           callback(featureLayerDataObj);

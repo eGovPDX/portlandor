@@ -11,6 +11,7 @@
       this.baseLayer = L.tileLayer(BASEMAP_DEFAULT_URL, { attribution: BASEMAP_DEFAULT_ATTRIBUTION });
       this.aerialLayer = L.tileLayer(BASEMAP_AERIAL_URL, { attribution: BASEMAP_AERIAL_ATTRIBUTION });
       this.map;
+      this.mapLayers = [];
       this.locationCircle;
       this.locationMarker;
       this.defaultSelectedMarkerIcon;
@@ -61,6 +62,7 @@
       // add event handlers to map
       this.map.on('locationerror', this.handleLocationError.bind(this));
       this.map.on('locationfound', this.handleLocateMeFound.bind(this));
+      this.map.on('zoomend', this.handleZoomEnd.bind(this));
 
       this.defaultSelectedMarkerIcon = L.icon({
         iconUrl: drupalSettings.selected_marker,
@@ -73,10 +75,6 @@
 
 
     }
-
-    // loadMapData() {
-
-    // }
 
     // #region ----- Event handlers -----
 
@@ -116,6 +114,21 @@
       this.locateControlContainer.style.backgroundImage = 'url("/modules/custom/portland/modules/portland_location_picker/images/map_locate.png")';
     }
 
+    handleZoomEnd(e) {
+      this.map.closePopup();
+      var currentZoom = this.map.getZoom();
+
+      // spin through loaded layers and determine whether or not to show each
+      for (var i = 0; i < this.mapLayers.length; i++) {
+        // if current zoom is greater than or equal to zoom_level, show the layer
+        if (currentZoom >= this.mapLayers[i].visibleZoom) {
+          this.map.addLayer(this.mapLayers[i]);
+        } else {
+          this.map.removeLayer(this.mapLayers[i]);
+        }
+      }
+    }
+
     // #endregion
 
     // #region ----- Helper functions -----
@@ -128,20 +141,33 @@
      *  
      * @param {*} featureLayerData - geoJson that includes features and layer config
      */
-    displayFeatureLayer(featureLayerDataObj) {
-      var features = featureLayerDataObj.features;
-      console.log(featureLayerDataObj.name + " features found: " + features.length);
-      var layer = L.geoJson(features, {
+    loadFeatureLayer(layerData) {
+      console.log(layerData.name + " features found: " + layerData.features.length);
+      
+      var markerIcon = LocationPickerView.GenerateMarkerIcon(layerData);
+
+      var layer = L.geoJson(layerData.features, {
         coordsToLatLng: function (coords) {
           // need to reverse the coords for Leaflet
           return new L.LatLng(coords[1], coords[0]);
         },
         pointToLayer: function (feature, latlng) {
           // need to create a marker for every feature.
-          var markerObj = new LocationPickerModel.MapMarker(featureLayerDataObj, feature);
-          var test = markerObj;
+          //var markerObj = new LocationPickerModel.MapMarker(layerData, feature);
+          return LocationPickerView.GenerateMarker(latlng, markerIcon);
         }
       });
+
+      // store visible zoom value as custom property on layer
+      layer.visibleZoom = layerData.visibleZoom;
+
+      // add to global array for use later
+      this.mapLayers.push(layer);
+
+      // add layer to map if we're at the right zoom level; otherwise, add it in the zoomend event handler.
+      if (this.map.getZoom() >= layerData.visibleZoom) {
+        layer.addTo(this.map);
+      }
     }
 
     generateLocateControl() {
@@ -236,26 +262,43 @@
      * @param {MapMarker} mapMarker 
      * @returns L.marker
      */
-    static GenerateMarker(mapMarker, mapMarkerDataObj) {
-      var markerIcon = LocationPickerView.GenerateIcon(mapMarkerDataObj);
-      return L.marker(mapMarker.latlng, { 
+    static GenerateMarker(latLng, markerIcon, 
+      draggable = MAP_MARKER_DEFAULTS.DRAGGABLE,
+      riseOnHover = MAP_MARKER_DEFAULTS.RISE_ON_HOVER) {
+
+        return L.marker(latLng, { 
         icon: markerIcon, 
-        draggable: mapMarkerDataObj.draggable, 
-        riseOnHover: mapMarkerDataObj.riseOnHover, 
-        iconSize: mapMarkerDataObj.iconSize, 
+        draggable: draggable, 
+        riseOnHover: riseOnHover 
       });
     }
 
-    static GenerateIcon(mapMarkerDataObj) {
+    static GenerateMarkerIcon(layerData,
+      iconUrl = LocationPickerView.PickIcon(layerData), 
+      iconSize = MAP_MARKER_DEFAULTS.ICON_SIZE, 
+      shadowSize = MAP_MARKER_DEFAULTS.SHADOW_SIZE, 
+      iconAnchor = MAP_MARKER_DEFAULTS.ICON_ANCHOR, 
+      shadowAnchor = MAP_MARKER_DEFAULTS.SHADOW_ANCHOR,
+      popupAnchor = MAP_MARKER_DEFAULTS.POPUP_ANCHOR) {
+
       return L.icon({
-        iconUrl: mapMarkerDataObj.iconUrl,
-        iconSize: mapMarkerDataObj.iconsize,
-        shadowSize: mapMarkerDataObj.shadowSize,
-        iconAnchor: mapMarkerDataObj.iconAnchor,
-        shadowAnchor: mapMarkerDataObj.shadowAnchor,
-        popupAnchor: mapMarkerDataObj.popupAnchor,
-        className: mapMarkerDataObj.className
+        iconUrl: iconUrl,
+        iconSize: iconSize,
+        shadowSize: shadowSize,
+        iconAnchor: iconAnchor,
+        shadowAnchor: shadowAnchor,
+        popupAnchor: popupAnchor,
+        className: layerData.type
       });
+    }
+
+    static PickIcon(layerData) {
+      if (layerData.type == LAYER_TYPE.ASSET) {
+        return FEATURE_LAYER_DEFAULTS.ICON_URL;
+      }
+      if (layerData.type == LAYER_TYPE.INCIDENT) {
+        return FEATURE_LAYER_DEFAULTS.INCIDENT_ICON_URL;
+      }
     }
 
     // #endregion

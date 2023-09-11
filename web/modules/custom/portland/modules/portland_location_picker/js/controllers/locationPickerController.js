@@ -47,7 +47,7 @@
         const thisLayerConfig = featureLayerConfig[i];
         this.model.loadFeatureLayerData(thisLayerConfig, (featureLayerDataObj) => {
           // Pass the data to the view for rendering on the map
-          this.view.displayFeatureLayer(featureLayerDataObj);
+          this.view.loadFeatureLayer(featureLayerDataObj);
         });
       }
     }

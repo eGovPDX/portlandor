@@ -49,8 +49,11 @@ const LAYER_BEHAVIOR = {
 const FEATURE_LAYER_DEFAULTS = {
   TYPE: LAYER_TYPE.ASSET,
   BEHAVIOR: LAYER_BEHAVIOR.SELECTION,
-  ICON_URL: "/modules/custom/portland/modules/portland_location_picker/map_marker_default.png",
-  ICON_SELECTED_URL: '/modules/custom/portland/modules/portland_location_picker/map_marker_default_selected.png'
+  ICON_URL: '/modules/custom/portland/modules/portland_location_picker/images/map_marker_default.png',
+  ICON_SELECTED_URL: '/modules/custom/portland/modules/portland_location_picker/images/map_marker_default_selected.png',
+  INCIDENT_ICON_URL: '/modules/custom/portland/modules/portland_location_picker/images/map_marker_incident.png',
+  INCIDENT_SOLVED_ICON_URL: '/modules/custom/portland/modules/portland_location_picker/images/map_marker_incident_solved.png',
+  VISIBLE_ZOOM: 18
 }
 
 const MAP_MARKER_DEFAULTS = {
