@@ -733,7 +733,7 @@ describe('Full regression test suite for Admin', () => {
         entityType: 'media',
         contentType: 'image',
         page: page,
-        fieldLabelArray: ['Name', 'Caption'],
+        fieldLabelArray: ['Name'],
         homepageUrl: HOME_PAGE,
         testGroupPath: TEST_GROUP_PATH,
       });
@@ -759,11 +759,6 @@ describe('Full regression test suite for Admin', () => {
         await this.page.type(
           'div.form-item--image-0-alt input[type="text"]',
           'Alternative text for the test image'
-        );
-
-        await this.page.type(
-          '#edit-field-caption-0-value',
-          'Caption for the test image'
         );
 
         await this.page.select('#edit-moderation-state-0-state', 'published');
@@ -794,7 +789,6 @@ describe('Full regression test suite for Admin', () => {
         fieldLabelArray: [
           'Name',
           'Video URL',
-          'Caption',
           'Transcript',
           'Attribution',
         ],
