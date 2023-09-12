@@ -806,12 +806,6 @@ describe('Full regression test suite for Admin', () => {
         );
         await this.page.evaluate(() => {
           document
-            .querySelector('iframe[title="Rich Text Editor, Caption field"]')
-            .contentDocument.querySelector('body p').textContent =
-            'Caption content for the test video';
-        });
-        await this.page.evaluate(() => {
-          document
             .querySelector('iframe[title="Rich Text Editor, Transcript field"]')
             .contentDocument.querySelector('body p').textContent =
             'Transcript content for the test video';
