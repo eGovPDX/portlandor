@@ -85,6 +85,7 @@ class ZendeskHandler extends WebformHandlerBase
       'collaborators' => '',
       'custom_fields' => '',
       'ticket_id_field' => '',
+      'ticket_fork_field' => '',
       'ticket_form_id' => '',
     ];
   }
@@ -396,6 +397,14 @@ class ZendeskHandler extends WebformHandlerBase
         '#required' => false
       ];
 
+      $form['ticket_fork_field'] = [
+        '#type' => 'textfield',
+        '#title' => $this->t('Zendesk Ticket Fork Field'),
+        '#description' => $this->t('If an element machine name is provided, and that element has multiple values, tickets will be forked from it.'),
+        '#default_value' => $this->configuration['ticket_fork_field'],
+        '#required' => false
+      ];
+
       return parent::buildConfigurationForm($form, $form_state);
   }
 
@@ -466,6 +475,17 @@ class ZendeskHandler extends WebformHandlerBase
     $webform_submission = $form_state->getFormObject()->getEntity();
     $submission_fields = $webform_submission->toArray(TRUE);
     $configuration = $this->getTokenManager()->replace($this->configuration, $webform_submission);
+
+    // retrieve the name of the forking field
+    $fork_field_name = "test";//$configuration['ticket_fork_field'];
+    //$fork_field_value = $submission_fields['data'][$fork_field_name];
+
+    echo '<pre>';
+    var_dump($submission_fields['data']);
+    echo '</pre>';
+    exit();
+
+
 
     // Allow for either values coming from other fields or static/tokens
     foreach ($this->defaultConfigurationNames() as $field) {
