@@ -517,6 +517,14 @@ class ZendeskHandler extends WebformHandlerBase
           $value = str_replace("&#039;", '\'', $value);
         } // END KLUGE
 
+        // NEXT KLUGE: If the token is empty, it's not getting replaced, and the token code is appearing in custom fields
+        // in Zendesk. also, the default filter isn't working. so we'll just clear out any values that start with a token
+        // string. at present, custom values will only include the tokens, not additional string values, so this approach
+        // is fine for now but may need to be extended to remove the token code from within a longer string.
+        if (substr($value, 0, 27) == "[webform_submission:values:") {
+          $value = "";
+        }
+
         $request['custom_fields'][] = [
           'id' => $key,
           'value' => $value
