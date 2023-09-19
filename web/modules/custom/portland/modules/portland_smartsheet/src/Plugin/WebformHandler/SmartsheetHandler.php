@@ -5,15 +5,15 @@ use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Logger\LoggerChannelFactoryInterface;
+use Drupal\webform\Plugin\WebformElementManagerInterface;
+use Drupal\webform\WebformMessageManagerInterface;
 use Drupal\webform\Plugin\WebformHandlerBase;
 use Drupal\webform\WebformSubmissionConditionsValidatorInterface;
 use Drupal\webform\WebformSubmissionInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
-use Drupal\webform\WebformTokenManagerInterface;
 use Drupal\Core\Serialization\Yaml;
 use Drupal\file\Entity\File;
 use Drupal\webform\Entity\Webform;
-use Drupal\webform\WebformMessageManagerInterface;
 use Drupal\webform\WebformSubmissionForm;
 use Drupal\portland_smartsheet\Client\SmartsheetClient;
 use Drupal\Component\Serialization\Json;
@@ -33,27 +33,16 @@ use Drupal\Core\Ajax\ReplaceCommand;
  * )
  */
 class SmartsheetHandler extends WebformHandlerBase {
-  /**
-   * The token manager.
-   *
-   * @var \Drupal\webform\WebformTokenManagerInterface
-   */
-  protected $token_manager;
-
-  /**
-   * The webform message manager.
-   *
-   * @var \Drupal\webform\WebformMessageManagerInterface
-   */
-  protected $message_manager;
+  protected WebformElementManagerInterface $elementManager;
+  protected WebformMessageManagerInterface $messageManager;
 
   /**
    * {@inheritdoc}
    */
   public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition) {
     $instance = parent::create($container, $configuration, $plugin_id, $plugin_definition);
-    $instance->token_manager = $container->get('webform.token_manager');
-    $instance->message_manager = $container->get('webform.message_manager');
+    $instance->elementManager = $container->get('plugin.manager.webform.element');
+    $instance->messageManager = $container->get('webform.message_manager');
     return $instance;
   }
 
@@ -69,6 +58,7 @@ class SmartsheetHandler extends WebformHandlerBase {
       'multiple_rows_separator' => '',
       'row_location' => 'toBottom',
       'sheet_id' => '',
+      'upload_attachments' => true,
     ];
   }
 
@@ -81,6 +71,19 @@ class SmartsheetHandler extends WebformHandlerBase {
 
   private function getWebformFields() {
     return $this->getWebform()->getElementsInitializedFlattenedAndHasValue();
+  }
+
+  private function getAttachments(WebformSubmissionInterface $webform_submission) {
+    $attachments = [];
+    $elements = $this->getWebform()->getElementsInitializedAndFlattened();
+    $element_attachments = $this->getWebform()->getElementsAttachments();
+    foreach ($element_attachments as $element_attachment) {
+      $element = $elements[$element_attachment];
+      $element_plugin = $this->elementManager->getElementInstance($element);
+      $attachments = array_merge($attachments, $element_plugin->getEmailAttachments($element, $webform_submission));
+    }
+
+    return $attachments;
   }
 
   public function fetchColumns(array &$form, FormStateInterface $form_state) {
@@ -198,13 +201,21 @@ class SmartsheetHandler extends WebformHandlerBase {
     $form['row_location'] = [
       '#type' => 'select',
       '#title' => $this->t('Row location'),
-      '#description' => $this->t('Should the row be added to the bottom or top of the sheet?'),
+      '#description' => $this->t('Where the new rows should be added in the sheet.'),
       '#description_display' => 'before',
       '#default_value' => $this->configuration['row_location'],
       '#options' => [
         'toBottom' => 'To Bottom',
         'toTop' => 'To Top',
       ],
+    ];
+
+    $form['upload_attachments'] = [
+      '#type' => 'checkbox',
+      '#title' => $this->t('Upload attachments to row'),
+      '#description' => $this->t('If checked, any attachments in the webform submission data will be uploaded to the first row.'),
+      '#description_display' => 'before',
+      '#default_value' => $this->configuration['upload_attachments'],
     ];
 
     $this->fetchColumns($form, $form_state);
@@ -226,6 +237,7 @@ class SmartsheetHandler extends WebformHandlerBase {
     $this->configuration['multiple_rows_separator'] = $values['multiple_rows_separator'];
     $this->configuration['row_location'] = $values['row_location'];
     $this->configuration['sheet_id'] = $values['sheet_id'];
+    $this->configuration['upload_attachments'] = $values['upload_attachments'];
   }
 
   private function getRowData(array $fields) {
@@ -252,9 +264,9 @@ class SmartsheetHandler extends WebformHandlerBase {
   public function validateForm(array &$form, FormStateInterface $form_state, WebformSubmissionInterface $webform_submission) {
     // By submitting to the API during the validate phase, we can interrupt the form submission if any errors happen.
     // But we need to check that the validation was triggered by the submit button, and that there were also no validation errors.
-    if ($form_state->hasAnyErrors() || !$form_state->getTriggeringElement() || $form_state->getTriggeringElement()['#type'] !== "submit") return;
+    if ($form_state->hasAnyErrors() || !$form_state->getTriggeringElement() || $form_state->getTriggeringElement()['#parents'][0] !== "submit") return;
 
-    $this->message_manager->setWebformSubmission($webform_submission);
+    $this->messageManager->setWebformSubmission($webform_submission);
 
     $submission_arr = $webform_submission->toArray(TRUE);
     $submission_id = $submission_arr['sid'] !== '' ? $submission_arr['sid'] : $submission_arr['uuid'];
@@ -286,7 +298,15 @@ class SmartsheetHandler extends WebformHandlerBase {
 
     try {
       $client = new SmartsheetClient($this->configuration['sheet_id']);
-      $client->addRows($rows);
+      $rows_result = $client->addRows($rows);
+
+      if ($this->configuration['upload_attachments']) {
+        $first_row_id = $rows_result[0]->id;
+        $element_attachments = $this->getAttachments($webform_submission);
+        foreach ($element_attachments as $attachment) {
+          $client->addAttachment($first_row_id, $attachment);
+        }
+      }
     } catch (\Exception $e) {
       // Log error message.
       $this->getLogger()->error('@form webform submission to Smartsheet (@handler_id) failed. @exception: @message.', [
@@ -298,7 +318,7 @@ class SmartsheetHandler extends WebformHandlerBase {
       ]);
 
       // Display error to user.
-      $this->message_manager->display(WebformMessageManagerInterface::SUBMISSION_EXCEPTION_MESSAGE, 'error');
+      $this->messageManager->display(WebformMessageManagerInterface::SUBMISSION_EXCEPTION_MESSAGE, 'error');
 
       // Add validation error to prevent submission.
       $form_state->setErrorByName('');

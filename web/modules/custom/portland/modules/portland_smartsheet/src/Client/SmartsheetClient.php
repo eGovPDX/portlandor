@@ -45,6 +45,27 @@ class SmartsheetClient {
     return $body->result ?? $body->data ?? $body;
   }
 
+  public function addAttachment($row_id, $attachment) {
+    if (!array_key_exists('filecontent', $attachment)
+      || !array_key_exists('filename', $attachment)
+      || !array_key_exists('filemime', $attachment)) {
+      throw new \Exception("Smartsheet API: attachment requires the following properties: filecontent, filename, filemime");
+    }
+
+    return $this->handleResponse($this->client->request('POST', "rows/{$row_id}/attachments", [
+      'multipart' => [
+        [
+          'name' => 'file',
+          'contents' => $attachment['filecontent'],
+          'filename' => $attachment['filename'],
+          'headers' => [
+            'Content-Type' => $attachment['filemime'],
+          ],
+        ],
+      ],
+    ]));
+  }
+
   public function addRows($data) {
     return $this->handleResponse($this->client->request('POST', 'rows', ['json' => $data]));
   }
@@ -55,6 +76,10 @@ class SmartsheetClient {
 
   public function listAllFilters() {
     return $this->handleResponse($this->client->request('GET', 'filters?includeAll=true'));
+  }
+
+  public function getAttachment($attachment_id) {
+    return $this->handleResponse($this->client->request('GET', "attachments/{$attachment_id}"));
   }
 
   public function getSheet($query = []) {
