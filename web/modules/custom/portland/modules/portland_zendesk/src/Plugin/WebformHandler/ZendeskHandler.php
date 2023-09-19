@@ -400,7 +400,7 @@ class ZendeskHandler extends WebformHandlerBase
       $form['ticket_fork_field'] = [
         '#type' => 'textfield',
         '#title' => $this->t('Zendesk Ticket Fork Field'),
-        '#description' => $this->t('If an element machine name is provided, and that element has multiple values, tickets will be forked from it.'),
+        '#description' => $this->t('If an element machine name is provided, and that element has multiple values, tickets will be forked from it. The resulting ticket IDs will be placed in the field identified by ticket_id_field in a comma delimted list and may require additional processing for use in a resolution form.'),
         '#default_value' => $this->configuration['ticket_fork_field'],
         '#required' => false
       ];
@@ -469,23 +469,43 @@ class ZendeskHandler extends WebformHandlerBase
     // Since we're doing this in the validate phase, instead of postSave, we need to manually generate
     // a webform_submission object from form_state and pull form values from that for the API submission.
 
-    // declare working variables
     $new_ticket_id = 0;
-    $request = [];
     $webform_submission = $form_state->getFormObject()->getEntity();
     $submission_fields = $webform_submission->toArray(TRUE);
     $configuration = $this->getTokenManager()->replace($this->configuration, $webform_submission);
 
-    // retrieve the name of the forking field
-    $fork_field_name = "test";//$configuration['ticket_fork_field'];
-    //$fork_field_value = $submission_fields['data'][$fork_field_name];
+    // tickets will be forked on the field identified in the config value 'ticket_fork_field'
+    if ($configuration['ticket_fork_field']) {
+      $fork_field_name = $configuration['ticket_fork_field'];
+      $fork_field_array = $submission_fields['data'][$fork_field_name];
+      $ticket_ids = [];
 
-    echo '<pre>';
-    var_dump($submission_fields['data']);
-    echo '</pre>';
-    exit();
+      foreach ($fork_field_array as $key => $value) {
+        $submission_fields['data'][$fork_field_name] = $fork_field_array[$key];
+        $ticket_ids[] = $this->submitTicket($submission_fields, $configuration, $webform_submission->id());
+      }
 
+      $new_ticket_id = implode(",", $ticket_ids);
 
+    } else {
+      $new_ticket_id = $this->submitTicket($submission_fields, $configuration, $webform_submission->id());
+    }
+
+    // if name field is set and present, add ticket ID to hidden Zendesk Ticket ID field
+    if ($zendesk_ticket_id_field_name && array_key_exists( $zendesk_ticket_id_field_name, $data ) && $new_ticket){
+      $new_ticket_id = $new_ticket->ticket->id;
+      $data[$zendesk_ticket_id_field_name] = $new_ticket_id;
+      $form_state->setValue($zendesk_ticket_id_field_name, $new_ticket_id);
+      $form['values'][$zendesk_ticket_id_field_name] = $new_ticket_id;
+    }
+
+    return $new_ticket_id; // if a null is returned, an error/try-again message will be displayed to the user
+  }
+
+  public function submitTicket($submission_fields, $configuration, $webform_submission_id) {
+
+    $new_ticket_id = 0;
+    $request = [];
 
     // Allow for either values coming from other fields or static/tokens
     foreach ($this->defaultConfigurationNames() as $field) {
@@ -553,7 +573,7 @@ class ZendeskHandler extends WebformHandlerBase
     }
 
     // set external_id to connect zendesk ticket with submission ID
-    $request['external_id'] = $webform_submission->id();
+    $request['external_id'] = $webform_submission_id;
 
     // get list of all webform fields with a file field type
     $file_fields = $this->getWebformFieldsWithFiles();
@@ -606,18 +626,7 @@ class ZendeskHandler extends WebformHandlerBase
       // retrieve the name of the field in which to store the created Zendesk Ticket ID
       $zendesk_ticket_id_field_name = $configuration['ticket_id_field'];
 
-      // retrieve submission data
-      $data = $webform_submission->getData();
-
       $new_ticket_id = $new_ticket->ticket->id;
-
-      // if name field is set and present, add ticket ID to hidden Zendesk Ticket ID field
-      if ($zendesk_ticket_id_field_name && array_key_exists( $zendesk_ticket_id_field_name, $data ) && $new_ticket){
-        $new_ticket_id = $new_ticket->ticket->id;
-        $data[$zendesk_ticket_id_field_name] = $new_ticket_id;
-        $form_state->setValue($zendesk_ticket_id_field_name, $new_ticket_id);
-        $form['values'][$zendesk_ticket_id_field_name] = $new_ticket_id;
-      }
 
     }
     catch( \Exception $e ){
@@ -635,6 +644,7 @@ class ZendeskHandler extends WebformHandlerBase
     }
 
     return $new_ticket_id;
+
   }
 
   /**
