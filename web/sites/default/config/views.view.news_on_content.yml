@@ -5,17 +5,21 @@ dependencies:
   config:
     - core.entity_view_mode.node.related
     - core.entity_view_mode.node.teaser
+    - node.type.city_charter
+    - node.type.city_code
     - node.type.city_service
     - node.type.construction_project
     - node.type.location
     - node.type.news
     - node.type.page
     - node.type.park_facility
+    - node.type.policy
+    - node.type.room
+    - node.type.service_location
   module:
     - datetime
     - node
     - user
-    - views_infinite_scroll
 id: news_on_content
 label: 'News on content'
 module: views
@@ -194,6 +198,10 @@ display:
           empty_zero: false
           hide_alter_empty: true
           view_mode: teaser
+      pager:
+        type: none
+        options:
+          offset: 0
       empty:
         area:
           id: area
@@ -205,7 +213,7 @@ display:
           plugin_id: text
           empty: true
           content:
-            value: 'No related news found.'
+            value: '<p>No related news found.</p>'
             format: full_html
           tokenize: false
       sorts:
@@ -273,10 +281,12 @@ display:
             fail: 'not found'
           validate_options:
             bundles:
+              city_charter: city_charter
+              city_code: city_code
               city_service: city_service
               construction_project: construction_project
               page: page
-              park_facility: park_facility
+              policy: policy
             access: false
             operation: view
             multiple: 0
@@ -459,13 +469,16 @@ display:
           admin_label: ''
           plugin_id: result
           empty: false
-          content: 'Displaying @start - @end of @total related news. '
+          content: '<p>Displaying @start - @end of @total related news.</p>'
       display_extenders:
-        metatag_display_extender: {  }
+        metatag_display_extender:
+          metatags: {  }
+          tokenize: false
       displays:
         page_1: page_1
       inherit_arguments: true
       inherit_pager: true
+      render_pager: false
     cache_metadata:
       max-age: -1
       contexts:
@@ -614,6 +627,10 @@ display:
           empty_zero: false
           hide_alter_empty: true
           view_mode: teaser
+      pager:
+        type: none
+        options:
+          offset: 0
       empty:
         area:
           id: area
@@ -625,7 +642,7 @@ display:
           plugin_id: text
           empty: true
           content:
-            value: 'No news found for this location.'
+            value: '<p>No related news found.</p>'
             format: full_html
           tokenize: false
       sorts:
@@ -694,6 +711,9 @@ display:
           validate_options:
             bundles:
               location: location
+              park_facility: park_facility
+              room: room
+              service_location: service_location
             access: false
             operation: view
             multiple: 0
@@ -873,13 +893,16 @@ display:
           admin_label: ''
           plugin_id: result
           empty: false
-          content: 'Displaying @start - @end of @total news at this location. '
+          content: '<p>Displaying @start - @end of @total related news.</p>'
       display_extenders:
-        metatag_display_extender: {  }
+        metatag_display_extender:
+          metatags: {  }
+          tokenize: false
       displays:
         page_1: page_1
       inherit_arguments: true
       inherit_pager: true
+      render_pager: false
     cache_metadata:
       max-age: -1
       contexts:
@@ -1969,20 +1992,18 @@ display:
     display_options:
       title: 'News and notices'
       fields:
-        type:
-          id: type
-          table: node_field_data
-          field: type
+        nothing:
+          id: nothing
+          table: views
+          field: nothing
           relationship: none
           group_type: group
           admin_label: ''
-          entity_type: node
-          entity_field: type
-          plugin_id: field
+          plugin_id: custom
           label: ''
           exclude: false
           alter:
-            alter_text: false
+            alter_text: true
             text: ''
             make_link: false
             path: ''
@@ -2019,31 +2040,19 @@ display:
           empty: ''
           hide_empty: false
           empty_zero: false
-          hide_alter_empty: true
-          click_sort_column: target_id
-          type: entity_reference_label
-          settings:
-            link: true
-          group_column: target_id
-          group_columns: {  }
-          group_rows: true
-          delta_limit: 0
-          delta_offset: 0
-          delta_reversed: false
-          delta_first_last: false
-          multi_type: separator
-          separator: ', '
-          field_api_classes: false
+          hide_alter_empty: false
       pager:
-        type: infinite_scroll
+        type: full
         options:
           offset: 0
-          items_per_page: 20
+          items_per_page: 10
           total_pages: null
           id: 0
           tags:
-            next: ››
-            previous: ‹‹
+            next: 'Next ›'
+            previous: '‹ Previous'
+            first: '« First'
+            last: 'Last »'
           expose:
             items_per_page: false
             items_per_page_label: 'Items per page'
@@ -2052,9 +2061,7 @@ display:
             items_per_page_options_all_label: '- All -'
             offset: false
             offset_label: Offset
-          views_infinite_scroll:
-            button_text: 'Load More'
-            automatically_load_content: true
+          quantity: 9
       empty: {  }
       filters:
         status:
@@ -2069,46 +2076,6 @@ display:
           plugin_id: boolean
           operator: '='
           value: '1'
-          group: 1
-          exposed: false
-          expose:
-            operator_id: ''
-            label: ''
-            description: ''
-            use_operator: false
-            operator: ''
-            operator_limit_selection: false
-            operator_list: {  }
-            identifier: ''
-            required: false
-            remember: false
-            multiple: false
-            remember_roles:
-              authenticated: authenticated
-          is_grouped: false
-          group_info:
-            label: ''
-            description: ''
-            identifier: ''
-            optional: true
-            widget: select
-            multiple: false
-            remember: false
-            default_group: All
-            default_group_multiple: {  }
-            group_items: {  }
-        status_1:
-          id: status_1
-          table: node_field_data
-          field: status
-          relationship: none
-          group_type: group
-          admin_label: ''
-          entity_type: node
-          entity_field: status
-          plugin_id: boolean
-          operator: '='
-          value: '0'
           group: 1
           exposed: false
           expose:
@@ -2209,11 +2176,11 @@ display:
         metatag_display_extender:
           metatags:
             robots: noindex
+          tokenize: false
       path: node/%/news
     cache_metadata:
       max-age: -1
       contexts:
-        - 'languages:language_content'
         - 'languages:language_interface'
         - url
         - url.query_args
