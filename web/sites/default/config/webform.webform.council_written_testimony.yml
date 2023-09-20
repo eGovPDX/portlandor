@@ -1,28 +1,94 @@
-uuid: b65e2aac-a18e-4af7-b004-282508a1e8df
+uuid: 09b56a54-facd-4a2c-98a6-ecdf464d4d70
 langcode: en
 status: open
-dependencies: {  }
+dependencies:
+  module:
+    - honeypot
+    - portland
+    - portland_smartsheet
+third_party_settings:
+  portland:
+    disable_demographic_form_prompt: 1
+  honeypot:
+    honeypot: true
+    time_restriction: true
 weight: 0
 open: null
 close: null
 uid: 1
 template: false
 archive: false
-id: garbage_collection_calendar
-title: 'Garbage Collection Calendar'
-description: 'ReCollect embed'
-categories:
-  - Utility
+id: council_written_testimony
+title: 'Council Written Testimony'
+description: ''
+categories: {  }
 elements: |-
-  loading_text:
-    '#type': webform_markup
-    '#markup': '<div id="rCw"><em>Garbage collection calendar is loading...</em></div>'
-  actions:
-    '#type': webform_actions
-    '#title': 'Submit button(s)'
-    '#submit_hide': true
+  agenda_item:
+    '#type': webform_entity_radios
+    '#title': 'Agenda Item'
+    '#description_display': before
+    '#prepopulate': true
+    '#required': true
+    '#format': value
+    '#target_type': node
+    '#selection_handler': views
+    '#selection_settings':
+      view:
+        view_name: council_documents
+        display_name: entity_reference_council_document_for_written_testimony
+        arguments: {  }
+  position:
+    '#type': radios
+    '#title': Position
+    '#options':
+      Support: Support
+      'Support with changes': 'Support with changes'
+      Oppose: Oppose
+  comments:
+    '#type': textarea
+    '#title': Comments
+    '#maxlength': 4000
+    '#rows': 3
+  attachments:
+    '#type': managed_file
+    '#title': 'File upload'
+    '#multiple': 3
+    '#description_display': before
+    '#max_filesize': '10'
+    '#file_extensions': 'pdf jpg jpeg png'
+    '#sanitize': true
+  contact_name:
+    '#type': textfield
+    '#title': 'Name or Organization'
+    '#description_display': before
+    '#description': 'Enter your name, organization, or leave blank if you would like to remain anonymous.'
+  contact_email:
+    '#type': textfield
+    '#title': Email
+    '#description': 'Provide your email address should you need to be contacted about your testimony.'
+    '#description_display': before
+    '#pattern': '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    '#pattern_error': 'Please enter a correctly formatted email address, such as myname@example.com.'
+  horizontal_rule:
+    '#type': webform_horizontal_rule
+  container_submit:
+    '#type': container
+    acknowledge_public_record:
+      '#type': checkbox
+      '#title': '<strong>I understand information entered in this form is public record.</strong>'
+      '#required': true
+    actions:
+      '#type': webform_actions
+      '#title': 'Submit button(s)'
+  computed_agenda_item:
+    '#type': webform_computed_twig
+    '#title': 'Computed - Agenda Item'
+    '#display_on': none
+    '#mode': text
+    '#template': '{{ drupal_view(''council_documents'', ''block_latest_agenda_item_for_written_testimony'', data.agenda_item)|render|striptags|trim }}'
+    '#store': true
 css: ''
-javascript: "window._recollect_config = {\r\n  area: \"CityofPortlandOR\",\r\n  // The container *has to* be \"rCw\" for their CSS to work\r\n  container: \"#rCw\",\r\n  name: \"calendar\"\r\n};\r\n\r\nconst script = document.createElement(\"script\");\r\nscript.src = \"https://assets.us.recollect.net/api/widget.js\";\r\nif (document.querySelector(\"#rCw\")) document.head.append(script);"
+javascript: ''
 settings:
   ajax: false
   ajax_scroll_top: form
@@ -33,7 +99,7 @@ settings:
   page_submit_path: ''
   page_confirm_path: ''
   page_theme_name: ''
-  form_title: source_entity_webform
+  form_title: both
   form_submit_once: false
   form_open_message: ''
   form_close_message: ''
@@ -105,7 +171,7 @@ settings:
   wizard_track: ''
   wizard_prev_button_label: ''
   wizard_next_button_label: ''
-  wizard_toggle: true
+  wizard_toggle: false
   wizard_toggle_show_label: ''
   wizard_toggle_hide_label: ''
   wizard_page_type: container
@@ -127,13 +193,14 @@ settings:
   draft_pending_multiple_message: ''
   confirmation_type: page
   confirmation_url: ''
-  confirmation_title: ''
-  confirmation_message: ''
+  confirmation_title: 'Your testimony has been received and shared with City Council'
+  confirmation_message: "<p><a href=\"/council/written-testimony\">View written testimony submitted for current agenda items</a></p>\r\n\r\n<p><a href=\"/council/agenda\">View the Council Agenda</a></p>"
   confirmation_attributes: {  }
-  confirmation_back: true
+  confirmation_back: false
   confirmation_back_label: ''
-  confirmation_back_attributes: {  }
-  confirmation_exclude_query: false
+  confirmation_back_attributes:
+    href: /council/agenda
+  confirmation_exclude_query: true
   confirmation_exclude_token: false
   confirmation_update: false
   limit_total: null
@@ -150,7 +217,7 @@ settings:
   entity_limit_user_interval: null
   purge: none
   purge_days: null
-  results_disabled: false
+  results_disabled: true
   results_disabled_ignore: false
   results_customize: false
   token_view: false
@@ -204,5 +271,38 @@ access:
     roles: {  }
     users: {  }
     permissions: {  }
-handlers: {  }
+handlers:
+  smartsheet_add_row_to_existing_sheet:
+    id: smartsheet_add_row
+    handler_id: smartsheet_add_row_to_existing_sheet
+    label: 'Smartsheet: add row to existing sheet'
+    notes: ''
+    status: true
+    conditions: {  }
+    weight: -49
+    settings:
+      column_mappings:
+        7815207971671940: computed_agenda_item
+        2185708437458820: position
+        6689308064829316: comments
+        8941107878514564: contact_name
+        39461740040068: contact_email
+        3058187154444164: ''
+      sheet_id: '4089476049489796'
+      multiple_rows_enable: null
+      multiple_rows_field: ''
+      multiple_rows_separator: ''
+      row_location: toTop
+      upload_attachments: '1'
+  portland_error_message_override:
+    id: portland_error_message_override_handler
+    handler_id: portland_error_message_override
+    label: 'Portland: Error message override'
+    notes: ''
+    status: true
+    conditions: {  }
+    weight: -50
+    settings:
+      element_id: agenda_items
+      error_message: 'The agenda item you selected is no longer available for testimony.'
 variants: {  }
