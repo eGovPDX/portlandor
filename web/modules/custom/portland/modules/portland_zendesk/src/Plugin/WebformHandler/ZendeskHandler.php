@@ -75,7 +75,7 @@ class ZendeskHandler extends WebformHandlerBase
       'requester_name' => '',
       'requester_email' => '',
       'subject' => '',
-      'comment' => '[webform_submission:values]', // by default lists all submission values as body
+      'comment' => '[webform_submission:values]',
       'tags' => 'drupal webform',
       'priority' => 'normal',
       'status' => 'new',
