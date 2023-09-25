@@ -462,38 +462,55 @@ class ZendeskHandler extends WebformHandlerBase
 
   public function sendToZendesk(array &$form, FormStateInterface &$form_state)
   {
-    // NOTE: This will run for both new and update webform submissions, so this handler should only
-    // be used on forms that don't allow updating. Otherwise, a new Zendesk ticket will be created
+    // NOTE: This functino will run both when a webform is created, and when it's updated, so this handler
+    // should only be used on forms that don't allow updating. Otherwise, a new Zendesk ticket will be created
     // on every submit of the form.
+
+    $new_ticket_id = 0;
+    $zendesk_ticket_id_field_name = $this->configuration['ticket_id_field'];
+
+    // tickets will be forked on the field identified in the config value 'ticket_fork_field'
+    $fork_field_name = $this->configuration['ticket_fork_field'];
 
     // Since we're doing this in the validate phase, instead of postSave, we need to manually generate
     // a webform_submission object from form_state and pull form values from that for the API submission.
-
-    $new_ticket_id = 0;
     $webform_submission = $form_state->getFormObject()->getEntity();
-    $submission_fields = $webform_submission->toArray(TRUE);
-    $configuration = $this->getTokenManager()->replace($this->configuration, $webform_submission);
 
-    // tickets will be forked on the field identified in the config value 'ticket_fork_field'
-    if ($configuration['ticket_fork_field']) {
-      $fork_field_name = $configuration['ticket_fork_field'];
-      $fork_field_array = $submission_fields['data'][$fork_field_name];
+    if ($fork_field_name) {
+      // if the handler has a fork field configured, grab the values array from that field so we can
+      // spin through it and stuff a single value into the webform_submission for each ticket being created.
+      
+      $data = $webform_submission->getData();
+      $fork_field_array = $data[$fork_field_name];  // TODO: inefficient; improve?
       $ticket_ids = [];
 
       foreach ($fork_field_array as $key => $value) {
-        $submission_fields['data'][$fork_field_name] = $fork_field_array[$key];
+        $data[$fork_field_name] = $fork_field_array[$key];
+        $webform_submission->setData($data);
+        $submission_fields = $webform_submission->toArray(TRUE);
+        $configuration = $this->getTokenManager()->replace($this->configuration, $webform_submission);
+
+        // call function to create ticket in Zendesk and store resulting ticket ID
         $ticket_ids[] = $this->submitTicket($submission_fields, $configuration, $webform_submission->id());
       }
+
+      // put original data back in webform_submission? no, that doesn't help.
+      // for some reason, the vehicle info is missing altogether in the forked tickets.
+      // $data[$fork_field_name] = $fork_field_array;
+      // $webform_submission->setData($this->getTokenManager()->replace($data));
 
       $new_ticket_id = implode(",", $ticket_ids);
 
     } else {
+      $submission_fields = $webform_submission->toArray(TRUE);
+      $configuration = $this->getTokenManager()->replace($this->configuration, $webform_submission);
       $new_ticket_id = $this->submitTicket($submission_fields, $configuration, $webform_submission->id());
+      $data = $webform_submission->getData();
     }
 
     // if name field is set and present, add ticket ID to hidden Zendesk Ticket ID field
-    if ($zendesk_ticket_id_field_name && array_key_exists( $zendesk_ticket_id_field_name, $data ) && $new_ticket){
-      $new_ticket_id = $new_ticket->ticket->id;
+    if ($zendesk_ticket_id_field_name && array_key_exists( $zendesk_ticket_id_field_name, $data ) && $new_ticket_id){
+      //$new_ticket_id = $new_ticket->ticket->id;
       $data[$zendesk_ticket_id_field_name] = $new_ticket_id;
       $form_state->setValue($zendesk_ticket_id_field_name, $new_ticket_id);
       $form['values'][$zendesk_ticket_id_field_name] = $new_ticket_id;
