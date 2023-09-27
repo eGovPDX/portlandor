@@ -14,14 +14,31 @@ function portland_smartsheet_views_data() {
   ];
 
   // Fields.
+  $data['smartsheet']['attachments'] = [
+    'title' => t('Attachments'),
+    'help' => t('Attachments from the current row'),
+    'field' => [
+      'id' => 'smartsheet_attachments',
+    ],
+  ];
   $data['smartsheet']['cell'] = [
     'title' => t('Cell Data'),
     'help' => t('Data from a cell in current row of the sheet'),
     'field' => [
-      'id' => 'smartsheet_cell'
+      'id' => 'smartsheet_cell',
     ],
     'sort' => [
-      'id' => 'smartsheet_cell'
+      'id' => 'smartsheet_cell',
+    ],
+  ];
+  $data['smartsheet']['row_id'] = [
+    'title' => t('Row ID'),
+    'help' => t('ID of the current row'),
+    'argument' => [
+      'id' => 'smartsheet_row_id',
+    ],
+    'field' => [
+      'id' => 'smartsheet_row_id',
     ],
   ];
 

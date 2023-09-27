@@ -31,8 +31,32 @@ elements: |-
       '#markup': |
         <strong>Public Records Statement</strong><br />
         Information you provide to the City is a public record and may be subject to release under Oregon&rsquo;s <a data-renderer-mark="true" href="https://www.doj.state.or.us/oregon-department-of-justice/public-records/attorney-generals-public-records-and-meetings-manual/i-public-records/#:~:text=Under%20Oregon's%20Public%20Records%20Law,committee%20of%20the%20Legislative%20Assembly" title="https://www.doj.state.or.us/oregon-department-of-justice/public-records/attorney-generals-public-records-and-meetings-manual/i-public-records/#:~:text=Under%20Oregon's%20Public%20Records%20Law,committee%20of%20the%20Legislative%20Assembly">Public Records Law</a>. This law classifies certain information as available to the public on request. See our <a data-renderer-mark="true" href="/help/about/privacy" title="https://www.portland.gov/help/about/privacy">privacy statement</a> for more information.
+  request_how:
+    '#type': radios
+    '#title': 'How would you like to make your request?'
+    '#prepopulate': true
+    '#options':
+      'I would like to call the City': 'I would like to contact the City by phone or TTY'
+      'I will continue with the online form': 'I will continue with the online form'
+    '#required': true
+  request_call_city_text_stop:
+    '#type': webform_markup
+    '#states':
+      visible:
+        ':input[name="request_how"]':
+          value: 'I would like to call the City'
+    '#markup': |-
+      <div class="webform-alert alert alert--info">
+      <h2>Next Steps</h2>
+
+      <p>Please call us at&nbsp;<a href="tel:311">311</a>,&nbsp;<a href="tel:+15038234000">(503) 823-4000</a>,&nbsp;or&nbsp;<a href="tel:711">711</a>&nbsp;for TTY via Oregon Relay Service.&nbsp;Staff are available daily, excluding federal holidays.&nbsp;Visit&nbsp;<a aria-label="Link PDX 311" href="https://www.portland.gov/311" rel="noreferrer noopener" target="_blank" title="https://www.portland.gov/311">PDX 311</a>&nbsp;for hours and details.</p>
+      </div>
   container_request:
     '#type': container
+    '#states':
+      visible:
+        ':input[name="request_how"]':
+          value: 'I will continue with the online form'
     request_who:
       '#type': radios
       '#title': 'Who are you making this request or complaint for?'
@@ -105,45 +129,15 @@ elements: |-
 
         <p>Please obtain their permission before submitting this form.</p>
         </div>
-    request_how:
-      '#type': radios
-      '#title': 'How would you like to make your request?'
-      '#prepopulate': true
-      '#options':
-        'I will contact the City': 'I will contact the City'
-        'I would like the City to contact me': 'I would like the City to contact me'
-        'I will continue with the online form': 'I will continue with the online form'
-      '#required': true
-      '#states':
-        visible:
-          - ':input[name="request_who"]':
-              value: Myself
-          - or
-          - ':input[name="request_who"]':
-              value: 'Neither of these apply to me'
-          - or
-          - ':input[name="request_who"]':
-              value: 'Someone else'
-            ':input[name="request_on_behalf_of_permission"]':
-              value: 'Yes'
-    request_call_city_text_stop:
-      '#type': webform_markup
-      '#states':
-        visible:
-          ':input[name="request_how"]':
-            value: 'I will contact the City'
-      '#markup': |-
-        <div class="webform-alert alert alert--info">
-        <h2>Next Steps</h2>
-
-        <p>Please call us at <a href="tel:311">311</a>,&nbsp;<a href="tel:+15038234000">(503) 823-4000</a>,&nbsp;or&nbsp;<a href="tel:711">711</a>&nbsp;for TTY via Oregon Relay Service. Staff are available Monday through Friday from 8:00 a.m. to 5:00 p.m., excluding Federal Holidays.</p>
-        </div>
   container_online:
     '#type': container
     '#states':
       visible:
-        ':input[name="request_how"]':
-          value: 'I will continue with the online form'
+        ':input[name="request_who"]':
+          value:
+            pattern: 'Myself|Someone else'
+        ':input[name="request_on_behalf_of_permission"]':
+          '!value': 'No'
     container_confidentiality:
       '#type': webform_section
       '#title': Confidentiality
@@ -392,11 +386,10 @@ elements: |-
     '#title_display': invisible
     '#states':
       visible:
-        - ':input[name="request_how"]':
-            value: 'I would like the City to contact me'
-        - or
-        - ':input[name="request_how"]':
-            value: 'I will continue with the online form'
+        ':input[name="request_what[radios]"]':
+          checked: true
+        ':input[name="request_on_behalf_of_permission"]':
+          '!value': 'No'
     contact_name:
       '#type': textfield
       '#title': 'Your Name'
@@ -572,8 +565,8 @@ settings:
   draft_pending_multiple_message: ''
   confirmation_type: page
   confirmation_url: ''
-  confirmation_title: 'Thank you for submitting your reqest!'
-  confirmation_message: 'Your request has been received, and you should be contacted within 48 hours.'
+  confirmation_title: 'Thank you for submitting your request!'
+  confirmation_message: '<p>Your request has been received, and you should be contacted within 48 hours.</p>'
   confirmation_attributes: {  }
   confirmation_back: true
   confirmation_back_label: ''
@@ -713,7 +706,7 @@ handlers:
       assignee_id: ''
       type: ''
       collaborators: ''
-      custom_fields: '8692493739543: ''[webform_submission:values:report_ticket_id]'''
+      custom_fields: "8692493739543: '[webform_submission:values:report_ticket_id]'"
       ticket_id_field: zendesk_request_number
       ticket_form_id: ''
   zendesk_new_ticket_developer_testing:
