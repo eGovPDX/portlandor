@@ -79,6 +79,7 @@ class ZendeskHandler extends WebformHandlerBase
       'tags' => 'drupal webform',
       'priority' => 'normal',
       'status' => 'new',
+      'recipient' => '',
       'group_id' => '',
       'assignee_id' => '',
       'type' => 'question',
@@ -120,7 +121,7 @@ class ZendeskHandler extends WebformHandlerBase
       'Type',
       'Priority',
       'Group',
-      'Assignee',
+      'Assignee'
     ];
 
       // get available email fields to use as requester email address
@@ -156,6 +157,7 @@ class ZendeskHandler extends WebformHandlerBase
       $assignees = [];
       $groups = [];
       $ticket_forms = [];
+      $recipients = [];
 
       try {
         // Get available groups and assignees from zendesk.
@@ -188,6 +190,13 @@ class ZendeskHandler extends WebformHandlerBase
 
         // order agents by name
         asort($assignees);
+
+        // get list of recipeint addresses
+        $response_recipients = $client->supportAddresses()->findAll();
+        foreach ($response_recipients->recipient_addresses as $recipient) {
+          $recipients[ $recipient->email] = $recipient->email;
+        }
+        asort($recipients);
 
         // get list of ticket fields and assign them to an array by id->title
         $response_fields = $client->ticketFields()->findAll();
@@ -313,6 +322,19 @@ class ZendeskHandler extends WebformHandlerBase
 
       // prep groups field
       // if found groups from Zendesk, populate dropdown.
+      $form['recipient'] = [
+        '#title' => $this->t('Ticket Recipient'),
+        '#description' => $this->t('The email address that is the "recipient" of the ticket, and the one from which notifications are sent.'),
+        '#default_value' => $this->configuration['recipient'],
+        '#required' => false
+      ];
+      if(!empty($groups) ){
+        $form['recipient']['#type'] = 'select';
+        $form['recipient']['#options'] = ['' => '- None -'] + $recipients;
+      }
+
+      // prep groups field
+      // if found groups from Zendesk, populate dropdown.
       $form['group_id'] = [
         '#title' => $this->t('Ticket Group'),
         '#description' => $this->t('The id of the intended group'),
@@ -335,7 +357,7 @@ class ZendeskHandler extends WebformHandlerBase
         '#required' => false
       ];
       if(! empty($assignees) ){
-        $form['assignee_id']['#type'] = 'webform_select_other';
+        $form['assignee_id']['#type'] = 'select';
         $form['assignee_id']['#options'] = ['' => '- None -'] + $assignees;
         $form['assignee_id']['#description'] = $this->t('The assignee to which the ticket should be assigned. Set either Ticket Group or Ticket Assignee, but not both. Typically tickets created by webforms should not be assigned to individual users, but tickets that are created as Solved must have an individual assignee. In this case, use the Portland.gov Support service account.');
       }
