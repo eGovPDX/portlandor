@@ -43,6 +43,7 @@ use Drupal\webform\WebformSubmissionForm;
  */
 class ZendeskHandler extends WebformHandlerBase
 {
+  private const JSON_FORM_DATA_FIELD_ID = 17698062540823;
 
   /**
    * @var WebformTokenManagerInterface $token_manager
@@ -371,13 +372,19 @@ class ZendeskHandler extends WebformHandlerBase
         '#title' => $this->t('Ticket Custom Fields'),
         '#help' => $this->t('Custom form fields for the ticket'),
         '#description' => $this->t(
-          '<div id="help">To set the value of one or more custom fields in the new Zendesk ticket, in <a href="https://learn.getgrav.org/16/advanced/yaml#mappings" target="_blank">YAML format</a>, specify a list of pairs consisting of IDs and values. You may find the custom field ID when viewing the list of <a href="https://'.$zendesk_subdomain.'.zendesk.com/agent/admin/ticket_fields" target="_blank">Ticket Fields</a> in Zendesk, or by clicking "<strong>Field Reference</strong>" below for a list of available fields. Values may be plain text, or Drupal webform tokens/placeholders. <p class="">Eg. <code class="CodeMirror"><span>12345678</span>: <span>\'foobar\'</span></code></p> </div>'
+          "<div id=\"help\">
+          To set the value of one or more custom fields in the new Zendesk ticket, in <a href=\"https://learn.getgrav.org/16/advanced/yaml#mappings\" target=\"_blank\">YAML format</a>, specify a list of pairs consisting of IDs and values.
+          You may find the custom field ID when viewing the list of <a href=\"https://${zendesk_subdomain}.zendesk.com/agent/admin/ticket_fields\" target=\"_blank\">Ticket Fields</a> in Zendesk, or by clicking <strong>Field Reference</strong>
+          below for a list of available fields. Values may be a plain text string (with tokens), or an array with the second value specifying a field to get marked as distinct in the JSON form data.
+          e.g. <code class=\"CodeMirror\">12345678: ['[webform_submission:values:foo]', 'foo']</code></div>"
         ),
         '#default_value' => $this->configuration['custom_fields'],
         '#description_display' => 'before',
         '#weight' => 90,
         '#attributes' => [
-          'placeholder' => '146455678: \'[webform_submission:value:email]\''
+          'placeholder' => "124819322: 'my constant value'\n" .
+          "382832843: '[webform_submission:values:multi_select:0:checked]'\n" .
+          "146455678: ['[webform_submission:values:contact_email]', 'contact_email']"
         ],
         '#required' => false,
         '#more_title' => 'Field Reference',
@@ -505,8 +512,11 @@ class ZendeskHandler extends WebformHandlerBase
     $custom_fields = Yaml::decode($request['custom_fields']);
     unset($request['custom_fields']);
     $request['custom_fields'] = [];
-    if($custom_fields) {
-      foreach ($custom_fields as $key => $value) {
+    if ($custom_fields) {
+      foreach ($custom_fields as $key => $raw_value) {
+        // if value is an array of [token, field_name], extract the token which is what we want.
+        // else use the value as the token
+        $value = is_array($raw_value) ? $raw_value[0] : $raw_value;
 
         // KLUGE: this is a kludge to prevent querystring ampersands from being escaped in the resolution_url custom field,
         // which prevents the URL from being usable in Zendesk emails, since it doesn't unescape them in triggers. For the
@@ -531,6 +541,47 @@ class ZendeskHandler extends WebformHandlerBase
         ];
       }
     }
+
+    // retrieve the name of the field in which to store the created Zendesk Ticket ID
+    $zendesk_ticket_id_field_name = $configuration['ticket_id_field'];
+
+    // an array of [field_name => custom_field_id] for each webform field that has an associated Zendesk custom field
+    $webform_fields_with_distinct_zendesk_fields = is_array($custom_fields) ? array_flip(array_map(
+      fn($val) => $val[1],
+      array_filter($custom_fields, fn ($val) => is_array($val) && count($val) === 2),
+    )) : [];
+    $json_form_data = [];
+    foreach ($submission_fields['data'] as $key => $value) {
+      // exclude ticket ID from json as it will always be empty at this point
+      if ($key === $zendesk_ticket_id_field_name) continue;
+
+      // check if composite element
+      if (is_array($value) && !array_is_list($value)) {
+        foreach ($value as $child_key => $child_value) {
+          $composite_key = $key . ':' . $child_key;
+          $json_form_data[$composite_key] = [
+            'value' => $child_value,
+          ];
+
+          if (array_key_exists($composite_key, $webform_fields_with_distinct_zendesk_fields)) {
+            $json_form_data[$composite_key]['ticket_field_id'] = $webform_fields_with_distinct_zendesk_fields[$composite_key];
+          }
+        }
+      } else {
+        $json_form_data[$key] = [
+          'value' => $value,
+        ];
+
+        if (array_key_exists($key, $webform_fields_with_distinct_zendesk_fields)) {
+          $json_form_data[$key]['ticket_field_id'] = $webform_fields_with_distinct_zendesk_fields[$key];
+        }
+      }
+    }
+
+    $request['custom_fields'][] = [
+      'id' => self::JSON_FORM_DATA_FIELD_ID,
+      'value' => json_encode($json_form_data),
+    ];
 
     // set external_id to connect zendesk ticket with submission ID
     $request['external_id'] = $webform_submission->id();
@@ -582,9 +633,6 @@ class ZendeskHandler extends WebformHandlerBase
 
       // create ticket
       $new_ticket = $client->tickets()->create($request);
-
-      // retrieve the name of the field in which to store the created Zendesk Ticket ID
-      $zendesk_ticket_id_field_name = $configuration['ticket_id_field'];
 
       // retrieve submission data
       $data = $webform_submission->getData();
