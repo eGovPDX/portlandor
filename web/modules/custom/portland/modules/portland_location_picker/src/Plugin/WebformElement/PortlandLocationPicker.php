@@ -144,7 +144,11 @@ class PortlandLocationPicker extends WebformCompositeBase {
   public function prepare(array &$element, WebformSubmissionInterface $webform_submission = NULL) {
     parent::prepare($element, $webform_submission);
 
-    $elementId = $element['#webform_key'];
+    $element_id = "report_location";
+    
+    if (array_key_exists("#webform_key", $element)) {
+      $element_id = $element['#webform_key'];
+    }
 
     $verifiedAddresses = array_key_exists('#verified_addresses', $element) ? $element['#verified_addresses'] : FALSE;
     $primaryLayerSource = array_key_exists('#primary_layer_source', $element) ? $element['#primary_layer_source'] : "";
@@ -164,7 +168,7 @@ class PortlandLocationPicker extends WebformCompositeBase {
     $locationTypes = array_key_exists('#location_types', $element) ? $element['#location_types'] : 'park,row,stream,street,taxlot,trail,waterbody';
 
     $element['#attached']['drupalSettings']['webform']['portland_location_picker']['verified_addresses'] = $verifiedAddresses;
-    $element['#attached']['drupalSettings']['webform']['portland_location_picker']['element_id'] = $elementId;
+    $element['#attached']['drupalSettings']['webform']['portland_location_picker']['element_id'] = $element_id;
     $element['#attached']['drupalSettings']['webform']['portland_location_picker']['primary_layer_source'] = $primaryLayerSource;
     $element['#attached']['drupalSettings']['webform']['portland_location_picker']['incidents_layer_source'] = $incidentsLayerSource;
     $element['#attached']['drupalSettings']['webform']['portland_location_picker']['regions_layer_source'] = $regionsLayerSource;
