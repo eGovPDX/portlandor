@@ -53,7 +53,8 @@
         const PRIMARY_LAYER_TYPE = {
           Asset: "asset",
           Incident: "incident",
-          Region: "region"
+          Region: "region",
+          RegionHidden: "region-hidden"
         }
         const PRIMARY_LAYER_BEHAVIOR = {
           Selection: "selection",
@@ -575,16 +576,25 @@
               });
             },
             onEachFeature: function (feature, layer) {
+              if (primaryLayerType == PRIMARY_LAYER_TYPE.RegionHidden) {
+                layer.setStyle({ opacity: 0, fillOpacity: 0 });
+              } else {
+                // if this is a region, disable autopan. otherwise we want it on.
+                var autoPanValue = primaryLayerType == PRIMARY_LAYER_TYPE.Region ? false : true;
+                layer.bindPopup(generatePopupContent(feature), { maxWidth: 250, offset: L.point(0, 0), autoPan: autoPanValue });
 
-              // if this is a region, disable autopan. otherwise we want it on.
-              var autoPanValue = primaryLayerType == PRIMARY_LAYER_TYPE.Region ? false : true;
-              layer.bindPopup(generatePopupContent(feature), { maxWidth: 250, offset: L.point(0, 0), autoPan: autoPanValue });
+                // if region, use mouseover to show popup
+                if (primaryLayerType == PRIMARY_LAYER_TYPE.Region) {
+                  layer.on("mouseover", function (e) { layer.openPopup(e.latlng); });
+                  layer.on("mousemove", function (e) { layer.openPopup(e.latlng); });
+                  layer.on("mouseout", function (e) { layer.closePopup(); });
+                  // layer.on("click", handleMapClick);
+                } else {
+                  // layer.on("click", handleMarkerClick);
+                }
+              }
 
-              // if region, use mouseover to show popup
-              if (primaryLayerType == PRIMARY_LAYER_TYPE.Region) {
-                layer.on("mouseover", function (e) { layer.openPopup(e.latlng); });
-                layer.on("mousemove", function (e) { layer.openPopup(e.latlng); });
-                layer.on("mouseout", function (e) { layer.closePopup(); });
+              if (primaryLayerType == PRIMARY_LAYER_TYPE.Region || primaryLayerType == PRIMARY_LAYER_TYPE.RegionHidden) {
                 layer.on("click", handleMapClick);
               } else {
                 layer.on("click", handleMarkerClick);
@@ -649,7 +659,7 @@
 
         function initRegionsLayer(features, layer) {
           layer = L.geoJson(features, {
-            color: 'blue',
+            color: 'red',
             interactive: false
           }).addTo(map);
         }
@@ -869,7 +879,7 @@
         function checkRegion(latlng) {
           // determine whether click is within a region on the primaryLayer layer, and store the region_id.
           // this is done if the primary layer type is Region, or if the regions layer is populated.
-          if (primaryLayerType == PRIMARY_LAYER_TYPE.Region || regionsLayerSource) {
+          if (primaryLayerType == PRIMARY_LAYER_TYPE.Region || primaryLayerType == PRIMARY_LAYER_TYPE.RegionHidden || regionsLayerSource) {
             var testLayer;
             if (regionsLayer) {
               testLayer = regionsLayer;
