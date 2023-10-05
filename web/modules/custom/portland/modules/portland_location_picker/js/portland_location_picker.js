@@ -431,24 +431,6 @@
               cityBoundaryLayer = L.geoJson(cityBoundaryFeatures, cityLimitsProperties).addTo(map);
               cityBoundaryLayer.municipality = cityBoundaryFeatures[0].properties.CITYNAME;
               console.log("City boundary layer loaded.");
-
-              if (requireCityLimits) {
-                // // NOTE: this is using geojson data from PortlandMaps, which is presumably cached in the browser to avoid
-                // // pummelling the server. it's a much larger file than the city limits, so it's only called in the rare
-                // // case that the widget has been configured for geofencing.
-
-                // NOTE: rather than load the whole municipalities layer, which is complex and large, and then run the
-                // point-in-polygon routine, we're going to just query PortlandMaps for the municipality name for each
-                // click.
-
-                // $.ajax({
-                //   url: MUNICIPALITIES_BOUNDARY_URL, success: function (municipalitiesResponse) {
-                //     municipalitiesFeatures = municipalitiesResponse.features;
-                //     municipalitiesLayer = L.geoJson(municipalitiesFeatures);
-                //     console.log("Municipality boundaries layer loaded.");
-                //   }
-                // });
-              }
             }
           });
         }
