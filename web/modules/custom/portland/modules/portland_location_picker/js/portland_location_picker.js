@@ -5,7 +5,7 @@
 
   // Here's how to reverse geolocate a park. Note the x/y values in the geometry parameter:
   // https://www.portlandmaps.com/arcgis/rest/services/Public/Parks_Misc/MapServer/2/query?geometry=%7B%22x%22%3A-122.55203425884248%2C%22y%22%3A45.53377174783918%2C%22spatialReference%22%3A%7B%22wkid%22%3A4326%7D%7D&geometryType=esriGeometryPoint&spacialRel=esriSpatialRelIntersects&returnGeometry=false&returnTrueCurves=false&returnIdsOnly=false&returnCountOnly=false&returnDistinctValues=false&f=pjson"
-  // returns an object that includes the park name. 
+  // returns an object that includes the park name.
 
   /**
    * Attach the machine-readable name form element behavior.
@@ -82,9 +82,9 @@
 
         // this is a static, modified version of the city limits geoJSON data. it includes a whole-earth polygon as the first polygon,
         // so that the city limits become a hole and everything else can be shaded. this will require us to change how we detect clicks
-        // with in the city limits. 
+        // with in the city limits.
         // original city boundaries geoJSON: https://www.portlandmaps.com/arcgis/rest/services/Public/COP_OpenData_Boundary/MapServer/10/query?where=CITYNAME%20like%20%27Portland%27&outFields=*&outSR=4326&f=geojson
-        const CITY_LIMITS_BOUNDARY_URL = "/modules/custom/portland/modules/portland_location_picker/js/cityboundary.json";
+        const CITY_LIMITS_BOUNDARY_URL = "/modules/custom/portland/modules/portland_location_picker/js/layers/cityboundary.json";
         const MUNICIPALITIES_BOUNDARY_URL = "https://www.portlandmaps.com/arcgis/rest/services/Public/COP_OpenData_Boundary/MapServer/10/query?outFields=*&where=1%3D1&f=geojson";
 
         // GLOBALS //////////
@@ -475,7 +475,7 @@
 
                         incidentsLoop:
                         // loop backwards becasue we're going to remove incidents that are attached to assets
-                        // and move the incident 
+                        // and move the incident
                         for (var j = incidentsFeatures.length - 1; j >= 0; j--) {
 
                           // is the incident associated with the asset?
@@ -840,7 +840,7 @@
 
         function doMapClick(latlng) {
           // normally when the map is clicked, we want to zoom to the clicked location
-          // and perform a reverse lookup. there are some cases where we may want to 
+          // and perform a reverse lookup. there are some cases where we may want to
           // perform additional actions. for example, if location type = park, we also
           // need to do a reverse parks lookup and adjust the park selector accordingly.
 
@@ -919,7 +919,7 @@
           captureSelectedAssetMarkerData(marker);
 
           // need to call reverseGeolocate in order to capture nearest address,
-          // this is the one instance where we don't want to zoom and center when clicking 
+          // this is the one instance where we don't want to zoom and center when clicking
           // an existing marker (2nd argument = false).
           reverseGeolocate(marker.latlng, false);
         }
@@ -1065,7 +1065,7 @@
 
               // set location radio button
               // report_location[location_type]
-              var radioInputs = $('input[name=' + elementId + '\\[location_type\\]]'); 
+              var radioInputs = $('input[name=' + elementId + '\\[location_type\\]]');
               var radioValue = calculateLocationType(results);
               for (var i = 0; i < radioInputs.length; i++) {
                 if (radioInputs[i].value == radioValue) {
@@ -1136,7 +1136,7 @@
           // $("#location_type_hidden").val(type);
           // console.log(type);
 
-          
+
         }
 
         function redrawMap() {
@@ -1343,7 +1343,7 @@
           });
         }
 
-        // takes selected coordinates and performs reverse geolocation using the PortlandMaps API. 
+        // takes selected coordinates and performs reverse geolocation using the PortlandMaps API.
         // gets called by:
         // - function handleMapClick(e)
         // - function handleLocateMeFound(e)
@@ -1422,7 +1422,7 @@
                 //   setHiddenLocationType("other");
                 // }
 
-                // $('#location_park').val('0'); // set park selector to 
+                // $('#location_park').val('0'); // set park selector to
                 // $('#location_park').trigger('change');
 
                 reverseGeolocateNotPark(lat, lng, zoomAndCenter);
