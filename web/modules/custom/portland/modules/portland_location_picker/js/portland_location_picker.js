@@ -828,27 +828,6 @@
         // HELPER FUNCTIONS ///////////////////////////////
 
         function handleCityLimits(latlng, muniLayer = municipalitiesLayer) {
-          // we want to call this late in the event handling process, so that previously collected coordinates
-          // or address values are cleared first.
-
-          // if (requireCityLimits || requireCityLimitsPlusParks) {
-          //   // clicks outside boundary will cause error message to be displayed and marker not set.
-          //   // call API query to determine whether click is within city boundary.
-
-          //   // check if within city limits
-          //   if ([withinCityLimits]) {
-          //     return true;
-          //   } else {
-          //     if (requireCityLimitsPlusParks) {
-          //       if ([withinParksLimits]) {
-          //         return true;
-          //       }
-          //     }
-          //     return false;
-          //   }
-
-          // }
-
           if (requireCityLimits || requireCityLimitsPlusParks) {
             var success = false;
             $.ajax({
@@ -890,32 +869,6 @@
             })
             return success;
           }
-          
-
-
-          // if (requireCityLimits && displayCityLimits) {
-          //   // check if click is within Portland city limits. if not, use js alert to show error message and return null.
-          //   var inLayer = leafletPip.pointInLayer(latlng, muniLayer, false);
-          //   if (inLayer.length > 0) {
-          //     var municipalityName = inLayer[0].feature.properties.CITYNAME;
-          //     if (municipalityName != "Portland") {
-          //       console.log("Clicked in " + municipalityName + ".");
-          //       showStatusModal(CITY_LIMITS_MESSAGE);
-          //       return false;
-          //     }
-          //   } else {
-          //     console.log("Clicked other area.");
-          //     console.log('Coordinates:' + latlng[0] + ', ' + latlng[1])
-          //     showStatusModal(CITY_LIMITS_MESSAGE);
-          //     return false;
-          //   }
-
-          //   $('#location_is_portland').val("Yes");
-          //   console.log("Is Portland: " + $('#location_is_portland').val());
-          //   $('#location_municipality_name').val(cityBoundaryLayer.municipality);
-          //   console.log("Municipality name: " + $('#location_municipality_name').val());
-          // }
-          // return true;
         }
 
         function buildCheckCityLimitsFenceUrl(latlng) {
