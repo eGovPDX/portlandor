@@ -144,7 +144,11 @@ class PortlandLocationPicker extends WebformCompositeBase {
   public function prepare(array &$element, WebformSubmissionInterface $webform_submission = NULL) {
     parent::prepare($element, $webform_submission);
 
-    $elementId = $element['#webform_key'];
+    $element_id = "report_location";
+    
+    if (array_key_exists("#webform_key", $element)) {
+      $element_id = $element['#webform_key'];
+    }
 
     $verifiedAddresses = array_key_exists('#verified_addresses', $element) ? $element['#verified_addresses'] : FALSE;
     $primaryLayerSource = array_key_exists('#primary_layer_source', $element) ? $element['#primary_layer_source'] : "";
@@ -159,12 +163,13 @@ class PortlandLocationPicker extends WebformCompositeBase {
     $verifyButtonText = array_key_exists('#verify_button_text', $element) ? $element['#verify_button_text'] : ($verifiedAddresses ? "Verify" : "Find");
     $primaryFeatureName = array_key_exists('#primary_feature_name', $element) ? $element['#primary_feature_name'] : "";
     $featureLayerVisibleZoom = array_key_exists('#feature_layer_visible_zoom', $element) ? $element['#feature_layer_visible_zoom'] : "";
-    $requireCityLimits = array_key_exists('#require_city_limits', $element) ? $element['#require_city_limits'] : FALSE;
     $displayCityLimits = array_key_exists('#display_city_limits', $element) ? $element['#display_city_limits'] : TRUE;
+    $requireCityLimits = array_key_exists('#require_city_limits', $element) ? $element['#require_city_limits'] : FALSE;
+    $requireCityLimitsPlusParks = array_key_exists('#require_city_limits_plus_parks', $element) ? $element['#require_city_limits_plus_parks'] : FALSE;
     $locationTypes = array_key_exists('#location_types', $element) ? $element['#location_types'] : 'park,row,stream,street,taxlot,trail,waterbody';
 
     $element['#attached']['drupalSettings']['webform']['portland_location_picker']['verified_addresses'] = $verifiedAddresses;
-    $element['#attached']['drupalSettings']['webform']['portland_location_picker']['element_id'] = $elementId;
+    $element['#attached']['drupalSettings']['webform']['portland_location_picker']['element_id'] = $element_id;
     $element['#attached']['drupalSettings']['webform']['portland_location_picker']['primary_layer_source'] = $primaryLayerSource;
     $element['#attached']['drupalSettings']['webform']['portland_location_picker']['incidents_layer_source'] = $incidentsLayerSource;
     $element['#attached']['drupalSettings']['webform']['portland_location_picker']['regions_layer_source'] = $regionsLayerSource;
@@ -177,8 +182,9 @@ class PortlandLocationPicker extends WebformCompositeBase {
     $element['#attached']['drupalSettings']['webform']['portland_location_picker']['verify_button_text'] = $verifyButtonText;
     $element['#attached']['drupalSettings']['webform']['portland_location_picker']['primary_feature_name'] = $primaryFeatureName;
     $element['#attached']['drupalSettings']['webform']['portland_location_picker']['feature_layer_visible_zoom'] = $featureLayerVisibleZoom;
-    $element['#attached']['drupalSettings']['webform']['portland_location_picker']['require_city_limits'] = $requireCityLimits;
     $element['#attached']['drupalSettings']['webform']['portland_location_picker']['display_city_limits'] = $displayCityLimits;
+    $element['#attached']['drupalSettings']['webform']['portland_location_picker']['require_city_limits'] = $requireCityLimits;
+    $element['#attached']['drupalSettings']['webform']['portland_location_picker']['require_city_limits_plus_parks'] = $requireCityLimitsPlusParks;
     $element['#attached']['drupalSettings']['webform']['portland_location_picker']['location_types'] = $locationTypes;
   }
 
