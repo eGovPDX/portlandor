@@ -42,7 +42,7 @@
         const SOLVED_ISSUE_MESSAGE = "This issue was recently solved. If that's not the case, or the issue has reoccured, please submit a new report.";
         const ASSET_ONLY_SELECTION_MESSAGE = "We have zoomed in on the address you provided, but this map only allows you to select existing asset markers. There may not be any in the current view. Please search again or use the Locate Me button in the lower-right corner of the map.";
         const VERIFIED_NO_COORDS = "The address you entered is valid, but an error occurred, and it can't be shown on the map. Please zoom in and find the desired location, then click it to set a marker.";
-        const CITY_LIMITS_MESSAGE = "<b>The location you selected is not managed by the City of Portland.</b><br><br>If you need help submitting your this form, please contact the <a href='https://www.portland.gov/311'>PDX 311 Customer Service program</a>."
+        const CITY_LIMITS_MESSAGE = "<b>The location you selected is not managed by the City of Portland.</b><br><br>If you need help submitting this form, please contact the <a href='https://www.portland.gov/311'>PDX 311 Customer Service program</a>."
         const VERIFY_ADDRESS_TEXT = "Enter an address, then click the button to verify the location. Or click the map to select a location and determine the verified address.";
         const DEFAULT_FEATURE_ICON_URL = "/modules/custom/portland/modules/portland_location_picker/images/map_marker_default.png";
         const DEFAULT_INCIDENT_ICON_URL = "/modules/custom/portland/modules/portland_location_picker/images/map_marker_incident.png";
