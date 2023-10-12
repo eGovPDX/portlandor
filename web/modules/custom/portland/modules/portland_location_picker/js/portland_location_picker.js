@@ -42,18 +42,21 @@
         const SOLVED_ISSUE_MESSAGE = "This issue was recently solved. If that's not the case, or the issue has reoccured, please submit a new report.";
         const ASSET_ONLY_SELECTION_MESSAGE = "We have zoomed in on the address you provided, but this map only allows you to select existing asset markers. There may not be any in the current view. Please search again or use the Locate Me button in the lower-right corner of the map.";
         const VERIFIED_NO_COORDS = "The address you entered is valid, but an error occurred, and it can't be shown on the map. Please zoom in and find the desired location, then click it to set a marker.";
-        const CITY_LIMITS_MESSAGE = "The location you selected is not within the Portland city limits. Please try again."
+        const CITY_LIMITS_MESSAGE = "<b>The location you selected is not managed by the City of Portland.</b><br><br>If you need help submitting this form, please contact the <a href='https://www.portland.gov/311'>PDX 311 Customer Service program</a>."
         const VERIFY_ADDRESS_TEXT = "Enter an address, then click the button to verify the location. Or click the map to select a location and determine the verified address.";
         const DEFAULT_FEATURE_ICON_URL = "/modules/custom/portland/modules/portland_location_picker/images/map_marker_default.png";
         const DEFAULT_INCIDENT_ICON_URL = "/modules/custom/portland/modules/portland_location_picker/images/map_marker_incident.png";
         const DEFAULT_SOLVED_ICON_URL = "/modules/custom/portland/modules/portland_location_picker/images/map_marker_incident_solved.png";
         const LOCATION_TYPE_LOOKUP_URL = "https://www.portlandmaps.com/api/intersects/?includeDetail=true&";
+        const API_BOUNDARY_URL = "https://www.portlandmaps.com/arcgis/rest/services/Public/Boundaries/MapServer/0/query";
+        const API_PARKS_BOUNDARY_URL = "https://www.portlandmaps.com/arcgis/rest/services/Public/Parks_Misc/MapServer/2/query";
         const PARKS_REVGEOCODE_URL = "https://www.portlandmaps.com/arcgis/rest/services/Public/Parks_Misc/MapServer/2/query?geometry=%7B%22x%22%3A${lng}%2C%22y%22%3A${lat}%2C%22spatialReference%22%3A%7B%22wkid%22%3A4326%7D%7D&geometryType=esriGeometryPoint&spacialRel=esriSpatialRelIntersects&returnGeometry=false&returnTrueCurves=false&returnIdsOnly=false&returnCountOnly=false&returnDistinctValues=false&f=pjson";
         const REVGEOCODE_URL = "https://www.portlandmaps.com/arcgis/rest/services/Public/Geocoding_PDX/GeocodeServer/reverseGeocode?location=%7B%22x%22%3A${lng}%2C+%22y%22%3A${lat}%2C+%22spatialReference%22%3A%7B%22wkid%22+%3A+4326%7D%7D&distance=100&langCode=&locationType=&featureTypes=&outSR=4326&returnIntersection=false&f=json";
         const PRIMARY_LAYER_TYPE = {
           Asset: "asset",
           Incident: "incident",
-          Region: "region"
+          Region: "region",
+          RegionHidden: "region-hidden"
         }
         const PRIMARY_LAYER_BEHAVIOR = {
           Selection: "selection",
@@ -137,8 +140,9 @@
         var verifyButtonText = drupalSettings.webform ? drupalSettings.webform.portland_location_picker.verify_button_text : "";
         var primaryFeatureName = drupalSettings.webform && drupalSettings.webform.portland_location_picker.primary_feature_name ? drupalSettings.webform.portland_location_picker.primary_feature_name : 'asset';
         var featureLayerVisibleZoom = drupalSettings.webform && drupalSettings.webform.portland_location_picker.feature_layer_visible_zoom ? drupalSettings.webform.portland_location_picker.feature_layer_visible_zoom : FEATURE_LAYER_VISIBLE_ZOOM;
-        var requireCityLimits = drupalSettings.webform && drupalSettings.webform.portland_location_picker.require_city_limits === false ? false : true;
+        var requireCityLimits = drupalSettings.webform && drupalSettings.webform.portland_location_picker.require_city_limits === true ? true : false;
         var displayCityLimits = drupalSettings.webform && drupalSettings.webform.portland_location_picker.display_city_limits === false ? false : true;
+        var requireCityLimitsPlusParks = drupalSettings.webform && drupalSettings.webform.portland_location_picker.require_city_limits_plus_parks === true ? true : false;
         var locationTypes = drupalSettings.webform && drupalSettings.webform.portland_location_picker.location_types === false ? false : true;
         var apiKey = drupalSettings.portlandmaps_api_key;
 
@@ -427,19 +431,6 @@
               cityBoundaryLayer = L.geoJson(cityBoundaryFeatures, cityLimitsProperties).addTo(map);
               cityBoundaryLayer.municipality = cityBoundaryFeatures[0].properties.CITYNAME;
               console.log("City boundary layer loaded.");
-
-              if (requireCityLimits) {
-                // NOTE: this is using geojson data from PortlandMaps, which is presumably cached in the browser to avoid
-                // pummelling the server. it's a much larger file than the city limits, so it's only called in the rare
-                // case that the widget has been configured for geofencing.
-                $.ajax({
-                  url: MUNICIPALITIES_BOUNDARY_URL, success: function (municipalitiesResponse) {
-                    municipalitiesFeatures = municipalitiesResponse.features;
-                    municipalitiesLayer = L.geoJson(municipalitiesFeatures);
-                    console.log("Municipality boundaries layer loaded.");
-                  }
-                });
-              }
             }
           });
         }
@@ -575,16 +566,25 @@
               });
             },
             onEachFeature: function (feature, layer) {
+              if (primaryLayerType == PRIMARY_LAYER_TYPE.RegionHidden) {
+                layer.setStyle({ opacity: 0, fillOpacity: 0 });
+              } else {
+                // if this is a region, disable autopan. otherwise we want it on.
+                var autoPanValue = primaryLayerType == PRIMARY_LAYER_TYPE.Region ? false : true;
+                layer.bindPopup(generatePopupContent(feature), { maxWidth: 250, offset: L.point(0, 0), autoPan: autoPanValue });
 
-              // if this is a region, disable autopan. otherwise we want it on.
-              var autoPanValue = primaryLayerType == PRIMARY_LAYER_TYPE.Region ? false : true;
-              layer.bindPopup(generatePopupContent(feature), { maxWidth: 250, offset: L.point(0, 0), autoPan: autoPanValue });
+                // if region, use mouseover to show popup
+                if (primaryLayerType == PRIMARY_LAYER_TYPE.Region) {
+                  layer.on("mouseover", function (e) { layer.openPopup(e.latlng); });
+                  layer.on("mousemove", function (e) { layer.openPopup(e.latlng); });
+                  layer.on("mouseout", function (e) { layer.closePopup(); });
+                  // layer.on("click", handleMapClick);
+                } else {
+                  // layer.on("click", handleMarkerClick);
+                }
+              }
 
-              // if region, use mouseover to show popup
-              if (primaryLayerType == PRIMARY_LAYER_TYPE.Region) {
-                layer.on("mouseover", function (e) { layer.openPopup(e.latlng); });
-                layer.on("mousemove", function (e) { layer.openPopup(e.latlng); });
-                layer.on("mouseout", function (e) { layer.closePopup(); });
+              if (primaryLayerType == PRIMARY_LAYER_TYPE.Region || primaryLayerType == PRIMARY_LAYER_TYPE.RegionHidden) {
                 layer.on("click", handleMapClick);
               } else {
                 layer.on("click", handleMarkerClick);
@@ -649,7 +649,7 @@
 
         function initRegionsLayer(features, layer) {
           layer = L.geoJson(features, {
-            color: 'blue',
+            color: 'red',
             interactive: false
           }).addTo(map);
         }
@@ -810,32 +810,86 @@
         // HELPER FUNCTIONS ///////////////////////////////
 
         function handleCityLimits(latlng, muniLayer = municipalitiesLayer) {
-          // we want to call this late in the event handling process, so that previously collected coordinates
-          // or address values are cleared first.
+          if (requireCityLimits || requireCityLimitsPlusParks) {
+            var success = false;
+            // NOTE: these are synchronous ajax calls because this function needs to return true or false.
+            $.ajax({
+              async: false,
+              url: buildCheckCityLimitsFenceUrl(latlng),
+              success: function (cityBoundaryResponse) {
+                cityBoundaryResponse = JSON.parse(cityBoundaryResponse);
 
-          if (requireCityLimits && displayCityLimits) {
-            // check if click is within Portland city limits. if not, use js alert to show error message and return null.
-            var inLayer = leafletPip.pointInLayer(latlng, muniLayer, false);
-            if (inLayer.length > 0) {
-              var municipalityName = inLayer[0].feature.properties.CITYNAME;
-              if (municipalityName != "Portland") {
-                console.log("Clicked in " + municipalityName + ".");
-                showStatusModal(CITY_LIMITS_MESSAGE);
-                return false;
+                if (!isBoundaryCheckSuccessful(cityBoundaryResponse, "portland")) {
+                  // not in city boundary. if configured, try parks boundaries.
+                  if (requireCityLimitsPlusParks) {
+                    $.ajax({
+                      async: false,
+                      url: buildCheckCityLimitsPlusParksFenceUrl(latlng),
+                      success: function (parksBoundaryResponse) {
+                        parksBoundaryResponse = JSON.parse(parksBoundaryResponse);
+                        if (!isBoundaryCheckSuccessful(parksBoundaryResponse)) {
+                          // not in parks boundary either, display error message
+                          showStatusModal(CITY_LIMITS_MESSAGE);
+                          success = false;
+                        } else {
+                          // is within extended city boundary
+                          $('#location_is_portland').val("Yes");
+                          console.log("Within geofence (typically Portland): " + $('#location_is_portland').val());
+                          $('#location_municipality_name').val(cityBoundaryLayer.municipality);
+                          console.log("Municipality: " + $('#location_municipality_name').val());
+                          success = true;
+                        }
+                      },
+                      error: function (e) {
+                        // Handle any error cases
+                        showErrorModal(response.error.message);
+                      }
+                    });
+                  } else {
+                    showStatusModal(CITY_LIMITS_MESSAGE);
+                  }
+                } else {
+                  // is within city boundary
+                  $('#location_is_portland').val("Yes");
+                  console.log("Within geofence (typically Portland): " + $('#location_is_portland').val());
+                  $('#location_municipality_name').val(cityBoundaryLayer.municipality);
+                  console.log("Municipality: " + $('#location_municipality_name').val());
+                  success = true;
+                }
+              },
+              error: function (e) {
+                // Handle any error cases
+                showErrorModal(response.error.message);
               }
-            } else {
-              console.log("Clicked other area.");
-              console.log('Coordinates:' + latlng[0] + ', ' + latlng[1])
-              showStatusModal(CITY_LIMITS_MESSAGE);
-              return false;
-            }
-
-            $('#location_is_portland').val("Yes");
-            console.log("Is Portland: " + $('#location_is_portland').val());
-            $('#location_municipality_name').val(cityBoundaryLayer.municipality);
-            console.log("Municipality name: " + $('#location_municipality_name').val());
+            })
+            return success;
+          } else {
+            return true;
           }
-          return true;
+        }
+
+        function buildCheckCityLimitsFenceUrl(latlng) {
+          var strGeometry = "%7B%22x%22%3A" + latlng.lng + "%2C%22y%22%3A" + latlng.lat + "%2C%22spatialReference%22%3A%7B%22wkid%22%3A4326%7D%7D";
+          return API_BOUNDARY_URL + "?" +
+            "geometry=" + strGeometry +
+            "&geometryType=esriGeometryPoint&spacialRel=esriSpatialRelIntersects" +
+            "&returnGeometry=false&returnTrueCurves=false&returnIdsOnly=false&returnCountOnly=false&returnDistinctValues=false&f=pjson";
+        }
+
+        function buildCheckCityLimitsPlusParksFenceUrl(latlng) {
+          var strGeometry = "%7B%22x%22%3A" + latlng.lng + "%2C%22y%22%3A" + latlng.lat + "%2C%22spatialReference%22%3A%7B%22wkid%22%3A4326%7D%7D";
+          return API_PARKS_BOUNDARY_URL + "?" +
+            "geometry=" + strGeometry +
+            "&geometryType=esriGeometryPoint&spacialRel=esriSpatialRelIntersects" +
+            "&returnGeometry=false&returnTrueCurves=false&returnIdsOnly=false&returnCountOnly=false&returnDistinctValues=false&f=pjson";
+        }
+
+        function isBoundaryCheckSuccessful(response, cityName = null) {
+          if (!response.features || response.features.length < 1 || (cityName && response.features[0].attributes.CITYNAME.toLowerCase() != cityName.toLowerCase())) {
+            return false;
+          } else {
+            return true;
+          }
         }
 
         function doMapClick(latlng) {
@@ -869,7 +923,7 @@
         function checkRegion(latlng) {
           // determine whether click is within a region on the primaryLayer layer, and store the region_id.
           // this is done if the primary layer type is Region, or if the regions layer is populated.
-          if (primaryLayerType == PRIMARY_LAYER_TYPE.Region || regionsLayerSource) {
+          if (primaryLayerType == PRIMARY_LAYER_TYPE.Region || primaryLayerType == PRIMARY_LAYER_TYPE.RegionHidden || regionsLayerSource) {
             var testLayer;
             if (regionsLayer) {
               testLayer = regionsLayer;
@@ -1467,9 +1521,14 @@
                 return false;
               }
 
-              if (handleCityLimits(L.latLng(lat, lng))) {
+              var isCityLimits = handleCityLimits(L.latLng(lat, lng));
+              if (isCityLimits) {
                 processReverseLocationData(response, lat, lng, zoomAndCenter);
               }
+            },
+            error: function (e) {
+              // Handle any error cases
+              console.error(e);
             }
           });
         }
