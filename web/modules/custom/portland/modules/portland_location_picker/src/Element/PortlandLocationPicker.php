@@ -174,10 +174,12 @@ class PortlandLocationPicker extends WebformCompositeBase {
       $location_required_error = "Please select an asset on the map that you'd like to report. You may need to zoom in to see asset markers, or there may not be any reportable assets within view.";
     }
 
+    //       '#title_display' => 'invisible',
+
     $element['location_lat'] = [
-      '#type' => 'hidden',
+      '#type' => 'textfield',
       '#title' => t('Location'),
-      '#title_display' => 'invisible',
+      '#title_display' => 'above',
       '#attributes' => ['class' => ['location-lat'], 'id' => 'location_lat'],
       '#required_error' => $location_required_error,
     ];
@@ -185,21 +187,21 @@ class PortlandLocationPicker extends WebformCompositeBase {
     // referenced in too many config files from webform handlers, so this is the one place it will
     // remain "lon"...
     $element['location_lon'] = [
-      '#type' => 'hidden',
+      '#type' => 'textfield',
       '#title' => t('Longitude'),
-      '#title_display' => 'invisible',
+      '#title_display' => 'above',
       '#attributes' => ['class' => ['location-lng'], 'id' => 'location_lon'],
     ];
     $element['location_x'] = [
-      '#type' => 'hidden',
+      '#type' => 'textfield',
       '#title' => t('Web Mercator x coordinate'),
-      '#title_display' => 'invisible',
+      '#title_display' => 'above',
       '#attributes' => ['class' => ['location-x'], 'id' => 'location_x'],
     ];
     $element['location_y'] = [
-      '#type' => 'hidden',
+      '#type' => 'textfield',
       '#title' => t('Web Mercator y coordinate'),
-      '#title_display' => 'invisible',
+      '#title_display' => 'above',
       '#attributes' => ['class' => ['location-y'], 'id' => 'location_y'],
     ];
     $element['place_name'] = [
