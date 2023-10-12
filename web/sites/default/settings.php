@@ -199,3 +199,7 @@ $ddev_settings = dirname(__FILE__) . '/settings.ddev.php';
 if (getenv('IS_DDEV_PROJECT') == 'true' && is_readable($ddev_settings)) {
   require $ddev_settings;
 }
+
+// Set the MySQL transaction isolation level
+// See https://www.drupal.org/docs/getting-started/system-requirements/setting-the-mysql-transaction-isolation-level
+$databases['default']['default']['init_commands']['isolation_level'] = 'SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED';

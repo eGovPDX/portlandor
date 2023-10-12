@@ -52,7 +52,10 @@ function portland_media_embed_helper_form_entity_embed_dialog_alter(array &$form
     $is_iframe = (empty($media)) ? false : ($media->bundle() == 'iframe_embed');
     if(!$hide_fields) $hide_fields = $is_iframe;
   }
-  else if ( isset($user_input["attributes"]["data-aspect-ratio"]) ) {
+  else if ( isset($user_input["attributes"]["data-aspect-ratio"]) 
+    // This is the only way to avoid adding Aspect Ratio form element when "Select a different entity" is clicked
+    && $user_input["_triggering_element_value"] != "Back" 
+    ) {
     $is_iframe = true;
     if(!$hide_fields) $hide_fields = $is_iframe;
   }
@@ -162,22 +165,6 @@ function portland_media_embed_helper_form_entity_embed_dialog_alter(array &$form
           '#description' => t('Provide an alternative link text to the document.  Leave blank to use the document\'s display name.'),
           '#default_value' => $entity_element['data-alt-link-text'] ?? '',
         ];
-      }
-    }
-  }
-
-  // load selected media entity and get Caption value to provide as default value
-  if (isset($form['attributes']['data-caption'])) {
-    $input = $form_state->getUserInput();
-    if (isset($input["entity_browser"]["entity_ids"])) {
-      $media_id = $input["entity_browser"]["entity_ids"];
-      $id = explode(":", $media_id);
-      if (count($id) == 2) {
-        $media = Media::load($id[1]);
-        if ($media->hasField("field_caption")) {
-          $form['attributes']['data-caption']['#maxlength'] = 300;
-          $form['attributes']['data-caption']['#default_value'] = $media->get("field_caption")->value;
-        }
       }
     }
   }

@@ -246,7 +246,7 @@ class PortlandLocationPicker extends WebformCompositeBase {
     ];
     $element['location_is_portland'] = [
       '#type' => 'hidden',
-      '#title' => t('Within Portland City Limits?'),
+      '#title' => t('Within the configured geofence (typcially Portland)?'),
       '#title_display' => 'invisible',
       '#attributes' => ['class' => ['location-is-portland'], 'id' => 'location_is_portland'],
       '#default_value' => "TRUE"

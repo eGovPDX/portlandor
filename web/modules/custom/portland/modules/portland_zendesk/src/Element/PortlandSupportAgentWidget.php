@@ -47,7 +47,7 @@ class PortlandSupportAgentWidget extends WebformCompositeBase {
       '#type' => 'markup',
       '#title' => t('Support Agent Widget'),
       '#title_display' => 'invisible',
-      '#markup' => '<h2>Customer Service Use Only</h2>',
+      '#markup' => '<h2>Customer Service Use Only</h2><div><strong>You are viewing this form as an employee. To submit a report as a community member, please log out.</strong></div>',
     ];
     $element['employee_email'] = [
       '#type' => 'textfield',
@@ -60,6 +60,17 @@ class PortlandSupportAgentWidget extends WebformCompositeBase {
       '#title' => t('Zendesk Request Number'),
       '#id' => 'zendesk_request_number',
       '#description' => 'If you are completing this webform on behalf of a community member, please enter the Zendesk request number of the request created to track the interaction. In addition to creating a new request for this report, the existing interaction request will be updated and linked.',
+    ];
+    $element['employee_notes_panel'] = [
+      '#type' => 'details',
+      '#title' => 'Employee Notes',
+      '#format' => 'details-closed',
+    ];
+    $element['employee_notes_panel']['employee_notes'] = [
+      '#type' => 'textarea',
+      '#title' => 'Employee Notes',
+      '#title_display' => 'invisible',
+      '#description' => 'Use this area as a scratch pad or as a field to add additional notes to the request. Anything submitted in this field will be included in the request description and may be visible to the requester.'
     ];
     $element['test_submission'] = [
       '#type' => 'checkbox',

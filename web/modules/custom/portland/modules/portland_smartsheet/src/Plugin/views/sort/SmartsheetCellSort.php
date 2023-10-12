@@ -53,7 +53,7 @@ class SmartsheetCellSort extends SortPluginBase {
       '#description' => $this->t('The column ID from which to sort the rows'),
       '#default_value' => $this->options['column_id'],
       '#options' => $options,
-      '#required' => TRUE
+      '#required' => true
     ];
   }
 }
