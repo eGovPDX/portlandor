@@ -75,7 +75,7 @@ class PortlandSupportAgentWidget extends WebformCompositeBase {
     $element['escalate_issue'] = [
       '#type' => 'checkbox',
       '#title' => t('Escalate this issue'),
-      '#id' => 'test_submission',
+      '#id' => 'escalate_issue',
     ];
     $element['test_submission'] = [
       '#type' => 'checkbox',
