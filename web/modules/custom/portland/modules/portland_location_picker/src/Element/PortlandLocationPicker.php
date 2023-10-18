@@ -77,13 +77,13 @@ class PortlandLocationPicker extends WebformCompositeBase {
       '#title_display' => 'before',
       '#options' => [
         'street' => t('Street, sidewalk, highway, trail, or other public right-of-way'),
-        'private' => t('Private property, public building, or other location with an address'),
+        'private' => t('Private property, such as a home, apartment building, or business'),
         'park' => t('A public park, natural area, or city-operated community center'),
         'waterway' => t('A river, stream, or other waterway'),
         'other' => t('I\'m not sure')
       ],
       '#options_display' => 'one_column',
-      '#default_value' => 'street',
+      // '#default_value' => 'street',
       '#attributes' => ['class' => ['location-type','visually-hidden-x']],
       '#required' => TRUE
     ];

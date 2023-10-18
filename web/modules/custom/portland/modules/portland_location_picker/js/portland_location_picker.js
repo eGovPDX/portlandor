@@ -1017,9 +1017,6 @@
           // NOTE: The following code would be problematic if we allow multiple copies of the widget or alternate naming conventions.
           // $("input[name='" + elementId + "[location_type]'][value='" + type + "']").click();
 
-          // CGIS doesn't want us auto-setting the location type! That means we're relying on community member to set it
-          // correctly so that tickets aren't wildly mis-routed. Yikes.
-
           var sphericalMerc = L.Projection.SphericalMercator.project(L.latLng(lat,lng));
           $('input[name=' + elementId + '\\[location_x\\]]').val(sphericalMerc.x);
           $('input[name=' + elementId + '\\[location_y\\]]').val(sphericalMerc.y);
@@ -1117,16 +1114,16 @@
               $('input[name=' + elementId + '\\[location_type_hidden\\]]').val(location_type);
               $('input[name=' + elementId + '\\[location_attributes\\]]').val(internal_details);
 
-              // set location radio button
-              // report_location[location_type]
-              var radioInputs = $('input[name=' + elementId + '\\[location_type\\]]'); 
-              var radioValue = calculateLocationType(results);
-              for (var i = 0; i < radioInputs.length; i++) {
-                if (radioInputs[i].value == radioValue) {
-                  radioInputs[i].click();
-                  break;
-                }
-              }
+              // // set location radio button
+              // // report_location[location_type]
+              // var radioInputs = $('input[name=' + elementId + '\\[location_type\\]]'); 
+              // var radioValue = calculateLocationType(results);
+              // for (var i = 0; i < radioInputs.length; i++) {
+              //   if (radioInputs[i].value == radioValue) {
+              //     radioInputs[i].click();
+              //     break;
+              //   }
+              // }
 
               console.log('Place name: ' + place_name);
               console.log('Location type: ' + location_type);
