@@ -48,7 +48,7 @@ class PortlandLocationPicker extends WebformCompositeBase {
 
     $element['location_address'] = [
       '#type' => 'textfield',
-      '#title' => t('Location Search'),
+      '#title' => t('Location'),
       '#id' => 'location_address',
       '#attributes' => ['class' => ['location-picker-address'], 'autocomplete' => 'off'],
       '#description' => t('Search by address, cross streets, park name, or community center. Or use the Locate Me button or click/tap the map to select a precise location.'),
@@ -78,6 +78,7 @@ class PortlandLocationPicker extends WebformCompositeBase {
       '#options' => [
         'street' => t('Street, sidewalk, highway, trail, or other public right-of-way'),
         'private' => t('Private property, such as a home, apartment building, or business'),
+        'public' => t('Public property, such as government buildings or schools'),
         'park' => t('A public park, natural area, or city-operated community center'),
         'waterway' => t('A river, stream, or other waterway'),
         'other' => t('I\'m not sure')
