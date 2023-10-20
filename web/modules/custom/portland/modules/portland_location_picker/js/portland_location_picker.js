@@ -5,7 +5,7 @@
 
   // Here's how to reverse geolocate a park. Note the x/y values in the geometry parameter:
   // https://www.portlandmaps.com/arcgis/rest/services/Public/Parks_Misc/MapServer/2/query?geometry=%7B%22x%22%3A-122.55203425884248%2C%22y%22%3A45.53377174783918%2C%22spatialReference%22%3A%7B%22wkid%22%3A4326%7D%7D&geometryType=esriGeometryPoint&spacialRel=esriSpatialRelIntersects&returnGeometry=false&returnTrueCurves=false&returnIdsOnly=false&returnCountOnly=false&returnDistinctValues=false&f=pjson"
-  // returns an object that includes the park name. 
+  // returns an object that includes the park name.
 
   /**
    * Attach the machine-readable name form element behavior.
@@ -42,7 +42,7 @@
         const SOLVED_ISSUE_MESSAGE = "This issue was recently solved. If that's not the case, or the issue has reoccured, please submit a new report.";
         const ASSET_ONLY_SELECTION_MESSAGE = "We have zoomed in on the address you provided, but this map only allows you to select existing asset markers. There may not be any in the current view. Please search again or use the Locate Me button in the lower-right corner of the map.";
         const VERIFIED_NO_COORDS = "The address you entered is valid, but an error occurred, and it can't be shown on the map. Please zoom in and find the desired location, then click it to set a marker.";
-        const CITY_LIMITS_MESSAGE = "<b>The location you selected is not managed by the City of Portland.</b><br><br>If you need help submitting your report, please contact the <a href='https://www.portland.gov/311'>PDX 311 Customer Service program</a>."
+        const CITY_LIMITS_MESSAGE = "<b>The location you selected is not managed by the City of Portland.</b><br><br>If you need help submitting this form, please contact the <a href='https://www.portland.gov/311'>PDX 311 Customer Service program</a>."
         const VERIFY_ADDRESS_TEXT = "Enter an address, then click the button to verify the location. Or click the map to select a location and determine the verified address.";
         const DEFAULT_FEATURE_ICON_URL = "/modules/custom/portland/modules/portland_location_picker/images/map_marker_default.png";
         const DEFAULT_INCIDENT_ICON_URL = "/modules/custom/portland/modules/portland_location_picker/images/map_marker_incident.png";
@@ -85,7 +85,7 @@
 
         // this is a static, modified version of the city limits geoJSON data. it includes a whole-earth polygon as the first polygon,
         // so that the city limits become a hole and everything else can be shaded. this will require us to change how we detect clicks
-        // with in the city limits. 
+        // with in the city limits.
         // original city boundaries geoJSON: https://www.portlandmaps.com/arcgis/rest/services/Public/COP_OpenData_Boundary/MapServer/10/query?where=CITYNAME%20like%20%27Portland%27&outFields=*&outSR=4326&f=geojson
         const CITY_LIMITS_BOUNDARY_URL = "/modules/custom/portland/modules/portland_location_picker/js/cityboundary.json";
         const MUNICIPALITIES_BOUNDARY_URL = "https://www.portlandmaps.com/arcgis/rest/services/Public/COP_OpenData_Boundary/MapServer/10/query?outFields=*&where=1%3D1&f=geojson";
@@ -466,7 +466,7 @@
 
                         incidentsLoop:
                         // loop backwards becasue we're going to remove incidents that are attached to assets
-                        // and move the incident 
+                        // and move the incident
                         for (var j = incidentsFeatures.length - 1; j >= 0; j--) {
 
                           // is the incident associated with the asset?
@@ -812,12 +812,14 @@
         function handleCityLimits(latlng, muniLayer = municipalitiesLayer) {
           if (requireCityLimits || requireCityLimitsPlusParks) {
             var success = false;
+            // NOTE: these are synchronous ajax calls because this function needs to return true or false.
             $.ajax({
               async: false,
               url: buildCheckCityLimitsFenceUrl(latlng),
               success: function (cityBoundaryResponse) {
                 cityBoundaryResponse = JSON.parse(cityBoundaryResponse);
-                if (!cityBoundaryResponse.features || cityBoundaryResponse.features.length < 1 || cityBoundaryResponse.features[0].attributes.CITYNAME.toLowerCase() != "portland") {
+
+                if (!isBoundaryCheckSuccessful(cityBoundaryResponse, "portland")) {
                   // not in city boundary. if configured, try parks boundaries.
                   if (requireCityLimitsPlusParks) {
                     $.ajax({
@@ -825,11 +827,16 @@
                       url: buildCheckCityLimitsPlusParksFenceUrl(latlng),
                       success: function (parksBoundaryResponse) {
                         parksBoundaryResponse = JSON.parse(parksBoundaryResponse);
-                        if (!parksBoundaryResponse.features || parksBoundaryResponse.features.length < 1) {
+                        if (!isBoundaryCheckSuccessful(parksBoundaryResponse)) {
                           // not in parks boundary either, display error message
                           showStatusModal(CITY_LIMITS_MESSAGE);
                           success = false;
                         } else {
+                          // is within extended city boundary
+                          $('#location_is_portland').val("Yes");
+                          console.log("Within geofence (typically Portland): " + $('#location_is_portland').val());
+                          $('#location_municipality_name').val(cityBoundaryLayer.municipality);
+                          console.log("Municipality: " + $('#location_municipality_name').val());
                           success = true;
                         }
                       },
@@ -838,9 +845,15 @@
                         showErrorModal(response.error.message);
                       }
                     });
+                  } else {
+                    showStatusModal(CITY_LIMITS_MESSAGE);
                   }
                 } else {
                   // is within city boundary
+                  $('#location_is_portland').val("Yes");
+                  console.log("Within geofence (typically Portland): " + $('#location_is_portland').val());
+                  $('#location_municipality_name').val(cityBoundaryLayer.municipality);
+                  console.log("Municipality: " + $('#location_municipality_name').val());
                   success = true;
                 }
               },
@@ -850,6 +863,8 @@
               }
             })
             return success;
+          } else {
+            return true;
           }
         }
 
@@ -867,11 +882,19 @@
             "geometry=" + strGeometry +
             "&geometryType=esriGeometryPoint&spacialRel=esriSpatialRelIntersects" +
             "&returnGeometry=false&returnTrueCurves=false&returnIdsOnly=false&returnCountOnly=false&returnDistinctValues=false&f=pjson";
+        }
+
+        function isBoundaryCheckSuccessful(response, cityName = null) {
+          if (!response.features || response.features.length < 1 || (cityName && response.features[0].attributes.CITYNAME.toLowerCase() != cityName.toLowerCase())) {
+            return false;
+          } else {
+            return true;
           }
+        }
 
         function doMapClick(latlng) {
           // normally when the map is clicked, we want to zoom to the clicked location
-          // and perform a reverse lookup. there are some cases where we may want to 
+          // and perform a reverse lookup. there are some cases where we may want to
           // perform additional actions. for example, if location type = park, we also
           // need to do a reverse parks lookup and adjust the park selector accordingly.
 
@@ -950,7 +973,7 @@
           captureSelectedAssetMarkerData(marker);
 
           // need to call reverseGeolocate in order to capture nearest address,
-          // this is the one instance where we don't want to zoom and center when clicking 
+          // this is the one instance where we don't want to zoom and center when clicking
           // an existing marker (2nd argument = false).
           reverseGeolocate(marker.latlng, false);
         }
@@ -1096,7 +1119,7 @@
 
               // set location radio button
               // report_location[location_type]
-              var radioInputs = $('input[name=' + elementId + '\\[location_type\\]]'); 
+              var radioInputs = $('input[name=' + elementId + '\\[location_type\\]]');
               var radioValue = calculateLocationType(results);
               for (var i = 0; i < radioInputs.length; i++) {
                 if (radioInputs[i].value == radioValue) {
@@ -1167,7 +1190,7 @@
           // $("#location_type_hidden").val(type);
           // console.log(type);
 
-          
+
         }
 
         function redrawMap() {
@@ -1374,7 +1397,7 @@
           });
         }
 
-        // takes selected coordinates and performs reverse geolocation using the PortlandMaps API. 
+        // takes selected coordinates and performs reverse geolocation using the PortlandMaps API.
         // gets called by:
         // - function handleMapClick(e)
         // - function handleLocateMeFound(e)
@@ -1453,7 +1476,7 @@
                 //   setHiddenLocationType("other");
                 // }
 
-                // $('#location_park').val('0'); // set park selector to 
+                // $('#location_park').val('0'); // set park selector to
                 // $('#location_park').trigger('change');
 
                 reverseGeolocateNotPark(lat, lng, zoomAndCenter);
