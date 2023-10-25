@@ -51,7 +51,7 @@
         const API_BOUNDARY_URL = "https://www.portlandmaps.com/arcgis/rest/services/Public/Boundaries/MapServer/0/query";
         const API_PARKS_BOUNDARY_URL = "https://www.portlandmaps.com/arcgis/rest/services/Public/Parks_Misc/MapServer/2/query";
         const PARKS_REVGEOCODE_URL = "https://www.portlandmaps.com/arcgis/rest/services/Public/Parks_Misc/MapServer/2/query?geometry=%7B%22x%22%3A${lng}%2C%22y%22%3A${lat}%2C%22spatialReference%22%3A%7B%22wkid%22%3A4326%7D%7D&geometryType=esriGeometryPoint&spacialRel=esriSpatialRelIntersects&returnGeometry=false&returnTrueCurves=false&returnIdsOnly=false&returnCountOnly=false&returnDistinctValues=false&f=pjson";
-        const REVGEOCODE_URL = "https://www.portlandmaps.com/arcgis/rest/services/Public/Geocoding_PDX/GeocodeServer/reverseGeocode?location=%7B%22x%22%3A${lng}%2C+%22y%22%3A${lat}%2C+%22spatialReference%22%3A%7B%22wkid%22+%3A+4326%7D%7D&distance=100&langCode=&locationType=&featureTypes=&outSR=4326&returnIntersection=false&f=json";
+        const REVGEOCODE_URL = "https://www.portlandmaps.com/arcgis/rest/services/Public/Geocoding_PDX/GeocodeServer/reverseGeocode?location=%7B%22x%22%3A${lng}%2C+%22y%22%3A${lat}%2C+%22spatialReference%22%3A%7B%22wkid%22+%3A+4326%7D%7D&distance=&langCode=&locationType=&featureTypes=&outSR=4326&returnIntersection=true&f=json";
         const PRIMARY_LAYER_TYPE = {
           Asset: "asset",
           Incident: "incident",
@@ -253,7 +253,7 @@
           }
 
           // Set up address verify button, autocomplete, and help text
-          $('.location-picker-address').after(`<input class="button button--primary location-verify js-form-submit form-submit" type="button" id="location_verify" name="op" value="${verifyButtonText}">`);
+          $('.location-picker-address').after(`<input class="button button--primary location-verify js-form-submit form-submit" type="button" id="location_verify" name="op" value="Search">`);
           $('.location-picker-address').on('keyup', function (e) {
             if (e.keyCode != 13) {
               showVerifyButton();
@@ -321,15 +321,15 @@
             });
           }
 
-          // KLUGE: couldn't get complex conditional logic to work in the custom element definition,
-          // so we're kludging it in with javascript. if the privatep property radio button is selected,
-          // then we need to show the ownership question. only fires if elements are present.
-          $('input[name=' + elementId + '\\[location_type\\]]').on("click", function() {
-            var typeValue = $(this).val();
-            var ownerQuestion = $('#location_private_owner--wrapper');
-            if (typeValue == "private") ownerQuestion.show();
-            else ownerQuestion.hide();
-          });
+          // // KLUGE: couldn't get complex conditional logic to work in the custom element definition,
+          // // so we're kludging it in with javascript. if the private property radio button is selected,
+          // // then we need to show the ownership question. only fires if elements are present.
+          // $('input[name=' + elementId + '\\[location_type\\]]').on("click", function() {
+          //   var typeValue = $(this).val();
+          //   var ownerQuestion = $('#location_private_owner--wrapper');
+          //   if (typeValue == "private") ownerQuestion.show();
+          //   else ownerQuestion.hide();
+          // });
 
           // ASSUMPTION: city boundary will always be displayed if geofencing is enabled.
           if (displayCityLimits) {
@@ -369,9 +369,9 @@
               address += ui.item.attributes.zip_code ? "  " + ui.item.attributes.zip_code : "";
               $(this).val(address);
               $('#place_name').val("");
-              if (ui.item.attributes.location_type == "PARK") {
-                $('#place_name').val(address);
-              }
+              // if (ui.item.attributes.location_type == "PARK") {
+              //   $('#place_name').val(address);
+              // }
               var lat = ui.item.attributes.lat;
               var lon = ui.item.attributes.lon;
               municipalitiesLayer = L.geoJson(municipalitiesFeatures);
@@ -1137,7 +1137,7 @@
               $('input[name=' + elementId + '\\[location_type_stream\\]]').trigger('change');
               $('input[name=' + elementId + '\\[location_type_street\\]]').trigger('change');
               $('input[name=' + elementId + '\\[location_type_row\\]]').trigger('change');
-              $('input[name=' + elementId + '\\[location_type\\]]').trigger('change');
+              // $('input[name=' + elementId + '\\[location_type\\]]').trigger('change');
 
               // if there is more than one location type, dipslay help text asking user to clarify in Location Details field
               // place_name--description

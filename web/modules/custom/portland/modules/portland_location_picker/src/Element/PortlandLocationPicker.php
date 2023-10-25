@@ -46,9 +46,33 @@ class PortlandLocationPicker extends WebformCompositeBase {
       $element_id = $element['#webform_key'];
     }
 
+    $element['container'] = [
+      '#type' => 'container',
+      '#attributes' => [
+        'class' => ['custom-search-container'],
+      ],
+    ];
+  
+    $element['container']['search'] = [
+      '#type' => 'textfield',
+      '#title' => t('Location search'),
+      '#title_display' => 'invisible',
+      '#attributes' => [
+        'class' => ['custom-search-field'],
+        'placeholder' => "Search..."
+      ]
+    ];
+  
+    $element['container']['button'] = [
+      '#markup' => '<button type="button" id="custom-search-button" class="button button--primary"><i class="fa fa-search"></i></button>',
+    ];
+  
+    
+    
+
     $element['location_address'] = [
       '#type' => 'textfield',
-      '#title' => t('Location'),
+      '#title' => t('Location Search'),
       '#id' => 'location_address',
       '#attributes' => ['class' => ['location-picker-address'], 'autocomplete' => 'off'],
       '#description' => t('Search by address, cross streets, park name, or community center. Or use the Locate Me button or click/tap the map to select a precise location.'),
@@ -69,25 +93,58 @@ class PortlandLocationPicker extends WebformCompositeBase {
       '#title_display' => 'invisible',
       '#markup' => '<div id="location_map_container" class="location-map"></div>',
     ];
-    $element['location_type'] = [
-      '#id' => 'location_type',
-      '#name' => 'location_type',
+    $element['location_is_private_property'] = [
       '#type' => 'radios',
-      '#title' => t('What type of location is this?'),
-      '#title_display' => 'before',
+      '#title' => 'Is the location on private property?',
+      '#description' => 'Such as a house, apartment building, business, etc.',
+      '#description_display' => 'before',
       '#options' => [
-        'street' => t('Street, sidewalk, highway, trail, or other public right-of-way'),
-        'private' => t('Private property, such as a home, apartment building, or business'),
-        'public' => t('Public property, such as government buildings or schools'),
-        'park' => t('A public park, natural area, or city-operated community center'),
-        'waterway' => t('A river, stream, or other waterway'),
-        'other' => t('I\'m not sure')
+        'Yes' => 'Yes',
+        'No' => 'No',
+        'Not sure' => 'Not sure'
       ],
-      '#options_display' => 'one_column',
-      // '#default_value' => 'street',
-      '#attributes' => ['class' => ['location-type','visually-hidden-x']],
-      '#required' => TRUE
+      '#required' => TRUE,
+      '#required_error' => 'Please specify whether the location is on private property'
     ];
+    $element['location_private_owner'] = [
+      '#id' => 'location_private_owner',
+      '#type' => 'radios',
+      '#title' => t('Are you the owner or lessee of the property?'),
+      '#title_display' => 'before',
+      '#options' => 'yes_no',
+      '#options_display' => 'side_by_side',
+      '#states' => [
+        'visible' => [
+          ':input[name="' . $element_id . '[location_is_private_property]"]' => [
+            'value' => 'Yes'
+          ],
+        ],
+        'required' => [
+          ':input[name="' . $element_id . '[location_is_private_property]"]' => [
+            'value' => 'Yes'
+          ],
+        ],
+      ],
+    ];
+    // $element['location_type'] = [
+    //   '#id' => 'location_type',
+    //   '#name' => 'location_type',
+    //   '#type' => 'radios',
+    //   '#title' => t('What type of location is this?'),
+    //   '#title_display' => 'before',
+    //   '#options' => [
+    //     'street' => t('Street, sidewalk, highway, trail, or other public right-of-way'),
+    //     'private' => t('Private property, such as a home, apartment building, or business'),
+    //     'public' => t('Public property, such as government buildings or schools'),
+    //     'park' => t('A public park, natural area, or city-operated community center'),
+    //     'waterway' => t('A river, stream, or other waterway'),
+    //     'other' => t('I\'m not sure')
+    //   ],
+    //   '#options_display' => 'one_column',
+    //   // '#default_value' => 'street',
+    //   '#attributes' => ['class' => ['location-type','visually-hidden-x']],
+    //   '#required' => TRUE
+    // ];
     $element['location_type_hidden'] = [
       '#type' => 'hidden',
       '#title' => t('Location types'),
@@ -127,32 +184,6 @@ class PortlandLocationPicker extends WebformCompositeBase {
       '#type' => 'hidden',
       '#title' => 'ROW',
       '#attributes' => ['id' => 'location_type_row'],
-    ];
-    $element['location_private_owner'] = [
-      '#id' => 'location_private_owner',
-      '#type' => 'radios',
-      '#title' => t('Are you the owner of the property?'),
-      '#title_display' => 'before',
-      '#options' => 'yes_no',
-      '#options_display' => 'side_by_side',
-      '#states' => [
-        'visible' => [
-          ':input[name="' . $element_id . '[location_type_taxlot]"]' => [
-            'value' => '1'
-          ],
-          ':input[name="' . $element_id . '[location_type_park]"]' => [
-            '!value' => '1'
-          ],
-        ],
-        'required' => [
-          ':input[name="' . $element_id . '[location_type_taxlot]"]' => [
-            'value' => '1'
-          ],
-          ':input[name="' . $element_id . '[location_type_park]"]' => [
-            '!value' => '1'
-          ],
-        ],
-      ],
     ];
     $element['suggestions_modal'] = [
       '#type' => 'markup',
