@@ -34,14 +34,23 @@ elements: |-
     '#title_display': invisible
     container_campsite_location:
       '#type': webform_section
-      '#title': 'Campsite location'
+      '#title': Location
+      location_is_private:
+        '#type': radios
+        '#title': 'Is the location on private property?'
+        '#options':
+          'Yes': 'Yes'
+          'No': 'No'
+          'Not sure': 'Not sure'
+        '#options_display': side_by_side
       report_location:
         '#type': portland_location_picker
         '#title': Location
-        '#location_address__description': 'Enter the address or cross streets of the campsite being reported, press the Verify button, and select the exact location on the map.'
+        '#states':
+          visible:
+            ':input[name="location_is_private"]':
+              '!value': 'Yes'
         '#location_address__required': true
-        '#location_type__title': 'What type of property is this?'
-        '#location_type__required': true
         '#location_private_owner__access': false
         '#location_lat__required': true
         '#place_name__access': false
@@ -52,13 +61,15 @@ elements: |-
         '#location_is_portland__access': false
         '#geojson_layer__access': false
         '#geojson_layer_behavior__access': false
+        '#location_type__title': 'What type of property is this?'
+        '#location_type__required': true
         '#require_city_limits_plus_parks': true
       markup_private_property_stop:
         '#type': webform_markup
         '#states':
           visible:
-            ':input[name="report_location[location_type]"]':
-              value: private
+            ':input[name="location_is_private"]':
+              value: 'Yes'
         '#markup': |-
           <div class="alert alert--info next-steps">
           <h2>Next Steps</h2>
@@ -72,11 +83,8 @@ elements: |-
       '#title': 'Campsite info'
       '#states':
         invisible:
-          - ':input[name="report_location[location_type]"]':
-              value: private
-          - or
-          - ':input[name="report_location[location_type]"]':
-              unchecked: true
+          ':input[name="location_is_private"]':
+            value: 'Yes'
       container_campsite:
         '#type': container
         '#states':

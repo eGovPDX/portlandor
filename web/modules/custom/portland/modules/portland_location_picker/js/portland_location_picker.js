@@ -51,7 +51,7 @@
         const API_BOUNDARY_URL = "https://www.portlandmaps.com/arcgis/rest/services/Public/Boundaries/MapServer/0/query";
         const API_PARKS_BOUNDARY_URL = "https://www.portlandmaps.com/arcgis/rest/services/Public/Parks_Misc/MapServer/2/query";
         const PARKS_REVGEOCODE_URL = "https://www.portlandmaps.com/arcgis/rest/services/Public/Parks_Misc/MapServer/2/query?geometry=%7B%22x%22%3A${lng}%2C%22y%22%3A${lat}%2C%22spatialReference%22%3A%7B%22wkid%22%3A4326%7D%7D&geometryType=esriGeometryPoint&spacialRel=esriSpatialRelIntersects&returnGeometry=false&returnTrueCurves=false&returnIdsOnly=false&returnCountOnly=false&returnDistinctValues=false&f=pjson";
-        const REVGEOCODE_URL = "https://www.portlandmaps.com/arcgis/rest/services/Public/Geocoding_PDX/GeocodeServer/reverseGeocode?location=%7B%22x%22%3A${lng}%2C+%22y%22%3A${lat}%2C+%22spatialReference%22%3A%7B%22wkid%22+%3A+4326%7D%7D&distance=&langCode=&locationType=&featureTypes=&outSR=4326&returnIntersection=true&f=json";
+        const REVGEOCODE_URL = "https://www.portlandmaps.com/arcgis/rest/services/Public/Geocoding_PDX/GeocodeServer/reverseGeocode?location=%7B%22x%22%3A${lng}%2C+%22y%22%3A${lat}%2C+%22spatialReference%22%3A%7B%22wkid%22+%3A+4326%7D%7D&distance=&langCode=&locationType=&featureTypes=&outSR=4326&returnIntersection=false&f=json";
         const PRIMARY_LAYER_TYPE = {
           Asset: "asset",
           Incident: "incident",
@@ -282,7 +282,8 @@
             // get address data from link
             var address = $(this).data('pick-address');
             // put selected address in address field
-            $('.location-picker-address').val(address);
+            // $('#verified_location').val(address).show();
+            showVerifiedLocation(address);
             suggestionsModal.dialog('close');
             // locate address on map
             var lat = $(this).data('lat');
@@ -367,7 +368,10 @@
               address += ui.item.attributes.city ? ", " + ui.item.attributes.city : "";
               address += ui.item.attributes.state ? ", " + ui.item.attributes.state : "";
               address += ui.item.attributes.zip_code ? "  " + ui.item.attributes.zip_code : "";
-              $(this).val(address);
+              $(this).val(ui.item.address);
+              showVerifiedLocation(address);
+              // $('#verified_location_text').text(address);
+              // $('#verified_location').removeClass("visually-hidden");
               $('#place_name').val("");
               // if (ui.item.attributes.location_type == "PARK") {
               //   $('#place_name').val(address);
@@ -999,7 +1003,8 @@
           // get populated by the location, such as lat, lon, address, region id, etc.
           // every map click essentially resets the previous click. this function clears
           // the relevant location fields.
-          $('input[name=' + elementId + '\\[location_address\\]]').val('');
+          // $('input[name=' + elementId + '\\[location_address\\]]').val('');
+          //hideVerifiedLocation();
           $('input[name=' + elementId + '\\[location_lat\\]]').val('');
           $('input[name=' + elementId + '\\[location_lon\\]]').val('');
           $('input[name=' + elementId + '\\[location_x\\]]').val('');
@@ -1248,7 +1253,8 @@
             var lng = candidates[0]["attributes"]["lon"];
             // put full address in field
             var fulladdress = buildFullAddress(candidates[0]);
-            $('.location-picker-address').val(fulladdress);
+            //$('.location-picker-address').val(fulladdress);
+            showVerifiedLocation(fulladdress);
 
             // put park name in place_name field
             if (candidates[0].attributes.location_type == "PARK") {
@@ -1409,7 +1415,9 @@
           shouldRecenterPark = false;
 
           // clear fields
-          $('#location_address').val();
+          //$('#location_address').val();
+          // $('#verified_location_text').text();
+          //hideVerifiedLocation();
 
           // performs parks reverse geocoding using portlandmaps.com API.
           // the non-parks reverse geocoding is called within the success function,
@@ -1459,7 +1467,8 @@
 
                 // set place name field and mark as verified
                 $('.place-name').val(parkName);
-                $('#location_address').val(parkName);
+                // $('#verified_location_text').text(parkName);
+                showVerifiedLocation(address);
                 setVerified("park");
 
               } else {
@@ -1507,12 +1516,14 @@
                 //}
                 if (response.error) {
 
-                  $('#location_address').val("N/A");
+                  //$('#verified_location_text').text("N/A");
+                  showVerifiedLocation("N/A");
                   $('#place_name').val('N/A');
                   setUnverified();
                 } else if (response && response.features && response.features[0].attributes && response.features[0].attributes.NAME) {
                   var locName = response.features[0].attributes.NAME;
-                  $('#location_address').val(locName);
+                  showVerifiedLocation(locName);
+                  //$('#verified_location_text').text(locName);
                   setUnverified();
                 };
                 return false;
@@ -1542,7 +1553,9 @@
           var state = data.address.State;
           var postal = data.address.ZIP;
           var addressLabel = street.length > 0 ? street + ', ' + city + ', ' + state + ' ' + postal : city;
-          $('.location-picker-address').val(addressLabel);
+          var addressDisplay = street.length > 0 ? street + '<br>' + city + ', ' + state + ' ' + postal : city;
+          //$('.location-picker-address').val(addressLabel);
+          showVerifiedLocation(addressDisplay);
           setVerified();
           setLocationType(lat, lng);
         }
@@ -1593,6 +1606,32 @@
         //     }
         //   });
         // }
+
+        function showVerifiedLocation(description) {
+          $('#verified_location_text').text(description);
+          //$('#verified_location').removeClass('visually-hidden');
+
+          var latlng = locationMarker.getLatLng();
+          var lat = latlng.lat.toFixed(6);
+          var lng = latlng.lng.toFixed(6);
+
+          var popupMarkup;
+
+          if (description.length < 1 || description.toUpperCase() == "N/A") {
+            popupMarkup = `<div class="location-popup"><p><strong>Selected location</strong><br><em>${lat}, ${lng}</em></p></div>`;
+          } else {
+            popupMarkup = `<div class="location-popup"><p><strong>Selected location</strong><br>${description.toUpperCase()}<br><em>${lat} ${lng}</em></p></div>`;
+          }
+
+          // bind to location marker
+          locationMarker.bindPopup(popupMarkup);
+          locationMarker.openPopup();
+        }
+
+        function hideVerifiedLocation() {
+          $('#verified_location_text').text("");
+          $('#verified_location').addClass('visually-hidden');
+        }
 
         function selfLocateBrowser() {
           var t = setTimeout(function () {
