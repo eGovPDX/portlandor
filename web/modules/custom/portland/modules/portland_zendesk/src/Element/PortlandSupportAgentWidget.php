@@ -72,6 +72,11 @@ class PortlandSupportAgentWidget extends WebformCompositeBase {
       '#title_display' => 'invisible',
       '#description' => 'Use this area as a scratch pad or as a field to add additional notes to the request. Anything submitted in this field will be included in the request description and may be visible to the requester.'
     ];
+    $element['escalate_issue'] = [
+      '#type' => 'checkbox',
+      '#title' => t('Escalate this issue'),
+      '#id' => 'escalate_issue'
+    ];
     $element['test_submission'] = [
       '#type' => 'checkbox',
       '#title' => t('Test Submission'),

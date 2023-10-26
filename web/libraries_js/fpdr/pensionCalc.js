@@ -102,16 +102,14 @@
                     $('#edit-hired-before--wrapper').hide();
             };
 
-            $(window).once().on('load', function () {
-                // Initialize hiredBefore field and add change listeners
-                showHideHiredBefore();
-                $('#edit-hire-date-month,#edit-hire-date-year').change(showHideHiredBefore);
+            // Initialize hiredBefore field and add change listeners
+            showHideHiredBefore();
+            $('#edit-hire-date-month,#edit-hire-date-year').change(showHideHiredBefore);
 
-                $('#edit-calculated-pension-results').hide();
+            $('#edit-calculated-pension-results').hide();
 
-                // Link calculatePension() to button click
-                $('#edit-actions-submit').click(calculatePension);
-            });
+            // Link calculatePension() to button click
+            $('#edit-actions-submit').click(calculatePension);
         }
     };
 })(jQuery, Drupal);
