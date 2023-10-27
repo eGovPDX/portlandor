@@ -1,34 +1,33 @@
-/**
- * @file
- * Back to top button.
- *
- * Display back to top button at viewheight * 1.5.
- */
-(function($, Drupal) {
-  Drupal.behaviors.cloudyBackToTop = {
-    attach: function(context, settings) {
-      var viewHeight = $(window).height();
-      var showHeight = viewHeight * 1.5;
-      var isAttached = false;
+import throttle from "lodash.throttle";
 
-      $(window).on('scroll', function() {
-        var scrollPos = $(document).scrollTop();
-        if (scrollPos > showHeight && !isAttached) {
-          var buttonText = Drupal.t('Back to top');
-          $('#block-cloudy-content', context).append('<a id="back-to-top" class="btn btn-dark" href="#header">' + buttonText + '</a>');
-          isAttached = true;
-        } else if (scrollPos <= showHeight && isAttached) {
-          $('#back-to-top').remove();
-          isAttached = false;
-        }
+((Drupal) => {
+  Drupal.behaviors.cloudyBackToTop = {
+    attach() {
+      const docEl = document.documentElement;
+      const btnEl = document.querySelector(".cloudy-back-to-top");
+      let minHeightToShow = window.innerHeight * .75;
+
+      window.addEventListener("resize", () => {
+        minHeightToShow = window.innerHeight * .75;
       });
 
-      $(once('backToTopClickHandler', '#back-to-top', context)).each(function () {
-        $(this).on('click', function() {
-          $(this).remove();
-          isAttached = false;
-        });
+      window.addEventListener("scroll", throttle(
+        () => {
+          const scrollTop = docEl.scrollTop;
+          if (scrollTop >= minHeightToShow) {
+            btnEl.classList.remove("d-none");
+          } else if (scrollTop < minHeightToShow) {
+            btnEl.classList.add("d-none");
+          }
+        },
+        300
+      ));
+
+      btnEl.addEventListener("click", (e) => {
+        e.preventDefault();
+        // scroll to x = x, y = 0
+        docEl.scrollTo(docEl.scrollLeft, 0);
       });
     }
-  };
-})(jQuery, Drupal);
+  }
+})(Drupal);
