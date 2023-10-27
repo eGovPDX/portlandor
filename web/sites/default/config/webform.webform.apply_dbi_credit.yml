@@ -26,10 +26,11 @@ elements: |-
     apply_how_to_file:
       '#type': radios
       '#title': 'How would you like to file?'
-      '#required': true
       '#options':
         Online: Online
         'By mail, fax or in person': 'By mail, fax or in person'
+      '#required': true
+      '#states_clear': false
       '#default_value': Online
     markup_mail_instructions:
       '#type': webform_markup
@@ -87,43 +88,21 @@ elements: |-
       '#markup': |-
         <h2>Before you begin:</h2>
 
-        <h3>1. Verify your business meets the credit requirements</h3>
+        <h3>1. <a href="/revenue/business-tax/downtown-business-incentive-credit-program#toc-credit-requirements" target="_blank">Review the credit requirements</a></h3>
 
-        <p>Review the <a href="/revenue/business-tax/downtown-business-incentive-credit-program#toc-credit-requirements">credit requirements</a> and <a href="/revenue/business-tax/downtown-business-incentive-credit-program#toc-sub-district-boundaries">sub-district boundaries</a> to verify your business is eligible to apply for the credit.</p>
+        <h3>2. <a href="/revenue/business-tax/downtown-business-incentive-credit-program#toc-sub-district-boundaries">Verify your business is within the sub-district boundaries</a></h3>
 
-        <h3>2. Click the button below to begin the application process online.</h3>
+        <h3>3. Click the button below to continue</h3>
+    actions:
+      '#type': webform_actions
+      '#title': 'Submit button(s)'
+      '#states':
+        invisible:
+          ':input[name="apply_how_to_file"]':
+            value: 'By mail, fax or in person'
   page_eligiblity_questions:
     '#type': webform_wizard_page
     '#title': 'Eligibility Questions'
-    '#attributes':
-      display: none
-    apply_business_sub_district:
-      '#type': radios
-      '#title': "In which sub-district is your business' leased or owned building space? "
-      '#options':
-        'Lower Albina': 'Lower Albina'
-        Lloyd: Lloyd
-        Downtown: Downtown
-        'Old Town/Chinatown': 'Old Town/Chinatown'
-      '#required': true
-    apply_sub_district_business_address:
-      '#type': textfield
-      '#title': "Enter the address of your business' leased or owned building space in the eligible sub-district. "
-      '#required': true
-    apply_business_duration_in_district:
-      '#type': radios
-      '#title': 'In 2023, how did your business obtain a building space in the eligible sub-district?'
-      '#options':
-        'Entered into a new lease for four years or more': 'Entered into a new lease for four years or more'
-        'Renewed a lease for four years or more': 'Renewed a lease for four years or more'
-        'Owned and will occupy for four years or more': 'Owned and will occupy for four years or more'
-      '#required': true
-    apply_business_sq_footage:
-      '#type': number
-      '#title': "Enter the square footage of the building space as listed in the lease or as actually used by the building owner's employees. "
-      '#required': true
-      '#min': 0
-      '#step': 1
     apply_business_minimum_employees:
       '#type': radios
       '#title': 'Do you or will you maintain 15 employees or more working at least half their time at the eligible building space?'
@@ -131,6 +110,74 @@ elements: |-
         'Yes': 'Yes'
         'No': 'No'
       '#required': true
+    container_eligible:
+      '#type': container
+      '#states':
+        invisible:
+          ':input[name="apply_business_minimum_employees"]':
+            value: 'No'
+      apply_business_sub_district:
+        '#type': radios
+        '#title': "In which sub-district is your business' leased or owned building space? "
+        '#options':
+          'Lower Albina': 'Lower Albina'
+          Lloyd: Lloyd
+          Downtown: Downtown
+          'Old Town/Chinatown': 'Old Town/Chinatown'
+        '#required': true
+      apply_business_duration_in_district:
+        '#type': radios
+        '#title': 'In 2023, how did your business obtain a building space in the eligible sub-district?'
+        '#options':
+          'Entered into a new lease for four years or more': 'Entered into a new lease for four years or more'
+          'Renewed a lease for four years or more': 'Renewed a lease for four years or more'
+          'Owned and will occupy for four years or more': 'Owned and will occupy for four years or more'
+        '#required': true
+      apply_business_sq_footage:
+        '#type': number
+        '#title': "Enter the square footage of the building space as listed in the lease or as actually used by the building owner's employees. "
+        '#required': true
+        '#min': 0
+        '#step': 1
+      section_sub_district_business_address:
+        '#type': webform_section
+        '#title': 'Business Address'
+        '#description': "Enter the address of your business' leased or owned building space in the eligible sub-district."
+        '#description_display': before
+        business_street_address:
+          '#type': textfield
+          '#title': 'Street Address'
+          '#required': true
+          '#attributes':
+            class:
+              - address-lookup
+        business_unit_type:
+          '#type': webform_select_other
+          '#title': 'Unit Type'
+          '#options': unit_type
+        business_unit_number:
+          '#type': textfield
+          '#title': 'Unit Number'
+          '#states':
+            invisible:
+              ':input[name="business_unit_type[select]"]':
+                value: none
+        business_city:
+          '#type': textfield
+          '#title': City/Town
+          '#required': true
+          '#default_value': Portland
+        business_state:
+          '#type': select
+          '#title': State
+          '#options': state_names
+          '#required': true
+          '#default_value': Oregon
+        business_zip_code:
+          '#type': textfield
+          '#title': 'ZIP Code'
+          '#required': true
+          '#input_mask': '99999[-9999]'
     markup_ineligibility_notice:
       '#type': webform_markup
       '#states':
@@ -143,6 +190,13 @@ elements: |-
 
         <p>Your business must maintain 15 employees or more working at least half their time at the eligible building space to qualify for the DBI credit.</a>.</p>
         </div>
+    actions_01:
+      '#type': webform_actions
+      '#title': 'Submit button(s)'
+      '#states':
+        invisible:
+          ':input[name="apply_business_minimum_employees"]':
+            value: 'No'
   page_business_demographics:
     '#type': webform_wizard_page
     '#title': 'Required Information'
@@ -155,6 +209,7 @@ elements: |-
         '#description': '<p>This information can be found on letters the Revenue Division has mailed to you related to your business tax account.</p>'
         '#description_display': before
         '#size': 15
+        '#input_mask': BZT9999999999
         '#required': true
       apply_business_name:
         '#type': textfield
@@ -167,11 +222,42 @@ elements: |-
           <p>If your business is a sole proprietor, enter the last name, first name of the primary person on the account.</p>
         '#description_display': before
         '#required': true
-      apply_business_mailing_address:
-        '#type': textarea
+      section_business_mailing_address:
+        '#type': webform_section
         '#title': 'Business Mailing Address'
-        '#rows': 4
-        '#required': true
+        mailing_street_address:
+          '#type': textfield
+          '#title': 'Street Address'
+          '#required': true
+          '#attributes':
+            class:
+              - address-lookup
+        mailing_unit_type:
+          '#type': webform_select_other
+          '#title': 'Unit Type'
+          '#options': unit_type
+        mailing_unit_number:
+          '#type': textfield
+          '#title': 'Unit Number'
+          '#states':
+            invisible:
+              ':input[name="mailing_unit_type[select]"]':
+                value: none
+        mailing_city:
+          '#type': textfield
+          '#title': City/Town
+          '#required': true
+          '#default_value': Portland
+        mailing_state:
+          '#type': select
+          '#title': State
+          '#options': state_names
+          '#default_value': Oregon
+        mailing_zip_code:
+          '#type': textfield
+          '#title': 'ZIP Code'
+          '#required': true
+          '#input_mask': '99999[-9999]'
       apply_change_in_address:
         '#type': radios
         '#title': "Has this mailing address changed from last year's return filing?"
@@ -191,12 +277,11 @@ elements: |-
       apply_documentation:
         '#type': managed_file
         '#title': 'Upload documentation'
-        '#multiple': 3
+        '#multiple': 10
         '#description_display': before
         '#required': true
         '#max_filesize': '10'
         '#file_extensions': 'pdf jpg jpeg png'
-        '#sanitize': true
     section_contact:
       '#type': webform_section
       '#title': 'Your Contact Information'
@@ -217,16 +302,24 @@ elements: |-
         '#description': 'Please provide your phone number in case we need additional information.'
         '#input_mask': '(999) 999-9999'
         '#required': true
-  actions:
-    '#type': webform_actions
-    '#title': 'Submit button(s)'
-    '#states':
-      invisible:
-        - ':input[name="apply_how_to_file"]':
-            value: 'By mail, fax or in person'
-        - or
-        - ':input[name="apply_business_minimum_employees"]':
-            value: 'No'
+  computed_business_address:
+    '#type': webform_computed_token
+    '#title': 'Computed Business Address'
+    '#display_on': none
+    '#mode': text
+    '#template': |-
+      [webform_submission:values:business_street_address]
+      [webform_submission:values:business_unit_type] [webform_submission:values:business_unit_number]
+      [webform_submission:values:business_city], [webform_submission:values:business_state] [webform_submission:values:business_zip_code]
+  computed_mailing_address:
+    '#type': webform_computed_token
+    '#title': 'Computed Mailing Address'
+    '#display_on': none
+    '#mode': text
+    '#template': |-
+      [webform_submission:values:mailing_street_address]
+      [webform_submission:values:mailing_unit_type] [webform_submission:values:mailing_unit_number]
+      [webform_submission:values:mailing_city], [webform_submission:values:mailing_state] [webform_submission:values:mailing_zip_code]
 css: ''
 javascript: ''
 settings:
@@ -421,16 +514,19 @@ handlers:
     weight: 0
     settings:
       column_mappings:
-        2211934540615556: ''
+        3789698494320516: ''
+        5994934151630724: ''
+        3743134337945476: ''
+        8246733965315972: ''
         4966769513942916: apply_bzt_account_number
         2714969700257668: apply_business_name
-        7218569327628164: apply_business_mailing_address
+        7218569327628164: computed_mailing_address
         1589069793415044: apply_change_in_address
         6092669420785540: contact_name
         3840869607100292: contact_email
         3326003960041348: contact_phone
         7829603587411844: apply_business_sub_district
-        2200104053198724: apply_sub_district_business_address
+        2200104053198724: computed_business_address
         6703703680569220: apply_business_duration_in_district
         4451903866883972: apply_business_sq_footage
         8955503494254468: apply_business_minimum_employees
