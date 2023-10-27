@@ -27,13 +27,6 @@ class PortlandLocationPicker extends WebformCompositeBase {
    * //NOTE: custom elements must have a #title attribute. if a value is not set here, it must be set
    * //in the field config. if not, an error is thrown when trying to add an email handler.
    * 
-   * Location types:
-   *  street - location_address, location_map
-   *  park - location_park, location_map
-   *  waterway - location_map
-   *  private - location_private_owner
-   *  other - location_address, location_map
-   * 
    * How to programmatically set field conditions: https://www.drupal.org/docs/drupal-apis/form-api/conditional-form-fields
    */
   public static function getCompositeElements(array $element) {
@@ -67,28 +60,28 @@ class PortlandLocationPicker extends WebformCompositeBase {
       '#description' => '',
       '#description_display' => 'before',
       '#title_display' => 'invisible',
-      '#markup' => '<div id="location_map_container" class="location-map"></div><!--<div id="map-text" class="map-text">Your Text Here</div>-->',
+      '#markup' => '<div id="location_map_container" class="location-map"></div>',
     ];
-    $element['location_private_owner'] = [
-      '#id' => 'location_private_owner',
-      '#type' => 'radios',
-      '#title' => t('Are you the owner or lessee of the property?'),
-      '#title_display' => 'before',
-      '#options' => 'yes_no',
-      '#options_display' => 'side_by_side',
-      '#states' => [
-        'visible' => [
-          ':input[name="' . $element_id . '[location_is_private_property]"]' => [
-            'value' => 'Yes'
-          ],
-        ],
-        'required' => [
-          ':input[name="' . $element_id . '[location_is_private_property]"]' => [
-            'value' => 'Yes'
-          ],
-        ],
-      ],
-    ];
+    // $element['location_private_owner'] = [
+    //   '#id' => 'location_private_owner',
+    //   '#type' => 'radios',
+    //   '#title' => t('Are you the owner or lessee of the property?'),
+    //   '#title_display' => 'before',
+    //   '#options' => 'yes_no',
+    //   '#options_display' => 'side_by_side',
+    //   '#states' => [
+    //     'visible' => [
+    //       ':input[name="' . $element_id . '[location_is_private_property]"]' => [
+    //         'value' => 'Yes'
+    //       ],
+    //     ],
+    //     'required' => [
+    //       ':input[name="' . $element_id . '[location_is_private_property]"]' => [
+    //         'value' => 'Yes'
+    //       ],
+    //     ],
+    //   ],
+    // ];
     // $element['location_type'] = [
     //   '#id' => 'location_type',
     //   '#name' => 'location_type',

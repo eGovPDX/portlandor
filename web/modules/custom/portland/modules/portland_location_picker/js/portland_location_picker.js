@@ -147,6 +147,7 @@
         var apiKey = drupalSettings.portlandmaps_api_key;
 
         var locationType;
+        var locationTextBlock;
 
         // properties for the city limits polygon; if geofencing is required, the city limits are shown
         // as a clear cutout of a shaded global polygon.
@@ -232,22 +233,24 @@
           map.on('locationerror', handleLocationError);
           map.on('locationfound', handleLocateMeFound);
 
-
-
-          // Position your text block element
-          var mapText = document.getElementById('map-text');
-          mapText.style.left = ((map.getSize().x - mapText.offsetWidth) / 2) + 'px';
-
-          // You may also need to adjust the position when the map is zoomed or resized
-          map.on('zoomend', function () {
-            mapText.style.left = ((map.getSize().x - mapText.offsetWidth) / 2) + 'px';
+          // instantiate location text block but don't add it to the map until a location is selected.
+          locationTextBlock = L.control({
+            position: 'bottomleft'
           });
 
-
-
-
-
-
+          locationTextBlock.onAdd = function (map) {
+            var customElement = L.DomUtil.create('div', 'custom-control');
+            // Prevent map interaction when clicking inside the control
+            L.DomEvent.disableClickPropagation(customElement);
+            customElement.innerHTML = `
+              <div id="location-text-container">
+                <div id="location-icon"><img src="/modules/custom/portland/modules/portland_location_picker/images/map_marker_default_selected.png"></div>
+                <div id="location-text"><strong><span id="location-text-value"></span></strong><br>
+                  <span id="location-text-lat"></span>,&nbsp;<span id="location-text-lng"></span></div>
+              </div>`;
+            customElement
+            return customElement;
+          };
 
           // only allow map clicks if primary layer behavior is not "selection." if it is, only asset markers can be clicked to select a locaiton.
           if (primaryLayerBehavior != PRIMARY_LAYER_BEHAVIOR.SelectionOnly) { map.on('click', handleMapClick); }
@@ -270,7 +273,7 @@
           }
 
           // Set up address verify button, autocomplete, and help text
-          $('.location-picker-address').after(`<input class="button button--primary location-verify js-form-submit form-submit" type="button" id="location_verify" name="op" value="Search">`);
+          $('.location-picker-address').after(`<input class="button button--primary location-verify js-form-submit form-submit" type="button" id="location_verify" name="op" value="${verifyButtonText}">`);
           $('.location-picker-address').on('keyup', function (e) {
             if (e.keyCode != 13) {
               showVerifyButton();
@@ -386,15 +389,10 @@
               address += ui.item.attributes.state ? ", " + ui.item.attributes.state : "";
               address += ui.item.attributes.zip_code ? "  " + ui.item.attributes.zip_code : "";
               $(this).val(ui.item.address);
-              showVerifiedLocation(address);
-              // $('#verified_location_text').text(address);
-              // $('#verified_location').removeClass("visually-hidden");
-              $('#place_name').val("");
-              // if (ui.item.attributes.location_type == "PARK") {
-              //   $('#place_name').val(address);
-              // }
               var lat = ui.item.attributes.lat;
               var lon = ui.item.attributes.lon;
+              showVerifiedLocation(address, lat, lon);
+              $('#place_name').val("");
               municipalitiesLayer = L.geoJson(municipalitiesFeatures);
               if (handleCityLimits(new L.LatLng(lat, lon), municipalitiesLayer)) {
                 if (doZoomAndCenter(lat, lon)) {
@@ -451,7 +449,7 @@
               var cityBoundaryFeatures = cityBoundaryResponse.features;
               cityBoundaryLayer = L.geoJson(cityBoundaryFeatures, cityLimitsProperties).addTo(map);
               cityBoundaryLayer.municipality = cityBoundaryFeatures[0].properties.CITYNAME;
-              console.log("City boundary layer loaded.");
+              //console.log("City boundary layer loaded.");
             }
           });
         }
@@ -855,9 +853,9 @@
                         } else {
                           // is within extended city boundary
                           $('#location_is_portland').val("Yes");
-                          console.log("Within geofence (typically Portland): " + $('#location_is_portland').val());
+                          // console.log("Within geofence (typically Portland): Yes");
                           $('#location_municipality_name').val(cityBoundaryLayer.municipality);
-                          console.log("Municipality: " + $('#location_municipality_name').val());
+                          // console.log("Municipality: " + cityBoundaryLayer.municipality);
                           success = true;
                         }
                       },
@@ -872,9 +870,9 @@
                 } else {
                   // is within city boundary
                   $('#location_is_portland').val("Yes");
-                  console.log("Within geofence (typically Portland): " + $('#location_is_portland').val());
+                  // console.log("Within geofence (typically Portland): Yes");
                   $('#location_municipality_name').val(cityBoundaryLayer.municipality);
-                  console.log("Municipality: " + $('#location_municipality_name').val());
+                  // console.log("Municipality: " + cityBoundaryLayer.municipality);
                   success = true;
                 }
               },
@@ -1052,28 +1050,28 @@
             url: apiUrl,
             success: function (results) {
               // Pass the results to the response callback
-              console.log("Taxlot: " + results.taxlot);
-              console.log("Park: " + results.park);
-              console.log("Waterbody: " + results.waterbody);
-              console.log("Trail: " + results.trail);
-              console.log("Stream: " + results.stream);
-              console.log("Street: " + results.street);
-              console.log("Row: " + results.row);
+              // console.log("Taxlot: " + results.taxlot);
+              // console.log("Park: " + results.park);
+              // console.log("Waterbody: " + results.waterbody);
+              // console.log("Trail: " + results.trail);
+              // console.log("Stream: " + results.stream);
+              // console.log("Street: " + results.street);
+              // console.log("Row: " + results.row);
               var location_type = "";
               var place_name = $('input[name=' + elementId + '\\[place_name\\]]').val();
               var internal_details = "";
               var type_count = 0;
 
               // clear location type fields
-              $('input[name=' + elementId + '\\[location_type_taxlot\\]]').val("");
-              $('input[name=' + elementId + '\\[location_type_park\\]]').val("");
-              $('input[name=' + elementId + '\\[location_type_waterbody\\]]').val("");
-              $('input[name=' + elementId + '\\[location_type_trail\\]]').val("");
-              $('input[name=' + elementId + '\\[location_type_stream\\]]').val("");
-              $('input[name=' + elementId + '\\[location_type_street\\]]').val("");
-              $('input[name=' + elementId + '\\[location_type_row\\]]').val("");
-              $('input[name=' + elementId + '\\[location_type_hidden\\]]').val("");
-              $('input[name=' + elementId + '\\[location_attributes\\]]').val("");
+              // $('input[name=' + elementId + '\\[location_type_taxlot\\]]').val("");
+              // $('input[name=' + elementId + '\\[location_type_park\\]]').val("");
+              // $('input[name=' + elementId + '\\[location_type_waterbody\\]]').val("");
+              // $('input[name=' + elementId + '\\[location_type_trail\\]]').val("");
+              // $('input[name=' + elementId + '\\[location_type_stream\\]]').val("");
+              // $('input[name=' + elementId + '\\[location_type_street\\]]').val("");
+              // $('input[name=' + elementId + '\\[location_type_row\\]]').val("");
+              // $('input[name=' + elementId + '\\[location_type_hidden\\]]').val("");
+              // $('input[name=' + elementId + '\\[location_attributes\\]]').val("");
 
               // TODO: need to manually display location_private_owner radios if taxlog
               if (results.taxlot) {
@@ -1271,7 +1269,7 @@
             // put full address in field
             var fulladdress = buildFullAddress(candidates[0]);
             //$('.location-picker-address').val(fulladdress);
-            showVerifiedLocation(fulladdress);
+            showVerifiedLocation(fulladdress, lat, lng);
 
             // put park name in place_name field
             if (candidates[0].attributes.location_type == "PARK") {
@@ -1466,44 +1464,15 @@
                   }
                 }
 
-                // // attempt to set park selector. if not exact match, set selector
-                // // value to "0" (Other/Not found)
+                // set place name field
                 var parkName = jsonResult.features[0].attributes.NAME;
-                // $('#location_park option').filter(function () {
-                //   return $(this).text() == parkName;
-                // }).prop('selected', true);
-
-                // var parkId = $('#location_park').val();
-                // if (!parkId) {
-                //   // the park selector could not be set, most likely because there was not an exact name match
-                //   // between Portland.gov and PortlandMaps.com. ideally, the names will be synchronized and
-                //   // and this condition will never occur.
-                //   $('#location_park').val("0"); // this value sets park selector to Other/Not found and keeps the map visible
-                // }
-                // $('#location_park').trigger('change');
-
-                // set place name field and mark as verified
                 $('.place-name').val(parkName);
-                // $('#verified_location_text').text(parkName);
-                showVerifiedLocation(address);
+                showVerifiedLocation(parkName, lat, lng);
                 setVerified("park");
 
               } else {
                 // it's not a park and not managed by Parks!
-
-                // // if location type is set to parks, but we got to this point, we want to
-                // // switch the type to "other" so that it goes to 311 for triage.
-                // if (locationType == "park") {
-                //   zoomAndCenter = true;
-                //   setLocationType("other");
-                //   setHiddenLocationType("other");
-                // }
-
-                // $('#location_park').val('0'); // set park selector to 
-                // $('#location_park').trigger('change');
-
                 reverseGeolocateNotPark(lat, lng, zoomAndCenter);
-
               }
             }
           });
@@ -1534,12 +1503,12 @@
                 if (response.error) {
 
                   //$('#verified_location_text').text("N/A");
-                  showVerifiedLocation("N/A");
+                  showVerifiedLocation("N/A", lat, lng);
                   $('#place_name').val('N/A');
                   setUnverified();
                 } else if (response && response.features && response.features[0].attributes && response.features[0].attributes.NAME) {
                   var locName = response.features[0].attributes.NAME;
-                  showVerifiedLocation(locName);
+                  showVerifiedLocation(locName, lat, lng);
                   //$('#verified_location_text').text(locName);
                   setUnverified();
                 };
@@ -1570,9 +1539,7 @@
           var state = data.address.State;
           var postal = data.address.ZIP;
           var addressLabel = street.length > 0 ? street + ', ' + city + ', ' + state + ' ' + postal : city;
-          var addressDisplay = street.length > 0 ? street + '<br>' + city + ', ' + state + ' ' + postal : city;
-          //$('.location-picker-address').val(addressLabel);
-          showVerifiedLocation(addressDisplay);
+          showVerifiedLocation(addressLabel, lat, lng);
           setVerified();
           setLocationType(lat, lng);
         }
@@ -1624,13 +1591,27 @@
         //   });
         // }
 
-        function showVerifiedLocation(description) {
+        function showVerifiedLocation(description, lat, lng) {
           $('#verified_location_text').text(description);
           //$('#verified_location').removeClass('visually-hidden');
 
-          var latlng = locationMarker.getLatLng();
-          var lat = latlng.lat.toFixed(6);
-          var lng = latlng.lng.toFixed(6);
+          if (!locationTextBlock.map) locationTextBlock.addTo(map);
+
+          if (!lat || !lng) {
+            var latlng = locationMarker.getLatLng();
+          }
+
+          lat = lat.toFixed(6);
+          lng = lng.toFixed(6);
+
+          $('#location-text-value').text(description);
+          $('#location-text-lat').text(lat);
+          $('#location-text-lng').text(lng);
+
+          // if verify mode, also put location description in address field
+          if (verifiedAddresses) {
+            $('.location-picker-address').val(description);
+          };
 
           // var popupMarkup;
           // if (description.length < 1 || description.toUpperCase() == "N/A") {
@@ -1642,6 +1623,8 @@
           // // bind to location marker
           // locationMarker.bindPopup(popupMarkup);
           // locationMarker.openPopup();
+
+
 
         }
 
