@@ -232,6 +232,23 @@
           map.on('locationerror', handleLocationError);
           map.on('locationfound', handleLocateMeFound);
 
+
+
+          // Position your text block element
+          var mapText = document.getElementById('map-text');
+          mapText.style.left = ((map.getSize().x - mapText.offsetWidth) / 2) + 'px';
+
+          // You may also need to adjust the position when the map is zoomed or resized
+          map.on('zoomend', function () {
+            mapText.style.left = ((map.getSize().x - mapText.offsetWidth) / 2) + 'px';
+          });
+
+
+
+
+
+
+
           // only allow map clicks if primary layer behavior is not "selection." if it is, only asset markers can be clicked to select a locaiton.
           if (primaryLayerBehavior != PRIMARY_LAYER_BEHAVIOR.SelectionOnly) { map.on('click', handleMapClick); }
 
@@ -379,7 +396,7 @@
               var lat = ui.item.attributes.lat;
               var lon = ui.item.attributes.lon;
               municipalitiesLayer = L.geoJson(municipalitiesFeatures);
-              if (handleCityLimits(new L.LatLng(lat,lon), municipalitiesLayer)) {
+              if (handleCityLimits(new L.LatLng(lat, lon), municipalitiesLayer)) {
                 if (doZoomAndCenter(lat, lon)) {
                   setLocationMarker(lat, lon);
                   setLocationType(lat, lon);
@@ -1022,7 +1039,7 @@
           // NOTE: The following code would be problematic if we allow multiple copies of the widget or alternate naming conventions.
           // $("input[name='" + elementId + "[location_type]'][value='" + type + "']").click();
 
-          var sphericalMerc = L.Projection.SphericalMercator.project(L.latLng(lat,lng));
+          var sphericalMerc = L.Projection.SphericalMercator.project(L.latLng(lat, lng));
           $('input[name=' + elementId + '\\[location_x\\]]').val(sphericalMerc.x);
           $('input[name=' + elementId + '\\[location_y\\]]').val(sphericalMerc.y);
 
@@ -1182,7 +1199,7 @@
           if (!myStr) return false;
           myStr = myStr.trim();
           if (myStr.endsWith(',')) {
-            return myStr.substring(0, myStr.length-1);
+            return myStr.substring(0, myStr.length - 1);
           }
         }
 
@@ -1192,7 +1209,7 @@
           // $("#location_type_hidden").val(type);
           // console.log(type);
 
-          
+
         }
 
         function redrawMap() {
@@ -1512,7 +1529,7 @@
                   }
                 }
                 //if (locationType == "park") {
-                  setLocationType(lat, lng);
+                setLocationType(lat, lng);
                 //}
                 if (response.error) {
 
@@ -1615,17 +1632,17 @@
           var lat = latlng.lat.toFixed(6);
           var lng = latlng.lng.toFixed(6);
 
-          var popupMarkup;
+          // var popupMarkup;
+          // if (description.length < 1 || description.toUpperCase() == "N/A") {
+          //   popupMarkup = `<div class="location-popup"><p><strong>Selected location</strong><br><em>${lat}, ${lng}</em></p></div>`;
+          // } else {
+          //   popupMarkup = `<div class="location-popup"><p><strong>Selected location</strong><br>${description.toUpperCase()}<br><em>${lat} ${lng}</em></p></div>`;
+          // }
 
-          if (description.length < 1 || description.toUpperCase() == "N/A") {
-            popupMarkup = `<div class="location-popup"><p><strong>Selected location</strong><br><em>${lat}, ${lng}</em></p></div>`;
-          } else {
-            popupMarkup = `<div class="location-popup"><p><strong>Selected location</strong><br>${description.toUpperCase()}<br><em>${lat} ${lng}</em></p></div>`;
-          }
+          // // bind to location marker
+          // locationMarker.bindPopup(popupMarkup);
+          // locationMarker.openPopup();
 
-          // bind to location marker
-          locationMarker.bindPopup(popupMarkup);
-          locationMarker.openPopup();
         }
 
         function hideVerifiedLocation() {

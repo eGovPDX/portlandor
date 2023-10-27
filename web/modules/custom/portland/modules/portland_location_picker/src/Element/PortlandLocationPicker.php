@@ -60,12 +60,6 @@ class PortlandLocationPicker extends WebformCompositeBase {
       '#title_display' => 'invisible',
       '#markup' => '<div class="alert alert--info next-steps visually-hidden precision_text" aria-hidden="true" id="precision_text"><strong>IMPORTANT:</strong> To help us provide better service, please click, tap, or drag the marker to the precise location on the map.</div>',
     ];
-    $element['verified_location'] = [
-      '#type' => 'markup',
-      '#title' => 'Precision',
-      '#title_display' => 'invisible',
-      '#markup' => '<div id="verified_location" class="visually-hidden"><em>VERIFIED LOCATION: <span id="verified_location_text"></span></em></div>',
-    ];
     $element['location_map'] = [
       '#type' => 'markup',
       '#id' => 'location_map',
@@ -73,7 +67,7 @@ class PortlandLocationPicker extends WebformCompositeBase {
       '#description' => '',
       '#description_display' => 'before',
       '#title_display' => 'invisible',
-      '#markup' => '<div id="location_map_container" class="location-map"></div>',
+      '#markup' => '<div id="location_map_container" class="location-map"></div><!--<div id="map-text" class="map-text">Your Text Here</div>-->',
     ];
     $element['location_private_owner'] = [
       '#id' => 'location_private_owner',
@@ -120,37 +114,37 @@ class PortlandLocationPicker extends WebformCompositeBase {
       '#attributes' => ['id' => 'location_type_hidden'],
     ];
     $element['location_type_taxlot'] = [
-      '#type' => 'textfield',
+      '#type' => 'hidden',
       '#title' => 'Taxlot',
       '#attributes' => ['id' => 'location_type_taxlot'],
     ];
     $element['location_type_park'] = [
-      '#type' => 'textfield',
+      '#type' => 'hidden',
       '#title' => 'Park',
       '#attributes' => ['id' => 'location_type_park'],
     ];
     $element['location_type_waterbody'] = [
-      '#type' => 'textfield',
+      '#type' => 'hidden',
       '#title' => 'Waterbody',
       '#attributes' => ['id' => 'location_type_waterbody'],
     ];
     $element['location_type_trail'] = [
-      '#type' => 'textfield',
+      '#type' => 'hidden',
       '#title' => 'Trail',
       '#attributes' => ['id' => 'location_type_trail'],
     ];
     $element['location_type_stream'] = [
-      '#type' => 'textfield',
+      '#type' => 'hidden',
       '#title' => 'Stream',
       '#attributes' => ['id' => 'location_type_stream'],
     ];
     $element['location_type_street'] = [
-      '#type' => 'textfield',
+      '#type' => 'hidden',
       '#title' => 'Street',
       '#attributes' => ['id' => 'location_type_street'],
     ];
     $element['location_type_row'] = [
-      '#type' => 'textfield',
+      '#type' => 'hidden',
       '#title' => 'ROW',
       '#attributes' => ['id' => 'location_type_row'],
     ];
