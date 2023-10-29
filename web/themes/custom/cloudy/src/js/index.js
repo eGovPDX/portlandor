@@ -16,6 +16,6 @@ import '../layouts/drawer/drawer';
 /**
  * Our scripts
  */
-import './back-to-top';
-import './header-dropdown-toggle';
-import './search-autocomplete';
+import './behaviors/back-to-top';
+import './behaviors/header-dropdown-toggle';
+import './behaviors/search-autocomplete';
