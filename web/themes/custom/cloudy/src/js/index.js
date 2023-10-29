@@ -3,12 +3,7 @@
  */
 
 import 'bootstrap/js/src/collapse';
-
-/**
- * Our components
- */
-
-import '../layouts/drawer/drawer';
+import 'bootstrap/js/src/offcanvas';
 
 /**
  * Our scripts
