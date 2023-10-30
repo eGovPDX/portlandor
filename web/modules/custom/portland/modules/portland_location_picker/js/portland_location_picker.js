@@ -144,6 +144,11 @@
         var displayCityLimits = drupalSettings.webform && drupalSettings.webform.portland_location_picker.display_city_limits === false ? false : true;
         var requireCityLimitsPlusParks = drupalSettings.webform && drupalSettings.webform.portland_location_picker.require_city_limits_plus_parks === true ? true : false;
         var locationTypes = drupalSettings.webform && drupalSettings.webform.portland_location_picker.location_types === false ? false : true;
+
+        var boundaryUrl = drupalSettings.webform ? drupalSettings.webform.portland_location_picker.primary_layer_source : "";
+        var displayBoundary = drupalSettings.webform && drupalSettings.webform.portland_location_picker.display_boundary === false ? false : true;
+        var requireBoundary = drupalSettings.webform && drupalSettings.webform.portland_location_picker.require_boundary === true ? true : false;
+            
         var apiKey = drupalSettings.portlandmaps_api_key;
 
         var locationType;
@@ -444,14 +449,20 @@
           // polygon has been inserted as the first polygon, so that the city boundary is shown as a hole, with additional
           // holes within a hole. if the boundaries ever change, that file will need to be updated, or we'll need to
           // pull in the file from portlandmaps.com and figure out how to update it dynamically.
-          $.ajax({
-            url: CITY_LIMITS_BOUNDARY_URL, success: function (cityBoundaryResponse) {
-              var cityBoundaryFeatures = cityBoundaryResponse.features;
-              cityBoundaryLayer = L.geoJson(cityBoundaryFeatures, cityLimitsProperties).addTo(map);
-              cityBoundaryLayer.municipality = cityBoundaryFeatures[0].properties.CITYNAME;
-              //console.log("City boundary layer loaded.");
-            }
-          });
+
+          // the old city boundary is still in use for backward compatiblity.
+          var url = displayBoundary && boundaryUrl ? boundaryUrl : displayCityLimits ? CITY_LIMITS_BOUNDARY_URL : "";
+
+          if (url) {
+            $.ajax({
+              url: url, success: function (cityBoundaryResponse) {
+                var cityBoundaryFeatures = cityBoundaryResponse.features;
+                cityBoundaryLayer = L.geoJson(cityBoundaryFeatures, cityLimitsProperties).addTo(map);
+                cityBoundaryLayer.municipality = cityBoundaryFeatures[0].properties.CITYNAME;
+                //console.log("City boundary layer loaded.");
+              }
+            });
+          }
         }
 
         function processGeoJsonData() {
@@ -827,6 +838,23 @@
         }
 
         // HELPER FUNCTIONS ///////////////////////////////
+
+        function handleCityLimits2(latlng) {
+          // this handles checking whether map clicks are within the specified boundary.
+          // returns TRUE or FALSE.
+
+          // if boundaryUrl && requireBoundary:
+          if (requireBoundary && boundaryURl) {
+            // use PiP library to determine whether map click was in bounds.
+
+          } else if (requireCityLimits || requireCityLimitsPlusParks) {
+
+            // use existing method that calls APIs
+          }
+
+
+          // if displayCityLimits
+        }
 
         function handleCityLimits(latlng, muniLayer = municipalitiesLayer) {
           if (requireCityLimits || requireCityLimitsPlusParks) {
