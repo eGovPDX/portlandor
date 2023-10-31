@@ -145,7 +145,7 @@
         var requireCityLimitsPlusParks = drupalSettings.webform && drupalSettings.webform.portland_location_picker.require_city_limits_plus_parks === true ? true : false;
         var locationTypes = drupalSettings.webform && drupalSettings.webform.portland_location_picker.location_types === false ? false : true;
 
-        var boundaryUrl = drupalSettings.webform ? drupalSettings.webform.portland_location_picker.primary_layer_source : "";
+        var boundaryUrl = drupalSettings.webform ? drupalSettings.webform.portland_location_picker.boundary_url : "";
         var displayBoundary = drupalSettings.webform && drupalSettings.webform.portland_location_picker.display_boundary === false ? false : true;
         var requireBoundary = drupalSettings.webform && drupalSettings.webform.portland_location_picker.require_boundary === true ? true : false;
             
@@ -459,7 +459,20 @@
                 var cityBoundaryFeatures = cityBoundaryResponse.features;
                 cityBoundaryLayer = L.geoJson(cityBoundaryFeatures, cityLimitsProperties).addTo(map);
                 cityBoundaryLayer.municipality = cityBoundaryFeatures[0].properties.CITYNAME;
-                //console.log("City boundary layer loaded.");
+                console.log("City boundary layer loaded.");
+
+                if (requireCityLimits) {
+                  // NOTE: this is using geojson data from PortlandMaps, which is presumably cached in the browser to avoid
+                  // pummelling the server. it's a much larger file than the city limits, so it's only called in the rare
+                  // case that the widget has been configured for geofencing.
+                  $.ajax({
+                    url: MUNICIPALITIES_BOUNDARY_URL, success: function (municipalitiesResponse) {
+                      municipalitiesFeatures = municipalitiesResponse.features;
+                      municipalitiesLayer = L.geoJson(municipalitiesFeatures);
+                      console.log("Municipality boundaries layer loaded.");
+                    }
+                  });
+                }  
               }
             });
           }
@@ -839,24 +852,80 @@
 
         // HELPER FUNCTIONS ///////////////////////////////
 
-        function handleCityLimits2(latlng) {
+        function handleCityLimits(latlng) {
           // this handles checking whether map clicks are within the specified boundary.
           // returns TRUE or FALSE.
 
           // if boundaryUrl && requireBoundary:
-          if (requireBoundary && boundaryURl) {
+          if (requireBoundary && boundaryUrl) {
             // use PiP library to determine whether map click was in bounds.
+            var result = leafletPip.pointInLayer(latlng, cityBoundaryLayer, false);
+            var municipality = result[0].feature.properties.CITYNAME;
+            return result.length > 0;
 
           } else if (requireCityLimits || requireCityLimitsPlusParks) {
-
             // use existing method that calls APIs
+            var success = false;
+            // NOTE: these are synchronous ajax calls because this function needs to return true or false.
+            $.ajax({
+              async: false,
+              url: buildCheckCityLimitsFenceUrl(latlng),
+              success: function (cityBoundaryResponse) {
+                cityBoundaryResponse = JSON.parse(cityBoundaryResponse);
+
+                if (!isBoundaryCheckSuccessful(cityBoundaryResponse, "portland")) {
+                  // not in city boundary. if configured, try parks boundaries.
+                  if (requireCityLimitsPlusParks) {
+                    $.ajax({
+                      async: false,
+                      url: buildCheckCityLimitsPlusParksFenceUrl(latlng),
+                      success: function (parksBoundaryResponse) {
+                        parksBoundaryResponse = JSON.parse(parksBoundaryResponse);
+                        if (!isBoundaryCheckSuccessful(parksBoundaryResponse)) {
+                          // not in parks boundary either, display error message
+                          showStatusModal(CITY_LIMITS_MESSAGE);
+                          success = false;
+                        } else {
+                          // is within extended city boundary
+                          $('#location_is_portland').val("Yes");
+                          // console.log("Within geofence (typically Portland): Yes");
+                          $('#location_municipality_name').val(cityBoundaryLayer.municipality);
+                          // console.log("Municipality: " + cityBoundaryLayer.municipality);
+                          success = true;
+                        }
+                      },
+                      error: function (e) {
+                        // Handle any error cases
+                        showErrorModal(response.error.message);
+                      }
+                    });
+                  } else {
+                    showStatusModal(CITY_LIMITS_MESSAGE);
+                  }
+                } else {
+                  // is within city boundary
+                  $('#location_is_portland').val("Yes");
+                  // console.log("Within geofence (typically Portland): Yes");
+                  $('#location_municipality_name').val(cityBoundaryLayer.municipality);
+                  // console.log("Municipality: " + cityBoundaryLayer.municipality);
+                  success = true;
+                }
+              },
+              error: function (e) {
+                // Handle any error cases
+                showErrorModal(response.error.message);
+              }
+            })
+            return success;
+
+          } else {
+            // if none of the "require" boundary vars are true, return true to indicate the
+            // click wasn't out of bounds.
+            return true;
           }
-
-
-          // if displayCityLimits
         }
 
-        function handleCityLimits(latlng, muniLayer = municipalitiesLayer) {
+        function handleCityLimits2(latlng, muniLayer = municipalitiesLayer) {
           if (requireCityLimits || requireCityLimitsPlusParks) {
             var success = false;
             // NOTE: these are synchronous ajax calls because this function needs to return true or false.
