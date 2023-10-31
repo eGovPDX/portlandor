@@ -157,6 +157,11 @@ build_and_deploy: &build_and_deploy
           # Don't check the repo host key
           export GIT_SSH_COMMAND="ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no"
 
+          if [[ $CIRCLE_USERNAME = "" ]]; then
+            # Set CIRCLE_USERNAME for builds triggered by GitHub actions
+            echo 'export CIRCLE_USERNAME="BTS eGov"' >> $BASH_ENV && source $BASH_ENV
+          fi
+          
           # Git operations
           # Set the git commit user name and email address so it's clear in Pantheon log who made the change
           git config --global user.name $CIRCLE_USERNAME
@@ -254,7 +259,7 @@ build_and_deploy: &build_and_deploy
               terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- search-api:reset-tracker
             fi
             echo "Begin indexing the Solr server"
-            terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- search-api:index full_index &
+            terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- search-api:index &
             sleep 20
             rm -rf ./env_list.txt
           fi
@@ -342,16 +347,16 @@ visual_regression: &visual_regression
           do
             # Generate one time login link for tests
             if [[ ${TESTFILE} == *"ally"* ]]; then
-              echo 'export ALLY_LOGIN=$(terminus drush portlandor.${SITE_NAME} -- uli --mail ally.admin@portlandoregon.gov)' > $BASH_ENV && source $BASH_ENV
+              echo 'export ALLY_LOGIN=$(terminus drush ${CIRCLE_PROJECT_REPONAME}.${SITE_NAME} -- uli --mail ally.admin@portlandoregon.gov)' > $BASH_ENV && source $BASH_ENV
               npm run jest-test -- ${TESTFILE}
             elif [[ ${TESTFILE} == *"marty"* ]]; then
-              echo 'export MARTY_LOGIN=$(terminus drush portlandor.${SITE_NAME} -- uli --mail marty.member@portlandoregon.gov)' > $BASH_ENV && source $BASH_ENV
+              echo 'export MARTY_LOGIN=$(terminus drush ${CIRCLE_PROJECT_REPONAME}.${SITE_NAME} -- uli --mail marty.member@portlandoregon.gov)' > $BASH_ENV && source $BASH_ENV
               npm run jest-test -- ${TESTFILE}
             elif [[ ${TESTFILE} == *"admin-group"* ]]; then
-              echo 'export KEVIN_LOGIN=$(terminus drush portlandor.${SITE_NAME} -- uli --mail xinju.wang@portlandoregon.gov)' > $BASH_ENV && source $BASH_ENV
+              echo 'export KEVIN_LOGIN=$(terminus drush ${CIRCLE_PROJECT_REPONAME}.${SITE_NAME} -- uli --mail xinju.wang@portlandoregon.gov)' > $BASH_ENV && source $BASH_ENV
               npm run jest-test -- ${TESTFILE}
             elif [[ ${TESTFILE} == *"admin"* ]]; then
-              echo 'export SUPERADMIN_LOGIN=$(terminus drush portlandor.${SITE_NAME} -- uli --name superAdmin)' > $BASH_ENV && source $BASH_ENV
+              echo 'export SUPERADMIN_LOGIN=$(terminus drush ${CIRCLE_PROJECT_REPONAME}.${SITE_NAME} -- uli --name superAdmin)' > $BASH_ENV && source $BASH_ENV
               npm run jest-test -- ${TESTFILE}
             elif [[ ${TESTFILE} == *"anonymous"* ]]; then
               npm run single-test -- ${TESTFILE}
@@ -403,9 +408,9 @@ full_regression: &full_regression
           cd /home/circleci/app/tests/percy
 
           # Get login links
-          echo 'export ALLY_LOGIN=$(terminus drush portlandor.${SITE_NAME} -- uli --mail ally.admin@portlandoregon.gov)' > $BASH_ENV && source $BASH_ENV
-          echo 'export MARTY_LOGIN=$(terminus drush portlandor.${SITE_NAME} -- uli --mail marty.member@portlandoregon.gov)' > $BASH_ENV && source $BASH_ENV
-          echo 'export SUPERADMIN_LOGIN=$(terminus drush portlandor.${SITE_NAME} -- uli --name superAdmin)' > $BASH_ENV && source $BASH_ENV
+          echo 'export ALLY_LOGIN=$(terminus drush ${CIRCLE_PROJECT_REPONAME}.${SITE_NAME} -- uli --mail ally.admin@portlandoregon.gov)' > $BASH_ENV && source $BASH_ENV
+          echo 'export MARTY_LOGIN=$(terminus drush ${CIRCLE_PROJECT_REPONAME}.${SITE_NAME} -- uli --mail marty.member@portlandoregon.gov)' > $BASH_ENV && source $BASH_ENV
+          echo 'export SUPERADMIN_LOGIN=$(terminus drush ${CIRCLE_PROJECT_REPONAME}.${SITE_NAME} -- uli --name superAdmin)' > $BASH_ENV && source $BASH_ENV
 
           # Start Percy tests
           npm run jest-full
@@ -454,7 +459,7 @@ clone_live_database: &clone_live_database
           # Reindex the Solr server. Indexing will take some time
           # and will continue running after the CircleCI build finishes.
           echo "Begin indexing the Solr server"
-          terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- search-api:index full_index &
+          terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- search-api:index &
           sleep 20
     - run:
         name: Run Percy tests
@@ -462,14 +467,16 @@ clone_live_database: &clone_live_database
           mkdir /home/circleci/artifacts
           cd /home/circleci/app/tests/percy
 
-          # Start Percy sandbox tests
-          TESTFILES=$(circleci tests glob "__sandbox_tests__/*.js" | circleci tests split)
-          for TESTFILE in $TESTFILES
-          do
-            # Generate one time login link for tests
-            echo 'export SUPERADMIN_LOGIN=$(terminus drush portlandor.${SITE_NAME} -- uli --name superAdmin)' > $BASH_ENV && source $BASH_ENV
-            npm run jest-sandbox -- ${TESTFILE}
-          done
+          if [[ $CIRCLE_BRANCH = "sandbox" ]]; then
+            # Start Percy sandbox tests
+            TESTFILES=$(circleci tests glob "__sandbox_tests__/*.js" | circleci tests split)
+            for TESTFILE in $TESTFILES
+            do
+              # Generate one time login link for tests
+              echo 'export SUPERADMIN_LOGIN=$(terminus drush ${CIRCLE_PROJECT_REPONAME}.${SITE_NAME} -- uli --name superAdmin)' > $BASH_ENV && source $BASH_ENV
+              npm run jest-sandbox -- ${TESTFILE}
+            done
+          fi
     - store_artifacts:
         path: /home/circleci/artifacts
         destination: /

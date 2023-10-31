@@ -5,6 +5,7 @@ use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Field\BaseFieldDefinition;
 use Drupal\Core\Field\FieldStorageDefinitionInterface;
 use Drupal\Core\Language\LanguageInterface;
+use Drupal\Core\Entity\EntityTypeInterface;
 
 /**
  * Implements hook_entity_base_field_info().
@@ -53,5 +54,16 @@ function portland_legacy_redirects_form_node_form_alter(&$form) {
   $current_lang = \Drupal::languageManager()->getCurrentLanguage(LanguageInterface::TYPE_CONTENT)->getId();
   if ($current_lang !== 'en') {
     $form['field_redirects']['#access'] = FALSE;
+  }
+}
+
+/**
+ * Implements hook_entity_bundle_field_info_alter().
+ * Add the constraint for the Legacy Path field to validate input
+ */
+function portland_legacy_redirects_entity_bundle_field_info_alter(&$fields, EntityTypeInterface $entity_type, $bundle) {
+  // Only add constraint for the entity types specified in portland_legacy_redirects_entity_base_field_info
+  if ( ( $entity_type->id() == 'node' || $entity_type->id() == 'group' || $entity_type->id() == 'media') && !empty($fields['field_redirects'])) {
+    $fields['field_redirects']->addConstraint('relative_path');
   }
 }

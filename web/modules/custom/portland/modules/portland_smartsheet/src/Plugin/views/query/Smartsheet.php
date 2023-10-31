@@ -21,6 +21,30 @@ use Drupal\Core\Ajax\HtmlCommand;
  */
 class Smartsheet extends QueryPluginBase {
   private $sorts = [];
+  private $whereRowId = [];
+
+  /**
+   * {@inheritdoc}
+   */
+  public function build(ViewExecutable $view) {
+    $view->initPager();
+  }
+
+  private function doSort(&$rows) {
+    if (empty($this->sorts)) return;
+
+    // Sort according to any added sort plugins
+    $multisort_args = [];
+    foreach ($this->sorts as $column_id => $order) {
+      $column = array_map(fn($el) => $el->displayValue ?? $el->value ?? NULL, array_column($rows, $column_id));
+
+      $multisort_args[] = $column;
+      $multisort_args[] = $order;
+    }
+
+    $multisort_args[] = &$rows;
+    array_multisort(...$multisort_args);
+  }
 
   /**
    * {@inheritdoc}
@@ -29,33 +53,30 @@ class Smartsheet extends QueryPluginBase {
     $sheet_id = $view->query->options['sheet_id'];
     if ($sheet_id === "") return;
 
-    $view->initPager();
     try {
       $client = new SmartsheetClient($sheet_id);
       $items_per_page = $view->pager->getItemsPerPage();
       $sheet = $client->getSheet([
         'exclude' => 'filteredOutRows',
         'filterId' => $this->options['filter_id'],
+        'include' => 'attachments',
         'page' => $view->pager->getCurrentPage() + 1,
-        'pageSize' => $items_per_page === 0 ? 9999 : $items_per_page
+        'pageSize' => $items_per_page === 0 ? 9999 : $items_per_page,
+        'rowIds' => join(',', $this->whereRowId),
       ]);
       $sheet_raw_rows = array_slice($sheet->rows, $view->pager->getOffset());
       $rows = [];
       foreach ($sheet_raw_rows as $sheet_row) {
-        $rows[] = array_column($sheet_row->cells, NULL, 'columnId');
+        $row_to_add = array_column($sheet_row->cells, NULL, 'columnId');
+
+        // add special '_data' column with the row metadata
+        unset($sheet_row->cells);
+        $row_to_add['_data'] = $sheet_row;
+
+        $rows[] = $row_to_add;
       }
 
-      // Sort according to any added sort plugins
-      $multisort_args = [];
-      foreach ($this->sorts as $column_id => $order) {
-        $column = array_map(fn($el) => $el->displayValue ?? $el->value ?? NULL, array_column($rows, $column_id));
-
-        $multisort_args[] = $column;
-        $multisort_args[] = $order;
-      }
-
-      $multisort_args[] = &$rows;
-      array_multisort(...$multisort_args);
+      $this->doSort($rows);
 
       // Add final filtered/sorted rows to view
       $view->result = array_map(
@@ -67,7 +88,14 @@ class Smartsheet extends QueryPluginBase {
         $rows
       );
 
-      $view->pager->total_items = $sheet->filteredRowCount ?? $sheet->totalRowCount;
+      if (empty($this->whereRowId)) {
+        $view->total_rows = $sheet->filteredRowCount ?? $sheet->totalRowCount;
+      } else {
+        // If a rowIds filter is applied in the query string, the totalRowCount is incorrect
+        $view->total_rows = count($rows);
+      }
+
+      $view->pager->total_items = $view->total_rows;
       $view->pager->updatePageInfo();
     } catch (\Exception $e) {
       return;
@@ -76,6 +104,10 @@ class Smartsheet extends QueryPluginBase {
 
   public function addSort($column_id, $direction) {
     $this->sorts[$column_id] = strtolower($direction) === 'asc' ? SORT_ASC : SORT_DESC;
+  }
+
+  public function addWhereRowId($row_id) {
+    $this->whereRowId[] = $row_id;
   }
 
   /**

@@ -75,6 +75,12 @@ if (isset($_ENV['PANTHEON_ENVIRONMENT']) && php_sapi_name() != 'cli') {
     $config['environment_indicator.indicator']['fg_color'] = '#ffffff';
     $config['environment_indicator.indicator']['name'] = 'Dev';
   }
+  elseif ($_ENV['PANTHEON_ENVIRONMENT'] === 'sandbox') {
+    $primary_domain = 'sandbox.portland.gov';
+    $config['environment_indicator.indicator']['bg_color'] = '#3455eb';
+    $config['environment_indicator.indicator']['fg_color'] = '#ffffff';
+    $config['environment_indicator.indicator']['name'] = 'Sandbox';
+  }
   else {
     // Redirect to HTTPS on every Pantheon environment.
     $primary_domain = $_SERVER['HTTP_HOST'];
@@ -162,30 +168,72 @@ if (function_exists('newrelic_ignore_transaction') && php_sapi_name() === 'cli')
 $config['file.settings']['make_unused_managed_files_temporary'] = TRUE;
 
 
-////////////////////////////////////////////////////////////
-// Only uncomment the following lines in the next deployment after the Redis module is enabled on Pantheon.
-// Otherwise will get WSOD.
-////////////////////////////////////////////////////////////
-
-// Configure Redis
-if (isset($_ENV['PANTHEON_ENVIRONMENT']) && $_ENV['PANTHEON_ENVIRONMENT'] !== 'lando') {
-  // Include the Redis services.yml file. Adjust the path if you installed to a contrib or other subdirectory.
-  $settings['container_yamls'][] = 'modules/contrib/redis/example.services.yml';
+// Configure Redis (code borrowed from https://docs.pantheon.io/object-cache/drupal)
+if (isset($_ENV['PANTHEON_ENVIRONMENT']) && $_ENV['PANTHEON_ENVIRONMENT'] !== 'lando' 
+    && !\Drupal\Core\Installer\InstallerKernel::installationAttempted() && extension_loaded('redis')) {
+  
+  // Set Redis as the default backend for any cache bin not otherwise specified.
+  $settings['cache']['default'] = 'cache.backend.redis';
 
   //phpredis is built into the Pantheon application container.
   $settings['redis.connection']['interface'] = 'PhpRedis';
+
   // These are dynamic variables handled by Pantheon.
-  $settings['redis.connection']['host']      = $_ENV['CACHE_HOST'];
-  $settings['redis.connection']['port']      = $_ENV['CACHE_PORT'];
-  $settings['redis.connection']['password']  = $_ENV['CACHE_PASSWORD'];
+  $settings['redis.connection']['host'] = $_ENV['CACHE_HOST'];
+  $settings['redis.connection']['port'] = $_ENV['CACHE_PORT'];
+  $settings['redis.connection']['password'] = $_ENV['CACHE_PASSWORD'];
 
   $settings['redis_compress_length'] = 100;
   $settings['redis_compress_level'] = 1;
   
-  $settings['cache']['default'] = 'cache.backend.redis'; // Use Redis as the default cache.
   $settings['cache_prefix']['default'] = 'pantheon-redis';
 
   $settings['cache']['bins']['form'] = 'cache.backend.database'; // Use the database for forms
+
+  // Apply changes to the container configuration to make better use of Redis.
+  // This includes using Redis for the lock and flood control systems, as well
+  // as the cache tag checksum. Alternatively, copy the contents of that file
+  // to your project-specific services.yml file, modify as appropriate, and
+  // remove this line.
+  $settings['container_yamls'][] = 'modules/contrib/redis/example.services.yml';
+
+  // Manually add the classloader path, this is required for the container
+  // cache bin definition below.
+  $class_loader->addPsr4('Drupal\\redis\\', 'modules/contrib/redis/src');
+
+  // Use redis for container cache.
+  // The container cache is used to load the container definition itself, and
+  // thus any configuration stored in the container itself is not available
+  // yet. These lines force the container cache to use Redis rather than the
+  // default SQL cache.
+  $settings['bootstrap_container_definition'] = [
+    'parameters' => [],
+    'services' => [
+      'redis.factory' => [
+        'class' => 'Drupal\redis\ClientFactory',
+      ],
+      'cache.backend.redis' => [
+        'class' => 'Drupal\redis\Cache\CacheBackendFactory',
+        'arguments' => [
+          '@redis.factory',
+          '@cache_tags_provider.container',
+          '@serialization.phpserialize',
+        ],
+      ],
+      'cache.container' => [
+        'class' => '\Drupal\redis\Cache\PhpRedis',
+        'factory' => ['@cache.backend.redis', 'get'],
+        'arguments' => ['container'],
+      ],
+      'cache_tags_provider.container' => [
+        'class' => 'Drupal\redis\Cache\RedisCacheTagsChecksum',
+        'arguments' => ['@redis.factory'],
+      ],
+      'serialization.phpserialize' => [
+        'class' => 'Drupal\Component\Serialization\PhpSerialize',
+      ],
+    ],
+  ];
 }
 
 // Automatically generated include for settings managed by ddev.
@@ -193,3 +241,7 @@ $ddev_settings = dirname(__FILE__) . '/settings.ddev.php';
 if (getenv('IS_DDEV_PROJECT') == 'true' && is_readable($ddev_settings)) {
   require $ddev_settings;
 }
+
+// Set the MySQL transaction isolation level
+// See https://www.drupal.org/docs/getting-started/system-requirements/setting-the-mysql-transaction-isolation-level
+$databases['default']['default']['init_commands']['isolation_level'] = 'SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED';
