@@ -519,7 +519,11 @@ class ZendeskHandler extends WebformHandlerBase
         $configuration = $this->getTokenManager()->replace($this->configuration, $webform_submission);
 
         // call function to create ticket in Zendesk and store resulting ticket ID
-        $ticket_ids[] = $this->submitTicket($submission_fields, $configuration, $webform_submission->id());
+        $ticket_id = $this->submitTicket($submission_fields, $configuration, $webform_submission->id());
+        // if ticket ID = 0, there was an error, so exit out and make the form error
+        if ($ticket_id === 0) return null;
+
+        $ticket_ids[] = $ticket_id;
       }
 
       // put original data back in webform_submission? no, that doesn't help.
@@ -538,7 +542,6 @@ class ZendeskHandler extends WebformHandlerBase
 
     // if name field is set and present, add ticket ID to hidden Zendesk Ticket ID field
     if ($zendesk_ticket_id_field_name && array_key_exists( $zendesk_ticket_id_field_name, $data ) && $new_ticket_id){
-      //$new_ticket_id = $new_ticket->ticket->id;
       $data[$zendesk_ticket_id_field_name] = $new_ticket_id;
       $form_state->setValue($zendesk_ticket_id_field_name, $new_ticket_id);
       $form['values'][$zendesk_ticket_id_field_name] = $new_ticket_id;
