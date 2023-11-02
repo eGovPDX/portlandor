@@ -1,0 +1,487 @@
+uuid: 2fbeeb0d-13da-445e-9f6d-07970239c320
+langcode: en
+status: open
+dependencies:
+  module:
+    - portland
+    - portland_zendesk
+third_party_settings:
+  portland:
+    disable_demographic_form_prompt: 0
+weight: 0
+open: null
+close: null
+uid: 60
+template: false
+archive: false
+id: report_cable_complaint
+title: 'Report Cable Complaint'
+description: ''
+categories:
+  - Report
+elements: |-
+  report_service_provider:
+    '#type': select
+    '#title': 'Select Your Service Provider'
+    '#options':
+      'Xfinity (Comcast)': 'Xfinity (Comcast)'
+      'Ziply (Frontier)': 'Ziply (Frontier)'
+      CenturyLink: CenturyLink
+      Other: Other
+    '#required': true
+  report_account_number:
+    '#type': textfield
+    '#title': 'Account Number'
+    '#description': 'The account number assigned to you by your provider. This can usually be found on a billing statement.'
+  report_issue_type:
+    '#type': select
+    '#title': 'Select the Type of Issue or Concern'
+    '#options':
+      'Billing/Cost (paper invoice isn’t being mailed)': 'Billing/Cost (paper invoice isn’t being mailed)'
+      'Billing/Cost (sports/broadcast fee)': 'Billing/Cost (sports/broadcast fee)'
+      'Billing/Cost (unexpected rate increase)': 'Billing/Cost (unexpected rate increase)'
+      'Billing/Cost (unexpected fee)': 'Billing/Cost (unexpected fee)'
+      'Billing/Cost (franchise fee)': 'Billing/Cost (franchise fee)'
+      'Billing/Cost (other)': 'Billing/Cost (other)'
+      'Installation/Repair (late or no show)': 'Installation/Repair (late or no show)'
+      'Installation/Repair (damaged property)': 'Installation/Repair (damaged property)'
+      'Installation/Repair (other)': 'Installation/Repair (other)'
+      'Phones (long wait time, busy signal, hang up)': 'Phones (long wait time, busy signal, hang up)'
+      'Phones (difficult to understand menu options)': 'Phones (difficult to understand menu options)'
+      'Phones (can’t speak to a human)': 'Phones (can’t speak to a human)'
+      'Phones (other)': 'Phones (other)'
+      'Service Quality (service outages/poor quality)': 'Service Quality (service outages/poor quality)'
+      'Service Quality (equipment isn’t working)': 'Service Quality (equipment isn’t working)'
+      'Service Quality (other)': 'Service Quality (other)'
+      Other: Other
+    '#required': true
+  report_issue_description:
+    '#type': textarea
+    '#title': 'Description of Issue or Concern'
+  section_contact:
+    '#type': webform_section
+    '#title': 'Your Contact Information'
+    contact_name:
+      '#type': textfield
+      '#title': Name
+    contact_email:
+      '#type': textfield
+      '#title': Email
+      '#pattern': '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+      '#pattern_error': 'Please enter a correctly formatted email address, such as myname@example.com.'
+      '#states':
+        required:
+          ':input[name="contact_phone"]':
+            empty: true
+    contact_phone:
+      '#type': textfield
+      '#title': Phone
+      '#input_mask': '(999) 999-9999'
+      '#states':
+        required:
+          ':input[name="contact_email"]':
+            empty: true
+    contact_zip_code:
+      '#type': textfield
+      '#title': 'ZIP Code'
+      '#description': '<p>The MHCRC tracks issues and concerns by ZIP code for reporting purposes.</p>'
+      '#input_mask': '99999[-9999]'
+      '#required': true
+  support_agent_use_only:
+    '#type': portland_support_agent_widget
+    '#title': 'Support Agent Use Only'
+  report_ticket_id:
+    '#type': hidden
+    '#title': 'Report Ticket Id'
+  resolution_url:
+    '#type': webform_computed_twig
+    '#title': 'Resolution URL'
+    '#display_on': none
+    '#mode': text
+    '#template': "{{ webform_token('[site:url-brief]', webform_submission, [], options) }}/form/cable-complaint-resolution?report_service_provider={{ data.report_service_provider }}&report_account_number={{ data.report_account_number }}&report_issue_type={{ data.report_issue_type }}&contact_zip_code={{ data.contact_zip_code }}&report_issue_description={{ data.report_issue_description }}&contact_name={{ data.contact_name }}&contact_email={{ data.contact_email }}&contact_phone={{ data.contact_phone }}"
+    '#whitespace': trim
+    '#store': true
+    '#ajax': true
+  computed_recipient:
+    '#type': webform_computed_twig
+    '#title': 'Computed Recipient'
+    '#display_on': none
+    '#mode': text
+    '#template': |-
+      {% if data.report_service_provider == "Xfinity (Comcast)" %}
+      sheri_acker@comcast.com,executive_customerrelations@comcast.com
+      {% elseif data.report_service_provider == "Ziply (Frontier)" %}
+      jessica.epley@ziply.com,complaints.northwest@ziplyfiber.com
+      {% elseif data.report_service_provider == "CenturyLink" %}
+      jared.wiener@lumen.com,uswpuc@centurylink.com
+      {% endif %}
+    '#whitespace': trim
+    '#store': true
+    '#ajax': true
+  computed_description:
+    '#type': webform_computed_twig
+    '#title': 'Computed Request Description'
+    '#display_on': none
+    '#mode': html
+    '#template': |
+      <h2>Cable Complaint</h2>
+
+      <p><strong>Service Provider:</strong> {{ data.report_service_provider is iterable ? '' : webform_token('[webform_submission:values:report_service_provider]', webform_submission) }}<br>
+      <strong>Contact:</strong> {{ data.computed_recipient }}</p>
+
+      {% if data.report_account_number %}
+      <p><strong>Account Number:</strong> {{ data.report_account_number }}</p>
+      {% endif %}
+
+      <p><strong>Issue Type:</strong> {{ data.report_issue_type is iterable ? '' : webform_token('[webform_submission:values:report_issue_type]', webform_submission) }}</p>
+
+      {% if data.report_issue_description %}
+      <p><strong>Description:</strong> {{ data.report_issue_description }}</p>
+      {% endif %}
+
+      {% if data.contact_name %}
+      <p><strong>Name:</strong> {{ data.contact_name }}</p>
+      {% endif %}
+
+      <p><strong>Email:</strong> {{ data.contact_email }}</p>
+
+      <p><strong>Phone:</strong> {{ data.contact_phone }}</p>
+
+      <p><strong>Zip Code:</strong> {{ data.contact_zip_code }}</p>
+
+      <p><i>Webform ID: report_cable_complaint</i></p>
+    '#ajax': true
+  computed_subject:
+    '#type': webform_computed_twig
+    '#title': 'Computed Subject'
+    '#display_on': none
+    '#mode': text
+    '#template': "Cable complaint: {{ data.report_issue_type is iterable ? '' : webform_token('[webform_submission:values:report_issue_type]', webform_submission) }}"
+    '#whitespace': trim
+    '#ajax': true
+css: ''
+javascript: ''
+settings:
+  ajax: false
+  ajax_scroll_top: form
+  ajax_progress_type: ''
+  ajax_effect: ''
+  ajax_speed: null
+  page: true
+  page_submit_path: ''
+  page_confirm_path: ''
+  page_theme_name: ''
+  form_title: both
+  form_submit_once: false
+  form_open_message: ''
+  form_close_message: ''
+  form_exception_message: ''
+  form_previous_submissions: true
+  form_confidential: false
+  form_confidential_message: ''
+  form_disable_remote_addr: false
+  form_convert_anonymous: false
+  form_prepopulate: false
+  form_prepopulate_source_entity: false
+  form_prepopulate_source_entity_required: false
+  form_prepopulate_source_entity_type: ''
+  form_unsaved: false
+  form_disable_back: false
+  form_submit_back: false
+  form_disable_autocomplete: false
+  form_novalidate: false
+  form_disable_inline_errors: false
+  form_required: false
+  form_autofocus: false
+  form_details_toggle: false
+  form_reset: false
+  form_access_denied: default
+  form_access_denied_title: ''
+  form_access_denied_message: ''
+  form_access_denied_attributes: {  }
+  form_file_limit: ''
+  form_attributes: {  }
+  form_method: ''
+  form_action: ''
+  share: false
+  share_node: false
+  share_theme_name: ''
+  share_title: true
+  share_page_body_attributes: {  }
+  submission_label: ''
+  submission_exception_message: ''
+  submission_locked_message: ''
+  submission_log: false
+  submission_excluded_elements: {  }
+  submission_exclude_empty: false
+  submission_exclude_empty_checkbox: false
+  submission_views: {  }
+  submission_views_replace: {  }
+  submission_user_columns: {  }
+  submission_user_duplicate: false
+  submission_access_denied: default
+  submission_access_denied_title: ''
+  submission_access_denied_message: ''
+  submission_access_denied_attributes: {  }
+  previous_submission_message: ''
+  previous_submissions_message: ''
+  autofill: false
+  autofill_message: ''
+  autofill_excluded_elements: {  }
+  wizard_progress_bar: true
+  wizard_progress_pages: false
+  wizard_progress_percentage: false
+  wizard_progress_link: false
+  wizard_progress_states: false
+  wizard_start_label: ''
+  wizard_preview_link: false
+  wizard_confirmation: true
+  wizard_confirmation_label: ''
+  wizard_auto_forward: true
+  wizard_auto_forward_hide_next_button: false
+  wizard_keyboard: true
+  wizard_track: ''
+  wizard_prev_button_label: ''
+  wizard_next_button_label: ''
+  wizard_toggle: false
+  wizard_toggle_show_label: ''
+  wizard_toggle_hide_label: ''
+  wizard_page_type: container
+  wizard_page_title_tag: h2
+  preview: 0
+  preview_label: ''
+  preview_title: ''
+  preview_message: ''
+  preview_attributes: {  }
+  preview_excluded_elements: {  }
+  preview_exclude_empty: true
+  preview_exclude_empty_checkbox: false
+  draft: none
+  draft_multiple: false
+  draft_auto_save: false
+  draft_saved_message: ''
+  draft_loaded_message: ''
+  draft_pending_single_message: ''
+  draft_pending_multiple_message: ''
+  confirmation_type: page
+  confirmation_url: ''
+  confirmation_title: ''
+  confirmation_message: ''
+  confirmation_attributes: {  }
+  confirmation_back: true
+  confirmation_back_label: ''
+  confirmation_back_attributes: {  }
+  confirmation_exclude_query: false
+  confirmation_exclude_token: false
+  confirmation_update: false
+  limit_total: null
+  limit_total_interval: null
+  limit_total_message: ''
+  limit_total_unique: false
+  limit_user: null
+  limit_user_interval: null
+  limit_user_message: ''
+  limit_user_unique: false
+  entity_limit_total: null
+  entity_limit_total_interval: null
+  entity_limit_user: null
+  entity_limit_user_interval: null
+  purge: none
+  purge_days: null
+  results_disabled: false
+  results_disabled_ignore: false
+  results_customize: false
+  token_view: false
+  token_update: false
+  token_delete: false
+  serial_disabled: false
+access:
+  create:
+    roles:
+      - anonymous
+      - authenticated
+    users: {  }
+    permissions: {  }
+  view_any:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  update_any:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  delete_any:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  purge_any:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  view_own:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  update_own:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  delete_own:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  administer:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  test:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  configuration:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+handlers:
+  zendesk_new_request:
+    id: zendesk
+    handler_id: zendesk_new_request
+    label: 'Zendesk new request'
+    notes: ''
+    status: true
+    conditions:
+      enabled:
+        ':input[name="support_agent_use_only[test_submission]"]':
+          unchecked: true
+    weight: -50
+    settings:
+      requester_name: contact_name
+      requester_email: contact_email
+      subject: '[webform_submission:values:computed_subject]'
+      comment: '[webform_submission:values:computed_description:html]'
+      tags: 'drupal webform [webform_submission:values:webform_id]'
+      priority: normal
+      status: new
+      group_id: '16849233417623'
+      assignee_id: ''
+      type: incident
+      collaborators: ''
+      custom_fields: "1500013095781: '[webform_submission:uuid]'\r\n6355783758871: ['[webform_submission:values:resolution_url]', 'resolution_url']\r\n1900004448785: ['[webform_submission:values:report_service_provider:raw]', 'report_service_provider']\r\n6353388345367: 'report_cable_complaint'"
+      ticket_id_field: report_ticket_id
+      ticket_form_id: '16814795517079'
+  zendesk_new_request_developer_test:
+    id: zendesk
+    handler_id: zendesk_new_request_developer_test
+    label: 'Zendesk new request - developer test'
+    notes: ''
+    status: true
+    conditions:
+      enabled:
+        ':input[name="support_agent_use_only[test_submission]"]':
+          checked: true
+    weight: -49
+    settings:
+      requester_name: contact_name
+      requester_email: contact_email
+      subject: 'TEST: [webform_submission:values:computed_subject]'
+      comment: '[webform_submission:values:computed_description:html]'
+      tags: 'drupal webform  [webform_submission:values:webform_id]'
+      priority: normal
+      status: new
+      group_id: '4549352062487'
+      assignee_id: ''
+      type: incident
+      collaborators: ''
+      custom_fields: "1500013095781: '[webform_submission:uuid]'\r\n6355783758871: ['[webform_submission:values:resolution_url]', 'resolution_url']\r\n1900004448785: ['[webform_submission:values:report_service_provider:raw]', 'report_service_provider']\r\n6353388345367: 'report_cable_complaint'"
+      ticket_id_field: report_ticket_id
+      ticket_form_id: '16814795517079'
+  zendesk_update_customer_support_interaction_request:
+    id: zendesk_update_ticket
+    handler_id: zendesk_update_customer_support_interaction_request
+    label: 'Zendesk update customer support interaction request'
+    notes: 'Updates an existing Zendesk "interaction request" and links it to the issue request. Enabled if an Zendesk Request Number value has been provided.'
+    status: true
+    conditions:
+      enabled:
+        ':input[name="support_agent_use_only[zendesk_request_number]"]':
+          filled: true
+    weight: -48
+    settings:
+      comment: "<h1>Cable Complaint Report</h1>\r\n<p><b>Linked Issue Request: <a href=\"https://portlandoregon.zendesk.com/agent/tickets/[webform_submission:values:report_ticket_id]\">[webform_submission:values:report_ticket_id]</a></b></p>\r\n\r\n[webform_submission:values:html]\r\n"
+      comment_private: 1
+      tags: ''
+      priority: ''
+      status: ''
+      group_id: ''
+      assignee_id: ''
+      type: ''
+      collaborators: ''
+      custom_fields: "8692493739543: '[webform_submission:values:report_ticket_id]'"
+      ticket_id_field: zendesk_request_number
+      ticket_form_id: '16814795517079'
+  email_notification_to_cable_company_representative:
+    id: email
+    handler_id: email_notification_to_cable_company_representative
+    label: 'Email notification to cable company representative'
+    notes: ''
+    status: true
+    conditions:
+      enabled:
+        ':input[name="report_service_provider"]':
+          '!value': Other
+        ':input[name="support_agent_use_only[test_submission]"]':
+          unchecked: true
+    weight: -47
+    settings:
+      states:
+        - completed
+      to_mail: '[webform_submission:values:computed_recipient]'
+      to_options: {  }
+      bcc_mail: ''
+      bcc_options: {  }
+      cc_mail: ''
+      cc_options: {  }
+      from_mail: noreply@portlandoregon.gov
+      from_options: {  }
+      from_name: ''
+      reply_to: ''
+      return_path: ''
+      sender_mail: ''
+      sender_name: ''
+      subject: '[webform_submission:values:computed_subject:raw]'
+      body: "<p>[webform_submission:values:computed_description:html]</p>\r\n\r\n<hr />\r\n<p>Please use this link to report resolution of the issue: <a href=\"https://[webform_submission:values:resolution_url]&amp;report_ticket_id=[webform_submission:values:report_ticket_id]&amp;original_submission_key=[webform_submission:uuid]\">https://[webform_submission:values:resolution_url]&amp;report_ticket_id=[webform_submission:values:report_ticket_id]&amp;original_submission_key=[webform_submission:uuid]</a></p>"
+      excluded_elements:
+        computed_description: computed_description
+        computed_subject: computed_subject
+      ignore_access: false
+      exclude_empty: true
+      exclude_empty_checkbox: false
+      exclude_attachments: false
+      html: true
+      attachments: false
+      twig: false
+      theme_name: ''
+      parameters: {  }
+      debug: false
+  update_zendesk_request_with_full_resolution_url_including_ticket:
+    id: zendesk_update_ticket
+    handler_id: update_zendesk_request_with_full_resolution_url_including_ticket
+    label: 'Update Zendesk request with full resolution URL including ticket ID'
+    notes: ''
+    status: true
+    conditions: {  }
+    weight: 0
+    settings:
+      comment: 'Resolution URL: <a href="https://[webform_submission:values:resolution_url]&amp;report_ticket_id=[webform_submission:values:report_ticket_id]&amp;original_submission_key=[webform_submission:uuid]">https://[webform_submission:values:resolution_url]&amp;report_ticket_id=[webform_submission:values:report_ticket_id]&amp;original_submission_key=[webform_submission:uuid]</a>'
+      comment_private: 1
+      tags: ''
+      priority: ''
+      status: ''
+      group_id: ''
+      assignee_id: ''
+      type: ''
+      collaborators: ''
+      custom_fields: "6355783758871: 'https://[webform_submission:values:resolution_url]&amp;report_ticket_id=[webform_submission:values:report_ticket_id]&amp;original_submission_key=[webform_submission:uuid]'"
+      ticket_id_field: report_ticket_id
+      ticket_form_id: '16814795517079'
+variants: {  }
