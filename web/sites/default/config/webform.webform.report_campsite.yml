@@ -1,0 +1,778 @@
+uuid: 743a709c-157b-4978-b3f6-7d9758a613da
+langcode: en
+status: open
+dependencies:
+  module:
+    - antibot
+    - honeypot
+    - portland
+    - portland_zendesk
+third_party_settings:
+  antibot:
+    antibot: true
+  honeypot:
+    honeypot: true
+  portland:
+    disable_demographic_form_prompt: 0
+weight: 0
+open: null
+close: null
+uid: 1
+template: false
+archive: false
+id: report_campsite
+title: 'Report a Campsite'
+description: ''
+categories:
+  - Report
+elements: |-
+  container_intro:
+    '#type': container
+    introductory_text:
+      '#type': webform_markup
+      '#markup': '<p>If this is a life-threatening emergency or to report a crime in progress, call 9-1-1.</p>'
+  section_report:
+    '#type': webform_section
+    '#title': Report
+    '#title_display': invisible
+    container_campsite_location:
+      '#type': webform_section
+      '#title': 'Campsite location'
+      report_location:
+        '#type': portland_location_picker
+        '#title': Location
+        '#default_value':
+          location_type: street
+          location_park: ''
+          location_address: ''
+          place_name: ''
+          location_details: ''
+          location_lat: ''
+          location_lon: ''
+          location_private_owner: ''
+        '#location_address__required': true
+        '#location_type__title': 'On what type of property is the campsite located?'
+        '#location_type__required': true
+        '#location_private_owner__access': false
+        '#location_lat__required': true
+        '#place_name__access': false
+        '#location_details__title': 'Location Details (optional)'
+        '#location_asset_id__access': false
+        '#location_region_id__access': false
+        '#location_municipality_name__access': false
+        '#location_is_portland__access': false
+        '#geojson_layer__access': false
+        '#geojson_layer_behavior__access': false
+        '#location_details__states':
+          invisible:
+            ':input[name="report_location[location_type]"]':
+              value: private
+        '#place_name__states':
+          invisible:
+            ':input[name="report_location[location_type]"]':
+              value: private
+        '#require_city_limits_plus_parks': true
+      markup_private_property_stop:
+        '#type': webform_markup
+        '#states':
+          visible:
+            ':input[name="report_location[location_type]"]':
+              value: private
+        '#markup': |
+          <div class="alert alert--info next-steps">
+          <h2>Next Steps</h2>
+
+          <p><strong>Campsites on private property:</strong> You are reporting a potential code violation. You may want to first try talking to the property owner to see if the issue can be resolved. If not, please fill out the Bureau of Development Service's online <a href="https://www.portlandoregon.gov/bds/index.cfm?&amp;cfid=283088908&amp;c=42240&amp;cftoken=9ab256232dbace5c%2D4FC97C74%2DE642%2D08D1%2D82D8D94D3016098C">violation reporting form</a>, or call the Code Enforcement Line at <a href="tel:+1-503-823-2633">503-823-2633</a> to report your concern.</p>
+          <p><strong>For property owners:</strong> You are responsible for addressing concerns on your property. If you would like additional information, please call <a href="tel:311">3-1-1</a> or <a href="tel:+15038234000">503-823-4000</a> so staff can assist you further.</p>
+          </div>
+    container_report_details:
+      '#type': webform_section
+      '#title': 'Campsite info'
+      '#states':
+        invisible:
+          - ':input[name="report_location[location_type]"]':
+              value: private
+          - or
+          - ':input[name="report_location[location_type]"]':
+              unchecked: true
+      container_campsite:
+        '#type': container
+        '#states':
+          invisible:
+            ':input[name="abandoned_auto"]':
+              '!value': ''
+        report_blocking_pedestrians:
+          '#type': radios
+          '#title': 'Is the campsite blocking pedestrian access?'
+          '#description': 'For example, is it blocking a sidewalk, trail, or path?'
+          '#description_display': before
+          '#options': yes_no
+          '#options_display': side_by_side
+        report_is_ada:
+          '#type': radios
+          '#title': 'Do you have a disability that is affected by this obstruction?'
+          '#options':
+            'yes': 'Yes, and I would like to request an accommodation'
+            'no': 'No'
+          '#states':
+            visible:
+              ':input[name="report_blocking_pedestrians"]':
+                value: 'Yes'
+        report_is_ada_text:
+          '#type': webform_markup
+          '#states':
+            visible:
+              ':input[name="report_is_ada"]':
+                value: 'yes'
+          '#markup': |-
+            <div class="alert alert--info next-steps">
+            <h2>You&#39;ve requested an accommodation</h2>
+
+            <p>After submitting this report, an ADA Coordinator from the City will be contacting you to learn more and process your accommodation request.&nbsp;</p>
+            </div>
+        report_visible_items:
+          '#type': checkboxes
+          '#title': 'Are any of the following items visible at the site?'
+          '#description': 'Check all that apply.'
+          '#description_display': before
+          '#prepopulate': true
+          '#options':
+            tent_structure: 'Tent or other structure'
+            vehicle: 'A vehicle, such as a car, truck, RV, trailer, motorcycle, or boat'
+            trash: 'Trash or debris'
+          '#options_none': true
+          '#required': true
+        markup_select_to_continue:
+          '#type': webform_markup
+          '#states':
+            visible:
+              ':input[name="report_visible_items[tent_structure]"]':
+                unchecked: true
+              ':input[name="report_visible_items[vehicle]"]':
+                unchecked: true
+              ':input[name="report_visible_items[trash]"]':
+                unchecked: true
+              ':input[name="report_visible_items[none]"]':
+                unchecked: true
+          '#markup': 'Please select an option above to continue.'
+      container_none_of_the_above:
+        '#type': container
+        '#states':
+          visible:
+            ':input[name="report_visible_items[none]"]':
+              checked: true
+        report_need_more_info_text_1:
+          '#type': webform_markup
+          '#markup': |-
+            <div class="alert alert--info next-steps">
+              <h2>
+                Next Steps
+              </h2>
+            <p>Please call <a href="tel:311">3-1-1</a> or <a href="tel:+15038234000">(503) 823-4000</a> to discuss further.&nbsp;We need more information to determine if we can address your concerns.</p>
+            </div>
+      container_abandoned_auto:
+        '#type': webform_section
+        '#title': 'Vehicle info'
+        '#states':
+          visible:
+            ':input[name="report_visible_items[vehicle]"]':
+              checked: true
+        markup_vehicle_info:
+          '#type': webform_markup
+          '#markup': 'Please provide as many details as possible about the abandoned vehicle(s) if it seems safe to do so.'
+        report_vehicle:
+          '#type': webform_custom_composite
+          '#title': Vehicles
+          '#multiple': 10
+          '#title_display': none
+          '#multiple__header': false
+          '#multiple__item_label': vehicle
+          '#multiple__no_items_message': '<p>No vehicles entered. Please add vehicles below.</p>'
+          '#multiple__sorting': false
+          '#multiple__add': false
+          '#multiple__add_more_input': false
+          '#multiple__add_more_button_label': 'Add another vehicle'
+          '#element':
+            type:
+              '#type': select
+              '#options': vehicle_type
+              '#required': true
+              '#title': 'Vehicle type'
+            make:
+              '#type': select
+              '#options': vehicle_make
+              '#required': true
+              '#title': 'Vehicle make'
+            color:
+              '#type': select
+              '#options': vehicle_color
+              '#required': true
+              '#title': 'Color of vehicle'
+            license_plate_state:
+              '#type': select
+              '#options': license_plate_state_codes
+              '#title': 'License plate state'
+              '#description': 'If the vehicle has a license plate, please select which state it&#39;s from.'
+              '#description_display': before
+            license_plate_number:
+              '#type': textfield
+              '#title': 'License plate number'
+              '#description': 'If the vehicle has a license plate, please enter the number.'
+              '#description_display': before
+              '#maxlength': 8
+      container_submit:
+        '#type': webform_section
+        '#title': 'Finish your report'
+        '#states':
+          visible:
+            - ':input[name="report_visible_items[tent_structure]"]':
+                checked: true
+            - or
+            - ':input[name="report_visible_items[trash]"]':
+                checked: true
+            - or
+            - ':input[name="report_visible_items[vehicle]"]':
+                checked: true
+        report_photo:
+          '#type': webform_image_file
+          '#title': Photos
+          '#multiple': 3
+          '#description': 'If appropriate, please include up to 3 photos of the issue you are reporting. Please do not include photos where other people are present and identifiable.'
+          '#description_display': before
+          '#file_preview': 'medium:image'
+          '#max_filesize': '30'
+          '#file_extensions': 'jpg jpeg png'
+          '#file_name': 'report_[webform_submission:sid]'
+          '#sanitize': true
+          '#max_resolution': 1280x1280
+          '#attachment_image_style': webform_report_uploaded_image
+        section_contact:
+          '#type': webform_section
+          '#title': 'Your contact information'
+          '#title_tag': h3
+          contact_name:
+            '#type': textfield
+            '#title': Name
+            '#states':
+              visible:
+                ':input[name="report_is_ada"]':
+                  value: 'yes'
+          contact_phone:
+            '#type': textfield
+            '#title': Phone
+            '#input_mask': '(999) 999-9999'
+            '#states':
+              visible:
+                ':input[name="report_is_ada"]':
+                  value: 'yes'
+          contact_email:
+            '#type': textfield
+            '#title': Email
+            '#description': 'We will use your email to confirm your submission.'
+            '#pattern': '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+            '#pattern_error': 'Please enter a correctly formatted email address, such as myname@example.com.'
+            '#required': true
+        public_records_statement_standard:
+          '#type': webform_markup
+          '#markup': |
+            <p><strong>Public Records Statement</strong><br />
+            Information you provide to the City is a public record and may be subject to release under Oregon&rsquo;s <a data-renderer-mark="true" href="https://www.doj.state.or.us/oregon-department-of-justice/public-records/attorney-generals-public-records-and-meetings-manual/i-public-records/#:~:text=Under%20Oregon's%20Public%20Records%20Law,committee%20of%20the%20Legislative%20Assembly" title="https://www.doj.state.or.us/oregon-department-of-justice/public-records/attorney-generals-public-records-and-meetings-manual/i-public-records/#:~:text=Under%20Oregon's%20Public%20Records%20Law,committee%20of%20the%20Legislative%20Assembly">Public Records Law</a>. This law classifies certain information as available to the public on request. See our <a data-renderer-mark="true" href="/help/about/privacy" title="https://www.portland.gov/help/about/privacy">privacy statement</a> for more information.</p>
+        support_agent_use_only:
+          '#type': portland_support_agent_widget
+          '#title': 'Support Agent Use Only'
+          '#access_create_roles':
+            - authenticated
+          '#access_update_roles':
+            - support_agent
+            - administrator
+          '#access_view_roles':
+            - support_agent
+            - administrator
+        actions:
+          '#type': webform_actions
+          '#title': 'Submit button(s)'
+  report_ticket_id:
+    '#type': hidden
+    '#title': 'Report Ticket ID'
+css: ".webform-multiple-table tbody tr:hover,\r\n.webform-multiple-table tbody tr:focus {\r\n    background: inherit;\r\n}\r\n\r\n.webform-multiple-table tbody {\r\n    counter-reset: vehicle;\r\n}\r\n\r\n.webform-multiple-table tbody td {\r\n    padding: 0;\r\n}\r\n\r\n.webform-multiple-table tbody tr {\r\n    display: block;\r\n    margin-bottom: 1rem;\r\n}\r\n\r\n.webform-multiple-table tbody tr::before {\r\n    counter-increment: vehicle;\r\n    content: \"Vehicle \" counter(vehicle);\r\n    display: block;\r\n    font-size: 1.5rem;\r\n    font-weight: 600;\r\n    line-height: 1.3333333333;\r\n    margin: 0 0 1rem;\r\n}\r\n\r\n.webform-multiple-table .form-control {\r\n    width: 100%;\r\n}"
+javascript: ''
+settings:
+  ajax: false
+  ajax_scroll_top: form
+  ajax_progress_type: ''
+  ajax_effect: ''
+  ajax_speed: null
+  page: true
+  page_submit_path: ''
+  page_confirm_path: ''
+  page_theme_name: ''
+  form_title: source_entity_webform
+  form_submit_once: false
+  form_open_message: ''
+  form_close_message: ''
+  form_exception_message: ''
+  form_previous_submissions: true
+  form_confidential: false
+  form_confidential_message: ''
+  form_disable_remote_addr: false
+  form_convert_anonymous: false
+  form_prepopulate: false
+  form_prepopulate_source_entity: false
+  form_prepopulate_source_entity_required: false
+  form_prepopulate_source_entity_type: ''
+  form_unsaved: false
+  form_disable_back: false
+  form_submit_back: false
+  form_disable_autocomplete: false
+  form_novalidate: false
+  form_disable_inline_errors: false
+  form_required: true
+  form_autofocus: false
+  form_details_toggle: false
+  form_reset: false
+  form_access_denied: default
+  form_access_denied_title: ''
+  form_access_denied_message: ''
+  form_access_denied_attributes: {  }
+  form_file_limit: ''
+  form_attributes: {  }
+  form_method: ''
+  form_action: ''
+  share: false
+  share_node: false
+  share_theme_name: ''
+  share_title: true
+  share_page_body_attributes: {  }
+  submission_label: ''
+  submission_exception_message: ''
+  submission_locked_message: ''
+  submission_log: false
+  submission_excluded_elements: {  }
+  submission_exclude_empty: false
+  submission_exclude_empty_checkbox: false
+  submission_views: {  }
+  submission_views_replace: {  }
+  submission_user_columns: {  }
+  submission_user_duplicate: false
+  submission_access_denied: default
+  submission_access_denied_title: ''
+  submission_access_denied_message: ''
+  submission_access_denied_attributes: {  }
+  previous_submission_message: ''
+  previous_submissions_message: ''
+  autofill: false
+  autofill_message: ''
+  autofill_excluded_elements: {  }
+  wizard_progress_bar: false
+  wizard_progress_pages: false
+  wizard_progress_percentage: false
+  wizard_progress_link: false
+  wizard_progress_states: false
+  wizard_start_label: ''
+  wizard_preview_link: false
+  wizard_confirmation: true
+  wizard_confirmation_label: ''
+  wizard_auto_forward: true
+  wizard_auto_forward_hide_next_button: false
+  wizard_keyboard: true
+  wizard_track: ''
+  wizard_prev_button_label: ''
+  wizard_next_button_label: ''
+  wizard_toggle: true
+  wizard_toggle_show_label: ''
+  wizard_toggle_hide_label: ''
+  wizard_page_type: container
+  wizard_page_title_tag: h2
+  preview: 0
+  preview_label: ''
+  preview_title: ''
+  preview_message: ''
+  preview_attributes: {  }
+  preview_excluded_elements: {  }
+  preview_exclude_empty: true
+  preview_exclude_empty_checkbox: false
+  draft: none
+  draft_multiple: false
+  draft_auto_save: false
+  draft_saved_message: ''
+  draft_loaded_message: ''
+  draft_pending_single_message: ''
+  draft_pending_multiple_message: ''
+  confirmation_type: page
+  confirmation_url: ''
+  confirmation_title: 'Thank you'
+  confirmation_message: |-
+    <p>Your report has been received.<br />
+    <br />
+    It is not necessary to submit reports for the same location more than once per week. Every report will be reviewed and analyzed, but not all will result in immediate action by the City.<br />
+    <br />
+    Please visit the&nbsp;<a href="/homelessnessimpactreduction">Homelessness and Urban Camping Impact Reduction Program home page</a> to learn more about the program, view reports, and check the status of specific sites.</p>
+
+    <p>&nbsp;</p>
+
+    <h2>Next Steps</h2>
+
+    <p><strong>Is a vehicle blocking a street, driveway, sidewalk, or bus/MAX/Streetcar stop or lane?</strong></p>
+
+    <p>Please call Parking Enforcement at <a href="tel:+15038235195">503-823-5195</a> to report the vehicle.</p>
+
+    <p><strong>Do you think a vehicle may be stolen?</strong></p>
+
+    <p>Please contact Portland Police Auto Records at <a href="tel:+15038230044">(503) 823-0044</a>&nbsp;to report the vehicle.</p>
+
+    <p><strong>Do you have any additional concerns or questions?</strong></p>
+
+    <p>Please call us at <a href="tel:311">3-1-1</a> or <a href="tel:+15038234000">(503) 823-4000</a> to discuss further.</p>
+
+    <p>&nbsp;</p>
+  confirmation_attributes: {  }
+  confirmation_back: true
+  confirmation_back_label: 'Submit another report'
+  confirmation_back_attributes: {  }
+  confirmation_exclude_query: false
+  confirmation_exclude_token: false
+  confirmation_update: false
+  limit_total: null
+  limit_total_interval: null
+  limit_total_message: ''
+  limit_total_unique: false
+  limit_user: null
+  limit_user_interval: null
+  limit_user_message: ''
+  limit_user_unique: false
+  entity_limit_total: null
+  entity_limit_total_interval: null
+  entity_limit_user: null
+  entity_limit_user_interval: null
+  purge: all
+  purge_days: 14
+  results_disabled: false
+  results_disabled_ignore: false
+  results_customize: false
+  token_view: false
+  token_update: false
+  token_delete: false
+  serial_disabled: false
+access:
+  create:
+    roles:
+      - anonymous
+      - authenticated
+    users: {  }
+    permissions: {  }
+  view_any:
+    roles:
+      - sitewide_editor
+      - administrator
+    users: {  }
+    permissions: {  }
+  update_any:
+    roles:
+      - administrator
+    users: {  }
+    permissions: {  }
+  delete_any:
+    roles:
+      - administrator
+    users: {  }
+    permissions: {  }
+  purge_any:
+    roles:
+      - administrator
+    users: {  }
+    permissions: {  }
+  view_own:
+    roles:
+      - anonymous
+      - authenticated
+    users: {  }
+    permissions: {  }
+  update_own:
+    roles:
+      - sitewide_editor
+      - administrator
+    users: {  }
+    permissions: {  }
+  delete_own:
+    roles:
+      - sitewide_editor
+      - administrator
+    users: {  }
+    permissions: {  }
+  administer:
+    roles:
+      - administrator
+    users: {  }
+    permissions: {  }
+  test:
+    roles:
+      - support_agent
+      - administrator
+    users: {  }
+    permissions: {  }
+  configuration:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+handlers:
+  zendesk_update_interaction_ticket:
+    id: zendesk_update_ticket
+    handler_id: zendesk_update_interaction_ticket
+    label: 'Zendesk update interaction request'
+    notes: 'Updates an existing Zendesk "interaction request" with details of the submitted report. Enabled if an Zendesk Request Number value has been provided.'
+    status: true
+    conditions:
+      enabled:
+        ':input[name="support_agent_use_only[zendesk_request_number]"]':
+          filled: true
+    weight: -42
+    settings:
+      comment: "<h1>Campsite Report</h1>\r\n<p><strong>Campsite Report has been submitted on behalf of the community member.</strong></p>\r\n\r\n[webform_submission:values:html]"
+      comment_private: 1
+      tags: ''
+      priority: ''
+      status: ''
+      group_id: ''
+      assignee_id: ''
+      type: ''
+      collaborators: ''
+      custom_fields: ''
+      ticket_id_field: zendesk_request_number
+      ticket_form_id: ''
+  submit_to_zendesk_irp:
+    id: zendesk
+    handler_id: submit_to_zendesk_irp
+    label: 'Submit to Zendesk - IRP'
+    notes: 'Creates a request in Zendesk, which is then pulled into the IRP processes and dashboards using a SQL connector for Zendesk. All submissions from this from go to IRP regardless of any additional routing, unless the Developer Test box is checked, in which case the ticket is created in the Developer Test Group.'
+    status: true
+    conditions:
+      disabled:
+        ':input[name="support_agent_use_only[test_submission]"]':
+          checked: true
+    weight: -50
+    settings:
+      requester_name: contact_name
+      requester_email: contact_email
+      subject: 'Campsite Report'
+      comment: '[webform_submission:values:html]'
+      tags: 'drupal webform campsite'
+      priority: normal
+      status: new
+      group_id: '11597151250071'
+      assignee_id: ''
+      type: incident
+      collaborators: ''
+      custom_fields: "6353388345367: 'report_campsite'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n1500013095781: '[webform_submission:uuid]'\r\n9205221816983: ['[webform_submission:values:report_location:location_type:raw]', 'report_location:location_type']\r\n5873270225303: '[webform_submission:values:report_visible_items:checked:vehicle]'"
+      ticket_id_field: report_ticket_id
+      ticket_form_id: '5873307855767'
+      recipient: ''
+      ticket_fork_field: ''
+  submit_to_zendesk_irp_developer_test:
+    id: zendesk
+    handler_id: submit_to_zendesk_irp_developer_test
+    label: 'Submit to Zendesk - IRP - developer test'
+    notes: 'Saves ticket to the Developer Test Group instead of the campsite reporting group. Does not use routing logic; submitted for all routing conditions. Adds the tag "test_ticket," so that Zendesk knows to never close it from Solved.'
+    status: true
+    conditions:
+      enabled:
+        ':input[name="support_agent_use_only[test_submission]"]':
+          checked: true
+    weight: -49
+    settings:
+      requester_name: contact_name
+      requester_email: contact_email
+      subject: 'Campsite Report'
+      comment: '[webform_submission:values:html]'
+      tags: 'drupal webform campsite test_ticket'
+      priority: normal
+      status: new
+      group_id: '4549352062487'
+      assignee_id: ''
+      type: incident
+      collaborators: ''
+      custom_fields: "6353388345367: 'report_campsite'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n1500013095781: '[webform_submission:uuid]'\r\n9205221816983: ['[webform_submission:values:report_location:location_type:raw]', 'report_location:location_type']\r\n5873270225303: '[webform_submission:values:report_visible_items:checked:vehicle]'"
+      ticket_id_field: report_ticket_id
+      ticket_form_id: '5873307855767'
+      recipient: ''
+      ticket_fork_field: ''
+  submit_to_zendesk_abautos:
+    id: zendesk
+    handler_id: submit_to_zendesk_abautos
+    label: 'Submit to Zendesk - AbAutos'
+    notes: ''
+    status: true
+    conditions:
+      enabled:
+        ':input[name="report_visible_items[vehicle]"]':
+          checked: true
+        ':input[name="support_agent_use_only[test_submission]"]':
+          unchecked: true
+    weight: -48
+    settings:
+      requester_name: contact_name
+      requester_email: contact_email
+      subject: 'Abandoned Vehicle Report'
+      comment: "<h2>Location</h2>\r\n[webform_submission:values:report_location:html]\r\n<h2>Vehicle info</h2>\r\n<strong>Color:</strong> [webform_submission:values:report_vehicle:color]\r\n<br>\r\n<strong>License Plate Number:</strong> [webform_submission:values:report_vehicle:license_plate_number]\r\n<br>\r\n<strong>License Plate State:</strong> [webform_submission:values:report_vehicle:license_plate_state]\r\n<br>\r\n<strong>Make:</strong> [webform_submission:values:report_vehicle:make]\r\n<br>\r\n<strong>Type:</strong> [webform_submission:values:report_vehicle:type]"
+      tags: 'drupal webform'
+      priority: normal
+      status: new
+      group_id: '18716157058327'
+      assignee_id: ''
+      type: incident
+      collaborators: ''
+      custom_fields: "6353388345367: 'report_abandoned_vehicle'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n1500013095781: '[webform_submission:uuid]'\r\n9205221816983: ['[webform_submission:values:report_location:location_type:raw]', 'report_location:location_type']\r\n14971313641239: ['[webform_submission:values:report_vehicle:color:raw]', 'report_vehicle:color']\r\n5873310799383: ['[webform_submission:values:report_vehicle:license_plate_number]', 'report_vehicle:license_plate_number']\r\n18716068517783: ['[webform_submission:values:report_vehicle:license_plate_state:raw]', 'report_vehicle:license_plate_state']\r\n5873293014679: ['[webform_submission:values:report_vehicle:make:raw]', 'report_vehicle:make']\r\n14971350075799: ['[webform_submission:values:report_vehicle:type:raw]', 'report_vehicle:type']"
+      ticket_id_field: report_ticket_id
+      ticket_form_id: '17751920813847'
+      recipient: ''
+      ticket_fork_field: report_vehicle
+  submit_to_zendesk_abautos_developer_test:
+    id: zendesk
+    handler_id: submit_to_zendesk_abautos_developer_test
+    label: 'Submit to Zendesk - AbAutos - Developer Test'
+    notes: ''
+    status: true
+    conditions:
+      enabled:
+        ':input[name="support_agent_use_only[test_submission]"]':
+          checked: true
+        ':input[name="report_visible_items[vehicle]"]':
+          checked: true
+    weight: -47
+    settings:
+      requester_name: contact_name
+      requester_email: contact_email
+      subject: 'Abandoned Vehicle Report'
+      comment: "<h2>Location</h2>\r\n[webform_submission:values:report_location:html]\r\n<h2>Vehicle info</h2>\r\n<strong>Color:</strong> [webform_submission:values:report_vehicle:color]\r\n<br>\r\n<strong>License Plate Number:</strong> [webform_submission:values:report_vehicle:license_plate_number]\r\n<br>\r\n<strong>License Plate State:</strong> [webform_submission:values:report_vehicle:license_plate_state]\r\n<br>\r\n<strong>Make:</strong> [webform_submission:values:report_vehicle:make]\r\n<br>\r\n<strong>Type:</strong> [webform_submission:values:report_vehicle:type]"
+      tags: 'drupal webform'
+      priority: normal
+      status: new
+      group_id: '4549352062487'
+      assignee_id: ''
+      type: incident
+      collaborators: ''
+      custom_fields: "6353388345367: 'report_abandoned_vehicle'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n1500013095781: '[webform_submission:uuid]'\r\n9205221816983: ['[webform_submission:values:report_location:location_type:raw]', 'report_location:location_type']\r\n14971313641239: ['[webform_submission:values:report_vehicle:color:raw]', 'report_vehicle:color']\r\n5873310799383: ['[webform_submission:values:report_vehicle:license_plate_number]', 'report_vehicle:license_plate_number']\r\n18716068517783: ['[webform_submission:values:report_vehicle:license_plate_state:raw]', 'report_vehicle:license_plate_state']\r\n5873293014679: ['[webform_submission:values:report_vehicle:make:raw]', 'report_vehicle:make']\r\n14971350075799: ['[webform_submission:values:report_vehicle:type:raw]', 'report_vehicle:type']"
+      ticket_id_field: report_ticket_id
+      ticket_form_id: '17751920813847'
+      recipient: ''
+      ticket_fork_field: report_vehicle
+  submit_to_zendesk_park_rangers:
+    id: zendesk
+    handler_id: submit_to_zendesk_park_rangers
+    label: 'Submit to Zendesk - Park Rangers'
+    notes: ''
+    status: true
+    conditions:
+      enabled:
+        ':input[name="support_agent_use_only[test_submission]"]':
+          unchecked: true
+        ':input[name="report_location[location_type]"]':
+          value: park
+    weight: -46
+    settings:
+      requester_name: contact_name
+      requester_email: contact_email
+      subject: 'Campsite Report Inside Park'
+      comment: "A campsite has been reported inside of a park by a community member:\r\n\r\n[webform_submission:values:html]"
+      tags: 'drupal webform campsite'
+      priority: normal
+      status: new
+      group_id: '16341182522007'
+      assignee_id: ''
+      type: incident
+      collaborators: ''
+      custom_fields: "6353388345367: 'report_campsite'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n1500013095781: '[webform_submission:uuid]'\r\n9205221816983: ['[webform_submission:values:report_location:location_type:raw]', 'report_location:location_type']\r\n5873270225303: '[webform_submission:values:report_visible_items:checked:vehicle]'"
+      ticket_id_field: report_ticket_id
+      ticket_form_id: '13176953771287'
+      recipient: ''
+      ticket_fork_field: ''
+  submit_to_zendesk_park_rangers_developer_test:
+    id: zendesk
+    handler_id: submit_to_zendesk_park_rangers_developer_test
+    label: 'Submit to Zendesk - Park Rangers - Developer Test'
+    notes: ''
+    status: true
+    conditions:
+      enabled:
+        ':input[name="support_agent_use_only[test_submission]"]':
+          checked: true
+        ':input[name="report_location[location_type]"]':
+          value: park
+    weight: -45
+    settings:
+      requester_name: contact_name
+      requester_email: contact_email
+      subject: 'Campsite Report Inside Park'
+      comment: "A campsite has been reported inside of a park by a community member:\r\n\r\n[webform_submission:values:html]"
+      tags: 'drupal webform campsite'
+      priority: normal
+      status: new
+      group_id: '4549352062487'
+      assignee_id: ''
+      type: incident
+      collaborators: ''
+      custom_fields: "6353388345367: 'report_campsite'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n1500013095781: '[webform_submission:uuid]'\r\n9205221816983: ['[webform_submission:values:report_location:location_type:raw]', 'report_location:location_type']\r\n5873270225303: '[webform_submission:values:report_visible_items:checked:vehicle]'"
+      ticket_id_field: report_ticket_id
+      ticket_form_id: '13176953771287'
+      recipient: ''
+      ticket_fork_field: ''
+  submit_to_zendesk_ada_developer_test:
+    id: zendesk
+    handler_id: submit_to_zendesk_ada_developer_test
+    label: 'Submit to Zendesk - ADA - Developer Test'
+    notes: ''
+    status: true
+    conditions:
+      enabled:
+        ':input[name="support_agent_use_only[test_submission]"]':
+          checked: true
+        ':input[name="report_is_ada"]':
+          value: 'yes'
+    weight: -43
+    settings:
+      requester_name: contact_name
+      requester_email: contact_email
+      subject: 'Campsite ADA Accommodation Request'
+      comment: "A campsite has been reported and the community member requested an ADA accommodation:\r\n\r\n[webform_submission:values:html]"
+      tags: 'drupal webform campsite'
+      priority: normal
+      status: new
+      group_id: '4549352062487'
+      assignee_id: ''
+      type: incident
+      collaborators: ''
+      custom_fields: "6353388345367: 'report_campsite'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n1500013095781: '[webform_submission:uuid]'\r\n9205221816983: ['[webform_submission:values:report_location:location_type:raw]', 'report_location:location_type']\r\n5873270225303: '[webform_submission:values:report_visible_items:checked:vehicle]'"
+      ticket_id_field: report_ticket_id
+      ticket_form_id: '12923141466007'
+      recipient: ''
+      ticket_fork_field: ''
+  submit_to_zendesk_ada:
+    id: zendesk
+    handler_id: submit_to_zendesk_ada
+    label: 'Submit to Zendesk - ADA'
+    notes: ''
+    status: true
+    conditions:
+      enabled:
+        ':input[name="support_agent_use_only[test_submission]"]':
+          unchecked: true
+        ':input[name="report_is_ada"]':
+          value: 'yes'
+    weight: -44
+    settings:
+      requester_name: contact_name
+      requester_email: contact_email
+      subject: 'Campsite ADA Accommodation Request'
+      comment: "A campsite has been reported and the community member requested an ADA accommodation:\r\n\r\n[webform_submission:values:html]"
+      tags: 'drupal webform campsite'
+      priority: normal
+      status: new
+      group_id: '4763233132567'
+      assignee_id: ''
+      type: incident
+      collaborators: ''
+      custom_fields: "6353388345367: 'report_campsite'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n1500013095781: '[webform_submission:uuid]'\r\n9205221816983: ['[webform_submission:values:report_location:location_type:raw]', 'report_location:location_type']\r\n5873270225303: '[webform_submission:values:report_visible_items:checked:vehicle]'"
+      ticket_id_field: report_ticket_id
+      ticket_form_id: '12923141466007'
+      recipient: ''
+      ticket_fork_field: ''
+variants: {  }
