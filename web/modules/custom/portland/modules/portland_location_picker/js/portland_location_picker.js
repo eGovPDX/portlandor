@@ -117,7 +117,7 @@
         var baseLayer;
         var aerialLayer;
         // var isPark;
-        var useParks;
+        // var useParks;
         // var hiddenLocationType;
         // var shouldRecenterPark = true;
         var currentView = "base";
@@ -209,18 +209,6 @@
         // SETUP FUNCTIONS ///////////////////////////////
 
         function initialize() {
-
-          // widget can be configured to use the park selector features or not.
-          // if not, we want to disable PortlandMaps parks lookups. this flag
-          // will be used to control that.
-          useParks = true;//$('select.location-park').length > 0 || $('input#edit-report-location-location-type-park').length > 0;
-          // NOTE: we're no longer using the park selector, since parks can be searched for by name.
-
-          // // if select-asset behavior, set label for selected asset text. the term "asset" can be overridden in the widget config.
-          // // Example selected asset text: "Selected asset: Trash Can 57110"
-          // if (primaryLayerBehavior == "selection") {
-          //   $('#selected_asset_label').text('Selected ' + primaryFeatureName + ': ');
-          // }
 
           // disable form submit when pressing enter on address field and click Verify button instead
           $('#location_search').on('keydown', function (e) {
@@ -322,8 +310,8 @@
             e.preventDefault();
             // get address data from link
             var address = $(this).data('pick-address');
-            // put selected address in address field
-            // $('#verified_location').val(address).show();
+            // put selected address in search field
+            $('#location_search').val(address);
             showVerifiedLocation(address);
             suggestionsModal.dialog('close');
             // locate address on map
@@ -344,40 +332,6 @@
           // this will display error messages, or a status indicator when performing slow ajax operations such as self geolocation
           statusModal = $('#status_modal');
 
-          // set up location type radios //////////////////////
-          // some of the sub elements need to be shown/hidden depending on the location type
-          $('fieldset.location-type input[type="radio"]').on("click", function () {
-            handleLocationTypeClick($(this));
-          });
-
-          // set up parks select list /////////////////////////
-          if (useParks) {
-            $('#location_park').after('<span class="verified-checkmark park invisible" title="Location is verified!">✓</span>');
-            $('#location_park').select2({
-              escapeMarkup: function (markup) { return markup; },
-              language: { noResults: function () { return 'No results found. Please try again, or select one of the other property type options above.'; } }
-            });
-            $('#location_park').on("change", function () {
-              var park = $(this).val();
-              //if (park) { locateParkFromSelector(park); }
-            });
-          }
-
-          // // KLUGE: couldn't get complex conditional logic to work in the custom element definition,
-          // // so we're kludging it in with javascript. if the private property radio button is selected,
-          // // then we need to show the ownership question. only fires if elements are present.
-          // $('input[name=' + elementId + '\\[location_type\\]]').on("click", function() {
-          //   var typeValue = $(this).val();
-          //   var ownerQuestion = $('#location_private_owner--wrapper');
-          //   if (typeValue == "private") ownerQuestion.show();
-          //   else ownerQuestion.hide();
-          // });
-
-          // TODO: Geofencing
-          // if (displayCityLimits ) {
-          //   initializeCityLimitsLayer();
-          // }
-
           if (displayBoundary && boundaryUrl != "") {
             // defaults to true && [basic Portland boundary]
             initailizeBounaryLayer();
@@ -389,8 +343,6 @@
 
         function initializeSearchAutocomplete() {
           // set up search field with autocomplete ////////////////////////////
-          // var suggestList;
-          // var suggester = new PdxSuggest();
           $('#location_search').autocomplete({
             source: function (request, response) {
               const searchTerm = request.term;
@@ -419,19 +371,6 @@
               var lon = ui.item.attributes.lon;
               var latlon = new L.LatLng(lat, lon);
               reverseGeolocate(latlon);
-              // showVerifiedLocation(address, lat, lon);
-              // $('#place_name').val("");
-              // municipalitiesLayer = L.geoJson(municipalitiesFeatures);
-              // if (handleCityLimits(new L.LatLng(lat, lon), municipalitiesLayer)) {
-              //   if (doZoomAndCenter(lat, lon)) {
-              //     setLocationMarker(lat, lon);
-              //     // setLocationDetails(lat, lon);
-              //   }
-              // } else {
-              //   return false;
-              // }
-              // var locationType = ui.item.attributes.location_type ?? ui.item.attributes.type;
-              // setHiddenLocationType(locationType);
               $(this).autocomplete('close');
               $('.verified-checkmark.address').removeClass('invisible');
               return false; // returning true causes the field to be cleared
@@ -480,38 +419,6 @@
                 boundaryLayer = L.geoJson(cityBoundaryFeatures, cityLimitsProperties).addTo(map);
                 boundaryLayer.municipality = cityBoundaryFeatures[0].properties.CITYNAME;
                 console.log("Boundary layer loaded.");
-              }
-            });
-          }
-        }
-
-        function initializeCityLimitsLayer() {
-          // DEPRECATED
-          // NOTE: this is currently using a static copy of the city boundaries geoJSON data, in which a whole-earth
-          // polygon has been inserted as the first polygon, so that the city boundary is shown as a hole, with additional
-          // holes within a hole. if the boundaries ever change, that file will need to be updated, or we'll need to
-          // pull in the file from portlandmaps.com and figure out how to update it dynamically.
-
-          if (displayCityLimits) {
-            $.ajax({
-              url: CITY_LIMITS_BOUNDARY_URL_DEPRECATED, success: function (cityBoundaryResponse) {
-                var cityBoundaryFeatures = cityBoundaryResponse.features;
-                cityBoundaryLayer = L.geoJson(cityBoundaryFeatures, cityLimitsProperties).addTo(map);
-                cityBoundaryLayer.municipality = cityBoundaryFeatures[0].properties.CITYNAME;
-                console.log("City boundary layer loaded.");
-
-                // if (requireCityLimits) {
-                //   // NOTE: this is using geojson data from PortlandMaps, which is presumably cached in the browser to avoid
-                //   // pummelling the server. it's a much larger file than the city limits, so it's only called in the rare
-                //   // case that the widget has been configured for geofencing.
-                //   $.ajax({
-                //     url: MUNICIPALITIES_BOUNDARY_URL, success: function (municipalitiesResponse) {
-                //       municipalitiesFeatures = municipalitiesResponse.features;
-                //       municipalitiesLayer = L.geoJson(municipalitiesFeatures);
-                //       console.log("Municipality boundaries layer loaded.");
-                //     }
-                //   });
-                // }  
               }
             });
           }
@@ -803,33 +710,6 @@
           }
         }
 
-        function handleLocationTypeClick(radios) {
-          // this might get called when the parks list is disabled, do a null check first
-          // var select = $('#location_park');
-          // if (select.length < 1) return;
-
-          // // reset park list; it may have been changed
-          // $('#location_park')[0].selectedIndex = 0;
-
-          // // unhide address field
-          // $("#location_address_wrapper").removeClass('visually-hidden');
-
-          // if type is not private, the map is exposed but needs to be redrawn
-          locationType = radios.val();
-          setHiddenLocationType(locationType);
-
-          // if type is park, hide address field container, and hide precision text
-          // if (locationType == 'park') {
-          //   $("#location_address_wrapper").addClass('visually-hidden');
-          //   hidePrecisionText();
-          // }
-
-          if (locationType != 'private') {
-            redrawMap();
-          }
-
-        }
-
         function handleLocateButtonClick(e) {
           cancelEventBubble(e);
           locationErrorShown = false;
@@ -899,100 +779,11 @@
           if (requireBoundary && boundaryUrl) {
             // use PiP library to determine whether map click was in bounds.
             var result = leafletPip.pointInLayer(latlng, boundaryLayer, false);
-            // $('#location_municipality_name').val(municipality);
             return result.length > 0;
 
           } else {
             // if none of the "require" boundary vars are true, return true to indicate the
             // click wasn't out of bounds.
-            return true;
-          }
-        }
-
-        function handleCityLimits(latlng, muniLayer = municipalitiesLayer) {
-
-          if (requireBoundary && boundaryUrl && !requireCityLimits && !requireCityLimitsPlusParks) {
-            return checkWithinBounds(latlng);
-          }
-
-          if (requireCityLimits || requireCityLimitsPlusParks) {
-            var success = false;
-            // NOTE: these are synchronous ajax calls because this function needs to return true or false.
-            $.ajax({
-              async: false,
-              url: buildCheckCityLimitsFenceUrl(latlng),
-              success: function (cityBoundaryResponse) {
-                cityBoundaryResponse = JSON.parse(cityBoundaryResponse);
-
-                if (!isBoundaryCheckSuccessful(cityBoundaryResponse, "portland")) {
-                  // not in city boundary. if configured, try parks boundaries.
-                  if (requireCityLimitsPlusParks) {
-                    $.ajax({
-                      async: false,
-                      url: buildCheckCityLimitsPlusParksFenceUrl(latlng),
-                      success: function (parksBoundaryResponse) {
-                        parksBoundaryResponse = JSON.parse(parksBoundaryResponse);
-                        if (!isBoundaryCheckSuccessful(parksBoundaryResponse)) {
-                          // not in parks boundary either, display error message
-                          showStatusModal(outOfBoundsMessage);
-                          success = false;
-                        } else {
-                          // is within extended city boundary
-                          // $('#location_is_portland').val("Yes");
-                          // console.log("Within geofence (typically Portland): Yes");
-                          // $('#location_municipality_name').val(cityBoundaryLayer.municipality);
-                          // console.log("Municipality: " + cityBoundaryLayer.municipality);
-                          success = true;
-                        }
-                      },
-                      error: function (e) {
-                        // Handle any error cases
-                        showErrorModal(response.error.message);
-                      }
-                    });
-                  } else {
-                    showStatusModal(outOfBoundsMessage);
-                  }
-                } else {
-                  // is within city boundary
-                  // $('#location_is_portland').val("Yes");
-                  // console.log("Within geofence (typically Portland): Yes");
-                  // $('#location_municipality_name').val(cityBoundaryLayer.municipality);
-                  // console.log("Municipality: " + cityBoundaryLayer.municipality);
-                  success = true;
-                }
-              },
-              error: function (e) {
-                // Handle any error cases
-                showErrorModal(response.error.message);
-              }
-            })
-            return success;
-          } else {
-            return true;
-          }
-        }
-
-        function buildCheckCityLimitsFenceUrl(latlng) {
-          var strGeometry = "%7B%22x%22%3A" + latlng.lng + "%2C%22y%22%3A" + latlng.lat + "%2C%22spatialReference%22%3A%7B%22wkid%22%3A4326%7D%7D";
-          return API_BOUNDARY_URL + "?" +
-            "geometry=" + strGeometry +
-            "&geometryType=esriGeometryPoint&spacialRel=esriSpatialRelIntersects" +
-            "&returnGeometry=false&returnTrueCurves=false&returnIdsOnly=false&returnCountOnly=false&returnDistinctValues=false&f=pjson";
-        }
-
-        function buildCheckCityLimitsPlusParksFenceUrl(latlng) {
-          var strGeometry = "%7B%22x%22%3A" + latlng.lng + "%2C%22y%22%3A" + latlng.lat + "%2C%22spatialReference%22%3A%7B%22wkid%22%3A4326%7D%7D";
-          return API_PARKS_BOUNDARY_URL + "?" +
-            "geometry=" + strGeometry +
-            "&geometryType=esriGeometryPoint&spacialRel=esriSpatialRelIntersects" +
-            "&returnGeometry=false&returnTrueCurves=false&returnIdsOnly=false&returnCountOnly=false&returnDistinctValues=false&f=pjson";
-        }
-
-        function isBoundaryCheckSuccessful(response, cityName = null) {
-          if (!response.features || response.features.length < 1 || (cityName && response.features[0].attributes.CITYNAME.toLowerCase() != cityName.toLowerCase())) {
-            return false;
-          } else {
             return true;
           }
         }
@@ -1438,7 +1229,7 @@
             for (var i = 0; i < candidates.length; i++) {
               var c = candidates[i];
               var fulladdress = buildFullAddress(c);
-              listMarkup += '<li><a href="#" class="pick" data-lat="' + c.attributes.lat + '" data-lng="' + c.attributes.lon + '" data-pick-address="' + fulladdress + '">' + fulladdress.toUpperCase() + '</a></li>';
+              listMarkup += '<li><a href="#" class="pick" data-lat="' + c.attributes.lat + '" data-lng="' + c.attributes.lon + '" data-pick-address="' + c.address + '">' + fulladdress.toUpperCase() + '</a></li>';
             }
             listMarkup += "</ul>";
             suggestionsModal.html(listMarkup);
@@ -1553,12 +1344,10 @@
           if (!lng) lng = "0";
           $('input[name=' + elementId + '\\[location_lat\\]]').val(lat);
           $('input[name=' + elementId + '\\[location_lon\\]]').val(lng);
-          //console.log('Set lat/lon: ' + $('input[name=' + elementId + '\\[location_lat\\]]').val() + ', ' + $('input[name=' + elementId + '\\[location_lon\\]]').val());
 
           var sphericalMerc = L.Projection.SphericalMercator.project(L.latLng(lat, lng));
           $('input[name=' + elementId + '\\[location_x\\]]').val(sphericalMerc.x);
           $('input[name=' + elementId + '\\[location_y\\]]').val(sphericalMerc.y);
-          //console.log('Set spherical mercator coordinates: ' + $('input[name=' + elementId + '\\[location_x\\]]').val() + ', ' + $('input[name=' + elementId + '\\[location_y\\]]').val());
         }
 
         // set location marker on map. this is only used with map clicks, not marker clicks.
@@ -1635,124 +1424,13 @@
           });
         }
 
-        // takes selected coordinates and performs reverse geolocation using the PortlandMaps API. 
-        // gets called by:
-        // - function handleMapClick(e)
-        // - function handleLocateMeFound(e)
-        // - handleMarkerClick > selectAsset(marker)
-        // - locationMarker.on('dragend')
-        // function reverseGeolocateX(latlng, zoomAndCenter = true) {
-        //   // this function performs two reverse geocoding lookups. one checks whether the click is inside a park.
-        //   // if it's not, the second lookup is done using the ArcGIS API to find the address/place of the clicked coorodinates.
-        //   var lat = latlng.lat;
-        //   var lng = latlng.lng;
-        //   setUnverified();
-        //   shouldRecenterPark = false;
-
-        //   // clear fields
-        //   //$('#location_address').val();
-        //   // $('#verified_location_text').text();
-        //   //hideVerifiedLocation();
-
-        //   // performs parks reverse geocoding using portlandmaps.com API.
-        //   // the non-parks reverse geocoding is called within the success function,
-        //   // chaining the two calls together.
-        //   if (useParks) {
-        //     // the reverseGeolocateParks function also calls reverseGeolocateNotPark
-        //     reverseGeolocateParks(lat, lng, zoomAndCenter);
-        //   } else {
-        //     reverseGeolocateNotPark(lat, lng, zoomAndCenter);
-        //   }
-        // }
-
-        // function reverseGeolocateParksX(lat, lng, zoomAndCenter = true) {
-        //   var reverseParksGeocodeUrl = PARKS_REVGEOCODE_URL.replace('${lat}', lat).replace('${lng}', lng);
-        //   $.ajax({
-        //     url: reverseParksGeocodeUrl, success: function (result) {
-        //       var jsonResult = JSON.parse(result);
-
-        //       if (jsonResult.features && jsonResult.features.length > 0) {
-        //         // it's a park. process the data from portlandmaps and exit function.
-
-        //         if (!handleCityLimits(L.latLng(lat, lng))) return false;
-        //         setLocationType(lat, lng);
-        //         setHiddenLocationType("park");
-        //         if (zoomAndCenter) {
-        //           doZoomAndCenter(lat, lng);
-        //           if (primaryLayerBehavior != PRIMARY_LAYER_BEHAVIOR.SelectionOnly) {
-        //             setLocationMarker(lat, lng);
-        //           }
-        //         }
-
-        //         // set place name field
-        //         var parkName = jsonResult.features[0].attributes.NAME;
-        //         $('.place-name').val(parkName);
-        //         showVerifiedLocation(parkName, lat, lng);
-        //         setVerified("park");
-
-        //       } else {
-        //         // it's not a park and not managed by Parks!
-        //         reverseGeolocateNotPark(lat, lng, zoomAndCenter);
-        //       }
-        //     }
-        //   });
-        // }
-
-        // function reverseGeolocateNotParkX(lat, lng, zoomAndCenter = true) {
-        //   // now do PortlandMaps ArcGIS reverse geocoding call to get the non-park address for the location
-        //   // https://www.portlandmaps.com/arcgis/rest/services/Public/Geocoding_PDX/GeocodeServer/reverseGeocode
-        //   var reverseGeocodeUrl = REVGEOCODE_URL.replace('${lat}', lat).replace('${lng}', lng);
-        //   $.ajax({
-        //     url: reverseGeocodeUrl, success: function (response) {
-        //       if (response.length < 1 || !response.address || !response.location) {
-        //         // portlandmaps doesn't have data for this location.
-        //         // set location type to "other" so 311 can triage but still set marker.
-        //         // address field may be required by the form, so something needs to go there.
-        //         if (!handleCityLimits(L.latLng(lat, lng))) return false;
-        //         if (zoomAndCenter) {
-        //           doZoomAndCenter(lat, lng);
-        //           if (primaryLayerBehavior != PRIMARY_LAYER_BEHAVIOR.SelectionOnly) {
-        //             setLocationMarker(lat, lng);
-        //             //$('#location_verify').addClass('visually-hidden');
-        //             hideVerifyButton();
-        //           }
-        //         }
-        //         //if (locationType == "park") {
-        //         setLocationType(lat, lng);
-        //         //}
-        //         if (response.error) {
-
-        //           //$('#verified_location_text').text("N/A");
-        //           showVerifiedLocation("N/A", lat, lng);
-        //           $('#place_name').val('N/A');
-        //           setUnverified();
-        //         } else if (response && response.features && response.features[0].attributes && response.features[0].attributes.NAME) {
-        //           var locName = response.features[0].attributes.NAME;
-        //           showVerifiedLocation(locName, lat, lng);
-        //           //$('#verified_location_text').text(locName);
-        //           setUnverified();
-        //         };
-        //         return false;
-        //       }
-
-        //       var isCityLimits = handleCityLimits(L.latLng(lat, lng));
-        //       if (isCityLimits) {
-        //         processReverseLocationData(response, lat, lng, zoomAndCenter);
-        //       }
-        //     },
-        //     error: function (e) {
-        //       // Handle any error cases
-        //       console.error(e);
-        //     }
-        //   });
-        // }
-
         function parseDescribeData(data) {
           var description = "";
 
           // if park, get park name
           if (data.park && data.detail.park[0].name != null) {
             description = data.detail.park[0].name.toUpperCase();
+            $('#place_name').val(data.detail.park[0].name);
           } else if (data.waterbody && data.detail.waterbody[0].name != null) {
             description = data.detail.waterbody[0].name.toUpperCase();
           } else {
@@ -1800,62 +1478,8 @@
             $('#location_name').val(data.detail.park[0].name);
           }
 
-          // var street = data.address.Street;
-          // var city = data.address.City;
-          // var state = data.address.State;
-          // var postal = data.address.ZIP;
-          // var addressLabel = street.length > 0 ? street + ', ' + city + ', ' + state + ' ' + postal : city;
-          // showVerifiedLocation(addressLabel, lat, lng);
-          // setVerified();
           setLocationDetails(data);
         }
-
-        // function locateParkFromSelector(id) {
-        //   // this function is triggered by the parks selector onchange. when user selects a park, look up the
-        //   // lat/lng and show it on the map. HOWEVER, the selector might get updated if the user clicks into a
-        //   // park on the map. in that case, we skip the onchange park geolocation.
-        //   // this function uses a view in Drupal to return parks data using the node id as a parameter.
-
-        //   if (!shouldRecenterPark) {
-        //     shouldRecenterPark = true;
-        //     return false;
-        //   }
-
-        //   // if user selected the "Other/Not found" option (value = "0"), don't do the lookup,
-        //   // but do unhide the map and redraw it.
-        //   if (id === "0") {
-        //     // change location type to "I'm not sure"
-        //     setLocationType("other");
-        //     redrawMap(); // workaround for map redraw issue when initialized while hidden
-        //     return false;
-        //   }
-        //   var url = '/api/parks/locationpicker/' + id; // this is a drupal view that returns json about the park
-        //   // this lookup uses the Park Finder view, which is a search view. if there is a problem with the search index, in particular in
-        //   // a local environment, it will not return results but should still work in a multidev or Live.
-        //   $.ajax({
-        //     url: url, success: function (result) {
-        //       showPrecisionText();
-        //       if (result.length < 1) {
-        //         showStatusModal(NOT_A_PARK);
-        //         setUnverified();
-        //         return;
-        //       }
-
-        //       // the coordinates returned by this call are for park entrances. some may have more than
-        //       // one entrance, such as large parks like Washington Park. we use the first one in the array.
-        //       // the geolocaiton data needs to be escaped; best way is in a textarea element (kludgey but works).
-        //       var txt = document.createElement("textarea");
-        //       txt.innerHTML = result[0].location;
-        //       var json = JSON.parse(txt.value);
-        //       var lng = json.coordinates[0];
-        //       var lat = json.coordinates[1];
-        //       setLocationMarker(lat, lng);
-        //       doZoomAndCenter(lat, lng);
-        //       redrawMap();
-        //       setVerified("park");
-        //     }
-        //   });
-        // }
 
         function showVerifiedLocation(description, lat, lng) {
           $('#verified_location_text').text(description);
@@ -1878,20 +1502,6 @@
           if (verifiedAddresses) {
             $('#location_search').val(description);
           };
-
-          // var popupMarkup;
-          // if (description.length < 1 || description.toUpperCase() == "N/A") {
-          //   popupMarkup = `<div class="location-popup"><p><strong>Selected location</strong><br><em>${lat}, ${lng}</em></p></div>`;
-          // } else {
-          //   popupMarkup = `<div class="location-popup"><p><strong>Selected location</strong><br>${description.toUpperCase()}<br><em>${lat} ${lng}</em></p></div>`;
-          // }
-
-          // // bind to location marker
-          // locationMarker.bindPopup(popupMarkup);
-          // locationMarker.openPopup();
-
-
-
         }
 
         function hideVerifiedLocation() {
@@ -1923,7 +1533,7 @@
         }
 
         function buildFullAddress(c) {
-          return [c.address, c.attributes.city, c.attributes.state]
+          return [c.address, c.attributes.city]
             .filter(Boolean)
             .join(', ')
             + ' ' + (c.attributes.zip_code || '');
