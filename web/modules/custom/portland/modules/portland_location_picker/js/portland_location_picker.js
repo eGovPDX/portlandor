@@ -189,6 +189,17 @@
           popupAnchor: [0, -41]
         });
 
+        // geofencing backwards compatibility
+        if (requireCityLimits) {
+          requireBoundary = true;
+          boundaryUrl = "https://www.portlandmaps.com/arcgis/rest/services/Public/Boundaries/MapServer/0/query?where=1%3D1&objectIds=35&outFields=*&returnGeometry=true&f=geojson";
+        }
+
+        if (requireCityLimitsPlusParks) {
+          requireBoundary = true;
+          boundaryUrl = "https://www.portlandmaps.com/arcgis/rest/services/Public/CGIS_Layers/MapServer/33/query?where=1%3D1&outFields=*&returnGeometry=true&f=geojson";
+        }
+
         // if ajax is used in the webform (for computed twig, for example), this script
         // and the initialize function may get called multiple times for some reason.
         // adding this flag prevents re-initialization of the map.
@@ -888,7 +899,6 @@
           if (requireBoundary && boundaryUrl) {
             // use PiP library to determine whether map click was in bounds.
             var result = leafletPip.pointInLayer(latlng, boundaryLayer, false);
-            var municipality = result[0].feature.properties.CITYNAME;
             // $('#location_municipality_name').val(municipality);
             return result.length > 0;
 
@@ -1010,8 +1020,12 @@
             locateControlContaier.style.backgroundImage = 'url("/modules/custom/portland/modules/portland_location_picker/images/map_locate.png")';
           }
 
-          reverseGeolocate(latlng);
-          checkRegion(latlng);
+          if (checkWithinBounds(latlng)) {
+            reverseGeolocate(latlng);
+            checkRegion(latlng);
+          } else {
+            showStatusModal(outOfBoundsMessage);
+          }
 
         }
 
