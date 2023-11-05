@@ -178,12 +178,12 @@ class PortlandLocationPicker extends WebformCompositeBase {
       '#attributes' => ['class' => ['location-attributes'], 'id' => 'location_attributes'],
     ];
     $element['location_asset_id'] = [
-      '#type' => 'textfield',
+      '#type' => 'hidden',
       '#title' => t('Asset ID'),
       '#attributes' => ['class' => ['location-asset-id'], 'id' => 'location_asset_id'],
     ];
     $element['location_region_id'] = [
-      '#type' => 'textfield',
+      '#type' => 'hidden',
       '#title' => t('Region ID'),
       '#attributes' => ['class' => ['location-region-id'], 'id' => 'location_region_id'],
     ];

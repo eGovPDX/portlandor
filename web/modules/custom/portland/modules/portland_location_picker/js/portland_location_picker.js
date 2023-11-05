@@ -159,18 +159,18 @@
         var locationType;
         var locationTextBlock;
 
-        // properties for the city limits polygon; if geofencing is required, the city limits are shown
-        // as a clear cutout of a shaded global polygon.
-        if (displayCityLimits && requireCityLimits) {
-          var cityLimitsProperties = {
-            color: 'red',
-            fillColor: 'black',
-            fillOpacity: 0.1,
-            weight: 1,
-            dashArray: "2 4",
-            interactive: false
-          }
-        } else if (displayCityLimits && !requireCityLimits) {
+        // // properties for the city limits polygon; if geofencing is required, the city limits are shown
+        // // as a clear cutout of a shaded global polygon.
+        // if (displayCityLimits && requireCityLimits) {
+        //   var cityLimitsProperties = {
+        //     color: 'red',
+        //     fillColor: 'black',
+        //     fillOpacity: 0.1,
+        //     weight: 1,
+        //     dashArray: "2 4",
+        //     interactive: false
+        //   }
+        // } else if (displayCityLimits && !requireCityLimits) {
           var cityLimitsProperties = {
             color: 'red',
             fillOpacity: 0,
@@ -178,7 +178,7 @@
             dashArray: "2 4",
             interactive: false
           }
-        }
+        // }
 
         var defaultSelectedMarkerIcon = L.icon({
           iconUrl: selectedMarker,
@@ -779,8 +779,14 @@
           if (requireBoundary && boundaryUrl) {
             // use PiP library to determine whether map click was in bounds.
             var result = leafletPip.pointInLayer(latlng, boundaryLayer, false);
-            return result.length > 0;
 
+            if (result.length < 1) {
+              // not within bounds, show message and return false.
+              showStatusModal(outOfBoundsMessage);
+              return false;
+            } else {
+              return true;
+            }
           } else {
             // if none of the "require" boundary vars are true, return true to indicate the
             // click wasn't out of bounds.
@@ -790,14 +796,12 @@
 
         function doMapClick(latlng) {
           // normally when the map is clicked, we want to zoom to the clicked location
-          // and perform a reverse lookup. there are some cases where we may want to 
-          // perform additional actions. for example, if location type = park, we also
-          // need to do a reverse parks lookup and adjust the park selector accordingly.
+          // and perform reverse geocoding. 
 
-          // if primary layer behavior is selection-only, we don't allow map clicks, but we
-          // still want to zoom in on that location.
-          // if (primaryLayerBehavior == PRIMARY_LAYER_BEHAVIOR.SelectionOnly) return false;
-
+          // if primary layer behavior is selection-only, or geofencing is enabled, 
+          // don't allow location selection, but still zoom in on that location and 
+          // display location description.
+          
           resetClickedMarker();
           resetLocationMarker();
           clearLocationFields();
@@ -811,12 +815,12 @@
             locateControlContaier.style.backgroundImage = 'url("/modules/custom/portland/modules/portland_location_picker/images/map_locate.png")';
           }
 
-          if (checkWithinBounds(latlng)) {
+          // if (checkWithinBounds(latlng)) {
             reverseGeolocate(latlng);
-            checkRegion(latlng);
-          } else {
-            showStatusModal(outOfBoundsMessage);
-          }
+          //   checkRegion(latlng);
+          // } else {
+          //   showStatusModal(outOfBoundsMessage);
+          // }
 
         }
 
@@ -875,7 +879,7 @@
           // need to call reverseGeolocate in order to capture nearest address,
           // this is the one instance where we don't want to zoom and center when clicking 
           // an existing marker (2nd argument = false).
-          reverseGeolocate(marker.latlng, false);
+          reverseGeolocate(marker.latlng, true);
         }
 
         function resetLocationMarker() {
@@ -1424,7 +1428,7 @@
           });
         }
 
-        function parseDescribeData(data) {
+        function parseDescribeData(data, isWithinBounds) {
           var description = "";
 
           // if park, get park name
@@ -1434,7 +1438,11 @@
           } else if (data.waterbody && data.detail.waterbody[0].name != null) {
             description = data.detail.waterbody[0].name.toUpperCase();
           } else {
-            description = data.describe ? data.describe.toUpperCase() : "";
+            // if within boudns, use data description. otherwise just city and zip
+            // be displayed.
+            if (isWithinBounds) {
+              description = data.describe ? data.describe.toUpperCase() : "";
+            }
           }
 
           if (data.detail.city && data.detail.city[0].name != null) {
@@ -1461,16 +1469,21 @@
         }
 
         function processReverseLocationData(data, lat, lng, zoomAndCenter = true) {
+          var isWithinBounds = checkWithinBounds(new L.LatLng(lat, lng));
+          // don't zoom in so far if not within bounds
+          var zoomLevel = isWithinBounds ? DEFAULT_ZOOM_CLICK : DEFAULT_ZOOM_CLICK - 2;
           if (zoomAndCenter) {
-            doZoomAndCenter(lat, lng);
-            if (primaryLayerBehavior != PRIMARY_LAYER_BEHAVIOR.SelectionOnly) {
-              setLocationMarker(lat, lng);
+            doZoomAndCenter(lat, lng, zoomLevel);
+            var latlng = new L.LatLng(lat, lng);
+            if (primaryLayerBehavior != PRIMARY_LAYER_BEHAVIOR.SelectionOnly && isWithinBounds) {
+              setLocationMarker(lat, lng, isWithinBounds);
+              checkRegion(latlng)
             }
           }
 
-          var description = parseDescribeData(data);
+          var description = parseDescribeData(data, isWithinBounds);
 
-          showVerifiedLocation(description, lat, lng);
+          showVerifiedLocation(description, lat, lng, isWithinBounds);
           $('#location_address').val(description);
 
           // if park, set location name
