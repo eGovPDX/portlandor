@@ -146,7 +146,7 @@ class PortlandLocationPicker extends WebformCompositeBase {
       $element_id = $element['#webform_key'];
     }
 
-    $verifiedAddresses = array_key_exists('#verified_addresses', $element) ? $element['#verified_addresses'] : FALSE;
+    $addressVerify = array_key_exists('#address_verify', $element) ? $element['#address_verify'] : FALSE;
     $primaryLayerSource = array_key_exists('#primary_layer_source', $element) ? $element['#primary_layer_source'] : "";
     $incidentsLayerSource = array_key_exists('#incidents_layer_source', $element) ? $element['#incidents_layer_source'] : "";
     $regionsLayerSource = array_key_exists('#regions_layer_source', $element) ? $element['#regions_layer_source'] : "";
@@ -169,7 +169,7 @@ class PortlandLocationPicker extends WebformCompositeBase {
     $requireBoundary = array_key_exists('#require_boundary', $element) ? $element['#require_boundary'] : FALSE;
     $outOfBoundsMessage = array_key_exists('#out_of_bounds_message', $element) ? $element['#out_of_bounds_message'] : "The location you selected is not within our service area. Please try a different location.";
 
-    $element['#attached']['drupalSettings']['webform']['portland_location_picker']['verified_addresses'] = $verifiedAddresses;
+    $element['#attached']['drupalSettings']['webform']['portland_location_picker']['address_verify'] = $addressVerify;
     $element['#attached']['drupalSettings']['webform']['portland_location_picker']['element_id'] = $element_id;
     $element['#attached']['drupalSettings']['webform']['portland_location_picker']['primary_layer_source'] = $primaryLayerSource;
     $element['#attached']['drupalSettings']['webform']['portland_location_picker']['incidents_layer_source'] = $incidentsLayerSource;

@@ -49,7 +49,7 @@
         const DEFAULT_SOLVED_ICON_URL = "/modules/custom/portland/modules/portland_location_picker/images/map_marker_incident_solved.png";
         // const LOCATION_TYPE_LOOKUP_URL = "https://www.portlandmaps.com/api/intersects/?includeDetail=true&";
         const REVERSE_GEOCODE_URL = 'https://www.portlandmaps.com/api/intersects/?geometry=%7B%20%22x%22:%20${x},%20%22y%22:%20${y},%20%22spatialReference%22:%20%7B%20%22wkid%22:%20%223857%22%7D%20%7D&include=all&detail=1&api_key=${apiKey}';
-
+        const ADDRESS_DECODER_URL = 'https://www.portlandmaps.com/arcgis/rest/services/Public/Geocoding_PDX/GeocodeServer/reverseGeocode?location=%7B%22x%22%3A${lng}%2C+%22y%22%3A${lat}%2C+%22spatialReference%22%3A%7B%22wkid%22+%3A+4326%7D%7D&distance=100&langCode=&locationType=&featureTypes=&outSR=4326&returnIntersection=false&f=json'
         const API_BOUNDARY_URL = "https://www.portlandmaps.com/arcgis/rest/services/Public/Boundaries/MapServer/0/query";
         const API_PARKS_BOUNDARY_URL = "https://www.portlandmaps.com/arcgis/rest/services/Public/Parks_Misc/MapServer/2/query";
         // const PARKS_REVGEOCODE_URL = "https://www.portlandmaps.com/arcgis/rest/services/Public/Parks_Misc/MapServer/2/query?geometry=%7B%22x%22%3A${lng}%2C%22y%22%3A${lat}%2C%22spatialReference%22%3A%7B%22wkid%22%3A4326%7D%7D&geometryType=esriGeometryPoint&spacialRel=esriSpatialRelIntersects&returnGeometry=false&returnTrueCurves=false&returnIdsOnly=false&returnCountOnly=false&returnDistinctValues=false&f=pjson";
@@ -130,7 +130,7 @@
         // var locationTypeHelpText = $('#location_details--description').text();
 
         // CUSTOM PROPERTIES SET IN WEBFORM CONFIG //////////
-        var verifiedAddresses = drupalSettings.webform ? drupalSettings.webform.portland_location_picker.verified_addresses : "";
+        var addressVerify = drupalSettings.webform ? drupalSettings.webform.portland_location_picker.address_verify : "";
         var elementId = drupalSettings.webform ? drupalSettings.webform.portland_location_picker.element_id : "";
         var primaryLayerSource = drupalSettings.webform ? drupalSettings.webform.portland_location_picker.primary_layer_source : "";
         var incidentsLayerSource = drupalSettings.webform ? drupalSettings.webform.portland_location_picker.incidents_layer_source : "";
@@ -288,7 +288,7 @@
               showVerifyButton();
             }
           });
-          if (verifiedAddresses) {
+          if (addressVerify) {
             $('#location_search').after('<span class="verified-checkmark address invisible" title="Location is verified!">✓</span>');
             // turn off verified checkmark if value changes
             $('#location_search').on('keyup', function () {
@@ -815,13 +815,7 @@
             locateControlContaier.style.backgroundImage = 'url("/modules/custom/portland/modules/portland_location_picker/images/map_locate.png")';
           }
 
-          // if (checkWithinBounds(latlng)) {
-            reverseGeolocate(latlng);
-          //   checkRegion(latlng);
-          // } else {
-          //   showStatusModal(outOfBoundsMessage);
-          // }
-
+          reverseGeolocate(latlng);
         }
 
         function checkRegion(latlng) {
@@ -894,7 +888,6 @@
             // reset clicked marker's icon to original
             clickedMarker.target.setIcon(clickedMarker.originalIcon);
             L.DomUtil.removeClass(clickedMarker.target._icon, 'selected');
-            //map.closePopup();
           }
         }
 
@@ -903,8 +896,6 @@
           // get populated by the location, such as lat, lon, address, region id, etc.
           // every map click essentially resets the previous click. this function clears
           // the relevant location fields.
-          // $('input[name=' + elementId + '\\[location_address\\]]').val('');
-          //hideVerifiedLocation();
           $('input[name=' + elementId + '\\[location_lat\\]]').val('');
           $('input[name=' + elementId + '\\[location_lon\\]]').val('');
           $('input[name=' + elementId + '\\[location_x\\]]').val('');
@@ -913,156 +904,11 @@
           $('input[name=' + elementId + '\\[location_asset_id\\]]').val('');
           $('input[name=' + elementId + '\\[location_region_id\\]]').val('');
           $('input[name=' + elementId + '\\[location_municipality_name\\]]').val('');
-          // $('input[name=' + elementId + '\\[location_is_portland\\]]').val('');
           $('input[name=' + elementId + '\\[location_attributes\\]]').val('');
         }
 
-        // this is the helper function that fires when an asset marker is clicked.
-        // function setLocationType(lat, lng) {
-        //   // NOTE: The following code would be problematic if we allow multiple copies of the widget or alternate naming conventions.
-        //   // $("input[name='" + elementId + "[location_type]'][value='" + type + "']").click();
-
-        //   var sphericalMerc = L.Projection.SphericalMercator.project(L.latLng(lat, lng));
-        //   $('input[name=' + elementId + '\\[location_x\\]]').val(sphericalMerc.x);
-        //   $('input[name=' + elementId + '\\[location_y\\]]').val(sphericalMerc.y);
-
-        //   var apiUrl = LOCATION_TYPE_LOOKUP_URL + "x=" + sphericalMerc.x + "&y=" + sphericalMerc.y;
-        //   apiUrl += "&api_key=" + apiKey;
-        //   // if row=true and street=false, this is a sidewalk or other easement
-        //   // street and taxlot might both be true for bridges/overpasses/viaducts
-
-        //   $.ajax({
-        //     url: apiUrl,
-        //     success: function (results) {
-        //       // Pass the results to the response callback
-        //       // console.log("Taxlot: " + results.taxlot);
-        //       // console.log("Park: " + results.park);
-        //       // console.log("Waterbody: " + results.waterbody);
-        //       // console.log("Trail: " + results.trail);
-        //       // console.log("Stream: " + results.stream);
-        //       // console.log("Street: " + results.street);
-        //       // console.log("Row: " + results.row);
-        //       var location_type = "";
-        //       var place_name = $('input[name=' + elementId + '\\[place_name\\]]').val();
-        //       var internal_details = "";
-        //       var type_count = 0;
-
-        //       // clear location type fields
-        //       // $('input[name=' + elementId + '\\[location_type_taxlot\\]]').val("");
-        //       // $('input[name=' + elementId + '\\[location_type_park\\]]').val("");
-        //       // $('input[name=' + elementId + '\\[location_type_waterbody\\]]').val("");
-        //       // $('input[name=' + elementId + '\\[location_type_trail\\]]').val("");
-        //       // $('input[name=' + elementId + '\\[location_type_stream\\]]').val("");
-        //       // $('input[name=' + elementId + '\\[location_type_street\\]]').val("");
-        //       // $('input[name=' + elementId + '\\[location_type_row\\]]').val("");
-        //       // $('input[name=' + elementId + '\\[location_types\\]]').val("");
-        //       // $('input[name=' + elementId + '\\[location_attributes\\]]').val("");
-
-        //       // TODO: need to manually display location_private_owner radios if taxlog
-        //       if (results.taxlot) {
-        //         $('input[name=' + elementId + '\\[location_type_taxlot\\]]').val("1");
-        //         location_type += "taxlot,";
-        //         var taxlot_id = results.feature_detail.taxlot[0].propertyid;
-        //         internal_details += "Tax lot: " + taxlot_id + ', ';
-        //         type_count += 1;
-        //       }
-        //       if (results.park) {
-        //         $('input[name=' + elementId + '\\[location_type_park\\]]').val("1");
-        //         location_type += "park,";
-        //         var park_name = results.feature_detail.park[0].name;
-        //         place_name += park_name + ', ';
-        //         type_count += 1;
-        //       }
-        //       if (results.waterbody) {
-        //         $('input[name=' + elementId + '\\[location_type_waterbody\\]]').val("1");
-        //         location_type += "waterbody,";
-        //         var waterbody_id = results.feature_detail.waterbody[0].objectid;
-        //         //place_name += waterbody_id + ', ';
-        //         internal_details += "Object ID: " + waterbody_id + ', ';
-        //         type_count += 1;
-        //       }
-        //       if (results.trail) {
-        //         $('input[name=' + elementId + '\\[location_type_trail\\]]').val("1");
-        //         location_type += "trail,";
-        //         var trail_name = results.feature_detail.trail[0].local_name;
-        //         place_name += trail_name + ', ';
-        //         type_count += 1;
-        //       }
-        //       if (results.stream) {
-        //         $('input[name=' + elementId + '\\[location_type_stream\\]]').val("1");
-        //         location_type += "stream,";
-        //         var stream_name = results.feature_detail.stream[0].name;
-        //         place_name += stream_name + ', ';
-        //         type_count += 1;
-        //       }
-        //       if (results.street) {
-        //         $('input[name=' + elementId + '\\[location_type_street\\]]').val("1");
-        //         location_type += "street,";
-        //         var street_name = results.feature_detail.street[0].full_name;
-        //         place_name += street_name + ', ';
-        //         type_count += 1;
-        //       }
-        //       if (results.row) {
-        //         $('input[name=' + elementId + '\\[location_type_row\\]]').val("1");
-        //         // $('input[name=' + elementId + '\\[location_type\\]]').val($('input[name=' + elementId + '\\[location_type\\]]').val() + 'row,');
-        //         location_type += "row,";
-        //         var tl_type = results.feature_detail.row[0].tl_type;
-        //         internal_details += "TL Type: " + tl_type + ', ';
-        //         type_count += 1;
-        //       }
-
-        //       place_name = removeTrailingComma(place_name);
-        //       location_type = removeTrailingComma(location_type);
-        //       internal_details = removeTrailingComma(internal_details);
-
-        //       //$('input[name=' + elementId + '\\[place_name\\]]').val(place_name);
-        //       $('input[name=' + elementId + '\\[location_types\\]]').val(location_type);
-        //       $('input[name=' + elementId + '\\[location_attributes\\]]').val(internal_details);
-
-        //       // // set location radio button
-        //       // // report_location[location_type]
-        //       // var radioInputs = $('input[name=' + elementId + '\\[location_type\\]]'); 
-        //       // var radioValue = calculateLocationType(results);
-        //       // for (var i = 0; i < radioInputs.length; i++) {
-        //       //   if (radioInputs[i].value == radioValue) {
-        //       //     radioInputs[i].click();
-        //       //     break;
-        //       //   }
-        //       // }
-
-        //       console.log('Place name: ' + place_name);
-        //       console.log('Location type: ' + location_type);
-        //       console.log('Internal details: ' + internal_details);
-
-        //       // $('input[name=' + elementId + '\\[location_type\\]]').trigger('change');
-        //       $('input[name=' + elementId + '\\[location_type_taxlot\\]]').trigger('change');
-        //       $('input[name=' + elementId + '\\[location_type_park\\]]').trigger('change');
-        //       $('input[name=' + elementId + '\\[location_type_waterbody\\]]').trigger('change');
-        //       $('input[name=' + elementId + '\\[location_type_trail\\]]').trigger('change');
-        //       $('input[name=' + elementId + '\\[location_type_stream\\]]').trigger('change');
-        //       $('input[name=' + elementId + '\\[location_type_street\\]]').trigger('change');
-        //       $('input[name=' + elementId + '\\[location_type_row\\]]').trigger('change');
-        //       // $('input[name=' + elementId + '\\[location_type\\]]').trigger('change');
-
-        //       // if there is more than one location type, dipslay help text asking user to clarify in Location Details field
-        //       // place_name--description
-        //       if (type_count > 1) {
-        //         var placeNameHelpText = " For example, for overpasses and bridges, please let us know whether the location is on the bridge or overpass above, or on the property below.";
-        //         $('#location_details--description').text(locationTypeHelpText + placeNameHelpText);
-        //       }
-
-        //     },
-        //     error: function (e) {
-        //       // Handle any error cases
-        //       console.error(e);
-        //     }
-        //   });
-
-        // }
-
         function setLocationDetails(results) {
           var location_type = "";
-          //var place_name = $('input[name=' + elementId + '\\[place_name\\]]').val();
           $('input[name=' + elementId + '\\[location_types\\]]').val("");
           $('input[name=' + elementId + '\\[location_attributes\\]]').val("");
           var internal_details = "";
@@ -1106,26 +952,19 @@
           if (results.stream) {
             $('input[name=' + elementId + '\\[location_type_stream\\]]').val("true");
             location_type += "stream,";
-            // var stream_name = results.detail.stream[0].name;
-            // place_name += stream_name + ', ';
             type_count += 1;
           }
           if (results.street) {
             $('input[name=' + elementId + '\\[location_type_street\\]]').val("true");
             location_type += "street,";
-            // var street_name = results.detail.street[0].full_name;
-            // place_name += street_name + ', ';
             type_count += 1;
           }
           if (results.row) {
             $('input[name=' + elementId + '\\[location_type_row\\]]').val("true");
             location_type += "row,";
-            // var tl_type = results.detail.row[0].tl_type;
-            // internal_details += "TL Type: " + tl_type + ', ';
             type_count += 1;
           }
 
-          //place_name = removeTrailingComma(place_name);
           location_type = removeTrailingComma(location_type);
           internal_details = removeTrailingComma(internal_details);
 
@@ -1156,24 +995,6 @@
 
         }
 
-        // function calculateLocationType(results) {
-        //   // parks are also taxlots!
-
-        //   // private
-        //   if (results.taxlot && !results.park) {
-        //     locationType = LOCATION_TYPE.Private;
-        //   } else if (results.park) {
-        //     locationType = LOCATION_TYPE.Park;
-        //   } else if (results.waterbody && results.row) {
-        //     locationType = LOCATION_TYPE.Waterway;
-        //   } else if (results.street || (results.row && results.feature_detail.row[0].tl_type == "ROAD")) {
-        //     locationType = LOCATION_TYPE.Street;
-        //   } else {
-        //     locationType = LOCATION_TYPE.Other;
-        //   }
-        //   return locationType;
-        // }
-
         function removeTrailingComma(myStr) {
           if (!myStr) return "";
           myStr = myStr.trim();
@@ -1185,15 +1006,6 @@
             var retval = myStr.substring(0, myStr.length - 2);
             return retval;
           }
-        }
-
-        function setHiddenLocationType(type) {
-          // if (type) type = type.toLowerCase();
-          // type = type == "natural area" ? "park" : type;
-          // $("#location_types").val(type);
-          // console.log(type);
-
-
         }
 
         function redrawMap() {
@@ -1270,7 +1082,7 @@
               doZoomAndCenter(lat, lng);
               checkRegion(new L.LatLng(lat, lng));
 
-              if (!verifiedAddresses) {
+              if (!addressVerify) {
                 // show precision text
                 showPrecisionText();
               }
@@ -1314,7 +1126,7 @@
         }
 
         function showPrecisionText() {
-          if (!verifiedAddresses) {
+          if (!addressVerify) {
             $('#precision_text').removeClass('visually-hidden');
           }
         }
@@ -1407,7 +1219,9 @@
           var sphericalMerc = L.Projection.SphericalMercator.project(latlng);
           var x = sphericalMerc.x;
           var y = sphericalMerc.y;
-          url = REVERSE_GEOCODE_URL.replace('${x}', x).replace('${y}', y).replace('${apiKey}', apiKey);
+
+          var url = addressVerify ? ADDRESS_DECODER_URL : REVERSE_GEOCODE_URL;
+          url = url.replace('${x}', x).replace('${y}', y).replace('${apiKey}', apiKey);
 
           $.ajax({
             url: url, success: function (response) {
@@ -1512,7 +1326,7 @@
           $('#location-text-lng').text(lng);
 
           // if verify mode, also put location description in address field
-          if (verifiedAddresses) {
+          if (addressVerify) {
             $('#location_search').val(description);
           };
         }
@@ -1576,7 +1390,7 @@
         }
 
         function setVerified(type = "address") {
-          if (verifiedAddresses) {
+          if (addressVerify) {
             $('.verified-checkmark.' + type).removeClass('invisible');
             $('.location-verify.' + type).prop('disabled', true);
           }
