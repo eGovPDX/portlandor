@@ -90,21 +90,38 @@ elements: |-
       container_location:
         '#type': webform_section
         '#title': 'Vehicle location'
+        report_location_is_private:
+          '#type': radios
+          '#title': 'Is the location on private property?'
+          '#description': '<p>Such as a home, apartment building, business, church, etc.</p>'
+          '#description_display': before
+          '#options':
+            'Yes': 'Yes'
+            'No': 'No'
+            'Not sure': 'Not sure'
+          '#options_display': side_by_side
+          '#required': true
+        markup_private_property_stop:
+          '#type': webform_markup
+          '#states':
+            visible:
+              ':input[name="report_location_is_private"]':
+                value: 'Yes'
+          '#markup': |
+            <div class="alert alert--info next-steps">
+            <h2>Next Steps</h2>
+
+            <p><strong>Abandoned vehicles on private property:</strong> You are reporting a potential code violation. You may want to first try talking to the property owner to see if the issue can be resolved. If not, please fill out the Bureau of Development Service's online <a href="https://www.portlandoregon.gov/bds/index.cfm?&amp;cfid=283088908&amp;c=42240&amp;cftoken=9ab256232dbace5c%2D4FC97C74%2DE642%2D08D1%2D82D8D94D3016098C">violation reporting form</a>, or call the Code Enforcement Line at <a href="tel:+1-503-823-2633">503-823-2633</a> to report your concern.</p>
+            <p><strong>For property owners:</strong> You are responsible for addressing concerns on your property. If you would like additional information, please call <a href="tel:311">3-1-1</a> or <a href="tel:+15038234000">503-823-4000</a> so staff can assist you further.</p>
+            </div>
         report_location:
           '#type': portland_location_picker
           '#title': Location
-          '#default_value':
-            location_type: street
-            location_park: ''
-            location_address: ''
-            place_name: ''
-            location_details: ''
-            location_lat: ''
-            location_lon: ''
-            location_private_owner: ''
+          '#states':
+            invisible:
+              ':input[name="report_location_is_private"]':
+                value: 'Yes'
           '#location_address__required': true
-          '#location_type__title': 'On what type of property is the vehicle located?'
-          '#location_type__required': true
           '#location_private_owner__access': false
           '#location_lat__required': true
           '#place_name__access': false
@@ -115,35 +132,14 @@ elements: |-
           '#location_is_portland__access': false
           '#geojson_layer__access': false
           '#geojson_layer_behavior__access': false
-          '#location_details__states':
-            invisible:
-              ':input[name="report_location[location_type]"]':
-                value: private
-          '#place_name__states':
-            invisible:
-              ':input[name="report_location[location_type]"]':
-                value: private
-          '#require_city_limits_plus_parks': true
-        markup_private_property_stop:
-          '#type': webform_markup
-          '#states':
-            visible:
-              ':input[name="report_location[location_type]"]':
-                value: private
-          '#markup': |
-            <div class="alert alert--info next-steps">
-            <h2>Next Steps</h2>
-
-            <p><strong>Abandoned vehicles on private property:</strong> You are reporting a potential code violation. You may want to first try talking to the property owner to see if the issue can be resolved. If not, please fill out the Bureau of Development Service's online <a href="https://www.portlandoregon.gov/bds/index.cfm?&amp;cfid=283088908&amp;c=42240&amp;cftoken=9ab256232dbace5c%2D4FC97C74%2DE642%2D08D1%2D82D8D94D3016098C">violation reporting form</a>, or call the Code Enforcement Line at <a href="tel:+1-503-823-2633">503-823-2633</a> to report your concern.</p>
-            <p><strong>For property owners:</strong> You are responsible for addressing concerns on your property. If you would like additional information, please call <a href="tel:311">3-1-1</a> or <a href="tel:+15038234000">503-823-4000</a> so staff can assist you further.</p>
-            </div>
+          '#require_boundary': true
       container_abandoned_auto:
         '#type': webform_section
         '#title': 'Vehicle info'
         '#states':
           invisible:
-            ':input[name="report_location[location_type]"]':
-              value: private
+            ':input[name="report_location_is_private"]':
+              value: 'Yes'
         markup_vehicle_info:
           '#type': webform_markup
           '#markup': 'Please provide as many details as possible about the abandoned vehicle(s) if it seems safe to do so.'
@@ -243,7 +239,7 @@ elements: |-
   report_ticket_id:
     '#type': hidden
     '#title': 'Report Ticket ID'
-css: ".webform-multiple-table tbody tr:hover,\r\n.webform-multiple-table tbody tr:focus {\r\n    background: inherit;\r\n}\r\n\r\n.webform-multiple-table tbody {\r\n    counter-reset: vehicle;\r\n}\r\n\r\n.webform-multiple-table tbody td {\r\n    padding: 0;\r\n}\r\n\r\n.webform-multiple-table tbody tr {\r\n    display: block;\r\n    margin-bottom: 1rem;\r\n}\r\n\r\n.webform-multiple-table tbody tr::before {\r\n    counter-increment: vehicle;\r\n    content: \"Vehicle \" counter(vehicle);\r\n    display: block;\r\n    font-size: 1.5rem;\r\n    font-weight: 600;\r\n    line-height: 1.3333333333;\r\n    margin: 0 0 1rem;\r\n}\r\n\r\n.webform-multiple-table .form-control {\r\n    width: 100%;\r\n}"
+css: "#edit-report-vehicle .webform-multiple-table tbody tr:hover,\r\n#edit-report-vehicle .webform-multiple-table tbody tr:focus {\r\n    background: inherit;\r\n}\r\n\r\n#edit-report-vehicle .webform-multiple-table tbody {\r\n    counter-reset: vehicle;\r\n}\r\n\r\n#edit-report-vehicle .webform-multiple-table tbody td {\r\n    padding: 0;\r\n}\r\n\r\n#edit-report-vehicle .webform-multiple-table tbody tr {\r\n    display: block;\r\n    margin-bottom: 1rem;\r\n}\r\n\r\n#edit-report-vehicle .webform-multiple-table tbody tr::before {\r\n    counter-increment: vehicle;\r\n    content: \"Vehicle \" counter(vehicle);\r\n    display: block;\r\n    font-size: 1.5rem;\r\n    font-weight: 600;\r\n    line-height: 1.3333333333;\r\n    margin: 0 0 1rem;\r\n}\r\n\r\n#edit-report-vehicle .webform-multiple-table .form-control {\r\n    width: 100%;\r\n}"
 javascript: ''
 settings:
   ajax: false
