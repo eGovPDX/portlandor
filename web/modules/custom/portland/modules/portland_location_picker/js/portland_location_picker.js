@@ -1284,9 +1284,11 @@
 
         function processReverseLocationData(data, lat, lng, zoomAndCenter = true) {
           var isWithinBounds = checkWithinBounds(new L.LatLng(lat, lng));
-          // don't zoom in so far if not within bounds
-          var zoomLevel = isWithinBounds ? DEFAULT_ZOOM_CLICK : DEFAULT_ZOOM_CLICK - 2;
           if (zoomAndCenter) {
+            // if click is outside boundary, we want to zoom in but not full zoom (default zoom click - 2).
+            // if already zoomed in more, dont change zoom.
+            var currentZoom = map.getZoom();
+            var zoomLevel = isWithinBounds ? DEFAULT_ZOOM_CLICK : currentZoom < DEFAULT_ZOOM_CLICK - 2 ? DEFAULT_ZOOM_CLICK - 2 : currentZoom;
             doZoomAndCenter(lat, lng, zoomLevel);
             var latlng = new L.LatLng(lat, lng);
             if (primaryLayerBehavior != PRIMARY_LAYER_BEHAVIOR.SelectionOnly && isWithinBounds) {
