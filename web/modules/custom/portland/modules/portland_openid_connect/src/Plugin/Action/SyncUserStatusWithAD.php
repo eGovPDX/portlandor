@@ -60,7 +60,6 @@ class SyncUserStatusWithAD extends ActionBase
   public function access($object, AccountInterface $account = NULL, $return_as_object = FALSE)
   {
     // The update permission's name could be either Update or Edit, we check both and allow access if either one is allowed.
-    // Please note the Core API AccessResult::orIf will return Forbidden if either access result is Forbidden
     $access_result_for_update = $object->access('update', $account);
     $access_result_for_edit = $object->access('edit', $account);
     if( $access_result_for_update || $access_result_for_edit ) {
