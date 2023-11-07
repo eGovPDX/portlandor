@@ -53,7 +53,7 @@
         const API_BOUNDARY_URL = "https://www.portlandmaps.com/arcgis/rest/services/Public/Boundaries/MapServer/0/query";
         const API_PARKS_BOUNDARY_URL = "https://www.portlandmaps.com/arcgis/rest/services/Public/Parks_Misc/MapServer/2/query";
         // const PARKS_REVGEOCODE_URL = "https://www.portlandmaps.com/arcgis/rest/services/Public/Parks_Misc/MapServer/2/query?geometry=%7B%22x%22%3A${lng}%2C%22y%22%3A${lat}%2C%22spatialReference%22%3A%7B%22wkid%22%3A4326%7D%7D&geometryType=esriGeometryPoint&spacialRel=esriSpatialRelIntersects&returnGeometry=false&returnTrueCurves=false&returnIdsOnly=false&returnCountOnly=false&returnDistinctValues=false&f=pjson";
-        // const REVGEOCODE_URL = "https://www.portlandmaps.com/arcgis/rest/services/Public/Geocoding_PDX/GeocodeServer/reverseGeocode?location=%7B%22x%22%3A${lng}%2C+%22y%22%3A${lat}%2C+%22spatialReference%22%3A%7B%22wkid%22+%3A+4326%7D%7D&distance=&langCode=&locationType=&featureTypes=&outSR=4326&returnIntersection=false&f=json";
+        const REVGEOCODE_URL = "https://www.portlandmaps.com/arcgis/rest/services/Public/Geocoding_PDX/GeocodeServer/reverseGeocode?location=%7B%22x%22%3A${lng}%2C+%22y%22%3A${lat}%2C+%22spatialReference%22%3A%7B%22wkid%22+%3A+4326%7D%7D&distance=100&langCode=&locationType=&featureTypes=&outSR=4326&returnIntersection=false&f=json";
         const PRIMARY_LAYER_TYPE = {
           Asset: "asset",
           Incident: "incident",
@@ -1242,6 +1242,54 @@
           });
         }
 
+        // TODO: Use this old call to do address verification; this is the one that returns verified street addressses.
+        function reverseGeolocateX(lat, lng, zoomAndCenter = true) {
+          // now do PortlandMaps ArcGIS reverse geocoding call to get the non-park address for the location
+          // https://www.portlandmaps.com/arcgis/rest/services/Public/Geocoding_PDX/GeocodeServer/reverseGeocode
+          var reverseGeocodeUrl = REVGEOCODE_URL.replace('${lat}', lat).replace('${lng}', lng);
+          $.ajax({
+            url: reverseGeocodeUrl, success: function (response) {
+              if (response.length < 1 || !response.address || !response.location) {
+                // portlandmaps doesn't have data for this location.
+                // set location type to "other" so 311 can triage but still set marker.
+                // address field may be required by the form, so something needs to go there.
+                if (!handleCityLimits(L.latLng(lat, lng))) return false;
+                if (zoomAndCenter) {
+                  doZoomAndCenter(lat, lng);
+                  if (primaryLayerBehavior != PRIMARY_LAYER_BEHAVIOR.SelectionOnly) {
+                    setLocationMarker(lat, lng);
+                    //$('#location_verify').addClass('visually-hidden');
+                    hideVerifyButton();
+                  }
+                }
+                //if (locationType == "park") {
+                  setLocationType(lat, lng);
+                //}
+                if (response.error) {
+
+                  $('#location_address').val("N/A");
+                  $('#place_name').val('N/A');
+                  setUnverified();
+                } else if (response && response.features && response.features[0].attributes && response.features[0].attributes.NAME) {
+                  var locName = response.features[0].attributes.NAME;
+                  $('#location_address').val(locName);
+                  setUnverified();
+                };
+                return false;
+              }
+
+              var isCityLimits = handleCityLimits(L.latLng(lat, lng));
+              if (isCityLimits) {
+                processReverseLocationData(response, lat, lng, zoomAndCenter);
+              }
+            },
+            error: function (e) {
+              // Handle any error cases
+              console.error(e);
+            }
+          });
+        }
+
         function parseDescribeData(data, isWithinBounds) {
           var description = "";
 
@@ -1420,6 +1468,7 @@
             });
           }).observe(element);
         }
+
         onVisible(document.querySelector("#location_map_container"), () => redrawMap());
 
       });
