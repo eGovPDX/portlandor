@@ -6,6 +6,7 @@ use Drupal\Core\Action\ActionBase;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\group\Entity\GroupInterface;
 use GuzzleHttp\Exception\RequestException;
+use Drupal\Core\Access\AccessResult;
 
 /**
  * Mark user as active.
@@ -45,10 +46,14 @@ class EnableUser extends ActionBase
    */
   public function access($object, AccountInterface $account = NULL, $return_as_object = FALSE)
   {
-    /** @var \Drupal\user\UserInterface $object */
-    $access = $object->status->access('edit', $account, TRUE)
-      ->orIf($object->access('update', $account, TRUE));
-
-    return $return_as_object ? $access : $access->isAllowed();
+    // The update permission's name could be either Update or Edit, we check both and allow access if either one is allowed.
+    $access_result_for_update = $object->access('update', $account);
+    $access_result_for_edit = $object->access('edit', $account);
+    if( $access_result_for_update || $access_result_for_edit ) {
+      return ($return_as_object ? AccessResult::allowed() : true );
+    }
+    else {
+      return ($return_as_object ? AccessResult::forbidden() : false );
+    }
   }
 }
