@@ -49,11 +49,11 @@
         const DEFAULT_SOLVED_ICON_URL = "/modules/custom/portland/modules/portland_location_picker/images/map_marker_incident_solved.png";
         // const LOCATION_TYPE_LOOKUP_URL = "https://www.portlandmaps.com/api/intersects/?includeDetail=true&";
         const REVERSE_GEOCODE_URL = 'https://www.portlandmaps.com/api/intersects/?geometry=%7B%20%22x%22:%20${x},%20%22y%22:%20${y},%20%22spatialReference%22:%20%7B%20%22wkid%22:%20%223857%22%7D%20%7D&include=all&detail=1&api_key=${apiKey}';
-        const ADDRESS_DECODER_URL = 'https://www.portlandmaps.com/arcgis/rest/services/Public/Geocoding_PDX/GeocodeServer/reverseGeocode?location=%7B%22x%22%3A${lng}%2C+%22y%22%3A${lat}%2C+%22spatialReference%22%3A%7B%22wkid%22+%3A+4326%7D%7D&distance=100&langCode=&locationType=&featureTypes=&outSR=4326&returnIntersection=false&f=json'
+        //const ADDRESS_DECODER_URL = 'https://www.portlandmaps.com/arcgis/rest/services/Public/Geocoding_PDX/GeocodeServer/reverseGeocode?location=%7B%22x%22%3A${lng}%2C+%22y%22%3A${lat}%2C+%22spatialReference%22%3A%7B%22wkid%22+%3A+4326%7D%7D&distance=100&langCode=&locationType=&featureTypes=&outSR=4326&returnIntersection=false&f=json'
         const API_BOUNDARY_URL = "https://www.portlandmaps.com/arcgis/rest/services/Public/Boundaries/MapServer/0/query";
         const API_PARKS_BOUNDARY_URL = "https://www.portlandmaps.com/arcgis/rest/services/Public/Parks_Misc/MapServer/2/query";
         // const PARKS_REVGEOCODE_URL = "https://www.portlandmaps.com/arcgis/rest/services/Public/Parks_Misc/MapServer/2/query?geometry=%7B%22x%22%3A${lng}%2C%22y%22%3A${lat}%2C%22spatialReference%22%3A%7B%22wkid%22%3A4326%7D%7D&geometryType=esriGeometryPoint&spacialRel=esriSpatialRelIntersects&returnGeometry=false&returnTrueCurves=false&returnIdsOnly=false&returnCountOnly=false&returnDistinctValues=false&f=pjson";
-        const REVGEOCODE_URL = "https://www.portlandmaps.com/arcgis/rest/services/Public/Geocoding_PDX/GeocodeServer/reverseGeocode?location=%7B%22x%22%3A${lng}%2C+%22y%22%3A${lat}%2C+%22spatialReference%22%3A%7B%22wkid%22+%3A+4326%7D%7D&distance=100&langCode=&locationType=&featureTypes=&outSR=4326&returnIntersection=false&f=json";
+        // const REVGEOCODE_URL =      "https://www.portlandmaps.com/arcgis/rest/services/Public/Geocoding_PDX/GeocodeServer/reverseGeocode?location=%7B%22x%22%3A${lng}%2C+%22y%22%3A${lat}%2C+%22spatialReference%22%3A%7B%22wkid%22+%3A+4326%7D%7D&distance=100&langCode=&locationType=&featureTypes=&outSR=4326&returnIntersection=false&f=json";
         const PRIMARY_LAYER_TYPE = {
           Asset: "asset",
           Incident: "incident",
@@ -89,7 +89,7 @@
         // so that the city limits become a hole and everything else can be shaded. this will require us to change how we detect clicks
         // with in the city limits. 
         // original city boundaries geoJSON: https://www.portlandmaps.com/arcgis/rest/services/Public/COP_OpenData_Boundary/MapServer/10/query?where=CITYNAME%20like%20%27Portland%27&outFields=*&outSR=4326&f=geojson
-        const CITY_LIMITS_BOUNDARY_URL_DEPRECATED = "https://www.portlandmaps.com/arcgis/rest/services/Public/Boundaries/MapServer/0/query?where=1%3D1&objectIds=35&outFields=*&returnGeometry=true&f=geojson";
+        //const CITY_LIMITS_BOUNDARY_URL_DEPRECATED = "https://www.portlandmaps.com/arcgis/rest/services/Public/Boundaries/MapServer/0/query?where=1%3D1&objectIds=35&outFields=*&returnGeometry=true&f=geojson";
         // const CITY_LIMITS_BOUNDARY_URL = "/modules/custom/portland/modules/portland_location_picker/js/cityboundary.json";
         // const MUNICIPALITIES_BOUNDARY_URL = "https://www.portlandmaps.com/arcgis/rest/services/Public/COP_OpenData_Boundary/MapServer/10/query?outFields=*&where=1%3D1&f=geojson";
 
@@ -1166,14 +1166,6 @@
           $('input[name=' + elementId + '\\[location_y\\]]').val(sphericalMerc.y);
         }
 
-        // set location marker on map. this is only used with map clicks, not marker clicks.
-        // asset marker clicks are handled by the selectAsset(marker) function.
-        // gets called when:
-        // -  map initialization, if postback and hidden lat/lng are set
-        // -  when an address suggestion is clicked
-        // -  processLocationData(candidates) if only one address selection is returned
-        // -  reverseGeolocate returns a park (reverseGeolocatePark)
-        // -  reverseGeolocate doesn't return a park (reverseGeolocateNotPark)
         function setLocationMarker(lat, lng) {
 
           // only do this if widget config allows
@@ -1214,14 +1206,19 @@
         function reverseGeolocate(latlng, zoomAndCenter = true) {
           setUnverified();
           shouldRecenterPark = false;
+          var url = '';
 
-          // use new intersects API call to reverse geolocate and get location details and description
-          var sphericalMerc = L.Projection.SphericalMercator.project(latlng);
-          var x = sphericalMerc.x;
-          var y = sphericalMerc.y;
-
-          var url = addressVerify ? ADDRESS_DECODER_URL : REVERSE_GEOCODE_URL;
-          url = url.replace('${x}', x).replace('${y}', y).replace('${apiKey}', apiKey);
+          // if (!addressVerify) {
+            url = REVERSE_GEOCODE_URL;
+            // use new intersects API call to reverse geolocate and get location details and description
+            var sphericalMerc = L.Projection.SphericalMercator.project(latlng);
+            var x = sphericalMerc.x;
+            var y = sphericalMerc.y;
+            url = url.replace('${x}', x).replace('${y}', y).replace('${apiKey}', apiKey);
+          // } else {
+          //   url = ADDRESS_DECODER_URL;
+          //   url = url.replace('${lat}', latlng.lat).replace('${lng}', latlng.lng);
+          // }
 
           $.ajax({
             url: url, success: function (response) {
@@ -1229,64 +1226,12 @@
                 // location data not available, how to handle?
                 console.log('Location not found');
               }
-
-              // TODO: add boundary check here
-              var test = response;
               processReverseLocationData(response, latlng.lat, latlng.lng, zoomAndCenter);
-
             },
             error: function (e) {
               console.error(e);
             }
 
-          });
-        }
-
-        // TODO: Use this old call to do address verification; this is the one that returns verified street addressses.
-        function reverseGeolocateX(lat, lng, zoomAndCenter = true) {
-          // now do PortlandMaps ArcGIS reverse geocoding call to get the non-park address for the location
-          // https://www.portlandmaps.com/arcgis/rest/services/Public/Geocoding_PDX/GeocodeServer/reverseGeocode
-          var reverseGeocodeUrl = REVGEOCODE_URL.replace('${lat}', lat).replace('${lng}', lng);
-          $.ajax({
-            url: reverseGeocodeUrl, success: function (response) {
-              if (response.length < 1 || !response.address || !response.location) {
-                // portlandmaps doesn't have data for this location.
-                // set location type to "other" so 311 can triage but still set marker.
-                // address field may be required by the form, so something needs to go there.
-                if (!handleCityLimits(L.latLng(lat, lng))) return false;
-                if (zoomAndCenter) {
-                  doZoomAndCenter(lat, lng);
-                  if (primaryLayerBehavior != PRIMARY_LAYER_BEHAVIOR.SelectionOnly) {
-                    setLocationMarker(lat, lng);
-                    //$('#location_verify').addClass('visually-hidden');
-                    hideVerifyButton();
-                  }
-                }
-                //if (locationType == "park") {
-                  setLocationType(lat, lng);
-                //}
-                if (response.error) {
-
-                  $('#location_address').val("N/A");
-                  $('#place_name').val('N/A');
-                  setUnverified();
-                } else if (response && response.features && response.features[0].attributes && response.features[0].attributes.NAME) {
-                  var locName = response.features[0].attributes.NAME;
-                  $('#location_address').val(locName);
-                  setUnverified();
-                };
-                return false;
-              }
-
-              var isCityLimits = handleCityLimits(L.latLng(lat, lng));
-              if (isCityLimits) {
-                processReverseLocationData(response, lat, lng, zoomAndCenter);
-              }
-            },
-            error: function (e) {
-              // Handle any error cases
-              console.error(e);
-            }
           });
         }
 
@@ -1330,8 +1275,14 @@
           return description;
         }
 
+        function parseVerifyData(data, isWithinBounds) {
+          var description = data.address.Street + ", " + data.address.City + " " + data.address.ZIP;
+          return description.toUpperCase();
+        }
+
         function processReverseLocationData(data, lat, lng, zoomAndCenter = true) {
           var isWithinBounds = checkWithinBounds(new L.LatLng(lat, lng));
+          var isVerifiedAddress = true;
           if (zoomAndCenter) {
             // if click is outside boundary, we want to zoom in but not full zoom (default zoom click - 2).
             // if already zoomed in more, dont change zoom.
@@ -1339,7 +1290,12 @@
             var zoomLevel = isWithinBounds ? DEFAULT_ZOOM_CLICK : currentZoom < DEFAULT_ZOOM_CLICK - 2 ? DEFAULT_ZOOM_CLICK - 2 : currentZoom;
             doZoomAndCenter(lat, lng, zoomLevel);
             var latlng = new L.LatLng(lat, lng);
-            if (primaryLayerBehavior != PRIMARY_LAYER_BEHAVIOR.SelectionOnly && isWithinBounds) {
+            if (addressVerify && !data.taxlot) {
+              showStatusModal("The location you selected does not have an address. Please try again.");
+              isVerifiedAddress = false;
+            }
+
+            if (primaryLayerBehavior != PRIMARY_LAYER_BEHAVIOR.SelectionOnly && isWithinBounds && isVerifiedAddress) {
               setLocationMarker(lat, lng, isWithinBounds);
               checkRegion(latlng)
             }
@@ -1347,7 +1303,7 @@
 
           var description = parseDescribeData(data, isWithinBounds);
 
-          showVerifiedLocation(description, lat, lng, isWithinBounds);
+          showVerifiedLocation(description, lat, lng, isWithinBounds, isVerifiedAddress);
           $('#location_address').val(description);
 
           // if park, set location name
@@ -1358,7 +1314,7 @@
           setLocationDetails(data);
         }
 
-        function showVerifiedLocation(description, lat, lng) {
+        function showVerifiedLocation(description, lat, lng, isWithinBounds, isVerifiedAddress) {
           $('#verified_location_text').text(description);
           //$('#verified_location').removeClass('visually-hidden');
 
@@ -1379,6 +1335,8 @@
           if (addressVerify) {
             $('#location_search').val(description);
           };
+
+          if (isVerifiedAddress) setVerified();
         }
 
         function hideVerifiedLocation() {
