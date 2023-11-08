@@ -74,8 +74,15 @@ class ArchiveAction extends ViewsBulkOperationsActionBase {
    */
   public function access($object, AccountInterface $account = NULL, $return_as_object = FALSE) {
     if ($object->getEntityTypeId() === 'node' || $object->getEntityTypeId() === 'media') {
-      $access = $object->access('update', $account, TRUE)->orIf($object->access('edit', $account, TRUE));
-      return $return_as_object ? $access : $access->isAllowed();
+      // The update permission's name could be either Update or Edit, we check both and allow access if either one is allowed.
+      $access_result_for_update = $object->access('update', $account);
+      $access_result_for_edit = $object->access('edit', $account);
+      if( $access_result_for_update || $access_result_for_edit ) {
+        return ($return_as_object ? AccessResult::allowed() : true );
+      }
+      else {
+        return ($return_as_object ? AccessResult::forbidden() : false );
+      }
     }
 
     // Other entity types may have different

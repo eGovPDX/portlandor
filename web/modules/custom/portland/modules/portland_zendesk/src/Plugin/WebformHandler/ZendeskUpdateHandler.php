@@ -567,6 +567,11 @@ class ZendeskUpdateHandler extends WebformHandlerBase
         $request['group_id'] = $ticket->group_id;
       }
 
+      // if tags not set, use previous value
+      if (!isset($request['tags']) || $request['tags'] == "") {
+        $request['tags'] = $ticket->tags;
+      }
+
       // create ticket
       $updated_ticket = $client->tickets()->update($zendesk_ticket_id, $request);
       $confirm_zendesk_ticket_id = $updated_ticket->ticket->id;
