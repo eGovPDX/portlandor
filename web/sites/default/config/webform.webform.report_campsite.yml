@@ -122,18 +122,6 @@ elements: |-
             visible:
               ':input[name="report_blocking_pedestrians"]':
                 value: 'Yes'
-        report_is_ada_text:
-          '#type': webform_markup
-          '#states':
-            visible:
-              ':input[name="report_is_ada"]':
-                value: 'yes'
-          '#markup': |-
-            <div class="alert alert--info next-steps">
-            <h2>You&#39;ve requested an accommodation</h2>
-
-            <p>After submitting this report, an ADA Coordinator from the City will be contacting you to learn more and process your accommodation request.&nbsp;</p>
-            </div>
         report_visible_items:
           '#type': checkboxes
           '#title': 'Are any of the following items visible at the site?'
@@ -183,7 +171,7 @@ elements: |-
               checked: true
         markup_vehicle_info:
           '#type': webform_markup
-          '#markup': 'Please provide as many details as possible about the abandoned vehicle(s) if it seems safe to do so.'
+          '#markup': '<p>Please provide as many details as possible about the vehicle(s) if it seems safe to do so.</p>'
         report_vehicle:
           '#type': webform_custom_composite
           '#title': Vehicles
@@ -292,6 +280,7 @@ elements: |-
           '#access_view_roles':
             - support_agent
             - administrator
+          '#escalate_issue__access': false
         actions:
           '#type': webform_actions
           '#title': 'Submit button(s)'
@@ -314,6 +303,20 @@ elements: |-
       other
       {% endif %}
     '#whitespace': trim
+    '#ajax': true
+  computed_ada_message:
+    '#type': webform_computed_twig
+    '#title': 'Computed ADA message'
+    '#display_on': none
+    '#mode': text
+    '#template': |-
+      {% if data.report_is_ada == "yes" %}
+      <div class="alert alert--info next-steps">
+      <h2>You've requested an accommodation</h2>
+
+      <p class="mb-0">An ADA Coordinator from the City will be contacting you to learn more and process your accommodation request.&nbsp;</p>
+      </div><br>
+      {% endif %}
     '#ajax': true
 css: "#edit-report-vehicle .webform-multiple-table tbody tr:hover,\r\n#edit-report-vehicle .webform-multiple-table tbody tr:focus {\r\n    background: inherit;\r\n}\r\n\r\n#edit-report-vehicle .webform-multiple-table tbody {\r\n    counter-reset: vehicle;\r\n}\r\n\r\n#edit-report-vehicle .webform-multiple-table tbody td {\r\n    padding: 0;\r\n}\r\n\r\n#edit-report-vehicle .webform-multiple-table tbody tr {\r\n    display: block;\r\n    margin-bottom: 1rem;\r\n}\r\n\r\n#edit-report-vehicle .webform-multiple-table tbody tr::before {\r\n    counter-increment: vehicle;\r\n    content: \"Vehicle \" counter(vehicle);\r\n    display: block;\r\n    font-size: 1.5rem;\r\n    font-weight: 600;\r\n    line-height: 1.3333333333;\r\n    margin: 0 0 1rem;\r\n}\r\n\r\n#edit-report-vehicle .webform-multiple-table .form-control {\r\n    width: 100%;\r\n}"
 javascript: ''
@@ -422,30 +425,7 @@ settings:
   confirmation_type: page
   confirmation_url: ''
   confirmation_title: 'Thank you'
-  confirmation_message: |-
-    <p>Your report has been received.<br />
-    <br />
-    It is not necessary to submit reports for the same location more than once per week. Every report will be reviewed and analyzed, but not all will result in immediate action by the City.<br />
-    <br />
-    Please visit the&nbsp;<a href="/homelessnessimpactreduction">Homelessness and Urban Camping Impact Reduction Program home page</a> to learn more about the program, view reports, and check the status of specific sites.</p>
-
-    <p>&nbsp;</p>
-
-    <h2>Next Steps</h2>
-
-    <p><strong>Is a vehicle blocking a street, driveway, sidewalk, or bus/MAX/Streetcar stop or lane?</strong></p>
-
-    <p>Please call Parking Enforcement at <a href="tel:+15038235195">503-823-5195</a> to report the vehicle.</p>
-
-    <p><strong>Do you think a vehicle may be stolen?</strong></p>
-
-    <p>Please contact Portland Police Auto Records at <a href="tel:+15038230044">(503) 823-0044</a>&nbsp;to report the vehicle.</p>
-
-    <p><strong>Do you have any additional concerns or questions?</strong></p>
-
-    <p>Please call us at <a href="tel:311">3-1-1</a> or <a href="tel:+15038234000">(503) 823-4000</a> to discuss further.</p>
-
-    <p>&nbsp;</p>
+  confirmation_message: "<p class=\"mb-8\">Your report has been received.<br />\r\n<br />\r\nIt is not necessary to submit reports for the same location more than once per week. Every report will be reviewed and analyzed, but not all will result in immediate action by the City.</p>\r\n\r\n<h2>Next Steps</h2>\r\n\r\n<div>[webform_submission:values:computed_ada_message]</div>\r\n\r\n<p>Please visit the&nbsp;<a href=\"/homelessnessimpactreduction\">Homelessness and Urban Camping Impact Reduction Program home page</a> to learn more about the program, view reports, and check the status of specific sites.</p>\r\n\r\n<p><strong>Is a vehicle blocking a street, driveway, sidewalk, or bus/MAX/Streetcar stop or lane?</strong></p>\r\n\r\n<p>Please call Parking Enforcement at <a href=\"tel:+15038235195\">503-823-5195</a> to report the vehicle.</p>\r\n\r\n<p><strong>Do you think a vehicle may be stolen?</strong></p>\r\n\r\n<p>Please contact Portland Police Auto Records at <a href=\"tel:+15038230044\">503-823-0044</a>&nbsp;to report the vehicle.</p>\r\n\r\n<p><strong>Do you have any additional concerns or questions?</strong></p>\r\n\r\n<p>Please call us at <a href=\"tel:311\">3-1-1</a> or <a href=\"tel:+15038234000\">503-823-4000</a> to discuss further.</p>\r\n\r\n<p>&nbsp;</p>"
   confirmation_attributes: {  }
   confirmation_back: true
   confirmation_back_label: 'Submit another report'
