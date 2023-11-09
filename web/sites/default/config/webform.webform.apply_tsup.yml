@@ -215,7 +215,7 @@ elements: |-
         - d-none
     '#display_on': form
     '#mode': text
-    '#template': '{{ data.permit_location.location_region_id ? "true" : "false" }}'
+    '#template': '{{ data.report_location.location_region_id ? "true" : "false" }}'
     '#whitespace': spaceless
     '#store': true
   page_location:
@@ -234,7 +234,7 @@ elements: |-
         <p>You can only close/reserve one street per application. If you will be working on more than one street, you&#39;ll need to submit a new application for each street.</p>
 
         <p><strong>NOTE:</strong> Please make sure the street you are working on is not restricted by a&nbsp;<a href="/transportation/permitting/temporary-street-use-permitting-tsup#toc-moratorium-dates-and-maps" target="_blank">Moratorium</a>.</p>
-    permit_location:
+    report_location:
       '#type': portland_location_picker
       '#title': 'Permit Location'
       '#required': true
@@ -1033,39 +1033,44 @@ elements: |-
     '#display_on': none
     '#mode': text
     '#template': |-
-      {% set location_lat = webform_token('[webform_submission:values:permit_location:location_lat]', webform_submission) %}
-      {% set location_lon = webform_token('[webform_submission:values:permit_location:location_lon]', webform_submission) %}
-      {% set geocortex_url = "https://www.portlandmaps.com/apps/gcx/pdx/Index.html?viewer=ROWCoordination.ROW&center=#{location_lon},#{location_lat},4326&scale=600" %}
       {% if data.permit_type == "simple" %}
         <h2>Your application</h2>
         <p><strong>You Requested:</strong> {{ webform_token('[webform_submission:values:wizard_permit_need]', webform_submission) }}</p>
         <h3>Location</h3>
-        <p><strong>At the address:</strong> <a href="{{ geocortex_url }}">{{ webform_token('[webform_submission:values:permit_location:location_address]', webform_submission) }}</a></p>
-        <p><strong>Side of the street:</strong> {{ webform_token('[webform_submission:values:simple_permit_street_side]', webform_submission) }}</p>
-        <p><strong>Between cross street:</strong> {{ webform_token('[webform_submission:values:simple_permit_cross_street_left]', webform_submission) }}</p>
-        <p><strong>And cross street:</strong> {{ webform_token('[webform_submission:values:simple_permit_cross_street_right]', webform_submission) }}</p>
-        <p><strong>Exact location of parking:</strong> {{ webform_token('[webform_submission:values:simple_permit_location_description]', webform_submission) }}</p>
+        <ul>
+          <li>At the address: <strong>{{ webform_token('[webform_submission:values:report_location:location_address]', webform_submission) }}</strong></li>
+          <li>Side of the street: <strong>{{ webform_token('[webform_submission:values:simple_permit_street_side]', webform_submission) }}</strong></li>
+          <li>Between cross street: <strong>{{ webform_token('[webform_submission:values:simple_permit_cross_street_left]', webform_submission) }}</strong></li>
+          <li>And cross street: <strong>{{ webform_token('[webform_submission:values:simple_permit_cross_street_right]', webform_submission) }}</strong></li>
+          <li>Exact location of parking: <strong>{{ webform_token('[webform_submission:values:simple_permit_location_description]', webform_submission) }}</strong></li>
+        </ul>
         <h3>Dates</h3>
-        <p><strong>Days of week:</strong> {{ webform_token('[webform_submission:values:permit_date_days_of_week]', webform_submission) }}</p>
-        <p><strong>Start date:</strong> {{ data.permit_date_start|date('D, m/d/Y') }}</p>
-        <p><strong>End date:</strong> {{ data.permit_date_end|date('D, m/d/Y') }}</p>
-        <p><strong>Requested Start and End times:</strong> {{ webform_token('[webform_submission:values:simple_permit_requested_times]', webform_submission) }}</p>
+        <ul>
+          <li>Days of week: <strong>{{ webform_token('[webform_submission:values:permit_date_days_of_week]', webform_submission) }}</strong></li>
+          <li>Start date: <strong>{{ data.permit_date_start|date('D, m/d/Y') }}</strong></li>
+          <li>End date: <strong>{{ data.permit_date_end|date('D, m/d/Y') }}</strong></li>
+          <li>Requested Start and End times: <strong>{{ webform_token('[webform_submission:values:simple_permit_requested_times]', webform_submission) }}</strong></li>
+        </ul>
         <h3>Permit details</h3>
-        <p><strong>How many 20ft spaces:</strong> {{ webform_token('[webform_submission:values:permit_amount_20ft_spaces]', webform_submission) }}</p>
-        <p><strong>Requested use:</strong> {{ webform_token('[webform_submission:values:simple_permit_reason]', webform_submission) }}</p>
-        <p><strong>Requested for:</strong> {{ data.simple_permit_occupying is iterable ? '' : webform_token('[webform_submission:values:simple_permit_occupying]', webform_submission) }}</p>
-        <p><strong>Associated BDS permit number:</strong> {{ webform_token('[webform_submission:values:computed_bds_permit_number]', webform_submission) }}</p>
+        <ul>
+          <li>How many 20ft spaces: <strong>{{ webform_token('[webform_submission:values:permit_amount_20ft_spaces]', webform_submission) }}</strong></li>
+          <li>Requested use: <strong>{{ webform_token('[webform_submission:values:simple_permit_reason]', webform_submission) }}</strong></li>
+          <li>Requested for: <strong>{{ data.simple_permit_occupying is iterable ? '' : webform_token('[webform_submission:values:simple_permit_occupying]', webform_submission) }}</strong></li>
+          <li>Associated BDS permit number: <strong>{{ webform_token('[webform_submission:values:computed_bds_permit_number]', webform_submission) }}</strong></li>
+        </ul>
         {% if data.simple_permit_additional_info %}
-        <p>Additional Info:</p>
+        <p><strong>Additional Info:</strong></p>
         <p>{{ webform_token('[webform_submission:values:simple_permit_additional_info]', webform_submission) }}</p>
         {% endif %}
         <h3>Contact Info</h3>
-        <p><strong>Full Legal Name:</strong> {{ webform_token('[webform_submission:values:contact_full_legal_name]', webform_submission) }}</p>
-        {% if data.contact_company %}
-        <p><strong>Company Name:</strong> {{ webform_token('[webform_submission:values:contact_company]', webform_submission) }}</p>
-        {% endif %}
-        <p><strong>Phone Number:</strong> {{ webform_token('[webform_submission:values:contact_phone]', webform_submission) }}</p>
-        <p><strong>Email Address:</strong> {{ webform_token('[webform_submission:values:contact_email]', webform_submission) }}</p>
+        <ul>
+          <li>Full Legal Name: <strong>{{ webform_token('[webform_submission:values:contact_full_legal_name]', webform_submission) }}</strong></li>
+          {% if data.contact_company %}
+          <li>Company Name: <strong>{{ webform_token('[webform_submission:values:contact_company]', webform_submission) }}</strong></li>
+          {% endif %}
+          <li>Phone Number: <strong>{{ webform_token('[webform_submission:values:contact_phone]', webform_submission) }}</strong></li>
+          <li>Email Address: <strong>{{ webform_token('[webform_submission:values:contact_email]', webform_submission) }}</strong></li>
+        </ul>
         <h3>Acknowledgements</h3>
         <p>As part of submitting this application, you agreed with the conditions of this permit:</p>
         <ul>
@@ -1077,22 +1082,30 @@ elements: |-
         <h2>Your application</h2>
         <p><strong>You Requested:</strong> {{ webform_token('[webform_submission:values:wizard_permit_need]', webform_submission) }}</p>
         <h3>Location</h3>
-        <p><strong>At the address:</strong> <a href="{{ geocortex_url }}">{{ webform_token('[webform_submission:values:permit_location:location_address]', webform_submission) }}</a></p>
-        <p><strong>You will be reserving parking on:</strong> {{ webform_token('[webform_submission:values:7day_permit_street_name]', webform_submission) }}</p>
+        <ul>
+          <li>At the address: <strong>{{ webform_token('[webform_submission:values:report_location:location_address]', webform_submission) }}</strong></li>
+          <li>You will be reserving parking on: <strong>{{ webform_token('[webform_submission:values:7day_permit_street_name]', webform_submission) }}</strong></li>
+        </ul>
         <h3>Dates</h3>
-        <p><strong>New days of week:</strong> {{ webform_token('[webform_submission:values:permit_date_days_of_week]', webform_submission) }}</p>
-        <p><strong>New start date:</strong> {{ data.permit_date_start|date('D, m/d/Y') }}</p>
-        <p><strong>New end date:</strong> {{ data.permit_date_end|date('D, m/d/Y') }}</p>
+        <ul>
+          <li>New days of week: <strong>{{ webform_token('[webform_submission:values:permit_date_days_of_week]', webform_submission) }}</strong></li>
+          <li>New start date: <strong>{{ data.permit_date_start|date('D, m/d/Y') }}</strong></li>
+          <li>New end date: <strong>{{ data.permit_date_end|date('D, m/d/Y') }}</strong></li>
+        </ul>
         <h3>Permit details</h3>
-        <p><strong>How many 20ft spaces:</strong> {{ webform_token('[webform_submission:values:permit_amount_20ft_spaces]', webform_submission) }}</p>
-        <p><strong>Requested use:</strong> {{ webform_token('[webform_submission:values:7day_permit_reason]', webform_submission) }}</p>
+        <ul>
+          <li>How many 20ft spaces: <strong>{{ webform_token('[webform_submission:values:permit_amount_20ft_spaces]', webform_submission) }}</strong></li>
+          <li>Requested use: <strong>{{ webform_token('[webform_submission:values:7day_permit_reason]', webform_submission) }}</strong></li>
+        </ul>
         <h3>Contact Info</h3>
-        <p><strong>Full Legal Name:</strong> {{ webform_token('[webform_submission:values:contact_full_legal_name]', webform_submission) }}</p>
-        {% if data.contact_company %}
-        <p><strong>Company Name:</strong> {{ webform_token('[webform_submission:values:contact_company]', webform_submission) }}</p>
-        {% endif %}
-        <p><strong>Phone Number:</strong> {{ webform_token('[webform_submission:values:contact_phone]', webform_submission) }}</p>
-        <p><strong>Email Address:</strong> {{ webform_token('[webform_submission:values:contact_email]', webform_submission) }}</p>
+        <ul>
+          <li>Full Legal Name: <strong>{{ webform_token('[webform_submission:values:contact_full_legal_name]', webform_submission) }}</strong></li>
+          {% if data.contact_company %}
+          <li>Company Name: <strong>{{ webform_token('[webform_submission:values:contact_company]', webform_submission) }}</strong></li>
+          {% endif %}
+          <li>Phone Number: <strong>{{ webform_token('[webform_submission:values:contact_phone]', webform_submission) }}</strong></li>
+          <li>Email Address: <strong>{{ webform_token('[webform_submission:values:contact_email]', webform_submission) }}</strong></li>
+        </ul>
         <h3>Acknowledgements</h3>
         <p>As part of submitting this application, you agreed with the conditions of this permit:</p>
         <ul>
@@ -1106,36 +1119,44 @@ elements: |-
         <h2>Your application</h2>
         <p><strong>You Requested:</strong> {{ webform_token('[webform_submission:values:wizard_permit_need]', webform_submission) }}</p>
         <h3>Location</h3>
-        <p><strong>At the address:</strong> <a href="{{ geocortex_url }}">{{ webform_token('[webform_submission:values:permit_location:location_address]', webform_submission) }}</a></p>
-        <p><strong>Primary street:</strong> {{ webform_token('[webform_submission:values:complex_permit_street_name]', webform_submission) }}</p>
-        <p><strong>Side of the street:</strong> {{ webform_token('[webform_submission:values:complex_permit_street_side]', webform_submission) }}</p>
-        <p><strong>Between cross street:</strong> {{ webform_token('[webform_submission:values:complex_permit_cross_street_left]', webform_submission) }}</p>
-        <p><strong>And cross street:</strong> {{ webform_token('[webform_submission:values:complex_permit_cross_street_right]', webform_submission) }}</p>
+        <ul>
+          <li>At the address: <strong>{{ webform_token('[webform_submission:values:report_location:location_address]', webform_submission) }}</strong></li>
+          <li>Primary street: <strong>{{ webform_token('[webform_submission:values:complex_permit_street_name]', webform_submission) }}</strong></li>
+          <li>Side of the street: <strong>{{ webform_token('[webform_submission:values:complex_permit_street_side]', webform_submission) }}</strong></li>
+          <li>Between cross street: <strong>{{ webform_token('[webform_submission:values:complex_permit_cross_street_left]', webform_submission) }}</strong></li>
+          <li>And cross street: <strong>{{ webform_token('[webform_submission:values:complex_permit_cross_street_right]', webform_submission) }}</strong></li>
+        </ul>
         <h3>Dates</h3>
-        <p><strong>Days of week:</strong> {{ webform_token('[webform_submission:values:permit_date_days_of_week]', webform_submission) }}</p>
-        <p><strong>Start date:</strong> {{ data.permit_date_start|date('D, m/d/Y') }}</p>
-        <p><strong>End date:</strong> {{ data.permit_date_end|date('D, m/d/Y') }}</p>
-        <p><strong>Requested Start and End times:</strong> {{ webform_token('[webform_submission:values:complex_permit_requested_times]', webform_submission) }}</p>
+        <ul>
+          <li>Days of week: <strong>{{ webform_token('[webform_submission:values:permit_date_days_of_week]', webform_submission) }}</strong></li>
+          <li>Start date: <strong>{{ data.permit_date_start|date('D, m/d/Y') }}</strong></li>
+          <li>End date: <strong>{{ data.permit_date_end|date('D, m/d/Y') }}</strong></li>
+          <li>Requested Start and End times: <strong>{{ webform_token('[webform_submission:values:complex_permit_requested_times]', webform_submission) }}</strong></li>
+        </ul>
         <h3>Permit details</h3>
-        <p><strong>Type of work:</strong> {{ data.complex_permit_work_type is iterable ? '' : webform_token('[webform_submission:values:complex_permit_work_type]', webform_submission) }}</p>
-        <p><strong>Type of closure(s):</strong> {{ webform_token('[webform_submission:values:complex_permit_closure_type]', webform_submission) }}</p>
-        <p><strong>Lanes affected:</strong> {{ webform_token('[webform_submission:values:complex_permit_lanes_affected]', webform_submission) }}</p>
-        <p><strong>Parking spaces affected:</strong> {{ webform_token('[webform_submission:values:complex_permit_parking_spaces_affected]', webform_submission) }}</p>
-        {% if data.complex_permit_additional_parking_spaces_description %}
-        <p><strong>Additional parking requested at:</strong> {{ webform_token('[webform_submission:values:complex_permit_additional_parking_spaces_description]', webform_submission) }}</p>
-        {% endif %}
-        <p><strong>Associated BDS permit number:</strong> {{ webform_token('[webform_submission:values:computed_bds_permit_number]', webform_submission) }}</p>
+        <ul>
+          <li>Type of work: <strong>{{ data.complex_permit_work_type is iterable ? '' : webform_token('[webform_submission:values:complex_permit_work_type]', webform_submission) }}</strong></li>
+          <li>Type of closure(s): <strong>{{ webform_token('[webform_submission:values:complex_permit_closure_type]', webform_submission) }}</strong></li>
+          <li>Lanes affected: <strong>{{ webform_token('[webform_submission:values:complex_permit_lanes_affected]', webform_submission) }}</strong></li>
+          <li>Parking spaces affected: <strong>{{ webform_token('[webform_submission:values:complex_permit_parking_spaces_affected]', webform_submission) }}</strong></li>
+          {% if data.complex_permit_additional_parking_spaces_description %}
+          <li>Additional parking requested at: <strong>{{ webform_token('[webform_submission:values:complex_permit_additional_parking_spaces_description]', webform_submission) }}</strong></li>
+          {% endif %}
+          <li>Associated BDS permit number: <strong>{{ webform_token('[webform_submission:values:computed_bds_permit_number]', webform_submission) }}</strong></li>
+        </ul>
         {% if data.simple_permit_additional_info %}
-        <p>Additional Info:</p>
+        <p><strong>Additional Info:</strong></p>
         <p>{{ webform_token('[webform_submission:values:complex_permit_additional_info]', webform_submission) }}</p>
         {% endif %}
         <h3>Contact Info</h3>
-        <p><strong>Full Legal Name:</strong> {{ webform_token('[webform_submission:values:contact_full_legal_name]', webform_submission) }}</p>
-        {% if data.contact_company %}
-        <p><strong>Company Name:</strong> {{ webform_token('[webform_submission:values:contact_company]', webform_submission) }}</p>
-        {% endif %}
-        <p><strong>Phone Number:</strong> {{ webform_token('[webform_submission:values:contact_phone]', webform_submission) }}</p>
-        <p><strong>Email Address:</strong> {{ webform_token('[webform_submission:values:contact_email]', webform_submission) }}</p>
+        <ul>
+          <li>Full Legal Name: <strong>{{ webform_token('[webform_submission:values:contact_full_legal_name]', webform_submission) }}</strong></li>
+          {% if data.contact_company %}
+          <li>Company Name: <strong>{{ webform_token('[webform_submission:values:contact_company]', webform_submission) }}</strong></li>
+          {% endif %}
+          <li>Phone Number: <strong>{{ webform_token('[webform_submission:values:contact_phone]', webform_submission) }}</strong></li>
+          <li>Email Address: <strong>{{ webform_token('[webform_submission:values:contact_email]', webform_submission) }}</strong></li>
+        </ul>
         <h3>Acknowledgements</h3>
         <p>As part of submitting this application, you agreed with the conditions of this permit:</p>
         <ul>
@@ -1150,20 +1171,24 @@ elements: |-
         <h2>Your change request</h2>
         <p><strong>You Requested:</strong> {{ webform_token('[webform_submission:values:wizard_existing_permit_situation]', webform_submission) }}</p>
         <h3>Change details</h3>
-        <p><strong>Amount of items to change:</strong> {{ webform_token('[webform_submission:values:change_request_items_to_change]', webform_submission) }}</p>
-        <p><strong>Identifying Number (Original Application #, Permit #, or IVR #):</strong> {{ webform_token('[webform_submission:values:change_request_id]', webform_submission) }}</p>
-        <p><strong>Type of change requested:</strong> {{ data.change_request_change_type is iterable ? '' : webform_token('[webform_submission:values:change_request_change_type]', webform_submission) }}</p>
+        <ul>
+          <li>Amount of items to change: <strong>{{ webform_token('[webform_submission:values:change_request_items_to_change]', webform_submission) }}</strong></li>
+          <li>Identifying Number: <strong>{{ webform_token('[webform_submission:values:change_request_id]', webform_submission) }}</strong></li>
+          <li>Type of change requested: <strong>{{ data.change_request_change_type is iterable ? '' : webform_token('[webform_submission:values:change_request_change_type]', webform_submission) }}</strong></li>
+        </ul>
         {% if data.change_request_additional_info %}
-        <p>Additional Info:</p>
+        <p><strong>Additional Info:</strong></p>
         <p>{{ webform_token('[webform_submission:values:change_request_additional_info]', webform_submission) }}</p>
         {% endif %}
         <h3>Contact Info</h3>
-        <p><strong>Full Legal Name:</strong> {{ webform_token('[webform_submission:values:contact_full_legal_name]', webform_submission) }}</p>
-        {% if data.contact_company %}
-        <p><strong>Company Name:</strong> {{ webform_token('[webform_submission:values:contact_company]', webform_submission) }}</p>
-        {% endif %}
-        <p><strong>Phone Number:</strong> {{ webform_token('[webform_submission:values:contact_phone]', webform_submission) }}</p>
-        <p><strong>Email Address:</strong> {{ webform_token('[webform_submission:values:contact_email]', webform_submission) }}</p>
+        <ul>
+          <li>Full Legal Name: <strong>{{ webform_token('[webform_submission:values:contact_full_legal_name]', webform_submission) }}</strong></li>
+          {% if data.contact_company %}
+          <li>Company Name: <strong>{{ webform_token('[webform_submission:values:contact_company]', webform_submission) }}</strong></li>
+          {% endif %}
+          <li>Phone Number: <strong>{{ webform_token('[webform_submission:values:contact_phone]', webform_submission) }}</strong></li>
+          <li>Email Address: <strong>{{ webform_token('[webform_submission:values:contact_email]', webform_submission) }}</strong></li>
+        </ul>
         <h3>Acknowledgements</h3>
         <p>As part of submitting this request, you agreed with the following conditions:</p>
         <ul>
@@ -1173,23 +1198,29 @@ elements: |-
         <h2>Your renewal request</h2>
         <p><strong>You Requested:</strong> {{ webform_token('[webform_submission:values:wizard_existing_permit_situation]', webform_submission) }}</p>
         <h3>Change details</h3>
-        <p><strong>Amount of permits to renew:</strong> {{ webform_token('[webform_submission:values:renewal_request_items_to_change]', webform_submission) }}</p>
-        <p><strong>Identifying Number (Original Application #, Permit #, or IVR #):</strong> {{ webform_token('[webform_submission:values:renewal_request_id]', webform_submission) }}</p>
+        <ul>
+          <li>Amount of permits to renew: <strong>{{ webform_token('[webform_submission:values:renewal_request_items_to_change]', webform_submission) }}</strong></li>
+          <li>Identifying Number: <strong>{{ webform_token('[webform_submission:values:renewal_request_id]', webform_submission) }}</strong></li>
+        </ul>
         {% if data.renewal_request_additional_info %}
-        <p>Additional Info:</p>
+        <p><strong>Additional Info:</strong></p>
         <p>{{ webform_token('[webform_submission:values:renewal_request_additional_info]', webform_submission) }}</p>
         {% endif %}
         <h3>Dates</h3>
-        <p><strong>Days of week:</strong> {{ webform_token('[webform_submission:values:renewal_request_permit_date_days_of_week]', webform_submission) }}</p>
-        <p><strong>Start date:</strong> {{ data.renewal_request_permit_date_start|date('D, m/d/Y') }}</p>
-        <p><strong>End date:</strong> {{ data.renewal_request_permit_date_end|date('D, m/d/Y') }}</p>
+        <ul>
+          <li>Days of week: <strong>{{ webform_token('[webform_submission:values:renewal_request_permit_date_days_of_week]', webform_submission) }}</strong></li>
+          <li>Start date: <strong>{{ data.renewal_request_permit_date_start|date('D, m/d/Y') }}</strong></li>
+          <li>End date: <strong>{{ data.renewal_request_permit_date_end|date('D, m/d/Y') }}</strong></li>
+        </ul>
         <h3>Contact Info</h3>
-        <p><strong>Full Legal Name:</strong> {{ webform_token('[webform_submission:values:contact_full_legal_name]', webform_submission) }}</p>
-        {% if data.contact_company %}
-        <p><strong>Company Name:</strong> {{ webform_token('[webform_submission:values:contact_company]', webform_submission) }}</p>
-        {% endif %}
-        <p><strong>Phone Number:</strong> {{ webform_token('[webform_submission:values:contact_phone]', webform_submission) }}</p>
-        <p><strong>Email Address:</strong> {{ webform_token('[webform_submission:values:contact_email]', webform_submission) }}</p>
+        <ul>
+          <li>Full Legal Name: <strong>{{ webform_token('[webform_submission:values:contact_full_legal_name]', webform_submission) }}</strong></li>
+          {% if data.contact_company %}
+          <li>Company Name: <strong>{{ webform_token('[webform_submission:values:contact_company]', webform_submission) }}</strong></li>
+          {% endif %}
+          <li>Phone Number: <strong>{{ webform_token('[webform_submission:values:contact_phone]', webform_submission) }}</strong></li>
+          <li>Email Address: <strong>{{ webform_token('[webform_submission:values:contact_email]', webform_submission) }}</strong></li>
+        </ul>
         <h3>Acknowledgements</h3>
         <p>As part of submitting this request, you agreed with the following conditions:</p>
         <ul>
@@ -1368,8 +1399,8 @@ settings:
   entity_limit_total_interval: null
   entity_limit_user: null
   entity_limit_user_interval: null
-  purge: none
-  purge_days: null
+  purge: all
+  purge_days: 14
   results_disabled: false
   results_disabled_ignore: false
   results_customize: false
@@ -1453,7 +1484,7 @@ handlers:
       assignee_id: ''
       type: incident
       collaborators: ''
-      custom_fields: "6353388345367: 'apply_tsup'\r\n1500013095781: '[webform_submission:uuid]'\r\n12281632679959: ['12281632679959_[webform_submission:values:permit_type]', 'permit_type']\r\n1900004448785: ['[webform_submission:values:contact_company]', 'contact_company']\r\n12280609857559: ['[webform_submission:values:computed_bds_permit_number]', 'computed_bds_permit_number']\r\n12281140173719: ['[webform_submission:values:computed_num_spaces]', 'computed_num_spaces']\r\n12280733221015: ['[webform_submission:values:computed_date_start]', 'computed_date_start']\r\n12280737894935: ['[webform_submission:values:computed_date_end]', 'computed_date_end']\r\n12281351917847: ['12281351917847_[webform_submission:values:7day_permit_reason]', '7day_permit_reason']\r\n5581480390679: ['[webform_submission:values:permit_location:location_lat]', 'permit_location:location_lat']\r\n5581490332439: ['[webform_submission:values:permit_location:location_lon]', 'permit_location:location_lon']\r\n13407901552407: ['[webform_submission:values:permit_location:location_x]', 'permit_location:location_x']\r\n13407918835095: ['[webform_submission:values:permit_location:location_y]', 'permit_location:location_y']\r\n1500012743961: ['[webform_submission:values:permit_location:location_address]', 'permit_location:location_address']\r\n9205221816983: ['[webform_submission:values:permit_location:location_type:raw]', 'permit_location:location_type']\r\n12281548831383: ['[webform_submission:values:complex_permit_closure_type]', 'complex_permit_closure_type']\r\n14564469123095: ['[webform_submission:values:permit_location_metered]', 'permit_location_metered']\r\n\r\n"
+      custom_fields: "6353388345367: 'apply_tsup'\r\n1500013095781: '[webform_submission:uuid]'\r\n12281632679959: ['12281632679959_[webform_submission:values:permit_type]', 'permit_type']\r\n1900004448785: ['[webform_submission:values:contact_company]', 'contact_company']\r\n12280609857559: ['[webform_submission:values:computed_bds_permit_number]', 'computed_bds_permit_number']\r\n12281140173719: ['[webform_submission:values:computed_num_spaces]', 'computed_num_spaces']\r\n12280733221015: ['[webform_submission:values:computed_date_start]', 'computed_date_start']\r\n12280737894935: ['[webform_submission:values:computed_date_end]', 'computed_date_end']\r\n12281351917847: ['12281351917847_[webform_submission:values:7day_permit_reason]', '7day_permit_reason']\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n9205221816983: ['[webform_submission:values:report_location:location_type:raw]', 'report_location:location_type']\r\n12281548831383: ['[webform_submission:values:complex_permit_closure_type]', 'complex_permit_closure_type']\r\n14564469123095: ['[webform_submission:values:permit_location_metered]', 'permit_location_metered']\r\n\r\n"
       ticket_id_field: report_ticket_id
       ticket_form_id: '12280613877783'
   create_new_zendesk_request_developer_test:
@@ -1481,7 +1512,7 @@ handlers:
       assignee_id: ''
       type: incident
       collaborators: ''
-      custom_fields: "6353388345367: 'apply_tsup'\r\n1500013095781: '[webform_submission:uuid]'\r\n12281632679959: ['12281632679959_[webform_submission:values:permit_type]', 'permit_type']\r\n1900004448785: ['[webform_submission:values:contact_company]', 'contact_company']\r\n12280609857559: ['[webform_submission:values:computed_bds_permit_number]', 'computed_bds_permit_number']\r\n12281140173719: ['[webform_submission:values:computed_num_spaces]', 'computed_num_spaces']\r\n12280733221015: ['[webform_submission:values:computed_date_start]', 'computed_date_start']\r\n12280737894935: ['[webform_submission:values:computed_date_end]', 'computed_date_end']\r\n12281351917847: ['12281351917847_[webform_submission:values:7day_permit_reason]', '7day_permit_reason']\r\n5581480390679: ['[webform_submission:values:permit_location:location_lat]', 'permit_location:location_lat']\r\n5581490332439: ['[webform_submission:values:permit_location:location_lon]', 'permit_location:location_lon']\r\n13407901552407: ['[webform_submission:values:permit_location:location_x]', 'permit_location:location_x']\r\n13407918835095: ['[webform_submission:values:permit_location:location_y]', 'permit_location:location_y']\r\n1500012743961: ['[webform_submission:values:permit_location:location_address]', 'permit_location:location_address']\r\n9205221816983: ['[webform_submission:values:permit_location:location_type:raw]', 'permit_location:location_type']\r\n12281548831383: ['[webform_submission:values:complex_permit_closure_type]', 'complex_permit_closure_type']\r\n14564469123095: ['[webform_submission:values:permit_location_metered]', 'permit_location_metered']\r\n\r\n"
+      custom_fields: "6353388345367: 'apply_tsup'\r\n1500013095781: '[webform_submission:uuid]'\r\n12281632679959: ['12281632679959_[webform_submission:values:permit_type]', 'permit_type']\r\n1900004448785: ['[webform_submission:values:contact_company]', 'contact_company']\r\n12280609857559: ['[webform_submission:values:computed_bds_permit_number]', 'computed_bds_permit_number']\r\n12281140173719: ['[webform_submission:values:computed_num_spaces]', 'computed_num_spaces']\r\n12280733221015: ['[webform_submission:values:computed_date_start]', 'computed_date_start']\r\n12280737894935: ['[webform_submission:values:computed_date_end]', 'computed_date_end']\r\n12281351917847: ['12281351917847_[webform_submission:values:7day_permit_reason]', '7day_permit_reason']\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n9205221816983: ['[webform_submission:values:report_location:location_type:raw]', 'report_location:location_type']\r\n12281548831383: ['[webform_submission:values:complex_permit_closure_type]', 'complex_permit_closure_type']\r\n14564469123095: ['[webform_submission:values:permit_location_metered]', 'permit_location_metered']\r\n\r\n"
       ticket_id_field: report_ticket_id
       ticket_form_id: '12280613877783'
   zendesk_general:
