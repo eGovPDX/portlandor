@@ -551,9 +551,12 @@ class ZendeskHandler extends WebformHandlerBase
       array_filter($custom_fields, fn ($val) => is_array($val) && count($val) === 2),
     )) : [];
     $json_form_data = [];
+    $exclude_from_json = $this->webform->getThirdPartySetting('portland', 'exclude_from_json') ?? [];
     foreach ($submission_fields['data'] as $key => $value) {
       // exclude ticket ID from json as it will always be empty at this point
       if ($key === $zendesk_ticket_id_field_name) continue;
+
+      if (array_key_exists($key, $exclude_from_json)) continue;
 
       // check if composite element
       if (is_array($value) && !array_is_list($value)) {
