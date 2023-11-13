@@ -27,69 +27,76 @@ elements: |-
     '#type': webform_section
     '#title': Report
     '#title_display': invisible
+    location_is_private:
+      '#type': radios
+      '#title': 'Is the location on private property?'
+      '#options':
+        'Yes': 'Yes'
+        'No': 'No'
+        'Not sure': 'Not sure'
+      '#options_display': side_by_side
+      '#required': true
+    location_private_owner:
+      '#type': radios
+      '#title': 'Are you the owner or lessee of the property?'
+      '#options': yes_no
+      '#options_display': side_by_side
+      '#required': true
+      '#states':
+        visible:
+          ':input[name="location_is_private"]':
+            value: 'Yes'
+    report_property_owner_assistance:
+      '#type': radios
+      '#title': 'What would you like to request?'
+      '#options':
+        Assistance: 'Request no-cost or low-cost graffiti removal assistance from the Graffiti Program'
+        'Removal Kit': 'Request a graffiti removal kit'
+        'None of the above - I just want to report the graffiti': 'None of the above - I just want to report the graffiti'
+      '#states':
+        visible:
+          ':input[name="location_private_owner"]':
+            value: 'Yes'
+      '#wrapper_type': form_element
+      '#required': true
+    next_steps_kit_text:
+      '#type': webform_markup
+      '#states':
+        visible:
+          ':input[name="report_property_owner_assistance"]':
+            value: 'Removal Kit'
+      '#markup': |-
+        <div class="alert alert--info next-steps">
+        <h2>Next Steps</h2>
+
+        <p>Graffiti kits consist of a solvent spray, gloves, rag, and safety goggles. They are best used to remove graffiti from metal and glass surfaces. Kits cannot be shipped and must be picked up at our downtown office. To request a kit and coordinate pickup, please email us at <a href="mailto:graffiti@portlandoregon.gov">graffiti@portlandoregon.gov</a>.</p>
+        </div>
     report_location:
       '#type': portland_location_picker
       '#title': Location
-      '#required': true
-      '#default_value':
-        location_type: street
-        location_park: ''
-        location_address: ''
-        place_name: ''
-        location_details: ''
-        location_lat: ''
-        location_lon: ''
-        location_private_owner: ''
+      '#states':
+        visible:
+          ':input[name="report_property_owner_assistance"]':
+            '!value': 'Removal Kit'
       '#wrapper_attributes':
         id: location_widget
-      '#location_address__required': true
       '#location_map__description': '<!--<em>Existing graffiti reports are displayed with a red marker <img src="/modules/custom/portland/modules/portland_location_picker/images/map_marker_incident.png" alt="Red map marker icon" class="inline-icon"> when the map is fully zoomed in. New reports must be reviewed and may take up to 2 business days to appear on the map.</em>-->'
+      '#location_address__required': true
+      '#location_lat__required': true
       '#location_type__required': true
       '#location_private_owner__title': 'Are you the owner or lessee of the property?'
-      '#location_lat__required': true
       '#primary_layer_source': /api/tickets/graffiti
       '#primary_layer_behavior': informational
       '#primary_layer_type': incident
       '#feature_layer_visible_zoom': 17
-    markup_select_to_continue:
-      '#type': webform_markup
-      '#states':
-        visible:
-          ':input[name="report_location[location_type]"]':
-            unchecked: true
-      '#markup': 'Make a selection to continue.'
     container_report_details:
       '#type': container
-      '#states':
-        visible:
-          ':input[name="report_location[location_type]"]':
-            checked: true
       container_property_owner:
         '#type': container
         '#states':
           visible:
-            ':input[name="report_location[location_private_owner]"]':
+            ':input[name="location_private_owner"]':
               value: 'Yes'
-        report_property_owner_assistance:
-          '#type': radios
-          '#title': 'What would you like to request?'
-          '#options':
-            Assistance: 'Request no-cost or low-cost graffiti removal assistance from the Graffiti Program'
-            'Removal Kit': 'Request a graffiti removal kit'
-            'None of the above - I just want to report the graffiti': 'None of the above - I just want to report the graffiti'
-          '#wrapper_type': form_element
-        next_steps_kit_text:
-          '#type': webform_markup
-          '#states':
-            visible:
-              ':input[name="report_property_owner_assistance"]':
-                value: 'Removal Kit'
-          '#markup': |-
-            <div class="alert alert--info next-steps">
-            <h2>Next Steps</h2>
-
-            <p>Graffiti kits consist of a solvent spray, gloves, rag, and safety goggles. They are best used to remove graffiti from metal and glass surfaces. Kits cannot be shipped and must be picked up at our downtown office. To request a kit and coordinate pickup, please email us at <a href="mailto:graffiti@portlandoregon.gov">graffiti@portlandoregon.gov</a>.</p>
-            </div>
         container_not_kit:
           '#type': container
           '#states':
@@ -106,7 +113,7 @@ elements: |-
             '#options_display': side_by_side
             '#states':
               required:
-                ':input[name="report_location[location_private_owner]"]':
+                ':input[name="location_private_owner"]':
                   value: 'Yes'
           report_private_property_type:
             '#type': radios
@@ -581,6 +588,8 @@ handlers:
       custom_fields: "6353388345367: 'report_graffiti'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n1500013095781: '[webform_submission:uuid]'\r\n6355783758871: '[webform_submission:values:resolution_url]'\r\n6379451469847: ['[webform_submission:values:waiver_url]', 'waiver_url']\r\n9205221816983: ['[webform_submission:values:report_location:location_type:raw]', 'report_location:location_type']\r\n10333166173079: ['[webform_submission:values:report_above_ground_level]', 'report_above_ground_level']\r\n10333167883159: ['[webform_submission:values:report_graffiti_on_mural]', 'report_graffiti_on_mural']\r\n6586776052759: ['[webform_submission:values:report_hate_speech_or_gang]', 'report_hate_speech_or_gang']"
       ticket_id_field: report_ticket_id
       ticket_form_id: '6499767163543'
+      recipient: ''
+      ticket_fork_field: ''
   create_new_zendesk_ticket_developer_test:
     id: zendesk
     handler_id: create_new_zendesk_ticket_developer_test
@@ -607,6 +616,8 @@ handlers:
       custom_fields: "6353388345367: 'report_graffiti'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n1500013095781: '[webform_submission:uuid]'\r\n6355783758871: '[webform_submission:values:resolution_url]'\r\n6379451469847: ['[webform_submission:values:waiver_url]', 'waiver_url']\r\n9205221816983: ['[webform_submission:values:report_location:location_type:raw]', 'report_location:location_type']\r\n10333166173079: ['[webform_submission:values:report_above_ground_level]', 'report_above_ground_level']\r\n10333167883159: ['[webform_submission:values:report_graffiti_on_mural]', 'report_graffiti_on_mural']\r\n6586776052759: ['[webform_submission:values:report_hate_speech_or_gang]', 'report_hate_speech_or_gang']"
       ticket_id_field: report_ticket_id
       ticket_form_id: '6499767163543'
+      recipient: ''
+      ticket_fork_field: ''
   zendesk_update_ticket:
     id: zendesk_update_ticket
     handler_id: zendesk_update_ticket
