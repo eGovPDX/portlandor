@@ -171,13 +171,13 @@
         //     interactive: false
         //   }
         // } else if (displayCityLimits && !requireCityLimits) {
-          var cityLimitsProperties = {
-            color: 'red',
-            fillOpacity: 0,
-            weight: 1,
-            dashArray: "2 4",
-            interactive: false
-          }
+        var cityLimitsProperties = {
+          color: 'red',
+          fillOpacity: 0,
+          weight: 1,
+          dashArray: "2 4",
+          interactive: false
+        }
         // }
 
         var defaultSelectedMarkerIcon = L.icon({
@@ -801,7 +801,7 @@
           // if primary layer behavior is selection-only, or geofencing is enabled, 
           // don't allow location selection, but still zoom in on that location and 
           // display location description.
-          
+
           resetClickedMarker();
           resetLocationMarker();
           clearLocationFields();
@@ -1209,12 +1209,12 @@
           var url = '';
 
           // if (!addressVerify) {
-            url = REVERSE_GEOCODE_URL;
-            // use new intersects API call to reverse geolocate and get location details and description
-            var sphericalMerc = L.Projection.SphericalMercator.project(latlng);
-            var x = sphericalMerc.x;
-            var y = sphericalMerc.y;
-            url = url.replace('${x}', x).replace('${y}', y).replace('${apiKey}', apiKey);
+          url = REVERSE_GEOCODE_URL;
+          // use new intersects API call to reverse geolocate and get location details and description
+          var sphericalMerc = L.Projection.SphericalMercator.project(latlng);
+          var x = sphericalMerc.x;
+          var y = sphericalMerc.y;
+          url = url.replace('${x}', x).replace('${y}', y).replace('${apiKey}', apiKey);
           // } else {
           //   url = ADDRESS_DECODER_URL;
           //   url = url.replace('${lat}', latlng.lat).replace('${lng}', latlng.lng);
@@ -1375,7 +1375,7 @@
         }
 
         function showStatusModal(message) {
-          statusModal.html('<p class="status-message">' + message + '</p>');
+          statusModal.html('<p class="status-message mb-0">' + message + '</p>');
           Drupal.dialog(statusModal, {
             width: '600px',
             buttons: [{
@@ -1386,6 +1386,12 @@
             }]
           }).showModal();
           statusModal.removeClass('visually-hidden');
+          const dialogContent = document.getElementById('status_modal');
+          const focusableElements = dialogContent.querySelectorAll('a, button, input, textarea');
+
+          focusableElements.forEach((element) => {
+            element.setAttribute('tabindex', '-1');
+          });
         }
 
         function closeStatusModal() {
