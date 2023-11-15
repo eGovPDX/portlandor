@@ -278,7 +278,7 @@
           if (lat && lng && lat !== "0" && lng !== "0") {
             setLocationMarker(lat, lng);
             doZoomAndCenter(lat, lng);
-            setLocationDetails(lat, lng)
+            doMapClick(new L.LatLng(lat, lng));
           }
 
           // Set up address verify button, autocomplete, and help text
