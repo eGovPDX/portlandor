@@ -20,7 +20,6 @@
 
       var test = $('main');
 
-      //$(context).once('location_picker').each(function () {
       $(once('location_picker', 'fieldset.portland-location-picker--wrapper', context)).each(function () {
 
         // CONSTANTS //////////
@@ -40,20 +39,14 @@
         const NOT_A_PARK = "You selected park or natural area as the property type, but no park data was found for the selected location. If you believe this is a valid location, please zoom in to find the park on the map, tap or click to select a location, and continue to submit your report.";
         const OPEN_ISSUE_MESSAGE = "If this issue is what you came here to report, there's no need to report it again.";
         const SOLVED_ISSUE_MESSAGE = "This issue was recently solved. If that's not the case, or the issue has reoccured, please submit a new report.";
-        // const ASSET_ONLY_SELECTION_MESSAGE = "We have zoomed in on the address you provided, but this map only allows you to select existing asset markers. There may not be any in the current view. Please search again or use the Locate Me button in the lower-right corner of the map.";
         const VERIFIED_NO_COORDS = "The address you entered is valid, but an error occurred, and it can't be shown on the map. Please zoom in and find the desired location, then click it to set a marker.";
-        // const CITY_LIMITS_MESSAGE = "<b>The location you selected is not managed by the City of Portland.</b><br><br>If you need help submitting this form, please contact the <a href='https://www.portland.gov/311'>PDX 311 Customer Service program</a>."
         const VERIFY_ADDRESS_TEXT = "Enter an address, then click the button to verify the location. Or click the map to select a location and determine the verified address.";
         const DEFAULT_FEATURE_ICON_URL = "/modules/custom/portland/modules/portland_location_picker/images/map_marker_default.png";
         const DEFAULT_INCIDENT_ICON_URL = "/modules/custom/portland/modules/portland_location_picker/images/map_marker_incident.png";
         const DEFAULT_SOLVED_ICON_URL = "/modules/custom/portland/modules/portland_location_picker/images/map_marker_incident_solved.png";
-        // const LOCATION_TYPE_LOOKUP_URL = "https://www.portlandmaps.com/api/intersects/?includeDetail=true&";
         const REVERSE_GEOCODE_URL = 'https://www.portlandmaps.com/api/intersects/?geometry=%7B%20%22x%22:%20${x},%20%22y%22:%20${y},%20%22spatialReference%22:%20%7B%20%22wkid%22:%20%223857%22%7D%20%7D&include=all&detail=1&api_key=${apiKey}';
-        //const ADDRESS_DECODER_URL = 'https://www.portlandmaps.com/arcgis/rest/services/Public/Geocoding_PDX/GeocodeServer/reverseGeocode?location=%7B%22x%22%3A${lng}%2C+%22y%22%3A${lat}%2C+%22spatialReference%22%3A%7B%22wkid%22+%3A+4326%7D%7D&distance=100&langCode=&locationType=&featureTypes=&outSR=4326&returnIntersection=false&f=json'
         const API_BOUNDARY_URL = "https://www.portlandmaps.com/arcgis/rest/services/Public/Boundaries/MapServer/0/query";
         const API_PARKS_BOUNDARY_URL = "https://www.portlandmaps.com/arcgis/rest/services/Public/Parks_Misc/MapServer/2/query";
-        // const PARKS_REVGEOCODE_URL = "https://www.portlandmaps.com/arcgis/rest/services/Public/Parks_Misc/MapServer/2/query?geometry=%7B%22x%22%3A${lng}%2C%22y%22%3A${lat}%2C%22spatialReference%22%3A%7B%22wkid%22%3A4326%7D%7D&geometryType=esriGeometryPoint&spacialRel=esriSpatialRelIntersects&returnGeometry=false&returnTrueCurves=false&returnIdsOnly=false&returnCountOnly=false&returnDistinctValues=false&f=pjson";
-        // const REVGEOCODE_URL =      "https://www.portlandmaps.com/arcgis/rest/services/Public/Geocoding_PDX/GeocodeServer/reverseGeocode?location=%7B%22x%22%3A${lng}%2C+%22y%22%3A${lat}%2C+%22spatialReference%22%3A%7B%22wkid%22+%3A+4326%7D%7D&distance=100&langCode=&locationType=&featureTypes=&outSR=4326&returnIntersection=false&f=json";
         const PRIMARY_LAYER_TYPE = {
           Asset: "asset",
           Incident: "incident",
@@ -85,14 +78,6 @@
 
         const GEOLOCATION_CACHE_MILLISECONDS = 0;
 
-        // this is a static, modified version of the city limits geoJSON data. it includes a whole-earth polygon as the first polygon,
-        // so that the city limits become a hole and everything else can be shaded. this will require us to change how we detect clicks
-        // with in the city limits. 
-        // original city boundaries geoJSON: https://www.portlandmaps.com/arcgis/rest/services/Public/COP_OpenData_Boundary/MapServer/10/query?where=CITYNAME%20like%20%27Portland%27&outFields=*&outSR=4326&f=geojson
-        //const CITY_LIMITS_BOUNDARY_URL_DEPRECATED = "https://www.portlandmaps.com/arcgis/rest/services/Public/Boundaries/MapServer/0/query?where=1%3D1&objectIds=35&outFields=*&returnGeometry=true&f=geojson";
-        // const CITY_LIMITS_BOUNDARY_URL = "/modules/custom/portland/modules/portland_location_picker/js/cityboundary.json";
-        // const MUNICIPALITIES_BOUNDARY_URL = "https://www.portlandmaps.com/arcgis/rest/services/Public/COP_OpenData_Boundary/MapServer/10/query?outFields=*&where=1%3D1&f=geojson";
-
         // GLOBALS //////////
         var primaryLayer;
         var incidentsLayer;
@@ -104,30 +89,19 @@
         var incidentsFeatures;
         var regionsFeatures;
         var locationMarker;
-        // var locationErrorShown;
-        // var locateControl;
-        // var locMarker;
         var locCircle;
         var locateControlContaier;
         var clickedMarker;
-        // var assetCount;
         var suggestionsModal;
-        var locationType;
         var statusModal;
         var baseLayer;
         var aerialLayer;
-        // var isPark;
-        // var useParks;
-        // var hiddenLocationType;
-        // var shouldRecenterPark = true;
         var currentView = "base";
         var baseLayer = L.tileLayer('https://www.portlandmaps.com/arcgis/rest/services/Public/Basemap_Color_Complete/MapServer/tile/{z}/{y}/{x}', { attribution: "PortlandMaps ESRI" });
         var aerialLayer = L.tileLayer('https://www.portlandmaps.com/arcgis/rest/services/Public/Basemap_Color_Complete_Aerial/MapServer/tile/{z}/{y}/{x}', { attribution: "PortlandMaps ESRI" });
         var LocateControl = generateLocateControl();
         var AerialControl = generateAerialControl();
         var verifyHidden = false;
-        var municipalitiesFeatures;
-        // var locationTypeHelpText = $('#location_details--description').text();
 
         // CUSTOM PROPERTIES SET IN WEBFORM CONFIG //////////
         var addressVerify = drupalSettings.webform ? drupalSettings.webform.portland_location_picker.address_verify : "";
@@ -140,14 +114,10 @@
         var primaryMarkerUrl = drupalSettings.webform && drupalSettings.webform.portland_location_picker.primary_marker ? drupalSettings.webform.portland_location_picker.primary_marker : '/modules/custom/portland/modules/portland_location_picker/images/map_marker_default.png';
         var selectedMarker = drupalSettings.webform && drupalSettings.webform.portland_location_picker.selected_marker ? drupalSettings.webform.portland_location_picker.selected_marker : '/modules/custom/portland/modules/portland_location_picker/images/map_marker_default_selected.png';
         var incidentMarker = drupalSettings.webform && drupalSettings.webform.portland_location_picker.incident_marker ? drupalSettings.webform.portland_location_picker.incident_marker : '/modules/custom/portland/modules/portland_location_picker/images/map_marker_incident.png';
-        var disablePopup = drupalSettings.webform && drupalSettings.webform.portland_location_picker.disable_popup ? true : false;
         var verifyButtonText = drupalSettings.webform ? drupalSettings.webform.portland_location_picker.verify_button_text : "";
-        var primaryFeatureName = drupalSettings.webform && drupalSettings.webform.portland_location_picker.primary_feature_name ? drupalSettings.webform.portland_location_picker.primary_feature_name : 'asset';
         var featureLayerVisibleZoom = drupalSettings.webform && drupalSettings.webform.portland_location_picker.feature_layer_visible_zoom ? drupalSettings.webform.portland_location_picker.feature_layer_visible_zoom : FEATURE_LAYER_VISIBLE_ZOOM;
         var requireCityLimits = drupalSettings.webform && drupalSettings.webform.portland_location_picker.require_city_limits === true ? true : false;
-        var displayCityLimits = drupalSettings.webform && drupalSettings.webform.portland_location_picker.display_city_limits === false ? false : true;
         var requireCityLimitsPlusParks = drupalSettings.webform && drupalSettings.webform.portland_location_picker.require_city_limits_plus_parks === true ? true : false;
-        var locationTypes = drupalSettings.webform && drupalSettings.webform.portland_location_picker.location_types === false ? false : true;
 
         var boundaryUrl = drupalSettings.webform ? drupalSettings.webform.portland_location_picker.boundary_url : "";
         var displayBoundary = drupalSettings.webform && drupalSettings.webform.portland_location_picker.display_boundary === false ? false : true;
@@ -159,18 +129,6 @@
         var locationType;
         var locationTextBlock;
 
-        // // properties for the city limits polygon; if geofencing is required, the city limits are shown
-        // // as a clear cutout of a shaded global polygon.
-        // if (displayCityLimits && requireCityLimits) {
-        //   var cityLimitsProperties = {
-        //     color: 'red',
-        //     fillColor: 'black',
-        //     fillOpacity: 0.1,
-        //     weight: 1,
-        //     dashArray: "2 4",
-        //     interactive: false
-        //   }
-        // } else if (displayCityLimits && !requireCityLimits) {
         var cityLimitsProperties = {
           color: 'red',
           fillOpacity: 0,
@@ -178,7 +136,6 @@
           dashArray: "2 4",
           interactive: false
         }
-        // }
 
         var defaultSelectedMarkerIcon = L.icon({
           iconUrl: selectedMarker,
@@ -203,7 +160,6 @@
         // if ajax is used in the webform (for computed twig, for example), this script
         // and the initialize function may get called multiple times for some reason.
         // adding this flag prevents re-initialization of the map.
-        // if (!initialized) { initialize(); initialized = true; }
         initialized = initialize();
 
         // SETUP FUNCTIONS ///////////////////////////////
@@ -981,10 +937,6 @@
             $('input[name=' + elementId + '\\[location_zipcode\\]]').val(zipcode);
           }
 
-          // console.log('Place name: ' + place_name);
-          // console.log('Location type: ' + location_type);
-          // console.log('Internal details: ' + internal_details);
-
           $('input[name=' + elementId + '\\[location_type_taxlot\\]]').trigger('change');
           $('input[name=' + elementId + '\\[location_type_park\\]]').trigger('change');
           $('input[name=' + elementId + '\\[location_type_waterbody\\]]').trigger('change');
@@ -1011,7 +963,6 @@
         function redrawMap() {
           // if map is initialized while hidden, this function needs to be called when the map is
           // exposed, so it can redraw the tiles.
-          //map.invalidateSize();
           setTimeout(function () { map.invalidateSize(); }, 200);
         }
 
@@ -1066,7 +1017,6 @@
             var lng = candidates[0]["attributes"]["lon"];
             // put full address in field
             var fulladdress = buildFullAddress(candidates[0]);
-            //$('#location_search').val(fulladdress);
             showVerifiedLocation(fulladdress, lat, lng);
 
             // put park name in place_name field
@@ -1171,7 +1121,6 @@
           // only do this if widget config allows
           if (primaryLayerBehavior == PRIMARY_LAYER_BEHAVIOR.SelectionOnly) {
             // Don't set marker if behavior is selection only. But do we want to show a help popup?
-            //showStatusModal(ASSET_ONLY_SELECTION_MESSAGE);
             return false;
           }
 
@@ -1215,10 +1164,6 @@
           var x = sphericalMerc.x;
           var y = sphericalMerc.y;
           url = url.replace('${x}', x).replace('${y}', y).replace('${apiKey}', apiKey);
-          // } else {
-          //   url = ADDRESS_DECODER_URL;
-          //   url = url.replace('${lat}', latlng.lat).replace('${lng}', latlng.lng);
-          // }
 
           $.ajax({
             url: url, success: function (response) {
@@ -1316,7 +1261,6 @@
 
         function showVerifiedLocation(description, lat, lng, isWithinBounds, isVerifiedAddress) {
           $('#verified_location_text').text(description);
-          //$('#verified_location').removeClass('visually-hidden');
 
           if (!locationTextBlock.map) locationTextBlock.addTo(map);
 
