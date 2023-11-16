@@ -44,9 +44,10 @@
         const DEFAULT_FEATURE_ICON_URL = "/modules/custom/portland/modules/portland_location_picker/images/map_marker_default.png";
         const DEFAULT_INCIDENT_ICON_URL = "/modules/custom/portland/modules/portland_location_picker/images/map_marker_incident.png";
         const DEFAULT_SOLVED_ICON_URL = "/modules/custom/portland/modules/portland_location_picker/images/map_marker_incident_solved.png";
+        const ERROR_MODAL_DEFAULT_TEXT = 'Please try again in a few moments. If the error persists, let us know using the <a href="/feedback?subject=The%20page%20looks%20broken">website feedback form</a>. You can also call us at <a href="tel:311">311</a>&nbsp;or&nbsp;<a href="tel:+15038234000">503-823-4000</a>.';
         const REVERSE_GEOCODE_URL = 'https://www.portlandmaps.com/api/intersects/?geometry=%7B%20%22x%22:%20${x},%20%22y%22:%20${y},%20%22spatialReference%22:%20%7B%20%22wkid%22:%20%223857%22%7D%20%7D&include=all&detail=1&api_key=${apiKey}';
         const API_BOUNDARY_URL = "https://www.portlandmaps.com/arcgis/rest/services/Public/Boundaries/MapServer/0/query";
-        const API_PARKS_BOUNDARY_URL = "https://www.portlandmaps.com/arcgis/rest/services/Public/Parks_Misc/MapServer/2/query";
+        const API_PARKS_BOUNDARY_URL = "https://www.portlandmaps.com/arcgis/rest/services/Public/Parks_Misc/MapServer/2/query?where=1%3D1&f=geojson";
         const PRIMARY_LAYER_TYPE = {
           Asset: "asset",
           Incident: "incident",
@@ -373,7 +374,12 @@
               url: boundaryUrl, success: function (cityBoundaryResponse) {
                 var cityBoundaryFeatures = cityBoundaryResponse.features;
                 boundaryLayer = L.geoJson(cityBoundaryFeatures, cityLimitsProperties).addTo(map);
-                boundaryLayer.municipality = cityBoundaryFeatures[0].properties.CITYNAME;
+                if (boundaryLayer.municipality) {
+                  boundaryLayer.municipality = cityBoundaryFeatures[0].properties.CITYNAME;
+                }
+                // if boundary is shown, display a map key
+                // $('.leaflet-container').after('<div class="mt-1"><p><em>Please select a location within the <span class="boundary-key">marked boundary area(s)</span>.</em></p></div>');
+
                 console.log("Boundary layer loaded.");
               }
             });
@@ -1174,7 +1180,11 @@
               processReverseLocationData(response, latlng.lat, latlng.lng, zoomAndCenter);
             },
             error: function (e) {
+              // if the PortlandMaps API is down, this is where we'll get stuck.
+              // any way to fail the location lookup gracefull and still let folks submit?
+              // at least display an error message.
               console.error(e);
+              showErrorModal("An error occurred while attemping to obtain location information from PortlandMaps.com.");
             }
 
           });
@@ -1343,7 +1353,7 @@
         }
 
         function showErrorModal(message) {
-          message = message + '<br><br>Please try again in a few moments. If the error persists, please <a href="/feedback">contact us</a>.';
+          message = message + "<br><br>" + ERROR_MODAL_DEFAULT_TEXT;// '<br><br>Please try again in a few moments. If the error persists, please <a href="/feedback">contact us</a>.';
           showStatusModal(message);
         }
 
