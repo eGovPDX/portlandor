@@ -43,14 +43,11 @@ class PortlandLocationPicker extends WebformCompositeBase {
       $lines[] = '<strong>Location name:</strong> ' . $value['place_name'];
     }
     if (isset($value['location_address']) && $value['location_address']) {
-      $lines[] = '<strong>Address:</strong> <a href="https://www.google.com/maps/place/' . $value['location_address'] . '">' . $value['location_address'] . '</a>';
+      $lines[] = '<strong>Address:</strong>&nbsp;<a href="https://www.google.com/maps/place/' . $value['location_address'] . '">' . $value['location_address'] . '</a>';
     }
     if (isset($value['location_lat']) && isset($value['location_lon']) && $value['location_lat']) {
       $latlon = $value['location_lat'] . ',' . $value['location_lon'];
-      $lines[] = '<strong>Lat/lng:</strong> <a href="https://www.google.com/maps/place/' . $latlon . '">' . $latlon . '</a>';
-    }
-    if (isset($value['location_x']) && isset($value['location_y']) && $value['location_y']) {
-      $lines[] = '<strong>X/Y coords:</strong> ' . $value['location_x'] . ' / ' . $value['location_y'];
+      $lines[] = '<strong>Lat/lng:</strong>&nbsp;<a href="https://www.google.com/maps/place/' . $latlon . '">' . $latlon . '</a>';
     }
     if (isset($value['location_municipality_name']) && $value['location_municipality_name']) {
       $lines[] = '<strong>Municipality:</strong> ' . $value['location_municipality_name'];
@@ -103,9 +100,6 @@ class PortlandLocationPicker extends WebformCompositeBase {
       $latlon = $value['location_lat'] . ',' . $value['location_lon'];
       $lines[] = 'Lat/lng: ' . $latlon;
       $lines[] = 'Map link: https://www.google.com/maps/place/' . $latlon;
-    }
-    if (isset($value['location_x']) && isset($value['location_y']) && $value['location_y']) {
-      $lines[] = 'X/Y coords: ' . $value['location_x'] . ' / ' . $value['location_y'];
     }
     if (isset($value['location_municipality_name']) && $value['location_municipality_name']) {
       $lines[] = 'Municipality: ' . $value['location_municipality_name'];
