@@ -8,6 +8,8 @@ dependencies:
 third_party_settings:
   portland:
     disable_demographic_form_prompt: 0
+    exclude_from_json:
+      computed_requester: computed_requester
 weight: 0
 open: null
 close: null
@@ -90,6 +92,7 @@ elements: |-
   support_agent_use_only:
     '#type': portland_support_agent_widget
     '#title': 'Support Agent Use Only'
+    '#escalate_issue__access': false
   report_ticket_id:
     '#type': hidden
     '#title': 'Report Ticket Id'
@@ -117,6 +120,19 @@ elements: |-
       {% endif %}
     '#whitespace': trim
     '#store': true
+    '#ajax': true
+  computed_requester:
+    '#type': webform_computed_twig
+    '#title': 'Computed Requester'
+    '#display_on': form
+    '#mode': text
+    '#template': |-
+      {% if data.contact_email %}
+      {{ data.contact_email }}
+      {% else %}
+      anonymous@portlandoregon.gov
+      {% endif %}
+    '#whitespace': spaceless
     '#ajax': true
   computed_description:
     '#type': webform_computed_twig
@@ -356,7 +372,7 @@ handlers:
     weight: -50
     settings:
       requester_name: contact_name
-      requester_email: computed_recipient
+      requester_email: computed_requester
       subject: '[webform_submission:values:computed_subject]'
       comment: '[webform_submission:values:computed_description:html]'
       tags: 'drupal webform [webform_submission:values:webform_id]'
@@ -384,7 +400,7 @@ handlers:
     weight: -49
     settings:
       requester_name: contact_name
-      requester_email: computed_recipient
+      requester_email: computed_requester
       subject: 'TEST: [webform_submission:values:computed_subject]'
       comment: '[webform_submission:values:computed_description:html]'
       tags: 'drupal webform  [webform_submission:values:webform_id]'
