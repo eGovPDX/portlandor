@@ -20,6 +20,16 @@ description: ''
 categories:
   - Report
 elements: |-
+  confidentiality_opt_in:
+    '#type': radios
+    '#title': 'Do you want the City to keep the information in your submission confidential?'
+    '#description': '<p>Complete information, including your contact information, is required to investigate your complaint and provide assistance. This information may be considered a public record and the City may be required to release it if a public records request is made under Oregon&rsquo;s&nbsp;<a data-renderer-mark="true" href="https://www.doj.state.or.us/oregon-department-of-justice/public-records/attorney-generals-public-records-and-meetings-manual/i-public-records/#:~:text=Under%20Oregon''s%20Public%20Records%20Law,committee%20of%20the%20Legislative%20Assembly" title="https://www.doj.state.or.us/oregon-department-of-justice/public-records/attorney-generals-public-records-and-meetings-manual/i-public-records/#:~:text=Under%20Oregon''s%20Public%20Records%20Law,committee%20of%20the%20Legislative%20Assembly">Public Records Law</a>. If you prefer, the City will attempt to keep your information confidential in the event of a public records request. If you request confidentiality, it will limit the City&rsquo;s ability to share information which may limit the City&rsquo;s ability to resolve your specific issue.</p>'
+    '#description_display': before
+    '#options':
+      'No': 'I am not requesting confidentiality.'
+      'Yes': 'I am requesting that the City keep my contact information confidential -- I am submitting my contact information with the expectation that the City will keep it confidential and will only disclose it if ordered to do so. I would not submit this information without the promise of confidentiality. I understand this may limit the City’s ability to resolve my issue.'
+    '#required': true
+    '#default_value': 'No'
   file_complaintee_name:
     '#type': textfield
     '#title': 'Name of the third-party delivery platform (company) alleged to have committed violation'
@@ -40,23 +50,53 @@ elements: |-
       visible:
         ':input[name="file_complainant_type"]':
           value: Restaurant
-    file_restaurant_name:
-      '#type': textfield
-      '#title': 'Restaurant Name'
-      '#required': true
-    file_restaurant_location:
-      '#type': portland_location_picker
-      '#title': 'Restaurant Location'
-      '#location_type__access': false
-      '#location_private_owner__access': false
-      '#place_name__access': false
-      '#location_details__access': false
     file_compensation_amount_restaurant:
       '#type': number
       '#title': 'Enter the total amount of fees that the restaurant alleges it was overcharged.'
       '#field_prefix': $
       '#required': true
       '#min': 0
+    section_restaurant_info:
+      '#type': webform_section
+      '#title': 'Restaurant Info'
+      file_restaurant_name:
+        '#type': textfield
+        '#title': 'Restaurant Name'
+        '#required': true
+      file_restaurant_location_street_address:
+        '#type': textfield
+        '#title': 'Street Address'
+        '#required': true
+        '#attributes':
+          class:
+            - address-lookup
+      file_restaurant_location_unit_type:
+        '#type': webform_select_other
+        '#title': 'Unit Type'
+        '#options': unit_type
+      file_restaurant_location_unit_number:
+        '#type': textfield
+        '#title': 'Unit Number'
+        '#states':
+          invisible:
+            ':input[name="file_restaurant_location_unit_type[select]"]':
+              value: ''
+      file_restaurant_location_city:
+        '#type': textfield
+        '#title': City/Town
+        '#required': true
+        '#default_value': Portland
+      file_restaurant_location_state:
+        '#type': select
+        '#title': State
+        '#options': state_names
+        '#required': true
+        '#default_value': Oregon
+      file_restaurant_location_zip_code:
+        '#type': textfield
+        '#title': 'ZIP Code'
+        '#required': true
+        '#input_mask': '99999[-9999]'
   file_compensation_amount_delivery_driver:
     '#type': number
     '#title': 'Enter the total compensation, if known, that the delivery driver believes they are entitled to receive.'
@@ -66,20 +106,21 @@ elements: |-
         ':input[name="file_complainant_type"]':
           value: 'Delivery Driver'
     '#min': 0
-  file_documentation_file_upload:
+  file_documentation:
     '#type': managed_file
-    '#title': Documentation
+    '#title': 'Upload documentation'
+    '#multiple': 10
     '#description': 'If appropriate, include any documentation that supports your complaint.'
     '#description_display': before
     '#max_filesize': '10'
     '#file_extensions': 'pdf jpg jpeg png'
-    '#sanitize': true
   section_contact:
     '#type': webform_section
     '#title': 'Your Contact Information'
     contact_name:
       '#type': textfield
       '#title': Name
+      '#required': true
     contact_email:
       '#type': textfield
       '#title': Email
@@ -91,11 +132,14 @@ elements: |-
       '#title': Phone
       '#input_mask': '(999) 999-9999'
   computed_restaurant_location:
-    '#type': webform_computed_twig
-    '#title': 'Computed - Restaurant Location'
+    '#type': webform_computed_token
+    '#title': 'Computed Restaurant Location'
     '#display_on': none
     '#mode': text
-    '#template': '{{ data.location.location_address }}'
+    '#template': |-
+      [webform_submission:values:file_restaurant_location_street_address]
+      [webform_submission:values:file_restaurant_location_unit_type:clear] [webform_submission:values:file_restaurant_location_unit_number]
+      [webform_submission:values:file_restaurant_location_city], [webform_submission:values:file_restaurant_location_state] [webform_submission:values:file_restaurant_location_zip_code]
 css: ''
 javascript: ''
 settings:
@@ -203,7 +247,7 @@ settings:
   confirmation_type: page
   confirmation_url: ''
   confirmation_title: ''
-  confirmation_message: "<p>Thank you for submitting your Delivery Fee Complaint. A confirmation has been sent to the email you provided.</p>\r\n\r\n<p>A staff member will contact you if additional information is needed.</p>\r\n\r\n<p>If you need to contact us, please email <a href=\"mailto:RevDivPermits@portlandoregon.gov\">RevDivPermits@portlandoregon.gov</a> or call us at (503) 823-5157.</p>"
+  confirmation_message: '<p>Thank you for submitting your complaint. A staff member from the Revenue Division will contact you if additional information is needed.</p>'
   confirmation_attributes: {  }
   confirmation_back: false
   confirmation_back_label: ''
@@ -302,12 +346,13 @@ handlers:
         3881941631717252: computed_restaurant_location
         6581034371993476: file_compensation_amount_restaurant
         4329234558308228: file_compensation_amount_delivery_driver
+        8019280579743620: confidentiality_opt_in
       multiple_rows_enable: null
       multiple_rows_field: ''
       multiple_rows_separator: ''
       row_location: toBottom
       sheet_id: '4599934925885316'
-      upload_attachments: true
+      upload_attachments: '1'
   send_confirmation_email:
     id: email
     handler_id: send_confirmation_email
@@ -332,21 +377,21 @@ handlers:
       return_path: ''
       sender_mail: ''
       sender_name: ''
-      subject: 'Delivery Fee Complaint Received '
+      subject: 'Delivery Fee Complaint Received'
       body: "<p>Thank you for submitting your Delivery Fee Complaint.</p>\r\n\r\n<p>A staff member will contact you if additional information is needed.</p>\r\n\r\n<p>If you need to contact us, please email <a href=\"mailto:RevDivPermits@portlandoregon.gov\">RevDivPermits@portlandoregon.gov</a> or call us at (503) 823-5157.</p>"
       excluded_elements:
         file_complaintee_name: file_complaintee_name
         file_date_and_occurances: file_date_and_occurances
         file_complainant_type: file_complainant_type
         file_restaurant_name: file_restaurant_name
-        file_restaurant_location: file_restaurant_location
+        file_file_restaurant_location: file_file_restaurant_location
         file_compensation_amount_restaurant: file_compensation_amount_restaurant
         file_compensation_amount_delivery_driver: file_compensation_amount_delivery_driver
         file_documentation_file_upload: file_documentation_file_upload
         contact_name: contact_name
         contact_email: contact_email
         contact_phone: contact_phone
-        computed_restaurant_location: computed_restaurant_location
+        computed_file_restaurant_location: computed_file_restaurant_location
       ignore_access: false
       exclude_empty: true
       exclude_empty_checkbox: false
