@@ -27,13 +27,6 @@ class PortlandLocationPicker extends WebformCompositeBase {
    * //NOTE: custom elements must have a #title attribute. if a value is not set here, it must be set
    * //in the field config. if not, an error is thrown when trying to add an email handler.
    * 
-   * Location types:
-   *  street - location_address, location_map
-   *  park - location_park, location_map
-   *  waterway - location_map
-   *  private - location_private_owner
-   *  other - location_address, location_map
-   * 
    * How to programmatically set field conditions: https://www.drupal.org/docs/drupal-apis/form-api/conditional-form-fields
    */
   public static function getCompositeElements(array $element) {
@@ -46,12 +39,12 @@ class PortlandLocationPicker extends WebformCompositeBase {
       $element_id = $element['#webform_key'];
     }
 
-    $element['location_address'] = [
+    $element['location_search'] = [
       '#type' => 'textfield',
       '#title' => t('Location Search'),
-      '#id' => 'location_address',
+      '#id' => 'location_search',
       '#attributes' => ['class' => ['location-picker-address'], 'autocomplete' => 'off'],
-      '#description' => t('Search by address, cross streets, park name, or community center. Or use the Locate Me button or click/tap the map to select a precise location.'),
+      '#description' => t('Search the map for an address, cross streets, park, or community center. Or use the map to click a location.'),
       '#description_display' => 'before',
     ];
     $element['precision_text'] = [
@@ -69,28 +62,27 @@ class PortlandLocationPicker extends WebformCompositeBase {
       '#title_display' => 'invisible',
       '#markup' => '<div id="location_map_container" class="location-map"></div>',
     ];
-    $element['location_type'] = [
-      '#id' => 'location_type',
-      '#name' => 'location_type',
-      '#type' => 'radios',
-      '#title' => t('What type of location is this?'),
-      '#title_display' => 'before',
-      '#options' => [
-        'street' => t('Street, sidewalk, highway, trail, or other public right-of-way'),
-        'private' => t('Private property, public building, or other location with an address'),
-        'park' => t('A public park, natural area, or city-operated community center'),
-        'waterway' => t('A river, stream, or other waterway'),
-        'other' => t('I\'m not sure')
-      ],
-      '#options_display' => 'one_column',
-      '#default_value' => 'street',
-      '#attributes' => ['class' => ['location-type','visually-hidden-x']],
-      '#required' => TRUE
+    $element['suggestions_modal'] = [
+      '#type' => 'markup',
+      '#title' => 'Suggestions',
+      '#title_display' => 'invisible',
+      '#markup' => '<div id="suggestions_modal" class="visually-hidden"></div>',
     ];
-    $element['location_type_hidden'] = [
+    $element['status_modal'] = [
+      '#type' => 'markup',
+      '#title' => 'Status indicator',
+      '#title_display' => 'invisible',
+      '#markup' => '<div id="status_modal" class="visually-hidden"></div>',
+    ];
+    $element['location_address'] = [
+      '#type' => 'hidden',
+      '#title' => t('Location Address'),
+      '#attributes' => ['class' => ['location-picker-address'], 'autocomplete' => 'off', 'id' => 'location_address']
+    ];
+    $element['location_types'] = [
       '#type' => 'hidden',
       '#title' => t('Location types'),
-      '#attributes' => ['id' => 'location_type_hidden'],
+      '#attributes' => ['id' => 'location_types'],
     ];
     $element['location_type_taxlot'] = [
       '#type' => 'hidden',
@@ -126,44 +118,6 @@ class PortlandLocationPicker extends WebformCompositeBase {
       '#type' => 'hidden',
       '#title' => 'ROW',
       '#attributes' => ['id' => 'location_type_row'],
-    ];
-    $element['location_private_owner'] = [
-      '#id' => 'location_private_owner',
-      '#type' => 'radios',
-      '#title' => t('Are you the owner of the property?'),
-      '#title_display' => 'before',
-      '#options' => 'yes_no',
-      '#options_display' => 'side_by_side',
-      '#states' => [
-        'visible' => [
-          ':input[name="' . $element_id . '[location_type_taxlot]"]' => [
-            'value' => '1'
-          ],
-          ':input[name="' . $element_id . '[location_type_park]"]' => [
-            '!value' => '1'
-          ],
-        ],
-        'required' => [
-          ':input[name="' . $element_id . '[location_type_taxlot]"]' => [
-            'value' => '1'
-          ],
-          ':input[name="' . $element_id . '[location_type_park]"]' => [
-            '!value' => '1'
-          ],
-        ],
-      ],
-    ];
-    $element['suggestions_modal'] = [
-      '#type' => 'markup',
-      '#title' => 'Suggestions',
-      '#title_display' => 'invisible',
-      '#markup' => '<div id="suggestions_modal" class="visually-hidden"></div>',
-    ];
-    $element['status_modal'] = [
-      '#type' => 'markup',
-      '#title' => 'Status indicator',
-      '#title_display' => 'invisible',
-      '#markup' => '<div id="status_modal" class="visually-hidden"></div>',
     ];
 
     $location_required_error = "Location is required. Please select a location by searching or clicking the map.";
@@ -226,38 +180,22 @@ class PortlandLocationPicker extends WebformCompositeBase {
     $element['location_asset_id'] = [
       '#type' => 'hidden',
       '#title' => t('Asset ID'),
-      '#title_display' => 'invisible',
       '#attributes' => ['class' => ['location-asset-id'], 'id' => 'location_asset_id'],
     ];
     $element['location_region_id'] = [
       '#type' => 'hidden',
       '#title' => t('Region ID'),
-      '#title_display' => 'invisible',
       '#attributes' => ['class' => ['location-region-id'], 'id' => 'location_region_id'],
     ];
-    // not currently in use. might be used if multiple municipalities are valid, such as for the water bureau.
     $element['location_municipality_name'] = [
       '#type' => 'hidden',
       '#title' => t('Municipality Name'),
-      '#title_display' => 'invisible',
       '#attributes' => ['class' => ['location-municipality-name'], 'id' => 'location_municipality_name'],
     ];
-    $element['location_is_portland'] = [
+    $element['location_zipcode'] = [
       '#type' => 'hidden',
-      '#title' => t('Within the configured geofence (typcially Portland)?'),
-      '#title_display' => 'invisible',
-      '#attributes' => ['class' => ['location-is-portland'], 'id' => 'location_is_portland'],
-      '#default_value' => "TRUE"
-    ];
-    $element['geojson_layer'] = [
-      '#title' => t('GeoJson Layer'),
-      '#type' => 'hidden',
-      '#id' => 'geojson_layer',
-    ];
-    $element['geojson_layer_behavior'] = [
-      '#title' => t('GeoJson Layer Behavior'),
-      '#type' => 'hidden',
-      '#id' => 'geojson_layer_behavior',
+      '#title' => t('Zipcode'),
+      '#attributes' => [ 'id' => 'location_zipcode']
     ];
 
     return $element;
