@@ -119,6 +119,7 @@
         var featureLayerVisibleZoom = drupalSettings.webform && drupalSettings.webform.portland_location_picker.feature_layer_visible_zoom ? drupalSettings.webform.portland_location_picker.feature_layer_visible_zoom : FEATURE_LAYER_VISIBLE_ZOOM;
         var requireCityLimits = drupalSettings.webform && drupalSettings.webform.portland_location_picker.require_city_limits === true ? true : false;
         var requireCityLimitsPlusParks = drupalSettings.webform && drupalSettings.webform.portland_location_picker.require_city_limits_plus_parks === true ? true : false;
+        var disablePlaceNameAutofill = drupalSettings.webform && drupalSettings.webform.portland_location_picker.disable_place_name_autofill === true ? true : false;
 
         var boundaryUrl = drupalSettings.webform ? drupalSettings.webform.portland_location_picker.boundary_url : "";
         var displayBoundary = drupalSettings.webform && drupalSettings.webform.portland_location_picker.display_boundary === false ? false : true;
@@ -862,11 +863,15 @@
           $('input[name=' + elementId + '\\[location_lon\\]]').val('');
           $('input[name=' + elementId + '\\[location_x\\]]').val('');
           $('input[name=' + elementId + '\\[location_y\\]]').val('');
-          $('input[name=' + elementId + '\\[place_name\\]]').val('');
           $('input[name=' + elementId + '\\[location_asset_id\\]]').val('');
           $('input[name=' + elementId + '\\[location_region_id\\]]').val('');
           $('input[name=' + elementId + '\\[location_municipality_name\\]]').val('');
           $('input[name=' + elementId + '\\[location_attributes\\]]').val('');
+
+          // only clear place name if autofill is disabled
+          if (!disablePlaceNameAutofill) {
+            $('input[name=' + elementId + '\\[place_name\\]]').val('');
+          }
         }
 
         function setLocationDetails(results) {
@@ -1026,7 +1031,7 @@
             showVerifiedLocation(fulladdress, lat, lng);
 
             // put park name in place_name field
-            if (candidates[0].attributes.location_type == "PARK") {
+            if (candidates[0].attributes.location_type == "PARK" && !disablePlaceNameAutofill) {
               $('#place_name').val(fulladdress);
             }
 
@@ -1093,7 +1098,7 @@
 
         function captureSelectedAssetMarkerData(marker) {
           // copy asset title to place name field
-          if (marker.target.feature.properties.name) {
+          if (marker.target.feature.properties.name && !disablePlaceNameAutofill) {
             $('#place_name').val(marker.target.feature.properties.name);
           }
 
@@ -1196,7 +1201,9 @@
           // if park, get park name
           if (data.park && data.detail.park[0].name != null) {
             description = data.detail.park[0].name.toUpperCase();
-            $('#place_name').val(data.detail.park[0].name);
+            if (!disablePlaceNameAutofill) {
+              $('#place_name').val(data.detail.park[0].name);
+            }
           } else if (data.waterbody && data.detail.waterbody[0].name != null) {
             description = data.detail.waterbody[0].name.toUpperCase();
           } else {
