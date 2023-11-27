@@ -770,8 +770,8 @@
           clearLocationFields();
 
           // clear place name and park selector fields; they will get reset if appropriate after the click.
-          $('.place-name').val("");
-          $('#location_park').val("");
+          // $('.place-name').val("");
+          // $('#location_park').val("");
 
           if (locCircle) {
             map.removeLayer(locCircle);
