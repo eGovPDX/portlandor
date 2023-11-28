@@ -229,16 +229,6 @@
           // force a crosshair cursor
           $('.leaflet-container').css('cursor', 'crosshair');
 
-          // if there are coordinates in the hidden lat/lng fields, set the map marker.
-          // this may be a submit postback that had validation errors, so we need to re set it.
-          var lat = $('input[name=' + elementId + '\\[location_lat\\]]').val();
-          var lng = $('input[name=' + elementId + '\\[location_lon\\]]').val();
-          if (lat && lng && lat !== "0" && lng !== "0") {
-            setLocationMarker(lat, lng);
-            doZoomAndCenter(lat, lng);
-            doMapClick(new L.LatLng(lat, lng));
-          }
-
           // Set up address verify button, autocomplete, and help text
           $('#location_search').after(`<input class="button button--primary location-verify js-form-submit form-submit" type="button" id="location_verify" name="op" value="${verifyButtonText}">`);
           $('#location_search').on('keyup', function (e) {
@@ -297,6 +287,18 @@
 
           // INITIALIZE GEOJSON LAYERS //////////
           processGeoJsonData();
+
+          // if there are coordinates in the hidden lat/lng fields, set the map marker.
+          // this may be a submit postback that had validation errors, so we need to re set it.
+          // NOTE: do this after all other init functions!
+          var lat = $('input[name=' + elementId + '\\[location_lat\\]]').val();
+          var lng = $('input[name=' + elementId + '\\[location_lon\\]]').val();
+          if (lat && lng && lat !== "0" && lng !== "0") {
+            setLocationMarker(lat, lng);
+            doZoomAndCenter(lat, lng);
+            doMapClick(new L.LatLng(lat, lng));
+          }
+
         }
 
         function initializeSearchAutocomplete() {
@@ -1178,10 +1180,10 @@
 
           $.ajax({
             url: url, success: function (response) {
-              if (response.length < 1 || !response.address || !response.location) {
-                // location data not available, how to handle?
-                console.log('Location not found');
-              }
+              // if (response.length < 1 || !response.address || !response.location) {
+              //   // location data not available, how to handle?
+              //   console.log('Location not found');
+              // }
               processReverseLocationData(response, latlng.lat, latlng.lng, zoomAndCenter);
             },
             error: function (e) {
