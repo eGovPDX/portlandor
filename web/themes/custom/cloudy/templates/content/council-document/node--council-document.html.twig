@@ -40,8 +40,19 @@
           'field_change_appropriations',
           'field_budgetary_impact_worksheet',
           'admin_agenda_items_entity_view_2',
-          'field_contact'
-          ) }}
+          'field_contact',
+        ) }}
+
+        {# A little hack to show any deleted files on the revision page #}
+        {# We filter for any files that weren't loaded (meaning the target_id no longer exists) and simply show the description instead #}
+        {% set deleted_files = node.field_documents_and_exhibits|filter(f => f._loaded is same as (false)) %}
+        {% if deleted_files|length > 0 %}
+          <h2>Deleted Documents and Exhibits</h2>
+          {% for file in deleted_files %}
+            <p>{{ file.description }} <em>(deleted in a newer revision)</em></p>
+          {% endfor %}
+        {% endif %}
+
         {% if node.field_council_document_type.target_id == '73' and node.field_council_document_status.target_id == '79' %}
           <p>An ordinance when passed by the Council shall be signed by the Auditor. It shall be carefully filed and preserved
             in the custody of the Auditor (City Charter Chapter 2 Article 1 Section 2-122)</p>
