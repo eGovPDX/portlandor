@@ -1268,7 +1268,6 @@
           var description = parseDescribeData(data, isWithinBounds);
 
           showVerifiedLocation(description, lat, lng, isWithinBounds, isVerifiedAddress);
-          $('#location_address').val(description);
 
           // if park, set location name
           if (data.park) {
@@ -1300,6 +1299,7 @@
           };
 
           if (isVerifiedAddress) setVerified();
+          $('#location_address').val(description);
         }
 
         function hideVerifiedLocation() {
