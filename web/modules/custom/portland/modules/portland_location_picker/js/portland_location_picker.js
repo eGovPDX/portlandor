@@ -300,24 +300,32 @@
           if (lat && lng && lat !== "0" && lng !== "0") {
             showLoader();
 
-            // WARNING: Need to wait until boundaryLayer and regions layers are loaded, if applicable
-            if (requireBoundary && boundaryLayer) {
+            if (requireBoundary) {
+              if (boundaryLayer) {
+                setLocationMarker(lat, lng);
+                doZoomAndCenter(lat, lng);
+                doMapClick(new L.LatLng(lat, lng));
+
+              } else {
+                setTimeout(function () {
+                  if (boundaryLayer) {
+                    setLocationMarker(lat, lng);
+                    doZoomAndCenter(lat, lng);
+                    doMapClick(new L.LatLng(lat, lng));
+
+                  } else {
+                    restoreLocationFromPostback();
+                  }
+                }, 1000);
+              }
+
+            } else {
               setLocationMarker(lat, lng);
               doZoomAndCenter(lat, lng);
               doMapClick(new L.LatLng(lat, lng));
-
-            } else {
-              setTimeout(function () {
-                if (requireBoundary && boundaryLayer) {
-                  setLocationMarker(lat, lng);
-                  doZoomAndCenter(lat, lng);
-                  doMapClick(new L.LatLng(lat, lng));
-
-                } else {
-                  restoreLocationFromPostback();
-                }
-              }, 1000);
             }
+
+            // WARNING: Need to wait until boundaryLayer and regions layers are loaded, if applicable
 
           }
         }
@@ -423,6 +431,8 @@
           if (primaryLayerSource) {
             primaryLayer = L.geoJson(); // can we create this on the fly?
 
+            showLoader();
+
             $.ajax({
               url: primaryLayerSource, success: function (primaryResponse) {
                 primaryFeatures = primaryResponse.features;
@@ -473,13 +483,27 @@
                   initPrimaryLayer(primaryFeatures, primaryLayer);
                 }
 
+                hideLoader();
+
                 if (regionsLayerSource) {
+                  showLoader();
                   $.ajax({
-                    url: regionsLayerSource, success: function (regionsResponse) {
+                    url: regionsLayerSource, 
+                    async: false,
+                    success: function (regionsResponse) {
                       regionsFeatures = regionsResponse.features;
                       console.log(regionsFeatures.length + " regions found.");
 
                       initRegionsLayer(regionsFeatures, regionsLayer);
+                      hideLoader();
+                    },
+                    error: function (e) {
+                      // if the PortlandMaps API is down, this is where we'll get stuck.
+                      // any way to fail the location lookup gracefull and still let folks submit?
+                      // at least display an error message.
+                      console.error(e);
+                      showErrorModal("An error occurred while attemping to load the regions layer.");
+                      hideLoader();
                     }
                   });
                 }
@@ -832,15 +856,32 @@
             } else {
               testLayer = primaryLayer;
             }
-            var inLayer = leafletPip.pointInLayer(latlng, testLayer, false);
-            if (inLayer.length > 0) {
-              // NOTE: The following code would be problematic if we allow multiple copies of the widget or alternate naming conventions.
-              $('input[name=' + elementId + '\\[location_region_id\\]]').val(inLayer[0].feature.properties.region_id);
+
+            showLoader();
+            if (testLayer.options.interactive) {
+              checkClickInRegion(latlng, testLayer);
             } else {
-              // clear region_id field
-              $('input[name=' + elementId + '\\[location_region_id\\]]').val("");
+              setTimeout(function () {
+                if (testLayer.options.interactive) {
+                  checkClickInRegion(latlng, testLayer);
+                } else {
+                  checkRegion(latlng);
+                }
+              }, 1000);
             }
           }
+        }
+
+        function checkClickInRegion(latlng, testLayer) {
+          var inLayer = leafletPip.pointInLayer(latlng, testLayer, false);
+          if (inLayer.length > 0) {
+            // NOTE: The following code would be problematic if we allow multiple copies of the widget or alternate naming conventions.
+            $('input[name=' + elementId + '\\[location_region_id\\]]').val(inLayer[0].feature.properties.region_id);
+          } else {
+            // clear region_id field
+            $('input[name=' + elementId + '\\[location_region_id\\]]').val("");
+          }
+          hideLoader();
         }
 
         function isAssetSelectable(marker) {
