@@ -402,7 +402,6 @@
           // display_boundary = true
 
           if (boundaryUrl) {
-            // setTimeout(function () {
             $.ajax({
               url: boundaryUrl, 
               success: function (cityBoundaryResponse) {
@@ -421,7 +420,6 @@
                 showErrorModal("An error occurred while attemping to load the boundary layer.");
               }
             });
-            // }, 10000);
           }
         }
 
@@ -584,9 +582,7 @@
                   layer.on("mouseover", function (e) { layer.openPopup(e.latlng); });
                   layer.on("mousemove", function (e) { layer.openPopup(e.latlng); });
                   layer.on("mouseout", function (e) { layer.closePopup(); });
-                  // layer.on("click", handleMapClick);
                 } else {
-                  // layer.on("click", handleMarkerClick);
                 }
               }
 
@@ -1446,7 +1442,7 @@
 
         function showErrorModal(message) {
           hideLoader();
-          message = message + "<br><br>" + ERROR_MODAL_DEFAULT_TEXT;// '<br><br>Please try again in a few moments. If the error persists, please <a href="/feedback">contact us</a>.';
+          message = message + "<br><br>" + ERROR_MODAL_DEFAULT_TEXT;
           showStatusModal(message);
         }
 
