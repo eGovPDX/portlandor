@@ -1420,6 +1420,7 @@
         }
 
         function showStatusModal(message) {
+          hideLoader();
           statusModal.html('<p class="status-message mb-0">' + message + '</p>');
           Drupal.dialog(statusModal, {
             width: '600px',
@@ -1444,6 +1445,7 @@
         }
 
         function showErrorModal(message) {
+          hideLoader();
           message = message + "<br><br>" + ERROR_MODAL_DEFAULT_TEXT;// '<br><br>Please try again in a few moments. If the error persists, please <a href="/feedback">contact us</a>.';
           showStatusModal(message);
         }
