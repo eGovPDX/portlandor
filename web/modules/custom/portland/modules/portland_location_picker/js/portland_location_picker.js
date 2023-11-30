@@ -290,15 +290,36 @@
 
           // if there are coordinates in the hidden lat/lng fields, set the map marker.
           // this may be a submit postback that had validation errors, so we need to re set it.
-          // NOTE: do this after all other init functions!
+          // WARNING: if boundaryLayer isn't loaded yet, this will fail in checkWithinBounds().
+          restoreLocationFromPostback();
+        }
+
+        function restoreLocationFromPostback() {
           var lat = $('input[name=' + elementId + '\\[location_lat\\]]').val();
           var lng = $('input[name=' + elementId + '\\[location_lon\\]]').val();
           if (lat && lng && lat !== "0" && lng !== "0") {
-            setLocationMarker(lat, lng);
-            doZoomAndCenter(lat, lng);
-            doMapClick(new L.LatLng(lat, lng));
-          }
+            showLoader();
 
+            // WARNING: Need to wait until boundaryLayer and regions layers are loaded, if applicable
+            if (requireBoundary && boundaryLayer) {
+              setLocationMarker(lat, lng);
+              doZoomAndCenter(lat, lng);
+              doMapClick(new L.LatLng(lat, lng));
+
+            } else {
+              setTimeout(function () {
+                if (requireBoundary && boundaryLayer) {
+                  setLocationMarker(lat, lng);
+                  doZoomAndCenter(lat, lng);
+                  doMapClick(new L.LatLng(lat, lng));
+
+                } else {
+                  restoreLocationFromPostback();
+                }
+              }, 1000);
+            }
+
+          }
         }
 
         function initializeSearchAutocomplete() {
@@ -373,19 +394,26 @@
           // display_boundary = true
 
           if (boundaryUrl) {
+            // setTimeout(function () {
             $.ajax({
-              url: boundaryUrl, success: function (cityBoundaryResponse) {
+              url: boundaryUrl, 
+              success: function (cityBoundaryResponse) {
                 var cityBoundaryFeatures = cityBoundaryResponse.features;
                 boundaryLayer = L.geoJson(cityBoundaryFeatures, cityLimitsProperties).addTo(map);
                 if (boundaryLayer.municipality) {
                   boundaryLayer.municipality = cityBoundaryFeatures[0].properties.CITYNAME;
                 }
-                // if boundary is shown, display a map key
-                // $('.leaflet-container').after('<div class="mt-1"><p><em>Please select a location within the <span class="boundary-key">marked boundary area(s)</span>.</em></p></div>');
-
                 console.log("Boundary layer loaded.");
+              },
+              error: function (e) {
+                // if the PortlandMaps API is down, this is where we'll get stuck.
+                // any way to fail the location lookup gracefull and still let folks submit?
+                // at least display an error message.
+                console.error(e);
+                showErrorModal("An error occurred while attemping to load the boundary layer.");
               }
             });
+            // }, 10000);
           }
         }
 
@@ -760,6 +788,9 @@
         }
 
         function doMapClick(latlng) {
+          // show loading indicator
+          showLoader();
+
           // normally when the map is clicked, we want to zoom to the clicked location
           // and perform reverse geocoding. 
 
@@ -781,6 +812,14 @@
           }
 
           reverseGeolocate(latlng);
+        }
+
+        function showLoader() {
+          $('.loader-container').css("display","flex");
+        }
+
+        function hideLoader() {
+          $('.loader-container').css("display","none");
         }
 
         function checkRegion(latlng) {
@@ -1163,6 +1202,8 @@
             setLatLngHiddenFields(latlng.lat, latlng.lng);
             reverseGeolocate(latlng);
           });
+
+          hideLoader();
         }
 
         function reverseGeolocate(latlng, zoomAndCenter = true) {
