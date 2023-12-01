@@ -119,6 +119,7 @@
         var featureLayerVisibleZoom = drupalSettings.webform && drupalSettings.webform.portland_location_picker.feature_layer_visible_zoom ? drupalSettings.webform.portland_location_picker.feature_layer_visible_zoom : FEATURE_LAYER_VISIBLE_ZOOM;
         var requireCityLimits = drupalSettings.webform && drupalSettings.webform.portland_location_picker.require_city_limits === true ? true : false;
         var requireCityLimitsPlusParks = drupalSettings.webform && drupalSettings.webform.portland_location_picker.require_city_limits_plus_parks === true ? true : false;
+        var disablePlaceNameAutofill = drupalSettings.webform && drupalSettings.webform.portland_location_picker.disable_place_name_autofill === true ? true : false;
 
         var boundaryUrl = drupalSettings.webform ? drupalSettings.webform.portland_location_picker.boundary_url : "";
         var displayBoundary = drupalSettings.webform && drupalSettings.webform.portland_location_picker.display_boundary === false ? false : true;
@@ -228,16 +229,6 @@
           // force a crosshair cursor
           $('.leaflet-container').css('cursor', 'crosshair');
 
-          // if there are coordinates in the hidden lat/lng fields, set the map marker.
-          // this may be a submit postback that had validation errors, so we need to re set it.
-          var lat = $('input[name=' + elementId + '\\[location_lat\\]]').val();
-          var lng = $('input[name=' + elementId + '\\[location_lon\\]]').val();
-          if (lat && lng && lat !== "0" && lng !== "0") {
-            setLocationMarker(lat, lng);
-            doZoomAndCenter(lat, lng);
-            doMapClick(new L.LatLng(lat, lng));
-          }
-
           // Set up address verify button, autocomplete, and help text
           $('#location_search').after(`<input class="button button--primary location-verify js-form-submit form-submit" type="button" id="location_verify" name="op" value="${verifyButtonText}">`);
           $('#location_search').on('keyup', function (e) {
@@ -296,6 +287,47 @@
 
           // INITIALIZE GEOJSON LAYERS //////////
           processGeoJsonData();
+
+          // if there are coordinates in the hidden lat/lng fields, set the map marker.
+          // this may be a submit postback that had validation errors, so we need to re set it.
+          // WARNING: if boundaryLayer isn't loaded yet, this will fail in checkWithinBounds().
+          restoreLocationFromPostback();
+        }
+
+        function restoreLocationFromPostback() {
+          var lat = $('input[name=' + elementId + '\\[location_lat\\]]').val();
+          var lng = $('input[name=' + elementId + '\\[location_lon\\]]').val();
+          if (lat && lng && lat !== "0" && lng !== "0") {
+            showLoader();
+
+            if (requireBoundary) {
+              if (boundaryLayer) {
+                setLocationMarker(lat, lng);
+                doZoomAndCenter(lat, lng);
+                doMapClick(new L.LatLng(lat, lng));
+
+              } else {
+                setTimeout(function () {
+                  if (boundaryLayer) {
+                    setLocationMarker(lat, lng);
+                    doZoomAndCenter(lat, lng);
+                    doMapClick(new L.LatLng(lat, lng));
+
+                  } else {
+                    restoreLocationFromPostback();
+                  }
+                }, 1000);
+              }
+
+            } else {
+              setLocationMarker(lat, lng);
+              doZoomAndCenter(lat, lng);
+              doMapClick(new L.LatLng(lat, lng));
+            }
+
+            // WARNING: Need to wait until boundaryLayer and regions layers are loaded, if applicable
+
+          }
         }
 
         function initializeSearchAutocomplete() {
@@ -371,16 +403,21 @@
 
           if (boundaryUrl) {
             $.ajax({
-              url: boundaryUrl, success: function (cityBoundaryResponse) {
+              url: boundaryUrl, 
+              success: function (cityBoundaryResponse) {
                 var cityBoundaryFeatures = cityBoundaryResponse.features;
                 boundaryLayer = L.geoJson(cityBoundaryFeatures, cityLimitsProperties).addTo(map);
                 if (boundaryLayer.municipality) {
                   boundaryLayer.municipality = cityBoundaryFeatures[0].properties.CITYNAME;
                 }
-                // if boundary is shown, display a map key
-                // $('.leaflet-container').after('<div class="mt-1"><p><em>Please select a location within the <span class="boundary-key">marked boundary area(s)</span>.</em></p></div>');
-
                 console.log("Boundary layer loaded.");
+              },
+              error: function (e) {
+                // if the PortlandMaps API is down, this is where we'll get stuck.
+                // any way to fail the location lookup gracefull and still let folks submit?
+                // at least display an error message.
+                console.error(e);
+                showErrorModal("An error occurred while attemping to load the boundary layer.");
               }
             });
           }
@@ -391,6 +428,8 @@
           // if there are any layer in use, the Primary Layer must be used first.
           if (primaryLayerSource) {
             primaryLayer = L.geoJson(); // can we create this on the fly?
+
+            showLoader();
 
             $.ajax({
               url: primaryLayerSource, success: function (primaryResponse) {
@@ -442,13 +481,27 @@
                   initPrimaryLayer(primaryFeatures, primaryLayer);
                 }
 
+                hideLoader();
+
                 if (regionsLayerSource) {
+                  showLoader();
                   $.ajax({
-                    url: regionsLayerSource, success: function (regionsResponse) {
+                    url: regionsLayerSource, 
+                    async: false,
+                    success: function (regionsResponse) {
                       regionsFeatures = regionsResponse.features;
                       console.log(regionsFeatures.length + " regions found.");
 
                       initRegionsLayer(regionsFeatures, regionsLayer);
+                      hideLoader();
+                    },
+                    error: function (e) {
+                      // if the PortlandMaps API is down, this is where we'll get stuck.
+                      // any way to fail the location lookup gracefull and still let folks submit?
+                      // at least display an error message.
+                      console.error(e);
+                      showErrorModal("An error occurred while attemping to load the regions layer.");
+                      hideLoader();
                     }
                   });
                 }
@@ -529,9 +582,7 @@
                   layer.on("mouseover", function (e) { layer.openPopup(e.latlng); });
                   layer.on("mousemove", function (e) { layer.openPopup(e.latlng); });
                   layer.on("mouseout", function (e) { layer.closePopup(); });
-                  // layer.on("click", handleMapClick);
                 } else {
-                  // layer.on("click", handleMarkerClick);
                 }
               }
 
@@ -757,6 +808,9 @@
         }
 
         function doMapClick(latlng) {
+          // show loading indicator
+          showLoader();
+
           // normally when the map is clicked, we want to zoom to the clicked location
           // and perform reverse geocoding. 
 
@@ -768,16 +822,20 @@
           resetLocationMarker();
           clearLocationFields();
 
-          // clear place name and park selector fields; they will get reset if appropriate after the click.
-          $('.place-name').val("");
-          $('#location_park').val("");
-
           if (locCircle) {
             map.removeLayer(locCircle);
             locateControlContaier.style.backgroundImage = 'url("/modules/custom/portland/modules/portland_location_picker/images/map_locate.png")';
           }
 
           reverseGeolocate(latlng);
+        }
+
+        function showLoader() {
+          $('.loader-container').css("display","flex");
+        }
+
+        function hideLoader() {
+          $('.loader-container').css("display","none");
         }
 
         function checkRegion(latlng) {
@@ -790,15 +848,32 @@
             } else {
               testLayer = primaryLayer;
             }
-            var inLayer = leafletPip.pointInLayer(latlng, testLayer, false);
-            if (inLayer.length > 0) {
-              // NOTE: The following code would be problematic if we allow multiple copies of the widget or alternate naming conventions.
-              $('input[name=' + elementId + '\\[location_region_id\\]]').val(inLayer[0].feature.properties.region_id);
+
+            showLoader();
+            if (testLayer.options.interactive) {
+              checkClickInRegion(latlng, testLayer);
             } else {
-              // clear region_id field
-              $('input[name=' + elementId + '\\[location_region_id\\]]').val("");
+              setTimeout(function () {
+                if (testLayer.options.interactive) {
+                  checkClickInRegion(latlng, testLayer);
+                } else {
+                  checkRegion(latlng);
+                }
+              }, 1000);
             }
           }
+        }
+
+        function checkClickInRegion(latlng, testLayer) {
+          var inLayer = leafletPip.pointInLayer(latlng, testLayer, false);
+          if (inLayer.length > 0) {
+            // NOTE: The following code would be problematic if we allow multiple copies of the widget or alternate naming conventions.
+            $('input[name=' + elementId + '\\[location_region_id\\]]').val(inLayer[0].feature.properties.region_id);
+          } else {
+            // clear region_id field
+            $('input[name=' + elementId + '\\[location_region_id\\]]').val("");
+          }
+          hideLoader();
         }
 
         function isAssetSelectable(marker) {
@@ -862,11 +937,15 @@
           $('input[name=' + elementId + '\\[location_lon\\]]').val('');
           $('input[name=' + elementId + '\\[location_x\\]]').val('');
           $('input[name=' + elementId + '\\[location_y\\]]').val('');
-          $('input[name=' + elementId + '\\[place_name\\]]').val('');
           $('input[name=' + elementId + '\\[location_asset_id\\]]').val('');
           $('input[name=' + elementId + '\\[location_region_id\\]]').val('');
           $('input[name=' + elementId + '\\[location_municipality_name\\]]').val('');
           $('input[name=' + elementId + '\\[location_attributes\\]]').val('');
+
+          // only clear place name if autofill is disabled
+          if (!disablePlaceNameAutofill) {
+            $('input[name=' + elementId + '\\[place_name\\]]').val('');
+          }
         }
 
         function setLocationDetails(results) {
@@ -1026,7 +1105,7 @@
             showVerifiedLocation(fulladdress, lat, lng);
 
             // put park name in place_name field
-            if (candidates[0].attributes.location_type == "PARK") {
+            if (candidates[0].attributes.location_type == "PARK" && !disablePlaceNameAutofill) {
               $('#place_name').val(fulladdress);
             }
 
@@ -1093,7 +1172,7 @@
 
         function captureSelectedAssetMarkerData(marker) {
           // copy asset title to place name field
-          if (marker.target.feature.properties.name) {
+          if (marker.target.feature.properties.name && !disablePlaceNameAutofill) {
             $('#place_name').val(marker.target.feature.properties.name);
           }
 
@@ -1156,6 +1235,8 @@
             setLatLngHiddenFields(latlng.lat, latlng.lng);
             reverseGeolocate(latlng);
           });
+
+          hideLoader();
         }
 
         function reverseGeolocate(latlng, zoomAndCenter = true) {
@@ -1173,10 +1254,10 @@
 
           $.ajax({
             url: url, success: function (response) {
-              if (response.length < 1 || !response.address || !response.location) {
-                // location data not available, how to handle?
-                console.log('Location not found');
-              }
+              // if (response.length < 1 || !response.address || !response.location) {
+              //   // location data not available, how to handle?
+              //   console.log('Location not found');
+              // }
               processReverseLocationData(response, latlng.lat, latlng.lng, zoomAndCenter);
             },
             error: function (e) {
@@ -1196,7 +1277,9 @@
           // if park, get park name
           if (data.park && data.detail.park[0].name != null) {
             description = data.detail.park[0].name.toUpperCase();
-            $('#place_name').val(data.detail.park[0].name);
+            if (!disablePlaceNameAutofill) {
+              $('#place_name').val(data.detail.park[0].name);
+            }
           } else if (data.waterbody && data.detail.waterbody[0].name != null) {
             description = data.detail.waterbody[0].name.toUpperCase();
           } else {
@@ -1259,7 +1342,6 @@
           var description = parseDescribeData(data, isWithinBounds);
 
           showVerifiedLocation(description, lat, lng, isWithinBounds, isVerifiedAddress);
-          $('#location_address').val(description);
 
           // if park, set location name
           if (data.park) {
@@ -1291,6 +1373,7 @@
           };
 
           if (isVerifiedAddress) setVerified();
+          $('#location_address').val(description);
         }
 
         function hideVerifiedLocation() {
@@ -1329,6 +1412,7 @@
         }
 
         function showStatusModal(message) {
+          hideLoader();
           statusModal.html('<p class="status-message mb-0">' + message + '</p>');
           Drupal.dialog(statusModal, {
             width: '600px',
@@ -1353,7 +1437,8 @@
         }
 
         function showErrorModal(message) {
-          message = message + "<br><br>" + ERROR_MODAL_DEFAULT_TEXT;// '<br><br>Please try again in a few moments. If the error persists, please <a href="/feedback">contact us</a>.';
+          hideLoader();
+          message = message + "<br><br>" + ERROR_MODAL_DEFAULT_TEXT;
           showStatusModal(message);
         }
 
