@@ -1,11 +1,17 @@
 <?php
 
-namespace Drupal\portland\Commands;
+namespace Drupal\portland\Drush\Commands;
+
+use Consolidation\OutputFormatters\StructuredData\RowsOfFields;
+use Drupal\Core\Entity\EntityTypeManagerInterface;
+use Drupal\Core\Logger\LoggerChannelInterface;
+use Drupal\Core\Utility\Token;
+use Drush\Attributes as CLI;
+use Drush\Commands\DrushCommands;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 
 use Drupal\group\Entity\Group;
 use Drupal\node\Entity\Node;
-use Drush\Commands\DrushCommands;
-use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Logger\LoggerChannelFactoryInterface;
 use Drupal\user\Entity\User;
 use Drupal\media\Entity\Media;
@@ -16,46 +22,37 @@ use Drupal\file\Entity\File;
  *
  * @package Drupal\portland\Commands
  */
-class BatchCommands extends DrushCommands
+final class BatchCommands extends DrushCommands
 {
-  /**
-   * Entity type service.
-   *
-   * @var \Drupal\Core\Entity\EntityTypeManagerInterface
-   */
-  private $entityTypeManager;
-  /**
-   * Logger service.
-   *
-   * @var \Drupal\Core\Logger\LoggerChannelFactoryInterface
-   */
-  private $loggerChannelFactory;
-
 
   /**
-   * Constructs a new command object.
-   *
-   * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entityTypeManager
-   *   Entity type service.
-   * @param \Drupal\Core\Logger\LoggerChannelFactoryInterface $loggerChannelFactory
-   *   Logger service.
+   * Constructs a TestCommands object.
    */
-  public function __construct(EntityTypeManagerInterface $entityTypeManager, LoggerChannelFactoryInterface $loggerChannelFactory)
-  {
-    $this->entityTypeManager = $entityTypeManager;
-    $this->loggerChannelFactory = $loggerChannelFactory;
+  public function __construct(
+    private readonly Token $token,
+    private readonly EntityTypeManagerInterface $entityTypeManager,
+    private readonly LoggerChannelInterface $loggerChannelSystem,
+  ) {
+    parent::__construct();
   }
 
+  /**
+   * {@inheritdoc}
+   */
+  public static function create(ContainerInterface $container) {
+    return new static(
+      $container->get('token'),
+      $container->get('entity_type.manager'),
+      $container->get('logger.channel.system'),
+    );
+  }
 
   /**
    * Drush command to set user's administration pages language setting to English.
-   *
-   * @command portland:set_admin_language
-   * @aliases portland-set-admin-language
-   * @param string $uid
-   *   The user ID to set. If omitted all the language of all users will be set.
-   * @usage portland:set_admin_language [UID]
    */
+  #[CLI\Command(name: 'portland:set_admin_language', aliases: ['portland-set-admin-language'])]
+  #[CLI\Argument(name: 'uid', description: 'The user ID.')]
+  #[CLI\Usage(name: 'portland:set_admin_language UID', description: 'Command followed by optinal user ID')] 
   public function set_admin_langguage($uid = 0)
   {
     $user_storage = $this->entityTypeManager->getStorage('user');
@@ -84,11 +81,9 @@ class BatchCommands extends DrushCommands
 
   /**
    * Drush command to copy Audio into Video.
-   *
-   * @command portland:remove_audio
-   * @aliases portland-remove-audio
-   * @usage portland:remove_audio
    */
+   #[CLI\Command(name: 'portland:remove_audio', aliases: ['portland-remove-audio'])]
+   #[CLI\Usage(name: 'portland:remove_audio', description: 'Command without parameter')] 
   public function remove_audio()
   {
     // Load all groups
@@ -116,11 +111,9 @@ class BatchCommands extends DrushCommands
   }
   /**
    * Drush command to copy Audio into Video.
-   *
-   * @command portland:copy_audio_to_video
-   * @aliases portland-copy-audio-to-video
-   * @usage portland:copy_audio_to_video
    */
+   #[CLI\Command(name: 'portland:copy_audio_to_video', aliases: ['portland-copy-audio-to-video'])]
+   #[CLI\Usage(name: 'portland:copy_audio_to_video', description: 'Command without parameter')] 
   public function copy_audio_to_video()
   {
     echo 'Migrating Audio to Video, please save the output to a CSV file to validate the results' . PHP_EOL;
@@ -175,4 +168,90 @@ class BatchCommands extends DrushCommands
     }
   }
 
+  private $GROUP_FIELD_ARRAY = [
+    'langcode',
+    'label',
+    'uid',
+    'created',
+    'changed',
+    'status',
+
+    'moderation_state',
+
+    'field_shortname_or_acronym',
+    'field_contact',
+    'field_disable_legacy_paths_block',
+    'field_enable_advisory_menu_item',
+    'field_group_menu_toggle',
+    'field_enable_bids_and_proposals',
+    'field_enable_blog_menu_item',
+    'field_enable_const_project_menu',
+    'field_enable_const_proj_complete',
+    'field_enable_documents_menu_item',
+    'field_enable_events_menu_item',
+    'field_enable_news_and_notices_me',
+    'field_enable_past_meetings',
+    'field_enable_permits',
+    'field_enable_press_releases',
+    'field_enable_programs_menu_item',
+    'field_enable_projects_menu_item',
+    'field_enable_public_notices',
+    'field_enable_reports',
+    'field_enable_services_and_inform',
+    'field_featured_content',
+    'field_featured_media',
+    'field_group_path',
+    'field_location',
+    'field_logo_svg',
+    'field_address',
+    'field_menu_link',
+    'field_migration_status',
+    'field_parent_group',
+    'field_featured_groups',
+    'field_search_keywords',
+    'field_summary',
+    'field_topics',
+  ];
+
+  /**
+   * Drush command to copy Program into Bureau/Office.
+   */
+   #[CLI\Command(name: 'portland:copy_program_to_bureau', aliases: ['portland-copy-program-to-bureau'])]
+   #[CLI\Usage(name: 'portland:copy_program_to_bureau', description: 'Command without parameter')] 
+  public function copy_program_to_bureau()
+  {
+    // Load all groups
+    $groups = Group::loadMultiple();
+    foreach ($groups as $group) {
+      $group_type_id = $group->getGroupType()->id();
+      if($group_type_id == "program") {
+        echo "Process program " . $group->label() . PHP_EOL;
+
+        $group_to_create= \Drupal::entityTypeManager()->getStorage('group')->create(['type' => 'bureau_office']);
+
+        foreach($this->GROUP_FIELD_ARRAY as $field_name) {
+          if($group->hasField($field_name)) {
+            $group_to_create->set($field_name, $group->get($field_name)->getValue());
+          }
+        }
+        $group_to_create->set('field_official_organization_name', $group->get('label')->getValue());
+        $group_to_create->set('field_group_type', ['target_id' => 844]);
+
+        // TODO: set old group's path to PATH-0 before saving
+        $group->set('field_group_path', [$group->get('field_group_path')->value . '-0']);
+        // $group->save();
+        // $group_to_create->save();
+
+
+        // Copy members
+
+        // Copy content
+
+        // Copy media
+
+        // TEST ONLY: only copy one program
+        break;
+      }
+    }
+  }
 }
