@@ -567,6 +567,11 @@ class ZendeskHandler extends WebformHandlerBase
     $request['collaborators'] = preg_split("/[^a-z0-9_\-@\.']+/i", $request['collaborators'] );
     if (!empty($request['ticket_form_id'])) $request['ticket_form_id'] = $this->configuration['ticket_form_id'];
 
+    // use anonymous if no requester set
+    if(!isset($request['requester'])){
+      $request['requester'] = "anonymous@portlandoregon.gov";
+    }
+
     // restructure requester
     if(!isset($request['requester'])){
       $request['requester'] = $request['requester_name']
