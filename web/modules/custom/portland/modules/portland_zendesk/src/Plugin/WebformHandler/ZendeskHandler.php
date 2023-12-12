@@ -497,7 +497,6 @@ class ZendeskHandler extends WebformHandlerBase
     $new_ticket_id = 0;
     $zendesk_ticket_id_field_name = $this->configuration['ticket_id_field'];
 
-
     // tickets will be forked on the field identified in the config value 'ticket_fork_field'
     $fork_field_name = $this->configuration['ticket_fork_field'];
 
