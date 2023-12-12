@@ -505,15 +505,12 @@ class ZendeskHandler extends WebformHandlerBase
     // a webform_submission object from form_state and pull form values from that for the API submission.
     $webform_submission = $form_state->getFormObject()->getEntity();
 
-    
-
     // check for a report_ticket_id value in the form state; if a handler previously submitted
     // a ticket, the ID should be available to subsequent handlers.
     $prev_ticket_id = $form_state->getValue('report_ticket_id');
     if ($prev_ticket_id) {
       $webform_submission->setElementData('report_ticket_id', $prev_ticket_id);
     }
-
 
     if ($fork_field_name) {
       // if the handler has a fork field configured, grab the values array from that field so we can
