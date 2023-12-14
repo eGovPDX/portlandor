@@ -43,6 +43,7 @@ use Drupal\webform\WebformSubmissionForm;
  */
 class ZendeskHandler extends WebformHandlerBase
 {
+  private const ANONYMOUS_EMAIL = 'anonymous@portlandoregon.gov';
   private const JSON_FORM_DATA_FIELD_ID = 17698062540823;
 
   /**
@@ -574,13 +575,14 @@ class ZendeskHandler extends WebformHandlerBase
     $request['collaborators'] = preg_split("/[^a-z0-9_\-@\.']+/i", $request['collaborators'] );
     if (!empty($request['ticket_form_id'])) $request['ticket_form_id'] = $this->configuration['ticket_form_id'];
 
-    // use anonymous if no requester set
-    if(!isset($request['requester'])){
-      $request['requester'] = "anonymous@portlandoregon.gov";
-    }
-
     // restructure requester
     if(!isset($request['requester'])){
+      // if requester email doesn't contain an @, that means the field was empty or the value wasn't set,
+      // so default to anonymous.
+      if (!str_contains($request['requester_email'], '@')) {
+        $request['requester_email'] = self::ANONYMOUS_EMAIL;
+      }
+
       $request['requester'] = $request['requester_name']
         ? [
           'name' => Utility::convertName($request['requester_name']),
