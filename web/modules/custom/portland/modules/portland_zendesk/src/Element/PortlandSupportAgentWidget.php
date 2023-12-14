@@ -81,7 +81,7 @@ class PortlandSupportAgentWidget extends WebformCompositeBase {
       '#type' => 'checkbox',
       '#title' => t('Test Submission'),
       '#id' => 'test_submission',
-      '#description' => 'For administrtor use only. Handlers can be configured to process form submissions differently based on whether this box is checked. Typically configured to place tickets in the Developer Test Group in Zendesk.',
+      '#description' => 'For administrator use only. Handlers can be configured to process form submissions differently based on whether this box is checked. Typically configured to place tickets in the Developer Test Group in Zendesk.',
       '#access_create_roles' => ['administrator'],
       '#access_update_roles' => ['administrator'],
       '#access_view_roles' => ['administrator'],
