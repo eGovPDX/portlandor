@@ -2,6 +2,7 @@
 
 use \Drupal\group\Entity\GroupContent;
 use \Drupal\group\Entity\Group;
+use \Drupal\Core\Database\Database;
 
 /**
  * Implements hook_form_alter().
@@ -91,6 +92,68 @@ function portland_groups_entity_update($entity) {
   if ($entity && method_exists($entity, 'hasField') && $entity->hasField('field_display_groups')) {
     _portland_groups_synchronize_entity_group_ownership($entity);
   }
+}
+
+/**
+ * Implements hook_group_update
+ *
+ * Update other group columns after the group type change. 
+ * Only to support group type migration. Should be removed after the migration
+ */
+function portland_groups_group_update($group) {
+  /** @var \Drupal\group\Entity\GroupInterface $oldGroup */
+  $oldGroup = $group->original;
+ 
+  // Group type was changed.
+  if ($oldGroup->bundle() !== $group->type->entity->id()) {
+    $newType = $group->type->entity->id();
+    $field_map = \Drupal::service('entity_field.manager')->getFieldMap();
+    // Handle type in fields.
+    foreach ($field_map['group'] as $field => $value) {
+      $table = 'group__' . $field;
+      $tableExists = Database::getConnection()
+        ->schema()
+        ->tableExists($table);
+      if ($tableExists) {
+        Database::getConnection()
+          ->update($table)
+          ->fields(['bundle' => $newType])
+          ->condition('entity_id', $group->id())
+          ->execute();
+      }
+    }
+
+    // Get a collection of all the enabled content plugins for the new type.
+    /** @var \Drupal\group\Plugin\GroupContentEnablerCollection $new_plugins */
+    $new_plugins = \Drupal::service('plugin.manager.group_content_enabler')->getInstalled($group->type->entity);
+    /** @var \Psr\Log\LoggerInterface */
+    $logger = \Drupal::logger('group_content');
+    foreach ($group->getContent() as $group_content) {
+      // Find the (old) plugin ID for this particular group content entity.
+      /** @var string $group_content_plugin_id */
+      $group_content_plugin_id = $group_content->getGroupContentType()->getContentPluginId();
+      // Prepare context for log messages.
+      $context = [
+        '%label' => $group_content->label(),
+        '@id' => $group_content->id(),
+        '@content_plugin_id' => $group_content_plugin_id,
+      ];
+      if ($new_plugins->has($group_content_plugin_id)) {
+        /** @var \Drupal\group\Plugin\GroupContentEnablerInterface $new_plugin */
+        $context['@old_group_content_type_id'] = $group_content->getGroupContentType()->id();
+        $new_plugin = $new_plugins->get($group_content_plugin_id);
+        $group_content->type = $new_plugin->getContentTypeConfigId();
+        $group_content->save();
+        $context['@new_group_content_type_id'] = $group_content->getGroupContentType()->id();
+        $logger->notice('Updated GroupContent type for @content_plugin_id %label (@id) [@old_group_content_type_id => @new_group_content_type_id]', $context);
+      }
+      else {
+        // @todo What's the best error mode here?
+        $context['%new_group_type'] = $group->type->entity->id();
+        $logger->error('Cannot update type for GroupContent %label (@id): the new group type (%new_group_type) does not have the @content_plugin_id plugin configured.', $context);
+      }
+    }
+  } 
 }
 
 /**

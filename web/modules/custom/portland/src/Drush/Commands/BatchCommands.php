@@ -214,6 +214,33 @@ final class BatchCommands extends DrushCommands
     'field_topics',
   ];
 
+
+  /**
+   * Drush command to change group type from Program into Bureau/Office.
+   * Please see hook_group_update() for additional code to handle the group type update.
+   */
+  #[CLI\Command(name: 'portland:change_group_type', aliases: ['portland-change-group-type'])]
+  #[CLI\Usage(name: 'portland:change_group_type', description: 'Command without parameter')] 
+ public function change_group_type()
+ {
+  $groups = Group::loadMultiple();// Load all groups
+  foreach ($groups as $group) {
+    $group_type_id = $group->getGroupType()->id();
+    if($group_type_id == "program") {
+      echo "Process program " . $group->label() . ", ID = ". $group->id() . PHP_EOL;
+      $group->type = "bureau_office";
+      $group->field_official_organization_name->value = $group->get('label')->value;
+      $group->field_group_type->target_id = 844; // Sub-type is "Program"
+      $group->revision_log_message->value = "Migrated to the Bureau/Offce type by the group migration drush command. Cannot be reverted to previous revisions.";
+      $group->revision_user->target_id = 0;
+      $group->changed->value = time();
+      $group->revision_created->value = time();
+      $group->save();
+      // break; // TEST ONLY: stop after the first program
+    }
+  }
+ }
+
   /**
    * Drush command to copy Program into Bureau/Office.
    */
@@ -252,6 +279,8 @@ final class BatchCommands extends DrushCommands
         $group_to_create->save(); // Must save the new group in order to get the ID
 
         // TODO: Copy revisions?
+
+        // TODO: look into changing bundle types...
 
         // Copy all group content by updating the group ID
         $group_to_create_id = $group_to_create->id();
