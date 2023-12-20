@@ -224,6 +224,8 @@ final class BatchCommands extends DrushCommands
  public function change_group_type()
  {
   $groups = Group::loadMultiple();// Load all groups
+  $max = 100;
+  $count = 0;
   foreach ($groups as $group) {
     $group_type_id = $group->getGroupType()->id();
     if($group_type_id == "program") {
@@ -236,6 +238,8 @@ final class BatchCommands extends DrushCommands
       $group->changed->value = time();
       $group->revision_created->value = time();
       $group->save();
+      $count++;
+      if($count >= $max) break;
       // break; // TEST ONLY: stop after the first program
     }
   }
