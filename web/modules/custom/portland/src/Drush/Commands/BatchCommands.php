@@ -240,6 +240,7 @@ final class BatchCommands extends DrushCommands
       $group->save();
       $count++;
       if($count >= $max) break;
+      $group = null;
       // break; // TEST ONLY: stop after the first program
     }
   }
