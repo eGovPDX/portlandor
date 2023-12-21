@@ -43,6 +43,7 @@ use Drupal\webform\WebformSubmissionForm;
  */
 class ZendeskHandler extends WebformHandlerBase
 {
+  private const ANONYMOUS_EMAIL = 'anonymous@portlandoregon.gov';
   private const JSON_FORM_DATA_FIELD_ID = 17698062540823;
 
   /**
@@ -504,6 +505,13 @@ class ZendeskHandler extends WebformHandlerBase
     // a webform_submission object from form_state and pull form values from that for the API submission.
     $webform_submission = $form_state->getFormObject()->getEntity();
 
+    // check for a report_ticket_id value in the form state; if a handler previously submitted
+    // a ticket, the ID should be available to subsequent handlers.
+    $prev_ticket_id = $form_state->getValue('report_ticket_id');
+    if ($prev_ticket_id) {
+      $webform_submission->setElementData('report_ticket_id', $prev_ticket_id);
+    }
+
     if ($fork_field_name) {
       // if the handler has a fork field configured, grab the values array from that field so we can
       // spin through it and stuff a single value into the webform_submission for each ticket being created.
@@ -569,6 +577,12 @@ class ZendeskHandler extends WebformHandlerBase
 
     // restructure requester
     if(!isset($request['requester'])){
+      // if requester email doesn't contain an @, that means the field was empty or the value wasn't set,
+      // so default to anonymous.
+      if (!str_contains($request['requester_email'], '@')) {
+        $request['requester_email'] = self::ANONYMOUS_EMAIL;
+      }
+
       $request['requester'] = $request['requester_name']
         ? [
           'name' => Utility::convertName($request['requester_name']),
