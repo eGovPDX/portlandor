@@ -32,13 +32,21 @@ elements: |-
       '#required': true
       '#location_address__title': 'Location of Vehicle Tow'
       '#location_address__required': true
-      '#location_type__access': false
-      '#location_private_owner__access': false
       '#location_lat__required': true
       '#place_name__access': false
       '#location_details__access': false
+      '#location_type__access': false
+      '#location_private_owner__access': false
       '#location_park_container__access': false
-      '#require_city_limits': true
+      '#require_boundary': true
+      '#out_of_bounds_message': |-
+        It appears the tow referenced in your complaint was done outside of the Portland Bureau of Transportation's jurisdiction.
+        <br><br>
+        This Office only has authority to investigate certain tows that occur in Portland and by specific agencies, however, please see contact information below for Agencies that may be able to assist you:
+        <br><br>
+        <a href="https://www.doj.state.or.us/consumer-protection/motor-vehicles/towing/">State of Oregon Consumer Protection Division</a>
+        <br>
+        <a href="https://www.courts.oregon.gov/courts/multnomah/pages/default.aspx">Multnomah County Circuit Court</a>
     report_tow_company:
       '#type': textfield
       '#title': 'Tow Company'
@@ -150,14 +158,13 @@ elements: |-
             '#type': webform_select_other
             '#title': 'Unit Type'
             '#options': unit_type
-            '#empty_value': none
           contact_unit_number:
             '#type': textfield
             '#title': 'Unit Number'
             '#states':
               invisible:
                 ':input[name="contact_unit_type[select]"]':
-                  value: none
+                  value: ''
           contact_city:
             '#type': textfield
             '#title': City/Town
@@ -190,6 +197,44 @@ elements: |-
       actions:
         '#type': webform_actions
         '#title': 'Submit button(s)'
+  computed_ticket_description:
+    '#type': webform_computed_twig
+    '#title': 'Computed ticket description'
+    '#display_on': none
+    '#mode': html
+    '#template': |-
+      <h2>Report</h2>
+      <p><strong>Type of Tow:</strong> {{ webform_token('[webform_submission:values:report_tow_type]', webform_submission) }}</p>
+      {% if data.report_tow_company %}
+      <p><strong>Tow Company:</strong> {{ webform_token('[webform_submission:values:report_tow_company]', webform_submission) }}</p>
+      {% endif %}
+      <p><strong>Location Address:</strong> {{ webform_token('[webform_submission:values:report_location:location_address]', webform_submission) }}</p>
+      {% if data.report_datetime_of_tow %}
+      <p><strong>Date/Time of Tow:</strong> {{ webform_token('[webform_submission:values:report_datetime_of_tow]', webform_submission) }}</p>
+      {% endif %}
+      {% if data.report_tow_number %}
+      <p><strong>Tow Number:</strong> {{ webform_token('[webform_submission:values:report_tow_number]', webform_submission) }}</p>
+      {% endif %}
+      {% if data.report_invoice_number %}
+      <p><strong>Invoice Number:</strong> {{ webform_token('[webform_submission:values:report_invoice_number]', webform_submission) }}</p>
+      {% endif %}
+      <p><strong>Vehicle License Plate or VIN:</strong> {{ webform_token('[webform_submission:values:report_vehicle_license_or_vin]', webform_submission) }}</p>
+      <p><strong>Type of Complaint(s):</strong> {{ webform_token('[webform_submission:values:report_complaint_type_composite]', webform_submission) }}</p>
+      {% if data.report_description %}
+      <p><strong>Additional information about your complaint(s):</strong> {{ webform_token('[webform_submission:values:report_description]', webform_submission) }}</p>
+      {% endif %}
+      <h2>Contact Information</h2>
+      <p><strong>Name:</strong> {{ webform_token('[webform_submission:values:contact_name]', webform_submission) }}</p>
+      <p><strong>Email:</strong> {{ webform_token('[webform_submission:values:contact_email]', webform_submission) }}</p>
+      {% if data.contact_phone %}
+      <p><strong>Phone:</strong> {{ webform_token('[webform_submission:values:contact_phone]', webform_submission) }}</p>
+      {% endif %}
+      {% if data.contact_street_address %}
+      <h3>Mailing Address</h3>
+      <p><pre>{{ webform_token('[webform_submission:values:contact_street_address]', webform_submission) }}
+      {{ webform_token('[webform_submission:values:contact_unit_type:clear]', webform_submission) }} {{ webform_token('[webform_submission:values:contact_unit_number]', webform_submission) }}
+      {{ webform_token('[webform_submission:values:contact_city]', webform_submission) }}, {{ webform_token('[webform_submission:values:contact_state]', webform_submission) }} {{ webform_token('[webform_submission:values:contact_zip_code]', webform_submission) }}</pre></p>
+      {% endif %}
 css: ''
 javascript: ''
 settings:
@@ -389,7 +434,7 @@ handlers:
       requester_name: contact_name
       requester_email: contact_email
       subject: 'Towing Complaint Received'
-      comment: "<h2>Report</h2>\r\n<p><strong>Type of Tow:</strong> [webform_submission:values:report_tow_type]</p>\r\n<p><strong>Tow Company:</strong> [webform_submission:values:report_tow_company]</p>\r\n<p><strong>Location Address:</strong> [webform_submission:values:report_location:location_address]</p>\r\n<p><strong>Date/Time of Tow:</strong> [webform_submission:values:report_datetime_of_tow]</p>\r\n<p><strong>Tow Number:</strong> [webform_submission:values:report_tow_number]</p>\r\n<p><strong>Invoice Number:</strong> [webform_submission:values:report_invoice_number]</p>\r\n<p><strong>Type of Complaint(s):</strong> [webform_submission:values:report_complaint_type_composite]</p>\r\n<p><strong>Additional information about your complaint(s):</strong> [webform_submission:values:report_description]</p>\r\n<h2>Your Contact Information</h2>\r\n<p><strong>Name:</strong> [webform_submission:values:contact_name]</p>\r\n<p><strong>Email:</strong> [webform_submission:values:contact_email]</p>\r\n<p><strong>Phone:</strong> [webform_submission:values:contact_phone]</p>\r\n<h3>Mailing Address</h3>\r\n<p><pre>[webform_submission:values:contact_street_address]\r\n[webform_submission:values:contact_unit_type:clear] [webform_submission:values:contact_unit_number]\r\n[webform_submission:values:contact_city], [webform_submission:values:contact_state] [webform_submission:values:contact_zip_code]</pre></p>"
+      comment: '[webform_submission:values:computed_ticket_description:raw]'
       tags: 'drupal webform'
       priority: normal
       status: new
@@ -397,7 +442,7 @@ handlers:
       assignee_id: ''
       type: question
       collaborators: ''
-      custom_fields: "1900004448785: ['[webform_submission:values:report_tow_company]', 'report_tow_company']"
+      custom_fields: "1900004448785: ['[webform_submission:values:report_tow_company]', 'report_tow_company']\r\n20015105884695: ['[webform_submission:values:report_tow_number]', 'report_tow_number']\r\n20015100822423: ['[webform_submission:values:report_invoice_number]', 'report_invoice_number']"
       ticket_id_field: ''
       ticket_form_id: '14205125621911'
       recipient: ''
@@ -417,7 +462,7 @@ handlers:
       requester_name: contact_name
       requester_email: contact_email
       subject: 'Towing Complaint Received'
-      comment: "<h2>Report</h2>\r\n<p><strong>Type of Tow:</strong> [webform_submission:values:report_tow_type]</p>\r\n<p><strong>Tow Company:</strong> [webform_submission:values:report_tow_company]</p>\r\n<p><strong>Location Address:</strong> [webform_submission:values:report_location:location_address]</p>\r\n<p><strong>Date/Time of Tow:</strong> [webform_submission:values:report_datetime_of_tow]</p>\r\n<p><strong>Tow Number:</strong> [webform_submission:values:report_tow_number]</p>\r\n<p><strong>Invoice Number:</strong> [webform_submission:values:report_invoice_number]</p>\r\n<p><strong>Type of Complaint(s):</strong> [webform_submission:values:report_complaint_type_composite]</p>\r\n<p><strong>Additional information about your complaint(s):</strong> [webform_submission:values:report_description]</p>\r\n<h2>Your Contact Information</h2>\r\n<p><strong>Name:</strong> [webform_submission:values:contact_name]</p>\r\n<p><strong>Email:</strong> [webform_submission:values:contact_email]</p>\r\n<p><strong>Phone:</strong> [webform_submission:values:contact_phone]</p>\r\n<h3>Mailing Address</h3>\r\n<p><pre>[webform_submission:values:contact_street_address]\r\n[webform_submission:values:contact_unit_type:clear] [webform_submission:values:contact_unit_number]\r\n[webform_submission:values:contact_city], [webform_submission:values:contact_state] [webform_submission:values:contact_zip_code]</pre></p>"
+      comment: '[webform_submission:values:computed_ticket_description:raw]'
       tags: 'drupal webform'
       priority: normal
       status: new
@@ -425,7 +470,7 @@ handlers:
       assignee_id: ''
       type: question
       collaborators: ''
-      custom_fields: "1900004448785: ['[webform_submission:values:report_tow_company]', 'report_tow_company']"
+      custom_fields: "1900004448785: ['[webform_submission:values:report_tow_company]', 'report_tow_company']\r\n20015105884695: ['[webform_submission:values:report_tow_number]', 'report_tow_number']\r\n20015100822423: ['[webform_submission:values:report_invoice_number]', 'report_invoice_number']"
       ticket_id_field: ''
       ticket_form_id: '14205125621911'
       recipient: ''
