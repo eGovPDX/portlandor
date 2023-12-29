@@ -60,7 +60,7 @@ class PortlandLocationPicker extends WebformCompositeBase {
       '#description' => '',
       '#description_display' => 'before',
       '#title_display' => 'invisible',
-      '#markup' => '<div id="location_map_container" class="location-map"></div>',
+      '#markup' => '<div id="location_map_container" class="location-map"></div><div class="loader-container" role="status"><div class="loader"></div><div class="visually-hidden">Loading...</div></div>',
     ];
     $element['suggestions_modal'] = [
       '#type' => 'markup',
@@ -160,7 +160,7 @@ class PortlandLocationPicker extends WebformCompositeBase {
       '#type' => 'textfield',
       '#id' => 'place_name',
       '#title' => t('Location Name'),
-      '#attributes' => ['class' => ['place-name']],
+      '#attributes' => ['class' => ['place-name'], 'autocomplete' => 'off'],
       '#description' => t('If this location has a name, such as a business or public building, please enter it here.'),
       '#description_display' => 'before',
     ];
@@ -168,7 +168,7 @@ class PortlandLocationPicker extends WebformCompositeBase {
       '#type' => 'textarea',
       '#id' => 'location_details',
       '#title' => t('Location Details'),
-      '#attributes' => ['class' => ['location-details']],
+      '#attributes' => ['class' => ['location-details'], 'autocomplete' => 'off'],
       '#description' => t('Please provide any other details that might help us locate the site you are reporting.'),
       '#description_display' => 'before',
     ];
