@@ -1,4 +1,4 @@
-uuid: 0cad7b83-cf70-40e8-b318-42ee742faa0e
+uuid: 9c416d93-71cb-4966-94ca-1b73b019b8e8
 langcode: en
 status: open
 dependencies:
@@ -21,36 +21,13 @@ close: null
 uid: 60
 template: false
 archive: false
-id: report_parks_issue
-title: 'Report an Issue in a Park or Community Center'
+id: report_park_maintenance_issue
+title: 'Report a Park Maintenance Issue'
 description: ''
 categories: {  }
 elements: |-
-  user_role:
-    '#type': webform_computed_twig
-    '#title': 'User Role'
-    '#display_on': none
-    '#mode': text
-    '#template': "{{ webform_token('[current-user:roles:first]', webform_submission, [], options)|default('anonymous') }}"
-    '#whitespace': spaceless
-  container_anonymous:
-    '#type': container
-    '#states':
-      visible:
-        ':input[name="user_role"]':
-          value: anonymous
-    markup_anonymous:
-      '#type': webform_markup
-      '#markup': |-
-        <div class="alert alert--info next-steps">
-        <p>This form is not available to anonymous users. You must be logged in as a City of Portland employee.</p>
-        </div>
   container_authenticated:
     '#type': container
-    '#states':
-      invisible:
-        ':input[name="user_role"]':
-          value: anonymous
     report_urgent:
       '#type': radios
       '#title': "Is this an urgent, life-threatening issue where someone is in danger or there is an active threat to someone's property?"
@@ -72,69 +49,6 @@ elements: |-
           <div class="alert alert--warning next-steps">
           <p><strong>Please stop filling out this form and call 911.</strong></p>
           </div>
-      markup_urgent_staff:
-        '#type': webform_markup
-        '#access_create_roles':
-          - authenticated
-        '#markup': |-
-          <div class="alert alert--warning next-steps">
-          <p><strong>QUICKLY:</strong> Ask what's happening & which park location, instruct caller to hang up and call 911. Radio rangers with location.</p>
-          </div>
-      report_staff_issue_type:
-        '#type': webform_radios_other
-        '#title': 'Type of fire or medical issue (if given)'
-        '#options':
-          'Medical assistance needed': 'Medical assistance needed'
-          Fires/Fireworks: 'Fires / Fireworks'
-          'Threatening behavior, weapon involved': 'Threatening behavior, weapon involved'
-          'Missing-separated person': 'Missing-separated person'
-          'Wellness check': 'Wellness check'
-          'Harassment or Bias': 'Harassment or Bias'
-          'Fire alarm going off': 'Fire alarm going off'
-        '#other__option_label': Other
-        '#access_create_roles':
-          - authenticated
-      urgent_location_details:
-        '#type': textarea
-        '#title': 'Location Details'
-        '#access_create_roles':
-          - authenticated
-      report_staff_incident_details:
-        '#type': textarea
-        '#title': 'Incident details'
-        '#access_create_roles':
-          - authenticated
-      urgent_contact_name:
-        '#type': textfield
-        '#title': 'Contact Name'
-        '#access_create_roles':
-          - authenticated
-      urgent_contact_telephone:
-        '#type': textfield
-        '#title': 'Contact Telephone'
-        '#description': 'Please provide the best telephone number to reach the requester. If the location is a community center, the best number may be an individual cell phone or direct line, not be the center&#39;s main contact phone number.'
-        '#description_display': before
-        '#access_create_roles':
-          - authenticated
-      urgent_contact_telephone_instructions:
-        '#type': textfield
-        '#title': 'Telephone Instructions'
-        '#description': 'Please provide any additional instructions for reaching the requester, such as dialing an extension or navigating a phone tree.'
-        '#description_display': before
-        '#access_create_roles':
-          - authenticated
-      urgent_callback_requested:
-        '#type': checkbox
-        '#title': 'Callback requested'
-        '#access_create_roles':
-          - authenticated
-      urgent_submit:
-        '#type': webform_actions
-        '#title': Submit
-        '#access_create_roles':
-          - authenticated
-        '#submit__label': Submit
-        '#update_hide': true
     container_not_urgent:
       '#type': container
       '#states':
@@ -198,6 +112,15 @@ elements: |-
               visible:
                 ':input[name="report_is_park"]':
                   value: 'Community center'
+          community_center_location_details:
+            '#type': textfield
+            '#title': 'Location Details'
+            '#description': '<p>Please describe where the problem is at the community center.</p>'
+            '#description_display': before
+            '#states':
+              visible:
+                ':input[name="report_is_park"]':
+                  value: 'Community center'
           report_location:
             '#type': portland_location_picker
             '#title': 'Location of Issue'
@@ -210,298 +133,17 @@ elements: |-
             '#place_name__description_display': invisible
             '#require_boundary': false
             '#display_boundary': false
-          report_community_center_location_details:
-            '#type': textarea
-            '#title': 'Location Details'
-            '#description': '<p>Please describe where the problem is at the community center.</p>'
-            '#description_display': before
-            '#states':
-              visible:
-                ':input[name="report_is_park"]':
-                  value: 'Community center'
-          report_comments:
-            '#type': textarea
-            '#title': 'Issue Description/Narrative'
-            '#states':
-              invisible:
-                ':input[name="report_urgent"]':
-                  value: 'Yes'
-          report_issue_type:
-            '#type': webform_radios_other
-            '#title': 'What type of issue are you reporting?'
-            '#options':
-              'Maintenance or groundskeeping issue': 'Maintenance or groundskeeping issue'
-              'Illegal activity': 'Illegal activity'
-              'Alarm going off (either audible or visual)': 'Alarm going off (either audible or visual)'
-              'Someone is locked in/out of a facility or needs an escort': 'Someone is locked in/out of a facility or needs an escort'
-              Camping: Camping
-              'Dog or animal related issue': 'Dog or animal related issue'
-              'Park rule violation': 'Park rule violation'
-              'Parking or traffic issue': 'Parking or traffic issue'
-              'Lost/Found property': 'Lost/Found property'
-              'Red Book Notification Procedure': 'Red Book Notification Procedure'
-              'Welfare Check': 'Welfare Check'
-              Electrical: Electrical
-            '#other__option_label': 'Something else...'
-            '#other__placeholder': 'Please describe'
-            '#required': true
-          markup_camping:
-            '#type': webform_markup
-            '#states':
-              visible:
-                ':input[name="report_issue_type[radios]"]':
-                  value: Camping
-            '#markup': |-
-              <div class="alert alert--info next-steps">
-              <h2>Next Steps</h2>
-
-              <p>If you want to report an unsanctioned campsite, please use the <a href="/homelessnessimpactreduction/report-campsite">Report a Campsite service</a>. A copy of the report will be sent to the Park Rangers.</p>
-              </div>
-          markup_call_ppb:
-            '#type': webform_markup
-            '#states':
-              visible:
-                ':input[name="report_issue_type[radios]"]':
-                  value: 'Illegal activity'
-                ':input[name="hidden_logged_in_user_email"]':
-                  value:
-                    pattern: '(.|\s)*\S(.|\s)*'
-            '#access_create_roles':
-              - anonymous
-            '#markup': |-
-              <div class="alert alert--warning next-steps">
-              <h2>Next Steps</h2>
-
-              <p>This issue may require police assistance. If your issue is about illegal activity involving drugs, weapons, or threats, please call Portland Police at <a href="tel:503-823-3333">503-823-3333.</a></p>
-
-              <p>Otherwise, please select 'Park rule violation' instead.</p>
-              </div>
-          markup_call_rangers:
-            '#type': webform_markup
-            '#states':
-              visible:
-                - ':input[name="report_issue_type[radios]"]':
-                    value: 'Alarm going off'
-                  ':input[name="user_role"]':
-                    value: anonymous
-                - or
-                - ':input[name="report_issue_type[radios]"]':
-                    value: 'Someone is locked in/out of a facility or needs an escort'
-                  ':input[name="user_role"]':
-                    value: anonymous
-            '#markup': |-
-              <div class="alert alert--warning next-steps">
-              <h2>Next Steps</h2>
-
-              <p>Please report this issue directly to Park Rangers via phone so we can respond to the issue as quickly as possible. Call <strong><a href="tel:503-823-1637">503-823-1637.</a></strong></p>
-
-              <p>After hours, contact Portland Police at <a href="tel:503-823-3333">503-823-3333.</a></p>
-              </div>
           container_not_rec_center:
             '#type': container
-            '#states':
-              visible:
-                ':input[name="report_issue_type[radios]"]':
-                  '!value': Camping
-            report_lost_found_property_description:
-              '#type': textfield
-              '#title': 'Please describe the lost/found property.'
-              '#required': true
-              '#states':
-                visible:
-                  ':input[name="report_issue_type[radios]"]':
-                    value: 'Lost/Found property'
-            report_staff_building_or_gate:
-              '#type': textfield
-              '#title': 'Which building or gate?'
-              '#required': true
-              '#states':
-                visible:
-                  ':input[name="report_issue_type[radios]"]':
-                    value: 'Someone is locked in/out of a facility or needs an escort'
-              '#access_create_roles':
-                - authenticated
-            report_staff_issue_type_illegal:
-              '#type': webform_radios_other
-              '#title': 'Type of illegal activity'
-              '#options':
-                'Disorderly conduct or nuisance behavior (no threats/weapons)': 'Disorderly conduct or nuisance behavior (no threats/weapons)'
-                'Crimes / PPB issues': 'Crimes / PPB issues'
-                'Fires / Fireworks': 'Fires / Fireworks'
-                'Vehicle break-in or damage': 'Vehicle break-in or damage'
-                'Damage or Vandalism': 'Damage or Vandalism'
-                Graffiti: Graffiti
-                'Hate crime': 'Hate crime'
-              '#other__option_label': Other
-              '#states':
-                visible:
-                  ':input[name="report_issue_type[radios]"]':
-                    value: 'Illegal activity'
-              '#access_create_roles':
-                - authenticated
-            report_hate_speech_or_gang:
-              '#type': radios
-              '#title': 'Is this graffiti hate speech or gang related?'
-              '#options':
-                'Yes': 'Yes'
-                'No': 'No'
-                'Not sure': 'Not sure'
-              '#options_display': side_by_side
-              '#required': true
-              '#states':
-                visible:
-                  ':input[name="report_issue_type[radios]"]':
-                    value: 'Illegal activity'
-                  ':input[name="report_staff_issue_type_illegal[radios]"]':
-                    value: Graffiti
-            markup_illegal_staff:
-              '#type': webform_markup
-              '#access_create_roles':
-                - authenticated
-              '#states':
-                visible:
-                  - ':input[name="report_staff_issue_type_illegal[radios]"]':
-                      value: 'Crimes / PPB issues'
-                  - or
-                  - ':input[name="report_staff_issue_type_illegal[radios]"]':
-                      value: 'Vehicle break-in or damage'
-              '#markup': |-
-                <div class="alert alert--warning next-steps">
-                <p>Refer caller to Portland Police online reporting (www.portland.gov/police/cor) or non-emergency line (503-823-3333). Call can still be entered for Rangers.</p>
-                </div>
-            report_staff_issue_type_alarm:
-              '#type': radios
-              '#title': 'Type of alarm'
-              '#options':
-                'Building - fire alarm': 'Building - fire alarm'
-                'Building - security alarm': 'Building - security alarm'
-                'Building - other type of alarm (e.g. door held open)': 'Building - other type of alarm (e.g. door held open)'
-                'Service box (pump box, electrical box)': 'Service box (pump box, electrical box)'
-              '#states':
-                visible:
-                  ':input[name="report_issue_type[radios]"]':
-                    value: 'Alarm going off'
-              '#access_create_roles':
-                - authenticated
-            report_issue_type_dog_animal:
-              '#type': webform_checkboxes_other
-              '#title': 'Type of dog or animal issue'
-              '#options':
-                'Dog off-leash': 'Dog off-leash'
-                'Aggressive dog/animal': 'Aggressive dog/animal'
-                'Aggressive dog owner': 'Aggressive dog owner'
-                'Scoop law': 'Scoop law'
-                'Animal in vehicle': 'Animal in vehicle'
-                'Lost dog': 'Lost dog'
-              '#other__option_label': 'Something else...'
-              '#other__placeholder': 'Please describe...'
-              '#states':
-                visible:
-                  ':input[name="report_issue_type[radios]"]':
-                    value: 'Dog or animal related issue'
-            computed_animal_issue:
-              '#type': webform_computed_twig
-              '#title': 'Computed animal issue'
-              '#states':
-                visible:
-                  ':input[name="report_issue_type[radios]"]':
-                    value: 'Dog or animal related issue'
-              '#display_on': none
-              '#template': "{{ webform_token('[webform_submission:values:report_issue_type_dog_animal]', webform_submission) }}"
-              '#whitespace': spaceless
-              '#ajax': true
-            markup_animal_staff:
-              '#type': webform_markup
-              '#states':
-                visible:
-                  - ':input[name="report_issue_type_dog_animal[checkboxes][Aggressive dog/animal]"]':
-                      checked: true
-                  - or
-                  - ':input[name="report_issue_type_dog_animal[checkboxes][Animal in vehicle]"]':
-                      checked: true
-              '#access_create_roles':
-                - authenticated
-              '#markup': |-
-                <div class="alert alert--warning next-steps">
-                <p><strong>Ask:</strong> Have you notified Multnomah County Animal Services? If no, refer caller to MultCo Animal Services after entering call for Rangers.</p>
-
-                <p>"We will let Rangers know, but we also need to contact Animal Services so they can assist with this issue as well"</p>
-                </div>
-            report_issue_type_policy:
-              '#type': webform_checkboxes_other
-              '#title': 'Type of policy violation or issue'
-              '#options':
-                'Skateboards / Scooters': 'Skateboards / Scooters'
-                'Permit issues (picnic, events, field reservations)': 'Permit issues (picnic, events, field reservations)'
-                'Smoking / Vaping': 'Smoking / Vaping'
-                'Drugs or Alcohol use': 'Drugs or Alcohol use'
-                Noise: Noise
-                'Trash / Illegal dumping': 'Trash / Illegal dumping'
-                'Trespassing / Park closure': 'Trespassing / Park closure'
-                'Restroom issue': 'Restroom issue'
-                'Nuisance / Disorderly behavior': 'Nuisance / Disorderly behavior'
-                'Indecent exposure': 'Indecent exposure'
-                'Excluded individual in park': 'Excluded individual in park'
-                Structure: Structure
-              '#other__option_label': 'Something else...'
-              '#other__placeholder': 'Please describe...'
-              '#states':
-                visible:
-                  ':input[name="report_issue_type[radios]"]':
-                    value: 'Park rule violation'
-            computed_policy_violation:
-              '#type': webform_computed_twig
-              '#title': 'Computed policy violation'
-              '#states':
-                visible:
-                  ':input[name="report_issue_type[radios]"]':
-                    value: 'Park rule violation'
-              '#display_on': none
-              '#template': "{{ webform_token('[webform_submission:values:report_issue_type_policy]', webform_submission) }}"
-              '#whitespace': spaceless
-              '#ajax': true
-            report_issue_type_parking_traffic:
-              '#type': webform_radios_other
-              '#title': 'Type of parking or traffic issue'
-              '#options':
-                'Parking meters': 'Parking meters'
-                'Traffic issues': 'Traffic issues'
-                'Abandoned vehicle': 'Abandoned vehicle'
-                'Illegally parked vehicle': 'Illegally parked vehicle'
-              '#other__option_label': Other
-              '#states':
-                visible:
-                  ':input[name="report_issue_type[radios]"]':
-                    value: 'Parking or traffic issue'
             report_what_needs_attention:
               '#type': radios
-              '#title': 'What physical "thing" needs attention?'
-              '#options':
-                'Basic park amenity, such as a fence, bench, sign or trash can': 'Basic park amenity, such as a fence, bench, sign or trash can'
-                'Paved parking lot, road, trail, path, sidewalk or stairs': 'Paved parking lot, road, trail, path, sidewalk or stairs'
-                'Playground, sport field or court, dog area or other recreation facility': 'Playground, sport field or court, dog area or other recreation facility'
-                'Restrooms, docks and other structures': 'Restrooms, docks and other structures'
-                'Trees, bushes, grass, natural area or other landscaping': 'Trees, bushes, grass, natural area or other landscaping'
-                'Unpaved trail, soft-surface path or beach': 'Unpaved trail, soft-surface path or beach'
-                'Water feature, pools, splash pads and decorative fountains': 'Water feature, pools, splash pads and decorative fountains'
+              '#title': 'What needs attention?'
+              '#options': maintenance_issue_areas
               '#required': true
-              '#states':
-                visible:
-                  ':input[name="report_issue_type[radios]"]':
-                    value: 'Maintenance or groundskeeping issue'
             report_basic_amenity:
               '#type': webform_radios_other
               '#title': 'Please choose from the following'
-              '#options':
-                'Bench / Picnic Table / Shelter': 'Bench / Picnic Table / Shelter'
-                'Garbage / Recycling Container': 'Garbage / Recycling Container'
-                'Drinking Fountain': 'Drinking Fountain'
-                Signs: Signs
-                Fence: Fence
-                'Flag Pole': 'Flag Pole'
-                Lighting: Lighting
-                'Stormwater basin or outdoor drain': 'Stormwater basin or outdoor drain'
-                Art/Mural/Monument/Sculpture: Art/Mural/Monument/Sculpture
+              '#options': park_amenities_basic
               '#other__option_label': 'Something else...'
               '#other__placeholder': 'Please describe'
               '#required': true
@@ -512,12 +154,7 @@ elements: |-
             report_paved_area:
               '#type': webform_radios_other
               '#title': 'Please choose from the following'
-              '#options':
-                'Parking lot': 'Parking lot'
-                Road: Road
-                'Paved trail or path': 'Paved trail or path'
-                Sidewalk: Sidewalk
-                Stairs: Stairs
+              '#options': park_amenities_pavement
               '#other__option_label': 'Something else...'
               '#other__placeholder': 'Please describe'
               '#required': true
@@ -528,17 +165,7 @@ elements: |-
             report_recreation_amenity:
               '#type': webform_radios_other
               '#title': 'Please choose from the following'
-              '#options':
-                Ampitheater: Ampitheater
-                'Basketball Court': 'Basketball Court'
-                'Disc golf course': 'Disc golf course'
-                'Dog off-leash area': 'Dog off-leash area'
-                Playground: Playground
-                'Running track': 'Running track'
-                'Skate park': 'Skate park'
-                'Sports field': 'Sports field'
-                'Tennis court': 'Tennis court'
-                'Volleyball court': 'Volleyball court'
+              '#options': park_amenities_play
               '#other__option_label': 'Something else...'
               '#other__placeholder': 'Please describe'
               '#required': true
@@ -549,12 +176,7 @@ elements: |-
             report_structure_feature:
               '#type': webform_radios_other
               '#title': 'Please choose from the following'
-              '#options':
-                'Door, window, or part of the building': 'Door, window, or part of the building'
-                'Toilet, sink, or other restroom fixture': 'Toilet, sink, or other restroom fixture'
-                'Toilet paper, soap, or other items': 'Toilet paper, soap, or other items'
-                'Docks and bridges': 'Docks and bridges'
-                'Retaining wall': 'Retaining wall'
+              '#options': park_amenities_structures
               '#other__option_label': 'Something else...'
               '#other__placeholder': 'Please describe'
               '#required': true
@@ -565,19 +187,14 @@ elements: |-
             report_landscaping:
               '#type': webform_radios_other
               '#title': 'Please choose from the following'
-              '#options':
-                'Grass or turf, including irrigation': 'Grass or turf, including irrigation'
-                Tree: Tree
-                'Bushes, flower beds, or natural areas': 'Bushes, flower beds, or natural areas'
-                'Community garden': 'Community garden'
-                Beach: Beach
+              '#options': park_amenities_trees_landscaping
               '#other__option_label': 'Something else...'
               '#other__placeholder': 'Please describe'
+              '#required': true
               '#states':
                 visible:
                   ':input[name="report_what_needs_attention"]':
                     value: 'Trees, bushes, grass, natural area or other landscaping'
-              '#required': true
             report_unpaved:
               '#type': webform_radios_other
               '#title': 'Please choose from the following'
@@ -594,26 +211,18 @@ elements: |-
             report_water_feature:
               '#type': webform_radios_other
               '#title': 'Please choose from the following'
-              '#options':
-                'Swimming Pool': 'Swimming Pool'
-                'Splash pad or spray park': 'Splash pad or spray park'
-                'Decorative fountain': 'Decorative fountain'
+              '#options': park_amenities_water_features
               '#other__option_label': 'Something else...'
               '#other__placeholder': 'Please describe'
+              '#required': true
               '#states':
                 visible:
                   ':input[name="report_what_needs_attention"]':
                     value: 'Water feature, pools, splash pads and decorative fountains'
-              '#required': true
             report_physical_thing_issue:
               '#type': webform_radios_other
               '#title': 'What is the issue?'
-              '#options':
-                'Something is missing, broken or needs repair': 'Something is missing, broken or needs repair'
-                'There is graffiti or tagging': 'There is graffiti or tagging'
-                'There is trash or it needs to be cleaned': 'There is trash or it needs to be cleaned'
-                'There are user conflicts or safety concerns': 'There are user conflicts or safety concerns'
-                Erosion: Erosion
+              '#options': amenity_issues_basic
               '#other__option_label': 'Something else...'
               '#other__placeholder': 'Please describe'
               '#states':
@@ -638,46 +247,33 @@ elements: |-
                   - or
                   - ':input[name="report_landscaping[radios]"]':
                       value: Beach
+              '#required': true
             report_pavement_issue:
               '#type': webform_radios_other
               '#title': 'What is the issue?'
-              '#options':
-                'Cracks or uneven surface': 'Cracks or uneven surface'
-                'Moss or leaves': 'Moss or leaves'
-                'Painted markings missing': 'Painted markings missing'
-                Erosion: Erosion
+              '#options': amenity_issues_pavement
               '#other__option_label': 'Something else...'
               '#other__placeholder': 'Please describe'
               '#states':
                 visible:
                   ':input[name="report_paved_area[radios]"]':
                     checked: true
+              '#required': true
             report_grass_issue:
               '#type': webform_radios_other
               '#title': 'What is the issue?'
-              '#options':
-                'Bare / brown areas': 'Bare / brown areas'
-                'Grass needs mowing': 'Grass needs mowing'
-                'Holes in ground': 'Holes in ground'
-                Weeds: Weeds
-                Uneven: Uneven
-                'Flooded/drainage issues': 'Flooded/drainage issues'
-                'Irrigation not working correctly': 'Irrigation not working correctly'
+              '#options': amenity_issues_grass
               '#other__option_label': 'Something else...'
               '#other__placeholder': 'Please describe'
               '#states':
                 visible:
                   ':input[name="report_landscaping[radios]"]':
                     value: 'Grass or turf, including irrigation'
+              '#required': true
             report_plant_issue:
               '#type': webform_radios_other
               '#title': 'What is the issue?'
-              '#options':
-                'Branches broken/dangling': 'Branches broken/dangling'
-                'Dead or dying': 'Dead or dying'
-                'Pruning needed': 'Pruning needed'
-                Weeds: Weeds
-                'Flooded/drainage issues': 'Flooded/drainage issues'
+              '#options': amenity_issues_plants
               '#other__option_label': 'Something else...'
               '#other__placeholder': 'Please describe'
               '#states':
@@ -687,16 +283,22 @@ elements: |-
                   - or
                   - ':input[name="report_landscaping[radios]"]':
                       value: 'Bushes, flower beds, or natural areas'
+              '#required': true
             container_submit:
               '#type': container
               '#states':
                 visible:
-                  - ':input[name="user_role"]':
-                      value: authenticated
+                  - ':input[name="report_physical_thing_issue[radios]"]':
+                      checked: true
                   - or
-                  - ':input[name="report_issue_type[radios]"]':
-                      value:
-                        '!pattern': camping
+                  - ':input[name="report_pavement_issue[radios]"]':
+                      checked: true
+                  - or
+                  - ':input[name="report_grass_issue[radios]"]':
+                      checked: true
+                  - or
+                  - ':input[name="report_plant_issue[radios]"]':
+                      checked: true
               report_photo:
                 '#type': webform_image_file
                 '#title': Photo
