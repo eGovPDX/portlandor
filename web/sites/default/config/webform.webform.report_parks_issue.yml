@@ -14,7 +14,10 @@ third_party_settings:
     honeypot: true
   portland:
     disable_demographic_form_prompt: 0
-    exclude_from_json: {  }
+    exclude_from_json:
+      maintenance_jump_button: maintenance_jump_button
+      campsite_jump_button: campsite_jump_button
+      graffiti_jump_button: graffiti_jump_button
 weight: 0
 open: null
 close: null
@@ -231,10 +234,11 @@ elements: |-
             '#title': 'What type of issue are you reporting?'
             '#options':
               'Maintenance or groundskeeping issue': 'Maintenance or groundskeeping issue'
+              Camping: Camping
+              Graffiti: Graffiti
               'Illegal activity': 'Illegal activity'
               'Alarm going off (either audible or visual)': 'Alarm going off (either audible or visual)'
               'Someone is locked in/out of a facility or needs an escort': 'Someone is locked in/out of a facility or needs an escort'
-              Camping: Camping
               'Dog or animal related issue': 'Dog or animal related issue'
               'Park rule violation': 'Park rule violation'
               'Parking or traffic issue': 'Parking or traffic issue'
@@ -245,18 +249,175 @@ elements: |-
             '#other__option_label': 'Something else...'
             '#other__placeholder': 'Please describe'
             '#required': true
-          markup_camping:
-            '#type': webform_markup
+          maintenance_jump_button:
+            '#type': webform_computed_twig
+            '#title': 'Maintenance jump button'
+            '#title_display': none
+            '#states':
+              visible:
+                ':input[name="report_issue_type[radios]"]':
+                  value: 'Maintenance or groundskeeping issue'
+            '#display_on': form
+            '#template': |-
+
+              <p><a href="/form/report-park-maintenance-issue?report_location[location_address]={{ data.report_location.location_address }}&report_location[location_lat]={{ data.report_location.location_lat }}&report_location[location_lon]={{ data.report_location.location_lon }}&report_location[place_name]={{ data.report_location.place_name }}&report_location[location_details]={{ data.report_location.location_details }}&report_is_park={{ data.report_is_park }}&report_community_center={{ data.report_community_center }}" class="button button--primary">Continue</a></p>
+            '#ajax': true
+          campsite_jump_button:
+            '#type': webform_computed_twig
+            '#title': 'Campsite jump button'
+            '#title_display': none
             '#states':
               visible:
                 ':input[name="report_issue_type[radios]"]':
                   value: Camping
-            '#markup': |-
-              <div class="alert alert--info next-steps">
-              <h2>Next Steps</h2>
+            '#display_on': form
+            '#template': |
+              {% set search = "" %}
+              {% set address = "" %}
+              {% set lat = "" %}
+              {% set lon = "" %}
 
-              <p>If you want to report an unsanctioned campsite, please use the <a href="/homelessnessimpactreduction/report-campsite">Report a Campsite service</a>. A copy of the report will be sent to the Park Rangers.</p>
-              </div>
+              {% if data.report_is_park == "Community center" %}
+                {% if data.report_community_center == "Community Music Center" %}
+                  {% set address = "3350 SE Francis Street" %}
+                  {% set lat = "45.494552" %}
+                  {% set lon = "-122.630532" %}
+                {% elseif data.report_community_center == "Charles Jordan Community Center" %}
+                  {% set address = "9009 N Foss Avenue" %}
+                  {% set lat = "45.587687" %}
+                  {% set lon = "-122.711366" %}
+                {% elseif data.report_community_center == "East Portland Community Center" %}
+                  {% set address = "740 SE 106th Avenue" %}
+                  {% set lat = "45.51579" %}
+                  {% set lon = "-122.553191" %}
+                {% elseif data.report_community_center == "Matt Dishman Community Center" %}
+                  {% set address = "77 NE Knott Street" %}
+                  {% set lat = "45.542161" %}
+                  {% set lon = "-122.665208" %}
+                {% elseif data.report_community_center == "Mt. Scott Community Center" %}
+                  {% set address = "5530 SE 72nd Avenue" %}
+                  {% set lat = "45.482342" %}
+                  {% set lon = "-122.588616" %}
+                {% elseif data.report_community_center == "Multnomah Arts Center" %}
+                  {% set address = "7688 SW Capitol Highway" %}
+                  {% set lat = "45.467943" %}
+                  {% set lon = "-122.710291" %}
+                {% elseif data.report_community_center == "Peninsula Park Community Center" %}
+                  {% set address = "700 N Rosa Parks Way" %}
+                  {% set lat = "45.569661" %}
+                  {% set lon = "-122.673647" %}
+                {% elseif data.report_community_center == "Southwest Community Center" %}
+                  {% set address = "6820 SW 45th Avenue" %}
+                  {% set lat = "45.475818" %}
+                  {% set lon = "-122.722099" %}
+                {% elseif data.report_community_center == "St. Johns Community Center" %}
+                  {% set address = "8427 N Central Street" %}
+                  {% set lat = "45.592196" %}
+                  {% set lon = "-122.752177" %}
+                {% elseif data.report_community_center == "Interstate Firehouse Cultural Center" %}
+                  {% set address = "5340 N Interstate Avenue" %}
+                  {% set lat = "45.561755" %}
+                  {% set lon = "-122.681942" %}
+                {% elseif data.report_community_center == "Montavilla Community Center" %}
+                  {% set address = "8219 NE Glisan Street" %}
+                  {% set lat = "45.526902" %}
+                  {% set lon = "-122.578436" %}
+                {% elseif data.report_community_center == "Woodstock Community Center" %}
+                  {% set address = "5905 SE 43rd Avenue" %}
+                  {% set lat = "45.479767" %}
+                  {% set lon = "-122.618853" %}
+                {% elseif data.report_community_center == "Fulton Park Community Center" %}
+                  {% set address = "68 SW Miles Street" %}
+                  {% set lat = "45.470962" %}
+                  {% set lon = "-122.679004" %}
+                {% elseif data.report_community_center == "Sellwood Community Center" %}
+                  {% set address = "1436 SE Spokane Street" %}
+                  {% set lat = "45.464811" %}
+                  {% set lon = "-122.65138" %}
+                {% endif %}
+                {% set search = data.report_community_center %}
+              {% endif %}
+
+              <p><a href="/form/report-campsite?report_location_is_private=No&report_location[location_address]={{ data.report_location.location_address }}&report_location[location_lat]={{ lat }}&report_location[location_lon]={{ lon }}&report_location[location_details]={{ data.report_location.location_details }}&report_location[location_search]={{ search }}" class="button button--primary">Continue</a></p>
+            '#ajax': true
+          graffiti_jump_button:
+            '#type': webform_computed_twig
+            '#title': 'Graffiti jump button'
+            '#title_display': none
+            '#states':
+              visible:
+                ':input[name="report_issue_type[radios]"]':
+                  value: Graffiti
+            '#display_on': form
+            '#template': |
+              {% set search = "" %}
+              {% set address = "" %}
+              {% set lat = "" %}
+              {% set lon = "" %}
+
+              {% if data.report_is_park == "Community center" %}
+                {% if data.report_community_center == "Community Music Center" %}
+                  {% set address = "3350 SE Francis Street" %}
+                  {% set lat = "45.494552" %}
+                  {% set lon = "-122.630532" %}
+                {% elseif data.report_community_center == "Charles Jordan Community Center" %}
+                  {% set address = "9009 N Foss Avenue" %}
+                  {% set lat = "45.587687" %}
+                  {% set lon = "-122.711366" %}
+                {% elseif data.report_community_center == "East Portland Community Center" %}
+                  {% set address = "740 SE 106th Avenue" %}
+                  {% set lat = "45.51579" %}
+                  {% set lon = "-122.553191" %}
+                {% elseif data.report_community_center == "Matt Dishman Community Center" %}
+                  {% set address = "77 NE Knott Street" %}
+                  {% set lat = "45.542161" %}
+                  {% set lon = "-122.665208" %}
+                {% elseif data.report_community_center == "Mt. Scott Community Center" %}
+                  {% set address = "5530 SE 72nd Avenue" %}
+                  {% set lat = "45.482342" %}
+                  {% set lon = "-122.588616" %}
+                {% elseif data.report_community_center == "Multnomah Arts Center" %}
+                  {% set address = "7688 SW Capitol Highway" %}
+                  {% set lat = "45.467943" %}
+                  {% set lon = "-122.710291" %}
+                {% elseif data.report_community_center == "Peninsula Park Community Center" %}
+                  {% set address = "700 N Rosa Parks Way" %}
+                  {% set lat = "45.569661" %}
+                  {% set lon = "-122.673647" %}
+                {% elseif data.report_community_center == "Southwest Community Center" %}
+                  {% set address = "6820 SW 45th Avenue" %}
+                  {% set lat = "45.475818" %}
+                  {% set lon = "-122.722099" %}
+                {% elseif data.report_community_center == "St. Johns Community Center" %}
+                  {% set address = "8427 N Central Street" %}
+                  {% set lat = "45.592196" %}
+                  {% set lon = "-122.752177" %}
+                {% elseif data.report_community_center == "Interstate Firehouse Cultural Center" %}
+                  {% set address = "5340 N Interstate Avenue" %}
+                  {% set lat = "45.561755" %}
+                  {% set lon = "-122.681942" %}
+                {% elseif data.report_community_center == "Montavilla Community Center" %}
+                  {% set address = "8219 NE Glisan Street" %}
+                  {% set lat = "45.526902" %}
+                  {% set lon = "-122.578436" %}
+                {% elseif data.report_community_center == "Woodstock Community Center" %}
+                  {% set address = "5905 SE 43rd Avenue" %}
+                  {% set lat = "45.479767" %}
+                  {% set lon = "-122.618853" %}
+                {% elseif data.report_community_center == "Fulton Park Community Center" %}
+                  {% set address = "68 SW Miles Street" %}
+                  {% set lat = "45.470962" %}
+                  {% set lon = "-122.679004" %}
+                {% elseif data.report_community_center == "Sellwood Community Center" %}
+                  {% set address = "1436 SE Spokane Street" %}
+                  {% set lat = "45.464811" %}
+                  {% set lon = "-122.65138" %}
+                {% endif %}
+                {% set search = data.report_community_center %}
+              {% endif %}
+
+              <p><a href="/form/report-graffiti?location_is_private=No&report_location[location_address]={{ data.report_location.location_address }}&report_location[location_lat]={{ lat }}&report_location[location_lon]={{ lon }}&report_location[location_details]={{ data.report_location.location_details }}&report_location[location_search]={{ search }}" class="button button--primary">Continue</a></p>
+            '#ajax': true
           markup_call_ppb:
             '#type': webform_markup
             '#states':
@@ -302,7 +463,8 @@ elements: |-
             '#states':
               visible:
                 ':input[name="report_issue_type[radios]"]':
-                  '!value': Camping
+                  value:
+                    '!pattern': 'Camping|Maintenance or groundskeeping issue|Graffiti'
             report_lost_found_property_description:
               '#type': textfield
               '#title': 'Please describe the lost/found property.'
@@ -473,220 +635,6 @@ elements: |-
                 visible:
                   ':input[name="report_issue_type[radios]"]':
                     value: 'Parking or traffic issue'
-            report_what_needs_attention:
-              '#type': radios
-              '#title': 'What physical "thing" needs attention?'
-              '#options':
-                'Basic park amenity, such as a fence, bench, sign or trash can': 'Basic park amenity, such as a fence, bench, sign or trash can'
-                'Paved parking lot, road, trail, path, sidewalk or stairs': 'Paved parking lot, road, trail, path, sidewalk or stairs'
-                'Playground, sport field or court, dog area or other recreation facility': 'Playground, sport field or court, dog area or other recreation facility'
-                'Restrooms, docks and other structures': 'Restrooms, docks and other structures'
-                'Trees, bushes, grass, natural area or other landscaping': 'Trees, bushes, grass, natural area or other landscaping'
-                'Unpaved trail, soft-surface path or beach': 'Unpaved trail, soft-surface path or beach'
-                'Water feature, pools, splash pads and decorative fountains': 'Water feature, pools, splash pads and decorative fountains'
-              '#required': true
-              '#states':
-                visible:
-                  ':input[name="report_issue_type[radios]"]':
-                    value: 'Maintenance or groundskeeping issue'
-            report_basic_amenity:
-              '#type': webform_radios_other
-              '#title': 'Please choose from the following'
-              '#options':
-                'Bench / Picnic Table / Shelter': 'Bench / Picnic Table / Shelter'
-                'Garbage / Recycling Container': 'Garbage / Recycling Container'
-                'Drinking Fountain': 'Drinking Fountain'
-                Signs: Signs
-                Fence: Fence
-                'Flag Pole': 'Flag Pole'
-                Lighting: Lighting
-                'Stormwater basin or outdoor drain': 'Stormwater basin or outdoor drain'
-                Art/Mural/Monument/Sculpture: Art/Mural/Monument/Sculpture
-              '#other__option_label': 'Something else...'
-              '#other__placeholder': 'Please describe'
-              '#required': true
-              '#states':
-                visible:
-                  ':input[name="report_what_needs_attention"]':
-                    value: 'Basic park amenity, such as a fence, bench, sign or trash can'
-            report_paved_area:
-              '#type': webform_radios_other
-              '#title': 'Please choose from the following'
-              '#options':
-                'Parking lot': 'Parking lot'
-                Road: Road
-                'Paved trail or path': 'Paved trail or path'
-                Sidewalk: Sidewalk
-                Stairs: Stairs
-              '#other__option_label': 'Something else...'
-              '#other__placeholder': 'Please describe'
-              '#required': true
-              '#states':
-                visible:
-                  ':input[name="report_what_needs_attention"]':
-                    value: 'Paved parking lot, road, trail, path, sidewalk or stairs'
-            report_recreation_amenity:
-              '#type': webform_radios_other
-              '#title': 'Please choose from the following'
-              '#options':
-                Ampitheater: Ampitheater
-                'Basketball Court': 'Basketball Court'
-                'Disc golf course': 'Disc golf course'
-                'Dog off-leash area': 'Dog off-leash area'
-                Playground: Playground
-                'Running track': 'Running track'
-                'Skate park': 'Skate park'
-                'Sports field': 'Sports field'
-                'Tennis court': 'Tennis court'
-                'Volleyball court': 'Volleyball court'
-              '#other__option_label': 'Something else...'
-              '#other__placeholder': 'Please describe'
-              '#required': true
-              '#states':
-                visible:
-                  ':input[name="report_what_needs_attention"]':
-                    value: 'Playground, sport field or court, dog area or other recreation facility'
-            report_structure_feature:
-              '#type': webform_radios_other
-              '#title': 'Please choose from the following'
-              '#options':
-                'Door, window, or part of the building': 'Door, window, or part of the building'
-                'Toilet, sink, or other restroom fixture': 'Toilet, sink, or other restroom fixture'
-                'Toilet paper, soap, or other items': 'Toilet paper, soap, or other items'
-                'Docks and bridges': 'Docks and bridges'
-                'Retaining wall': 'Retaining wall'
-              '#other__option_label': 'Something else...'
-              '#other__placeholder': 'Please describe'
-              '#required': true
-              '#states':
-                visible:
-                  ':input[name="report_what_needs_attention"]':
-                    value: 'Restrooms, docks and other structures'
-            report_landscaping:
-              '#type': webform_radios_other
-              '#title': 'Please choose from the following'
-              '#options':
-                'Grass or turf, including irrigation': 'Grass or turf, including irrigation'
-                Tree: Tree
-                'Bushes, flower beds, or natural areas': 'Bushes, flower beds, or natural areas'
-                'Community garden': 'Community garden'
-                Beach: Beach
-              '#other__option_label': 'Something else...'
-              '#other__placeholder': 'Please describe'
-              '#states':
-                visible:
-                  ':input[name="report_what_needs_attention"]':
-                    value: 'Trees, bushes, grass, natural area or other landscaping'
-              '#required': true
-            report_unpaved:
-              '#type': webform_radios_other
-              '#title': 'Please choose from the following'
-              '#options':
-                'Unpaved trail': 'Unpaved trail or path'
-                Beaches: Beaches
-              '#other__option_label': 'Something else...'
-              '#other__placeholder': 'Please describe'
-              '#states':
-                visible:
-                  ':input[name="report_what_needs_attention"]':
-                    value: 'Unpaved trail, soft-surface path or beach'
-              '#required': true
-            report_water_feature:
-              '#type': webform_radios_other
-              '#title': 'Please choose from the following'
-              '#options':
-                'Swimming Pool': 'Swimming Pool'
-                'Splash pad or spray park': 'Splash pad or spray park'
-                'Decorative fountain': 'Decorative fountain'
-              '#other__option_label': 'Something else...'
-              '#other__placeholder': 'Please describe'
-              '#states':
-                visible:
-                  ':input[name="report_what_needs_attention"]':
-                    value: 'Water feature, pools, splash pads and decorative fountains'
-              '#required': true
-            report_physical_thing_issue:
-              '#type': webform_radios_other
-              '#title': 'What is the issue?'
-              '#options':
-                'Something is missing, broken or needs repair': 'Something is missing, broken or needs repair'
-                'There is graffiti or tagging': 'There is graffiti or tagging'
-                'There is trash or it needs to be cleaned': 'There is trash or it needs to be cleaned'
-                'There are user conflicts or safety concerns': 'There are user conflicts or safety concerns'
-                Erosion: Erosion
-              '#other__option_label': 'Something else...'
-              '#other__placeholder': 'Please describe'
-              '#states':
-                visible:
-                  - ':input[name="report_water_feature[radios]"]':
-                      checked: true
-                  - or
-                  - ':input[name="report_unpaved[radios]"]':
-                      checked: true
-                  - or
-                  - ':input[name="report_basic_amenity[radios]"]':
-                      checked: true
-                  - or
-                  - ':input[name="report_recreation_amenity[radios]"]':
-                      checked: true
-                  - or
-                  - ':input[name="report_structure_feature[radios]"]':
-                      checked: true
-                  - or
-                  - ':input[name="report_landscaping[radios]"]':
-                      value: 'Community garden'
-                  - or
-                  - ':input[name="report_landscaping[radios]"]':
-                      value: Beach
-            report_pavement_issue:
-              '#type': webform_radios_other
-              '#title': 'What is the issue?'
-              '#options':
-                'Cracks or uneven surface': 'Cracks or uneven surface'
-                'Moss or leaves': 'Moss or leaves'
-                'Painted markings missing': 'Painted markings missing'
-                Erosion: Erosion
-              '#other__option_label': 'Something else...'
-              '#other__placeholder': 'Please describe'
-              '#states':
-                visible:
-                  ':input[name="report_paved_area[radios]"]':
-                    checked: true
-            report_grass_issue:
-              '#type': webform_radios_other
-              '#title': 'What is the issue?'
-              '#options':
-                'Bare / brown areas': 'Bare / brown areas'
-                'Grass needs mowing': 'Grass needs mowing'
-                'Holes in ground': 'Holes in ground'
-                Weeds: Weeds
-                Uneven: Uneven
-                'Flooded/drainage issues': 'Flooded/drainage issues'
-                'Irrigation not working correctly': 'Irrigation not working correctly'
-              '#other__option_label': 'Something else...'
-              '#other__placeholder': 'Please describe'
-              '#states':
-                visible:
-                  ':input[name="report_landscaping[radios]"]':
-                    value: 'Grass or turf, including irrigation'
-            report_plant_issue:
-              '#type': webform_radios_other
-              '#title': 'What is the issue?'
-              '#options':
-                'Branches broken/dangling': 'Branches broken/dangling'
-                'Dead or dying': 'Dead or dying'
-                'Pruning needed': 'Pruning needed'
-                Weeds: Weeds
-                'Flooded/drainage issues': 'Flooded/drainage issues'
-              '#other__option_label': 'Something else...'
-              '#other__placeholder': 'Please describe'
-              '#states':
-                visible:
-                  - ':input[name="report_landscaping[radios]"]':
-                      value: Tree
-                  - or
-                  - ':input[name="report_landscaping[radios]"]':
-                      value: 'Bushes, flower beds, or natural areas'
             container_submit:
               '#type': container
               '#states':
