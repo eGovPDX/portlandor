@@ -28,37 +28,14 @@ categories: {  }
 elements: |-
   container_authenticated:
     '#type': container
-    report_urgent:
-      '#type': radios
-      '#title': "Is this an urgent, life-threatening issue where someone is in danger or there is an active threat to someone's property?"
-      '#options': yes_no
-      '#options_display': side_by_side
-      '#required': true
-      '#default_value': 'No'
-    container_urgent_agent:
-      '#type': container
-      '#states':
-        visible:
-          ':input[name="report_urgent"]':
-            value: 'Yes'
-      markup_urgent_public:
-        '#type': webform_markup
-        '#access_create_roles':
-          - anonymous
-        '#markup': |-
-          <div class="alert alert--warning next-steps">
-          <p><strong>Please stop filling out this form and call 911.</strong></p>
-          </div>
     container_not_urgent:
       '#type': container
-      '#states':
-        visible:
-          ':input[name="report_urgent"]':
-            value: 'No'
       report_ada_issue:
         '#type': radios
         '#title': "Are you or someone you're representing experiencing a barrier to access or have an ADA concern?"
-        '#options': yes_no
+        '#options':
+          'No': 'No'
+          'Yes': 'Yes'
         '#options_display': side_by_side
         '#required': true
         '#default_value': 'No'
@@ -303,6 +280,10 @@ elements: |-
                   - or
                   - ':input[name="report_plant_issue[radios]"]':
                       checked: true
+              report_comments:
+                '#type': textarea
+                '#title': 'Issue Description/Narrative'
+                '#prepopulate': true
               report_photo:
                 '#type': webform_image_file
                 '#title': Photo
@@ -332,18 +313,6 @@ elements: |-
                       required:
                         ':input[name="user_role"]':
                           value: anonymous
-                  contact_telephone:
-                    '#type': textfield
-                    '#title': Telephone
-                    '#input_mask': '(999) 999-9999'
-                  contact_telephone_instructions:
-                    '#type': textfield
-                    '#title': 'Telephone Instructions'
-                    '#description': 'Please provide any additional instructions for reaching you by phone, such as dialing an extension or navigating a phone tree.'
-                    '#description_display': before
-                  contact_callback_requested:
-                    '#type': checkbox
-                    '#title': 'Callback requested'
               section_public_records_statement:
                 '#type': webform_section
                 '#title': 'Public Records Statement'
@@ -403,58 +372,16 @@ elements: |-
     '#whitespace': spaceless
     '#store': true
     '#ajax': true
-  computed_priority:
-    '#type': webform_computed_twig
-    '#title': 'Computed Priority'
-    '#description_display': before
-    '#wrapper_attributes':
-      style: 'background-color: #ffffcc; padding: 15px;'
-    '#display_on': none
-    '#mode': text
-    '#template': |
-      {% set priority = 'priority_normal' %}
-
-      {# HIGHEST #}
-      {% if
-          (data.report_issue_type == 'Illegal activity' and
-            (data.report_staff_issue_type_illegal == 'Disorderly conduct or nuisance behavior (no threats/weapons)' or
-            data.report_staff_issue_type_illegal == 'Crimes / PPB issues' or
-            data.report_staff_issue_type_illegal == 'Fires / Fireworks'))
-          or data.report_issue_type == 'Alarm going off (either audible or visual)'
-          or (data.report_issue_type == 'Park rule violation' and data.report_issue_type_policy == "Nuisance / Disorderly behavior")
-          or data.report_urgent == "Yes" %}
-      {% set priority = 'priority_urgent' %}
-      {% elseif
-          (data.report_issue_type == 'Illegal activity' and data.report_staff_issue_type_illegal == 'Graffiti') or
-          (data.report_issue_type == 'Park rule violation' and
-            (data.report_issue_type_policy == 'Skateboards / Scooters' or
-             data.report_issue_type_policy == 'Smoking / Vaping' or
-             data.report_issue_type_policy == 'Trash / Illegal dumping' or
-             data.report_issue_type_policy == 'Restroom issue')) or
-           data.report_issue_type == 'Parking or traffic issue' %}
-      {% set priority = 'priority_low' %}
-      {% endif %}
-      {{ priority }}
-    '#whitespace': spaceless
-    '#store': true
-    '#ajax': true
   computed_place_name:
     '#type': webform_computed_twig
     '#title': 'Computed Place Name'
     '#display_on': none
     '#mode': text
     '#template': |
-      {% if data.report_location.place_name != '' %}
-      {{ data.report_location.place_name }}
-      {% elseif data.report_location.location_park['#value'] is not empty %}
-        {% set selectedValue = data.report_location.location_park['#value'] %}
-        {% set options = data.report_location.location_park['#options'] %}
-        {% if options[selectedValue] is not empty %}
-          {% set labelOfSelectedOption = options[selectedValue] %}
-          {{ labelOfSelectedOption }}
-        {% endif %}
+      {% if data.report_is_park %}
+        {{ data.report_location.place_name }}
       {% else %}
-      {{ data.report_community_center }}
+        {{ data.report_community_center }}
       {% endif %}
     '#whitespace': spaceless
     '#ajax': true
@@ -470,57 +397,9 @@ elements: |-
     '#title': 'Computed Subject'
     '#display_on': none
     '#mode': text
-    '#template': |-
-      {% if data.report_urgent == "Yes" %}
-      Ranger Request:
-      {{ data.report_staff_issue_type is iterable ? '' : webform_token('[webform_submission:values:report_staff_issue_type]', webform_submission) }}
-      {% else %}
-      Ranger Request:
-      {{ data.report_issue_type is iterable ? '' : webform_token('[webform_submission:values:report_issue_type]', webform_submission) }}
-      {% endif %}
-    '#whitespace': spaceless
-    '#ajax': true
-  resolution_url:
-    '#type': webform_computed_twig
-    '#title': 'Resolution URL'
-    '#display_on': none
-    '#mode': text
-    '#template': "{{ webform_token('[site:url-brief]', webform_submission, [], options) }}/form/report-graffiti-resolution?report_location[location_type]={{ data.report_location.location_type }}&report_location[location_park]={{ data.report_location.location_park }}&report_location[place_name]={{ data.report_location.place_name|url_encode }}&report_location[location_details]={{ data.report_location.location_details|url_encode }}&report_location[location_address]={{ data.report_location.location_address }}&report_location[location_lat]={{ data.report_location.location_lat }}&report_location[location_lon]={{ data.report_location.location_lon }}&original_submission_key={{ uuid }}&report_ticket_id="
-    '#store': true
-    '#ajax': true
-  computed_tags:
-    '#type': webform_computed_token
-    '#title': 'Computed Tags'
-    '#display_on': none
-    '#mode': text
-    '#template': '{% if data.user_role != "anonymous" %}ranger_dispatch{% endif %}'
-    '#ajax': true
-  computed_requester:
-    '#type': webform_computed_twig
-    '#title': 'Computed Requester Email'
-    '#display_on': none
-    '#mode': text
-    '#template': |-
-      {% if data.contact_email %}
-        {{ data.contact_email }}
-      {% else %}
-        anonymous@portlandoregon.gov
-      {% endif %}
-    '#whitespace': spaceless
-    '#ajax': true
-  computed_requester_name:
-    '#type': webform_computed_twig
-    '#title': 'Computed Requester Name'
-    '#display_on': none
-    '#mode': text
-    '#template': |-
-      {% if data.urgent_contact_name %}
-      {{ data.urgent_contact_name }}
-      {% elseif data.contact_name %}
-      {{ data.contact_name }}
-      {% else %}
-      Anonymous User
-      {% endif %}
+    '#template': |
+      Park maintenance issue:
+        {{ data.report_issue_type is iterable ? '' : webform_token('[webform_submission:values:report_issue_type]', webform_submission) }}
     '#whitespace': spaceless
     '#ajax': true
   computed_issue_description:
@@ -529,36 +408,6 @@ elements: |-
     '#display_on': none
     '#mode': html
     '#template': |
-      <p><strong>Is this an urgent, life threatening issue?</strong> {{ data.report_urgent }}</p>
-
-      {%- if data.report_staff_issue_type %}
-      <p><strong>Type of fire or medical issue</strong> {{ data.report_staff_issue_type is iterable ? '' : webform_token('[webform_submission:values:report_staff_issue_type]', webform_submission) }}</p>
-      {% endif -%}
-
-      {%- if data.urgent_location_details %}
-      <p><strong>Location details</strong> {{ data.urgent_location_details }}</p>
-      {% endif -%}
-
-      {%- if data.report_staff_incident_details %}
-      <p><strong>Incident details</strong> {{ data.report_staff_incident_details }}</p>
-      {% endif -%}
-
-      {%- if data.urgent_contact_name %}
-      <p><strong>Contact name</strong> {{ data.urgent_contact_name }}</p>
-      {% endif -%}
-
-      {%- if data.urgent_contact_telephone %}
-      <p><strong>Contact telephone</strong> {{ data.urgent_contact_telephone }}</p>
-      {% endif -%}
-
-      {%- if data.urgent_contact_telephone_instructions %}
-      <p><strong>Telephone instructions</strong> {{ data.urgent_contact_telephone_instructions }}</p>
-      {% endif -%}
-
-      {%- if data.urgent_callback_requested %}
-      <p><strong>Callback requested?</strong> {{ data.urgent_callback_requested }}</p>
-      {% endif -%}
-
       {%- if data.report_is_park %}
       <p><strong>Park or community center?</strong> {{ data.report_is_park }}</p>
       {% endif -%}
@@ -567,44 +416,8 @@ elements: |-
       <p><strong>Callback requested?</strong> {{ data.report_community_center }}</p>
       {% endif -%}
 
-      {%- if data.report_issue_type %}
-      <p><strong>What type of issue are you reporting?</strong> {{ data.report_issue_type is iterable ? '' : webform_token('[webform_submission:values:report_issue_type]', webform_submission) }}</p>
-      {% endif -%}
-
       {%- if data.report_community_center_location_details %}
       <p><strong>Location details</strong> {{ data.report_community_center_location_details }}</p>
-      {% endif -%}
-
-      {%- if data.report_lost_found_property_description %}
-      <p><strong>Please describe the lost/found property</strong> {{ data.report_lost_found_property_description }}</p>
-      {% endif -%}
-
-      {%- if data.report_staff_building_or_gate %}
-      <p><strong>Which building or gate?</strong> {{ data.report_staff_building_or_gate }}</p>
-      {% endif -%}
-
-      {%- if data.report_staff_issue_type_illegal %}
-      <p><strong>Type of illegal activity:</strong> {{ data.report_staff_issue_type_illegal is iterable ? '' : webform_token('[webform_submission:values:report_staff_issue_type_illegal]', webform_submission) }}</p>
-      {% endif -%}
-
-      {%- if data.report_hate_speech_or_gang %}
-      <p><strong>Is the graffiti hate speech or gang related?</strong> {{ data.report_hate_speech_or_gang }}</p>
-      {% endif -%}
-
-      {%- if data.report_staff_issue_type_alarm %}
-      <p><strong>Type of alarm:</strong> {{ data.report_staff_issue_type_alarm }}</p>
-      {% endif -%}
-
-      {%- if data.computed_animal_issue %}
-      <p><strong>Type of dog or animal issue:</strong> {{ data.computed_animal_issue }}</p>
-      {% endif -%}
-
-      {%- if data.computed_policy_violation %}
-      <p><strong>Type of policy violation or issue:</strong> {{ data.computed_policy_violation }}</p>
-      {% endif -%}
-
-      {%- if data.report_issue_type_parking_traffic %}
-      <p><strong>Type of parking or traffic issue:</strong> {{ data.report_issue_type_parking_traffic is iterable ? '' : webform_token('[webform_submission:values:report_issue_type_parking_traffic]', webform_submission) }}</p>
       {% endif -%}
 
       {%- if data.report_what_needs_attention %}
@@ -666,12 +479,6 @@ elements: |-
 
       {%- if data.contact_name or data.contact_email %}
       	<p><strong>Contact:</strong> {% if data.contact_name %}{{ data.contact_name }}{% endif %}{% if data.contact_email %}, {{data.contact_email }} {% endif %}
-      {% endif -%}
-
-      {%- if data.contact_telephone %}
-      	<p><strong>Telephone:</strong> {{ data.contact_telephone }}
-      	{% if data.contact_telephone_instructions %}<br><i>{{ data.contact_telephone_instructions }}</i>{% endif %}
-      	{% if data.contact_callback_requested %}<br>CALLBACK REQUESTED{% endif %}
       {% endif -%}
     '#ajax': true
 css: ''
@@ -874,102 +681,6 @@ access:
     users: {  }
     permissions: {  }
 handlers:
-  zendesk_new_request:
-    id: zendesk
-    handler_id: zendesk_new_request
-    label: 'Zendesk new Rangers request - LOW priority'
-    notes: ''
-    status: true
-    conditions:
-      enabled:
-        ':input[name="computed_priority"]':
-          value: priority_low
-        ':input[name="report_issue_type[radios]"]':
-          '!value': maintenance
-        ':input[name="support_agent_use_only[test_submission]"]':
-          unchecked: true
-    weight: 0
-    settings:
-      requester_name: contact_name
-      requester_email: computed_requester
-      subject: '[webform_submission:values:computed_subject]'
-      comment: '[webform_submission:values:computed_issue_description:html]'
-      tags: 'drupal webform parks [webform_submission:values:computed_tags]'
-      priority: low
-      status: new
-      group_id: '12927681093399'
-      assignee_id: ''
-      type: incident
-      collaborators: ''
-      custom_fields: "6353388345367: 'report_park_issue'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:computed_place_name]', 'computed_place_name']\r\n1500013095781: '[webform_submission:uuid]'\r\n9205221816983: ['[webform_submission:values:report_location:location_type:raw]', 'report_location:location_type']\r\n13178808571927: ['[webform_submission:computed_priority]', 'computed_priority']\r\n5873224754071: ['[webform_submission:values:report_location:location_details]', 'report_location:location_details']\r\n18197040973335: ['[webform_submission:values:support_agent_use_only:escalate_issue]', 'support_agent_use_only:escalate_issue']"
-      ticket_id_field: report_ticket_id
-      ticket_form_id: '13176953771287'
-      recipient: ''
-      ticket_fork_field: ''
-  zendesk_new_request_normal_priority:
-    id: zendesk
-    handler_id: zendesk_new_request_normal_priority
-    label: 'Zendesk new Rangers request - NORMAL priority'
-    notes: ''
-    status: true
-    conditions:
-      enabled:
-        ':input[name="computed_priority"]':
-          value: priority_normal
-        ':input[name="report_issue_type[radios]"]':
-          '!value': maintenance
-        ':input[name="support_agent_use_only[test_submission]"]':
-          unchecked: true
-    weight: 1
-    settings:
-      requester_name: contact_name
-      requester_email: computed_requester
-      subject: '[webform_submission:values:computed_subject]'
-      comment: '[webform_submission:values:computed_issue_description:html]'
-      tags: 'drupal webform parks [webform_submission:values:computed_tags]'
-      priority: normal
-      status: new
-      group_id: '12927681093399'
-      assignee_id: ''
-      type: incident
-      collaborators: ''
-      custom_fields: "6353388345367: 'report_park_issue'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:computed_place_name]', 'computed_place_name']\r\n1500013095781: '[webform_submission:uuid]'\r\n9205221816983: ['[webform_submission:values:report_location:location_type:raw]', 'report_location:location_type']\r\n13178808571927: ['[webform_submission:computed_priority]', 'computed_priority']\r\n5873224754071: ['[webform_submission:values:report_location:location_details]', 'report_location:location_details']\r\n18197040973335: ['[webform_submission:values:support_agent_use_only:escalate_issue]', 'support_agent_use_only:escalate_issue']"
-      ticket_id_field: report_ticket_id
-      ticket_form_id: '13176953771287'
-      recipient: ''
-      ticket_fork_field: ''
-  zendesk_new_request_urgent_priority:
-    id: zendesk
-    handler_id: zendesk_new_request_urgent_priority
-    label: 'Zendesk new Rangers request - URGENT priority'
-    notes: ''
-    status: true
-    conditions:
-      enabled:
-        ':input[name="computed_priority"]':
-          value: priority_urgent
-        ':input[name="report_issue_type[radios]"]':
-          '!value': maintenance
-        ':input[name="support_agent_use_only[test_submission]"]':
-          unchecked: true
-    weight: 2
-    settings:
-      requester_name: contact_name
-      requester_email: computed_requester
-      subject: '[webform_submission:values:computed_subject]'
-      comment: '[webform_submission:values:computed_issue_description:html]'
-      tags: 'drupal webform parks [webform_submission:values:computed_tags]'
-      priority: urgent
-      status: new
-      group_id: '12927681093399'
-      assignee_id: ''
-      type: incident
-      collaborators: ''
-      custom_fields: "6353388345367: 'report_park_issue'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:computed_place_name]', 'computed_place_name']\r\n1500013095781: '[webform_submission:uuid]'\r\n9205221816983: ['[webform_submission:values:report_location:location_type:raw]', 'report_location:location_type']\r\n13178808571927: ['[webform_submission:computed_priority]', 'computed_priority']\r\n5873224754071: ['[webform_submission:values:report_location:location_details]', 'report_location:location_details']\r\n18197040973335: ['[webform_submission:values:support_agent_use_only:escalate_issue]', 'support_agent_use_only:escalate_issue']"
-      ticket_id_field: report_ticket_id
-      ticket_form_id: '13176953771287'
-      recipient: ''
-      ticket_fork_field: ''
   zendesk_update_customer_support_interaction_request_handler:
     id: zendesk_update_ticket
     handler_id: zendesk_update_customer_support_interaction_request_handler
@@ -980,7 +691,7 @@ handlers:
       enabled:
         ':input[name="support_agent_use_only[zendesk_request_number]"]':
           filled: true
-    weight: 2
+    weight: -49
     settings:
       comment: "<h1>[webform_submission:values:computed_subject]</h1>\r\n<p><b>Linked Issue Request: <a href=\"https://portlandoregon.zendesk.com/agent/tickets/[webform_submission:values:report_ticket_id]\">[webform_submission:values:report_ticket_id]</a></b></p>\r\n\r\n[webform_submission:values:computed_issue_description:html]\r\n"
       comment_private: 1
@@ -994,86 +705,26 @@ handlers:
       custom_fields: "8692493739543: '[webform_submission:values:report_ticket_id]'"
       ticket_id_field: zendesk_request_number
       ticket_form_id: ''
-  zendesk_new_graffiti_report:
-    id: zendesk
-    handler_id: zendesk_new_graffiti_report
-    label: 'Zendesk new graffiti report'
-    notes: ''
-    status: true
-    conditions:
-      enabled:
-        ':input[name="report_issue_type[radios]"]':
-          value: illegal_activity
-        ':input[name="report_staff_issue_type_illegal[radios]"]':
-          value: Graffiti
-    weight: 5
-    settings:
-      requester_name: contact_name
-      requester_email: contact_email
-      subject: 'Park Graffiti Report'
-      comment: '[webform_submission:values:computed_issue_description:html]'
-      tags: 'drupal webform parks graffiti [webform_submission:values:computed_tags]'
-      priority: normal
-      status: new
-      group_id: '8559017236631'
-      assignee_id: ''
-      type: incident
-      collaborators: ''
-      custom_fields: "6353388345367: 'report_graffiti'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:computed_place_name]', 'computed_place_name']\r\n1500013095781: '[webform_submission:uuid]'\r\n6355783758871: ['[webform_submission:values:resolution_url]', 'resolution_url']\r\n6379451469847: ['[webform_submission:values:waiver_url]', 'waiver_url']\r\n9205221816983: ['[webform_submission:values:report_location:location_type:raw]', 'report_location:location_type']\r\n6586776052759: ['[webform_submission:values:report_hate_speech_or_gang]', 'report_hate_speech_or_gang']\r\n18197040973335: ['[webform_submission:values:support_agent_use_only:escalate_issue]', 'support_agent_use_only:escalate_issue']"
-      ticket_id_field: report_ticket_id
-      ticket_form_id: '6499767163543'
-      recipient: ''
-      ticket_fork_field: ''
   zendesk_new_park_maintenance_request_testing_only:
     id: zendesk
     handler_id: zendesk_new_park_maintenance_request_testing_only
-    label: 'Zendesk new Park Maintenance request - testing only'
+    label: 'Zendesk new Park Maintenance request'
     notes: 'This handler assigns all maintenance requests to the PP&R: General group, for testing purposes until detailed routing is set up.'
     status: true
     conditions:
       enabled:
         ':input[name="report_issue_type[radios]"]':
           value: maintenance
-    weight: 5
+    weight: -50
     settings:
       requester_name: contact_name
-      requester_email: computed_requester
+      requester_email: contact_email
       subject: '[webform_submission:values:computed_subject]'
       comment: '[webform_submission:values:computed_issue_description:html]'
-      tags: 'drupal webform parks maintenance [webform_submission:values:computed_tags]'
+      tags: 'drupal webform parks maintenance'
       priority: normal
       status: new
       group_id: '14482054292375'
-      assignee_id: ''
-      type: incident
-      collaborators: ''
-      custom_fields: "6353388345367: 'report_park_issue'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:computed_place_name]', 'computed_place_name']\r\n1500013095781: '[webform_submission:uuid]'\r\n9205221816983: ['[webform_submission:values:report_location:location_type:raw]', 'report_location:location_type']\r\n13178808571927: ['[webform_submission:computed_priority]', 'computed_priority']\r\n5873224754071: ['[webform_submission:values:report_location:location_details]', 'report_location:location_details']\r\n18197040973335: ['[webform_submission:values:support_agent_use_only:escalate_issue]', 'support_agent_use_only:escalate_issue']"
-      ticket_id_field: report_ticket_id
-      ticket_form_id: '13176953771287'
-      recipient: ''
-      ticket_fork_field: ''
-  test_zendesk_new_rangers_request_normal_priority:
-    id: zendesk
-    handler_id: test_zendesk_new_rangers_request_normal_priority
-    label: 'TEST: Zendesk new Rangers request - NORMAL priority'
-    notes: ''
-    status: true
-    conditions:
-      enabled:
-        ':input[name="report_issue_type[radios]"]':
-          '!value': maintenance
-        ':input[name="support_agent_use_only[test_submission]"]':
-          checked: true
-    weight: 6
-    settings:
-      requester_name: contact_name
-      requester_email: computed_requester
-      subject: '[webform_submission:values:computed_subject]'
-      comment: '[webform_submission:values:computed_issue_description:html]'
-      tags: 'drupal webform parks test [webform_submission:values:computed_tags]'
-      priority: normal
-      status: new
-      group_id: '4549352062487'
       assignee_id: ''
       type: incident
       collaborators: ''
