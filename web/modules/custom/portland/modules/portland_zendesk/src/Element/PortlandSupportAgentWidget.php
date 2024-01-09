@@ -10,7 +10,7 @@ use Drupal\webform\Element\WebformCompositeBase;
  *
  * Composite element contains a set of sub-elements that generate a Customer Service Use Only
  * block on webforms that might be completed on behalf of community members.
- * 
+ *
  * Employee Email (textfield, default = logged-in user name & email)
  * Zendesk Request Number (textfield)
  * Test Submission (checkbox)
@@ -30,9 +30,9 @@ class PortlandSupportAgentWidget extends WebformCompositeBase {
    * {@inheritdoc}
    * NOTE: custom elements must have a #title attribute. if a value is not set here, it must be set
    * in the field config. if not, an error is thrown when trying to add an email handler (why?).
-   * 
-   * When configuring this element, need to set the access to be Administrator and Support Agent roles only. 
-   * 
+   *
+   * When configuring this element, need to set the access to be Administrator and Support Agent roles only.
+   *
    * How to programmatically set field conditions: https://www.drupal.org/docs/drupal-apis/form-api/conditional-form-fields
    */
   public static function getCompositeElements(array $element) {
@@ -42,7 +42,7 @@ class PortlandSupportAgentWidget extends WebformCompositeBase {
     $currentUserName = $currentUser->getDisplayName();
 
     $element['#title'] = ['Support Agent Widget'];
-    
+
     $element['support_agent_widget_title'] = [
       '#type' => 'markup',
       '#title' => t('Support Agent Widget'),
@@ -54,6 +54,7 @@ class PortlandSupportAgentWidget extends WebformCompositeBase {
       '#title' => t('Employee Email'),
       '#id' => 'employee_email',
       '#value' => $currentUserName . ' <[' . $currentUserEmail . ']>',
+      '#readonly' => true,
     ];
     $element['zendesk_request_number'] = [
       '#type' => 'number',
@@ -81,7 +82,7 @@ class PortlandSupportAgentWidget extends WebformCompositeBase {
       '#type' => 'checkbox',
       '#title' => t('Test Submission'),
       '#id' => 'test_submission',
-      '#description' => 'For administrtor use only. Handlers can be configured to process form submissions differently based on whether this box is checked. Typically configured to place tickets in the Developer Test Group in Zendesk.',
+      '#description' => 'For administrator use only. Handlers can be configured to process form submissions differently based on whether this box is checked. Typically configured to place tickets in the Developer Test Group in Zendesk.',
       '#access_create_roles' => ['administrator'],
       '#access_update_roles' => ['administrator'],
       '#access_view_roles' => ['administrator'],
