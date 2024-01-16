@@ -17,6 +17,7 @@ use Drupal\user\Entity\User;
 use Drupal\media\Entity\Media;
 use Drupal\file\Entity\File;
 use Drupal\group\Entity\GroupInterface;
+use Drupal\taxonomy\Entity\Term;
 /**
  * Custom drush command file.
  *
@@ -212,7 +213,26 @@ final class BatchCommands extends DrushCommands
     'field_search_keywords',
     'field_summary',
     'field_topics',
+
+    'field_certified_advisory_group', // Advisory group only
   ];
+
+  /**
+   * Drush command to create group type taxonomy terms.
+   */
+  #[CLI\Command(name: 'portland:create_group_types', aliases: ['portland-create-group-types'])]
+  #[CLI\Usage(name: 'portland:create_group_types', description: 'Command without parameter')] 
+  public function create_group_types()
+  {
+    $group_types = ['Program', 'Bureau/office', 'Advisory group', 'Project'];
+    foreach ($group_types as $group_type) {
+      $term = Term::create(array(
+        'parent' => array(),
+        'name' => $group_type,
+        'vid' => 'group_type',
+      ))->save();
+    }
+  }
 
   /**
    * Drush command to copy Program into Bureau/Office.
@@ -224,8 +244,8 @@ final class BatchCommands extends DrushCommands
     $groups = Group::loadMultiple();// Load all groups
     foreach ($groups as $group) {
       $group_type_id = $group->getGroupType()->id();
-      if($group_type_id == "program") {
-        echo "Process program " . $group->label() . PHP_EOL;
+      if($group_type_id == "advisory_group") {
+        echo "Process Advisory Group: " . $group->label() . PHP_EOL;
 
         /** @var GroupInterface $group_to_create */
         $group_to_create= \Drupal::entityTypeManager()->getStorage('group')->create(['type' => 'bureau_office']);
@@ -236,11 +256,14 @@ final class BatchCommands extends DrushCommands
           }
         }
         $group_to_create->set('field_official_organization_name', $group->get('label')->getValue());
-        $group_to_create->set('field_group_type', ['target_id' => 844]); // Sub-type is "Program"
+        $group_to_create->set('field_group_type', ['target_id' => 846]); // 844 is "Program", 846 is Advisory group
 
-        // Change old group's path to PATH-0 to avoid path conflict
+        // Change old group's path to PATH-orig to avoid path conflict
         $orig_group_id = $group->id();
-        $group->set('field_group_path', [$group->get('field_group_path')->value . '-0']);
+
+        // Trim the group path to fit into the max of 60 char
+        $path_value = substr($group->get('field_group_path')->value, 0, 55);
+        $group->set('field_group_path', [$path_value . '-orig']);
         $group->moderation_state->value = "archived";
         $group->status->value = 0;
         $group->revision_log_message->value = "Archived after migrated to Bureau/Offce by the group migration drush command";
@@ -352,7 +375,7 @@ final class BatchCommands extends DrushCommands
           }
         }
 
-        // TEST ONLY: only copy one program
+        // TEST ONLY: exit the loop after one copy
         // break;
       }
     }
