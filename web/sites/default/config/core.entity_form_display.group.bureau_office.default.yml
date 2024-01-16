@@ -3,11 +3,13 @@ langcode: en
 status: true
 dependencies:
   config:
-    - entity_browser.browser.locations_browser
+    - entity_browser.browser.map_browser_embed
     - field.field.group.bureau_office.field_address
     - field.field.group.bureau_office.field_certified_advisory_body
     - field.field.group.bureau_office.field_contact
     - field.field.group.bureau_office.field_disable_legacy_paths_block
+    - field.field.group.bureau_office.field_display_date
+    - field.field.group.bureau_office.field_display_date_toggle
     - field.field.group.bureau_office.field_enable_advisory_menu_item
     - field.field.group.bureau_office.field_enable_bids_and_proposals
     - field.field.group.bureau_office.field_enable_blog_menu_item
@@ -26,30 +28,40 @@ dependencies:
     - field.field.group.bureau_office.field_enable_public_notices
     - field.field.group.bureau_office.field_enable_reports
     - field.field.group.bureau_office.field_enable_services_and_inform
+    - field.field.group.bureau_office.field_end_date
     - field.field.group.bureau_office.field_featured_content
     - field.field.group.bureau_office.field_featured_groups
     - field.field.group.bureau_office.field_featured_media
+    - field.field.group.bureau_office.field_geo_map
     - field.field.group.bureau_office.field_group_menu_toggle
     - field.field.group.bureau_office.field_group_path
     - field.field.group.bureau_office.field_group_type
+    - field.field.group.bureau_office.field_hide_map
     - field.field.group.bureau_office.field_location
     - field.field.group.bureau_office.field_logo_svg
+    - field.field.group.bureau_office.field_map
     - field.field.group.bureau_office.field_menu_link
     - field.field.group.bureau_office.field_migration_status
     - field.field.group.bureau_office.field_official_organization_name
     - field.field.group.bureau_office.field_parent_group
+    - field.field.group.bureau_office.field_project_status
+    - field.field.group.bureau_office.field_project_type
     - field.field.group.bureau_office.field_search_keywords
     - field.field.group.bureau_office.field_shortname_or_acronym
+    - field.field.group.bureau_office.field_start_date
     - field.field.group.bureau_office.field_summary
     - field.field.group.bureau_office.field_topics
     - group.type.bureau_office
     - workflows.workflow.editorial
   module:
     - address
+    - conditional_fields
     - content_moderation
+    - datetime
     - entity_browser
     - field_group
     - file
+    - leaflet
     - maxlength
     - menu_link
     - path
@@ -79,7 +91,7 @@ third_party_settings:
       label: 'Group Menu and Features'
       region: content
       parent_name: ''
-      weight: 16
+      weight: 25
       format_type: details
       format_settings:
         classes: ''
@@ -95,7 +107,7 @@ third_party_settings:
       label: 'Path and Redirects'
       region: content
       parent_name: ''
-      weight: 17
+      weight: 26
       format_type: details
       format_settings:
         classes: ''
@@ -113,7 +125,7 @@ third_party_settings:
       label: 'Administrative Fields (Site Admins Only)'
       region: content
       parent_name: ''
-      weight: 18
+      weight: 27
       format_type: details
       format_settings:
         classes: 'border border-danger'
@@ -128,7 +140,7 @@ third_party_settings:
       label: Logo
       region: content
       parent_name: ''
-      weight: 9
+      weight: 16
       format_type: details
       format_settings:
         classes: ''
@@ -143,7 +155,7 @@ third_party_settings:
       label: Topics
       region: content
       parent_name: ''
-      weight: 13
+      weight: 22
       format_type: details
       format_settings:
         classes: ''
@@ -158,7 +170,7 @@ third_party_settings:
       label: 'Parent Groups'
       region: content
       parent_name: ''
-      weight: 14
+      weight: 23
       format_type: details
       format_settings:
         classes: ''
@@ -173,7 +185,7 @@ third_party_settings:
       label: Location
       region: content
       parent_name: ''
-      weight: 15
+      weight: 24
       format_type: details
       format_settings:
         classes: ''
@@ -182,6 +194,24 @@ third_party_settings:
         description: ''
         required_fields: true
         weight: 0
+    group_project_dates:
+      children:
+        - field_display_date_toggle
+        - field_display_date
+        - field_start_date
+        - field_end_date
+      label: 'Project dates'
+      region: content
+      parent_name: ''
+      weight: 7
+      format_type: details
+      format_settings:
+        classes: ''
+        show_empty_fields: false
+        id: ''
+        open: true
+        description: ''
+        required_fields: true
 id: group.bureau_office.default
 targetEntityType: group
 bundle: bureau_office
@@ -189,7 +219,7 @@ mode: default
 content:
   field_address:
     type: address_default
-    weight: 12
+    weight: 20
     region: content
     settings: {  }
     third_party_settings: {  }
@@ -221,7 +251,7 @@ content:
             selector: ''
   field_contact:
     type: entity_reference_autocomplete
-    weight: 11
+    weight: 19
     region: content
     settings:
       match_operator: CONTAINS
@@ -232,6 +262,39 @@ content:
   field_disable_legacy_paths_block:
     type: boolean_checkbox
     weight: 17
+    region: content
+    settings:
+      display_label: true
+    third_party_settings: {  }
+  field_display_date:
+    type: string_textfield
+    weight: 9
+    region: content
+    settings:
+      size: 60
+      placeholder: ''
+    third_party_settings:
+      conditional_fields:
+        e9a8a3be-1a0f-431f-856a-9f147859c976:
+          entity_type: group
+          bundle: project
+          dependee: field_display_date_toggle
+          settings:
+            state: visible
+            condition: checked
+            grouping: AND
+            values_set: 1
+            value: ''
+            values: {  }
+            value_form:
+              value: false
+            effect: show
+            effect_options: {  }
+            selector: ''
+            form_mode: default
+  field_display_date_toggle:
+    type: boolean_checkbox
+    weight: 8
     region: content
     settings:
       display_label: true
@@ -253,7 +316,7 @@ content:
     third_party_settings: {  }
   field_enable_blog_menu_item:
     type: boolean_checkbox
-    weight: 11
+    weight: 12
     region: content
     settings:
       display_label: true
@@ -291,7 +354,7 @@ content:
       conditional_fields: {  }
   field_enable_news_and_notices_me:
     type: boolean_checkbox
-    weight: 10
+    weight: 11
     region: content
     settings:
       display_label: true
@@ -365,15 +428,21 @@ content:
     third_party_settings: {  }
   field_enable_services_and_inform:
     type: boolean_checkbox
-    weight: 9
+    weight: 10
     region: content
     settings:
       display_label: true
     third_party_settings:
       conditional_fields: {  }
+  field_end_date:
+    type: datetime_default
+    weight: 11
+    region: content
+    settings: {  }
+    third_party_settings: {  }
   field_featured_content:
     type: entity_reference_autocomplete
-    weight: 7
+    weight: 11
     region: content
     settings:
       match_operator: CONTAINS
@@ -383,7 +452,7 @@ content:
     third_party_settings: {  }
   field_featured_groups:
     type: entity_reference_autocomplete
-    weight: 8
+    weight: 14
     region: content
     settings:
       match_operator: CONTAINS
@@ -393,7 +462,7 @@ content:
     third_party_settings: {  }
   field_featured_media:
     type: entity_browser_entity_reference
-    weight: 10
+    weight: 17
     region: content
     settings:
       entity_browser: image_browser_embed
@@ -405,6 +474,73 @@ content:
       field_widget_display_settings:
         view_mode: banner
       selection_mode: selection_append
+    third_party_settings: {  }
+  field_geo_map:
+    type: leaflet_widget_default
+    weight: 18
+    region: content
+    settings:
+      map:
+        leaflet_map: portlandmaps_color
+        height: 400
+        auto_center: 1
+        map_position:
+          force: false
+          center:
+            lat: 45.5234515
+            lon: -122.6762071
+          zoom: 11
+          minZoom: 1
+          maxZoom: 20
+          zoomFiner: 0
+        scroll_zoom_enabled: 0
+        locate: 0
+      input:
+        show: true
+        readonly: false
+      toolbar:
+        position: topright
+        marker: defaultMarker
+        drawPolyline: true
+        drawRectangle: true
+        drawPolygon: true
+        drawCircle: false
+        editMode: true
+        dragMode: true
+        cutPolygon: false
+        removalMode: true
+        rotateMode: false
+      reset_map:
+        control: false
+        position: topright
+      map_scale:
+        control: false
+        options: '{"position":"bottomright","maxWidth":100,"metric":true,"imperial":false,"updateWhenIdle":false}'
+      fullscreen:
+        control: false
+        options: '{"position":"topleft","pseudoFullscreen":false}'
+      path: '{"color":"#3388ff","opacity":"1.0","stroke":true,"weight":3,"fill":"false","fillColor":"*","fillOpacity":"0","radius":"6"}'
+      locate:
+        control: false
+        options: '{"position": "topright", "setView": "untilPanOrZoom", "returnToPrevBounds":true, "keepCurrentZoomLevel": true, "strings": {"title": "Locate my position"}}'
+        automatic: false
+      geocoder:
+        control: false
+        settings:
+          position: topright
+          input_size: 25
+          providers:
+            arcgisonline:
+              weight: 0
+              checked: false
+          min_terms: 4
+          delay: 800
+          zoom: 16
+          popup: false
+          options: ''
+      geometry_validation: false
+      feature_properties:
+        values: ''
     third_party_settings: {  }
   field_group_menu_toggle:
     type: boolean_checkbox
@@ -430,6 +566,13 @@ content:
     region: content
     settings: {  }
     third_party_settings: {  }
+  field_hide_map:
+    type: boolean_checkbox
+    weight: 15
+    region: content
+    settings:
+      display_label: true
+    third_party_settings: {  }
   field_location:
     type: entity_browser_entity_reference
     weight: 11
@@ -447,10 +590,25 @@ content:
     third_party_settings: {  }
   field_logo_svg:
     type: file_generic
-    weight: 13
+    weight: 10
     region: content
     settings:
       progress_indicator: throbber
+    third_party_settings: {  }
+  field_map:
+    type: entity_browser_entity_reference
+    weight: 21
+    region: content
+    settings:
+      entity_browser: map_browser_embed
+      field_widget_display: rendered_entity
+      field_widget_edit: true
+      field_widget_remove: true
+      field_widget_replace: false
+      open: false
+      field_widget_display_settings:
+        view_mode: thumbnail
+      selection_mode: selection_append
     third_party_settings: {  }
   field_menu_link:
     type: menu_link_default
@@ -466,7 +624,7 @@ content:
     third_party_settings: {  }
   field_official_organization_name:
     type: string_textfield
-    weight: 4
+    weight: 6
     region: content
     settings:
       size: 60
@@ -482,6 +640,74 @@ content:
       size: 60
       placeholder: ''
     third_party_settings: {  }
+  field_project_status:
+    type: options_select
+    weight: 5
+    region: content
+    settings: {  }
+    third_party_settings:
+      conditional_fields:
+        9c73bbf0-8b70-42c4-805b-a946e0d2e893:
+          entity_type: group
+          bundle: bureau_office
+          dependee: field_group_type
+          settings:
+            state: visible
+            reset: false
+            condition: value
+            grouping: AND
+            values_set: 1
+            value: ''
+            values: {  }
+            value_form:
+              -
+                target_id: '847'
+            effect: show
+            effect_options: {  }
+            selector: ''
+  field_project_type:
+    type: options_select
+    weight: 4
+    region: content
+    settings: {  }
+    third_party_settings:
+      conditional_fields:
+        8ebc72f7-2c64-4f4e-816e-4963613ab0a9:
+          entity_type: group
+          bundle: bureau_office
+          dependee: field_group_type
+          settings:
+            state: visible
+            reset: false
+            condition: value
+            grouping: AND
+            values_set: 1
+            value: ''
+            values: {  }
+            value_form:
+              -
+                target_id: '847'
+            effect: show
+            effect_options: {  }
+            selector: ''
+        653ca9cd-8be7-4046-9fa5-600678aae884:
+          entity_type: group
+          bundle: bureau_office
+          dependee: field_group_type
+          settings:
+            state: required
+            reset: false
+            condition: value
+            grouping: AND
+            values_set: 1
+            value: ''
+            values: {  }
+            value_form:
+              -
+                target_id: '847'
+            effect: show
+            effect_options: {  }
+            selector: ''
   field_redirects:
     type: string_textfield
     weight: 16
@@ -500,15 +726,21 @@ content:
     third_party_settings: {  }
   field_shortname_or_acronym:
     type: string_textfield
-    weight: 5
+    weight: 9
     region: content
     settings:
       size: 60
       placeholder: ''
     third_party_settings: {  }
+  field_start_date:
+    type: datetime_default
+    weight: 10
+    region: content
+    settings: {  }
+    third_party_settings: {  }
   field_summary:
     type: string_textarea
-    weight: 6
+    weight: 10
     region: content
     settings:
       rows: 2
@@ -521,10 +753,38 @@ content:
         maxlength_js_truncate_html: true
   field_topics:
     type: options_buttons
-    weight: 7
+    weight: 10
     region: content
     settings: {  }
     third_party_settings: {  }
+  group_project_dates:
+    weight: 30
+    region: content
+    settings: {  }
+    third_party_settings:
+      conditional_fields:
+        95f82da5-5a60-41da-b521-900136223fae:
+          entity_type: group
+          bundle: bureau_office
+          dependee: field_group_type
+          settings:
+            state: visible
+            reset: false
+            condition: value
+            grouping: AND
+            values_set: 1
+            value: ''
+            values: {  }
+            value_form:
+              -
+                target_id: '847'
+            effect: show
+            effect_options: {  }
+            selector: ''
+            inheritance:
+              propagate: '0'
+              apply_to_parent: '0'
+              recurse: '0'
   label:
     type: string_textfield
     weight: 0
@@ -538,7 +798,7 @@ content:
         maxlength_js_label: 'The title is also used for menus and breadcrumbs that need shorter titles. Rather than using the official bureau name, use a title that reflects what the community might call this bureau or office. The official organization name will be printed below this short name. Content limited to @limit characters, remaining: <strong>@remaining</strong>'
   moderation_state:
     type: moderation_state_default
-    weight: 20
+    weight: 29
     region: content
     settings: {  }
     third_party_settings: {  }
@@ -550,7 +810,7 @@ content:
     third_party_settings: {  }
   uid:
     type: entity_reference_autocomplete
-    weight: 19
+    weight: 28
     region: content
     settings:
       match_operator: CONTAINS

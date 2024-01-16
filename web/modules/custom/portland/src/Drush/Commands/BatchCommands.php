@@ -213,8 +213,18 @@ final class BatchCommands extends DrushCommands
     'field_search_keywords',
     'field_summary',
     'field_topics',
-
-    'field_certified_advisory_group', // Advisory group only
+    // Advisory group only fields
+    'field_certified_advisory_group',
+    // Project only fields
+    "field_end_date",
+    "field_geo_map",
+    "field_hide_map",
+    "field_map",
+    "field_project_status",
+    "field_project_type",
+    "field_start_date",
+    "field_display_date_toggle",
+    "field_display_date",
   ];
 
   /**
@@ -234,18 +244,35 @@ final class BatchCommands extends DrushCommands
     }
   }
 
+  private $group_type_and_name = [
+    "advisory_group" => [
+      "name" => "Advisory Group",
+      "id" => 846,
+    ],
+    "program" =>  [
+      "name" => "Program",
+      "id" => 844,
+    ],
+    "project" =>  [
+      "name" => "Project",
+      "id" => 847,
+    ]
+  ];
   /**
-   * Drush command to copy Program into Bureau/Office.
+   * Drush command to migrate Advisory group, Program, and Project into Bureau/Office.
    */
-   #[CLI\Command(name: 'portland:copy_program_to_bureau', aliases: ['portland-copy-program-to-bureau'])]
-   #[CLI\Usage(name: 'portland:copy_program_to_bureau', description: 'Command without parameter')] 
-  public function copy_program_to_bureau()
+   #[CLI\Command(name: 'portland:migrate_group', aliases: ['portland-migrate-group'])]
+   #[CLI\Usage(name: 'portland:migrate_group GROUP_TYPE', description: 'GROUP_TYPE is the group type machine name like advisory_group.')] 
+  public function copy_program_to_bureau($group_type = "advisory_group")
   {
     $groups = Group::loadMultiple();// Load all groups
     foreach ($groups as $group) {
       $group_type_id = $group->getGroupType()->id();
-      if($group_type_id == "advisory_group") {
-        echo "Process Advisory Group: " . $group->label() . PHP_EOL;
+      if($group_type_id == $group_type) {
+        $group_type_name = $this->group_type_and_name[$group_type]["name"];
+        $group_name = $group->label();
+        $group_id = $group->id();
+        echo "Started migrating $group_type_name: $group_name ($group_id)" . PHP_EOL;
 
         /** @var GroupInterface $group_to_create */
         $group_to_create= \Drupal::entityTypeManager()->getStorage('group')->create(['type' => 'bureau_office']);
@@ -255,12 +282,12 @@ final class BatchCommands extends DrushCommands
             $group_to_create->set($field_name, $group->get($field_name)->getValue());
           }
         }
+        // This is a required field in Bureau/Office
         $group_to_create->set('field_official_organization_name', $group->get('label')->getValue());
-        $group_to_create->set('field_group_type', ['target_id' => 846]); // 844 is "Program", 846 is Advisory group
+        $group_to_create->set('field_group_type', ['target_id' => $this->group_type_and_name[$group_type]["id"]]);
 
-        // Change old group's path to PATH-orig to avoid path conflict
+        // Change old group's path to "PATH-orig" to avoid path conflict
         $orig_group_id = $group->id();
-
         // Trim the group path to fit into the max of 60 char
         $path_value = substr($group->get('field_group_path')->value, 0, 55);
         $group->set('field_group_path', [$path_value . '-orig']);
