@@ -159,7 +159,7 @@ elements: |-
       '#states':
         visible:
           ':input[name="report_is_park"]':
-            '!value': 'Community garden'
+            value: 'Park or natural area'
       report_what_needs_attention:
         '#type': webform_radios_other
         '#title': 'What needs attention?'
@@ -332,7 +332,7 @@ elements: |-
               value: _other_
           - or
           - ':input[name="report_is_park"]':
-              value: 'Community garden'
+              '!value': 'Park or natural area'
       report_comments:
         '#type': textarea
         '#title': 'Issue Description/Narrative'
@@ -460,7 +460,7 @@ elements: |-
   computed_issue_description:
     '#type': webform_computed_twig
     '#title': 'Computed Issue Description'
-    '#display_on': none
+    '#display_on': form
     '#mode': html
     '#template': |
       {%- if data.report_is_park %}
@@ -746,7 +746,7 @@ handlers:
       enabled:
         ':input[name="support_agent_use_only[zendesk_request_number]"]':
           filled: true
-    weight: -49
+    weight: -46
     settings:
       comment: "<h1>[webform_submission:values:computed_subject]</h1>\r\n<p><b>Linked Issue Request: <a href=\"https://portlandoregon.zendesk.com/agent/tickets/[webform_submission:values:report_ticket_id]\">[webform_submission:values:report_ticket_id]</a></b></p>\r\n\r\n[webform_submission:values:computed_issue_description:html]\r\n"
       comment_private: 1
@@ -760,13 +760,87 @@ handlers:
       custom_fields: "8692493739543: '[webform_submission:values:report_ticket_id]'"
       ticket_id_field: zendesk_request_number
       ticket_form_id: ''
-  zendesk_new_park_maintenance_request_testing_only:
+  zendesk_new_park_maintenance_request:
     id: zendesk
-    handler_id: zendesk_new_park_maintenance_request_testing_only
-    label: 'Zendesk new Park Maintenance request - Park'
-    notes: 'This handler assigns all maintenance requests to the PP&R: General group, for testing purposes until detailed routing is set up.'
+    handler_id: zendesk_new_park_maintenance_request
+    label: 'Route to Developer Test Group (Zendesk)'
+    notes: 'Routes ticket to Developer Test Group when the Test Submission box is checked in the Customer Service Use Only block.'
     status: true
-    conditions: {  }
+    conditions:
+      enabled:
+        ':input[name="support_agent_use_only[test_submission]"]':
+          checked: true
+    weight: -45
+    settings:
+      requester_name: contact_name
+      requester_email: contact_email
+      subject: '[webform_submission:values:computed_subject]'
+      comment: '[webform_submission:values:computed_issue_description:html]'
+      tags: 'drupal webform parks maintenance test [webform_submission:values:computed_tags]'
+      priority: normal
+      status: new
+      group_id: '4549352062487'
+      assignee_id: ''
+      type: incident
+      collaborators: ''
+      custom_fields: "6353388345367: 'report_park_issue'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:computed_place_name]', 'computed_place_name']\r\n1500013095781: '[webform_submission:uuid]'\r\n9205221816983: ['[webform_submission:values:report_location:location_type:raw]', 'report_location:location_type']\r\n13178808571927: ['[webform_submission:computed_priority]', 'computed_priority']\r\n5873224754071: ['[webform_submission:values:report_location:location_details]', 'report_location:location_details']\r\n18197040973335: ['[webform_submission:values:support_agent_use_only:escalate_issue]', 'support_agent_use_only:escalate_issue']"
+      ticket_id_field: report_ticket_id
+      ticket_form_id: '15142080018711'
+      recipient: ''
+      ticket_fork_field: ''
+  route_to_park_rangers_zendesk:
+    id: zendesk
+    handler_id: route_to_park_rangers_zendesk
+    label: 'Route to Ranger Dispatch (Zendesk)'
+    notes: 'Creates ticket in Ranger Dispatch group. Enabled if A) "Interactions, improper use, and safety concerns" is selected in the default issues list, and B) Test Submission is NOT checked.'
+    status: true
+    conditions:
+      enabled:
+        ':input[name="report_issue_default[radios]"]':
+          value: 'Interactions, improper use, and safety concerns'
+        ':input[name="support_agent_use_only[test_submission]"]':
+          unchecked: true
+    weight: -49
+    settings:
+      requester_name: contact_name
+      requester_email: contact_email
+      subject: '[webform_submission:values:computed_subject]'
+      comment: '[webform_submission:values:html]'
+      tags: 'drupal webform parks maintenance [webform_submission:values:computed_tags]'
+      priority: normal
+      status: new
+      group_id: '12927681093399'
+      assignee_id: ''
+      type: incident
+      collaborators: ''
+      custom_fields: "6353388345367: 'report_park_issue'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:computed_place_name]', 'computed_place_name']\r\n1500013095781: '[webform_submission:uuid]'\r\n9205221816983: ['[webform_submission:values:report_location:location_type:raw]', 'report_location:location_type']\r\n13178808571927: ['[webform_submission:computed_priority]', 'computed_priority']\r\n5873224754071: ['[webform_submission:values:report_location:location_details]', 'report_location:location_details']\r\n18197040973335: ['[webform_submission:values:support_agent_use_only:escalate_issue]', 'support_agent_use_only:escalate_issue']"
+      ticket_id_field: report_ticket_id
+      ticket_form_id: '13176953771287'
+      recipient: ''
+      ticket_fork_field: ''
+  route_to_parks_maintenance_zendesk:
+    id: zendesk
+    handler_id: route_to_parks_maintenance_zendesk
+    label: 'Route to Parks Maintenance (Zendesk)'
+    notes: 'Default routing for maintenance reports. Disabled if any of the following are true: 1) Community Garden, 2) Art/Mural/Monument/Sculpture, 3) Interactions, improper use, and safety concerns, 4) Test Submission box checked. '
+    status: true
+    conditions:
+      disabled:
+        -
+          ':input[name="report_is_park"]':
+            value: 'Community garden'
+        - or
+        -
+          ':input[name="report_basic_amenity[radios]"]':
+            value: Art/Mural/Monument/Sculpture
+        - or
+        -
+          ':input[name="report_issue_default[radios]"]':
+            value: 'Interactions, improper use, and safety concerns'
+        - or
+        -
+          ':input[name="support_agent_use_only[test_submission]"]':
+            checked: true
     weight: -50
     settings:
       requester_name: contact_name
@@ -785,29 +859,128 @@ handlers:
       ticket_form_id: '15142080018711'
       recipient: ''
       ticket_fork_field: ''
-  zendesk_new_park_maintenance_request:
-    id: zendesk
-    handler_id: zendesk_new_park_maintenance_request
-    label: 'TEST: Zendesk new Park Maintenance request'
-    notes: ''
+  art_mural_monument_sculpture_issue_email:
+    id: email
+    handler_id: art_mural_monument_sculpture_issue_email
+    label: 'Art/Mural/Monument/Sculpture Issue (Email)'
+    notes: 'Sends an email to the individual responsible for art and monuments. Enabled if A) "Art/Mural/Monument/Sculpture Issue" is selected, and B) Test Submission is NOT checked.'
     status: true
-    conditions: {  }
-    weight: 2
+    conditions:
+      enabled:
+        ':input[name="report_basic_amenity[radios]"]':
+          value: Art/Mural/Monument/Sculpture
+        ':input[name="support_agent_use_only[test_submission]"]':
+          unchecked: true
+    weight: -48
     settings:
-      requester_name: contact_name
-      requester_email: contact_email
-      subject: '[webform_submission:values:computed_subject]'
-      comment: '[webform_submission:values:computed_issue_description:html]'
-      tags: 'drupal webform parks maintenance test'
-      priority: normal
-      status: new
-      group_id: '4549352062487'
-      assignee_id: ''
-      type: incident
-      collaborators: ''
-      custom_fields: "6353388345367: 'report_park_issue'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:computed_place_name]', 'computed_place_name']\r\n1500013095781: '[webform_submission:uuid]'\r\n9205221816983: ['[webform_submission:values:report_location:location_type:raw]', 'report_location:location_type']\r\n13178808571927: ['[webform_submission:computed_priority]', 'computed_priority']\r\n5873224754071: ['[webform_submission:values:report_location:location_details]', 'report_location:location_details']\r\n18197040973335: ['[webform_submission:values:support_agent_use_only:escalate_issue]', 'support_agent_use_only:escalate_issue']"
-      ticket_id_field: report_ticket_id
-      ticket_form_id: '13176953771287'
-      recipient: ''
-      ticket_fork_field: ''
+      states:
+        - completed
+      to_mail: jess.persteiner@portlandoregon.gov
+      to_options: {  }
+      bcc_mail: ''
+      bcc_options: {  }
+      cc_mail: ''
+      cc_options: {  }
+      from_mail: noreply@portlandoregon.gov
+      from_options: {  }
+      from_name: _default
+      reply_to: ''
+      return_path: ''
+      sender_mail: ''
+      sender_name: ''
+      subject: _default
+      body: _default
+      excluded_elements: {  }
+      ignore_access: false
+      exclude_empty: true
+      exclude_empty_checkbox: false
+      exclude_attachments: false
+      html: true
+      attachments: false
+      twig: false
+      theme_name: ''
+      parameters: {  }
+      debug: false
+  community_gardens_issue_email:
+    id: email
+    handler_id: community_gardens_issue_email
+    label: 'Community Gardens issue (Email)'
+    notes: 'Sends a notification to the primary contact for community gardens. Enabled if A) Community Garden is selected, and B) Test Selection is not checked.'
+    status: true
+    conditions:
+      enabled:
+        ':input[name="report_is_park"]':
+          value: 'Community garden'
+        ':input[name="support_agent_use_only[test_submission]"]':
+          unchecked: true
+    weight: -47
+    settings:
+      states:
+        - completed
+      to_mail: laura.niemi@portlandoregon.gov
+      to_options: {  }
+      bcc_mail: ''
+      bcc_options: {  }
+      cc_mail: ''
+      cc_options: {  }
+      from_mail: noreply@portlandoregon.gov
+      from_options: {  }
+      from_name: _default
+      reply_to: ''
+      return_path: ''
+      sender_mail: ''
+      sender_name: ''
+      subject: _default
+      body: _default
+      excluded_elements: {  }
+      ignore_access: false
+      exclude_empty: true
+      exclude_empty_checkbox: false
+      exclude_attachments: false
+      html: true
+      attachments: false
+      twig: false
+      theme_name: ''
+      parameters: {  }
+      debug: false
+  test_email:
+    id: email
+    handler_id: test_email
+    label: 'Route email to logged in developer'
+    notes: "Enabled when the Test Submission box is checked in the Customer Service Use Only block. Sends the email to the logged in user, which will be a site administrator, since that's the only group that has permissions to see the checkbox."
+    status: true
+    conditions:
+      enabled:
+        ':input[name="support_agent_use_only[test_submission]"]':
+          '': ''
+    weight: 6
+    settings:
+      states:
+        - completed
+      to_mail: '[current-user:mail]'
+      to_options: {  }
+      bcc_mail: ''
+      bcc_options: {  }
+      cc_mail: ''
+      cc_options: {  }
+      from_mail: noreply@portlandoregon.gov
+      from_options: {  }
+      from_name: _default
+      reply_to: ''
+      return_path: ''
+      sender_mail: ''
+      sender_name: ''
+      subject: _default
+      body: _default
+      excluded_elements: {  }
+      ignore_access: false
+      exclude_empty: true
+      exclude_empty_checkbox: false
+      exclude_attachments: false
+      html: true
+      attachments: false
+      twig: false
+      theme_name: ''
+      parameters: {  }
+      debug: false
 variants: {  }
