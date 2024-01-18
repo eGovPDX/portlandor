@@ -271,8 +271,6 @@ final class BatchCommands extends DrushCommands
       if($group_type_id == $group_type) {
         $group_type_name = $this->group_type_and_name[$group_type]["name"];
         $group_name = $group->label();
-        $group_id = $group->id();
-        echo "Started migrating $group_type_name: $group_name ($group_id)" . PHP_EOL;
 
         /** @var GroupInterface $group_to_create */
         $group_to_create= \Drupal::entityTypeManager()->getStorage('group')->create(['type' => 'bureau_office']);
@@ -297,9 +295,11 @@ final class BatchCommands extends DrushCommands
         $group->revision_user->target_id = 0;
         $group->changed->value = time();
         $group->save();
-        
+
         $group_to_create->revision_log_message->value = "Created by the group migration drush command. The original group ID is $orig_group_id";
         $group_to_create->save(); // Must save the new group in order to get the ID
+        $new_group_id = $group_to_create->id();
+        echo "Migrated $group_type_name: $group_name (original ID: $orig_group_id, new ID: $new_group_id)" . PHP_EOL;
 
         // TODO: Copy revisions?
 
@@ -337,8 +337,9 @@ final class BatchCommands extends DrushCommands
                 case 'field_parent_group':
                   if($source_node->get('field_parent_group')->target_id == $orig_group_id) {
                     $source_node->get('field_parent_group')->target_id = $group_to_create_id;
-                    $source_node->revision_log->value = "field_parent_group updated by Drush command";
+                    $source_node->revision_log->value = "$group_name in field_parent_group migrated by Drush command";
                     $source_node->revision_uid = 0;
+                    $source_node->revision_timestamp = time();
                     $source_node->save();
                   }
                   break;
@@ -348,8 +349,9 @@ final class BatchCommands extends DrushCommands
                   foreach($display_groups->referencedEntities() as $index => $display_group) {
                     if($source_node->field_display_groups[$index]->target_id == $orig_group_id) {
                       $source_node->field_display_groups[$index]->target_id = $group_to_create_id;
-                      $source_node->revision_log->value = "field_display_groups updated by Drush command";
+                      $source_node->revision_log->value = "$group_name in field_display_groups migrated by Drush command";
                       $source_node->revision_uid = 0;
+                      $source_node->revision_timestamp = time();
                       $source_node->save();
                     }
                   }
@@ -364,8 +366,9 @@ final class BatchCommands extends DrushCommands
                   $replacement_count = 0;
                   $source_node->field_body_content->value = str_replace($text_to_be_replaced, $replacement_text, $source_node->field_body_content->value, $replacement_count);
                   if($replacement_count > 0) { // Only save if the body content is updated
-                    $source_node->revision_log->value = "field_body_content updated by Drush command";
+                    $source_node->revision_log->value = "$group_name embedded in field_body_content updated by Drush command";
                     $source_node->revision_uid = 0;
+                    $source_node->revision_timestamp = time();
                     $source_node->save();
                   }
                   break;
@@ -381,7 +384,7 @@ final class BatchCommands extends DrushCommands
                   foreach($featured_groups->referencedEntities() as $index => $featured_group) {
                     if($source_group->field_featured_groups[$index]->target_id == $orig_group_id) {
                       $source_group->field_featured_groups[$index]->target_id = $group_to_create_id;
-                      $source_group->revision_log_message->value = "field_featured_groups updated by Drush command";
+                      $source_group->revision_log_message->value = "$group_name in field_featured_groups migrated by Drush command";
                       $source_group->revision_user->target_id = 0;
                       $source_group->revision_created->value = time();
                       $source_group->save();
@@ -391,7 +394,7 @@ final class BatchCommands extends DrushCommands
                 case 'field_parent_group':
                   if($source_group->get('field_parent_group')->target_id == $orig_group_id) {
                     $source_group->get('field_parent_group')->target_id = $group_to_create_id;
-                    $source_group->revision_log_message->value = "field_parent_group updated by Drush command";
+                    $source_group->revision_log_message->value = "$group_name in field_parent_group migrated by Drush command";
                     $source_group->revision_user->target_id = 0;
                     $source_group->revision_created->value = time();
                     $source_group->save();
