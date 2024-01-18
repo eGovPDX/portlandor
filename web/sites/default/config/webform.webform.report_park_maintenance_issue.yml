@@ -463,13 +463,121 @@ elements: |-
     '#display_on': none
     '#mode': html
     '#template': |-
-      {% if data.report_what_needs_attention %}
-      <p><strong>What needs attention:</strong> 
+      <strong>Location:</strong><br>
 
-      {{ data.report_what_needs_attention is iterable ? '' : webform_token('[webform_submission:values:report_what_needs_attention]', webform_submission) }}
-
-      </p>
+      {% if data.report_is_park %}
+        {{ data.report_is_park is iterable ? '' : webform_token('[webform_submission:values:report_is_park]', webform_submission) }} --
       {% endif %}
+
+      {# Location name #}
+      {% if data.report_community_center %}
+        {{ data.report_community_center }}<br>
+      {% endif %}
+      {% if data.community_garden_name_location %}
+        {{ data.community_garden_name_location }}<br>
+      {% endif %}
+      {% if data.report_location.place_name %}
+        {{ data.report_location.place_name }}<br>
+      {% endif %}
+
+      {# Location picker data #}
+      {% if data.report_location.location_address %}
+        {{ data.report_location.location_address }}<br>
+      {% endif %}
+
+      <br>
+
+      <strong>What needs attention:</strong><br>
+
+      {% if data.report_what_needs_attention %}
+        {{ data.report_what_needs_attention is iterable ? '' : webform_token('[webform_submission:values:report_what_needs_attention]', webform_submission) }}<br>
+      {% endif %}
+
+      {% if data.report_basic_amenity %}
+        {{ data.report_basic_amenity is iterable ? '' : webform_token('[webform_submission:values:report_basic_amenity]', webform_submission) }}<br><br>
+      {% endif %}
+
+      {% if data.report_restroom %}
+        {{ data.report_restroom is iterable ? '' : webform_token('[webform_submission:values:report_restroom]', webform_submission) }}<br><br>
+      {% endif %}
+
+      {% if data.report_paved_area %}
+        {{ data.report_paved_area is iterable ? '' : webform_token('[webform_submission:values:report_paved_area]', webform_submission) }}<br><br>
+      {% endif %}
+
+      {% if data.report_structure_feature %}
+        {{ data.report_structure_feature is iterable ? '' : webform_token('[webform_submission:values:report_structure_feature]', webform_submission) }}<br><br>
+      {% endif %}
+
+      {% if data.report_recreation_amenity %}
+        {{ data.report_recreation_amenity is iterable ? '' : webform_token('[webform_submission:values:report_recreation_amenity]', webform_submission) }}<br><br>
+      {% endif %}
+
+      {% if data.report_landscaping %}
+        {{ data.report_landscaping is iterable ? '' : webform_token('[webform_submission:values:report_landscaping]', webform_submission) }}<br><br>
+      {% endif %}
+
+      {% if data.report_water_feature %}
+        {{ data.report_water_feature is iterable ? '' : webform_token('[webform_submission:values:report_water_feature]', webform_submission) }}<br><br>
+      {% endif %}
+
+      <strong>What is the issue?</strong><br>
+
+      {% if data.report_issue_default %}
+        {{ data.report_issue_default is iterable ? '' : webform_token('[webform_submission:values:report_issue_default]', webform_submission) }}<br><br>
+      {% endif %}
+
+      {% if data.report_pavement_issue %}
+        {{ data.report_pavement_issue is iterable ? '' : webform_token('[webform_submission:values:report_pavement_issue]', webform_submission) }}<br><br>
+      {% endif %}
+
+      {% if data.report_grass_issue %}
+        {{ data.report_grass_issue is iterable ? '' : webform_token('[webform_submission:values:report_grass_issue]', webform_submission) }}<br><br>
+      {% endif %}
+
+      {% if data.report_plant_issue %}
+        {{ data.report_plant_issue is iterable ? '' : webform_token('[webform_submission:values:report_plant_issue]', webform_submission) }}<br><br>
+      {% endif %}
+
+      <strong>Issue description:</strong><br>
+
+      {% if data.report_comments %}
+        {{ data.report_comments }}
+      {% endif %}
+    '#ajax': true
+  computed_tags:
+    '#type': webform_computed_twig
+    '#title': 'Computed Tags'
+    '#display_on': form
+    '#mode': text
+    '#template': |+
+      {% set tags = "" %}
+
+      {% if (data.report_issue_default and data.report_issue_default is not iterable and data.report_issue_default == "Something is missing, broken or needs repair")
+         or (data.report_issue_default and data.report_issue_default is not iterable and data.report_issue_default == "Drinking fountain") 
+         or (data.report_water_feature and data.report_water_feature is not iterable and data.report_water_feature == "Drinking fountain") %}
+        {% set tags = "prms " %}
+      {% endif %}
+
+      {% if (data.report_is_park and data.report_is_park is not iterable and data.report_is_park == "Community garden")
+         or (data.report_issue_default and data.report_issue_default is not iterable and data.report_issue_default == "There is trash or it needs to be cleaned")
+         or (data.report_restroom and data.report_restroom is not iterable and data.report_restroom == "Toilet paper, soap, or other items")
+         or (data.report_landscaping and data.report_landscaping is not iterable and data.report_landscaping == "Bushes, flower beds, or natural areas")
+         or (data.report_landscaping and data.report_landscaping is not iterable and data.report_landscaping == "Grass or turf, including irrigation")
+         or (data.report_what_needs_attention and data.report_what_needs_attention is not iterable and data.report_what_needs_attention == "Unpaved Trail or soft-surface path") 
+         or (data.report_water_feature and data.report_water_feature is not iterable and data.report_water_feature == "Splash pad or spray park") 
+         or (data.report_paved_area and data.report_paved_area is not iterable and data.report_paved_area == "Paved trail or path") %}
+        {% set tags = "land_steward " %}
+      {% endif %}
+
+      {% if (data.report_water_feature and data.report_water_feature is not iterable and data.report_water_feature == "Swimming pool")
+         or (data.report_water_feature and data.report_water_feature is not iterable and data.report_water_feature == "Interactive fountain") %}
+        {% set tags = "recreation_aquatics " %}
+      {% endif %}
+
+      {{ tags }}
+
+    '#whitespace': trim
     '#ajax': true
 css: ''
 javascript: ''
