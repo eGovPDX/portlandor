@@ -60,7 +60,7 @@ elements: |-
         <div class="alert alert--info next-steps">
         <h2>Next Steps</h2>
 
-        <p>To report a tree issue, please contact us at <a href="tel:311">311</a> or <a href="311@portlandoregon.gov">311@portlandoregon.gov</a>.</p>
+        <p>To report a tree issue, please contact us at <a href="tel:311">3-1-1</a> or <a href="311@portlandoregon.gov">311@portlandoregon.gov</a>.</p>
         </div>
     markup_graffiti_jump:
       '#type': webform_markup
@@ -377,6 +377,7 @@ elements: |-
         '#title': 'Customer Service Use Only'
         '#access_create_roles':
           - authenticated
+        '#escalate_issue__access': false
       actions:
         '#type': webform_actions
         '#title': 'Submit button(s)'
@@ -453,8 +454,15 @@ elements: |-
     '#display_on': none
     '#mode': text
     '#template': |
-      Park maintenance issue:
-        {{ data.report_what_needs_attention is iterable ? '' : webform_token('[webform_submission:values:report_what_needs_attention]', webform_submission) }}
+      {% if (data.report_is_park and data.report_is_park is not iterable and data.report_is_park == "Community garden") %}
+        Maintenance issue in community garden
+      {% elseif (data.report_is_park and data.report_is_park is not iterable and data.report_is_park == "Community center") %}
+        Maintenance issue at {{ data.report_community_center and data.report_community_center is iterable ? '' : webform_token('[webform_submission:values:report_community_center]', webform_submission) }}
+      {% elseif (data.report_basic_amenity and data.report_basic_amenity is not iterable and data.report_basic_amenity == "Art/mural/monument/sculpture") %}
+        Park maintenance issue: Art/mural/monument/sculpture
+      {% else %}
+        Park maintenance issue: {{ data.report_what_needs_attention is iterable ? '' : webform_token('[webform_submission:values:report_what_needs_attention]', webform_submission) }}
+      {% endif %}
     '#whitespace': spaceless
     '#ajax': true
   computed_issue_description:
@@ -550,33 +558,27 @@ elements: |-
     '#title': 'Computed Tags'
     '#display_on': none
     '#mode': text
-    '#template': |+
-      {% set tags = "" %}
-
-      {% if (data.report_issue_default and data.report_issue_default is not iterable and data.report_issue_default == "Something is missing, broken or needs repair")
-         or (data.report_issue_default and data.report_issue_default is not iterable and data.report_issue_default == "Drinking fountain") 
-         or (data.report_water_feature and data.report_water_feature is not iterable and data.report_water_feature == "Drinking fountain") %}
-        {% set tags = "prms " %}
-      {% endif %}
-
+    '#template': |-
       {% if (data.report_is_park and data.report_is_park is not iterable and data.report_is_park == "Community garden")
-         or (data.report_issue_default and data.report_issue_default is not iterable and data.report_issue_default == "There is trash or it needs to be cleaned")
-         or (data.report_restroom and data.report_restroom is not iterable and data.report_restroom == "Toilet paper, soap, or other items")
-         or (data.report_landscaping and data.report_landscaping is not iterable and data.report_landscaping == "Bushes, flower beds, or natural areas")
-         or (data.report_landscaping and data.report_landscaping is not iterable and data.report_landscaping == "Grass or turf, including irrigation")
-         or (data.report_what_needs_attention and data.report_what_needs_attention is not iterable and data.report_what_needs_attention == "Unpaved Trail or soft-surface path") 
-         or (data.report_water_feature and data.report_water_feature is not iterable and data.report_water_feature == "Splash pad or spray park") 
-         or (data.report_paved_area and data.report_paved_area is not iterable and data.report_paved_area == "Paved trail or path") %}
-        {% set tags = "land_steward " %}
+      	or (data.report_what_needs_attention and data.report_what_needs_attention is not iterable and data.report_what_needs_attention == "Unpaved trail or soft-surface path") %}
+      	land_steward
+      {% elseif (data.report_restroom and data.report_restroom is not iterable and data.report_restroom == "Toilet paper, soap, or other items")
+      		   or (data.report_paved_area and data.report_paved_area is not iterable and data.report_paved_area == "Paved trail or path")
+      		   or (data.report_landscaping and data.report_landscaping is not iterable and data.report_landscaping == "Grass or turf, including irrigation")
+      		   or (data.report_landscaping and data.report_landscaping is not iterable and data.report_landscaping == "Bushes, flower beds, or natural areas")
+      		   or (data.report_water_feature and data.report_water_feature is not iterable and data.report_water_feature == "Splash pad or spray park") %}
+      	land_steward
+      {% elseif (data.report_basic_amenity and data.report_basic_amenity is not iterable and data.report_basic_amenity == "Drinking fountain")
+      		   or (data.report_water_feature and data.report_water_feature is not iterable and data.report_water_feature == "Drinking fountain") %}
+      	prms
+      {% elseif (data.report_water_feature and data.report_water_feature is not iterable and data.report_water_feature == "Swimming pool")
+      		or (data.report_water_feature and data.report_water_feature is not iterable and data.report_water_feature == "Interactive fountain") %}
+      	recreation_aquatics
+      {% elseif (data.report_issue_default and data.report_issue_default is not iterable and data.report_issue_default == "There is trash or it needs to be cleaned") %}
+      	land_steward
+      {% elseif (data.report_issue_default and data.report_issue_default is not iterable and data.report_issue_default == "Something is missing, broken or needs repair") %}
+      	prms
       {% endif %}
-
-      {% if (data.report_water_feature and data.report_water_feature is not iterable and data.report_water_feature == "Swimming pool")
-         or (data.report_water_feature and data.report_water_feature is not iterable and data.report_water_feature == "Interactive fountain") %}
-        {% set tags = "recreation_aquatics " %}
-      {% endif %}
-
-      {{ tags }}
-
     '#whitespace': trim
     '#ajax': true
 css: ''
@@ -685,8 +687,8 @@ settings:
   draft_pending_multiple_message: ''
   confirmation_type: page
   confirmation_url: ''
-  confirmation_title: 'Thank you for submitting your report!'
-  confirmation_message: "<h1>Thank you</h1>\r\n\r\n<p>Your report (#[webform_submission:values:report_ticket_id]) has been received.</p>\r\n\r\n<h2>What happens next?</h2>\r\n\r\n<p>Your report has been sent to a Parks Maintenance staff person for review. Reported issues will be addressed based on the risk to public health and safety, maintenance schedules, available resources, and planned capital improvements. Portland Parks &amp; Recreation will act on dangerous or unsafe conditions immediately. Some reports may be resolved through regular maintenance routines – for example, trash cans and restroom supplies are checked daily. Reports that require larger, more in-depth repairs and improvements may require a capital improvement project.<br />\r\n&nbsp;<br />\r\nIf you have additional questions, please contact us at <a href=\"tel:311\">3-1-1</a>, <a href=\"tel:503-823-4000\">503-823-4000</a>, or <a href=\"mailto:311@portlandoregon.gov\">311@portlandoregon.gov</a>.</p>"
+  confirmation_title: 'Thank you'
+  confirmation_message: "<p>Your report (#[webform_submission:values:report_ticket_id]) has been received.</p>\r\n\r\n<h2>What happens next?</h2>\r\n\r\n<p>Your report has been sent to a Parks Maintenance staff person for review. Reported issues will be addressed based on the risk to public health and safety, maintenance schedules, available resources, and planned capital improvements. Portland Parks &amp; Recreation will act on dangerous or unsafe conditions immediately. Some reports may be resolved through regular maintenance routines – for example, trash cans and restroom supplies are checked daily. Reports that require larger, more in-depth repairs and improvements may require a capital improvement project.<br />\r\n&nbsp;<br />\r\nIf you have additional questions, please contact us at <a href=\"tel:311\">3-1-1</a>, <a href=\"tel:503-823-4000\">503-823-4000</a>, or <a href=\"mailto:311@portlandoregon.gov\">311@portlandoregon.gov</a>.</p>"
   confirmation_attributes: {  }
   confirmation_back: true
   confirmation_back_label: 'Submit another report'
@@ -829,36 +831,6 @@ handlers:
       custom_fields: "6353388345367: 'report_park_issue'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:computed_place_name]', 'computed_place_name']\r\n1500013095781: '[webform_submission:uuid]'\r\n9205221816983: ['[webform_submission:values:report_location:location_type:raw]', 'report_location:location_type']\r\n13178808571927: ['[webform_submission:computed_priority]', 'computed_priority']\r\n5873224754071: ['[webform_submission:values:report_location:location_details]', 'report_location:location_details']\r\n18197040973335: ['[webform_submission:values:support_agent_use_only:escalate_issue]', 'support_agent_use_only:escalate_issue']"
       ticket_id_field: report_ticket_id
       ticket_form_id: '15142080018711'
-      recipient: ''
-      ticket_fork_field: ''
-  route_to_park_rangers_zendesk:
-    id: zendesk
-    handler_id: route_to_park_rangers_zendesk
-    label: 'Route to Ranger Dispatch (Zendesk)'
-    notes: 'Creates ticket in Ranger Dispatch group. Enabled if A) "Interactions, improper use, and safety concerns" is selected in the default issues list, and B) Test Submission is NOT checked.'
-    status: true
-    conditions:
-      enabled:
-        ':input[name="report_issue_default[radios]"]':
-          value: 'Interactions, improper use, and safety concerns'
-        ':input[name="support_agent_use_only[test_submission]"]':
-          unchecked: true
-    weight: -49
-    settings:
-      requester_name: contact_name
-      requester_email: contact_email
-      subject: '[webform_submission:values:computed_subject]'
-      comment: '[webform_submission:values:html]'
-      tags: 'drupal webform parks maintenance [webform_submission:values:computed_tags]'
-      priority: normal
-      status: new
-      group_id: '12927681093399'
-      assignee_id: ''
-      type: incident
-      collaborators: ''
-      custom_fields: "6353388345367: 'report_park_issue'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:computed_place_name]', 'computed_place_name']\r\n1500013095781: '[webform_submission:uuid]'\r\n9205221816983: ['[webform_submission:values:report_location:location_type:raw]', 'report_location:location_type']\r\n13178808571927: ['[webform_submission:computed_priority]', 'computed_priority']\r\n5873224754071: ['[webform_submission:values:report_location:location_details]', 'report_location:location_details']\r\n18197040973335: ['[webform_submission:values:support_agent_use_only:escalate_issue]', 'support_agent_use_only:escalate_issue']"
-      ticket_id_field: report_ticket_id
-      ticket_form_id: '13176953771287'
       recipient: ''
       ticket_fork_field: ''
   route_to_parks_maintenance_zendesk:
