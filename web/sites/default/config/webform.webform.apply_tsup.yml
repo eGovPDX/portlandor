@@ -471,7 +471,7 @@ elements: |-
     '#states':
       visible:
         ':input[name="permit_type"]':
-          value: simple
+          value: parking_only
     '#admin_title': 'Simple Permit'
     markup_simple_permit_introduction:
       '#type': processed_text
@@ -646,7 +646,7 @@ elements: |-
       visible:
         ':input[name="permit_type"]':
           value:
-            pattern: complex
+            pattern: traffic_control
     '#admin_title': 'Complex Permit'
     markup_complex_permit_introduction:
       '#type': processed_text
@@ -966,16 +966,16 @@ elements: |-
     '#template': |-
       {% set permit_type = "unknown" %}
       {% if data.wizard_permit_need == "parking" %}
-        {% set permit_type = "simple" %}
+        {% set permit_type = "parking_only" %}
 
         {% if data.permit_location_metered == "false" and data.permit_street_28ft_wide == "Yes" and data.permit_restricted_parking_zone == "No" %}
           {% set permit_type = "7day" %}
         {% endif %}
       {% elseif data.wizard_permit_need == "traffic" %}
         {% if data.permit_date_span >= 28 %}
-          {% set permit_type = "lt_complex" %}
+          {% set permit_type = "lt_traffic_control" %}
         {% else %}
-          {% set permit_type = "complex" %}
+          {% set permit_type = "traffic_control" %}
         {% endif %}
       {% elseif data.wizard_permit_need == "existing_permit" %}
         {% set permit_type = "existing_permit" %}
@@ -996,10 +996,10 @@ elements: |-
     '#mode': text
     '#template': |-
       {% set name_map = {
-        'simple': 'Simple',
+        'parking_only': 'Parking Only',
         '7day': '7-Day',
-        'lt_complex': 'LT Complex',
-        'complex': 'Complex',
+        'lt_traffic_control': 'Long Term Traffic Control',
+        'traffic_control': 'Traffic Control',
         'change_request': 'Change Request',
         'renewal_request': 'Renewal Request',
       } %}
@@ -1045,9 +1045,9 @@ elements: |-
     '#display_on': none
     '#mode': text
     '#template': |-
-      {% if data.permit_type == 'simple' %}
+      {% if data.permit_type == 'parking_only' %}
       {% set permit_number = data.simple_permit_bds_associated is iterable ? '' : data.simple_permit_bds_associated %}
-      {% elseif data.permit_type == 'complex' or data.permit_type == 'lt_complex' %}
+      {% elseif data.permit_type == 'traffic_control' or data.permit_type == 'lt_traffic_control' %}
       {% set permit_number = data.complex_permit_bds_associated is iterable ? '' : data.complex_permit_bds_associated %}
       {% endif %}
       {{ permit_number == 'No' ? '' : permit_number }}
@@ -1059,7 +1059,7 @@ elements: |-
     '#display_on': none
     '#mode': text
     '#template': |-
-      {% if data.permit_type == "simple" %}
+      {% if data.permit_type == "parking_only" %}
         <h2>Your application</h2>
         <p><strong>You Requested:</strong> {{ webform_token('[webform_submission:values:wizard_permit_need]', webform_submission) }}</p>
         <h3>Location</h3>
@@ -1142,7 +1142,7 @@ elements: |-
           <li>You understand that this permit is only for moving, utility work, property maintenance, construction, and event loading/unloading.</li>
           <li>You understand that obtaining this permit does not automatically reserve a specific parking space, nor guarantee availability of a space to reserve.</li>
         </ul>
-      {% elseif data.permit_type == "complex" or data.permit_type == "lt_complex" %}
+      {% elseif data.permit_type == "traffic_control" or data.permit_type == "lt_traffic_control" %}
         <h2>Your application</h2>
         <p><strong>You Requested:</strong> {{ webform_token('[webform_submission:values:wizard_permit_need]', webform_submission) }}</p>
         <h3>Location</h3>
@@ -1267,7 +1267,7 @@ elements: |-
     '#display_on': none
     '#mode': html
     '#template': |-
-      {% if data.permit_type == "simple" %}
+      {% if data.permit_type == "parking_only" %}
         <p><strong>Your Application Number: </strong>{{ data.report_ticket_id }}</p>
         <p>Thank you for submitting a Temporary Street Use Permit application. We will contact you shortly with the price and next steps.</p>
         <p>If you have not heard back from us about this submission within 5 business days, please first check your SPAM folder, and then contact us at <a href="mailto:CPAC@portlandoregon.gov">CPAC@portlandoregon.gov</a> or <a href="tel:+1-503-823-7365">503-823-7365</a>.</p>
@@ -1276,7 +1276,7 @@ elements: |-
         <p><strong>Your Application Number: </strong>{{ data.report_ticket_id }}</p>
         <p>Thank you for submitting a Temporary Street Use Permit application. You will receive an email with your Item # and a link to the online invoice. Once the invoice has been paid, you will be able to access the PERMIT ID CARD and NO PARKING SIGNS.</p>
         <p>If you have any questions, please contact us at <a href="mailto:CPAC@portlandoregon.gov">CPAC@portlandoregon.gov</a> or <a href="tel:+1-503-823-7365">503-823-7365</a>.</p>
-      {% elseif data.permit_type == "complex" or data.permit_type == "lt_complex" %}
+      {% elseif data.permit_type == "traffic_control" or data.permit_type == "lt_traffic_control" %}
         <p><strong>Your Application Number: </strong>{{ data.report_ticket_id }}</p>
         <p>Thank you for submitting a Temporary Street Use Permit application. We will contact you shortly with a price and payment date. If the application is incomplete, you will be contacted for additional information.</p>
         <p>If you are impacting a Sidewalk or Lane and your work is along a TriMet transit route, you are required to notify them at least five business days in advance of your work. Email TriMet at <a href="mailto:foc@trimet.org">foc@trimet.org</a> or call them at <a href="tel:+1-503-962-4949">503-962-4949</a>.</p>
@@ -1300,7 +1300,7 @@ elements: |-
     '#title': 'Assessment Prefilled (skips first page)'
     '#prepopulate': true
 css: ''
-javascript: "(function($, Drupal) {\r\n    Drupal.behaviors.tsupDateCalculator = {\r\n        attach() {\r\n            const isDateSame = (a, b) =>\r\n                a.getFullYear() === b.getFullYear() &&\r\n                a.getMonth() === b.getMonth() &&\r\n                a.getDate() === b.getDate();\r\n\t\t\tconst dayNameToNum = {\r\n\t\t\t\t\"sunday\": 0,\r\n\t\t\t\t\"monday\": 1,\r\n\t\t\t\t\"tuesday\": 2,\r\n\t\t\t\t\"wednesday\": 3,\r\n\t\t\t\t\"thursday\": 4,\r\n\t\t\t\t\"friday\": 5,\r\n\t\t\t\t\"saturday\": 6,\r\n\t\t\t};\r\n\r\n\t\t\tfunction setDateSpan(amtDays) {\r\n\t\t\t\t$(\"input[name='permit_date_span']\").val(amtDays);\r\n\t\t\t\t$(\"input[name='permit_date_span']\").trigger(\"change\");\r\n\t\t\t};\r\n\r\n\t\t\tfunction getEarliestStartDate() {\r\n\t\t\t\tconst permitType = $(\"input[name='permit_type']\").val();\r\n\t\t\t\tconst isMetered = $(\"input[name='permit_location_metered']\").val() === \"true\";\r\n\t\t\t  \r\n\t\t\t\tconst startDateOffsetDays = permitType.includes(\"complex\")\r\n\t\t\t\t\t? 12\r\n\t\t\t\t\t: (isMetered ? 3 : 4);\r\n\t\t\t\tconst earliestStartDate = new Date();\r\n\t\t\t\tearliestStartDate.setDate(earliestStartDate.getDate() + startDateOffsetDays);\r\n\t\t\t\tearliestStartDate.setHours(0);\r\n\t\t\t\tearliestStartDate.setMinutes(0);\r\n\t\t\t\tearliestStartDate.setSeconds(0);\r\n\t\t\t\tearliestStartDate.setMilliseconds(0);\r\n\t\t\t\t\r\n\t\t\t\treturn earliestStartDate;\r\n\t\t\t}\r\n          \r\n            function calculateDateSpan() {\r\n\t\t\t\tconst isMetered = $(\"input[name='permit_location_metered']\").val() === \"true\";\r\n\t\t\t\t\r\n\t\t\t\tconst daysOfWeek = $(\"input[name*='permit_date_days_of_week']\")\r\n\t\t\t\t.filter(\":checked\")\r\n\t\t\t\t.map((_, el) => dayNameToNum[el.value])\r\n\t\t\t\t.get() || [];\r\n\t\t\t\tconst startValue = $(\"input[name='permit_date_start']\").val();\r\n\t\t\t\tconst endValue = $(\"input[name='permit_date_end']\").val()\r\n\t\t\t\tif (!startValue || !endValue) return;\r\n\t\t\t\t\r\n\t\t\t\tconst startDate = new Date(startValue + \"T00:00\");\r\n\t\t\t\tconst endDate = new Date(endValue + \"T00:00\");\r\n\t\t\t\tif (startDate.getTime() > endDate.getTime()) {\r\n\t\t\t\t\t$(\".date-error\").text(\"Your start date cannot be later than your end date.\");\r\n\t\t\t\t\tsetDateSpan(0);\r\n\t\t\t\t\treturn;\r\n\t\t\t\t} else if (startDate.getTime() < getEarliestStartDate().getTime()) {\r\n\t\t\t\t\t$(\".date-error\").text(\"Your start date is too early.\");\r\n\t\t\t\t\tsetDateSpan(0);\r\n\t\t\t\t\treturn;\r\n\t\t\t\t}\r\n\t\t\t\r\n\t\t\t\tlet amtDays = 0;\r\n\t\t\t\tif (daysOfWeek.includes(startDate.getDay())) amtDays++;\r\n\t\t\t\r\n\t\t\t\tconst curDate = new Date(startValue + \"T00:00\");\r\n\t\t\t\twhile (!isDateSame(curDate, endDate)) {\r\n\t\t\t\t\tcurDate.setDate(curDate.getDate() + 1);\r\n\t\t\t\r\n\t\t\t\t\tif (daysOfWeek.includes(curDate.getDay())) amtDays++;\r\n\t\t\t\t}\r\n\t\t\t\t\r\n\t\t\t\tsetDateSpan(amtDays);\r\n              \r\n                if (amtDays === 0) {\r\n                    $(\".date-calculator\").html(\"\");\r\n                    $(\".date-error\").text(\"The time period you selected does not contain any of the days of the week you selected.\");\r\n                    return;\r\n                } else {\r\n                    $(\".date-error\").text(\"\")\r\n                }\r\n              \r\n\t\t\t\tif (isMetered) {\r\n\t\t\t\t\t$(\".date-calculator\").html(`You've requested <strong>${amtDays === 1 ? \"1 day\" : `${amtDays} days`}</strong> of closure.`);\r\n\t\t\t\t} else {\r\n\t\t\t\t\tconst amtWeeks = Math.ceil(amtDays / 7);\r\n\t\t\t\t\t$(\".date-calculator\").html(`You've requested <strong>${amtWeeks === 1 ? \"1 week\" : `${amtWeeks} weeks`}</strong> of closure.`);\r\n\t\t\t\t}\r\n\t\t\t}\r\n\t\t\t\r\n\t\t\t$(document).ajaxComplete(function() {\r\n\t\t\t\t$(\"input[name='permit_date_start'], input[name='permit_date_end'], input[name*='permit_date_days_of_week']\").change(calculateDateSpan);\r\n\t\t\t\tcalculateDateSpan();\r\n\r\n\t\t\t\tconst earliestStartDate = getEarliestStartDate();\r\n\t\t\t\t$(\".earliest-start-date\").text(earliestStartDate.toLocaleDateString());\r\n                \r\n                // the input \"min\" attribute needs to be in yyyy-mm-dd format, this gives us the ISO string in that format, in the user's current timezone\r\n                const earliestStartDateMinValue = new Date(earliestStartDate.getTime() - earliestStartDate.getTimezoneOffset() * 60000).toISOString().split(\"T\")[0];\r\n                $(\"input[name='permit_date_start'], input[name='permit_date_end']\").attr(\"min\", earliestStartDateMinValue);\r\n\t\t\t});\r\n\t\t}\r\n    };\r\n})(jQuery, Drupal);\r\n"
+javascript: "(function($, Drupal) {\r\n    Drupal.behaviors.tsupDateCalculator = {\r\n        attach() {\r\n            const isDateSame = (a, b) =>\r\n                a.getFullYear() === b.getFullYear() &&\r\n                a.getMonth() === b.getMonth() &&\r\n                a.getDate() === b.getDate();\r\n\t\t\tconst dayNameToNum = {\r\n\t\t\t\t\"sunday\": 0,\r\n\t\t\t\t\"monday\": 1,\r\n\t\t\t\t\"tuesday\": 2,\r\n\t\t\t\t\"wednesday\": 3,\r\n\t\t\t\t\"thursday\": 4,\r\n\t\t\t\t\"friday\": 5,\r\n\t\t\t\t\"saturday\": 6,\r\n\t\t\t};\r\n\r\n\t\t\tfunction setDateSpan(amtDays) {\r\n\t\t\t\t$(\"input[name='permit_date_span']\").val(amtDays);\r\n\t\t\t\t$(\"input[name='permit_date_span']\").trigger(\"change\");\r\n\t\t\t};\r\n\r\n\t\t\tfunction getEarliestStartDate() {\r\n\t\t\t\tconst permitType = $(\"input[name='permit_type']\").val();\r\n\t\t\t\tconst isMetered = $(\"input[name='permit_location_metered']\").val() === \"true\";\r\n\t\t\t  \r\n\t\t\t\tconst startDateOffsetDays = permitType.includes(\"traffic_control\")\r\n\t\t\t\t\t? 12\r\n\t\t\t\t\t: (isMetered ? 3 : 4);\r\n\t\t\t\tconst earliestStartDate = new Date();\r\n\t\t\t\tearliestStartDate.setDate(earliestStartDate.getDate() + startDateOffsetDays);\r\n\t\t\t\tearliestStartDate.setHours(0);\r\n\t\t\t\tearliestStartDate.setMinutes(0);\r\n\t\t\t\tearliestStartDate.setSeconds(0);\r\n\t\t\t\tearliestStartDate.setMilliseconds(0);\r\n\t\t\t\t\r\n\t\t\t\treturn earliestStartDate;\r\n\t\t\t}\r\n          \r\n            function calculateDateSpan() {\r\n\t\t\t\tconst isMetered = $(\"input[name='permit_location_metered']\").val() === \"true\";\r\n\t\t\t\t\r\n\t\t\t\tconst daysOfWeek = $(\"input[name*='permit_date_days_of_week']\")\r\n\t\t\t\t.filter(\":checked\")\r\n\t\t\t\t.map((_, el) => dayNameToNum[el.value])\r\n\t\t\t\t.get() || [];\r\n\t\t\t\tconst startValue = $(\"input[name='permit_date_start']\").val();\r\n\t\t\t\tconst endValue = $(\"input[name='permit_date_end']\").val()\r\n\t\t\t\tif (!startValue || !endValue) return;\r\n\t\t\t\t\r\n\t\t\t\tconst startDate = new Date(startValue + \"T00:00\");\r\n\t\t\t\tconst endDate = new Date(endValue + \"T00:00\");\r\n\t\t\t\tif (startDate.getTime() > endDate.getTime()) {\r\n\t\t\t\t\t$(\".date-error\").text(\"Your start date cannot be later than your end date.\");\r\n\t\t\t\t\tsetDateSpan(0);\r\n\t\t\t\t\treturn;\r\n\t\t\t\t} else if (startDate.getTime() < getEarliestStartDate().getTime()) {\r\n\t\t\t\t\t$(\".date-error\").text(\"Your start date is too early.\");\r\n\t\t\t\t\tsetDateSpan(0);\r\n\t\t\t\t\treturn;\r\n\t\t\t\t}\r\n\t\t\t\r\n\t\t\t\tlet amtDays = 0;\r\n\t\t\t\tif (daysOfWeek.includes(startDate.getDay())) amtDays++;\r\n\t\t\t\r\n\t\t\t\tconst curDate = new Date(startValue + \"T00:00\");\r\n\t\t\t\twhile (!isDateSame(curDate, endDate)) {\r\n\t\t\t\t\tcurDate.setDate(curDate.getDate() + 1);\r\n\t\t\t\r\n\t\t\t\t\tif (daysOfWeek.includes(curDate.getDay())) amtDays++;\r\n\t\t\t\t}\r\n\t\t\t\t\r\n\t\t\t\tsetDateSpan(amtDays);\r\n              \r\n                if (amtDays === 0) {\r\n                    $(\".date-calculator\").html(\"\");\r\n                    $(\".date-error\").text(\"The time period you selected does not contain any of the days of the week you selected.\");\r\n                    return;\r\n                } else {\r\n                    $(\".date-error\").text(\"\")\r\n                }\r\n              \r\n\t\t\t\tif (isMetered) {\r\n\t\t\t\t\t$(\".date-calculator\").html(`You've requested <strong>${amtDays === 1 ? \"1 day\" : `${amtDays} days`}</strong> of closure.`);\r\n\t\t\t\t} else {\r\n\t\t\t\t\tconst amtWeeks = Math.ceil(amtDays / 7);\r\n\t\t\t\t\t$(\".date-calculator\").html(`You've requested <strong>${amtWeeks === 1 ? \"1 week\" : `${amtWeeks} weeks`}</strong> of closure.`);\r\n\t\t\t\t}\r\n\t\t\t}\r\n\t\t\t\r\n\t\t\t$(document).ajaxComplete(function() {\r\n\t\t\t\t$(\"input[name='permit_date_start'], input[name='permit_date_end'], input[name*='permit_date_days_of_week']\").change(calculateDateSpan);\r\n\t\t\t\tcalculateDateSpan();\r\n\r\n\t\t\t\tconst earliestStartDate = getEarliestStartDate();\r\n\t\t\t\t$(\".earliest-start-date\").text(earliestStartDate.toLocaleDateString());\r\n                \r\n                // the input \"min\" attribute needs to be in yyyy-mm-dd format, this gives us the ISO string in that format, in the user's current timezone\r\n                const earliestStartDateMinValue = new Date(earliestStartDate.getTime() - earliestStartDate.getTimezoneOffset() * 60000).toISOString().split(\"T\")[0];\r\n                $(\"input[name='permit_date_start'], input[name='permit_date_end']\").attr(\"min\", earliestStartDateMinValue);\r\n\t\t\t});\r\n\t\t}\r\n    };\r\n})(jQuery, Drupal);\r\n"
 settings:
   ajax: true
   ajax_scroll_top: form
