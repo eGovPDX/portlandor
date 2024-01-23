@@ -25,7 +25,7 @@ uid: 60
 template: false
 archive: false
 id: report_parks_issue
-title: 'Report an Issue in a Park or Community Center'
+title: 'Report a Park Safety Issue'
 description: ''
 categories: {  }
 elements: |-
@@ -779,106 +779,123 @@ elements: |-
   computed_issue_description:
     '#type': webform_computed_twig
     '#title': 'Computed Issue Description'
+    '#title_display': none
     '#display_on': none
     '#mode': html
-    '#template': |+
-      <p><strong>Is this an urgent, life threatening issue?</strong> {{ data.report_urgent }}</p>
+    '#template': |
+      {% if data.report_urgent == "Yes" %}
+        <strong>THIS IS AN URGENT LIFE-THREATENING ISSUE</strong><br><br>
+        
+        {% if data.report_staff_issue_type %}
+          <strong>Type of fire or medical issue</strong> {{ data.report_staff_issue_type is iterable ? '' : webform_token('[webform_submission:values:report_staff_issue_type]', webform_submission) }}<br><br>
+        {% endif %}
 
-      {%- if data.report_staff_issue_type %}
-      <p><strong>Type of fire or medical issue</strong> {{ data.report_staff_issue_type is iterable ? '' : webform_token('[webform_submission:values:report_staff_issue_type]', webform_submission) }}</p>
-      {% endif -%}
+        {% if data.urgent_location_details %}
+          <strong>Location details</strong> {{ data.urgent_location_details }}<br><br>
+        {% endif %}
 
-      {%- if data.urgent_location_details %}
-      <p><strong>Location details</strong> {{ data.urgent_location_details }}</p>
-      {% endif -%}
+        {% if data.report_staff_incident_details %}
+          <strong>Incident details</strong> {{ data.report_staff_incident_details }}<br>
+        {% endif %}
 
-      {%- if data.report_staff_incident_details %}
-      <p><strong>Incident details</strong> {{ data.report_staff_incident_details }}</p>
-      {% endif -%}
+        {% if data.urgent_contact_name or data.urgent_contact_telephone %}
+          <br><strong>Contact information:</strong><br>
+          {% if data.urgent_contact_name %}
+      	  {{ data.urgent_contact_name }}<br>
+          {% endif %}
+          {% if data.urgent_contact_telephone %}
+      	  {{ data.urgent_contact_telephone }}<br>
+      	  {% if data.urgent_contact_telephone_instructions %}<i>{{ data.urgent_contact_telephone_instructions }}</i><br>{% endif %}
+      	  {% if data.urgent_callback_requested %}CALLBACK REQUESTED<br>{% endif %}
+          {% endif %}
+        
+        {% endif %}
 
-      {%- if data.urgent_contact_name %}
-      <p><strong>Contact name</strong> {{ data.urgent_contact_name }}</p>
-      {% endif -%}
+      {% else %}
 
-      {%- if data.urgent_contact_telephone %}
-      <p><strong>Contact telephone</strong> {{ data.urgent_contact_telephone }}</p>
-      {% endif -%}
+        <strong>Location:</strong><br>
 
-      {%- if data.urgent_contact_telephone_instructions %}
-      <p><strong>Telephone instructions</strong> {{ data.urgent_contact_telephone_instructions }}</p>
-      {% endif -%}
+        {% if data.report_is_park %}
+          {{ data.report_is_park is iterable ? '' : webform_token('[webform_submission:values:report_is_park]', webform_submission) }} --
+        {% endif %}
 
-      {%- if data.urgent_callback_requested %}
-      <p><strong>Callback requested?</strong> {{ data.urgent_callback_requested }}</p>
-      {% endif -%}
+        {# Location name #}
+        {% if data.report_community_center %}
+      	{{ data.report_community_center }}<br>
+        {% elseif data.report_location.place_name %}
+      	{{ data.report_location.place_name }}<br>
+        {% elseif data.report_location.location_address %}
+      	{{ data.report_location.location_address }}<br>
+        {% endif %}
 
-      {%- if data.report_is_park %}
-      <p><strong>Park or community center?</strong> {{ data.report_is_park }}</p>
-      {% endif -%}
+        {% if data.report_location.location_details %}
+          {{ data.report_location.location_details }}<br>
+        {% endif %}
 
-      {%- if data.report_community_center %}
-      <p><strong>Callback requested?</strong> {{ data.report_community_center }}</p>
-      {% endif -%}
+        {# Location link #}
+        {% if data.report_location.location_lat and data.report_location.location_lon %}
+          Lat/Lon: <a href="https://www.google.com/maps/place/{{ data.report_location.location_lat }},{{ data.report_location.location_lon }}">{{ data.report_location.location_lat }},{{ data.report_location.location_lon }}</a><br>
+        {% endif %}
+        
+        <br>
+        
+        {% if data.report_issue_type %}
+          <strong>What type of issue are you reporting?</strong> {{ data.report_issue_type is iterable ? '' : webform_token('[webform_submission:values:report_issue_type]', webform_submission) }}<br>
+        {% endif %}
 
-      {%- if data.report_issue_type %}
-      <p><strong>What type of issue are you reporting?</strong> {{ data.report_issue_type is iterable ? '' : webform_token('[webform_submission:values:report_issue_type]', webform_submission) }}</p>
-      {% endif -%}
+        {% if data.report_lost_found_property_description %}
+          <strong>Please describe the lost/found property</strong> {{ data.report_lost_found_property_description }}<br>
+        {% endif %}
 
-      {%- if data.report_community_center_location_details %}
-      <p><strong>Location details</strong> {{ data.report_community_center_location_details }}</p>
-      {% endif -%}
+        {% if data.report_staff_building_or_gate %}
+          <strong>Which building or gate?</strong> {{ data.report_staff_building_or_gate }}<br>
+        {% endif %}
 
-      {%- if data.report_lost_found_property_description %}
-      <p><strong>Please describe the lost/found property</strong> {{ data.report_lost_found_property_description }}</p>
-      {% endif -%}
+        {% if data.report_staff_issue_type_illegal %}
+          <strong>Type of illegal activity:</strong> {{ data.report_staff_issue_type_illegal is iterable ? '' : webform_token('[webform_submission:values:report_staff_issue_type_illegal]', webform_submission) }}<br>
+        {% endif %}
 
-      {%- if data.report_staff_building_or_gate %}
-      <p><strong>Which building or gate?</strong> {{ data.report_staff_building_or_gate }}</p>
-      {% endif -%}
+        {% if data.report_hate_speech_or_gang %}
+          <strong>Is the graffiti hate speech or gang related?</strong> {{ data.report_hate_speech_or_gang }}<br>
+        {% endif %}
 
-      {%- if data.report_staff_issue_type_illegal %}
-      <p><strong>Type of illegal activity:</strong> {{ data.report_staff_issue_type_illegal is iterable ? '' : webform_token('[webform_submission:values:report_staff_issue_type_illegal]', webform_submission) }}</p>
-      {% endif -%}
+        {% if data.report_staff_issue_type_alarm %}
+          <strong>Type of alarm:</strong> {{ data.report_staff_issue_type_alarm }}<br>
+        {% endif %}
 
-      {%- if data.report_hate_speech_or_gang %}
-      <p><strong>Is the graffiti hate speech or gang related?</strong> {{ data.report_hate_speech_or_gang }}</p>
-      {% endif -%}
+        {% if data.computed_animal_issue %}
+          <strong>Type of dog or animal issue:</strong> {{ data.computed_animal_issue }}<br>
+        {% endif %}
 
-      {%- if data.report_staff_issue_type_alarm %}
-      <p><strong>Type of alarm:</strong> {{ data.report_staff_issue_type_alarm }}</p>
-      {% endif -%}
+        {% if data.computed_policy_violation %}
+          <strong>Type of policy violation or issue:</strong> {{ data.computed_policy_violation }}<br>
+        {% endif %}
 
-      {%- if data.computed_animal_issue %}
-      <p><strong>Type of dog or animal issue:</strong> {{ data.computed_animal_issue }}</p>
-      {% endif -%}
+        {% if data.report_issue_type_parking_traffic %}
+          <strong>Type of parking or traffic issue:</strong> {{ data.report_issue_type_parking_traffic is iterable ? '' : webform_token('[webform_submission:values:report_issue_type_parking_traffic]', webform_submission) }}<br>
+        {% endif %}
 
-      {%- if data.computed_policy_violation %}
-      <p><strong>Type of policy violation or issue:</strong> {{ data.computed_policy_violation }}</p>
-      {% endif -%}
+        {% if data.report_comments %}
+          <strong>Additional comments:</strong> {{ data.report_comments }}<br>
+        {% endif %}
+        
+        {% if data.contact_name or data.contact_email or data.contact_telephone %}
+          <br><strong>Contact information:</strong><br>
+          {% if data.contact_name %}
+      	  {{ data.contact_name }}<br>
+          {% endif %}
+          {% if data.contact_email %}
+      	  <a href="mailto:{{ data.contact_email }}">{{ data.contact_email }}</a><br>
+          {% endif %}
+          {% if data.contact_telephone %}
+      	  {{ data.contact_telephone }}<br>
+      	  {% if data.contact_telephone_instructions %}<i>{{ data.contact_telephone_instructions }}</i><br>{% endif %}
+      	  {% if data.contact_callback_requested %}CALLBACK REQUESTED<br>{% endif %}
+          {% endif %}
+        
+        {% endif %}
 
-      {%- if data.report_issue_type_parking_traffic %}
-      <p><strong>Type of parking or traffic issue:</strong> {{ data.report_issue_type_parking_traffic is iterable ? '' : webform_token('[webform_submission:values:report_issue_type_parking_traffic]', webform_submission) }}</p>
-      {% endif -%}
-
-      <p><strong>Location:</strong><br>
-      Place name: {{ data.computed_place_name }}<br>
-      {% if data.report_location.location_details %}Additional details: {{ data.report_location.location_details }}{% endif %}
-      </p>
-
-      {%- if data.report_comments %}
-      <p><strong>Additional comments:</strong> {{ data.report_comments }}</p>
-      {% endif -%}
-
-      {%- if data.contact_name or data.contact_email %}
-      	<p><strong>Contact:</strong> {% if data.contact_name %}{{ data.contact_name }}{% endif %}{% if data.contact_email %}, {{data.contact_email }} {% endif %}
-      {% endif -%}
-
-      {%- if data.contact_telephone %}
-      	<p><strong>Telephone:</strong> {{ data.contact_telephone }}
-      	{% if data.contact_telephone_instructions %}<br><i>{{ data.contact_telephone_instructions }}</i>{% endif %}
-      	{% if data.contact_callback_requested %}<br>CALLBACK REQUESTED{% endif %}
-      {% endif -%}
-
+      {% endif %}
     '#ajax': true
 css: ''
 javascript: ''
@@ -1092,7 +1109,7 @@ handlers:
           value: priority_low
         ':input[name="support_agent_use_only[test_submission]"]':
           unchecked: true
-    weight: 0
+    weight: -50
     settings:
       requester_name: contact_name
       requester_email: contact_email
@@ -1105,7 +1122,7 @@ handlers:
       assignee_id: ''
       type: incident
       collaborators: ''
-      custom_fields: "6353388345367: 'report_park_issue'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:computed_place_name]', 'computed_place_name']\r\n1500013095781: '[webform_submission:uuid]'\r\n9205221816983: ['[webform_submission:values:report_location:location_type:raw]', 'report_location:location_type']\r\n13178808571927: ['[webform_submission:computed_priority]', 'computed_priority']\r\n5873224754071: ['[webform_submission:values:report_location:location_details]', 'report_location:location_details']\r\n18197040973335: ['[webform_submission:values:support_agent_use_only:escalate_issue]', 'support_agent_use_only:escalate_issue']"
+      custom_fields: "6353388345367: 'report_park_safety_issue'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:computed_place_name]', 'computed_place_name']\r\n1500013095781: '[webform_submission:uuid]'\r\n9205221816983: ['[webform_submission:values:report_location:location_type:raw]', 'report_location:location_type']\r\n13178808571927: ['[webform_submission:computed_priority]', 'computed_priority']\r\n5873224754071: ['[webform_submission:values:report_location:location_details]', 'report_location:location_details']\r\n18197040973335: ['[webform_submission:values:support_agent_use_only:escalate_issue]', 'support_agent_use_only:escalate_issue']"
       ticket_id_field: report_ticket_id
       ticket_form_id: '13176953771287'
       recipient: ''
@@ -1122,7 +1139,7 @@ handlers:
           value: priority_normal
         ':input[name="support_agent_use_only[test_submission]"]':
           unchecked: true
-    weight: 1
+    weight: -49
     settings:
       requester_name: contact_name
       requester_email: contact_email
@@ -1135,7 +1152,7 @@ handlers:
       assignee_id: ''
       type: incident
       collaborators: ''
-      custom_fields: "6353388345367: 'report_park_issue'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:computed_place_name]', 'computed_place_name']\r\n1500013095781: '[webform_submission:uuid]'\r\n9205221816983: ['[webform_submission:values:report_location:location_type:raw]', 'report_location:location_type']\r\n13178808571927: ['[webform_submission:computed_priority]', 'computed_priority']\r\n5873224754071: ['[webform_submission:values:report_location:location_details]', 'report_location:location_details']\r\n18197040973335: ['[webform_submission:values:support_agent_use_only:escalate_issue]', 'support_agent_use_only:escalate_issue']"
+      custom_fields: "6353388345367: 'report_park_safety_issue'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:computed_place_name]', 'computed_place_name']\r\n1500013095781: '[webform_submission:uuid]'\r\n9205221816983: ['[webform_submission:values:report_location:location_type:raw]', 'report_location:location_type']\r\n13178808571927: ['[webform_submission:computed_priority]', 'computed_priority']\r\n5873224754071: ['[webform_submission:values:report_location:location_details]', 'report_location:location_details']\r\n18197040973335: ['[webform_submission:values:support_agent_use_only:escalate_issue]', 'support_agent_use_only:escalate_issue']"
       ticket_id_field: report_ticket_id
       ticket_form_id: '13176953771287'
       recipient: ''
@@ -1152,7 +1169,7 @@ handlers:
           value: priority_urgent
         ':input[name="support_agent_use_only[test_submission]"]':
           unchecked: true
-    weight: 2
+    weight: -48
     settings:
       requester_name: contact_name
       requester_email: contact_email
@@ -1165,7 +1182,7 @@ handlers:
       assignee_id: ''
       type: incident
       collaborators: ''
-      custom_fields: "6353388345367: 'report_park_issue'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:computed_place_name]', 'computed_place_name']\r\n1500013095781: '[webform_submission:uuid]'\r\n9205221816983: ['[webform_submission:values:report_location:location_type:raw]', 'report_location:location_type']\r\n13178808571927: ['[webform_submission:computed_priority]', 'computed_priority']\r\n5873224754071: ['[webform_submission:values:report_location:location_details]', 'report_location:location_details']\r\n18197040973335: ['[webform_submission:values:support_agent_use_only:escalate_issue]', 'support_agent_use_only:escalate_issue']"
+      custom_fields: "6353388345367: 'report_park_safety_issue'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:computed_place_name]', 'computed_place_name']\r\n1500013095781: '[webform_submission:uuid]'\r\n9205221816983: ['[webform_submission:values:report_location:location_type:raw]', 'report_location:location_type']\r\n13178808571927: ['[webform_submission:computed_priority]', 'computed_priority']\r\n5873224754071: ['[webform_submission:values:report_location:location_details]', 'report_location:location_details']\r\n18197040973335: ['[webform_submission:values:support_agent_use_only:escalate_issue]', 'support_agent_use_only:escalate_issue']"
       ticket_id_field: report_ticket_id
       ticket_form_id: '13176953771287'
       recipient: ''
@@ -1180,7 +1197,7 @@ handlers:
       enabled:
         ':input[name="support_agent_use_only[zendesk_request_number]"]':
           filled: true
-    weight: 2
+    weight: -46
     settings:
       comment: "<h1>[webform_submission:values:computed_subject]</h1>\r\n<p><b>Linked Issue Request: <a href=\"https://portlandoregon.zendesk.com/agent/tickets/[webform_submission:values:report_ticket_id]\">[webform_submission:values:report_ticket_id]</a></b></p>\r\n\r\n[webform_submission:values:computed_issue_description:html]\r\n"
       comment_private: 1
@@ -1201,7 +1218,7 @@ handlers:
     notes: ''
     status: true
     conditions: {  }
-    weight: 2
+    weight: -47
     settings:
       requester_name: contact_name
       requester_email: contact_email
@@ -1215,7 +1232,7 @@ handlers:
       assignee_id: ''
       type: incident
       collaborators: ''
-      custom_fields: "6353388345367: 'report_park_issue'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:computed_place_name]', 'computed_place_name']\r\n1500013095781: '[webform_submission:uuid]'\r\n9205221816983: ['[webform_submission:values:report_location:location_type:raw]', 'report_location:location_type']\r\n13178808571927: ['[webform_submission:computed_priority]', 'computed_priority']\r\n5873224754071: ['[webform_submission:values:report_location:location_details]', 'report_location:location_details']\r\n18197040973335: ['[webform_submission:values:support_agent_use_only:escalate_issue]', 'support_agent_use_only:escalate_issue']"
+      custom_fields: "6353388345367: 'report_park_safety_issue_test'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:computed_place_name]', 'computed_place_name']\r\n1500013095781: '[webform_submission:uuid]'\r\n9205221816983: ['[webform_submission:values:report_location:location_type:raw]', 'report_location:location_type']\r\n13178808571927: ['[webform_submission:computed_priority]', 'computed_priority']\r\n5873224754071: ['[webform_submission:values:report_location:location_details]', 'report_location:location_details']\r\n18197040973335: ['[webform_submission:values:support_agent_use_only:escalate_issue]', 'support_agent_use_only:escalate_issue']"
       ticket_id_field: report_ticket_id
       ticket_fork_field: ''
       ticket_form_id: '13176953771287'

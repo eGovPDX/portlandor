@@ -130,16 +130,6 @@ elements: |-
           ':input[name="report_is_park"]':
             value: 'Community garden'
       '#required': true
-    community_center_location_details:
-      '#type': textfield
-      '#title': 'Location Details'
-      '#description': '<p>Please describe where the problem is at the community center.</p>'
-      '#description_display': before
-      '#prepopulate': true
-      '#states':
-        visible:
-          ':input[name="report_is_park"]':
-            value: 'Community center'
     report_location:
       '#type': portland_location_picker
       '#title': 'Location of Issue'
@@ -151,9 +141,15 @@ elements: |-
       '#location_map__description': 'Please place the marker as close to the incident or issue as possible. You may click or drag it to any location on the map.'
       '#place_name__title': 'Park Name'
       '#location_details__access': false
+      '#location_details__help': 'Please provide information to help us find this site.'
       '#place_name__description_display': invisible
       '#require_boundary': false
       '#display_boundary': false
+    report_location_notes:
+      '#type': textfield
+      '#title': 'Location Notes'
+      '#description': '<p>Please provide information to help us find the issue.</p>'
+      '#description_display': before
     container_not_garden:
       '#type': container
       '#states':
@@ -468,6 +464,7 @@ elements: |-
   computed_issue_description:
     '#type': webform_computed_twig
     '#title': 'Computed Issue Description'
+    '#title_display': none
     '#display_on': none
     '#mode': html
     '#template': |-
@@ -479,78 +476,94 @@ elements: |-
 
       {# Location name #}
       {% if data.report_community_center %}
-        {{ data.report_community_center }}<br>
-      {% endif %}
-      {% if data.community_garden_name_location %}
-        {{ data.community_garden_name_location }}<br>
-      {% endif %}
-      {% if data.report_location.place_name %}
-        {{ data.report_location.place_name }}<br>
+      	{{ data.report_community_center }}<br>
+      {% elseif data.community_garden_name_location %}
+      	{{ data.community_garden_name_location }}<br>
+      {% elseif data.report_location.place_name %}
+      	{{ data.report_location.place_name }}<br>
+      {% elseif data.report_location.location_address %}
+      	{{ data.report_location.location_address }}<br>
       {% endif %}
 
       {# Location picker data #}
-      {% if data.report_location.location_address %}
-        {{ data.report_location.location_address }}<br>
+      {% if data.report_location.location_lat and data.report_location.location_lon %}
+        Lat/Lon: <a href="https://www.google.com/maps/place/{{ data.report_location.location_lat }},{{ data.report_location.location_lon }}">{{ data.report_location.location_lat }},{{ data.report_location.location_lon }}</a><br>
       {% endif %}
 
-      <br>
+      {% if data.report_location_notes %}
+      Location notes: {{ data.report_location_notes }}<br>
+      {% endif %}
 
-      <strong>What needs attention:</strong><br>
+      {% if data.report_is_park and data.report_is_park is not iterable and data.report_is_park == "Park or natural area" %}
+      <br><strong>What needs attention:</strong><br>
+      {% endif %}
 
       {% if data.report_what_needs_attention %}
         {{ data.report_what_needs_attention is iterable ? '' : webform_token('[webform_submission:values:report_what_needs_attention]', webform_submission) }}<br>
       {% endif %}
 
       {% if data.report_basic_amenity %}
-        {{ data.report_basic_amenity is iterable ? '' : webform_token('[webform_submission:values:report_basic_amenity]', webform_submission) }}<br><br>
+        {{ data.report_basic_amenity is iterable ? '' : webform_token('[webform_submission:values:report_basic_amenity]', webform_submission) }}<br>
       {% endif %}
 
       {% if data.report_restroom %}
-        {{ data.report_restroom is iterable ? '' : webform_token('[webform_submission:values:report_restroom]', webform_submission) }}<br><br>
+        {{ data.report_restroom is iterable ? '' : webform_token('[webform_submission:values:report_restroom]', webform_submission) }}<br>
       {% endif %}
 
       {% if data.report_paved_area %}
-        {{ data.report_paved_area is iterable ? '' : webform_token('[webform_submission:values:report_paved_area]', webform_submission) }}<br><br>
+        {{ data.report_paved_area is iterable ? '' : webform_token('[webform_submission:values:report_paved_area]', webform_submission) }}<br>
       {% endif %}
 
       {% if data.report_structure_feature %}
-        {{ data.report_structure_feature is iterable ? '' : webform_token('[webform_submission:values:report_structure_feature]', webform_submission) }}<br><br>
+        {{ data.report_structure_feature is iterable ? '' : webform_token('[webform_submission:values:report_structure_feature]', webform_submission) }}<br>
       {% endif %}
 
       {% if data.report_recreation_amenity %}
-        {{ data.report_recreation_amenity is iterable ? '' : webform_token('[webform_submission:values:report_recreation_amenity]', webform_submission) }}<br><br>
+        {{ data.report_recreation_amenity is iterable ? '' : webform_token('[webform_submission:values:report_recreation_amenity]', webform_submission) }}<br>
       {% endif %}
 
       {% if data.report_landscaping %}
-        {{ data.report_landscaping is iterable ? '' : webform_token('[webform_submission:values:report_landscaping]', webform_submission) }}<br><br>
+        {{ data.report_landscaping is iterable ? '' : webform_token('[webform_submission:values:report_landscaping]', webform_submission) }}<br>
       {% endif %}
 
       {% if data.report_water_feature %}
-        {{ data.report_water_feature is iterable ? '' : webform_token('[webform_submission:values:report_water_feature]', webform_submission) }}<br><br>
+        {{ data.report_water_feature is iterable ? '' : webform_token('[webform_submission:values:report_water_feature]', webform_submission) }}<br>
       {% endif %}
 
-      <strong>What is the issue?</strong><br>
+      {% if data.report_is_park and data.report_is_park is not iterable and data.report_is_park == "Park or natural area" %}
+      <br><strong>What is the issue?</strong><br>
+      {% endif %}
 
       {% if data.report_issue_default %}
-        {{ data.report_issue_default is iterable ? '' : webform_token('[webform_submission:values:report_issue_default]', webform_submission) }}<br><br>
+        {{ data.report_issue_default is iterable ? '' : webform_token('[webform_submission:values:report_issue_default]', webform_submission) }}<br>
       {% endif %}
 
       {% if data.report_pavement_issue %}
-        {{ data.report_pavement_issue is iterable ? '' : webform_token('[webform_submission:values:report_pavement_issue]', webform_submission) }}<br><br>
+        {{ data.report_pavement_issue is iterable ? '' : webform_token('[webform_submission:values:report_pavement_issue]', webform_submission) }}<br>
       {% endif %}
 
       {% if data.report_grass_issue %}
-        {{ data.report_grass_issue is iterable ? '' : webform_token('[webform_submission:values:report_grass_issue]', webform_submission) }}<br><br>
+        {{ data.report_grass_issue is iterable ? '' : webform_token('[webform_submission:values:report_grass_issue]', webform_submission) }}<br>
       {% endif %}
 
       {% if data.report_plant_issue %}
-        {{ data.report_plant_issue is iterable ? '' : webform_token('[webform_submission:values:report_plant_issue]', webform_submission) }}<br><br>
+        {{ data.report_plant_issue is iterable ? '' : webform_token('[webform_submission:values:report_plant_issue]', webform_submission) }}<br>
       {% endif %}
 
-      <strong>Issue description:</strong><br>
+      <br><strong>Issue description:</strong><br>
 
       {% if data.report_comments %}
-        {{ data.report_comments }}
+        {{ data.report_comments }}<br>
+      {% endif %}
+
+      {% if data.contact_name or data.contact_email %}
+      <br><strong>Contact information:</strong><br>
+      {% if data.contact_name %}
+      	{{ data.contact_name }}<br>
+      {% endif %}
+      {% if data.contact_email %}
+      	<a href="mailto:{{ data.contact_email }}">{{ data.contact_email }}</a>
+      {% endif %}
       {% endif %}
     '#ajax': true
   computed_tags:
@@ -828,7 +841,7 @@ handlers:
       assignee_id: ''
       type: incident
       collaborators: ''
-      custom_fields: "6353388345367: 'report_park_issue'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:computed_place_name]', 'computed_place_name']\r\n1500013095781: '[webform_submission:uuid]'\r\n9205221816983: ['[webform_submission:values:report_location:location_type:raw]', 'report_location:location_type']\r\n13178808571927: ['[webform_submission:computed_priority]', 'computed_priority']\r\n5873224754071: ['[webform_submission:values:report_location:location_details]', 'report_location:location_details']\r\n18197040973335: ['[webform_submission:values:support_agent_use_only:escalate_issue]', 'support_agent_use_only:escalate_issue']"
+      custom_fields: "6353388345367: 'report_park_maintenance_issue_test'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:computed_place_name]', 'computed_place_name']\r\n1500013095781: '[webform_submission:uuid]'\r\n9205221816983: ['[webform_submission:values:report_location:location_type:raw]', 'report_location:location_type']\r\n13178808571927: ['[webform_submission:computed_priority]', 'computed_priority']\r\n5873224754071: ['[webform_submission:values:report_location:location_details]', 'report_location:location_details']\r\n18197040973335: ['[webform_submission:values:support_agent_use_only:escalate_issue]', 'support_agent_use_only:escalate_issue']"
       ticket_id_field: report_ticket_id
       ticket_form_id: '15142080018711'
       recipient: ''
@@ -861,7 +874,7 @@ handlers:
       requester_name: contact_name
       requester_email: contact_email
       subject: '[webform_submission:values:computed_subject]'
-      comment: '[webform_submission:values:html]'
+      comment: '[webform_submission:values:computed_issue_description:html]'
       tags: 'drupal webform parks maintenance [webform_submission:values:computed_tags]'
       priority: normal
       status: new
@@ -869,7 +882,7 @@ handlers:
       assignee_id: ''
       type: incident
       collaborators: ''
-      custom_fields: "6353388345367: 'report_park_issue'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:computed_place_name]', 'computed_place_name']\r\n1500013095781: '[webform_submission:uuid]'\r\n9205221816983: ['[webform_submission:values:report_location:location_type:raw]', 'report_location:location_type']\r\n13178808571927: ['[webform_submission:computed_priority]', 'computed_priority']\r\n5873224754071: ['[webform_submission:values:report_location:location_details]', 'report_location:location_details']\r\n18197040973335: ['[webform_submission:values:support_agent_use_only:escalate_issue]', 'support_agent_use_only:escalate_issue']"
+      custom_fields: "6353388345367: 'report_park_maintenance_issue'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:computed_place_name]', 'computed_place_name']\r\n1500013095781: '[webform_submission:uuid]'\r\n9205221816983: ['[webform_submission:values:report_location:location_type:raw]', 'report_location:location_type']\r\n13178808571927: ['[webform_submission:computed_priority]', 'computed_priority']\r\n5873224754071: ['[webform_submission:values:report_location:location_details]', 'report_location:location_details']\r\n18197040973335: ['[webform_submission:values:support_agent_use_only:escalate_issue]', 'support_agent_use_only:escalate_issue']"
       ticket_id_field: report_ticket_id
       ticket_form_id: '15142080018711'
       recipient: ''
@@ -904,7 +917,7 @@ handlers:
       sender_mail: ''
       sender_name: ''
       subject: _default
-      body: _default
+      body: '<p>[webform_submission:values:computed_issue_description:html]</p>'
       excluded_elements: {  }
       ignore_access: false
       exclude_empty: true
@@ -946,7 +959,7 @@ handlers:
       sender_mail: ''
       sender_name: ''
       subject: _default
-      body: _default
+      body: '<p>[webform_submission:values:computed_issue_description:html]</p>'
       excluded_elements: {  }
       ignore_access: false
       exclude_empty: true
@@ -986,7 +999,7 @@ handlers:
       sender_mail: ''
       sender_name: ''
       subject: _default
-      body: _default
+      body: '<p>[webform_submission:values:computed_issue_description:html]</p>'
       excluded_elements: {  }
       ignore_access: false
       exclude_empty: true
