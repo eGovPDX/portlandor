@@ -244,18 +244,18 @@ final class BatchCommands extends DrushCommands
     }
   }
 
-  private $group_type_and_name = [
+  private $group_type_and_name_list = [
     "advisory_group" => [
-      "name" => "Advisory Group",
-      "id" => 846,
+      "name" => "Advisory group",
     ],
     "program" =>  [
       "name" => "Program",
-      "id" => 844,
     ],
     "project" =>  [
       "name" => "Project",
-      "id" => 847,
+    ],
+    "bureau_office" =>  [
+      "name" => "Bureau/office",
     ]
   ];
   /**
@@ -263,13 +263,27 @@ final class BatchCommands extends DrushCommands
    */
    #[CLI\Command(name: 'portland:migrate_group', aliases: ['portland-migrate-group'])]
    #[CLI\Usage(name: 'portland:migrate_group GROUP_TYPE', description: 'GROUP_TYPE is the group type machine name like advisory_group.')] 
-  public function copy_program_to_bureau($group_type = "advisory_group")
+  public function migrate_group($group_type = "advisory_group")
   {
+    // Load all group types taxonomy terms
+    $group_type_terms = \Drupal::entityTypeManager()
+            ->getStorage('taxonomy_term')
+            ->loadByProperties([
+                    'vid' => 'group_type',
+                ]);
+    foreach($group_type_terms as $group_type_term) {
+      foreach($this->group_type_and_name_list as &$group_type_and_name) {
+        if($group_type_and_name['name'] == $group_type_term->getName()) {
+          $group_type_and_name['id'] = $group_type_term->id();
+        }
+      }
+    }
+
     $groups = Group::loadMultiple();// Load all groups
     foreach ($groups as $group) {
       $group_type_id = $group->getGroupType()->id();
       if($group_type_id == $group_type) {
-        $group_type_name = $this->group_type_and_name[$group_type]["name"];
+        $group_type_name = $this->group_type_and_name_list[$group_type]["name"];
         $group_name = $group->label();
 
         /** @var GroupInterface $group_to_create */
@@ -282,14 +296,17 @@ final class BatchCommands extends DrushCommands
         }
         // This is a required field in Bureau/Office
         $group_to_create->set('field_official_organization_name', $group->get('label')->getValue());
-        $group_to_create->set('field_group_subtype', ['target_id' => $this->group_type_and_name[$group_type]["id"]]);
+        $group_to_create->set('field_group_subtype', ['target_id' => $this->group_type_and_name_list[$group_type]["id"]]);
 
         // Change old group's path to "PATH-orig" to avoid path conflict
         $orig_group_id = $group->id();
         // Trim the group path to fit into the max of 60 char
         $path_value = substr($group->get('field_group_path')->value, 0, 55);
         $group->set('field_group_path', [$path_value . '-orig']);
-        $group->moderation_state->value = "archived";
+        // Archive the original group if it's published
+        if($group->moderation_state->value == 'published') {
+          $group->moderation_state->value = "archived";
+        }
         $group->status->value = 0;
         $group->revision_log_message->value = "Archived after migrated to Bureau/Offce by the group migration drush command";
         $group->revision_user->target_id = 0;
