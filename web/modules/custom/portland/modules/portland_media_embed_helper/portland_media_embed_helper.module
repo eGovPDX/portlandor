@@ -54,7 +54,7 @@ function portland_media_embed_helper_form_entity_embed_dialog_alter(array &$form
     if(!$hide_fields) $hide_fields = $is_iframe;
   }
   // This is the only way to avoid adding Aspect Ratio form element when "Select a different entity" is clicked
-  else if ($embed_type == "insert_iframe" && isset($user_input["attributes"]["title"]) 
+  else if ($embed_type == "insert_iframe" && isset($user_input["attributes"]["data-aspect-ratio"])
           && $user_input["_triggering_element_value"] != "Back" ) {
     $is_iframe = true;
     if(!$hide_fields) $hide_fields = $is_iframe;
@@ -100,27 +100,20 @@ function portland_media_embed_helper_form_entity_embed_dialog_alter(array &$form
   }
 
   // if this is the video browser, and the caption field is set, then insert the start time field
-  // HACK ALERT: Entity Embed dialog no longer allows data-start-cue attribute, so we've hijacked the
-  // title attribute and are using it to store the value now.
   if (isset($form['attributes']['data-caption']) && $embed_type == "audio_video_browser") {
-    $entity_element = $form_state->get('entity_element');
     $form['attributes']['data-start-cue']['#type'] = "textfield";
     $form['attributes']['data-start-cue']['#title'] = "Video start cue time (optional)";
     $form['attributes']['data-start-cue']['#placeholder'] = "0";
-    $form['attributes']['data-start-cue']['#default_value'] = $entity_element['title'] ?? '';
     $form['attributes']['data-start-cue']['#description'] = "Provide the start time in seconds";
-    $form['attributes']['data-start-cue']['#parents'] = ['attributes', 'title'];
   }
 
   // Only show the aspect ratio radio buttons for iframe
   if($is_iframe) {
     // Default aspect ratio is 16/9.
-    // When editing an item, get value from "data-aspect-ratio" attribute 
-    // HACK ALERT: Entity Embed dialog no longer allows data-aspect-ratio attribute, so we've hijacked the
-    // title attribute and are using it to store the value now.
+    // When editing an item, get value from "data-aspect-ratio" attribute
     $default_aspect_ratio = '16/9';
-    if($has_editor_object && isset($user_input['editor_object']['title'])) {
-      $default_aspect_ratio = $user_input['editor_object']['title'];
+    if($has_editor_object && isset($user_input['editor_object']['data-aspect-ratio'])) {
+      $default_aspect_ratio = $user_input['editor_object']['data-aspect-ratio'];
     }
     $form['attributes']['data-aspect-ratio'] = [
       '#title' => t('Aspect ratio'),
@@ -133,7 +126,7 @@ function portland_media_embed_helper_form_entity_embed_dialog_alter(array &$form
       ],
       '#step' => '1',
       '#default_value' => $default_aspect_ratio,
-      '#parents' => ['attributes', 'title'],
+      '#parents' => ['attributes', 'data-aspect-ratio'],
       // Make radio buttons inline
       '#attributes' => ['class' => ['container-inline']],
     ];
@@ -161,9 +154,7 @@ function portland_media_embed_helper_form_entity_embed_dialog_alter(array &$form
     }
 
     // if document, add alt link text
-    // HACK ALERT: Entity Embed dialog no longer allows data-alt-link-text attribute, so we've hijacked the
-    // title attribute and are using it to store the value now.
-    // $embed_type = $form['attributes']['data-embed-button']['#value'];
+
     if ($embed_type == "document_browser") {
       $entity_element = $form_state->get('entity_element');
       if ($entity_element !== null) {
@@ -171,8 +162,7 @@ function portland_media_embed_helper_form_entity_embed_dialog_alter(array &$form
           '#type' => 'textfield',
           '#title' => t('Link text'),
           '#description' => t('Provide an alternative link text to the document.  Leave blank to use the document\'s display name.'),
-          '#default_value' => $entity_element['title'] ?? '',
-          '#parents' => ['attributes', 'title'],
+          '#default_value' => $entity_element['data-alt-link-text'] ?? '',
         ];
       }
     }

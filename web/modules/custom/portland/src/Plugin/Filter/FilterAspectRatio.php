@@ -38,10 +38,8 @@ class FilterAspectRatio extends FilterBase {
         if ($entity_loaded_by_uuid->bundle() != 'iframe_embed') continue;
 
         // Read the data-aspect-ratio attribute's value, then delete it.
-        // HACK ALERT: Entity Embed dialog no longer allows data-aspect-ratio attribute, so we've hijacked the
-        // title attribute and are using it to store the value now.
-        $aspect_ratio = $node->getAttribute('title');
-        $node->removeAttribute('title');
+        $aspect_ratio = $node->getAttribute('data-aspect-ratio');
+        $node->removeAttribute('data-aspect-ratio');
 
         // Default ratio is 16x9
         if (empty($aspect_ratio)) {
