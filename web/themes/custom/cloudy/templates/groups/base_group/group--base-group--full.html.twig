@@ -1,0 +1,133 @@
+{% set overline %}
+  Bureau/Office {% set group_label = group.field_group_subtype.entity.name.value|title %}
+  {% if group_label %}
+    {% include '@components/badge/badge.twig' with {
+      text: group_label,
+      mb: 8
+    } only %}
+  {% endif %}
+{% endset %}
+
+{% set heading %}
+  {% include '@components/heading/heading.twig' with {
+    text: label
+  } only %}
+{% endset %}
+
+
+{% set header_left %}
+  {{ heading }}
+  {{ overline }}
+  <div class="mb-2">{{ content.group_date }}</div>
+  {{ content.field_summary }}
+{% endset %}
+
+{% set header_right %}
+  {{ content.field_featured_media.0 }}
+{% endset %}
+
+{% set header %}
+  <div class="container">
+    <div class="row mb-8 align-items-center">
+      <div class="col">
+        {{ header_left }}
+      </div>
+      {% if header_left|trim|length and header_right|trim|length %}
+        <div class="col-lg-6 ps-md-4 align-items-center">
+          {{ header_right }}
+        </div>
+      {% endif %}
+    </div>
+  </div>
+{% endset %}
+
+{% set group_menu %}
+  <div class="col">
+    {{ drupal_view('group_site_menu', 'entity_view_1')|render }}
+  </div>
+{% endset %}
+
+{% set featured_content %}
+  <div class="col">
+  {{ content.field_featured_content|render }}
+  </div>
+{% endset %}
+
+{% set contact_left %}
+  {{ content.field_contact }}
+{% endset %}
+
+{% set contact_right %}
+  {{ content.field_location }}
+  {% if content.field_location.0 is not empty and content.field_address.0['#address_line1'] is not empty %}
+    <div class="mt-8">{{ content.field_address }}</div>
+  {% elseif content.field_address.0['#address_line1'] is not empty %}
+    {{ content.field_address }}
+  {% endif %}
+{% endset %}
+
+{% set contact %}
+  {% set contact_left_classes = contact_left_classes|default(['col']) %}
+  {% set contact_right_classes = contact_right_classes|default(['col']) %}
+
+  {% if contact_left|striptags|trim is not empty and contact_right|render|striptags|trim is not empty %}
+    {% set contact_right_classes = [
+      'col-12',
+      'col-md-4',
+      'col-lg-6',
+      'mt-8',
+      'mt-md-0'
+    ] %}
+  {% endif %}
+  {% if contact_left|striptags|trim is not empty %}
+    <div class="{{ contact_left_classes|join(' ')|trim }}">
+      {{ contact_left }}
+    </div>
+  {% endif %}
+  {% if contact_right|render|striptags|trim is not empty %}
+    <div class="{{ contact_right_classes|join(' ')|trim }}">
+      {{ contact_right }}
+    </div>
+  {% endif %}
+{% endset %}
+
+
+{% set featured_groups %}
+  <div class="col">
+    {{ content.field_featured_groups|render }}
+  </div>
+{% endset %}
+
+{% apply spaceless %}
+  <article>
+    {% if header|trim|length %}
+      <section class="row">
+        {{ header }}
+      </section>
+    {% endif %}
+    {% if group_menu|striptags|trim is not empty %}
+      <section class="row">
+        {{ group_menu }}
+      </section>
+    {% endif %}
+    {% if featured_content|striptags|trim is not empty %}
+      <section class="row">
+        {{ featured_content }}
+      </section>
+    {% endif %}
+    {% if contact|striptags|trim is not empty %}
+      <hr class="separator mb-8 mt-0">
+      <section class="row mt-4 mt-sm-0 mb-12">
+        <div class="col-12">
+          <h2 class="mb-8">{{ "contact"|t|capitalize }}</h2>
+        </div>
+        {{ contact }}
+      </section>
+    {% endif %}
+    {% if featured_groups|striptags|trim is not empty %}
+      <section class="row">
+        {{ featured_groups }}
+      </section>
+    {% endif %}
+  </article>
+{% endapply %}
