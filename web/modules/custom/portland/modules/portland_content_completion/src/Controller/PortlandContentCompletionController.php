@@ -22,7 +22,10 @@ class PortlandContentCompletionController extends ControllerBase {
               'group_content_type_ec1fc1b4137da', 'group_content_type_f8c21c1e82c21', 'program-group_node-city_service', 'program-group_node-contact', 
               'program-group_node-data_table', 'program-group_node-event', 'program-group_node-news', 'program-group_node-notification', 
               'program-group_node-page', 'project-group_node-contact', 'project-group_node-data_table', 'project-group_node-event', 'project-group_node-news', 
-              'project-group_node-notification', 'project-group_node-page'";
+              'project-group_node-notification', 'project-group_node-page',
+              'base_group-group_node-contact', 'base_group-group_node-event',
+              'base_group-group_node-news', 'base_group-group_node-page',
+              'group_content_type_6d525f8ada5e5', 'group_content_type_f7bc4b3b5788b'";
 
   /**
    * Returns a page that displays a full list of groups and their percentage of completed content.

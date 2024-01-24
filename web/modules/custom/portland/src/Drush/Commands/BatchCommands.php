@@ -273,7 +273,7 @@ final class BatchCommands extends DrushCommands
         $group_name = $group->label();
 
         /** @var GroupInterface $group_to_create */
-        $group_to_create= \Drupal::entityTypeManager()->getStorage('group')->create(['type' => 'bureau_office']);
+        $group_to_create= \Drupal::entityTypeManager()->getStorage('group')->create(['type' => 'base_group']);
 
         foreach($this->group_field_name_array as $field_name) {
           if($group->hasField($field_name)) {
@@ -282,7 +282,7 @@ final class BatchCommands extends DrushCommands
         }
         // This is a required field in Bureau/Office
         $group_to_create->set('field_official_organization_name', $group->get('label')->getValue());
-        $group_to_create->set('field_group_type', ['target_id' => $this->group_type_and_name[$group_type]["id"]]);
+        $group_to_create->set('field_group_subtype', ['target_id' => $this->group_type_and_name[$group_type]["id"]]);
 
         // Change old group's path to "PATH-orig" to avoid path conflict
         $orig_group_id = $group->id();
