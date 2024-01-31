@@ -18,6 +18,7 @@ use Drupal\media\Entity\Media;
 use Drupal\file\Entity\File;
 use Drupal\group\Entity\GroupInterface;
 use Drupal\taxonomy\Entity\Term;
+
 /**
  * Custom drush command file.
  *
@@ -40,7 +41,8 @@ final class BatchCommands extends DrushCommands
   /**
    * {@inheritdoc}
    */
-  public static function create(ContainerInterface $container) {
+  public static function create(ContainerInterface $container)
+  {
     return new static(
       $container->get('token'),
       $container->get('entity_type.manager'),
@@ -53,7 +55,7 @@ final class BatchCommands extends DrushCommands
    */
   #[CLI\Command(name: 'portland:set_admin_language', aliases: ['portland-set-admin-language'])]
   #[CLI\Argument(name: 'uid', description: 'The user ID.')]
-  #[CLI\Usage(name: 'portland:set_admin_language UID', description: 'Command followed by optinal user ID')] 
+  #[CLI\Usage(name: 'portland:set_admin_language UID', description: 'Command followed by optinal user ID')]
   public function set_admin_langguage($uid = 0)
   {
     $user_storage = $this->entityTypeManager->getStorage('user');
@@ -63,7 +65,7 @@ final class BatchCommands extends DrushCommands
         ->accessCheck()
         ->execute();
     } else {
-      $users = [ $uid ];
+      $users = [$uid];
     }
 
     foreach ($users as $uid) {
@@ -84,27 +86,26 @@ final class BatchCommands extends DrushCommands
   /**
    * Drush command to copy Audio into Video.
    */
-   #[CLI\Command(name: 'portland:remove_audio', aliases: ['portland-remove-audio'])]
-   #[CLI\Usage(name: 'portland:remove_audio', description: 'Command without parameter')] 
+  #[CLI\Command(name: 'portland:remove_audio', aliases: ['portland-remove-audio'])]
+  #[CLI\Usage(name: 'portland:remove_audio', description: 'Command without parameter')]
   public function remove_audio()
   {
     // Load all groups
     $groups = Group::loadMultiple();
     foreach ($groups as $group) {
       $group_type_id = $group->getGroupType()->id();
-      if($group_type_id == "program") {
+      if ($group_type_id == "program") {
         echo "Process program " . $group->label() . PHP_EOL;
 
-        $audio_contents = $group->getContent(null, ["type"=>"program-group_media-audio"]);
-        foreach($audio_contents as $audio_content) {
+        $audio_contents = $group->getContent(null, ["type" => "program-group_media-audio"]);
+        foreach ($audio_contents as $audio_content) {
           echo "Delete group audio " . $audio_content->label() . PHP_EOL;
           $audio_content->delete();
         }
-      }
-      else if($group_type_id == "project") {
+      } else if ($group_type_id == "project") {
         echo "Process project " . $group->label() . PHP_EOL;
-        $audio_contents = $group->getContent(null, ["type"=>"project-group_media-audio"]);
-        foreach($audio_contents as $audio_content) {
+        $audio_contents = $group->getContent(null, ["type" => "project-group_media-audio"]);
+        foreach ($audio_contents as $audio_content) {
           echo "Delete group audio " . $audio_content->label() . PHP_EOL;
           $audio_content->delete();
         }
@@ -114,8 +115,8 @@ final class BatchCommands extends DrushCommands
   /**
    * Drush command to copy Audio into Video.
    */
-   #[CLI\Command(name: 'portland:copy_audio_to_video', aliases: ['portland-copy-audio-to-video'])]
-   #[CLI\Usage(name: 'portland:copy_audio_to_video', description: 'Command without parameter')] 
+  #[CLI\Command(name: 'portland:copy_audio_to_video', aliases: ['portland-copy-audio-to-video'])]
+  #[CLI\Usage(name: 'portland:copy_audio_to_video', description: 'Command without parameter')]
   public function copy_audio_to_video()
   {
     echo 'Migrating Audio to Video, please save the output to a CSV file to validate the results' . PHP_EOL;
@@ -127,7 +128,7 @@ final class BatchCommands extends DrushCommands
 
     foreach ($audios as $audio) {
       $audio_redirects = $audio->field_redirects->getValue();
-      if(!empty($audio_redirects)) {
+      if (!empty($audio_redirects)) {
         $audio->field_redirects = [];
         $audio->save();
       }
@@ -157,16 +158,16 @@ final class BatchCommands extends DrushCommands
       // Update media UUID in Body
       $nodes_using_audio = array_keys(\Drupal::service('entity_usage.usage')->listSources($audio)['node'] ?? []);
       $node_urls = [];
-      foreach($nodes_using_audio as $node_using_audio) {
+      foreach ($nodes_using_audio as $node_using_audio) {
         $node = Node::load($node_using_audio);
         $orig_uuid = $audio->uuid->value;
         $new_uuid = $new_video->uuid->value;
         $node->field_body_content->value = str_replace($orig_uuid, $new_uuid, $node->field_body_content->value);
         $node->save();
-        $node_urls []= $base_url . '/node/' . $node->nid->value;
+        $node_urls[] = $base_url . '/node/' . $node->nid->value;
       }
 
-      echo $base_url . '/media/'. $audio->mid->value . ',' . $base_url . '/media/'. $new_video->mid->value . ',' . implode(',', $node_urls) . PHP_EOL;
+      echo $base_url . '/media/' . $audio->mid->value . ',' . $base_url . '/media/' . $new_video->mid->value . ',' . implode(',', $node_urls) . PHP_EOL;
     }
   }
 
@@ -231,7 +232,7 @@ final class BatchCommands extends DrushCommands
    * Drush command to create group type taxonomy terms.
    */
   #[CLI\Command(name: 'portland:create_group_types', aliases: ['portland-create-group-types'])]
-  #[CLI\Usage(name: 'portland:create_group_types', description: 'Command without parameter')] 
+  #[CLI\Usage(name: 'portland:create_group_types', description: 'Command without parameter')]
   public function create_group_types()
   {
     $group_types = ['Program', 'Bureau/office', 'Advisory group', 'Project'];
@@ -258,39 +259,68 @@ final class BatchCommands extends DrushCommands
       "name" => "Bureau/office",
     ]
   ];
+
+  /*
+New approach:
+
+For non-translated groups: (appears there is no unpublished group with published default revision)
+1. Update field values and save. Take a note of the new revision ID.
+2. Search all group related table and change the group bundle or group type to "base_group".
+
+For translated groups:
+Looks like none of the new fields are translated. We can simply update the group bundle.
+1. Get the CSV of the latest translated revision ID. (there are only 14)
+2. ??? Load that revision. Update field value. Save the revision.
+3. Search all group related table for the new revision and change the group bundle or group type to "base_group".
+*/
+
   /**
    * Drush command to migrate Advisory group, Program, and Project into Bureau/Office.
    */
-   #[CLI\Command(name: 'portland:migrate_group', aliases: ['portland-migrate-group'])]
-   #[CLI\Usage(name: 'portland:migrate_group GROUP_TYPE', description: 'GROUP_TYPE is the group type machine name like advisory_group.')] 
-  public function migrate_group($group_type = "advisory_group")
+  #[CLI\Command(name: 'portland:migrate_group', aliases: ['portland-migrate-group'])]
+  #[CLI\Usage(name: 'portland:migrate_group GROUP_TYPE', description: 'GROUP_TYPE is the group type machine name like advisory_group.')]
+  public function migrate_group($group_type = "advisory_group", $resume_at_group_id = null, $new_group_id = null)
   {
     // Load all group types taxonomy terms
     $group_type_terms = \Drupal::entityTypeManager()
-            ->getStorage('taxonomy_term')
-            ->loadByProperties([
-                    'vid' => 'group_type',
-                ]);
-    foreach($group_type_terms as $group_type_term) {
-      foreach($this->group_type_and_name_list as &$group_type_and_name) {
-        if($group_type_and_name['name'] == $group_type_term->getName()) {
+      ->getStorage('taxonomy_term')
+      ->loadByProperties([
+        'vid' => 'group_type',
+      ]);
+    foreach ($group_type_terms as $group_type_term) {
+      foreach ($this->group_type_and_name_list as &$group_type_and_name) {
+        if ($group_type_and_name['name'] == $group_type_term->getName()) {
           $group_type_and_name['id'] = $group_type_term->id();
         }
       }
     }
 
-    $groups = Group::loadMultiple();// Load all groups
+    $groups = \Drupal::entityTypeManager()->getStorage('group')->loadByProperties(['type' => $group_type]);
     foreach ($groups as $group) {
-      $group_type_id = $group->getGroupType()->id();
-      if($group_type_id == $group_type) {
+      // When a group ID to resume the migration is given
+      $orig_group_id = $group->id();
+      if (!is_null($resume_at_group_id) && (int)$orig_group_id < (int)$resume_at_group_id) {
+        continue;
+      }
+
+      // DO NOT copy group when resuming. Only update usages.
+      if ((int)$orig_group_id === (int)$resume_at_group_id) {
+        $group_to_create = Group::load($new_group_id);
+        if($group_to_create === null) {
+          echo "Failed to load the new group" . PHP_EOL;
+          break;
+        }
+      } 
+      else {
+        // Copy field values into the new group
         $group_type_name = $this->group_type_and_name_list[$group_type]["name"];
         $group_name = $group->label();
 
         /** @var GroupInterface $group_to_create */
-        $group_to_create= \Drupal::entityTypeManager()->getStorage('group')->create(['type' => 'base_group']);
+        $group_to_create = \Drupal::entityTypeManager()->getStorage('group')->create(['type' => 'base_group']);
 
-        foreach($this->group_field_name_array as $field_name) {
-          if($group->hasField($field_name)) {
+        foreach ($this->group_field_name_array as $field_name) {
+          if ($group->hasField($field_name)) {
             $group_to_create->set($field_name, $group->get($field_name)->getValue());
           }
         }
@@ -299,12 +329,11 @@ final class BatchCommands extends DrushCommands
         $group_to_create->set('field_group_subtype', ['target_id' => $this->group_type_and_name_list[$group_type]["id"]]);
 
         // Change old group's path to "PATH-orig" to avoid path conflict
-        $orig_group_id = $group->id();
         // Trim the group path to fit into the max of 60 char
         $path_value = substr($group->get('field_group_path')->value, 0, 55);
         $group->set('field_group_path', [$path_value . '-orig']);
         // Archive the original group if it's published
-        if($group->moderation_state->value == 'published') {
+        if ($group->moderation_state->value == 'published') {
           $group->moderation_state->value = "archived";
         }
         $group->status->value = 0;
@@ -317,19 +346,20 @@ final class BatchCommands extends DrushCommands
         $group_to_create->save(); // Must save the new group in order to get the ID
         $new_group_id = $group_to_create->id();
         echo "Migrated $group_type_name: $group_name (original ID: $orig_group_id, new ID: $new_group_id)" . PHP_EOL;
+      }
 
-        // TODO: Copy revisions?
+      // TODO: Copy revisions?
 
-        // Copy all group content by updating the group ID
-        $group_to_create_id = $group_to_create->id();
-        $group_contents = $group->getContent();
-        foreach($group_contents as $group_content) {
-          $group_content->gid->target_id = $group_to_create_id;
-          $group_content->save();
-        }
+      // Copy all group content by updating the group ID
+      $group_to_create_id = $group_to_create->id();
+      $group_contents = $group->getContent();
+      foreach ($group_contents as $group_content) {
+        $group_content->gid->target_id = $group_to_create_id;
+        $group_content->save();
+      }
 
-        // Update all usage of the original group
-        /*
+      // Update all usage of the original group
+      /*
         List of entity fields that reference to group:
           node->field_display_groups
           node->field_body_content
@@ -340,91 +370,90 @@ final class BatchCommands extends DrushCommands
           node->field_bureau (Council Document only. No need to migrate)
           group->field_body_content (Elected only. Easy to check manually)
         */
-        $usage_service = \Drupal::service('entity_usage.usage');
-        $usage_list = $usage_service->listSources($group);
-        // Two source types: [group, node]
-        foreach($usage_list as $source_type => $usage_list_by_type) {
-          // $usage is [ entity ID => [ entry for each revision ] ]
-          foreach($usage_list_by_type as $entity_id => $usage) {
-            if($source_type == 'node') {
-              $source_node = \Drupal\node\Entity\Node::load($entity_id);
-              $field_name = $usage[0]['field_name']; // The first item is the latest revision
+      $usage_service = \Drupal::service('entity_usage.usage');
+      $usage_list = $usage_service->listSources($group);
+      // Two source types: [group, node]
+      foreach ($usage_list as $source_type => $usage_list_by_type) {
+        // $usage is [ entity ID => [ entry for each revision ] ]
+        foreach ($usage_list_by_type as $entity_id => $usage) {
+          if ($source_type == 'node') {
+            $source_node = \Drupal\node\Entity\Node::load($entity_id);
+            $field_name = $usage[0]['field_name']; // The first item is the latest revision
 
-              switch($field_name) {
-                case 'field_parent_group':
-                  if($source_node->get('field_parent_group')->target_id == $orig_group_id) {
-                    $source_node->get('field_parent_group')->target_id = $group_to_create_id;
-                    $source_node->revision_log->value = "$group_name in field_parent_group migrated by Drush command";
+            switch ($field_name) {
+              case 'field_parent_group':
+                if ($source_node->get('field_parent_group')->target_id == $orig_group_id) {
+                  $source_node->get('field_parent_group')->target_id = $group_to_create_id;
+                  $source_node->revision_log->value = "$group_name in field_parent_group migrated by Drush command";
+                  $source_node->revision_uid = 0;
+                  $source_node->revision_timestamp = time();
+                  $source_node->save();
+                }
+                break;
+              case 'field_display_groups':
+                /** @var EntityReferenceFieldItemListInterface $display_groups */
+                $display_groups = $source_node->get('field_display_groups');
+                foreach ($display_groups->referencedEntities() as $index => $display_group) {
+                  if ($source_node->field_display_groups[$index]->target_id == $orig_group_id) {
+                    $source_node->field_display_groups[$index]->target_id = $group_to_create_id;
+                    $source_node->revision_log->value = "$group_name in field_display_groups migrated by Drush command";
                     $source_node->revision_uid = 0;
                     $source_node->revision_timestamp = time();
                     $source_node->save();
                   }
-                  break;
-                case 'field_display_groups':
-                  /** @var EntityReferenceFieldItemListInterface $display_groups */
-                  $display_groups = $source_node->get('field_display_groups');
-                  foreach($display_groups->referencedEntities() as $index => $display_group) {
-                    if($source_node->field_display_groups[$index]->target_id == $orig_group_id) {
-                      $source_node->field_display_groups[$index]->target_id = $group_to_create_id;
-                      $source_node->revision_log->value = "$group_name in field_display_groups migrated by Drush command";
-                      $source_node->revision_uid = 0;
-                      $source_node->revision_timestamp = time();
-                      $source_node->save();
-                    }
-                  }
-                  break;
-                case 'field_body_content':
-                  // Update field_body_content: do a search and replace for group UUID and the ID in href
-                  // <a data-entity-type="group" data-entity-uuid="2697532a-7898-40a5-b86a-b36aae959494" href="/group/40">
-                  $orig_group_uuid = $group->uuid();
-                  $group_to_create_uuid = $group_to_create->uuid();
-                  $text_to_be_replaced = 'data-entity-uuid="' . $orig_group_uuid . '" href="/group/' . $orig_group_id;
-                  $replacement_text = 'data-entity-uuid="' . $group_to_create_uuid . '" href="/group/' . $group_to_create_id;
-                  $replacement_count = 0;
-                  $source_node->field_body_content->value = str_replace($text_to_be_replaced, $replacement_text, $source_node->field_body_content->value, $replacement_count);
-                  if($replacement_count > 0) { // Only save if the body content is updated
-                    $source_node->revision_log->value = "$group_name embedded in field_body_content updated by Drush command";
-                    $source_node->revision_uid = 0;
-                    $source_node->revision_timestamp = time();
-                    $source_node->save();
-                  }
-                  break;
-              }
+                }
+                break;
+              case 'field_body_content':
+                // Update field_body_content: do a search and replace for group UUID and the ID in href
+                // <a data-entity-type="group" data-entity-uuid="2697532a-7898-40a5-b86a-b36aae959494" href="/group/40">
+                $orig_group_uuid = $group->uuid();
+                $group_to_create_uuid = $group_to_create->uuid();
+                $text_to_be_replaced = 'data-entity-uuid="' . $orig_group_uuid . '" href="/group/' . $orig_group_id;
+                $replacement_text = 'data-entity-uuid="' . $group_to_create_uuid . '" href="/group/' . $group_to_create_id;
+                $replacement_count = 0;
+                $source_node->field_body_content->value = str_replace($text_to_be_replaced, $replacement_text, $source_node->field_body_content->value, $replacement_count);
+                if ($replacement_count > 0) { // Only save if the body content is updated
+                  $source_node->revision_log->value = "$group_name embedded in field_body_content updated by Drush command";
+                  $source_node->revision_uid = 0;
+                  $source_node->revision_timestamp = time();
+                  $source_node->save();
+                }
+                break;
             }
-            else if($source_type == 'group') {
-              $source_group = \Drupal\group\Entity\Group::load($entity_id);
-              $field_name = $usage[0]['field_name']; // The latest revision
-              switch($field_name) {
-                case 'field_featured_groups':
-                  /** @var EntityReferenceFieldItemListInterface $featured_groups */
-                  $featured_groups = $source_group->get('field_featured_groups');
-                  foreach($featured_groups->referencedEntities() as $index => $featured_group) {
-                    if($source_group->field_featured_groups[$index]->target_id == $orig_group_id) {
-                      $source_group->field_featured_groups[$index]->target_id = $group_to_create_id;
-                      $source_group->revision_log_message->value = "$group_name in field_featured_groups migrated by Drush command";
-                      $source_group->revision_user->target_id = 0;
-                      $source_group->revision_created->value = time();
-                      $source_group->save();
-                    }
-                  }
-                  break;
-                case 'field_parent_group':
-                  if($source_group->get('field_parent_group')->target_id == $orig_group_id) {
-                    $source_group->get('field_parent_group')->target_id = $group_to_create_id;
-                    $source_group->revision_log_message->value = "$group_name in field_parent_group migrated by Drush command";
+          } else if ($source_type == 'group') {
+            $source_group = \Drupal\group\Entity\Group::load($entity_id);
+            $field_name = $usage[0]['field_name']; // The latest revision
+            switch ($field_name) {
+              case 'field_featured_groups':
+                /** @var EntityReferenceFieldItemListInterface $featured_groups */
+                $featured_groups = $source_group->get('field_featured_groups');
+                foreach ($featured_groups->referencedEntities() as $index => $featured_group) {
+                  if ($source_group->field_featured_groups[$index]->target_id == $orig_group_id) {
+                    $source_group->field_featured_groups[$index]->target_id = $group_to_create_id;
+                    $source_group->revision_log_message->value = "$group_name in field_featured_groups migrated by Drush command";
                     $source_group->revision_user->target_id = 0;
                     $source_group->revision_created->value = time();
                     $source_group->save();
                   }
-                  break;
-              }
+                }
+                break;
+              case 'field_parent_group':
+                if ($source_group->get('field_parent_group')->target_id == $orig_group_id) {
+                  $source_group->get('field_parent_group')->target_id = $group_to_create_id;
+                  $source_group->revision_log_message->value = "$group_name in field_parent_group migrated by Drush command";
+                  $source_group->revision_user->target_id = 0;
+                  $source_group->revision_created->value = time();
+                  $source_group->save();
+                }
+                break;
             }
           }
         }
-
-        // TEST ONLY: exit the loop after one copy
-        // break;
       }
+
+      // TEST ONLY: exit the loop after one copy
+      // break;
+
     }
   }
 }
