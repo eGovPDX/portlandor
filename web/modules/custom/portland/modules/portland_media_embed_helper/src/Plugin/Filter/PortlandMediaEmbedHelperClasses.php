@@ -12,7 +12,7 @@ use Drupal\filter\Render\FilteredMarkup;
  * @Filter(
  *   id = "portland_media_embed_helper_filter",
  *   title = @Translation("Portland Media Embed Helper Filter"),
- *   description = @Translation("Adds classes to entity embed containers and pre-selects image display mode based on alignment selections. This filter must be executed before Align, Caption, or Display Embedded Entities."),
+ *   description = @Translation("Adds classes to entity embed containers and sets image view mode based on alignment selection. This filter must be executed before Caption or Display Embedded Entities."),
  *   type = Drupal\filter\Plugin\FilterInterface::TYPE_TRANSFORM_IRREVERSIBLE,
  * )
  */
@@ -34,21 +34,14 @@ class PortlandMediaEmbedHelperClasses extends FilterBase {
     if (stristr($text, 'data-embed-button') !== false) {
       $dom = Html::load($text);
       $xpath = new \DOMXPath($dom);
-      $called_by_ckeditor = false;
-      if (str_starts_with($text, "<drupal-entity ") && str_ends_with($text, "</drupal-entity>") && strlen($text) < 255) {
-        $called_by_ckeditor = true;
-        $display = "embedded";
-      }
       foreach ($xpath->query('//*[@data-embed-button]') as $node) {
         // Read the data-caption attribute's value; this is used to determine media type
         $embed_button = Html::escape($node->getAttribute('data-embed-button'));
 
         // alignment is used to determine image display mode
-        $alignment = Html::escape($node->getAttribute('data-align'));
         // if empty, default is responsive-full/embedded_100
-        if (!$alignment && !$called_by_ckeditor) {
-          $alignment = "responsive-full";
-        }
+        // data-portland-align is functionally equivalent to data-align. data-align is deprecated but may still be present in older content
+        $alignment = Html::escape($node->getAttribute('data-portland-align') ?: $node->getAttribute('data-align')) ?: 'responsive-full';
 
         // the embed tag may be enclosed in a <figure> provided by the filter-caption template.
         // that is where we want to put the media type class.

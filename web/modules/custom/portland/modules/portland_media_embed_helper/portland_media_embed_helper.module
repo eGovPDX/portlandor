@@ -6,6 +6,22 @@ use Drupal\media\Entity\Media;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 
 /**
+ * Implements hook_entity_prepare_form().
+ *
+ * Replaces all instances of "data-align" in body content with "data-portland-align"
+ */
+function portland_media_embed_helper_entity_prepare_form($entity, $operation, $form_state) {
+  if ($operation === 'edit') {
+    foreach ($entity->getFields() as $field) {
+      if ($field->getFieldDefinition()->getType() !== 'text_long') continue;
+
+      $field_content = $field->first()->getString();
+      $entity->set($field->getName(), preg_replace('/data-align="/', 'data-portland-align="', $field_content));
+    }
+  }
+}
+
+/**
  * Implements hook_form_alter().
  */
 function portland_media_embed_helper_form_entity_embed_dialog_alter(array &$form, FormStateInterface $form_state, $form_id) {
