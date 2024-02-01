@@ -303,7 +303,9 @@ Looks like none of the new fields are translated. We can simply update the group
         continue;
       }
 
-      // DO NOT copy group when resuming. Only update usages.
+      $group_type_name = $this->group_type_and_name_list[$group_type]["name"];
+      $group_name = $group->label();
+      // When resuming, the new group has already be created. Load it by ID.
       if ((int)$orig_group_id === (int)$resume_at_group_id) {
         $group_to_create = Group::load($new_group_id);
         if($group_to_create === null) {
@@ -313,9 +315,6 @@ Looks like none of the new fields are translated. We can simply update the group
       } 
       else {
         // Copy field values into the new group
-        $group_type_name = $this->group_type_and_name_list[$group_type]["name"];
-        $group_name = $group->label();
-
         /** @var GroupInterface $group_to_create */
         $group_to_create = \Drupal::entityTypeManager()->getStorage('group')->create(['type' => 'base_group']);
 
@@ -345,7 +344,7 @@ Looks like none of the new fields are translated. We can simply update the group
         $group_to_create->revision_log_message->value = "Created by the group migration drush command. The original group ID is $orig_group_id";
         $group_to_create->save(); // Must save the new group in order to get the ID
         $new_group_id = $group_to_create->id();
-        echo "Migrated $group_type_name: $group_name (original ID: $orig_group_id, new ID: $new_group_id)" . PHP_EOL;
+        echo "Migrating $group_type_name: $group_name (original ID: $orig_group_id, new ID: $new_group_id)" . PHP_EOL;
       }
 
       // TODO: Copy revisions?
