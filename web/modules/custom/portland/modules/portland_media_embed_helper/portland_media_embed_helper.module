@@ -6,22 +6,6 @@ use Drupal\media\Entity\Media;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 
 /**
- * Implements hook_entity_prepare_form().
- *
- * Replaces all instances of "data-align" in body content with "data-portland-align"
- */
-function portland_media_embed_helper_entity_prepare_form($entity, $operation, $form_state) {
-  if ($operation === 'edit') {
-    foreach ($entity->getFields() as $field) {
-      if ($field->getFieldDefinition()->getType() !== 'text_long') continue;
-
-      $field_content = $field->first()->getString();
-      $entity->set($field->getName(), preg_replace('/data-align="/', 'data-portland-align="', $field_content));
-    }
-  }
-}
-
-/**
  * Implements hook_form_alter().
  */
 function portland_media_embed_helper_form_entity_embed_dialog_alter(array &$form, FormStateInterface $form_state, $form_id) {
@@ -35,10 +19,10 @@ function portland_media_embed_helper_form_entity_embed_dialog_alter(array &$form
   // Map of which options we want enabled on each media type
   $attributes_enabled_by_bundle = [
     'document' => ['data-alt-link-text'],
-    'iframe_embed' => ['data-portland-align', 'data-aspect-ratio'],
-    'image' => ['data-portland-align', 'data-caption'],
-    'map' => ['data-portland-align', 'data-caption'],
-    'video' => ['data-portland-align', 'data-caption', 'data-start-cue'],
+    'iframe_embed' => ['data-align', 'data-aspect-ratio'],
+    'image' => ['data-align', 'data-caption'],
+    'map' => ['data-align', 'data-caption'],
+    'video' => ['data-align', 'data-caption', 'data-start-cue'],
   ];
   $attributes_enabled = $attributes_enabled_by_bundle[$entity->bundle()];
 
@@ -53,7 +37,7 @@ function portland_media_embed_helper_form_entity_embed_dialog_alter(array &$form
     $form['attributes']['data-caption']['#access'] = false;
   }
 
-  if (in_array('data-portland-align', $attributes_enabled)) {
+  if (in_array('data-align', $attributes_enabled)) {
     $alignments = [
       [
         'icon' => 'img-100.png',
@@ -76,17 +60,26 @@ function portland_media_embed_helper_form_entity_embed_dialog_alter(array &$form
         'id' => 'right',
       ],
     ];
+    $alignments_enabled_by_bundle = [
+      'iframe_embed' => ['responsive-full', 'responsive-right'],
+      'image' => ['responsive-full', 'narrow', 'responsive-right', 'right'],
+      'map' => ['responsive-full', 'responsive-right'],
+      'video' => ['responsive-full', 'responsive-right'],
+    ];
+    $alignments_enabled = $alignments_enabled_by_bundle[$entity->bundle()];
 
-    $form['attributes']['data-portland-align'] = [
+    $form['attributes']['data-align'] = [
       '#type' => 'radios',
       '#title' => t('Alignment'),
       '#weight' => 1,
-      '#default_value' => $user_input['editor_object']['data-portland-align'] ?? 'responsive-full',
+      '#default_value' => $entity_element['data-align'] ?? 'responsive-full',
       '#attributes' => ['class' => ['container-inline']],
     ];
 
     foreach ($alignments as $alignment) {
-      $form['attributes']['data-portland-align']['#options'][$alignment['id']]
+      if (!in_array($alignment['id'], $alignments_enabled)) continue;
+
+      $form['attributes']['data-align']['#options'][$alignment['id']]
         = "{$alignment['name']}<br><img src=\"/themes/custom/cloudy/images/icons/{$alignment['icon']}\" />";
     }
   }

@@ -27,11 +27,10 @@ class PortlandMediaEmbedHelperClasses extends FilterBase {
    * @param [type] $langcode
    * @return void
    */
-  public function process($text, $langcode)
-  {
+  public function process($text, $langcode) {
     $result = new FilterProcessResult($text);
 
-    if (stristr($text, 'data-embed-button') !== false) {
+    if (str_contains($text, 'data-embed-button')) {
       $dom = Html::load($text);
       $xpath = new \DOMXPath($dom);
       foreach ($xpath->query('//*[@data-embed-button]') as $node) {
@@ -39,73 +38,36 @@ class PortlandMediaEmbedHelperClasses extends FilterBase {
         $embed_button = Html::escape($node->getAttribute('data-embed-button'));
 
         // alignment is used to determine image display mode
-        // if empty, default is responsive-full/embedded_100
-        // data-portland-align is functionally equivalent to data-align. data-align is deprecated but may still be present in older content
-        $alignment = Html::escape($node->getAttribute('data-portland-align') ?: $node->getAttribute('data-align')) ?: 'responsive-full';
+        $alignment = Html::escape($node->getAttribute('data-align')) ?: '';
 
         // the embed tag may be enclosed in a <figure> provided by the filter-caption template.
         // that is where we want to put the media type class.
         $node = ($node->parentNode->tagName === 'figure') ? $node->parentNode : $node;
 
-        // set class based on embed button id; this is not ideal, since it relies on configuration
-        $media_class = "";
-        switch ($embed_button) {
-          case "document_browser":
-            $media_class = "embed-document";
-            if($node->getAttribute('data-entity-embed-display') == 'view_mode:media.embedded_with_thumbnail') {
-              $media_class .= ' responsive-right';
-            }
-            break;
+        if ($embed_button === 'image_browser') {
+          $alignment_to_view_mode_map = [
+            // Full width
+            'responsive-full' => 'embedded_100',
+            // Narrow
+            'narrow' => 'embedded',
+            // 50% fill
+            'responsive-right' => 'embedded_50',
+            // 50% fit
+            'right' => 'embedded',
+            // None
+            '' => 'embedded',
+          ];
 
-          case "image_browser":
-            $media_class = "embed-image";
-            // for images, set the display mode based on alignment
-            if ($alignment) {
-              if ($alignment == "responsive-right") {
-                $display = "embedded_50";
-                $media_class .= " responsive-right";
-              } else if ($alignment == "responsive-full") {
-                $display = "embedded_100";
-                $media_class .= " responsive-full";
-              } else if ($alignment == "narrow") {
-                $display = "embedded";
-                $media_class .= " embedded-narrow";
-              } else {
-                $display = "embedded";
-                $media_class .= " embedded-right";
-              }
-            }
-            // change value of data-entity-embed-display="view_mode:media.embedded"
-            $node->setAttribute("data-entity-embed-display", "view_mode:media." . $display);
-            break;
-
-          case "audio_video_browser":
-            $media_class = "embed-video";
-            if (!is_null($alignment) && $alignment == "responsive-right") {
-              $media_class .= " responsive-right";
-            }
-            break;
-
-          case "map_browser":
-            $media_class = "embed-map";
-            if (!is_null($alignment) && $alignment == "responsive-right") {
-              $media_class .= " responsive-right";
-            }
-            break;
-
-          case "insert_iframe":
-            if (!is_null($alignment)) {
-              $media_class .= " $alignment";
-            }
-            break;
+          // change to corresponding view mode based on alingment
+          $node->setAttribute('data-entity-embed-display', 'view_mode:media.' . $alignment_to_view_mode_map[$alignment] ?? 'embedded');
         }
 
-        // if there are already classes on the parent element, update them with media type class.
-        $classes = $node->getAttribute('class');
-        $node->removeAttribute('class');
-        $classes = (strlen($classes) > 0) ? explode(' ', $classes) : [];
-        $classes[] = $media_class;
-        $node->setAttribute('class', implode(' ', $classes));
+        if (!empty($alignment)) {
+          $existing_classes = $node->getAttribute('class');
+          $classes = empty($existing_classes) ? [] : explode(' ', $existing_classes);
+          $classes[] = 'align-' . $alignment;
+          $node->setAttribute('class', implode(' ', $classes));
+        }
       }
 
       $result->setProcessedText(Html::serialize($dom))
