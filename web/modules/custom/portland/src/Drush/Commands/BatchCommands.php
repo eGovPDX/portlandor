@@ -260,19 +260,23 @@ final class BatchCommands extends DrushCommands
     ]
   ];
 
-  /*
-New approach:
-
-For non-translated groups: (appears there is no unpublished group with published default revision)
-1. Update field values and save. Take a note of the new revision ID.
-2. Search all group related table and change the group bundle or group type to "base_group".
-
-For translated groups:
-Looks like none of the new fields are translated. We can simply update the group bundle.
-1. Get the CSV of the latest translated revision ID. (there are only 14)
-2. ??? Load that revision. Update field value. Save the revision.
-3. Search all group related table for the new revision and change the group bundle or group type to "base_group".
-*/
+  /**
+   * Drush command to delete Advisory group, Program, and Project into Bureau/Office.
+   */
+  #[CLI\Command(name: 'portland:delete_groups', aliases: ['portland-delete-groups'])]
+  #[CLI\Usage(name: 'portland:delete_groups GROUP_TYPE', description: 'GROUP_TYPE is the group type machine name like advisory_group.')]
+  public function delete_groups($group_type = "advisory_group")
+  {
+    // Make sure only delete these group types
+    if( ! in_array($group_type, ['advisory_group', 'program', 'project', 'bureau_office'])) return;
+    $groups = \Drupal::entityTypeManager()->getStorage('group')->loadByProperties(['type' => $group_type]);
+    foreach ($groups as $group) {
+      $group_name = $group->label();
+      $orig_group_id = $group->id();
+      $group->delete();
+      echo "Deleted $group_type: $group_name (ID: $orig_group_id)" . PHP_EOL;
+    }
+  }
 
   /**
    * Drush command to migrate Advisory group, Program, and Project into Bureau/Office.
