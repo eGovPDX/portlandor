@@ -334,8 +334,7 @@ final class BatchCommands extends DrushCommands
       // When a group ID to resume the migration is given
       $orig_group_id = $group->id();
 
-      if (!($orig_group_id == 192 || $orig_group_id == 258)) continue;
-      // if (!($orig_group_id == 463 || $orig_group_id == 66)) continue;
+      // if (!($orig_group_id == 192 || $orig_group_id == 258)) continue;
 
       if (!is_null($resume_at_group_id) && (int)$orig_group_id < (int)$resume_at_group_id) {
         continue;
