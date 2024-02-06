@@ -282,30 +282,37 @@ final class BatchCommands extends DrushCommands
   // Return TRUE if $groups is modified.
   public static function insert_new_group(&$groups, $orig_group_id, $group_to_create_id)
   {
-    $groups_clone = clone $groups;
-    $old_group_index = null;
+    // $groups_clone = clone $groups;
+    // $old_group_index = null;
+    $group_replaced = false;
     foreach ($groups->referencedEntities() as $index => $group) {
-      // DO NOT replace the original group, append the new group
-      if ($group->id() == $orig_group_id) {
-        $old_group_index = $index;
+      if ($groups[$index]->target_id == $orig_group_id) {
+        $groups[$index]->target_id = $group_to_create_id;
+        $group_replaced = true;
       }
+
+      // DO NOT replace the original group, append the new group
+      // if ($group->id() == $orig_group_id) {
+      //   $old_group_index = $index;
+      // }
     }
+    return $group_replaced;
 
     // Found the old group in the list
-    if ($old_group_index !== null) {
-      $count = $groups_clone->count() + 1;
-      for ($i = 0; $i < $count; $i++) {
-        if ($i === $old_group_index) {
-          $groups->set($i, ['target_id' => $group_to_create_id]);
-        } else if ($i > $old_group_index) {
-          $groups->set($i, $groups_clone->get($i - 1));
-        } else {
-          $groups->set($i, $groups_clone->get($i));
-        }
-      }
-      return true;
-    }
-    return false;
+    // if ($old_group_index !== null) {
+    //   $count = $groups_clone->count() + 1;
+    //   for ($i = 0; $i < $count; $i++) {
+    //     if ($i === $old_group_index) {
+    //       $groups->set($i, ['target_id' => $group_to_create_id]);
+    //     } else if ($i > $old_group_index) {
+    //       $groups->set($i, $groups_clone->get($i - 1));
+    //     } else {
+    //       $groups->set($i, $groups_clone->get($i));
+    //     }
+    //   }
+    //   return true;
+    // }
+    // return false;
   }
 
   /**
@@ -423,7 +430,7 @@ final class BatchCommands extends DrushCommands
               $field_name = $usage['field_name'];
 
               switch ($field_name) {
-                case 'field_parent_group': // Only used feeds
+                case 'field_parent_group': // Only used in feeds
                   if ($source_node->get('field_parent_group')->target_id == $orig_group_id) {
                     $source_node->get('field_parent_group')->target_id = $group_to_create_id;
                     $source_node->revision_log->value = "$group_name in field_parent_group migrated by Drush command";
@@ -445,6 +452,7 @@ final class BatchCommands extends DrushCommands
                     \Drupal::state()->set('last_saved_node_id',$entity_id);
                     echo "node:$entity_id display, ";
                   }
+                  unset($display_groups);
                   break;
                 case 'field_body_content':
                   // Update field_body_content: do a search and replace for group UUID and the ID in href
@@ -466,6 +474,7 @@ final class BatchCommands extends DrushCommands
                   break;
               }
             }
+            unset($source_node);
           } else if ($source_type == 'group') {
             $source_group = \Drupal\group\Entity\Group::load($entity_id);
 
@@ -485,6 +494,7 @@ final class BatchCommands extends DrushCommands
                     $source_group->save();
                     echo "group:$entity_id featured, ";
                   }
+                  unset($featured_groups);
                   break;
                 case 'field_parent_group':
                   $parent_groups = $source_group->get('field_parent_group');
@@ -495,9 +505,11 @@ final class BatchCommands extends DrushCommands
                     $source_group->save();
                     echo "group:$entity_id parent, ";
                   }
+                  unset($parent_groups);
                   break;
               }
             }
+            unset($source_group);
           }
         }
       }
