@@ -412,6 +412,7 @@ final class BatchCommands extends DrushCommands
         // $usage is [ entity ID => [ entry for each revision ] ]
         foreach ($usage_list_by_type as $entity_id => $usage_array) {
           if ($source_type == 'node') {
+            
             $source_node = \Drupal\node\Entity\Node::load($entity_id);
 
             // source_vid is the revision ID. The first item in $usage_array is the latest.
@@ -429,6 +430,8 @@ final class BatchCommands extends DrushCommands
                     $source_node->revision_uid = 0;
                     $source_node->revision_timestamp = time();
                     $source_node->save();
+                    \Drupal::state()->set('last_saved_node_id',$entity_id);
+                    echo "Updated field_parent_group field for node:$entity_id" . PHP_EOL;
                   }
                   break;
                 case 'field_display_groups':
@@ -439,6 +442,8 @@ final class BatchCommands extends DrushCommands
                     $source_node->revision_uid = 0;
                     $source_node->revision_timestamp = time();
                     $source_node->save();
+                    \Drupal::state()->set('last_saved_node_id',$entity_id);
+                    echo "Updated Displayed In field for node:$entity_id" . PHP_EOL;
                   }
                   break;
                 case 'field_body_content':
@@ -455,6 +460,8 @@ final class BatchCommands extends DrushCommands
                     $source_node->revision_uid = 0;
                     $source_node->revision_timestamp = time();
                     $source_node->save();
+                    \Drupal::state()->set('last_saved_node_id',$entity_id);
+                    echo "Updated field_body_content field for node:$entity_id" . PHP_EOL;
                   }
                   break;
               }
@@ -476,6 +483,7 @@ final class BatchCommands extends DrushCommands
                     $source_group->revision_user->target_id = 0;
                     $source_group->revision_created->value = time();
                     $source_group->save();
+                    echo "Updated field_featured_groups field for group:$entity_id" . PHP_EOL;
                   }
                   break;
                 case 'field_parent_group':
@@ -485,6 +493,7 @@ final class BatchCommands extends DrushCommands
                     $source_group->revision_user->target_id = 0;
                     $source_group->revision_created->value = time();
                     $source_group->save();
+                    echo "Updated field_parent_group field for group:$entity_id" . PHP_EOL;
                   }
                   break;
               }
