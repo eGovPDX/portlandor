@@ -380,7 +380,7 @@ final class BatchCommands extends DrushCommands
         $group_to_create->revision_log_message->value = "Created by the group migration drush command. The original group ID is $orig_group_id";
         $group_to_create->save(); // Must save the new group in order to get the ID
         $new_group_id = $group_to_create->id();
-        echo "Migrating $group_type_name: $group_name (original ID: $orig_group_id, new ID: $new_group_id)" . PHP_EOL;
+        echo "Created $group_type_name: $group_name (original ID: $orig_group_id, new ID: $new_group_id)" . PHP_EOL;
       }
 
       // TODO: Copy revisions?
@@ -431,7 +431,7 @@ final class BatchCommands extends DrushCommands
                     $source_node->revision_timestamp = time();
                     $source_node->save();
                     \Drupal::state()->set('last_saved_node_id',$entity_id);
-                    echo "Updated field_parent_group field for node:$entity_id" . PHP_EOL;
+                    echo "node:$entity_id parent, ";
                   }
                   break;
                 case 'field_display_groups':
@@ -443,7 +443,7 @@ final class BatchCommands extends DrushCommands
                     $source_node->revision_timestamp = time();
                     $source_node->save();
                     \Drupal::state()->set('last_saved_node_id',$entity_id);
-                    echo "Updated Displayed In field for node:$entity_id" . PHP_EOL;
+                    echo "node:$entity_id display, ";
                   }
                   break;
                 case 'field_body_content':
@@ -461,7 +461,7 @@ final class BatchCommands extends DrushCommands
                     $source_node->revision_timestamp = time();
                     $source_node->save();
                     \Drupal::state()->set('last_saved_node_id',$entity_id);
-                    echo "Updated field_body_content field for node:$entity_id" . PHP_EOL;
+                    echo "node:$entity_id body, ";
                   }
                   break;
               }
@@ -483,7 +483,7 @@ final class BatchCommands extends DrushCommands
                     $source_group->revision_user->target_id = 0;
                     $source_group->revision_created->value = time();
                     $source_group->save();
-                    echo "Updated field_featured_groups field for group:$entity_id" . PHP_EOL;
+                    echo "group:$entity_id featured, ";
                   }
                   break;
                 case 'field_parent_group':
@@ -493,7 +493,7 @@ final class BatchCommands extends DrushCommands
                     $source_group->revision_user->target_id = 0;
                     $source_group->revision_created->value = time();
                     $source_group->save();
-                    echo "Updated field_parent_group field for group:$entity_id" . PHP_EOL;
+                    echo "group:$entity_id parent, ";
                   }
                   break;
               }
@@ -501,6 +501,7 @@ final class BatchCommands extends DrushCommands
           }
         }
       }
+      echo PHP_EOL . "Updated usage for $group_type_name: $group_name" . PHP_EOL;
 
       // TEST ONLY: exit the loop after one copy
       // break;
