@@ -139,7 +139,22 @@ function portland_media_embed_helper_form_entity_embed_dialog_alter(array &$form
     ];
   }
 
+  $form['#submit'][] = 'portland_media_embed_helper_entity_embed_dialog_submit';
   $form['#after_build'][] = 'portland_media_embed_helper_after_build';
+}
+
+/**
+ * Adds responsive-right alignment if document "embedded with thumbnail" view mode is selected
+ */
+function portland_media_embed_helper_entity_embed_dialog_submit(array &$form, FormStateInterface $form_state) {
+  $entity = $form_state->get('entity');
+  if ($entity->bundle() === 'document') {
+    if ($form_state->getValue(['attributes', 'data-entity-embed-display']) === 'view_mode:media.embedded_with_thumbnail') {
+      $form_state->setValue(['attributes', 'data-align'], 'responsive-right');
+    } else {
+      $form_state->unsetValue(['attributes', 'data-align']);
+    }
+  }
 }
 
 function portland_media_embed_helper_after_build($form, &$form_state) {
