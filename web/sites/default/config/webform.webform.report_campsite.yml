@@ -362,6 +362,45 @@ elements: |-
       {% endif %}
 
     '#ajax': true
+  computed_confirmation:
+    '#type': webform_computed_twig
+    '#title': 'Computed Confirmation'
+    '#display_on': form
+    '#mode': html
+    '#template': |+
+      <strong>Location:</strong><br>
+
+      {% if data.report_location.location_address %}
+      	{{ data.report_location.location_address }}<br>
+      {% endif %}
+      {% if data.report_location.location_lat and data.report_location.location_lon %}
+        Lat/Lon: <a href="https://www.google.com/maps/place/{{ data.report_location.location_lat }},{{ data.report_location.location_lon }}">{{ data.report_location.location_lat }},{{ data.report_location.location_lon }}</a><br>
+      {% endif %}
+
+      {% if data.report_location.place_name %}
+        <br><strong>Location notes:</strong> {{ data.report_location.place_name }}<br>
+      {% endif %}
+      {% if data.report_location.location_details %}
+        <br><strong>Additional information:</strong> {{ data.report_location.location_details }}<br>
+      {% endif %}<br>
+
+      <strong>Is the campsite blocking pedestrian access, like a sidewalk, trail, or path?</strong> {{ data.report_blocking_pedestrians }}<br><br>
+
+      <strong>Do you or someone you legally represent have a disability that is affected by this obstruction?</strong>
+      {% if data.report_is_ada == "no" %}No
+      {% elseif data.report_is_ada == "no request" %}Yes, but I do not want to request an ADA accommodation
+      {% else %}Yes, and I would like to request an ADA accommodation{% endif %}<br><br>
+
+      <strong>Reported items:</strong> 
+      {% set selectedValues = data.report_visible_items %}
+      {% set options = webform.get('elements')['report_visible_items'].options %}
+      {% for optionKey, option in options %}
+        {% if selectedValues is iterable and optionKey in selectedValues %}
+          {{ option['#title'] }}
+        {% endif %}
+      {% endfor %}
+
+    '#ajax': true
 css: "div.form-item-report-vehicle .webform-multiple-table tbody tr:hover,\r\ndiv.form-item-report-vehicle .webform-multiple-table tbody tr:focus {\r\n    background: inherit;\r\n}\r\n\r\ndiv.form-item-report-vehicle .webform-multiple-table tbody {\r\n    counter-reset: vehicle;\r\n}\r\n\r\ndiv.form-item-report-vehicle .webform-multiple-table tbody tr {\r\n    display: block;\r\n    margin-bottom: 1rem;\r\n}\r\n\r\ndiv.form-item-report-vehicle .webform-multiple-table tbody tr::before {\r\n    counter-increment: vehicle;\r\n    content: \"Vehicle \" counter(vehicle);\r\n    display: block;\r\n    font-size: 1.5rem;\r\n    font-weight: 600;\r\n    line-height: 1.3333333333;\r\n    margin: 0 0 1rem;\r\n}\r\n\r\ndiv.form-item-report-vehicle .webform-multiple-table .form-control {\r\n    width: 100%;\r\n}\r\n\r\ndiv.form-item-support-agent-use-only-zendesk-request-number {\r\n  display: none;\r\n}"
 javascript: ''
 settings:
