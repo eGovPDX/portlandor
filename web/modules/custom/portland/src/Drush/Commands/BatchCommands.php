@@ -349,7 +349,7 @@ final class BatchCommands extends DrushCommands
 
     // Change old group's path to "PATH-orig" to avoid path conflict
     // Trim the group path to fit into the max of 60 char
-    $path_value = substr($group->get('field_group_path')->value, 0, 55);
+    $path_value = substr($group->get('field_group_path')->value, 0, 50);
     $group->set('field_group_path', [$path_value . '-orig']);
     // Archive the original group if it's published
     if ($group->moderation_state->value == 'published') {
@@ -413,7 +413,7 @@ final class BatchCommands extends DrushCommands
                   $source_node->revision_uid = 0;
                   $source_node->revision_timestamp = time();
                   $source_node->save();
-                  // echo "node:$entity_id parent, ";
+                  echo ".";
                 }
                 break;
               case 'field_display_groups':
@@ -424,7 +424,7 @@ final class BatchCommands extends DrushCommands
                   $source_node->revision_uid = 0;
                   $source_node->revision_timestamp = time();
                   $source_node->save();
-                  // echo "node:$entity_id display, ";
+                  echo ".";
                 }
                 unset($display_groups);
                 break;
@@ -442,7 +442,7 @@ final class BatchCommands extends DrushCommands
                   $source_node->revision_uid = 0;
                   $source_node->revision_timestamp = time();
                   $source_node->save();
-                  // echo "node:$entity_id body, ";
+                  echo ".";
                 }
                 break;
             }
@@ -465,7 +465,7 @@ final class BatchCommands extends DrushCommands
                   $source_group->revision_user->target_id = 0;
                   $source_group->revision_created->value = time();
                   $source_group->save();
-                  // echo "group:$entity_id featured, ";
+                  echo ".";
                 }
                 unset($featured_groups);
                 break;
@@ -476,7 +476,7 @@ final class BatchCommands extends DrushCommands
                   $source_group->revision_user->target_id = 0;
                   $source_group->revision_created->value = time();
                   $source_group->save();
-                  // echo "group:$entity_id parent, ";
+                  echo ".";
                 }
                 unset($parent_groups);
                 break;
