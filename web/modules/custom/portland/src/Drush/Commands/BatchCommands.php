@@ -413,8 +413,7 @@ final class BatchCommands extends DrushCommands
                   $source_node->revision_uid = 0;
                   $source_node->revision_timestamp = time();
                   $source_node->save();
-                  \Drupal::state()->set('last_saved_node_id', $entity_id);
-                  echo "node:$entity_id parent, ";
+                  // echo "node:$entity_id parent, ";
                 }
                 break;
               case 'field_display_groups':
@@ -425,8 +424,7 @@ final class BatchCommands extends DrushCommands
                   $source_node->revision_uid = 0;
                   $source_node->revision_timestamp = time();
                   $source_node->save();
-                  \Drupal::state()->set('last_saved_node_id', $entity_id);
-                  echo "node:$entity_id display, ";
+                  // echo "node:$entity_id display, ";
                 }
                 unset($display_groups);
                 break;
@@ -444,8 +442,7 @@ final class BatchCommands extends DrushCommands
                   $source_node->revision_uid = 0;
                   $source_node->revision_timestamp = time();
                   $source_node->save();
-                  \Drupal::state()->set('last_saved_node_id', $entity_id);
-                  echo "node:$entity_id body, ";
+                  // echo "node:$entity_id body, ";
                 }
                 break;
             }
@@ -468,7 +465,7 @@ final class BatchCommands extends DrushCommands
                   $source_group->revision_user->target_id = 0;
                   $source_group->revision_created->value = time();
                   $source_group->save();
-                  echo "group:$entity_id featured, ";
+                  // echo "group:$entity_id featured, ";
                 }
                 unset($featured_groups);
                 break;
@@ -479,7 +476,7 @@ final class BatchCommands extends DrushCommands
                   $source_group->revision_user->target_id = 0;
                   $source_group->revision_created->value = time();
                   $source_group->save();
-                  echo "group:$entity_id parent, ";
+                  // echo "group:$entity_id parent, ";
                 }
                 unset($parent_groups);
                 break;
