@@ -1,13 +1,14 @@
 #! /bin/bash
 
 set -e
-TERMINUS_HIDE_GIT_MODE_WARNING=1
+export TERMINUS_HIDE_GIT_MODE_WARNING=1
 
 # store original mailer value and turn off mailer
 original_mailer=$(terminus drush portlandor.$1 -- config:get mailsystem.settings defaults.sender)
-terminus drush portlandor.$1 -- config:set mailsystem.settings defaults.sender 'test_mail_collector'
+terminus drush portlandor.$1 -- config:set mailsystem.settings defaults.sender 'test_mail_collector' -y
 
 # create taxonomy terms
+terminus drush portlandor.$1 -- cr
 terminus drush portlandor.$1 -- cim -y && terminus drush portlandor.$1 -- portland:create_group_types
 
 # migrate groups
@@ -31,4 +32,4 @@ terminus drush portlandor.$1 -- sapi-r
 terminus drush portlandor.$1 -- sapi-i
 
 # retore mailer
-terminus drush portlandor.$1 -- config:set mailsystem.settings defaults.sender $original_mailer
+terminus drush portlandor.$1 -- config:set mailsystem.settings defaults.sender $original_mailer -y
