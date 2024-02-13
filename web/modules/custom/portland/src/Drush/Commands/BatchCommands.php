@@ -193,11 +193,13 @@ final class BatchCommands extends DrushCommands
     'field_enable_documents_menu_item',
     'field_enable_events_menu_item',
     'field_enable_news_and_notices_me',
+    'field_enable_offices_menu_item',
     'field_enable_past_meetings',
     'field_enable_permits',
+    'field_enable_projects_menu_item',
+    'field_enable_policies_menu_item',
     'field_enable_press_releases',
     'field_enable_programs_menu_item',
-    'field_enable_projects_menu_item',
     'field_enable_public_notices',
     'field_enable_reports',
     'field_enable_services_and_inform',
@@ -342,9 +344,11 @@ final class BatchCommands extends DrushCommands
       if ($group->hasField($field_name)) {
         $group_to_create->set($field_name, $group->get($field_name)->getValue());
       }
+      else if($field_name == 'field_official_organization_name') {
+        // Groups other than Bureau/Office don't have this required field, reuse the group name
+        $group_to_create->set('field_official_organization_name', $group->get('label')->getValue());
+      }
     }
-    // This is a required field in Bureau/Office
-    $group_to_create->set('field_official_organization_name', $group->get('label')->getValue());
     $group_to_create->set('field_group_subtype', ['target_id' => $this->group_type_and_name_list[$group_type_name]["id"]]);
 
     // Change old group's path to "PATH-orig" to avoid path conflict

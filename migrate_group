@@ -1,11 +1,15 @@
 #! /bin/bash
 
+# Exit on error
 set -e
+# Turn off warning that the site is in GIT mode
 export TERMINUS_HIDE_GIT_MODE_WARNING=1
 
-# store original mailer value and turn off mailer
-original_mailer=$(terminus drush portlandor.$1 -- config:get mailsystem.settings defaults.sender)
-terminus drush portlandor.$1 -- config:set mailsystem.settings defaults.sender 'test_mail_collector' -y
+# Turn off email notification on Live
+if [[ $1 == "live" ]]
+then
+  terminus drush portlandor.$1 -- config:set mailsystem.settings defaults.sender 'test_mail_collector' -y
+fi
 
 # create taxonomy terms
 terminus drush portlandor.$1 -- cr
@@ -31,5 +35,8 @@ for word in $(cat ids_bureau_office.log | grep -v "^$"); do time terminus drush 
 terminus drush portlandor.$1 -- sapi-r
 terminus drush portlandor.$1 -- sapi-i
 
-# retore mailer
-terminus drush portlandor.$1 -- config:set mailsystem.settings defaults.sender $original_mailer -y
+# retore mailer on Live
+if [[ $1 == "live" ]]
+then
+  terminus drush portlandor.$1 -- config:set mailsystem.settings defaults.sender 'sendgrid_integration' -y
+fi
