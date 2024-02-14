@@ -32,13 +32,21 @@ elements: |-
       '#required': true
       '#location_address__title': 'Location of Vehicle Tow'
       '#location_address__required': true
-      '#location_type__access': false
-      '#location_private_owner__access': false
       '#location_lat__required': true
       '#place_name__access': false
       '#location_details__access': false
+      '#location_type__access': false
+      '#location_private_owner__access': false
       '#location_park_container__access': false
-      '#require_city_limits': true
+      '#require_boundary': true
+      '#out_of_bounds_message': |-
+        It appears the tow referenced in your complaint was done outside of the Portland Bureau of Transportation's jurisdiction.
+        <br><br>
+        This Office only has authority to investigate certain tows that occur in Portland and by specific agencies, however, please see contact information below for Agencies that may be able to assist you:
+        <br><br>
+        <a href="https://www.doj.state.or.us/consumer-protection/motor-vehicles/towing/">State of Oregon Consumer Protection Division</a>
+        <br>
+        <a href="https://www.courts.oregon.gov/courts/multnomah/pages/default.aspx">Multnomah County Circuit Court</a>
     report_tow_company:
       '#type': textfield
       '#title': 'Tow Company'
@@ -48,6 +56,7 @@ elements: |-
       '#date_date_format': ''
       '#date_year_range': ''
       '#date_time_format': ''
+      '#date_time_step': '60'
     report_tow_number:
       '#type': textfield
       '#title': 'Tow Number'
@@ -57,6 +66,8 @@ elements: |-
     report_vehicle_license_or_vin:
       '#type': textfield
       '#title': 'Vehicle License Plate or VIN'
+      '#description': '<p>Enter "None" if no plate or VIN.</p>'
+      '#description_display': before
       '#required': true
     report_complaint_type_composite:
       '#type': checkboxes
@@ -65,97 +76,165 @@ elements: |-
         Overcharge: Overcharge
         'Signage complaint': 'Signage complaint'
         Rudeness: Rudeness
-        'Tower damaged vehicle': 'Tower damaged vehicle'
         'Tower refuses to release vehicle': 'Tower refuses to release vehicle'
+        'Unauthorized tow': 'Unauthorized tow'
         'Charged for, or refused to, drop the vehicle at tow scene': 'Charged for, or refused to, drop the vehicle at tow scene'
         'Accessibility (ADA) related complaint': 'Accessibility (ADA) related complaint'
         'No invoice provided': 'No invoice provided'
+        'Tower damaged vehicle': 'Tower damaged vehicle'
         Other: 'Other -- Please provide more detail below'
       '#required': true
-    report_description:
-      '#type': textarea
-      '#title': 'Additional information about your complaint(s)'
-      '#description_display': before
-      '#placeholder': 'Please be concise'
-    report_invoice_file:
-      '#type': webform_image_file
-      '#title': 'Upload handwritten tow invoice'
-      '#description': 'This will help with easier, more accurate processing.'
-      '#description_display': before
-      '#file_preview': 'medium:image'
-      '#max_filesize': '10'
-      '#file_extensions': 'jpg png jpeg pdf'
-      '#file_name': 'report_[webform_submission:sid]'
-      '#sanitize': true
-      '#max_resolution': 1280x1280
-      '#attachment_image_style': webform_report_uploaded_image
-  section_contact:
-    '#type': webform_section
-    '#title': 'Your Contact Information'
-    contact_name:
-      '#type': textfield
-      '#title': Name
-      '#required': true
-    contact_email:
-      '#type': textfield
-      '#title': Email
-      '#description': '<p>We will use your email to confirm your submission and respond if necessary.</p>'
-      '#pattern': '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
-      '#pattern_error': 'Please enter a correctly formatted email address, such as myname@example.com.'
-      '#required': true
-    contact_phone:
-      '#type': textfield
-      '#title': Phone
-      '#description': 'Please provide your phone number in case we need additional information.'
-      '#input_mask': '(999) 999-9999'
-    section_mailing_address:
-      '#type': webform_section
-      '#title': 'Mailing Address'
-      '#title_tag': h3
+    markup_stop_damaged_vehicle:
+      '#type': webform_markup
       '#states':
         visible:
-          ':input[name="contact_country"]':
-            value: US
-      contact_street_address:
-        '#type': textfield
-        '#title': 'Street Address'
-        '#attributes':
-          class:
-            - address-lookup
-        '#required': true
-      contact_unit_type:
-        '#type': webform_select_other
-        '#title': 'Unit Type'
-        '#options': unit_type
-        '#empty_value': none
-      contact_unit_number:
-        '#type': textfield
-        '#title': 'Unit Number'
-        '#states':
-          invisible:
-            ':input[name="contact_unit_type[select]"]':
-              value: none
-      contact_city:
-        '#type': textfield
-        '#title': City/Town
-        '#required': true
-      contact_state:
-        '#type': select
-        '#title': State
-        '#options': state_names
-        '#default_value': Oregon
-        '#required': true
-      contact_zip_code:
-        '#type': textfield
-        '#title': 'ZIP Code'
-        '#input_mask': '99999[-9999]'
-        '#required': true
-  support_agent_use_only:
-    '#type': portland_support_agent_widget
-    '#title': 'Support Agent Use Only'
-    '#zendesk_request_number__access': false
-    '#employee_notes_panel__access': false
-    '#escalate_issue__access': false
+          ':input[name="report_complaint_type_composite[Tower damaged vehicle]"]':
+            checked: true
+      '#markup': |-
+        <div class="alert alert--info next-steps">
+        <h2>Next Steps</h2>
+
+        <p>Damage claims should be addressed with the tower directly. You may also consider a claim with your insurance carrier, the State of Oregon, or in civil court:</p>
+        <a href="https://www.doj.state.or.us/consumer-protection/motor-vehicles/towing/">State of Oregon Consumer Protection Division</a><br />
+        <a href="https://www.courts.oregon.gov/courts/multnomah/pages/default.aspx">Multnomah County Circuit Court</a></div>
+    container_continue_report:
+      '#type': container
+      '#states':
+        invisible:
+          ':input[name="report_complaint_type_composite[Tower damaged vehicle]"]':
+            checked: true
+      report_description:
+        '#type': textarea
+        '#title': 'Additional information about your complaint(s)'
+        '#description_display': before
+        '#placeholder': 'Please be concise'
+      report_invoice_file:
+        '#type': webform_image_file
+        '#title': 'Upload handwritten tow invoice'
+        '#description': 'This will help with easier, more accurate processing.'
+        '#description_display': before
+        '#file_preview': 'medium:image'
+        '#max_filesize': '10'
+        '#file_extensions': 'jpg png jpeg pdf'
+        '#file_name': 'report_[webform_submission:sid]'
+        '#sanitize': true
+        '#max_resolution': 1280x1280
+        '#attachment_image_style': webform_report_uploaded_image
+      section_contact:
+        '#type': webform_section
+        '#title': 'Your Contact Information'
+        contact_name:
+          '#type': textfield
+          '#title': Name
+          '#required': true
+        contact_email:
+          '#type': textfield
+          '#title': Email
+          '#description': '<p>We will use your email to confirm your submission and respond if necessary.</p>'
+          '#pattern': '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+          '#pattern_error': 'Please enter a correctly formatted email address, such as myname@example.com.'
+          '#required': true
+        contact_phone:
+          '#type': textfield
+          '#title': Phone
+          '#description': 'Please provide your phone number in case we need additional information.'
+          '#input_mask': '(999) 999-9999'
+        section_mailing_address:
+          '#type': webform_section
+          '#title': 'Mailing Address'
+          '#title_tag': h3
+          '#states':
+            visible:
+              ':input[name="contact_country"]':
+                value: US
+          contact_street_address:
+            '#type': textfield
+            '#title': 'Street Address'
+            '#attributes':
+              class:
+                - address-lookup
+            '#required': true
+          contact_unit_type:
+            '#type': webform_select_other
+            '#title': 'Unit Type'
+            '#options': unit_type
+          contact_unit_number:
+            '#type': textfield
+            '#title': 'Unit Number'
+            '#states':
+              invisible:
+                ':input[name="contact_unit_type[select]"]':
+                  value: ''
+          contact_city:
+            '#type': textfield
+            '#title': City/Town
+            '#required': true
+          contact_state:
+            '#type': select
+            '#title': State
+            '#options': state_names
+            '#default_value': Oregon
+            '#required': true
+          contact_zip_code:
+            '#type': textfield
+            '#title': 'ZIP Code'
+            '#input_mask': '99999[-9999]'
+            '#required': true
+      support_agent_use_only:
+        '#type': portland_support_agent_widget
+        '#title': 'Support Agent Use Only'
+        '#zendesk_request_number__access': false
+        '#employee_notes_panel__access': false
+        '#escalate_issue__access': false
+        '#access_create_roles':
+          - authenticated
+        '#access_update_roles':
+          - support_agent
+          - administrator
+        '#access_view_roles':
+          - support_agent
+          - administrator
+      actions:
+        '#type': webform_actions
+        '#title': 'Submit button(s)'
+  computed_ticket_description:
+    '#type': webform_computed_twig
+    '#title': 'Computed ticket description'
+    '#display_on': none
+    '#mode': html
+    '#template': |-
+      <h2>Report</h2>
+      <p><strong>Type of Tow:</strong> {{ webform_token('[webform_submission:values:report_tow_type]', webform_submission) }}</p>
+      {% if data.report_tow_company %}
+      <p><strong>Tow Company:</strong> {{ webform_token('[webform_submission:values:report_tow_company]', webform_submission) }}</p>
+      {% endif %}
+      <p><strong>Location Address:</strong> {{ webform_token('[webform_submission:values:report_location:location_address]', webform_submission) }}</p>
+      {% if data.report_datetime_of_tow %}
+      <p><strong>Date/Time of Tow:</strong> {{ webform_token('[webform_submission:values:report_datetime_of_tow]', webform_submission) }}</p>
+      {% endif %}
+      {% if data.report_tow_number %}
+      <p><strong>Tow Number:</strong> {{ webform_token('[webform_submission:values:report_tow_number]', webform_submission) }}</p>
+      {% endif %}
+      {% if data.report_invoice_number %}
+      <p><strong>Invoice Number:</strong> {{ webform_token('[webform_submission:values:report_invoice_number]', webform_submission) }}</p>
+      {% endif %}
+      <p><strong>Vehicle License Plate or VIN:</strong> {{ webform_token('[webform_submission:values:report_vehicle_license_or_vin]', webform_submission) }}</p>
+      <p><strong>Type of Complaint(s):</strong> {{ webform_token('[webform_submission:values:report_complaint_type_composite]', webform_submission) }}</p>
+      {% if data.report_description %}
+      <p><strong>Additional information about your complaint(s):</strong> {{ webform_token('[webform_submission:values:report_description]', webform_submission) }}</p>
+      {% endif %}
+      <h2>Contact Information</h2>
+      <p><strong>Name:</strong> {{ webform_token('[webform_submission:values:contact_name]', webform_submission) }}</p>
+      <p><strong>Email:</strong> {{ webform_token('[webform_submission:values:contact_email]', webform_submission) }}</p>
+      {% if data.contact_phone %}
+      <p><strong>Phone:</strong> {{ webform_token('[webform_submission:values:contact_phone]', webform_submission) }}</p>
+      {% endif %}
+      {% if data.contact_street_address %}
+      <h3>Mailing Address</h3>
+      <p><pre>{{ webform_token('[webform_submission:values:contact_street_address]', webform_submission) }}
+      {{ webform_token('[webform_submission:values:contact_unit_type:clear]', webform_submission) }} {{ webform_token('[webform_submission:values:contact_unit_number]', webform_submission) }}
+      {{ webform_token('[webform_submission:values:contact_city]', webform_submission) }}, {{ webform_token('[webform_submission:values:contact_state]', webform_submission) }} {{ webform_token('[webform_submission:values:contact_zip_code]', webform_submission) }}</pre></p>
+      {% endif %}
 css: ''
 javascript: ''
 settings:
@@ -355,7 +434,7 @@ handlers:
       requester_name: contact_name
       requester_email: contact_email
       subject: 'Towing Complaint Received'
-      comment: '[webform_submission:values:html]'
+      comment: '[webform_submission:values:computed_ticket_description:raw]'
       tags: 'drupal webform'
       priority: normal
       status: new
@@ -363,9 +442,11 @@ handlers:
       assignee_id: ''
       type: question
       collaborators: ''
-      custom_fields: "1900004448785: ['[webform_submission:values:report_tow_company]', 'report_tow_company']"
+      custom_fields: "1900004448785: ['[webform_submission:values:report_tow_company]', 'report_tow_company']\r\n20015105884695: ['[webform_submission:values:report_tow_number]', 'report_tow_number']\r\n20015100822423: ['[webform_submission:values:report_invoice_number]', 'report_invoice_number']"
       ticket_id_field: ''
       ticket_form_id: '14205125621911'
+      recipient: ''
+      ticket_fork_field: ''
   zendesk_new_request_developer_test:
     id: zendesk
     handler_id: zendesk_new_request_developer_test
@@ -381,7 +462,7 @@ handlers:
       requester_name: contact_name
       requester_email: contact_email
       subject: 'Towing Complaint Received'
-      comment: '[webform_submission:values:html]'
+      comment: '[webform_submission:values:computed_ticket_description:raw]'
       tags: 'drupal webform'
       priority: normal
       status: new
@@ -389,7 +470,9 @@ handlers:
       assignee_id: ''
       type: question
       collaborators: ''
-      custom_fields: "1900004448785: ['[webform_submission:values:report_tow_company]', 'report_tow_company']"
+      custom_fields: "1900004448785: ['[webform_submission:values:report_tow_company]', 'report_tow_company']\r\n20015105884695: ['[webform_submission:values:report_tow_number]', 'report_tow_number']\r\n20015100822423: ['[webform_submission:values:report_invoice_number]', 'report_invoice_number']"
       ticket_id_field: ''
       ticket_form_id: '14205125621911'
+      recipient: ''
+      ticket_fork_field: ''
 variants: {  }

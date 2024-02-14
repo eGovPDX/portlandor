@@ -1114,17 +1114,8 @@
             // the required lat/lon fields with zeroes so that the form can still be submitted. at least
             // it will capture the address, and the report will still be usable.
             if (lat && lng) {
-              doZoomAndCenter(lat, lng);
-              checkRegion(new L.LatLng(lat, lng));
-
-              if (!addressVerify) {
-                // show precision text
-                showPrecisionText();
-              }
-
-              if (primaryLayerBehavior != PRIMARY_LAYER_BEHAVIOR.SelectionOnly) {
-                setLocationMarker(lat, lng);
-              }
+              doMapClick(new L.LatLng(lat, lng));
+              setVerified();
             } else {
               setLatLngHiddenFields(0, 0);
               showStatusModal(VERIFIED_NO_COORDS);
