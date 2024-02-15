@@ -1,0 +1,394 @@
+uuid: 1d5ff0ef-8e64-4cbc-a856-c129614d7e3b
+langcode: en
+status: open
+dependencies:
+  module:
+    - portland
+    - portland_smartsheet
+third_party_settings:
+  portland:
+    disable_demographic_form_prompt: 0
+    exclude_from_json: {  }
+weight: 0
+open: null
+close: null
+uid: 60
+template: false
+archive: false
+id: request_outreach_assistance
+title: 'Request Assistance from a City Street Outreach Worker'
+description: ''
+categories: {  }
+elements: |-
+  request_who_request_is_for:
+    '#type': radios
+    '#title': 'Who are you making this request for? '
+    '#options':
+      Myself: Myself
+      'A friend, family member or person I know': 'A friend, family member or person I know'
+      'A client': 'A client'
+    '#required': true
+  request_agency_name:
+    '#type': textfield
+    '#title': 'What is the name of the agency or organization making the request? '
+    '#required': true
+    '#states':
+      visible:
+        ':input[name="request_who_request_is_for"]':
+          value: 'A client'
+  request_new_or_updated:
+    '#type': radios
+    '#title': 'Is this a new or an updated request?'
+    '#options':
+      New: 'New -- This is the first time I am requesting assistance for myself/this person.'
+      Updated: 'Updated -- I made a request for assistance but I need to submit new contact information (please enter all of the available information again, even if you submitted it before).'
+  request_name:
+    '#type': textfield
+    '#title': 'Name of person needing assistance'
+    '#description_display': before
+    '#required': true
+  request_phone_number:
+    '#type': textfield
+    '#title': 'Phone number of person needing assistance, if known'
+    '#description_display': before
+    '#input_mask': '(999) 999-9999'
+  contact_email:
+    '#type': textfield
+    '#title': 'Email of person needing assistance, if known'
+    '#description_display': before
+    '#pattern': '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    '#pattern_error': 'Please enter a correctly formatted email address, such as myname@example.com.'
+  request_additional_contact_information:
+    '#type': textfield
+    '#title': 'Additional contact information'
+    '#description': '<p>Add any other information about how to contact the unsheltered person. For example, the best days and times to reach them.</p>'
+    '#description_display': before
+  report_location:
+    '#type': portland_location_picker
+    '#title': 'Current location'
+    '#required': true
+    '#location_address__title': 'Location of person who is needing assistance'
+    '#location_address__description': 'Enter the best, last known location where we are most likely to find the person in need of assistance.'
+    '#location_address__required': true
+    '#place_name__access': false
+    '#location_details__description': 'Please provide any other details that might help us find the unsheltered person, such as the color of their tent or vehicle information.'
+    '#location_details__type': textfield
+    '#location_type__access': false
+    '#location_private_owner__access': false
+    '#location_is_portland__access': false
+    '#location_details__counter_type': ''
+  report_photos:
+    '#type': webform_image_file
+    '#title': Photos
+    '#multiple': 3
+    '#description': "<p>If appropriate, please include up to 3 photos of the individual's current location. Please do not include photos where people are present and identifiable.</p>"
+    '#description_display': before
+    '#file_preview': 'medium:image'
+    '#max_filesize': '30'
+    '#file_extensions': 'jpg jpeg png'
+    '#file_name': 'report_[webform_submission:sid]'
+    '#sanitize': true
+    '#max_resolution': 1280x1280
+    '#attachment_image_style': webform_report_uploaded_image
+  contact_confirmation_email:
+    '#type': textfield
+    '#title': 'Confirmation Email'
+    '#description': '<p>Enter your email to receive a confirmation, or leave this field blank to remain anonymous.</p>'
+    '#description_display': before
+    '#pattern': '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    '#pattern_error': 'Please enter a correctly formatted email address, such as myname@example.com.'
+  computed_address:
+    '#type': webform_computed_twig
+    '#title': 'Computed Address'
+    '#display_on': none
+    '#mode': text
+    '#template': '{{ data.report_location.location_address }}'
+    '#whitespace': trim
+    '#ajax': true
+  computed_lat_lon:
+    '#type': webform_computed_twig
+    '#title': 'Computed Lat/Lon'
+    '#display_on': none
+    '#mode': text
+    '#template': '{{ data.report_location.location_lat }},{{ data.report_location.location_lon }}'
+    '#whitespace': trim
+    '#ajax': true
+  computed_location_details:
+    '#type': webform_computed_twig
+    '#title': 'Computed Location Details'
+    '#display_on': none
+    '#mode': text
+    '#template': '{{ data.report_location.location_details }}'
+    '#whitespace': trim
+    '#ajax': true
+  computed_location_link:
+    '#type': webform_computed_twig
+    '#title': 'Computed Location Link'
+    '#display_on': none
+    '#mode': text
+    '#template': 'https://www.google.com/maps/?q={{ data.report_location.location_lat }}+{{ data.report_location.location_lon }}'
+    '#whitespace': trim
+    '#ajax': true
+  public_records_statement:
+    '#type': webform_section
+    '#title': 'Public Records Statement'
+    markup_public_records_statement:
+      '#type': webform_markup
+      '#markup': '<p>Information you provide to the City is a public record and may be subject to release under Oregon’s <a data-renderer-mark="true" href="https://www.doj.state.or.us/oregon-department-of-justice/public-records/attorney-generals-public-records-and-meetings-manual/i-public-records/#:~:text=Under%20Oregon''s%20Public%20Records%20Law,committee%20of%20the%20Legislative%20Assembly" title="https://www.doj.state.or.us/oregon-department-of-justice/public-records/attorney-generals-public-records-and-meetings-manual/i-public-records/#:~:text=Under%20Oregon''s%20Public%20Records%20Law,committee%20of%20the%20Legislative%20Assembly">Public Records Law</a>. This law classifies certain information as available to the public on request. See our <a data-renderer-mark="true" href="/help/about/privacy" title="https://www.portland.gov/help/about/privacy">privacy statement</a> for more information.</p>'
+  support_agent_use_only:
+    '#type': portland_support_agent_widget
+    '#title': 'Support Agent Use Only'
+    '#access_create_roles':
+      - authenticated
+    '#escalate_issue__access': false
+css: ''
+javascript: ''
+settings:
+  ajax: false
+  ajax_scroll_top: form
+  ajax_progress_type: ''
+  ajax_effect: ''
+  ajax_speed: null
+  page: true
+  page_submit_path: ''
+  page_confirm_path: ''
+  page_theme_name: ''
+  form_title: both
+  form_submit_once: false
+  form_open_message: ''
+  form_close_message: ''
+  form_exception_message: ''
+  form_previous_submissions: true
+  form_confidential: false
+  form_confidential_message: ''
+  form_disable_remote_addr: false
+  form_convert_anonymous: false
+  form_prepopulate: false
+  form_prepopulate_source_entity: false
+  form_prepopulate_source_entity_required: false
+  form_prepopulate_source_entity_type: ''
+  form_unsaved: false
+  form_disable_back: false
+  form_submit_back: false
+  form_disable_autocomplete: false
+  form_novalidate: false
+  form_disable_inline_errors: false
+  form_required: false
+  form_autofocus: false
+  form_details_toggle: false
+  form_reset: false
+  form_access_denied: default
+  form_access_denied_title: ''
+  form_access_denied_message: ''
+  form_access_denied_attributes: {  }
+  form_file_limit: ''
+  form_attributes: {  }
+  form_method: ''
+  form_action: ''
+  share: false
+  share_node: false
+  share_theme_name: ''
+  share_title: true
+  share_page_body_attributes: {  }
+  submission_label: ''
+  submission_exception_message: ''
+  submission_locked_message: ''
+  submission_log: false
+  submission_excluded_elements: {  }
+  submission_exclude_empty: false
+  submission_exclude_empty_checkbox: false
+  submission_views: {  }
+  submission_views_replace: {  }
+  submission_user_columns: {  }
+  submission_user_duplicate: false
+  submission_access_denied: default
+  submission_access_denied_title: ''
+  submission_access_denied_message: ''
+  submission_access_denied_attributes: {  }
+  previous_submission_message: ''
+  previous_submissions_message: ''
+  autofill: false
+  autofill_message: ''
+  autofill_excluded_elements: {  }
+  wizard_progress_bar: true
+  wizard_progress_pages: false
+  wizard_progress_percentage: false
+  wizard_progress_link: false
+  wizard_progress_states: false
+  wizard_start_label: ''
+  wizard_preview_link: false
+  wizard_confirmation: true
+  wizard_confirmation_label: ''
+  wizard_auto_forward: true
+  wizard_auto_forward_hide_next_button: false
+  wizard_keyboard: true
+  wizard_track: ''
+  wizard_prev_button_label: ''
+  wizard_next_button_label: ''
+  wizard_toggle: false
+  wizard_toggle_show_label: ''
+  wizard_toggle_hide_label: ''
+  wizard_page_type: container
+  wizard_page_title_tag: h2
+  preview: 0
+  preview_label: ''
+  preview_title: ''
+  preview_message: ''
+  preview_attributes: {  }
+  preview_excluded_elements: {  }
+  preview_exclude_empty: true
+  preview_exclude_empty_checkbox: false
+  draft: none
+  draft_multiple: false
+  draft_auto_save: false
+  draft_saved_message: ''
+  draft_loaded_message: ''
+  draft_pending_single_message: ''
+  draft_pending_multiple_message: ''
+  confirmation_type: page
+  confirmation_url: ''
+  confirmation_title: 'Thank you for submitting your request'
+  confirmation_message: "<p data-renderer-start-pos=\"1\"><strong data-renderer-mark=\"true\">Thank you!</strong></p>\r\n\r\n<p data-renderer-start-pos=\"62\">Your request for&nbsp;assistance from a City Street Outreach Worker has been received.</p>\r\n\r\n<p data-renderer-start-pos=\"104\">All requests will be reviewed by the City Outreach Team. Once a Street Outreach Worker is available, they will attempt to contact the unsheltered person by phone, email, and in-person at their location. If your/their location or phone number changes, please submit a new form.</p>\r\n\r\n<p data-renderer-start-pos=\"382\">The Street Outreach Worker can provide information and assistance with accessing housing and other services, based on availability, appropriateness, and the community member’s interest.</p>\r\n\r\n<p data-renderer-start-pos=\"569\">If you made a request on behalf of someone else, you will <u data-renderer-mark=\"true\">not</u> receive any further updates about this request for privacy reasons.</p>\r\n\r\n<p data-renderer-start-pos=\"700\">If you have additional questions, please contact us at <a data-renderer-mark=\"true\" data-testid=\"link-with-safety\" href=\"tel:311\" title=\"tel:311\">3-1-1</a>, <a data-renderer-mark=\"true\" data-testid=\"link-with-safety\" href=\"tel:5038234000\" title=\"tel:5038234000\">503-823-4000</a>, or <a data-renderer-mark=\"true\" data-testid=\"link-with-safety\" href=\"mailto:311@portlandoregon.gov\" title=\"mailto:311@portlandoregon.gov\">311@portlandoregon.gov</a>.</p>"
+  confirmation_attributes: {  }
+  confirmation_back: true
+  confirmation_back_label: ''
+  confirmation_back_attributes: {  }
+  confirmation_exclude_query: false
+  confirmation_exclude_token: false
+  confirmation_update: false
+  limit_total: null
+  limit_total_interval: null
+  limit_total_message: ''
+  limit_total_unique: false
+  limit_user: null
+  limit_user_interval: null
+  limit_user_message: ''
+  limit_user_unique: false
+  entity_limit_total: null
+  entity_limit_total_interval: null
+  entity_limit_user: null
+  entity_limit_user_interval: null
+  purge: none
+  purge_days: null
+  results_disabled: false
+  results_disabled_ignore: false
+  results_customize: false
+  token_view: false
+  token_update: false
+  token_delete: false
+  serial_disabled: false
+access:
+  create:
+    roles:
+      - anonymous
+      - authenticated
+    users: {  }
+    permissions: {  }
+  view_any:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  update_any:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  delete_any:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  purge_any:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  view_own:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  update_own:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  delete_own:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  administer:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  test:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  configuration:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+handlers:
+  smartsheet_add_row_to_existing_sheet:
+    id: smartsheet_add_row
+    handler_id: smartsheet_add_row_to_existing_sheet
+    label: 'Smartsheet: add row to existing sheet'
+    notes: ''
+    status: true
+    conditions: {  }
+    weight: -50
+    settings:
+      column_mappings:
+        5091700671205252: ''
+        3776684764385156: request_new_or_updated
+        4214603924852612: request_name
+        8718203552223108: request_phone_number
+        555429227614084: contact_email
+        8280284391755652: request_additional_contact_information
+        7310828668669828: computed_address
+        5260557310447492: computed_lat_lon
+        756957683076996: computed_location_link
+        3008757496762244: computed_location_details
+        5059028854984580: request_who_request_is_for
+        2807229041299332: request_agency_name
+        8032967826820996: contact_confirmation_email
+      multiple_rows_enable: null
+      multiple_rows_field: ''
+      multiple_rows_separator: ''
+      row_location: toTop
+      sheet_id: '3329149020098436'
+      upload_attachments: '1'
+  email:
+    id: email
+    handler_id: email
+    label: 'Email confirmation'
+    notes: ''
+    status: true
+    conditions: {  }
+    weight: -49
+    settings:
+      states:
+        - completed
+      to_mail: '[webform_submission:values:contact_confirmation_email:raw]'
+      to_options: {  }
+      bcc_mail: ''
+      bcc_options: {  }
+      cc_mail: ''
+      cc_options: {  }
+      from_mail: noreply@portlandoregon.gov
+      from_options: {  }
+      from_name: _default
+      reply_to: ''
+      return_path: ''
+      sender_mail: ''
+      sender_name: ''
+      subject: 'Your submission has been received by the City of Portland'
+      body: "<p data-renderer-start-pos=\"1\"><strong data-renderer-mark=\"true\">Thank you!</strong></p>\r\n\r\n<p data-renderer-start-pos=\"62\">Your request for&nbsp;assistance from a City Street Outreach Worker has been received.</p>\r\n\r\n<p data-renderer-start-pos=\"104\">All requests will be reviewed by the City Outreach Team. Once a Street Outreach Worker is available, they will attempt to contact the unsheltered person by phone, email, and in-person at their location. If your/their location or phone number changes, please submit a new form.</p>\r\n\r\n<p data-renderer-start-pos=\"382\">The Street Outreach Worker can provide information and assistance with accessing housing and other services, based on availability, appropriateness, and the community member’s interest.</p>\r\n\r\n<p data-renderer-start-pos=\"569\">If you made a request on behalf of someone else, you will <u data-renderer-mark=\"true\">not</u> receive any further updates about this request for privacy reasons.</p>\r\n\r\n<p data-renderer-start-pos=\"700\">If you have additional questions, please contact us at <a data-renderer-mark=\"true\" data-testid=\"link-with-safety\" href=\"tel:311\" title=\"tel:311\">3-1-1</a>, <a data-renderer-mark=\"true\" data-testid=\"link-with-safety\" href=\"tel:5038234000\" title=\"tel:5038234000\">503-823-4000</a>, or <a data-renderer-mark=\"true\" data-testid=\"link-with-safety\" href=\"mailto:311@portlandoregon.gov\" title=\"mailto:311@portlandoregon.gov\">311@portlandoregon.gov</a>.<button tabindex=\"0\" type=\"button\"></button></p>"
+      excluded_elements: {  }
+      ignore_access: false
+      exclude_empty: true
+      exclude_empty_checkbox: false
+      exclude_attachments: false
+      html: true
+      attachments: false
+      twig: false
+      theme_name: ''
+      parameters: {  }
+      debug: false
+variants: {  }
