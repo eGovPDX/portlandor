@@ -217,7 +217,7 @@ final class BatchCommands extends DrushCommands
     'field_summary',
     'field_topics',
     // Advisory group only fields
-    'field_certified_advisory_group',
+    'field_certified_advisory_body',
     // Project only fields
     "field_end_date",
     "field_geo_map",
