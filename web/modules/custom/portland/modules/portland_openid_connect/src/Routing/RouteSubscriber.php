@@ -57,16 +57,15 @@ class RouteSubscriber extends RouteSubscriberBase {
         ->warning('@message', $variables);
     }
 
-    // Custom overrides on Pantheon dev, test, and live environments to enable OpenID login form
+    // Custom overrides on Pantheon demo environment to enable OpenID login form
     if(
       isset($_ENV['PANTHEON_ENVIRONMENT']) &&
-      in_array($_ENV['PANTHEON_ENVIRONMENT'], [
-        'pgov-779', 'sandbox', 'demo', 'dev', 'test', 'live'])
+      in_array($_ENV['PANTHEON_ENVIRONMENT'], ['demo'])
     ) {
       // only log in with an OpenID provider
-      // if ($route = $collection->get('user.login')) {
-      //   $route->setDefault('_form', 'Drupal\openid_connect\Form\LoginForm');
-      // }
+      if ($route = $collection->get('user.login')) {
+        $route->setDefault('_form', 'Drupal\openid_connect\Form\OpenIDConnectLoginForm');
+      }
       // don't accept POSTs to a login route
       if ($route = $collection->get('user.login.http')) {
         $route->setRequirement('_access', 'FALSE');
