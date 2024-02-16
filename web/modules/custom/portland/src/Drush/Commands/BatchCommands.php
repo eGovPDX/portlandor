@@ -228,6 +228,7 @@ final class BatchCommands extends DrushCommands
     "field_start_date",
     "field_display_date_toggle",
     "field_display_date",
+    "field_neighborhood",
   ];
 
   /**
