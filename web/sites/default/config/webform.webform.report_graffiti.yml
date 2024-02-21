@@ -666,14 +666,16 @@ handlers:
   create_new_zendesk_ticket:
     id: zendesk
     handler_id: create_new_zendesk_ticket
-    label: 'Create new Zendesk request'
+    label: 'Create new Zendesk request - no waiver'
     notes: ''
     status: true
     conditions:
-      disabled:
+      enabled:
         ':input[name="support_agent_use_only[test_submission]"]':
-          checked: true
-    weight: 0
+          unchecked: true
+        ':input[name="agreement_confirmation"]':
+          unchecked: true
+    weight: -50
     settings:
       requester_name: contact_name
       requester_email: contact_email
@@ -694,14 +696,16 @@ handlers:
   create_new_zendesk_ticket_developer_test:
     id: zendesk
     handler_id: create_new_zendesk_ticket_developer_test
-    label: 'Create new Zendesk request - developer test'
+    label: 'TEST: Create new Zendesk request - no waiver'
     notes: 'Creates new Zendesk request but puts it in the Developer Test Group. This handler gets used if the Test checkbox is ticked in the Developer Use Only section.'
     status: true
     conditions:
       enabled:
         ':input[name="support_agent_use_only[test_submission]"]':
           checked: true
-    weight: 1
+        ':input[name="agreement_confirmation"]':
+          unchecked: true
+    weight: -48
     settings:
       requester_name: contact_name
       requester_email: contact_email
@@ -729,7 +733,7 @@ handlers:
       enabled:
         ':input[name="support_agent_use_only[zendesk_request_number]"]':
           filled: true
-    weight: 2
+    weight: -46
     settings:
       comment: "<h1>Graffiti Report</h1>\r\n<p><b>Linked Issue Request: <a href=\"https://portlandoregon.zendesk.com/agent/tickets/[webform_submission:values:report_ticket_id]\">[webform_submission:values:report_ticket_id]</a></b></p>\r\n\r\n[webform_submission:values:html]\r\n\r\n"
       comment_private: 1
@@ -743,4 +747,64 @@ handlers:
       custom_fields: "8692493739543: '[webform_submission:values:report_ticket_id]'"
       ticket_id_field: zendesk_request_number
       ticket_form_id: ''
+  create_new_zendesk_request:
+    id: zendesk
+    handler_id: create_new_zendesk_request
+    label: 'Create new Zendesk request - yes waiver'
+    notes: ''
+    status: true
+    conditions:
+      enabled:
+        ':input[name="support_agent_use_only[test_submission]"]':
+          unchecked: true
+        ':input[name="agreement_confirmation"]':
+          value: 'Yes'
+    weight: -49
+    settings:
+      requester_name: contact_name
+      requester_email: contact_email
+      subject: 'Graffiti Report'
+      comment: '[webform_submission:values:ticket_description:html]'
+      tags: 'drupal webform graffiti digital_waiver_received'
+      priority: normal
+      status: new
+      group_id: '8559017236631'
+      assignee_id: ''
+      type: incident
+      collaborators: ''
+      custom_fields: "6353388345367: 'report_graffiti'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n1500013095781: '[webform_submission:uuid]'\r\n6355783758871: '[webform_submission:values:resolution_url]'\r\n6379451469847: ['[webform_submission:values:waiver_url]', 'waiver_url']\r\n9205221816983: ['[webform_submission:values:report_location:location_type:raw]', 'report_location:location_type']\r\n10333166173079: ['[webform_submission:values:report_above_ground_level]', 'report_above_ground_level']\r\n10333167883159: ['[webform_submission:values:report_graffiti_on_mural]', 'report_graffiti_on_mural']\r\n6586776052759: ['[webform_submission:values:report_hate_speech_or_gang]', 'report_hate_speech_or_gang']"
+      ticket_id_field: report_ticket_id
+      ticket_form_id: '6499767163543'
+      recipient: ''
+      ticket_fork_field: ''
+  test_create_new_zendesk_request_yes_waiver:
+    id: zendesk
+    handler_id: test_create_new_zendesk_request_yes_waiver
+    label: 'TEST: Create new Zendesk request - yes waiver'
+    notes: 'Creates new Zendesk request but puts it in the Developer Test Group. This handler gets used if the Test checkbox is ticked in the Developer Use Only section.'
+    status: true
+    conditions:
+      enabled:
+        ':input[name="support_agent_use_only[test_submission]"]':
+          checked: true
+        ':input[name="agreement_confirmation"]':
+          value: 'Yes'
+    weight: -47
+    settings:
+      requester_name: contact_name
+      requester_email: contact_email
+      subject: 'Graffiti Report'
+      comment: '[webform_submission:values:ticket_description:html]'
+      tags: 'drupal webform graffiti digital_waiver_received'
+      priority: normal
+      status: new
+      group_id: '4549352062487'
+      assignee_id: ''
+      type: incident
+      collaborators: ''
+      custom_fields: "6353388345367: 'report_graffiti'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n1500013095781: '[webform_submission:uuid]'\r\n6355783758871: '[webform_submission:values:resolution_url]'\r\n6379451469847: ['[webform_submission:values:waiver_url]', 'waiver_url']\r\n9205221816983: ['[webform_submission:values:report_location:location_type:raw]', 'report_location:location_type']\r\n10333166173079: ['[webform_submission:values:report_above_ground_level]', 'report_above_ground_level']\r\n10333167883159: ['[webform_submission:values:report_graffiti_on_mural]', 'report_graffiti_on_mural']\r\n6586776052759: ['[webform_submission:values:report_hate_speech_or_gang]', 'report_hate_speech_or_gang']"
+      ticket_id_field: report_ticket_id
+      ticket_form_id: '6499767163543'
+      recipient: ''
+      ticket_fork_field: ''
 variants: {  }
