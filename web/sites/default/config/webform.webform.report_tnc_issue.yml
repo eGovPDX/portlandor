@@ -5,6 +5,7 @@ dependencies:
   module:
     - portland
     - portland_zendesk
+    - weight
 third_party_settings:
   portland:
     disable_demographic_form_prompt: 0
@@ -44,7 +45,7 @@ elements: |-
     '#title': 'Date of Incident'
     '#required': true
   report_complaint_category:
-    '#type': webform_radios_other
+    '#type': radios
     '#title': 'Complaint category'
     '#options':
       'Damages to your personal vehicle': 'Damages to your personal vehicle'
@@ -54,6 +55,7 @@ elements: |-
       'Passenger conduct': 'Passenger conduct'
       'Vehicle crash': 'Vehicle crash'
       ' Insurance claim': ' Insurance claim'
+      Other: Other
     '#required': true
   report_complaint_detail:
     '#type': textarea
@@ -155,6 +157,14 @@ elements: |-
 
       <strong>Phone:</strong>
       {{ data.contact_phone }}
+    '#ajax': true
+  computed_ticket_subject:
+    '#type': webform_computed_twig
+    '#title': 'Computed Subject'
+    '#display_on': none
+    '#mode': text
+    '#template': "TNC driver complaint: {{ data.report_complaint_category is iterable ? '' : data.report_complaint_category }}"
+    '#whitespace': trim
     '#ajax': true
 css: ''
 javascript: ''
@@ -354,7 +364,7 @@ handlers:
     settings:
       requester_name: contact_name
       requester_email: contact_email
-      subject: 'TNC Driver Complaint'
+      subject: '[webform_submission:values:computed_ticket_subject]'
       comment: '[webform_submission:values:computed_ticket_description:html]'
       tags: 'drupal webform'
       priority: normal
@@ -382,7 +392,7 @@ handlers:
     settings:
       requester_name: contact_name
       requester_email: contact_email
-      subject: 'TNC Driver Complaint'
+      subject: '[webform_submission:values:computed_ticket_subject]'
       comment: '[webform_submission:values:computed_ticket_description:html]'
       tags: 'drupal webform'
       priority: normal
