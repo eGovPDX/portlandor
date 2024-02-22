@@ -5,10 +5,12 @@ dependencies:
   module:
     - portland
     - portland_zendesk
+    - weight
 third_party_settings:
   portland:
     disable_demographic_form_prompt: 0
-    exclude_from_json: {  }
+    exclude_from_json:
+      computed_ticket_description: computed_ticket_description
   weight: 0
 weight: 0
 open: null
@@ -17,7 +19,7 @@ uid: 60
 template: false
 archive: false
 id: report_tnc_issue
-title: 'Report Issue with a TNC'
+title: 'Report TNC Issue'
 description: '<p>This form is intended to help TNC drivers describe complaints about TNC companies, drivers, or other industry related issues to a neutral and independent ombudsperson who will attempt to resolve the complaint(s).</p>'
 categories:
   - Report
@@ -29,6 +31,7 @@ elements: |-
       Uber: Uber
       Lyft: Lyft
       Wingz: Wingz
+    '#required': true
   report_company_complaint:
     '#type': radios
     '#title': 'Which TNC company are you filing this complaint about?'
@@ -36,9 +39,11 @@ elements: |-
       Uber: Uber
       Lyft: Lyft
       Wingz: Wingz
+    '#required': true
   report_date_of_incident:
     '#type': date
     '#title': 'Date of Incident'
+    '#required': true
   report_complaint_category:
     '#type': webform_radios_other
     '#title': 'Complaint category'
@@ -50,15 +55,18 @@ elements: |-
       'Passenger conduct': 'Passenger conduct'
       'Vehicle crash': 'Vehicle crash'
       ' Insurance claim': ' Insurance claim'
+    '#required': true
   report_complaint_detail:
     '#type': textarea
     '#title': 'Please provide a detailed account of what your complaint is'
+    '#required': true
   report_filed_with_company:
     '#type': radios
     '#title': 'Have you filed the complaint with your company?'
     '#options':
       'Yes': 'Yes'
       'No': 'No'
+    '#required': true
   container_contact:
     '#type': container
     contact_name:
@@ -66,9 +74,11 @@ elements: |-
       '#title': Name
       '#description': '<p>First and last name</p>'
       '#description_display': before
+      '#required': true
     contact_email:
       '#type': textfield
       '#title': Email
+      '#required': true
     contact_phone:
       '#type': textfield
       '#title': Phone
@@ -76,6 +86,7 @@ elements: |-
     contact_tnc_permit_number:
       '#type': textfield
       '#title': 'TNC permit number'
+      '#required': true
   report_ticket_id:
     '#type': hidden
     '#title': 'Report ticket id'
@@ -92,13 +103,60 @@ elements: |-
       	{% endfor %}
       {% endif %}
 
-      https://{{ webform_token('[site:url-brief]', webform_submission, [], options) }}/form/report-tnc-issue-update?report_company_complaint={{ data.report_company_complaint is iterable ? '' : data.report_company_complaint }}&report_operator_company={{ companies|url_encode }}&report_date_of_incident={{ data.report_date_of_incident|url_encode }}&report_complaint_category={{ data.report_complaint_category is iterable ? '' : data.report_complaint_category|url_encode }}&report_filed_with_company={{ data.report_filed_with_company is iterable ? '' : data.report_filed_with_company }}&contact_name={{ data.contact_name|url_encode }}&contact_email={{ data.contact_email }}&contact_phone={{ data.contact_phone|url_encode }}&contact_tnc_permit_number={{ data.contact_tnc_permit_number|url_encode }}&original_submission_key={{ uuid }}&report_complaint_detail={{ data.report_complaint_detail|url_encode }}
+      {% set detail = data.report_complaint_detail %}
+      {% if detail|length > 200 %}
+        {% set detail = detail|truncate(200)|url_encode ~ "..." %}
+      {% endif %}
+
+      https://{{ webform_token('[site:url-brief]', webform_submission, [], options) }}/form/report-tnc-issue-update?report_company_complaint={{ data.report_company_complaint is iterable ? '' : data.report_company_complaint }}&report_operator_company={{ companies|url_encode }}&report_date_of_incident={{ data.report_date_of_incident|date("m/d/Y")|url_encode }}&report_complaint_category={{ data.report_complaint_category is iterable ? '' : data.report_complaint_category|url_encode }}&report_filed_with_company={{ data.report_filed_with_company is iterable ? '' : data.report_filed_with_company }}&contact_name={{ data.contact_name|url_encode }}&contact_email={{ data.contact_email }}&contact_phone={{ data.contact_phone|url_encode }}&contact_tnc_permit_number={{ data.contact_tnc_permit_number|url_encode }}&original_submission_key={{ uuid }}&report_complaint_detail={{ detail }}
     '#whitespace': trim
     '#ajax': true
   support_agent_use_only:
     '#type': portland_support_agent_widget
     '#title': 'Support Agent Use Only'
+    '#access_create_roles':
+      - authenticated
     '#escalate_issue__access': false
+  computed_ticket_description:
+    '#type': webform_computed_twig
+    '#title': 'Computed Ticket Description'
+    '#display_on': none
+    '#mode': html
+    '#template': |-
+      {% set companies = '' %}
+      {% if data.report_operator_company is iterable %}
+      	{% for item in data.report_operator_company %}
+      		{% set companies = companies ~ item ~ ", " %}
+      	{% endfor %}
+      {% endif %}
+
+      <strong>Which TNC companies do you operate for?</strong>
+      {{ companies }}<br><br>
+
+      <strong>Which TNC company are you filing this complaint about?</strong>
+      {{ data.report_company_complaint is iterable ? '' : data.report_company_complaint }}<br><br>
+
+      <strong>Date of Incident:</strong>
+      {{ data.report_date_of_incident|date("m/d/Y") }}<br><br>
+
+      <strong>Complaint category:</strong>
+      {{ data.report_complaint_category is iterable ? '' : data.report_complaint_category }}<br><br>
+
+      <strong>Complaint description:</strong><br>
+      {{ data.report_complaint_detail }}<br><br>
+
+      <strong>Have you filed the complaint with your company?</strong>
+      {{ data.report_filed_with_company is iterable ? '' : data.report_filed_with_company }}<br><br>
+
+      <strong>Name:</strong>
+      {{ data.contact_name }}<br><br>
+
+      <strong>Email:</strong>
+      {{ data.contact_email }}<br><br>
+
+      <strong>Phone:</strong>
+      {{ data.contact_phone }}
+    '#ajax': true
 css: ''
 javascript: ''
 settings:
@@ -298,7 +356,7 @@ handlers:
       requester_name: contact_name
       requester_email: contact_email
       subject: 'TNC Driver Complaint'
-      comment: '[webform_submission:values:html]'
+      comment: '[webform_submission:values:computed_ticket_description:html]'
       tags: 'drupal webform'
       priority: normal
       status: new
@@ -326,7 +384,7 @@ handlers:
       requester_name: contact_name
       requester_email: contact_email
       subject: 'TNC Driver Complaint'
-      comment: '[webform_submission:values:html]'
+      comment: '[webform_submission:values:computed_ticket_description:html]'
       tags: 'drupal webform'
       priority: normal
       status: new
