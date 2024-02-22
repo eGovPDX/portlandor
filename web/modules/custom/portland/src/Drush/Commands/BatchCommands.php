@@ -178,6 +178,10 @@ final class BatchCommands extends DrushCommands
     'created',
     'changed',
     'status',
+    'rh_action',
+    'rh_redirect',
+    'rh_redirect_response',
+    'rh_redirect_fallback_action',
 
     'moderation_state',
 
