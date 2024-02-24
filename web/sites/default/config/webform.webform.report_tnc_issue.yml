@@ -39,27 +39,6 @@ elements: |-
       Lyft: Lyft
       Wingz: Wingz
     '#required': true
-  report_date_of_incident:
-    '#type': date
-    '#title': 'Date of Incident'
-    '#required': true
-  report_complaint_category:
-    '#type': radios
-    '#title': 'Complaint category'
-    '#options':
-      'Damages to your personal vehicle': 'Damages to your personal vehicle'
-      Compensation: Compensation
-      'Unexplained off-boarding/suspension': 'Unexplained off-boarding/suspension'
-      'Driver app errors and issues': 'Driver app errors and issues'
-      'Passenger conduct': 'Passenger conduct'
-      'Vehicle crash': 'Vehicle crash'
-      ' Insurance claim': ' Insurance claim'
-      Other: Other
-    '#required': true
-  report_complaint_detail:
-    '#type': textarea
-    '#title': 'Please provide a detailed account of what your complaint is'
-    '#required': true
   report_filed_with_company:
     '#type': radios
     '#title': 'Have you filed the complaint with your company?'
@@ -67,26 +46,66 @@ elements: |-
       'Yes': 'Yes'
       'No': 'No'
     '#required': true
-  container_contact:
+  container_submit:
     '#type': container
-    contact_name:
-      '#type': textfield
-      '#title': Name
-      '#description': '<p>First and last name</p>'
-      '#description_display': before
+    '#states':
+      visible:
+        ':input[name="report_filed_with_company"]':
+          value: 'Yes'
+    report_date_of_incident:
+      '#type': date
+      '#title': 'Date of Incident'
       '#required': true
-    contact_email:
-      '#type': textfield
-      '#title': Email
+    report_complaint_category:
+      '#type': radios
+      '#title': 'Complaint category'
+      '#options':
+        Compensation: Compensation
+        'Unexplained off-boarding/suspension': 'Unexplained off-boarding/suspension'
+        'Driver app errors and issues': 'Driver app errors and issues'
+        'Passenger conduct': 'Passenger conduct'
+        Other: Other
       '#required': true
-    contact_phone:
-      '#type': textfield
-      '#title': Phone
-      '#input_mask': '(999) 999-9999'
-    contact_tnc_permit_number:
-      '#type': textfield
-      '#title': 'TNC permit number'
+    report_complaint_detail:
+      '#type': textarea
+      '#title': 'Please provide a detailed account of what your complaint is'
       '#required': true
+    container_contact:
+      '#type': container
+      contact_name:
+        '#type': textfield
+        '#title': Name
+        '#description': '<p>First and last name</p>'
+        '#description_display': before
+        '#required': true
+      contact_email:
+        '#type': textfield
+        '#title': Email
+        '#required': true
+      contact_phone:
+        '#type': textfield
+        '#title': Phone
+        '#input_mask': '(999) 999-9999'
+      contact_tnc_permit_number:
+        '#type': textfield
+        '#title': 'TNC permit number'
+        '#required': true
+    actions:
+      '#type': webform_actions
+      '#title': 'Submit button(s)'
+      '#submit__label': Submit
+  markup:
+    '#type': webform_markup
+    '#states':
+      visible:
+        ':input[name="report_filed_with_company"]':
+          value: 'No'
+    '#markup': |-
+      <div class="alert alert--info next-steps">
+      <h2>Next Steps</h2>
+
+      <p class="mb-0">The City of Portland is unable to take action on a complaint if you haven't already filed with your TNC.&nbsp;Please submit through your TNC's mobile app process and then return to initiate the complaint with the Regulatory Division.&nbsp;Thank you.</p>
+      </div>
   report_ticket_id:
     '#type': hidden
     '#title': 'Report ticket id'
@@ -111,12 +130,6 @@ elements: |-
       https://{{ webform_token('[site:url-brief]', webform_submission, [], options) }}/form/report-tnc-issue-update?report_company_complaint={{ data.report_company_complaint is iterable ? '' : data.report_company_complaint }}&report_operator_company={{ companies|url_encode }}&report_date_of_incident={{ data.report_date_of_incident|date("m/d/Y")|url_encode }}&report_complaint_category={{ data.report_complaint_category is iterable ? '' : data.report_complaint_category|url_encode }}&report_filed_with_company={{ data.report_filed_with_company is iterable ? '' : data.report_filed_with_company }}&contact_name={{ data.contact_name|url_encode }}&contact_email={{ data.contact_email }}&contact_phone={{ data.contact_phone|url_encode }}&contact_tnc_permit_number={{ data.contact_tnc_permit_number|url_encode }}&original_submission_key={{ uuid }}&report_complaint_detail={{ detail|url_encode }}
     '#whitespace': trim
     '#ajax': true
-  support_agent_use_only:
-    '#type': portland_support_agent_widget
-    '#title': 'Support Agent Use Only'
-    '#access_create_roles':
-      - authenticated
-    '#escalate_issue__access': false
   computed_ticket_description:
     '#type': webform_computed_twig
     '#title': 'Computed Ticket Description'
