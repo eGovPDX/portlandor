@@ -287,7 +287,7 @@ final class BatchCommands extends DrushCommands
 
   // Insert a new group ID in front of the original group ID to the EntityReferenceFieldItemList
   // Return TRUE if $groups is modified.
-  public static function insert_new_group(&$groups, $orig_group_id, $group_to_create_id)
+  public static function replace_referenced_group(&$groups, $orig_group_id, $group_to_create_id)
   {
     // $groups_clone = clone $groups;
     // $old_group_index = null;
@@ -425,10 +425,22 @@ final class BatchCommands extends DrushCommands
                   echo ".";
                 }
                 break;
+              case 'field_bureau': // Only used in Council Document
+                /** @var EntityReferenceFieldItemListInterface $bureaus */
+                $bureaus = $source_node->get('field_bureau');
+                if (BatchCommands::replace_referenced_group($bureaus, $orig_group_id, $group_to_create_id)) {
+                  $source_node->revision_log->value = "$group_name in bureaus migrated by Drush command";
+                  $source_node->revision_uid = 0;
+                  $source_node->revision_timestamp = time();
+                  $source_node->save();
+                  echo ".";
+                }
+                unset($bureaus);
+                break;
               case 'field_display_groups':
                 /** @var EntityReferenceFieldItemListInterface $display_groups */
                 $display_groups = $source_node->get('field_display_groups');
-                if (BatchCommands::insert_new_group($display_groups, $orig_group_id, $group_to_create_id)) {
+                if (BatchCommands::replace_referenced_group($display_groups, $orig_group_id, $group_to_create_id)) {
                   $source_node->revision_log->value = "$group_name in field_display_groups migrated by Drush command";
                   $source_node->revision_uid = 0;
                   $source_node->revision_timestamp = time();
@@ -469,7 +481,7 @@ final class BatchCommands extends DrushCommands
               case 'field_featured_groups':
                 /** @var EntityReferenceFieldItemListInterface $featured_groups */
                 $featured_groups = $source_group->get('field_featured_groups');
-                if (BatchCommands::insert_new_group($featured_groups, $orig_group_id, $group_to_create_id)) {
+                if (BatchCommands::replace_referenced_group($featured_groups, $orig_group_id, $group_to_create_id)) {
                   $source_group->revision_log_message->value = "$group_name in field_featured_groups migrated by Drush command";
                   $source_group->revision_user->target_id = 0;
                   $source_group->revision_created->value = time();
@@ -480,7 +492,7 @@ final class BatchCommands extends DrushCommands
                 break;
               case 'field_parent_group':
                 $parent_groups = $source_group->get('field_parent_group');
-                if (BatchCommands::insert_new_group($parent_groups, $orig_group_id, $group_to_create_id)) {
+                if (BatchCommands::replace_referenced_group($parent_groups, $orig_group_id, $group_to_create_id)) {
                   $source_group->revision_log_message->value = "$group_name in field_parent_group migrated by Drush command";
                   $source_group->revision_user->target_id = 0;
                   $source_group->revision_created->value = time();
