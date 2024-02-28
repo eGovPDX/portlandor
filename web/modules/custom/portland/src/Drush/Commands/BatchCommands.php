@@ -267,6 +267,24 @@ final class BatchCommands extends DrushCommands
     ]
   ];
 
+  private $bundle_and_plugin_id_array = [
+    "document" => "group_media:document",
+    "image" => "group_media:image",
+    "map" => "group_media:map",
+    "video" => "group_media:video",
+    "contact" => "group_node:contact",
+    "event" => "group_node:event",
+    "news" => "group_node:news",
+    "page" => "group_node:page",
+    "policy" => "group_node:policy",
+    "city_service" => "group_node:city_service",
+    "construction_project" => "group_node:construction_project",
+    "service_location" => "group_node:service_location",
+    "external_resource" => "group_node:external_resource",
+    "iframe_embed" => "group_media:iframe_embed",
+    "notification" => "group_node:notification",
+  ];
+
   /**
    * Drush command to delete Advisory group, Program, and Project into Bureau/Office.
    */
@@ -377,12 +395,26 @@ final class BatchCommands extends DrushCommands
 
     // TODO: Copy revisions?
 
-    // Copy all group content by updating the group ID
+    // Add content/member to the new group
     $group_to_create_id = $group_to_create->id();
     $group_contents = $group->getContent();
+    $count = 0;
     foreach ($group_contents as $group_content) {
       $group_content->gid->target_id = $group_to_create_id;
-      $group_content->save();
+      $plugin = $group_content->getContentPlugin();
+      $entityBundle = $plugin->getEntityBundle(); // content or media bundle machine name
+
+      if($plugin->getEntityTypeId() == "user") {
+        $group_to_create->addMember($group_content->getEntity(), ['group_roles' => $group_content->group_roles->getValue()]);
+      }
+      else {
+        $group_to_create->addContent($group_content->getEntity(), $this->bundle_and_plugin_id_array[$entityBundle]);
+      }
+      $count++;
+      if($count >= 100) {
+        echo ".";
+        $count = 0;
+      }
     }
 
     // Update all usage of the original group
