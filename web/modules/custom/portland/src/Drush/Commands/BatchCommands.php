@@ -412,7 +412,7 @@ final class BatchCommands extends DrushCommands
       }
       $group_content->delete();
       $count++;
-      if($count >= 100) {
+      if($count >= 50) {
         echo ".";
         $count = 0;
       }
