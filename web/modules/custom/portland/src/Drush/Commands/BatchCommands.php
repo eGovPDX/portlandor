@@ -410,6 +410,7 @@ final class BatchCommands extends DrushCommands
       else {
         $group_to_create->addContent($group_content->getEntity(), $this->bundle_and_plugin_id_array[$entityBundle]);
       }
+      $group_content->delete();
       $count++;
       if($count >= 100) {
         echo ".";
