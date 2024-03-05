@@ -336,6 +336,25 @@ final class BatchCommands extends DrushCommands
   /**
    * Drush command to migrate Advisory group, Program, and Project into Bureau/Office.
    */
+  #[CLI\Command(name: 'portland:get_group_content', aliases: ['portland-get-group-content'])]
+  #[CLI\Usage(name: 'portland:get_group_content GROUP_ID', description: 'GROUP_ID is the group entity ID.')]
+  public function get_group_content($group_id = null)
+  {
+    $group = \Drupal\group\Entity\Group::load((int)$group_id);
+    $group_contents = $group->getContent();
+    foreach ($group_contents as $group_content) {
+      $plugin = $group_content->getContentPlugin();
+      $entityBundle = $plugin->getEntityBundle(); // content or media bundle machine name
+      if($plugin->getEntityTypeId() == "user") {
+        $group_entity = $group_content->getEntity();
+        print_r($group_content->group_roles->getValue());
+      }
+    }
+  }
+
+  /**
+   * Drush command to migrate Advisory group, Program, and Project into Bureau/Office.
+   */
   #[CLI\Command(name: 'portland:migrate_group', aliases: ['portland-migrate-group'])]
   #[CLI\Usage(name: 'portland:migrate_group GROUP_ID', description: 'GROUP_ID is the group entity ID.')]
   public function migrate_group($group_id_to_migrate = null)
@@ -405,14 +424,21 @@ final class BatchCommands extends DrushCommands
       $entityBundle = $plugin->getEntityBundle(); // content or media bundle machine name
 
       if($plugin->getEntityTypeId() == "user") {
-        $group_to_create->addMember($group_content->getEntity(), ['group_roles' => $group_content->group_roles->getValue()]);
+        $roles_orig = $group_content->group_roles->getValue(); // [ ["target_id" => "bureau_office-admin"], [...], [...]]
+        $roles_new = [];
+        foreach($roles_orig as $role_orig) {
+          if(str_ends_with($role_orig["target_id"], "admin")) $roles_new []= "base_group-admin";
+          else if(str_ends_with($role_orig["target_id"], "reviewer")) $roles_new []= "base_group-reviewer";
+          else if(str_ends_with($role_orig["target_id"], "editor")) $roles_new []= "base_group-editor";
+        }
+        $group_to_create->addMember($group_content->getEntity(), ['group_roles' => $roles_new]);
       }
       else {
         $group_to_create->addContent($group_content->getEntity(), $this->bundle_and_plugin_id_array[$entityBundle]);
       }
       $group_content->delete();
       $count++;
-      if($count >= 50) {
+      if($count >= 20) {
         echo ".";
         $count = 0;
       }
