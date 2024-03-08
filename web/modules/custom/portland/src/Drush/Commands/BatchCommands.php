@@ -233,6 +233,8 @@ final class BatchCommands extends DrushCommands
     "field_display_date_toggle",
     "field_display_date",
     "field_neighborhood",
+    // Bureau/office only field
+    "field_official_organization_name",
   ];
 
   /**
@@ -367,6 +369,7 @@ final class BatchCommands extends DrushCommands
         'vid' => 'group_type',
       ]);
     foreach ($group_type_terms as $group_type_term) {
+      /** @var EntityInterface $group_type_term */
       foreach ($this->group_type_and_name_list as &$group_type_and_name) {
         if ($group_type_and_name['name'] == $group_type_term->getName()) {
           $group_type_and_name['id'] = $group_type_term->id();
@@ -439,7 +442,7 @@ final class BatchCommands extends DrushCommands
       $group_content->delete();
       $count++;
       if($count >= 20) {
-        echo ".";
+        echo "+";
         $count = 0;
       }
     }
@@ -453,7 +456,7 @@ final class BatchCommands extends DrushCommands
           feeds_feed->field_parent_group
           group->field_featured_groups
           group->field_parent_group
-          node->field_bureau (Council Document only. No need to migrate)
+          node->field_bureau (Council Document only)
           group->field_body_content (Elected only. Easy to check manually)
         */
     $usage_service = \Drupal::service('entity_usage.usage');
@@ -462,9 +465,9 @@ final class BatchCommands extends DrushCommands
     foreach ($usage_list as $source_type => $usage_list_by_type) {
       // $usage is [ entity ID => [ entry for each revision ] ]
       foreach ($usage_list_by_type as $entity_id => $usage_array) {
-        if ($source_type == 'node') {
+        if ($source_type == 'node' || $source_type == 'media') {
 
-          $source_node = \Drupal\node\Entity\Node::load($entity_id);
+          $source_entity = ($source_type == 'node') ? \Drupal\node\Entity\Node::load($entity_id) : \Drupal\media\Entity\Media::load($entity_id);
 
           // source_vid is the revision ID. The first item in $usage_array is the latest.
           // But there could be more items with the same source_vid but different field_name.
@@ -475,35 +478,35 @@ final class BatchCommands extends DrushCommands
 
             switch ($field_name) {
               case 'field_parent_group': // Only used in feeds
-                if ($source_node->get('field_parent_group')->target_id == $orig_group_id) {
-                  $source_node->get('field_parent_group')->target_id = $group_to_create_id;
-                  $source_node->revision_log->value = "$group_name in field_parent_group migrated by Drush command";
-                  $source_node->revision_uid = 0;
-                  $source_node->revision_timestamp = time();
-                  $source_node->save();
+                if ($source_entity->get('field_parent_group')->target_id == $orig_group_id) {
+                  $source_entity->get('field_parent_group')->target_id = $group_to_create_id;
+                  $source_entity->revision_log->value = "$group_name in field_parent_group migrated by Drush command";
+                  $source_entity->revision_uid = 0;
+                  $source_entity->revision_timestamp = time();
+                  $source_entity->save();
                   echo ".";
                 }
                 break;
               case 'field_bureau': // Only used in Council Document
                 /** @var EntityReferenceFieldItemListInterface $bureaus */
-                $bureaus = $source_node->get('field_bureau');
+                $bureaus = $source_entity->get('field_bureau');
                 if (BatchCommands::replace_referenced_group($bureaus, $orig_group_id, $group_to_create_id)) {
-                  $source_node->revision_log->value = "$group_name in bureaus migrated by Drush command";
-                  $source_node->revision_uid = 0;
-                  $source_node->revision_timestamp = time();
-                  $source_node->save();
+                  $source_entity->revision_log->value = "$group_name in bureaus migrated by Drush command";
+                  $source_entity->revision_uid = 0;
+                  $source_entity->revision_timestamp = time();
+                  $source_entity->save();
                   echo ".";
                 }
                 unset($bureaus);
                 break;
               case 'field_display_groups':
                 /** @var EntityReferenceFieldItemListInterface $display_groups */
-                $display_groups = $source_node->get('field_display_groups');
+                $display_groups = $source_entity->get('field_display_groups');
                 if (BatchCommands::replace_referenced_group($display_groups, $orig_group_id, $group_to_create_id)) {
-                  $source_node->revision_log->value = "$group_name in field_display_groups migrated by Drush command";
-                  $source_node->revision_uid = 0;
-                  $source_node->revision_timestamp = time();
-                  $source_node->save();
+                  $source_entity->revision_log->value = "$group_name in field_display_groups migrated by Drush command";
+                  $source_entity->revision_uid = 0;
+                  $source_entity->revision_timestamp = time();
+                  $source_entity->save();
                   echo ".";
                 }
                 unset($display_groups);
@@ -516,18 +519,18 @@ final class BatchCommands extends DrushCommands
                 $text_to_be_replaced = 'data-entity-uuid="' . $orig_group_uuid . '" href="/group/' . $orig_group_id;
                 $replacement_text = 'data-entity-uuid="' . $group_to_create_uuid . '" href="/group/' . $group_to_create_id;
                 $replacement_count = 0;
-                $source_node->field_body_content->value = str_replace($text_to_be_replaced, $replacement_text, $source_node->field_body_content->value, $replacement_count);
+                $source_entity->field_body_content->value = str_replace($text_to_be_replaced, $replacement_text, $source_entity->field_body_content->value, $replacement_count);
                 if ($replacement_count > 0) { // Only save if the body content is updated
-                  $source_node->revision_log->value = "$group_name embedded in field_body_content updated by Drush command";
-                  $source_node->revision_uid = 0;
-                  $source_node->revision_timestamp = time();
-                  $source_node->save();
+                  $source_entity->revision_log->value = "$group_name embedded in field_body_content updated by Drush command";
+                  $source_entity->revision_uid = 0;
+                  $source_entity->revision_timestamp = time();
+                  $source_entity->save();
                   echo ".";
                 }
                 break;
             }
           }
-          unset($source_node);
+          unset($source_entity);
         } else if ($source_type == 'group') {
           $source_group = \Drupal\group\Entity\Group::load($entity_id);
 
