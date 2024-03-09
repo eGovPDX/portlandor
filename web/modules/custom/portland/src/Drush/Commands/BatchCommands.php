@@ -503,11 +503,20 @@ final class BatchCommands extends DrushCommands
                 /** @var EntityReferenceFieldItemListInterface $display_groups */
                 $display_groups = $source_entity->get('field_display_groups');
                 if (BatchCommands::replace_referenced_group($display_groups, $orig_group_id, $group_to_create_id)) {
-                  $source_entity->revision_log->value = "$group_name in field_display_groups migrated by Drush command";
-                  $source_entity->revision_uid = 0;
-                  $source_entity->revision_timestamp = time();
-                  $source_entity->save();
-                  echo ".";
+                  if ($source_type == 'node') {
+                    $source_entity->revision_log->value = "$group_name in field_display_groups migrated by Drush command";
+                    $source_entity->revision_uid = 0;
+                    $source_entity->revision_timestamp = time();
+                    $source_entity->save();
+                    echo ".";
+                  }
+                  else if ($source_type == 'media') {
+                    $source_entity->revision_log_message->value = "$group_name in field_display_groups migrated by Drush command";
+                    $source_entity->revision_user = 0;
+                    $source_entity->revision_created = time();
+                    $source_entity->save();
+                    echo ".";
+                  }
                 }
                 unset($display_groups);
                 break;
