@@ -53,7 +53,7 @@ elements: |-
       '#title': 'What type of issue or object are you reporting?'
       '#options':
         Vehicle: Vehicle
-        'Construction work zone item': 'Construction work zone item -- Porta-potty, staging, fencing, miscellaneous equipment, etc. '
+        'Construction work zone item': 'Construction work zone item -- Staging, fencing, miscellaneous equipment, etc. '
         'Permanent structure': 'Permanent structure -- Fences, planters, sheds, etc.'
         'Temporary item': 'Temporary item -- Mulch piles, basketball hoops, sports items, electrical cords, trash cans, etc.'
         'Outdoor dining': 'Outdoor dining -- Outdoor seating, tables, sandwich boards, dining structure, etc.'
@@ -303,27 +303,6 @@ elements: |-
 
         <p class="mb-0">Signs are not allowed to be posted on utility poles according to City Code 17.64.040, however the City does not have resources to enforce this code and the power utility companies own and maintain most utility poles in the City of Portland.</p>
         </div>
-  computed_email_recipient:
-    '#type': webform_computed_twig
-    '#title': computed_email_recipient
-    '#display_on': none
-    '#mode': text
-    '#template': |-
-      {% if data.report_construction_work_zone_item == "Utility cut" %}
-        pbotutilityinspectors@portlandoregon.gov
-      {% elseif data.report_temporary_item == "Garbage/recycling bins" %}
-        wasteinfo@portlandoregon.gov
-      {% elseif data.report_outdoor_dining_item == "Outdoor seating, tables, dining structure" %}
-        OutdoorDiningPDX@portlandoregon.gov
-      {% elseif data.report_trees_vegetation_type == "Blocking traffic signals, signs, or visibility at intersections" %}
-        tom.jensen@portlandoregon.gov
-      {% elseif data.report_trees_vegetation_type == "Coming from publicly owned land" %}
-        pdxroads@portlandoregon.gov
-      {% elseif data.report_signage_type == "Unauthorized No Parking signs or obstructions to prevent parking" %}
-        PBOTparkingcontrol@portlandoregon.gov
-      {% endif %}
-    '#whitespace': trim
-    '#ajax': true
   container_submit:
     '#type': container
     '#states':
@@ -382,17 +361,8 @@ elements: |-
       '#type': container
       '#states':
         visible:
-          - ':input[name="report_construction_work_zone_item"]':
-              value: 'Construction equipment'
-          - or
-          - ':input[name="report_construction_work_zone_item"]':
-              value: 'Construction fencing'
-          - or
-          - ':input[name="report_construction_work_zone_item"]':
-              value: Materials
-          - or
-          - ':input[name="report_construction_work_zone_item"]':
-              value: Other
+          - ':input[name="report_issue_type"]':
+              value: 'Construction work zone item'
           - or
           - ':input[name="report_permanent_structure"]':
               value: Fence
@@ -446,7 +416,7 @@ elements: |-
       '#title': 'Your Contact Information'
       contact_name:
         '#type': textfield
-        '#title': 'Name'
+        '#title': Name
       contact_email:
         '#type': textfield
         '#title': Email
@@ -459,6 +429,29 @@ elements: |-
       '#access_create_roles':
         - authenticated
       '#escalate_issue__access': false
+    computed_email_recipient:
+      '#type': webform_computed_twig
+      '#title': computed_email_recipient
+      '#display_on': form
+      '#mode': text
+      '#template': |-
+        {% if data.report_construction_work_zone_item == "Utility cut" %}
+          pbotutilityinspectors@portlandoregon.gov
+        {% elseif data.report_temporary_item == "Garbage/recycling bins" %}
+          wasteinfo@portlandoregon.gov
+        {% elseif data.report_outdoor_dining_item == "Outdoor seating, tables, dining structure" %}
+          OutdoorDiningPDX@portlandoregon.gov
+        {% elseif data.report_trees_vegetation_type == "Blocking traffic signals, signs, or visibility at intersections" %}
+          tom.jensen@portlandoregon.gov
+        {% elseif data.report_trees_vegetation_type == "Coming from publicly owned land" %}
+          pdxroads@portlandoregon.gov
+        {% elseif data.report_signage_type == "Unauthorized No Parking signs or obstructions to prevent parking" %}
+          PBOTparkingcontrol@portlandoregon.gov
+        {% elseif data.support_agent_use_only.test_submission.checked %}
+          gregory.clapp@portlandoregon.gov
+        {% endif %}
+      '#whitespace': trim
+      '#ajax': true
     actions:
       '#type': webform_actions
       '#title': 'Submit button(s)'
@@ -736,7 +729,7 @@ handlers:
       sender_mail: ''
       sender_name: ''
       subject: 'Obstruction in the right of way: [webform_submission:values:report_issue_type]'
-      body: '<p>[webform_submission:values]</p>'
+      body: '<p>[webform_submission:values:html]</p>'
       excluded_elements: {  }
       ignore_access: false
       exclude_empty: true
