@@ -4,6 +4,7 @@ status: true
 dependencies:
   config:
     - field.storage.node.field_bureau
+    - field.storage.node.field_committee
     - field.storage.node.field_introduced_by
     - field.storage.relation.field_agenda_item_disposition
     - field.storage.relation.field_agenda_item_number
@@ -19,14 +20,18 @@ dependencies:
     - field.storage.relation.field_votes
     - portland_relations.relation_type.council_agenda_item
     - system.menu.council-toolbar
+    - taxonomy.vocabulary.council_committee
     - user.role.administrator
     - user.role.council_clerk
+  content:
+    - 'taxonomy_term:council_committee:7e9d0dac-e638-4764-8dfc-23e9a4eb4118'
   module:
     - datetime
     - eva
     - node
     - options
     - portland_relations
+    - taxonomy
     - user
 id: admin_agenda_items
 label: 'Admin: Agenda Items'
@@ -637,6 +642,15 @@ display:
           admin_label: 'field_council_document: Content'
           plugin_id: standard
           required: false
+        field_council_agenda:
+          id: field_council_agenda
+          table: relation__field_council_agenda
+          field: field_council_agenda
+          relationship: field_council_session
+          group_type: group
+          admin_label: 'field_council_agenda: Content'
+          plugin_id: standard
+          required: false
       header:
         result:
           id: result
@@ -1010,7 +1024,7 @@ display:
     display_plugin: entity_view
     position: 2
     display_options:
-      title: 'Agenda Items'
+      title: 'Document History'
       fields:
         field_agenda_sub_item_number:
           id: field_agenda_sub_item_number
@@ -1214,7 +1228,7 @@ display:
           exclude: false
           alter:
             alter_text: true
-            text: '{{ field_agenda_item_number }}{{ field_agenda_sub_item_number }} {{ field_agenda_item_type }} in {{ field_council_agenda }}'
+            text: 'Item {{ field_agenda_item_number }}{{ field_agenda_sub_item_number }} {{ field_agenda_item_type }} in {{ field_council_agenda }}'
             make_link: false
             path: ''
             absolute: false
@@ -1255,6 +1269,69 @@ display:
           type: entity_reference_label
           settings:
             link: true
+          group_column: target_id
+          group_columns: {  }
+          group_rows: true
+          delta_limit: 0
+          delta_offset: 0
+          delta_reversed: false
+          delta_first_last: false
+          multi_type: separator
+          separator: ', '
+          field_api_classes: false
+        field_committee:
+          id: field_committee
+          table: node__field_committee
+          field: field_committee
+          relationship: field_council_agenda
+          group_type: group
+          admin_label: ''
+          plugin_id: field
+          label: ''
+          exclude: false
+          alter:
+            alter_text: true
+            text: '<p class="badge rounded-pill bg-light text-dark">{{ field_committee }}</p>'
+            make_link: false
+            path: ''
+            absolute: false
+            external: false
+            replace_spaces: false
+            path_case: none
+            trim_whitespace: false
+            alt: ''
+            rel: ''
+            link_class: ''
+            prefix: ''
+            suffix: ''
+            target: ''
+            nl2br: false
+            max_length: 0
+            word_boundary: true
+            ellipsis: true
+            more_link: false
+            more_link_text: ''
+            more_link_path: ''
+            strip_tags: false
+            trim: false
+            preserve_tags: ''
+            html: false
+          element_type: ''
+          element_class: ''
+          element_label_type: ''
+          element_label_class: ''
+          element_label_colon: false
+          element_wrapper_type: ''
+          element_wrapper_class: ''
+          element_default_classes: true
+          empty: ''
+          hide_empty: false
+          empty_zero: false
+          hide_alter_empty: true
+          click_sort_column: target_id
+          type: entity_reference_label
+          settings:
+            link: false
           group_column: target_id
           group_columns: {  }
           group_rows: true
@@ -1522,7 +1599,7 @@ display:
           entity_type: node
           entity_field: nid
           plugin_id: node_nid
-          default_action: ignore
+          default_action: empty
           exception:
             value: all
             title_enable: false
@@ -1585,10 +1662,21 @@ display:
           admin_label: 'field_council_session: Relation'
           plugin_id: standard
           required: false
+        field_council_agenda:
+          id: field_council_agenda
+          table: relation__field_council_agenda
+          field: field_council_agenda
+          relationship: field_council_session
+          group_type: group
+          admin_label: 'field_council_agenda: Content'
+          plugin_id: standard
+          required: false
       display_description: ''
       header: {  }
       display_extenders:
-        metatag_display_extender: {  }
+        metatag_display_extender:
+          metatags: {  }
+          tokenize: false
       entity_type: node
       bundles:
         - council_document
@@ -1601,6 +1689,7 @@ display:
         - url
         - user.permissions
       tags:
+        - 'config:field.storage.node.field_committee'
         - 'config:field.storage.relation.field_agenda_item_disposition'
         - 'config:field.storage.relation.field_agenda_item_number'
         - 'config:field.storage.relation.field_agenda_item_type'
@@ -2368,6 +2457,27 @@ display:
           multi_type: separator
           separator: ', '
           field_api_classes: false
+      pager:
+        type: full
+        options:
+          offset: 0
+          items_per_page: 100
+          total_pages: null
+          id: 0
+          tags:
+            next: 'Next ›'
+            previous: '‹ Previous'
+            first: '« First'
+            last: 'Last »'
+          expose:
+            items_per_page: false
+            items_per_page_label: 'Items per page'
+            items_per_page_options: '5, 10, 25, 50'
+            items_per_page_options_all: false
+            items_per_page_options_all_label: '- All -'
+            offset: false
+            offset_label: Offset
+          quantity: 9
       filters:
         type:
           id: type
@@ -2427,16 +2537,83 @@ display:
             default_group: All
             default_group_multiple: {  }
             group_items: {  }
+        field_committee_target_id:
+          id: field_committee_target_id
+          table: node__field_committee
+          field: field_committee_target_id
+          relationship: field_council_agenda
+          group_type: group
+          admin_label: ''
+          plugin_id: taxonomy_index_tid
+          operator: or
+          value:
+            846: 846
+          group: 1
+          exposed: true
+          expose:
+            operator_id: field_committee_target_id_op
+            label: Committee
+            description: ''
+            use_operator: false
+            operator: field_committee_target_id_op
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: field_committee_target_id
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+              anonymous: '0'
+              publisher: '0'
+              policy_author: '0'
+              policy_editor: '0'
+              attorney: '0'
+              council_author: '0'
+              council_clerk: '0'
+              budget: '0'
+              park_editor: '0'
+              code_author: '0'
+              code_editor: '0'
+              group_creator: '0'
+              translator: '0'
+              alert_editor: '0'
+              neighborhood_editor: '0'
+              sitewide_editor: '0'
+              support_agent: '0'
+              administrator: '0'
+            reduce: false
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
+          reduce_duplicates: false
+          vid: council_committee
+          type: select
+          hierarchy: false
+          limit: true
+          error_message: true
       filter_groups:
         operator: AND
         groups:
           1: AND
       defaults:
         title: false
+        pager: false
+        group_by: false
         fields: false
         filters: false
         filter_groups: false
         header: false
+      group_by: true
       display_description: ''
       header:
         result:
@@ -2450,7 +2627,9 @@ display:
           empty: true
           content: "<a href=\"/relation/add/council_agenda_item?destination=/council/agenda/manage/agenda-items\" class=\"button btn-cta mb-2\">Add Agenda Item</a>\r\n<p>Displaying @start - @end of @total current or upcoming agenda items. <a href=\"/council/agenda/manage/agenda-items/past\">Manage past agenda items</a>.</p>"
       display_extenders:
-        metatag_display_extender: {  }
+        metatag_display_extender:
+          metatags: {  }
+          tokenize: false
       path: council/agenda/manage/agenda-items
       menu:
         type: normal
@@ -2467,6 +2646,7 @@ display:
       contexts:
         - 'languages:language_content'
         - 'languages:language_interface'
+        - url
         - url.query_args
         - user.roles
       tags:
@@ -2924,7 +3104,7 @@ display:
           type: entity_reference_label
           settings:
             link: true
-          group_column: target_id
+          group_column: entity_id
           group_columns: {  }
           group_rows: true
           delta_limit: 0
@@ -2987,7 +3167,7 @@ display:
           type: entity_reference_label
           settings:
             link: true
-          group_column: target_id
+          group_column: entity_id
           group_columns: {  }
           group_rows: true
           delta_limit: 0
@@ -3302,19 +3482,6 @@ display:
             label: ''
             field_identifier: field_agenda_item_type_value
           exposed: false
-        field_introduced_by_target_id:
-          id: field_introduced_by_target_id
-          table: node__field_introduced_by
-          field: field_introduced_by_target_id
-          relationship: field_council_document
-          group_type: group
-          admin_label: ''
-          plugin_id: standard
-          order: ASC
-          expose:
-            label: ''
-            field_identifier: field_introduced_by_target_id
-          exposed: false
       filters:
         type:
           id: type
@@ -3374,18 +3541,155 @@ display:
             default_group: All
             default_group_multiple: {  }
             group_items: {  }
+        field_committee_target_id:
+          id: field_committee_target_id
+          table: node__field_committee
+          field: field_committee_target_id
+          relationship: field_council_agenda
+          group_type: group
+          admin_label: ''
+          plugin_id: taxonomy_index_tid
+          operator: or
+          value:
+            846: 846
+          group: 1
+          exposed: true
+          expose:
+            operator_id: field_committee_target_id_op
+            label: Committee
+            description: ''
+            use_operator: false
+            operator: field_committee_target_id_op
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: field_committee_target_id
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+              anonymous: '0'
+              publisher: '0'
+              policy_author: '0'
+              policy_editor: '0'
+              attorney: '0'
+              council_author: '0'
+              council_clerk: '0'
+              budget: '0'
+              park_editor: '0'
+              code_author: '0'
+              code_editor: '0'
+              group_creator: '0'
+              translator: '0'
+              alert_editor: '0'
+              neighborhood_editor: '0'
+              sitewide_editor: '0'
+              support_agent: '0'
+              administrator: '0'
+            reduce: false
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
+          reduce_duplicates: false
+          vid: council_committee
+          type: select
+          hierarchy: false
+          limit: true
+          error_message: true
+        field_agenda_item_number_value:
+          id: field_agenda_item_number_value
+          table: relation__field_agenda_item_number
+          field: field_agenda_item_number_value
+          relationship: none
+          group_type: group
+          admin_label: ''
+          plugin_id: numeric
+          operator: '='
+          value:
+            min: ''
+            max: ''
+            value: ''
+          group: 1
+          exposed: true
+          expose:
+            operator_id: field_agenda_item_number_value_op
+            label: Number
+            description: ''
+            use_operator: false
+            operator: field_agenda_item_number_value_op
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: field_agenda_item_number_value
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+              anonymous: '0'
+              publisher: '0'
+              policy_author: '0'
+              policy_editor: '0'
+              attorney: '0'
+              council_author: '0'
+              council_clerk: '0'
+              budget: '0'
+              park_editor: '0'
+              code_author: '0'
+              code_editor: '0'
+              group_creator: '0'
+              translator: '0'
+              alert_editor: '0'
+              neighborhood_editor: '0'
+              sitewide_editor: '0'
+              support_agent: '0'
+              administrator: '0'
+            min_placeholder: ''
+            max_placeholder: ''
+            placeholder: ''
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
       filter_groups:
         operator: AND
         groups:
           1: AND
+      query:
+        type: views_query
+        options:
+          query_comment: ''
+          disable_sql_rewrite: false
+          distinct: true
+          replica: false
+          query_tags: {  }
       defaults:
+        query: false
         title: false
         pager: false
+        group_by: false
         fields: false
         sorts: false
         filters: false
         filter_groups: false
         header: false
+      group_by: true
       display_description: ''
       header:
         result:
@@ -3399,7 +3703,9 @@ display:
           empty: true
           content: "<a href=\"/relation/add/council_agenda_item?destination=/council/agenda/manage/agenda-items\" class=\"button btn-cta mb-2\">Add Agenda Item</a>\r\n<p>Displaying @start - @end of @total past agenda items. <a href=\"/council/agenda/manage/agenda-items\">Manage current or upcoming agenda items</a>.</p>"
       display_extenders:
-        metatag_display_extender: {  }
+        metatag_display_extender:
+          metatags: {  }
+          tokenize: false
       path: council/agenda/manage/agenda-items/past
       menu:
         type: none
@@ -3416,6 +3722,7 @@ display:
       contexts:
         - 'languages:language_content'
         - 'languages:language_interface'
+        - url
         - url.query_args
         - user.roles
       tags:
