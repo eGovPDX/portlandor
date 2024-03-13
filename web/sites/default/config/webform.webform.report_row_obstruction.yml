@@ -53,6 +53,13 @@ elements: |-
       </div>
   container_issue_type:
     '#type': container
+    '#states':
+      invisible:
+        - ':input[name="report_is_urgent"]':
+            unchecked: true
+        - or
+        - ':input[name="report_is_urgent"]':
+            value: 'Yes'
     report_issue_type:
       '#type': radios
       '#title': 'What type of issue or object are you reporting?'
@@ -64,10 +71,6 @@ elements: |-
         'Outdoor dining': 'Outdoor dining -- Outdoor seating, tables, sandwich boards, dining structure, etc.'
         'Trees or vegetation': 'Trees or vegetation'
         'Unauthorized signage in the right of way': 'Unauthorized signage in the right of way'
-      '#states':
-        visible:
-          ':input[name="report_is_urgent"]':
-            value: 'No'
       '#required': true
     report_vehicle_issue_type:
       '#type': radios
@@ -236,6 +239,13 @@ elements: |-
           ':input[name="report_temporary_item"]':
             value: 'Trash, debris, or hazardous materials'
       '#markup': '<p><a class="button button--primary" href="/311/report-trash">Continue</a></p>'
+    markup_campsite_jump:
+      '#type': webform_markup
+      '#states':
+        visible:
+          ':input[name="report_temporary_item"]':
+            value: 'Hazardous waste'
+      '#markup': '<p><a class="button button--primary" href="/homelessnessimpactreduction/report-campsite?report_visible_items[trash]=trash">Continue</a></p>'
     markup_animal:
       '#type': webform_markup
       '#states':
@@ -260,16 +270,6 @@ elements: |-
 
         <p class="mb-0">Please call&nbsp;<a href="tel:+1-503-823-8733">503-823-8733</a> to report a tree hazard in the public right of way.&nbsp;&nbsp;</p>
         </div>
-    markup_call_unauthorized_no_parking:
-      '#type': webform_markup
-      '#states':
-        visible:
-          ':input[name="report_signage_type"]':
-            value: 'Unauthorized No Parking signs or obstructions to prevent parking'
-      '#markup': |-
-        <div class="alert alert--info next-steps">
-        <p class="mb-0">Please submit this online form, or call PBOT Parking Control at <a href="tel:+1-503-823-7275">503-823-7275</a> to report the vehicle.</p>
-        </div>
     markup_utility_pole_signs:
       '#type': webform_markup
       '#states':
@@ -286,11 +286,11 @@ elements: |-
     '#type': container
     '#states':
       invisible:
-        - ':input[name="report_is_urgent"]':
-            value: 'Yes'
+        - ':input[name="report_tree_issue"]':
+            value: 'A tree or large branch that has fallen and is now a hazard in the street or sidewalk'
         - or
-        - ':input[name="report_issue_type"]':
-            unchecked: true
+        - ':input[name="report_vegetation_source[radios]"]':
+            value: 'Private property'
         - or
         - ':input[name="report_issue_type"]':
             value: Vehicle
@@ -313,17 +313,17 @@ elements: |-
         - ':input[name="report_outdoor_dining_item"]':
             value: 'A-board sign'
         - or
-        - ':input[name="report_vegetation_source[radios]"]':
-            value: 'Private property'
-        - or
-        - ':input[name="report_vegetation_source[radios]"]':
-            value: 'Parking strip, median, or other parts of the street or right of way'
-        - or
         - ':input[name="report_signage_type"]':
             value: 'A-board sign'
         - or
         - ':input[name="report_signage_type"]':
             value: 'Unauthorized signs on utility poles'
+        - or
+        - ':input[name="report_is_urgent"]':
+            unchecked: true
+        - or
+        - ':input[name="report_is_urgent"]':
+            value: 'Yes'
     container_location_photos:
       '#type': container
       report_location:
@@ -411,6 +411,82 @@ elements: |-
   report_ticket_id:
     '#type': hidden
     '#title': 'Report Ticket Id'
+  computed_location_output:
+    '#type': webform_computed_twig
+    '#title': 'Computed Location Output'
+    '#display_on': form
+    '#mode': html
+    '#template': |-
+      <p><strong>Location</strong><br>
+      {% if data.report_location.place_name %}
+        {{ data.report_location.place_name }}<br>
+      {% endif %}
+      {% if data.report_location.location_address %}
+        {{ data.report_location.location_address }}<br>
+      {% endif %}
+      {% if data.report_location.location_lat and data.report_location.location_lon %}
+        Lat/Lon: <a href="https://www.google.com/maps/place/{{ data.report_location.location_lat }},{{ data.report_location.location_lon }}">{{ data.report_location.location_lat }},{{ data.report_location.location_lon }}</a><br>
+      {% endif %}
+      {% if data.report_location.location_details %}
+        {{ data.report_location.location_details }}
+      {% endif %}
+      </p>
+    '#whitespace': trim
+    '#ajax': true
+  computed_description:
+    '#type': webform_computed_twig
+    '#title': 'Computed Description'
+    '#display_on': form
+    '#mode': html
+    '#template': |
+      <strong>Reported Issue</strong><br>
+
+      {% if data.report_issue_type and data.report_issue_type is not iterable %}
+        {{ data.report_issue_type }} &#151;
+      {% endif %}
+
+      {% if data.report_vehicle_issue_type and data.report_vehicle_issue_type is not iterable %}
+        {{ data.report_vehicle_issue_type }}<br>
+      {% endif %}
+
+      {% if data.report_construction_work_zone_item and data.report_construction_work_zone_item is not iterable %}
+        {{ data.report_construction_work_zone_item }}<br>
+      {% endif %}
+
+      {% if data.report_permanent_structure and data.report_permanent_structure is not iterable %}
+        {{ data.report_permanent_structure }}<br>
+      {% endif %}
+
+      {% if data.report_temporary_item and data.report_temporary_item is not iterable %}
+        {{ data.report_temporary_item }}<br>
+      {% endif %}
+
+      {% if data.report_outdoor_dining_item and data.report_outdoor_dining_item is not iterable %}
+        {{ data.report_outdoor_dining_item }}<br>
+      {% endif %}
+
+      {% if data.report_tree_issue and data.report_tree_issue is not iterable %}
+        {{ data.report_tree_issue }}<br>
+      {% endif %}
+
+      {% if data.report_vegetation_source and data.report_vegetation_source is not iterable %}
+        Growing from: {{ data.report_vegetation_source }}<br>
+      {% endif %}
+
+      {% if data.report_signage_type and data.report_signage_type is not iterable %}
+        {{ data.report_signage_type }}<br>
+      {% endif %}
+
+      {% if data.report_signage_type and data.report_signage_type is not iterable %}
+        {{ data.report_signage_type }}<br>
+      {% endif %}
+
+      {% if data.contact_name or data.contact_email %}
+      <strong>Contact name:</strong> {{ data.contact_name ? data.contact_name : "anonymous" }}<br>
+      <strong>Email:</strong> {{ data.contact_email ? data.contact_email : "anonymous" }}
+      {% endif %}
+    '#whitespace': trim
+    '#ajax': true
 css: ''
 javascript: ''
 settings:
@@ -605,12 +681,12 @@ handlers:
       disabled:
         ':input[name="support_agent_use_only[test_submission]"]':
           checked: true
-    weight: 0
+    weight: -50
     settings:
       requester_name: contact_name
       requester_email: contact_email
       subject: 'Obstruction in the right of way: [webform_submission:values:report_issue_type]'
-      comment: '[webform_submission:values:html]'
+      comment: "[webform_submission:values:computed_description:html]\r\n\r\n[webform_submission:values:computed_location_output:html]"
       tags: 'drupal webform'
       priority: normal
       status: new
@@ -623,47 +699,17 @@ handlers:
       ticket_form_id: '20531514301207'
       recipient: ''
       ticket_fork_field: ''
-  submit_to_zendesk_1:
-    id: zendesk
-    handler_id: submit_to_zendesk_1
-    label: 'TEST: Submit to Zendesk'
-    notes: ''
-    status: true
-    conditions:
-      enabled:
-        ':input[name="support_agent_use_only[test_submission]"]':
-          checked: true
-    weight: 1
-    settings:
-      requester_name: contact_name
-      requester_email: contact_email
-      subject: 'TEST: Obstruction in the right of way: [webform_submission:values:report_issue_type]'
-      comment: '[webform_submission:values:html]'
-      tags: 'drupal webform'
-      priority: normal
-      status: new
-      group_id: '4549352062487'
-      assignee_id: ''
-      type: incident
-      collaborators: ''
-      custom_fields: "6353388345367: 'report_row_obstruction'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n1500013095781: '[webform_submission:uuid]'\r\n"
-      ticket_id_field: report_ticket_id
-      ticket_form_id: '20531514301207'
-      recipient: ''
-      ticket_fork_field: ''
   email:
     id: email
     handler_id: email
     label: 'Submit by email'
-    notes: ''
+    notes: "Only enabled if the computed_recipient element has a value. If Test Submission is checked, it should be populated with Greg's email address."
     status: true
     conditions:
       enabled:
-        ':input[name="support_agent_use_only[test_submission]"]':
-          unchecked: true
         ':input[name="computed_email_recipient"]':
           filled: true
-    weight: 2
+    weight: -47
     settings:
       states:
         - completed
@@ -681,7 +727,7 @@ handlers:
       sender_mail: ''
       sender_name: ''
       subject: 'Obstruction in the right of way: [webform_submission:values:report_issue_type]'
-      body: '<p>[webform_submission:values:html]</p>'
+      body: "<p>[webform_submission:values:computed_description:html]</p>\r\n\r\n<p>[webform_submission:values:computed_location_output:html]</p>"
       excluded_elements: {  }
       ignore_access: false
       exclude_empty: true
@@ -693,4 +739,32 @@ handlers:
       theme_name: ''
       parameters: {  }
       debug: false
+  test_submit_to_zendesk:
+    id: zendesk
+    handler_id: test_submit_to_zendesk
+    label: 'TEST: Submit to Zendesk'
+    notes: ''
+    status: true
+    conditions:
+      enabled:
+        ':input[name="support_agent_use_only[test_submission]"]':
+          checked: true
+    weight: -48
+    settings:
+      requester_name: contact_name
+      requester_email: contact_email
+      subject: 'TEST: Obstruction in the right of way: [webform_submission:values:report_issue_type]'
+      comment: "[webform_submission:values:computed_description:html]\r\n\r\n[webform_submission:values:computed_location_output:html]"
+      tags: 'drupal webform'
+      priority: normal
+      status: new
+      group_id: '4549352062487'
+      assignee_id: ''
+      type: incident
+      collaborators: ''
+      custom_fields: "6353388345367: 'report_row_obstruction'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n1500013095781: '[webform_submission:uuid]'\r\n"
+      ticket_id_field: report_ticket_id
+      ticket_form_id: '20531514301207'
+      recipient: ''
+      ticket_fork_field: ''
 variants: {  }
