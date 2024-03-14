@@ -381,6 +381,22 @@ elements: |-
         '#title': Email
         '#pattern': '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
         '#pattern_error': 'Please enter a correctly formatted email address, such as myname@example.com.'
+    section_public_records_statement:
+      '#type': webform_section
+      '#title': 'Public Records Statement'
+      markup_public_records_statement:
+        '#type': webform_markup
+        '#markup': '<p>Information you provide to the City is a public record and may be subject to release under Oregon’s <a data-renderer-mark="true" href="https://www.doj.state.or.us/oregon-department-of-justice/public-records/attorney-generals-public-records-and-meetings-manual/i-public-records/#:~:text=Under%20Oregon''s%20Public%20Records%20Law,committee%20of%20the%20Legislative%20Assembly" title="https://www.doj.state.or.us/oregon-department-of-justice/public-records/attorney-generals-public-records-and-meetings-manual/i-public-records/#:~:text=Under%20Oregon''s%20Public%20Records%20Law,committee%20of%20the%20Legislative%20Assembly">Public Records Law</a>. This law classifies certain information as available to the public on request. See our <a data-renderer-mark="true" href="/help/about/privacy" title="https://www.portland.gov/help/about/privacy">privacy statement</a> for more information.</p>'
+    actions:
+      '#type': webform_actions
+      '#title': 'Submit button(s)'
+      '#submit__label': Submit
+    support_agent_use_only:
+      '#type': portland_support_agent_widget
+      '#title': 'Support Agent Use Only'
+      '#access_create_roles':
+        - authenticated
+      '#escalate_issue__access': false
     computed_email_recipient:
       '#type': webform_computed_twig
       '#title': computed_email_recipient
@@ -403,27 +419,9 @@ elements: |-
           pdxroads@portlandoregon.gov
         {% elseif data.report_signage_type == "Unauthorized No Parking signs or obstructions to prevent parking" %}
           PBOTparkingcontrol@portlandoregon.gov
-        {% elseif data.support_agent_use_only.test_submission.checked %}
-          gregory.clapp@portlandoregon.gov
         {% endif %}
       '#whitespace': trim
       '#ajax': true
-    section_public_records_statement:
-      '#type': webform_section
-      '#title': 'Public Records Statement'
-      markup_public_records_statement:
-        '#type': webform_markup
-        '#markup': '<p>Information you provide to the City is a public record and may be subject to release under Oregon’s <a data-renderer-mark="true" href="https://www.doj.state.or.us/oregon-department-of-justice/public-records/attorney-generals-public-records-and-meetings-manual/i-public-records/#:~:text=Under%20Oregon''s%20Public%20Records%20Law,committee%20of%20the%20Legislative%20Assembly" title="https://www.doj.state.or.us/oregon-department-of-justice/public-records/attorney-generals-public-records-and-meetings-manual/i-public-records/#:~:text=Under%20Oregon''s%20Public%20Records%20Law,committee%20of%20the%20Legislative%20Assembly">Public Records Law</a>. This law classifies certain information as available to the public on request. See our <a data-renderer-mark="true" href="/help/about/privacy" title="https://www.portland.gov/help/about/privacy">privacy statement</a> for more information.</p>'
-    actions:
-      '#type': webform_actions
-      '#title': 'Submit button(s)'
-      '#submit__label': Submit
-    support_agent_use_only:
-      '#type': portland_support_agent_widget
-      '#title': 'Support Agent Use Only'
-      '#access_create_roles':
-        - authenticated
-      '#escalate_issue__access': false
   report_ticket_id:
     '#type': hidden
     '#title': 'Report Ticket Id'
@@ -713,12 +711,14 @@ handlers:
     id: email
     handler_id: email
     label: 'Submit by email'
-    notes: "Only enabled if the computed_recipient element has a value. If Test Submission is checked, it should be populated with Greg's email address."
+    notes: 'Sends the report by email to the recipient specified in the computed_email_recipient field.'
     status: true
     conditions:
       enabled:
         ':input[name="computed_email_recipient"]':
           filled: true
+        ':input[name="support_agent_use_only[test_submission]"]':
+          unchecked: true
     weight: -47
     settings:
       states:
@@ -807,4 +807,46 @@ handlers:
       ticket_form_id: '20531514301207'
       recipient: ''
       ticket_fork_field: ''
+  submit_by_email:
+    id: email
+    handler_id: submit_by_email
+    label: 'TEST: Submit by email'
+    notes: 'Sends a test email to gregory.clapp@portlandoregon.gov.'
+    status: true
+    conditions:
+      enabled:
+        ':input[name="computed_email_recipient"]':
+          filled: true
+        ':input[name="support_agent_use_only[test_submission]"]':
+          checked: true
+    weight: 4
+    settings:
+      states:
+        - completed
+      to_mail: gregory.clapp@portlandoregon.gov
+      to_options: {  }
+      bcc_mail: ''
+      bcc_options: {  }
+      cc_mail: ''
+      cc_options: {  }
+      from_mail: noreply@portlandoregon.gov
+      from_options: {  }
+      from_name: _default
+      reply_to: ''
+      return_path: ''
+      sender_mail: ''
+      sender_name: ''
+      subject: 'TEST: Obstruction in the right of way: [webform_submission:values:report_issue_type]'
+      body: "<p><strong>This is a test. This email would normally have been sent to&nbsp;[webform_submission:values:computed_email_recipient:html].</strong></p>\r\n\r\n<p>[webform_submission:values:computed_description:html]</p>\r\n\r\n<p>[webform_submission:values:computed_location_output:html]</p>"
+      excluded_elements: {  }
+      ignore_access: false
+      exclude_empty: true
+      exclude_empty_checkbox: false
+      exclude_attachments: false
+      html: true
+      attachments: false
+      twig: false
+      theme_name: ''
+      parameters: {  }
+      debug: false
 variants: {  }
