@@ -15,6 +15,7 @@ third_party_settings:
   portland:
     disable_demographic_form_prompt: 0
     exclude_from_json:
+      computed_confirmation: computed_confirmation
       computed_vehicle_message: computed_vehicle_message
 weight: 0
 open: null
@@ -45,6 +46,7 @@ elements: |-
         '#title': 'Is the location on private property?'
         '#description': '<p>Such as a home, apartment building, business, church, etc.</p>'
         '#description_display': before
+        '#prepopulate': true
         '#options':
           'No': 'No'
           'Yes': 'Yes'
@@ -54,6 +56,7 @@ elements: |-
       report_location:
         '#type': portland_location_picker
         '#title': Location
+        '#prepopulate': true
         '#states':
           invisible:
             ':input[name="report_location_is_private"]':
@@ -116,6 +119,7 @@ elements: |-
             'No': 'No'
             'Yes': 'Yes'
           '#options_display': side_by_side
+          '#default_value': 'No'
         report_is_ada:
           '#type': radios
           '#title': 'Do you, or someone you legally represent (e.g. child, spouse), have a disability that is affected by this obstruction?'
@@ -125,6 +129,9 @@ elements: |-
             'yes': 'Yes, and I would like to request an ADA accommodation -- I have, or represent someone with, a disability covered under the Americans with Disabilities Act (ADA). The campsite is creating a barrier that preventing my/their access and I would like to request an accommodation. By checking this option, I acknowledge that the City may contact me to complete the ADA accommodation request process.'
           '#states':
             visible:
+              ':input[name="report_blocking_pedestrians"]':
+                value: 'Yes'
+            required:
               ':input[name="report_blocking_pedestrians"]':
                 value: 'Yes'
         report_visible_items:
@@ -274,6 +281,7 @@ elements: |-
             '#type': textfield
             '#title': Email
             '#description': '<p>Enter your email to receive a confirmation, or leave this field blank to remain anonymous.</p>'
+            '#prepopulate': true
             '#pattern': '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
             '#pattern_error': 'Please enter a correctly formatted email address, such as myname@example.com.'
             '#states':
@@ -359,6 +367,52 @@ elements: |-
       </div>
       {% endif %}
 
+    '#ajax': true
+  computed_confirmation:
+    '#type': webform_computed_twig
+    '#title': 'Computed Confirmation'
+    '#display_on': none
+    '#mode': html
+    '#template': |-
+      <strong>Location:</strong><br>
+
+      {% if data.report_location.location_address %}
+      	{{ data.report_location.location_address }}<br>
+      {% endif %}
+      {% if data.report_location.location_lat and data.report_location.location_lon %}
+        Lat/Lon: <a href="https://www.google.com/maps/place/{{ data.report_location.location_lat }},{{ data.report_location.location_lon }}">{{ data.report_location.location_lat }},{{ data.report_location.location_lon }}</a><br>
+      {% endif %}
+
+      {% if data.report_location.place_name %}
+        <br><strong>Location notes:</strong><br>{{ data.report_location.place_name }}<br>
+      {% endif %}
+      {% if data.report_location.location_details %}
+        <br><strong>Additional information:</strong><br>{{ data.report_location.location_details }}<br>
+      {% endif %}<br>
+
+      <strong>Is the campsite blocking pedestrian access, like a sidewalk, trail, or path?</strong><br>{{ data.report_blocking_pedestrians }}<br><br>
+
+      {% if data.report_blocking_pedestrians == "Yes" %}
+        <strong>Do you or someone you legally represent have a disability that is affected by this obstruction?</strong><br>
+        {% if data.report_is_ada == "no" %}No
+        {% elseif data.report_is_ada == "no request" %}Yes, but I do not want to request an ADA accommodation
+        {% elseif data.report_is_ada == "yes" %}Yes, and I would like to request an ADA accommodation{% endif %}<br><br>
+      {% endif %}
+
+      <strong>Reported item(s):</strong><br>
+      {% if data.report_visible_items is iterable %}
+        {% for item in data.report_visible_items %}
+          {% if item == "tent_structure" %}
+            Tent, tarp, or other shelter
+          {% endif %}
+          {% if item == "vehicle" %}
+            A vehicle, such as a car, truck, RV, trailer, motorcycle, or boat
+          {% endif %}
+          {% if item == "trash" %}
+            Trash or debris only
+          {% endif %}
+        {% endfor %}
+      {% endif %}<br><br>
     '#ajax': true
 css: "div.form-item-report-vehicle .webform-multiple-table tbody tr:hover,\r\ndiv.form-item-report-vehicle .webform-multiple-table tbody tr:focus {\r\n    background: inherit;\r\n}\r\n\r\ndiv.form-item-report-vehicle .webform-multiple-table tbody {\r\n    counter-reset: vehicle;\r\n}\r\n\r\ndiv.form-item-report-vehicle .webform-multiple-table tbody tr {\r\n    display: block;\r\n    margin-bottom: 1rem;\r\n}\r\n\r\ndiv.form-item-report-vehicle .webform-multiple-table tbody tr::before {\r\n    counter-increment: vehicle;\r\n    content: \"Vehicle \" counter(vehicle);\r\n    display: block;\r\n    font-size: 1.5rem;\r\n    font-weight: 600;\r\n    line-height: 1.3333333333;\r\n    margin: 0 0 1rem;\r\n}\r\n\r\ndiv.form-item-report-vehicle .webform-multiple-table .form-control {\r\n    width: 100%;\r\n}\r\n\r\ndiv.form-item-support-agent-use-only-zendesk-request-number {\r\n  display: none;\r\n}"
 javascript: ''
@@ -467,9 +521,9 @@ settings:
   confirmation_type: page
   confirmation_url: ''
   confirmation_title: 'Thank you'
-  confirmation_message: "<p>Your report (#[webform_submission:values:report_ticket_id]) has been received.</p>\r\n\r\n<p>All reported locations are <a href=\"/homelessnessimpactreduction/campsite-assessment\">assessed</a> by the <a href=\"/homelessnessimpactreduction\">Impact Reduction Program</a>, typically within a few business days. To help us work efficiently, please wait one week before filing a new report for this location.</p>\r\n\r\n<p>If you would like to provide any additional information or photos, please send an email to <a href=\"mailto:reportPDX@portlandoregon.gov?subject=Re: Campsite report #[webform_submission:values:report_ticket_id] - [webform_submission:values:report_location:location_address]\">reportPDX@portlandoregon.gov</a> with the location and report number in the subject line.</p>\r\n\r\n<p>[webform_submission:values:computed_ada_message] [webform_submission:values:computed_vehicle_message]</p>\r\n\r\n<h2>What happens once a campsite is reported?</h2>\r\n\r\n<p>Once a campsite is reported, a field crew will be automatically assigned to visit the reported location to clean up trash, work with people living in the encampment to improve the situation, provide resources, and <a href=\"/homelessnessimpactreduction/campsite-assessment\">assess health and safety risks</a>. As a last resort, the sites that pose the highest risk will be scheduled for removal, and any personal property will be securely stored. The Impact Reduction Program's <a href=\"/homelessnessimpactreduction/impact-reduction-program-dashboard-and-performance-measures\">Data Dashboard</a> tracks the status of existing reports and provides information on site assessment and campsite removal work going on across the city.</p>\r\n\r\n<h2>Do you have any additional questions?</h2>\r\n\r\n<p>Please contact us at <a href=\"tel:311\">3-1-1</a>, <a href=\"tel:+15038234000\">503-823-4000</a>, or <a href=\"mailto:311@portlandoregon.gov\">311@portlandoregon.gov</a> to discuss further.</p>"
+  confirmation_message: "<p>Your report (#[webform_submission:values:report_ticket_id]) has been received.</p>\r\n\r\n<p>All reported locations are <a href=\"/homelessnessimpactreduction/campsite-assessment\">assessed</a> by the <a href=\"/homelessnessimpactreduction\">Impact Reduction Program</a>, typically within a few business days. To help us work efficiently, please wait one week before filing a new report for this location.</p>\r\n\r\n<p>If you would like to provide any additional information or photos, please send an email to <a href=\"mailto:reportPDX@portlandoregon.gov?subject=Re: Campsite report #[webform_submission:values:report_ticket_id] - [webform_submission:values:report_location:location_address]\">reportPDX@portlandoregon.gov</a> with the location and report number in the subject line.</p>\r\n\r\n<p>[webform_submission:values:computed_ada_message] [webform_submission:values:computed_vehicle_message]</p>\r\n\r\n<h2>What happens once a campsite is reported?</h2>\r\n\r\n<p>Once a campsite is reported, a field crew will be automatically assigned to visit the reported location to clean up trash, work with people living in the encampment to improve the situation, provide resources, and <a href=\"/homelessnessimpactreduction/campsite-assessment\">assess health and safety risks</a>. As a last resort, the sites that pose the highest risk will be scheduled for removal, and any personal property will be securely stored. The Impact Reduction Program's <a href=\"/homelessnessimpactreduction/impact-reduction-program-dashboard-and-performance-measures\">Data Dashboard</a> tracks the status of existing reports and provides information on site assessment and campsite removal work going on across the city.</p>\r\n\r\n<h2>Do you have any additional questions?</h2>\r\n\r\n<p>Please contact us at <a href=\"tel:311\">3-1-1</a>, <a href=\"tel:+15038234000\">503-823-4000</a>, or <a href=\"mailto:311@portlandoregon.gov\">311@portlandoregon.gov</a> to discuss further.</p>\r\n\r\n<p>&nbsp;</p>\r\n\r\n<p><a href=\"/node/33215?contact_email=[webform_submission:values:contact_email]\">Submit another report</a></p>"
   confirmation_attributes: {  }
-  confirmation_back: true
+  confirmation_back: false
   confirmation_back_label: 'Submit another report'
   confirmation_back_attributes: {  }
   confirmation_exclude_query: false
@@ -707,9 +761,8 @@ handlers:
       enabled:
         ':input[name="support_agent_use_only[test_submission]"]':
           unchecked: true
-        ':input[name="report_location[location_types]"]':
-          value:
-            pattern: park
+        ':input[name="report_location[location_type_park]"]':
+          value: 'true'
     weight: -46
     settings:
       requester_name: contact_name
@@ -738,9 +791,8 @@ handlers:
       enabled:
         ':input[name="support_agent_use_only[test_submission]"]':
           checked: true
-        ':input[name="report_location[location_types]"]':
-          value:
-            pattern: park
+        ':input[name="report_location[location_type_park]"]':
+          value: 'true'
     weight: -45
     settings:
       requester_name: contact_name
@@ -847,7 +899,7 @@ handlers:
       sender_mail: ''
       sender_name: ''
       subject: 'Campsite report received (#[webform_submission:values:report_ticket_id])'
-      body: "<p><strong><em>This is an automated message, please do not reply.</em></strong></p>\r\n\r\n<p>Your report (#[webform_submission:values:report_ticket_id]) has been received.</p>\r\n\r\n<p>All reported locations are <a href=\"/homelessnessimpactreduction/campsite-assessment\">assessed</a> by the <a href=\"/homelessnessimpactreduction\">Impact Reduction Program</a>, typically within a few business days. To help us work efficiently, please wait one week before filing a new report for this location.</p>\r\n\r\n<p>If you would like to provide any additional information or photos, please send an email to <a href=\"mailto:reportPDX@portlandoregon.gov?subject=Re: Campsite report #[webform_submission:values:report_ticket_id] - [webform_submission:values:report_location:location_address]\">reportPDX@portlandoregon.gov</a> with the location and report number in the subject line.</p>\r\n\r\n<p>[webform_submission:values:computed_ada_message] [webform_submission:values:computed_vehicle_message]</p>\r\n\r\n<h3>What happens once a campsite is reported?</h3>\r\n\r\n<p>Once a campsite is reported, a field crew will be automatically assigned to visit the reported location to clean up trash, work with people living in the encampment to improve the situation, provide resources, and <a href=\"/homelessnessimpactreduction/campsite-assessment\">assess health and safety risks</a>. As a last resort, the sites that pose the highest risk will be scheduled for removal, and any personal property will be securely stored. The Impact Reduction Program's <a href=\"/homelessnessimpactreduction/impact-reduction-program-dashboard-and-performance-measures\">Data Dashboard</a> tracks the status of existing reports and provides information on site assessment and campsite removal work going on across the city.</p>\r\n\r\n<h3>Do you have any additional questions?</h3>\r\n\r\n<p>Please call us at <a href=\"tel:311\">3-1-1</a> or <a href=\"tel:+15038234000\">503-823-4000</a> to discuss further.</p>"
+      body: "<p><strong><em>This is an automated message, please do not reply.</em></strong></p>\r\n\r\n<p>Your report (#[webform_submission:values:report_ticket_id]) has been received:</p>\r\n\r\n<blockquote>\r\n<p>[webform_submission:values:computed_confirmation]</p>\r\n</blockquote>\r\n\r\n<p>&nbsp;</p>\r\n\r\n<p>All reported locations are <a href=\"/homelessnessimpactreduction/campsite-assessment\">assessed</a> by the <a href=\"/homelessnessimpactreduction\">Impact Reduction Program</a>, typically within a few business days. To help us work efficiently, please wait one week before filing a new report for this location.</p>\r\n\r\n<p>If you would like to provide any additional information or photos, please send an email to <a href=\"mailto:reportPDX@portlandoregon.gov?subject=Re: Campsite report #[webform_submission:values:report_ticket_id] - [webform_submission:values:report_location:location_address]\">reportPDX@portlandoregon.gov</a> with the location and report number in the subject line.</p>\r\n\r\n<p>[webform_submission:values:computed_ada_message] [webform_submission:values:computed_vehicle_message]</p>\r\n\r\n<h3>What happens once a campsite is reported?</h3>\r\n\r\n<p>Once a campsite is reported, a field crew will be automatically assigned to visit the reported location to clean up trash, work with people living in the encampment to improve the situation, provide resources, and <a href=\"/homelessnessimpactreduction/campsite-assessment\">assess health and safety risks</a>. As a last resort, the sites that pose the highest risk will be scheduled for removal, and any personal property will be securely stored. The Impact Reduction Program's <a href=\"/homelessnessimpactreduction/impact-reduction-program-dashboard-and-performance-measures\">Data Dashboard</a> tracks the status of existing reports and provides information on site assessment and campsite removal work going on across the city.</p>\r\n\r\n<h3>Do you have any additional questions?</h3>\r\n\r\n<p>Please call us at <a href=\"tel:311\">3-1-1</a> or <a href=\"tel:+15038234000\">503-823-4000</a> to discuss further.</p>"
       excluded_elements: {  }
       ignore_access: false
       exclude_empty: true

@@ -158,6 +158,7 @@ class PortlandLocationPicker extends WebformCompositeBase {
     $requireCityLimitsPlusParks = array_key_exists('#require_city_limits_plus_parks', $element) ? $element['#require_city_limits_plus_parks'] : FALSE;
     $locationTypes = array_key_exists('#location_types', $element) ? $element['#location_types'] : 'park,row,stream,street,taxlot,trail,waterbody';
     $disablePlaceNameAutofill = array_key_exists('#disable_place_name_autofill', $element) ? $element['#disable_place_name_autofill'] : FALSE;
+    $regionIdPropertyName = array_key_exists('#region_id_property_name', $element) ? $element['#region_id_property_name'] : 'region_id';
     
     $boundaryUrl = array_key_exists('#boundary_url', $element) ? $element['#boundary_url'] : 'https://www.portlandmaps.com/arcgis/rest/services/Public/Boundaries/MapServer/0/query?where=1%3D1&objectIds=35&outFields=*&returnGeometry=true&f=geojson';
     $displayBoundary = array_key_exists('#display_boundary', $element) ? $element['#display_boundary'] : TRUE;
@@ -183,6 +184,8 @@ class PortlandLocationPicker extends WebformCompositeBase {
     $element['#attached']['drupalSettings']['webform']['portland_location_picker']['require_city_limits_plus_parks'] = $requireCityLimitsPlusParks;
     $element['#attached']['drupalSettings']['webform']['portland_location_picker']['location_types'] = $locationTypes;
     $element['#attached']['drupalSettings']['webform']['portland_location_picker']['disable_place_name_autofill'] = $disablePlaceNameAutofill;
+    $element['#attached']['drupalSettings']['webform']['portland_location_picker']['region_id_property_name'] = $regionIdPropertyName;
+
 
     $element['#attached']['drupalSettings']['webform']['portland_location_picker']['boundary_url'] = $boundaryUrl;
     $element['#attached']['drupalSettings']['webform']['portland_location_picker']['display_boundary'] = $displayBoundary;
