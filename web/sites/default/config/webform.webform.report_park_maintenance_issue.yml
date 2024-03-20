@@ -22,9 +22,10 @@ uid: 60
 template: false
 archive: false
 id: report_park_maintenance_issue
-title: 'Report a Park Maintenance Issue'
+title: 'Report Park Maintenance Issue'
 description: ''
-categories: {  }
+categories:
+  - Report
 elements: |-
   container_nav:
     '#type': container
@@ -146,6 +147,10 @@ elements: |-
       '#place_name__description_display': invisible
       '#require_boundary': false
       '#display_boundary': false
+      '#primary_layer_behavior': informational
+      '#primary_layer_type': region-hidden
+      '#primary_layer_source': 'https://www.portlandmaps.com/arcgis/rest/services/Public/Parks_Administrative_Boundaries/MapServer/1/query?where=1%3D1&f=geojson'
+      '#region_id_property_name': Name
     report_location_notes:
       '#type': textfield
       '#title': 'Location Notes'
@@ -241,66 +246,94 @@ elements: |-
           visible:
             ':input[name="report_what_needs_attention[radios]"]':
               value: 'Water feature such as pool, splash pad, or interactive fountain'
-      report_issue_default:
-        '#type': webform_radios_other
+      report_basic_amenity_issue:
+        '#type': radios
         '#title': 'What is the issue?'
         '#options': amenity_issues_basic
         '#other__option_label': 'Something else...'
         '#other__placeholder': 'Please describe'
         '#required': true
         '#states':
-          visible:
+          invisible:
             - ':input[name="report_basic_amenity[radios]"]':
-                checked: true
+                unchecked: true
+            - or
+            - ':input[name="report_basic_amenity[radios]"]':
+                value: _other_
+      report_restroom_issue:
+        '#type': radios
+        '#title': 'What is the issue?'
+        '#options': amenity_issues_basic
+        '#other__option_label': 'Something else...'
+        '#other__placeholder': 'Please describe'
+        '#required': true
+        '#states':
+          invisible:
+            - ':input[name="report_restroom[radios]"]':
+                unchecked: true
             - or
             - ':input[name="report_restroom[radios]"]':
-                checked: true
-            - or
-            - ':input[name="report_structure_feature[radios]"]':
-                checked: true
-            - or
-            - ':input[name="report_recreation_amenity[radios]"]':
-                checked: true
-            - or
-            - ':input[name="report_what_needs_attention[radios]"]':
-                value: 'Unpaved trail or soft-surface path'
-            - or
-            - ':input[name="report_water_feature[radios]"]':
-                checked: true
-            - or
-            - ':input[name="report_what_needs_attention[radios]"]':
-                value: _other_
-            - or
-            - ':input[name="report_landscaping[radios]"]':
                 value: _other_
       report_pavement_issue:
-        '#type': webform_radios_other
+        '#type': radios
         '#title': 'What is the issue?'
         '#options': amenity_issues_pavement
         '#other__option_label': 'Something else...'
         '#other__placeholder': 'Please describe'
-        '#states':
-          visible:
-            ':input[name="report_paved_area[radios]"]':
-              checked: true
         '#required': true
+        '#states':
+          invisible:
+            - ':input[name="report_paved_area[radios]"]':
+                unchecked: true
+            - or
+            - ':input[name="report_paved_area[radios]"]':
+                value: _other_
+      report_structure_issue:
+        '#type': radios
+        '#title': 'What is the issue?'
+        '#options': amenity_issues_basic
+        '#other__option_label': 'Something else...'
+        '#other__placeholder': 'Please describe'
+        '#required': true
+        '#states':
+          invisible:
+            - ':input[name="report_structure_feature[radios]"]':
+                unchecked: true
+            - or
+            - ':input[name="report_structure_feature[radios]"]':
+                value: _other_
+      report_recreation_amenity_issue:
+        '#type': radios
+        '#title': 'What is the issue?'
+        '#options': amenity_issues_basic
+        '#other__option_label': 'Something else...'
+        '#other__placeholder': 'Please describe'
+        '#required': true
+        '#states':
+          invisible:
+            - ':input[name="report_recreation_amenity[radios]"]':
+                unchecked: true
+            - or
+            - ':input[name="report_recreation_amenity[radios]"]':
+                value: _other_
       report_grass_issue:
-        '#type': webform_radios_other
+        '#type': radios
         '#title': 'What is the issue?'
         '#options': amenity_issues_grass
         '#other__option_label': 'Something else...'
         '#other__placeholder': 'Please describe'
+        '#required': true
         '#states':
           visible:
             ':input[name="report_landscaping[radios]"]':
               value: 'Grass or turf, including irrigation'
-        '#required': true
       report_plant_issue:
-        '#type': webform_radios_other
+        '#type': radios
         '#title': 'What is the issue?'
         '#options': amenity_issues_plants
         '#other__option_label': 'Something else...'
         '#other__placeholder': 'Please describe'
+        '#required': true
         '#states':
           visible:
             - ':input[name="report_landscaping[radios]"]':
@@ -308,36 +341,45 @@ elements: |-
             - or
             - ':input[name="report_landscaping[radios]"]':
                 value: 'Bushes, flower beds, or natural areas'
+      report_unpaved_trail_issue:
+        '#type': radios
+        '#title': 'What is the issue?'
+        '#options': amenity_issues_basic
+        '#other__option_label': 'Something else...'
+        '#other__placeholder': 'Please describe'
         '#required': true
+        '#states':
+          visible:
+            ':input[name="report_what_needs_attention[radios]"]':
+              value: 'Unpaved trail or soft-surface path'
+      report_water_feature_issue:
+        '#type': radios
+        '#title': 'What is the issue?'
+        '#options': amenity_issues_basic
+        '#other__option_label': 'Something else...'
+        '#other__placeholder': 'Please describe'
+        '#required': true
+        '#states':
+          invisible:
+            - ':input[name="report_water_feature[radios]"]':
+                unchecked: true
+            - or
+            - ':input[name="report_water_feature[radios]"]':
+                value: _other_
     container_submit:
       '#type': container
       '#states':
         visible:
-          - ':input[name="report_issue_default[radios]"]':
-              checked: true
-          - or
-          - ':input[name="report_pavement_issue[radios]"]':
-              checked: true
-          - or
-          - ':input[name="report_grass_issue[radios]"]':
-              checked: true
-          - or
-          - ':input[name="report_plant_issue[radios]"]':
-              checked: true
-          - or
           - ':input[name="report_what_needs_attention[radios]"]':
-              value: _other_
+              checked: true
           - or
-          - ':input[name="report_is_park"]':
-              '!value': 'Park or natural area'
+          - ':input[name="report_what_needs_attention[other]"]':
+              filled: true
       report_comments:
         '#type': textarea
         '#title': 'Issue Description/Narrative'
         '#prepopulate': true
-        '#states':
-          optional:
-            ':input[name="report_is_park"]':
-              value: 'Park or natural area'
+        '#required': true
       report_photo:
         '#type': webform_image_file
         '#title': Photo
@@ -362,7 +404,8 @@ elements: |-
             '#type': textfield
             '#title': Email
             '#description': '<p>We will only use your email address to respond to your report if needed.</p>'
-            '#input_mask': "'alias': 'email'"
+            '#pattern': '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+            '#pattern_error': 'Please enter a correctly formatted email address, such as myname@example.com.'
       section_public_records_statement:
         '#type': webform_section
         '#title': 'Public Records Statement'
@@ -531,16 +574,28 @@ elements: |-
         {{ data.report_water_feature is iterable ? '' : webform_token('[webform_submission:values:report_water_feature]', webform_submission) }}<br>
       {% endif %}
 
-      {% if data.report_is_park and data.report_is_park is not iterable and data.report_is_park == "Park or natural area" %}
+      <!--{% if data.report_is_park and data.report_is_park is not iterable and data.report_is_park == "Park or natural area" %}
       <br><strong>What is the issue?</strong><br>
+      {% endif %}-->
+
+      {% if data.report_basic_amenity_issue %}
+        {{ data.report_basic_amenity_issue is iterable ? '' : webform_token('[webform_submission:values:report_basic_amenity_issue]', webform_submission) }}<br>
       {% endif %}
 
-      {% if data.report_issue_default %}
-        {{ data.report_issue_default is iterable ? '' : webform_token('[webform_submission:values:report_issue_default]', webform_submission) }}<br>
+      {% if data.report_restroom_issue %}
+        {{ data.report_restroom_issue is iterable ? '' : webform_token('[webform_submission:values:report_restroom_issue]', webform_submission) }}<br>
       {% endif %}
 
       {% if data.report_pavement_issue %}
         {{ data.report_pavement_issue is iterable ? '' : webform_token('[webform_submission:values:report_pavement_issue]', webform_submission) }}<br>
+      {% endif %}
+
+      {% if data.report_structure_issue %}
+        {{ data.report_structure_issue is iterable ? '' : webform_token('[webform_submission:values:report_structure_issue]', webform_submission) }}<br>
+      {% endif %}
+
+      {% if data.report_recreation_amenity_issue %}
+        {{ data.report_recreation_amenity_issue is iterable ? '' : webform_token('[webform_submission:values:report_recreation_amenity_issue]', webform_submission) }}<br>
       {% endif %}
 
       {% if data.report_grass_issue %}
@@ -549,6 +604,14 @@ elements: |-
 
       {% if data.report_plant_issue %}
         {{ data.report_plant_issue is iterable ? '' : webform_token('[webform_submission:values:report_plant_issue]', webform_submission) }}<br>
+      {% endif %}
+
+      {% if data.report_unpaved_trail_issue %}
+        {{ data.report_unpaved_trail_issue is iterable ? '' : webform_token('[webform_submission:values:report_unpaved_trail_issue]', webform_submission) }}<br>
+      {% endif %}
+
+      {% if data.report_water_feature_issue %}
+        {{ data.report_water_feature_issue is iterable ? '' : webform_token('[webform_submission:values:report_water_feature_issue]', webform_submission) }}<br>
       {% endif %}
 
       <br><strong>Issue description:</strong><br>
@@ -593,6 +656,17 @@ elements: |-
       {% elseif (data.report_issue_default and data.report_issue_default is not iterable and data.report_issue_default == "Something is missing, broken or needs repair") %}
       	prms
       {% endif %}
+    '#whitespace': trim
+    '#ajax': true
+  resolution_url:
+    '#type': webform_computed_twig
+    '#title': 'Resolution URL'
+    '#display_on': none
+    '#mode': text
+    '#template': |-
+      {% set detail = data.report_comments %}{% if detail|length > 200 %}{% set detail = detail|truncate(200) ~ "..." %}{% endif %}
+
+      https://{{ webform_token('[site:url-brief]', webform_submission, [], options) }}/form/report-park-issue-resolution?original_submission_key={{ uuid }}&report_is_park={{ data.report_is_park is iterable ? '' : data.report_is_park|url_encode }}&report_community_center={{ data.report_community_center|url_encode }}&community_garden_name_location={{ data.community_garden_name_location|url_encode }}&report_location[location_lat]={{ data.report_location.location_lat }}&report_location[location_lon]={{ data.report_location.location_lon }}{% if data.report_location_notes %}&report_location_notes={{ data.report_location_notes|url_encode }}{% endif %}&report_what_needs_attention={{ data.report_what_needs_attention is iterable ? '' : data.report_what_needs_attention|url_encode }}{% if data.report_basic_amenity and data.report_basic_amenity is not iterable %}&report_basic_amenity={{ data.report_basic_amenity|url_encode }}{% endif %}{% if data.report_restroom and data.report_restroom is not iterable %}&report_restroom={{ data.report_restroom|url_encode }}{% endif %}{% if data.report_paved_area and data.report_paved_area is not iterable %}&report_paved_area={{ data.report_paved_area|url_encode }}{% endif %}{% if data.report_structure_feature and data.report_structure_feature is not iterable %}&report_structure_feature={{ data.report_structure_feature|url_encode }}{% endif %}{% if data.report_recreation_amenity and data.report_recreation_amenity is not iterable %}&report_recreation_amenity={{ data.report_recreation_amenity|url_encode }}{% endif %}{% if data.report_landscaping and data.report_landscaping is not iterable %}&report_landscaping={{ data.report_landscaping|url_encode }}{% endif %}{% if data.report_water_feature and data.report_water_feature is not iterable %}&report_water_feature={{ data.report_water_feature|url_encode }}{% endif %}{% if data.report_basic_amenity_issue and data.report_basic_amenity_issue is not iterable %}&report_basic_amenity_issue={{ data.report_basic_amenity_issue|url_encode }}{% endif %}{% if data.report_restroom_issue and data.report_restroom_issue is not iterable %}&report_restroom_issue={{ data.report_restroom_issue|url_encode }}{% endif %}{% if data.report_pavement_issue and data.report_pavement_issue is not iterable %}&report_pavement_issue={{ data.report_pavement_issue|url_encode }}{% endif %}{% if data.report_structure_issue and data.report_structure_issue is not iterable %}&report_structure_issue={{ data.report_structure_issue|url_encode }}{% endif %}{% if data.report_recreation_amenity_issue and data.report_recreation_amenity_issue is not iterable %}&report_recreation_amenity_issue={{ data.report_recreation_amenity_issue|url_encode }}{% endif %}{% if data.report_grass_issue and data.report_grass_issue is not iterable %}&report_grass_issue={{ data.report_grass_issue|url_encode }}{% endif %}{% if data.report_plant_issue and data.report_plant_issue is not iterable %}&report_plant_issue={{ data.report_plant_issue|url_encode }}{% endif %}{% if data.report_unpaved_trail_issue and data.report_unpaved_trail_issue is not iterable %}&report_unpaved_trail_issue={{ data.report_unpaved_trail_issue|url_encode }}{% endif %}{% if data.report_water_feature_issue and data.report_water_feature_issue is not iterable %}&report_water_feature_issue={{ data.report_water_feature_issue|url_encode }}{% endif %}{% if data.contact_name %}&contact_name={{ data.contact_name|url_encode }}{% endif %}{% if data.contact_email %}&contact_email={{ data.contact_email|url_encode }}{% endif %}{% if detail %}&report_comments={{ detail|url_encode }}{% endif %}
     '#whitespace': trim
     '#ajax': true
 css: ''
@@ -702,7 +776,7 @@ settings:
   confirmation_type: page
   confirmation_url: ''
   confirmation_title: 'Thank you'
-  confirmation_message: "<p>Your report (#[webform_submission:values:report_ticket_id]) has been received.</p>\r\n\r\n<h2>What happens next?</h2>\r\n\r\n<p>Your report has been sent to a Parks Maintenance staff person for review. Reported issues will be addressed based on the risk to public health and safety, maintenance schedules, available resources, and planned capital improvements. Portland Parks &amp; Recreation will act on dangerous or unsafe conditions immediately. Some reports may be resolved through regular maintenance routines – for example, trash cans and restroom supplies are checked daily. Reports that require larger, more in-depth repairs and improvements may require a capital improvement project.<br />\r\n&nbsp;<br />\r\nIf you have additional questions, please contact us at <a href=\"tel:311\">3-1-1</a>, <a href=\"tel:503-823-4000\">503-823-4000</a>, or <a href=\"mailto:311@portlandoregon.gov\">311@portlandoregon.gov</a>.</p>"
+  confirmation_message: "<p>Your communication was received by the Portland Parks &amp; Recreation (PP&amp;R) Maintenance Staff. Issues will be forwarded to the appropriate workgroup, and action taken if needed.</p>\r\n\r\n<p data-renderer-start-pos=\"243\">Each day PP&amp;R staff pick up litter &amp; debris, clean restrooms, empty trashcans, maintain irrigation lines, assess assets, maintain built assets, and perform maintenance to our green infrastructure. If your report is regarding a significant repair or a repair requiring a specific skillset, a work order will be created, and added to the queue. Please note delays may occur in completion of repairs due to staffing, supply chain issues, environmental factors, and other work that has been prioritized based on safety, security, and equity concerns.</p>\r\n\r\n<p data-renderer-start-pos=\"791\">Thanks again for your support of Portland Parks!<br />\r\n&nbsp;<br />\r\nIf you have additional questions, please contact us at <a href=\"tel:311\">3-1-1</a>, <a href=\"tel:503-823-4000\">503-823-4000</a>, or <a href=\"mailto:311@portlandoregon.gov\">311@portlandoregon.gov</a>.</p>"
   confirmation_attributes: {  }
   confirmation_back: true
   confirmation_back_label: 'Submit another report'
@@ -805,7 +879,7 @@ handlers:
       enabled:
         ':input[name="support_agent_use_only[zendesk_request_number]"]':
           filled: true
-    weight: -46
+    weight: -47
     settings:
       comment: "<h1>[webform_submission:values:computed_subject]</h1>\r\n<p><b>Linked Issue Request: <a href=\"https://portlandoregon.zendesk.com/agent/tickets/[webform_submission:values:report_ticket_id]\">[webform_submission:values:report_ticket_id]</a></b></p>\r\n\r\n[webform_submission:values:computed_issue_description:html]\r\n"
       comment_private: 1
@@ -822,14 +896,14 @@ handlers:
   zendesk_new_park_maintenance_request:
     id: zendesk
     handler_id: zendesk_new_park_maintenance_request
-    label: 'Route to Developer Test Group (Zendesk)'
+    label: 'TEST: Route to Developer Test Group (Zendesk)'
     notes: 'Routes ticket to Developer Test Group when the Test Submission box is checked in the Customer Service Use Only block.'
     status: true
     conditions:
       enabled:
         ':input[name="support_agent_use_only[test_submission]"]':
           checked: true
-    weight: -45
+    weight: -46
     settings:
       requester_name: contact_name
       requester_email: contact_email
@@ -844,28 +918,20 @@ handlers:
       collaborators: ''
       custom_fields: "6353388345367: 'report_park_maintenance_issue_test'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:computed_place_name]', 'computed_place_name']\r\n1500013095781: '[webform_submission:uuid]'\r\n9205221816983: ['[webform_submission:values:report_location:location_type:raw]', 'report_location:location_type']\r\n13178808571927: ['[webform_submission:computed_priority]', 'computed_priority']\r\n5873224754071: ['[webform_submission:values:report_location:location_details]', 'report_location:location_details']\r\n18197040973335: ['[webform_submission:values:support_agent_use_only:escalate_issue]', 'support_agent_use_only:escalate_issue']"
       ticket_id_field: report_ticket_id
-      ticket_form_id: '15142080018711'
+      ticket_form_id: '4990038807319'
       recipient: ''
       ticket_fork_field: ''
   route_to_parks_maintenance_zendesk:
     id: zendesk
     handler_id: route_to_parks_maintenance_zendesk
     label: 'Route to Parks Maintenance (Zendesk)'
-    notes: 'Default routing for maintenance reports. Disabled if any of the following are true: 1) Community Garden, 2) Art/Mural/Monument/Sculpture, 3) Interactions, improper use, and safety concerns, 4) Test Submission box checked. '
+    notes: 'Default routing for maintenance reports. Disabled if any of the following are true: 1) Art/Mural/Monument/Sculpture, 2) Interactions, improper use, and safety concerns, 3) Test Submission box checked. '
     status: true
     conditions:
       disabled:
         -
-          ':input[name="report_is_park"]':
-            value: 'Community garden'
-        - or
-        -
           ':input[name="report_basic_amenity[radios]"]':
-            value: Art/Mural/Monument/Sculpture
-        - or
-        -
-          ':input[name="report_issue_default[radios]"]':
-            value: 'Interactions, improper use, and safety concerns'
+            value: Art/mural/monument/sculpture
         - or
         -
           ':input[name="support_agent_use_only[test_submission]"]':
@@ -883,7 +949,7 @@ handlers:
       assignee_id: ''
       type: incident
       collaborators: ''
-      custom_fields: "6353388345367: 'report_park_maintenance_issue'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:computed_place_name]', 'computed_place_name']\r\n1500013095781: '[webform_submission:uuid]'\r\n9205221816983: ['[webform_submission:values:report_location:location_type:raw]', 'report_location:location_type']\r\n13178808571927: ['[webform_submission:computed_priority]', 'computed_priority']\r\n5873224754071: ['[webform_submission:values:report_location:location_details]', 'report_location:location_details']\r\n18197040973335: ['[webform_submission:values:support_agent_use_only:escalate_issue]', 'support_agent_use_only:escalate_issue']"
+      custom_fields: "6353388345367: 'report_park_maintenance_issue'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:computed_place_name]', 'computed_place_name']\r\n1500013095781: '[webform_submission:uuid]'\r\n9205221816983: ['[webform_submission:values:report_location:location_type:raw]', 'report_location:location_type']\r\n13178808571927: ['[webform_submission:computed_priority]', 'computed_priority']\r\n5873224754071: ['[webform_submission:values:report_location:location_details]', 'report_location:location_details']\r\n18197040973335: ['[webform_submission:values:support_agent_use_only:escalate_issue]', 'support_agent_use_only:escalate_issue']\r\n"
       ticket_id_field: report_ticket_id
       ticket_form_id: '15142080018711'
       recipient: ''
@@ -900,7 +966,7 @@ handlers:
           value: Art/Mural/Monument/Sculpture
         ':input[name="support_agent_use_only[test_submission]"]':
           unchecked: true
-    weight: -48
+    weight: -49
     settings:
       states:
         - completed
@@ -942,7 +1008,7 @@ handlers:
           value: 'Community garden'
         ':input[name="support_agent_use_only[test_submission]"]':
           unchecked: true
-    weight: -47
+    weight: -48
     settings:
       states:
         - completed
@@ -977,12 +1043,12 @@ handlers:
     handler_id: test_email
     label: 'Route email to logged in developer'
     notes: "Enabled when the Test Submission box is checked in the Customer Service Use Only block. Sends the email to the logged in user, which will be a site administrator, since that's the only group that has permissions to see the checkbox."
-    status: true
+    status: false
     conditions:
       enabled:
         ':input[name="support_agent_use_only[test_submission]"]':
           checked: true
-    weight: 6
+    weight: -45
     settings:
       states:
         - completed
@@ -1012,4 +1078,52 @@ handlers:
       theme_name: ''
       parameters: {  }
       debug: false
+  zendesk_update_request:
+    id: zendesk_update_ticket
+    handler_id: zendesk_update_request
+    label: 'Update Zendesk request with full resolution URL including ticket ID'
+    notes: ''
+    status: true
+    conditions:
+      disabled:
+        ':input[name="support_agent_use_only[test_submission]"]':
+          checked: true
+    weight: -44
+    settings:
+      comment: 'Resolution URL: <a href="[webform_submission:values:resolution_url]&report_ticket_id=[webform_submission:values:report_ticket_id]">[webform_submission:values:resolution_url]&report_ticket_id=[webform_submission:values:report_ticket_id]</a>'
+      comment_private: 1
+      tags: ''
+      priority: ''
+      status: ''
+      group_id: ''
+      assignee_id: ''
+      type: ''
+      collaborators: ''
+      custom_fields: "6355783758871: '[webform_submission:values:resolution_url]&report_ticket_id=[webform_submission:values:report_ticket_id]'"
+      ticket_id_field: report_ticket_id
+      ticket_form_id: '15142080018711'
+  update_zendesk_request_with_full_resolution_url_including_ticket:
+    id: zendesk_update_ticket
+    handler_id: update_zendesk_request_with_full_resolution_url_including_ticket
+    label: 'TEST: Update Zendesk request with full resolution URL including ticket ID'
+    notes: ''
+    status: true
+    conditions:
+      enabled:
+        ':input[name="support_agent_use_only[test_submission]"]':
+          checked: true
+    weight: -43
+    settings:
+      comment: 'Resolution URL: <a href="[webform_submission:values:resolution_url]&report_ticket_id=[webform_submission:values:report_ticket_id]">[webform_submission:values:resolution_url]&report_ticket_id=[webform_submission:values:report_ticket_id]</a>'
+      comment_private: 1
+      tags: ''
+      priority: ''
+      status: ''
+      group_id: ''
+      assignee_id: ''
+      type: ''
+      collaborators: ''
+      custom_fields: "6355783758871: '[webform_submission:values:resolution_url]&report_ticket_id=[webform_submission:values:report_ticket_id]'"
+      ticket_id_field: report_ticket_id
+      ticket_form_id: '4990038807319'
 variants: {  }
