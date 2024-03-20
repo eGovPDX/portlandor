@@ -5,6 +5,7 @@ dependencies:
   module:
     - portland
     - portland_zendesk
+    - weight
 third_party_settings:
   portland:
     disable_demographic_form_prompt: 0
@@ -35,10 +36,11 @@ elements: |-
     '#type': radios
     '#title': 'Which TNC company are you filing this complaint about?'
     '#options':
-      Uber: Uber
-      Lyft: Lyft
-      Wingz: Wingz
+      uber: Uber
+      lyft: Lyft
+      wingz: Wingz
     '#required': true
+    '#admin_notes': '<p>Value must match the lowercase values in the mapped TNC Company custom field in Zendesk.</p>'
   report_filed_with_company:
     '#type': radios
     '#title': 'Have you filed the complaint with your company?'
@@ -133,6 +135,11 @@ elements: |-
       	{% for item in data.report_operator_company %}
       		{% set companies = companies ~ item ~ ", " %}
       	{% endfor %}
+          
+          {% if companies|length > 2 %}
+            {% set companies = companies[0 : companies|length-2] %}
+          {% endif %}
+          
       {% endif %}
 
       {% set detail = data.report_complaint_detail %}
@@ -154,13 +161,18 @@ elements: |-
       	{% for item in data.report_operator_company %}
       		{% set companies = companies ~ item ~ ", " %}
       	{% endfor %}
+          
+          {% if companies|length > 2 %}
+            {% set companies = companies[0 : companies|length-2] %}
+          {% endif %}
+          
       {% endif %}
 
       <strong>Which TNC companies do you operate for?</strong>
       {{ companies }}<br><br>
 
       <strong>Which TNC company are you filing this complaint about?</strong>
-      {{ data.report_company_complaint is iterable ? '' : data.report_company_complaint }}<br><br>
+      {{ data.report_company_complaint is iterable ? '' : data.report_company_complaint|raw }}<br><br>
 
       <strong>Date of Incident:</strong>
       {{ data.report_date_of_incident|date("m/d/Y") }}<br><br>
@@ -188,7 +200,7 @@ elements: |-
     '#title': 'Computed Subject'
     '#display_on': none
     '#mode': text
-    '#template': "TNC driver complaint: {{ data.report_complaint_category is iterable ? '' : data.report_complaint_category }}"
+    '#template': 'TNC driver complaint: {{ data.contact_name }}'
     '#whitespace': trim
     '#ajax': true
 css: ''
@@ -297,8 +309,8 @@ settings:
   draft_pending_multiple_message: ''
   confirmation_type: page
   confirmation_url: ''
-  confirmation_title: ''
-  confirmation_message: ''
+  confirmation_title: 'Thank you!'
+  confirmation_message: '<p>Your report has been received.&nbsp;</p>'
   confirmation_attributes: {  }
   confirmation_back: true
   confirmation_back_label: ''
@@ -398,7 +410,7 @@ handlers:
       assignee_id: ''
       type: incident
       collaborators: ''
-      custom_fields: "6353388345367: 'report_tnc_issue'\r\n1500013095781: '[webform_submission:uuid]'\r\n6355783758871: ['[webform_submission:values:resolution_url]', 'resolution_url']"
+      custom_fields: "6353388345367: 'report_tnc_issue'\r\n1500013095781: '[webform_submission:uuid]'\r\n6355783758871: ['[webform_submission:values:resolution_url]', 'resolution_url']\r\n21749891543191: ['[webform_submission:values:report_company_complaint]', 'report_company_complaint']"
       ticket_id_field: report_ticket_id
       ticket_form_id: '21232163956503'
       recipient: ''
@@ -426,9 +438,9 @@ handlers:
       assignee_id: ''
       type: incident
       collaborators: ''
-      custom_fields: "6353388345367: 'report_tnc_issue'\r\n1500013095781: '[webform_submission:uuid]'\r\n6355783758871: ['[webform_submission:values:resolution_url]', 'resolution_url']"
+      custom_fields: "6353388345367: 'report_tnc_issue'\r\n1500013095781: '[webform_submission:uuid]'\r\n6355783758871: ['[webform_submission:values:resolution_url]', 'resolution_url']\r\n21749891543191: ['[webform_submission:values:report_company_complaint]', 'report_company_complaint']"
       ticket_id_field: report_ticket_id
-      ticket_form_id: '4990038807319'
+      ticket_form_id: '21232163956503'
       recipient: ''
       ticket_fork_field: ''
   zendesk_update_request:
@@ -478,5 +490,5 @@ handlers:
       collaborators: ''
       custom_fields: "6355783758871: '[webform_submission:values:resolution_url]&report_ticket_id=[webform_submission:values:report_ticket_id]'"
       ticket_id_field: report_ticket_id
-      ticket_form_id: '4990038807319'
+      ticket_form_id: '21232163956503'
 variants: {  }
