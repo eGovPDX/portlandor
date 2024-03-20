@@ -35,30 +35,30 @@ describe('SuperAdmin user test', () => {
   afterAll(async () => {
     await browser.close()
   })
-  
-  // it(
-  //   'The site is in good status',
-  //   async () => {
-  //     try {
 
-  //       let text_content = '';
-  //       await page.goto(`${HOME_PAGE}/admin/reports/status`);
-  //       await page.waitForSelector('.system-status-report');
-  //       text_content = await page.evaluate(() => document.querySelector('.system-status-report').textContent);
-  //       // Negative test
-  //       expect(text_content).toEqual(expect.not.stringContaining('Errors found'));
-  //       expect(text_content).toEqual(expect.not.stringContaining('The following changes were detected in the entity type and field definitions.'));
-  //     } catch (e) {
-  //       // Capture the screenshot when test fails and re-throw the exception
-  //       await page.screenshot({
-  //         path: `${ARTIFACTS_FOLDER}site-status-error.jpg`,
-  //         type: "jpeg",
-  //         fullPage: true
-  //       });
-  //       throw e;
-  //     }
-  //   }
-  // );
+  it(
+    'The site is in good status',
+    async () => {
+      try {
+
+        let text_content = '';
+        await page.goto(`${HOME_PAGE}/admin/reports/status`);
+        await page.waitForSelector('.system-status-report');
+        text_content = await page.evaluate(() => document.querySelector('.system-status-report').textContent);
+        // Negative test
+        expect(text_content).toEqual(expect.not.stringContaining('Errors found'));
+        expect(text_content).toEqual(expect.not.stringContaining('The following changes were detected in the entity type and field definitions.'));
+      } catch (e) {
+        // Capture the screenshot when test fails and re-throw the exception
+        await page.screenshot({
+          path: `${ARTIFACTS_FOLDER}site-status-error.jpg`,
+          type: "jpeg",
+          fullPage: true
+        });
+        throw e;
+      }
+    }
+  );
 
   it(
     'All configurations are imported',
