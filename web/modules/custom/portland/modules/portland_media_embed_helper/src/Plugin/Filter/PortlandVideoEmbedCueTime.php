@@ -12,8 +12,8 @@ use Drupal\filter\Render\FilteredMarkup;
  * @Filter(
  *   id = "portland_video_embed_cue_time",
  *   title = @Translation("Portland Video Embed Cue Time"),
- *   description = @Translation("When enabled, applies a start cue time to YouTube and Vimeo video URLs. Requries a custom embed dialog field to capture the timecode. This filter must be processed after the Display Embedded Entities filter."),
- *   type = Drupal\filter\Plugin\FilterInterface::TYPE_MARKUP_LANGUAGE,
+ *   description = @Translation("When enabled, convert the <code>data-start-cue</code> attribute value into the start cue time for YouTube and Vimeo video URLs. Requries a custom embed dialog field to capture the timecode. This filter must be processed after the Display Embedded Entities filter."),
+ *   type = Drupal\filter\Plugin\FilterInterface::TYPE_TRANSFORM_REVERSIBLE,
  * )
  */
 class PortlandVideoEmbedCueTime extends FilterBase {
@@ -23,19 +23,15 @@ class PortlandVideoEmbedCueTime extends FilterBase {
    * @param [type] $langcode
    * @return void
    */
-  public function process($text, $langcode)
-  {
+  public function process($text, $langcode) {
     $result = new FilterProcessResult($text);
 
     $dom = Html::load($text);
     $xpath = new \DOMXPath($dom);
-
-    $dom = Html::load($text);
-    $xpath = new \DOMXPath($dom);
     // this section only gets used if data-start-cue attribute is present
-    $elems = $xpath->query("//div[@data-start-cue]");
+    $elems = $xpath->query('//div[@data-start-cue]');
     foreach ($elems as $elem) {
-      $cue = $elem->getAttribute("data-start-cue");
+      $cue = $elem->getAttribute('data-start-cue');
       $iframes = $elem->getElementsByTagName('iframe');
       foreach ($iframes as $frame) {
         $src = $frame->getAttribute('src');
