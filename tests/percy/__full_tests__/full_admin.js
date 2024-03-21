@@ -799,10 +799,9 @@ describe('Full regression test suite for Admin', () => {
           video_url
         );
         await this.page.evaluate(() => {
-          document
-            .querySelector('iframe[title="Rich Text Editor, Transcript field"]')
-            .contentDocument.querySelector('body p').textContent =
-            'Transcript content for the test video';
+          ck5 = Drupal.CKEditor5Instances.keys().next().value;
+          editor = Drupal.CKEditor5Instances.get(ck5);
+          editor.setData('Transcript content for the test video');
         });
         selector = 'details#edit-group-attribution';
         await this.page.evaluate(
