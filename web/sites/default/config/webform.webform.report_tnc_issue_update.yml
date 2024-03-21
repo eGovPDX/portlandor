@@ -105,7 +105,7 @@ elements: |-
     '#states':
       visible:
         ':input[name="update_action"]':
-          checked: true
+          value: 'Provide a determination'
     '#markup': |-
       <div class="alert alert--warning next-steps">
       <p class="mb-0">CAUTION: Information entered in the Update Details field will be visible to the complainant.</p>
@@ -190,7 +190,7 @@ elements: |-
 
       <p><strong>Update Action:</strong> {{ data.update_action }}<br><br>
 
-      <strong>Details:</strong>{{ data.update_details }}<br><br>
+      <strong>Details:</strong> {{ data.update_details }}<br><br>
 
       <strong>Updated By:</strong> {{ data.update_representative }}<br><br>
 
@@ -393,14 +393,19 @@ handlers:
   zendesk_update_request:
     id: zendesk_update_ticket
     handler_id: zendesk_update_request
-    label: 'Update TNC ticket - Provide additional information'
+    label: 'Update TNC ticket - Provide additional information or something else'
     notes: 'This handler updates the ticket with additional details in a private note and sets the status to Open.'
     status: true
     conditions:
-      disabled:
-        ':input[name="update_action"]':
-          value: 'Provide a determination'
-    weight: 0
+      enabled:
+        -
+          ':input[name="update_action"]':
+            value: 'Provide supplemental information'
+        - or
+        -
+          ':input[name="update_action"]':
+            value: 'Something else...'
+    weight: -49
     settings:
       comment: "<p><strong>This request has been updated by [webform_submission:values:update_representative] ([webform_submission:values:update_representative_company])</strong></p>\r\n\r\n<p><strong>Action:</strong> [webform_submission:values:update_action]</p>\r\n\r\n<p><strong>Details:</strong> [webform_submission:values:update_details]</p>"
       comment_private: 1
@@ -421,7 +426,7 @@ handlers:
     notes: ''
     status: true
     conditions: {  }
-    weight: 0
+    weight: -50
     settings: {  }
   update_tnc_ticket:
     id: zendesk_update_ticket
@@ -433,7 +438,7 @@ handlers:
       enabled:
         ':input[name="update_action"]':
           value: 'Provide a determination'
-    weight: 2
+    weight: -48
     settings:
       comment: "<p><strong>This request has been updated by [webform_submission:values:update_representative_company]</strong></p>\r\n\r\n<p><strong>Action:</strong> [webform_submission:values:update_action]</p>\r\n\r\n<p><strong>Details:</strong> [webform_submission:values:update_details]</p>"
       comment_private: 0
@@ -457,7 +462,7 @@ handlers:
       enabled:
         ':input[name="support_agent_use_only[test_submission]"]':
           unchecked: true
-    weight: 3
+    weight: -46
     settings:
       states:
         - completed
@@ -497,7 +502,7 @@ handlers:
       enabled:
         ':input[name="support_agent_use_only[test_submission]"]':
           checked: true
-    weight: 4
+    weight: -45
     settings:
       states:
         - completed
@@ -527,4 +532,28 @@ handlers:
       theme_name: ''
       parameters: {  }
       debug: false
+  update_tnc_ticket_update_ticket_with_rep_name:
+    id: zendesk_update_ticket
+    handler_id: update_tnc_ticket_update_ticket_with_rep_name
+    label: 'Update TNC ticket - Update ticket with rep name'
+    notes: 'This handler updates the ticket to include the representative name in a private note if "Provide determination" was selected.'
+    status: true
+    conditions:
+      enabled:
+        ':input[name="update_action"]':
+          value: 'Provide a determination'
+    weight: -47
+    settings:
+      comment: '<p><strong>This request was updated by [webform_submission:values:update_representative]([webform_submission:values:update_representative_company])</strong></p>'
+      comment_private: 1
+      tags: ''
+      priority: ''
+      status: open
+      group_id: ''
+      assignee_id: ''
+      type: ''
+      collaborators: ''
+      custom_fields: ''
+      ticket_id_field: report_ticket_id
+      ticket_form_id: '21232163956503'
 variants: {  }
