@@ -33,24 +33,24 @@ class MigrateEmbeddedMediaAction extends ViewsBulkOperationsActionBase
 
     $text = $entity->field_body_content->value;
     $search = [
-      'drupal-entity',
-      'data-embed-button="document_browser"',
-      'data-embed-button="map_browser"',
-      'data-embed-button="insert_iframe"',
-      'data-embed-button="image_browser"',
-      'data-embed-button="audio_video_browser"',
-      'data-entity-embed-display',
-      'view_mode:media.',
+      'drupal-entity data-align="none"',
+      // 'data-embed-button="document_browser"',
+      // 'data-embed-button="map_browser"',
+      // 'data-embed-button="insert_iframe"',
+      // 'data-embed-button="image_browser"',
+      // 'data-embed-button="audio_video_browser"',
+      // 'data-entity-embed-display',
+      // 'view_mode:media.',
     ];
     $replace = [
-      'drupal-media',
-      '',
-      '',
-      '',
-      '',
-      '',
-      'data-view-mode',
-      '',
+      'drupal-entity data-align="responsive-full"',
+      // '',
+      // '',
+      // '',
+      // '',
+      // '',
+      // 'data-view-mode',
+      // '',
     ];
     $text = str_replace($search, $replace, $text);
     // @phpstan-ignore-next-line
