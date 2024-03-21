@@ -57,7 +57,7 @@ commands:
             cd /home/circleci/app/tests/percy
             export PERCY_POSTINSTALL_BROWSER=true
             yarn install --frozen-lockfile
-            node node_modules/puppeteer/install.js
+            node node_modules/puppeteer/install.mjs
       - save_cache:
           name: Save Jest and Percy dependencies cache
           key: jest-{{ checksum "tests/percy/yarn.lock" }}-v2
@@ -308,9 +308,8 @@ build_and_deploy: &build_and_deploy
               then
                 echo "Start to delete multi-dev..."
                 while read env_name; do
-                  echo "Skipped deleting multi-dev: $env_name"
-                  # terminus multidev:delete --delete-branch $CIRCLE_PROJECT_REPONAME.$env_name -y
-                  # echo "Deleted multi-dev: $env_name"
+                  terminus multidev:delete --delete-branch $CIRCLE_PROJECT_REPONAME.$env_name -y
+                  echo "Deleted multi-dev: $env_name"
                 done <./matching_env_list.txt
                 echo "Done deleting multi-dev"
                 rm -f ./matching_env_list.txt
@@ -495,7 +494,7 @@ jobs:
     <<: *clone_live_database
 
 orbs:
-  percy: percy/agent@0.1.2
+# percy: percy/agent@0.1.2
   slack: circleci/slack@4.4.2
 
 # Declare a workflow that runs all of our jobs in parallel.

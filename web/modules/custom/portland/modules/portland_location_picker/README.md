@@ -148,6 +148,8 @@ These properties are set in the Advanced tab of the Location Picker element. Dat
 
 - ***location_types*** - NOT IMPLEMENTED. Configurable to contain a list of location type codes that are used by the parent form. Can be used to inform widget functionaltiy. For example, if only "park" is included, only parks-specific functionality is enabled.
 
+- ***region_id_property_name*** - The property name of the feature property that holds the region value we want to capture. Assumes the value is located at features[x].properties[y][regionIdPropertyName]. Defaults to 'region_id.'
+
 ### Example of custom properties
 
 This is the advanced properties configuration used in the Report a Problem with a Public Trash Can reporting form. The first six properties are used to manipulate how the widget and its subelements are rendered. The remaining properties are from the list above and are used to configure the geoJSON layers and how the user interacts with them.
