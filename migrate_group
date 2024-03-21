@@ -16,27 +16,34 @@ fi
 
 # create taxonomy terms
 terminus drush portlandor.$1 -- cr
-terminus drush portlandor.$1 -- cim -y && terminus drush portlandor.$1 -- portland:create_group_types
+terminus drush portlandor.$1 -- cim -y
+terminus drush portlandor.$1 -- portland:create_group_types
 
-# migrate groups
+# advisory_group
 terminus drush portlandor.$1 -- portland:list_group_by_type advisory_group > ids_advisory_group.log
 for word in $(cat ids_advisory_group.log | grep -v "^$"); do terminus drush portlandor.$1 -- portland:migrate_group $word; done
-terminus drush portlandor.$1 -- portland:list_group_by_type program > ids_program.log
-for word in $(cat ids_program.log | grep -v "^$"); do terminus drush portlandor.$1 -- portland:migrate_group $word; done
-terminus drush portlandor.$1 -- portland:list_group_by_type project > ids_project.log
-for word in $(cat ids_project.log | grep -v "^$"); do terminus drush portlandor.$1 -- portland:migrate_group $word; done
-terminus drush portlandor.$1 -- portland:list_group_by_type bureau_office > ids_bureau_office.log
-for word in $(cat ids_bureau_office.log | grep -v "^$"); do terminus drush portlandor.$1 -- portland:migrate_group $word; done
+
+# # program
+# terminus drush portlandor.$1 -- portland:list_group_by_type program > ids_program.log
+# for word in $(cat ids_program.log | grep -v "^$"); do terminus drush portlandor.$1 -- portland:migrate_group $word; done
+
+# # project
+# terminus drush portlandor.$1 -- portland:list_group_by_type project > ids_project.log
+# for word in $(cat ids_project.log | grep -v "^$"); do terminus drush portlandor.$1 -- portland:migrate_group $word; done
+
+# # bureau_office
+# terminus drush portlandor.$1 -- portland:list_group_by_type bureau_office > ids_bureau_office.log
+# for word in $(cat ids_bureau_office.log | grep -v "^$"); do terminus drush portlandor.$1 -- portland:migrate_group $word; done
 
 # Delete groups:
-# time terminus drush portlandor.$1 -- portland:delete_groups advisory_group
-# time terminus drush portlandor.$1 -- portland:delete_groups project
-# time terminus drush portlandor.$1 -- portland:delete_groups program
-# time terminus drush portlandor.$1 -- portland:delete_groups bureau_office
+# time terminus drush portlandor.group-demo -- portland:delete_groups advisory_group
+# time terminus drush portlandor.group-demo -- portland:delete_groups project
+# time terminus drush portlandor.group-demo -- portland:delete_groups program
+# time terminus drush portlandor.group-demo -- portland:delete_groups bureau_office
 
-# re-index
-terminus drush portlandor.$1 -- sapi-r
-terminus drush portlandor.$1 -- sapi-i
+# # re-index
+# terminus drush portlandor.$1 -- sapi-r
+# terminus drush portlandor.$1 -- sapi-i
 
 # retore mailer on Live
 if [[ $1 == "live" ]]
@@ -44,4 +51,4 @@ then
   terminus drush portlandor.$1 -- config:set mailsystem.settings defaults.sender 'sendgrid_integration' -y
 fi
 
-terminus drush portlandor.$1 -- state:delete portland.skip_group_sync
+# terminus drush portlandor.$1 -- state:delete portland.skip_group_sync
