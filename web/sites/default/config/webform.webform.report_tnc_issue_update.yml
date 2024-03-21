@@ -153,7 +153,7 @@ elements: |-
   computed_update_summary:
     '#type': webform_computed_twig
     '#title': 'Computed Update Summary'
-    '#display_on': form
+    '#display_on': none
     '#template': |
       <div style="padding: 20px; margin-bottom: 20px; background-color: #cccccc">
       <h2>Original Report</h2>
@@ -196,6 +196,16 @@ elements: |-
 
       <strong>Company:</strong> {{ data.update_representative_company }}</p>
     '#ajax': true
+  support_agent_use_only:
+    '#type': portland_support_agent_widget
+    '#title': 'Customer Service Use Only'
+    '#access_create_roles':
+      - administrator
+    '#support_agent_widget_title__access': false
+    '#employee_email__access': false
+    '#zendesk_request_number__access': false
+    '#employee_notes_panel__access': false
+    '#escalate_issue__access': false
 css: ''
 javascript: ''
 settings:
@@ -383,8 +393,8 @@ handlers:
   zendesk_update_request:
     id: zendesk_update_ticket
     handler_id: zendesk_update_request
-    label: 'Update TNC ticket - Provide information or other, update in private comment'
-    notes: ''
+    label: 'Update TNC ticket - Provide additional information'
+    notes: 'This handler updates the ticket with additional details in a private note and sets the status to Open.'
     status: true
     conditions:
       disabled:
@@ -392,7 +402,7 @@ handlers:
           value: 'Provide a determination'
     weight: 0
     settings:
-      comment: "<p><strong>This request has been updated by [webform_submission:values:update_representative]</strong></p>\r\n\r\n<p><strong>Action:</strong> [webform_submission:values:update_action]</p>\r\n\r\n<p><strong>Details:</strong> [webform_submission:values:update_details]</p>"
+      comment: "<p><strong>This request has been updated by [webform_submission:values:update_representative] ([webform_submission:values:update_representative_company])</strong></p>\r\n\r\n<p><strong>Action:</strong> [webform_submission:values:update_action]</p>\r\n\r\n<p><strong>Details:</strong> [webform_submission:values:update_details]</p>"
       comment_private: 1
       tags: ''
       priority: ''
@@ -416,8 +426,8 @@ handlers:
   update_tnc_ticket:
     id: zendesk_update_ticket
     handler_id: update_tnc_ticket
-    label: 'Update TNC ticket - Determination in public comment'
-    notes: ''
+    label: 'Update TNC ticket - Provide determination'
+    notes: 'This handler updates the ticket with additional details in a public comment that is sent to the requester and sets the ticket status to Open.'
     status: true
     conditions:
       enabled:
@@ -425,7 +435,7 @@ handlers:
           value: 'Provide a determination'
     weight: 2
     settings:
-      comment: "<p><strong>This request has been updated by [webform_submission:values:update_representative]</strong></p>\r\n\r\n<p><strong>Action:</strong> [webform_submission:values:update_action]</p>\r\n\r\n<p><strong>Details:</strong> [webform_submission:values:update_details]</p>"
+      comment: "<p><strong>This request has been updated by [webform_submission:values:update_representative_company]</strong></p>\r\n\r\n<p><strong>Action:</strong> [webform_submission:values:update_action]</p>\r\n\r\n<p><strong>Details:</strong> [webform_submission:values:update_details]</p>"
       comment_private: 0
       tags: ''
       priority: ''
@@ -437,4 +447,84 @@ handlers:
       custom_fields: ''
       ticket_id_field: report_ticket_id
       ticket_form_id: '21232163956503'
+  email:
+    id: email
+    handler_id: email
+    label: 'Email confirmation of update'
+    notes: 'Sends an email confirmation of the update to the email address associated with the selected company.'
+    status: true
+    conditions:
+      enabled:
+        ':input[name="support_agent_use_only[test_submission]"]':
+          unchecked: true
+    weight: 3
+    settings:
+      states:
+        - completed
+      to_mail: '[webform_submission:values:computed_representative_email]'
+      to_options: {  }
+      bcc_mail: ''
+      bcc_options: {  }
+      cc_mail: ''
+      cc_options: {  }
+      from_mail: _default
+      from_options: {  }
+      from_name: _default
+      reply_to: ''
+      return_path: ''
+      sender_mail: ''
+      sender_name: ''
+      subject: 'TNC Driver Complaint - [webform_submission:values:contact_name]'
+      body: '<p>[webform_submission:values:computed_update_summary]</p>'
+      excluded_elements: {  }
+      ignore_access: false
+      exclude_empty: true
+      exclude_empty_checkbox: false
+      exclude_attachments: false
+      html: true
+      attachments: false
+      twig: false
+      theme_name: ''
+      parameters: {  }
+      debug: false
+  email_confirmation_of_update:
+    id: email
+    handler_id: email_confirmation_of_update
+    label: 'TEST: Email confirmation of update'
+    notes: 'Sends a test email confirmation of the update to Greg, with a note of which email address would have been used if not a test.'
+    status: true
+    conditions:
+      enabled:
+        ':input[name="support_agent_use_only[test_submission]"]':
+          checked: true
+    weight: 4
+    settings:
+      states:
+        - completed
+      to_mail: gregory.clapp@portlandoregon.gov
+      to_options: {  }
+      bcc_mail: ''
+      bcc_options: {  }
+      cc_mail: ''
+      cc_options: {  }
+      from_mail: _default
+      from_options: {  }
+      from_name: _default
+      reply_to: ''
+      return_path: ''
+      sender_mail: ''
+      sender_name: ''
+      subject: 'TNC Driver Complaint - [webform_submission:values:contact_name]'
+      body: "<p><strong>THIS IS A TEST. This email would normally have been sent to:&nbsp;[webform_submission:values:computed_representative_email]</strong></p>\r\n\r\n<p>[webform_submission:values:computed_update_summary]</p>"
+      excluded_elements: {  }
+      ignore_access: false
+      exclude_empty: true
+      exclude_empty_checkbox: false
+      exclude_attachments: false
+      html: true
+      attachments: false
+      twig: false
+      theme_name: ''
+      parameters: {  }
+      debug: false
 variants: {  }
