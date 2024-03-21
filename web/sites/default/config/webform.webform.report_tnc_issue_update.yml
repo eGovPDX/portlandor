@@ -105,7 +105,7 @@ elements: |-
     '#states':
       visible:
         ':input[name="update_action"]':
-          value: 'Provide a determination'
+          checked: true
     '#markup': |-
       <div class="alert alert--warning next-steps">
       <p class="mb-0">CAUTION: Information entered in the Update Details field will be visible to the complainant.</p>
@@ -121,23 +121,44 @@ elements: |-
   update_representative_company:
     '#type': radios
     '#title': 'Representative Company'
+    '#description': '<p>A confirmation copy of this update will be sent to the email address on file for the TNC company or ombudsperson.</p>'
+    '#description_display': before
     '#options':
-      gregoryscottclapp+uber@gmail.com: Uber
-      gregoryscottclapp+lyft@gmail.com: Lyft
-      gregoryscottclapp+wingz@gmail.com: Wingz
-      gregoryscottclapp+omsbudperson@gmail.com: Ombudsperson
+      Uber: Uber
+      Lyft: Lyft
+      Wingz: Wingz
+      Ombudsperson: Ombudsperson
+    '#required': true
   original_submission_key:
     '#type': hidden
     '#title': 'Original Submission Key'
     '#prepopulate': true
+  computed_representative_email:
+    '#type': webform_computed_twig
+    '#title': 'Computed Representative Email'
+    '#display_on': none
+    '#mode': text
+    '#template': |-
+      {% set email = 'gregoryscottclapp+ombudsperson@gmail.com' %}
+      {% if data.update_representative_company == 'Lyft' %}
+        {% set email = 'gregoryscottclapp+lyft@gmail.com' %}
+      {% elseif data.update_representative_company == 'Uber' %}
+        {% set email = 'gregoryscottclapp+uber@gmail.com' %}
+      {% elseif data.update_representative_company == 'Wingz' %}
+        {% set email = 'gregoryscottclapp+wingz@gmail.com' %}
+      {% endif %}
+      {{ email }}
+    '#whitespace': trim
+    '#ajax': true
   computed_update_summary:
     '#type': webform_computed_twig
     '#title': 'Computed Update Summary'
     '#display_on': form
-    '#template': |-
+    '#template': |
+      <div style="padding: 20px; margin-bottom: 20px; background-color: #cccccc">
       <h2>Original Report</h2>
 
-      <p><strong>Which TNC companies do you operate for?</strong>
+      <p style="margin-bottom: 0px;"><strong>Which TNC companies do you operate for?</strong>
       {{ data.report_operator_company }}<br><br>
 
       <strong>Which TNC company are you filing this complaint about?</strong>
@@ -163,6 +184,7 @@ elements: |-
 
       <strong>Phone:</strong>
       {{ data.contact_phone }}</p>
+      </div>
 
       <h2>Update Details</h2>
 
