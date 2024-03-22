@@ -468,3 +468,19 @@ lando terminus drush portlandor.powr-[ID] -- migrate:import pccep_meetings_redir
 lando terminus drush portlandor.powr-[ID] -- migrate:import --group=pccep_meetings
 
 ```
+
+#### Police Cold Cases
+
+##### Local
+```
+lando drush migrate:import police_cold_cases
+lando drush migrate:import police_cold_cases_redirects
+lando drush migrate:import --group=police_cold_cases
+```
+##### On Pantheon
+```
+lando terminus drush portlandor.powr-[ID] -- migrate:import police_cold_cases
+lando terminus drush portlandor.powr-[ID] -- migrate:import police_cold_cases_redirects
+lando terminus drush portlandor.powr-[ID] -- migrate:import --group=police_cold_cases
+
+```
