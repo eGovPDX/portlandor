@@ -78,7 +78,6 @@ describe('Marty Member user test', () => {
       expect(text_content).toEqual(expect.stringContaining('Add Page'));
 
       await page.goto(`${HOME_PAGE}/powr/content/create/group_node:page`, { waitUntil: 'networkidle2' });
-      const ckeditor = await page.waitForSelector('iframe');
       text_content = await page.evaluate(() => document.querySelector('#node-page-form').textContent);
       expect(text_content).toEqual(expect.stringContaining('Title'));
       expect(text_content).toEqual(expect.stringContaining('Page type'));
@@ -89,7 +88,11 @@ describe('Marty Member user test', () => {
       await page.type('#edit-title-0-value', 'Test page');
       await page.type('#edit-field-summary-0-value', 'Summary for the test page');
       await page.type('#edit-field-menu-link-text-0-value', 'Test page');
-      await ckeditor.type('body p', 'Body content for the test page', { delay: 100 });
+      await page.evaluate(() => {
+        ck5 = Drupal.CKEditor5Instances.keys().next().value;
+        editor = Drupal.CKEditor5Instances.get(ck5);
+        editor.setData('Body content for the test page');
+      });
       await page.type('#edit-revision-log-0-value', 'Test revision message');
 
       // Click submit button and wait for page load
