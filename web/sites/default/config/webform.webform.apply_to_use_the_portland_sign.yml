@@ -37,8 +37,9 @@ elements: |-
       apply_merchandise_type:
         '#type': webform_custom_composite
         '#title': 'Tell us about the merchandise you want to produce'
+        '#required': true
         '#element':
-          apply_merch_type:
+          merch_type:
             '#type': webform_select_other
             '#options':
               T-shirt: T-shirt
@@ -56,32 +57,14 @@ elements: |-
               'Playing cards': 'Playing cards'
             '#required': true
             '#title': 'Type of merchandise'
-          apply_merch_price:
-            '#type': select
-            '#options':
-              '<$2.50': '<$2.50'
-              $2.51-$5.00: $2.51-$5.00
-              $5.01-$10.00: $5.01-$10.00
-              $10.01-$25.00: $10.01-$25.00
-              $25.01-$50.00: $25.01-$50.00
-              $50.01-$75.00: $50.01-$75.00
-              $75.01-$100: $75.01-$100
-              '>$100': '>$100'
+          merch_price:
+            '#type': number
             '#required': true
             '#title': 'Retail price (each)'
-          apply_merch_quantity:
-            '#type': select
-            '#options':
-              1-25: 1-25
-              26-100: 26-100
-              101-500: 101-500
-              501-1000: 501-1000
-              1001-5000: 1001-5000
-              '5001-10,000': '5001-10,000'
-              '>10,000': '>10,000'
+          merch_qty:
+            '#type': number
             '#required': true
             '#title': 'Quantity being produced'
-        '#required': true
       apply_project_design_files:
         '#type': webform_document_file
         '#title': 'Please attach all of your design samples for approval.'
@@ -268,18 +251,136 @@ elements: |-
     '#title': 'Computed Fee'
     '#mode': text
     '#template': |+
-      {% set fee = 0.00 %}
+      {% set total_fee = 0.00 %}
+      {% set special_permission = 0 %}
+      {% set summary = "Fee Summary:<br><br>" %}
 
       {% if data.apply_project_type == "Merchandise" %}
-        {# Admin fee #}
-        {% set fee = fee + 100 %}
+        <strong>Merchandise</strong><br><br>
         
-        {# spin through merchandise items #}
+        {# spin through merchandise items; sub-items: merch_type, merch_price, merch_qty #}
         {% for delta in data.apply_merchandise_type %}
-          <p>{{ delta.apply_merch_type }}<br>{{ delta.apply_merch_price }}<br>{{ delta.apply_merch_quantity }}</p>
         
-        {% endfor %}
+        	{% set royalty = 0.00 %}
+        	
+        	Item {{ loop.index }}: {{ delta.merch_type }} / ${{ delta.merch_price }} each / Qty {{ delta.merch_qty }}<br>
 
+      		{# REQUIRES SPECIAL PERMISSION #}
+      		{% if delta.merch_price >= 100 or delta.merch_qty > 10000 %}
+      			SPECIAL PERMISSION REQUIRED<br>
+      		
+      		{# NO ROYALTY FOR 25 OR FEWER #}
+      		{% elseif delta.merch_qty <= 25 %}
+      			{% set royalty = 0.00 %}
+      		
+      		{% elseif delta.merch_price <= 2.5 %}
+      			{% if delta.merch_qty <= 100 %}
+      				{% set royalty = 0.05 %}
+      			{% elseif delta.merch_qty <= 500 %}
+      				{% set royalty = 0.05 %}
+      			{% elseif delta.merch_qty <= 1000 %}
+      				{% set royalty = 0.04 %}
+      			{% elseif delta.merch_qty <= 5000 %}
+      				{% set royalty = 0.04 %}
+      			{% elseif delta.merch_qty <= 10000 %}
+      				{% set royalty = 0.03 %}
+      			{% endif %}
+      		
+      		{% elseif delta.merch_price <= 5 %}
+      			{% if delta.merch_qty <= 100 %}
+      				{% set royalty = 0.12 %}
+      			{% elseif delta.merch_qty <= 500 %}
+      				{% set royalty = 0.12 %}
+      			{% elseif delta.merch_qty <= 1000 %}
+      				{% set royalty = 0.10 %}
+      			{% elseif delta.merch_qty <= 5000 %}
+      				{% set royalty = 0.10 %}
+      			{% elseif delta.merch_qty <= 10000 %}
+      				{% set royalty = 0.08 %}
+      			{% endif %}
+      		
+      		{% elseif delta.merch_price <= 10 %}
+      			{% if delta.merch_qty <= 100 %}
+      				{% set royalty = 0.50 %}
+      			{% elseif delta.merch_qty <= 500 %}
+      				{% set royalty = 0.45 %}
+      			{% elseif delta.merch_qty <= 1000 %}
+      				{% set royalty = 0.40 %}
+      			{% elseif delta.merch_qty <= 5000 %}
+      				{% set royalty = 0.45 %}
+      			{% elseif delta.merch_qty <= 10000 %}
+      				{% set royalty = 0.35 %}
+      			{% endif %}
+      		
+      		{% elseif delta.merch_price <= 25 %}
+      			{% if delta.merch_qty <= 100 %}
+      				{% set royalty = 0.75 %}
+      			{% elseif delta.merch_qty <= 500 %}
+      				{% set royalty = 0.70 %}
+      			{% elseif delta.merch_qty <= 1000 %}
+      				{% set royalty = 0.65 %}
+      			{% elseif delta.merch_qty <= 5000 %}
+      				{% set royalty = 0.60 %}
+      			{% elseif delta.merch_qty <= 10000 %}
+      				{% set royalty = 0.55 %}
+      			{% endif %}
+      		
+      		{% elseif delta.merch_price <= 50 %}
+      			{% if delta.merch_qty <= 100 %}
+      				{% set royalty = 2.50 %}
+      			{% elseif delta.merch_qty <= 500 %}
+      				{% set royalty = 2.25 %}
+      			{% elseif delta.merch_qty <= 1000 %}
+      				{% set royalty = 2.00 %}
+      			{% elseif delta.merch_qty <= 5000 %}
+      				{% set royalty = 1.75 %}
+      			{% elseif delta.merch_qty <= 10000 %}
+      				{% set royalty = 1.5 %}
+      			{% endif %}
+      		
+      		{% elseif delta.merch_price <= 75 %}
+      			{% if delta.merch_qty <= 100 %}
+      				{% set royalty = 3.75 %}
+      			{% elseif delta.merch_qty <= 500 %}
+      				{% set royalty = 3.50 %}
+      			{% elseif delta.merch_qty <= 1000 %}
+      				{% set royalty = 3.25 %}
+      			{% elseif delta.merch_qty <= 5000 %}
+      				{% set royalty = 3.00 %}
+      			{% elseif delta.merch_qty <= 10000 %}
+      				{% set royalty = 2.75 %}
+      			{% endif %}
+      		
+      		{% elseif delta.merch_price <= 100 %}
+      			{% if delta.merch_qty <= 100 %}
+      				{% set royalty = 5.00 %}
+      			{% elseif delta.merch_qty <= 500 %}
+      				{% set royalty = 4.50 %}
+      			{% elseif delta.merch_qty <= 1000 %}
+      				{% set royalty = 4.00 %}
+      			{% elseif delta.merch_qty <= 5000 %}
+      				{% set royalty = 3.50 %}
+      			{% elseif delta.merch_qty <= 10000 %}
+      				{% set royalty = 3.00 %}
+      			{% endif %}
+      		
+      		
+      		{% endif %}
+
+      		{% if delta.merch_price < 100 and delta.merch_qty <= 10000 %}
+      			{% set line_fee = royalty * delta.merch_qty %}
+      			{% set total_fee = total_fee + line_fee %}
+      			Royalty: ${{ royalty|number_format(2) }} per item, ${{ (royalty * delta.merch_qty)|number_format(2) }} total for item
+      			
+      			{% if loop.index < data.apply_merchandise_type|length %}<br><br>{% endif %}
+      		{% endif %}
+
+      {% endfor %}
+
+      	<hr>
+      	Total royalties: ${{ total_fee|number_format(2) }}<br>
+      	Administrative fee: $100.00 {% set total_fee = total_fee + 100 %}<br><br>
+      	<strong>Grand total:</strong> ${{ total_fee|number_format(2) }}
 
 
       {% elseif data.apply_project_type == "Film or Television" %}
@@ -289,6 +390,7 @@ elements: |-
       {% endif %}
 
       {# DISCOUNTS #}
+
 
 
 
