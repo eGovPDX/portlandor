@@ -1,7 +1,13 @@
 uuid: 87253147-0916-4cb4-bb04-66c7fe052d4a
 langcode: en
 status: open
-dependencies: {  }
+dependencies:
+  module:
+    - portland
+third_party_settings:
+  portland:
+    disable_demographic_form_prompt: 0
+    exclude_from_json: {  }
 weight: 0
 open: null
 close: null
@@ -11,7 +17,8 @@ archive: false
 id: apply_to_use_the_portland_sign
 title: 'Apply to Use the Portland Sign'
 description: ''
-categories: {  }
+categories:
+  - Apply
 elements: |-
   page_project_specifics:
     '#type': webform_wizard_page
@@ -118,6 +125,7 @@ elements: |-
         visible:
           ':input[name="apply_project_type"]':
             checked: true
+      '#required': true
   page_applicant_information:
     '#type': webform_wizard_page
     '#title': 'Applicant Information'
@@ -170,10 +178,9 @@ elements: |-
             'Over $10,000,000': 'Over $10,000,000'
           '#empty_option': '- Select -'
           '#states':
-            visible:
-              ':input[name="apply_project_type"]':
-                value: Advertisement
-          '#required': true
+            optional:
+              ':input[name="apply_applicant_type"]':
+                '!value': 'Private business'
       apply_third_party_agreement:
         '#type': radios
         '#title': 'Is this a Third Party license agreement? '
@@ -379,9 +386,9 @@ elements: |-
       		
       		{% set discount_amount = (total_fee * discount_percent)|number_format(2) %}
       		
-      		Discount: ${{ discount_amount }} ({{ (discount_percent * 100) | number_format(2, '.', '') }}%)<br><br>
+      		Discount: ${{ discount_amount }} ({{ (discount_percent * 100) | number_format(2, '.', '') }}%)<br>
       		
-      		Administrative fee: $100.00<br>
+      		Administrative fee: $100.00<br><br>
 
       		<strong>TOTAL FEE: ${{ (total_fee + 100 - discount_amount)|number_format(2) }}</strong>
       	
@@ -459,6 +466,23 @@ elements: |-
       	
       	Production fee: {{ royalty|number_format(2) }}<br>
       	
+      	{# DISCOUNT -------------------- #}
+      	{% set discount_percent = 0 %}
+      	{% if data.apply_production_type == "Student film" %}
+      		{% set discount_percent = 1 %}
+      	{% else %}
+      		{% if data.apply_is_small_business == "Yes" or data.apply_is_business_certified == "Yes" or data.apply_applicant_type == "Non-profit organization or public entity" %}
+      			{% set discount_percent = 0.5 %}
+      		{% endif %}
+      		{% if data.apply_business_in_oregon == "Yes" %}
+      			{% set discount_percent = discount_percent + 0.1 %}
+      		{% endif %}
+      	{% endif %}
+
+      	{% set discount_amount = (royalty * discount_percent)|number_format(2) %}
+      	
+      	Discount: ${{ discount_amount }} ({{ (discount_percent * 100) | number_format(2, '.', '') }}%)<br>
+      	
       	{# ADMINISTRATIVE FEE -------------------- #}
       	{% set admin_fee = 0 %}
       	{% if data.apply_production_type == "Student film" %}
@@ -469,22 +493,9 @@ elements: |-
       		{% set admin_fee = 250 %}
       	{% endif %}	
       	
-      	Administrative fee: {{ admin_fee|number_format(2) }}<br>
-      	Subtotal: ${{ (royalty + admin_fee)|number_format(2) }}<br>
+      	Administrative fee: {{ admin_fee|number_format(2) }}<br><br>
       	
-      	{# DISCOUNT -------------------- #}
-      	{% set discount = 0 %}
-      	{% if data.apply_production_type == "Student film" %}
-      		{% set discount = 1 %}
-      	{% elseif data.apply_is_small_business == "Yes" or data.apply_is_business_certified == "Yes" or data.apply_applicant_type == "Non-profit organization or public entity" %}
-      		{% set discount = 0.5 %}
-      	{% elseif data.apply_business_in_oregon == "Yes" %}
-      		{% set discount = 0.1 %}
-      	{% endif %}
-      	
-      	Discount: {{ (discount * 100) | number_format(2, '.', '') }}%<br><br>
-      	
-      	<strong>TOTAL FEE: ${{ (royalty - (royalty * discount + admin_fee))|number_format(2) }}</strong>
+      	<strong>TOTAL FEE: ${{ (royalty + (royalty * discount + admin_fee) - discount_amount)|number_format(2) }}</strong>
 
       {% else %}
       	<strong>Advertisement</strong><br><br>
@@ -510,20 +521,28 @@ elements: |-
       	{% endif %}
       	
       	Annual gross fee: {{ royalty|number_format(2) }}<br>
-      	Administrative fee: $100.00<br>
-      	Subtotal: ${{ royalty + admin_fee }}<br>
       	
       	{# DISCOUNT -------------------- #}
-      	{% set discount = 0 %}
-      	{% if data.apply_is_small_business == "Yes" or data.apply_is_business_certified == "Yes" %}
-      		{% set discount = 0.5 %}
-      	{% elseif data.apply_business_in_oregon == "Yes" %}
-      		{% set discount = 0.1 %}
+      	{% set discount_percent = 0 %}
+      	{% if data.apply_production_type == "Student film" %}
+      		{% set discount_percent = 1 %}
+      	{% elseif data.apply_applicant_type != "Non-profit organization or public entity" %}
+      		{% if data.apply_is_small_business == "Yes" or data.apply_is_business_certified == "Yes" %}
+      			{% set discount_percent = 0.5 %}
+      		{% endif %}
+      		{% if data.apply_business_in_oregon == "Yes" %}
+      			{% set discount_percent = discount_percent + 0.1 %}
+      		{% endif %}
       	{% endif %}
+
+      	{% set discount_amount = (royalty * discount_percent)|number_format(2) %}
       	
-      	Discount: {{ (discount) * 100 | number_format(2, '.', '') }}%<br><br>
+      	Discount: ${{ discount_amount }} ({{ (discount_percent * 100) | number_format(2, '.', '') }}%)<br>
       	
-      	<strong>TOTAL FEE: ${{ (royalty - royalty * discount + admin_fee)|number_format(2) }}</strong>
+      	{% set admin_fee = 100 %}
+      	Administrative fee: {{ admin_fee|number_format(2) }}<br><br>
+      	
+      	<strong>TOTAL FEE: ${{ (royalty + (royalty * discount + admin_fee) - discount_amount)|number_format(2) }}</strong>
         
       {% endif %}
     '#ajax': true
