@@ -4,6 +4,7 @@ status: open
 dependencies:
   module:
     - portland
+    - portland_zendesk
 third_party_settings:
   portland:
     disable_demographic_form_prompt: 0
@@ -195,12 +196,12 @@ elements: |-
               checked: true
       apply_third_party_company_name:
         '#type': textfield
-        '#title': 'Third Party company / organization name'
+        '#title': 'Third party company / organization name'
+        '#required': true
         '#states':
           visible:
             ':input[name="apply_third_party_agreement"]':
               value: 'Yes'
-        '#required': true
   page_contact_information:
     '#type': webform_wizard_page
     '#title': 'Contact Information'
@@ -256,11 +257,13 @@ elements: |-
       contact_auth_signer_title:
         '#type': textfield
         '#title': Title
-  computed_fee:
+  computed_fee_summary:
     '#type': webform_computed_twig
-    '#title': 'Computed Fee'
-    '#mode': text
+    '#title': 'Computed Fee Summary'
+    '#display_on': none
+    '#mode': html
     '#template': |
+      <h2>Fee Summary</h2>
       {% set total_fee = 0.00 %}
 
       {% if data.apply_project_type == "Merchandise" %}
@@ -545,7 +548,78 @@ elements: |-
       	<strong>TOTAL FEE: ${{ (royalty + (royalty * discount + admin_fee) - discount_amount)|number_format(2) }}</strong>
         
       {% endif %}
+    '#whitespace': trim
     '#ajax': true
+  report_ticket_id:
+    '#type': hidden
+    '#title': 'Request Ticket Id'
+  computed_request_description:
+    '#type': webform_computed_twig
+    '#title': 'Computed Request Description'
+    '#display_on': none
+    '#mode': html
+    '#template': |-
+      <h2>{{ data.apply_project_type is iterable ? "" : data.apply_project_type }}</h2>
+
+      {% if data.apply_merchandise_type and data.apply_merchandise_type is not iterable %}
+      	{% for delta in data.apply_merchandise_type %}
+        	<strong>Item {{ loop.index }}:</strong> {{ delta.merch_type }} / ${{ delta.merch_price|number_format(2) }} each / Qty {{ delta.merch_qty }}<br>
+      	{% endfor %}<br>
+      {% endif %}
+
+      {% if data.apply_production_type %}
+      	<strong>Production type:</strong> {{ data.apply_production_type }}<br>
+      {% endif %}
+
+      {% if data.apply_percentage_in_oregon and data.apply_percentage_in_oregon is not iterable %}
+      	<strong>Percentage filmed in Oregon:</strong> {{ data.apply_percentage_in_oregon }}<br>
+      {% endif %}
+
+      <strong>Project description:</strong> {{ data.apply_project_description }}<br>
+
+      <strong>Type of applicant:</strong> {{ data.apply_applicant_type is iterable ? "" : data.apply_applicant_type }}<br>
+
+      {% if data.apply_applicant_type is not iterable and data.apply_applicant_type == "Private business" %}
+      	<strong>Small business?</strong> {{ data.apply_is_small_business }}<br>
+      	<strong>COBID or DBE certified?</strong> {{ data.apply_is_business_certified }}<br>
+      	<strong>Headquartered in Oregon?</strong> {{ data.apply_business_in_oregon	 }}<br>
+      	<strong>Annual gross income:</strong> {{ data.apply_business_annual_income }}<br>
+      {% endif %}
+
+      <strong>Third party agreement?</strong> {{ data.apply_third_party_agreement }}<br>
+      {% if data.apply_third_party_company_name %}
+      	<strong>Third party:</strong> {{ data.apply_third_party_company_name }}<br><br>
+      {% else %}<br>{% endif %}
+
+      <h2>Contact Information</h2>
+
+      {{ data.contact_name }}<br>
+      {{ data.contact_mailing_address }}<br>
+      <a href="mailto:{{ data.contact_email }}">{{ data.contact_email }}</a><br>
+      {{ data.contact_phone }}<br>
+      {% if data.contact_website %}<a href="{{ data.contact_website }}" target="_blank">{{ data.contact_website }}</a><br><br>{% else %}<br>{% endif %}
+
+      {% if data.contact_additional_name or data.contact_additional_email %}
+      	<strong>Additional Contact Person</strong><br>
+      	{{ data.contact_additional_name }}{% if data.contact_additional_email %}, {{ data.contact_additional_email }}{% endif %}<br><br>
+      {% else %}<br>{% endif %}
+
+      {% if data.contact_auth_signer_name or data.contact_auth_signer_title %}
+      	<strong>Additional Contact Person</strong><br>
+      	{{ data.contact_auth_signer_name }}{% if data.contact_auth_signer_title %}, {{ data.contact_auth_signer_title }}{% endif %}<br><br>
+      {% else %}<br>{% endif %}
+    '#whitespace': spaceless
+    '#ajax': true
+  support_agent_use_only:
+    '#type': portland_support_agent_widget
+    '#title': 'Customer Service Use Only'
+    '#access_create_roles':
+      - authenticated
+    '#support_agent_widget_title__access': false
+    '#employee_email__access': false
+    '#zendesk_request_number__access': false
+    '#employee_notes_panel__access': false
+    '#escalate_issue__access': false
 css: ''
 javascript: ''
 settings:
@@ -729,5 +803,30 @@ access:
     roles: {  }
     users: {  }
     permissions: {  }
-handlers: {  }
+handlers:
+  zendesk_new_request:
+    id: zendesk
+    handler_id: zendesk_new_request
+    label: 'TEST: New Zendesk request'
+    notes: ''
+    status: true
+    conditions: {  }
+    weight: 0
+    settings:
+      requester_name: contact_name
+      requester_email: contact_email
+      subject: 'Portland Sign Usage Application'
+      comment: "[webform_submission:values:computed_request_description:html]\r\n\r\n[webform_submission:values:computed_fee_summary:html]"
+      tags: 'drupal webform'
+      priority: normal
+      status: new
+      recipient: ''
+      group_id: '4549352062487'
+      assignee_id: ''
+      type: incident
+      collaborators: ''
+      custom_fields: ''
+      ticket_id_field: request_ticket_id
+      ticket_fork_field: ''
+      ticket_form_id: '4990038807319'
 variants: {  }
