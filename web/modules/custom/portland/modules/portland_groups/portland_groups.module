@@ -2,6 +2,7 @@
 
 use \Drupal\group\Entity\GroupContent;
 use \Drupal\group\Entity\Group;
+use \Drupal\group\Entity\GroupInterface;
 
 /**
  * Implements hook_form_alter().
@@ -91,6 +92,35 @@ function portland_groups_entity_update($entity) {
   if ($entity && method_exists($entity, 'hasField') && $entity->hasField('field_display_groups')) {
     _portland_groups_synchronize_entity_group_ownership($entity);
   }
+}
+
+
+/**
+ * Implements hook_ENTITY_TYPE_update().
+ * Add and update group aliases like "/powr/news" when a group is updated.
+ */
+function portland_groups_group_update(GroupInterface $group)
+{
+    // get group path
+    $group_path = $group->get('field_group_path')->value;
+    $orig_group_path = $group->original->get('field_group_path')->value;
+
+    // only update URL aliases if group_path changes
+    if ($group_path != $orig_group_path) {
+        // 4.2. Bulk regenerate URL aliases for content by running pathauto batch processing
+        $batch = array(
+            'title' => t('Bulk updating URL aliases'),
+            'operations' => array(
+            array('Drupal\pathauto\Form\PathautoBulkUpdateForm::batchStart', array()),
+            ),
+            'finished' => 'Drupal\pathauto\Form\PathautoBulkUpdateForm::batchFinished',
+        );
+        $batch['operations'][] = array('Drupal\pathauto\Form\PathautoBulkUpdateForm::batchProcess', ["canonical_entities:node", "update"]);
+        $batch['operations'][] = array('Drupal\pathauto\Form\PathautoBulkUpdateForm::batchProcess', ["canonical_entities:group", "update"]);
+        $batch['operations'][] = array('Drupal\pathauto\Form\PathautoBulkUpdateForm::batchProcess', ["canonical_entities:group_content", "update"]);
+        $batch['operations'][] = array('Drupal\pathauto\Form\PathautoBulkUpdateForm::batchProcess', ["canonical_entities:media", "update"]);
+        batch_set($batch);
+    }
 }
 
 /**
