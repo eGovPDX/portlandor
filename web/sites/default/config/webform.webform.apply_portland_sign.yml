@@ -128,6 +128,16 @@ elements: |-
           ':input[name="apply_project_type"]':
             checked: true
       '#required': true
+    apply_release_date:
+      '#type': date
+      '#title': 'What is the projected release date for your project?'
+      '#description': '<p>Licensing agreements and fee payment must be complete before your projected release date.</p>'
+      '#description_display': before
+      '#required': true
+      '#states':
+        visible:
+          ':input[name="apply_project_type"]':
+            checked: true
   page_applicant_information:
     '#type': webform_wizard_page
     '#title': 'Applicant Information'
@@ -138,7 +148,8 @@ elements: |-
       '#options':
         'Private business': 'Private business'
         Individual: Individual
-        'Non-profit organization or public entity': 'Non-profit organization or public entity'
+        'Non-profit organization': 'Non-profit organization'
+        'State or local government agency': 'State or local government agency'
       '#required': true
     container_not_individual:
       '#type': container
@@ -264,7 +275,7 @@ elements: |-
   computed_fee_summary:
     '#type': webform_computed_twig
     '#title': 'Computed Fee Summary'
-    '#display_on': none
+    '#display_on': form
     '#mode': html
     '#template': |
       <h2>Fee Summary</h2>
@@ -385,10 +396,11 @@ elements: |-
       		
       		{# DISCOUNT -------------------- #}
       		{% set discount_percent = 0 %}
-      		{% if data.apply_is_small_business == "Yes" or data.apply_is_business_certified == "Yes" or data.apply_applicant_type == "Non-profit organization or public entity" %}
+      		{% if data.apply_is_small_business == "Yes" or data.apply_is_business_certified == "Yes" or data.apply_applicant_type == "Non-profit organization" or data.apply_applicant_type == "State or local government agency" %}
       			{% set discount_percent = 0.5 %}
-      		{% elseif data.apply_business_in_oregon == "Yes" %}
-      			{% set discount_percent = 0.1 %}
+      		{% endif %}
+      		{% if data.apply_business_in_oregon == "Yes" %}
+      			{% set discount_percent = discount_percent + 0.1 %}
       		{% endif %}
       		
       		{% set discount_amount = (total_fee * discount_percent)|number_format(2) %}
@@ -471,14 +483,14 @@ elements: |-
       		{% endif %}
       	{% endif %}
       	
-      	Production fee: {{ royalty|number_format(2) }}<br>
+      	Production fee: ${{ royalty|number_format(2) }}<br>
       	
       	{# DISCOUNT -------------------- #}
       	{% set discount_percent = 0 %}
       	{% if data.apply_production_type == "Student film" %}
       		{% set discount_percent = 1 %}
       	{% else %}
-      		{% if data.apply_is_small_business == "Yes" or data.apply_is_business_certified == "Yes" or data.apply_applicant_type == "Non-profit organization or public entity" %}
+      		{% if data.apply_is_small_business == "Yes" or data.apply_is_business_certified == "Yes" or data.apply_applicant_type == "Non-profit organization" or data.apply_applicant_type == "State or local government agency" %}
       			{% set discount_percent = 0.5 %}
       		{% endif %}
       		{% if data.apply_business_in_oregon == "Yes" %}
@@ -486,28 +498,35 @@ elements: |-
       		{% endif %}
       	{% endif %}
 
-      	{% set discount_amount = (royalty * discount_percent)|number_format(2) %}
+      	{% set discount_amount = royalty * discount_percent %}
       	
-      	Discount: ${{ discount_amount }} ({{ (discount_percent * 100) | number_format(2, '.', '') }}%)<br>
+      	Discount: ${{ discount_amount|number_format(2) }} ({{ (discount_percent * 100) | number_format(2, '.', '') }}%)<br>
       	
       	{# ADMINISTRATIVE FEE -------------------- #}
+      	{# $1000 fee if less than 30 days before release #}
       	{% set admin_fee = 0 %}
+      	{% set today = date("now") %}
+      	{% set releaseDate = webform_token('[webform_submission:values:apply_release_date:raw:clear]', webform_submission) %}
+      	{% set dateDiff = releaseDate|date('U') - today|date('U') %}
+      	{% set diffDays = (dateDiff / 60 / 60 / 24)|round(0, 'ceil') %}
+
       	{% if data.apply_production_type == "Student film" %}
       		{% set admin_fee = 25 %}
-      	{% elseif 1 == 0 %}{# rush fee -- how to determine? #}
+      	{% elseif diffDays < 30 %}{# rush fee #}
       		{% set admin_fee = 1000 %}
       	{% else %}
       		{% set admin_fee = 250 %}
       	{% endif %}	
       	
-      	Administrative fee: {{ admin_fee|number_format(2) }}<br><br>
+      	Administrative fee: {{ admin_fee|number_format(2) }}
+      	{% if diffDays < 30 %} (Rush fee applies){% endif %}<br><br>
       	
-      	<strong>TOTAL FEE: ${{ (royalty + (royalty * discount + admin_fee) - discount_amount)|number_format(2) }}</strong>
+      	<strong>TOTAL FEE: ${{ (royalty - discount_amount + admin_fee)|number_format(2) }}</strong>
 
       {% else %}
       	<strong>Advertisement</strong><br><br>
       	
-      	{% if data.apply_applicant_type == "Non-profit organization or public entity" %}
+      	{% if data.apply_applicant_type == "Non-profit organization" or data.apply_applicant_type == "State or local government agency" %}
       		{# royalty is zero #}
       	{% elseif data.apply_business_annual_income == "$25,000 or less" %}
       		{% set royalty = 50 %}
@@ -547,6 +566,9 @@ elements: |-
       	Discount: ${{ discount_amount }} ({{ (discount_percent * 100) | number_format(2, '.', '') }}%)<br>
       	
       	{% set admin_fee = 100 %}
+      	{% if data.apply_applicant_type == "State or local government agency" %}
+      		{% set admin_fee = 0 %}
+      	{% endif %}
       	Administrative fee: {{ admin_fee|number_format(2) }}<br><br>
       	
       	<strong>TOTAL FEE: ${{ (royalty + (royalty * discount + admin_fee) - discount_amount)|number_format(2) }}</strong>
