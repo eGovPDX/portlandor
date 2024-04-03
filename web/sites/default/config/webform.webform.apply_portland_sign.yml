@@ -33,6 +33,7 @@ elements: |-
         Merchandise: Merchandise
         'Film or Television': 'Film or Television (non-advertisement)'
         Advertisement: Advertisement
+        'Something Else': 'Something Else'
       '#options_display': buttons_horizontal
       '#options_description_display': help
       '#required': true
@@ -119,6 +120,21 @@ elements: |-
       apply_advertisement_mock_up:
         '#type': webform_document_file
         '#title': 'Advertisement mock-up/draft of sign use'
+        '#multiple': 5
+        '#file_extensions': 'pdf doc docx ppt pptx odp psd ai eps jpg tif png svg'
+    section_something_else:
+      '#type': webform_section
+      '#title': 'Project Details'
+      '#states':
+        visible:
+          ':input[name="apply_project_type"]':
+            value: 'Something Else'
+      apply_other_materials:
+        '#type': webform_document_file
+        '#title': 'Upload design materials'
+        '#multiple': 5
+        '#description': '<p>Please upload any mock-ups, illustrations, photos, or other materials you might have, to help us better understand your project.</p>'
+        '#description_display': before
         '#file_extensions': 'pdf doc docx ppt pptx odp psd ai eps jpg tif png svg'
     apply_project_description:
       '#type': textarea
@@ -133,11 +149,13 @@ elements: |-
       '#title': 'What is the projected release date for your project?'
       '#description': '<p>Licensing agreements and fee payment must be complete before your projected release date.</p>'
       '#description_display': before
-      '#required': true
       '#states':
         visible:
           ':input[name="apply_project_type"]':
             checked: true
+        optional:
+          ':input[name="apply_project_type"]':
+            value: 'Something Else'
   page_applicant_information:
     '#type': webform_wizard_page
     '#title': 'Applicant Information'
@@ -191,9 +209,11 @@ elements: |-
             'Over $10,000,000': 'Over $10,000,000'
           '#empty_option': '- Select -'
           '#states':
-            optional:
+            visible:
+              ':input[name="apply_project_type"]':
+                value: Advertisement
               ':input[name="apply_applicant_type"]':
-                '!value': 'Private business'
+                value: 'Private business'
       apply_third_party_agreement:
         '#type': radios
         '#title': 'Is this a Third Party license agreement? '
@@ -226,7 +246,7 @@ elements: |-
         '#required': true
       contact_company_name:
         '#type': textfield
-        '#title': 'Company Name'
+        '#title': 'Company/Organization Name'
       contact_mailing_address:
         '#type': textfield
         '#title': 'Mailing Address'
@@ -275,304 +295,308 @@ elements: |-
   computed_fee_summary:
     '#type': webform_computed_twig
     '#title': 'Computed Fee Summary'
-    '#display_on': form
+    '#display_on': none
     '#mode': html
-    '#template': |
-      <h2>Fee Summary</h2>
-      {% set total_fee = 0.00 %}
+    '#template': |-
+      {% if data.apply_project_type != "Something Else" %}
 
-      {% if data.apply_project_type == "Merchandise" %}
-        <strong>Merchandise</strong><br><br>
-      	{% set special = 0 %}
-        
-        {# spin through merchandise items; sub-items: merch_type, merch_price, merch_qty #}
-        {% for delta in data.apply_merchandise_type %}
-        
-        	{% set royalty = 0.00 %}
-        	
-        	Item {{ loop.index }}: {{ delta.merch_type }} / ${{ delta.merch_price }} each / Qty {{ delta.merch_qty }}<br>
+      	<h2>Fee Summary</h2>
+      	{% set total_fee = 0.00 %}
 
-      		{% if delta.merch_price > 100 or delta.merch_qty > 10000 %}
-      			{% set special = 1 %}
-      		{% elseif delta.merch_qty <= 25 %}{# NO ROYALTY FOR 25 OR FEWER #}
+      	{% if data.apply_project_type == "Merchandise" %}
+      		<strong>Merchandise</strong><br><br>
+      		{% set special = 0 %}
+
+      		{# spin through merchandise items; sub-items: merch_type, merch_price, merch_qty #}
+      		{% for delta in data.apply_merchandise_type %}
+
       			{% set royalty = 0.00 %}
-      		{% elseif delta.merch_price <= 2.5 %}
-      			{% if delta.merch_qty <= 100 %}
-      				{% set royalty = 0.05 %}
-      			{% elseif delta.merch_qty <= 500 %}
-      				{% set royalty = 0.05 %}
-      			{% elseif delta.merch_qty <= 1000 %}
-      				{% set royalty = 0.04 %}
-      			{% elseif delta.merch_qty <= 5000 %}
-      				{% set royalty = 0.04 %}
-      			{% elseif delta.merch_qty <= 10000 %}
-      				{% set royalty = 0.03 %}
+
+      			Item {{ loop.index }}: {{ delta.merch_type }} / ${{ delta.merch_price }} each / Qty {{ delta.merch_qty }}<br>
+
+      			{% if delta.merch_price > 100 or delta.merch_qty > 10000 %}
+      				{% set special = 1 %}
+      			{% elseif delta.merch_qty <= 25 %}{# NO ROYALTY FOR 25 OR FEWER #}
+      				{% set royalty = 0.00 %}
+      			{% elseif delta.merch_price <= 2.5 %}
+      				{% if delta.merch_qty <= 100 %}
+      					{% set royalty = 0.05 %}
+      				{% elseif delta.merch_qty <= 500 %}
+      					{% set royalty = 0.05 %}
+      				{% elseif delta.merch_qty <= 1000 %}
+      					{% set royalty = 0.04 %}
+      				{% elseif delta.merch_qty <= 5000 %}
+      					{% set royalty = 0.04 %}
+      				{% elseif delta.merch_qty <= 10000 %}
+      					{% set royalty = 0.03 %}
+      				{% endif %}
+      			{% elseif delta.merch_price <= 5 %}
+      				{% if delta.merch_qty <= 100 %}
+      					{% set royalty = 0.12 %}
+      				{% elseif delta.merch_qty <= 500 %}
+      					{% set royalty = 0.12 %}
+      				{% elseif delta.merch_qty <= 1000 %}
+      					{% set royalty = 0.10 %}
+      				{% elseif delta.merch_qty <= 5000 %}
+      					{% set royalty = 0.10 %}
+      				{% elseif delta.merch_qty <= 10000 %}
+      					{% set royalty = 0.08 %}
+      				{% endif %}
+      			{% elseif delta.merch_price <= 10 %}
+      				{% if delta.merch_qty <= 100 %}
+      					{% set royalty = 0.50 %}
+      				{% elseif delta.merch_qty <= 500 %}
+      					{% set royalty = 0.45 %}
+      				{% elseif delta.merch_qty <= 1000 %}
+      					{% set royalty = 0.40 %}
+      				{% elseif delta.merch_qty <= 5000 %}
+      					{% set royalty = 0.45 %}
+      				{% elseif delta.merch_qty <= 10000 %}
+      					{% set royalty = 0.35 %}
+      				{% endif %}
+      			{% elseif delta.merch_price <= 25 %}
+      				{% if delta.merch_qty <= 100 %}
+      					{% set royalty = 0.75 %}
+      				{% elseif delta.merch_qty <= 500 %}
+      					{% set royalty = 0.70 %}
+      				{% elseif delta.merch_qty <= 1000 %}
+      					{% set royalty = 0.65 %}
+      				{% elseif delta.merch_qty <= 5000 %}
+      					{% set royalty = 0.60 %}
+      				{% elseif delta.merch_qty <= 10000 %}
+      					{% set royalty = 0.55 %}
+      				{% endif %}
+      			{% elseif delta.merch_price <= 50 %}
+      				{% if delta.merch_qty <= 100 %}
+      					{% set royalty = 2.50 %}
+      				{% elseif delta.merch_qty <= 500 %}
+      					{% set royalty = 2.25 %}
+      				{% elseif delta.merch_qty <= 1000 %}
+      					{% set royalty = 2.00 %}
+      				{% elseif delta.merch_qty <= 5000 %}
+      					{% set royalty = 1.75 %}
+      				{% elseif delta.merch_qty <= 10000 %}
+      					{% set royalty = 1.5 %}
+      				{% endif %}
+      			{% elseif delta.merch_price <= 75 %}
+      				{% if delta.merch_qty <= 100 %}
+      					{% set royalty = 3.75 %}
+      				{% elseif delta.merch_qty <= 500 %}
+      					{% set royalty = 3.50 %}
+      				{% elseif delta.merch_qty <= 1000 %}
+      					{% set royalty = 3.25 %}
+      				{% elseif delta.merch_qty <= 5000 %}
+      					{% set royalty = 3.00 %}
+      				{% elseif delta.merch_qty <= 10000 %}
+      					{% set royalty = 2.75 %}
+      				{% endif %}
+      			{% elseif delta.merch_price <= 100 %}
+      				{% if delta.merch_qty <= 100 %}
+      					{% set royalty = 5.00 %}
+      				{% elseif delta.merch_qty <= 500 %}
+      					{% set royalty = 4.50 %}
+      				{% elseif delta.merch_qty <= 1000 %}
+      					{% set royalty = 4.00 %}
+      				{% elseif delta.merch_qty <= 5000 %}
+      					{% set royalty = 3.50 %}
+      				{% elseif delta.merch_qty <= 10000 %}
+      					{% set royalty = 3.00 %}
+      				{% endif %}
       			{% endif %}
-      		{% elseif delta.merch_price <= 5 %}
-      			{% if delta.merch_qty <= 100 %}
-      				{% set royalty = 0.12 %}
-      			{% elseif delta.merch_qty <= 500 %}
-      				{% set royalty = 0.12 %}
-      			{% elseif delta.merch_qty <= 1000 %}
-      				{% set royalty = 0.10 %}
-      			{% elseif delta.merch_qty <= 5000 %}
-      				{% set royalty = 0.10 %}
-      			{% elseif delta.merch_qty <= 10000 %}
-      				{% set royalty = 0.08 %}
+
+      			{% if delta.merch_price < 100 and delta.merch_qty <= 10000 and special == 0 %}
+      				{% set line_fee = royalty * delta.merch_qty %}
+      				{% set total_fee = total_fee + line_fee %}
+      				Royalty: ${{ royalty|number_format(2) }} per item, ${{ (royalty * delta.merch_qty)|number_format(2) }} total for item<br><br>
       			{% endif %}
-      		{% elseif delta.merch_price <= 10 %}
-      			{% if delta.merch_qty <= 100 %}
-      				{% set royalty = 0.50 %}
-      			{% elseif delta.merch_qty <= 500 %}
-      				{% set royalty = 0.45 %}
-      			{% elseif delta.merch_qty <= 1000 %}
-      				{% set royalty = 0.40 %}
-      			{% elseif delta.merch_qty <= 5000 %}
-      				{% set royalty = 0.45 %}
-      			{% elseif delta.merch_qty <= 10000 %}
-      				{% set royalty = 0.35 %}
+
+      		{% endfor %}
+
+      		{% if special == 0 %}
+
+      			Total royalties: ${{ total_fee|number_format(2) }}<br>
+
+      			{# DISCOUNT -------------------- #}
+      			{% set discount_percent = 0 %}
+      			{% if data.apply_is_small_business == "Yes" or data.apply_is_business_certified == "Yes" or data.apply_applicant_type == "Non-profit organization" or data.apply_applicant_type == "State or local government agency" %}
+      				{% set discount_percent = 0.5 %}
       			{% endif %}
-      		{% elseif delta.merch_price <= 25 %}
-      			{% if delta.merch_qty <= 100 %}
-      				{% set royalty = 0.75 %}
-      			{% elseif delta.merch_qty <= 500 %}
-      				{% set royalty = 0.70 %}
-      			{% elseif delta.merch_qty <= 1000 %}
-      				{% set royalty = 0.65 %}
-      			{% elseif delta.merch_qty <= 5000 %}
-      				{% set royalty = 0.60 %}
-      			{% elseif delta.merch_qty <= 10000 %}
-      				{% set royalty = 0.55 %}
+      			{% if data.apply_business_in_oregon == "Yes" %}
+      				{% set discount_percent = discount_percent + 0.1 %}
       			{% endif %}
-      		{% elseif delta.merch_price <= 50 %}
-      			{% if delta.merch_qty <= 100 %}
-      				{% set royalty = 2.50 %}
-      			{% elseif delta.merch_qty <= 500 %}
-      				{% set royalty = 2.25 %}
-      			{% elseif delta.merch_qty <= 1000 %}
-      				{% set royalty = 2.00 %}
-      			{% elseif delta.merch_qty <= 5000 %}
-      				{% set royalty = 1.75 %}
-      			{% elseif delta.merch_qty <= 10000 %}
-      				{% set royalty = 1.5 %}
-      			{% endif %}
-      		{% elseif delta.merch_price <= 75 %}
-      			{% if delta.merch_qty <= 100 %}
-      				{% set royalty = 3.75 %}
-      			{% elseif delta.merch_qty <= 500 %}
-      				{% set royalty = 3.50 %}
-      			{% elseif delta.merch_qty <= 1000 %}
-      				{% set royalty = 3.25 %}
-      			{% elseif delta.merch_qty <= 5000 %}
-      				{% set royalty = 3.00 %}
-      			{% elseif delta.merch_qty <= 10000 %}
-      				{% set royalty = 2.75 %}
-      			{% endif %}
-      		{% elseif delta.merch_price <= 100 %}
-      			{% if delta.merch_qty <= 100 %}
-      				{% set royalty = 5.00 %}
-      			{% elseif delta.merch_qty <= 500 %}
-      				{% set royalty = 4.50 %}
-      			{% elseif delta.merch_qty <= 1000 %}
-      				{% set royalty = 4.00 %}
-      			{% elseif delta.merch_qty <= 5000 %}
-      				{% set royalty = 3.50 %}
-      			{% elseif delta.merch_qty <= 10000 %}
-      				{% set royalty = 3.00 %}
-      			{% endif %}
-      		{% endif %}
-      		
-      		{% if delta.merch_price < 100 and delta.merch_qty <= 10000 and special == 0 %}
-      			{% set line_fee = royalty * delta.merch_qty %}
-      			{% set total_fee = total_fee + line_fee %}
-      			Royalty: ${{ royalty|number_format(2) }} per item, ${{ (royalty * delta.merch_qty)|number_format(2) }} total for item<br><br>
+
+      			{% set discount_amount = (total_fee * discount_percent)|number_format(2) %}
+
+      			Discount: ${{ discount_amount }} ({{ (discount_percent * 100) | number_format(2, '.', '') }}%)<br>
+
+      			Administrative fee: $100.00<br><br>
+
+      			<strong>TOTAL FEE: ${{ (total_fee + 100 - discount_amount)|number_format(2) }}</strong>
+
+      		{% else %}
+      			<strong>SPECIAL PERMISSION REQUIRED</strong>
       		{% endif %}
 
-      	{% endfor %}
-      	
-      	{% if special == 0 %}
-      	
-      		Total royalties: ${{ total_fee|number_format(2) }}<br>
-      		
+
+      	{% elseif data.apply_project_type == "Film or Television" %}
+      		<strong>Film or Television (non-advertisement)</strong><br><br>
+
+      		{% if data.apply_production_type == "Student film" %}{# no production fee for student films, but admin fee is $25 #}
+      			{% set royalty = 0 %}
+      		{% elseif data.apply_production_type == "Feature length film (over 40 minutes, including credits)" %}
+      			{% if data.apply_percentage_in_oregon == "100% in Oregon" %}
+      				{% set royalty = 1000 %}
+      			{% elseif data.apply_percentage_in_oregon == "50-99% in Oregon" %}
+      				{% set royalty = 2500 %}
+      			{% elseif data.apply_percentage_in_oregon == "25-49% in Oregon" %}
+      				{% set royalty = 4000 %}
+      			{% elseif data.apply_percentage_in_oregon == "Less than 25% in Oregon" %}
+      				{% set royalty = 5000 %}
+      			{% endif %}
+      		{% elseif data.apply_production_type == "Short film (up to 40 minutes, including credits)" %}
+      			{% if data.apply_percentage_in_oregon == "100% in Oregon" %}
+      				{% set royalty = 500 %}
+      			{% elseif data.apply_percentage_in_oregon == "50-99% in Oregon" %}
+      				{% set royalty = 1000 %}
+      			{% elseif data.apply_percentage_in_oregon == "25-49% in Oregon" %}
+      				{% set royalty = 1500 %}
+      			{% elseif data.apply_percentage_in_oregon == "Less than 25% in Oregon" %}
+      				{% set royalty = 2500 %}
+      			{% endif %}
+      		{% elseif data.apply_production_type == "Television or streaming series" %}
+      			{% if data.apply_percentage_in_oregon == "100% in Oregon" %}
+      				{% set royalty = 1000 %}
+      			{% elseif data.apply_percentage_in_oregon == "50-99% in Oregon" %}
+      				{% set royalty = 2500 %}
+      			{% elseif data.apply_percentage_in_oregon == "25-49% in Oregon" %}
+      				{% set royalty = 4000 %}
+      			{% elseif data.apply_percentage_in_oregon == "Less than 25% in Oregon" %}
+      				{% set royalty = 5000 %}
+      			{% endif %}
+      		{% elseif data.apply_production_type == "Documentary film (over 40 minutes, including credits)" %}
+      			{% if data.apply_percentage_in_oregon == "100% in Oregon" %}
+      				{% set royalty = 500 %}
+      			{% elseif data.apply_percentage_in_oregon == "50-99% in Oregon" %}
+      				{% set royalty = 750 %}
+      			{% elseif data.apply_percentage_in_oregon == "25-49% in Oregon" %}
+      				{% set royalty = 1000 %}
+      			{% elseif data.apply_percentage_in_oregon == "Less than 25% in Oregon" %}
+      				{% set royalty = 2500 %}
+      			{% endif %}
+      		{% elseif data.apply_production_type == "Documentary short film (up to 40 minutes, including credits)" %}
+      			{% if data.apply_percentage_in_oregon == "100% in Oregon" %}
+      				{% set royalty = 250 %}
+      			{% elseif data.apply_percentage_in_oregon == "50-99% in Oregon" %}
+      				{% set royalty = 400 %}
+      			{% elseif data.apply_percentage_in_oregon == "25-49% in Oregon" %}
+      				{% set royalty = 500 %}
+      			{% elseif data.apply_percentage_in_oregon == "Less than 25% in Oregon" %}
+      				{% set royalty = 1000 %}
+      			{% endif %}
+      		{% elseif data.apply_production_type == "Music video" %}
+      			{% if data.apply_percentage_in_oregon == "100% in Oregon" %}
+      				{% set royalty = 200 %}
+      			{% elseif data.apply_percentage_in_oregon == "50-99% in Oregon" %}
+      				{% set royalty = 300 %}
+      			{% elseif data.apply_percentage_in_oregon == "25-49% in Oregon" %}
+      				{% set royalty = 400 %}
+      			{% else %}{# Less than 25% in Oregon #}
+      				{% set royalty = 500 %}
+      			{% endif %}
+      		{% endif %}
+
+      		Production fee: ${{ royalty|number_format(2) }}<br>
+
       		{# DISCOUNT -------------------- #}
       		{% set discount_percent = 0 %}
-      		{% if data.apply_is_small_business == "Yes" or data.apply_is_business_certified == "Yes" or data.apply_applicant_type == "Non-profit organization" or data.apply_applicant_type == "State or local government agency" %}
-      			{% set discount_percent = 0.5 %}
+      		{% if data.apply_production_type == "Student film" %}
+      			{% set discount_percent = 1 %}
+      		{% else %}
+      			{% if data.apply_is_small_business == "Yes" or data.apply_is_business_certified == "Yes" or data.apply_applicant_type == "Non-profit organization" or data.apply_applicant_type == "State or local government agency" %}
+      				{% set discount_percent = 0.5 %}
+      			{% endif %}
+      			{% if data.apply_business_in_oregon == "Yes" %}
+      				{% set discount_percent = discount_percent + 0.1 %}
+      			{% endif %}
       		{% endif %}
-      		{% if data.apply_business_in_oregon == "Yes" %}
-      			{% set discount_percent = discount_percent + 0.1 %}
-      		{% endif %}
-      		
-      		{% set discount_amount = (total_fee * discount_percent)|number_format(2) %}
-      		
-      		Discount: ${{ discount_amount }} ({{ (discount_percent * 100) | number_format(2, '.', '') }}%)<br>
-      		
-      		Administrative fee: $100.00<br><br>
 
-      		<strong>TOTAL FEE: ${{ (total_fee + 100 - discount_amount)|number_format(2) }}</strong>
-      	
-      	{% else %}
-      		<strong>SPECIAL PERMISSION REQUIRED</strong>
-      	{% endif %}
+      		{% set discount_amount = royalty * discount_percent %}
 
+      		Discount: ${{ discount_amount|number_format(2) }} ({{ (discount_percent * 100) | number_format(2, '.', '') }}%)<br>
 
-      {% elseif data.apply_project_type == "Film or Television" %}
-      	<strong>Film or Television (non-advertisement)</strong><br><br>
-      	
-      	{% if data.apply_production_type == "Student film" %}{# no production fee for student films, but admin fee is $25 #}
-      		{% set royalty = 0 %}
-      	{% elseif data.apply_production_type == "Feature length film (over 40 minutes, including credits)" %}
-      		{% if data.apply_percentage_in_oregon == "100% in Oregon" %}
-      			{% set royalty = 1000 %}
-      		{% elseif data.apply_percentage_in_oregon == "50-99% in Oregon" %}
-      			{% set royalty = 2500 %}
-      		{% elseif data.apply_percentage_in_oregon == "25-49% in Oregon" %}
-      			{% set royalty = 4000 %}
-      		{% elseif data.apply_percentage_in_oregon == "Less than 25% in Oregon" %}
-      			{% set royalty = 5000 %}
-      		{% endif %}
-      	{% elseif data.apply_production_type == "Short film (up to 40 minutes, including credits)" %}
-      		{% if data.apply_percentage_in_oregon == "100% in Oregon" %}
-      			{% set royalty = 500 %}
-      		{% elseif data.apply_percentage_in_oregon == "50-99% in Oregon" %}
-      			{% set royalty = 1000 %}
-      		{% elseif data.apply_percentage_in_oregon == "25-49% in Oregon" %}
-      			{% set royalty = 1500 %}
-      		{% elseif data.apply_percentage_in_oregon == "Less than 25% in Oregon" %}
-      			{% set royalty = 2500 %}
-      		{% endif %}
-      	{% elseif data.apply_production_type == "Television or streaming series" %}
-      		{% if data.apply_percentage_in_oregon == "100% in Oregon" %}
-      			{% set royalty = 1000 %}
-      		{% elseif data.apply_percentage_in_oregon == "50-99% in Oregon" %}
-      			{% set royalty = 2500 %}
-      		{% elseif data.apply_percentage_in_oregon == "25-49% in Oregon" %}
-      			{% set royalty = 4000 %}
-      		{% elseif data.apply_percentage_in_oregon == "Less than 25% in Oregon" %}
-      			{% set royalty = 5000 %}
-      		{% endif %}
-      	{% elseif data.apply_production_type == "Documentary film (over 40 minutes, including credits)" %}
-      		{% if data.apply_percentage_in_oregon == "100% in Oregon" %}
-      			{% set royalty = 500 %}
-      		{% elseif data.apply_percentage_in_oregon == "50-99% in Oregon" %}
-      			{% set royalty = 750 %}
-      		{% elseif data.apply_percentage_in_oregon == "25-49% in Oregon" %}
-      			{% set royalty = 1000 %}
-      		{% elseif data.apply_percentage_in_oregon == "Less than 25% in Oregon" %}
-      			{% set royalty = 2500 %}
-      		{% endif %}
-      	{% elseif data.apply_production_type == "Documentary short film (up to 40 minutes, including credits)" %}
-      		{% if data.apply_percentage_in_oregon == "100% in Oregon" %}
-      			{% set royalty = 250 %}
-      		{% elseif data.apply_percentage_in_oregon == "50-99% in Oregon" %}
-      			{% set royalty = 400 %}
-      		{% elseif data.apply_percentage_in_oregon == "25-49% in Oregon" %}
-      			{% set royalty = 500 %}
-      		{% elseif data.apply_percentage_in_oregon == "Less than 25% in Oregon" %}
-      			{% set royalty = 1000 %}
-      		{% endif %}
-      	{% elseif data.apply_production_type == "Music video" %}
-      		{% if data.apply_percentage_in_oregon == "100% in Oregon" %}
-      			{% set royalty = 200 %}
-      		{% elseif data.apply_percentage_in_oregon == "50-99% in Oregon" %}
-      			{% set royalty = 300 %}
-      		{% elseif data.apply_percentage_in_oregon == "25-49% in Oregon" %}
-      			{% set royalty = 400 %}
-      		{% else %}{# Less than 25% in Oregon #}
-      			{% set royalty = 500 %}
-      		{% endif %}
-      	{% endif %}
-      	
-      	Production fee: ${{ royalty|number_format(2) }}<br>
-      	
-      	{# DISCOUNT -------------------- #}
-      	{% set discount_percent = 0 %}
-      	{% if data.apply_production_type == "Student film" %}
-      		{% set discount_percent = 1 %}
-      	{% else %}
-      		{% if data.apply_is_small_business == "Yes" or data.apply_is_business_certified == "Yes" or data.apply_applicant_type == "Non-profit organization" or data.apply_applicant_type == "State or local government agency" %}
-      			{% set discount_percent = 0.5 %}
-      		{% endif %}
-      		{% if data.apply_business_in_oregon == "Yes" %}
-      			{% set discount_percent = discount_percent + 0.1 %}
-      		{% endif %}
-      	{% endif %}
-
-      	{% set discount_amount = royalty * discount_percent %}
-      	
-      	Discount: ${{ discount_amount|number_format(2) }} ({{ (discount_percent * 100) | number_format(2, '.', '') }}%)<br>
-      	
-      	{# ADMINISTRATIVE FEE -------------------- #}
-      	{# $1000 fee if less than 30 days before release #}
-      	{% set admin_fee = 0 %}
-      	{% set today = date("now") %}
-      	{% set releaseDate = webform_token('[webform_submission:values:apply_release_date:raw:clear]', webform_submission) %}
-      	{% set dateDiff = releaseDate|date('U') - today|date('U') %}
-      	{% set diffDays = (dateDiff / 60 / 60 / 24)|round(0, 'ceil') %}
-
-      	{% if data.apply_production_type == "Student film" %}
-      		{% set admin_fee = 25 %}
-      	{% elseif diffDays < 30 %}{# rush fee #}
-      		{% set admin_fee = 1000 %}
-      	{% else %}
-      		{% set admin_fee = 250 %}
-      	{% endif %}	
-      	
-      	Administrative fee: {{ admin_fee|number_format(2) }}
-      	{% if diffDays < 30 %} (Rush fee applies){% endif %}<br><br>
-      	
-      	<strong>TOTAL FEE: ${{ (royalty - discount_amount + admin_fee)|number_format(2) }}</strong>
-
-      {% else %}
-      	<strong>Advertisement</strong><br><br>
-      	
-      	{% if data.apply_applicant_type == "Non-profit organization" or data.apply_applicant_type == "State or local government agency" %}
-      		{# royalty is zero #}
-      	{% elseif data.apply_business_annual_income == "$25,000 or less" %}
-      		{% set royalty = 50 %}
-      	{% elseif data.apply_business_annual_income == "$50,000 or less" %}
-      		{% set royalty = 100 %}
-      	{% elseif data.apply_business_annual_income == "$100,000 or less" %}
-      		{% set royalty = 250 %}
-      	{% elseif data.apply_business_annual_income == "$250,000 or less" %}
-      		{% set royalty = 500 %}
-      	{% elseif data.apply_business_annual_income == "$500,000 or less" %}
-      		{% set royalty = 1000 %}
-      	{% elseif data.apply_business_annual_income == "$1,000,000 or less" %}
-      		{% set royalty = 2000 %}
-      	{% elseif data.apply_business_annual_income == "$10,000,000 or less" %}
-      		{% set royalty = 10000 %}
-      	{% elseif data.apply_business_annual_income == "Over $10,000,000" %}
-      		{% set royalty = 20000 %}
-      	{% endif %}
-      	
-      	Annual gross fee: {{ royalty|number_format(2) }}<br>
-      	
-      	{# DISCOUNT -------------------- #}
-      	{% set discount_percent = 0 %}
-      	{% if data.apply_production_type == "Student film" %}
-      		{% set discount_percent = 1 %}
-      	{% elseif data.apply_applicant_type != "Non-profit organization or public entity" %}
-      		{% if data.apply_is_small_business == "Yes" or data.apply_is_business_certified == "Yes" %}
-      			{% set discount_percent = 0.5 %}
-      		{% endif %}
-      		{% if data.apply_business_in_oregon == "Yes" %}
-      			{% set discount_percent = discount_percent + 0.1 %}
-      		{% endif %}
-      	{% endif %}
-
-      	{% set discount_amount = (royalty * discount_percent)|number_format(2) %}
-      	
-      	Discount: ${{ discount_amount }} ({{ (discount_percent * 100) | number_format(2, '.', '') }}%)<br>
-      	
-      	{% set admin_fee = 100 %}
-      	{% if data.apply_applicant_type == "State or local government agency" %}
+      		{# ADMINISTRATIVE FEE -------------------- #}
+      		{# $1000 fee if less than 30 days before release #}
       		{% set admin_fee = 0 %}
+      		{% set today = date("now") %}
+      		{% set releaseDate = webform_token('[webform_submission:values:apply_release_date:raw:clear]', webform_submission) %}
+      		{% set dateDiff = releaseDate|date('U') - today|date('U') %}
+      		{% set diffDays = (dateDiff / 60 / 60 / 24)|round(0, 'ceil') %}
+
+      		{% if data.apply_production_type == "Student film" %}
+      			{% set admin_fee = 25 %}
+      		{% elseif diffDays < 30 %}{# rush fee #}
+      			{% set admin_fee = 1000 %}
+      		{% else %}
+      			{% set admin_fee = 250 %}
+      		{% endif %}	
+
+      		Administrative fee: {{ admin_fee|number_format(2) }}
+      		{% if diffDays < 30 %} (Rush fee applies){% endif %}<br><br>
+
+      		<strong>TOTAL FEE: ${{ (royalty - discount_amount + admin_fee)|number_format(2) }}</strong>
+
+      	{% else %}
+      		<strong>Advertisement</strong><br><br>
+
+      		{% if data.apply_applicant_type == "Non-profit organization" or data.apply_applicant_type == "State or local government agency" %}
+      			{# royalty is zero #}
+      		{% elseif data.apply_business_annual_income == "$25,000 or less" %}
+      			{% set royalty = 50 %}
+      		{% elseif data.apply_business_annual_income == "$50,000 or less" %}
+      			{% set royalty = 100 %}
+      		{% elseif data.apply_business_annual_income == "$100,000 or less" %}
+      			{% set royalty = 250 %}
+      		{% elseif data.apply_business_annual_income == "$250,000 or less" %}
+      			{% set royalty = 500 %}
+      		{% elseif data.apply_business_annual_income == "$500,000 or less" %}
+      			{% set royalty = 1000 %}
+      		{% elseif data.apply_business_annual_income == "$1,000,000 or less" %}
+      			{% set royalty = 2000 %}
+      		{% elseif data.apply_business_annual_income == "$10,000,000 or less" %}
+      			{% set royalty = 10000 %}
+      		{% elseif data.apply_business_annual_income == "Over $10,000,000" %}
+      			{% set royalty = 20000 %}
+      		{% endif %}
+
+      		Annual gross fee: {{ royalty|number_format(2) }}<br>
+
+      		{# DISCOUNT -------------------- #}
+      		{% set discount_percent = 0 %}
+      		{% if data.apply_production_type == "Student film" %}
+      			{% set discount_percent = 1 %}
+      		{% elseif data.apply_applicant_type != "Non-profit organization or public entity" %}
+      			{% if data.apply_is_small_business == "Yes" or data.apply_is_business_certified == "Yes" %}
+      				{% set discount_percent = 0.5 %}
+      			{% endif %}
+      			{% if data.apply_business_in_oregon == "Yes" %}
+      				{% set discount_percent = discount_percent + 0.1 %}
+      			{% endif %}
+      		{% endif %}
+
+      		{% set discount_amount = (royalty * discount_percent)|number_format(2) %}
+
+      		Discount: ${{ discount_amount }} ({{ (discount_percent * 100) | number_format(2, '.', '') }}%)<br>
+
+      		{% set admin_fee = 100 %}
+      		{% if data.apply_applicant_type == "State or local government agency" %}
+      			{% set admin_fee = 0 %}
+      		{% endif %}
+      		Administrative fee: {{ admin_fee|number_format(2) }}<br><br>
+
+      		<strong>TOTAL FEE: ${{ (royalty + (royalty * discount + admin_fee) - discount_amount)|number_format(2) }}</strong>
+
       	{% endif %}
-      	Administrative fee: {{ admin_fee|number_format(2) }}<br><br>
-      	
-      	<strong>TOTAL FEE: ${{ (royalty + (royalty * discount + admin_fee) - discount_amount)|number_format(2) }}</strong>
-        
+
       {% endif %}
     '#whitespace': spaceless
     '#ajax': true
@@ -856,10 +880,13 @@ handlers:
   zendesk_update_request:
     id: zendesk_update_ticket
     handler_id: zendesk_update_request
-    label: 'Zendesk update request'
+    label: 'Add fee summary to ticket'
     notes: ''
     status: true
-    conditions: {  }
+    conditions:
+      disabled:
+        ':input[name="apply_project_type"]':
+          value: 'Something Else'
     weight: 0
     settings:
       comment: '[webform_submission:values:computed_fee_summary:html]'
