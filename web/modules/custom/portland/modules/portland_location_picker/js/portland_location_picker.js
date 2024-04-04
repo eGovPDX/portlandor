@@ -120,6 +120,7 @@
         var requireCityLimits = drupalSettings.webform && drupalSettings.webform.portland_location_picker.require_city_limits === true ? true : false;
         var requireCityLimitsPlusParks = drupalSettings.webform && drupalSettings.webform.portland_location_picker.require_city_limits_plus_parks === true ? true : false;
         var disablePlaceNameAutofill = drupalSettings.webform && drupalSettings.webform.portland_location_picker.disable_place_name_autofill === true ? true : false;
+        var regionIdPropertyName = drupalSettings.webform && drupalSettings.webform.portland_location_picker.region_id_property_name ? drupalSettings.webform.portland_location_picker.region_id_property_name : "region_id";
 
         var boundaryUrl = drupalSettings.webform ? drupalSettings.webform.portland_location_picker.boundary_url : "";
         var displayBoundary = drupalSettings.webform && drupalSettings.webform.portland_location_picker.display_boundary === false ? false : true;
@@ -868,7 +869,7 @@
           var inLayer = leafletPip.pointInLayer(latlng, testLayer, false);
           if (inLayer.length > 0) {
             // NOTE: The following code would be problematic if we allow multiple copies of the widget or alternate naming conventions.
-            $('input[name=' + elementId + '\\[location_region_id\\]]').val(inLayer[0].feature.properties.region_id);
+            $('input[name=' + elementId + '\\[location_region_id\\]]').val(inLayer[0].feature.properties[regionIdPropertyName]);
           } else {
             // clear region_id field
             $('input[name=' + elementId + '\\[location_region_id\\]]').val("");
