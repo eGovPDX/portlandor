@@ -116,19 +116,26 @@ function portland_groups_group_update(GroupInterface $group)
     $group_entities = $group->getContentEntities();
     $non_user_entities = [];
     foreach ($group_entities as $group_entity) {
-      if ($group_entity->bundle() === "user") continue;
+      if ($group_entity->bundle() === "user") continue; // Skip users
       $non_user_entities[] = $group_entity;
     }
 
-    // 4.2. Bulk regenerate URL aliases for content by running pathauto batch processing
-    $batch = array(
-      'title' => t('Bulk updating URL aliases'),
+    // Batch process 100 items for each iteration
+    $limit = 100;
+    $batch_job = array(
+      'title' => t("Bulk updating URL aliases for content and media in {$group->label->value}"),
+      'init_message' => t('Starting the URL alias updating process'),
       'operations' => [
-        ['Drupal\portland_groups\UpdateAliasInBatch::updateAlias', [ $non_user_entities ]],
+        ['Drupal\portland_groups\UpdateAliasInBatch::updateAlias', [ 
+          $non_user_entities, 
+          $limit,
+          $orig_group_path,
+          $group_path,
+        ]],
       ],
       'finished' => 'Drupal\portland_groups\UpdateAliasInBatch::updateAliasFinishedCallback',
     );
-    batch_set($batch);
+    batch_set($batch_job);
   }
 }
 
