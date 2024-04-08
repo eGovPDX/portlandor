@@ -296,9 +296,7 @@
         }
 
         function restoreLocationFromPostback() {
-          // if in address verify mode, we don't need to reset the map's location as it's not visible
-          if (addressVerify) return;
-
+          var verifiedAddress = addressVerify ? $('input[name=' + elementId + '\\[location_address\\]]').val() : undefined;
           var lat = $('input[name=' + elementId + '\\[location_lat\\]]').val();
           var lng = $('input[name=' + elementId + '\\[location_lon\\]]').val();
           if (lat && lng && lat !== "0" && lng !== "0") {
@@ -308,14 +306,14 @@
               if (boundaryLayer) {
                 setLocationMarker(lat, lng);
                 doZoomAndCenter(lat, lng);
-                doMapClick(new L.LatLng(lat, lng));
+                doMapClick(new L.LatLng(lat, lng), verifiedAddress);
 
               } else {
                 setTimeout(function () {
                   if (boundaryLayer) {
                     setLocationMarker(lat, lng);
                     doZoomAndCenter(lat, lng);
-                    doMapClick(new L.LatLng(lat, lng));
+                    doMapClick(new L.LatLng(lat, lng), verifiedAddress);
 
                   } else {
                     restoreLocationFromPostback();
@@ -326,7 +324,7 @@
             } else {
               setLocationMarker(lat, lng);
               doZoomAndCenter(lat, lng);
-              doMapClick(new L.LatLng(lat, lng));
+              doMapClick(new L.LatLng(lat, lng), verifiedAddress);
             }
 
             // WARNING: Need to wait until boundaryLayer and regions layers are loaded, if applicable
@@ -815,7 +813,7 @@
           }
         }
 
-        function doMapClick(latlng) {
+        function doMapClick(latlng, verifiedAddress) {
           // show loading indicator
           showLoader();
 
@@ -835,7 +833,7 @@
             locateControlContaier.style.backgroundImage = 'url("/modules/custom/portland/modules/portland_location_picker/images/map_locate.png")';
           }
 
-          reverseGeolocate(latlng);
+          reverseGeolocate(latlng, true, verifiedAddress);
         }
 
         function showLoader() {
@@ -1122,7 +1120,7 @@
             // the required lat/lon fields with zeroes so that the form can still be submitted. at least
             // it will capture the address, and the report will still be usable.
             if (lat && lng) {
-              doMapClick(new L.LatLng(lat, lng));
+              doMapClick(new L.LatLng(lat, lng), fulladdress);
               setVerified();
             } else {
               setLatLngHiddenFields(0, 0);
@@ -1406,7 +1404,7 @@
         }
 
         function buildFullAddress(c) {
-          return [c.address, c.attributes.city]
+          return [c.address, c.attributes.city + " " + c.attributes.state]
             .filter(Boolean)
             .join(', ')
             + ' ' + (c.attributes.zip_code || '');
