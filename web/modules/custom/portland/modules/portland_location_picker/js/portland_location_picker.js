@@ -5,7 +5,7 @@
 
   // Here's how to reverse geolocate a park. Note the x/y values in the geometry parameter:
   // https://www.portlandmaps.com/arcgis/rest/services/Public/Parks_Misc/MapServer/2/query?geometry=%7B%22x%22%3A-122.55203425884248%2C%22y%22%3A45.53377174783918%2C%22spatialReference%22%3A%7B%22wkid%22%3A4326%7D%7D&geometryType=esriGeometryPoint&spacialRel=esriSpatialRelIntersects&returnGeometry=false&returnTrueCurves=false&returnIdsOnly=false&returnCountOnly=false&returnDistinctValues=false&f=pjson"
-  // returns an object that includes the park name. 
+  // returns an object that includes the park name.
 
   /**
    * Attach the machine-readable name form element behavior.
@@ -296,6 +296,9 @@
         }
 
         function restoreLocationFromPostback() {
+          // if in address verify mode, we don't need to reset the map's location as it's not visible
+          if (addressVerify) return;
+
           var lat = $('input[name=' + elementId + '\\[location_lat\\]]').val();
           var lng = $('input[name=' + elementId + '\\[location_lon\\]]').val();
           if (lat && lng && lat !== "0" && lng !== "0") {
@@ -353,14 +356,18 @@
             minLength: 3,
             select: function (event, ui) {
               var address = ui.item.address;
-              address += ui.item.attributes.city ? ", " + ui.item.attributes.city : "";
-              // address += ui.item.attributes.state ? ", " + ui.item.attributes.state : "";
-              // address += ui.item.attributes.zip_code ? "  " + ui.item.attributes.zip_code : "";
-              $(this).val(ui.item.address);
+              // if in address verify mode, add all details toa ddress
+              if (addressVerify) {
+                address += ui.item.attributes.city ? ", " + ui.item.attributes.city : "";
+                address += ui.item.attributes.state ? " " + ui.item.attributes.state : "";
+                address += ui.item.attributes.zip_code ? " " + ui.item.attributes.zip_code : "";
+              }
+
+              $(this).val(address);
               var lat = ui.item.attributes.lat;
               var lon = ui.item.attributes.lon;
               var latlon = new L.LatLng(lat, lon);
-              reverseGeolocate(latlon);
+              reverseGeolocate(latlon, true, address);
               $(this).autocomplete('close');
               $('.verified-checkmark.address').removeClass('invisible');
               return false; // returning true causes the field to be cleared
@@ -404,7 +411,7 @@
 
           if (boundaryUrl) {
             $.ajax({
-              url: boundaryUrl, 
+              url: boundaryUrl,
               success: function (cityBoundaryResponse) {
                 var cityBoundaryFeatures = cityBoundaryResponse.features;
                 boundaryLayer = L.geoJson(cityBoundaryFeatures, cityLimitsProperties).addTo(map);
@@ -457,7 +464,7 @@
 
                         incidentsLoop:
                         // loop backwards becasue we're going to remove incidents that are attached to assets
-                        // and move the incident 
+                        // and move the incident
                         for (var j = incidentsFeatures.length - 1; j >= 0; j--) {
 
                           // is the incident associated with the asset?
@@ -487,7 +494,7 @@
                 if (regionsLayerSource) {
                   showLoader();
                   $.ajax({
-                    url: regionsLayerSource, 
+                    url: regionsLayerSource,
                     async: false,
                     success: function (regionsResponse) {
                       regionsFeatures = regionsResponse.features;
@@ -813,10 +820,10 @@
           showLoader();
 
           // normally when the map is clicked, we want to zoom to the clicked location
-          // and perform reverse geocoding. 
+          // and perform reverse geocoding.
 
-          // if primary layer behavior is selection-only, or geofencing is enabled, 
-          // don't allow location selection, but still zoom in on that location and 
+          // if primary layer behavior is selection-only, or geofencing is enabled,
+          // don't allow location selection, but still zoom in on that location and
           // display location description.
 
           resetClickedMarker();
@@ -909,7 +916,7 @@
           captureSelectedAssetMarkerData(marker);
 
           // need to call reverseGeolocate in order to capture nearest address,
-          // this is the one instance where we don't want to zoom and center when clicking 
+          // this is the one instance where we don't want to zoom and center when clicking
           // an existing marker (2nd argument = false).
           reverseGeolocate(marker.latlng, true);
         }
@@ -1231,7 +1238,7 @@
           hideLoader();
         }
 
-        function reverseGeolocate(latlng, zoomAndCenter = true) {
+        function reverseGeolocate(latlng, zoomAndCenter = true, verifiedAddress) {
           setUnverified();
           shouldRecenterPark = false;
           var url = '';
@@ -1250,7 +1257,7 @@
               //   // location data not available, how to handle?
               //   console.log('Location not found');
               // }
-              processReverseLocationData(response, latlng.lat, latlng.lng, zoomAndCenter);
+              processReverseLocationData(response, latlng.lat, latlng.lng, zoomAndCenter, verifiedAddress);
             },
             error: function (e) {
               // if the PortlandMaps API is down, this is where we'll get stuck.
@@ -1310,7 +1317,7 @@
           return description.toUpperCase();
         }
 
-        function processReverseLocationData(data, lat, lng, zoomAndCenter = true) {
+        function processReverseLocationData(data, lat, lng, zoomAndCenter = true, verifiedAddress) {
           var isWithinBounds = checkWithinBounds(new L.LatLng(lat, lng));
           var isVerifiedAddress = true;
           if (zoomAndCenter) {
@@ -1331,7 +1338,9 @@
             }
           }
 
-          var description = parseDescribeData(data, isWithinBounds);
+          // if in address verify mode, use the verified address from suggest API
+          // rather than the "described" address that is less accurate
+          var description = addressVerify ? verifiedAddress : parseDescribeData(data, isWithinBounds);
 
           showVerifiedLocation(description, lat, lng, isWithinBounds, isVerifiedAddress);
 
