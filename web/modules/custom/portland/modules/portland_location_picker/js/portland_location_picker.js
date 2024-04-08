@@ -354,11 +354,9 @@
             minLength: 3,
             select: function (event, ui) {
               var address = ui.item.address;
-              // if in address verify mode, add all details toa ddress
+              // if in address verify mode, add all details to address
               if (addressVerify) {
-                address += ui.item.attributes.city ? ", " + ui.item.attributes.city : "";
-                address += ui.item.attributes.state ? " " + ui.item.attributes.state : "";
-                address += ui.item.attributes.zip_code ? " " + ui.item.attributes.zip_code : "";
+                address = buildFullAddress(ui.item);
               }
 
               $(this).val(address);
@@ -1021,6 +1019,7 @@
           if (results.detail.city) {
             var city_name = results.detail.city[0].name;
             $('input[name=' + elementId + '\\[location_municipality_name\\]]').val(city_name);
+            $('input[name=' + elementId + '\\[location_municipality_name\\]]').trigger('change');
           }
 
           if (results.detail.zipcode) {
@@ -1404,10 +1403,10 @@
         }
 
         function buildFullAddress(c) {
-          return [c.address, c.attributes.city + " " + c.attributes.state]
+          return [c.address, c.attributes.city ? c.attributes.city + ' ' + c.attributes.state : '']
             .filter(Boolean)
             .join(', ')
-            + ' ' + (c.attributes.zip_code || '');
+            + (c.attributes.zip_code ? ' ' + c.attributes.zip_code : '');
         }
 
         function showStatusModal(message) {
