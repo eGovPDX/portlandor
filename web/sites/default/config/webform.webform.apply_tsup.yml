@@ -990,6 +990,22 @@ elements: |-
       {{ permit_type }}
     '#whitespace': trim
     '#store': true
+  friendly_permit_type:
+    '#type': webform_computed_twig
+    '#title': 'Friendly permit type (used for Subject field)'
+    '#display_on': none
+    '#mode': text
+    '#template': |-
+      {% set name_map = {
+        'simple': 'Parking Only',
+        '7day': 'Parking Reservation Permit',
+        'lt_complex': 'Long Term Traffic Control',
+        'complex': 'Traffic Control',
+        'change_request': 'Change Request',
+        'renewal_request': 'Renewal Request',
+      } %}
+      {{ name_map[data.permit_type]|default('Unknown') }}
+    '#whitespace': trim
   computed_days_of_week:
     '#type': webform_computed_twig
     '#title': 'Computed days of week'
@@ -1507,7 +1523,7 @@ handlers:
     settings:
       requester_name: contact_full_legal_name
       requester_email: contact_email
-      subject: 'Temporary Street Use Permit Application'
+      subject: 'Temporary Street Use Permit Application ([webform_submission:values:friendly_permit_type])'
       comment: '[webform_submission:values:computed_ticket_description:raw]'
       tags: 'drupal webform tsup'
       priority: normal
@@ -1537,7 +1553,7 @@ handlers:
     settings:
       requester_name: contact_full_legal_name
       requester_email: contact_email
-      subject: 'Temporary Street Use Permit Application'
+      subject: 'Temporary Street Use Permit Application ([webform_submission:values:friendly_permit_type])'
       comment: '[webform_submission:values:computed_ticket_description:raw]'
       tags: 'drupal webform tsup'
       priority: normal
