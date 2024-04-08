@@ -11,7 +11,7 @@ use \Drupal\pathauto\PathautoState;
  */
 class UpdateAliasInBatch
 {
-  public static function updateAlias($entities, $limit, $orig_group_path, $group_path, &$context)
+  public static function updateGroupContentAlias($entities, $limit, $orig_group_path, $group_path, &$context)
   {
     if (empty($context['sandbox'])) {
       $context['sandbox']['progress'] = 0;
@@ -41,6 +41,39 @@ class UpdateAliasInBatch
       else {
         $pathGen->updateEntityAlias($entity, "update");
       }
+
+      $_SESSION['http_request_count']++;
+      $context['sandbox']['progress']++;
+      // Assuming you have number for entry within file.
+      $context['sandbox']['current_index']++;
+      $context['results'] []= "alias updated";
+    }
+
+    // Inform the batch engine that we are not finished,`
+    // and provide an estimation of the completion level we reached.
+    if ($context['sandbox']['progress'] != $context['sandbox']['max']) {
+      $context['finished'] = $context['sandbox']['progress'] / $context['sandbox']['max'];
+    }
+  }
+
+  public static function updateSubgroupAlias($entities, $limit, $orig_group_path, $group_path, &$context)
+  {
+    if (empty($context['sandbox'])) {
+      $context['sandbox']['progress'] = 0;
+      $context['sandbox']['current_index'] = 0;
+      $context['sandbox']['max'] = count($entities);
+      $context['sandbox']['source_array'] = $entities;
+      $context['results'] = [];
+    }
+
+    $pathGen = \Drupal::service('pathauto.generator');
+    $path_alias_manager = \Drupal::entityTypeManager()->getStorage('path_alias');
+    foreach (array_slice($entities, $context['sandbox']['current_index'], $limit) as $entity) {
+      $context['message'] = "Processing subgroup: {$entity->id()}";
+      
+      $count = 1;
+      $entity->field_group_path = str_replace($orig_group_path, $group_path, $entity->field_group_path->value, $count);
+      $entity->save();
 
       $_SESSION['http_request_count']++;
       $context['sandbox']['progress']++;

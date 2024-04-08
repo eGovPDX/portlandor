@@ -120,14 +120,25 @@ function portland_groups_group_update(GroupInterface $group)
       $non_user_entities[] = $group_entity;
     }
 
+    $subgroups = \Drupal::entityTypeManager()->getStorage('group')
+      ->loadByProperties([
+      'field_parent_group' => $group->id(),
+    ]);
+
     // Batch process 100 items for each iteration
-    $limit = 100;
+    $limit = 50;
     $batch_job = array(
-      'title' => t("Bulk updating URL aliases for content and media in {$group->label->value}"),
+      'title' => t("Bulk updating URL aliases for content, media, and subgroups in {$group->label->value}"),
       'init_message' => t('Starting the URL alias updating process'),
       'operations' => [
-        ['Drupal\portland_groups\UpdateAliasInBatch::updateAlias', [ 
+        ['Drupal\portland_groups\UpdateAliasInBatch::updateGroupContentAlias', [ 
           $non_user_entities, 
+          $limit,
+          $orig_group_path,
+          $group_path,
+        ]],
+        ['Drupal\portland_groups\UpdateAliasInBatch::updateSubgroupAlias', [ 
+          $subgroups, 
           $limit,
           $orig_group_path,
           $group_path,
