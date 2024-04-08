@@ -6,7 +6,7 @@ dependencies:
     - antibot
     - honeypot
     - portland
-    - portland_zendesk
+    - portland_smartsheet
 third_party_settings:
   antibot:
     antibot: true
@@ -111,8 +111,9 @@ elements: |-
         '#title': 'When did the incident occur?'
         '#required': true
         '#default_value': now
-        '#datepicker': true
+        '#format': ''
         '#date_date_format': m/d/Y
+        '#datepicker': true
       report_location:
         '#type': portland_location_picker
         '#title': 'Where did the incident occur?'
@@ -142,7 +143,7 @@ elements: |-
       report_known_witnesses:
         '#type': radios
         '#title': 'Do you know their name and phone number or email address?'
-        '#description': 'Witnesses will only be contacted if necessary to investigate your complaint. If contacted, witnesses can choose whether they want to participate.'
+        '#description': '<p>Witnesses will only be contacted if necessary to investigate your complaint. If contacted, witnesses can choose whether they want to participate.</p>'
         '#description_display': before
         '#options':
           'Yes': 'Yes'
@@ -235,10 +236,43 @@ elements: |-
         '#access_view_roles':
           - support_agent
           - administrator
+        '#zendesk_request_number__access': false
+        '#employee_notes_panel__access': false
         '#escalate_issue__access': false
+      computed_date:
+        '#type': webform_computed_twig
+        '#title': 'Computed Date in Smartsheet Format'
+        '#display_on': none
+        '#mode': text
+        '#template': "{{ data.report_date|date('c') }}"
+        '#whitespace': trim
+        '#ajax': true
       actions:
         '#type': webform_actions
         '#title': 'Submit button(s)'
+  computed_csr:
+    '#type': webform_computed_twig
+    '#title': 'Computed CSR'
+    '#display_on': none
+    '#mode': text
+    '#template': '{{ data.support_agent_use_only.employee_email|raw }}'
+    '#whitespace': trim
+    '#ajax': true
+  computed_location_address:
+    '#type': webform_computed_twig
+    '#title': 'Computed Location Address'
+    '#display_on': none
+    '#mode': text
+    '#template': '{{ data.report_location.location_address }}'
+    '#ajax': true
+  computed_location_lat_lon:
+    '#type': webform_computed_twig
+    '#title': 'Computed Location Lat/Lon'
+    '#display_on': none
+    '#mode': text
+    '#template': '{{ data.report_location.location_lat }},{{ data.report_location.location_lon }}'
+    '#whitespace': spaceless
+    '#ajax': true
 css: ''
 javascript: ''
 settings:
@@ -449,7 +483,7 @@ handlers:
       disabled:
         ':input[name="support_agent_use_only[test_submission]"]':
           checked: true
-    weight: 0
+    weight: -49
     settings:
       states:
         - completed
@@ -483,28 +517,83 @@ handlers:
       theme_name: ''
       parameters: {  }
       debug: false
-  zendesk_update_ticket:
-    id: zendesk_update_ticket
-    handler_id: zendesk_update_ticket
-    label: 'Zendesk update customer support interaction request'
-    notes: 'Updates an existing Zendesk "interaction request" and links it to the issue request. Enabled if an Zendesk Request Number value has been provided.'
+  test_submit_report_to_webforms_portlandoregon_gov:
+    id: email
+    handler_id: test_submit_report_to_webforms_portlandoregon_gov
+    label: 'TEST: Submit report to webforms@portlandoregon.gov'
+    notes: ''
     status: true
     conditions:
       enabled:
-        ':input[name="support_agent_use_only[zendesk_request_number]"]':
-          filled: true
-    weight: 0
+        ':input[name="support_agent_use_only[test_submission]"]':
+          checked: true
+    weight: -48
     settings:
-      comment: "<h1>Campsite Removal Complaint</h1>\r\n<p><strong>Campsite removal complaint has been submitted on behalf of the community member.</strong> The requests cannot be automatically linked since the webform either doesn't submit to Zendesk or doesn't use an API handler.</p>\r\n[webform_submission:values:html]\r\n\r\n"
-      comment_private: 1
-      tags: ''
-      priority: ''
-      status: ''
-      group_id: ''
-      assignee_id: ''
-      type: ''
-      collaborators: ''
-      custom_fields: "8692493739543: '[webform_submission:values:report_ticket_id]'"
-      ticket_id_field: zendesk_request_number
-      ticket_form_id: ''
+      states:
+        - completed
+      to_mail: webforms@portlandoregon.gov
+      to_options: {  }
+      bcc_mail: ''
+      bcc_options: {  }
+      cc_mail: ''
+      cc_options: {  }
+      from_mail: '[webform_submission:values:contact_email:raw]'
+      from_options: {  }
+      from_name: '[webform_submission:values:contact_name:raw]'
+      reply_to: '[webform_submission:values:contact_email:raw]'
+      return_path: ''
+      sender_mail: ''
+      sender_name: ''
+      subject: 'TEST: Campsite Removal Complaint'
+      body: "<p>Submitted on [webform_submission:created]</p>\r\n\r\n<p>[webform_submission:values:html]<br />\r\n<br />\r\nWebform ID:&nbsp;report_camp_removal_complaint</p>"
+      excluded_elements:
+        markup_property_collection: markup_property_collection
+        markup_ombudsman: markup_ombudsman
+        markup_ipr: markup_ipr
+        public_records_statement_standard: public_records_statement_standard
+      ignore_access: false
+      exclude_empty: true
+      exclude_empty_checkbox: false
+      exclude_attachments: false
+      html: true
+      attachments: false
+      twig: false
+      theme_name: ''
+      parameters: {  }
+      debug: false
+  smartsheet_add_row_to_existing_sheet:
+    id: smartsheet_add_row
+    handler_id: smartsheet_add_row_to_existing_sheet
+    label: 'Smartsheet: add row to existing sheet'
+    notes: ''
+    status: true
+    conditions: {  }
+    weight: -50
+    settings:
+      column_mappings:
+        3608990247243652: report_problem_type
+        904240699494276: report_employer
+        8112589874614148: computed_date
+        794240480137092: computed_location_address
+        5407840326864772: computed_location_lat_lon
+        5297840107507588: report_description
+        7659640140550020: report_witness1_name
+        6533740233707396: report_witness1_phone
+        4281940420022148: report_witness1_email
+        2030140606336900: report_witness2_name
+        8785540047392644: report_witness2_phone
+        200553257717636: report_witness2_email
+        4704152885088132: contact_name
+        2452353071402884: contact_email
+        6955952698773380: contact_phone
+        1326453164560260: contact_preference
+        5830052791930756: computed_csr
+        6423740014350212: ''
+        4171940200664964: ''
+      multiple_rows_enable: null
+      multiple_rows_field: ''
+      multiple_rows_separator: ''
+      row_location: toBottom
+      sheet_id: '449257534345092'
+      upload_attachments: null
 variants: {  }

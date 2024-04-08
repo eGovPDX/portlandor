@@ -8,7 +8,8 @@ dependencies:
 third_party_settings:
   portland:
     disable_demographic_form_prompt: 0
-    exclude_from_json: {  }
+    exclude_from_json:
+      computed_ticket_description: computed_ticket_description
   weight: 0
 weight: 0
 open: null
@@ -17,7 +18,7 @@ uid: 60
 template: false
 archive: false
 id: report_tnc_issue
-title: 'Report Issue with a TNC'
+title: 'Report TNC Issue'
 description: '<p>This form is intended to help TNC drivers describe complaints about TNC companies, drivers, or other industry related issues to a neutral and independent ombudsperson who will attempt to resolve the complaint(s).</p>'
 categories:
   - Report
@@ -29,53 +30,96 @@ elements: |-
       Uber: Uber
       Lyft: Lyft
       Wingz: Wingz
+    '#required': true
   report_company_complaint:
     '#type': radios
     '#title': 'Which TNC company are you filing this complaint about?'
     '#options':
-      Uber: Uber
-      Lyft: Lyft
-      Wingz: Wingz
-  report_date_of_incident:
-    '#type': date
-    '#title': 'Date of Incident'
-  report_complaint_category:
-    '#type': webform_radios_other
-    '#title': 'Complaint category'
-    '#options':
-      'Damages to your personal vehicle': 'Damages to your personal vehicle'
-      Compensation: Compensation
-      'Unexplained off-boarding/suspension': 'Unexplained off-boarding/suspension'
-      'Driver app errors and issues': 'Driver app errors and issues'
-      'Passenger conduct': 'Passenger conduct'
-      'Vehicle crash': 'Vehicle crash'
-      ' Insurance claim': ' Insurance claim'
-  report_complaint_detail:
-    '#type': textarea
-    '#title': 'Please provide a detailed account of what your complaint is'
+      uber: Uber
+      lyft: Lyft
+      wingz: Wingz
+    '#required': true
+    '#admin_notes': '<p>Value must match the lowercase values in the mapped TNC Company custom field in Zendesk.</p>'
   report_filed_with_company:
     '#type': radios
     '#title': 'Have you filed the complaint with your company?'
     '#options':
       'Yes': 'Yes'
       'No': 'No'
-  container_contact:
+    '#required': true
+  container_submit:
     '#type': container
-    contact_name:
-      '#type': textfield
-      '#title': Name
-      '#description': '<p>First and last name</p>'
+    '#states':
+      visible:
+        ':input[name="report_filed_with_company"]':
+          value: 'Yes'
+    report_date_of_incident:
+      '#type': date
+      '#title': 'Date of incident'
+      '#required': true
+    report_complaint_category:
+      '#type': radios
+      '#title': 'Complaint category'
+      '#options':
+        Compensation: Compensation
+        'Unexplained off-boarding/suspension': 'Unexplained off-boarding/suspension'
+        'Driver app errors and issues': 'Driver app errors and issues'
+        'Passenger conduct': 'Passenger conduct'
+        Other: Other
+      '#required': true
+    report_complaint_detail:
+      '#type': textarea
+      '#title': 'Complaint description'
+      '#description': '<p>Please provide a detailed account of what your complaint is.</p>'
       '#description_display': before
-    contact_email:
-      '#type': textfield
-      '#title': Email
-    contact_phone:
-      '#type': textfield
-      '#title': Phone
-      '#input_mask': '(999) 999-9999'
-    contact_tnc_permit_number:
-      '#type': textfield
-      '#title': 'TNC permit number'
+      '#required': true
+    section_contact:
+      '#type': webform_section
+      '#title': 'Your Contact Information'
+      contact_name:
+        '#type': textfield
+        '#title': Name
+        '#description': '<p>First and last name.</p>'
+        '#description_display': before
+        '#required': true
+      contact_email:
+        '#type': textfield
+        '#title': Email
+        '#required': true
+        '#pattern': '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        '#pattern_error': 'Please enter a correctly formatted email address, such as myname@example.com.'
+      contact_phone:
+        '#type': textfield
+        '#title': Phone
+        '#input_mask': '(999) 999-9999'
+      contact_tnc_permit_number:
+        '#type': textfield
+        '#title': 'TNC permit number'
+        '#required': true
+    support_agent_use_only:
+      '#type': portland_support_agent_widget
+      '#title': 'Support Agent Use Only'
+      '#zendesk_request_number__access': false
+      '#employee_notes_panel__access': false
+      '#escalate_issue__access': false
+      '#access_create_roles':
+        - authenticated
+    actions:
+      '#type': webform_actions
+      '#title': 'Submit button(s)'
+      '#submit__label': Submit
+  markup_complaint_not_filed:
+    '#type': webform_markup
+    '#states':
+      visible:
+        ':input[name="report_filed_with_company"]':
+          value: 'No'
+    '#markup': |-
+      <div class="alert alert--info next-steps">
+      <h2>Next Steps</h2>
+
+      <p class="mb-0">The City of Portland is unable to take action on a complaint if you haven't already filed with your TNC.&nbsp;Please submit through your TNC's mobile app process and then return to initiate the complaint with the Regulatory Division.&nbsp;Thank you.</p>
+      </div>
   report_ticket_id:
     '#type': hidden
     '#title': 'Report ticket id'
@@ -90,15 +134,74 @@ elements: |-
       	{% for item in data.report_operator_company %}
       		{% set companies = companies ~ item ~ ", " %}
       	{% endfor %}
+          
+          {% if companies|length > 2 %}
+            {% set companies = companies[0 : companies|length-2] %}
+          {% endif %}
+          
       {% endif %}
 
-      https://{{ webform_token('[site:url-brief]', webform_submission, [], options) }}/form/report-tnc-issue-update?report_company_complaint={{ data.report_company_complaint is iterable ? '' : data.report_company_complaint }}&report_operator_company={{ companies|url_encode }}&report_date_of_incident={{ data.report_date_of_incident|url_encode }}&report_complaint_category={{ data.report_complaint_category is iterable ? '' : data.report_complaint_category|url_encode }}&report_filed_with_company={{ data.report_filed_with_company is iterable ? '' : data.report_filed_with_company }}&contact_name={{ data.contact_name|url_encode }}&contact_email={{ data.contact_email }}&contact_phone={{ data.contact_phone|url_encode }}&contact_tnc_permit_number={{ data.contact_tnc_permit_number|url_encode }}&original_submission_key={{ uuid }}&report_complaint_detail={{ data.report_complaint_detail|url_encode }}
+      {% set detail = data.report_complaint_detail %}
+      {% if detail|length > 200 %}
+        {% set detail = detail|truncate(200) ~ "..." %}
+      {% endif %}
+
+      https://{{ webform_token('[site:url-brief]', webform_submission, [], options) }}/form/report-tnc-issue-update?report_company_complaint={{ data.report_company_complaint is iterable ? '' : data.report_company_complaint }}&report_operator_company={{ companies|url_encode }}&report_date_of_incident={{ data.report_date_of_incident|date("m/d/Y")|url_encode }}&report_complaint_category={{ data.report_complaint_category is iterable ? '' : data.report_complaint_category|url_encode }}&report_filed_with_company={{ data.report_filed_with_company is iterable ? '' : data.report_filed_with_company }}&contact_name={{ data.contact_name|url_encode }}&contact_email={{ data.contact_email }}&contact_phone={{ data.contact_phone|url_encode }}&contact_tnc_permit_number={{ data.contact_tnc_permit_number|url_encode }}&original_submission_key={{ uuid }}&report_complaint_detail={{ detail|url_encode }}
     '#whitespace': trim
     '#ajax': true
-  support_agent_use_only:
-    '#type': portland_support_agent_widget
-    '#title': 'Support Agent Use Only'
-    '#escalate_issue__access': false
+  computed_ticket_description:
+    '#type': webform_computed_twig
+    '#title': 'Computed Ticket Description'
+    '#display_on': none
+    '#mode': html
+    '#template': |-
+      {% set companies = '' %}
+      {% if data.report_operator_company is iterable %}
+      	{% for item in data.report_operator_company %}
+      		{% set companies = companies ~ item ~ ", " %}
+      	{% endfor %}
+          
+          {% if companies|length > 2 %}
+            {% set companies = companies[0 : companies|length-2] %}
+          {% endif %}
+          
+      {% endif %}
+
+      <strong>Which TNC companies do you operate for?</strong>
+      {{ companies }}<br><br>
+
+      <strong>Which TNC company are you filing this complaint about?</strong>
+      {{ data.report_company_complaint is iterable ? '' : data.report_company_complaint|raw }}<br><br>
+
+      <strong>Date of Incident:</strong>
+      {{ data.report_date_of_incident|date("m/d/Y") }}<br><br>
+
+      <strong>Complaint category:</strong>
+      {{ data.report_complaint_category is iterable ? '' : data.report_complaint_category }}<br><br>
+
+      <strong>Complaint description:</strong><br>
+      {{ data.report_complaint_detail }}<br><br>
+
+      <strong>Have you filed the complaint with your company?</strong>
+      {{ data.report_filed_with_company is iterable ? '' : data.report_filed_with_company }}<br><br>
+
+      <strong>Name:</strong>
+      {{ data.contact_name }}<br><br>
+
+      <strong>Email:</strong>
+      {{ data.contact_email }}<br><br>
+
+      <strong>Phone:</strong>
+      {{ data.contact_phone }}
+    '#ajax': true
+  computed_ticket_subject:
+    '#type': webform_computed_twig
+    '#title': 'Computed Subject'
+    '#display_on': none
+    '#mode': text
+    '#template': 'TNC driver complaint: {{ data.contact_name }}'
+    '#whitespace': trim
+    '#ajax': true
 css: ''
 javascript: ''
 settings:
@@ -205,8 +308,8 @@ settings:
   draft_pending_multiple_message: ''
   confirmation_type: page
   confirmation_url: ''
-  confirmation_title: ''
-  confirmation_message: ''
+  confirmation_title: 'Thank you!'
+  confirmation_message: '<p>Thank you for submitting your issue. PBOT and the Ombudperson team will coordinate to review your submission.</p>'
   confirmation_attributes: {  }
   confirmation_back: true
   confirmation_back_label: ''
@@ -297,8 +400,8 @@ handlers:
     settings:
       requester_name: contact_name
       requester_email: contact_email
-      subject: 'TNC Driver Complaint'
-      comment: '[webform_submission:values:html]'
+      subject: '[webform_submission:values:computed_ticket_subject]'
+      comment: '[webform_submission:values:computed_ticket_description:html]'
       tags: 'drupal webform'
       priority: normal
       status: new
@@ -306,7 +409,7 @@ handlers:
       assignee_id: ''
       type: incident
       collaborators: ''
-      custom_fields: "6353388345367: 'report_rideshare_issue'\r\n1500013095781: '[webform_submission:uuid]'\r\n6355783758871: ['[webform_submission:values:resolution_url]', 'resolution_url']"
+      custom_fields: "6353388345367: 'report_tnc_issue'\r\n1500013095781: '[webform_submission:uuid]'\r\n6355783758871: ['[webform_submission:values:resolution_url]', 'resolution_url']\r\n21749891543191: ['[webform_submission:values:report_company_complaint]', 'report_company_complaint']"
       ticket_id_field: report_ticket_id
       ticket_form_id: '21232163956503'
       recipient: ''
@@ -325,8 +428,8 @@ handlers:
     settings:
       requester_name: contact_name
       requester_email: contact_email
-      subject: 'TNC Driver Complaint'
-      comment: '[webform_submission:values:html]'
+      subject: '[webform_submission:values:computed_ticket_subject]'
+      comment: '[webform_submission:values:computed_ticket_description:html]'
       tags: 'drupal webform'
       priority: normal
       status: new
@@ -334,9 +437,9 @@ handlers:
       assignee_id: ''
       type: incident
       collaborators: ''
-      custom_fields: "6353388345367: 'report_rideshare_issue'\r\n1500013095781: '[webform_submission:uuid]'\r\n6355783758871: ['[webform_submission:values:resolution_url]', 'resolution_url']"
+      custom_fields: "6353388345367: 'report_tnc_issue'\r\n1500013095781: '[webform_submission:uuid]'\r\n6355783758871: ['[webform_submission:values:resolution_url]', 'resolution_url']\r\n21749891543191: ['[webform_submission:values:report_company_complaint]', 'report_company_complaint']"
       ticket_id_field: report_ticket_id
-      ticket_form_id: '4990038807319'
+      ticket_form_id: '21232163956503'
       recipient: ''
       ticket_fork_field: ''
   zendesk_update_request:
@@ -386,5 +489,5 @@ handlers:
       collaborators: ''
       custom_fields: "6355783758871: '[webform_submission:values:resolution_url]&report_ticket_id=[webform_submission:values:report_ticket_id]'"
       ticket_id_field: report_ticket_id
-      ticket_form_id: '4990038807319'
+      ticket_form_id: '21232163956503'
 variants: {  }
