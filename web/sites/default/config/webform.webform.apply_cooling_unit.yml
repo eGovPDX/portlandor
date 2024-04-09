@@ -123,6 +123,9 @@ elements: |-
           	<li>For additional home weatherization assistance, contact Multnomah County Department of Human Services at <a href="tel:+1-503-988-7423">503-988-7423</a></li>
           </ul>
           </div>
+      coolingsearch_api_result:
+        '#type': hidden
+        '#title': 'CoolingSearch API Result'
     actions_02:
       '#type': webform_actions
       '#title': 'Submit button(s)'
@@ -211,29 +214,6 @@ elements: |-
           'Northwest Native Chamber': 'Northwest Native Chamber'
           'Somali American Chamber of Oregon (SACOO)': 'Somali American Chamber of Oregon (SACOO)'
           Verde: Verde
-      report_race_ethnicity:
-        '#type': webform_computed_twig
-        '#title': 'Race and Ethnicity'
-        '#display_on': none
-        '#template': '{{ data.report_race_ethnicity_prefer_not_disclose ? "I prefer not to disclose" : data.report_race_ethnicity_value|join(";") }}'
-        '#whitespace': trim
-      report_race_ethnicity_value:
-        '#type': webform_checkboxes_other
-        '#title': '(Optional) Which of the following describes your racial or ethnic identity? Please select ALL that apply.'
-        '#description_display': before
-        '#options': ethnicity
-        '#options_none_text': ''
-        '#other__option_label': 'Not listed above, please describe'
-        '#other__placeholder': 'Please describe'
-        '#states':
-          disabled:
-            ':input[name="report_race_ethnicity_prefer_not_disclose"]':
-              checked: true
-        '#admin_title': 'Race and Ethnicity - Value'
-      report_race_ethnicity_prefer_not_disclose:
-        '#type': checkbox
-        '#title': 'I prefer not to answer'
-        '#admin_title': 'Race and Ethnicity - Prefer not to disclose'
       support_agent_use_only:
         '#type': portland_support_agent_widget
         '#title': 'Support Agent Use Only'
@@ -252,13 +232,14 @@ elements: |-
         'phone_secondary': data.contact_phone_secondary,
         'location_address': data.report_location.location_address,
         'location_unit_number': data.report_location_unit_number,
+        'coolingsearch_api_result': data.coolingsearch_api_result,
         'household_size': data.apply_household_size,
         'income_attestation': data.apply_income_qualifies == 'Yes' ? 'true' : 'false',
         'vulnerabilities': data.apply_vulnerabilities|join(','),
         'cdp_preference': data.apply_cdp_preference,
-      }]|serialize('csv') }}
+      }]|serialize('csv')|raw }}
 css: "#location_map {\r\n  display: none;\r\n}"
-javascript: "((Drupal) => {\r\n\tDrupal.behaviors.eligibilityChecker = {\r\n\t\tattach() {\r\n\t\t\tconst addressEl = document.querySelector(\"input[name='report_location[location_address]']\");\r\n\t\t\tconst unitNumberEl = document.querySelector(\"input[name='report_location_unit_number']\");\r\n\t\t\tif (!addressEl) return;\r\n\r\n\t\t\tconst submitButtonEl = document.querySelector(\".webform-button--next\");\r\n\t\t\tconst submitHandler = (e) => {\r\n\t\t\t\te.preventDefault();\r\n\t\t\t\tconst splitAddress = addressEl.value.split(\",\");\r\n\t\t\t\tif (splitAddress.length < 2) {\r\n\t\t\t\t\tdocument.querySelector(\".verification-error\").textContent = \"Address is invalid. Please make sure you verified your address.\";\r\n\t\t\t\t\treturn;\r\n\t\t\t\t}\r\n\r\n\t\t\t\t// combine property address and unit number into one string\r\n\t\t\t\tconst fullAddress = `${splitAddress[0]} ${unitNumberEl.value}, ${splitAddress[1]}`;\r\n\t\t\t\tfetch(`https://coolingsearch.org/api/search?search=${fullAddress}`, {\r\n\t\t\t\t\theaders: {\r\n\t\t\t\t\t\t\"Authorization\": \"Token e367099a03f3cd984e2be20f60bceb8d798a7607\"\r\n\t\t\t\t\t},\r\n\t\t\t\t}).then((res) => res.json()).then((data) => {\r\n\t\t\t\t\tconst errorMessage = data.message || data.installed || data.scheduled || data.out_of_bounds || data.housing_provider;\r\n\t\t\t\t\tif (errorMessage) {\r\n\t\t\t\t\t\tdocument.querySelector(\".verification-error\").textContent = errorMessage;\r\n\t\t\t\t\t} else {\r\n\t\t\t\t\t\tsubmitButtonEl.removeEventListener(\"click\", submitHandler);\r\n\t\t\t\t\t\tsubmitButtonEl.click();\r\n\t\t\t\t\t}\r\n\t\t\t\t}, () => {\r\n\t\t\t\t\tsubmitButtonEl.removeEventListener(\"click\", submitHandler);\r\n\t\t\t\t\tsubmitButtonEl.click();\r\n\t\t\t\t});\r\n\t\t\t};\r\n\r\n\t\t\tsubmitButtonEl.addEventListener(\"click\", submitHandler);\r\n\t\t},\r\n\t};\r\n\r\n\tDrupal.behaviors.incomeCalculator = {\r\n\t\t// The HUD 2023 60% Median Income in the Portland-Vancouver-Hillsboro MSA by household size (1-indexed)\r\n\t\tMEDIAN_INCOMES: [\r\n\t\t\t0,\r\n\t\t\t47400,\r\n\t\t\t54180,\r\n\t\t\t60960,\r\n\t\t\t67680,\r\n\t\t\t73140,\r\n\t\t\t78540,\r\n\t\t\t83940,\r\n\t\t\t89340,\r\n\t\t],\r\n\r\n\t\tattach() {\r\n\t\t\tconst householdSizeEl = document.querySelector(\"input[name='apply_household_size']\");\r\n\t\t\tif (!householdSizeEl) return;\r\n\r\n\t\t\tthis.calculateIncome(householdSizeEl);\r\n\t\t\thouseholdSizeEl.addEventListener(\"input\", (e) => this.calculateIncome(e.target));\r\n\t\t},\r\n\r\n\t\tcalculateIncome(el) {\r\n\t\t\tconst medianIncomes = this.MEDIAN_INCOMES;\r\n\t\t\tconst householdSize = el.valueAsNumber;\r\n\t\t\tlet incomeLimitYearly = 0;\r\n\t\t\tif (isNaN(householdSize) || householdSize === 0) return;\r\n\r\n\t\t\tif (householdSize > 8) {\r\n\t\t\t\t// For each person over eight-persons, the four-person income limit\r\n\t\t\t\t// should be multiplied by an additional 8 percent. (For example, the nine-person limit equals 140\r\n\t\t\t\t// percent [132 + 8] of the relevant four-person income limit.)\r\n\t\t\t\tincomeLimitYearly = medianIncomes[4] * (1 + (0.08 * (householdSize - 4)));\r\n\t\t\t} else {\r\n\t\t\t\tincomeLimitYearly = medianIncomes[householdSize];\r\n\t\t\t}\r\n\r\n\t\t\tdocument.querySelectorAll(\".income-yearly\").forEach((el) => el.textContent = this.prettyNumber(incomeLimitYearly));\r\n\t\t\tdocument.querySelector(\".income-monthly\").textContent = this.prettyNumber(incomeLimitYearly / 12);\r\n\t\t},\r\n\r\n\t\tprettyNumber(num) {\r\n\t\t\treturn num.toLocaleString(undefined, { currency: \"USD\", maximumFractionDigits: 0, style: \"currency\" });\r\n\t\t},\r\n\t};\r\n})(Drupal);\r\n"
+javascript: "((Drupal) => {\r\n\tDrupal.behaviors.eligibilityChecker = {\r\n\t\tattach() {\r\n\t\t\tconst addressEl = document.querySelector(\"input[name='report_location[location_address]']\");\r\n\t\t\tconst unitNumberEl = document.querySelector(\"input[name='report_location_unit_number']\");\r\n\t\t\tif (!addressEl) return;\r\n\r\n\t\t\tconst submitButtonEl = document.querySelector(\".webform-button--next\");\r\n\t\t\tconst submitHandler = (e) => {\r\n\t\t\t\te.preventDefault();\r\n\t\t\t\tconst splitAddress = addressEl.value.split(\",\");\r\n\t\t\t\tif (splitAddress.length < 2) {\r\n\t\t\t\t\tdocument.querySelector(\".verification-error\").textContent = \"Address is invalid. Please make sure you verified your address.\";\r\n\t\t\t\t\treturn;\r\n\t\t\t\t}\r\n\r\n\t\t\t\t// combine property address and unit number into one string\r\n\t\t\t\tconst fullAddress = `${splitAddress[0]} ${unitNumberEl.value}, ${splitAddress[1]}`;\r\n\t\t\t\tfetch(`https://coolingsearch.org/api/search?search=${fullAddress}`, {\r\n\t\t\t\t\theaders: {\r\n\t\t\t\t\t\t\"Authorization\": \"Token e367099a03f3cd984e2be20f60bceb8d798a7607\"\r\n\t\t\t\t\t},\r\n\t\t\t\t}).then((res) => res.json()).then((data) => {\r\n\t\t\t\t\tconst apiResultEl = document.querySelector(\"input[name='coolingsearch_api_result']\");\r\n\t\t\t\t\tconst errorMessage = data.message || data.scheduled || data.out_of_bounds || data.housing_provider;\r\n\t\t\t\t\tif (errorMessage) {\r\n\t\t\t\t\t\tdocument.querySelector(\".verification-error\").textContent = errorMessage;\r\n\t\t\t\t\t} else {\r\n\t\t\t\t\t\t// if unit has previously been installed, we still want to let user continue\r\n\t\t\t\t\t\t// but flag it in submission data as they may be a different tenant.\r\n\t\t\t\t\t\tapiResultEl.value = data.installed ? \"installed\" : \"eligible\";\r\n\t\t\t\t\t\tsubmitButtonEl.removeEventListener(\"click\", submitHandler);\r\n\t\t\t\t\t\tsubmitButtonEl.click();\r\n\t\t\t\t\t}\r\n\t\t\t\t}, () => {\r\n\t\t\t\t\tsubmitButtonEl.removeEventListener(\"click\", submitHandler);\r\n\t\t\t\t\tsubmitButtonEl.click();\r\n\t\t\t\t});\r\n\t\t\t};\r\n\r\n\t\t\tsubmitButtonEl.addEventListener(\"click\", submitHandler);\r\n\t\t},\r\n\t};\r\n\r\n\tDrupal.behaviors.incomeCalculator = {\r\n\t\t// The HUD 2023 60% Median Income in the Portland-Vancouver-Hillsboro MSA by household size (1-indexed)\r\n\t\tMEDIAN_INCOMES: [\r\n\t\t\t0,\r\n\t\t\t47400,\r\n\t\t\t54180,\r\n\t\t\t60960,\r\n\t\t\t67680,\r\n\t\t\t73140,\r\n\t\t\t78540,\r\n\t\t\t83940,\r\n\t\t\t89340,\r\n\t\t],\r\n\r\n\t\tattach() {\r\n\t\t\tconst householdSizeEl = document.querySelector(\"input[name='apply_household_size']\");\r\n\t\t\tif (!householdSizeEl) return;\r\n\r\n\t\t\tthis.calculateIncome(householdSizeEl);\r\n\t\t\thouseholdSizeEl.addEventListener(\"input\", (e) => this.calculateIncome(e.target));\r\n\t\t},\r\n\r\n\t\tcalculateIncome(el) {\r\n\t\t\tconst medianIncomes = this.MEDIAN_INCOMES;\r\n\t\t\tconst householdSize = el.valueAsNumber;\r\n\t\t\tlet incomeLimitYearly = 0;\r\n\t\t\tif (isNaN(householdSize) || householdSize === 0) return;\r\n\r\n\t\t\tif (householdSize > 8) {\r\n\t\t\t\t// For each person over eight-persons, the four-person income limit\r\n\t\t\t\t// should be multiplied by an additional 8 percent. (For example, the nine-person limit equals 140\r\n\t\t\t\t// percent [132 + 8] of the relevant four-person income limit.)\r\n\t\t\t\tincomeLimitYearly = medianIncomes[4] * (1 + (0.08 * (householdSize - 4)));\r\n\t\t\t} else {\r\n\t\t\t\tincomeLimitYearly = medianIncomes[householdSize];\r\n\t\t\t}\r\n\r\n\t\t\tdocument.querySelectorAll(\".income-yearly\").forEach((el) => el.textContent = this.prettyNumber(incomeLimitYearly));\r\n\t\t\tdocument.querySelector(\".income-monthly\").textContent = this.prettyNumber(incomeLimitYearly / 12);\r\n\t\t},\r\n\r\n\t\tprettyNumber(num) {\r\n\t\t\treturn num.toLocaleString(undefined, { currency: \"USD\", maximumFractionDigits: 0, style: \"currency\" });\r\n\t\t},\r\n\t};\r\n})(Drupal);\r\n"
 settings:
   ajax: false
   ajax_scroll_top: form
