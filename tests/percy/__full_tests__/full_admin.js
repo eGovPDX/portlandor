@@ -152,10 +152,9 @@ describe('Full regression test suite for Admin', () => {
         await this.page.select("#edit-field-severity", "20");
         //Alert Text
         await this.page.evaluate(() => {
-          document
-            .querySelector("iframe.cke_wysiwyg_frame")
-            .contentDocument.querySelector("body p").textContent =
-            "Full regression test alert text";
+          ck5 = Drupal.CKEditor5Instances.keys().next().value;
+          editor = Drupal.CKEditor5Instances.get(ck5);
+          editor.setData('Full regression test alert text');
         });
         //Revision text
         await this.page.type(
@@ -328,10 +327,9 @@ describe('Full regression test suite for Admin', () => {
 
         // Update the CKEditor content
         await this.page.evaluate(() => {
-          document
-            .querySelector('iframe.cke_wysiwyg_frame')
-            .contentDocument.querySelector('body p').textContent =
-            'Body content for the test city service';
+          ck5 = Drupal.CKEditor5Instances.keys().next().value;
+          editor = Drupal.CKEditor5Instances.get(ck5);
+          editor.setData('Body content for the test city service');
         });
         await this.page.type(
           '#edit-revision-log-0-value',
@@ -393,10 +391,9 @@ describe('Full regression test suite for Admin', () => {
 
         // Update the CKEditor content
         await this.page.evaluate(() => {
-          document
-            .querySelector('iframe.cke_wysiwyg_frame')
-            .contentDocument.querySelector('body p').textContent =
-            'Body content for the test construction';
+          ck5 = Drupal.CKEditor5Instances.keys().next().value;
+          editor = Drupal.CKEditor5Instances.get(ck5);
+          editor.setData('Body content for the test construction');
         });
 
         await this.page.type(
@@ -493,10 +490,9 @@ describe('Full regression test suite for Admin', () => {
         await this.page.type('input#edit-field-end-time-0-value', '04:00pm');
 
         await this.page.evaluate(() => {
-          document
-            .querySelector('iframe.cke_wysiwyg_frame')
-            .contentDocument.querySelector('body p').textContent =
-            'Body content for the test event';
+          ck5 = Drupal.CKEditor5Instances.keys().next().value;
+          editor = Drupal.CKEditor5Instances.get(ck5);
+          editor.setData('Body content for the test event');
         });
         await this.page.type(
           '#edit-revision-log-0-value',
@@ -601,10 +597,9 @@ describe('Full regression test suite for Admin', () => {
         );
 
         await this.page.evaluate(() => {
-          document
-            .querySelector('iframe.cke_wysiwyg_frame')
-            .contentDocument.querySelector('body p').textContent =
-            'Body content for the test news';
+          ck5 = Drupal.CKEditor5Instances.keys().next().value;
+          editor = Drupal.CKEditor5Instances.get(ck5);
+          editor.setData('Body content for the test news');
         });
         await this.page.type(
           '#edit-revision-log-0-value',
@@ -647,10 +642,9 @@ describe('Full regression test suite for Admin', () => {
 
         // Update the CKEditor content
         await this.page.evaluate(() => {
-          document
-            .querySelector('iframe.cke_wysiwyg_frame')
-            .contentDocument.querySelector('body p').textContent =
-            'Body content for the test notification';
+          ck5 = Drupal.CKEditor5Instances.keys().next().value;
+          editor = Drupal.CKEditor5Instances.get(ck5);
+          editor.setData('Body content for the test notification');
         });
 
         await this.page.type(
@@ -805,10 +799,9 @@ describe('Full regression test suite for Admin', () => {
           video_url
         );
         await this.page.evaluate(() => {
-          document
-            .querySelector('iframe[title="Rich Text Editor, Transcript field"]')
-            .contentDocument.querySelector('body p').textContent =
-            'Transcript content for the test video';
+          ck5 = Drupal.CKEditor5Instances.keys().next().value;
+          editor = Drupal.CKEditor5Instances.get(ck5);
+          editor.setData('Transcript content for the test video');
         });
         selector = 'details#edit-group-attribution';
         await this.page.evaluate(

@@ -8,168 +8,153 @@ use Symfony\Component\HttpFoundation\RedirectResponse;
 /**
  * Implements hook_form_alter().
  */
-function portland_media_embed_helper_form_entity_embed_dialog_alter(array &$form, FormStateInterface $form_state, $form_id)
-{
-  // for embedded documents, images and videos using the entity_embed align and caption filters,
-  // remove the filter fields from the embed form if the media item is a document.
-  $hide_fields = false;
-  if ( $form_state->getValue("entity_browser") ) {
-    $entities = $form_state->getValue("entity_browser")["entities"];
-    if (isset($entities)) {
-      // there should only be 1 element in the entities array, but just in case there
-      // are more, don't hide the fields if one of them isn't a document.
-      foreach($form_state->getValue("entity_browser")["entities"] as $entity) {
-        if ($entity->bundle() == "document") {
-          $hide_fields = true;
-          break;
-        }
-      }
-    }
-  } else {
-    $input = $form_state->getUserInput();
-    if (isset($input) && isset($input['editor_object']['data-embed-button'])) {
-      $type = $input['editor_object']['data-embed-button'];
-      if ($type == "document_browser") {
-        $hide_fields = true;
-      }
-    }
+function portland_media_embed_helper_form_entity_embed_dialog_alter(array &$form, FormStateInterface $form_state, $form_id) {
+  $entity = $form_state->get('entity');
+  $entity_element = $form_state->get('entity_element');
+  // if no entity has been selected yet or we're not on the embed dialog, there's nothing for us to do
+  if (!$entity || !$entity_element || !array_key_exists('data-embed-button', $form['attributes'])) {
+    return;
   }
 
-  // When inserting a newly selected item, check if it's iframe and display aspect ratio radio buttons.
-  // check $form_state->getUserInput()["entity_browser"]["entity_ids"]. Format is media:ID
-  // When editing a previously inserted item, get the saved aspect ratio from $form_state->getUserInput()['editor_object']
-  // Hide the Caption and Align fields if it's an iframe
-  $user_input = $form_state->getUserInput();
-  $is_iframe = false;
-  $has_editor_object = isset($user_input['editor_object']);
-  if( $has_editor_object && isset($user_input['editor_object']['data-entity-uuid']) ) {
-    $is_iframe = $user_input['editor_object']['data-embed-button'] == 'insert_iframe';
-    if(!$hide_fields) $hide_fields = $is_iframe;
-  }
-  else if(isset($user_input["entity_browser"]) && isset($user_input["entity_browser"]["entity_ids"])) {
-    $media_id = substr($user_input["entity_browser"]["entity_ids"], 6); // Format is media:ID
-    $media = \Drupal::entityTypeManager()->getStorage('media')->load($media_id);
-    $is_iframe = (empty($media)) ? false : ($media->bundle() == 'iframe_embed');
-    if(!$hide_fields) $hide_fields = $is_iframe;
-  }
-  else if ( isset($user_input["attributes"]["data-aspect-ratio"]) 
-    // This is the only way to avoid adding Aspect Ratio form element when "Select a different entity" is clicked
-    && $user_input["_triggering_element_value"] != "Back" 
-    ) {
-    $is_iframe = true;
-    if(!$hide_fields) $hide_fields = $is_iframe;
-  }
+  // Map of which options we want enabled on each media type
+  $attributes_enabled_by_bundle = [
+    'document' => ['data-alt-link-text'],
+    'iframe_embed' => ['data-align', 'data-aspect-ratio'],
+    'image' => ['data-align', 'data-caption'],
+    'map' => ['data-align', 'data-caption'],
+    'video' => ['data-align', 'data-caption', 'data-start-cue'],
+  ];
+  $attributes_enabled = $attributes_enabled_by_bundle[$entity->bundle()];
 
-  if ($hide_fields) {
-    if (isset($form['attributes']['data-caption'])) unset($form['attributes']['data-caption']);
-    if (isset($form['attributes']['data-align']) && !$is_iframe) unset($form['attributes']['data-align']);
-  }
-
-  // Hide additional fields (e.g. alt text) from entity_embed module
+  // Hide additional fields we don't want
   $form['attributes']['data-entity-embed-display-settings']['#access'] = false;
   // Move view mode selection to bottom
   $form['attributes']['data-entity-embed-display']['#weight'] = 99;
 
-  // configure align options and add icons
-  if (isset($form['attributes']['data-align'])) {
-    $img_100 =            "<img src=\"/themes/custom/cloudy/images/icons/img-100.png\" alt=\"100% width\" />";
-    $img_narrow =         "<img src=\"/themes/custom/cloudy/images/icons/img-narrow.png\" alt=\"Narrow\" />";
-    $img_50_right_fill =  "<img src=\"/themes/custom/cloudy/images/icons/img-50-fill.png\" alt=\"50% fill\" />";
-    $img_50_right_fit =   "<img src=\"/themes/custom/cloudy/images/icons/img-50-fit.png\" alt=\"50% fit\" />";
-    $embed_type = $form['attributes']['data-embed-button']['#value'];
-
-    // clear default alignment options
-    unset($form['attributes']['data-align']['#options']['left']);
-    unset($form['attributes']['data-align']['#options']['right']);
-    unset($form['attributes']['data-align']['#options']['center']);
-    unset($form['attributes']['data-align']['#options']['']);
-
-    $form['attributes']['data-align']['#title'] = "Alignment";
-    $form['attributes']['data-align']['#default_value'] = $user_input['editor_object']['data-align'] ?? "responsive-full";
-
-    // full width applies to images and videos
-    $form['attributes']['data-align']['#options']['responsive-full'] = "Full width<br>$img_100";
-
-    // narrow, right fill and fit don't apply to videos
-    if ($embed_type == "audio_video_browser" || $embed_type == "map_browser" || $embed_type == "chart_browser" || $is_iframe) {
-      $form['attributes']['data-align']['#options']['responsive-right'] = "50% right<br>$img_50_right_fill";
-    } else {
-      $form['attributes']['data-align']['#options']['narrow'] = "Narrow<br>$img_narrow";
-      $form['attributes']['data-align']['#options']['responsive-right'] = "50% fill<br>$img_50_right_fill";
-      $form['attributes']['data-align']['#options']['right'] = "50% fit<br>$img_50_right_fit";
-    }
+  if (in_array('data-caption', $attributes_enabled)) {
+    $form['attributes']['data-caption']['#weight'] = 2;
+  } else {
+    $form['attributes']['data-caption']['#access'] = false;
   }
 
-  // if this is the video browser, and the caption field is set, then insert the start time field
-  if (isset($form['attributes']['data-caption']) && isset($embed_type) && $embed_type == "audio_video_browser") {
-    $form['attributes']['data-start-cue']['#type'] = "textfield";
-    $form['attributes']['data-start-cue']['#title'] = "Video start cue time (optional)";
-    $form['attributes']['data-start-cue']['#placeholder'] = "0";
-    $form['attributes']['data-start-cue']['#description'] = "Provide the start time in seconds";
-  }
+  if (in_array('data-align', $attributes_enabled)) {
+    $alignments = [
+      [
+        'icon' => 'img-100.png',
+        'name' => 'Full width',
+        'id' => 'responsive-full',
+      ],
+      [
+        'icon' => 'img-narrow.png',
+        'name' => 'Narrow',
+        'id' => 'narrow',
+      ],
+      [
+        'icon' => 'img-50-fill.png',
+        'name' => '50% fill',
+        'id' => 'responsive-right',
+      ],
+      [
+        'icon' => 'img-50-fit.png',
+        'name' => '50% fit',
+        'id' => 'right',
+      ],
+    ];
+    $alignments_enabled_by_bundle = [
+      'iframe_embed' => ['responsive-full', 'responsive-right'],
+      'image' => ['responsive-full', 'narrow', 'responsive-right', 'right'],
+      'map' => ['responsive-full', 'responsive-right'],
+      'video' => ['responsive-full', 'responsive-right'],
+    ];
+    $alignments_enabled = $alignments_enabled_by_bundle[$entity->bundle()];
 
-  // Only show the aspect ratio radio buttons for iframe
-  if($is_iframe) {
-    // Default aspect ratio is 16/9.
-    // When editing an item, get value from "data-aspect-ratio" attribute
-    $default_aspect_ratio = '16/9';
-    if($has_editor_object && isset($user_input['editor_object']['data-aspect-ratio'])) {
-      $default_aspect_ratio = $user_input['editor_object']['data-aspect-ratio'];
-    }
-    $form['attributes']['data-aspect-ratio'] = [
-      '#title' => t('Aspect ratio'),
+    $form['attributes']['data-align'] = [
       '#type' => 'radios',
+      '#title' => t('Alignment'),
+      '#weight' => 1,
+      '#default_value' => $entity_element['data-align'] ?? 'responsive-full',
+      '#attributes' => ['class' => ['container-inline']],
+    ];
+
+    foreach ($alignments as $alignment) {
+      if (!in_array($alignment['id'], $alignments_enabled)) continue;
+
+      $form['attributes']['data-align']['#options'][$alignment['id']]
+        = "{$alignment['name']}<br><img src=\"/themes/custom/cloudy/images/icons/{$alignment['icon']}\" />";
+    }
+  }
+
+  if (in_array('data-start-cue', $attributes_enabled)) {
+    $form['attributes']['data-start-cue'] = [
+      '#type' => 'textfield',
+      '#title' => t('Video start cue time (optional)'),
+      '#weight' => 3,
+      '#placeholder' => '0',
+      '#description' => t('Provide a start time in seconds'),
+      '#default_value' => $entity_element['data-start-cue'] ?? '',
+    ];
+  }
+
+  if (in_array('data-aspect-ratio', $attributes_enabled)) {
+    $form['attributes']['data-aspect-ratio'] = [
+      '#type' => 'radios',
+      '#title' => t('Aspect ratio'),
+      '#weight' => 2,
       '#options' => [
         '16/9' => t('16x9'),
         '4/3' => t('4x3'),
         '1/1' => t('1x1'),
         '9/16' => t('9x16'),
       ],
-      '#step' => '1',
-      '#default_value' => $default_aspect_ratio,
-      '#parents' => ['attributes', 'data-aspect-ratio'],
-      // Make radio buttons inline
+      '#default_value' => $entity_element['data-aspect-ratio'] ?? '16/9',
       '#attributes' => ['class' => ['container-inline']],
     ];
   }
 
-  // if this is within the embed dialog
-  if (array_key_exists('data-embed-button', $form['attributes'])) {
-    $entity = $form_state->get('entity');
-    // if media type is translatable, add translate link
-    if ($entity->isTranslatable()) {
-      $entity_translations = $entity->getTranslationLanguages(FALSE);
-      $entity_translation_names = array_map(fn($lang) => $lang->getName(), $entity_translations);
-      $user_can_translate = \Drupal::currentUser()->hasPermission('translate editable entities');
-      $form['attributes']['data-translate-media'] = [
-        '#type' => 'item',
-        '#title' => t('Translate this media item'),
-        '#weight' => 0,
-        '#markup' => $user_can_translate
-          ? '<a target="_blank" href="/media/' . $entity->id(). '/translations">Translate</a>'
-          : 'You do not have the translator role.',
-        '#description' => (count($entity_translations) > 0
-          ? 'Already translated in: ' .  join(', ', $entity_translation_names)
-          : 'This media currently has no translations.'),
-      ];
-    }
-
-    // if document, add alt link text
-    $embed_type = $form['attributes']['data-embed-button']['#value'];
-    if (isset($embed_type) && $embed_type == "document_browser") {
-      $entity_element = $form_state->get('entity_element');
-      if ($entity_element !== null) {
-        $form['attributes']['data-alt-link-text'] = [
-          '#type' => 'textfield',
-          '#title' => t('Link text'),
-          '#description' => t('Provide an alternative link text to the document.  Leave blank to use the document\'s display name.'),
-          '#default_value' => $entity_element['data-alt-link-text'] ?? '',
-        ];
-      }
-    }
+  if (in_array('data-alt-link-text', $attributes_enabled)) {
+    $form['attributes']['data-alt-link-text'] = [
+      '#type' => 'textfield',
+      '#title' => t('Link text'),
+      '#weight' => 1,
+      '#description' => t('Provide an alternative link text for the document.  Leave blank to use the document\'s display name.'),
+      '#default_value' => $entity_element['data-alt-link-text'] ?? '',
+    ];
   }
 
+  // if entity type is translatable, add translation info
+  if ($entity->isTranslatable()) {
+    $entity_translations = $entity->getTranslationLanguages(FALSE);
+    $entity_translation_names = array_map(fn($lang) => $lang->getName(), $entity_translations);
+    $user_can_translate = \Drupal::currentUser()->hasPermission('translate editable entities');
+    $form['attributes']['data-translate-media'] = [
+      '#type' => 'item',
+      '#title' => t('Translate this media item'),
+      '#weight' => 0,
+      '#markup' => $user_can_translate
+        ? '<a target="_blank" href="/media/' . $entity->id(). '/translations">Translate</a>'
+        : 'You do not have the translator role.',
+      '#description' => (count($entity_translations) > 0
+        ? 'Already translated in: ' .  join(', ', $entity_translation_names)
+        : 'This media currently has no translations.'),
+    ];
+  }
+
+  $form['#submit'][] = 'portland_media_embed_helper_entity_embed_dialog_submit';
   $form['#after_build'][] = 'portland_media_embed_helper_after_build';
+}
+
+/**
+ * Adds responsive-right alignment if document "embedded with thumbnail" view mode is selected
+ */
+function portland_media_embed_helper_entity_embed_dialog_submit(array &$form, FormStateInterface $form_state) {
+  $entity = $form_state->get('entity');
+  if ($entity->bundle() === 'document') {
+    if ($form_state->getValue(['attributes', 'data-entity-embed-display']) === 'view_mode:media.embedded_with_thumbnail') {
+      $form_state->setValue(['attributes', 'data-align'], 'responsive-right');
+    } else {
+      $form_state->unsetValue(['attributes', 'data-align']);
+    }
+  }
 }
 
 function portland_media_embed_helper_after_build($form, &$form_state) {

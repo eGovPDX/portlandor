@@ -21,9 +21,6 @@ description: ''
 categories:
   - Report
 elements: |-
-  markup_public_records_disclosure:
-    '#type': webform_markup
-    '#markup': '<p><strong>Public Records Disclosure Clause:</strong> The information you are providing on this form is available to the public through a public records request. Please do not include confidential or sensitive information.</p>'
   container_demographics:
     '#type': container
     report_race_ethnicity:
@@ -49,28 +46,6 @@ elements: |-
       '#type': checkbox
       '#title': 'I prefer not to answer'
       '#admin_title': 'Race and Ethnicity - Prefer not to disclose'
-    report_gender:
-      '#type': webform_computed_twig
-      '#title': Gender
-      '#display_on': none
-      '#template': '{{ data.report_gender_prefer_not_disclose ? "I prefer not to disclose" : data.report_gender_value|join(";") }}'
-      '#whitespace': trim
-    report_gender_value:
-      '#type': webform_checkboxes_other
-      '#title': 'How do you identify your gender? Please select ALL that apply.'
-      '#description_display': before
-      '#options': gender
-      '#other__option_label': 'I prefer to describe my gender'
-      '#other__placeholder': 'Please describe'
-      '#states':
-        disabled:
-          ':input[name="report_gender_prefer_not_disclose"]':
-            checked: true
-      '#admin_title': 'Gender - Value'
-    report_gender_prefer_not_disclose:
-      '#type': checkbox
-      '#title': 'I prefer not to answer'
-      '#admin_title': 'Gender - Prefer not to disclose'
     report_annual_household_income:
       '#type': webform_computed_twig
       '#title': 'Annual Household Income'
@@ -89,7 +64,7 @@ elements: |-
       '#admin_title': 'Annual Household Income - Value'
     report_annual_household_income_prefer_not_disclose:
       '#type': checkbox
-      '#title': 'Don''t know / I prefer not to answer'
+      '#title': "Don't know / I prefer not to answer"
       '#admin_title': 'Annual Household Income - Prefer not to disclose'
     report_household_size:
       '#type': webform_computed_twig
@@ -121,15 +96,15 @@ elements: |-
       '#whitespace': trim
     report_age_value:
       '#type': number
-      '#title': 'Year of birth:'
+      '#title': 'What is your current age, in years?'
       '#description_display': before
       '#states':
         disabled:
           ':input[name="report_age_prefer_not_disclose"]':
             checked: true
       '#admin_title': 'Age - Value'
-      '#min': 1900
-      '#max': 9999
+      '#min': 0
+      '#max': 200
       '#step': 1
     report_age_prefer_not_disclose:
       '#type': checkbox
@@ -139,22 +114,47 @@ elements: |-
       '#type': webform_computed_twig
       '#title': Languages
       '#display_on': none
-      '#template': '{{ data.report_languages_prefer_not_disclose ? "I prefer not to disclose" : data.report_languages_value }}'
+      '#template': '{{ data.report_languages_prefer_not_disclose ? "I prefer not to disclose" : data.report_languages_value|join(";") }}'
       '#whitespace': trim
     report_languages_value:
-      '#type': textfield
-      '#title': 'Language(s) spoken or signed at home:'
+      '#type': webform_checkboxes_other
+      '#title': 'What language(s) do you speak or sign at home?'
       '#description_display': before
+      '#options': languages
+      '#options_none_text': ''
+      '#other__option_label': 'Not listed above, please describe'
+      '#other__placeholder': 'Please describe'
       '#states':
         disabled:
           ':input[name="report_languages_prefer_not_disclose"]':
             checked: true
       '#admin_title': 'Languages - Value'
-      '#size': 15
     report_languages_prefer_not_disclose:
       '#type': checkbox
       '#title': 'I prefer not to answer'
       '#admin_title': 'Languages - Prefer not to disclose'
+    report_gender:
+      '#type': webform_computed_twig
+      '#title': Gender
+      '#display_on': none
+      '#template': '{{ data.report_gender_prefer_not_disclose ? "I prefer not to disclose" : data.report_gender_value|join(";") }}'
+      '#whitespace': trim
+    report_gender_value:
+      '#type': radios
+      '#title': 'Do you identify as a member of the LGBTQ2SIA+ community?'
+      '#description_display': before
+      '#options': yes_no
+      '#other__option_label': ''
+      '#other__placeholder': ''
+      '#states':
+        disabled:
+          ':input[name="report_gender_prefer_not_disclose"]':
+            checked: true
+      '#admin_title': 'Gender - Value'
+    report_gender_prefer_not_disclose:
+      '#type': checkbox
+      '#title': 'I prefer not to answer'
+      '#admin_title': 'Gender - Prefer not to disclose'
     report_disabilities:
       '#type': webform_computed_twig
       '#title': Disabilities
@@ -165,7 +165,7 @@ elements: |-
       '#type': radios
       '#title': 'Do you identify with having or living with a disability? Please select one.'
       '#description_display': before
-      '#options': disabilities
+      '#options': yes_no
       '#states':
         disabled:
           ':input[name="report_disabilities_prefer_not_disclose"]':
@@ -205,36 +205,6 @@ elements: |-
         visible:
           ':input[name="report_disabilities_value"]':
             value: 'Yes'
-    report_tribal_affiliation:
-      '#type': webform_computed_twig
-      '#title': 'Tribal Affiliation'
-      '#display_on': none
-      '#template': '{{ data.report_tribal_affiliation_prefer_not_disclose ? "I prefer not to disclose" : data.report_tribal_affiliation_value ~ (data.report_tribal_affiliation_details ? ";" ~ data.report_tribal_affiliation_details : "") }}'
-      '#whitespace': trim
-    report_tribal_affiliation_value:
-      '#type': radios
-      '#title': 'Are you an enrolled member, and/or a descendant, of a Federal or State recognized American Indian Tribe or Alaskan Native Village/Corporation? Mark and describe all that apply.'
-      '#description_display': before
-      '#options': tribal_affiliation
-      '#states':
-        disabled:
-          ':input[name="report_tribal_affiliation_prefer_not_disclose"]':
-            checked: true
-      '#admin_title': 'Tribal Affiliation - Value'
-    report_tribal_affiliation_prefer_not_disclose:
-      '#type': checkbox
-      '#title': 'I prefer not to answer'
-      '#admin_title': 'Tribal Affiliation - Prefer not to disclose'
-    report_tribal_affiliation_details:
-      '#type': textfield
-      '#title': 'Tribal Affiliation(s):'
-      '#states':
-        visible:
-          ':input[name="report_tribal_affiliation_value"]':
-            value:
-              pattern: 'Enrolled Member|Descendant'
-          ':input[name="report_tribal_affiliation_prefer_not_disclose"]':
-            unchecked: true
     report_zip_code:
       '#type': webform_computed_twig
       '#title': 'ZIP code'
@@ -243,7 +213,7 @@ elements: |-
       '#whitespace': trim
     report_zip_code_value:
       '#type': textfield
-      '#title': 'What is the zip code of your primary residence?'
+      '#title': 'What is the zip code where you live?'
       '#description_display': before
       '#size': 10
       '#input_mask': '99999'
@@ -256,45 +226,23 @@ elements: |-
       '#type': checkbox
       '#title': 'I prefer not to answer'
       '#admin_title': 'ZIP code - Prefer not to disclose'
-    report_suggestions:
-      '#type': textarea
-      '#title': '(Optional) How could we improve the [webform_submission:values:report_form_title] form you completed?'
-      '#description': 'Your comments are appreciated, but as this is an anonymous survey we will not be able to respond. If you had any issues filling out the form, <a href="/311/contact-311">please contact 311.</a>'
-      '#description_display': after
-      '#admin_title': 'Form suggestions'
-  container_bds:
-    '#type': container
-    '#states':
-      visible:
-        ':input[name="purpose"]':
-          value: bds
-    report_bds_project_type:
-      '#type': radios
-      '#title': 'What is the type of project you are applying for?'
-      '#options':
-        Residential: Residential
-        Commercial: Commercial
-    report_bds_project_relation:
-      '#type': webform_radios_other
-      '#title': 'What is your relation to the project?'
-      '#options':
-        'I am the business/property owner': 'I am the business/property owner'
-        'I am a renter/leaser': 'I am a renter/leaser'
-      '#other__option_label': Other
-      '#other__placeholder': 'Please describe'
-  report_form_title:
-    '#type': hidden
-    '#title': 'Form Title'
-    '#default_value': ' '
-    '#prepopulate': true
+  report_suggestions:
+    '#type': textarea
+    '#title': '(Optional) How could we improve the [webform_submission:values:report_form_title] form you completed earlier?'
+    '#description': 'Your comments are appreciated, but as this is an anonymous survey we will not be able to respond. If you had any issues filling out the form, <a href="/311/contact-311">please contact 311.</a>'
+    '#description_display': after
+    '#admin_title': 'Form suggestions'
   report_form_id:
     '#type': hidden
     '#title': 'Form ID'
     '#prepopulate': true
-  purpose:
-    '#type': hidden
-    '#title': Purpose
-    '#prepopulate': true
+  report_form_title:
+    '#type': webform_computed_twig
+    '#title': 'Form Title'
+    '#display_on': none
+    '#mode': text
+    '#template': "{{ data.report_form_id ? drupal_config('webform.webform.' ~ data.report_form_id, 'title') : '' }} "
+    '#whitespace': trim
 css: ''
 javascript: ''
 settings:
@@ -491,20 +439,23 @@ handlers:
       sheet_id: '5651392804218756'
       column_mappings:
         5906210767562628: __submission_id
+        3668701731573636: ''
         857686929631108: report_form_id
         839661186770820: report_race_ethnicity
-        5343260814141316: report_gender
-        6441191047384964: ''
+        5343260814141316: ''
+        6441191047384964: report_gender
         3091461000456068: report_annual_household_income
         2954311722395524: report_household_size
-        7457911349766020: report_age
-        4189391233699716: ''
+        7457911349766020: ''
+        4189391233699716: report_age
         1828411815552900: report_disabilities
         6978614094784388: report_zip_code
         7014782091612036: report_disability_details
         4159241006829444: report_languages
-        3875800948363140: report_tribal_affiliation
+        3875800948363140: ''
         1349114560571268: report_suggestions
+        8172301358944132: ''
+        853951964467076: ''
         8482598244640644: ''
       multiple_rows_enable: null
       multiple_rows_field: ''
