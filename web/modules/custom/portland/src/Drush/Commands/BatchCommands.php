@@ -18,6 +18,10 @@ use Drupal\media\Entity\Media;
 use Drupal\file\Entity\File;
 use Drupal\group\Entity\GroupInterface;
 use Drupal\taxonomy\Entity\Term;
+use Drupal\redirect\Entity\Redirect;
+use \Drupal\Core\Url;
+
+use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
 
 /**
  * Custom drush command file.
@@ -382,6 +386,12 @@ final class BatchCommands extends DrushCommands
     $group_name = $group->label();
     $group_type_name = $group->bundle();
 
+    // Get all redirects to the original group
+    $redirect_repo = \Drupal::service("redirect.repository");
+    $redirects = $redirect_repo->findByDestinationUri([
+      "entity:group/{$group->id()}"
+    ]);
+
     // Copy field values into the new group
     /** @var GroupInterface $group_to_create */
     $group_to_create = \Drupal::entityTypeManager()->getStorage('group')->create(['type' => 'base_group']);
@@ -414,6 +424,15 @@ final class BatchCommands extends DrushCommands
     $group_to_create->save(); // Must save the new group in order to get the ID
     $new_group_id = $group_to_create->id();
     echo "Created $group_type_name: $group_name (original ID: $orig_group_id, new ID: $new_group_id)" . PHP_EOL;
+
+    // Update all redirects to the original group
+    $new_group_url = new Url('entity.group.canonical', ['group' => $new_group_id]);
+    $new_group_url_string = $new_group_url->toString();
+    foreach($redirects as $redirect) {
+      // $redirect->setRedirect("entity:group/$new_group_id"); // "entity:group/5"
+      $redirect->setRedirect("/group/$new_group_id"); // "/group/5"
+      $redirect->save();
+    }
 
     // TODO: Copy revisions?
 
