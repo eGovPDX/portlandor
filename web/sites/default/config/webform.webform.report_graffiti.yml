@@ -18,7 +18,6 @@ third_party_settings:
       location_private_owner: location_private_owner
       report_tenant: report_tenant
       report_authorized_to_maintain: report_authorized_to_maintain
-      report_graffiti_on_sign: report_graffiti_on_sign
 weight: 0
 open: null
 close: null
@@ -481,6 +480,81 @@ elements: |-
       {{ webform_token('[site:url]', webform_submission, [], options) }}form/report-graffiti-waiver?original_submission_key={{ uuid }}&property_address={{ address }}&property_type={{ data.report_private_property_type }}&contact_name={{ data.contact_name }}&contact_email={{ data.contact_email }}&report_ticket_id=
     '#store': true
     '#ajax': true
+  container_hidden_elements:
+    '#type': container
+    '#states':
+      visible:
+        ':input[name="resolution"]':
+          checked: true
+    resolution:
+      '#type': radios
+      '#title': 'Issue Resolution'
+      '#prepopulate': true
+      '#options':
+        graffiti_removed: 'Graffiti has been removed'
+        graffiti_not_found: 'Graffiti was not found at the reported location'
+        graffiti_deferred: 'Graffiti will be removed later'
+        graffiti_other: 'Something else'
+      '#other__option_label': ''
+      '#other__placeholder': ''
+    resolution_other:
+      '#type': textfield
+      '#title': 'Resolution - other'
+      '#title_display': invisible
+      '#placeholder': 'Please describe...'
+    report_repeat_offender:
+      '#type': radios
+      '#title': 'Have you seen this graffiti or tag before? Is it from a repeat offender?'
+      '#prepopulate': true
+      '#options': yes_no
+      '#options_display': side_by_side
+    resolution_ssl:
+      '#type': radios
+      '#title': 'PBOT Signs and Streetlights (SSL) asset'
+      '#prepopulate': true
+      '#options': yes_no
+      '#options_display': side_by_side
+    report_resolution_other_value:
+      '#type': webform_computed_twig
+      '#title': 'Report Resolution Other Value'
+      '#display_on': none
+      '#template': '{% if data.resolution_other %} -- {{ data.resolution_other }}{% endif %}'
+      '#ajax': true
+    resolution_notes:
+      '#type': textarea
+      '#title': 'Abatement Notes'
+      '#prepopulate': true
+    resolution_square_footage:
+      '#type': number
+      '#title': 'Square footage of abatement'
+      '#description': 'Whole numbers only'
+    resolution_photos:
+      '#type': webform_image_file
+      '#title': 'Abatement Photos'
+      '#multiple': 16
+      '#file_preview': name
+      '#file_extensions': 'gif jpg png svg jpeg'
+      '#file_name': 'report_[webform_submission:sid]_resolved'
+      '#sanitize': true
+      '#max_resolution': 1280x1280
+      '#attachment_image_style': webform_report_uploaded_image
+    resolution_contractor:
+      '#type': webform_select_other
+      '#title': 'Graffiti Contractor'
+      '#prepopulate': true
+      '#options':
+        graffiti_removal_services_grs: 'Graffiti Removal Services (GRS)'
+        portland_graffiti_removal_pgr: 'Portland Graffiti Removal (PGR)'
+        metal_acoustic_commercial_kraft_mack: 'Metal Acoustic Commercial Kraft (MACK)'
+        rnac: RNAC
+        onight: ONIGHT
+        metro: Metro
+      '#default_value': graffiti_removal_services_grs
+    request_description:
+      '#type': hidden
+    computed_confirmation_message:
+      '#type': hidden
+      '#title': 'Computed confirmation message'
 css: '.form-item-agreement-confirm label.option { font-weight: bold; }'
 javascript: ''
 settings:
@@ -706,7 +780,7 @@ handlers:
       assignee_id: ''
       type: incident
       collaborators: ''
-      custom_fields: "6353388345367: 'report_graffiti'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n1500013095781: '[webform_submission:uuid]'\r\n6355783758871: '[webform_submission:values:resolution_url]'\r\n6379451469847: ['[webform_submission:values:waiver_url]', 'waiver_url']\r\n9205221816983: ['[webform_submission:values:report_location:location_type:raw]', 'report_location:location_type']\r\n10333166173079: ['[webform_submission:values:report_above_ground_level]', 'report_above_ground_level']\r\n10333167883159: ['[webform_submission:values:report_graffiti_on_mural]', 'report_graffiti_on_mural']\r\n6586776052759: ['[webform_submission:values:report_hate_speech_or_gang]', 'report_hate_speech_or_gang']"
+      custom_fields: "6353388345367: 'report_graffiti'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n1500013095781: '[webform_submission:uuid]'\r\n6355783758871: '[webform_submission:values:resolution_url]'\r\n6379451469847: ['[webform_submission:values:waiver_url]', 'waiver_url']\r\n9205221816983: ['[webform_submission:values:report_location:location_type:raw]', 'report_location:location_type']\r\n10333166173079: ['[webform_submission:values:report_above_ground_level]', 'report_above_ground_level']\r\n10333167883159: ['[webform_submission:values:report_graffiti_on_mural]', 'report_graffiti_on_mural']\r\n6586776052759: ['[webform_submission:values:report_hate_speech_or_gang]', 'report_hate_speech_or_gang']\r\n10148668334871: ['[webform_submission:values:report_graffiti_on_sign]', 'report_graffiti_on_sign']"
       ticket_id_field: report_ticket_id
       ticket_form_id: '6499767163543'
       recipient: ''
@@ -766,7 +840,7 @@ handlers:
       assignee_id: ''
       type: incident
       collaborators: ''
-      custom_fields: "6353388345367: 'report_graffiti'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n1500013095781: '[webform_submission:uuid]'\r\n6355783758871: '[webform_submission:values:resolution_url]'\r\n6379451469847: ['[webform_submission:values:waiver_url]', 'waiver_url']\r\n9205221816983: ['[webform_submission:values:report_location:location_type:raw]', 'report_location:location_type']\r\n10333166173079: ['[webform_submission:values:report_above_ground_level]', 'report_above_ground_level']\r\n10333167883159: ['[webform_submission:values:report_graffiti_on_mural]', 'report_graffiti_on_mural']\r\n6586776052759: ['[webform_submission:values:report_hate_speech_or_gang]', 'report_hate_speech_or_gang']"
+      custom_fields: "6353388345367: 'report_graffiti'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n1500013095781: '[webform_submission:uuid]'\r\n6355783758871: '[webform_submission:values:resolution_url]'\r\n6379451469847: ['[webform_submission:values:waiver_url]', 'waiver_url']\r\n9205221816983: ['[webform_submission:values:report_location:location_type:raw]', 'report_location:location_type']\r\n10333166173079: ['[webform_submission:values:report_above_ground_level]', 'report_above_ground_level']\r\n10333167883159: ['[webform_submission:values:report_graffiti_on_mural]', 'report_graffiti_on_mural']\r\n6586776052759: ['[webform_submission:values:report_hate_speech_or_gang]', 'report_hate_speech_or_gang']\r\n10148668334871: ['[webform_submission:values:report_graffiti_on_sign]', 'report_graffiti_on_sign']"
       ticket_id_field: report_ticket_id
       ticket_form_id: '6499767163543'
       recipient: ''
