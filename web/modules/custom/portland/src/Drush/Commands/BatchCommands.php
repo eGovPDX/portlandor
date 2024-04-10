@@ -429,7 +429,11 @@ final class BatchCommands extends DrushCommands
     $new_group_url = new Url('entity.group.canonical', ['group' => $new_group_id]);
     $new_group_url_string = $new_group_url->toString();
     foreach($redirects as $redirect) {
-      // $redirect->setRedirect("entity:group/$new_group_id"); // "entity:group/5"
+      // setRedirect will fail when source and target are the same. 
+      // Must fix manually for groups: 144,419,212,140,485,179,180,12,31
+      if($redirect->getSourceUrl() == "/{$group_to_create->field_group_path->value}") {
+        continue;
+      }
       $redirect->setRedirect("/group/$new_group_id"); // "/group/5"
       $redirect->save();
     }
