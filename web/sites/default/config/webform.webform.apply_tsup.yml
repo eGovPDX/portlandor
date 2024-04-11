@@ -98,6 +98,9 @@ elements: |-
         '#multiple__sorting': false
         '#multiple__add_more_input': false
         '#multiple__add_more_button_label': 'Add another permit'
+      change_request_location:
+        '#type': textfield
+        '#title': 'What is the location of your permit(s)?'
       change_request_change_type:
         '#type': webform_select_other
         '#title': 'What kind of change are you requesting?'
@@ -151,6 +154,9 @@ elements: |-
         '#multiple__sorting': false
         '#multiple__add_more_input': false
         '#multiple__add_more_button_label': 'Add another permit'
+      renewal_request_location:
+        '#type': textfield
+        '#title': 'What is the location of your permit(s)?'
       renewal_request_permit_date_days_of_week:
         '#type': checkboxes
         '#title': 'New Permit Days of Week'
@@ -944,21 +950,21 @@ elements: |-
       '#required': true
       '#pattern': '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
       '#pattern_error': 'Please enter a correctly formatted email address, such as myname@example.com.'
-  support_agent_use_only:
-    '#type': portland_support_agent_widget
-    '#title': 'Support Agent Use Only'
-    '#states':
-      visible:
-        - ':input[name="wizard_permit_need"]':
-            value: general
-        - or
-        - ':input[name="permit_type"]':
-            '!value': unknown
-    '#wrapper_attributes':
-      style: 'background-color: #ccc; padding: 15px;'
-    '#access_create_roles':
-      - support_agent
-      - administrator
+    support_agent_use_only:
+      '#type': portland_support_agent_widget
+      '#title': 'Support Agent Use Only'
+      '#states':
+        visible:
+          - ':input[name="wizard_permit_need"]':
+              value: general
+          - or
+          - ':input[name="permit_type"]':
+              '!value': unknown
+      '#wrapper_attributes':
+        style: 'background-color: #ccc; padding: 15px;'
+      '#access_create_roles':
+        - support_agent
+        - administrator
   permit_type:
     '#type': webform_computed_twig
     '#title': 'Computed permit type'
@@ -1028,7 +1034,7 @@ elements: |-
     '#template': |-
       {{ webform_token('[webform_submission:values:simple_permit_reason:clear]', webform_submission)
         |default(webform_token('[webform_submission:values:7day_permit_reason:clear]', webform_submission))
-        |default(webform_token('[webform_submission:values:complex_permit_work_type:clear]', webform_submission)) }}
+        |default(data.complex_permit_work_type is iterable ? '' : webform_token('[webform_submission:values:complex_permit_work_type:clear]', webform_submission)) }}
     '#whitespace': trim
     '#store': true
   computed_permit_street_name:
@@ -1123,7 +1129,7 @@ elements: |-
           <li>Company Name: <strong>{{ webform_token('[webform_submission:values:contact_company]', webform_submission) }}</strong></li>
           {% endif %}
           <li>Phone Number: <strong>{{ webform_token('[webform_submission:values:contact_phone]', webform_submission) }}</strong></li>
-          <li>Email Address: <strong>{{ webform_token('[webform_submission:values:contact_email]', webform_submission) }}</strong></li>
+          <li>Email Address: <strong>{{ data.contact_email is iterable ? '' : webform_token('[webform_submission:values:contact_email]', webform_submission) }}</strong></li>
         </ul>
         <h3>Acknowledgements</h3>
         <p>As part of submitting this application, you agreed with the conditions of this permit:</p>
@@ -1158,7 +1164,7 @@ elements: |-
           <li>Company Name: <strong>{{ webform_token('[webform_submission:values:contact_company]', webform_submission) }}</strong></li>
           {% endif %}
           <li>Phone Number: <strong>{{ webform_token('[webform_submission:values:contact_phone]', webform_submission) }}</strong></li>
-          <li>Email Address: <strong>{{ webform_token('[webform_submission:values:contact_email]', webform_submission) }}</strong></li>
+          <li>Email Address: <strong>{{ data.contact_email is iterable ? '' : webform_token('[webform_submission:values:contact_email]', webform_submission) }}</strong></li>
         </ul>
         <h3>Acknowledgements</h3>
         <p>As part of submitting this application, you agreed with the conditions of this permit:</p>
@@ -1206,7 +1212,7 @@ elements: |-
           <li>Company Name: <strong>{{ webform_token('[webform_submission:values:contact_company]', webform_submission) }}</strong></li>
           {% endif %}
           <li>Phone Number: <strong>{{ webform_token('[webform_submission:values:contact_phone]', webform_submission) }}</strong></li>
-          <li>Email Address: <strong>{{ webform_token('[webform_submission:values:contact_email]', webform_submission) }}</strong></li>
+          <li>Email Address: <strong>{{ data.contact_email is iterable ? '' : webform_token('[webform_submission:values:contact_email]', webform_submission) }}</strong></li>
         </ul>
         <h3>Acknowledgements</h3>
         <p>As part of submitting this application, you agreed with the conditions of this permit:</p>
@@ -1225,6 +1231,7 @@ elements: |-
         <ul>
           <li>Amount of items to change: <strong>{{ webform_token('[webform_submission:values:change_request_items_to_change]', webform_submission) }}</strong></li>
           <li>Identifying Number: <strong>{{ webform_token('[webform_submission:values:change_request_id]', webform_submission) }}</strong></li>
+          <li>Location of permit(s): <strong>{{ webform_token('[webform_submission:values:change_request_location]', webform_submission) }}</strong></li>
           <li>Type of change requested: <strong>{{ data.change_request_change_type is iterable ? '' : webform_token('[webform_submission:values:change_request_change_type]', webform_submission) }}</strong></li>
         </ul>
         {% if data.change_request_additional_info %}
@@ -1238,7 +1245,7 @@ elements: |-
           <li>Company Name: <strong>{{ webform_token('[webform_submission:values:contact_company]', webform_submission) }}</strong></li>
           {% endif %}
           <li>Phone Number: <strong>{{ webform_token('[webform_submission:values:contact_phone]', webform_submission) }}</strong></li>
-          <li>Email Address: <strong>{{ webform_token('[webform_submission:values:contact_email]', webform_submission) }}</strong></li>
+          <li>Email Address: <strong>{{ data.contact_email is iterable ? '' : webform_token('[webform_submission:values:contact_email]', webform_submission) }}</strong></li>
         </ul>
         <h3>Acknowledgements</h3>
         <p>As part of submitting this request, you agreed with the following conditions:</p>
@@ -1252,6 +1259,7 @@ elements: |-
         <ul>
           <li>Amount of permits to renew: <strong>{{ webform_token('[webform_submission:values:renewal_request_items_to_change]', webform_submission) }}</strong></li>
           <li>Identifying Number: <strong>{{ webform_token('[webform_submission:values:renewal_request_id]', webform_submission) }}</strong></li>
+          <li>Location of permit(s): <strong>{{ webform_token('[webform_submission:values:renewal_request_location]', webform_submission) }}</strong></li>
         </ul>
         {% if data.renewal_request_additional_info %}
         <p><strong>Additional Info:</strong></p>
@@ -1270,7 +1278,7 @@ elements: |-
           <li>Company Name: <strong>{{ webform_token('[webform_submission:values:contact_company]', webform_submission) }}</strong></li>
           {% endif %}
           <li>Phone Number: <strong>{{ webform_token('[webform_submission:values:contact_phone]', webform_submission) }}</strong></li>
-          <li>Email Address: <strong>{{ webform_token('[webform_submission:values:contact_email]', webform_submission) }}</strong></li>
+          <li>Email Address: <strong>{{ data.contact_email is iterable ? '' : webform_token('[webform_submission:values:contact_email]', webform_submission) }}</strong></li>
         </ul>
         <h3>Acknowledgements</h3>
         <p>As part of submitting this request, you agreed with the following conditions:</p>
@@ -1401,7 +1409,7 @@ settings:
   wizard_start_label: Assessment
   wizard_preview_link: false
   wizard_confirmation: true
-  wizard_confirmation_label: Confirmation
+  wizard_confirmation_label: Done
   wizard_auto_forward: true
   wizard_auto_forward_hide_next_button: false
   wizard_keyboard: true
