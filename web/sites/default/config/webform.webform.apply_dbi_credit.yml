@@ -103,19 +103,17 @@ elements: |-
   page_eligiblity_questions:
     '#type': webform_wizard_page
     '#title': 'Eligibility Questions'
-    apply_business_minimum_employees:
-      '#type': radios
-      '#title': 'Do you or will you maintain 15 employees or more working at least half their time at the eligible building space?'
-      '#options':
-        'Yes': 'Yes'
-        'No': 'No'
+    apply_number_employees:
+      '#type': number
+      '#title': 'What is the total number of full-time employees that will be working at least half of their time in the eligible building space?'
       '#required': true
     container_eligible:
       '#type': container
       '#states':
-        invisible:
-          ':input[name="apply_business_minimum_employees"]':
-            value: 'No'
+        visible:
+          ':input[name="apply_number_employees"]':
+            value:
+              greater_equal: '15'
       apply_business_sub_district:
         '#type': radios
         '#title': "In which sub-district is your business' leased or owned building space? "
@@ -133,7 +131,7 @@ elements: |-
         '#required': true
       apply_business_duration_in_district:
         '#type': radios
-        '#title': 'In 2023, how did your business obtain a building space in the eligible sub-district?'
+        '#title': 'In 2024, how did your business obtain a building space in the eligible sub-district?'
         '#options':
           'Entered into a new lease for four years or more': 'Entered into a new lease for four years or more'
           'Renewed a lease for four years or more': 'Renewed a lease for four years or more'
@@ -188,8 +186,9 @@ elements: |-
       '#type': webform_markup
       '#states':
         visible:
-          ':input[name="apply_business_minimum_employees"]':
-            value: 'No'
+          ':input[name="apply_number_employees"]':
+            value:
+              less: '15'
       '#markup': |-
         <div class="alert alert--info next-steps">
         <h2>Ineligibility Notice</h2>
@@ -201,8 +200,9 @@ elements: |-
       '#title': 'Submit button(s)'
       '#states':
         invisible:
-          ':input[name="apply_business_minimum_employees"]':
-            value: 'No'
+          ':input[name="apply_number_employees"]':
+            value:
+              less_equal: '15'
   page_business_demographics:
     '#type': webform_wizard_page
     '#title': 'Required Information'
@@ -277,7 +277,7 @@ elements: |-
       markup_documentation:
         '#type': webform_markup
         '#markup': |-
-          <p>Attach a copy of the lease that demonstrates your business has entered into a new lease or renewed a current lease for a period of four years or more in 2023.</p>
+          <p>Attach a copy of the lease that demonstrates your business has entered into a new lease or renewed a current lease for a period of four years or more in 2024.</p>
 
           <p>If your business owns and occupies the building space, attach documentation to support your claim of eligibility.</p>
       apply_documentation:
@@ -326,6 +326,16 @@ elements: |-
       [webform_submission:values:mailing_street_address]
       [webform_submission:values:mailing_unit_type:clear] [webform_submission:values:mailing_unit_number]
       [webform_submission:values:mailing_city], [webform_submission:values:mailing_state] [webform_submission:values:mailing_zip_code]
+  support_agent_use_only:
+    '#type': portland_support_agent_widget
+    '#title': 'Support Agent Use Only'
+    '#access_create_roles':
+      - administrator
+    '#support_agent_widget_title__access': false
+    '#employee_email__access': false
+    '#zendesk_request_number__access': false
+    '#employee_notes_panel__access': false
+    '#escalate_issue__access': false
 css: ''
 javascript: ''
 settings:
@@ -433,7 +443,7 @@ settings:
   confirmation_type: page
   confirmation_url: ''
   confirmation_title: 'Apply for the Downtown Business Incentive (DBI) Credit'
-  confirmation_message: "<p>Thank you for submitting your application for the Downtown Business Incentive Credit.</p>\r\n\r\n<p>We will notify you of our determination within 60 days or by 5/31/2024.</p>\r\n\r\n<p><a href=\"/revenue/dbi\">Return to the DBI credit program web page.</a></p>"
+  confirmation_message: "<p>Thank you for submitting your application for the Downtown Business Incentive Credit.</p>\r\n\r\n<p>We will notify you of our determination within 45 days or by 3/15/2025.</p>\r\n\r\n<p><a href=\"/revenue/dbi\">Return to the DBI credit program web page.</a></p>"
   confirmation_attributes: {  }
   confirmation_back: false
   confirmation_back_label: ''
@@ -514,9 +524,12 @@ handlers:
     id: smartsheet_add_row
     handler_id: smartsheet_add_row_to_existing_sheet
     label: 'Smartsheet: add row to existing sheet'
-    notes: ''
+    notes: 'Adds a row with webform submission data to an existing Smartsheet. Disabled if the Test Submission box is checked.'
     status: true
-    conditions: {  }
+    conditions:
+      disabled:
+        ':input[name="support_agent_use_only[test_submission]"]':
+          checked: true
     weight: -50
     settings:
       column_mappings:
@@ -536,7 +549,7 @@ handlers:
         5617218873151364: business_zip_code
         6703703680569220: apply_business_duration_in_district
         4451903866883972: apply_business_sq_footage
-        8955503494254468: apply_business_minimum_employees
+        8955503494254468: ''
       multiple_rows_enable: null
       multiple_rows_field: ''
       multiple_rows_separator: ''
@@ -568,7 +581,7 @@ handlers:
       sender_mail: ''
       sender_name: ''
       subject: 'Downtown Business Incentive Credit: Application Received '
-      body: "<p>Thank you for submitting your application for the Downtown Business Incentive Credit.&nbsp;<br />\r\n<br />\r\nWe will notify you of our determination within 60 days or by 5/31/2024.&nbsp;<br />\r\n<br />\r\nIf you need to contact us, please do not reply to this email. Please contact us at: DBI@portlandoregon.gov or call us at (503) 823-5157.</p>"
+      body: "<p>Thank you for submitting your application for the Downtown Business Incentive Credit.&nbsp;<br />\r\n<br />\r\nWe will notify you of our determination within 45 days or by 3/15/2025.&nbsp;<br />\r\n<br />\r\nIf you need to contact us, please do not reply to this email. Please contact us at: DBI@portlandoregon.gov or call us at (503) 823-5157.</p>"
       excluded_elements: {  }
       ignore_access: false
       exclude_empty: true
