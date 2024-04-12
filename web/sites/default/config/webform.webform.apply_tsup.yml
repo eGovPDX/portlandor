@@ -12,6 +12,7 @@ third_party_settings:
       computed_days_of_week: computed_days_of_week
       computed_permit_reason: computed_permit_reason
       computed_permit_street_name: computed_permit_street_name
+      friendly_permit_type: friendly_permit_type
 weight: 0
 open: null
 close: null
@@ -97,6 +98,9 @@ elements: |-
         '#multiple__sorting': false
         '#multiple__add_more_input': false
         '#multiple__add_more_button_label': 'Add another permit'
+      change_request_location:
+        '#type': textfield
+        '#title': 'What is the location of your permit(s)?'
       change_request_change_type:
         '#type': webform_select_other
         '#title': 'What kind of change are you requesting?'
@@ -150,6 +154,9 @@ elements: |-
         '#multiple__sorting': false
         '#multiple__add_more_input': false
         '#multiple__add_more_button_label': 'Add another permit'
+      renewal_request_location:
+        '#type': textfield
+        '#title': 'What is the location of your permit(s)?'
       renewal_request_permit_date_days_of_week:
         '#type': checkboxes
         '#title': 'New Permit Days of Week'
@@ -884,8 +891,9 @@ elements: |-
       '#title': 'How can we help you?'
       '#required': true
     general_email:
-      '#type': textfield
+      '#type': webform_email_confirm
       '#title': 'Email Address'
+      '#confirm__title': 'Confirm Email Address'
       '#description': 'We will use this to respond to your question.'
       '#description_display': before
       '#required': true
@@ -934,28 +942,29 @@ elements: |-
       '#input_mask': '(999) 999-9999'
       '#required': true
     contact_email:
-      '#type': textfield
+      '#type': webform_email_confirm
       '#title': 'Email Address'
+      '#confirm__title': 'Confirm Email Address'
       '#description': 'Primary communication will be done through email, please check your spam folder.'
       '#description_display': before
       '#required': true
       '#pattern': '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
       '#pattern_error': 'Please enter a correctly formatted email address, such as myname@example.com.'
-  support_agent_use_only:
-    '#type': portland_support_agent_widget
-    '#title': 'Support Agent Use Only'
-    '#states':
-      visible:
-        - ':input[name="wizard_permit_need"]':
-            value: general
-        - or
-        - ':input[name="permit_type"]':
-            '!value': unknown
-    '#wrapper_attributes':
-      style: 'background-color: #ccc; padding: 15px;'
-    '#access_create_roles':
-      - support_agent
-      - administrator
+    support_agent_use_only:
+      '#type': portland_support_agent_widget
+      '#title': 'Support Agent Use Only'
+      '#states':
+        visible:
+          - ':input[name="wizard_permit_need"]':
+              value: general
+          - or
+          - ':input[name="permit_type"]':
+              '!value': unknown
+      '#wrapper_attributes':
+        style: 'background-color: #ccc; padding: 15px;'
+      '#access_create_roles':
+        - support_agent
+        - administrator
   permit_type:
     '#type': webform_computed_twig
     '#title': 'Computed permit type'
@@ -997,10 +1006,10 @@ elements: |-
     '#mode': text
     '#template': |-
       {% set name_map = {
-        'simple': 'Parking Only',
+        'parking_only': 'Parking Only',
         '7day': 'Parking Reservation Permit',
-        'lt_complex': 'Long Term Traffic Control',
-        'complex': 'Traffic Control',
+        'lt_traffic_control': 'Long Term Traffic Control',
+        'traffic_control': 'Traffic Control',
         'change_request': 'Change Request',
         'renewal_request': 'Renewal Request',
       } %}
@@ -1025,7 +1034,7 @@ elements: |-
     '#template': |-
       {{ webform_token('[webform_submission:values:simple_permit_reason:clear]', webform_submission)
         |default(webform_token('[webform_submission:values:7day_permit_reason:clear]', webform_submission))
-        |default(webform_token('[webform_submission:values:complex_permit_work_type:clear]', webform_submission)) }}
+        |default(data.complex_permit_work_type is iterable ? '' : webform_token('[webform_submission:values:complex_permit_work_type:clear]', webform_submission)) }}
     '#whitespace': trim
     '#store': true
   computed_permit_street_name:
@@ -1120,7 +1129,7 @@ elements: |-
           <li>Company Name: <strong>{{ webform_token('[webform_submission:values:contact_company]', webform_submission) }}</strong></li>
           {% endif %}
           <li>Phone Number: <strong>{{ webform_token('[webform_submission:values:contact_phone]', webform_submission) }}</strong></li>
-          <li>Email Address: <strong>{{ webform_token('[webform_submission:values:contact_email]', webform_submission) }}</strong></li>
+          <li>Email Address: <strong>{{ data.contact_email is iterable ? '' : webform_token('[webform_submission:values:contact_email]', webform_submission) }}</strong></li>
         </ul>
         <h3>Acknowledgements</h3>
         <p>As part of submitting this application, you agreed with the conditions of this permit:</p>
@@ -1155,7 +1164,7 @@ elements: |-
           <li>Company Name: <strong>{{ webform_token('[webform_submission:values:contact_company]', webform_submission) }}</strong></li>
           {% endif %}
           <li>Phone Number: <strong>{{ webform_token('[webform_submission:values:contact_phone]', webform_submission) }}</strong></li>
-          <li>Email Address: <strong>{{ webform_token('[webform_submission:values:contact_email]', webform_submission) }}</strong></li>
+          <li>Email Address: <strong>{{ data.contact_email is iterable ? '' : webform_token('[webform_submission:values:contact_email]', webform_submission) }}</strong></li>
         </ul>
         <h3>Acknowledgements</h3>
         <p>As part of submitting this application, you agreed with the conditions of this permit:</p>
@@ -1203,7 +1212,7 @@ elements: |-
           <li>Company Name: <strong>{{ webform_token('[webform_submission:values:contact_company]', webform_submission) }}</strong></li>
           {% endif %}
           <li>Phone Number: <strong>{{ webform_token('[webform_submission:values:contact_phone]', webform_submission) }}</strong></li>
-          <li>Email Address: <strong>{{ webform_token('[webform_submission:values:contact_email]', webform_submission) }}</strong></li>
+          <li>Email Address: <strong>{{ data.contact_email is iterable ? '' : webform_token('[webform_submission:values:contact_email]', webform_submission) }}</strong></li>
         </ul>
         <h3>Acknowledgements</h3>
         <p>As part of submitting this application, you agreed with the conditions of this permit:</p>
@@ -1222,6 +1231,7 @@ elements: |-
         <ul>
           <li>Amount of items to change: <strong>{{ webform_token('[webform_submission:values:change_request_items_to_change]', webform_submission) }}</strong></li>
           <li>Identifying Number: <strong>{{ webform_token('[webform_submission:values:change_request_id]', webform_submission) }}</strong></li>
+          <li>Location of permit(s): <strong>{{ webform_token('[webform_submission:values:change_request_location]', webform_submission) }}</strong></li>
           <li>Type of change requested: <strong>{{ data.change_request_change_type is iterable ? '' : webform_token('[webform_submission:values:change_request_change_type]', webform_submission) }}</strong></li>
         </ul>
         {% if data.change_request_additional_info %}
@@ -1235,7 +1245,7 @@ elements: |-
           <li>Company Name: <strong>{{ webform_token('[webform_submission:values:contact_company]', webform_submission) }}</strong></li>
           {% endif %}
           <li>Phone Number: <strong>{{ webform_token('[webform_submission:values:contact_phone]', webform_submission) }}</strong></li>
-          <li>Email Address: <strong>{{ webform_token('[webform_submission:values:contact_email]', webform_submission) }}</strong></li>
+          <li>Email Address: <strong>{{ data.contact_email is iterable ? '' : webform_token('[webform_submission:values:contact_email]', webform_submission) }}</strong></li>
         </ul>
         <h3>Acknowledgements</h3>
         <p>As part of submitting this request, you agreed with the following conditions:</p>
@@ -1245,10 +1255,11 @@ elements: |-
       {% elseif data.permit_type == "renewal_request" %}
         <h2>Your renewal request</h2>
         <p><strong>You Requested:</strong> {{ webform_token('[webform_submission:values:wizard_existing_permit_situation]', webform_submission) }}</p>
-        <h3>Change details</h3>
+        <h3>Renewal details</h3>
         <ul>
           <li>Amount of permits to renew: <strong>{{ webform_token('[webform_submission:values:renewal_request_items_to_change]', webform_submission) }}</strong></li>
           <li>Identifying Number: <strong>{{ webform_token('[webform_submission:values:renewal_request_id]', webform_submission) }}</strong></li>
+          <li>Location of permit(s): <strong>{{ webform_token('[webform_submission:values:renewal_request_location]', webform_submission) }}</strong></li>
         </ul>
         {% if data.renewal_request_additional_info %}
         <p><strong>Additional Info:</strong></p>
@@ -1267,7 +1278,7 @@ elements: |-
           <li>Company Name: <strong>{{ webform_token('[webform_submission:values:contact_company]', webform_submission) }}</strong></li>
           {% endif %}
           <li>Phone Number: <strong>{{ webform_token('[webform_submission:values:contact_phone]', webform_submission) }}</strong></li>
-          <li>Email Address: <strong>{{ webform_token('[webform_submission:values:contact_email]', webform_submission) }}</strong></li>
+          <li>Email Address: <strong>{{ data.contact_email is iterable ? '' : webform_token('[webform_submission:values:contact_email]', webform_submission) }}</strong></li>
         </ul>
         <h3>Acknowledgements</h3>
         <p>As part of submitting this request, you agreed with the following conditions:</p>
@@ -1291,30 +1302,31 @@ elements: |-
       {% if data.permit_type == "parking_only" %}
         <p><strong>Your Application Number: </strong>{{ data.report_ticket_id }}</p>
         <p>Thank you for submitting a Temporary Street Use Permit application. We will contact you shortly with the price and next steps.</p>
-        <p>If you have not heard back from us about this submission within 5 business days, please first check your SPAM folder, and then contact us at <a href="mailto:CPAC@portlandoregon.gov">CPAC@portlandoregon.gov</a> or <a href="tel:+1-503-823-7365">503-823-7365</a>.</p>
+        <p>If you have not heard back from us about this submission within 5 business days, please first check your SPAM folder, and then contact us at <a href="mailto:TSUP@portlandoregon.gov">TSUP@portlandoregon.gov</a> or <a href="tel:+1-503-823-7365">503-823-7365</a>.</p>
         <p>To cancel or make a change to this request, please <a href="{{ webform_token('[webform:url]', webform_submission) }}?assessment_prefilled=1&wizard_permit_need=existing_permit&wizard_existing_permit_situation=change&change_request_id[]={{ data.report_ticket_id }}">submit a Change Request here.</a></p>
       {% elseif data.permit_type == "7day" %}
         <p><strong>Your Application Number: </strong>{{ data.report_ticket_id }}</p>
-        <p>Thank you for submitting a Temporary Street Use Permit application. You will receive an email with your Item # and a link to the online invoice. Once the invoice has been paid, you will be able to access the PERMIT ID CARD and NO PARKING SIGNS.</p>
-        <p>If you have any questions, please contact us at <a href="mailto:CPAC@portlandoregon.gov">CPAC@portlandoregon.gov</a> or <a href="tel:+1-503-823-7365">503-823-7365</a>.</p>
+        <p><a class="btn btn-primary" href="https://www.portlandoregon.gov/transportation/7daypermit/?trackitnum={{ data.report_ticket_id }}&spaces={{ data.permit_amount_20ft_spaces }}">PAY TO ACTIVATE YOUR PERMIT</a></p>
+        <p>Your application for a Temporary Street Use Permit has been received. <strong>Please click the button above to pay and activate your permit.</strong> Once the invoice has been paid, you will be able to access the PERMIT ID CARD and NO PARKING SIGNS.</p>
+        <p>If you have any questions, please contact us at <a href="mailto:TSUP@portlandoregon.gov">TSUP@portlandoregon.gov</a> or <a href="tel:+1-503-823-7365">503-823-7365</a>.</p>
       {% elseif data.permit_type == "traffic_control" or data.permit_type == "lt_traffic_control" %}
         <p><strong>Your Application Number: </strong>{{ data.report_ticket_id }}</p>
         <p>Thank you for submitting a Temporary Street Use Permit application. We will contact you shortly with a price and payment date. If the application is incomplete, you will be contacted for additional information.</p>
         <p>If you are impacting a Sidewalk or Lane and your work is along a TriMet transit route, you are required to notify them at least five business days in advance of your work. Email TriMet at <a href="mailto:foc@trimet.org">foc@trimet.org</a> or call them at <a href="tel:+1-503-962-4949">503-962-4949</a>.</p>
         <p><strong>Due to processing times and parking enforcement logistics, your permit may not be valid for up to 15 business days. If the application is incomplete, you will be contacted for additional information.</strong></p>
-        <p>If you have not heard back from us about this submission within 5 business days, please first check your SPAM folder, and then contact us at <a href="mailto:CPAC@portlandoregon.gov">CPAC@portlandoregon.gov</a> or <a href="tel:+1-503-823-7365">503-823-7365</a>.</p>
+        <p>If you have not heard back from us about this submission within 5 business days, please first check your SPAM folder, and then contact us at <a href="mailto:TSUP@portlandoregon.gov">TSUP@portlandoregon.gov</a> or <a href="tel:+1-503-823-7365">503-823-7365</a>.</p>
         <p>To cancel or make a change to this request, please <a href="{{ webform_token('[webform:url]', webform_submission) }}?assessment_prefilled=1&wizard_permit_need=existing_permit&wizard_existing_permit_situation=change&change_request_id[]={{ data.report_ticket_id }}">submit a Change Request here.</a></p>
       {% elseif data.permit_type == "change_request" %}
         <p><strong>Your Change Request Number: </strong>{{ data.report_ticket_id }}</p>
         <p>Thank you for submitting a Change Request. We will do our best to accommodate your request. A member of our staff should respond to your request within 2 business days.</p>
         <p>To make a change to this request, please submit another Change Request form.</p>
-        <p>If you have not heard back from us about this submission within 2 business days, please first check your SPAM folder, and then contact us at <a href="mailto:CPAC@portlandoregon.gov">CPAC@portlandoregon.gov</a> or <a href="tel:+1-503-823-7365">503-823-7365</a>.</p>
+        <p>If you have not heard back from us about this submission within 2 business days, please first check your SPAM folder, and then contact us at <a href="mailto:TSUP@portlandoregon.gov">TSUP@portlandoregon.gov</a> or <a href="tel:+1-503-823-7365">503-823-7365</a>.</p>
       {% elseif data.permit_type == "renewal_request" %}
         <p><strong>Your Renewal Request Number: </strong>{{ data.report_ticket_id }}</p>
         <p>Thank you for submitting a Renewal Request. We will contact you shortly with the price and next steps.</p>
         <p>If you are impacting a Sidewalk or Lane and your work is along a TriMet transit route, you are required to notify them at least five business days in advance of your work. Email TriMet at <a href="mailto:foc@trimet.org">foc@trimet.org</a> or call them at <a href="tel:+1-503-962-4949">503-962-4949</a>.</p>
         <p>To cancel or make changes to your application, please submit a Change Request form. We will do our best to accommodate your change request.</p>
-        <p>If you have not heard back from us about this submission within 5 business days, please first check your SPAM folder, and then contact us at <a href="mailto:CPAC@portlandoregon.gov">CPAC@portlandoregon.gov</a> or <a href="tel:+1-503-823-7365">503-823-7365</a>.</p>
+        <p>If you have not heard back from us about this submission within 5 business days, please first check your SPAM folder, and then contact us at <a href="mailto:TSUP@portlandoregon.gov">TSUP@portlandoregon.gov</a> or <a href="tel:+1-503-823-7365">503-823-7365</a>.</p>
       {% endif %}
   assessment_prefilled:
     '#type': hidden
@@ -1397,7 +1409,7 @@ settings:
   wizard_start_label: Assessment
   wizard_preview_link: false
   wizard_confirmation: true
-  wizard_confirmation_label: Confirmation
+  wizard_confirmation_label: Done
   wizard_auto_forward: true
   wizard_auto_forward_hide_next_button: false
   wizard_keyboard: true
@@ -1535,7 +1547,7 @@ handlers:
       custom_fields: "6353388345367: 'apply_tsup'\r\n1500013095781: '[webform_submission:uuid]'\r\n12281632679959: ['12281632679959_[webform_submission:values:permit_type]', 'permit_type']\r\n1900004448785: ['[webform_submission:values:contact_company]', 'contact_company']\r\n12280609857559: ['[webform_submission:values:computed_bds_permit_number]', 'computed_bds_permit_number']\r\n12281140173719: ['[webform_submission:values:computed_num_spaces]', 'computed_num_spaces']\r\n12280733221015: ['[webform_submission:values:computed_date_start]', 'computed_date_start']\r\n12280737894935: ['[webform_submission:values:computed_date_end]', 'computed_date_end']\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n9205221816983: ['[webform_submission:values:report_location:location_type:raw]', 'report_location:location_type']\r\n12281548831383: ['[webform_submission:values:complex_permit_closure_type]', 'complex_permit_closure_type']\r\n14564469123095: ['[webform_submission:values:permit_location_metered]', 'permit_location_metered']\r\n22193428346135: [[[webform_submission:values:computed_days_of_week:raw]], 'permit_date_days_of_week']\r\n22195736298263: '[webform_submission:values:computed_permit_reason]'\r\n22195822294935: '[webform_submission:values:computed_permit_street_name]'"
       ticket_id_field: report_ticket_id
       ticket_form_id: '12280613877783'
-      recipient: 'tsup@portlandoregon.gov'
+      recipient: tsup@portlandoregon.gov
       ticket_fork_field: ''
   create_new_zendesk_request_developer_test:
     id: zendesk
@@ -1565,7 +1577,7 @@ handlers:
       custom_fields: "6353388345367: 'apply_tsup'\r\n1500013095781: '[webform_submission:uuid]'\r\n12281632679959: ['12281632679959_[webform_submission:values:permit_type]', 'permit_type']\r\n1900004448785: ['[webform_submission:values:contact_company]', 'contact_company']\r\n12280609857559: ['[webform_submission:values:computed_bds_permit_number]', 'computed_bds_permit_number']\r\n12281140173719: ['[webform_submission:values:computed_num_spaces]', 'computed_num_spaces']\r\n12280733221015: ['[webform_submission:values:computed_date_start]', 'computed_date_start']\r\n12280737894935: ['[webform_submission:values:computed_date_end]', 'computed_date_end']\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n9205221816983: ['[webform_submission:values:report_location:location_type:raw]', 'report_location:location_type']\r\n12281548831383: ['[webform_submission:values:complex_permit_closure_type]', 'complex_permit_closure_type']\r\n14564469123095: ['[webform_submission:values:permit_location_metered]', 'permit_location_metered']\r\n22193428346135: [[[webform_submission:values:computed_days_of_week:raw]], 'permit_date_days_of_week']\r\n22195736298263: '[webform_submission:values:computed_permit_reason]'\r\n22195822294935: '[webform_submission:values:computed_permit_street_name]'"
       ticket_id_field: report_ticket_id
       ticket_form_id: '4990038807319'
-      recipient: 'tsup@portlandoregon.gov'
+      recipient: tsup@portlandoregon.gov
       ticket_fork_field: ''
   zendesk_general:
     id: zendesk
@@ -1598,7 +1610,7 @@ handlers:
       custom_fields: "6353388345367: 'apply_tsup'\r\n1500013095781: '[webform_submission:uuid]'\r\n"
       ticket_id_field: report_ticket_id
       ticket_form_id: '9791802547607'
-      recipient: 'tsup@portlandoregon.gov'
+      recipient: tsup@portlandoregon.gov
       ticket_fork_field: ''
   zendesk_general_dev:
     id: zendesk
@@ -1628,6 +1640,6 @@ handlers:
       custom_fields: "6353388345367: 'apply_tsup'\r\n1500013095781: '[webform_submission:uuid]'\r\n"
       ticket_id_field: report_ticket_id
       ticket_form_id: '9791802547607'
-      recipient: 'tsup@portlandoregon.gov'
+      recipient: tsup@portlandoregon.gov
       ticket_fork_field: ''
 variants: {  }
