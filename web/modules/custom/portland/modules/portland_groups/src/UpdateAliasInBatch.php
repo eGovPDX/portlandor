@@ -11,6 +11,9 @@ use \Drupal\pathauto\PathautoState;
  */
 class UpdateAliasInBatch
 {
+  /**
+   * A static function that updates content and media aliases when the parent group's group_path is updated
+   */
   public static function updateGroupContentAlias($entities, $limit, $orig_group_path, $group_path, &$context)
   {
     if (empty($context['sandbox'])) {
@@ -22,23 +25,9 @@ class UpdateAliasInBatch
     }
 
     $pathGen = \Drupal::service('pathauto.generator');
-    $path_alias_manager = \Drupal::entityTypeManager()->getStorage('path_alias');
     foreach (array_slice($entities, $context['sandbox']['current_index'], $limit) as $entity) {
       $context['message'] = "Processing entity: {$entity->id()}";
-      if (empty($entity->path->pathauto)) { // This means custom alias
-        // Get aliases in all languages of the system path
-        $alias_objects = $path_alias_manager->loadByProperties([
-          'path' => "/{$entity->getEntityTypeId()}/{$entity->id()}",
-        ]);
-
-        $count = 1;
-        foreach($alias_objects as $alias_object) {
-          // Replace the first occurance of the original group path with the new one
-          $alias_object->alias = str_replace($orig_group_path, $group_path, $alias_object->alias->value, $count);
-          $alias_object->save();
-        }
-      }
-      else {
+      if (! empty($entity->path->pathauto)) { // check if the alias is auto-generated
         $pathGen->updateEntityAlias($entity, "update");
       }
 
@@ -56,6 +45,9 @@ class UpdateAliasInBatch
     }
   }
 
+  /**
+   * A static function that updates subgroups' group_path field when the parent group's group_path is updated
+   */
   public static function updateSubgroupAlias($entities, $limit, $orig_group_path, $group_path, &$context)
   {
     if (empty($context['sandbox'])) {
