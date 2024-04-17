@@ -23,22 +23,22 @@ commands:
       - restore_cache:
           name: Restore Terminus Cache
           keys:
-            - terminus-cache-{{ .Environment.CIRCLE_BRANCH }}-v3
-            - ~/.terminus
+            - terminus-cache-{{ .Environment.CIRCLE_BRANCH }}-{{ checksum "composer.lock" }}
+            - terminus-cache-{{ .Environment.CIRCLE_BRANCH }}-
+            - terminus-cache-
       - run:
           name: Install Terminus
           command: |
-            if [ ! -f "/tmp/vendor/pantheon-systems/terminus/bin/terminus" ]; then
-              cd /tmp && composer require pantheon-systems/terminus:^3
-              # Temporary workaround to https://github.com/pantheon-systems/terminus/issues/2336
-              cd /tmp && composer require league/container:3.4.1
-              /tmp/vendor/bin/terminus self:plugin:install terminus-build-tools-plugin
-            fi
+            export TERMINUS_RELEASE=$(curl --silent "https://api.github.com/repos/pantheon-systems/terminus/releases/latest" | jq -r .tag_name)
+            mkdir ~/terminus && cd ~/terminus
+            echo "Installing Terminus v$TERMINUS_RELEASE"
+            curl -L https://github.com/pantheon-systems/terminus/releases/download/$TERMINUS_RELEASE/terminus.phar --output terminus
+            chmod +x terminus
+            echo 'export PATH=$PATH:~/terminus' >> $BASH_ENV
       - save_cache:
           name: Save Terminus cache
-          key: terminus-cache-{{ .Environment.CIRCLE_BRANCH }}-v3
+          key: terminus-cache-{{ .Environment.CIRCLE_BRANCH }}-{{ checksum "composer.lock" }}
           paths:
-            - "/tmp/vendor"
             - ~/.terminus
       - run:
           name: Authenticate Terminus
@@ -88,6 +88,9 @@ commands:
               echo 'export SITE_NAME=${CIRCLE_BRANCH}' >> $BASH_ENV && source $BASH_ENV
             fi
             cd /home/circleci/app
+
+            # Turn off warning that the site is in GIT mode
+            echo 'export TERMINUS_HIDE_GIT_MODE_WARNING=1' >> $BASH_ENV && source $BASH_ENV
 
 #Jobs
 
