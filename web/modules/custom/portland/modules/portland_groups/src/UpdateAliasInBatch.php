@@ -29,12 +29,14 @@ class UpdateAliasInBatch
       $context['message'] = "Processing entity: {$entity->id()}";
       // Update subgroup's group_path field
       if ($entity->getEntityTypeId() == "group") {
-        $count = 1;
-        $entity->field_group_path = str_replace($orig_group_path, $group_path, $entity->field_group_path->value, $count);
-        $entity->save();
+        // Only replace the parent graoup path at the start of the child group path
+        if (str_starts_with($entity->field_group_path->value, $orig_group_path)) {
+          $entity->field_group_path = substr_replace($entity->field_group_path->value,  $group_path, 0, strlen($orig_group_path));
+          $entity->save();
+        }
       }
       // Update content and media aliases
-      else if (! empty($entity->path->pathauto)) { // check if the alias is auto-generated
+      else if (!empty($entity->path->pathauto)) { // check if the alias is auto-generated
         $pathGen->updateEntityAlias($entity, "update");
       }
 
@@ -42,7 +44,7 @@ class UpdateAliasInBatch
       $context['sandbox']['progress']++;
       // Assuming you have number for entry within file.
       $context['sandbox']['current_index']++;
-      $context['results'] []= "alias updated";
+      $context['results'][] = "alias updated";
     }
 
     // Inform the batch engine that we are not finished,`
