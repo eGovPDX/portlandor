@@ -120,14 +120,6 @@ function portland_groups_group_update(GroupInterface $group)
       $non_user_entities[] = $group_entity;
     }
 
-    $subgroups = \Drupal::entityTypeManager()->getStorage('group')
-      ->loadByProperties([
-      'field_parent_group' => $group->id(),
-    ]);
-    foreach ($subgroups as $subgroup) {
-      $non_user_entities[] = $subgroup;
-    }
-
     // Batch process 50 items for each iteration
     $limit = 50;
     $batch_job = array(
@@ -137,8 +129,6 @@ function portland_groups_group_update(GroupInterface $group)
         ['Drupal\portland_groups\UpdateAliasInBatch::updateGroupContentAlias', [ 
           $non_user_entities, 
           $limit,
-          $orig_group_path,
-          $group_path,
         ]],
       ],
       'finished' => 'Drupal\portland_groups\UpdateAliasInBatch::updateAliasFinishedCallback',
