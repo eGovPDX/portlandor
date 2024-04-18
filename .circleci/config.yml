@@ -23,8 +23,8 @@ commands:
       - restore_cache:
           name: Restore Terminus Cache
           keys:
-            - terminus-cache-v2-{{ checksum "composer.lock" }}
-            - terminus-cache-v2-
+            - terminus-cache-v3-{{ checksum "composer.lock" }}
+            - terminus-cache-v3-
       - run:
           name: Install Terminus
           command: |
@@ -35,11 +35,12 @@ commands:
               echo "Installing Terminus v$TERMINUS_RELEASE"
               curl -L https://github.com/pantheon-systems/terminus/releases/download/$TERMINUS_RELEASE/terminus.phar --output terminus
               chmod +x terminus
+              ./terminus self:plugin:install terminus-build-tools-plugin
             fi
             echo 'export PATH=$PATH:~/terminus' >> $BASH_ENV
       - save_cache:
           name: Save Terminus cache
-          key: terminus-cache-v2-{{ checksum "composer.lock" }}
+          key: terminus-cache-v3-{{ checksum "composer.lock" }}
           paths:
             - ~/terminus
       - run:
