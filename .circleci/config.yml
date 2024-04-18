@@ -23,23 +23,25 @@ commands:
       - restore_cache:
           name: Restore Terminus Cache
           keys:
-            - terminus-cache-{{ .Environment.CIRCLE_BRANCH }}-{{ checksum "composer.lock" }}
-            - terminus-cache-{{ .Environment.CIRCLE_BRANCH }}-
+            - terminus-cache-{{ checksum "composer.lock" }}
             - terminus-cache-
       - run:
           name: Install Terminus
           command: |
             export TERMINUS_RELEASE=$(curl --silent "https://api.github.com/repos/pantheon-systems/terminus/releases/latest" | jq -r .tag_name)
-            mkdir ~/terminus && cd ~/terminus
-            echo "Installing Terminus v$TERMINUS_RELEASE"
-            curl -L https://github.com/pantheon-systems/terminus/releases/download/$TERMINUS_RELEASE/terminus.phar --output terminus
-            chmod +x terminus
+            export CURRENT_TERMINUS_VERSION=$(~/terminus/terminus self:info --field terminus_version 2>/dev/null)
+            if [ ! -d "$HOME/terminus" ] || [ "$CURRENT_TERMINUS_VERSION" != $TERMINUS_RELEASE ]; then
+              mkdir ~/terminus && cd ~/terminus
+              echo "Installing Terminus v$TERMINUS_RELEASE"
+              curl -L https://github.com/pantheon-systems/terminus/releases/download/$TERMINUS_RELEASE/terminus.phar --output terminus
+              chmod +x terminus
+            fi
             echo 'export PATH=$PATH:~/terminus' >> $BASH_ENV
       - save_cache:
           name: Save Terminus cache
           key: terminus-cache-{{ .Environment.CIRCLE_BRANCH }}-{{ checksum "composer.lock" }}
           paths:
-            - ~/.terminus
+            - ~/terminus
       - run:
           name: Authenticate Terminus
           command: |
