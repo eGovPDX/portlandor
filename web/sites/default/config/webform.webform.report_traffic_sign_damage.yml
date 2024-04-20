@@ -1,22 +1,15 @@
-uuid: e134a3ca-02b9-400d-ae2d-a7c2eab819a2
+uuid: 832bf06e-6970-4f3a-bd5a-0e85cfccf6c5
 langcode: en
 status: open
-dependencies:
-  module:
-    - portland
-    - portland_zendesk
-third_party_settings:
-  portland:
-    disable_demographic_form_prompt: 0
-    exclude_from_json: {  }
+dependencies: {  }
 weight: 0
 open: null
 close: null
-uid: 628
+uid: 60
 template: false
 archive: false
-id: report_roadway_surface_damage
-title: 'Report Roadway Surface Damage'
+id: report_traffic_sign_damage
+title: 'Report Traffic or Street Sign Damage'
 description: ''
 categories:
   - 'PBOT MO'
@@ -32,62 +25,18 @@ elements: |-
     '#mode': text
     '#template': "{{ webform_token('[current-user:roles:first]', webform_submission, [], options)|default('anonymous') }}"
     '#whitespace': trim
-  report_damage_type:
+  report_sign_type:
     '#type': webform_radios_other
-    '#title': 'What type of damage are you reporting?'
+    '#title': 'What color/kind of sign?'
     '#options':
-      Pothole: 'Pothole -- A rough hole in the road'
-      Sinkhole: 'Sinkhole -- A large depression, like the earth caved in'
-      Landslide: 'Landslide -- A mass of dirt or rocks that slid onto the road'
-      'Utility cut': 'Utility cut -- A square or rectangular cut in the road used to fix water or sewer lines'
-      'Pavement markings are wearing or missing': 'Pavement markings are wearing or missing'
-      'Gravel street needs maintenance': 'Gravel street needs maintenance'
-      Graffiti: Graffiti
+      'RED: Stop, Yield, Do Not Enter, or One Way sign': 'RED: Stop, Yield, Do Not Enter, or One Way sign'
+      'GREEN: Street name sign': 'GREEN: Street name sign -- For example, "SE 38th Ave" or "N Interstate Blvd"'
+      'YELLOW: Advisory sign': 'YELLOW: Advisory sign -- For example, "No Outlet"'
+      'WHITE: Speed Limit, No Turn, or Parking sign': 'WHITE: Speed Limit, No Turn, or Parking sign'
+      'BLUE: Informational sign': 'BLUE: Informational sign'
+      'ORANGE: Construction related sign': 'ORANGE: Construction related sign'
     '#other__option_label': 'Something else...'
     '#other__placeholder': 'Please describe'
-    '#required': true
-  markup_sinkholes:
-    '#type': markup_stop_sinkhole_or_landslide
-    '#states':
-      visible:
-        ':input[name="report_damage_type[radios]"]':
-          value: Sinkhole
-        ':input[name="user_role"]':
-          value: anonymous
-    '#markup': |-
-      <div class="webform-alert alert alert--info">
-      <h2>Next Steps</h2>
-
-      <p>Sinkholes are considered urgent. To ensure a fast response, please call PBOT's 24/7 maintenance dispatch line at <a href="tel:+1-503-823-1700">503-823-1700</a> to speak with a representative about the roadway damage.</p>
-      </div>
-  markup_landslides:
-    '#type': webform_markup
-    '#states':
-      visible:
-        ':input[name="report_damage_type[radios]"]':
-          value: Landslide
-        ':input[name="user_role"]':
-          value: anonymous
-    '#markup': |-
-      <div class="webform-alert alert alert--info">
-      <h2>Next Steps</h2>
-
-      <p>Landslides are considered urgent. To ensure a fast response, please call PBOT's 24/7 maintenance dispatch line at <a href="tel:+1-503-823-1700">503-823-1700</a> to speak with a representative about the roadway damage.</p>
-      </div>
-  markup_graffiti:
-    '#type': markup_stop_sinkhole_or_landslide
-    '#states':
-      visible:
-        ':input[name="report_damage_type[radios]"]':
-          value: Graffiti
-    '#markup': |-
-      <div class="webform-alert alert alert--info">
-      <h2>Next Steps</h2>
-
-      <p>To ensure the fastest response, please report this through the <a href="/bps/graffiti/report-graffiti">Report Graffiti service</a>.</p>
-
-      <p class="mb-0"><a class="button button--primary" href="/bps/graffiti/report-graffiti">Continue</a></p>
-      </div>
   container_continue_report:
     '#type': container
     '#states':
@@ -102,6 +51,27 @@ elements: |-
           ':input[name="report_damage_type[radios]"]':
             value:
               '!pattern': 'Sinkhole|Landslide|Graffiti|Gravel street needs maintenance'
+    report_damage_type:
+      '#type': webform_radios_other
+      '#title': 'What type of damage has been done?'
+      '#options':
+        'Damaged or knocked over': 'Damaged or knocked over'
+        'Sign is missing': 'Sign is missing'
+        'Twisted or turned the wrong direction': 'Twisted or turned the wrong direction'
+        'Lettering or markings not readable': 'Lettering or markings not readable'
+        'Blocked by vegetation': 'Blocked by vegetation'
+        Graffiti: Graffiti
+    report_safety_hazard:
+      '#type': radios
+      '#title': 'Is it blocking the street or sidewalk, or causing an immediate safety hazard?'
+      '#options': yes_no
+      '#required': true
+    report_overhead:
+      '#type': radios
+      '#title': 'Is the sign on an overhead arm crossing over the street/above traffic? '
+      '#options': yes_no
+      '#options_display': side_by_side
+      '#required': true
     report_location:
       '#type': portland_location_picker
       '#title': 'Location of damage'
@@ -113,13 +83,6 @@ elements: |-
       '#place_name__access': false
       '#location_details__access': false
       '#require_city_limits': true
-    report_time:
-      '#type': webform_time
-      '#title': 'Time call received'
-      '#states':
-        invisible:
-          ':input[name="user_role"]':
-            value: anonymous
     report_description:
       '#type': textarea
       '#title': 'Description of issue'
@@ -129,7 +92,6 @@ elements: |-
       '#title': 'Do you have a photo?'
       '#options': yes_no
       '#options_display': side_by_side
-      '#required': true
       '#states':
         invisible:
           - ':input[name="report_damage_type[radios]"]':
@@ -137,20 +99,14 @@ elements: |-
           - or
           - ':input[name="report_damage_type[radios]"]':
               value: Landslide
-    report_damage_severity:
-      '#type': radios
-      '#title': "Which of the following best matches the issue you're reporting?"
-      '#options':
-        'Cracks in the surface': 'Cracks in the surface -- <img src="https://www.portland.gov/sites/default/files/2023/pothole_4.jpg" width="300" />'
-        'Pothole with gravel/debris, mostly flush with the road': 'Pothole with gravel/debris, mostly flush with the road -- <img src="https://www.portland.gov/sites/default/files/2023/pothole_3.jpg" width="300" />'
-        'Larger pothole with a noticeably sunken surface': 'Larger pothole with a noticeably sunken surface -- <img src="https://www.portland.gov/sites/default/files/2023/pothole_2.jpg" width="300" />'
-        'Deep, potentially hazardous pothole in lane or crosswalk': 'Deep, potentially hazardous pothole in lane or crosswalk -- <img src="https://www.portland.gov/sites/default/files/2023/pothole_1.jpg" width="300" />'
+      '#default_value': 'Yes'
+    report_sign_text:
+      '#type': textfield
+      '#title': 'What does the sign say?'
       '#states':
         visible:
           ':input[name="report_has_photo"]':
             value: 'No'
-          ':input[name="report_damage_type[radios]"]':
-            value: Pothole
     report_photo:
       '#type': webform_image_file
       '#title': Photo
@@ -158,17 +114,8 @@ elements: |-
       '#description_display': before
       '#states':
         invisible:
-          - ':input[name="report_damage_type[radios]"]':
-              value: Sinkhole
-          - or
-          - ':input[name="report_damage_type[radios]"]':
-              value: Landslide
-          - or
-          - ':input[name="report_has_photo"]':
-              value: 'No'
-          - or
-          - ':input[name="report_has_photo"]':
-              unchecked: true
+          ':input[name="report_has_photo"]':
+            value: 'No'
       '#file_preview': 'medium:image'
       '#max_filesize': '30'
       '#file_extensions': 'jpg png jpeg'
@@ -197,23 +144,6 @@ elements: |-
         '#type': textfield
         '#title': Phone
         '#input_mask': '(999) 999-9999'
-    actions:
-      '#type': webform_actions
-      '#title': 'Submit button(s)'
-  markup_gravel_street:
-    '#type': markup_stop_sinkhole_or_landslide
-    '#states':
-      visible:
-        ':input[name="report_damage_type[radios]"]':
-          value: 'Gravel street needs maintenance'
-        ':input[name="user_role"]':
-          value: anonymous
-    '#markup': |-
-      <div class="webform-alert alert alert--info">
-      <h2>Information</h2>
-
-      <p>The City of Portland fills ruts and holes then regrades gravel streets once every three years. Learn more about the <a href="/transportation/maintenance/portland-gravel-street-service">Gravel Street Service</a>.</p>
-      </div>
 css: ''
 javascript: ''
 settings:
@@ -397,30 +327,5 @@ access:
     roles: {  }
     users: {  }
     permissions: {  }
-handlers:
-  zendesk_new_request:
-    id: zendesk
-    handler_id: zendesk_new_request
-    label: 'Zendesk new request'
-    notes: ''
-    status: true
-    conditions: {  }
-    weight: 0
-    settings:
-      requester_name: contact_name
-      requester_email: contact_email
-      subject: 'Roadway Surface Damage Report ([webform_submission:values:report_damage_type])'
-      comment: '[webform_submission:values:html]'
-      tags: 'drupal webform'
-      priority: normal
-      status: new
-      group_id: '13673642085527'
-      assignee_id: ''
-      type: problem
-      collaborators: ''
-      custom_fields: ''
-      ticket_id_field: ''
-      ticket_form_id: '13796628711191'
-      recipient: ''
-      ticket_fork_field: ''
+handlers: {  }
 variants: {  }

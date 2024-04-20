@@ -1,22 +1,15 @@
-uuid: e134a3ca-02b9-400d-ae2d-a7c2eab819a2
+uuid: 8253163b-621d-4bd2-a08f-056b63028753
 langcode: en
 status: open
-dependencies:
-  module:
-    - portland
-    - portland_zendesk
-third_party_settings:
-  portland:
-    disable_demographic_form_prompt: 0
-    exclude_from_json: {  }
+dependencies: {  }
 weight: 0
 open: null
 close: null
-uid: 628
+uid: 60
 template: false
 archive: false
-id: report_roadway_surface_damage
-title: 'Report Roadway Surface Damage'
+id: report_sidewalk_issue
+title: 'Report Sidewalk or Curb Issue'
 description: ''
 categories:
   - 'PBOT MO'
@@ -32,53 +25,60 @@ elements: |-
     '#mode': text
     '#template': "{{ webform_token('[current-user:roles:first]', webform_submission, [], options)|default('anonymous') }}"
     '#whitespace': trim
-  report_damage_type:
+  report_issue:
     '#type': webform_radios_other
-    '#title': 'What type of damage are you reporting?'
+    '#title': "What's the issue?"
     '#options':
-      Pothole: 'Pothole -- A rough hole in the road'
-      Sinkhole: 'Sinkhole -- A large depression, like the earth caved in'
-      Landslide: 'Landslide -- A mass of dirt or rocks that slid onto the road'
-      'Utility cut': 'Utility cut -- A square or rectangular cut in the road used to fix water or sewer lines'
-      'Pavement markings are wearing or missing': 'Pavement markings are wearing or missing'
-      'Gravel street needs maintenance': 'Gravel street needs maintenance'
+      'Sidewalk cracked, uplifting, or damaged': 'Sidewalk cracked, uplifting, or damaged'
+      'Curb broken': 'Curb broken'
+      'Corner cracked or missing concrete': 'Corner cracked or missing concrete'
+      'Yellow anti-slip pad is chipped or broken': 'Yellow anti-slip pad is chipped or broken'
+      'Corner metal strip/guard is broken or dangerous': 'Corner metal strip/guard is broken or dangerous'
       Graffiti: Graffiti
+      'Curb ramp is needed': 'Curb ramp is needed'
     '#other__option_label': 'Something else...'
     '#other__placeholder': 'Please describe'
     '#required': true
-  markup_sinkholes:
-    '#type': markup_stop_sinkhole_or_landslide
-    '#states':
-      visible:
-        ':input[name="report_damage_type[radios]"]':
-          value: Sinkhole
-        ':input[name="user_role"]':
-          value: anonymous
-    '#markup': |-
-      <div class="webform-alert alert alert--info">
-      <h2>Next Steps</h2>
-
-      <p>Sinkholes are considered urgent. To ensure a fast response, please call PBOT's 24/7 maintenance dispatch line at <a href="tel:+1-503-823-1700">503-823-1700</a> to speak with a representative about the roadway damage.</p>
-      </div>
-  markup_landslides:
+  markup_continue:
     '#type': webform_markup
     '#states':
       visible:
-        ':input[name="report_damage_type[radios]"]':
-          value: Landslide
+        ':input[name="report_issue[radios]"]':
+          unchecked: true
+    '#markup': '<p class="mt-5"><strong>Please make a selection to continue.</strong></p>'
+  markup_curb_ramp:
+    '#type': webform_markup
+    '#states':
+      visible:
+        ':input[name="report_issue[radios]"]':
+          value: 'Curb ramp is needed'
+    '#markup': |-
+      <div class="webform-alert alert alert--info">
+      <h2>Next Steps</h2>
+
+      <p>Please use the <a href="/311/ada-request">Request an ADA Accommodation service</a> to request a curb ramp.</p>
+
+      <p class="mb-0"><a class="button button--primary" href="/311/ada-request">Continue</a></p>
+      </div>
+  markup_dangerous:
+    '#type': webform_markup
+    '#states':
+      visible:
+        ':input[name="report_issue[radios]"]':
+          value: 'Corner metal strip/guard is broken or dangerous'
         ':input[name="user_role"]':
           value: anonymous
     '#markup': |-
       <div class="webform-alert alert alert--info">
       <h2>Next Steps</h2>
 
-      <p>Landslides are considered urgent. To ensure a fast response, please call PBOT's 24/7 maintenance dispatch line at <a href="tel:+1-503-823-1700">503-823-1700</a> to speak with a representative about the roadway damage.</p>
+      <p>This is considered an urgent issue. To ensure a fast response, please call PBOT's 24/7 maintenance dispatch line at <a href="tel:+1-503-823-1700">503-823-1700</a> to speak with a representative about the roadway damage.</p>
       </div>
   markup_graffiti:
     '#type': markup_stop_sinkhole_or_landslide
     '#states':
       visible:
-        ':input[name="report_damage_type[radios]"]':
+        ':input[name="report_issue[radios]"]':
           value: Graffiti
     '#markup': |-
       <div class="webform-alert alert alert--info">
@@ -91,27 +91,29 @@ elements: |-
   container_continue_report:
     '#type': container
     '#states':
-      visible:
-        - ':input[name="user_role"]':
-            value: authenticated
-          ':input[name="report_damage_type[radios]"]':
-            '!value': Graffiti
+      invisible:
+        - ':input[name="report_issue[radios]"]':
+            unchecked: true
         - or
-        - ':input[name="user_role"]':
-            value: anonymous
-          ':input[name="report_damage_type[radios]"]':
-            value:
-              '!pattern': 'Sinkhole|Landslide|Graffiti|Gravel street needs maintenance'
+        - ':input[name="report_issue[radios]"]':
+            value: Graffiti
+        - or
+        - ':input[name="report_issue[radios]"]':
+            value: 'Curb ramp is needed'
+        - or
+        - ':input[name="report_issue[radios]"]':
+            value: 'Corner metal strip/guard is broken or dangerous'
     report_location:
       '#type': portland_location_picker
-      '#title': 'Location of damage'
-      '#location_type__access': false
-      '#location_park_container__access': false
-      '#location_private_owner__access': false
+      '#title': Location
+      '#title_display': none
       '#location_address__description': 'Enter the address or intersection nearest to the damage and click Verify. Please zoom in and choose the exact location of the pothole. Try to be as precise as possible.'
       '#location_address__required': true
       '#place_name__access': false
       '#location_details__access': false
+      '#location_type__access': false
+      '#location_park_container__access': false
+      '#location_private_owner__access': false
       '#require_city_limits': true
     report_time:
       '#type': webform_time
@@ -200,20 +202,6 @@ elements: |-
     actions:
       '#type': webform_actions
       '#title': 'Submit button(s)'
-  markup_gravel_street:
-    '#type': markup_stop_sinkhole_or_landslide
-    '#states':
-      visible:
-        ':input[name="report_damage_type[radios]"]':
-          value: 'Gravel street needs maintenance'
-        ':input[name="user_role"]':
-          value: anonymous
-    '#markup': |-
-      <div class="webform-alert alert alert--info">
-      <h2>Information</h2>
-
-      <p>The City of Portland fills ruts and holes then regrades gravel streets once every three years. Learn more about the <a href="/transportation/maintenance/portland-gravel-street-service">Gravel Street Service</a>.</p>
-      </div>
 css: ''
 javascript: ''
 settings:
@@ -397,30 +385,5 @@ access:
     roles: {  }
     users: {  }
     permissions: {  }
-handlers:
-  zendesk_new_request:
-    id: zendesk
-    handler_id: zendesk_new_request
-    label: 'Zendesk new request'
-    notes: ''
-    status: true
-    conditions: {  }
-    weight: 0
-    settings:
-      requester_name: contact_name
-      requester_email: contact_email
-      subject: 'Roadway Surface Damage Report ([webform_submission:values:report_damage_type])'
-      comment: '[webform_submission:values:html]'
-      tags: 'drupal webform'
-      priority: normal
-      status: new
-      group_id: '13673642085527'
-      assignee_id: ''
-      type: problem
-      collaborators: ''
-      custom_fields: ''
-      ticket_id_field: ''
-      ticket_form_id: '13796628711191'
-      recipient: ''
-      ticket_fork_field: ''
+handlers: {  }
 variants: {  }
