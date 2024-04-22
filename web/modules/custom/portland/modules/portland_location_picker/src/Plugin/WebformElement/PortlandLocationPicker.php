@@ -123,7 +123,7 @@ class PortlandLocationPicker extends WebformCompositeBase {
       $lines[] = 'Region ID: ' . $value['location_region_id'];
     }
     if (isset($value['location_search']) && $value['location_search']) {
-      $lines[] = 'Region ID: ' . $value['location_search'];
+      $lines[] = 'Search query: ' . $value['location_search'];
     }
     return $lines;
   }
