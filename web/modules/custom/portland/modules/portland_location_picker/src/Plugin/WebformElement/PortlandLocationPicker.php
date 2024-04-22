@@ -62,7 +62,7 @@ class PortlandLocationPicker extends WebformCompositeBase {
       $lines[] = '<strong>Location type(s):</strong> ' . $value['location_types'];
     }
     if (isset($value['location_attributes']) && $value['location_attributes']) {
-      $lines[] = '<strong>Location details:</strong> ' . $value['location_attributes'];
+      $lines[] = '<strong>Location attributes:</strong> ' . $value['location_attributes'];
     }
     if (isset($value['location_asset_id']) && $value['location_asset_id']) {
       $lines[] = '<strong>Asset ID:</strong> ' . $value['location_asset_id'];
