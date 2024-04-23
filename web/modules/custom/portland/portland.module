@@ -1638,3 +1638,13 @@ function portland_local_tasks_alter(&$local_tasks): void {
   unset($local_tasks['entity.version_history:group.version_history']);
   unset($local_tasks['entity.version_history:media.version_history']);
 }
+
+function portland_form_node_council_impact_statement_form_alter(array &$form, FormStateInterface $form_state) {
+  $form['title']['#access'] = false;
+  $form['title']['widget'][0]['value']['#default_value'] = 'none';
+  $query_council_document_id = \Drupal::request()->query->get('council_document_id');
+  if ($query_council_document_id) {
+    $node = \Drupal::entityTypeManager()->getStorage('node')->load($query_council_document_id);
+    $form['field_council_document']['widget'][0]['target_id']['#default_value'] = $node ?? null;
+  }
+}
