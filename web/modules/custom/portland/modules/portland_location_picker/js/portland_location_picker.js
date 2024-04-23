@@ -1311,6 +1311,12 @@
         }
 
         function processReverseLocationData(data, lat, lng, zoomAndCenter = true) {
+          // KLUGE: Address data coming from PortlandMaps has a trailing space; trim it.
+          if (data.describe) {
+            var describe = data.describe.trim();
+            data.describe = describe;
+          }
+          
           var isWithinBounds = checkWithinBounds(new L.LatLng(lat, lng));
           var isVerifiedAddress = true;
           if (zoomAndCenter) {
