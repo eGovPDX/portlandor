@@ -2,16 +2,18 @@
 
 use \Drupal\group\Entity\GroupContent;
 use \Drupal\group\Entity\Group;
+use \Drupal\group\Entity\GroupInterface;
 
 /**
  * Implements hook_form_alter().
  */
-function portland_groups_form_alter(&$form, &$form_state, $form_id) {
+function portland_groups_form_alter(&$form, &$form_state, $form_id)
+{
   if (array_key_exists('field_display_groups', $form) === TRUE && !is_null($form['field_display_groups'])) {
     _portland_groups_populate_field_display_groups($form, $form_state);
   }
   // Select the group add/edit form.
-  if ( $form['#theme'] !== 'confirm_form' && isset($form_id) && isset($form) && preg_match('/^group/',$form_id)) {
+  if ($form['#theme'] !== 'confirm_form' && isset($form_id) && isset($form) && preg_match('/^group/', $form_id)) {
     // Use the node edit form template.
     $form['#theme'][0] = 'node_edit_form';
 
@@ -32,7 +34,8 @@ function portland_groups_form_alter(&$form, &$form_state, $form_id) {
 /**
  * Implements hook_form_BASE_FORM_ID_alter().
  */
-function portland_groups_form_media_form_alter(&$form, $form_state, $form_id) {
+function portland_groups_form_media_form_alter(&$form, $form_state, $form_id)
+{
   // Remove redundant "The list of groups media item belongs to" from groupmedia module
   // that shows right below Displayed in field on media
   unset($form['group_information']);
@@ -41,7 +44,8 @@ function portland_groups_form_media_form_alter(&$form, $form_state, $form_id) {
 /**
  * Implements hook_inline_entity_form_entity_form_alter().
  */
-function portland_groups_inline_entity_form_entity_form_alter(&$entity_form, &$form_state) {
+function portland_groups_inline_entity_form_entity_form_alter(&$entity_form, &$form_state)
+{
   if ($entity_form['#entity_type'] == 'media' && array_key_exists('field_display_groups', $entity_form)) {
     _portland_groups_inline_entity_populate_field_display_groups($entity_form, $form_state);
   }
@@ -50,16 +54,17 @@ function portland_groups_inline_entity_form_entity_form_alter(&$entity_form, &$f
 /**
  * Populates the field_display_groups autocomplete widget in a node form.
  */
-function _portland_groups_populate_field_display_groups(&$form, &$form_state) {
+function _portland_groups_populate_field_display_groups(&$form, &$form_state)
+{
   // get the group id and store it in session in case it's needed in an inline entity
   // form in a CKEditor iframe. if new page, prepopulate field_display_groups with parent group.
-  if(array_key_exists('group', $form_state->getStorage()) && $form_state->getStorage()['group'] != NULL) {
+  if (array_key_exists('group', $form_state->getStorage()) && $form_state->getStorage()['group'] != NULL) {
     $group = $form_state->getStorage()['group'];
     $group_id = $group->id();
     \Drupal::request()->getSession()->set('parent_group_id', $group_id);
 
     $node = $form_state->getFormObject()->getEntity();
-    if($node->isNew()) {
+    if ($node->isNew()) {
       $form['field_display_groups']['widget'][0]['target_id']['#default_value'] = $group;
     }
   }
@@ -68,9 +73,10 @@ function _portland_groups_populate_field_display_groups(&$form, &$form_state) {
 /**
  * Populates the field_display_groups select/chosen widget in a media form.
  */
-function _portland_groups_inline_entity_populate_field_display_groups(&$form, &$form_state) {
+function _portland_groups_inline_entity_populate_field_display_groups(&$form, &$form_state)
+{
   // if new erntity, prepopulate with parent group, which is stored in a session var.
-  if($form['#entity']->isNew()) {
+  if ($form['#entity']->isNew()) {
     $session = \Drupal::request()->getSession();
     $group_id = $session->get('parent_group_id');
     if (!is_null($group_id)) {
@@ -87,9 +93,47 @@ function _portland_groups_inline_entity_populate_field_display_groups(&$form, &$
  * If the entity has field_display_groups, call a function to synchronize group ownership based on the
  * first group in the field.
  */
-function portland_groups_entity_update($entity) {
+function portland_groups_entity_update($entity)
+{
   if ($entity && method_exists($entity, 'hasField') && $entity->hasField('field_display_groups')) {
     _portland_groups_synchronize_entity_group_ownership($entity);
+  }
+}
+
+
+/**
+ * Implements hook_ENTITY_TYPE_update().
+ * Add and update content and media aliases when a group is updated.
+ */
+function portland_groups_group_update(GroupInterface $group)
+{
+  // get group path
+  $group_path = $group->get('field_group_path')->value;
+  $orig_group_path = $group->original->get('field_group_path')->value;
+
+  // only update URL aliases if group_path changes
+  if ($group_path != $orig_group_path) {
+    $group_entities = $group->getContentEntities();
+    $non_user_entities = [];
+    foreach ($group_entities as $group_entity) {
+      if ($group_entity->bundle() === "user") continue; // Skip users
+      $non_user_entities[] = $group_entity;
+    }
+
+    // Batch process 50 items for each iteration
+    $limit = 50;
+    $batch_job = array(
+      'title' => t("Bulk updating URL aliases for content, media, and subgroups in {$group->label->value}"),
+      'init_message' => t('Starting the URL alias updating process'),
+      'operations' => [
+        ['Drupal\portland_groups\UpdateAliasInBatch::updateGroupContentAlias', [ 
+          $non_user_entities, 
+          $limit,
+        ]],
+      ],
+      'finished' => 'Drupal\portland_groups\UpdateAliasInBatch::updateAliasFinishedCallback',
+    );
+    batch_set($batch_job);
   }
 }
 
@@ -100,14 +144,15 @@ function portland_groups_entity_update($entity) {
  * When we are in group context, the group module will take care of creating
  * the group content entity.
  */
-function portland_groups_entity_insert($entity) {
+function portland_groups_entity_insert($entity)
+{
   if ($entity && method_exists($entity, 'hasField') && $entity->hasField('field_display_groups') && \Drupal::routeMatch()->getParameter('group') == null) {
     _portland_groups_synchronize_entity_group_ownership($entity);
   }
 }
 
 function _portland_groups_synchronize_entity_group_ownership($entity) {
-  // TEST ONLY: skip for group migration
+  // skip duing group migration
   if( \Drupal::state()->get('portland.skip_group_sync') == 1) return;
 
   // start building entity type id; we only support node and media entity types
@@ -133,7 +178,6 @@ function _portland_groups_synchronize_entity_group_ownership($entity) {
       _portland_groups_add_entity_to_group($entity, $group_id, $plugin_id);
     }
     return;
-
   } else {
     // this is an existing entity; if the group has changed, remove it from the old group
     // and assign to the new group.
@@ -160,7 +204,7 @@ function _portland_groups_synchronize_entity_group_ownership($entity) {
         $old_group = Group::load($orig_owner_group);
         if ($old_group) {
           $current_node = $old_group->getContent($plugin_id, ['entity_id' => $eid]);
-          if(count($current_node) > 0) {
+          if (count($current_node) > 0) {
             $content = array_values($current_node)[0];
             $content->delete();
           }
@@ -168,19 +212,17 @@ function _portland_groups_synchronize_entity_group_ownership($entity) {
       }
       // assign to new group
       _portland_groups_add_entity_to_group($entity, $new_owner_group, $plugin_id);
-    }
-    else {
+    } else {
       $new_group = Group::load($new_owner_group);
       if ($new_group) {
         // When the Display In field has a group but there is no group content node,
         // add a group content node
         $current_node = $new_group->getContent($plugin_id, ['entity_id' => $eid]);
-        if(count($current_node) == 0) {
+        if (count($current_node) == 0) {
           _portland_groups_add_entity_to_group($entity, $new_owner_group, $plugin_id);
-        }
-        else if (count($current_node) > 1) {
+        } else if (count($current_node) > 1) {
           // POWR-2800 One entity added to the same group many times, delete all group content but the first one
-          for($i=1; $i<count($current_node); $i++) {
+          for ($i = 1; $i < count($current_node); $i++) {
             array_values($current_node)[$i]->delete();
           }
         }
@@ -188,8 +230,8 @@ function _portland_groups_synchronize_entity_group_ownership($entity) {
         // POWR-2800 One entity added to many different groups, delete all but the first Displayed In group
         $group_content_nodes = GroupContent::loadByEntity($entity);
         if (count($group_content_nodes) > 1) {
-          foreach($group_content_nodes as $group_content_node) {
-            if($group_content_node->getGroup()->id() != $new_owner_group) {
+          foreach ($group_content_nodes as $group_content_node) {
+            if ($group_content_node->getGroup()->id() != $new_owner_group) {
               $group_content_node->delete();
             }
           }
@@ -199,7 +241,8 @@ function _portland_groups_synchronize_entity_group_ownership($entity) {
   }
 }
 
-function _portland_groups_add_entity_to_group($entity, $group_id, $plugin_id) {
+function _portland_groups_add_entity_to_group($entity, $group_id, $plugin_id)
+{
   // make sure entity isn't already in group; the entity may already be assigned to
   // the group by virtue of having been created in that context.
   $group = Group::load($group_id);
@@ -208,6 +251,6 @@ function _portland_groups_add_entity_to_group($entity, $group_id, $plugin_id) {
   // use this code if we ever need to check if a node is in a group before adding it.
   $current_node = $group->getContent($plugin_id, ['entity_id' => $entity->id()]);
   if (!$current_node || count($current_node) < 1) {
-   $group->addContent($entity, $plugin_id);
+    $group->addContent($entity, $plugin_id);
   }
 }
