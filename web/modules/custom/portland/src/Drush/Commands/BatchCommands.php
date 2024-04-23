@@ -241,35 +241,18 @@ final class BatchCommands extends DrushCommands
     "field_official_organization_name",
   ];
 
-  /**
-   * Drush command to create group type taxonomy terms.
-   */
-  #[CLI\Command(name: 'portland:create_group_types', aliases: ['portland-create-group-types'])]
-  #[CLI\Usage(name: 'portland:create_group_types', description: 'Command without parameter')]
-  public function create_group_types()
-  {
-    $group_types = ['Program', 'Bureau/office', 'Advisory group', 'Project'];
-    foreach ($group_types as $group_type) {
-      $term = Term::create(array(
-        'parent' => array(),
-        'name' => $group_type,
-        'vid' => 'group_type',
-      ))->save();
-    }
-  }
-
   private $group_type_and_name_list = [
     "advisory_group" => [
-      "name" => "Advisory group",
+      "id" => "849",
     ],
     "program" =>  [
-      "name" => "Program",
+      "id" => "851",
     ],
     "project" =>  [
-      "name" => "Project",
+      "id" => "852",
     ],
     "bureau_office" =>  [
-      "name" => "Bureau/office",
+      "id" => "850",
     ]
   ];
 
@@ -340,7 +323,7 @@ final class BatchCommands extends DrushCommands
   }
 
   /**
-   * Drush command to migrate Advisory group, Program, and Project into Bureau/Office.
+   * Drush command to print group user roles.
    */
   #[CLI\Command(name: 'portland:get_group_content', aliases: ['portland-get-group-content'])]
   #[CLI\Usage(name: 'portland:get_group_content GROUP_ID', description: 'GROUP_ID is the group entity ID.')]
@@ -366,20 +349,6 @@ final class BatchCommands extends DrushCommands
   public function migrate_group($group_id_to_migrate = null)
   {
     if(empty($group_id_to_migrate)) return;
-    // Load all group types taxonomy terms and initialize $group_type_and_name_list
-    $group_type_terms = \Drupal::entityTypeManager()
-      ->getStorage('taxonomy_term')
-      ->loadByProperties([
-        'vid' => 'group_type',
-      ]);
-    foreach ($group_type_terms as $group_type_term) {
-      /** @var EntityInterface $group_type_term */
-      foreach ($this->group_type_and_name_list as &$group_type_and_name) {
-        if ($group_type_and_name['name'] == $group_type_term->getName()) {
-          $group_type_and_name['id'] = $group_type_term->id();
-        }
-      }
-    }
 
     $group = \Drupal\group\Entity\Group::load((int)$group_id_to_migrate);
     $orig_group_id = $group->id();
