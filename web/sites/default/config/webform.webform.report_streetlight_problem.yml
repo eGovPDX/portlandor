@@ -34,6 +34,7 @@ elements: |-
   report_asset_type:
     '#type': radios
     '#title': 'What asset type are you reporting?'
+    '#description_display': after
     '#options':
       'Traffic Signal': 'Traffic Signal -- A set of indicating lights usually attached to poles or wires to keep cars and people moving safely and smoothly through busy intersections.'
       'Pedestrian or bicycle crossing signal': 'Pedestrian or bicycle crossing signal -- A signal that helps pedestrians or cyclists cross streets.'
@@ -51,31 +52,26 @@ elements: |-
         - ':input[name="report_asset_type"]':
             value: 'Pedestrian or bicycle crossing signal'
     report_signal_issue:
-      '#type': radios
+      '#type': webform_radios_other
       '#title': "What's wrong with the signal?"
       '#options':
         'Light is out': 'Light is out'
         'Light is flashing': 'Light is flashing'
         'Pole is damaged or knocked over': 'Pole is damaged or knocked over'
         Graffiti: Graffiti
-    container_anon_traffic_signal:
+    container_anon_signal:
       '#type': container
       '#states':
         visible:
           ':input[name="user_role"]':
-            value: anonymous
+            '!value': authenticated
       markup_anon_traffic_signal:
         '#type': webform_markup
         '#states':
           visible:
-            - ':input[name="report_signal_issue"]':
-                value: 'Light is out'
-            - or
-            - ':input[name="report_signal_issue"]':
-                value: 'Light is flashing'
-            - or
-            - ':input[name="report_signal_issue"]':
-                value: 'Pole is damaged or knocked over'
+            ':input[name="report_signal_issue[radios]"]':
+              value:
+                pattern: 'Light is out|Light is flashing|Pole is damaged or knocked over'
         '#access_create_roles':
           - anonymous
         '#access_update_roles':
@@ -88,28 +84,6 @@ elements: |-
 
           <p class="mb-0">Call Portland Bureau of Transportation’s (PBOT) 24/7 maintenance dispatch at <a href="tel:+1-503-823-1700">503-823-1700</a> to report problems with traffic signals, including physical damage, burnt out signal heads, problems detecting cars or bikes in the intersection, or any other immediate risks.</p>
           </div>
-    container_auth_signal_report:
-      '#type': container
-      '#states':
-        visible:
-          ':input[name="user_role"]':
-            value: authenticated
-          ':input[name="report_signal_issue"]':
-            '!value': Graffiti
-      report_description:
-        '#type': textarea
-        '#title': Description
-      report_photo:
-        '#type': webform_image_file
-        '#title': Photo
-        '#multiple': 4
-        '#file_preview': name
-        '#max_filesize': '30'
-        '#file_extensions': 'jpg png svg jpeg'
-        '#file_name': 'report_[webform_submission:sid]'
-        '#sanitize': true
-        '#max_resolution': 1280x1280
-        '#attachment_image_style': webform_report_uploaded_image
   section_streetlight:
     '#type': webform_section
     '#title': 'Report a problem with a streetlight'
@@ -121,50 +95,47 @@ elements: |-
       '#type': webform_radios_other
       '#title': 'What is the issue with the streetlight?'
       '#options':
-        'Streetlight is out': 'Streetlight is out'
-        'Streetlight is cycling on and off': 'Streetlight is cycling on and off'
+        'Light is out': 'Light is out'
+        'Light is flashing on and off': 'Light is flashing on and off'
         'Streetlight is on during the day': 'Streetlight is on during the day'
-        'Streetlight is damaged ': 'Streetlight is damaged '
+        'Pole is damaged ': 'Pole is damaged '
+        'Pole/light is knocked over': 'Pole/light is knocked over'
         Graffiti: Graffiti
       '#required': true
-    container_streetlight_report:
-      '#type': container
-      '#states':
-        invisible:
-          ':input[name="report_streetlight_problem[radios]"]':
-            value: Graffiti
-      markup_pole_tag_info:
-        '#type': webform_markup
-        '#markup': 'Map and Pole numbers are found on the Pole Tag. A Pole Tag is a three inch round metal plate on the Street Light pole located at about eye level (NOTE: There may not be a Pole Tag).'
-      report_map_number:
-        '#type': textfield
-        '#title': 'Map Number'
-      report_pole_number:
-        '#type': textfield
-        '#title': 'Pole Number'
-    container_auth_streetlight:
+    container_anon_streetlight:
       '#type': container
       '#states':
         visible:
           ':input[name="user_role"]':
-            value: authenticated
-  section_flashing_beacon:
-    '#type': webform_section
-    '#title': 'Report a problem with a flashing beacon'
-    '#states':
-      visible:
-        ':input[name="report_asset_type"]':
-          value: 'Flashing Beacon'
-    report_description_of_issue:
-      '#type': textarea
-      '#title': 'Description of issue'
+            '!value': authenticated
+      markup_anon_streetlight:
+        '#type': webform_markup
+        '#states':
+          visible:
+            - ':input[name="report_streetlight_problem[radios]"]':
+                value: 'Pole is damaged '
+            - or
+            - ':input[name="report_streetlight_problem[radios]"]':
+                value: 'Pole/light is knocked over'
+        '#access_create_roles':
+          - anonymous
+        '#access_update_roles':
+          - anonymous
+        '#access_view_roles':
+          - anonymous
+        '#markup': |-
+          <div class="webform-alert alert alert--info">
+          <h2>Next Steps</h2>
+
+          <p class="mb-0">Call Portland Bureau of Transportation’s (PBOT) 24/7 maintenance dispatch at <a href="tel:+1-503-823-1700">503-823-1700</a> to report damaged streetlight poles.</p>
+          </div>
   markup_graffiti_jump_button:
     '#type': webform_computed_twig
     '#title': 'Graffiti Jump Button'
     '#title_display': none
     '#states':
       visible:
-        - ':input[name="report_signal_issue"]':
+        - ':input[name="report_signal_issue[radios]"]':
             value: Graffiti
         - or
         - ':input[name="report_streetlight_problem[radios]"]':
@@ -181,63 +152,73 @@ elements: |-
       </div>
     '#whitespace': spaceless
     '#ajax': true
-  report_location:
-    '#type': portland_location_picker
-    '#title': Location
-    '#states':
-      invisible:
-        - ':input[name="user_role"]':
-            value: anonymous
-          ':input[name="report_signal_issue"]':
-            value: 'Light is out'
-        - or
-        - ':input[name="user_role"]':
-            value: anonymous
-          ':input[name="report_signal_issue"]':
-            value: 'Light is flashing'
-        - or
-        - ':input[name="user_role"]':
-            value: anonymous
-          ':input[name="report_signal_issue"]':
-            value: 'Pole is damaged or knocked over'
-        - or
-        - ':input[name="report_signal_issue"]':
-            value: Graffiti
-    '#location_address__required': true
-    '#place_name__access': false
-    '#location_type__access': false
-    '#location_park_container__access': false
-    '#location_private_owner__access': false
-  container_hidden_if_graffiti:
+  container_submit:
     '#type': container
     '#states':
       invisible:
-        - ':input[name="report_signal_issue"]':
+        - ':input[name="report_asset_type"]':
+            unchecked: true
+        - or
+        - ':input[name="report_signal_issue[radios]"]':
             value: Graffiti
         - or
         - ':input[name="report_streetlight_problem[radios]"]':
             value: Graffiti
+        - or
+        - ':input[name="user_role"]':
+            '!value': authenticated
+          ':input[name="report_signal_issue[radios]"]':
+            value:
+              pattern: 'Light is out|Light is flashing|Pole is damaged or knocked over'
+        - or
+        - ':input[name="user_role"]':
+            '!value': authenticated
+          ':input[name="report_streetlight_problem[radios]"]':
+            value: null
+            pattern: 'Pole is damaged|Pole/light is knocked over'
+    report_location:
+      '#type': portland_location_picker
+      '#title': Location
+      '#location_address__required': true
+      '#place_name__access': false
+      '#location_details__access': false
+      '#location_type__access': false
+      '#location_park_container__access': false
+      '#location_private_owner__access': false
+    container_streetlight_report:
+      '#type': container
+      '#states':
+        visible:
+          ':input[name="report_asset_type"]':
+            value: Streetlight
+          ':input[name="report_streetlight_problem[radios]"]':
+            '!value': Graffiti
+      markup_pole_tag_info:
+        '#type': webform_markup
+        '#markup': 'Map and Pole numbers are found on the Pole Tag. A Pole Tag is a three inch round metal plate on the Street Light pole located at about eye level (NOTE: There may not be a Pole Tag).'
+      report_map_number:
+        '#type': textfield
+        '#title': 'Map Number'
+      report_pole_number:
+        '#type': textfield
+        '#title': 'Pole Number'
+    report_description:
+      '#type': textarea
+      '#title': 'Issue Description'
+    report_photo:
+      '#type': webform_image_file
+      '#title': Photo
+      '#multiple': 4
+      '#file_preview': name
+      '#max_filesize': '30'
+      '#file_extensions': 'jpg png svg jpeg'
+      '#file_name': 'report_[webform_submission:sid]'
+      '#sanitize': true
+      '#max_resolution': 1280x1280
+      '#attachment_image_style': webform_report_uploaded_image
     section_contact:
       '#type': webform_section
       '#title': 'Your Contact Information'
-      '#states':
-        visible:
-          - ':input[name="report_asset_type"]':
-              value: Streetlight
-          - or
-          - ':input[name="report_asset_type"]':
-              value: 'Flashing Beacon'
-          - or
-          - ':input[name="report_asset_type"]':
-              value: 'Pedestrian or bicycle crossing signal'
-          - or
-          - ':input[name="report_asset_type"]':
-              value: 'Traffic Signal'
-            ':input[name="user_role"]':
-              value: authenticated
-        hidden:
-          - ':input[name="report_signal_issue"]':
-              value: Graffiti
       contact_name:
         '#type': textfield
         '#title': Name
@@ -247,9 +228,9 @@ elements: |-
         '#description': 'We will use your email to confirm your submission and respond if necessary.'
         '#input_mask': "'alias': 'email'"
         '#required': true
-      actions:
-        '#type': webform_actions
-        '#title': 'Submit button(s)'
+    actions:
+      '#type': webform_actions
+      '#title': 'Submit button(s)'
 css: ''
 javascript: ''
 settings:

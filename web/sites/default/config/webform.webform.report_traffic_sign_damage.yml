@@ -37,20 +37,28 @@ elements: |-
       'ORANGE: Construction related sign': 'ORANGE: Construction related sign'
     '#other__option_label': 'Something else...'
     '#other__placeholder': 'Please describe'
+  markup_row_signs:
+    '#type': webform_markup
+    '#states':
+      visible:
+        ':input[name="report_sign_type[radios]"]':
+          value: 'RED: Stop, Yield, Do Not Enter, or One Way sign'
+        ':input[name="user_role"]':
+          value: anonymous
+    '#markup': |-
+      <div class="webform-alert alert alert--info">
+      <h2>Next Steps</h2>
+
+      <p>Issues with these types of signs are considered urgent. To ensure a fast response, please call PBOT's 24/7 maintenance dispatch line at <a href="tel:+1-503-823-1700">503-823-1700</a> to speak with a representative about the issue.</p>
+      </div>
   container_continue_report:
     '#type': container
     '#states':
-      visible:
-        - ':input[name="user_role"]':
-            value: authenticated
-          ':input[name="report_damage_type[radios]"]':
-            '!value': Graffiti
-        - or
-        - ':input[name="user_role"]':
-            value: anonymous
-          ':input[name="report_damage_type[radios]"]':
-            value:
-              '!pattern': 'Sinkhole|Landslide|Graffiti|Gravel street needs maintenance'
+      invisible:
+        ':input[name="user_role"]':
+          value: anonymous
+        ':input[name="report_sign_type[radios]"]':
+          value: 'RED: Stop, Yield, Do Not Enter, or One Way sign'
     report_damage_type:
       '#type': webform_radios_other
       '#title': 'What type of damage has been done?'
@@ -61,89 +69,157 @@ elements: |-
         'Lettering or markings not readable': 'Lettering or markings not readable'
         'Blocked by vegetation': 'Blocked by vegetation'
         Graffiti: Graffiti
+    markup_graffiti:
+      '#type': webform_markup
+      '#states':
+        visible:
+          ':input[name="report_damage_type[radios]"]':
+            value: Graffiti
+      '#markup': |-
+        <div class="webform-alert alert alert--info">
+        <h2>Next Steps</h2>
+
+        <p>To ensure the fastest response, please report this through the <a href="/bps/graffiti/report-graffiti">Report Graffiti service</a>.</p>
+
+        <p class="mb-0"><a class="button button--primary" href="/bps/graffiti/report-graffiti">Continue</a></p>
+        </div>
     report_safety_hazard:
       '#type': radios
       '#title': 'Is it blocking the street or sidewalk, or causing an immediate safety hazard?'
       '#options': yes_no
+      '#options_display': side_by_side
       '#required': true
+      '#states':
+        visible:
+          ':input[name="report_damage_type[radios]"]':
+            value: 'Damaged or knocked over'
     report_overhead:
       '#type': radios
       '#title': 'Is the sign on an overhead arm crossing over the street/above traffic? '
       '#options': yes_no
       '#options_display': side_by_side
       '#required': true
-    report_location:
-      '#type': portland_location_picker
-      '#title': 'Location of damage'
-      '#location_type__access': false
-      '#location_park_container__access': false
-      '#location_private_owner__access': false
-      '#location_address__description': 'Enter the address or intersection nearest to the damage and click Verify. Please zoom in and choose the exact location of the pothole. Try to be as precise as possible.'
-      '#location_address__required': true
-      '#place_name__access': false
-      '#location_details__access': false
-      '#require_city_limits': true
-    report_description:
-      '#type': textarea
-      '#title': 'Description of issue'
-      '#description': 'Please provide any other details about the damage or location that may be useful.'
-    report_has_photo:
-      '#type': radios
-      '#title': 'Do you have a photo?'
-      '#options': yes_no
-      '#options_display': side_by_side
-      '#states':
-        invisible:
-          - ':input[name="report_damage_type[radios]"]':
-              value: Sinkhole
-          - or
-          - ':input[name="report_damage_type[radios]"]':
-              value: Landslide
-      '#default_value': 'Yes'
-    report_sign_text:
-      '#type': textfield
-      '#title': 'What does the sign say?'
       '#states':
         visible:
-          ':input[name="report_has_photo"]':
-            value: 'No'
-    report_photo:
-      '#type': webform_image_file
-      '#title': Photo
-      '#description': '<p>If possible and safe to do so, please include a picture of the damage you are reporting.</p>'
-      '#description_display': before
+          ':input[name="report_damage_type[radios]"]':
+            value: 'Damaged or knocked over'
+    markup_safety_hazard:
+      '#type': webform_markup
+      '#states':
+        visible:
+          - ':input[name="user_role"]':
+              '!value': authenticated
+            ':input[name="report_safety_hazard"]':
+              value: 'Yes'
+          - or
+          - ':input[name="user_role"]':
+              '!value': authenticated
+            ':input[name="report_overhead"]':
+              value: 'Yes'
+      '#markup': |-
+        <div class="webform-alert alert alert--info">
+        <h2>Next Steps</h2>
+
+        <p>This type of issue is considered urgent. To ensure a fast response, please call PBOT's 24/7 maintenance dispatch line at <a href="tel:+1-503-823-1700">503-823-1700</a> to speak with a representative about the issue.</p>
+        </div>
+    container_submit_report:
+      '#type': container
       '#states':
         invisible:
-          ':input[name="report_has_photo"]':
-            value: 'No'
-      '#file_preview': 'medium:image'
-      '#max_filesize': '30'
-      '#file_extensions': 'jpg png jpeg'
-      '#file_name': 'report_[webform_submission:sid]'
-      '#sanitize': true
-      '#max_resolution': 1280x1280
-      '#attachment_image_style': webform_report_uploaded_image
-    section_contact:
-      '#type': webform_section
-      '#title': 'Your Contact Information'
-      contact_name:
-        '#type': textfield
-        '#title': Name
+          - ':input[name="user_role"]':
+              '!value': authenticated
+            ':input[name="report_safety_hazard"]':
+              value: 'Yes'
+          - or
+          - ':input[name="user_role"]':
+              '!value': authenticated
+            ':input[name="report_overhead"]':
+              value: 'Yes'
+          - or
+          - ':input[name="report_damage_type[radios]"]':
+              value: Graffiti
+      '#states_clear': false
+      report_location:
+        '#type': portland_location_picker
+        '#title': 'Location of damage'
+        '#location_type__access': false
+        '#location_park_container__access': false
+        '#location_private_owner__access': false
+        '#location_address__description': 'Enter the address or intersection nearest to the damage and click Verify. Please zoom in and choose the exact location of the pothole. Try to be as precise as possible.'
+        '#location_address__required': true
+        '#place_name__access': false
+        '#location_details__access': false
+        '#require_city_limits': true
+      report_description:
+        '#type': textarea
+        '#title': 'Description of issue'
+        '#description': 'Please provide any other details about the damage or location that may be useful.'
+      report_has_photo:
+        '#type': radios
+        '#title': 'Do you have a photo?'
+        '#options': yes_no
+        '#options_display': side_by_side
         '#states':
           invisible:
-            ':input[name="report_damage_type[radios]"]':
-              value: Pothole
-      contact_email:
+            - ':input[name="report_damage_type[radios]"]':
+                value: Sinkhole
+            - or
+            - ':input[name="report_damage_type[radios]"]':
+                value: Landslide
+        '#default_value': 'Yes'
+      report_sign_text:
         '#type': textfield
-        '#title': Email
-        '#description': '<p>We will use your email to confirm your submission and respond if necessary.</p>'
-        '#required': true
-        '#pattern': '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
-        '#pattern_error': 'Please enter a correctly formatted email address, such as myname@example.com.'
-      contact_phone:
-        '#type': textfield
-        '#title': Phone
-        '#input_mask': '(999) 999-9999'
+        '#title': 'What does the sign say?'
+        '#states':
+          visible:
+            ':input[name="report_has_photo"]':
+              value: 'No'
+      report_photo:
+        '#type': webform_image_file
+        '#title': Photo
+        '#description': '<p>If possible and safe to do so, please include a picture of the damage you are reporting.</p>'
+        '#description_display': before
+        '#states':
+          invisible:
+            ':input[name="report_has_photo"]':
+              value: 'No'
+        '#file_preview': 'medium:image'
+        '#max_filesize': '30'
+        '#file_extensions': 'jpg png jpeg'
+        '#file_name': 'report_[webform_submission:sid]'
+        '#sanitize': true
+        '#max_resolution': 1280x1280
+        '#attachment_image_style': webform_report_uploaded_image
+      section_contact:
+        '#type': webform_section
+        '#title': 'Your Contact Information'
+        contact_name:
+          '#type': textfield
+          '#title': Name
+          '#states':
+            invisible:
+              ':input[name="report_damage_type[radios]"]':
+                value: Pothole
+        contact_email:
+          '#type': textfield
+          '#title': Email
+          '#description': '<p>We will use your email to confirm your submission and respond if necessary.</p>'
+          '#required': true
+          '#pattern': '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+          '#pattern_error': 'Please enter a correctly formatted email address, such as myname@example.com.'
+        contact_phone:
+          '#type': textfield
+          '#title': Phone
+          '#input_mask': '(999) 999-9999'
+      actions:
+        '#type': webform_actions
+        '#title': 'Submit button(s)'
+        '#states':
+          invisible:
+            ':input[name="user_role"]':
+              value: anonymous
+            ':input[name="report_sign_type[radios]"]':
+              value: 'RED: Stop, Yield, Do Not Enter, or One Way sign'
 css: ''
 javascript: ''
 settings:
