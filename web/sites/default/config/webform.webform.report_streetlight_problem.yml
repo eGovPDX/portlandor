@@ -27,10 +27,9 @@ elements: |-
     '#title': 'User Role'
     '#wrapper_attributes':
       style: 'display: none;'
-    '#display_on': none
     '#mode': text
-    '#template': "Role: {{ webform_token('[current-user:roles:first]', webform_submission, [], options)|default('anonymous') }}"
-    '#whitespace': spaceless
+    '#template': "{{ webform_token('[current-user:roles:first]', webform_submission, [], options)|default('anonymous') }}"
+    '#whitespace': trim
   report_asset_type:
     '#type': radios
     '#title': 'What asset type are you reporting?'
@@ -41,6 +40,13 @@ elements: |-
       Streetlight: 'Streetlight -- A tall post with a light on top that lights up the street when it gets dark outside.'
       'Flashing Beacon': "Flashing Beacon -- A special kind of light you might see at a crosswalk. It's meant to help people cross the street safely. "
     '#required': true
+  markup_continue:
+    '#type': webform_markup
+    '#states':
+      visible:
+        ':input[name="report_asset_type"]':
+          unchecked: true
+    '#markup': '<p><strong>Please make a selection to continue.</strong></p>'
   section_traffic_signal:
     '#type': webform_section
     '#title': 'Report a problem with a traffic, pedestrian, or bicycle crossing signal'
@@ -166,16 +172,16 @@ elements: |-
             value: Graffiti
         - or
         - ':input[name="user_role"]':
-            '!value': authenticated
+            value: anonymous
           ':input[name="report_signal_issue[radios]"]':
             value:
               pattern: 'Light is out|Light is flashing|Pole is damaged or knocked over'
         - or
         - ':input[name="user_role"]':
-            '!value': authenticated
+            value: anonymous
           ':input[name="report_streetlight_problem[radios]"]':
-            value: null
-            pattern: 'Pole is damaged|Pole/light is knocked over'
+            value:
+              pattern: 'Pole is damaged|Pole/light is knocked over'
     report_location:
       '#type': portland_location_picker
       '#title': Location
