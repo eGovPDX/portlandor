@@ -29,36 +29,28 @@ elements: |-
     '#type': webform_radios_other
     '#title': 'What color/kind of sign?'
     '#options':
-      'RED: Stop, Yield, Do Not Enter, or One Way sign': 'RED: Stop, Yield, Do Not Enter, or One Way sign'
-      'GREEN: Street name sign': 'GREEN: Street name sign -- For example, "SE 38th Ave" or "N Interstate Blvd"'
-      'YELLOW: Advisory sign': 'YELLOW: Advisory sign -- For example, "No Outlet"'
-      'WHITE: Speed Limit, No Turn, or Parking sign': 'WHITE: Speed Limit, No Turn, or Parking sign'
-      'BLUE: Informational sign': 'BLUE: Informational sign'
-      'ORANGE: Construction related sign': 'ORANGE: Construction related sign'
+      'Red: Regulatory': 'Red: Regulatory -- Examples: STOP, YIELD, DO NOT ENTER'
+      'White: Regulatory': 'White: Regulatory -- Examples: SPEED LIMIT, ONE WAY, NO TURN, NO PARKING'
+      'Yellow: Warning': 'Yellow: Warning -- Examples: NO OUTLET, CURVE AHEAD, LOW CLEARANCE'
+      'Green: Street name': 'Green: Street name -- Examples: SE 38TH AVE or N INTERSTATE BLVD'
+      'Blue: Motorist services': 'Blue: Motorist services -- Examples: HOSPITAL, DISABLED ACCESS, SCENIC OVERLOOK'
+      'Orange: Temporary traffic control': 'Orange: Temporary traffic control -- Examples: WORKERS AHEAD, DETOUR, ROAD WORK'
     '#other__option_label': 'Something else...'
     '#other__placeholder': 'Please describe'
-  markup_row_signs:
+    '#required': true
+  markup_continue:
     '#type': webform_markup
     '#states':
       visible:
         ':input[name="report_sign_type[radios]"]':
-          value: 'RED: Stop, Yield, Do Not Enter, or One Way sign'
-        ':input[name="user_role"]':
-          value: anonymous
-    '#markup': |-
-      <div class="webform-alert alert alert--info">
-      <h2>Next Steps</h2>
-
-      <p>Issues with these types of signs are considered urgent. To ensure a fast response, please call PBOT's 24/7 maintenance dispatch line at <a href="tel:+1-503-823-1700">503-823-1700</a> to speak with a representative about the issue.</p>
-      </div>
+          unchecked: true
+    '#markup': '<p class="mt-5"><strong>Please make a selection to continue.</strong></p>'
   container_continue_report:
     '#type': container
     '#states':
-      invisible:
-        ':input[name="user_role"]':
-          value: anonymous
+      visible:
         ':input[name="report_sign_type[radios]"]':
-          value: 'RED: Stop, Yield, Do Not Enter, or One Way sign'
+          checked: true
     report_damage_type:
       '#type': webform_radios_other
       '#title': 'What type of damage has been done?'
@@ -69,6 +61,7 @@ elements: |-
         'Lettering or markings not readable': 'Lettering or markings not readable'
         'Blocked by vegetation': 'Blocked by vegetation'
         Graffiti: Graffiti
+      '#required': true
     markup_graffiti:
       '#type': webform_markup
       '#states':
@@ -103,41 +96,12 @@ elements: |-
         visible:
           ':input[name="report_damage_type[radios]"]':
             value: 'Damaged or knocked over'
-    markup_safety_hazard:
-      '#type': webform_markup
-      '#states':
-        visible:
-          - ':input[name="user_role"]':
-              '!value': authenticated
-            ':input[name="report_safety_hazard"]':
-              value: 'Yes'
-          - or
-          - ':input[name="user_role"]':
-              '!value': authenticated
-            ':input[name="report_overhead"]':
-              value: 'Yes'
-      '#markup': |-
-        <div class="webform-alert alert alert--info">
-        <h2>Next Steps</h2>
-
-        <p>This type of issue is considered urgent. To ensure a fast response, please call PBOT's 24/7 maintenance dispatch line at <a href="tel:+1-503-823-1700">503-823-1700</a> to speak with a representative about the issue.</p>
-        </div>
     container_submit_report:
       '#type': container
       '#states':
         invisible:
-          - ':input[name="user_role"]':
-              '!value': authenticated
-            ':input[name="report_safety_hazard"]':
-              value: 'Yes'
-          - or
-          - ':input[name="user_role"]':
-              '!value': authenticated
-            ':input[name="report_overhead"]':
-              value: 'Yes'
-          - or
-          - ':input[name="report_damage_type[radios]"]':
-              value: Graffiti
+          ':input[name="report_damage_type[radios]"]':
+            value: Graffiti
       '#states_clear': false
       report_location:
         '#type': portland_location_picker
@@ -150,6 +114,13 @@ elements: |-
         '#place_name__access': false
         '#location_details__access': false
         '#require_city_limits': true
+      report_time:
+        '#type': webform_time
+        '#title': 'Time call received'
+        '#states':
+          invisible:
+            ':input[name="user_role"]':
+              value: anonymous
       report_description:
         '#type': textarea
         '#title': 'Description of issue'

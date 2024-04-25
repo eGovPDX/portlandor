@@ -21,6 +21,14 @@ categories:
   - 'PBOT MO'
   - Report
 elements: |-
+  user_role:
+    '#type': webform_computed_twig
+    '#title': 'User Role'
+    '#wrapper_attributes':
+      style: 'display: none;'
+    '#mode': text
+    '#template': "{{ webform_token('[current-user:roles:first]', webform_submission, [], options)|default('anonymous') }}"
+    '#whitespace': trim
   report_asset_type:
     '#type': radios
     '#title': 'What type of asset are you reporting?'
@@ -30,12 +38,40 @@ elements: |-
       'Concrete island or diverter': 'Concrete island or diverter'
       Bollard: Bollard
       Planter: Planter
-  container_location_photos:
-    '#type': container
+  markup_continue:
+    '#type': webform_markup
     '#states':
       visible:
         ':input[name="report_asset_type"]':
-          checked: true
+          unchecked: true
+    '#markup': '<p><strong>Please make a selection to continue.</strong></p>'
+  markup_row_signs:
+    '#type': webform_markup
+    '#states':
+      visible:
+        ':input[name="user_role"]':
+          value: anonymous
+        ':input[name="report_asset_type"]':
+          value:
+            pattern: 'Cushions after snow and ice|Bollard'
+    '#markup': |-
+      <div class="webform-alert alert alert--info">
+      <h2>Next Steps</h2>
+
+      <p>This type of issue is considered urgent. To ensure a fast response, please call PBOT's 24/7 maintenance dispatch line at <a href="tel:+1-503-823-1700">503-823-1700</a> to speak with a representative about it.</p>
+      </div>
+  container_submit:
+    '#type': container
+    '#states':
+      invisible:
+        - ':input[name="user_role"]':
+            value: anonymous
+          ':input[name="report_asset_type"]':
+            value:
+              pattern: 'Cushions after snow and ice|Bollard'
+        - or
+        - ':input[name="report_asset_type"]':
+            unchecked: true
     report_location:
       '#type': portland_location_picker
       '#title': 'Location of the traffic calming device'
@@ -46,6 +82,20 @@ elements: |-
       '#location_details__help': 'Please tell us as much as you can so we can better identify the asset.'
       '#location_type__access': false
       '#location_private_owner__access': false
+    report_time:
+      '#type': webform_time
+      '#title': 'Time call received'
+      '#states':
+        invisible:
+          ':input[name="user_role"]':
+            value: anonymous
+    report_issue_details:
+      '#type': textarea
+      '#title': 'Issue Details'
+      '#description': '<p>Please provide any other details that might help us find and identify the issue.</p>'
+      '#description_display': before
+      '#counter_type': character
+      '#counter_maximum': 400
     report_photo:
       '#type': webform_image_file
       '#title': 'Photo of issue'
@@ -56,13 +106,6 @@ elements: |-
       '#sanitize': true
       '#max_resolution': 1280x1280
       '#attachment_image_style': webform_report_uploaded_image
-    report_asset_details:
-      '#type': textarea
-      '#title': 'Asset Details'
-      '#description': '<p>Please provide any other details that might help us find and identify the asset.</p>'
-      '#description_display': before
-      '#counter_type': character
-      '#counter_maximum': 400
     section_contact:
       '#type': webform_section
       '#title': 'Your Contact Information'
