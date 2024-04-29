@@ -625,7 +625,7 @@ class ZendeskHandler extends WebformHandlerBase
         // in Zendesk. also, the default filter isn't working. so we'll just clear out any values that start with a token
         // string. at present, custom values will only include the tokens, not additional string values, so this approach
         // is fine for now but may need to be extended to remove the token code from within a longer string.
-        if (substr($value, 0, 27) == "[webform_submission:values:") {
+        if (is_string($value) && substr($value, 0, 27) == "[webform_submission:values:") {
           $value = "";
         }
 

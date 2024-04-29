@@ -49,10 +49,9 @@ describe('SuperAdmin user test', () => {
         await page.type('#edit-title-0-value', 'Sandbox Site'); 
         await page.select('#edit-field-severity', '30');    // Information
         await page.evaluate(() => {
-          document
-            .querySelector('iframe.cke_wysiwyg_frame')
-            .contentDocument.querySelector('body p').textContent =
-            'This site is a Monday morning snapshot copy of portland.gov and provides a safe environment for editor training classes, self learning, or experimentation, etc. Changes made here will not affect the live site and cannot be imported into the live site.';
+          ck5 = Drupal.CKEditor5Instances.keys().next().value;
+          editor = Drupal.CKEditor5Instances.get(ck5);
+          editor.setData('This site is a Monday morning snapshot copy of portland.gov and provides a safe environment for editor training classes, self learning, or experimentation, etc. Changes made here will not affect the live site and cannot be imported into the live site.');
         });
         await page.select("#edit-moderation-state-0-state", "published");
         

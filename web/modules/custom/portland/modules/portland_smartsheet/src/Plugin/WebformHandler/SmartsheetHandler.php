@@ -251,7 +251,7 @@ class SmartsheetHandler extends WebformHandlerBase {
       $field_data = $fields[$field_id];
       $cells[] = [
         'columnId' => (int) $col_id,
-        'value' => is_array($field_data) ? join(',', $field_data) : $field_data,
+        'value' => is_array($field_data) ? join(';', $field_data) : $field_data,
       ];
     }
 
