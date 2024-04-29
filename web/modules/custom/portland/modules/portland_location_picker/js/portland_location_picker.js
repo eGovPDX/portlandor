@@ -5,7 +5,7 @@
 
   // Here's how to reverse geolocate a park. Note the x/y values in the geometry parameter:
   // https://www.portlandmaps.com/arcgis/rest/services/Public/Parks_Misc/MapServer/2/query?geometry=%7B%22x%22%3A-122.55203425884248%2C%22y%22%3A45.53377174783918%2C%22spatialReference%22%3A%7B%22wkid%22%3A4326%7D%7D&geometryType=esriGeometryPoint&spacialRel=esriSpatialRelIntersects&returnGeometry=false&returnTrueCurves=false&returnIdsOnly=false&returnCountOnly=false&returnDistinctValues=false&f=pjson"
-  // returns an object that includes the park name. 
+  // returns an object that includes the park name.
 
   /**
    * Attach the machine-readable name form element behavior.
@@ -404,7 +404,7 @@
 
           if (boundaryUrl) {
             $.ajax({
-              url: boundaryUrl, 
+              url: boundaryUrl,
               success: function (cityBoundaryResponse) {
                 var cityBoundaryFeatures = cityBoundaryResponse.features;
                 boundaryLayer = L.geoJson(cityBoundaryFeatures, cityLimitsProperties).addTo(map);
@@ -457,7 +457,7 @@
 
                         incidentsLoop:
                         // loop backwards becasue we're going to remove incidents that are attached to assets
-                        // and move the incident 
+                        // and move the incident
                         for (var j = incidentsFeatures.length - 1; j >= 0; j--) {
 
                           // is the incident associated with the asset?
@@ -487,7 +487,7 @@
                 if (regionsLayerSource) {
                   showLoader();
                   $.ajax({
-                    url: regionsLayerSource, 
+                    url: regionsLayerSource,
                     async: false,
                     success: function (regionsResponse) {
                       regionsFeatures = regionsResponse.features;
@@ -813,10 +813,10 @@
           showLoader();
 
           // normally when the map is clicked, we want to zoom to the clicked location
-          // and perform reverse geocoding. 
+          // and perform reverse geocoding.
 
-          // if primary layer behavior is selection-only, or geofencing is enabled, 
-          // don't allow location selection, but still zoom in on that location and 
+          // if primary layer behavior is selection-only, or geofencing is enabled,
+          // don't allow location selection, but still zoom in on that location and
           // display location description.
 
           resetClickedMarker();
@@ -869,10 +869,10 @@
           var inLayer = leafletPip.pointInLayer(latlng, testLayer, false);
           if (inLayer.length > 0) {
             // NOTE: The following code would be problematic if we allow multiple copies of the widget or alternate naming conventions.
-            $('input[name=' + elementId + '\\[location_region_id\\]]').val(inLayer[0].feature.properties[regionIdPropertyName]);
+            $('input[name=' + elementId + '\\[location_region_id\\]]').val(inLayer[0].feature.properties[regionIdPropertyName]).trigger('change');
           } else {
             // clear region_id field
-            $('input[name=' + elementId + '\\[location_region_id\\]]').val("");
+            $('input[name=' + elementId + '\\[location_region_id\\]]').val("").trigger('change');
           }
           hideLoader();
         }
@@ -909,7 +909,7 @@
           captureSelectedAssetMarkerData(marker);
 
           // need to call reverseGeolocate in order to capture nearest address,
-          // this is the one instance where we don't want to zoom and center when clicking 
+          // this is the one instance where we don't want to zoom and center when clicking
           // an existing marker (2nd argument = false).
           reverseGeolocate(marker.latlng, true);
         }
@@ -939,7 +939,7 @@
           $('input[name=' + elementId + '\\[location_x\\]]').val('');
           $('input[name=' + elementId + '\\[location_y\\]]').val('');
           $('input[name=' + elementId + '\\[location_asset_id\\]]').val('');
-          $('input[name=' + elementId + '\\[location_region_id\\]]').val('');
+          $('input[name=' + elementId + '\\[location_region_id\\]]').val('').trigger('change');
           $('input[name=' + elementId + '\\[location_municipality_name\\]]').val('');
           $('input[name=' + elementId + '\\[location_attributes\\]]').val('');
 
@@ -1316,7 +1316,7 @@
             var describe = data.describe.trim();
             data.describe = describe;
           }
-          
+
           var isWithinBounds = checkWithinBounds(new L.LatLng(lat, lng));
           var isVerifiedAddress = true;
           if (zoomAndCenter) {
