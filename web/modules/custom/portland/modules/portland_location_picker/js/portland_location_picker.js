@@ -464,7 +464,7 @@
                         for (var j = incidentsFeatures.length - 1; j >= 0; j--) {
 
                           // is the incident associated with the asset?
-                          if (primaryFeatures[i].properties.id == incidentsFeatures[j].properties.asset_id) {
+                          if (primaryFeatures[i].properties.id && primaryFeatures[i].properties.id == incidentsFeatures[j].properties.asset_id) {
                             // add incident details to asset details
                             primaryFeatures[i].properties.incidentDetail = incidentsFeatures[j].properties.detail;
                             primaryFeatures[i].properties.hasOpenIncident = incidentsFeatures[j].properties.status == "open" || incidentsFeatures[j].properties.status == "new";
@@ -1315,6 +1315,12 @@
         }
 
         function processReverseLocationData(data, lat, lng, zoomAndCenter = true, verifiedAddress) {
+          // KLUGE: Address data coming from PortlandMaps has a trailing space; trim it.
+          if (data.describe) {
+            var describe = data.describe.trim();
+            data.describe = describe;
+          }
+
           var isWithinBounds = checkWithinBounds(new L.LatLng(lat, lng));
           var isVerifiedAddress = true;
           if (zoomAndCenter) {
