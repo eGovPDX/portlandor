@@ -515,7 +515,7 @@ elements: |-
     '#type': webform_computed_twig
     '#title': 'Computed Issue Description'
     '#title_display': none
-    '#display_on': form
+    '#display_on': none
     '#mode': html
     '#template': |-
       <strong>Location:</strong><br>
@@ -546,7 +546,12 @@ elements: |-
 
       <p><a href="https://www.portlandmaps.com/detail/property/{{ data.report_location.location_x }}_{{ data.report_location.location_y}}_xy/">View in PortlandMaps</a></p>
 
-      {% if data.report_is_park and data.report_is_park is not iterable and data.report_is_park == "Park or natural area" %}
+      {% set staffIssue = 0 %}
+      {% if data.what_are_you_trying_to_report and data.what_are_you_trying_to_report is not iterable and data.what_are_you_trying_to_report == "Feedback about a staff encounter" %}
+        {% set staffIssue = 1 %}
+      {% endif %}
+
+      {% if data.report_is_park and data.report_is_park is not iterable and data.report_is_park == "Park or natural area" and staffIssue == 0 %}
       <br><strong>What needs attention:</strong><br>
       {% endif %}
 
@@ -933,10 +938,14 @@ handlers:
     id: zendesk
     handler_id: route_to_parks_maintenance_zendesk
     label: 'Route to Parks Maintenance (Zendesk)'
-    notes: 'Default routing for maintenance reports. Disabled if any of the following are true: 1) Art/Mural/Monument/Sculpture, 2) Interactions, improper use, and safety concerns, 3) Test Submission box checked. '
+    notes: 'Default routing for maintenance reports. Disabled if any of the following are true: 1) Feedback about a staff encounter, 2) Art/Mural/Monument/Sculpture, 3) Test Submission box checked. '
     status: true
     conditions:
       disabled:
+        -
+          ':input[name="what_are_you_trying_to_report"]':
+            value: 'Feedback about a staff encounter'
+        - or
         -
           ':input[name="report_basic_amenity[radios]"]':
             value: Art/mural/monument/sculpture
@@ -944,10 +953,6 @@ handlers:
         -
           ':input[name="support_agent_use_only[test_submission]"]':
             checked: true
-        - or
-        -
-          ':input[name="what_are_you_trying_to_report"]':
-            value: 'Feedback about a staff encounter'
     weight: -50
     settings:
       requester_name: contact_name
