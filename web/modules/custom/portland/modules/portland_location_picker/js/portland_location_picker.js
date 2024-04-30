@@ -336,7 +336,7 @@
           // set up search field with autocomplete ////////////////////////////
           $('#location_search').autocomplete({
             source: function (request, response) {
-              const searchTerm = request.term;
+              const searchTerm = encodeURIComponent(request.term);
               var apiUrl = `https://www.portlandmaps.com/api/suggest/?intersections=1&landmarks=1&alt_coords=1&api_key=${apiKey}&query=${searchTerm}`;
 
               $.ajax({
@@ -1057,7 +1057,7 @@
         }
 
         function verifyAddressPortlandMaps(address) {
-          var encodedAddress = encodeURI(address);
+          var encodedAddress = encodeURIComponent(address);
           // API documentation: https://www.portlandmaps.com/development/#suggest
           var url = "https://www.portlandmaps.com/api/suggest/?intersections=1&alt_coords=1&api_key=" + drupalSettings.portlandmaps_api_key + "&query=" + encodedAddress;
           $.ajax({
