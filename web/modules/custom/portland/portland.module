@@ -221,9 +221,98 @@ function portland_node_presave($node)
 
   // If the Save is from a cron job, add a revision log
   $current_path = \Drupal::service('path.current')->getPath();
-  // Start cron by loading URL or clicking button
   if (strpos($current_path, '/cron') === 0  || $current_path == '/admin/config/system/cron') {
     $node->revision_log->value = 'Scheduled update';
+  }
+
+
+  // Send GovDelivery bulletin emails if 'send email' checkbox is checked and node is published.
+  // This can't all be done in one hook. In hook_node_presave() we can modify a field value but
+  // the node hasn't actually been saved yet so it doesn't have a node ID or URL yet which is 
+  // needed to send the email. So that part will happen in hook_node_update() after it's saved.
+  if ($node->hasField("field_send_email") && $node->get("field_send_email")->value && $node->get('moderation_state')->getString() == "published") {
+    // Reset send email checkbox
+    $node->set('field_send_email', 0);
+
+    // Set a flag for this request so that we can continue in portland_node_update()
+    $_REQUEST['send_govdelivery_email'] = TRUE;
+  }
+}
+
+/**
+ * Implements hook_node_update().
+ * Send GovDelivery bulletin emails.
+ */
+function portland_node_update($node)
+{
+  if (isset($_REQUEST['send_govdelivery_email']) && $_REQUEST['send_govdelivery_email'] && count($node->get("field_topics")->getValue())) {
+    /*
+    // Prepare the node's body HTML for use in the email
+    // Remove HTML / Twig comments
+    $body = $node->get("field_body_content")->processed;
+    $body = preg_replace("/<!--(?:.|\n)*?-->\n?/", "", $body);
+
+    // Convert relative links in the body HTML to absolute links
+    $base_url = \Drupal::request()->getSchemeAndHttpHost();
+    $search_str = ['href="/', 'src="/', 'srcset="/', 'action="/'];
+    $replace_str = ["href=\"$base_url/", "src=\"$base_url/", "srcset=\"$base_url/", "action=\"$base_url/"];
+    $body = str_ireplace($search_str, $replace_str, $body);
+
+    // srcset attribute can contain multiple URLs:
+    // e.g. <img srcset="url1 resolution1, url2 resolution2">
+    // First URL occurrence was converted above, now convert any remaining URLs
+    $count = 1;
+    while($count) {
+      $body = preg_replace('/(srcset="[^"]+?), (\/[^,"]+)/', "$1, $base_url$2", $body, -1, $count);
+    }
+    */
+
+    $body = "<h2>" . $node->getTitle() . "</h2>";
+    $body .= "<p>" . $node->get("field_summary")->value . "</p>";
+    $body .= "<p><a href=\"" . $node->toUrl()->setAbsolute()->toString() . "\">Read more</a></p>";
+    
+    \Drupal::service('govdelivery_bulletins.add_bulletin_to_queue')
+      ->setFlag('dedupe', TRUE)  // Optional
+      ->setQueueUid($node->id()) // Optional
+      // ->setSubject('[[TOPIC_NAME]]: ' . $node->getTitle())
+      ->setBody($body)
+      // ->setFromAddress('portlandOR_stage@public.govdelivery.com')
+      // ->setHeader("Some header text for the message.")  // Optional
+      // ->setFooter("Some footer text for the message.")  // Optional
+      // ->addCategory('sales')  // Optional
+      // ->addCategory('emergency')  // Optional
+      // ->addTopic('DEF-789')  // Optional
+      ->setXmlBool('click_tracking', TRUE)  // Optional
+      ->setXmlBool('open_tracking', TRUE)  // Optional
+      // ->setXmlBool('publish_rss', FALSE)  // Optional
+      // ->setXmlBool('share_content_enabled', FALSE)  // Optional
+      // ->setXmlBool('urgent', FALSE)  // Optional
+      ;
+    
+    // Process the selected topic(s). The field_topics will contain an array of topic IDs.
+    // Use the ID to load the taxonomy term, get its name and associated GovDelivery topic code.
+    // Also, build a list of topic names for the subject line while we're looping through the topics.
+    $topics = $node->get("field_topics")->getValue();
+    $topic_list = '';
+    $has_valid_topic = FALSE;
+    foreach($topics as $index => $item) {
+      $topic = \Drupal::entityTypeManager()->getStorage('taxonomy_term')->load($item['target_id']);
+      $topic_name = $topic->label();
+      $topic_code = $topic->get('field_govdelivery_topic_code')->value;
+      $topic_list .= "$topic_name; ";
+      if (strlen($topic_code)) {
+        $has_valid_topic = TRUE;
+        \Drupal::service('govdelivery_bulletins.add_bulletin_to_queue')->addTopic($topic_code);
+      }
+    }
+    $topic_list = rtrim($topic_list, "; ");
+
+    \Drupal::service('govdelivery_bulletins.add_bulletin_to_queue')->setSubject("$topic_list: " . $node->getTitle());
+    
+    // Only actually add this bulletin to the queue if it has at least one valid topic
+    if ($has_valid_topic) {
+      \Drupal::service('govdelivery_bulletins.add_bulletin_to_queue')->addToQueueAndReset();
+    }
   }
 }
 
@@ -759,9 +848,22 @@ function _validate_group_group_path(&$form, FormStateInterface $form_state)
 
 /**
  * Implement hook_cron()
- * Retrieve a view and send it to powr@portlandoregon.gov
  */
 function portland_cron()
+{
+  // Send content notification email to powr@portlandoregon.gov
+  _send_content_email();
+
+  // Send queued GovDelivery emails
+  _process_govdelivery_queue();
+}
+
+
+/**
+ * Helper function to send content notification email.
+ * Retrieve a view and send it to powr@portlandoregon.gov
+ */
+function _send_content_email()
 {
   // In each cron run after 12pm, check if we've sent the content update summary email today.
   $hour = (int)(date('G')); // 0 to 23
@@ -825,6 +927,17 @@ function portland_cron()
       \Drupal::state()->set('portland.last_daily_email_sent', date('m/d/Y'));
     }
   }
+}
+
+
+/**
+ * Helper function to send any queued GovDelivery email notifications
+ */
+function _process_govdelivery_queue()
+{
+  $queue_worker = \Drupal::service('plugin.manager.queue_worker');
+  $bulletinQueue_worker = $queue_worker->createInstance('govdelivery_bulletins');
+  $bulletinQueue_worker->processQueue();
 }
 
 
