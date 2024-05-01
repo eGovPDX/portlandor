@@ -882,30 +882,6 @@ access:
     users: {  }
     permissions: {  }
 handlers:
-  zendesk_update_customer_support_interaction_request_handler:
-    id: zendesk_update_ticket
-    handler_id: zendesk_update_customer_support_interaction_request_handler
-    label: 'Zendesk update customer support interaction request handler'
-    notes: 'Updates an existing Zendesk "interaction request" and links it to the issue request. Enabled if an Zendesk Request Number value has been provided.'
-    status: true
-    conditions:
-      enabled:
-        ':input[name="support_agent_use_only[zendesk_request_number]"]':
-          filled: true
-    weight: -46
-    settings:
-      comment: "<h1>[webform_submission:values:computed_subject]</h1>\r\n<p><b>Linked Issue Request: <a href=\"https://portlandoregon.zendesk.com/agent/tickets/[webform_submission:values:report_ticket_id]\">[webform_submission:values:report_ticket_id]</a></b></p>\r\n\r\n[webform_submission:values:computed_issue_description:html]\r\n"
-      comment_private: 1
-      tags: ''
-      priority: ''
-      status: ''
-      group_id: ''
-      assignee_id: ''
-      type: ''
-      collaborators: ''
-      custom_fields: "8692493739543: '[webform_submission:values:report_ticket_id]'"
-      ticket_id_field: zendesk_request_number
-      ticket_form_id: ''
   zendesk_new_park_maintenance_request:
     id: zendesk
     handler_id: zendesk_new_park_maintenance_request
@@ -1103,8 +1079,13 @@ handlers:
     status: true
     conditions:
       disabled:
-        ':input[name="support_agent_use_only[test_submission]"]':
-          checked: true
+        -
+          ':input[name="support_agent_use_only[test_submission]"]':
+            checked: true
+        - or
+        -
+          ':input[name="what_are_you_trying_to_report"]':
+            value: 'Feedback about a staff encounter'
     weight: -43
     settings:
       comment: 'Resolution URL: <a href="[webform_submission:values:resolution_url]&report_ticket_id=[webform_submission:values:report_ticket_id]">[webform_submission:values:resolution_url]&report_ticket_id=[webform_submission:values:report_ticket_id]</a>'
@@ -1129,6 +1110,8 @@ handlers:
       enabled:
         ':input[name="support_agent_use_only[test_submission]"]':
           checked: true
+        ':input[name="what_are_you_trying_to_report"]':
+          '!value': 'Feedback about a staff encounter'
     weight: -42
     settings:
       comment: 'Resolution URL: <a href="[webform_submission:values:resolution_url]&report_ticket_id=[webform_submission:values:report_ticket_id]">[webform_submission:values:resolution_url]&report_ticket_id=[webform_submission:values:report_ticket_id]</a>'
