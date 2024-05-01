@@ -5,7 +5,7 @@
 
   // Here's how to reverse geolocate a park. Note the x/y values in the geometry parameter:
   // https://www.portlandmaps.com/arcgis/rest/services/Public/Parks_Misc/MapServer/2/query?geometry=%7B%22x%22%3A-122.55203425884248%2C%22y%22%3A45.53377174783918%2C%22spatialReference%22%3A%7B%22wkid%22%3A4326%7D%7D&geometryType=esriGeometryPoint&spacialRel=esriSpatialRelIntersects&returnGeometry=false&returnTrueCurves=false&returnIdsOnly=false&returnCountOnly=false&returnDistinctValues=false&f=pjson"
-  // returns an object that includes the park name. 
+  // returns an object that includes the park name.
 
   /**
    * Attach the machine-readable name form element behavior.
@@ -296,6 +296,7 @@
         }
 
         function restoreLocationFromPostback() {
+          var verifiedAddress = addressVerify ? $('input[name=' + elementId + '\\[location_address\\]]').val() : undefined;
           var lat = $('input[name=' + elementId + '\\[location_lat\\]]').val();
           var lng = $('input[name=' + elementId + '\\[location_lon\\]]').val();
           if (lat && lng && lat !== "0" && lng !== "0") {
@@ -305,14 +306,14 @@
               if (boundaryLayer) {
                 setLocationMarker(lat, lng);
                 doZoomAndCenter(lat, lng);
-                doMapClick(new L.LatLng(lat, lng));
+                doMapClick(new L.LatLng(lat, lng), verifiedAddress);
 
               } else {
                 setTimeout(function () {
                   if (boundaryLayer) {
                     setLocationMarker(lat, lng);
                     doZoomAndCenter(lat, lng);
-                    doMapClick(new L.LatLng(lat, lng));
+                    doMapClick(new L.LatLng(lat, lng), verifiedAddress);
 
                   } else {
                     restoreLocationFromPostback();
@@ -323,7 +324,7 @@
             } else {
               setLocationMarker(lat, lng);
               doZoomAndCenter(lat, lng);
-              doMapClick(new L.LatLng(lat, lng));
+              doMapClick(new L.LatLng(lat, lng), verifiedAddress);
             }
 
             // WARNING: Need to wait until boundaryLayer and regions layers are loaded, if applicable
@@ -335,7 +336,7 @@
           // set up search field with autocomplete ////////////////////////////
           $('#location_search').autocomplete({
             source: function (request, response) {
-              const searchTerm = request.term;
+              const searchTerm = encodeURIComponent(request.term);
               var apiUrl = `https://www.portlandmaps.com/api/suggest/?intersections=1&landmarks=1&alt_coords=1&api_key=${apiKey}&query=${searchTerm}`;
 
               $.ajax({
@@ -353,14 +354,16 @@
             minLength: 3,
             select: function (event, ui) {
               var address = ui.item.address;
-              address += ui.item.attributes.city ? ", " + ui.item.attributes.city : "";
-              // address += ui.item.attributes.state ? ", " + ui.item.attributes.state : "";
-              // address += ui.item.attributes.zip_code ? "  " + ui.item.attributes.zip_code : "";
-              $(this).val(ui.item.address);
+              // if in address verify mode, add all details to address
+              if (addressVerify) {
+                address = buildFullAddress(ui.item);
+              }
+
+              $(this).val(address);
               var lat = ui.item.attributes.lat;
               var lon = ui.item.attributes.lon;
               var latlon = new L.LatLng(lat, lon);
-              reverseGeolocate(latlon);
+              reverseGeolocate(latlon, true, address);
               $(this).autocomplete('close');
               $('.verified-checkmark.address').removeClass('invisible');
               return false; // returning true causes the field to be cleared
@@ -404,7 +407,7 @@
 
           if (boundaryUrl) {
             $.ajax({
-              url: boundaryUrl, 
+              url: boundaryUrl,
               success: function (cityBoundaryResponse) {
                 var cityBoundaryFeatures = cityBoundaryResponse.features;
                 boundaryLayer = L.geoJson(cityBoundaryFeatures, cityLimitsProperties).addTo(map);
@@ -457,7 +460,7 @@
 
                         incidentsLoop:
                         // loop backwards becasue we're going to remove incidents that are attached to assets
-                        // and move the incident 
+                        // and move the incident
                         for (var j = incidentsFeatures.length - 1; j >= 0; j--) {
 
                           // is the incident associated with the asset?
@@ -487,7 +490,7 @@
                 if (regionsLayerSource) {
                   showLoader();
                   $.ajax({
-                    url: regionsLayerSource, 
+                    url: regionsLayerSource,
                     async: false,
                     success: function (regionsResponse) {
                       regionsFeatures = regionsResponse.features;
@@ -808,15 +811,15 @@
           }
         }
 
-        function doMapClick(latlng) {
+        function doMapClick(latlng, verifiedAddress) {
           // show loading indicator
           showLoader();
 
           // normally when the map is clicked, we want to zoom to the clicked location
-          // and perform reverse geocoding. 
+          // and perform reverse geocoding.
 
-          // if primary layer behavior is selection-only, or geofencing is enabled, 
-          // don't allow location selection, but still zoom in on that location and 
+          // if primary layer behavior is selection-only, or geofencing is enabled,
+          // don't allow location selection, but still zoom in on that location and
           // display location description.
 
           resetClickedMarker();
@@ -828,7 +831,7 @@
             locateControlContaier.style.backgroundImage = 'url("/modules/custom/portland/modules/portland_location_picker/images/map_locate.png")';
           }
 
-          reverseGeolocate(latlng);
+          reverseGeolocate(latlng, true, verifiedAddress);
         }
 
         function showLoader() {
@@ -909,7 +912,7 @@
           captureSelectedAssetMarkerData(marker);
 
           // need to call reverseGeolocate in order to capture nearest address,
-          // this is the one instance where we don't want to zoom and center when clicking 
+          // this is the one instance where we don't want to zoom and center when clicking
           // an existing marker (2nd argument = false).
           reverseGeolocate(marker.latlng, true);
         }
@@ -1016,6 +1019,7 @@
           if (results.detail.city) {
             var city_name = results.detail.city[0].name;
             $('input[name=' + elementId + '\\[location_municipality_name\\]]').val(city_name);
+            $('input[name=' + elementId + '\\[location_municipality_name\\]]').trigger('change');
           }
 
           if (results.detail.zipcode) {
@@ -1053,7 +1057,7 @@
         }
 
         function verifyAddressPortlandMaps(address) {
-          var encodedAddress = encodeURI(address);
+          var encodedAddress = encodeURIComponent(address);
           // API documentation: https://www.portlandmaps.com/development/#suggest
           var url = "https://www.portlandmaps.com/api/suggest/?intersections=1&alt_coords=1&api_key=" + drupalSettings.portlandmaps_api_key + "&query=" + encodedAddress;
           $.ajax({
@@ -1115,7 +1119,7 @@
             // the required lat/lon fields with zeroes so that the form can still be submitted. at least
             // it will capture the address, and the report will still be usable.
             if (lat && lng) {
-              doMapClick(new L.LatLng(lat, lng));
+              doMapClick(new L.LatLng(lat, lng), fulladdress);
               setVerified();
             } else {
               setLatLngHiddenFields(0, 0);
@@ -1231,7 +1235,7 @@
           hideLoader();
         }
 
-        function reverseGeolocate(latlng, zoomAndCenter = true) {
+        function reverseGeolocate(latlng, zoomAndCenter = true, verifiedAddress) {
           setUnverified();
           shouldRecenterPark = false;
           var url = '';
@@ -1250,7 +1254,7 @@
               //   // location data not available, how to handle?
               //   console.log('Location not found');
               // }
-              processReverseLocationData(response, latlng.lat, latlng.lng, zoomAndCenter);
+              processReverseLocationData(response, latlng.lat, latlng.lng, zoomAndCenter, verifiedAddress);
             },
             error: function (e) {
               // if the PortlandMaps API is down, this is where we'll get stuck.
@@ -1310,13 +1314,13 @@
           return description.toUpperCase();
         }
 
-        function processReverseLocationData(data, lat, lng, zoomAndCenter = true) {
+        function processReverseLocationData(data, lat, lng, zoomAndCenter = true, verifiedAddress) {
           // KLUGE: Address data coming from PortlandMaps has a trailing space; trim it.
           if (data.describe) {
             var describe = data.describe.trim();
             data.describe = describe;
           }
-          
+
           var isWithinBounds = checkWithinBounds(new L.LatLng(lat, lng));
           var isVerifiedAddress = true;
           if (zoomAndCenter) {
@@ -1337,7 +1341,9 @@
             }
           }
 
-          var description = parseDescribeData(data, isWithinBounds);
+          // if in address verify mode, use the verified address from suggest API
+          // rather than the "described" address that is less accurate
+          var description = addressVerify ? verifiedAddress : parseDescribeData(data, isWithinBounds);
 
           showVerifiedLocation(description, lat, lng, isWithinBounds, isVerifiedAddress);
 
@@ -1403,10 +1409,10 @@
         }
 
         function buildFullAddress(c) {
-          return [c.address, c.attributes.city]
+          return [c.address, c.attributes.city ? c.attributes.city + ' ' + c.attributes.state : '']
             .filter(Boolean)
             .join(', ')
-            + ' ' + (c.attributes.zip_code || '');
+            + (c.attributes.zip_code ? ' ' + c.attributes.zip_code : '');
         }
 
         function showStatusModal(message) {
