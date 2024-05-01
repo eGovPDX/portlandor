@@ -155,6 +155,17 @@ elements: |-
         '#type': radios
         '#title': 'Do you currently have a functioning cooling unit?'
         '#options': yes_no
+        '#required': true
+      apply_move_in_date:
+        '#type': date
+        '#title': 'Our records indicate that this address has already received a cooling unit. Please provide the date you moved in:'
+        '#required': true
+        '#states':
+          visible:
+            ':input[name="coolingsearch_api_result"]':
+              value: installed
+            ':input[name="apply_previous_recipient"]':
+              value: 'No'
       markup_stop_already_have_unit:
         '#type': webform_markup
         '#states':
@@ -167,6 +178,11 @@ elements: |-
 
           <p>Thank you. Unfortunately, the Cooling Portland program is designed to provide life-saving cooling units to those who are unable to maintain a safe and comfortable environment in their homes during extreme heat events. Our services are exclusively available to individuals who do not currently have a functioning cooling system.</p>
           </div>
+      computed_move_in_date:
+        '#type': webform_computed_twig
+        '#title': 'Computed Move-in Date in Smartsheet Format'
+        '#display_on': none
+        '#template': "{{ data.apply_move_in_date ? data.apply_move_in_date|date('c') : '' }}"
     actions_01:
       '#type': webform_actions
       '#title': 'Submit button(s)'
@@ -234,8 +250,47 @@ elements: |-
     '#display_on': none
     '#mode': text
     '#template': '{{ data.apply_vulnerabilities|join("\n") }}'
+  computed_confirmation_message:
+    '#type': webform_computed_twig
+    '#title': 'Computed Confirmation Message'
+    '#display_on': none
+    '#mode': html
+    '#template': |-
+      <p>
+          Thank you for your interest in receiving a cooling unit from Cooling Portland: <a href="https://www.earthadvantage.org/climate-justice/hrp-information.html">A PCEF-Funded Climate Resilience Program!</a>
+      </p>
+      <p>
+          Your application has been sent to a Community Distribution Partner to coordinate an installation.
+      </p>
+      {% if data.apply_cdp_preference %}
+      <p>
+          <strong>CDP Preference: </strong>{{ data.apply_cdp_preference }}
+      </p>
+      {% endif %}
+      <hr>
+      <p>
+          Please review the following information:
+      </p>
+      <p>
+          <strong>Window:</strong>
+      </p>
+      <p>
+          Cooling units cannot be installed in unsafe, damaged, or broken windows. Your desired installation window must work and be undamaged.
+      </p>
+      <p>
+          <strong>Electrical Outlet:</strong>
+      </p>
+      <p>
+          There should be a three-pronged electrical outlet within 5 feet of the window where you want the cooling unit installed.
+      </p>
+      <p>
+          <strong>Clear path:</strong>
+      </p>
+      <p>
+          You must provide installers with a safe, clear way into and out of your home throughout the duration of the installation. The area around the installation spot must be clean and free of tripping hazards, biohazards, and clutter. (We can assist people with disabilities or mobility issues to clear the area, within reason.)
+      </p>
 css: "#location_map {\r\n  display: none;\r\n}"
-javascript: "((Drupal) => {\r\n\tDrupal.behaviors.eligibilityChecker = {\r\n\t\tattach() {\r\n\t\t\tconst addressEl = document.querySelector(\"input[name='report_location[location_address]']\");\r\n\t\t\tconst unitNumberEl = document.querySelector(\"input[name='report_location_unit_number']\");\r\n\t\t\tif (!addressEl) return;\r\n\r\n\t\t\tconst submitButtonEl = document.querySelector(\".webform-button--next\");\r\n\t\t\tconst submitHandler = (e) => {\r\n\t\t\t\te.preventDefault();\r\n\t\t\t\tconst splitAddress = addressEl.value.split(\",\");\r\n\t\t\t\tif (splitAddress.length < 2) {\r\n\t\t\t\t\tdocument.querySelector(\".verification-error\").textContent = \"Address is invalid. Please make sure you verified your address.\";\r\n\t\t\t\t\treturn;\r\n\t\t\t\t}\r\n\r\n\t\t\t\t// combine property address and unit number into one string\r\n\t\t\t\tconst fullAddress = `${splitAddress[0]} ${unitNumberEl.value}, ${splitAddress[1]}`;\r\n\t\t\t\tfetch(`https://coolingsearch.org/api/search?search=${fullAddress}`, {\r\n\t\t\t\t\theaders: {\r\n\t\t\t\t\t\t\"Authorization\": \"Token e367099a03f3cd984e2be20f60bceb8d798a7607\"\r\n\t\t\t\t\t},\r\n\t\t\t\t}).then((res) => res.json()).then((data) => {\r\n\t\t\t\t\tconst apiResultEl = document.querySelector(\"input[name='coolingsearch_api_result']\");\r\n\t\t\t\t\tconst errorMessage = data.message || data.scheduled || data.out_of_bounds || data.housing_provider;\r\n\t\t\t\t\tif (errorMessage) {\r\n\t\t\t\t\t\tdocument.querySelector(\".verification-error\").textContent = errorMessage;\r\n\t\t\t\t\t} else {\r\n\t\t\t\t\t\t// if unit has previously been installed, we still want to let user continue\r\n\t\t\t\t\t\t// but flag it in submission data as they may be a different tenant.\r\n\t\t\t\t\t\tapiResultEl.value = data.installed ? \"installed\" : \"eligible\";\r\n\t\t\t\t\t\tsubmitButtonEl.removeEventListener(\"click\", submitHandler);\r\n\t\t\t\t\t\tsubmitButtonEl.click();\r\n\t\t\t\t\t}\r\n\t\t\t\t}, () => {\r\n\t\t\t\t\tsubmitButtonEl.removeEventListener(\"click\", submitHandler);\r\n\t\t\t\t\tsubmitButtonEl.click();\r\n\t\t\t\t});\r\n\t\t\t};\r\n\r\n\t\t\tsubmitButtonEl.addEventListener(\"click\", submitHandler);\r\n\t\t},\r\n\t};\r\n\r\n\tDrupal.behaviors.incomeCalculator = {\r\n\t\t// The HUD 2023 60% Median Income in the Portland-Vancouver-Hillsboro MSA by household size (1-indexed)\r\n\t\tMEDIAN_INCOMES: [\r\n\t\t\t0,\r\n\t\t\t47400,\r\n\t\t\t54180,\r\n\t\t\t60960,\r\n\t\t\t67680,\r\n\t\t\t73140,\r\n\t\t\t78540,\r\n\t\t\t83940,\r\n\t\t\t89340,\r\n\t\t],\r\n\r\n\t\tattach() {\r\n\t\t\tconst householdSizeEl = document.querySelector(\"input[name='apply_household_size']\");\r\n\t\t\tif (!householdSizeEl) return;\r\n\r\n\t\t\tthis.calculateIncome(householdSizeEl);\r\n\t\t\thouseholdSizeEl.addEventListener(\"input\", (e) => this.calculateIncome(e.target));\r\n\t\t},\r\n\r\n\t\tcalculateIncome(el) {\r\n\t\t\tconst medianIncomes = this.MEDIAN_INCOMES;\r\n\t\t\tconst householdSize = el.valueAsNumber;\r\n\t\t\tlet incomeLimitYearly = 0;\r\n\t\t\tif (isNaN(householdSize) || householdSize === 0) return;\r\n\r\n\t\t\tif (householdSize > 8) {\r\n\t\t\t\t// For each person over eight-persons, the four-person income limit\r\n\t\t\t\t// should be multiplied by an additional 8 percent. (For example, the nine-person limit equals 140\r\n\t\t\t\t// percent [132 + 8] of the relevant four-person income limit.)\r\n\t\t\t\tincomeLimitYearly = medianIncomes[4] * (1 + (0.08 * (householdSize - 4)));\r\n\t\t\t} else {\r\n\t\t\t\tincomeLimitYearly = medianIncomes[householdSize];\r\n\t\t\t}\r\n\r\n\t\t\tdocument.querySelectorAll(\".income-yearly\").forEach((el) => el.textContent = this.prettyNumber(incomeLimitYearly));\r\n\t\t\tdocument.querySelector(\".income-monthly\").textContent = this.prettyNumber(incomeLimitYearly / 12);\r\n\t\t},\r\n\r\n\t\tprettyNumber(num) {\r\n\t\t\treturn num.toLocaleString(undefined, { currency: \"USD\", maximumFractionDigits: 0, style: \"currency\" });\r\n\t\t},\r\n\t};\r\n})(Drupal);\r\n"
+javascript: "((Drupal) => {\r\n\tDrupal.behaviors.eligibilityChecker = {\r\n\t\tattach() {\r\n\t\t\tconst addressEl = document.querySelector(\"input[name='report_location[location_address]']\");\r\n\t\t\tconst unitNumberEl = document.querySelector(\"input[name='report_location_unit_number']\");\r\n\t\t\tif (!addressEl) return;\r\n\r\n\t\t\tconst submitButtonEl = document.querySelector(\".webform-button--next\");\r\n\t\t\tconst submitHandler = (e) => {\r\n\t\t\t\te.preventDefault();\r\n\t\t\t\tconst splitAddress = addressEl.value.split(\",\");\r\n\t\t\t\tif (splitAddress.length < 2) {\r\n\t\t\t\t\tdocument.querySelector(\".verification-error\").textContent = \"Address is invalid. Please make sure you verified your address.\";\r\n\t\t\t\t\treturn;\r\n\t\t\t\t}\r\n\r\n\t\t\t\t// combine property address and unit number into one string\r\n\t\t\t\tconst fullAddress = `${addressEl.value} ${unitNumberEl.value}`;\r\n\t\t\t\tfetch(`https://coolingsearch.org/api/search?search=${fullAddress}`, {\r\n\t\t\t\t\theaders: {\r\n\t\t\t\t\t\t\"Authorization\": \"Token e367099a03f3cd984e2be20f60bceb8d798a7607\"\r\n\t\t\t\t\t},\r\n\t\t\t\t}).then((res) => res.json()).then((data) => {\r\n\t\t\t\t\tconst apiResultEl = document.querySelector(\"input[name='coolingsearch_api_result']\");\r\n\t\t\t\t\tconst errorMessage = data.housing_provider || data.message || data.scheduled || data.out_of_bounds;\r\n\t\t\t\t\tif (errorMessage) {\r\n\t\t\t\t\t\tdocument.querySelector(\".verification-error\").textContent = errorMessage;\r\n\t\t\t\t\t} else {\r\n\t\t\t\t\t\t// if unit has previously been installed, we still want to let user continue\r\n\t\t\t\t\t\t// but flag it in submission data as they may be a different tenant.\r\n\t\t\t\t\t\tapiResultEl.value = data.installed ? \"installed\" : \"eligible\";\r\n\t\t\t\t\t\tsubmitButtonEl.removeEventListener(\"click\", submitHandler);\r\n\t\t\t\t\t\tsubmitButtonEl.click();\r\n\t\t\t\t\t}\r\n\t\t\t\t}, () => {\r\n\t\t\t\t\tsubmitButtonEl.removeEventListener(\"click\", submitHandler);\r\n\t\t\t\t\tsubmitButtonEl.click();\r\n\t\t\t\t});\r\n\t\t\t};\r\n\r\n\t\t\tsubmitButtonEl.addEventListener(\"click\", submitHandler);\r\n\t\t},\r\n\t};\r\n\r\n\tDrupal.behaviors.incomeCalculator = {\r\n\t\t// The HUD 2023 60% Median Income in the Portland-Vancouver-Hillsboro MSA by household size (1-indexed)\r\n\t\tMEDIAN_INCOMES: [\r\n\t\t\t0,\r\n\t\t\t47400,\r\n\t\t\t54180,\r\n\t\t\t60960,\r\n\t\t\t67680,\r\n\t\t\t73140,\r\n\t\t\t78540,\r\n\t\t\t83940,\r\n\t\t\t89340,\r\n\t\t],\r\n\r\n\t\tattach() {\r\n\t\t\tconst householdSizeEl = document.querySelector(\"input[name='apply_household_size']\");\r\n\t\t\tif (!householdSizeEl) return;\r\n\r\n\t\t\tthis.calculateIncome(householdSizeEl);\r\n\t\t\thouseholdSizeEl.addEventListener(\"input\", (e) => this.calculateIncome(e.target));\r\n\t\t},\r\n\r\n\t\tcalculateIncome(el) {\r\n\t\t\tconst medianIncomes = this.MEDIAN_INCOMES;\r\n\t\t\tconst householdSize = el.valueAsNumber;\r\n\t\t\tlet incomeLimitYearly = 0;\r\n\t\t\tif (isNaN(householdSize) || householdSize === 0) return;\r\n\r\n\t\t\tif (householdSize > 8) {\r\n\t\t\t\t// For each person over eight-persons, the four-person income limit\r\n\t\t\t\t// should be multiplied by an additional 8 percent. (For example, the nine-person limit equals 140\r\n\t\t\t\t// percent [132 + 8] of the relevant four-person income limit.)\r\n\t\t\t\tincomeLimitYearly = medianIncomes[4] * (1 + (0.08 * (householdSize - 4)));\r\n\t\t\t} else {\r\n\t\t\t\tincomeLimitYearly = medianIncomes[householdSize];\r\n\t\t\t}\r\n\r\n\t\t\tdocument.querySelectorAll(\".income-yearly\").forEach((el) => el.textContent = this.prettyNumber(incomeLimitYearly));\r\n\t\t\tdocument.querySelector(\".income-monthly\").textContent = this.prettyNumber(incomeLimitYearly / 12);\r\n\t\t},\r\n\r\n\t\tprettyNumber(num) {\r\n\t\t\treturn num.toLocaleString(undefined, { currency: \"USD\", maximumFractionDigits: 0, style: \"currency\" });\r\n\t\t},\r\n\t};\r\n})(Drupal);\r\n"
 settings:
   ajax: false
   ajax_scroll_top: form
@@ -341,7 +396,7 @@ settings:
   confirmation_type: page
   confirmation_url: ''
   confirmation_title: ''
-  confirmation_message: "<p>Thank you for your interest in receiving a cooling unit from Cooling Portland: <a href=\"https://www.earthadvantage.org/climate-justice/hrp-information.html\">A PCEF-Funded Climate Resilience Program</a>!</p>\r\n\r\n<p>Your application has been sent to a Community Distribution Partner to coordinate an installation.</p>\r\n\r\n<hr />\r\n<p>Please review the following information:</p>\r\n\r\n<p><strong>Window:</strong></p>\r\n\r\n<p>Cooling units cannot be installed in unsafe, damaged, or broken windows. Your desired installation window must work and be undamaged.</p>\r\n\r\n<p><strong>Electrical Outlet:</strong></p>\r\n\r\n<p>There should be a three-pronged electrical outlet within 5 feet of the window where you want the cooling unit installed.</p>\r\n\r\n<p><strong>Clear path:</strong></p>\r\n\r\n<p>You must provide installers with a safe, clear way into and out of your home throughout the duration of the installation. The area around the installation spot must be clean and free of tripping hazards, biohazards, and clutter. (We can assist people with disabilities or mobility issues to clear the area, within reason.)</p>"
+  confirmation_message: '<p>[webform_submission:values:computed_confirmation_message]</p>'
   confirmation_attributes: {  }
   confirmation_back: false
   confirmation_back_label: ''
@@ -443,8 +498,9 @@ handlers:
       sender_mail: ''
       sender_name: ''
       subject: 'Cooling Unit Request Received'
-      body: "<p>Thank you for your interest in receiving a cooling unit from Cooling Portland: <a href=\"https://www.earthadvantage.org/climate-justice/hrp-information.html\">A PCEF-Funded Climate Resilience Program</a>!</p>\r\n\r\n<p>Your application has been sent to a Community Distribution Partner to coordinate an installation.</p>\r\n\r\n<hr />\r\n<p>Please review the following information:</p>\r\n\r\n<p><strong>Window:</strong></p>\r\n\r\n<p>Cooling units cannot be installed in unsafe, damaged, or broken windows. Your desired installation window must work and be undamaged.</p>\r\n\r\n<p><strong>Electrical Outlet:</strong></p>\r\n\r\n<p>There should be a three-pronged electrical outlet within 5 feet of the window where you want the cooling unit installed.</p>\r\n\r\n<p><strong>Clear path:</strong></p>\r\n\r\n<p>You must provide installers with a safe, clear way into and out of your home throughout the duration of the installation. The area around the installation spot must be clean and free of tripping hazards, biohazards, and clutter. (We can assist people with disabilities or mobility issues to clear the area, within reason.)</p>"
-      excluded_elements: {  }
+      body: '<p>[webform_submission:values:computed_confirmation_message]</p>'
+      excluded_elements:
+        computed_confirmation_message: computed_confirmation_message
       ignore_access: false
       exclude_empty: true
       exclude_empty_checkbox: false
@@ -467,6 +523,9 @@ handlers:
       column_mappings:
         340473775345540: __submission_id
         2882544658763652: ''
+        4450738099933060: ''
+        1648037863575428: ''
+        8512044192976772: apply_cdp_preference
         4844073402716036: contact_name
         2592273589030788: contact_email
         7095873216401284: contact_phone
@@ -475,8 +534,8 @@ handlers:
         7386144286134148: report_location_unit_number
         6260244379291524: apply_household_size
         4008444565606276: computed_vulnerabilities
-        8512044192976772: apply_cdp_preference
         1756644751921028: coolingsearch_api_result
+        6857905503424388: computed_move_in_date
       multiple_rows_enable: null
       multiple_rows_field: ''
       multiple_rows_separator: ''
