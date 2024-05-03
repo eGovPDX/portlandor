@@ -9,10 +9,11 @@ third_party_settings:
   portland:
     disable_demographic_form_prompt: 1
     exclude_from_json:
+      permit_date_unenforceable_agree: permit_date_unenforceable_agree
+      friendly_permit_type: friendly_permit_type
       computed_days_of_week: computed_days_of_week
       computed_permit_reason: computed_permit_reason
       computed_permit_street_name: computed_permit_street_name
-      friendly_permit_type: friendly_permit_type
 weight: 0
 open: null
 close: null
@@ -711,17 +712,12 @@ elements: |-
     complex_permit_traffic_documents:
       '#type': webform_document_file
       '#title': 'Attach your TCP or WSD'
-      '#description': |-
-        <p>A <strong>Traffic Control Plan (TCP) is required</strong>,&nbsp;showing how your work affects traffic at the jobsite (pedestrian or vehicle) for traffic engineer review. You can attach your TCP in the section below. For more information on what an appropriate TCP looks like, please visit our <a target="_blank" href="/transportation/permitting/temporary-street-use-permitting-tsup#toc-traffic-control-plan-work-space-diagram-requirements">Traffic Control Plan Information Page</a>.</p>
-
-        <p>In some situations, this can be a Work Space Diagram showing your planned area of impact to the right of way. Indicate this area by drawing a box or other polygon on the <a target="_blank" href="https://pdx.maps.arcgis.com/apps/webappviewer/index.html?id=f68278b842164d6784bef5f6cc5c5ae9">PBOT BaseMap</a>.</p>
-
-        <p>Here is an example of a simple work space diagram: <a target="_blank" href="/sites/default/files/2022/work-space-diagram.pdf">Work Space Diagram</a>. Please <a target="_blank" href="/sites/default/files/2022/tcp-flowchart.pdf">see this flowchart for help</a> deciding if a site specific traffic control plan is needed.</p>
+      '#multiple': 8
+      '#description': '<p>You are required to prepare a plan showing your proposed closure using the <a href="https://pdx.maps.arcgis.com/apps/webappviewer/index.html?id=f68278b842164d6784bef5f6cc5c5ae9">PBOT Basemap</a> and attach it below. <strong>If your plan is not created on the </strong><a href="https://pdx.maps.arcgis.com/apps/webappviewer/index.html?id=f68278b842164d6784bef5f6cc5c5ae9"><strong>PBOT Basemap</strong></a><strong>, your application will be rejected and you''ll need to reapply.</strong><br>&nbsp;</p><p>Please <a href="/transportation/permitting/documents/tcp-flowchart/download">see this flowchart for help</a> deciding if a site specific traffic control plan (TCP) is needed, or if you can instead prepare a work space diagram (WSD).<br>&nbsp;</p><p><strong>If the chart indicates that a site-specific traffic control plan (TCP) is required</strong>, you''ll need to prepare a plan that includes all the traffic control devices you will use to manage pedestrian and vehicle traffic at the jobsite. You can attach your TCP in the section below. For more information on what an appropriate TCP looks like, please visit our <a href="/transportation/permitting/temporary-street-use-permitting-tsup#toc-traffic-control-plan-work-space-diagram-requirements">Traffic Control Plan Information Page.</a><br>&nbsp;</p><p><strong>If the chart indicates "Use Traffic Manual" for your situation, then you may submit a simple work space diagram (WSD) instead of a full traffic control plan.</strong> A Work Space Diagram shows your planned area of impact to the right of way, but omits traffic control devices and has less detail than a full TCP. Create a WSD by drawing a box or other polygon over your work space on the <a href="https://pdx.maps.arcgis.com/apps/webappviewer/index.html?id=f68278b842164d6784bef5f6cc5c5ae9">PBOT Basemap</a>. Here is an example of a simple work space diagram: <a href="/transportation/permitting/documents/example-wsd/download">Work Space Diagram.&nbsp;</a></p>'
       '#description_display': before
       '#required': true
-      '#multiple': 8
-      '#max_filesize': '30'
       '#file_help': help
+      '#max_filesize': '30'
       '#file_extensions': 'pdf jpg jpeg png'
     section_acknowledgements:
       '#type': webform_section
@@ -906,10 +902,16 @@ elements: |-
           '#title': 'Requested Start and End times (include AM or PM)'
           '#placeholder': 'e.g. 7am-4pm or All Hours'
           '#required': true
+        complex_permit_work_description:
+          '#type': textarea
+          '#title': 'Work Description'
+          '#description': '<p>Please provide a clear description of your proposed work.</p>'
+          '#placeholder': 'e.g. "closing a single travel lane and the adjacent sidewalk during crane lift onto the roof at 1120 SW 5th Ave."'
+          '#required': true
         complex_permit_additional_info:
           '#type': textarea
           '#title': 'Additional Info'
-          '#placeholder': "Please provide us with any additional information here, such as location, purpose, time, that didn't fit in anywhere above."
+          '#description': "<p>Please provide us with any additional information here, such as location, purpose, time, that didn't fit in anywhere above.</p>"
         complex_permit_acknowledge_conditions:
           '#type': checkbox
           '#title': 'I have read and agree with the conditions of this permit (see below).'
@@ -1148,6 +1150,9 @@ elements: |-
           <li>Exact location of parking: <strong>{{ webform_token('[webform_submission:values:simple_permit_location_description]', webform_submission) }}</strong></li>
         </ul>
         <h3>Dates</h3>
+        {% if data.permit_date_unenforceable_agree %}
+        <p><strong>The start date you selected is sooner than we can typically accommodate. Reserving parking requires placing signage in advance, so we may be unable to meet your requested start date and you may be unable to have any enforcement of your reserved zone.</strong></p>
+        {% endif %}
         <ul>
           <li>Days of week: <strong>{{ webform_token('[webform_submission:values:permit_date_days_of_week]', webform_submission) }}</strong></li>
           <li>Start date: <strong>{{ data.permit_date_start|date('D, m/d/Y') }}</strong></li>
@@ -1190,6 +1195,9 @@ elements: |-
           <li>You will be reserving parking on: <strong>{{ webform_token('[webform_submission:values:7day_permit_street_name]', webform_submission) }}</strong></li>
         </ul>
         <h3>Dates</h3>
+        {% if data.permit_date_unenforceable_agree %}
+        <p><strong>The start date you selected is sooner than we can typically accommodate. Reserving parking requires placing signage in advance, so we may be unable to meet your requested start date and you may be unable to have any enforcement of your reserved zone.</strong></p>
+        {% endif %}
         <ul>
           <li>Days of week: <strong>{{ webform_token('[webform_submission:values:permit_date_days_of_week]', webform_submission) }}</strong></li>
           <li>Start date: <strong>{{ data.permit_date_start|date('D, m/d/Y') }}</strong></li>
@@ -1230,6 +1238,9 @@ elements: |-
           <li>And cross street: <strong>{{ webform_token('[webform_submission:values:complex_permit_cross_street_right]', webform_submission) }}</strong></li>
         </ul>
         <h3>Dates</h3>
+        {% if data.permit_date_unenforceable_agree %}
+        <p><strong>The start date you selected is sooner than we can typically accommodate, and we may be unable to meet your requested start date. As soon as we are able to process your application, we will let you know the soonest start date we can manage.</strong></p>
+        {% endif %}
         <ul>
           <li>Days of week: <strong>{{ webform_token('[webform_submission:values:permit_date_days_of_week]', webform_submission) }}</strong></li>
           <li>Start date: <strong>{{ data.permit_date_start|date('D, m/d/Y') }}</strong></li>
@@ -1244,6 +1255,8 @@ elements: |-
           <li>Parking spaces affected: <strong>{{ webform_token('[webform_submission:values:complex_permit_parking_spaces_affected]', webform_submission) }}</strong></li>
           <li>Associated BDS permit number: <strong>{{ webform_token('[webform_submission:values:computed_bds_permit_number]', webform_submission) }}</strong></li>
         </ul>
+        <p><strong>Work Description:</strong></p>
+        <p>{{ webform_token('[webform_submission:values:complex_permit_work_description]', webform_submission) }}</p>
         {% if data.complex_permit_additional_info %}
         <p><strong>Additional Info:</strong></p>
         <p>{{ webform_token('[webform_submission:values:complex_permit_additional_info]', webform_submission) }}</p>
