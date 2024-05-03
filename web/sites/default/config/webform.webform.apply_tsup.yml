@@ -308,7 +308,39 @@ elements: |-
     markup_date_error:
       '#type': webform_markup
       '#admin_title': 'Date Error'
-      '#markup': '<p class="date-error fw-bold invalid-feedback"></p>'
+      '#markup': '<p aria-live="polite" class="date-error fw-bold invalid-feedback">Please select a date above to continue.</p>'
+    container_date_unenforceable:
+      '#type': container
+      '#states':
+        visible:
+          ':input[name="permit_date_span"]':
+            value:
+              greater: '0'
+          ':input[name="permit_date_unenforceable"]':
+            value: 'true'
+      markup_date_unenforceable_parking:
+        '#type': webform_markup
+        '#states':
+          visible:
+            ':input[name="permit_type"]':
+              value:
+                pattern: parking_only|7day
+        '#admin_title': 'Date Unenforceable Message - Parking'
+        '#markup': '<p><strong>Requesting immediate dates:</strong> The start date you selected is sooner than we can typically accommodate. Reserving parking requires placing signage in advance, so we may be unable to meet your requested start date and you may be unable to have any enforcement of your reserved zone.</p>'
+      markup_date_unenforceable_traffic_control:
+        '#type': webform_markup
+        '#states':
+          visible:
+            ':input[name="permit_type"]':
+              value:
+                pattern: traffic_control
+        '#admin_title': 'Date Unenforceable Message - Traffic Control'
+        '#markup': '<p><strong>Requesting immediate dates:</strong> The start date you selected is sooner than we can typically accommodate, and we may be unable to meet your requested start date. As soon as we are able to process your application, we will let you know the soonest start date we can manage.</p>'
+      permit_date_unenforceable_agree:
+        '#type': checkbox
+        '#title': 'I understand the above'
+        '#required': true
+        '#required_error': 'You must acknowledge this.'
     permit_type_value:
       '#type': hidden
       '#title': 'Permit Type (hidden, used for JS)'
@@ -317,6 +349,10 @@ elements: |-
       '#type': hidden
       '#title': 'Date Span (hidden, computed by JS)'
       '#default_value': '0'
+    permit_date_unenforceable:
+      '#type': hidden
+      '#title': 'Is Date Unenforceable (hidden, computed by JS)'
+      '#default_value': ''
     actions_wizard_prev:
       '#type': webform_actions
       '#title': 'Previous Button'
@@ -945,7 +981,7 @@ elements: |-
     contact_phone:
       '#type': textfield
       '#title': 'Best Phone Number to reach you at'
-      '#input_mask': '999-999-9999'
+      '#input_mask': 999-999-9999
       '#required': true
     contact_email:
       '#type': webform_email_confirm
@@ -1340,7 +1376,7 @@ elements: |-
     '#title': 'Assessment Prefilled (skips first page)'
     '#prepopulate': true
 css: ''
-javascript: "(function($, Drupal) {\r\n    Drupal.behaviors.tsupDateCalculator = {\r\n        attach() {\r\n            const isDateSame = (a, b) =>\r\n                a.getFullYear() === b.getFullYear() &&\r\n                a.getMonth() === b.getMonth() &&\r\n                a.getDate() === b.getDate();\r\n\t\t\tconst dayNameToNum = {\r\n\t\t\t\t\"sunday\": 0,\r\n\t\t\t\t\"monday\": 1,\r\n\t\t\t\t\"tuesday\": 2,\r\n\t\t\t\t\"wednesday\": 3,\r\n\t\t\t\t\"thursday\": 4,\r\n\t\t\t\t\"friday\": 5,\r\n\t\t\t\t\"saturday\": 6,\r\n\t\t\t};\r\n\r\n\t\t\tfunction setDateSpan(amtDays) {\r\n\t\t\t\t$(\"input[name='permit_date_span']\").val(amtDays);\r\n\t\t\t\t$(\"input[name='permit_date_span']\").trigger(\"change\");\r\n\t\t\t};\r\n\r\n\t\t\tfunction getEarliestStartDate() {\r\n\t\t\t\tconst permitType = $(\"input[name='permit_type']\").val();\r\n\t\t\t\tconst isMetered = $(\"input[name='permit_location_metered']\").val() === \"true\";\r\n\t\t\t  \r\n\t\t\t\tconst startDateOffsetDays = permitType.includes(\"traffic_control\")\r\n\t\t\t\t\t? 12\r\n\t\t\t\t\t: (isMetered ? 3 : 4);\r\n\t\t\t\tconst earliestStartDate = new Date();\r\n\t\t\t\tearliestStartDate.setDate(earliestStartDate.getDate() + startDateOffsetDays);\r\n\t\t\t\tearliestStartDate.setHours(0);\r\n\t\t\t\tearliestStartDate.setMinutes(0);\r\n\t\t\t\tearliestStartDate.setSeconds(0);\r\n\t\t\t\tearliestStartDate.setMilliseconds(0);\r\n\t\t\t\t\r\n\t\t\t\treturn earliestStartDate;\r\n\t\t\t}\r\n          \r\n            function calculateDateSpan() {\r\n\t\t\t\tconst isMetered = $(\"input[name='permit_location_metered']\").val() === \"true\";\r\n\t\t\t\t\r\n\t\t\t\tconst daysOfWeek = $(\"input[name*='permit_date_days_of_week']\")\r\n\t\t\t\t.filter(\":checked\")\r\n\t\t\t\t.map((_, el) => dayNameToNum[el.value])\r\n\t\t\t\t.get() || [];\r\n\t\t\t\tconst startValue = $(\"input[name='permit_date_start']\").val();\r\n\t\t\t\tconst endValue = $(\"input[name='permit_date_end']\").val()\r\n\t\t\t\tif (!startValue || !endValue) return;\r\n\t\t\t\t\r\n\t\t\t\tconst startDate = new Date(startValue + \"T00:00\");\r\n\t\t\t\tconst endDate = new Date(endValue + \"T00:00\");\r\n\t\t\t\tif (startDate.getTime() > endDate.getTime()) {\r\n\t\t\t\t\t$(\".date-error\").text(\"Your start date cannot be later than your end date.\");\r\n\t\t\t\t\tsetDateSpan(0);\r\n\t\t\t\t\treturn;\r\n\t\t\t\t} else if (startDate.getTime() < getEarliestStartDate().getTime()) {\r\n\t\t\t\t\t$(\".date-error\").text(\"Your start date is too early.\");\r\n\t\t\t\t\tsetDateSpan(0);\r\n\t\t\t\t\treturn;\r\n\t\t\t\t}\r\n\t\t\t\r\n\t\t\t\tlet amtDays = 0;\r\n\t\t\t\tif (daysOfWeek.includes(startDate.getDay())) amtDays++;\r\n\t\t\t\r\n\t\t\t\tconst curDate = new Date(startValue + \"T00:00\");\r\n\t\t\t\twhile (!isDateSame(curDate, endDate)) {\r\n\t\t\t\t\tcurDate.setDate(curDate.getDate() + 1);\r\n\t\t\t\r\n\t\t\t\t\tif (daysOfWeek.includes(curDate.getDay())) amtDays++;\r\n\t\t\t\t}\r\n\t\t\t\t\r\n\t\t\t\tsetDateSpan(amtDays);\r\n              \r\n                if (amtDays === 0) {\r\n                    $(\".date-calculator\").html(\"\");\r\n                    $(\".date-error\").text(\"The time period you selected does not contain any of the days of the week you selected.\");\r\n                    return;\r\n                } else {\r\n                    $(\".date-error\").text(\"\")\r\n                }\r\n              \r\n\t\t\t\tif (isMetered) {\r\n\t\t\t\t\t$(\".date-calculator\").html(`You've requested <strong>${amtDays === 1 ? \"1 day\" : `${amtDays} days`}</strong> of closure.`);\r\n\t\t\t\t} else {\r\n\t\t\t\t\tconst amtWeeks = Math.ceil(amtDays / 7);\r\n\t\t\t\t\t$(\".date-calculator\").html(`You've requested <strong>${amtWeeks === 1 ? \"1 week\" : `${amtWeeks} weeks`}</strong> of closure.`);\r\n\t\t\t\t}\r\n\t\t\t}\r\n\t\t\t\r\n\t\t\t$(document).ajaxComplete(function() {\r\n\t\t\t\t$(\"input[name='permit_date_start'], input[name='permit_date_end'], input[name*='permit_date_days_of_week']\").change(calculateDateSpan);\r\n\t\t\t\tcalculateDateSpan();\r\n\r\n\t\t\t\tconst earliestStartDate = getEarliestStartDate();\r\n\t\t\t\t$(\".earliest-start-date\").text(earliestStartDate.toLocaleDateString());\r\n                \r\n                // the input \"min\" attribute needs to be in yyyy-mm-dd format, this gives us the ISO string in that format, in the user's current timezone\r\n                const earliestStartDateMinValue = new Date(earliestStartDate.getTime() - earliestStartDate.getTimezoneOffset() * 60000).toISOString().split(\"T\")[0];\r\n                $(\"input[name='permit_date_start'], input[name='permit_date_end']\").attr(\"min\", earliestStartDateMinValue);\r\n\t\t\t});\r\n\t\t}\r\n    };\r\n})(jQuery, Drupal);\r\n"
+javascript: "(function ($, Drupal) {\r\n\tDrupal.behaviors.tsupDateCalculator = {\r\n\t\tattach() {\r\n\t\t\tconst isDateSame = (a, b) =>\r\n\t\t\t\ta.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();\r\n\t\t\tconst dayNameToNum = {\r\n\t\t\t\tsunday: 0,\r\n\t\t\t\tmonday: 1,\r\n\t\t\t\ttuesday: 2,\r\n\t\t\t\twednesday: 3,\r\n\t\t\t\tthursday: 4,\r\n\t\t\t\tfriday: 5,\r\n\t\t\t\tsaturday: 6,\r\n\t\t\t};\r\n\r\n\t\t\tfunction setDateSpan(amtDays) {\r\n\t\t\t\t$(\"input[name='permit_date_span']\").val(amtDays);\r\n\t\t\t\t$(\"input[name='permit_date_span']\").trigger(\"change\");\r\n\t\t\t}\r\n\r\n\t\t\tfunction getEarliestStartDate() {\r\n\t\t\t\tconst permitType = $(\"input[name='permit_type']\").val();\r\n\t\t\t\tconst isMetered = $(\"input[name='permit_location_metered']\").val() === \"true\";\r\n\r\n\t\t\t\tconst startDateOffsetDays = permitType.includes(\"traffic_control\") ? 12 : isMetered ? 3 : 4;\r\n\t\t\t\tconst earliestStartDate = new Date();\r\n\t\t\t\tearliestStartDate.setDate(earliestStartDate.getDate() + startDateOffsetDays);\r\n\t\t\t\tearliestStartDate.setHours(0);\r\n\t\t\t\tearliestStartDate.setMinutes(0);\r\n\t\t\t\tearliestStartDate.setSeconds(0);\r\n\t\t\t\tearliestStartDate.setMilliseconds(0);\r\n\r\n\t\t\t\treturn earliestStartDate;\r\n\t\t\t}\r\n\r\n\t\t\tfunction calculateDateSpan() {\r\n\t\t\t\tconst isMetered = $(\"input[name='permit_location_metered']\").val() === \"true\";\r\n\r\n\t\t\t\tconst daysOfWeek =\r\n\t\t\t\t\t$(\"input[name*='permit_date_days_of_week']\")\r\n\t\t\t\t\t\t.filter(\":checked\")\r\n\t\t\t\t\t\t.map((_, el) => dayNameToNum[el.value])\r\n\t\t\t\t\t\t.get() || [];\r\n\t\t\t\tconst startValue = $(\"input[name='permit_date_start']\").val();\r\n\t\t\t\tconst endValue = $(\"input[name='permit_date_end']\").val();\r\n\t\t\t\tif (!startValue || !endValue) return;\r\n\t\t\t\t$(\".date-calculator\").html(\"\");\r\n\r\n\t\t\t\tconst startDate = new Date(startValue + \"T00:00\");\r\n\t\t\t\tconst endDate = new Date(endValue + \"T00:00\");\r\n\t\t\t\tif (startDate.getTime() > endDate.getTime()) {\r\n\t\t\t\t\t$(\".date-error\").text(\"Your start date cannot be later than your end date.\");\r\n\t\t\t\t\tsetDateSpan(0);\r\n\t\t\t\t\treturn;\r\n\t\t\t\t}\r\n\r\n\t\t\t\t// if start date is too early, mark as unenforceable\r\n\t\t\t\t$(\"input[name='permit_date_unenforceable']\")\r\n\t\t\t\t\t.val(startDate.getTime() < getEarliestStartDate().getTime())\r\n\t\t\t\t\t.trigger(\"change\");\r\n\r\n\t\t\t\tlet amtDays = 0;\r\n\t\t\t\t// non-metered billing is calculated by the raw date range,\r\n\t\t\t\t// regardless of any days of the week selected. only restrict days if metered\r\n\t\t\t\tif (!isMetered || daysOfWeek.includes(startDate.getDay())) amtDays++;\r\n\r\n\t\t\t\tconst curDate = new Date(startValue + \"T00:00\");\r\n\t\t\t\tconst daysOfWeekFound = {};\r\n\t\t\t\twhile (!isDateSame(curDate, endDate)) {\r\n\t\t\t\t\tcurDate.setDate(curDate.getDate() + 1);\r\n\r\n\t\t\t\t\tconst day = curDate.getDay();\r\n\t\t\t\t\t// reference comment above\r\n\t\t\t\t\tif (!isMetered || daysOfWeek.includes(day)) {\r\n\t\t\t\t\t\tamtDays++;\r\n\t\t\t\t\t\tdaysOfWeekFound[day] = true;\r\n\t\t\t\t\t}\r\n\t\t\t\t}\r\n\r\n\t\t\t\tsetDateSpan(amtDays);\r\n\r\n\t\t\t\tif (amtDays === 0 || !daysOfWeek.every((day) => daysOfWeekFound[day])) {\r\n\t\t\t\t\t$(\".date-error\").text(\r\n\t\t\t\t\t\t\"The time period you selected does not contain all of the days of the week you selected.\",\r\n\t\t\t\t\t);\r\n\t\t\t\t\tsetDateSpan(0);\r\n\t\t\t\t\treturn;\r\n\t\t\t\t} else {\r\n\t\t\t\t\t$(\".date-error\").text(\"\");\r\n\t\t\t\t}\r\n\r\n\t\t\t\tif (isMetered) {\r\n\t\t\t\t\t$(\".date-calculator\").html(\r\n\t\t\t\t\t\t`You've requested <strong>${amtDays === 1 ? \"1 day\" : `${amtDays} days`}</strong> of closure.`,\r\n\t\t\t\t\t);\r\n\t\t\t\t} else {\r\n\t\t\t\t\tconst amtWeeks = Math.ceil(amtDays / 7);\r\n\t\t\t\t\t$(\".date-calculator\").html(\r\n\t\t\t\t\t\t`You've requested <strong>${amtWeeks === 1 ? \"1 week\" : `${amtWeeks} weeks`}</strong> of closure.`,\r\n\t\t\t\t\t);\r\n\t\t\t\t}\r\n\t\t\t}\r\n\r\n\t\t\t$(document).ajaxComplete(function () {\r\n\t\t\t\t$(\r\n\t\t\t\t\t\"input[name='permit_date_start'], input[name='permit_date_end'], input[name*='permit_date_days_of_week']\",\r\n\t\t\t\t).change(calculateDateSpan);\r\n\t\t\t\tcalculateDateSpan();\r\n\r\n\t\t\t\tconst earliestStartDate = getEarliestStartDate();\r\n\t\t\t\t$(\".earliest-start-date\").text(earliestStartDate.toLocaleDateString());\r\n\t\t\t});\r\n\t\t},\r\n\t};\r\n})(jQuery, Drupal);\r\n"
 settings:
   ajax: true
   ajax_scroll_top: form
