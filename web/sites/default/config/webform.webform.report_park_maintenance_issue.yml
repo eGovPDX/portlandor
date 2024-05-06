@@ -40,6 +40,7 @@ elements: |-
         Campsite: Campsite
         'ADA accessibility issue or barrier': 'ADA accessibility issue or barrier'
         'Maintenance or groundskeeping issue': 'Maintenance or groundskeeping issue'
+        'Feedback about a staff encounter': 'Feedback about a staff encounter'
     markup_safety_issue:
       '#type': webform_markup
       '#states':
@@ -58,12 +59,7 @@ elements: |-
         visible:
           ':input[name="what_are_you_trying_to_report"]':
             value: 'Tree hazard'
-      '#markup': |-
-        <div class="alert alert--info next-steps">
-        <h2>Next Steps</h2>
-
-        <p>To report a tree issue, please contact us at <a href="tel:311">3-1-1</a> or <a href="311@portlandoregon.gov">311@portlandoregon.gov</a>.</p>
-        </div>
+      '#markup': '<div class="alert alert--info next-steps"><h2>Next Steps</h2><p>To report a tree issue, please contact us at <a href="tel:+15038238733">503-823-8733 (TREE)</a>.</p></div>'
     markup_graffiti_jump:
       '#type': webform_markup
       '#states':
@@ -89,8 +85,11 @@ elements: |-
     '#type': container
     '#states':
       visible:
-        ':input[name="what_are_you_trying_to_report"]':
-          value: 'Maintenance or groundskeeping issue'
+        - ':input[name="what_are_you_trying_to_report"]':
+            value: 'Maintenance or groundskeeping issue'
+        - or
+        - ':input[name="what_are_you_trying_to_report"]':
+            value: 'Feedback about a staff encounter'
     report_is_park:
       '#type': radios
       '#title': 'Where is the issue located?'
@@ -156,12 +155,18 @@ elements: |-
       '#title': 'Location Notes'
       '#description': '<p>Please provide information to help us find the issue.</p>'
       '#description_display': before
+      '#states':
+        invisible:
+          ':input[name="what_are_you_trying_to_report"]':
+            value: 'Feedback about a staff encounter'
     container_not_garden:
       '#type': container
       '#states':
         visible:
           ':input[name="report_is_park"]':
             value: 'Park or natural area'
+          ':input[name="what_are_you_trying_to_report"]':
+            '!value': 'Feedback about a staff encounter'
       report_what_needs_attention:
         '#type': webform_radios_other
         '#title': 'What needs attention?'
@@ -380,11 +385,15 @@ elements: |-
       report_photo:
         '#type': webform_image_file
         '#title': Photo
-        '#description': 'If appropriate, please include a photo of the issue you are reporting. Please do not include photos where other people are present and identifiable.'
+        '#description': '<p>If appropriate, please include a photo of the issue you are reporting. Please do not include photos where other people are present and identifiable.</p>'
         '#description_display': before
+        '#states':
+          invisible:
+            ':input[name="what_are_you_trying_to_report"]':
+              value: 'Feedback about a staff encounter'
         '#file_preview': 'medium:image'
         '#max_filesize': '30'
-        '#file_extensions': 'gif jpg png svg jpeg'
+        '#file_extensions': 'jpg jpeg png'
         '#file_name': 'report_[webform_submission:sid]'
         '#sanitize': true
         '#max_resolution': 1280x1280
@@ -535,7 +544,14 @@ elements: |-
       Location notes: {{ data.report_location_notes }}<br>
       {% endif %}
 
-      {% if data.report_is_park and data.report_is_park is not iterable and data.report_is_park == "Park or natural area" %}
+      <p><a href="https://www.portlandmaps.com/detail/property/{{ data.report_location.location_x }}_{{ data.report_location.location_y}}_xy/">View in PortlandMaps</a></p>
+
+      {% set staffIssue = 0 %}
+      {% if data.what_are_you_trying_to_report and data.what_are_you_trying_to_report is not iterable and data.what_are_you_trying_to_report == "Feedback about a staff encounter" %}
+        {% set staffIssue = 1 %}
+      {% endif %}
+
+      {% if data.report_is_park and data.report_is_park is not iterable and data.report_is_park == "Park or natural area" and staffIssue == 0 %}
       <br><strong>What needs attention:</strong><br>
       {% endif %}
 
@@ -866,30 +882,6 @@ access:
     users: {  }
     permissions: {  }
 handlers:
-  zendesk_update_customer_support_interaction_request_handler:
-    id: zendesk_update_ticket
-    handler_id: zendesk_update_customer_support_interaction_request_handler
-    label: 'Zendesk update customer support interaction request handler'
-    notes: 'Updates an existing Zendesk "interaction request" and links it to the issue request. Enabled if an Zendesk Request Number value has been provided.'
-    status: true
-    conditions:
-      enabled:
-        ':input[name="support_agent_use_only[zendesk_request_number]"]':
-          filled: true
-    weight: -47
-    settings:
-      comment: "<h1>[webform_submission:values:computed_subject]</h1>\r\n<p><b>Linked Issue Request: <a href=\"https://portlandoregon.zendesk.com/agent/tickets/[webform_submission:values:report_ticket_id]\">[webform_submission:values:report_ticket_id]</a></b></p>\r\n\r\n[webform_submission:values:computed_issue_description:html]\r\n"
-      comment_private: 1
-      tags: ''
-      priority: ''
-      status: ''
-      group_id: ''
-      assignee_id: ''
-      type: ''
-      collaborators: ''
-      custom_fields: "8692493739543: '[webform_submission:values:report_ticket_id]'"
-      ticket_id_field: zendesk_request_number
-      ticket_form_id: ''
   zendesk_new_park_maintenance_request:
     id: zendesk
     handler_id: zendesk_new_park_maintenance_request
@@ -900,7 +892,7 @@ handlers:
       enabled:
         ':input[name="support_agent_use_only[test_submission]"]':
           checked: true
-    weight: -46
+    weight: -45
     settings:
       requester_name: contact_name
       requester_email: contact_email
@@ -922,10 +914,14 @@ handlers:
     id: zendesk
     handler_id: route_to_parks_maintenance_zendesk
     label: 'Route to Parks Maintenance (Zendesk)'
-    notes: 'Default routing for maintenance reports. Disabled if any of the following are true: 1) Art/Mural/Monument/Sculpture, 2) Interactions, improper use, and safety concerns, 3) Test Submission box checked. '
+    notes: 'Default routing for maintenance reports. Disabled if any of the following are true: 1) Feedback about a staff encounter, 2) Art/Mural/Monument/Sculpture, 3) Test Submission box checked. '
     status: true
     conditions:
       disabled:
+        -
+          ':input[name="what_are_you_trying_to_report"]':
+            value: 'Feedback about a staff encounter'
+        - or
         -
           ':input[name="report_basic_amenity[radios]"]':
             value: Art/mural/monument/sculpture
@@ -1045,7 +1041,7 @@ handlers:
       enabled:
         ':input[name="support_agent_use_only[test_submission]"]':
           checked: true
-    weight: -45
+    weight: -44
     settings:
       states:
         - completed
@@ -1083,9 +1079,14 @@ handlers:
     status: true
     conditions:
       disabled:
-        ':input[name="support_agent_use_only[test_submission]"]':
-          checked: true
-    weight: -44
+        -
+          ':input[name="support_agent_use_only[test_submission]"]':
+            checked: true
+        - or
+        -
+          ':input[name="what_are_you_trying_to_report"]':
+            value: 'Feedback about a staff encounter'
+    weight: -43
     settings:
       comment: 'Resolution URL: <a href="[webform_submission:values:resolution_url]&report_ticket_id=[webform_submission:values:report_ticket_id]">[webform_submission:values:resolution_url]&report_ticket_id=[webform_submission:values:report_ticket_id]</a>'
       comment_private: 1
@@ -1109,7 +1110,9 @@ handlers:
       enabled:
         ':input[name="support_agent_use_only[test_submission]"]':
           checked: true
-    weight: -43
+        ':input[name="what_are_you_trying_to_report"]':
+          '!value': 'Feedback about a staff encounter'
+    weight: -42
     settings:
       comment: 'Resolution URL: <a href="[webform_submission:values:resolution_url]&report_ticket_id=[webform_submission:values:report_ticket_id]">[webform_submission:values:resolution_url]&report_ticket_id=[webform_submission:values:report_ticket_id]</a>'
       comment_private: 1
@@ -1123,4 +1126,46 @@ handlers:
       custom_fields: "6355783758871: '[webform_submission:values:resolution_url]&report_ticket_id=[webform_submission:values:report_ticket_id]'"
       ticket_id_field: report_ticket_id
       ticket_form_id: '4990038807319'
+  staff_issue_email:
+    id: email
+    handler_id: staff_issue_email
+    label: 'Staff Issue (Email)'
+    notes: 'Sends an email to the individual responsible for reported issues with staff.'
+    status: true
+    conditions:
+      enabled:
+        ':input[name="what_are_you_trying_to_report"]':
+          value: 'Feedback about a staff encounter'
+        ':input[name="support_agent_use_only[test_submission]"]':
+          unchecked: true
+    weight: -47
+    settings:
+      states:
+        - completed
+      to_mail: parksworkforce@portlandoregon.gov
+      to_options: {  }
+      bcc_mail: ''
+      bcc_options: {  }
+      cc_mail: ''
+      cc_options: {  }
+      from_mail: noreply@portlandoregon.gov
+      from_options: {  }
+      from_name: _default
+      reply_to: ''
+      return_path: ''
+      sender_mail: ''
+      sender_name: ''
+      subject: 'Parks Issue: Feedback about a staff encounter'
+      body: '<p>[webform_submission:values:computed_issue_description:html]</p>'
+      excluded_elements: {  }
+      ignore_access: false
+      exclude_empty: true
+      exclude_empty_checkbox: false
+      exclude_attachments: false
+      html: true
+      attachments: false
+      twig: false
+      theme_name: ''
+      parameters: {  }
+      debug: false
 variants: {  }
