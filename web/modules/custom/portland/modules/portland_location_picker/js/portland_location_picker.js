@@ -45,6 +45,8 @@
         const DEFAULT_INCIDENT_ICON_URL = "/modules/custom/portland/modules/portland_location_picker/images/map_marker_incident.png";
         const DEFAULT_SOLVED_ICON_URL = "/modules/custom/portland/modules/portland_location_picker/images/map_marker_incident_solved.png";
         const ERROR_MODAL_DEFAULT_TEXT = 'Please try again in a few moments. If the error persists, let us know using the <a href="/feedback?subject=The%20page%20looks%20broken">website feedback form</a>. You can also call us at <a href="tel:311">311</a>&nbsp;or&nbsp;<a href="tel:+15038234000">503-823-4000</a>.';
+        const NO_MATCHING_ADDRESS_TEXT = "Sorry, we were unable to locate that address. Please try a different address nearby, or zoom in and find it on the map.";
+        const NO_MATCHING_ADDRESS_TEXT_VERIFY_MODE = "Sorry, we were unable to locate that address. Please verify the address was entered correctly.";
         const REVERSE_GEOCODE_URL = 'https://www.portlandmaps.com/api/intersects/?geometry=%7B%20%22x%22:%20${x},%20%22y%22:%20${y},%20%22spatialReference%22:%20%7B%20%22wkid%22:%20%223857%22%7D%20%7D&include=all&detail=1&api_key=${apiKey}';
         const API_BOUNDARY_URL = "https://www.portlandmaps.com/arcgis/rest/services/Public/Boundaries/MapServer/0/query";
         const API_PARKS_BOUNDARY_URL = "https://www.portlandmaps.com/arcgis/rest/services/Public/Parks_Misc/MapServer/2/query?where=1%3D1&f=geojson";
@@ -1063,7 +1065,7 @@
           $.ajax({
             url: url, success: function (response) {
               if (response.length < 1 || (response.candidates && response.candidates.length < 1)) {
-                showStatusModal("No matching locations found. Please try a different address and try again.");
+                showStatusModal(addressVerify ? NO_MATCHING_ADDRESS_TEXT_VERIFY_MODE : NO_MATCHING_ADDRESS_TEXT);
                 setUnverified();
                 return false;
               } else if (response.error) {
@@ -1130,7 +1132,7 @@
 
           } else {
             // no matches found
-            showStatusModal("No matches found. Please try again.");
+            showStatusModal(addressVerify ? NO_MATCHING_ADDRESS_TEXT_VERIFY_MODE : NO_MATCHING_ADDRESS_TEXT);
           }
         }
 
