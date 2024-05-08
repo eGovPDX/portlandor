@@ -41,17 +41,6 @@ elements: |-
             ':input[name="apply_household_size"]':
               value:
                 greater: '0'
-      markup_enter_household_size:
-        '#type': webform_markup
-        '#states':
-          visible:
-            - ':input[name="apply_household_size"]':
-                value:
-                  less: '1'
-            - or
-            - ':input[name="apply_household_size"]':
-                empty: true
-        '#markup': '<p><strong>Please enter your household size to continue.</strong></p>'
       markup_stop_income_too_high:
         '#type': webform_markup
         '#states':
@@ -72,90 +61,109 @@ elements: |-
           	<li>For additional home weatherization assistance, contact Multnomah County Department of Human Services at <a href="tel:+1-503-988-7423">503-988-7423</a></li>
           </ul>
           </div>
-    actions:
-      '#type': webform_actions
-      '#title': 'Submit button(s)'
-      '#states':
-        visible:
-          ':input[name="apply_income_qualifies"]':
-            '!value': 'No'
-          ':input[name="apply_household_size"]':
-            value:
-              greater: '0'
-  page_location:
-    '#type': webform_wizard_page
-    '#title': Location
-    '#next_button_label': Continue
-    location_section:
-      '#type': webform_section
-      '#title': Location
-      report_location:
-        '#type': portland_location_picker
-        '#title': 'Location Address'
-        '#location_search__title': 'Address where the unit is to be installed'
-        '#location_search__description': 'Search for your address and press Verify, or select it from the dropdown.'
-        '#precision_text__access': false
-        '#place_name__access': false
-        '#location_details__access': false
-        '#address_verify': true
-      report_location_unit_number:
-        '#type': textfield
-        '#title': 'Unit Number'
-        '#placeholder': 'e.g. 101, APT 101 or UNIT 101'
-      markup_error:
-        '#type': webform_markup
-        '#admin_title': 'Error Container'
-        '#markup': '<p aria-live="assertive" class="verification-error fw-bold invalid-feedback"></p>'
-      markup_out_of_bounds:
-        '#type': webform_markup
+      container_income_eligible:
+        '#type': container
         '#states':
           visible:
-            ':input[name="report_location[location_municipality_name]"]':
-              value:
-                '!pattern': (Portland|^$)
-        '#markup': |-
-          <div class="alert alert--info next-steps">
-          <h2>Ineligibility Notice</h2>
+            ':input[name="apply_income_qualifies"]':
+              value: 'Yes'
+        apply_previous_recipient:
+          '#type': radios
+          '#title': 'Do you currently have a functioning cooling unit?'
+          '#options': yes_no
+          '#required': true
+        markup_stop_already_have_unit:
+          '#type': webform_markup
+          '#states':
+            visible:
+              ':input[name="apply_previous_recipient"]':
+                value: 'Yes'
+          '#markup': |-
+            <div class="alert alert--info next-steps">
+            <h2>Ineligibility Notice</h2>
 
-          <p>Thank you. Unfortunately, your home is not located within the City of Portland's official boundaries, which means you do not qualify for the Cooling Portland program. You may still be eligible for assistance through programs operated by other local organizations. We recommend you contact one of the following resources directly for information about available programs. Please note that not all programs will be suitable for every applicant, and many may not be able to provide immediate relief. If you have an urgent need for cooling assistance, please contact 211 for information on cooling shelters and transportation options.</p>
-
-          <ul>
-          	<li>For information on programs offered through medical providers, contact Health Share Oregon: <a href="tel:+1-503-416-8090">503-416-8090</a></li>
-          	<li>For information on programs offered through utility providers, contact Energy Trust of Oregon: <a href="tel:+1-866-368-7878">866-368-7878</a></li>
-          	<li>For additional home weatherization assistance, contact Multnomah County Department of Human Services at <a href="tel:+1-503-988-7423">503-988-7423</a></li>
-          </ul>
-          </div>
-      coolingsearch_api_result:
-        '#type': hidden
-        '#title': 'CoolingSearch API Result'
-    actions_02:
-      '#type': webform_actions
-      '#title': 'Submit button(s)'
+            <p>Thank you. Unfortunately, the Cooling Portland program is designed to provide life-saving cooling units to those who are unable to maintain a safe and comfortable environment in their homes during extreme heat events. Our services are exclusively available to individuals who do not currently have a functioning cooling system.</p>
+            </div>
+    container_preliminarily_eligible:
+      '#type': container
       '#states':
-        invisible:
-          ':input[name="report_location[location_municipality_name]"]':
-            value:
-              '!pattern': (Portland|^$)
+        visible:
+          ':input[name="apply_previous_recipient"]':
+            value: 'No'
+      location_section:
+        '#type': webform_section
+        '#title': Location
+        report_location:
+          '#type': portland_location_picker
+          '#title': 'Location Address'
+          '#location_search__title': 'Address where the unit is to be installed'
+          '#location_search__description': 'Enter your address and press Search, or select it from the dropdown.'
+          '#precision_text__access': false
+          '#place_name__access': false
+          '#place_name__title': 'Unit Number'
+          '#place_name__placeholder': 'e.g. 101, APT 101 or UNIT 101'
+          '#location_details__access': false
+          '#address_verify': true
+          '#verify_button_text': Search
+        report_location_unit_number:
+          '#type': textfield
+          '#title': 'Unit Number'
+          '#placeholder': 'e.g. 101, APT 101 or UNIT 101'
+        markup_error:
+          '#type': webform_markup
+          '#admin_title': 'Error Container'
+          '#markup': '<p aria-live="assertive" class="verification-error fw-bold invalid-feedback"></p>'
+        markup_out_of_bounds:
+          '#type': webform_markup
+          '#states':
+            visible:
+              ':input[name="report_location[location_municipality_name]"]':
+                value:
+                  '!pattern': (Portland|^$)
+          '#markup': |-
+            <div class="alert alert--info next-steps">
+            <h2>Ineligibility Notice</h2>
+
+            <p>Thank you. Unfortunately, your home is not located within the City of Portland's official boundaries, which means you do not qualify for the Cooling Portland program. You may still be eligible for assistance through programs operated by other local organizations. We recommend you contact one of the following resources directly for information about available programs. Please note that not all programs will be suitable for every applicant, and many may not be able to provide immediate relief. If you have an urgent need for cooling assistance, please contact 211 for information on cooling shelters and transportation options.</p>
+
+            <ul>
+            	<li>For information on programs offered through medical providers, contact Health Share Oregon: <a href="tel:+1-503-416-8090">503-416-8090</a></li>
+            	<li>For information on programs offered through utility providers, contact Energy Trust of Oregon: <a href="tel:+1-866-368-7878">866-368-7878</a></li>
+            	<li>For additional home weatherization assistance, contact Multnomah County Department of Human Services at <a href="tel:+1-503-988-7423">503-988-7423</a></li>
+            </ul>
+            </div>
+        markup_continue:
+          '#type': webform_markup
+          '#states':
+            visible:
+              ':input[name="report_location[location_municipality_name]"]':
+                value: ''
+          '#markup': '<p><strong>Please search for an address above to continue.</strong></p>'
+        coolingsearch_api_result:
+          '#type': hidden
+          '#title': 'CoolingSearch API Result'
+        actions:
+          '#type': webform_actions
+          '#title': 'Submit button(s)'
+          '#states':
+            visible:
+              ':input[name="report_location[location_municipality_name]"]':
+                '!value': ''
   page_priority:
     '#type': webform_wizard_page
     '#title': Priority
     '#next_button_label': Continue
+    markup_address_eligible:
+      '#type': webform_markup
+      '#states':
+        visible:
+          ':input[name="coolingsearch_api_result"]':
+            value: eligible
+      '#markup': '<div class="alert alert--info next-steps"><h2>This address is eligible to receive a cooling unit</h2><p>Please continue with the form to apply.</p></div>'
     apply_priority_section:
       '#type': webform_section
       '#title': 'Priority Questions'
       '#description': "<p>This section of the form is to determine the priority we'll set when coordinating an installation.</p>"
-      apply_vulnerabilities:
-        '#type': checkboxes
-        '#title': 'Do any of the following apply to your situation?'
-        '#options':
-          'Family member over 60 years of age': 'Family member over 60 years of age'
-          'Medical condition that increases risk of heat-related illness': 'Medical condition that increases risk of heat-related illness'
-          'Live alone': 'Live alone'
-      apply_previous_recipient:
-        '#type': radios
-        '#title': 'Do you currently have a functioning cooling unit?'
-        '#options': yes_no
-        '#required': true
       apply_move_in_date:
         '#type': date
         '#title': 'Our records indicate that this address has already received a cooling unit. Please provide the date you moved in:'
@@ -164,32 +172,21 @@ elements: |-
           visible:
             ':input[name="coolingsearch_api_result"]':
               value: installed
-            ':input[name="apply_previous_recipient"]':
-              value: 'No'
-      markup_stop_already_have_unit:
-        '#type': webform_markup
-        '#states':
-          visible:
-            ':input[name="apply_previous_recipient"]':
-              value: 'Yes'
-        '#markup': |-
-          <div class="alert alert--info next-steps">
-          <h2>Ineligibility Notice</h2>
-
-          <p>Thank you. Unfortunately, the Cooling Portland program is designed to provide life-saving cooling units to those who are unable to maintain a safe and comfortable environment in their homes during extreme heat events. Our services are exclusively available to individuals who do not currently have a functioning cooling system.</p>
-          </div>
       computed_move_in_date:
         '#type': webform_computed_twig
         '#title': 'Computed Move-in Date in Smartsheet Format'
         '#display_on': none
         '#template': "{{ data.apply_move_in_date ? data.apply_move_in_date|date('c') : '' }}"
+      apply_vulnerabilities:
+        '#type': checkboxes
+        '#title': 'Do any of the following apply to your situation?'
+        '#options':
+          'Family member over 60 years of age': 'Family member over 60 years of age'
+          'Medical condition that increases risk of heat-related illness': 'Medical condition that increases risk of heat-related illness'
+          'Live alone': 'Live alone'
     actions_01:
       '#type': webform_actions
       '#title': 'Submit button(s)'
-      '#states':
-        invisible:
-          ':input[name="apply_previous_recipient"]':
-            value: 'Yes'
   page_contact:
     '#type': webform_wizard_page
     '#title': Contact
@@ -290,7 +287,7 @@ elements: |-
           You must provide installers with a safe, clear way into and out of your home throughout the duration of the installation. The area around the installation spot must be clean and free of tripping hazards, biohazards, and clutter. (We can assist people with disabilities or mobility issues to clear the area, within reason.)
       </p>
 css: "#location_map {\r\n  display: none;\r\n}"
-javascript: "((Drupal) => {\r\n\tDrupal.behaviors.eligibilityChecker = {\r\n\t\tattach() {\r\n\t\t\tconst addressEl = document.querySelector(\"input[name='report_location[location_address]']\");\r\n\t\t\tconst unitNumberEl = document.querySelector(\"input[name='report_location_unit_number']\");\r\n\t\t\tif (!addressEl) return;\r\n\r\n\t\t\tconst submitButtonEl = document.querySelector(\".webform-button--next\");\r\n\t\t\tconst submitHandler = (e) => {\r\n\t\t\t\te.preventDefault();\r\n\t\t\t\tconst splitAddress = addressEl.value.split(\",\");\r\n\t\t\t\tif (splitAddress.length < 2) {\r\n\t\t\t\t\tdocument.querySelector(\".verification-error\").textContent = \"Address is invalid. Please make sure you verified your address.\";\r\n\t\t\t\t\treturn;\r\n\t\t\t\t}\r\n\r\n\t\t\t\t// combine property address and unit number into one string\r\n\t\t\t\tconst fullAddress = `${addressEl.value} ${unitNumberEl.value}`;\r\n\t\t\t\tfetch(`https://coolingsearch.org/api/search?search=${fullAddress}`, {\r\n\t\t\t\t\theaders: {\r\n\t\t\t\t\t\t\"Authorization\": \"Token e367099a03f3cd984e2be20f60bceb8d798a7607\"\r\n\t\t\t\t\t},\r\n\t\t\t\t}).then((res) => res.json()).then((data) => {\r\n\t\t\t\t\tconst apiResultEl = document.querySelector(\"input[name='coolingsearch_api_result']\");\r\n\t\t\t\t\tconst errorMessage = data.housing_provider || data.message || data.scheduled || data.out_of_bounds;\r\n\t\t\t\t\tif (errorMessage) {\r\n\t\t\t\t\t\tdocument.querySelector(\".verification-error\").textContent = errorMessage;\r\n\t\t\t\t\t} else {\r\n\t\t\t\t\t\t// if unit has previously been installed, we still want to let user continue\r\n\t\t\t\t\t\t// but flag it in submission data as they may be a different tenant.\r\n\t\t\t\t\t\tapiResultEl.value = data.installed ? \"installed\" : \"eligible\";\r\n\t\t\t\t\t\tsubmitButtonEl.removeEventListener(\"click\", submitHandler);\r\n\t\t\t\t\t\tsubmitButtonEl.click();\r\n\t\t\t\t\t}\r\n\t\t\t\t}, () => {\r\n\t\t\t\t\tsubmitButtonEl.removeEventListener(\"click\", submitHandler);\r\n\t\t\t\t\tsubmitButtonEl.click();\r\n\t\t\t\t});\r\n\t\t\t};\r\n\r\n\t\t\tsubmitButtonEl.addEventListener(\"click\", submitHandler);\r\n\t\t},\r\n\t};\r\n\r\n\tDrupal.behaviors.incomeCalculator = {\r\n\t\t// The HUD 2023 60% Median Income in the Portland-Vancouver-Hillsboro MSA by household size (1-indexed)\r\n\t\tMEDIAN_INCOMES: [\r\n\t\t\t0,\r\n\t\t\t47400,\r\n\t\t\t54180,\r\n\t\t\t60960,\r\n\t\t\t67680,\r\n\t\t\t73140,\r\n\t\t\t78540,\r\n\t\t\t83940,\r\n\t\t\t89340,\r\n\t\t],\r\n\r\n\t\tattach() {\r\n\t\t\tconst householdSizeEl = document.querySelector(\"input[name='apply_household_size']\");\r\n\t\t\tif (!householdSizeEl) return;\r\n\r\n\t\t\tthis.calculateIncome(householdSizeEl);\r\n\t\t\thouseholdSizeEl.addEventListener(\"input\", (e) => this.calculateIncome(e.target));\r\n\t\t},\r\n\r\n\t\tcalculateIncome(el) {\r\n\t\t\tconst medianIncomes = this.MEDIAN_INCOMES;\r\n\t\t\tconst householdSize = el.valueAsNumber;\r\n\t\t\tlet incomeLimitYearly = 0;\r\n\t\t\tif (isNaN(householdSize) || householdSize === 0) return;\r\n\r\n\t\t\tif (householdSize > 8) {\r\n\t\t\t\t// For each person over eight-persons, the four-person income limit\r\n\t\t\t\t// should be multiplied by an additional 8 percent. (For example, the nine-person limit equals 140\r\n\t\t\t\t// percent [132 + 8] of the relevant four-person income limit.)\r\n\t\t\t\tincomeLimitYearly = medianIncomes[4] * (1 + (0.08 * (householdSize - 4)));\r\n\t\t\t} else {\r\n\t\t\t\tincomeLimitYearly = medianIncomes[householdSize];\r\n\t\t\t}\r\n\r\n\t\t\tdocument.querySelectorAll(\".income-yearly\").forEach((el) => el.textContent = this.prettyNumber(incomeLimitYearly));\r\n\t\t\tdocument.querySelector(\".income-monthly\").textContent = this.prettyNumber(incomeLimitYearly / 12);\r\n\t\t},\r\n\r\n\t\tprettyNumber(num) {\r\n\t\t\treturn num.toLocaleString(undefined, { currency: \"USD\", maximumFractionDigits: 0, style: \"currency\" });\r\n\t\t},\r\n\t};\r\n})(Drupal);\r\n"
+javascript: "((Drupal) => {\r\n\tDrupal.behaviors.eligibilityChecker = {\r\n\t\tattach() {\r\n\t\t\tconst addressEl = document.querySelector(\"input[name='report_location[location_address]']\");\r\n\t\t\tconst unitNumberEl = document.querySelector(\"input[name='report_location_unit_number']\");\r\n\t\t\tif (!addressEl) return;\r\n\r\n\t\t\tconst submitButtonEl = document.querySelector(\".webform-button--next\");\r\n\t\t\tconst submitHandler = (e) => {\r\n\t\t\t\te.preventDefault();\r\n\t\t\t\tconst splitAddress = addressEl.value.split(\",\");\r\n\t\t\t\tif (splitAddress.length < 2) {\r\n\t\t\t\t\tdocument.querySelector(\".verification-error\").textContent = \"Address is invalid. Please make sure you verified your address.\";\r\n\t\t\t\t\treturn;\r\n\t\t\t\t}\r\n\r\n\t\t\t\tlet unitNumber = unitNumberEl.value;\r\n\t\t\t\t// if unit number starts with an integer, prefix it with a #\r\n\t\t\t\t// so coolingsearch API can correctly interpret it\r\n\t\t\t\tif (unitNumber.match(/^\\d/)) {\r\n\t\t\t\t\tunitNumber = `#${unitNumber}`;\r\n\t\t\t\t}\r\n\r\n\t\t\t\t// combine property address and unit number into one string\r\n\t\t\t\tconst fullAddress = `${addressEl.value} ${unitNumber}`;\r\n\t\t\t\tfetch(`https://coolingsearch.org/api/search?search=${encodeURIComponent(fullAddress)}`, {\r\n\t\t\t\t\theaders: {\r\n\t\t\t\t\t\t\"Authorization\": \"Token e367099a03f3cd984e2be20f60bceb8d798a7607\"\r\n\t\t\t\t\t},\r\n\t\t\t\t}).then((res) => res.json()).then((data) => {\r\n\t\t\t\t\tconst apiResultEl = document.querySelector(\"input[name='coolingsearch_api_result']\");\r\n\t\t\t\t\tconst errorMessage = data.housing_provider || data.message || data.scheduled || data.out_of_bounds;\r\n\t\t\t\t\tif (errorMessage) {\r\n\t\t\t\t\t\tdocument.querySelector(\".verification-error\").textContent = errorMessage;\r\n\t\t\t\t\t} else {\r\n\t\t\t\t\t\t// if unit has previously been installed, we still want to let user continue\r\n\t\t\t\t\t\t// but flag it in submission data as they may be a different tenant.\r\n\t\t\t\t\t\tapiResultEl.value = data.installed ? \"installed\" : \"eligible\";\r\n\t\t\t\t\t\tsubmitButtonEl.removeEventListener(\"click\", submitHandler);\r\n\t\t\t\t\t\tsubmitButtonEl.click();\r\n\t\t\t\t\t}\r\n\t\t\t\t}, () => {\r\n\t\t\t\t\t// if API call fails, let user continue but flag it in the data.\r\n\t\t\t\t\tapiResultEl.value = \"api_error\";\r\n\t\t\t\t\tsubmitButtonEl.removeEventListener(\"click\", submitHandler);\r\n\t\t\t\t\tsubmitButtonEl.click();\r\n\t\t\t\t});\r\n\t\t\t};\r\n\r\n\t\t\tsubmitButtonEl.addEventListener(\"click\", submitHandler);\r\n\t\t},\r\n\t};\r\n\r\n\tDrupal.behaviors.incomeCalculator = {\r\n\t\t// The HUD 2023 60% Median Income in the Portland-Vancouver-Hillsboro MSA by household size (1-indexed)\r\n\t\tMEDIAN_INCOMES: [\r\n\t\t\t0,\r\n\t\t\t47400,\r\n\t\t\t54180,\r\n\t\t\t60960,\r\n\t\t\t67680,\r\n\t\t\t73140,\r\n\t\t\t78540,\r\n\t\t\t83940,\r\n\t\t\t89340,\r\n\t\t],\r\n\r\n\t\tattach() {\r\n\t\t\tconst householdSizeEl = document.querySelector(\"input[name='apply_household_size']\");\r\n\t\t\tif (!householdSizeEl) return;\r\n\r\n\t\t\tthis.calculateIncome(householdSizeEl);\r\n\t\t\thouseholdSizeEl.addEventListener(\"input\", (e) => this.calculateIncome(e.target));\r\n\t\t},\r\n\r\n\t\tcalculateIncome(el) {\r\n\t\t\tconst medianIncomes = this.MEDIAN_INCOMES;\r\n\t\t\tconst householdSize = el.valueAsNumber;\r\n\t\t\tlet incomeLimitYearly = 0;\r\n\t\t\tif (isNaN(householdSize) || householdSize === 0) return;\r\n\r\n\t\t\tif (householdSize > 8) {\r\n\t\t\t\t// For each person over eight-persons, the four-person income limit\r\n\t\t\t\t// should be multiplied by an additional 8 percent. (For example, the nine-person limit equals 140\r\n\t\t\t\t// percent [132 + 8] of the relevant four-person income limit.)\r\n\t\t\t\tincomeLimitYearly = medianIncomes[4] * (1 + (0.08 * (householdSize - 4)));\r\n\t\t\t} else {\r\n\t\t\t\tincomeLimitYearly = medianIncomes[householdSize];\r\n\t\t\t}\r\n\r\n\t\t\tdocument.querySelectorAll(\".income-yearly\").forEach((el) => el.textContent = this.prettyNumber(incomeLimitYearly));\r\n\t\t\tdocument.querySelector(\".income-monthly\").textContent = this.prettyNumber(incomeLimitYearly / 12);\r\n\t\t},\r\n\r\n\t\tprettyNumber(num) {\r\n\t\t\treturn num.toLocaleString(undefined, { currency: \"USD\", maximumFractionDigits: 0, style: \"currency\" });\r\n\t\t},\r\n\t};\r\n})(Drupal);\r\n"
 settings:
   ajax: false
   ajax_scroll_top: form
