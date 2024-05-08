@@ -40,6 +40,8 @@ class MediaIframeEmbedFormatter extends MediaRemoteFormatterBase {
       "^https?:\/\/app\.smartsheet\.com\/b\/form\/.+$",
       // Smartsheet publish
       "^https?:\/\/publish\.smartsheet\.com\/.+$",
+      // RankedVote
+      "^https:\/\/app.rankedvote.co\/rv\/[^\/]+\/vote\/embed-rv\/?$",
     ];
 
     return "/" . join("|", $patterns) . "/";
