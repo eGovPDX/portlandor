@@ -365,6 +365,7 @@
               var lat = ui.item.attributes.lat;
               var lon = ui.item.attributes.lon;
               var latlon = new L.LatLng(lat, lon);
+              clearLocationFields()
               reverseGeolocate(latlon, true, address);
               $(this).autocomplete('close');
               $('.verified-checkmark.address').removeClass('invisible');
@@ -1021,7 +1022,6 @@
           if (results.detail.city) {
             var city_name = results.detail.city[0].name;
             $('input[name=' + elementId + '\\[location_municipality_name\\]]').val(city_name);
-            $('input[name=' + elementId + '\\[location_municipality_name\\]]').trigger('change');
           }
 
           if (results.detail.zipcode) {
@@ -1029,6 +1029,7 @@
             $('input[name=' + elementId + '\\[location_zipcode\\]]').val(zipcode);
           }
 
+          $('input[name=' + elementId + '\\[location_municipality_name\\]]').trigger('change');
           $('input[name=' + elementId + '\\[location_type_taxlot\\]]').trigger('change');
           $('input[name=' + elementId + '\\[location_type_park\\]]').trigger('change');
           $('input[name=' + elementId + '\\[location_type_waterbody\\]]').trigger('change');
@@ -1379,7 +1380,7 @@
           };
 
           if (isVerifiedAddress) setVerified();
-          $('#location_address').val(description);
+          $('#location_address').val(description).trigger('change');
         }
 
         function hideVerifiedLocation() {

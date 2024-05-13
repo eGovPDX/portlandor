@@ -17,7 +17,7 @@ template: false
 archive: false
 id: apply_cooling_unit
 title: 'Apply for a Cooling Unit'
-description: "<p>This webform utilizes some custom CSS and JS for the functionality.</p><h2>Custom CSS</h2><p>The CSS hides the location picker map as we only use the widget for the address verification field.</p><h2>Custom JS</h2><p>The JS provides two behaviors:</p><h3>Eligibility checker</h3><p>The `eligibilityChecker` behavior checks the entered address + unit number against the CoolingSearch API, when the continue button on the first page is clicked. If there's an error or user is ineligible, it will be displayed and the user cannot continue.</p><h3>Income calculator</h3><p>The `incomeCalculator` behavior calculates the maximum program income limit based on the HUD 2023 60% Median Income limits. This calculated number is then displayed as part of an eligibility question to which the user must answer Yes in order to continue.&nbsp;</p>"
+description: "<p>This webform utilizes some custom CSS and JS for the functionality.</p><ul><li><strong>Custom CSS - </strong>The CSS hides the location picker map as we only use the widget for the address verification field.</li><li><strong>Custom JS - </strong>The JS provides two behaviors:</li><li><strong>Eligibility checker - </strong>The `eligibilityChecker` behavior checks the entered address + unit number against the CoolingSearch API, when the continue button on the first page is clicked. If there's an error or user is ineligible, it will be displayed and the user cannot continue.</li><li><strong>Income calculator - </strong>The `incomeCalculator` behavior calculates the maximum program income limit based on the HUD 2023 60% Median Income limits. This calculated number is then displayed as part of an eligibility question to which the user must answer Yes in order to continue.&nbsp;</li></ul>"
 categories: {  }
 elements: |-
   page_eligibility:
@@ -111,6 +111,12 @@ elements: |-
         '#type': textfield
         '#title': 'Unit Number'
         '#placeholder': 'e.g. 101, APT 101 or UNIT 101'
+        '#states':
+          invisible:
+            ':input[name="report_location[location_municipality_name]"]':
+              '!value': Portland
+            ':input[name="report_location[location_address]"]':
+              '!value': ''
       markup_error:
         '#type': webform_markup
         '#wrapper_attributes':
@@ -124,9 +130,10 @@ elements: |-
         '#type': webform_markup
         '#states':
           visible:
+            ':input[name="report_location[location_address]"]':
+              '!value': ''
             ':input[name="report_location[location_municipality_name]"]':
-              value:
-                '!pattern': (Portland|^$)
+              '!value': Portland
         '#markup': |-
           <div class="alert alert--info next-steps">
           <h2>Ineligibility Notice</h2>
@@ -143,7 +150,7 @@ elements: |-
         '#type': webform_markup
         '#states':
           visible:
-            ':input[name="report_location[location_municipality_name]"]':
+            ':input[name="report_location[location_address]"]':
               value: ''
         '#markup': '<p><strong>Please search for an address above to continue.</strong></p>'
       coolingsearch_api_result:
@@ -154,7 +161,7 @@ elements: |-
         '#states':
           visible:
             ':input[name="report_location[location_municipality_name]"]':
-              '!value': ''
+              value: Portland
             ':input[name="coolingsearch_api_result"]':
               value: ''
         '#markup': '<p><strong>Please press continue below to check your eligibility.</strong></p>'
@@ -164,7 +171,7 @@ elements: |-
         '#states':
           visible:
             ':input[name="report_location[location_municipality_name]"]':
-              '!value': ''
+              value: Portland
   page_priority:
     '#type': webform_wizard_page
     '#title': Priority
@@ -270,11 +277,10 @@ elements: |-
     '#display_on': none
     '#mode': html
     '#template': |-
-      <p>
-          Thank you for your interest in receiving a cooling unit from Cooling Portland: <a href="https://www.earthadvantage.org/climate-justice/hrp-information.html">A PCEF-Funded Climate Resilience Program!</a>
+      <p>Thank you for your interest in receiving a cooling unit from Cooling Portland: <a href="https://www.earthadvantage.org/climate-justice/hrp-information.html">A PCEF-Funded Climate Resilience Program!</a>
       </p>
       <p>
-          Your application has been sent to a Community Distribution Partner to coordinate an installation.
+          Your application has been sent to a Community Distribution Partner (CDP) to coordinate an installation. As a minimum you should expect to hear back from a CDP within 15 business days after registering to the Cooling Portland program. During periods of intense heat and demand, this could take longer. The Cooling Portland program is a long-term climate resilience program, not an emergency response to heat.
       </p>
       {% if data.apply_cdp_preference %}
       <p>
@@ -303,6 +309,7 @@ elements: |-
       <p>
           You must provide installers with a safe, clear way into and out of your home throughout the duration of the installation. The area around the installation spot must be clean and free of tripping hazards, biohazards, and clutter. (We can assist people with disabilities or mobility issues to clear the area, within reason.)
       </p>
+      <p>For more information, please visit the <a href="/bps/cleanenergy/about-cooling-portland">Cooling Portland information page on Portland.gov</a>.</p>
 css: |-
   #location_map {
     display: none;
@@ -612,15 +619,15 @@ handlers:
       bcc_options: {  }
       cc_mail: ''
       cc_options: {  }
-      from_mail: cleanenergyfund@portlandoregon.gov
+      from_mail: noreply@portlandoregon.gov
       from_options: {  }
-      from_name: 'Cooling Portland'
+      from_name: Portland.gov
       reply_to: ''
       return_path: ''
       sender_mail: ''
       sender_name: ''
       subject: 'Cooling Unit Request Received'
-      body: '<p>[webform_submission:values:computed_confirmation_message]</p>'
+      body: '<p><em>This message was sent from an automated system and cannot accept replies.</em></p><p>[webform_submission:values:computed_confirmation_message]</p>'
       excluded_elements:
         computed_confirmation_message: computed_confirmation_message
       ignore_access: false
