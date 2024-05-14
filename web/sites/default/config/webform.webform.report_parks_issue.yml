@@ -199,6 +199,10 @@ elements: |-
             '#require_boundary': false
             '#display_boundary': false
             '#location_details__maxlength': 500
+            '#primary_layer_behavior': informational
+            '#primary_layer_type': region-hidden
+            '#primary_layer_source': 'https://www.portlandmaps.com/arcgis/rest/services/Public/Parks_Administrative_Boundaries/MapServer/1/query?where=1%3D1&f=geojson'
+            '#region_id_property_name': Name
           report_community_center_location_details:
             '#type': textarea
             '#title': 'Location Details'
@@ -759,15 +763,15 @@ elements: |-
     '#title': 'Computed Subject'
     '#display_on': none
     '#mode': text
-    '#template': |-
+    '#template': |
       {% if data.report_urgent == "Yes" %}
-      Ranger Request:
+      Ranger Request{{ data.report_location.location_region_id ? ' (' ~ data.report_location.location_region_id ~ ')' : '' }}: 
       {{ data.report_staff_issue_type is iterable ? '' : webform_token('[webform_submission:values:report_staff_issue_type]', webform_submission) }}
       {% else %}
-      Ranger Request:
+      Ranger Request{{ data.report_location.location_region_id ? ' (' ~ data.report_location.location_region_id ~ ')' : '' }}: 
       {{ data.report_issue_type is iterable ? '' : webform_token('[webform_submission:values:report_issue_type]', webform_submission) }}
       {% endif %}
-    '#whitespace': spaceless
+    '#whitespace': trim
     '#ajax': true
   computed_tags:
     '#type': webform_computed_token
@@ -838,6 +842,7 @@ elements: |-
         {% endif %}
         
         <br>
+        <a href="https://www.portlandmaps.com/detail/property/{{ data.report_location.location_x }}_{{ data.report_location.location_y}}_xy/">View in PortlandMaps</a><br><br>
         
         {% if data.report_issue_type %}
           <strong>What type of issue are you reporting?</strong> {{ data.report_issue_type is iterable ? '' : webform_token('[webform_submission:values:report_issue_type]', webform_submission) }}<br>
