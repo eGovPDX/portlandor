@@ -39,7 +39,7 @@ elements: |-
       'Gibbs Street Pedestrian Bridge (Elevator)': 'Gibbs Street Pedestrian Bridge (Elevator)'
     '#required': true
   report_impact:
-    '#type': checkboxes
+    '#type': radios
     '#title': 'What is the level of impact?'
     '#description': '<p>To help us gauge the severity of the issue</p>'
     '#description_display': before
@@ -51,7 +51,7 @@ elements: |-
       Discretionary: 'Discretionary -- Work that is desired but not essential to protect, preserve, or restore facilities and equipment'
     '#required': true
   report_issue_type:
-    '#type': webform_checkboxes_other
+    '#type': webform_radios_other
     '#title': 'What needs attention?'
     '#options':
       'Doors – general/access': 'Doors – general/access'
@@ -73,7 +73,7 @@ elements: |-
       'Plumbing – leaks, not working, clog': 'Plumbing – leaks, not working, clog'
       'Roof/Ceiling – general': 'Roof/Ceiling – general'
       'Roof/Ceiling – leak': 'Roof/Ceiling – leak'
-      'Walls – patch, paint': 'Walls – patch, paint, hanging'
+      'Walls – patch, paint, hanging': 'Walls – patch, paint, hanging'
       'Windows – repair, replace': 'Windows – repair, replace'
       'Setup – meeting/event/trainings': 'Setup – meeting/event/trainings -- (describe below)'
     '#required': true
@@ -84,7 +84,6 @@ elements: |-
   report_due_date:
     '#type': date
     '#title': 'Required by date'
-    '#datepicker': true
   report_file_upload:
     '#type': webform_image_file
     '#title': 'File Upload'
@@ -101,13 +100,14 @@ elements: |-
     '#pattern_error': 'Please enter a correctly formatted email address, such as myname@example.com.'
   computed_issue_types:
     '#type': webform_computed_twig
-    '#title': 'Computed Issue Types'
+    '#title': 'Computed Issue Type'
     '#display_on': none
     '#mode': text
     '#template': |-
       {% set element_options = elements.report_issue_type['#options'] %}
+      {{dump(element_options)}}
       {# we want to filter out the "other" field #}
-      {{ data.report_issue_type|default([])|map(v => v in element_options ? v : 'Other')|join('\n') }}
+      {{ data.report_issue_type in (element_options|keys) ? data.report_issue_type : 'Other' }}
   computed_other_issue_type:
     '#type': webform_computed_twig
     '#title': 'Computed Other Issue Type'
@@ -116,7 +116,7 @@ elements: |-
     '#template': |-
       {% set element_options = elements.report_issue_type['#options'] %}
       {# we want only the "other" field #}
-      {{ (data.report_issue_type|default([])|filter(v => v not in element_options))|join('') }}
+      {{ data.report_issue_type not in (element_options|keys) ? data.report_issue_type : '' }}
   report_send_copy:
     '#type': checkbox
     '#title': 'Send me a copy of this request'
