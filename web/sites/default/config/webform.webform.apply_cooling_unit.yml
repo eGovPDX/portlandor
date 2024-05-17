@@ -36,6 +36,7 @@ elements: |-
         '#min': 1
         '#max': 99
         '#step': 1
+        '#required': true
       apply_income_qualifies:
         '#type': radios
         '#title': 'Is your total household income LESS than <span class="income-yearly">$0</span> per year (<span class="income-monthly">$0</span>/month)?'
@@ -101,6 +102,7 @@ elements: |-
         '#location_search__title': 'Address where the unit is to be installed'
         '#location_search__description': 'Enter your address and press Search, or select it from the dropdown.'
         '#precision_text__access': false
+        '#location_address__required': true
         '#place_name__access': false
         '#place_name__title': 'Unit Number'
         '#place_name__placeholder': 'e.g. 101, APT 101 or UNIT 101'
@@ -117,15 +119,6 @@ elements: |-
               '!value': Portland
             ':input[name="report_location[location_address]"]':
               '!value': ''
-      markup_error:
-        '#type': webform_markup
-        '#wrapper_attributes':
-          style: 'display: none;'
-        '#admin_title': 'Error Container'
-        '#markup': |-
-          <div class="alert alert--warning next-steps">
-          <p aria-live="polite" class="verification-error fw-bold m-0"></p>
-          </div>
       markup_out_of_bounds:
         '#type': webform_markup
         '#states':
@@ -134,44 +127,75 @@ elements: |-
               '!value': ''
             ':input[name="report_location[location_municipality_name]"]':
               '!value': Portland
-        '#markup': |-
-          <div class="alert alert--info next-steps">
-          <h2>Ineligibility Notice</h2>
-
-          <p>Thank you. Unfortunately, your home is not located within the City of Portland's official boundaries, which means you do not qualify for the Cooling Portland program. You may still be eligible for assistance through programs operated by other local organizations. We recommend you contact one of the following resources directly for information about available programs. Please note that not all programs will be suitable for every applicant, and many may not be able to provide immediate relief. If you have an urgent need for cooling assistance, please contact 211 for information on cooling shelters and transportation options.</p>
-
-          <ul>
-          	<li>For information on programs offered through medical providers, contact Health Share Oregon: <a href="tel:+1-503-416-8090">503-416-8090</a></li>
-          	<li>For information on programs offered through utility providers, contact Energy Trust of Oregon: <a href="tel:+1-866-368-7878">866-368-7878</a></li>
-          	<li>For additional home weatherization assistance, contact Multnomah County Department of Human Services at <a href="tel:+1-503-988-7423">503-988-7423</a></li>
-          </ul>
-          </div>
+        '#markup': '<div class="alert alert--info next-steps"><h2>Ineligibility Notice</h2><p>Thank you. Unfortunately, your home is not located within the City of Portland''s official boundaries, which means you do not qualify for the Cooling Portland program. You may still be eligible for assistance through programs operated by other local organizations.</p><p>We recommend you contact one of the following resources directly for information about available programs. Please note that not all programs will be suitable for every applicant, and many may not be able to provide immediate relief.</p><ul><li>If you have an urgent need for cooling assistance, please call <a href="tel:211">211</a> for information on cooling shelters and transportation options.</li><li>For information on programs offered through medical providers, contact Health Share Oregon: <a href="tel:+1-503-416-8090">503-416-8090</a></li><li>For information on programs offered through utility providers, contact Energy Trust of Oregon: <a href="tel:+1-866-368-7878">866-368-7878</a></li><li>For additional home weatherization assistance, contact Multnomah County Department of Human Services at <a href="tel:+1-503-988-7423">503-988-7423</a></li></ul><p><em>If you believe this message to be in error, please call </em><a href="tel:311"><em>3-1-1</em></a><em> or </em><a href="tel:+15038234000"><em>503-823-4000</em></a><em> so staff can assist you further.</em></p></div>'
       markup_continue:
         '#type': webform_markup
         '#states':
           visible:
             ':input[name="report_location[location_address]"]':
               value: ''
+            ':input[name="apply_csr_override"]':
+              checked: false
         '#markup': '<p><strong>Please search for an address above to continue.</strong></p>'
       coolingsearch_api_result:
         '#type': hidden
         '#title': 'CoolingSearch API Result'
+      markup_error:
+        '#type': webform_markup
+        '#wrapper_attributes':
+          style: 'display: none;'
+        '#admin_title': 'Error Container'
+        '#markup': |-
+          <div class="alert alert--warning next-steps">
+            <p aria-live="polite" class="verification-error fw-bold"></p>
+            <p class="m-0"><em>If you believe this message to be in error, please call </em><a href="tel:311"><em>3-1-1</em></a><em> or </em><a href="tel:+15038234000"><em>503-823-4000</em></a><em> so staff can assist you further.</em></p>
+          </div>
+      apply_csr_override:
+        '#type': checkbox
+        '#title': '311 CSR override'
+        '#description': "Check this box if the address/eligibility verification is not working and you have independently verified the community member's address."
+        '#access_create_roles':
+          - authenticated
+      apply_csr_override_notes:
+        '#type': textfield
+        '#title': 'Override notes'
+        '#description': 'Please provide a reason for overriding.'
+        '#description_display': before
+        '#required': true
+        '#access_create_roles':
+          - authenticated
+        '#states':
+          visible:
+            ':input[name="apply_csr_override"]':
+              checked: true
       markup_check_eligibility:
         '#type': webform_markup
         '#states':
           visible:
-            ':input[name="report_location[location_municipality_name]"]':
-              value: Portland
-            ':input[name="coolingsearch_api_result"]':
-              value: ''
+            - ':input[name="report_location[location_municipality_name]"]':
+                value: Portland
+              ':input[name="report_location[location_address]"]':
+                '!value': ''
+              ':input[name="coolingsearch_api_result"]':
+                value: ''
+            - or
+            - ':input[name="apply_csr_override"]':
+                checked: true
+              ':input[name="coolingsearch_api_result"]':
+                value: ''
         '#markup': '<p><strong>Please press continue below to check your eligibility.</strong></p>'
       actions:
         '#type': webform_actions
         '#title': 'Submit button(s)'
         '#states':
           visible:
-            ':input[name="report_location[location_municipality_name]"]':
-              value: Portland
+            - ':input[name="report_location[location_address]"]':
+                '!value': ''
+              ':input[name="report_location[location_municipality_name]"]':
+                value: Portland
+            - or
+            - ':input[name="apply_csr_override"]':
+                checked: true
   page_priority:
     '#type': webform_wizard_page
     '#title': Priority
@@ -238,27 +262,14 @@ elements: |-
         '#description': '<p>To ensure we can coordinate your installation quicker, please provide a second phone number, if available.</p>'
         '#description_display': before
         '#input_mask': '(999) 999-9999'
-      apply_cdp_preference:
-        '#type': radios
-        '#title': 'Are you looking to work with a particular Community Distribution Partner?'
-        '#description': "<p>If left blank or No Preference is selected, we'll connect you with the group that has the most capacity to assist you.</p>"
-        '#description_display': before
-        '#options':
-          'No Preference': 'No Preference'
-          'African American Alliance for Homeownership (AAAH)': 'African American Alliance for Homeownership (AAAH)'
-          'APANO Communities United Fund': 'APANO Communities United Fund'
-          'Ecumenical Ministries of Oregon (EMO)': 'Ecumenical Ministries of Oregon (EMO)'
-          'Latino Network': 'Latino Network'
-          'Native American Youth and Family Center (NAYA)': 'Native American Youth and Family Center (NAYA)'
-          'Northwest Native Chamber': 'Northwest Native Chamber'
-          'Somali American Chamber of Oregon (SACOO)': 'Somali American Chamber of Oregon (SACOO)'
-          Verde: Verde
       support_agent_use_only:
         '#type': portland_support_agent_widget
         '#title': 'Support Agent Use Only'
         '#zendesk_request_number__access': false
         '#employee_notes_panel__access': false
         '#escalate_issue__access': false
+        '#access_create_roles':
+          - authenticated
   computed_location_address:
     '#type': webform_computed_twig
     '#title': 'Computed Location Address'
@@ -271,6 +282,12 @@ elements: |-
     '#display_on': none
     '#mode': text
     '#template': '{{ data.apply_vulnerabilities|join("\n") }}'
+  computed_submitted_by_311:
+    '#type': webform_computed_twig
+    '#title': 'Computed Submitted by 311'
+    '#display_on': none
+    '#mode': text
+    '#template': '{{ data.support_agent_use_only and data.support_agent_use_only.employee_email ? "Yes" : "No" }}'
   computed_confirmation_message:
     '#type': webform_computed_twig
     '#title': 'Computed Confirmation Message'
@@ -282,11 +299,6 @@ elements: |-
       <p>
           Your application has been sent to a Community Distribution Partner (CDP) to coordinate an installation. As a minimum you should expect to hear back from a CDP within 15 business days after registering to the Cooling Portland program. During periods of intense heat and demand, this could take longer. The Cooling Portland program is a long-term climate resilience program, not an emergency response to heat.
       </p>
-      {% if data.apply_cdp_preference %}
-      <p>
-          <strong>CDP Preference: </strong>{{ data.apply_cdp_preference }}
-      </p>
-      {% endif %}
       <hr>
       <p>
           Please review the following information:
@@ -310,116 +322,8 @@ elements: |-
           You must provide installers with a safe, clear way into and out of your home throughout the duration of the installation. The area around the installation spot must be clean and free of tripping hazards, biohazards, and clutter. (We can assist people with disabilities or mobility issues to clear the area, within reason.)
       </p>
       <p>For more information, please visit the <a href="/bps/cleanenergy/about-cooling-portland">Cooling Portland information page on Portland.gov</a>.</p>
-css: |-
-  #location_map {
-    display: none;
-  }
-javascript: |
-  ((Drupal) => {
-  	Drupal.behaviors.eligibilityChecker = {
-  		attach() {
-  			const addressEl = document.querySelector("input[name='report_location[location_address]']");
-  			const unitNumberEl = document.querySelector("input[name='report_location_unit_number']");
-  			if (!addressEl) return;
-
-  			const submitButtonEl = document.querySelector(".webform-button--next");
-  			const submitHandler = (e) => {
-  				e.preventDefault();
-  				const splitAddress = addressEl.value.split(",");
-  				if (splitAddress.length < 2) {
-  					document.querySelector(".js-form-item-markup-error").style.display = "block";
-  					document.querySelector(".verification-error").textContent = "Address is invalid. Please make sure you verified your address.";
-  					return;
-  				}
-
-  				let unitNumber = unitNumberEl.value;
-  				// if unit number starts with an integer, prefix it with a #
-  				// so coolingsearch API can correctly interpret it
-  				if (unitNumber.match(/^\d/)) {
-  					unitNumber = `#${unitNumber}`;
-  				}
-
-  				// combine property address and unit number into one string
-  				const fullAddress = `${addressEl.value} ${unitNumber}`;
-  				fetch(`https://coolingsearch.org/api/search?search=${encodeURIComponent(fullAddress)}`, {
-  					headers: {
-  						"Authorization": "Token e367099a03f3cd984e2be20f60bceb8d798a7607"
-  					},
-  				}).then((res) => res.json()).then((data) => {
-  					const apiResultEl = document.querySelector("input[name='coolingsearch_api_result']");
-  					const errorMessage = data.housing_provider || data.message || data.scheduled || data.out_of_bounds;
-  					if (errorMessage) {
-  						document.querySelector(".js-form-item-markup-error").style.display = "block";
-  						document.querySelector(".verification-error").textContent = errorMessage;
-  						apiResultEl.value = "ineligible";
-  						jQuery(apiResultEl).trigger("change");
-  					} else {
-  						// if unit has previously been installed, we still want to let user continue
-  						// but flag it in submission data as they may be a different tenant.
-  						apiResultEl.value = data.installed ? "installed" : "eligible";
-  						jQuery(apiResultEl).trigger("change");
-  						submitButtonEl.removeEventListener("click", submitHandler);
-  						submitButtonEl.click();
-  					}
-  				}, () => {
-  					// if API call fails, let user continue but flag it in the data.
-  					apiResultEl.value = "api_error";
-  					jQuery(apiResultEl).trigger("change");
-  					submitButtonEl.removeEventListener("click", submitHandler);
-  					submitButtonEl.click();
-  				});
-  			};
-
-  			submitButtonEl.addEventListener("click", submitHandler);
-  		},
-  	};
-
-  	Drupal.behaviors.incomeCalculator = {
-  		// The HUD 2023 60% Median Income in the Portland-Vancouver-Hillsboro MSA by household size (1-indexed)
-  		MEDIAN_INCOMES: [
-  			0,
-  			47400,
-  			54180,
-  			60960,
-  			67680,
-  			73140,
-  			78540,
-  			83940,
-  			89340,
-  		],
-
-  		attach() {
-  			const householdSizeEl = document.querySelector("input[name='apply_household_size']");
-  			if (!householdSizeEl) return;
-
-  			this.calculateIncome(householdSizeEl);
-  			householdSizeEl.addEventListener("input", (e) => this.calculateIncome(e.target));
-  		},
-
-  		calculateIncome(el) {
-  			const medianIncomes = this.MEDIAN_INCOMES;
-  			const householdSize = el.valueAsNumber;
-  			let incomeLimitYearly = 0;
-  			if (isNaN(householdSize) || householdSize === 0) return;
-
-  			if (householdSize > 8) {
-  				// For each person over eight-persons, the four-person income limit
-  				// should be multiplied by an additional 8 percent. (For example, the nine-person limit equals 140
-  				// percent [132 + 8] of the relevant four-person income limit.)
-  				incomeLimitYearly = medianIncomes[4] * (1 + (0.08 * (householdSize - 4)));
-  			} else {
-  				incomeLimitYearly = medianIncomes[householdSize];
-  			}
-
-  			document.querySelectorAll(".income-yearly").forEach((el) => el.textContent = this.prettyNumber(incomeLimitYearly));
-  			document.querySelector(".income-monthly").textContent = this.prettyNumber(incomeLimitYearly / 12);
-  		},
-
-  		prettyNumber(num) {
-  			return num.toLocaleString(undefined, { currency: "USD", maximumFractionDigits: 0, style: "currency" });
-  		},
-  	};
-  })(Drupal);
+css: "#location_map {\r\n  display: none;\r\n}"
+javascript: "((Drupal) => {\r\n\tDrupal.behaviors.eligibilityChecker = {\r\n\t\tattach() {\r\n\t\t\tconst addressEl = document.querySelector(\"input[name='report_location[location_address]']\");\r\n\t\t\tconst csrOverrideEl = document.querySelector(\"input[name='apply_csr_override']\");\r\n\t\t\tconst unitNumberEl = document.querySelector(\"input[name='report_location_unit_number']\");\r\n\t\t\tif (!addressEl) return;\r\n\r\n\t\t\tconst submitButtonEl = document.querySelector(\".webform-button--next\");\r\n\t\t\tconst submitHandler = (e) => {\r\n\t\t\t\te.preventDefault();\r\n\t\t\t\t// if csr override box is checked, and no verified address is set, use the search field value\r\n\t\t\t\tif (csrOverrideEl && csrOverrideEl.checked) {\r\n\t\t\t\t\tif (!addressEl.value) addressEl.value = document.querySelector(\"input[name='report_location[location_search]']\").value;\r\n\t\t\t\t}\r\n\r\n\t\t\t\tif (addressEl.value.length < 1) {\r\n\t\t\t\t\tdocument.querySelector(\".js-form-item-markup-error\").style.display = \"block\";\r\n\t\t\t\t\tdocument.querySelector(\".verification-error\").textContent = \"Address is invalid. Please make sure you verified your address.\";\r\n\t\t\t\t\treturn;\r\n\t\t\t\t}\r\n\r\n\t\t\t\tlet unitNumber = unitNumberEl.value;\r\n\t\t\t\t// if unit number starts with an integer, prefix it with a #\r\n\t\t\t\t// so coolingsearch API can correctly interpret it\r\n\t\t\t\tif (unitNumber.match(/^\\d/)) {\r\n\t\t\t\t\tunitNumber = `#${unitNumber}`;\r\n\t\t\t\t}\r\n\r\n\t\t\t\t// combine property address and unit number into one string\r\n\t\t\t\tconst fullAddress = `${addressEl.value} ${unitNumber}`;\r\n\t\t\t\tfetch(`https://coolingsearch.org/api/search?search=${encodeURIComponent(fullAddress)}`, {\r\n\t\t\t\t\theaders: {\r\n\t\t\t\t\t\t\"Authorization\": \"Token e367099a03f3cd984e2be20f60bceb8d798a7607\"\r\n\t\t\t\t\t},\r\n\t\t\t\t}).then((res) => res.json()).then((data) => {\r\n\t\t\t\t\tconst apiResultEl = document.querySelector(\"input[name='coolingsearch_api_result']\");\r\n\t\t\t\t\tconst errorMessage = data.housing_provider || data.message || data.scheduled || data.out_of_bounds;\r\n\t\t\t\t\tif (errorMessage && !(csrOverrideEl && csrOverrideEl.checked)) {\r\n\t\t\t\t\t\tdocument.querySelector(\".js-form-item-markup-error\").style.display = \"block\";\r\n\t\t\t\t\t\tdocument.querySelector(\".verification-error\").textContent = errorMessage;\r\n\t\t\t\t\t\tapiResultEl.value = \"ineligible\";\r\n\t\t\t\t\t\tjQuery(apiResultEl).trigger(\"change\");\r\n\t\t\t\t\t} else {\r\n\t\t\t\t\t\t// if unit has previously been installed, we still want to let user continue\r\n\t\t\t\t\t\t// but flag it in submission data as they may be a different tenant.\r\n\t\t\t\t\t\tapiResultEl.value = data.installed ? \"installed\" : \"eligible\";\r\n\t\t\t\t\t\tjQuery(apiResultEl).trigger(\"change\");\r\n\t\t\t\t\t\tsubmitButtonEl.removeEventListener(\"click\", submitHandler);\r\n\t\t\t\t\t\tsubmitButtonEl.click();\r\n\t\t\t\t\t}\r\n\t\t\t\t}, () => {\r\n\t\t\t\t\t// if API call fails, let user continue but flag it in the data.\r\n\t\t\t\t\tapiResultEl.value = \"api_error\";\r\n\t\t\t\t\tjQuery(apiResultEl).trigger(\"change\");\r\n\t\t\t\t\tsubmitButtonEl.removeEventListener(\"click\", submitHandler);\r\n\t\t\t\t\tsubmitButtonEl.click();\r\n\t\t\t\t});\r\n\t\t\t};\r\n\r\n\t\t\tsubmitButtonEl.addEventListener(\"click\", submitHandler);\r\n\t\t},\r\n\t};\r\n\r\n\tDrupal.behaviors.incomeCalculator = {\r\n\t\t// The HUD 2023 60% Median Income in the Portland-Vancouver-Hillsboro MSA by household size (1-indexed)\r\n\t\tMEDIAN_INCOMES: [\r\n\t\t\t0,\r\n\t\t\t47400,\r\n\t\t\t54180,\r\n\t\t\t60960,\r\n\t\t\t67680,\r\n\t\t\t73140,\r\n\t\t\t78540,\r\n\t\t\t83940,\r\n\t\t\t89340,\r\n\t\t],\r\n\r\n\t\tattach() {\r\n\t\t\tconst householdSizeEl = document.querySelector(\"input[name='apply_household_size']\");\r\n\t\t\tif (!householdSizeEl) return;\r\n\r\n\t\t\tthis.calculateIncome(householdSizeEl);\r\n\t\t\thouseholdSizeEl.addEventListener(\"input\", (e) => this.calculateIncome(e.target));\r\n\t\t},\r\n\r\n\t\tcalculateIncome(el) {\r\n\t\t\tconst medianIncomes = this.MEDIAN_INCOMES;\r\n\t\t\tconst householdSize = el.valueAsNumber;\r\n\t\t\tlet incomeLimitYearly = 0;\r\n\t\t\tif (isNaN(householdSize) || householdSize === 0) return;\r\n\r\n\t\t\tif (householdSize > 8) {\r\n\t\t\t\t// For each person over eight-persons, the four-person income limit\r\n\t\t\t\t// should be multiplied by an additional 8 percent. (For example, the nine-person limit equals 140\r\n\t\t\t\t// percent [132 + 8] of the relevant four-person income limit.)\r\n\t\t\t\tincomeLimitYearly = medianIncomes[4] * (1 + (0.08 * (householdSize - 4)));\r\n\t\t\t} else {\r\n\t\t\t\tincomeLimitYearly = medianIncomes[householdSize];\r\n\t\t\t}\r\n\r\n\t\t\tdocument.querySelectorAll(\".income-yearly\").forEach((el) => el.textContent = this.prettyNumber(incomeLimitYearly));\r\n\t\t\tdocument.querySelector(\".income-monthly\").textContent = this.prettyNumber(incomeLimitYearly / 12);\r\n\t\t},\r\n\r\n\t\tprettyNumber(num) {\r\n\t\t\treturn num.toLocaleString(undefined, { currency: \"USD\", maximumFractionDigits: 0, style: \"currency\" });\r\n\t\t},\r\n\t};\r\n})(Drupal);\r\n"
 settings:
   ajax: false
   ajax_scroll_top: form
@@ -654,7 +558,7 @@ handlers:
         2882544658763652: ''
         4450738099933060: ''
         1648037863575428: ''
-        8512044192976772: apply_cdp_preference
+        8512044192976772: ''
         4844073402716036: contact_name
         2592273589030788: contact_email
         7095873216401284: contact_phone
@@ -665,6 +569,9 @@ handlers:
         4008444565606276: computed_vulnerabilities
         1756644751921028: coolingsearch_api_result
         6857905503424388: computed_move_in_date
+        1185297541844868: ''
+        5267859075714948: apply_csr_override_notes
+        6322089718927236: computed_submitted_by_311
       multiple_rows_enable: null
       multiple_rows_field: ''
       multiple_rows_separator: ''

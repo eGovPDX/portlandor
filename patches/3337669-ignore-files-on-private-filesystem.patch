@@ -1,0 +1,38 @@
+From 4995e0d158e49e4a46b313fd197fea13b43ef644 Mon Sep 17 00:00:00 2001
+From: Oden <hello@odensc.com>
+Date: Thu, 16 May 2024 10:55:27 -0700
+Subject: [PATCH] ignore files on the private filesystem
+
+---
+ pantheon_advanced_page_cache.module | 10 +++++++---
+ 1 file changed, 7 insertions(+), 3 deletions(-)
+
+diff --git a/pantheon_advanced_page_cache.module b/pantheon_advanced_page_cache.module
+index ad7b219..c2a22bb 100644
+--- a/pantheon_advanced_page_cache.module
++++ b/pantheon_advanced_page_cache.module
+@@ -17,14 +17,18 @@ function pantheon_advanced_page_cache_file_update(EntityInterface $file) {
+   // No matter what, the file's base URL needs to be cleared out.
+   $paths_to_clear = [$file->createFileUrl()];
+ 
++  $file_uri = $file->getFileUri();
++  // Skip any files on the private filesystem as they aren't cached.
++  if (str_starts_with($file_uri, 'private://')) {
++    return;
++  }
++
+   // If this is an image, we need to clear the edge cache paths for every
+   // image style, or those won't work.
+   if (strpos($file->getMimeType(), 'image', 0) === 0) {
+     $styles = ImageStyle::loadMultiple();
+     foreach ($styles as $style) {
+-      $file_uri = $file->getFileUri();
+-      $url      = $style->buildUrl($file_uri);
+-
++      $url              = $style->buildUrl($file_uri);
+       $paths_to_clear[] = parse_url($url)['path'];
+     }
+   }
+-- 
+GitLab
+
