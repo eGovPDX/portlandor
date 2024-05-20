@@ -1,0 +1,139 @@
+From b71d004376456ed613c319e7576eae364b5a2e04 Mon Sep 17 00:00:00 2001
+From: Oden <hello@odensc.com>
+Date: Wed, 15 May 2024 19:08:46 -0700
+Subject: [PATCH 1/2] #3350275 add test for "select other" computed token error
+
+---
+ .../webform.webform.test_element_other.yml       | 16 ++++++++++++++++
+ .../Element/WebformElementOtherTest.php          | 10 ++++++++++
+ 2 files changed, 26 insertions(+)
+
+diff --git a/tests/modules/webform_test/config/install/webform.webform.test_element_other.yml b/tests/modules/webform_test/config/install/webform.webform.test_element_other.yml
+index 67edb12948..d1ceff888d 100644
+--- a/tests/modules/webform_test/config/install/webform.webform.test_element_other.yml
++++ b/tests/modules/webform_test/config/install/webform.webform.test_element_other.yml
+@@ -30,6 +30,16 @@ elements: |
+           Two: Two
+         Three: Three
+       '#default_value': Four
++    select_other_conditional:
++      '#type': webform_select_other
++      '#title': 'Select other conditionally visible'
++      '#options':
++        One: One
++        Two: Two
++      '#states':
++        visible:
++          ':input[name="select_other_basic[other]"]':
++            value: 'Four'
+     select_other_advanced:
+       '#type': webform_select_other
+       '#title': 'Select other advanced'
+@@ -72,6 +82,12 @@ elements: |
+         Two: Two
+         Three: Three
+       '#default_value': 0
++    computed_select_other_conditional_value:
++      '#type': webform_computed_token
++      '#title': 'Computed conditionally visible select other value'
++      '#mode': text
++      '#template': '[webform_submission:values:select_other_conditional]'
++      '#store': true
+   checkboxes_other:
+     '#type': details
+     '#title': 'Checkboxes other (checkboxes_other)'
+diff --git a/tests/src/Functional/Element/WebformElementOtherTest.php b/tests/src/Functional/Element/WebformElementOtherTest.php
+index e6d121cd08..98c681ed98 100644
+--- a/tests/src/Functional/Element/WebformElementOtherTest.php
++++ b/tests/src/Functional/Element/WebformElementOtherTest.php
+@@ -119,12 +119,14 @@ class WebformElementOtherTest extends WebformElementBrowserTestBase {
+ 
+     $this->postSubmission($webform);
+     $assert_session->responseContains("select_other_basic: Four
++select_other_conditional: ''
+ select_other_advanced: Four
+ select_other_multiple:
+   - One
+   - Two
+   - Four
+ select_other_zero: '0'
++computed_select_other_conditional_value: ''
+ checkboxes_other_basic:
+   - One
+   - Two
+@@ -166,6 +168,14 @@ wrapper_other_container: ''");
+     $this->submitForm($edit, 'Submit');
+     $assert_session->responseNotContains('Select other basic field is required.');
+ 
++    // Check that select other computed token value is correct when element is conditionally visible.
++    $this->drupalGet('/webform/test_element_other');
++    $edit = [
++      'select_other_conditional[select]' => 'Two',
++    ];
++    $this->submitForm($edit, 'Submit');
++    $assert_session->responseContains('computed_select_other_conditional_value: Two');
++
+     // Check select other required validation.
+     $this->drupalGet('/webform/test_element_other');
+     $edit = [
+-- 
+GitLab
+
+
+From 1bea9c66d6b5295c699bbcb247bdc6e243bca0bf Mon Sep 17 00:00:00 2001
+From: Oden <hello@odensc.com>
+Date: Wed, 15 May 2024 19:10:12 -0700
+Subject: [PATCH 2/2] #3350275 fix unprocessed other element value being passed
+ into computed tokens
+
+---
+ src/Plugin/WebformElement/OptionsBase.php | 26 ++++++++++++++++-------
+ 1 file changed, 18 insertions(+), 8 deletions(-)
+
+diff --git a/src/Plugin/WebformElement/OptionsBase.php b/src/Plugin/WebformElement/OptionsBase.php
+index 98a7782395..81eaea1e96 100644
+--- a/src/Plugin/WebformElement/OptionsBase.php
++++ b/src/Plugin/WebformElement/OptionsBase.php
+@@ -808,21 +808,31 @@ abstract class OptionsBase extends WebformElementBase {
+   /**
+    * {@inheritdoc}
+    */
+-  public function getElementSelectorInputValue($selector, $trigger, array $element, WebformSubmissionInterface $webform_submission) {
++  public function getValue(array $element, WebformSubmissionInterface $webform_submission, array $options = []) {
++    $value = parent::getValue($element, $webform_submission, $options);
+     if ($this->isOptionsOther()) {
+-      $input_name = WebformSubmissionConditionsValidator::getSelectorInputName($selector);
+-      $other_type = WebformSubmissionConditionsValidator::getInputNameAsArray($input_name, 1);
+-      $value = $this->getRawValue($element, $webform_submission);
+-
+-      // Handle edge case where the other element's value has
+-      // not been processed.
+-      // @see https://www.drupal.org/project/webform/issues/3000202
++      // Handle edge case where the other element's value has not yet been processed by WebformOtherBase::validateWebformOther.
++      // e.g. if used in a computed field, or element is conditional.
++      // @see https://www.drupal.org/project/webform/issues/3000202, https://www.drupal.org/project/webform/issues/3350275
+       /** @var \Drupal\webform\Element\WebformOtherBase $class */
+       $class = $this->getFormElementClassDefinition();
+       $type = $class::getElementType();
+       if (is_array($value) && count($value) === 2 && array_key_exists($type, $value) && isset($value['other'])) {
+         $value = $class::processValue($element, $value);
+       }
++    }
++
++    return $value;
++  }
++
++  /**
++   * {@inheritdoc}
++   */
++  public function getElementSelectorInputValue($selector, $trigger, array $element, WebformSubmissionInterface $webform_submission) {
++    if ($this->isOptionsOther()) {
++      $input_name = WebformSubmissionConditionsValidator::getSelectorInputName($selector);
++      $other_type = WebformSubmissionConditionsValidator::getInputNameAsArray($input_name, 1);
++      $value = $this->getRawValue($element, $webform_submission);
+ 
+       $options = OptGroup::flattenOptions($element['#options']);
+       if ($other_type === 'other') {
+-- 
+GitLab
+
