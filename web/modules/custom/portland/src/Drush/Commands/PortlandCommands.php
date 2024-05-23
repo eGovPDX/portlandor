@@ -45,7 +45,9 @@ class PortlandCommands extends DrushCommands {
     foreach ($agendas as $agenda) {
       $agenda->set('field_committee', [['target_id' => 950]]);
       $agenda->setNewRevision(TRUE);
-      $agenda->revision_log = 'Moved to "City Council" committee';
+      $agenda->setRevisionLogMessage('Moved to "City Council" committee');
+      $agenda->setRevisionCreationTime(\Drupal::time()->getCurrentTime());
+      $agenda->setRevisionUserId(1);
       $agenda->save();
     }
   }
