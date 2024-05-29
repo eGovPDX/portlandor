@@ -22,6 +22,11 @@ title: 'A.D.A. Accommodation Request'
 description: ''
 categories: {  }
 elements: |-
+  request_is_staff:
+    '#type': checkbox
+    '#title': 'I am a City staff person creating a record'
+    '#access_create_roles':
+      - authenticated
   request_how:
     '#type': radios
     '#title': 'How would you like to make your request?'
@@ -30,11 +35,17 @@ elements: |-
       'I would like to call the City': 'I would like to contact the City by phone or TTY'
       'I will continue with the online form': 'I will continue with the online form'
     '#required': true
+    '#states':
+      invisible:
+        ':input[name="request_is_staff"]':
+          checked: true
   markup_continue:
     '#type': webform_markup
     '#states':
       visible:
         ':input[name="request_how"]':
+          unchecked: true
+        ':input[name="request_is_staff"]':
           unchecked: true
     '#markup': '<p class="mt-5"><strong>Please make a selection to continue.</strong></p>'
   request_call_city_text_stop:
@@ -53,8 +64,11 @@ elements: |-
     '#type': container
     '#states':
       visible:
-        ':input[name="request_how"]':
-          value: 'I will continue with the online form'
+        - ':input[name="request_how"]':
+            value: 'I will continue with the online form'
+        - or
+        - ':input[name="request_is_staff"]':
+            checked: true
     request_who:
       '#type': radios
       '#title': 'Who are you making this request or complaint for?'
@@ -67,11 +81,6 @@ elements: |-
         invisible:
           ':input[name="request_is_staff"]':
             checked: true
-    request_is_staff:
-      '#type': checkbox
-      '#title': 'I am a City staff person creating a record'
-      '#access_create_roles':
-        - authenticated
     request_who_myself_text:
       '#type': webform_markup
       '#states':
@@ -115,11 +124,10 @@ elements: |-
       '#required': true
       '#states':
         visible:
-          - ':input[name="request_who"]':
-              value: 'Someone else'
-          - or
-          - ':input[name="request_is_staff"]':
-              checked: true
+          ':input[name="request_who"]':
+            value: 'Someone else'
+          ':input[name="request_is_staff"]':
+            unchecked: true
     request_on_behalf_of_name:
       '#type': textfield
       '#title': 'What is their name?'
