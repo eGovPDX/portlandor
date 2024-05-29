@@ -25,8 +25,27 @@ elements: |-
   request_is_staff:
     '#type': checkbox
     '#title': 'I am a City staff person creating a record'
+    '#states':
+      visible:
+        ':input[name="request_event_name"]':
+          value: DISABLED
     '#access_create_roles':
       - authenticated
+  request_proxy:
+    '#type': radios
+    '#title': 'Who is completing this form?'
+    '#options':
+      'I am a 311 customer service agent': 'I am a 311 customer service agent'
+      'I am the City staff member who will be handling this request': 'I am the City staff member who will be handling this request'
+    '#access_create_roles':
+      - authenticated
+  markup_proxy:
+    '#type': webform_markup
+    '#states':
+      visible:
+        ':input[name="request_proxy"]':
+          checked: true
+    '#markup': '<div class="webform-alert alert alert--warning"><h2>Attention</h2><p class="mb-0">Please read the following questions to the community member as if you''re filling out the form as their proxy.</p></div>'
   request_how:
     '#type': radios
     '#title': 'How would you like to make your request?'
@@ -37,16 +56,17 @@ elements: |-
     '#required': true
     '#states':
       invisible:
-        ':input[name="request_is_staff"]':
+        ':input[name="request_proxy"]':
           checked: true
   markup_continue:
     '#type': webform_markup
     '#states':
-      visible:
-        ':input[name="request_how"]':
-          unchecked: true
-        ':input[name="request_is_staff"]':
-          unchecked: true
+      invisible:
+        - ':input[name="request_proxy"]':
+            checked: true
+        - or
+        - ':input[name="request_how"]':
+            checked: true
     '#markup': '<p class="mt-5"><strong>Please make a selection to continue.</strong></p>'
   request_call_city_text_stop:
     '#type': webform_markup
@@ -67,7 +87,7 @@ elements: |-
         - ':input[name="request_how"]':
             value: 'I will continue with the online form'
         - or
-        - ':input[name="request_is_staff"]':
+        - ':input[name="request_proxy"]':
             checked: true
     request_who:
       '#type': radios
@@ -77,10 +97,6 @@ elements: |-
         'Someone else': 'Someone else'
         'Neither of these apply to me': 'Neither of these apply to me'
       '#required': true
-      '#states':
-        invisible:
-          ':input[name="request_is_staff"]':
-            checked: true
     request_who_myself_text:
       '#type': webform_markup
       '#states':
@@ -126,8 +142,6 @@ elements: |-
         visible:
           ':input[name="request_who"]':
             value: 'Someone else'
-          ':input[name="request_is_staff"]':
-            unchecked: true
     request_on_behalf_of_name:
       '#type': textfield
       '#title': 'What is their name?'
@@ -151,11 +165,14 @@ elements: |-
     '#type': container
     '#states':
       visible:
-        ':input[name="request_who"]':
-          value:
-            pattern: 'Myself|Someone else'
-        ':input[name="request_on_behalf_of_permission"]':
-          '!value': 'No'
+        - ':input[name="request_who"]':
+            value:
+              pattern: 'Myself|Someone else'
+        - or
+        - ':input[name="request_on_behalf_of_permission"]':
+            '!value': 'No'
+          ':input[name="request_is_staff"]':
+            checked: true
     container_confidentiality:
       '#type': webform_section
       '#title': Confidentiality
