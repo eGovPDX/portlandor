@@ -1638,3 +1638,49 @@ function portland_local_tasks_alter(&$local_tasks): void {
   unset($local_tasks['entity.version_history:group.version_history']);
   unset($local_tasks['entity.version_history:media.version_history']);
 }
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ *
+ * Hide certain fields for Park Editors when bulk editing fields on Park Facility
+ */
+function portland_form_views_bulk_operations_configure_action_alter(&$form, &$form_state)
+{
+  // Skip if this is NOT a park facility node
+  if(!array_key_exists("node", $form) || !array_key_exists("park_facility", $form["node"])) {
+    return;
+  }
+  
+  // Skip if the current user is a site admin
+  if (in_array('administrator', \Drupal::currentUser()->getRoles())) {
+    return;
+  }
+
+  $fields_to_hide_from_editor = [
+    "title",
+    "field_featured_media",
+    "field_search_keywords",
+    "field_summary",
+    "field_body_content",
+    "field_images",
+    "field_size_in_acres",
+    "field_facebook",
+    "field_property_id",
+    "field_pog_property_id",
+    "field_portlandmaps_id",
+    "field_twitter",
+    "field_history",
+    "field_instagram",
+    "field_location",
+    "field_documents",
+    "field_redirects",
+  ];
+  foreach($fields_to_hide_from_editor as $field_name) {
+    // Hide the checkbox to show the field widget
+    unset($form["node"]["park_facility"]["_field_selector"][$field_name]);
+    // Hide the field widget
+    unset($form["node"]["park_facility"][$field_name]);
+    // Hode the "Change mothod" option for the field
+    unset($form["node"]["park_facility"][$field_name . "_change_method"]);
+  }
+}
