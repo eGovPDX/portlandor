@@ -14,166 +14,194 @@ description: ''
 categories:
   - Request
 elements: |-
-  report_location:
-    '#type': portland_location_picker
-    '#title': Location
-    '#location_search__title': "Select a location to determine whether you're eligible"
-    '#location_lat__required': true
-    '#place_name__access': false
-    '#location_details__title': 'Unit Number'
-    '#location_details__description': 'If your location has an apartment, unit, suite, or other number or designation, please provide it here.'
-    '#location_details__type': textfield
-    '#location_details__counter_type': ''
-    '#location_details__placeholder': 'e.g. 101, APT 101 or UNIT 101'
-    '#location_details__states':
-      visible:
-        ':input[name="computed_location_is_selected"]':
-          value: '1'
-    '#primary_layer_behavior': informational
-    '#primary_layer_type': region-hidden
-    '#primary_layer_source': 'https://www.portlandmaps.com/arcgis/rest/services/Public/Utilities_Water/MapServer/6/query?where=IsConsortiumMember=%27Yes%27&f=geojson&outFields=WaterProvider'
-    '#region_id_property_name': WaterProvider
-    '#require_boundary': false
-  computed_location_is_selected:
-    '#type': webform_computed_twig
-    '#title': 'Location Is Selected'
-    '#wrapper_attributes':
-      class:
-        - d-none
-    '#mode': text
-    '#template': '{{ data.report_location.location_address ? 1 : 0 }}'
-    '#whitespace': trim
-    '#ajax': true
-  computed_region_is_selected:
-    '#type': webform_computed_twig
-    '#title': 'Region Is Selected'
-    '#wrapper_attributes':
-      class:
-        - d-none
-      style: d-none
-    '#mode': text
-    '#template': '{{ data.report_location.location_region_id ? 1 : 0 }}'
-    '#whitespace': trim
-    '#ajax': true
-  computed_provider:
-    '#type': webform_computed_token
-    '#title': 'Water Provider'
-    '#wrapper_attributes':
-      class:
-        - d-none
-      style: d-none
-    '#mode': text
-    '#template': '[webform_submission:values:report_location:location_region_id:clear]'
-    '#ajax': true
-  markup:
+  request_where:
+    '#type': radios
+    '#title': 'Where do you want to test water?'
+    '#options':
+      'Portland-area residence': 'Portland-area residence'
+      'Childcare facility': 'Childcare facility'
+      'School (public, private, or charter)': 'School (public, private, or charter)'
+      Other: Other
+  markup_childcare:
     '#type': webform_markup
     '#states':
       visible:
-        ':input[name="computed_location_is_selected"]':
-          '!value': '1'
-    '#markup': '<p><strong>Please select a location to continue.</strong></p>'
-  container_location_selected:
+        ':input[name="request_where"]':
+          value: 'Childcare facility'
+    '#markup': '<div class="alert alert--info next-steps"><h2 class="mt-0">Next Steps</h2><p class="mb-0"><a href="https://www.portland.gov/water/childcare">Request a child care provider kit</a> that meets state testing regulations.</p></div>'
+  markup_school:
+    '#type': webform_markup
+    '#states':
+      visible:
+        ':input[name="request_where"]':
+          value: 'School (public, private, or charter)'
+    '#markup': '<div class="alert alert--info next-steps"><h2 class="mt-0">Next Steps</h2><p class="mb-0">Request assistance or testing for schools by email at <a href="mailto:WBFacilities@portlandoregon.gov">WBFacilities@portlandoregon.gov</a>, or call <a href="tel:+1-503-823-7525">503-823-7525</a>.</p></div>'
+  markup_other:
+    '#type': webform_markup
+    '#states':
+      visible:
+        ':input[name="request_where"]':
+          value: Other
+    '#markup': '<div class="alert alert--info next-steps"><h2 class="mt-0">Not Eligible</h2><p class="mb-0">If you''d like to pay a laboratory to test your water, you can find a lab at <a href="https://orelap.state.or.us/searchLabs">https://orelap.state.or.us/searchLabs</a>.</p></div>'
+  container_residential:
     '#type': container
     '#states':
       visible:
-        ':input[name="computed_location_is_selected"]':
-          value: '1'
-    computed_not_eligible_message:
-      '#type': webform_computed_token
-      '#title': 'Not Eligible Message'
-      '#title_display': none
-      '#states':
+        ':input[name="request_where"]':
+          value: 'Portland-area residence'
+    report_location:
+      '#type': portland_location_picker
+      '#title': Location
+      '#location_search__title': "Select a location to determine whether you're eligible"
+      '#location_lat__required': true
+      '#place_name__access': false
+      '#location_details__title': 'Unit Number'
+      '#location_details__description': 'If your location has an apartment, unit, suite, or other number or designation, please provide it here.'
+      '#location_details__type': textfield
+      '#location_details__counter_type': ''
+      '#location_details__placeholder': 'e.g. 101, APT 101 or UNIT 101'
+      '#location_details__states':
         visible:
-          ':input[name="computed_region_is_selected"]':
-            '!value': '1'
-      '#mode': html
-      '#template': |-
-        <div class="alert alert--info next-steps mb-10">
-            <h2>
-                Not Eligible
-            </h2>
-            <p class="mb-0">
-                The location of your sampling address is not eligible for free testing from the Portland Water Bureau. Contact your water provider to see if they provide free testing. You can also pay a laboratory to test your water, find a lab at <a href="https://orelap.state.or.us/searchLabs">https://orelap.state.or.us/searchLabs</a>.
-            </p>
-        </div>
+          ':input[name="computed_location_is_selected"]':
+            value: '1'
+      '#primary_layer_behavior': informational
+      '#primary_layer_type': region-hidden
+      '#primary_layer_source': 'https://www.portlandmaps.com/arcgis/rest/services/Public/Utilities_Water/MapServer/6/query?where=IsConsortiumMember=%27Yes%27&f=geojson&outFields=WaterProvider'
+      '#region_id_property_name': WaterProvider
+      '#require_boundary': false
+    computed_location_is_selected:
+      '#type': webform_computed_twig
+      '#title': 'Location Is Selected'
+      '#wrapper_attributes':
+        class:
+          - d-none
+      '#mode': text
+      '#template': '{{ data.report_location.location_address ? 1 : 0 }}'
+      '#whitespace': trim
       '#ajax': true
-    container_eligible:
+    computed_region_is_selected:
+      '#type': webform_computed_twig
+      '#title': 'Region Is Selected'
+      '#wrapper_attributes':
+        class:
+          - d-none
+        style: d-none
+      '#mode': text
+      '#template': '{{ data.report_location.location_region_id ? 1 : 0 }}'
+      '#whitespace': trim
+      '#ajax': true
+    computed_provider:
+      '#type': webform_computed_token
+      '#title': 'Water Provider'
+      '#wrapper_attributes':
+        class:
+          - d-none
+        style: d-none
+      '#mode': text
+      '#template': '[webform_submission:values:report_location:location_region_id:clear]'
+      '#ajax': true
+    container_location_selected:
       '#type': container
       '#states':
         visible:
-          ':input[name="computed_region_is_selected"]':
+          ':input[name="computed_location_is_selected"]':
             value: '1'
-      computed_eligible_message:
+      computed_not_eligible_message:
         '#type': webform_computed_token
-        '#title': 'Eligible Message'
+        '#title': 'Not Eligible Message'
         '#title_display': none
+        '#states':
+          visible:
+            ':input[name="computed_region_is_selected"]':
+              '!value': '1'
         '#mode': html
         '#template': |-
           <div class="alert alert--info next-steps mb-10">
               <h2>
-                  Water provider: [webform_submission:values:computed_provider]
+                  Not Eligible
               </h2>
               <p class="mb-0">
-                  You are eligible for free testing from the Portland Water Bureau. Please complete and submit this form to receive a kit.
+                  The location of your sampling address is not eligible for free testing from the Portland Water Bureau. Contact your water provider to see if they provide free testing. You can also pay a laboratory to test your water, find a lab at <a href="https://orelap.state.or.us/searchLabs">https://orelap.state.or.us/searchLabs</a>.
               </p>
           </div>
         '#ajax': true
-      container_contact:
-        '#type': webform_section
-        '#title': 'Your Contact Information'
-        contact_name:
-          '#type': textfield
-          '#title': Name
-          '#required': true
-        contact_email:
-          '#type': textfield
-          '#title': Email
-          '#pattern': '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
-          '#required': true
-        contact_phone:
-          '#type': textfield
-          '#title': Phone
-          '#required': true
-        contact_preferred_language:
-          '#type': select
-          '#title': 'Preferred Language'
-          '#options': languages
-          '#default_value': English
-        contact_mailing_address_same:
-          '#type': radios
-          '#title': 'Is the sampling address the same as the mailing address?'
-          '#options': yes_no
-          '#options_display': side_by_side
-          '#default_value': 'Yes'
-        container_mailing_address:
-          '#type': container
-          '#states':
-            visible:
-              ':input[name="contact_mailing_address_same"]':
-                value: 'No'
-          contact_mailing_address:
+      container_eligible:
+        '#type': container
+        '#states':
+          visible:
+            ':input[name="computed_region_is_selected"]':
+              value: '1'
+        computed_eligible_message:
+          '#type': webform_computed_token
+          '#title': 'Eligible Message'
+          '#title_display': none
+          '#mode': html
+          '#template': |-
+            <div class="alert alert--info next-steps mb-10">
+                <h2>
+                    Water provider: [webform_submission:values:computed_provider]
+                </h2>
+                <p class="mb-0">
+                    You are eligible for free testing from the Portland Water Bureau. Please complete and submit this form to receive a kit.
+                </p>
+            </div>
+          '#ajax': true
+        container_contact:
+          '#type': webform_section
+          '#title': 'Your Contact Information'
+          contact_name:
             '#type': textfield
-            '#title': 'Mailing Address'
-      request_where_hear:
-        '#type': webform_select_other
-        '#title': 'Where did you hear about this testing program?'
-        '#options':
-          'Google or web search': 'Google or web search'
-          'Water provider': 'Water provider'
-          'News (online, print, radio, TV)': 'News (online, print, radio, TV)'
-          'Social media': 'Social media'
-          'Word of mouth (family, friend, school, doctor, etc.)': 'Word of mouth (family, friend, school, doctor, etc.)'
-          "Don't know": "Don't know"
-        '#empty_option': Select...
-        '#other__placeholder': 'Please describe...'
-      request_comments:
-        '#type': textarea
-        '#title': Comments
-        '#counter_type': character
-        '#counter_maximum': 500
-      actions:
-        '#type': webform_actions
-        '#title': 'Submit button(s)'
+            '#title': Name
+            '#required': true
+          contact_email:
+            '#type': textfield
+            '#title': Email
+            '#pattern': '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+            '#required': true
+          contact_phone:
+            '#type': textfield
+            '#title': Phone
+            '#required': true
+          contact_preferred_language:
+            '#type': select
+            '#title': 'Preferred Language'
+            '#options': languages
+            '#default_value': English
+          contact_mailing_address_same:
+            '#type': radios
+            '#title': 'Is the sampling address the same as the mailing address?'
+            '#options': yes_no
+            '#options_display': side_by_side
+            '#default_value': 'Yes'
+          container_mailing_address:
+            '#type': container
+            '#states':
+              visible:
+                ':input[name="contact_mailing_address_same"]':
+                  value: 'No'
+            contact_mailing_address:
+              '#type': textfield
+              '#title': 'Mailing Address'
+        request_where_hear:
+          '#type': webform_select_other
+          '#title': 'Where did you hear about this testing program?'
+          '#options':
+            'Google or web search': 'Google or web search'
+            'Water provider': 'Water provider'
+            'News (online, print, radio, TV)': 'News (online, print, radio, TV)'
+            'Social media': 'Social media'
+            'Word of mouth (family, friend, school, doctor, etc.)': 'Word of mouth (family, friend, school, doctor, etc.)'
+            "Don't know": "Don't know"
+          '#empty_option': Select...
+          '#other__placeholder': 'Please describe...'
+        request_comments:
+          '#type': textarea
+          '#title': Comments
+          '#counter_type': character
+          '#counter_maximum': 500
+        actions:
+          '#type': webform_actions
+          '#title': 'Submit button(s)'
 css: ''
 javascript: ''
 settings:
