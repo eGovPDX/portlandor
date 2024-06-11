@@ -378,10 +378,7 @@
             create: function () {
               $(this).data('ui-autocomplete')._renderItem = function (ul, item) {
                 var address = item.address;
-                var fullAddress = item.address;
-                fullAddress += item.attributes.city ? ", " + item.attributes.city : "";
-                fullAddress += item.attributes.state ? ", " + item.attributes.state : "";
-                fullAddress += item.attributes.zip_code ? "  " + item.attributes.zip_code : "";
+                var fullAddress = buildFullAddress(item);
 
                 var lat = item.attributes.lat;
                 var lon = item.attributes.lon;
@@ -1412,7 +1409,11 @@
         }
 
         function buildFullAddress(c) {
-          return [c.address, c.attributes.city ? c.attributes.city + ' ' + c.attributes.state : '']
+          // Sometimes the PortlandMaps API erroneously returns a full address string  w/ city & state in the `address` field
+          // so let's split it by comma and only extract the first part which will be the address alone.
+          const address = c.address.split(',')[0];
+
+          return [address, c.attributes.city ? c.attributes.city + ' ' + c.attributes.state : '']
             .filter(Boolean)
             .join(', ')
             + (c.attributes.zip_code ? ' ' + c.attributes.zip_code : '');
