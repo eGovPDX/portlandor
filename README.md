@@ -7,7 +7,7 @@
 `git clone git@github.com:eGovPDX/portlandor.git` will create a folder called `portlandor` whereever you run it and pull down the code from the repo.
 
 ## Git setup for our Windows developers
-
+ 
 Windows handles line endings differently than \*nix based systems (Unix, Linux, macOS). To make sure our code is interoperable with the Linux servers to which they are deployed and to the local Linux containers where you develop, you will need to make sure your git configuration is set to properly handle line endings.
 
 We want the repo to correctly pull down symlinks for use in the Lando containers.git. To do this, we will enable symlinks as part of the cloning of the repo.
