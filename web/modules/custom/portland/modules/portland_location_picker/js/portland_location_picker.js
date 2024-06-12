@@ -259,24 +259,10 @@
           // Set up pick links //////////////////////////////////
           $(document).on('click', 'a.pick', function (e) {
             e.preventDefault();
-            // get address data from link
-            var address = $(this).data('pick-address');
-            // put selected address in search field
-            $('#location_search').val(address);
-            showVerifiedLocation(address);
+            const candidate = JSON.parse($(this).data('candidate'));
+            // now that the user has made a selection, pass back the single candidate
+            processLocationData([candidate]);
             suggestionsModal.dialog('close');
-            // locate address on map
-            var lat = $(this).data('lat');
-            var lng = $(this).data('lng');
-            var latlng = new L.LatLng(lat, lng);
-            if (latlng.lat && latlng.lng) {
-              doMapClick(latlng);
-              setVerified();
-            } else {
-              showStatusModal(VERIFIED_NO_COORDS);
-              setLatLngHiddenFields(latlng.lat, latlng.lng);
-              setVerified();
-            }
           });
 
           // set up status modal ///////////////////////////////
@@ -367,8 +353,8 @@
               var latlon = new L.LatLng(lat, lon);
               clearLocationFields()
               reverseGeolocate(latlon, true, address);
+              setVerified();
               $(this).autocomplete('close');
-              $('.verified-checkmark.address').removeClass('invisible');
               return false; // returning true causes the field to be cleared
             },
             response: function (event, ui) {
@@ -1082,14 +1068,21 @@
           if (candidates.length > 1) {
             // multiple candidates, how to handle? how about a modal dialog?
             suggestionsModal = $('#suggestions_modal');
-            var listMarkup = "<p>Please select an address by clicking it.</p><ul>";
+            suggestionsModal.html("<p>Please select an address by clicking it.</p>");
+            const listEl = $("<ul></ul>");
             for (var i = 0; i < candidates.length; i++) {
-              var c = candidates[i];
-              var fulladdress = buildFullAddress(c);
-              listMarkup += '<li><a href="#" class="pick" data-lat="' + c.attributes.lat + '" data-lng="' + c.attributes.lon + '" data-pick-address="' + c.address + '">' + fulladdress.toUpperCase() + '</a></li>';
+              const c = candidates[i];
+              const fullAddress = buildFullAddress(c);
+
+              const listItemEl = $("<li></li>");
+              const linkEl = $('<a href="#" class="pick"></a>');
+              linkEl.text(fullAddress.toUpperCase());
+              linkEl.data("candidate", JSON.stringify(c));
+
+              listItemEl.append(linkEl);
+              listEl.append(listItemEl);
             }
-            listMarkup += "</ul>";
-            suggestionsModal.html(listMarkup);
+            suggestionsModal.append(listEl);
             Drupal.dialog(suggestionsModal, {
               title: 'Multiple possible matches found',
               width: '600px',
@@ -1124,10 +1117,8 @@
             } else {
               setLatLngHiddenFields(0, 0);
               showStatusModal(VERIFIED_NO_COORDS);
+              setVerified();
             }
-
-            setVerified();
-
           } else {
             // no matches found
             showStatusModal(addressVerify ? NO_MATCHING_ADDRESS_TEXT_VERIFY_MODE : NO_MATCHING_ADDRESS_TEXT);
