@@ -64,7 +64,7 @@ class PortlandAddressVerifier extends WebformCompositeBase {
       $element_id = $element['#webform_key'];
     }
 
-    $verifyButtonText = array_key_exists('#verify_button_text', $element) ? $element['#verify_button_text'] : ($addressVerify ? "Verify" : "Search");
+    $verifyButtonText = array_key_exists('#verify_button_text', $element) ? $element['#verify_button_text'] : "Verify";
     $element['#attached']['drupalSettings']['webform']['portland_address_verifier']['verify_button_text'] = $verifyButtonText;
   }
 
