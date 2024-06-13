@@ -58,11 +58,11 @@ class PortlandAddressVerifier extends WebformCompositeBase {
   public function prepare(array &$element, WebformSubmissionInterface $webform_submission = NULL) {
     parent::prepare($element, $webform_submission);
 
-    $element_id = "report_location";
+    // $machine_name = "veriifed_address";
     
-    if (array_key_exists("#webform_key", $element)) {
-      $element_id = $element['#webform_key'];
-    }
+    // if (array_key_exists("#webform_key", $element)) {
+    //   $machine_name = $element['#webform_key'];
+    // }
 
     $verifyButtonText = array_key_exists('#verify_button_text', $element) ? $element['#verify_button_text'] : "Verify";
     $element['#attached']['drupalSettings']['webform']['portland_address_verifier']['verify_button_text'] = $verifyButtonText;
