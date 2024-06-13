@@ -1,12 +1,11 @@
-function AddressVerifierController(model, view) {
+function AddressVerifierController(element, model, view) {
+    this.element = element;
     this.model = model;
     this.view = view;
 }
 
 AddressVerifierController.prototype.init = function() {
     // Initialize the address verifier element
-    alert('Initializing Address Verifier!');
-
     this.view.renderAddressVerifier();
 };
 

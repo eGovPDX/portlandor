@@ -40,19 +40,26 @@ class PortlandAddressVerifier extends WebformCompositeBase {
 
     $nodes = \Drupal::entityTypeManager()->getStorage('node')->loadByProperties(['type' => 'park_facility', 'status' => 1]);
 
-    $element_id = "report_location";
+    // $element_id = "report_location";
     
-    if (array_key_exists("#webform_key", $element)) {
-      $element_id = $element['#webform_key'];
-    }
+    // if (array_key_exists("#webform_key", $element)) {
+    //   $element_id = $element['#webform_key'];
+    // }
 
-    $element['location_search'] = [
+    $element['location_address'] = [
       '#type' => 'textfield',
       '#title' => t('Location Search'),
-      '#id' => 'location_search',
-      '#attributes' => ['class' => ['location-picker-address'], 'autocomplete' => 'off'],
-      '#description' => t('Search the map for an address, cross streets, park, or community center. Or use the map to click a location.'),
+      '#id' => 'location_address',
+      '#attributes' => ['autocomplete' => 'off'],
+      '#description' => t('Enter an address to verify.'),
       '#description_display' => 'before',
+    ];
+    $element['unit_number'] = [
+      '#type' => 'textfield',
+      '#title' => t('Unit Number'),
+      '#id' => 'location_address',
+      '#attributes' => ['autocomplete' => 'off'],
+      '#placeholder' => t('e.g. 101, APT 101, or UNIT 101'),
     ];
     $element['suggestions_modal'] = [
       '#type' => 'markup',
@@ -66,61 +73,45 @@ class PortlandAddressVerifier extends WebformCompositeBase {
       '#title_display' => 'invisible',
       '#markup' => '<div id="status_modal" class="visually-hidden"></div>',
     ];
-    $element['location_address'] = [
-      '#type' => 'hidden',
-      '#title' => t('Location Address'),
-      '#attributes' => ['class' => ['location-picker-address'], 'autocomplete' => 'off', 'id' => 'location_address']
+    $element['location_street'] = [
+      '#type' => 'textfield',
+      '#title' => t('Street'),
+      '#attributes' => ['id' => 'location_street']
     ];
-    $element['location_types'] = [
-      '#type' => 'hidden',
-      '#title' => t('Location types'),
-      '#attributes' => ['id' => 'location_types'],
+    $element['location_city'] = [
+      '#type' => 'textfield',
+      '#title' => t('City'),
+      '#attributes' => ['id' => 'location_city']
     ];
-    $element['location_type_taxlot'] = [
-      '#type' => 'hidden',
-      '#title' => 'Taxlot',
-      '#attributes' => ['id' => 'location_type_taxlot'],
+    $element['location_state'] = [
+      '#type' => 'textfield',
+      '#title' => t('State'),
+      '#attributes' => ['id' => 'location_state']
     ];
-    $element['location_type_park'] = [
-      '#type' => 'hidden',
-      '#title' => 'Park',
-      '#attributes' => ['id' => 'location_type_park'],
+    $element['location_zip'] = [
+      '#type' => 'textfield',
+      '#title' => t('Zip'),
+      '#attributes' => [ 'id' => 'location_zip']
     ];
-    $element['location_type_waterbody'] = [
-      '#type' => 'hidden',
-      '#title' => 'Waterbody',
-      '#attributes' => ['id' => 'location_type_waterbody'],
+    $element['location_lat'] = [
+      '#type' => 'textfield',
+      '#title' => t('Latitude'),
+      '#attributes' => [ 'id' => 'location_lat']
     ];
-    $element['location_type_trail'] = [
-      '#type' => 'hidden',
-      '#title' => 'Trail',
-      '#attributes' => ['id' => 'location_type_trail'],
+    $element['location_lon'] = [
+      '#type' => 'textfield',
+      '#title' => t('Longitude'),
+      '#attributes' => [ 'id' => 'location_lon']
     ];
-    $element['location_type_stream'] = [
-      '#type' => 'hidden',
-      '#title' => 'Stream',
-      '#attributes' => ['id' => 'location_type_stream'],
+    $element['location_x'] = [
+      '#type' => 'textfield',
+      '#title' => t('Coordinates X'),
+      '#attributes' => [ 'id' => 'location_x']
     ];
-    $element['location_type_street'] = [
-      '#type' => 'hidden',
-      '#title' => 'Street',
-      '#attributes' => ['id' => 'location_type_street'],
-    ];
-    $element['location_type_row'] = [
-      '#type' => 'hidden',
-      '#title' => 'ROW',
-      '#attributes' => ['id' => 'location_type_row'],
-    ];
-
-    $element['location_municipality_name'] = [
-      '#type' => 'hidden',
-      '#title' => t('Municipality Name'),
-      '#attributes' => ['class' => ['location-municipality-name'], 'id' => 'location_municipality_name'],
-    ];
-    $element['location_zipcode'] = [
-      '#type' => 'hidden',
-      '#title' => t('Zipcode'),
-      '#attributes' => [ 'id' => 'location_zipcode']
+    $element['location_y'] = [
+      '#type' => 'textfield',
+      '#title' => t('Coordinates Y'),
+      '#attributes' => [ 'id' => 'location_y']
     ];
 
     return $element;
