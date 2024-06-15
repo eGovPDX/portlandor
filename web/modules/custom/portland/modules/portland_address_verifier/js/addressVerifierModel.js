@@ -1,6 +1,10 @@
 AddressVerifierModel.locationItem = function (data) {
     this.fullAddress = AddressVerifierModel.buildFullAddress(data).toUpperCase();
+    this.displayAddress = data.address.toUpperCase() + ', ' + data.attributes.city.toUpperCase();
     this.street = data.address.toUpperCase();
+    this.streetNumber = "";
+    this.streetQuadrant = "";
+    this.streetName = "";
     this.city = data.attributes.city.toUpperCase();
     this.state = data.attributes.state.toUpperCase();
     this.zipCode = data.attributes.zip_code;
@@ -9,6 +13,8 @@ AddressVerifierModel.locationItem = function (data) {
     this.x = data.location.x;
     this.y = data.location.y;
     this.unit = "";
+
+    this.parseStreetData(data.address);
 }
 
 function AddressVerifierModel(jQuery, element, apiKey) {
@@ -72,3 +78,10 @@ AddressVerifierModel.buildFullAddress = function (c) {
         + (c.attributes.zip_code ? ' ' + c.attributes.zip_code : '');
 }
 
+AddressVerifierModel.locationItem.prototype.parseStreetData = function(street) {
+    // Assuming street is in the format "1234 NW Main St"
+    const streetParts = street.split(' ');
+    this.streetNumber = streetParts.shift();
+    this.streetQuadrant = streetParts.shift();
+    this.streetName = streetParts.join(' ');
+};

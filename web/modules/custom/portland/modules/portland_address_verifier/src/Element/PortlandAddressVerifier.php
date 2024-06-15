@@ -48,16 +48,16 @@ class PortlandAddressVerifier extends WebformCompositeBase {
 
     $element['location_address'] = [
       '#type' => 'textfield',
-      '#title' => t('Location Search'),
+      '#title' => t('Address'),
       '#id' => 'location_address',
       '#attributes' => ['autocomplete' => 'off'],
-      '#description' => t('Enter an address to verify.'),
+      '#description' => t('Begin typing to see a list of matches, or use the Search button.'),
       '#description_display' => 'before',
     ];
     $element['unit_number'] = [
       '#type' => 'textfield',
       '#title' => t('Unit Number'),
-      '#id' => 'location_address',
+      '#id' => 'unit_number',
       '#attributes' => ['autocomplete' => 'off'],
       '#placeholder' => t('e.g. 101, APT 101, or UNIT 101'),
     ];
@@ -77,6 +77,21 @@ class PortlandAddressVerifier extends WebformCompositeBase {
       '#type' => 'textfield',
       '#title' => t('Street'),
       '#attributes' => ['id' => 'location_street']
+    ];
+    $element['location_street_number'] = [
+      '#type' => 'textfield',
+      '#title' => t('Street Number'),
+      '#attributes' => ['id' => 'location_street_number']
+    ];
+    $element['location_street_quadrant'] = [
+      '#type' => 'textfield',
+      '#title' => t('Street Quadrant'),
+      '#attributes' => ['id' => 'location_street_quadrant']
+    ];
+    $element['location_street_name'] = [
+      '#type' => 'textfield',
+      '#title' => t('Street Name'),
+      '#attributes' => ['id' => 'location_street_name']
     ];
     $element['location_city'] = [
       '#type' => 'textfield',

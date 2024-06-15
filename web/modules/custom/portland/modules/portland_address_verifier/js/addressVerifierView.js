@@ -33,7 +33,7 @@ AddressVerifierView.prototype.renderAddressVerifier = function () {
         // NOTE: Portland Maps API for location suggestions doesn't work property when an ampersand is used to identify intersections
         var address = self.$input.val().replace("&", "and");
         if (address.length >= 3) {
-            self._addressVerify(address);
+            self._addressSearch(address);
         } else {
             self._showStatusModal("You must enter an address or partial address to verify.");
         }
@@ -48,14 +48,18 @@ AddressVerifierView.prototype.renderAddressVerifier = function () {
         display: 'inline-block'
     })
 
+    //set up pick links
+    this.$(document).on('click', 'a.pick', function (e) {
+        e.preventDefault();
+        var item = self.$(this).data('item');
+        // now that the user has made a selection, pass back the single candidate
+        self.$input.val(item.fullAddress);
+        self._setVerified($checkmark, $button, self.$element, item);
+        self.$suggestModal.dialog('close');
+    });
+
     // Add verified checkmark ///////////////////////////////////
     var $checkmark = this.$('<span class="verified-checkmark address invisible" title="Location is verified!">✓</span>');
-    $checkmark.css({
-        color: 'green',
-        fontSize: '24px',
-        margin: '0 0 0 4px',
-        fontWeight: 'bold'
-    });
     this.$input.after($checkmark);
 
     // Configure address field ////////////////////////////////////
@@ -94,7 +98,7 @@ AddressVerifierView.prototype.renderAddressVerifier = function () {
         select: function (event, ui) {
             self.$input.val(ui.item.fullAddress);
             self.$input.autocomplete('close');
-            self._setVerified($checkmark, $button, ui.item);
+            self._setVerified($checkmark, $button, self.$element, ui.item);
             return false; // returning true causes the field to be cleared
         },
         response: function (event, ui) {
@@ -104,7 +108,7 @@ AddressVerifierView.prototype.renderAddressVerifier = function () {
         create: function () {
             self.$input.data('ui-autocomplete')._renderItem = function (ul, item) {
                 const li = self.$('<li>')
-                    .append(item.fullAddress)
+                    .append(item.displayAddress + '  ' + item.zipCode)
                     .appendTo(ul);
                 return li;
             };
@@ -113,35 +117,72 @@ AddressVerifierView.prototype.renderAddressVerifier = function () {
 
 };
 
-AddressVerifierView.prototype._addressVerify = function (address) {
-    alert(address);
+AddressVerifierView.prototype._addressSearch = function (address) {
+    // alert(address);
+    var self = this;
+    this._resetSuggestModal();
+    this.model.fetchAutocompleteItems(address)
+        .done(function (locationItems) {
+            // Pass the locationItems to the response callback
+            var list = self.$("<ul></ul>");
+            locationItems.map(function (item) {
+
+                var strData = JSON.stringify(item);
+                var listItem = self.$(`<li><a href=\"#\" class="pick"
+                    data-item='${strData}'>${item.fullAddress}</a></li>`);
+                list.append(listItem);
+
+            });
+            self.$suggestModal.append(list);
+            Drupal.dialog(self.$suggestModal, {
+                title: 'Multiple possible matches found',
+                width: '600px',
+                buttons: [{
+                    text: 'Close',
+                    click: function () {
+                        self.$(this).dialog('close');
+                    }
+                }]
+            }).showModal();
+            self.$suggestModal.removeClass('visually-hidden');
+        })
+        .fail(function (error) {
+            console.error('Error fetching autocomplete items:', error);
+            response([]);
+        });
+}
+
+AddressVerifierView.prototype._resetSuggestModal = function () {
+    this.$suggestModal.html("");
 }
 
 AddressVerifierView.prototype._showStatusModal = function (message) {
     var self = this;
     this.$statusModal.html('<p class="status-message mb-0">' + message + '</p>');
     Drupal.dialog(this.$statusModal, {
-      width: '600px',
-      buttons: [{
-        text: 'Close',
-        click: function () {
-          self.$statusModal.dialog('close');
-        }
-      }]
+        width: '600px',
+        buttons: [{
+            text: 'Close',
+            click: function () {
+                self.$statusModal.dialog('close');
+            }
+        }]
     }).showModal();
     this.$statusModal.removeClass('visually-hidden');
 }
 
-AddressVerifierView.prototype._setVerified = function ($checkmark, $button, item) {
+AddressVerifierView.prototype._setVerified = function ($checkmark, $button, $element, item) {
     $checkmark.removeClass("invisible");
     $button.prop("disabled", "disabled");
     $button.removeClass("button--primary");
     $button.addClass("disabled button--info");
 
     // populate hidden sub-elements for address data
-    var $element = this.$(this.element);
     $element.find('#verified_address').val(item.fullAddress);
     $element.find('#location_street').val(item.street);
+    $element.find('#location_street_number').val(item.streetNumber);
+    $element.find('#location_street_quadrant').val(item.streetQuadrant);
+    $element.find('#location_street_name').val(item.streetName);
     $element.find('#location_city').val(item.city);
     $element.find('#location_state').val(item.state);
     $element.find('#location_zip').val(item.zipCode);
@@ -161,6 +202,9 @@ AddressVerifierView.prototype._setUnverified = function ($checkmark, $button) {
     var $element = this.$(this.element);
     $element.find('#verified_address').val("");
     $element.find('#location_street').val("");
+    $element.find('#location_street_number').val();
+    $element.find('#location_street_quadrant').val();
+    $element.find('#location_street_name').val();
     $element.find('#location_city').val("");
     $element.find('#location_state').val("");
     $element.find('#location_zip').val("");

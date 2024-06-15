@@ -116,7 +116,20 @@ class SmartsheetHandler extends WebformHandlerBase {
         $title = $value['#admin_title'] ?? $value['#title'] ?? NULL;
         if (empty($title)) continue;
 
-        $options[$key] = $title;
+        // if (array_key_exists("#webform_composite_elements", $value)) {
+        //   // there are child elements
+        //   foreach ($value['#webform_composite_elements'] as $key2 => $value2) {
+        //     if (!str_starts_with($key2, "#")) {
+        //       // if it doesn't start with #, it's a sub-element
+        //       $subkey = $key . ":" . $key2;
+        //       $subvalue = $title . " > " . $value2["#title"];
+        //       $options[$subkey] = $subvalue;
+        //     }
+        //   }
+        // } else {
+          $options[$key] = $title;
+        // }
+
       }
 
       $form['column_mappings_container']['table']['#rows'] = array_map(
