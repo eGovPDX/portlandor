@@ -49,7 +49,7 @@ class PortlandAddressVerifier extends WebformCompositeBase {
     // level token, such as [webform_submission:values:location]. If more granular field sub-field values are
     // needed, such as in a handler that is sending data to an external system, the sub-field needs to be
     // specified in the token, such as [webform_submission:values:location:place_name].
-    return $value['location_address'];
+    return $value['location_address'] . "Unit number:" . $value['unit_number'];
   }
 
     /**

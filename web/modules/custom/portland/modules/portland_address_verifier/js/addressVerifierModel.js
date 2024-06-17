@@ -1,4 +1,11 @@
-AddressVerifierModel.locationItem = function (data) {
+AddressVerifierModel.locationItem = function (data, isSingleton = false) {
+
+    // PortlandMaps sends incorrectly formatted address data if there is only 1 suggestion to return.
+    // If a singleton, the isSingleton flag will be true, and we'll do some kludgey string manipulation.
+    if (isSingleton) {
+        var arrAddress = data.address.split(', ');
+        data.address = arrAddress[0];
+    }
     this.fullAddress = AddressVerifierModel.buildFullAddress(data).toUpperCase();
     this.displayAddress = data.address.toUpperCase() + ', ' + data.attributes.city.toUpperCase();
     this.street = data.address.toUpperCase();
@@ -43,8 +50,8 @@ AddressVerifierModel.prototype.fetchAutocompleteItems = function (addrSearch) {
                 });
             } else if (response.candidates.length == 1) {
                 return response.candidates.map(function(candidate) {
-                    var retItem = new AddressVerifierModel.locationItem(candidate);
-                    // fix fullAddress
+                    var retItem = new AddressVerifierModel.locationItem(candidate, true);
+                    // send flag indicating this is a special case
                     retItem.fullAddress = AddressVerifierModel.buildFullAddress(candidate);
                     return retItem;
                 });
@@ -59,25 +66,6 @@ AddressVerifierModel.prototype.fetchAutocompleteItems = function (addrSearch) {
     });
 };
 
-AddressVerifierModel.prototype.verifyAddress = function (address) {
-    // Call the third-party API to verify the address
-    // Update verifiedAddress with the verified address data
-    alert('Doing verification now');
-};
-
-AddressVerifierModel.prototype.getVerifiedAddress = function () {
-    return "123 Fake St, Anytown, USA 10101";
-};
-
-// static functions
-
-AddressVerifierModel.buildFullAddress = function (c) {
-    return [c.address, c.attributes.city ? c.attributes.city + ', ' + c.attributes.state : '']
-        .filter(Boolean)
-        .join(', ')
-        + (c.attributes.zip_code ? ' ' + c.attributes.zip_code : '');
-}
-
 AddressVerifierModel.locationItem.prototype.parseStreetData = function(street) {
     // Assuming street is in the format "1234 NW Main St"
     const streetParts = street.split(' ');
@@ -85,3 +73,22 @@ AddressVerifierModel.locationItem.prototype.parseStreetData = function(street) {
     this.streetQuadrant = streetParts.shift();
     this.streetName = streetParts.join(' ');
 };
+
+// static functions
+
+AddressVerifierModel.buildFullAddress = function (item) {
+    return [item.address, item.attributes.city ? item.attributes.city + ', ' + item.attributes.state : '']
+        .filter(Boolean)
+        .join(', ')
+        + (item.attributes.zip_code ? ' ' + item.attributes.zip_code : '');
+}
+
+AddressVerifierModel.buildMailingLabel = function (item) {
+    var label = item.street;
+    if (item.unit) {
+        label += ", UNIT " + item.unit;
+    }
+    label += "\r\n" + item.city + ", " + item.state + " " + item.zipCode;
+    return label;
+}
+

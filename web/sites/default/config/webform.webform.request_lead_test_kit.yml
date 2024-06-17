@@ -1,7 +1,9 @@
 uuid: 8b0a050a-c1e8-4fcd-8453-133eb2b025dd
 langcode: en
 status: open
-dependencies: {  }
+dependencies:
+  module:
+    - portland_smartsheet
 weight: 0
 open: null
 close: null
@@ -69,12 +71,95 @@ elements: |-
       '#primary_layer_source': 'https://www.portlandmaps.com/arcgis/rest/services/Public/Utilities_Water/MapServer/6/query?where=1=1&f=geojson&outFields=WaterProvider'
       '#region_id_property_name': WaterProvider
       '#require_boundary': false
+    container_location_data:
+      '#type': container
+      computed_street_number:
+        '#type': webform_computed_twig
+        '#title': 'Computed Street Number'
+        '#wrapper_attributes':
+          class:
+            - d-none
+        '#display_on': none
+        '#mode': text
+        '#template': |
+          {% set addressLines = data.report_location.location_address|split(", ") %}
+          {% set arrAddress = addressLines[0]|split(" ") %}
+          {{ arrAddress[0] }}
+        '#whitespace': trim
+        '#ajax': true
+      computed_street_quadrant:
+        '#type': webform_computed_twig
+        '#title': 'Computed Street Quadrant'
+        '#wrapper_attributes':
+          class:
+            - d-none
+        '#display_on': none
+        '#mode': text
+        '#template': |
+          {% set addressLines = data.report_location.location_address|split(", ") %}
+          {% set arrAddress = addressLines[0]|split(" ") %}
+          {{ arrAddress[1] }}
+        '#whitespace': trim
+      computed_street_name:
+        '#type': webform_computed_twig
+        '#title': 'Computed Street Name'
+        '#wrapper_attributes':
+          class:
+            - d-none
+        '#display_on': none
+        '#mode': text
+        '#template': |
+          {% set addressLines = data.report_location.location_address|split(", ") %}
+          {% set arrAddress = addressLines[0]|split(" ") %}
+          {{ arrAddress[2] ~ ' ' ~ arrAddress[3] }}
+        '#whitespace': trim
+      computed_city:
+        '#type': webform_computed_twig
+        '#title': 'Computed City'
+        '#wrapper_attributes':
+          class:
+            - d-none
+        '#display_on': none
+        '#mode': text
+        '#template': '{{ data.report_location.location_municipality_name }}'
+        '#whitespace': trim
+      computed_state:
+        '#type': webform_computed_twig
+        '#title': 'Computed State'
+        '#wrapper_attributes':
+          class:
+            - d-none
+        '#display_on': none
+        '#mode': text
+        '#template': OR
+        '#whitespace': trim
+      computed_zip:
+        '#type': webform_computed_twig
+        '#title': 'Computed Zipcode'
+        '#wrapper_attributes':
+          class:
+            - d-none
+        '#display_on': none
+        '#mode': text
+        '#template': '{{ data.report_location.location_zipcode }}'
+        '#whitespace': trim
+      computed_unit_number:
+        '#type': webform_computed_twig
+        '#title': 'Computed Unit Number'
+        '#wrapper_attributes':
+          class:
+            - d-none
+        '#display_on': none
+        '#mode': text
+        '#template': '{{ data.report_location.location_details }}'
+        '#whitespace': trim
     computed_location_is_selected:
       '#type': webform_computed_twig
       '#title': 'Location Is Selected'
       '#wrapper_attributes':
         class:
           - d-none
+      '#display_on': form
       '#mode': text
       '#template': '{{ data.report_location.location_address ? 1 : 0 }}'
       '#whitespace': trim
@@ -86,6 +171,7 @@ elements: |-
         class:
           - d-none
         style: d-none
+      '#display_on': form
       '#mode': text
       '#template': '{{ data.report_location.location_region_id ? 1 : 0 }}'
       '#whitespace': trim
@@ -100,28 +186,52 @@ elements: |-
       '#mode': text
       '#template': '[webform_submission:values:report_location:location_region_id:clear]'
       '#ajax': true
+    computed_is_eligible:
+      '#type': webform_computed_twig
+      '#title': 'Computed Is Eligible'
+      '#wrapper_attributes':
+        class:
+          - d-none
+      '#mode': text
+      '#template': |-
+        {% if data.report_location.location_region_id == "Burlington Water District" or
+              data.report_location.location_region_id == "Gresham, City of" or
+              data.report_location.location_region_id == "Tualatin, City of" or
+              data.report_location.location_region_id == "Lake Grove Water District" or
+              data.report_location.location_region_id == "Lorna Portland Water" or
+              data.report_location.location_region_id == "Lusted Water District" or
+              data.report_location.location_region_id == "Palatine Hill Water District" or
+              data.report_location.location_region_id == "Pleasant Home Water District" or
+              data.report_location.location_region_id == "Portland Water Bureau" or
+              data.report_location.location_region_id == "Raleigh Water District" or
+              data.report_location.location_region_id == "Rockwood Water PUD" or
+              data.report_location.location_region_id == "Tualatin Valley Water District" or
+              data.report_location.location_region_id == "Valley View Water District" or
+              data.report_location.location_region_id == "West Slope Water District" %}Yes{% else %}No{% endif %}
+      '#whitespace': trim
+      '#ajax': true
     container_location_selected:
       '#type': container
       '#states':
         visible:
           ':input[name="computed_location_is_selected"]':
             value: '1'
-      computed_not_eligible_message:
-        '#type': webform_computed_token
-        '#title': 'Not Eligible Message'
+      computed_not_eligible_msg:
+        '#type': webform_computed_twig
+        '#title': 'Computed Not Eligible Message'
         '#title_display': none
         '#states':
           visible:
-            ':input[name="computed_region_is_selected"]':
-              '!value': '1'
+            ':input[name="computed_is_eligible"]':
+              value: 'No'
         '#mode': html
         '#template': |-
           <div class="alert alert--info next-steps mb-10">
               <h2>
                   Not Eligible
               </h2>
-              <p class="mb-0">
-                  The location of your sampling address is not eligible for free testing from the Portland Water Bureau. Contact your water provider to see if they provide free testing. You can also pay a laboratory to test your water, find a lab at <a href="https://orelap.state.or.us/searchLabs">https://orelap.state.or.us/searchLabs</a>.
+              <p><strong>Water provider: {{ data.report_location.location_region_id ?: "N/A" }}</strong></p>
+              <p class="mb-0">The location of your sampling address is not eligible for free testing from the Portland Water Bureau. Contact your water provider to see if they provide free testing. You can also pay a laboratory to test your water, find a lab at <a href="https://orelap.state.or.us/searchLabs">https://orelap.state.or.us/searchLabs</a>.
               </p>
           </div>
         '#ajax': true
@@ -129,47 +239,8 @@ elements: |-
         '#type': container
         '#states':
           visible:
-            - ':input[name="report_location[location_region_id]"]':
-                value: 'Burlington Water District'
-            - or
-            - ':input[name="report_location[location_region_id]"]':
-                value: 'Gresham, City of'
-            - or
-            - ':input[name="report_location[location_region_id]"]':
-                value: 'Tualatin, City of'
-            - or
-            - ':input[name="report_location[location_region_id]"]':
-                value: 'Lake Grove Water District'
-            - or
-            - ':input[name="report_location[location_region_id]"]':
-                value: 'Lorna Portland Water'
-            - or
-            - ':input[name="report_location[location_region_id]"]':
-                value: 'Lusted Water District'
-            - or
-            - ':input[name="report_location[location_region_id]"]':
-                value: 'Palatine Hill Water District'
-            - or
-            - ':input[name="report_location[location_region_id]"]':
-                value: 'Pleasant Home Water District'
-            - or
-            - ':input[name="report_location[location_region_id]"]':
-                value: 'Portland Water Bureau'
-            - or
-            - ':input[name="report_location[location_region_id]"]':
-                value: 'Raleigh Water District'
-            - or
-            - ':input[name="report_location[location_region_id]"]':
-                value: 'Rockwood Water PUD'
-            - or
-            - ':input[name="report_location[location_region_id]"]':
-                value: 'Tualatin Valley Water District'
-            - or
-            - ':input[name="report_location[location_region_id]"]':
-                value: 'Valley View Water District'
-            - or
-            - ':input[name="report_location[location_region_id]"]':
-                value: 'West Slope Water District'
+            ':input[name="computed_is_eligible"]':
+              value: 'Yes'
         computed_eligible_message:
           '#type': webform_computed_token
           '#title': 'Eligible Message'
@@ -188,9 +259,13 @@ elements: |-
         container_contact:
           '#type': webform_section
           '#title': 'Your Contact Information'
-          contact_name:
+          contact_first_name:
             '#type': textfield
-            '#title': Name
+            '#title': 'First Name'
+            '#required': true
+          contact_last_name:
+            '#type': textfield
+            '#title': 'Last Name'
             '#required': true
           contact_email:
             '#type': textfield
@@ -221,6 +296,11 @@ elements: |-
             contact_mailing_address:
               '#type': portland_address_verifier
               '#title': 'Mailing Address'
+            computed_mailing_address:
+              '#type': webform_computed_twig
+              '#title': 'Computed Mailing Address'
+              '#template': '{{ data.contact_mailing_address.location_address_label }}'
+              '#ajax': true
         request_where_hear:
           '#type': webform_select_other
           '#title': 'Where did you hear about this testing program?'
@@ -424,5 +504,38 @@ access:
     roles: {  }
     users: {  }
     permissions: {  }
-handlers: {  }
+handlers:
+  smartsheet_add_row_to_existing_sheet:
+    id: smartsheet_add_row
+    handler_id: smartsheet_add_row_to_existing_sheet
+    label: 'Smartsheet: add row to existing sheet'
+    notes: ''
+    status: true
+    conditions: {  }
+    weight: 0
+    settings:
+      column_mappings:
+        3324483248279428: __submission_id
+        2198583341436804: computed_street_number
+        6702182968807300: computed_street_quadrant
+        4450383155122052: computed_street_name
+        8953982782492548: computed_unit_number
+        2726686279028612: computed_city
+        7230285906399108: computed_state
+        1600786372185988: computed_zip
+        6104385999556484: computed_provider
+        3852586185871236: contact_first_name
+        8356185813241732: contact_last_name
+        1037836418764676: contact_phone
+        5541436046135172: contact_email
+        3289636232449924: contact_preferred_language
+        7793235859820420: computed_mailing_address
+        2163736325607300: request_where_hear
+        6667335952977796: request_comments
+      multiple_rows_enable: null
+      multiple_rows_field: ''
+      multiple_rows_separator: ''
+      row_location: toBottom
+      sheet_id: '4934804453674884'
+      upload_attachments: '1'
 variants: {  }
