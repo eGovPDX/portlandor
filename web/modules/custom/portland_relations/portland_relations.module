@@ -6,6 +6,8 @@
  */
 
 use Drupal\Core\Routing\RouteMatchInterface;
+use Drupal\Core\StringTranslation\TranslatableMarkup;
+use Drupal\Core\Field\BaseFieldDefinition;
 
 /**
  * Implements hook_help().
@@ -65,4 +67,81 @@ function portland_relations_inline_entity_form_entity_form_alter(&$entity_form, 
   if($entity_form['#entity_type'] == 'relation') {
     $entity_form['#save_entity'] = true;
   }
+}
+
+/**
+ * Implements hook_post_update_NAME().
+ */
+function portland_relations_post_update_make_relation_revisionable(&$sandbox) {
+  $definition_update_manager = \Drupal::entityDefinitionUpdateManager();
+  /** @var \Drupal\Core\Entity\EntityLastInstalledSchemaRepositoryInterface $last_installed_schema_repository */
+  $last_installed_schema_repository = \Drupal::service('entity.last_installed_schema.repository');
+
+  $entity_type = $definition_update_manager->getEntityType('relation');
+  $field_storage_definitions = $last_installed_schema_repository->getLastInstalledFieldStorageDefinitions('relation');
+
+  // Update the entity type definition.
+  $entity_keys = $entity_type->getKeys();
+  $entity_keys['revision'] = 'revision_id';
+  $entity_type->set('entity_keys', $entity_keys);
+  $entity_type->set('revision_table', 'relation_revision');
+  $entity_type->set('revision_data_table', 'relation_field_revision');
+  $revision_metadata_keys = [
+    'revision_default' => 'revision_default',
+    'revision_user' => 'revision_user',
+    'revision_created' => 'revision_created',
+    'revision_log_message' => 'revision_log_message',
+  ];
+  $entity_type->set('revision_metadata_keys', $revision_metadata_keys);
+
+  // Update the field storage definitions and add the new ones required by a
+  // revisionable entity type.
+  $field_storage_definitions['changed']->setRevisionable(TRUE);
+
+  $field_storage_definitions['revision_id'] = BaseFieldDefinition::create('integer')
+    ->setName('revision_id')
+    ->setTargetEntityTypeId('relation')
+    ->setTargetBundle(NULL)
+    ->setLabel(new TranslatableMarkup('Revision ID'))
+    ->setReadOnly(TRUE)
+    ->setSetting('unsigned', TRUE);
+
+  $field_storage_definitions['revision_default'] = BaseFieldDefinition::create('boolean')
+    ->setName('revision_default')
+    ->setTargetEntityTypeId('relation')
+    ->setTargetBundle(NULL)
+    ->setLabel(new TranslatableMarkup('Default revision'))
+    ->setDescription(new TranslatableMarkup('A flag indicating whether this was a default revision when it was saved.'))
+    ->setStorageRequired(TRUE)
+    ->setInternal(TRUE)
+    ->setTranslatable(FALSE)
+    ->setRevisionable(TRUE);
+
+  $field_storage_definitions['revision_created'] = BaseFieldDefinition::create('created')
+    ->setName('revision_created')
+    ->setTargetEntityTypeId('relation')
+    ->setTargetBundle(NULL)
+    ->setLabel(new TranslatableMarkup('Revision create time'))
+    ->setDescription(new TranslatableMarkup('The time that the current revision was created.'))
+    ->setRevisionable(TRUE);
+  $field_storage_definitions['revision_user'] = BaseFieldDefinition::create('entity_reference')
+    ->setName('revision_user')
+    ->setTargetEntityTypeId('relation')
+    ->setTargetBundle(NULL)
+    ->setLabel(new TranslatableMarkup('Revision user'))
+    ->setDescription(new TranslatableMarkup('The user ID of the author of the current revision.'))
+    ->setSetting('target_type', 'user')
+    ->setRevisionable(TRUE);
+  $field_storage_definitions['revision_log_message'] = BaseFieldDefinition::create('string_long')
+    ->setName('revision_log_message')
+    ->setTargetEntityTypeId('relation')
+    ->setTargetBundle(NULL)
+    ->setLabel(new TranslatableMarkup('Revision log message'))
+    ->setDescription(new TranslatableMarkup('Briefly describe the changes you have made.'))
+    ->setRevisionable(TRUE)
+    ->setDefaultValue('');
+
+  $definition_update_manager->updateFieldableEntityType($entity_type, $field_storage_definitions, $sandbox);
+
+  return t(($sandbox['progress'] ?? '0') . ' relations have been converted to be revisionable.');
 }

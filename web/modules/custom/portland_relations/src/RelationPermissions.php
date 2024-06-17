@@ -47,14 +47,23 @@ class RelationPermissions{
     $type_params = ['%type_name' => $type->label()];
 
     return [
-      "$type_id create entities" => [
-        'title' => $this->t('Create new %type_name entities', $type_params),
+      "create $type_id relations" => [
+        'title' => $this->t('%type_name: Create new relation entity', $type_params),
       ],
-      "$type_id edit any entities" => [
-        'title' => $this->t('Edit any %type_name entities', $type_params),
+      "edit any $type_id relations" => [
+        'title' => $this->t('%type_name: Edit relation entity', $type_params),
       ],
-      "$type_id delete any entities" => [
-        'title' => $this->t('Delete any %type_name entities', $type_params),
+      "delete any $type_id relations" => [
+        'title' => $this->t('%type_name: Delete relation entity', $type_params),
+      ],
+      "view any $type_id relation revisions" => [
+        'title' => $this->t('%type_name: View any relation revision pages', $type_params),
+      ],
+      "revert any $type_id relation revisions" => [
+        'title' => $this->t('%type_name: Revert relation revisions', $type_params),
+      ],
+      "delete any $type_id relation revisions" => [
+        'title' => $this->t('%type_name: Delete relation revisions', $type_params),
       ],
     ];
   }
