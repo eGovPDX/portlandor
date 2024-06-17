@@ -74,59 +74,64 @@ class PortlandAddressVerifier extends WebformCompositeBase {
       '#markup' => '<div id="status_modal" class="visually-hidden"></div>',
     ];
     $element['location_street'] = [
-      '#type' => 'textfield',
+      '#type' => 'hidden',
       '#title' => t('Street'),
       '#attributes' => ['id' => 'location_street']
     ];
     $element['location_street_number'] = [
-      '#type' => 'textfield',
+      '#type' => 'hidden',
       '#title' => t('Street Number'),
       '#attributes' => ['id' => 'location_street_number']
     ];
     $element['location_street_quadrant'] = [
-      '#type' => 'textfield',
+      '#type' => 'hidden',
       '#title' => t('Street Quadrant'),
       '#attributes' => ['id' => 'location_street_quadrant']
     ];
     $element['location_street_name'] = [
-      '#type' => 'textfield',
+      '#type' => 'hidden',
       '#title' => t('Street Name'),
       '#attributes' => ['id' => 'location_street_name']
     ];
     $element['location_city'] = [
-      '#type' => 'textfield',
+      '#type' => 'hidden',
       '#title' => t('City'),
       '#attributes' => ['id' => 'location_city']
     ];
     $element['location_state'] = [
-      '#type' => 'textfield',
+      '#type' => 'hidden',
       '#title' => t('State'),
       '#attributes' => ['id' => 'location_state']
     ];
     $element['location_zip'] = [
-      '#type' => 'textfield',
+      '#type' => 'hidden',
       '#title' => t('Zip'),
       '#attributes' => [ 'id' => 'location_zip']
     ];
     $element['location_lat'] = [
-      '#type' => 'textfield',
+      '#type' => 'hidden',
       '#title' => t('Latitude'),
       '#attributes' => [ 'id' => 'location_lat']
     ];
     $element['location_lon'] = [
-      '#type' => 'textfield',
+      '#type' => 'hidden',
       '#title' => t('Longitude'),
       '#attributes' => [ 'id' => 'location_lon']
     ];
     $element['location_x'] = [
-      '#type' => 'textfield',
+      '#type' => 'hidden',
       '#title' => t('Coordinates X'),
       '#attributes' => [ 'id' => 'location_x']
     ];
     $element['location_y'] = [
-      '#type' => 'textfield',
+      '#type' => 'hidden',
       '#title' => t('Coordinates Y'),
       '#attributes' => [ 'id' => 'location_y']
+    ];
+    $element['location_address_label'] = [
+      '#type' => 'hidden',
+      '#title' => t('Address Label'),
+      '#attributes' => [ 'id' => 'location_address_label']
     ];
 
     return $element;

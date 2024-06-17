@@ -190,6 +190,8 @@ AddressVerifierView.prototype._setVerified = function ($checkmark, $button, $ele
     $element.find('#location_lon').val(item.lon);
     $element.find('#location_x').val(item.x);
     $element.find('#location_y').val(item.y);
+    $element.find('#location_address_label').val(AddressVerifierModel.buildMailingLabel(item));
+    console.log(JSON.stringify(item));
 }
 
 AddressVerifierView.prototype._setUnverified = function ($checkmark, $button) {
@@ -202,9 +204,9 @@ AddressVerifierView.prototype._setUnverified = function ($checkmark, $button) {
     var $element = this.$(this.element);
     $element.find('#verified_address').val("");
     $element.find('#location_street').val("");
-    $element.find('#location_street_number').val();
-    $element.find('#location_street_quadrant').val();
-    $element.find('#location_street_name').val();
+    $element.find('#location_street_number').val("");
+    $element.find('#location_street_quadrant').val("");
+    $element.find('#location_street_name').val("");
     $element.find('#location_city').val("");
     $element.find('#location_state').val("");
     $element.find('#location_zip').val("");
@@ -212,6 +214,7 @@ AddressVerifierView.prototype._setUnverified = function ($checkmark, $button) {
     $element.find('#location_lon').val("");
     $element.find('#location_x').val("");
     $element.find('#location_y').val("");
+    $element.find('#address_label').val("");
 }
 
 AddressVerifierView.prototype.updateAddressUI = function (address) {
