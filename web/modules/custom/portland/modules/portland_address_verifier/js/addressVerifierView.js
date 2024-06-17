@@ -8,6 +8,7 @@ function AddressVerifierView(jQuery, element, model, settings) {
     this.$input = element.find('#location_address');
     this.$suggestModal = element.find('#suggestions_modal');
     this.$statusModal = element.find('#status_modal');
+    this.$checkmark;
 }
 
 // globals /////////////////////////////
@@ -39,12 +40,14 @@ AddressVerifierView.prototype.renderAddressVerifier = function () {
         }
     });
 
-    this.$input.after($button);
+    this.$button = $button;
+
+    this.$input.after(this.$button);
     this.$input.css({
         display: 'inline-block',
         marginRight: '10px;'
     });
-    $button.css({
+    this.$button.css({
         display: 'inline-block'
     })
 
@@ -54,13 +57,13 @@ AddressVerifierView.prototype.renderAddressVerifier = function () {
         var item = self.$(this).data('item');
         // now that the user has made a selection, pass back the single candidate
         self.$input.val(item.fullAddress);
-        self._setVerified($checkmark, $button, self.$element, item);
+        self._setVerified($checkmark, this.$button, self.$element, item);
         self.$suggestModal.dialog('close');
     });
 
     // Add verified checkmark ///////////////////////////////////
-    var $checkmark = this.$('<span class="verified-checkmark address invisible" title="Location is verified!">✓</span>');
-    this.$input.after($checkmark);
+    this.$checkmark = this.$('<span class="verified-checkmark address invisible" title="Location is verified!">✓</span>');
+    this.$input.after(this.$checkmark);
 
     // Configure address field ////////////////////////////////////
 
@@ -68,7 +71,7 @@ AddressVerifierView.prototype.renderAddressVerifier = function () {
     this.$input.on('keydown', function (e) {
         if (e.keyCode == 13) {
             e.preventDefault();
-            $button.click();
+            this.$button.click();
             return false;
         }
     });
@@ -76,7 +79,7 @@ AddressVerifierView.prototype.renderAddressVerifier = function () {
     // unset verify if address field value changes
     this.$input.on('keyup', function () {
         if (self.$(this).val().length > 3) {
-            self._setUnverified($checkmark, $button);
+            self._setUnverified(self.$checkmark, this.$button);
         }
     });
 
@@ -98,7 +101,7 @@ AddressVerifierView.prototype.renderAddressVerifier = function () {
         select: function (event, ui) {
             self.$input.val(ui.item.fullAddress);
             self.$input.autocomplete('close');
-            self._setVerified($checkmark, $button, self.$element, ui.item);
+            self._setVerified(self.$checkmark, self.$button, self.$element, ui.item);
             return false; // returning true causes the field to be cleared
         },
         response: function (event, ui) {
@@ -123,28 +126,34 @@ AddressVerifierView.prototype._addressSearch = function (address) {
     this._resetSuggestModal();
     this.model.fetchAutocompleteItems(address)
         .done(function (locationItems) {
-            // Pass the locationItems to the response callback
-            var list = self.$("<ul></ul>");
-            locationItems.map(function (item) {
+            // if only 1 returned item, use it immediately
+            if (locationItems.length > 1) {
+                // Pass the locationItems to the response callback
+                var list = self.$("<ul></ul>");
+                locationItems.map(function (item) {
 
-                var strData = JSON.stringify(item);
-                var listItem = self.$(`<li><a href=\"#\" class="pick"
-                    data-item='${strData}'>${item.fullAddress}</a></li>`);
-                list.append(listItem);
+                    var strData = JSON.stringify(item);
+                    var listItem = self.$(`<li><a href=\"#\" class="pick"
+                        data-item='${strData}'>${item.fullAddress}</a></li>`);
+                    list.append(listItem);
 
-            });
-            self.$suggestModal.append(list);
-            Drupal.dialog(self.$suggestModal, {
-                title: 'Multiple possible matches found',
-                width: '600px',
-                buttons: [{
-                    text: 'Close',
-                    click: function () {
-                        self.$(this).dialog('close');
-                    }
-                }]
-            }).showModal();
-            self.$suggestModal.removeClass('visually-hidden');
+                });
+                self.$suggestModal.append(list);
+                Drupal.dialog(self.$suggestModal, {
+                    title: 'Multiple possible matches found',
+                    width: '600px',
+                    buttons: [{
+                        text: 'Close',
+                        click: function () {
+                            self.$(this).dialog('close');
+                        }
+                    }]
+                }).showModal();
+                self.$suggestModal.removeClass('visually-hidden');
+            } else {
+                self._setVerified(self.$checkmark, self.$button, self.$element, item);
+            }
+            
         })
         .fail(function (error) {
             console.error('Error fetching autocomplete items:', error);
