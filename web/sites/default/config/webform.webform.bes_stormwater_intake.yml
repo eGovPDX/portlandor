@@ -1,0 +1,410 @@
+uuid: 7d2d32a0-ac77-4d63-8439-f77a9d3da941
+langcode: en
+status: open
+dependencies:
+  module:
+    - portland_smartsheet
+weight: 0
+open: null
+close: null
+uid: 628
+template: false
+archive: false
+id: bes_stormwater_intake
+title: 'BES Stormwater Intake'
+description: ''
+categories: {  }
+elements: |-
+  section_property:
+    '#type': webform_section
+    '#title': 'Property/Account Information'
+    property_is_residential:
+      '#type': radios
+      '#title': 'Only residential single-family homes within Multnomah County, where there is one Portland Water Bureau account per taxlot, are eligible for review. Does your property meet this criteria?'
+      '#options': yes_no
+      '#required': true
+    markup_non_residential:
+      '#type': webform_markup
+      '#states':
+        visible:
+          ':input[name="property_is_residential"]':
+            value: 'No'
+      '#markup': |-
+        <div class="alert alert--info next-steps">
+        <h2>Ineligibility Notice</h2>
+
+        <p>Placeholder.</p>
+        </div>
+  container_continue:
+    '#type': container
+    '#states':
+      invisible:
+        ':input[name="property_is_residential"]':
+          value: 'No'
+    report_location:
+      '#type': portland_location_picker
+      '#title': 'What is your property address?'
+      '#required': true
+      '#location_search__title': 'What is your property address?'
+      '#location_search__description': 'Search for your address and press Verify, or select it from the dropdown.'
+      '#location_search__required': true
+      '#precision_text__access': false
+      '#place_name__access': false
+      '#location_details__access': false
+      '#address_verify': true
+    computed_location_address:
+      '#type': webform_computed_token
+      '#title': 'Computed Location Address'
+      '#display_on': none
+      '#mode': text
+      '#template': '[webform_submission:values:report_location:location_address]'
+    property_id:
+      '#type': textfield
+      '#title': 'What is your property ID?'
+      '#input_mask': R999999
+      '#required': true
+    water_account_number:
+      '#type': textfield
+      '#title': 'What is your Portland Water account number?'
+      '#pattern': '2(8|9)(\d{8})'
+      '#pattern_error': 'Water account number is invalid (note: all account numbers should start with either "29" or "28")'
+      '#required': true
+    section_stormwater:
+      '#type': webform_section
+      '#title': 'Stormwater Information'
+      '#description': '<p>Please list the stormwater billable area associated with each segment below:</p>'
+      sqft_brick_or_pavers:
+        '#type': number
+        '#title': 'Brick or pervious pavers'
+        '#field_suffix': 'sq. ft'
+        '#min': 0
+        '#step': 1
+      sqft_breezeway:
+        '#type': number
+        '#title': Breezeway
+        '#field_suffix': 'sq. ft'
+        '#min': 0
+        '#step': 1
+      sqft_carport:
+        '#type': number
+        '#title': Carport
+        '#field_suffix': 'sq. ft'
+        '#min': 0
+        '#step': 1
+      sqft_porch_deck_patio:
+        '#type': number
+        '#title': 'Covered or enclosed porch, deck, or patio'
+        '#field_suffix': 'sq. ft'
+        '#min': 0
+        '#step': 1
+      sqft_detached_garage:
+        '#type': number
+        '#title': 'Detached garage'
+        '#field_suffix': 'sq. ft'
+        '#min': 0
+        '#step': 1
+      sqft_detached_structure:
+        '#type': number
+        '#title': 'Detached room, shed, building, or other structure'
+        '#field_suffix': 'sq. ft'
+        '#min': 0
+        '#step': 1
+      sqft_farm_building:
+        '#type': number
+        '#title': 'Farm building'
+        '#field_suffix': 'sq. ft'
+        '#min': 0
+        '#step': 1
+      sqft_main:
+        '#type': number
+        '#title': 'Main house and attached garage'
+        '#field_suffix': 'sq. ft'
+        '#min': 0
+        '#step': 1
+      sqft_pavement:
+        '#type': number
+        '#title': 'Blacktop, concrete, pervious pavement, or paving'
+        '#field_suffix': 'sq. ft'
+        '#min': 0
+        '#step': 1
+      sqft_sports_court:
+        '#type': number
+        '#title': 'Sports court'
+        '#field_suffix': 'sq. ft'
+        '#min': 0
+        '#step': 1
+      stormwater_tier:
+        '#type': select
+        '#title': 'What is your current stormwater billing tier?'
+        '#options':
+          1: 'Tier 1 (small)'
+          2: 'Tier 2 (average)'
+          3: 'Tier 3 (large)'
+        '#required': true
+      no_tier_change:
+        '#type': hidden
+        '#title': 'No Tier Change'
+      markup_no_tier_change:
+        '#type': webform_markup
+        '#states':
+          visible:
+            ':input[name="no_tier_change"]':
+              value: 'true'
+        '#markup': |-
+          <div class="alert alert--info next-steps">
+          <h2>No tier change</h2>
+
+          <p><strong>Placeholder:</strong>&nbsp;Based on the information you've provided, there would be no change to your stormwater tier.</p>
+          </div>
+    section_contact:
+      '#type': webform_section
+      '#title': 'Your Contact Information'
+      '#states':
+        invisible:
+          ':input[name="no_tier_change"]':
+            value: 'true'
+      contact_name:
+        '#type': textfield
+        '#title': Name
+        '#required': true
+      contact_email:
+        '#type': textfield
+        '#title': Email
+        '#description': '<p>We will use your email to confirm your submission.</p>'
+        '#required': true
+        '#pattern': '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        '#pattern_error': 'Please enter a correctly formatted email address, such as myname@example.com.'
+      preferred_communication_method:
+        '#type': radios
+        '#title': 'What is your preferred method of communication?'
+        '#options':
+          address: 'Address on file with the Portland Water Bureau'
+          email: Email
+        '#required': true
+      accept_terms:
+        '#type': checkbox
+        '#title': 'The information provided is truthful .data input to this form may be reviewed for accuracy .any change to billing will be effective as of the date information provided to the City by the County tax assessor ..'
+        '#required': true
+      actions:
+        '#type': webform_actions
+        '#title': 'Submit button(s)'
+css: "#location_map {\r\n  display: none;\r\n}"
+javascript: "let stormwaterTier = undefined;\r\n\r\ndocument.querySelector(\"#edit-section-stormwater\").addEventListener(\"input\", (e) => {\r\n  if (e.target.name === \"stormwater_tier\") {\r\n    stormwaterTier = e.target.value;\r\n  }\r\n  \r\n  const sqftTotal = Array.from(document.querySelectorAll(\"input[name^='sqft_']\"))\r\n  .map(el => el.valueAsNumber || 0)\r\n  .reduce((a, b) => a + b);\r\n  const noTierChangeEl = document.querySelector(\"input[name='no_tier_change']\");\r\n  if ((stormwaterTier === \"1\" && sqftTotal <= 1500)\r\n      || (stormwaterTier === \"2\" && (sqftTotal > 1500 && sqftTotal <= 2700))\r\n      || (stormwaterTier === \"3\" && sqftTotal > 2700)) {\r\n    noTierChangeEl.value = \"true\";\r\n  } else {\r\n    noTierChangeEl.value = \"false\";\r\n  }\r\n  noTierChangeEl.dispatchEvent(new Event(\"change\"))\r\n});"
+settings:
+  ajax: false
+  ajax_scroll_top: form
+  ajax_progress_type: ''
+  ajax_effect: ''
+  ajax_speed: null
+  page: true
+  page_submit_path: ''
+  page_confirm_path: ''
+  page_theme_name: ''
+  form_title: both
+  form_submit_once: false
+  form_open_message: ''
+  form_close_message: ''
+  form_exception_message: ''
+  form_previous_submissions: true
+  form_confidential: false
+  form_confidential_message: ''
+  form_disable_remote_addr: false
+  form_convert_anonymous: false
+  form_prepopulate: false
+  form_prepopulate_source_entity: false
+  form_prepopulate_source_entity_required: false
+  form_prepopulate_source_entity_type: ''
+  form_unsaved: false
+  form_disable_back: false
+  form_submit_back: false
+  form_disable_autocomplete: false
+  form_novalidate: false
+  form_disable_inline_errors: false
+  form_required: false
+  form_autofocus: false
+  form_details_toggle: false
+  form_reset: false
+  form_access_denied: default
+  form_access_denied_title: ''
+  form_access_denied_message: ''
+  form_access_denied_attributes: {  }
+  form_file_limit: ''
+  form_attributes: {  }
+  form_method: ''
+  form_action: ''
+  share: false
+  share_node: false
+  share_theme_name: ''
+  share_title: true
+  share_page_body_attributes: {  }
+  submission_label: ''
+  submission_exception_message: ''
+  submission_locked_message: ''
+  submission_log: false
+  submission_excluded_elements: {  }
+  submission_exclude_empty: false
+  submission_exclude_empty_checkbox: false
+  submission_views: {  }
+  submission_views_replace: {  }
+  submission_user_columns: {  }
+  submission_user_duplicate: false
+  submission_access_denied: default
+  submission_access_denied_title: ''
+  submission_access_denied_message: ''
+  submission_access_denied_attributes: {  }
+  previous_submission_message: ''
+  previous_submissions_message: ''
+  autofill: false
+  autofill_message: ''
+  autofill_excluded_elements: {  }
+  wizard_progress_bar: true
+  wizard_progress_pages: false
+  wizard_progress_percentage: false
+  wizard_progress_link: false
+  wizard_progress_states: false
+  wizard_start_label: ''
+  wizard_preview_link: false
+  wizard_confirmation: true
+  wizard_confirmation_label: ''
+  wizard_auto_forward: true
+  wizard_auto_forward_hide_next_button: false
+  wizard_keyboard: true
+  wizard_track: ''
+  wizard_prev_button_label: ''
+  wizard_next_button_label: ''
+  wizard_toggle: false
+  wizard_toggle_show_label: ''
+  wizard_toggle_hide_label: ''
+  wizard_page_type: container
+  wizard_page_title_tag: h2
+  preview: 0
+  preview_label: ''
+  preview_title: ''
+  preview_message: ''
+  preview_attributes: {  }
+  preview_excluded_elements: {  }
+  preview_exclude_empty: true
+  preview_exclude_empty_checkbox: false
+  draft: none
+  draft_multiple: false
+  draft_auto_save: false
+  draft_saved_message: ''
+  draft_loaded_message: ''
+  draft_pending_single_message: ''
+  draft_pending_multiple_message: ''
+  confirmation_type: page
+  confirmation_url: ''
+  confirmation_title: ''
+  confirmation_message: ''
+  confirmation_attributes: {  }
+  confirmation_back: true
+  confirmation_back_label: ''
+  confirmation_back_attributes: {  }
+  confirmation_exclude_query: false
+  confirmation_exclude_token: false
+  confirmation_update: false
+  limit_total: null
+  limit_total_interval: null
+  limit_total_message: ''
+  limit_total_unique: false
+  limit_user: null
+  limit_user_interval: null
+  limit_user_message: ''
+  limit_user_unique: false
+  entity_limit_total: null
+  entity_limit_total_interval: null
+  entity_limit_user: null
+  entity_limit_user_interval: null
+  purge: none
+  purge_days: null
+  results_disabled: false
+  results_disabled_ignore: false
+  results_customize: false
+  token_view: false
+  token_update: false
+  token_delete: false
+  serial_disabled: false
+access:
+  create:
+    roles:
+      - anonymous
+      - authenticated
+    users: {  }
+    permissions: {  }
+  view_any:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  update_any:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  delete_any:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  purge_any:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  view_own:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  update_own:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  delete_own:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  administer:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  test:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  configuration:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+handlers:
+  smartsheet_add_row_to_existing_sheet:
+    id: smartsheet_add_row
+    handler_id: smartsheet_add_row_to_existing_sheet
+    label: 'Smartsheet: add row to existing sheet'
+    notes: ''
+    status: true
+    conditions: {  }
+    weight: 0
+    settings:
+      column_mappings:
+        2294426771607428: __submission_id
+        5181323399352196: ''
+        6798026398977924: computed_location_address
+        1168526864764804: property_id
+        5672126492135300: water_account_number
+        3420326678450052: stormwater_tier
+        6025748329484164: contact_name
+        1522148702113668: contact_email
+        7151648236326788: preferred_communication_method
+        7923926305820548: sqft_brick_or_pavers
+        2929523585666948: sqft_breezeway
+        4055423492509572: sqft_carport
+        6307223306194820: sqft_porch_deck_patio
+        2648048608956292: sqft_detached_garage
+        4899848422641540: sqft_detached_structure
+        396248795271044: sqft_farm_building
+        8559023119880068: sqft_main
+        1803623678824324: sqft_pavement
+        7433123213037444: sqft_sports_court
+      multiple_rows_enable: null
+      multiple_rows_field: ''
+      multiple_rows_separator: ''
+      row_location: toBottom
+      sheet_id: '2362710427651972'
+      upload_attachments: '1'
+variants: {  }
