@@ -55,6 +55,7 @@ elements: |-
         visible:
           ':input[name="report_issue[radios]"]':
             value: 'improperly parked'
+      '#required': true
     report_private_property:
       '#type': radios
       '#title': 'Is the e-scooter parked on private property?'
@@ -64,6 +65,7 @@ elements: |-
         visible:
           ':input[name="report_blocking"]':
             value: 'No'
+      '#required': true
     report_company:
       '#type': radios
       '#title': 'Electric scooter (e-scooter) company'
@@ -184,14 +186,18 @@ elements: |-
     '#template': |
       {% set response = 'NA' %}
 
-      {% if data.report_issue == 'improperly parked' and data.report_blocking == 'Yes' %}
-        {% set response = '1' %}
-      {% elseif data.report_issue == 'improperly parked' and data.report_blocking == 'No' %}
-        {% set response = '24' %}
+      {% if data.report_issue == 'improperly parked' %}
+        {% if data.report_blocking == 'Yes' %}
+          {% set response = '1.5' %}
+        {% elseif data.report_private_property == 'Yes' %}
+          {% set response = '24' %}
+        {% else %}
+          {% set response = '48' %}
+        {% endif %}
       {% elseif data.report_issue == 'damaged' %}
-        {% set response = '1' %}
+        {% set response = '12' %}
       {% elseif data.report_issue == 'scooter not working' %}
-        {% set response = '1' %}
+        {% set response = '12' %}
       {% endif %}
 
       {{ response }}
@@ -231,19 +237,27 @@ elements: |-
   computed_urgency:
     '#type': webform_computed_twig
     '#title': 'Computed Urgency'
-    '#display_on': none
-    '#template': '{% if data.company_sla == "1" %}Urgent {% endif %}'
+    '#wrapper_attributes':
+      class:
+        - d-none
+    '#display_on': form
+    '#template': "{% if data.report_issue == 'improperly parked' and data.report_blocking == 'Yes' %}Urgent{% endif %}"
+    '#ajax': true
   computed_urgency_text:
     '#type': webform_computed_twig
     '#title': 'Computed Urgency Text'
-    '#display_on': none
+    '#wrapper_attributes':
+      class:
+        - d-none
+    '#display_on': form
     '#template': |-
-      {% if data.company_sla == "1" %}
-        Please note, due to the nature of this report, the response time dictated by the City’s Administrative Rule is 60 MINUTES.
-      {% elseif data.company_sla == "24" %}
-        Please note, due to the nature of this report, the response time dictated by the City’s Administrative Rule is 24 HOURS.
+      {% if data.company_sla == "1.5" %}
+        Please note, due to the nature of this report, the response time dictated by the City’s Administrative Rule is 90 MINUTES.
+      {% elseif data.company_sla == "12" or data.company_sla == "24" or data.company_sla == "48" %}
+        Please note, due to the nature of this report, the response time dictated by the City’s Administrative Rule is {{ data.company_sla }} HOURS.
       {% endif %}
     '#whitespace': trim
+    '#ajax': true
   computed_resolution_url:
     '#type': webform_computed_twig
     '#title': 'Computed Resolution URL'
