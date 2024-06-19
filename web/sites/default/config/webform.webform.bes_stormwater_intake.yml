@@ -3,7 +3,12 @@ langcode: en
 status: open
 dependencies:
   module:
+    - portland
     - portland_smartsheet
+third_party_settings:
+  portland:
+    disable_demographic_form_prompt: 0
+    exclude_from_json: {  }
 weight: 0
 open: null
 close: null
@@ -11,16 +16,16 @@ uid: 628
 template: false
 archive: false
 id: bes_stormwater_intake
-title: 'BES Stormwater Intake'
-description: ''
+title: 'Request a change to your stormwater billable area category'
+description: "<p>This webform utilizes some custom CSS and JS for the functionality.</p><ul><li><strong>Custom CSS - </strong>The CSS hides the location picker map as we only use the widget for the address verification field. Also styles the readonly fields.</li><li><strong>Custom JS - </strong>The JS provides two behaviors:</li><li><strong>Stormwater tier calculator - </strong>The `stormwaterTierCalculator` behavior checks the entered stormwater square footage and compares it to the user's existing tier that they indicated, providing a message if there is/is not going to be a change in tier.</li><li><strong>Property ID autofill - </strong>The `propertyIdAutofill` behavior autofills the property ID form field when the user enters an address, based on the tax lot ID.</li><li><strong>Surface area calculator - </strong>The `surfaceAreaCalculator` behavior provides a helper tool for the user to calculate rectangular/circular surface areas.</li></ul>"
 categories: {  }
 elements: |-
   section_property:
     '#type': webform_section
-    '#title': 'Property/Account Information'
+    '#title': 'Property and Account Information'
     property_is_residential:
       '#type': radios
-      '#title': 'Only residential single-family homes within Multnomah County, where there is one Portland Water Bureau account per taxlot, are eligible for review. Does your property meet this criteria?'
+      '#title': 'Only residential single-family homes within Portland City limits, where there is one City of Portland Utilities account per taxlot, are eligible for review. Does your property meet these criteria?'
       '#options': yes_no
       '#required': true
     markup_non_residential:
@@ -35,23 +40,31 @@ elements: |-
 
         <p>Placeholder.</p>
         </div>
-  container_continue:
-    '#type': container
-    '#states':
-      invisible:
-        ':input[name="property_is_residential"]':
-          value: 'No'
     report_location:
       '#type': portland_location_picker
       '#title': 'What is your property address?'
       '#required': true
+      '#states':
+        invisible:
+          ':input[name="property_is_residential"]':
+            value: 'No'
+      '#format': custom
+      '#format_html': '{{ element.location_address }}'
+      '#format_text': '{{ element.location_address }}'
       '#location_search__title': 'What is your property address?'
       '#location_search__description': 'Search for your address and press Verify, or select it from the dropdown.'
       '#location_search__required': true
       '#precision_text__access': false
+      '#location_address__required': true
       '#place_name__access': false
       '#location_details__access': false
       '#address_verify': true
+  container_continue:
+    '#type': container
+    '#states':
+      visible:
+        ':input[name="report_location[location_address]"]':
+          '!value': ''
     computed_location_address:
       '#type': webform_computed_token
       '#title': 'Computed Location Address'
@@ -60,76 +73,81 @@ elements: |-
       '#template': '[webform_submission:values:report_location:location_address]'
     property_id:
       '#type': textfield
-      '#title': 'What is your property ID?'
+      '#title': 'Based on your address, this is your Property ID:'
       '#input_mask': R999999
       '#required': true
     water_account_number:
       '#type': textfield
-      '#title': 'What is your Portland Water account number?'
+      '#title': 'What is your City of Portland Utilities Account Number?'
+      '#description': '<p>Please enter your ten-digit account number found on your bill.</p>'
+      '#description_display': before
+      '#placeholder': 'example: 2912345678'
+      '#required': true
       '#pattern': '2(8|9)(\d{8})'
       '#pattern_error': 'Water account number is invalid (note: all account numbers should start with either "29" or "28")'
-      '#required': true
     section_stormwater:
       '#type': webform_section
-      '#title': 'Stormwater Information'
-      '#description': '<p>Please list the stormwater billable area associated with each segment below:</p>'
-      sqft_brick_or_pavers:
+      '#title': 'Stormwater Billable Area Measurements'
+      '#description': '<p>Please list all stormwater billable area, including broken and non-contiguous surfaces, below:</p>'
+      details_calculation_helper:
+        '#type': details
+        '#title': 'Need help calculating?'
+        calculator_rectangle:
+          '#type': webform_section
+          '#title': 'Calculate a rectangular area'
+          '#title_tag': h3
+          calculator_rectangle_length:
+            '#type': number
+            '#title': 'Length = '
+            '#title_display': inline
+            '#field_suffix': ft
+            '#min': 0
+            '#step': 1
+          calculator_rectangle_width:
+            '#type': number
+            '#title': 'Width = '
+            '#title_display': inline
+            '#field_suffix': ft
+            '#min': 0
+            '#step': 1
+          calculator_rectangle_result:
+            '#type': number
+            '#title': 'Result: '
+            '#title_display': inline
+            '#field_suffix': ft
+            '#readonly': true
+        calculator_circle:
+          '#type': webform_section
+          '#title': 'Calculate a circular area'
+          '#title_tag': h3
+          calculator_circle_diameter:
+            '#type': number
+            '#title': 'Diameter = '
+            '#title_display': inline
+            '#field_suffix': ft
+            '#min': 0
+            '#step': 1
+          calculator_circle_result:
+            '#type': number
+            '#title': 'Result: '
+            '#title_display': inline
+            '#field_suffix': ft
+            '#readonly': true
+      sqft_roof_area:
         '#type': number
-        '#title': 'Brick or pervious pavers'
+        '#title': 'All roof area (including the primary dwelling and all other structures)'
         '#field_suffix': 'sq. ft'
         '#min': 0
         '#step': 1
-      sqft_breezeway:
+      sqft_driveway_and_parking:
         '#type': number
-        '#title': Breezeway
+        '#title': 'Driveway and parking areas (including pervious pavement or asphalt)'
         '#field_suffix': 'sq. ft'
         '#min': 0
         '#step': 1
-      sqft_carport:
+      sqft_other_hard_surfaces:
         '#type': number
-        '#title': Carport
-        '#field_suffix': 'sq. ft'
-        '#min': 0
-        '#step': 1
-      sqft_porch_deck_patio:
-        '#type': number
-        '#title': 'Covered or enclosed porch, deck, or patio'
-        '#field_suffix': 'sq. ft'
-        '#min': 0
-        '#step': 1
-      sqft_detached_garage:
-        '#type': number
-        '#title': 'Detached garage'
-        '#field_suffix': 'sq. ft'
-        '#min': 0
-        '#step': 1
-      sqft_detached_structure:
-        '#type': number
-        '#title': 'Detached room, shed, building, or other structure'
-        '#field_suffix': 'sq. ft'
-        '#min': 0
-        '#step': 1
-      sqft_farm_building:
-        '#type': number
-        '#title': 'Farm building'
-        '#field_suffix': 'sq. ft'
-        '#min': 0
-        '#step': 1
-      sqft_main:
-        '#type': number
-        '#title': 'Main house and attached garage'
-        '#field_suffix': 'sq. ft'
-        '#min': 0
-        '#step': 1
-      sqft_pavement:
-        '#type': number
-        '#title': 'Blacktop, concrete, pervious pavement, or paving'
-        '#field_suffix': 'sq. ft'
-        '#min': 0
-        '#step': 1
-      sqft_sports_court:
-        '#type': number
-        '#title': 'Sports court'
+        '#title': 'All other hard surface area (including pervious pavers, decks, or other hard surfaces)'
         '#field_suffix': 'sq. ft'
         '#min': 0
         '#step': 1
@@ -137,25 +155,28 @@ elements: |-
         '#type': select
         '#title': 'What is your current stormwater billing tier?'
         '#options':
-          1: 'Tier 1 (small)'
-          2: 'Tier 2 (average)'
-          3: 'Tier 3 (large)'
+          small: Small
+          standard: Standard
+          large: Large
         '#required': true
-      no_tier_change:
+      hidden_tier_change:
         '#type': hidden
-        '#title': 'No Tier Change'
+        '#title': 'Tier Change'
       markup_no_tier_change:
         '#type': webform_markup
         '#states':
           visible:
-            ':input[name="no_tier_change"]':
-              value: 'true'
-        '#markup': |-
-          <div class="alert alert--info next-steps">
-          <h2>No tier change</h2>
-
-          <p><strong>Placeholder:</strong>&nbsp;Based on the information you've provided, there would be no change to your stormwater tier.</p>
-          </div>
+            ':input[name="hidden_tier_change"]':
+              value: none
+        '#markup': '<div class="alert alert--info next-steps"><h2>No tier change</h2><p>Based on the information you''ve provided, there would be no change to your stormwater tier.</p></div>'
+      markup_tier_change:
+        '#type': webform_markup
+        '#states':
+          visible:
+            ':input[name="hidden_tier_change"]':
+              value:
+                pattern: small|standard|large
+        '#markup': '<div class="alert alert--info next-steps"><h2>Tier change</h2><p>Based on the information you''ve provided, your stormwater tier would be <strong><span class="new-tier"></span></strong>.</p></div>'
     section_contact:
       '#type': webform_section
       '#title': 'Your Contact Information'
@@ -174,22 +195,35 @@ elements: |-
         '#required': true
         '#pattern': '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
         '#pattern_error': 'Please enter a correctly formatted email address, such as myname@example.com.'
+      contact_phone:
+        '#type': textfield
+        '#title': Phone
+        '#required': true
+        '#input_mask': '(999) 999-9999'
       preferred_communication_method:
         '#type': radios
         '#title': 'What is your preferred method of communication?'
         '#options':
           address: 'Address on file with the Portland Water Bureau'
           email: Email
+          phone: Phone
         '#required': true
-      accept_terms:
-        '#type': checkbox
-        '#title': 'The information provided is truthful .data input to this form may be reviewed for accuracy .any change to billing will be effective as of the date information provided to the City by the County tax assessor ..'
-        '#required': true
+      section_acknowledgement:
+        '#type': webform_section
+        '#title': Acknowledgement
+        '#format': container
+        markup_terms:
+          '#type': webform_markup
+          '#markup': '<p>By submitting this form, I acknowledge that I am the City of Portland stormwater ratepayer for the property referenced in this form and that the account referenced in this form is in my name.</p><p>This request is for a property subject to tiered stormwater billing. The property is occupied by a residential single-family home, is associated with a single City of Portland stormwater utility account, does not contain any other dwelling units, and is within the Portland city limits.</p><p>I acknowledge that all the information contained within this form is both accurate and complete and that the stormwater billable area segments listed in this form significantly represent current stormwater billable areas as described in Portland City Code Section 17.36.050 and Administrative Rule ENB-4.09.</p><p>I understand that, by submitting this form, data may be transferred to the City of Portland Bureau of Environmental Services who, at their discretion and utilizing methodology they deem appropriate, may or may not update records that relate to or could influence the stormwater and related charges associated with the property address I have referenced in the form.</p><p>I understand that, in accordance with Portland City Code and administrative rules, the City of Portland Bureau of Environmental Services will make the final determination regarding the measured or estimated area of all property segments comprising stormwater billable area and that that determination is not appealable.</p><p>Any change in stormwater billing resulting from data provided to the City will be effective as of the date the City reviews and confirms the accuracy of all information contained in this form. Changes to stormwater billing may not, under any circumstance, be retroactive.</p><p>Data in this form may be reviewed or validated prior to transferring information to the City of Portland Bureau of Environmental Services for review of stormwater billable area. If the City is unable to confirm or validate the information you provided, or if the City determines this request is not appropriate, the City may refuse to transfer your request to the City of Portland Bureau of Environmental Services for a stormwater billable area review and may issue you a written or electronic notification informing you of this determination.</p>'
+        accept_terms:
+          '#type': checkbox
+          '#title': 'I agree'
+          '#required': true
       actions:
         '#type': webform_actions
         '#title': 'Submit button(s)'
-css: "#location_map {\r\n  display: none;\r\n}"
-javascript: "let stormwaterTier = undefined;\r\n\r\ndocument.querySelector(\"#edit-section-stormwater\").addEventListener(\"input\", (e) => {\r\n  if (e.target.name === \"stormwater_tier\") {\r\n    stormwaterTier = e.target.value;\r\n  }\r\n  \r\n  const sqftTotal = Array.from(document.querySelectorAll(\"input[name^='sqft_']\"))\r\n  .map(el => el.valueAsNumber || 0)\r\n  .reduce((a, b) => a + b);\r\n  const noTierChangeEl = document.querySelector(\"input[name='no_tier_change']\");\r\n  if ((stormwaterTier === \"1\" && sqftTotal <= 1500)\r\n      || (stormwaterTier === \"2\" && (sqftTotal > 1500 && sqftTotal <= 2700))\r\n      || (stormwaterTier === \"3\" && sqftTotal > 2700)) {\r\n    noTierChangeEl.value = \"true\";\r\n  } else {\r\n    noTierChangeEl.value = \"false\";\r\n  }\r\n  noTierChangeEl.dispatchEvent(new Event(\"change\"))\r\n});"
+css: "#location_map {\r\n  display: none;\r\n}\r\n\r\n.webform-readonly input[type=number] {\r\n  background: #fff;\r\n}"
+javascript: "(function ($) {\r\n  Drupal.behaviors.stormwaterTierCalculator = {\r\n    attach() {\r\n      let stormwaterTier = undefined;\r\n\r\n      $(\"#edit-section-stormwater\").on(\"input\", (e) => {\r\n        if (e.target.name === \"stormwater_tier\") {\r\n          stormwaterTier = e.target.value;\r\n        }\r\n        \r\n        if (!stormwaterTier) return;\r\n        \r\n        const sqftTotal = Array.from(document.querySelectorAll(\"input[name^='sqft_']\"))\r\n          .map(el => el.valueAsNumber || 0)\r\n          .reduce((a, b) => a + b);\r\n        const tierChangeEl = $(\"input[name='hidden_tier_change']\");\r\n        let newTier = \"\";\r\n        if (sqftTotal <= 1500) {\r\n          newTier = \"small\";\r\n        } else if (sqftTotal > 1500 && sqftTotal <= 2700) {\r\n          newTier = \"standard\";\r\n        } else if (sqftTotal > 2700) {\r\n          newTier = \"large\";\r\n        }\r\n        \r\n        if (newTier === stormwaterTier) {\r\n          tierChangeEl.val(\"none\");\r\n        } else {\r\n          tierChangeEl.val(newTier);\r\n          $(\".new-tier\").text(newTier);\r\n        }\r\n\r\n        tierChangeEl.trigger(\"change\");\r\n      });\r\n    },\r\n  };\r\n\r\n  Drupal.behaviors.propertyIdAutofill = {\r\n    attach() {\r\n      $(\"input[name='report_location[location_attributes]']\").on(\"change\", (e) => {\r\n        const match = e.target.value.match(/Tax lot: (R\\d+)/);\r\n        if (match && match[1]) {\r\n          $(\"input[name='property_id']\").val(match[1]);\r\n        }\r\n      });\r\n    }\r\n  }\r\n\r\n  Drupal.behaviors.surfaceAreaCalculator = {\r\n    attach() {\r\n      const rectangleLengthEl = $(\"input[name='calculator_rectangle_length']\");\r\n      const rectangleWidthEl = $(\" input[name='calculator_rectangle_width']\"); \r\n      $([rectangleLengthEl[0], rectangleWidthEl[0]]).on(\"input\", () => {\r\n        const length = parseFloat(rectangleLengthEl.val()) || 0;\r\n        const width = parseFloat(rectangleWidthEl.val()) || 0;\r\n        $(\"input[name='calculator_rectangle_result']\").val(length * width);\r\n      });\r\n\r\n      const circleDiameterEl = $(\"input[name='calculator_circle_diameter']\");\r\n      $(circleDiameterEl).on(\"input\", () => {\r\n        const diameter = parseFloat(circleDiameterEl.val()) || 0;\r\n        $(\"input[name='calculator_circle_result']\").val(Math.round((diameter / 2) * diameter / 2 * Math.PI));\r\n      });\r\n    }\r\n  }\r\n})(jQuery);"
 settings:
   ajax: false
   ajax_scroll_top: form
@@ -200,7 +234,7 @@ settings:
   page_submit_path: ''
   page_confirm_path: ''
   page_theme_name: ''
-  form_title: both
+  form_title: source_entity_webform
   form_submit_once: false
   form_open_message: ''
   form_close_message: ''
@@ -220,7 +254,7 @@ settings:
   form_disable_autocomplete: false
   form_novalidate: false
   form_disable_inline_errors: false
-  form_required: false
+  form_required: true
   form_autofocus: false
   form_details_toggle: false
   form_reset: false
@@ -294,10 +328,10 @@ settings:
   draft_pending_multiple_message: ''
   confirmation_type: page
   confirmation_url: ''
-  confirmation_title: ''
-  confirmation_message: ''
+  confirmation_title: 'Thank you'
+  confirmation_message: '<p>Your request has been received. The information you provided will be compared to City records and, if a review of stormwater billable area is warranted, an email or mailed letter describing the review process will be issued within the next two business days.</p>'
   confirmation_attributes: {  }
-  confirmation_back: true
+  confirmation_back: false
   confirmation_back_label: ''
   confirmation_back_attributes: {  }
   confirmation_exclude_query: false
@@ -379,7 +413,7 @@ handlers:
     notes: ''
     status: true
     conditions: {  }
-    weight: 0
+    weight: -50
     settings:
       column_mappings:
         2294426771607428: __submission_id
@@ -390,21 +424,60 @@ handlers:
         3420326678450052: stormwater_tier
         6025748329484164: contact_name
         1522148702113668: contact_email
+        4613465244389252: contact_phone
         7151648236326788: preferred_communication_method
-        7923926305820548: sqft_brick_or_pavers
-        2929523585666948: sqft_breezeway
-        4055423492509572: sqft_carport
-        6307223306194820: sqft_porch_deck_patio
-        2648048608956292: sqft_detached_garage
-        4899848422641540: sqft_detached_structure
-        396248795271044: sqft_farm_building
-        8559023119880068: sqft_main
-        1803623678824324: sqft_pavement
-        7433123213037444: sqft_sports_court
+        7923926305820548: sqft_roof_area
+        2929523585666948: sqft_driveway_and_parking
+        4055423492509572: sqft_other_hard_surfaces
       multiple_rows_enable: null
       multiple_rows_field: ''
       multiple_rows_separator: ''
       row_location: toBottom
       sheet_id: '2362710427651972'
       upload_attachments: '1'
+  email:
+    id: email
+    handler_id: email
+    label: 'Send Confirmation Email'
+    notes: ''
+    status: true
+    conditions: {  }
+    weight: -49
+    settings:
+      states:
+        - completed
+      to_mail: '[webform_submission:values:contact_email:raw]'
+      to_options: {  }
+      bcc_mail: ''
+      bcc_options: {  }
+      cc_mail: ''
+      cc_options: {  }
+      from_mail: noreply@portlandoregon.gov
+      from_options: {  }
+      from_name: 'City of Portland Bureau of Environmental Services'
+      reply_to: ''
+      return_path: ''
+      sender_mail: ''
+      sender_name: ''
+      subject: 'BES stormwater review request received ([webform_submission:values:property_id])'
+      body: '<p>Your request has been received. The information you provided will be compared to City records and, if a review of stormwater billable area is warranted, an email or mailed letter describing the review process will be issued within the next two business days.</p><hr><p>[webform_submission:values:html]</p>'
+      excluded_elements:
+        property_is_residential: property_is_residential
+        markup_non_residential: markup_non_residential
+        computed_location_address: computed_location_address
+        hidden_tier_change: hidden_tier_change
+        markup_no_tier_change: markup_no_tier_change
+        markup_tier_change: markup_tier_change
+        markup_terms: markup_terms
+        accept_terms: accept_terms
+      ignore_access: false
+      exclude_empty: true
+      exclude_empty_checkbox: false
+      exclude_attachments: false
+      html: true
+      attachments: false
+      twig: false
+      theme_name: ''
+      parameters: {  }
+      debug: false
 variants: {  }

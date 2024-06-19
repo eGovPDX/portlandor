@@ -1012,6 +1012,7 @@
             $('input[name=' + elementId + '\\[location_zipcode\\]]').val(zipcode);
           }
 
+          $('input[name=' + elementId + '\\[location_attributes\\]]').trigger('change');
           $('input[name=' + elementId + '\\[location_municipality_name\\]]').trigger('change');
           $('input[name=' + elementId + '\\[location_type_taxlot\\]]').trigger('change');
           $('input[name=' + elementId + '\\[location_type_park\\]]').trigger('change');
