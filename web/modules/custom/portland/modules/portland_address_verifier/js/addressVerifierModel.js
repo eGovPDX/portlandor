@@ -41,7 +41,8 @@ AddressVerifierModel.prototype.fetchAutocompleteItems = function (addrSearch) {
         if (response && response.candidates && Array.isArray(response.candidates)) {
             // KLUDGE: There's an issue with the PortlandMaps suggests API where the data is
             // formatted differently when there is only a single candidate returned, as opposed
-            // to multiple candidates. The logic below takes this into account.
+            // to multiple candidates. The locationItem object constructor avoids this issue
+            // by always assembling the address from its component parts if we send the isSingleton flag.
             
             if (response.candidates.length > 1) {
                 return response.candidates.map(function(candidate) {
@@ -51,8 +52,6 @@ AddressVerifierModel.prototype.fetchAutocompleteItems = function (addrSearch) {
             } else if (response.candidates.length == 1) {
                 return response.candidates.map(function(candidate) {
                     var retItem = new AddressVerifierModel.locationItem(candidate, true);
-                    // send flag indicating this is a special case
-                    retItem.fullAddress = AddressVerifierModel.buildFullAddress(candidate);
                     return retItem;
                 });
             } else {
