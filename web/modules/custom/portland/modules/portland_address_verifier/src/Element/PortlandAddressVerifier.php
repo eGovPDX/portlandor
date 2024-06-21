@@ -51,7 +51,7 @@ class PortlandAddressVerifier extends WebformCompositeBase {
       '#title' => t('Address'),
       '#id' => 'location_address',
       '#attributes' => ['autocomplete' => 'off'],
-      '#description' => t('Begin typing to see a list of matches, or use the Search button.'),
+      '#description' => t('Please enter your full address and verify it, or begin typing to see a list of possible matches.'),
       '#description_display' => 'before',
     ];
     $element['unit_number'] = [
@@ -69,9 +69,15 @@ class PortlandAddressVerifier extends WebformCompositeBase {
     ];
     $element['status_modal'] = [
       '#type' => 'markup',
-      '#title' => 'Status indicator',
+      '#title' => 'Status Indicator',
       '#title_display' => 'invisible',
       '#markup' => '<div id="status_modal" class="visually-hidden"></div>',
+    ];
+    $element['not_found_modal'] = [
+      '#type' => 'markup',
+      '#title' => 'Address Not Found',
+      '#title_display' => 'invisible',
+      '#markup' => '<div id="not_found_modal" class="visually-hidden"></div>',
     ];
     $element['location_street'] = [
       '#type' => 'hidden',
@@ -128,10 +134,10 @@ class PortlandAddressVerifier extends WebformCompositeBase {
       '#title' => t('Coordinates Y'),
       '#attributes' => [ 'id' => 'location_y']
     ];
-    $element['location_address_label'] = [
+    $element['location_verification_status'] = [
       '#type' => 'hidden',
-      '#title' => t('Address Label'),
-      '#attributes' => [ 'id' => 'location_address_label']
+      '#title' => t('Verification Status'),
+      '#attributes' => [ 'id' => 'location_verification_status']
     ];
 
     return $element;
