@@ -23,7 +23,7 @@ var $statusModal;
 const NOT_VERIFIED_MESSAGE = "The address you entered could not be verified.";
 const IF_CERTAIN_MESSAGE = "If you are certain this is the full, correct address, you may use it without verification.";
 const MUST_PROVIDE_ADDRESS_MESSAGE = "You must enter an address or partial address to verify.";
-const UNVERIFIED_WARNING_MESSAGE = "Location is not verified. Only submit this form if you are certain you have entered the full, correct address."
+const UNVERIFIED_WARNING_MESSAGE = "We're unable to verify this address. Please make sure you've entered the full, correct address before submitting."
 const VERIFIED_MESSAGE = "Address is verified!";
 
 AddressVerifierView.prototype.renderAddressVerifier = function () {
