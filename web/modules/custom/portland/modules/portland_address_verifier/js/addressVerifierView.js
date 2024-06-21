@@ -1,16 +1,18 @@
-
 function AddressVerifierView(jQuery, element, model, settings) {
     this.$ = jQuery;
     this.model = model;
     this.settings = settings;
-
     this.$element = element;
     this.$input = element.find('#location_address');
     this.$suggestModal = element.find('#suggestions_modal');
     this.$statusModal = element.find('#status_modal');
-    this.$checkmark;
-
+    this.$notFoundModal = element.find("#not_found_modal");
+    this.$verificationStatus = element.find('#location_verification_status');
     this.isVerified = false;
+
+    this.$checkmark;
+    this.$status;
+    this.$button;
 }
 
 // globals /////////////////////////////
@@ -18,16 +20,28 @@ var $element;
 var $input;
 var $suggestModal;
 var $statusModal;
+const NOT_VERIFIED_MESSAGE = "The address you entered could not be verified.";
+const IF_CERTAIN_MESSAGE = "If you are certain this is the full, correct address, you may use it without verification.";
+const MUST_PROVIDE_ADDRESS_MESSAGE = "You must enter an address or partial address to verify.";
+const UNVERIFIED_WARNING_MESSAGE = "Location is not verified. Only submit this form if you are certain you have entered the full, correct address."
+const VERIFIED_MESSAGE = "Address is verified!";
 
 AddressVerifierView.prototype.renderAddressVerifier = function () {
 
     var self = this; // preserve refernece to "this" for use inside functions.
 
-    // Add verify button ///////////////////////////////////////////
-    var $button = this.$('<input>', {
+    this._setUpVerifyButton();
+    this._setUpInputFieldAndAutocomplete();
+
+};
+
+AddressVerifierView.prototype._setUpVerifyButton = function () {
+    var self = this;
+    this.$button = this.$('<input>', {
         type: 'button',
         value: self.settings.verify_button_text,
-        class: 'button button--primary js-form-submit form-submit btn-verify'
+        class: 'button button--primary js-form-submit form-submit btn-verify',
+        // display: 'inline-block'
     }).on('click', function (event) {
         // prevent default behavior
         event.preventDefault();
@@ -36,56 +50,44 @@ AddressVerifierView.prototype.renderAddressVerifier = function () {
         // NOTE: Portland Maps API for location suggestions doesn't work property when an ampersand is used to identify intersections
         var address = self.$input.val().replace("&", "and");
         if (address.length >= 3) {
-            self._addressSearch(address);
+            self._showSuggestions(address);
         } else {
-            self._showStatusModal("You must enter an address or partial address to verify.");
+            self._showStatusModal(`<p>${MUST_PROVIDE_ADDRESS_MESSAGE}</p>`);
         }
     });
-
-    this.$button = $button;
-
-    this.$input.after(this.$button);
     this.$input.css({
         display: 'inline-block',
         marginRight: '10px;'
     });
-    this.$button.css({
-        display: 'inline-block'
-    })
 
-    //set up pick links
-    this.$(document).on('click', 'a.pick', function (e) {
-        e.preventDefault();
-        var item = self.$(this).data('item');
-        // now that the user has made a selection, pass back the single candidate
-        self.$input.val(item.fullAddress);
-        self._setVerified($checkmark, this.$button, self.$element, item);
-        self.$suggestModal.dialog('close');
-    });
+    this.$status = this.$(`<div id="statusMessage" class="status-message invisible"></div>`);
+    this.$input.after(this.$status);
 
-    // Add verified checkmark ///////////////////////////////////
-    this.$checkmark = this.$('<span class="verified-checkmark address invisible" title="Location is verified!">✓</span>');
+    this.$input.after(this.$button);
+
+    this.$checkmark = this.$('<span class="fa fas checkmark invisible" title="Location is verified!"></span>');
     this.$input.after(this.$checkmark);
 
-    // Configure address field ////////////////////////////////////
+}
 
-    // disable form submit when pressing enter; force user to use autocomplete or verify button
+AddressVerifierView.prototype._setUpInputFieldAndAutocomplete = function () {
+
+    var self = this;
+
     this.$input.on('keydown', function (e) {
         if (e.keyCode == 13) {
             e.preventDefault();
-            this.$button.click();
+            self.$button.click();
             return false;
         }
     });
 
-    // unset verify if address field value changes
     this.$input.on('keyup', function () {
         if (self.$(this).val().length > 3 && self.isVerified) {
-            self._setUnverified(self.$checkmark, self.$button);
+            self._resetUnverified(self.$checkmark, self.$button);
         }
     });
 
-    // set up autocomplete
     this.$input.autocomplete({
         source: function (request, response) {
             // Call the model method to fetch autocomplete items
@@ -118,58 +120,63 @@ AddressVerifierView.prototype.renderAddressVerifier = function () {
                 return li;
             };
         }
-    })
+    });
 
-};
+}
 
-AddressVerifierView.prototype._addressSearch = function (address) {
+AddressVerifierView.prototype._showSuggestions = function (address) {
     // alert(address);
     var self = this;
     this._resetSuggestModal();
     this.model.fetchAutocompleteItems(address)
         .done(function (locationItems) {
-            // if only 1 returned item, use it immediately
-            if (locationItems.length > 1) {
+
+            if (locationItems.length > 0) {
                 // Pass the locationItems to the response callback
                 var list = self.$("<ul></ul>");
                 locationItems.map(function (item) {
-
                     var strData = JSON.stringify(item);
-                    var listItem = self.$(`<li><a href=\"#\" class="pick"
+                    var listItem = self.$(`<li><a href=\"#\" class="pick btn btn-primary"
                         data-item='${strData}'>${item.fullAddress}</a></li>`);
+                    listItem.find('a.pick').on('click', function (e) {
+                        e.preventDefault();
+                        var item = self.$(this).data('item');
+                        // now that the user has made a selection, pass back the single candidate
+                        self.$input.val(item.fullAddress);
+                        self._setVerified(self.$checkmark, self.$button, self.$element, item);
+                        self.$suggestModal.dialog('close');
+                    });
                     list.append(listItem);
-
                 });
+                var listInfo = self.$('<p><em>Select one of the verified addresses below.</em></p>');
+                self.$suggestModal.append(listInfo);
+                var notFound = self.$(`<li><a href=\"#\" class="pick-not-found btn btn-secondary not-found"
+                    data-item=''>My address is not listed</a></li>`);
+                notFound.find('a.pick-not-found').on('click', function (e) {
+                    e.preventDefault();
+                    self.$suggestModal.dialog('close');
+                    self._showNotFoundModal();
+                });
+                list.append(notFound);
                 self.$suggestModal.append(list);
                 Drupal.dialog(self.$suggestModal, {
-                    title: 'Multiple possible matches found',
+                    title: 'Possible matches found',
                     width: '600px',
                     buttons: [{
                         text: 'Close',
+                        class: 'btn-primary',
                         click: function () {
                             self.$(this).dialog('close');
                         }
                     }]
                 }).showModal();
                 self.$suggestModal.removeClass('visually-hidden');
-            } else if (locationItems.length == 1) {
-                // the suggest API may have returned a single address that is close but incorrect, 
-                // so don't assume it's a verified match; need to test it or ask the user.
-                if (self.testIsMatch(self.$element, locationItems[0])) {
-                    self._setVerified(self.$checkmark, self.$button, self.$element, locationItems[0]);
-                } else {
-                    var markup = "<strong>We could not find an exact address match for the address &quot;" + self.$input.val().toUpperCase() + "&quot;.</strong> Please select which address you'd like to use.<br>";
-                    markup += "<br>You entered:<br><input type=\"button\" value=\"" + self.$input.val().toUpperCase() + "\" class=\"button button--primary\" style=\"display: inline-block;\">";
-                    markup += "<br><br>We found<br><input type=\"button\" value=\"" + locationItems[0].fullAddress + "\" class=\"button button--primary\" style=\"display: inline-block;\">";
-                    markup += "<br><br><input type=\"button\" value=\"None of the above\" class=\"button button--primary\" style=\"display: inline-block;\">";
-                    self._showStatusModal(markup);
-                }
-                
-            } else {
+
+            } else if (locationItems.length == 0) {
                 // none found, display message
-                self._showStatusModal("<strong>The address you entered could not be verified.</strong> If you are certain this is the correct address, you may proceed without verification.");
+                self._showNotFoundModal();
             }
-            
+
         })
         .fail(function (error) {
             console.error('Error fetching autocomplete items:', error);
@@ -181,13 +188,37 @@ AddressVerifierView.prototype._resetSuggestModal = function () {
     this.$suggestModal.html("");
 }
 
-AddressVerifierView.prototype._showStatusModal = function (message) {
+AddressVerifierView.prototype._showNotFoundModal = function () {
+    var self = this;
+    var inputVal = self.$input.val().trim();
+    this.$notFoundModal.html(`<p><strong>${NOT_VERIFIED_MESSAGE}</strong></p><p>${IF_CERTAIN_MESSAGE}</p><p><input type="text" id="enteredAddress" class="form-text form-control" value="${inputVal}"></p>`);
+    Drupal.dialog(this.$notFoundModal, {
+        width: '600px',
+        buttons: [{
+            text: "Use this address",
+            class: 'btn-primary',
+            click: function () {
+                self.$notFoundModal.dialog('close');
+                self._useUnverified()
+            }
+        }, {
+            text: "Cancel",
+            class: 'btn-default',
+            click: function () {
+                self.$notFoundModal.dialog('close');
+            }
+        }]
+    }).showModal();
+    this.$notFoundModal.removeClass('visually-hidden');
+}
+
+AddressVerifierView.prototype._showStatusModal = function (message, buttonText = "Close") {
     var self = this;
     this.$statusModal.html('<p class="status-message mb-0">' + message + '</p>');
     Drupal.dialog(this.$statusModal, {
         width: '600px',
         buttons: [{
-            text: 'Close',
+            text: buttonText,
             class: 'btn-primary',
             click: function () {
                 self.$statusModal.dialog('close');
@@ -197,14 +228,16 @@ AddressVerifierView.prototype._showStatusModal = function (message) {
     this.$statusModal.removeClass('visually-hidden');
 }
 
-AddressVerifierView.prototype.testIsMatch = function($element, item) {
+AddressVerifierView.prototype.testIsMatch = function ($element, item) {
     return item.fullAddress.toUpperCase().startsWith($element.find('#location_address').val().toUpperCase());
 }
 
 AddressVerifierView.prototype._setVerified = function ($checkmark, $button, $element, item) {
     // NOTE: Suggest API might return a positive match even if the address isn't exactly the same.
     // (e.g. "123 Baldwin St N" vs "123 N Baldwin ST"). If it's not an exact match,
-    $checkmark.removeClass("invisible");
+    $checkmark.removeClass("invisible").addClass("fa-solid fa-check verified");
+    this.$status.text(VERIFIED_MESSAGE).removeClass("invisible").addClass("verified");
+
     $button.prop("disabled", "disabled");
     $button.removeClass("button--primary");
     $button.addClass("disabled button--info");
@@ -227,8 +260,9 @@ AddressVerifierView.prototype._setVerified = function ($checkmark, $button, $ele
     console.log(JSON.stringify(item));
 }
 
-AddressVerifierView.prototype._setUnverified = function ($checkmark, $button) {
-    $checkmark.addClass("invisible");
+AddressVerifierView.prototype._resetUnverified = function ($checkmark, $button) {
+    $checkmark.addClass("invisible").removeClass("fa-triangle-exclamation fa-check verified unverified");
+    this.$status.removeClass("verified unverified").addClass("invisible").text("");
     $button.prop('disabled', false);
     $button.removeClass("disabled button--info");
     $button.addClass("button--primary");
@@ -249,6 +283,17 @@ AddressVerifierView.prototype._setUnverified = function ($checkmark, $button) {
     $element.find('#location_y').val("");
     $element.find('#address_label').val("");
     this.isVerified = false;
+}
+
+AddressVerifierView.prototype._useUnverified = function () {
+    this.$checkmark.removeClass("invisible").addClass("fa-triangle-exclamation unverified");
+    this.$status.removeClass("invisible").addClass("unverified").text(UNVERIFIED_WARNING_MESSAGE);
+    var input = this.$notFoundModal.find("#enteredAddress").val();
+    this.$input.val(input);
+    this.$button.prop("disabled", "disabled");
+    this.$button.removeClass("button--primary");
+    this.$button.addClass("disabled button--info");
+    this.isVerified = true;
 }
 
 AddressVerifierView.prototype.updateAddressUI = function (address) {

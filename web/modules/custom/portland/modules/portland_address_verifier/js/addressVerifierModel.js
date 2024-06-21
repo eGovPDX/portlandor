@@ -7,12 +7,16 @@ AddressVerifierModel.locationItem = function (data, isSingleton = false) {
         data.address = arrAddress[0];
     }
     this.fullAddress = AddressVerifierModel.buildFullAddress(data).toUpperCase();
-    this.displayAddress = data.address.toUpperCase() + ', ' + data.attributes.city.toUpperCase();
+    this.displayAddress = data.address.toUpperCase() + ', ' + data.attributes.jurisdiction.toUpperCase();
     this.street = data.address.toUpperCase();
-    this.streetNumber = "";
-    this.streetQuadrant = "";
-    this.streetName = "";
-    this.city = data.attributes.city.toUpperCase();
+    this.streetNumber = data.attributes.address_number;
+    this.streetQuadrant = data.attributes.street_direction;
+    this.streetDirectionSuffix = data.attributes.street_direction_suffix.trim();
+    this.streetName = data.attributes.street_name + " " + data.attributes.street_type;
+    if (this.streetDirectionSuffix) {
+        this.streetName += " " + this.streetDirectionSuffix;
+    }
+    this.city = data.attributes.jurisdiction.toUpperCase();
     this.state = data.attributes.state.toUpperCase();
     this.zipCode = data.attributes.zip_code;
     this.lat = data.attributes.lat;
@@ -20,8 +24,6 @@ AddressVerifierModel.locationItem = function (data, isSingleton = false) {
     this.x = data.location.x;
     this.y = data.location.y;
     this.unit = "";
-
-    this.parseStreetData(data.address);
 }
 
 function AddressVerifierModel(jQuery, element, apiKey) {
@@ -32,7 +34,7 @@ function AddressVerifierModel(jQuery, element, apiKey) {
 
 AddressVerifierModel.prototype.fetchAutocompleteItems = function (addrSearch) {
     const apiKey = this.apiKey;
-    const apiUrl = `https://www.portlandmaps.com/api/suggest/?intersections=1&landmarks=1&alt_coords=1&api_key=${apiKey}&query=${encodeURIComponent(addrSearch)}`;
+    const apiUrl = `https://www.portlandmaps.com/api/suggest/?intersections=1&elements=1&landmarks=1&alt_coords=1&api_key=${apiKey}&query=${encodeURIComponent(addrSearch)}`;
 
     return this.$.ajax({
         url: apiUrl,
@@ -76,7 +78,7 @@ AddressVerifierModel.locationItem.prototype.parseStreetData = function(street) {
 // static functions
 
 AddressVerifierModel.buildFullAddress = function (item) {
-    return [item.address, item.attributes.city ? item.attributes.city + ', ' + item.attributes.state : '']
+    return [item.address, item.attributes.jurisdiction ? item.attributes.jurisdiction + ', ' + item.attributes.state : '']
         .filter(Boolean)
         .join(', ')
         + (item.attributes.zip_code ? ' ' + item.attributes.zip_code : '');
