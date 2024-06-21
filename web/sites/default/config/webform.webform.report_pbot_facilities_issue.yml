@@ -17,7 +17,7 @@ categories: {  }
 elements: |-
   markup_urgent_public:
     '#type': webform_markup
-    '#markup': '<div class="alert alert--warning next-steps"><p class="mb-0"><strong>If this is an emergency or life-safety issue, please call 911. For a security issue occurring now or to request assistance, call </strong><a class="text-nowrap" href="tel:+15038237777"><strong>503-823-7777</strong></a><strong>.&nbsp;</strong>For general security information, please visit the City''s <a href="https://employees.portland.gov/security">Integrated Security information page</a> on the Employees intranet.</p></div>'
+    '#markup': '<div class="alert alert--info next-steps mb-2"><p class="mb-0">Use this form for all PBOT buildings except the Portland Building. For Portland Building facilities issues, please use the <a href="https://app.smartsheet.com/b/form/6ae2bbc110fc44e9a281478239726435">PBOT Portland Building Facilities Request Intake</a> form.</p></div><div class="alert alert--warning next-steps"><p class="mb-0"><strong>If this is an emergency or life-safety issue, please call 911. For a security issue occurring now or to request assistance, call </strong><a class="text-nowrap" href="tel:+15038237777"><strong>503-823-7777</strong></a><strong>.&nbsp;</strong>For general security information, please visit the City''s <a href="https://employees.portland.gov/security">Integrated Security information page</a> on the Employees intranet.</p></div>'
   report_property:
     '#type': select
     '#title': 'Chose the PBOT property where the issue is located'
@@ -39,7 +39,7 @@ elements: |-
       'Gibbs Street Pedestrian Bridge (Elevator)': 'Gibbs Street Pedestrian Bridge (Elevator)'
     '#required': true
   report_impact:
-    '#type': checkboxes
+    '#type': radios
     '#title': 'What is the level of impact?'
     '#description': '<p>To help us gauge the severity of the issue</p>'
     '#description_display': before
@@ -51,7 +51,7 @@ elements: |-
       Discretionary: 'Discretionary -- Work that is desired but not essential to protect, preserve, or restore facilities and equipment'
     '#required': true
   report_issue_type:
-    '#type': webform_checkboxes_other
+    '#type': webform_radios_other
     '#title': 'What needs attention?'
     '#options':
       'Doors – general/access': 'Doors – general/access'
@@ -73,7 +73,7 @@ elements: |-
       'Plumbing – leaks, not working, clog': 'Plumbing – leaks, not working, clog'
       'Roof/Ceiling – general': 'Roof/Ceiling – general'
       'Roof/Ceiling – leak': 'Roof/Ceiling – leak'
-      'Walls – patch, paint': 'Walls – patch, paint, hanging'
+      'Walls – patch, paint, hanging': 'Walls – patch, paint, hanging'
       'Windows – repair, replace': 'Windows – repair, replace'
       'Setup – meeting/event/trainings': 'Setup – meeting/event/trainings -- (describe below)'
     '#required': true
@@ -84,7 +84,6 @@ elements: |-
   report_due_date:
     '#type': date
     '#title': 'Required by date'
-    '#datepicker': true
   report_file_upload:
     '#type': webform_image_file
     '#title': 'File Upload'
@@ -101,13 +100,14 @@ elements: |-
     '#pattern_error': 'Please enter a correctly formatted email address, such as myname@example.com.'
   computed_issue_types:
     '#type': webform_computed_twig
-    '#title': 'Computed Issue Types'
+    '#title': 'Computed Issue Type'
     '#display_on': none
     '#mode': text
     '#template': |-
       {% set element_options = elements.report_issue_type['#options'] %}
+      {{dump(element_options)}}
       {# we want to filter out the "other" field #}
-      {{ data.report_issue_type|default([])|map(v => v in element_options ? v : 'Other')|join('\n') }}
+      {{ data.report_issue_type in (element_options|keys) ? data.report_issue_type : 'Other' }}
   computed_other_issue_type:
     '#type': webform_computed_twig
     '#title': 'Computed Other Issue Type'
@@ -116,7 +116,7 @@ elements: |-
     '#template': |-
       {% set element_options = elements.report_issue_type['#options'] %}
       {# we want only the "other" field #}
-      {{ (data.report_issue_type|default([])|filter(v => v not in element_options))|join('') }}
+      {{ data.report_issue_type not in (element_options|keys) ? data.report_issue_type : '' }}
   report_send_copy:
     '#type': checkbox
     '#title': 'Send me a copy of this request'
