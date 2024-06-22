@@ -858,10 +858,10 @@
           var inLayer = leafletPip.pointInLayer(latlng, testLayer, false);
           if (inLayer.length > 0) {
             // NOTE: The following code would be problematic if we allow multiple copies of the widget or alternate naming conventions.
-            $('input[name=' + elementId + '\\[location_region_id\\]]').val(inLayer[0].feature.properties[regionIdPropertyName]);
+            $('input[name=' + elementId + '\\[location_region_id\\]]').val(inLayer[0].feature.properties[regionIdPropertyName]).trigger('change');
           } else {
             // clear region_id field
-            $('input[name=' + elementId + '\\[location_region_id\\]]').val("");
+            $('input[name=' + elementId + '\\[location_region_id\\]]').val("").trigger('change');
           }
           hideLoader();
         }
@@ -928,7 +928,7 @@
           $('input[name=' + elementId + '\\[location_x\\]]').val('');
           $('input[name=' + elementId + '\\[location_y\\]]').val('');
           $('input[name=' + elementId + '\\[location_asset_id\\]]').val('');
-          $('input[name=' + elementId + '\\[location_region_id\\]]').val('');
+          $('input[name=' + elementId + '\\[location_region_id\\]]').val('').trigger('change');
           $('input[name=' + elementId + '\\[location_municipality_name\\]]').val('');
           $('input[name=' + elementId + '\\[location_attributes\\]]').val('');
 
