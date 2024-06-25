@@ -81,6 +81,7 @@ AddressVerifierView.prototype._setUpUnitNumberField = function () {
         if (json) {
             var item = JSON.parse(json);
             item.unit = unit;
+            self.$element.find('#location_address_label').val(AddressVerifierModel.buildMailingLabel(item, self.$element));
             self.$element.find('#mailing_label').html(AddressVerifierModel.buildMailingLabel(item, self.$element, true));
         }
     });
