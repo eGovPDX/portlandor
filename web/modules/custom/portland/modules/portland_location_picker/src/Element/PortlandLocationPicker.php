@@ -79,21 +79,6 @@ class PortlandLocationPicker extends WebformCompositeBase {
       '#title' => t('Location Address'),
       '#attributes' => ['class' => ['location-picker-address'], 'autocomplete' => 'off', 'id' => 'location_address']
     ];
-    $element['location_street_number'] = [
-      '#type' => 'hidden',
-      '#title' => t('Street Number'),
-      '#attributes' => ['id' => 'location_street_number']
-    ];
-    $element['location_street_quadrant'] = [
-      '#type' => 'hidden',
-      '#title' => t('Street Quadrant'),
-      '#attributes' => ['id' => 'location_street_quadrant']
-    ];
-    $element['location_street_name'] = [
-      '#type' => 'hidden',
-      '#title' => t('Street Name'),
-      '#attributes' => ['id' => 'location_street_name']
-    ];
     $element['location_types'] = [
       '#type' => 'hidden',
       '#title' => t('Location types'),
@@ -143,10 +128,6 @@ class PortlandLocationPicker extends WebformCompositeBase {
       $location_required_error = "Please select an asset on the map that you'd like to report. You may need to zoom in to see asset markers, or there may not be any reportable assets within view.";
     }
 
-    // NOTE: the title for this element should be Latitude, but it can't be changed without
-    //       going through the CGIS change process, so leave it for now. It doesn't make a
-    //       difference for the handlers, but the data extraction processes use the title and 
-    //       will break when it's changed.
     $element['location_lat'] = [
       '#type' => 'hidden',
       '#title' => t('Location'),
