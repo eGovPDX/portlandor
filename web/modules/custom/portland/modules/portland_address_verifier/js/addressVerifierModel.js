@@ -98,7 +98,7 @@ AddressVerifierModel.buildMailingLabel = function (item, $element, useHtml = fal
     var unit = $element.find('#unit_number').val();
     var label = item.street;
     if (item.unit) {
-        label += " " + unit;
+        label += " " + unit.toUpperCase();
     }
     label += lineBreak + item.city + ", " + item.state + " " + item.zipCode;
     return label;
