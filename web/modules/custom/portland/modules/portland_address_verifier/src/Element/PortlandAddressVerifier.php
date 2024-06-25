@@ -58,7 +58,8 @@ class PortlandAddressVerifier extends WebformCompositeBase {
     ];
     $element['container_unit'] = [
       '#type' => 'container',
-      '#id' => 'container_unit'
+      '#id' => 'container_unit',
+      '#title' => 'container_unit' // undefined array key #title error thrown if no title on this container (?!)
     ];
     $element['container_unit']['has_unit'] = [
       '#type' => 'checkbox',
