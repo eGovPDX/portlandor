@@ -79,6 +79,21 @@ class PortlandLocationPicker extends WebformCompositeBase {
       '#title' => t('Location Address'),
       '#attributes' => ['class' => ['location-picker-address'], 'autocomplete' => 'off', 'id' => 'location_address']
     ];
+    $element['location_street_number'] = [
+      '#type' => 'hidden',
+      '#title' => t('Street Number'),
+      '#attributes' => ['id' => 'location_street_number']
+    ];
+    $element['location_street_quadrant'] = [
+      '#type' => 'hidden',
+      '#title' => t('Street Quadrant'),
+      '#attributes' => ['id' => 'location_street_quadrant']
+    ];
+    $element['location_street_name'] = [
+      '#type' => 'hidden',
+      '#title' => t('Street Name'),
+      '#attributes' => ['id' => 'location_street_name']
+    ];
     $element['location_types'] = [
       '#type' => 'hidden',
       '#title' => t('Location types'),
