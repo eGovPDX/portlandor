@@ -1,4 +1,4 @@
-AddressVerifierModel.locationItem = function (data, isSingleton = false) {
+AddressVerifierModel.locationItem = function (data, $element = null, isSingleton = false) {
 
     // PortlandMaps sends incorrectly formatted address data if there is only 1 suggestion to return.
     // If a singleton, the isSingleton flag will be true, and we'll do some kludgey string manipulation.
@@ -6,12 +6,12 @@ AddressVerifierModel.locationItem = function (data, isSingleton = false) {
         var arrAddress = data.address.split(', ');
         data.address = arrAddress[0];
     }
-    this.fullAddress = AddressVerifierModel.buildFullAddress(data).toUpperCase();
+    this.fullAddress = AddressVerifierModel.buildFullAddress(data, $element).toUpperCase();
     this.displayAddress = data.address.toUpperCase() + ', ' + data.attributes.jurisdiction.toUpperCase();
     this.street = data.address.toUpperCase();
     this.streetNumber = data.attributes.address_number;
     this.streetQuadrant = data.attributes.street_direction;
-    this.streetDirectionSuffix = data.attributes.street_direction_suffix.trim();
+    this.streetDirectionSuffix = data.attributes.street_direction_suffix ? data.attributes.street_direction_suffix.trim() : "";
     this.streetName = data.attributes.street_name + " " + data.attributes.street_type;
     if (this.streetDirectionSuffix) {
         this.streetName += " " + this.streetDirectionSuffix;
@@ -32,7 +32,7 @@ function AddressVerifierModel(jQuery, element, apiKey) {
     this.apiKey = apiKey;
 }
 
-AddressVerifierModel.prototype.fetchAutocompleteItems = function (addrSearch) {
+AddressVerifierModel.prototype.fetchAutocompleteItems = function (addrSearch, $element) {
     const apiKey = this.apiKey;
     const apiUrl = `https://www.portlandmaps.com/api/suggest/?intersections=1&elements=1&landmarks=1&alt_coords=1&api_key=${apiKey}&query=${encodeURIComponent(addrSearch)}`;
 
@@ -48,12 +48,12 @@ AddressVerifierModel.prototype.fetchAutocompleteItems = function (addrSearch) {
             
             if (response.candidates.length > 1) {
                 return response.candidates.map(function(candidate) {
-                    var retItem = new AddressVerifierModel.locationItem(candidate);
+                    var retItem = new AddressVerifierModel.locationItem(candidate, $element);
                     return retItem;
                 });
             } else if (response.candidates.length == 1) {
                 return response.candidates.map(function(candidate) {
-                    var retItem = new AddressVerifierModel.locationItem(candidate, true);
+                    var retItem = new AddressVerifierModel.locationItem(candidate, $element, true);
                     return retItem;
                 });
             } else {
@@ -77,19 +77,30 @@ AddressVerifierModel.locationItem.prototype.parseStreetData = function(street) {
 
 // static functions
 
-AddressVerifierModel.buildFullAddress = function (item) {
-    return [item.address, item.attributes.jurisdiction ? item.attributes.jurisdiction + ', ' + item.attributes.state : '']
+AddressVerifierModel.buildFullAddress = function (item, $element) {
+    var streetAddress = item.address + (item.unit ? " " + item.unit : "");
+    return [streetAddress, item.attributes.jurisdiction ? item.attributes.jurisdiction + ', ' + item.attributes.state : '']
         .filter(Boolean)
         .join(', ')
         + (item.attributes.zip_code ? ' ' + item.attributes.zip_code : '');
 }
 
-AddressVerifierModel.buildMailingLabel = function (item) {
+AddressVerifierModel.updateFullAddress = function (item, $element) {
+    var streetAddress = item.street + (item.unit ? " " + item.unit : "");
+    return [streetAddress, item.city ? item.city + ', ' + item.state : '']
+        .filter(Boolean)
+        .join(', ')
+        + (item.zip ? ' ' + item.attributes.zip_code : '');
+}
+
+AddressVerifierModel.buildMailingLabel = function (item, $element, useHtml = false) {
+    var lineBreak = useHtml ? "<br>" : "\r\n";
+    var unit = $element.find('#unit_number').val();
     var label = item.street;
     if (item.unit) {
-        label += ", UNIT " + item.unit;
+        label += " " + unit;
     }
-    label += "\r\n" + item.city + ", " + item.state + " " + item.zipCode;
+    label += lineBreak + item.city + ", " + item.state + " " + item.zipCode;
     return label;
 }
 

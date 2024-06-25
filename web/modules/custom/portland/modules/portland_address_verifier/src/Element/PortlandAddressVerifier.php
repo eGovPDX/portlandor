@@ -51,15 +51,46 @@ class PortlandAddressVerifier extends WebformCompositeBase {
       '#title' => t('Address'),
       '#id' => 'location_address',
       '#attributes' => ['autocomplete' => 'off'],
-      '#description' => t('Please enter your full address and verify it, or begin typing to see a list of possible matches.'),
+      '#description' => t('Begin typing to see a list of possible address matches. Do not incude unit number.'),
       '#description_display' => 'before',
+      '#required' => TRUE,
+      '#required_error' => 'Please enter an address and verify it.'
     ];
-    $element['unit_number'] = [
+    $element['container_unit'] = [
+      '#type' => 'container',
+      '#id' => 'container_unit'
+    ];
+    $element['container_unit']['has_unit'] = [
+      '#type' => 'checkbox',
+      '#title' => t('This address has a unit number (apartment, suite, floor, unit, etc.)'),
+      '#id' => 'has_unit',
+    ];
+    $element['container_unit']['unit_number'] = [
       '#type' => 'textfield',
       '#title' => t('Unit Number'),
       '#id' => 'unit_number',
       '#attributes' => ['autocomplete' => 'off'],
-      '#placeholder' => t('e.g. 101, APT 101, or UNIT 101'),
+      // '#description' => t('If there is an apartment, suite, floor or other unit number, enter it here exactly as it should appear in your address.'),
+      // '#description_display' => 'before',
+      '#placeholder' => t('e.g. #101, APT 101, or UNIT 101'),
+      '#states' => [
+        'visible' => [
+          ':input[id="has_unit"]' => ['checked' => TRUE],
+        ],
+      ],
+    ];
+    $element['location_address_label_markup'] = [
+      '#type' => 'markup',
+      '#title' => t('Mailing label example'),
+      '#title_display' => 'invisible',
+      // '#help' => t('This is how the address would appear on a mailing label.'),
+      // '#help_display' => 'title_after',
+      '#markup' => '<div id="location_address_label_markup" class="mailing-label d-none"><p><em>This is how the address would appear on a mailing label:</em></p><div id="mailing_label"></div></div>',
+      // '#states' => [
+      //   'hidden' => [
+      //     ':input[id="location_address"]' => ['filled' => FALSE],
+      //   ],
+      // ],
     ];
     $element['suggestions_modal'] = [
       '#type' => 'markup',
@@ -134,10 +165,23 @@ class PortlandAddressVerifier extends WebformCompositeBase {
       '#title' => t('Coordinates Y'),
       '#attributes' => [ 'id' => 'location_y']
     ];
+    $element['location_address_label'] = [
+      '#type' => 'hidden',
+      '#title' => t('Address Label'),
+      '#attributes' => [ 'id' => 'location_address_label']
+    ];
     $element['location_verification_status'] = [
       '#type' => 'hidden',
       '#title' => t('Verification Status'),
-      '#attributes' => [ 'id' => 'location_verification_status']
+      '#required' => TRUE,
+      '#attributes' => [ 'id' => 'location_verification_status'],
+      '#required' => TRUE,
+      '#required_error' => 'Please verify the address before continuing.'
+    ];
+    $element['location_data'] = [
+      '#type' => 'hidden',
+      '#title' => t('Location Data'),
+      '#attributes' => [ 'id' => 'location_data']
     ];
 
     return $element;

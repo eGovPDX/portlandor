@@ -20,10 +20,11 @@ var $element;
 var $input;
 var $suggestModal;
 var $statusModal;
-const NOT_VERIFIED_MESSAGE = "The address you entered could not be verified.";
+const NOT_VERIFIED_MESSAGE = "We're unable to verify this address.";
+const NOT_VERIFIED_REASONS = "This sometimes happens with new addresses, PO boxes, and some multi-family buildings.";
 const IF_CERTAIN_MESSAGE = "If you are certain this is the full, correct address, you may use it without verification.";
 const MUST_PROVIDE_ADDRESS_MESSAGE = "You must enter an address or partial address to verify.";
-const UNVERIFIED_WARNING_MESSAGE = "We're unable to verify this address. Please make sure you've entered the full, correct address before submitting."
+const UNVERIFIED_WARNING_MESSAGE = "We're unable to verify this address. If you're certain this is the full, correct address, you may proceed without verification."
 const VERIFIED_MESSAGE = "Address is verified!";
 
 AddressVerifierView.prototype.renderAddressVerifier = function () {
@@ -32,6 +33,7 @@ AddressVerifierView.prototype.renderAddressVerifier = function () {
 
     this._setUpVerifyButton();
     this._setUpInputFieldAndAutocomplete();
+    this._setUpUnitNumberField();
 
 };
 
@@ -65,9 +67,23 @@ AddressVerifierView.prototype._setUpVerifyButton = function () {
 
     this.$input.after(this.$button);
 
-    this.$checkmark = this.$('<span class="fa fas checkmark invisible" title="Location is verified!"></span>');
+    this.$checkmark = this.$('<span class="fa fas checkmark invisible"></span>');
     this.$input.after(this.$checkmark);
 
+}
+
+AddressVerifierView.prototype._setUpUnitNumberField = function () {
+    var self = this;
+    // add onchange handler to unit number field to add unit number to address
+    this.$element.find('#unit_number').on('keyup', function (e) {
+        var unit = self.$(this).val();
+        var json = self.$element.find('#location_data').val();
+        if (json) {
+            var item = JSON.parse(json);
+            item.unit = unit;
+            self.$element.find('#mailing_label').html(AddressVerifierModel.buildMailingLabel(item, self.$element, true));
+        }
+    });
 }
 
 AddressVerifierView.prototype._setUpInputFieldAndAutocomplete = function () {
@@ -84,14 +100,14 @@ AddressVerifierView.prototype._setUpInputFieldAndAutocomplete = function () {
 
     this.$input.on('keyup', function () {
         if (self.$(this).val().length > 3 && self.isVerified) {
-            self._resetUnverified(self.$checkmark, self.$button);
+            self._resetVerified(self.$checkmark, self.$button);
         }
     });
 
     this.$input.autocomplete({
         source: function (request, response) {
             // Call the model method to fetch autocomplete items
-            self.model.fetchAutocompleteItems(request.term)
+            self.model.fetchAutocompleteItems(request.term, self.$element)
                 .done(function (locationItems) {
                     // Pass the locationItems to the response callback
                     response(locationItems);
@@ -191,7 +207,7 @@ AddressVerifierView.prototype._resetSuggestModal = function () {
 AddressVerifierView.prototype._showNotFoundModal = function () {
     var self = this;
     var inputVal = self.$input.val().trim();
-    this.$notFoundModal.html(`<p><strong>${NOT_VERIFIED_MESSAGE}</strong></p><p>${IF_CERTAIN_MESSAGE}</p><p><input type="text" id="enteredAddress" class="form-text form-control" value="${inputVal}"></p>`);
+    this.$notFoundModal.html(`<p><strong>${NOT_VERIFIED_MESSAGE}</strong> ${NOT_VERIFIED_REASONS}</p><p>${IF_CERTAIN_MESSAGE}</p><p><input type="text" id="enteredAddress" class="form-text form-control" value="${inputVal}"></p>`);
     Drupal.dialog(this.$notFoundModal, {
         width: '600px',
         buttons: [{
@@ -233,6 +249,10 @@ AddressVerifierView.prototype.testIsMatch = function ($element, item) {
 }
 
 AddressVerifierView.prototype._setVerified = function ($checkmark, $button, $element, item) {
+
+    // first reset
+    this._resetVerified($checkmark, $button);
+
     // NOTE: Suggest API might return a positive match even if the address isn't exactly the same.
     // (e.g. "123 Baldwin St N" vs "123 N Baldwin ST"). If it's not an exact match,
     $checkmark.removeClass("invisible").addClass("fa-solid fa-check verified");
@@ -255,12 +275,16 @@ AddressVerifierView.prototype._setVerified = function ($checkmark, $button, $ele
     $element.find('#location_lon').val(item.lon);
     $element.find('#location_x').val(item.x);
     $element.find('#location_y').val(item.y);
-    $element.find('#location_address_label').val(AddressVerifierModel.buildMailingLabel(item));
+    $element.find('#location_address_label').val(AddressVerifierModel.buildMailingLabel(item, this.$element));
+    $element.find('#mailing_label').html(AddressVerifierModel.buildMailingLabel(item, this.$element, true));
+    $element.find('#location_address_label_markup').removeClass('d-none');
+    $element.find('#location_verification_status').val("Verified");
+    $element.find('#location_data').val(JSON.stringify(item));
     this.isVerified = true;
     console.log(JSON.stringify(item));
 }
 
-AddressVerifierView.prototype._resetUnverified = function ($checkmark, $button) {
+AddressVerifierView.prototype._resetVerified = function ($checkmark, $button) {
     $checkmark.addClass("invisible").removeClass("fa-triangle-exclamation fa-check verified unverified");
     this.$status.removeClass("verified unverified").addClass("invisible").text("");
     $button.prop('disabled', false);
@@ -282,17 +306,28 @@ AddressVerifierView.prototype._resetUnverified = function ($checkmark, $button) 
     $element.find('#location_x').val("");
     $element.find('#location_y').val("");
     $element.find('#address_label').val("");
+    $element.find('#location_address_label_markup').addClass('d-none');
+    $element.find('#location_verification_status').val("");
+    $element.find('#location_data').val("");
+    this.$element.find('#container_unit').removeClass('d-none');
+    this.$element.find('#location_address_label_markup').removeClass('d-none');
     this.isVerified = false;
 }
 
+// use this function to force an override
 AddressVerifierView.prototype._useUnverified = function () {
-    this.$checkmark.removeClass("invisible").addClass("fa-triangle-exclamation unverified");
+    this.$checkmark.addClass("invisible");
+    this.$status.addClass("invisible");
+    // this.$checkmark.removeClass("invisible").addClass("fa-triangle-exclamation unverified");
     this.$status.removeClass("invisible").addClass("unverified").text(UNVERIFIED_WARNING_MESSAGE);
     var input = this.$notFoundModal.find("#enteredAddress").val();
     this.$input.val(input);
     this.$button.prop("disabled", "disabled");
     this.$button.removeClass("button--primary");
     this.$button.addClass("disabled button--info");
+    this.$element.find('#location_verification_status').val("Forced");
+    this.$element.find('#container_unit').addClass('d-none');
+    this.$element.find('#location_address_label_markup').addClass('d-none');
     this.isVerified = true;
 }
 

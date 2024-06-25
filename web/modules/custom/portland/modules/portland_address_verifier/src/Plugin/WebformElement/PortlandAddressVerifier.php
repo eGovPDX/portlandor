@@ -32,11 +32,23 @@ class PortlandAddressVerifier extends WebformCompositeBase {
   protected function formatHtmlItemValue(array $element, WebformSubmissionInterface $webform_submission, array $options = []) {
     $value = $this->getValue($element, $webform_submission, $options);
 
-    // this text string is used as a display value for the field value, and is what is returned by the parent
+    // this content is used as a display value for the field value, and is what is returned by the parent
     // level token, such as [webform_submission:values:location]. If more granular field sub-field values are
     // needed, such as in a handler that is sending data to an external system, the sub-field needs to be
     // specified in the token, such as [webform_submission:values:location:place_name].
-    return '<a href="https://www.google.com/maps/place/' . $value['location_address'] . '">' . $value['location_address'] . '</a>';
+    $lines = [];
+    $address;
+
+    if ($value['location_verification_status'] == 'Verified') {
+      $address = $value['address_label'];
+      $address = str_replace("\r\n", "<br>", $label);
+    } else {
+      $address = $value['location_address'];
+    }
+
+    $lines[] = $address;
+    //$lines[] = '<a href="https://www.google.com/maps/place/' . $value['location_address'] . '">' . $value['location_address'] . '</a>';
+    return $lines;
   }
 
   /**
@@ -45,11 +57,22 @@ class PortlandAddressVerifier extends WebformCompositeBase {
   protected function formatTextItemValue(array $element, WebformSubmissionInterface $webform_submission, array $options = []) {
     $value = $this->getValue($element, $webform_submission, $options);
 
-    // this text string is used as a display value for the field value, and is what is returned by the parent
+    // this content is used as a display value for the field value, and is what is returned by the parent
     // level token, such as [webform_submission:values:location]. If more granular field sub-field values are
     // needed, such as in a handler that is sending data to an external system, the sub-field needs to be
     // specified in the token, such as [webform_submission:values:location:place_name].
-    return $value['location_address'] . "Unit number:" . $value['unit_number'];
+    $lines = [];
+    $address;
+
+    if ($value['location_verification_status'] == 'Verified') {
+      $address = $value['address_label'];
+      $address = str_replace("<br>", "\r\n", $label);
+    } else {
+      $address = $value['location_address'];
+    }
+
+    $lines[] = $address;
+    return $lines;
   }
 
     /**
