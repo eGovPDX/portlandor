@@ -53,7 +53,7 @@ class PortlandAddressVerifier extends WebformCompositeBase {
       '#attributes' => ['autocomplete' => 'off'],
       '#description' => t('Begin typing to see a list of possible address matches. Do not incude unit number.'),
       '#description_display' => 'before',
-      '#required' => TRUE,
+      // '#required' => TRUE,
       '#required_error' => 'Please enter an address and verify it.'
     ];
     $element['container_unit'] = [
@@ -174,9 +174,8 @@ class PortlandAddressVerifier extends WebformCompositeBase {
     $element['location_verification_status'] = [
       '#type' => 'hidden',
       '#title' => t('Verification Status'),
-      '#required' => TRUE,
       '#attributes' => [ 'id' => 'location_verification_status'],
-      '#required' => TRUE,
+      // '#required' => TRUE,
       '#required_error' => 'Please verify the address before continuing.'
     ];
     $element['location_data'] = [
