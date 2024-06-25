@@ -115,21 +115,21 @@ class SmartsheetHandler extends WebformHandlerBase {
       foreach ($webform_fields as $key => $value) {
         $title = $value['#admin_title'] ?? $value['#title'] ?? NULL;
         if (empty($title)) continue;
-        if (array_key_exists("#webform_composite_elements", $value)) {
-          // there are child elements
-          foreach ($value['#webform_composite_elements'] as $key2 => $value2) {
-            if (!str_starts_with($key2, "#")) {
-              // if it doesn't start with #, it's a sub-element
-              $subkey = $key . ":" . $key2;
-              if (array_key_exists('#title', $value2)) {
-                $subvalue = $title . " > " . $value2["#title"];
-                $options[$subkey] = $subvalue;
-              }
-            }
-          }
-        } else {
+        // if (array_key_exists("#webform_composite_elements", $value)) {
+        //   // there are child elements
+        //   foreach ($value['#webform_composite_elements'] as $key2 => $value2) {
+        //     if (!str_starts_with($key2, "#")) {
+        //       // if it doesn't start with #, it's a sub-element
+        //       $subkey = $key . ":" . $key2;
+        //       if (array_key_exists('#title', $value2)) {
+        //         $subvalue = $title . " > " . $value2["#title"];
+        //         $options[$subkey] = $subvalue;
+        //       }
+        //     }
+        //   }
+        // } else {
           $options[$key] = $title;
-        }
+        // }
       }
 
       $form['column_mappings_container']['table']['#rows'] = array_map(
