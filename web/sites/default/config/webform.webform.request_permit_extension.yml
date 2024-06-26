@@ -20,7 +20,7 @@ elements: |-
     '#title': 'What do you need to do?'
     '#options':
       extension: 'I need to request a permit extension'
-      reactivation: 'reacI need to request a permit reactivation (my permit is expired)tivation'
+      reactivation: 'I need to request a permit reactivation (my permit is expired)'
     '#required': true
   request_permit_number:
     '#type': textfield
@@ -46,8 +46,10 @@ elements: |-
   computed_address:
     '#type': webform_computed_twig
     '#title': 'Computed Address'
+    '#display_on': none
     '#mode': text
     '#template': '{{ data.request_address.location_address }}'
+    '#whitespace': trim
     '#ajax': true
   section_contact:
     '#type': webform_section
@@ -57,14 +59,23 @@ elements: |-
       '#title': Name
       '#required': true
     contact_who_are_you:
-      '#type': webform_checkboxes_other
+      '#type': checkboxes
       '#title': 'Who are you?'
       '#options':
         Applicant: Applicant
         Contractor: Contractor
         'Property owner': 'Property owner'
+        Other: Other...
       '#other__placeholder': 'Please describe...'
       '#required': true
+    contact_who_are_you_other:
+      '#type': textfield
+      '#title': 'Please describe your role'
+      '#required': true
+      '#states':
+        visible:
+          ':input[name="contact_who_are_you[Other]"]':
+            checked: true
     contact_email:
       '#type': textfield
       '#title': Email
@@ -76,11 +87,13 @@ elements: |-
       '#title': Phone
       '#input_mask': '(999) 999-9999'
       '#required': true
-  test:
-    '#type': webform_computed_twig
-    '#title': Test
-    '#template': Test
-    '#ajax': true
+    computed_role:
+      '#type': webform_computed_twig
+      '#title': 'Computed Role'
+      '#display_on': none
+      '#mode': text
+      '#template': '{{ data.contact_who_are_you|join("\n") }}'
+      '#whitespace': trim
 css: "#location_map {\r\n  display: none;\r\n}"
 javascript: ''
 settings:
@@ -275,7 +288,7 @@ handlers:
     weight: 0
     settings:
       column_mappings:
-        8724217527750532: ''
+        8724217527750532: __submission_id
         835432253181828: ''
         561443203141508: ''
         851529119518596: ''
@@ -283,18 +296,18 @@ handlers:
         7287296949964676: ''
         2201079985950596: request_type
         7316842644197252: request_permit_number
-        6190942737354628: ''
+        6190942737354628: computed_address
         3939142923669380: contact_name
-        8442742551039876: contact_who_are_you
-        5596308340428676: request_please_describe
+        8442742551039876: computed_role
+        5596308340428676: contact_who_are_you_other
         1124393156562820: contact_phone
         5627992783933316: contact_email
         2250293063405444: ''
         6753892690775940: ''
         4502092877090692: ''
         9005692504461188: ''
-      multiple_rows_enable: null
-      multiple_rows_field: ''
+      multiple_rows_enable: '1'
+      multiple_rows_field: request_permit_number
       multiple_rows_separator: ''
       row_location: toTop
       sheet_id: '1112415651450756'
