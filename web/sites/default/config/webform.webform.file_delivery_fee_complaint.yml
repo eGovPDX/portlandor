@@ -8,6 +8,7 @@ dependencies:
 third_party_settings:
   portland:
     disable_demographic_form_prompt: 0
+    exclude_from_json: {  }
 weight: 0
 open: null
 close: null
@@ -15,28 +16,27 @@ uid: 221
 template: false
 archive: false
 id: file_delivery_fee_complaint
-title: 'File a Delivery Fee Complaint'
+title: 'File Third-Party Food Platform Complaint'
 description: ''
 categories:
   - Report
 elements: |-
-  confidentiality_opt_in:
-    '#type': radios
-    '#title': 'Do you want the City to keep the information in your submission confidential?'
-    '#description': '<p>Complete information, including your contact information, is required to investigate your complaint and provide assistance. This information may be considered a public record and the City may be required to release it if a public records request is made under Oregon&rsquo;s&nbsp;<a data-renderer-mark="true" href="https://www.doj.state.or.us/oregon-department-of-justice/public-records/attorney-generals-public-records-and-meetings-manual/i-public-records/#:~:text=Under%20Oregon''s%20Public%20Records%20Law,committee%20of%20the%20Legislative%20Assembly" title="https://www.doj.state.or.us/oregon-department-of-justice/public-records/attorney-generals-public-records-and-meetings-manual/i-public-records/#:~:text=Under%20Oregon''s%20Public%20Records%20Law,committee%20of%20the%20Legislative%20Assembly">Public Records Law</a>. If you prefer, the City will attempt to keep your information confidential in the event of a public records request. If you request confidentiality, it will limit the City&rsquo;s ability to share information which may limit the City&rsquo;s ability to resolve your specific issue.</p>'
-    '#description_display': before
-    '#options':
-      'No': 'I am not requesting confidentiality.'
-      'Yes': 'I am requesting that the City keep my contact information confidential -- I am submitting my contact information with the expectation that the City will keep it confidential and will only disclose it if ordered to do so. I would not submit this information without the promise of confidentiality. I understand this may limit the City’s ability to resolve my issue.'
-    '#required': true
-    '#default_value': 'No'
   file_complaintee_name:
     '#type': textfield
-    '#title': 'Name of the third-party delivery platform (company) alleged to have committed violation'
+    '#title': 'Name of the third-party food platform (company) alleged to have committed a violation'
+    '#description': '<p><strong>If submitting complaints for multiple platforms, you must submit a separate complaint for each.</strong></p>'
+    '#description_display': before
     '#required': true
+  file_number_of_occurances:
+    '#type': number
+    '#title': 'Enter the number of times you believe a violation occurred.'
+    '#required': true
+    '#min': 1
+    '#step': 1
   file_date_and_occurances:
     '#type': textarea
-    '#title': 'Enter the date(s) of the alleged violation(s) and the number of times on each date you believe a violation occurred.'
+    '#title': 'Enter the date(s) of the alleged violation(s).'
+    '#required': true
   file_complainant_type:
     '#type': select
     '#title': 'Are you filing on behalf of a restaurant or as a delivery driver?'
@@ -106,6 +106,10 @@ elements: |-
         ':input[name="file_complainant_type"]':
           value: 'Delivery Driver'
     '#min': 0
+  file_violation_description:
+    '#type': textarea
+    '#title': 'Please explain the reason(s) you believe the third-party food platform violated <a href="/code/7/27">Portland City Code Chapter 7.27</a>.'
+    '#required': true
   file_documentation:
     '#type': managed_file
     '#title': 'Upload documentation'
@@ -131,6 +135,16 @@ elements: |-
       '#type': textfield
       '#title': Phone
       '#input_mask': '(999) 999-9999'
+    confidentiality_opt_in:
+      '#type': radios
+      '#title': 'Do you want the City to keep the information in your submission confidential?'
+      '#description': '<p>Complete information, including your contact information, is required to investigate your complaint and provide assistance. This information may be considered a public record and the City may be required to release it if a public records request is made under Oregon’s&nbsp;<a href="https://www.doj.state.or.us/oregon-department-of-justice/public-records/attorney-generals-public-records-and-meetings-manual/i-public-records/#:~:text=Under%20Oregon&apos;s%20Public%20Records%20Law,committee%20of%20the%20Legislative%20Assembly" data-renderer-mark="true" title="https://www.doj.state.or.us/oregon-department-of-justice/public-records/attorney-generals-public-records-and-meetings-manual/i-public-records/#:~:text=Under%20Oregon&apos;s%20Public%20Records%20Law,committee%20of%20the%20Legislative%20Assembly">Public Records Law</a>. If you prefer, the City will attempt to keep your information confidential in the event of a public records request. <strong>If you request confidentiality, it will prevent the City from pursuing refund requests on behalf of your organization.</strong></p>'
+      '#description_display': before
+      '#options':
+        'No': 'I am not requesting confidentiality.'
+        'Yes': 'I am requesting that the City keep my contact information confidential -- I am submitting my contact information with the expectation that the City will keep it confidential and will only disclose it if ordered to do so. I would not submit this information without the promise of confidentiality. I understand this may limit the City’s ability to resolve my issue.'
+      '#required': true
+      '#default_value': 'No'
   computed_restaurant_location:
     '#type': webform_computed_token
     '#title': 'Computed Restaurant Location'
@@ -140,6 +154,10 @@ elements: |-
       [webform_submission:values:file_restaurant_location_street_address]
       [webform_submission:values:file_restaurant_location_unit_type:clear] [webform_submission:values:file_restaurant_location_unit_number]
       [webform_submission:values:file_restaurant_location_city], [webform_submission:values:file_restaurant_location_state] [webform_submission:values:file_restaurant_location_zip_code]
+  file_complaint_received_via:
+    '#type': hidden
+    '#title': 'Complaint Received Via (static value for Smartsheet handler)'
+    '#default_value': website
 css: ''
 javascript: ''
 settings:
@@ -337,10 +355,22 @@ handlers:
         4161810290659204: ''
         1630141818032004: __submission_id
         7511763537796: contact_name
+        5224087956705156: ''
+        1342427832209284: ''
+        5846027459579780: ''
+        1116312515334020: ''
+        2468327739051908: ''
+        5619912142704516: ''
+        3368112329019268: ''
+        6971927366422404: ''
+        216527925366660: file_complaint_received_via
+        4720127552737156: ''
         4511111390908292: contact_phone
         2259311577223044: contact_email
         6762911204593540: file_complaintee_name
         1133411670380420: file_date_and_occurances
+        2852784019033988: file_number_of_occurances
+        2676434809343876: file_violation_description
         5637011297750916: file_complainant_type
         6133741445402500: file_restaurant_name
         3881941631717252: computed_restaurant_location
@@ -378,20 +408,11 @@ handlers:
       sender_mail: ''
       sender_name: ''
       subject: 'Delivery Fee Complaint Received'
-      body: "<p>Thank you for submitting your Delivery Fee Complaint.</p>\r\n\r\n<p>A staff member will contact you if additional information is needed.</p>\r\n\r\n<p>If you need to contact us, please email <a href=\"mailto:RevDivPermits@portlandoregon.gov\">RevDivPermits@portlandoregon.gov</a> or call us at (503) 823-5157.</p>"
+      body: '<p><em><strong>This is an automated message, please do not reply.</strong></em></p><p>Thank you for submitting your Delivery Fee Complaint.</p><p>A staff member will contact you if additional information is needed.</p><p>If you need to contact us, please email <a href="mailto:RevDivPermits@portlandoregon.gov">RevDivPermits@portlandoregon.gov</a> or call us at (503) 865-2488.</p><h2>Complaint details</h2><p>[webform_submission:values:html]</p>'
       excluded_elements:
-        file_complaintee_name: file_complaintee_name
-        file_date_and_occurances: file_date_and_occurances
-        file_complainant_type: file_complainant_type
-        file_restaurant_name: file_restaurant_name
-        file_restaurant_location: file_restaurant_location
-        file_compensation_amount_restaurant: file_compensation_amount_restaurant
-        file_compensation_amount_delivery_driver: file_compensation_amount_delivery_driver
-        file_documentation_file_upload: file_documentation_file_upload
-        contact_name: contact_name
-        contact_email: contact_email
-        contact_phone: contact_phone
+        file_documentation: file_documentation
         computed_restaurant_location: computed_restaurant_location
+        file_complaint_received_via: file_complaint_received_via
       ignore_access: false
       exclude_empty: true
       exclude_empty_checkbox: false

@@ -19,28 +19,36 @@ commands:
           paths:
             - ".git"
   install_terminus_and_login:
-    steps:
+    steps:     
+      - run:
+          name: Get latest Terminus release
+          command: |
+            echo 'export TERMINUS_RELEASE=$(curl --silent "https://api.github.com/repos/pantheon-systems/terminus/releases/latest" | jq -r .tag_name)'  >> $BASH_ENV && source $BASH_ENV
+            echo $TERMINUS_RELEASE > ~/terminus_release.txt
+            echo "Latest Terminus release: $TERMINUS_RELEASE"
       - restore_cache:
           name: Restore Terminus Cache
           keys:
-            - terminus-cache-v4-{{ checksum "composer.lock" }}
-            - terminus-cache-v4-
+            - terminus-cache-v1-{{ checksum "~/terminus_release.txt" }}
+            - terminus-cache-v1-
       - run:
           name: Install Terminus
           command: |
-            export TERMINUS_RELEASE=$(curl --silent "https://api.github.com/repos/pantheon-systems/terminus/releases/latest" | jq -r .tag_name)
             export CURRENT_TERMINUS_VERSION=$(~/terminus/terminus self:info --field terminus_version 2>/dev/null)
+            echo "Latest Terminus release: $TERMINUS_RELEASE"
+            echo "Current Terminus version: $CURRENT_TERMINUS_VERSION"
             if [ ! -d "$HOME/terminus" ] || [ "$CURRENT_TERMINUS_VERSION" != $TERMINUS_RELEASE ]; then
-              mkdir ~/terminus && cd ~/terminus
+              mkdir -p ~/terminus && cd ~/terminus
               echo "Installing Terminus v$TERMINUS_RELEASE"
               curl -L https://github.com/pantheon-systems/terminus/releases/download/$TERMINUS_RELEASE/terminus.phar --output terminus
               chmod +x terminus
+              ./terminus self:plugin:reload
               ./terminus self:plugin:install terminus-build-tools-plugin
             fi
             echo 'export PATH=$PATH:~/terminus' >> $BASH_ENV
       - save_cache:
           name: Save Terminus cache
-          key: terminus-cache-v4-{{ checksum "composer.lock" }}
+          key: terminus-cache-v1-{{ checksum "~/terminus_release.txt" }}
           paths:
             - ~/terminus
             - ~/.terminus
@@ -256,6 +264,9 @@ build_and_deploy: &build_and_deploy
           echo "Rebuilding cache..."
           terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- cr
 
+          # Post our custom Solr schema to Pantheon's Solr server
+          terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- search-api-pantheon:postSchema pantheon_solr8 ../private/solr-conf
+          
           if [[ $CIRCLE_BRANCH != "master" ]]; then
             # Begin indexing the Solr server. For new multidevs, indexing will take some time
             # and will continue running after the CircleCI build finishes.
@@ -550,4 +561,3 @@ workflows:
   #           branches:
   #             only:
   #               # - master
-  #               - powr-3508
