@@ -3,9 +3,31 @@
   {% if group_label %}
     {% include '@components/badge/badge.twig' with {
       text: group_label,
-      mb: 8
+      mb: 8,
+      me: 4
     } only %}
   {% endif %}
+  {% set service_area %}
+  {% if content.field_service_area %}
+    {% for item in content.field_service_area %}
+      {% if item['#options']['entity'] %}
+        {% set term = item['#options']['entity'] %}
+        {% if term.id and term.label %}
+          {% include '@components/link/link.twig' with{
+            background: false,
+            standalone: false,
+            icon: {
+              name: link.icon.name,
+              fontAwesome: link.icon.fontAwesome,
+            },
+            text: term.label,
+            url: path('entity.taxonomy_term.canonical', {'taxonomy_term': term.id})
+          }%}
+        {% endif %}
+      {% endif %}
+    {% endfor %}
+  {% endif %}
+  {% endset %}
 {% endset %}
 
 {% set heading %}
@@ -18,7 +40,8 @@
 {% set header_left %}
   {{ heading }}
   {{ overline }}
-  <div class="mb-2">{{ content.group_date }}</div>
+  {{ content.group_date }}
+  {{ service_area }}
   {{ content.field_summary }}
 {% endset %}
 

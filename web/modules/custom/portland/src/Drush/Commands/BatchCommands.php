@@ -222,6 +222,7 @@ final class BatchCommands extends DrushCommands
     'field_parent_group',
     'field_featured_groups',
     'field_search_keywords',
+    'field_service_area',
     'field_summary',
     'field_topics',
     // Advisory group only fields
