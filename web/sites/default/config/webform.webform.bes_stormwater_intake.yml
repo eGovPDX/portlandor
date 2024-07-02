@@ -220,6 +220,20 @@ elements: |-
       actions:
         '#type': webform_actions
         '#title': 'Submit button(s)'
+      support_agent_use_only:
+        '#type': portland_support_agent_widget
+        '#title': 'Support Agent Use Only'
+        '#access_create_roles':
+          - authenticated
+        '#zendesk_request_number__access': false
+        '#employee_notes_panel__access': false
+        '#escalate_issue__access': false
+      computed_staff_agent:
+        '#type': webform_computed_twig
+        '#title': 'Computed Staff Agent'
+        '#display_on': none
+        '#template': '{{ data.support_agent_use_only.employee_email }}'
+        '#ajax': true
 css: "#location_map {\r\n  display: none;\r\n}\r\n\r\n.webform-readonly input[type=number] {\r\n  background: #fff;\r\n}"
 javascript: "(function ($) {\r\n  Drupal.behaviors.stormwaterTierCalculator = {\r\n    attach() {\r\n      let stormwaterTier = undefined;\r\n\r\n      $(\"#edit-section-stormwater\").on(\"input\", (e) => {\r\n        if (e.target.name === \"stormwater_tier\") {\r\n          stormwaterTier = e.target.value;\r\n        }\r\n        \r\n        if (!stormwaterTier) return;\r\n        \r\n        const sqftTotal = Array.from(document.querySelectorAll(\"input[name^='sqft_']\"))\r\n          .map(el => el.valueAsNumber || 0)\r\n          .reduce((a, b) => a + b);\r\n        const tierChangeEl = $(\"input[name='hidden_tier_change']\");\r\n        let newTier = \"\";\r\n        if (sqftTotal <= 1500) {\r\n          newTier = \"small\";\r\n        } else if (sqftTotal > 1500 && sqftTotal <= 2700) {\r\n          newTier = \"standard\";\r\n        } else if (sqftTotal > 2700) {\r\n          newTier = \"large\";\r\n        }\r\n        \r\n        if (newTier === stormwaterTier) {\r\n          tierChangeEl.val(\"none\");\r\n        } else {\r\n          tierChangeEl.val(newTier);\r\n          $(\".new-tier\").text(newTier);\r\n        }\r\n\r\n        tierChangeEl.trigger(\"change\");\r\n      });\r\n    },\r\n  };\r\n\r\n  Drupal.behaviors.propertyIdAutofill = {\r\n    attach() {\r\n      $(\"input[name='report_location[location_attributes]']\").on(\"change\", (e) => {\r\n        const match = e.target.value.match(/Tax lot: (R\\d+)/);\r\n        if (match && match[1]) {\r\n          $(\"input[name='property_id']\").val(match[1]);\r\n        }\r\n      });\r\n    }\r\n  }\r\n\r\n  Drupal.behaviors.surfaceAreaCalculator = {\r\n    attach() {\r\n      const rectangleLengthEl = $(\"input[name='calculator_rectangle_length']\");\r\n      const rectangleWidthEl = $(\" input[name='calculator_rectangle_width']\"); \r\n      $([rectangleLengthEl[0], rectangleWidthEl[0]]).on(\"input\", () => {\r\n        const length = parseFloat(rectangleLengthEl.val()) || 0;\r\n        const width = parseFloat(rectangleWidthEl.val()) || 0;\r\n        $(\"input[name='calculator_rectangle_result']\").val(length * width);\r\n      });\r\n\r\n      const circleDiameterEl = $(\"input[name='calculator_circle_diameter']\");\r\n      $(circleDiameterEl).on(\"input\", () => {\r\n        const diameter = parseFloat(circleDiameterEl.val()) || 0;\r\n        $(\"input[name='calculator_circle_result']\").val(Math.round((diameter / 2) * diameter / 2 * Math.PI));\r\n      });\r\n    }\r\n  }\r\n})(jQuery);"
 settings:
@@ -410,7 +424,10 @@ handlers:
     label: 'Smartsheet: add row to existing sheet'
     notes: ''
     status: true
-    conditions: {  }
+    conditions:
+      enabled:
+        ':input[name="support_agent_use_only[test_submission]"]':
+          unchecked: true
     weight: -50
     settings:
       column_mappings:
@@ -427,6 +444,7 @@ handlers:
         7923926305820548: sqft_roof_area
         2929523585666948: sqft_driveway_and_parking
         4055423492509572: sqft_other_hard_surfaces
+        4189150116007812: computed_staff_agent
       multiple_rows_enable: null
       multiple_rows_field: ''
       multiple_rows_separator: ''
@@ -440,7 +458,7 @@ handlers:
     notes: ''
     status: true
     conditions: {  }
-    weight: -49
+    weight: -48
     settings:
       states:
         - completed
@@ -478,4 +496,37 @@ handlers:
       theme_name: ''
       parameters: {  }
       debug: false
+  test_smartsheet_add_row_to_existing_sheet:
+    id: smartsheet_add_row
+    handler_id: test_smartsheet_add_row_to_existing_sheet
+    label: 'TEST: Smartsheet: add row to existing sheet'
+    notes: 'Submits to test sheet when Test Submission box is checked'
+    status: true
+    conditions:
+      enabled:
+        ':input[name="support_agent_use_only[test_submission]"]':
+          checked: true
+    weight: -49
+    settings:
+      column_mappings:
+        230734712491908: __submission_id
+        4734334339862404: ''
+        2482534526177156: computed_location_address
+        6986134153547652: property_id
+        1356634619334532: water_account_number
+        5860234246705028: stormwater_tier
+        3608434433019780: contact_name
+        8112034060390276: contact_email
+        793684665913220: contact_phone
+        5297284293283716: preferred_communication_method
+        3045484479598468: sqft_roof_area
+        7549084106968964: sqft_driveway_and_parking
+        1919584572755844: sqft_other_hard_surfaces
+        4208992864915332: computed_staff_agent
+      multiple_rows_enable: null
+      multiple_rows_field: ''
+      multiple_rows_separator: ''
+      row_location: toBottom
+      sheet_id: '3271659838459780'
+      upload_attachments: '1'
 variants: {  }
