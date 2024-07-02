@@ -26,6 +26,7 @@ class RedirectList extends FieldItemList implements FieldItemListInterface {
       $redirects = \Drupal::service('redirect.repository')->findByDestinationUri(["internal:/$type/$nid", "entity:$type/$nid"]);
       $delta = 0;
       foreach($redirects as $key => $redirect) {
+        if($redirect->language->value !== 'en') continue;
         $this->list[$delta] = $this->createItem($delta, '/' . $redirect->getSource()['path']);
         $delta += 1;
       }
