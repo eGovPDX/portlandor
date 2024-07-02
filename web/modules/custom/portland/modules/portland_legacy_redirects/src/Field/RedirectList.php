@@ -5,6 +5,7 @@ namespace Drupal\portland_legacy_redirects\Field;
 use Drupal\Core\Field\FieldItemList;
 use Drupal\Core\TypedData\ComputedItemListTrait;
 use Drupal\Core\Field\FieldItemListInterface;
+use Drupal\Core\Language\LanguageInterface;
 use Drupal\redirect\Entity\Redirect;
 
 /**
@@ -22,11 +23,12 @@ class RedirectList extends FieldItemList implements FieldItemListInterface {
     $entity = $this->getEntity();
     $nid = $entity->Id();
     $type = $entity->getEntityTypeId();
+    $content_lang = \Drupal::languageManager()->getCurrentLanguage(LanguageInterface::TYPE_CONTENT)->getId();
     if ($nid && $type) {
       $redirects = \Drupal::service('redirect.repository')->findByDestinationUri(["internal:/$type/$nid", "entity:$type/$nid"]);
       $delta = 0;
-      foreach($redirects as $key => $redirect) {
-        if($redirect->language->value !== 'en') continue;
+      foreach ($redirects as $key => $redirect) {
+        if ($redirect->language->value !== $content_lang) continue;
         $this->list[$delta] = $this->createItem($delta, '/' . $redirect->getSource()['path']);
         $delta += 1;
       }
