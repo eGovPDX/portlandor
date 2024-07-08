@@ -940,7 +940,7 @@
 
         function setLocationDetails(results) {
           var location_type = "";
-          $('input[name=' + elementId + '\\[location_types\\]]').val("");
+          $('input[name^=' + elementId + '\\[location_type]').val("");
           $('input[name=' + elementId + '\\[location_attributes\\]]').val("");
           var internal_details = "";
           var type_count = 0;
@@ -1012,15 +1012,9 @@
             $('input[name=' + elementId + '\\[location_zipcode\\]]').val(zipcode);
           }
 
+          $('input[name=' + elementId + '\\[location_attributes\\]]').trigger('change');
           $('input[name=' + elementId + '\\[location_municipality_name\\]]').trigger('change');
-          $('input[name=' + elementId + '\\[location_type_taxlot\\]]').trigger('change');
-          $('input[name=' + elementId + '\\[location_type_park\\]]').trigger('change');
-          $('input[name=' + elementId + '\\[location_type_waterbody\\]]').trigger('change');
-          $('input[name=' + elementId + '\\[location_type_trail\\]]').trigger('change');
-          $('input[name=' + elementId + '\\[location_type_stream\\]]').trigger('change');
-          $('input[name=' + elementId + '\\[location_type_street\\]]').trigger('change');
-          $('input[name=' + elementId + '\\[location_type_row\\]]').trigger('change');
-
+          $('input[name^=' + elementId + '\\[location_type]').trigger('change');
         }
 
         function removeTrailingComma(myStr) {
