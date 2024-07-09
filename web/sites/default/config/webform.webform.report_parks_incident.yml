@@ -175,6 +175,8 @@ elements: |-
       '#description': '<ul><li>What happened and where?&nbsp;</li><li>Who was involved/injured?&nbsp;</li><li>Who witnessed it?</li><li>Suspect information, if any?</li><li>Estimated repair costs, if any?</li></ul>'
       '#description_display': before
       '#required': true
+      '#counter_type': character
+      '#counter_maximum': 2000
     report_photo:
       '#type': webform_image_file
       '#title': Photo
@@ -371,6 +373,7 @@ elements: |-
   computed_issue_description:
     '#type': webform_computed_twig
     '#title': 'Computed Issue Description'
+    '#display_on': none
     '#mode': html
     '#template': |+
       <p><strong>Reporting organization</strong>: {{ data.report_organization }}</p>
@@ -426,15 +429,28 @@ elements: |-
 
       {% if data.details_other_steps or data.details_police_info or data.details_file_upload|length > 0 %}
         <p><strong>Additional details:</strong><br>
-        {% if data.details_other_steps %}{{ data.details_other_steps is iterable ? '' : data.details_other_steps }}<br>{% endif %}
-        {% if data.details_police_info %}<strong>PPB case info:</strong>{{ data.details_police_info }}<br>{% endif %}
+        {% if data.details_other_steps|length > 0 %}
+          <ul>
+          {% for value in data.details_other_steps %}
+           <li>{{ value }}</li>
+          {% endfor %}
+          </ul>
+        {% endif %}
+        {% if data.details_police_info %}<strong>PPB case info:</strong> {{ data.details_police_info }}<br><br>{% endif %}
         {% if data.details_file_upload|length > 0 %}
-          Uploaded files: {{ data.details_file_upload|length }}
+          <strong>Uploaded case files:</strong> {{ data.details_file_upload|length }}
         {% endif %}</p>
       {% endif %}
 
     '#whitespace': spaceless
     '#ajax': true
+  computed_subject:
+    '#type': webform_computed_twig
+    '#title': 'Computed Subject'
+    '#display_on': none
+    '#mode': text
+    '#template': '{{ data.report_issue_category }}'
+    '#whitespace': spaceless
 css: ''
 javascript: ''
 settings:
@@ -542,7 +558,7 @@ settings:
   confirmation_type: page
   confirmation_url: ''
   confirmation_title: ''
-  confirmation_message: '<p>[webform_submission:values:computed_issue_description]</p>'
+  confirmation_message: ''
   confirmation_attributes: {  }
   confirmation_back: true
   confirmation_back_label: ''
@@ -624,7 +640,7 @@ handlers:
     handler_id: zendesk_new_request
     label: 'Zendesk new request'
     notes: ''
-    status: false
+    status: true
     conditions:
       enabled:
         ':input[name="support_agent_use_only[test_submission]"]':
@@ -633,8 +649,8 @@ handlers:
     settings:
       requester_name: contact_name
       requester_email: contact_email
-      subject: 'New Parks Incident Report'
-      comment: '[webform_submission:values:html]'
+      subject: '[webform_submission:values:computed_subject]'
+      comment: '[webform_submission:values:computed_issue_description:html]'
       tags: 'drupal webform'
       priority: normal
       status: new
@@ -643,35 +659,7 @@ handlers:
       assignee_id: ''
       type: incident
       collaborators: ''
-      custom_fields: ''
-      ticket_id_field: request_ticket_id
-      ticket_fork_field: ''
-      ticket_form_id: '4990038807319'
-  test_zendesk_new_request:
-    id: zendesk
-    handler_id: test_zendesk_new_request
-    label: 'TEST: Zendesk new request'
-    notes: ''
-    status: false
-    conditions:
-      enabled:
-        ':input[name="support_agent_use_only[test_submission]"]':
-          unchecked: true
-    weight: 2
-    settings:
-      requester_name: contact_name
-      requester_email: contact_email
-      subject: 'New Parks Incident Report'
-      comment: '[webform_submission:values:html]'
-      tags: 'drupal webform'
-      priority: normal
-      status: new
-      recipient: ''
-      group_id: '4549352062487'
-      assignee_id: ''
-      type: incident
-      collaborators: ''
-      custom_fields: ''
+      custom_fields: "6353388345367: 'report_parks_incident'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n1500013095781: '[webform_submission:uuid]'\r\n"
       ticket_id_field: request_ticket_id
       ticket_fork_field: ''
       ticket_form_id: '4990038807319'
