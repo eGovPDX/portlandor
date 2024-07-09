@@ -1,0 +1,613 @@
+uuid: 8f4132b5-4c63-45c4-b3a0-f4c71cecc3ba
+langcode: en
+status: open
+dependencies:
+  module:
+    - portland
+    - portland_smartsheet
+third_party_settings:
+  portland:
+    disable_demographic_form_prompt: 0
+    exclude_from_json: {  }
+weight: 0
+open: null
+close: null
+uid: 221
+template: false
+archive: false
+id: apply_cooling_unit
+title: 'Apply for a Cooling Unit'
+description: "<p>This webform utilizes some custom CSS and JS for the functionality.</p><ul><li><strong>Custom CSS - </strong>The CSS hides the location picker map as we only use the widget for the address verification field.</li><li><strong>Custom JS - </strong>The JS provides two behaviors:</li><li><strong>Eligibility checker - </strong>The `eligibilityChecker` behavior checks the entered address + unit number against the CoolingSearch API, when the continue button on the first page is clicked. If there's an error or user is ineligible, it will be displayed and the user cannot continue.</li><li><strong>Income calculator - </strong>The `incomeCalculator` behavior calculates the maximum program income limit based on the HUD 2023 60% Median Income limits. This calculated number is then displayed as part of an eligibility question to which the user must answer Yes in order to continue.&nbsp;</li></ul>"
+categories: {  }
+elements: |-
+  page_eligibility:
+    '#type': webform_wizard_page
+    '#title': Eligibility
+    '#next_button_label': Continue
+    eligibility_section:
+      '#type': webform_section
+      '#title': 'Eligibility Questions'
+      '#description': '<p>Questions in this section will determine if you are eligible to receive a cooling unit.</p>'
+      apply_household_size:
+        '#type': number
+        '#title': 'How many people live in your household?'
+        '#description': '<p>Household generally means all residents within a dwelling who are included on a single federal or state joint tax return (for example, taxfiler, spouse and dependents).</p>'
+        '#description_display': before
+        '#min': 1
+        '#max': 99
+        '#step': 1
+        '#required': true
+      apply_income_qualifies:
+        '#type': radios
+        '#title': 'Is your total household income LESS than <span class="income-yearly">$0</span> per year (<span class="income-monthly">$0</span>/month)?'
+        '#options': yes_no
+        '#required': true
+        '#states':
+          visible:
+            ':input[name="apply_household_size"]':
+              value:
+                greater: '0'
+      markup_stop_income_too_high:
+        '#type': webform_markup
+        '#states':
+          visible:
+            ':input[name="apply_income_qualifies"]':
+              value: 'No'
+        '#markup': |-
+          <div class="alert alert--info next-steps">
+          <h2>Ineligibility Notice</h2>
+
+          <p>Thank you. Unfortunately, the Cooling Portland program is only available to Portland residents who have a household income 60% or less of the Area Median Income. For your household, that threshold is <span class="income-yearly">$0</span> per year.</p>
+
+          <p>You may still be eligible for assistance through programs operated by other local organizations. We recommend you contact one of the following resources directly for information about available programs. Please note that not all programs will be suitable for every applicant, and many may not be able to provide immediate relief. If you have an urgent need for cooling assistance, please contact 211 for information on cooling shelters and transportation options.</p>
+
+          <ul>
+          	<li>For information on programs offered through medical providers, contact Health Share Oregon: <a href="tel:+1-503-416-8090">503-416-8090</a></li>
+          	<li>For information on programs offered through utility providers, contact Energy Trust of Oregon: <a href="tel:+1-866-368-7878">866-368-7878</a></li>
+          	<li>For additional home weatherization assistance, contact Multnomah County Department of Human Services at <a href="tel:+1-503-988-7423">503-988-7423</a></li>
+          </ul>
+          </div>
+      container_income_eligible:
+        '#type': container
+        '#states':
+          visible:
+            ':input[name="apply_income_qualifies"]':
+              value: 'Yes'
+        apply_previous_recipient:
+          '#type': radios
+          '#title': 'Do you currently have a functioning cooling unit?'
+          '#options': yes_no
+          '#required': true
+        markup_stop_already_have_unit:
+          '#type': webform_markup
+          '#states':
+            visible:
+              ':input[name="apply_previous_recipient"]':
+                value: 'Yes'
+          '#markup': |-
+            <div class="alert alert--info next-steps">
+            <h2>Ineligibility Notice</h2>
+
+            <p>Thank you. Unfortunately, the Cooling Portland program is designed to provide life-saving cooling units to those who are unable to maintain a safe and comfortable environment in their homes during extreme heat events. Our services are exclusively available to individuals who do not currently have a functioning cooling system.</p>
+            </div>
+    container_preliminarily_eligible:
+      '#type': container
+      '#states':
+        visible:
+          ':input[name="apply_previous_recipient"]':
+            value: 'No'
+      report_location:
+        '#type': portland_location_picker
+        '#title': 'Location Address'
+        '#location_search__title': 'Address where the unit is to be installed'
+        '#location_search__description': 'Enter your address and press Search, or select it from the dropdown.<br><em>IMPORTANT: Only enter the address where the unit will be installed.  We cannot use other addresses to determine eligibility.</em>'
+        '#precision_text__access': false
+        '#location_address__required': true
+        '#place_name__access': false
+        '#place_name__title': 'Unit Number'
+        '#place_name__placeholder': 'e.g. 101, APT 101 or UNIT 101'
+        '#location_details__access': false
+        '#address_verify': true
+        '#verify_button_text': Search
+      report_location_unit_number:
+        '#type': textfield
+        '#title': 'Unit Number'
+        '#placeholder': 'e.g. 101, APT 101 or UNIT 101'
+        '#states':
+          invisible:
+            ':input[name="report_location[location_municipality_name]"]':
+              '!value': Portland
+            ':input[name="report_location[location_address]"]':
+              '!value': ''
+      markup_out_of_bounds:
+        '#type': webform_markup
+        '#states':
+          visible:
+            ':input[name="report_location[location_address]"]':
+              '!value': ''
+            ':input[name="report_location[location_municipality_name]"]':
+              '!value': Portland
+        '#markup': '<div class="alert alert--info next-steps"><h2>Ineligibility Notice</h2><p>Thank you. Unfortunately, your home is not located within the City of Portland''s official boundaries, which means you do not qualify for the Cooling Portland program. You may still be eligible for assistance through programs operated by other local organizations.</p><p>We recommend you contact one of the following resources directly for information about available programs. Please note that not all programs will be suitable for every applicant, and many may not be able to provide immediate relief.</p><ul><li>If you have an urgent need for cooling assistance, please call <a href="tel:211">211</a> for information on cooling shelters and transportation options.</li><li>For information on programs offered through medical providers, contact Health Share Oregon: <a href="tel:+1-503-416-8090">503-416-8090</a></li><li>For information on programs offered through utility providers, contact Energy Trust of Oregon: <a href="tel:+1-866-368-7878">866-368-7878</a></li><li>For additional home weatherization assistance, contact Multnomah County Department of Human Services at <a href="tel:+1-503-988-7423">503-988-7423</a></li></ul><p><em>If you believe this message to be in error, please call </em><a href="tel:311"><em>3-1-1</em></a><em> or </em><a href="tel:+15038234000"><em>503-823-4000</em></a><em> so staff can assist you further.</em></p></div>'
+      markup_continue:
+        '#type': webform_markup
+        '#states':
+          visible:
+            ':input[name="report_location[location_address]"]':
+              value: ''
+            ':input[name="apply_csr_override"]':
+              checked: false
+        '#markup': '<p><strong>Please search for an address above to continue.</strong></p>'
+      coolingsearch_api_result:
+        '#type': hidden
+        '#title': 'CoolingSearch API Result'
+      apply_csr_override:
+        '#type': checkbox
+        '#title': '<strong>311 agents only:</strong> Address override'
+        '#description': "<p>Checking this box will bypass the address validation and continue with the form. <strong>Only use this if the address verification is not working and you have independently verified the community member's address is within the City of Portland.</strong></p>"
+        '#wrapper_attributes':
+          class:
+            - bg-light
+            - p-4
+        '#access_create_roles':
+          - authenticated
+      apply_csr_override_notes:
+        '#type': textfield
+        '#title': Notes
+        '#description': '<p>Provide any notes or requests (e.g. Spanish-speaking installer) from the community member. <strong>If address is overridden:</strong> you must provide a reason for overriding.&nbsp;</p>'
+        '#description_display': before
+        '#states':
+          required:
+            ':input[name="apply_csr_override"]':
+              checked: true
+        '#access_create_roles':
+          - authenticated
+      markup_check_eligibility:
+        '#type': webform_markup
+        '#states':
+          visible:
+            - ':input[name="report_location[location_municipality_name]"]':
+                value: Portland
+              ':input[name="report_location[location_address]"]':
+                '!value': ''
+              ':input[name="coolingsearch_api_result"]':
+                value: ''
+            - or
+            - ':input[name="apply_csr_override"]':
+                checked: true
+              ':input[name="coolingsearch_api_result"]':
+                value: ''
+        '#markup': '<p><strong>Please press continue below to check your eligibility.</strong></p>'
+      markup_error:
+        '#type': webform_markup
+        '#wrapper_attributes':
+          style: 'display: none;'
+        '#admin_title': 'Error Container'
+        '#markup': |-
+          <div class="alert alert--warning next-steps">
+            <p aria-live="polite" class="verification-error fw-bold"></p>
+            <p class="m-0"><em>If you believe this message to be in error, please call </em><a href="tel:311"><em>3-1-1</em></a><em> or </em><a href="tel:+15038234000"><em>503-823-4000</em></a><em> so staff can assist you further.</em></p>
+          </div>
+      actions:
+        '#type': webform_actions
+        '#title': 'Submit button(s)'
+        '#states':
+          visible:
+            - ':input[name="report_location[location_address]"]':
+                '!value': ''
+              ':input[name="report_location[location_municipality_name]"]':
+                value: Portland
+            - or
+            - ':input[name="apply_csr_override"]':
+                checked: true
+  page_priority:
+    '#type': webform_wizard_page
+    '#title': Priority
+    '#next_button_label': Continue
+    markup_address_eligible:
+      '#type': webform_markup
+      '#states':
+        visible:
+          ':input[name="coolingsearch_api_result"]':
+            value:
+              pattern: eligible|installed
+      '#markup': '<div class="alert alert--info next-steps"><h2>This address is eligible to receive a cooling unit</h2><p>Please continue with the form to apply.</p></div>'
+    apply_priority_section:
+      '#type': webform_section
+      '#title': 'Priority Questions'
+      '#description': "<p>This section of the form is to determine the priority we'll set when coordinating an installation.</p>"
+      apply_move_in_date:
+        '#type': date
+        '#title': 'Our records indicate that this address has already received a cooling unit. Please provide the date you moved in:'
+        '#required': true
+        '#states':
+          visible:
+            ':input[name="coolingsearch_api_result"]':
+              value: installed
+      computed_move_in_date:
+        '#type': webform_computed_twig
+        '#title': 'Computed Move-in Date in Smartsheet Format'
+        '#display_on': none
+        '#template': "{{ data.apply_move_in_date ? data.apply_move_in_date|date('c') : '' }}"
+      apply_vulnerabilities:
+        '#type': checkboxes
+        '#title': 'Do any of the following apply to your situation?'
+        '#options':
+          'Household member over 60 years of age': 'Household member over 60 years of age'
+          'Medical condition that increases risk of heat-related illness': 'Medical condition that increases risk of heat-related illness'
+          'Live alone': 'Live alone'
+    actions_01:
+      '#type': webform_actions
+      '#title': 'Submit button(s)'
+  page_contact:
+    '#type': webform_wizard_page
+    '#title': Contact
+    '#next_button_label': Submit
+    section_contact:
+      '#type': webform_section
+      '#title': 'Your Contact Information'
+      contact_name:
+        '#type': textfield
+        '#title': Name
+        '#required': true
+      contact_email:
+        '#type': textfield
+        '#title': Email
+        '#pattern': '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        '#pattern_error': 'Please enter a correctly formatted email address, such as myname@example.com.'
+      contact_phone:
+        '#type': textfield
+        '#title': Phone
+        '#required': true
+        '#input_mask': '(999) 999-9999'
+      contact_phone_secondary:
+        '#type': textfield
+        '#title': 'Secondary Phone'
+        '#description': '<p>To ensure we can coordinate your installation quicker, please provide a second phone number, if available.</p>'
+        '#description_display': before
+        '#input_mask': '(999) 999-9999'
+      support_agent_use_only:
+        '#type': portland_support_agent_widget
+        '#title': 'Support Agent Use Only'
+        '#zendesk_request_number__access': false
+        '#employee_notes_panel__access': false
+        '#escalate_issue__access': false
+        '#access_create_roles':
+          - authenticated
+  computed_location_address:
+    '#type': webform_computed_twig
+    '#title': 'Computed Location Address'
+    '#display_on': none
+    '#mode': text
+    '#template': '{{ data.report_location.location_address }}'
+  computed_location_latlon:
+    '#type': webform_computed_twig
+    '#title': 'Computed Location Lat/Lon'
+    '#display_on': none
+    '#mode': text
+    '#template': "{{ data.report_location.location_lat ? (data.report_location.location_lat ~ ',' ~ data.report_location.location_lon) : '' }}"
+  computed_vulnerabilities:
+    '#type': webform_computed_twig
+    '#title': 'Computed Vulnerabilities'
+    '#display_on': none
+    '#mode': text
+    '#template': '{{ data.apply_vulnerabilities|join("\n") }}'
+  computed_submitted_by_311:
+    '#type': webform_computed_twig
+    '#title': 'Computed Submitted by 311'
+    '#display_on': none
+    '#mode': text
+    '#template': '{{ data.support_agent_use_only and data.support_agent_use_only.employee_email ? "Yes" : "No" }}'
+  computed_311_agent:
+    '#type': webform_computed_twig
+    '#title': 'Computed 311 Agent'
+    '#display_on': none
+    '#mode': text
+    '#template': '{{ data.support_agent_use_only.employee_email|raw }}'
+  computed_confirmation_message:
+    '#type': webform_computed_twig
+    '#title': 'Computed Confirmation Message'
+    '#display_on': none
+    '#mode': html
+    '#template': |-
+      <p>Thank you for your interest in receiving a cooling unit from Cooling Portland: <a href="https://www.earthadvantage.org/climate-justice/hrp-information.html">A PCEF-Funded Climate Resilience Program!</a>
+      </p>
+      <h2>What Happens Next?</h2>
+      <p>The Cooling Portland program is currently receiving a high volume of applications and wait times for units are increasing. Your application is currently on a waitlist. A Community Distribution Partner (CDP) will review and process your application and reach out directly to coordinate installation.</p>
+      <p><strong>If you have already applied to receive a unit through the program, please <u>do not call 311</u> to check on the status of your application.</strong></p>
+      <p>Unit distribution is assigned according to risk, with priority going to those who are most vulnerable to heat-related hazards:</p>
+      <ul>
+      <li>People aged 60 or older</li>
+      <li>People who live alone</li>
+      <li>People who have medical conditions that increase the likelihood of heat related illness</li>
+      </ul>
+      <h2>When Will I Get My Unit?</h2>
+      <p>Distribution partners are working as quickly as possible to process applications and schedule installations. Please note that <u>there is no guaranteed timeline for when you will receive a cooling unit</u> and based on the current waitlist, your installation may not be scheduled before late summer or early fall.</p>
+      <p>
+          <strong>If you need assistance getting to a cooling center, please dial <a href="tel:211">2-1-1</a>.</strong>
+      </p>
+      <hr>
+      <p>
+          Please review the following information:
+      </p>
+      <p>
+          <strong>Window:</strong>
+      </p>
+      <p>
+          Cooling units cannot be installed in unsafe, damaged, or broken windows. Your desired installation window must work and be undamaged.
+      </p>
+      <p>
+          <strong>Electrical Outlet:</strong>
+      </p>
+      <p>
+          There should be a three-pronged electrical outlet within 5 feet of the window where you want the cooling unit installed.
+      </p>
+      <p>
+          <strong>Clear path:</strong>
+      </p>
+      <p>
+          You must provide installers with a safe, clear way into and out of your home throughout the duration of the installation. The area around the installation spot must be clean and free of tripping hazards, biohazards, and clutter. (We can assist people with disabilities or mobility issues to clear the area, within reason.)
+      </p>
+      <p>For more information, please visit the <a href="/bps/cleanenergy/about-cooling-portland">Cooling Portland information page on Portland.gov</a>.</p>
+css: "#location_map {\r\n  display: none;\r\n}"
+javascript: "((Drupal) => {\r\n\tDrupal.behaviors.eligibilityChecker = {\r\n\t\tattach() {\r\n\t\t\tconst addressEl = document.querySelector(\"input[name='report_location[location_address]']\");\r\n\t\t\tconst csrAddressOverrideEl = document.querySelector(\"input[name='apply_csr_override']\");\r\n\t\t\tconst unitNumberEl = document.querySelector(\"input[name='report_location_unit_number']\");\r\n\t\t\tif (!addressEl) return;\r\n\r\n\t\t\tconst submitButtonEl = document.querySelector(\".webform-button--next\");\r\n\t\t\tconst submitHandler = (e) => {\r\n\t\t\t\te.preventDefault();\r\n\t\t\t\t// if csr override box is checked, and no verified address is set, use the search field value\r\n\t\t\t\tif (csrAddressOverrideEl && csrAddressOverrideEl.checked) {\r\n\t\t\t\t\tif (!addressEl.value) addressEl.value = document.querySelector(\"input[name='report_location[location_search]']\").value;\r\n\t\t\t\t}\r\n\r\n\t\t\t\tif (addressEl.value.length < 1) {\r\n\t\t\t\t\tdocument.querySelector(\".js-form-item-markup-error\").style.display = \"block\";\r\n\t\t\t\t\tdocument.querySelector(\".verification-error\").textContent = \"Address is invalid. Please make sure you verified your address.\";\r\n\t\t\t\t\treturn;\r\n\t\t\t\t}\r\n\r\n\t\t\t\tlet unitNumber = unitNumberEl.value;\r\n\t\t\t\t// if unit number starts with an integer, prefix it with a #\r\n\t\t\t\t// so coolingsearch API can correctly interpret it\r\n\t\t\t\tif (unitNumber.match(/^\\d/)) {\r\n\t\t\t\t\tunitNumber = `#${unitNumber}`;\r\n\t\t\t\t}\r\n\r\n\t\t\t\t// combine property address and unit number into one string\r\n\t\t\t\tconst fullAddress = `${addressEl.value} ${unitNumber}`;\r\n\t\t\t\tfetch(`https://coolingsearch.org/api/search?search=${encodeURIComponent(fullAddress)}`, {\r\n\t\t\t\t\theaders: {\r\n\t\t\t\t\t\t\"Authorization\": \"Token e367099a03f3cd984e2be20f60bceb8d798a7607\"\r\n\t\t\t\t\t},\r\n\t\t\t\t}).then((res) => res.json()).then((data) => {\r\n\t\t\t\t\tconst apiResultEl = document.querySelector(\"input[name='coolingsearch_api_result']\");\r\n\t\t\t\t\tconst errorMessage = data.housing_provider || data.message || data.scheduled || data.out_of_bounds;\r\n\t\t\t\t\tif (errorMessage) {\r\n\t\t\t\t\t\tdocument.querySelector(\".js-form-item-markup-error\").style.display = \"block\";\r\n\t\t\t\t\t\tdocument.querySelector(\".verification-error\").textContent = errorMessage;\r\n\t\t\t\t\t\tapiResultEl.value = errorMessage;\r\n\t\t\t\t\t\tjQuery(apiResultEl).trigger(\"change\");\r\n\t\t\t\t\t} else {\r\n\t\t\t\t\t\t// if unit has previously been installed, we still want to let user continue\r\n\t\t\t\t\t\t// but flag it in submission data as they may be a different tenant.\r\n\t\t\t\t\t\tapiResultEl.value = data.installed ? \"installed\" : \"eligible\";\r\n\t\t\t\t\t\tjQuery(apiResultEl).trigger(\"change\");\r\n\t\t\t\t\t\tsubmitButtonEl.removeEventListener(\"click\", submitHandler);\r\n\t\t\t\t\t\tsubmitButtonEl.click();\r\n\t\t\t\t\t}\r\n\r\n\t\t\t\t\tconst overridenErrors = [\"PortlandMaps\", \"Portland Maps\", \"Unable to parse\"];\r\n\t\t\t\t\t// if CSR override is enabled and error is overridable, ignore.\r\n\t\t\t\t\tif (csrAddressOverrideEl && csrAddressOverrideEl.checked && overridenErrors.some(e => errorMessage.includes(e))) {\r\n\t\t\t\t\t\tapiResultEl.value = \"OVERRIDDEN: \" + apiResultEl.value;\r\n\t\t\t\t\t\tsubmitButtonEl.removeEventListener(\"click\", submitHandler);\r\n\t\t\t\t\t\tsubmitButtonEl.click();\r\n\t\t\t\t\t}\r\n\t\t\t\t}, () => {\r\n\t\t\t\t\t// if API call fails, let user continue but flag it in the data.\r\n\t\t\t\t\tapiResultEl.value = \"api_error\";\r\n\t\t\t\t\tjQuery(apiResultEl).trigger(\"change\");\r\n\t\t\t\t\tsubmitButtonEl.removeEventListener(\"click\", submitHandler);\r\n\t\t\t\t\tsubmitButtonEl.click();\r\n\t\t\t\t});\r\n\t\t\t};\r\n\r\n\t\t\tsubmitButtonEl.addEventListener(\"click\", submitHandler);\r\n\t\t},\r\n\t};\r\n\r\n\tDrupal.behaviors.incomeCalculator = {\r\n\t\t// The HUD 2023 60% Median Income in the Portland-Vancouver-Hillsboro MSA by household size (1-indexed)\r\n\t\tMEDIAN_INCOMES: [\r\n\t\t\t0,\r\n\t\t\t47400,\r\n\t\t\t54180,\r\n\t\t\t60960,\r\n\t\t\t67680,\r\n\t\t\t73140,\r\n\t\t\t78540,\r\n\t\t\t83940,\r\n\t\t\t89340,\r\n\t\t],\r\n\r\n\t\tattach() {\r\n\t\t\tconst householdSizeEl = document.querySelector(\"input[name='apply_household_size']\");\r\n\t\t\tif (!householdSizeEl) return;\r\n\r\n\t\t\tthis.calculateIncome(householdSizeEl);\r\n\t\t\thouseholdSizeEl.addEventListener(\"input\", (e) => this.calculateIncome(e.target));\r\n\t\t},\r\n\r\n\t\tcalculateIncome(el) {\r\n\t\t\tconst medianIncomes = this.MEDIAN_INCOMES;\r\n\t\t\tconst householdSize = el.valueAsNumber;\r\n\t\t\tlet incomeLimitYearly = 0;\r\n\t\t\tif (isNaN(householdSize) || householdSize === 0) return;\r\n\r\n\t\t\tif (householdSize > 8) {\r\n\t\t\t\t// For each person over eight-persons, the four-person income limit\r\n\t\t\t\t// should be multiplied by an additional 8 percent. (For example, the nine-person limit equals 140\r\n\t\t\t\t// percent [132 + 8] of the relevant four-person income limit.)\r\n\t\t\t\tincomeLimitYearly = medianIncomes[4] * (1 + (0.08 * (householdSize - 4)));\r\n\t\t\t} else {\r\n\t\t\t\tincomeLimitYearly = medianIncomes[householdSize];\r\n\t\t\t}\r\n\r\n\t\t\tdocument.querySelectorAll(\".income-yearly\").forEach((el) => el.textContent = this.prettyNumber(incomeLimitYearly));\r\n\t\t\tdocument.querySelector(\".income-monthly\").textContent = this.prettyNumber(incomeLimitYearly / 12);\r\n\t\t},\r\n\r\n\t\tprettyNumber(num) {\r\n\t\t\treturn num.toLocaleString(undefined, { currency: \"USD\", maximumFractionDigits: 0, style: \"currency\" });\r\n\t\t},\r\n\t};\r\n})(Drupal);\r\n"
+settings:
+  ajax: false
+  ajax_scroll_top: form
+  ajax_progress_type: ''
+  ajax_effect: ''
+  ajax_speed: null
+  page: true
+  page_submit_path: ''
+  page_confirm_path: ''
+  page_theme_name: ''
+  form_title: both
+  form_submit_once: false
+  form_open_message: ''
+  form_close_message: ''
+  form_exception_message: ''
+  form_previous_submissions: true
+  form_confidential: false
+  form_confidential_message: ''
+  form_disable_remote_addr: false
+  form_convert_anonymous: false
+  form_prepopulate: false
+  form_prepopulate_source_entity: false
+  form_prepopulate_source_entity_required: false
+  form_prepopulate_source_entity_type: ''
+  form_unsaved: false
+  form_disable_back: false
+  form_submit_back: false
+  form_disable_autocomplete: false
+  form_novalidate: false
+  form_disable_inline_errors: false
+  form_required: false
+  form_autofocus: false
+  form_details_toggle: false
+  form_reset: false
+  form_access_denied: default
+  form_access_denied_title: ''
+  form_access_denied_message: ''
+  form_access_denied_attributes: {  }
+  form_file_limit: ''
+  form_attributes: {  }
+  form_method: ''
+  form_action: ''
+  share: false
+  share_node: false
+  share_theme_name: ''
+  share_title: true
+  share_page_body_attributes: {  }
+  submission_label: ''
+  submission_exception_message: ''
+  submission_locked_message: ''
+  submission_log: false
+  submission_excluded_elements: {  }
+  submission_exclude_empty: false
+  submission_exclude_empty_checkbox: false
+  submission_views: {  }
+  submission_views_replace: {  }
+  submission_user_columns: {  }
+  submission_user_duplicate: false
+  submission_access_denied: default
+  submission_access_denied_title: ''
+  submission_access_denied_message: ''
+  submission_access_denied_attributes: {  }
+  previous_submission_message: ''
+  previous_submissions_message: ''
+  autofill: false
+  autofill_message: ''
+  autofill_excluded_elements: {  }
+  wizard_progress_bar: true
+  wizard_progress_pages: false
+  wizard_progress_percentage: false
+  wizard_progress_link: false
+  wizard_progress_states: false
+  wizard_start_label: ''
+  wizard_preview_link: false
+  wizard_confirmation: true
+  wizard_confirmation_label: ''
+  wizard_auto_forward: true
+  wizard_auto_forward_hide_next_button: false
+  wizard_keyboard: true
+  wizard_track: ''
+  wizard_prev_button_label: ''
+  wizard_next_button_label: ''
+  wizard_toggle: false
+  wizard_toggle_show_label: ''
+  wizard_toggle_hide_label: ''
+  wizard_page_type: container
+  wizard_page_title_tag: h2
+  preview: 0
+  preview_label: ''
+  preview_title: ''
+  preview_message: ''
+  preview_attributes: {  }
+  preview_excluded_elements: {  }
+  preview_exclude_empty: true
+  preview_exclude_empty_checkbox: false
+  draft: none
+  draft_multiple: false
+  draft_auto_save: false
+  draft_saved_message: ''
+  draft_loaded_message: ''
+  draft_pending_single_message: ''
+  draft_pending_multiple_message: ''
+  confirmation_type: page
+  confirmation_url: ''
+  confirmation_title: ''
+  confirmation_message: '<p>[webform_submission:values:computed_confirmation_message]</p>'
+  confirmation_attributes: {  }
+  confirmation_back: false
+  confirmation_back_label: ''
+  confirmation_back_attributes: {  }
+  confirmation_exclude_query: false
+  confirmation_exclude_token: false
+  confirmation_update: false
+  limit_total: null
+  limit_total_interval: null
+  limit_total_message: ''
+  limit_total_unique: false
+  limit_user: null
+  limit_user_interval: null
+  limit_user_message: ''
+  limit_user_unique: false
+  entity_limit_total: null
+  entity_limit_total_interval: null
+  entity_limit_user: null
+  entity_limit_user_interval: null
+  purge: none
+  purge_days: null
+  results_disabled: false
+  results_disabled_ignore: false
+  results_customize: false
+  token_view: false
+  token_update: false
+  token_delete: false
+  serial_disabled: false
+access:
+  create:
+    roles:
+      - anonymous
+      - authenticated
+    users: {  }
+    permissions: {  }
+  view_any:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  update_any:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  delete_any:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  purge_any:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  view_own:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  update_own:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  delete_own:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  administer:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  test:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  configuration:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+handlers:
+  email:
+    id: email
+    handler_id: email
+    label: 'Send Confirmation Email to User'
+    notes: ''
+    status: true
+    conditions:
+      disabled:
+        ':input[name="contact_email"]':
+          empty: true
+    weight: -49
+    settings:
+      states:
+        - completed
+      to_mail: '[webform_submission:values:contact_email:raw]'
+      to_options: {  }
+      bcc_mail: ''
+      bcc_options: {  }
+      cc_mail: ''
+      cc_options: {  }
+      from_mail: noreply@portlandoregon.gov
+      from_options: {  }
+      from_name: Portland.gov
+      reply_to: ''
+      return_path: ''
+      sender_mail: ''
+      sender_name: ''
+      subject: 'Cooling Unit Request Received'
+      body: '<p><em>This message was sent from an automated system and cannot accept replies.</em></p><p>[webform_submission:values:computed_confirmation_message]</p>'
+      excluded_elements:
+        computed_confirmation_message: computed_confirmation_message
+      ignore_access: false
+      exclude_empty: true
+      exclude_empty_checkbox: false
+      exclude_attachments: false
+      html: true
+      attachments: false
+      twig: false
+      theme_name: ''
+      parameters: {  }
+      debug: false
+  smartsheet_add_row_to_existing_sheet:
+    id: smartsheet_add_row
+    handler_id: smartsheet_add_row_to_existing_sheet
+    label: 'Smartsheet: add row to existing sheet'
+    notes: ''
+    status: true
+    conditions: {  }
+    weight: -50
+    settings:
+      column_mappings:
+        340473775345540: __submission_id
+        2882544658763652: ''
+        4450738099933060: ''
+        1114308311469956: ''
+        1648037863575428: ''
+        8512044192976772: ''
+        4844073402716036: contact_name
+        2592273589030788: contact_email
+        7095873216401284: contact_phone
+        1466373682188164: contact_phone_secondary
+        5969973309558660: computed_location_address
+        7386144286134148: report_location_unit_number
+        6260244379291524: apply_household_size
+        4008444565606276: computed_vulnerabilities
+        1756644751921028: coolingsearch_api_result
+        6857905503424388: computed_move_in_date
+        1185297541844868: ''
+        5267859075714948: apply_csr_override_notes
+        6322089718927236: computed_submitted_by_311
+        5606672530886532: computed_311_agent
+        5962690733494148: computed_location_latlon
+      multiple_rows_enable: null
+      multiple_rows_field: ''
+      multiple_rows_separator: ''
+      row_location: toTop
+      sheet_id: '4135886635618180'
+      upload_attachments: '1'
+variants: {  }

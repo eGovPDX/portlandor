@@ -29,30 +29,29 @@ class PortlandMediaEmbedHtmlFilter extends FilterBase {
 
     // this query was found at https://stackoverflow.com/questions/11744454/xpath-to-recursively-remove-empty-dom-nodes
     // it cleans up empty DOM elements, nested empty elements, elements with non-breaking spaces, etc.,
-    // but ignores elements with legitimate content. it also leaves the following un-closed elements: img, br, hr, drupal-entity
-    // HOWEVER, it also removes empty table cells, so we'll need to modify this if we ever decide to allow tables in content.
+    // but ignores elements with legitimate content. it also leaves the following self-closed elements: img, br, hr, drupal-entity
+    // and the following table elements: td, th
     $query = "//*[not(normalize-space((translate(., '\xC2\xA0\', ''))))
                 and
-                  not(descendant-or-self::*[self::img or self::input or self::br or self::hr or self::drupal-entity])
+                  not(descendant-or-self::*[self::td or self::th or self::img or self::input or self::br or self::hr or self::drupal-entity])
                   ]
                   [not(ancestor::*
                           [count(.| //*[not(normalize-space((translate(., '\xC2\xA0\', ''))))
                                       and
                                         not(descendant-or-self::*
-                                                [self::img or self::input or self::br or self::hr or self::drupal-entity])
+                                                [self::td or self::th or self::img or self::input or self::br or self::hr or self::drupal-entity])
                                         ]
                                   )
                           =
                             count(//*[not(normalize-space((translate(., '\xC2\xA0\', ''))))
                                     and
                                       not(descendant-or-self::*
-                                              [self::img or self::input or self::br or self::hr or self::drupal-entity])
+                                              [self::td or self::th or self::img or self::input or self::br or self::hr or self::drupal-entity])
                                       ]
                                 )
                             ]
                         )
                   ]";
-    //$query = "//*[text()=\"\xC2\xA0\"]";
 
     $dom = Html::load($text);
     $xpath = new \DOMXPath($dom);
@@ -60,7 +59,7 @@ class PortlandMediaEmbedHtmlFilter extends FilterBase {
     foreach ($elems as $elem) {
       $elem->parentNode->removeChild($elem);
     }
-    
+
     $result->setProcessedText(Html::serialize($dom))
       ->addAttachments([
         'library' => [

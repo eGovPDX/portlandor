@@ -1,0 +1,353 @@
+uuid: c58a1963-d02c-446c-9d30-f42aff9861ab
+langcode: en
+status: open
+dependencies:
+  module:
+    - portland_smartsheet
+weight: 0
+open: null
+close: null
+uid: 1
+template: false
+archive: false
+id: report_pbot_facilities_issue
+title: 'Report a PBOT Facilities Issue'
+description: ''
+categories: {  }
+elements: |-
+  markup_urgent_public:
+    '#type': webform_markup
+    '#markup': '<div class="alert alert--info next-steps mb-2"><p class="mb-0">Use this form for all PBOT buildings except the Portland Building. For Portland Building facilities issues, please use the <a href="https://app.smartsheet.com/b/form/6ae2bbc110fc44e9a281478239726435">PBOT Portland Building Facilities Request Intake</a> form.</p></div><div class="alert alert--warning next-steps"><p class="mb-0"><strong>If this is an emergency or life-safety issue, please call 911. For a security issue occurring now or to request assistance, call </strong><a class="text-nowrap" href="tel:+15038237777"><strong>503-823-7777</strong></a><strong>.&nbsp;</strong>For general security information, please visit the City''s <a href="https://employees.portland.gov/security">Integrated Security information page</a> on the Employees intranet.</p></div>'
+  report_property:
+    '#type': select
+    '#title': 'Chose the PBOT property where the issue is located'
+    '#options':
+      'Kerby Building': 'Kerby Building'
+      'Kerby Training Center': 'Kerby Training Center'
+      'Kerby Garage (Tunnel)': 'Kerby Garage (Tunnel)'
+      'Kerby Employee Parking Lot': 'Kerby Employee Parking Lot'
+      'Valvoline Building': 'Valvoline Building'
+      'Sunderland Yard': 'Sunderland Yard'
+      'Stanton Yard': 'Stanton Yard'
+      'Albina Yard': 'Albina Yard'
+      'Upper and Lower State Lots': 'Upper and Lower State Lots'
+      'Triangle Lot': 'Triangle Lot'
+      'Knott Lot': 'Knott Lot'
+      'Graham Garage': 'Graham Garage'
+      'Materials Testing Lab': 'Materials Testing Lab'
+      'Bob Stacey Crossing (Elevators)': 'Bob Stacey Crossing (Elevators)'
+      'Gibbs Street Pedestrian Bridge (Elevator)': 'Gibbs Street Pedestrian Bridge (Elevator)'
+    '#required': true
+  report_impact:
+    '#type': radios
+    '#title': 'What is the level of impact?'
+    '#description': '<p>To help us gauge the severity of the issue</p>'
+    '#description_display': before
+    '#options':
+      Critical: 'Critical -- Safety of life or property threatened; immediate impact on entire building, Bureau, or Division’s primary business function; loss of utilities'
+      Urgent: 'Urgent -- Maintenance or repair work required for continued facility operation and to restore healthful environment'
+      Significant: 'Significant -- Limited or temporary impact on Group or Individual’s primary business function, safety, or property. Maintenance or repair work to return the premises to a safe or useable state'
+      Routine: 'Routine -- Facilities maintenance work that can be resolved as part of a routine schedule'
+      Discretionary: 'Discretionary -- Work that is desired but not essential to protect, preserve, or restore facilities and equipment'
+    '#required': true
+  report_issue_type:
+    '#type': webform_radios_other
+    '#title': 'What needs attention?'
+    '#options':
+      'Doors – general/access': 'Doors – general/access'
+      'Doors – keys made': 'Doors – keys made'
+      'Electrical – general, lighting': 'Electrical – general, lighting'
+      'Electrical – power outage': 'Electrical – power outage'
+      'Elevators – repair, clean': 'Elevators – repair, clean'
+      'Fencing/Gate – repair, replace': 'Fencing/Gate – repair, replace'
+      'Floor/Carpet – repair, clean': 'Floor/Carpet – repair, clean'
+      'Furniture – adjustment, broken': 'Furniture – adjustment, broken'
+      'Graffiti Removal': 'Graffiti Removal'
+      'Hazard – safety issue': 'Hazard – safety issue'
+      'HVAC – filter change/air quality': 'HVAC – filter change/air quality'
+      'HVAC – general, down system': 'HVAC – general, down system'
+      'HVAC – too hot/cold, temperature control': 'HVAC – too hot/cold, temperature control'
+      'Janitorial – garbage/recycling': 'Janitorial – garbage/recycling'
+      'Janitorial – spills, clean up': 'Janitorial – spills, clean up'
+      Landscaping: Landscaping
+      'Plumbing – leaks, not working, clog': 'Plumbing – leaks, not working, clog'
+      'Roof/Ceiling – general': 'Roof/Ceiling – general'
+      'Roof/Ceiling – leak': 'Roof/Ceiling – leak'
+      'Walls – patch, paint, hanging': 'Walls – patch, paint, hanging'
+      'Windows – repair, replace': 'Windows – repair, replace'
+      'Setup – meeting/event/trainings': 'Setup – meeting/event/trainings -- (describe below)'
+    '#required': true
+  report_description:
+    '#type': textarea
+    '#title': 'Description of issue'
+    '#required': true
+  report_due_date:
+    '#type': date
+    '#title': 'Required by date'
+  report_file_upload:
+    '#type': webform_image_file
+    '#title': 'File Upload'
+  contact_name:
+    '#type': textfield
+    '#title': Name
+    '#required': true
+  contact_email:
+    '#type': textfield
+    '#title': Email
+    '#description': '<p>We will use your email to confirm your submission and respond if necessary.</p>'
+    '#required': true
+    '#pattern': '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    '#pattern_error': 'Please enter a correctly formatted email address, such as myname@example.com.'
+  computed_issue_types:
+    '#type': webform_computed_twig
+    '#title': 'Computed Issue Type'
+    '#display_on': none
+    '#mode': text
+    '#template': |-
+      {% set element_options = elements.report_issue_type['#options'] %}
+      {{dump(element_options)}}
+      {# we want to filter out the "other" field #}
+      {{ data.report_issue_type in (element_options|keys) ? data.report_issue_type : 'Other' }}
+  computed_other_issue_type:
+    '#type': webform_computed_twig
+    '#title': 'Computed Other Issue Type'
+    '#display_on': none
+    '#mode': text
+    '#template': |-
+      {% set element_options = elements.report_issue_type['#options'] %}
+      {# we want only the "other" field #}
+      {{ data.report_issue_type not in (element_options|keys) ? data.report_issue_type : '' }}
+  report_send_copy:
+    '#type': checkbox
+    '#title': 'Send me a copy of this request'
+    '#return_value': 'true'
+    '#format': custom
+    '#format_html': "{{ value ? '1' : '0' }}"
+    '#format_text': "{{ value ? '1' : '0' }}"
+  computed_send_copy:
+    '#type': webform_computed_twig
+    '#title': 'Computed Send Copy'
+    '#display_on': none
+    '#mode': text
+    '#template': "{{ data.report_send_copy ? 'Yes' : 'No' }}"
+    '#whitespace': trim
+css: ''
+javascript: ''
+settings:
+  ajax: false
+  ajax_scroll_top: form
+  ajax_progress_type: ''
+  ajax_effect: ''
+  ajax_speed: null
+  page: true
+  page_submit_path: ''
+  page_confirm_path: ''
+  page_theme_name: ''
+  form_title: both
+  form_submit_once: false
+  form_open_message: ''
+  form_close_message: ''
+  form_exception_message: ''
+  form_previous_submissions: true
+  form_confidential: false
+  form_confidential_message: ''
+  form_disable_remote_addr: false
+  form_convert_anonymous: false
+  form_prepopulate: false
+  form_prepopulate_source_entity: false
+  form_prepopulate_source_entity_required: false
+  form_prepopulate_source_entity_type: ''
+  form_unsaved: false
+  form_disable_back: false
+  form_submit_back: false
+  form_disable_autocomplete: false
+  form_novalidate: false
+  form_disable_inline_errors: false
+  form_required: false
+  form_autofocus: false
+  form_details_toggle: false
+  form_reset: false
+  form_access_denied: default
+  form_access_denied_title: ''
+  form_access_denied_message: ''
+  form_access_denied_attributes: {  }
+  form_file_limit: ''
+  form_attributes: {  }
+  form_method: ''
+  form_action: ''
+  share: false
+  share_node: false
+  share_theme_name: ''
+  share_title: true
+  share_page_body_attributes: {  }
+  submission_label: ''
+  submission_exception_message: ''
+  submission_locked_message: ''
+  submission_log: false
+  submission_excluded_elements: {  }
+  submission_exclude_empty: false
+  submission_exclude_empty_checkbox: false
+  submission_views: {  }
+  submission_views_replace: {  }
+  submission_user_columns: {  }
+  submission_user_duplicate: false
+  submission_access_denied: default
+  submission_access_denied_title: ''
+  submission_access_denied_message: ''
+  submission_access_denied_attributes: {  }
+  previous_submission_message: ''
+  previous_submissions_message: ''
+  autofill: false
+  autofill_message: ''
+  autofill_excluded_elements: {  }
+  wizard_progress_bar: true
+  wizard_progress_pages: false
+  wizard_progress_percentage: false
+  wizard_progress_link: false
+  wizard_progress_states: false
+  wizard_start_label: ''
+  wizard_preview_link: false
+  wizard_confirmation: true
+  wizard_confirmation_label: ''
+  wizard_auto_forward: true
+  wizard_auto_forward_hide_next_button: false
+  wizard_keyboard: true
+  wizard_track: ''
+  wizard_prev_button_label: ''
+  wizard_next_button_label: ''
+  wizard_toggle: false
+  wizard_toggle_show_label: ''
+  wizard_toggle_hide_label: ''
+  wizard_page_type: container
+  wizard_page_title_tag: h2
+  preview: 0
+  preview_label: ''
+  preview_title: ''
+  preview_message: ''
+  preview_attributes: {  }
+  preview_excluded_elements: {  }
+  preview_exclude_empty: true
+  preview_exclude_empty_checkbox: false
+  draft: none
+  draft_multiple: false
+  draft_auto_save: false
+  draft_saved_message: ''
+  draft_loaded_message: ''
+  draft_pending_single_message: ''
+  draft_pending_multiple_message: ''
+  confirmation_type: page
+  confirmation_url: ''
+  confirmation_title: ''
+  confirmation_message: ''
+  confirmation_attributes: {  }
+  confirmation_back: true
+  confirmation_back_label: ''
+  confirmation_back_attributes: {  }
+  confirmation_exclude_query: false
+  confirmation_exclude_token: false
+  confirmation_update: false
+  limit_total: null
+  limit_total_interval: null
+  limit_total_message: ''
+  limit_total_unique: false
+  limit_user: null
+  limit_user_interval: null
+  limit_user_message: ''
+  limit_user_unique: false
+  entity_limit_total: null
+  entity_limit_total_interval: null
+  entity_limit_user: null
+  entity_limit_user_interval: null
+  purge: none
+  purge_days: null
+  results_disabled: false
+  results_disabled_ignore: false
+  results_customize: false
+  token_view: false
+  token_update: false
+  token_delete: false
+  serial_disabled: false
+access:
+  create:
+    roles:
+      - anonymous
+      - authenticated
+    users: {  }
+    permissions: {  }
+  view_any:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  update_any:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  delete_any:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  purge_any:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  view_own:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  update_own:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  delete_own:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  administer:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  test:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  configuration:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+handlers:
+  smartsheet_add_row_to_existing_sheet:
+    id: smartsheet_add_row
+    handler_id: smartsheet_add_row_to_existing_sheet
+    label: 'Smartsheet: add row to existing sheet'
+    notes: ''
+    status: true
+    conditions: {  }
+    weight: 0
+    settings:
+      column_mappings:
+        108766195306372: ''
+        5231545974476676: ''
+        4612365822676868: ''
+        2360566008991620: ''
+        1117561134468996: contact_name
+        8339770370379652: contact_email
+        3369360948154244: report_property
+        2160816156528516: report_impact
+        7872960575524740: computed_issue_types
+        2243461041311620: computed_other_issue_type
+        6747060668682116: report_description
+        2123638433075076: ''
+        2979746160791428: ''
+        7790315690741636: report_due_date
+        1375155556142980: ''
+        5878755183513476: ''
+        3626955369828228: ''
+        3286716063371140: ''
+        5031245208571780: computed_send_copy
+      multiple_rows_enable: null
+      multiple_rows_field: ''
+      multiple_rows_separator: ''
+      row_location: toTop
+      sheet_id: '4257606008786820'
+      upload_attachments: '1'
+variants: {  }

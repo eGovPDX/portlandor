@@ -61,13 +61,14 @@ elements: |-
       '#type': radios
       '#title': 'What type of issue or object are you reporting?'
       '#options':
-        Vehicle: Vehicle
+        Vehicle: 'Vehicle -- Including dumpsters, PODS, trailers'
         'Construction work zone item': 'Construction work zone item -- Staging, fencing, miscellaneous equipment, etc. '
-        'Permanent structure': 'Permanent structure -- Fences, planters, sheds, etc.'
+        'Permanent structure': 'Permanent structure -- Fences, planters, sheds, trash can enclosures, etc.'
         'Temporary item': 'Temporary item -- Mulch piles, basketball hoops, sports items, electrical cords, trash cans, etc.'
         'Outdoor dining': 'Outdoor dining -- Outdoor seating, tables, sandwich boards, dining structure, etc.'
         'Trees or vegetation': 'Trees or vegetation'
-        'Unauthorized signage in the right-of-way': 'Unauthorized signage in the right-of-way'
+        'Unauthorized signage or other parking obstruction in the right-of-way': 'Unauthorized signage or other parking obstruction in the right-of-way'
+        'Sidewalk in need of repair': 'Sidewalk in need of repair'
       '#required': true
     computed_tags:
       '#type': webform_computed_twig
@@ -94,7 +95,7 @@ elements: |-
       '#title': 'What type of vehicle issue?'
       '#options':
         'Illegally parked': 'Illegally parked'
-        'Abandoned vehicle': 'Abandoned vehicle'
+        'Abandoned vehicle': 'Abandoned vehicle -- Including dumpsters, PODS, trailers'
       '#states':
         visible:
           ':input[name="report_issue_type"]':
@@ -122,12 +123,13 @@ elements: |-
         'Planter box': 'Planter box'
         Shed: Shed
         'Outdoor seating, tables, dining structures': 'Outdoor seating, tables, dining structures'
+        'Trash can enclosure': 'Trash can enclosure'
         Other: Other
+      '#required': true
       '#states':
         visible:
           ':input[name="report_issue_type"]':
             value: 'Permanent structure'
-      '#required': true
     report_temporary_item:
       '#type': radios
       '#title': 'What type of temporary item?'
@@ -146,7 +148,6 @@ elements: |-
         visible:
           ':input[name="report_issue_type"]':
             value: 'Temporary item'
-      '#required': true
     report_outdoor_dining_item:
       '#type': radios
       '#title': 'What type of outdoor dining item?'
@@ -165,7 +166,7 @@ elements: |-
         'A tree or large branch that has fallen and is now a hazard in the street or sidewalk': 'A tree or large branch that has fallen and is now a hazard in the street or sidewalk'
         'A tree or vegetation that is blocking view of a traffic signal, traffic or street sign': 'A tree or vegetation that is blocking view of a traffic signal, traffic or street sign'
         'Vegetation blocking a streetlight': 'Vegetation blocking a streetlight'
-        'Vegetation growing into the sidewalk, bike lane, or other travel lane': 'Vegetation growing into the sidewalk, bike lane, or other travel lane -- For example, hanging from above or growing in from the side'
+        'Vegetation growing into the sidewalk, public pathway, bike lane, or other travel lane': 'Vegetation growing into the sidewalk, public pathway, bike lane, or other travel lane -- For example, hanging from above or growing in from the side'
         'None of the above': 'None of the above'
       '#required': true
       '#states':
@@ -186,7 +187,7 @@ elements: |-
       '#states':
         visible:
           - ':input[name="report_tree_issue"]':
-              value: 'Vegetation growing into the sidewalk, bike lane, or other travel lane'
+              value: 'Vegetation growing into the sidewalk, public pathway, bike lane, or other travel lane'
           - or
           - ':input[name="report_tree_issue"]':
               value: 'None of the above'
@@ -194,13 +195,13 @@ elements: |-
       '#type': radios
       '#title': 'What type of signage?'
       '#options':
-        'Unauthorized No Parking signs or obstructions to prevent parking': 'Unauthorized No Parking signs or obstructions to prevent parking'
+        'Unauthorized No Parking signs or obstruction to prevent parking': 'Unauthorized No Parking signs or obstruction to prevent parking'
         'A-board sign': 'A-board sign'
         'Unauthorized signs on utility poles': 'Unauthorized signs on utility poles'
       '#states':
         visible:
           ':input[name="report_issue_type"]':
-            value: 'Unauthorized signage in the right-of-way'
+            value: 'Unauthorized signage or other parking obstruction in the right-of-way'
       '#required': true
     markup_vehicle:
       '#type': webform_markup
@@ -226,30 +227,6 @@ elements: |-
 
         <p class="mb-0">Please call Parking Enforcement at <a href="tel:+1-503-823-5195">503-823-5195</a> to report the vehicle.</p>
         </div>
-    markup_bds_compliance:
-      '#type': webform_markup
-      '#states':
-        visible:
-          - ':input[name="report_temporary_item"]':
-              value: Mulch
-          - or
-          - ':input[name="report_temporary_item"]':
-              value: 'A-board sign'
-          - or
-          - ':input[name="report_outdoor_dining_item"]':
-              value: 'A-board sign'
-          - or
-          - ':input[name="report_vegetation_source"]':
-              value: 'Private property'
-          - or
-          - ':input[name="report_signage_type"]':
-              value: 'A-board sign'
-      '#markup': |-
-        <div class="alert alert--info next-steps">
-        <h2>Next Steps</h2>
-
-        <p class="mb-0">Please use the <a href="https://www.portlandoregon.gov/bds/42240">BDS Property Compliance form</a>&nbsp;to report this issue.&nbsp;&nbsp;</p>
-        </div>
     markup_trash_jump:
       '#type': webform_markup
       '#states':
@@ -263,7 +240,7 @@ elements: |-
         visible:
           ':input[name="report_temporary_item"]':
             value: 'Hazardous waste'
-      '#markup': '<p><a class="button button--primary" href="/homelessnessimpactreduction/report-campsite?report_visible_items[trash]=trash#edit-section-report">Continue</a></p>'
+      '#markup': '<div class="alert alert--info next-steps"><h2>Next Steps</h2><p>Please report hazardous waste using the <a href="/homelessnessimpactreduction/report-campsite?report_visible_items[trash]=trash#edit-section-report">Report a Campsite form</a>, and select "Trash or debris only."</p><p class="mb-0"><a class="button button--primary" href="/homelessnessimpactreduction/report-campsite?report_visible_items[trash]=trash#edit-section-report">Continue</a></p></div>'
     markup_animal:
       '#type': webform_markup
       '#states':
@@ -282,12 +259,7 @@ elements: |-
         visible:
           ':input[name="report_tree_issue"]':
             value: 'A tree or large branch that has fallen and is now a hazard in the street or sidewalk'
-      '#markup': |-
-        <div class="alert alert--info next-steps">
-        <h2>Next Steps</h2>
-
-        <p class="mb-0">Please call&nbsp;<a href="tel:+1-503-823-8733">503-823-TREE (8733)</a> to report this urgent issue.&nbsp;&nbsp;</p>
-        </div>
+      '#markup': '<div class="alert alert--info next-steps"><h2>Next Steps</h2><p class="mb-0">Please call&nbsp;<a href="tel:+1-503-823-8733">503-823-8733 (TREE)</a> to report this urgent issue.&nbsp;&nbsp;</p></div>'
     markup_utility_pole_signs:
       '#type': webform_markup
       '#states':
@@ -332,6 +304,9 @@ elements: |-
             value: 'Vegetation blocking a streetlight'
         - or
         - ':input[name="report_vegetation_source"]':
+            value: 'Private property'
+        - or
+        - ':input[name="report_vegetation_source"]':
             value: 'Parking strip, median, or other parts of the street or right-of-way'
         - or
         - ':input[name="report_vegetation_source"]':
@@ -341,7 +316,22 @@ elements: |-
             value: 'Something else, or unsure'
         - or
         - ':input[name="report_signage_type"]':
-            value: 'Unauthorized No Parking signs or obstructions to prevent parking'
+            value: 'Unauthorized No Parking signs or obstruction to prevent parking'
+        - or
+        - ':input[name="report_temporary_item"]':
+            value: Mulch
+        - or
+        - ':input[name="report_temporary_item"]':
+            value: 'A-board sign'
+        - or
+        - ':input[name="report_outdoor_dining_item"]':
+            value: 'A-board sign'
+        - or
+        - ':input[name="report_issue_type"]':
+            value: 'Sidewalk in need of repair'
+        - or
+        - ':input[name="report_signage_type"]':
+            value: 'A-board sign'
     container_location_photos:
       '#type': container
       report_location:
@@ -357,6 +347,7 @@ elements: |-
       report_photo:
         '#type': webform_image_file
         '#title': 'Photo of Obstruction'
+        '#multiple': 4
         '#file_preview': 'medium:image'
         '#max_filesize': '30'
         '#file_extensions': 'jpg jpeg png'
@@ -377,11 +368,47 @@ elements: |-
       contact_name:
         '#type': textfield
         '#title': Name
+        '#states':
+          required:
+            - ':input[name="report_temporary_item"]':
+                value: Mulch
+            - or
+            - ':input[name="report_temporary_item"]':
+                value: 'A-board sign'
+            - or
+            - ':input[name="report_outdoor_dining_item"]':
+                value: 'A-board sign'
+            - or
+            - ':input[name="report_vegetation_source"]':
+                value: 'Private property'
+            - or
+            - ':input[name="report_signage_type"]':
+                value: 'A-board sign'
       contact_email:
         '#type': textfield
         '#title': Email
         '#pattern': '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
         '#pattern_error': 'Please enter a correctly formatted email address, such as myname@example.com.'
+        '#states':
+          required:
+            - ':input[name="report_temporary_item"]':
+                value: Mulch
+            - or
+            - ':input[name="report_temporary_item"]':
+                value: 'A-board sign'
+            - or
+            - ':input[name="report_outdoor_dining_item"]':
+                value: 'A-board sign'
+            - or
+            - ':input[name="report_vegetation_source"]':
+                value: 'Private property'
+            - or
+            - ':input[name="report_signage_type"]':
+                value: 'A-board sign'
+      phone:
+        '#type': textfield
+        '#title': Phone
+        '#input_mask': '(999) 999-9999'
     section_public_records_statement:
       '#type': webform_section
       '#title': 'Public Records Statement'
@@ -394,39 +421,47 @@ elements: |-
       '#access_create_roles':
         - authenticated
       '#escalate_issue__access': false
-    computed_email_recipient:
-      '#type': webform_computed_twig
-      '#title': 'Email Routing:'
-      '#title_display': inline
-      '#admin_title': 'Computed Email Recipient'
-      '#access_create_roles':
-        - authenticated
-      '#display_on': form
-      '#mode': text
-      '#template': |-
-        {% if data.report_construction_work_zone_item == "Cuts in the roadway surface" %}
-          pbotutilityinspectors@portlandoregon.gov
-        {% elseif data.report_permanent_structure == "Outdoor seating, tables, dining structures" %}
-          OutdoorDiningPDX@portlandoregon.gov
-        {% elseif data.report_temporary_item == "Garbage/recycling bins" %}
-          wasteinfo@portlandoregon.gov
-        {% elseif data.report_outdoor_dining_item == "Outdoor seating, tables, dining structure" %}
-          OutdoorDiningPDX@portlandoregon.gov
-        {% elseif data.report_tree_issue == "A tree or vegetation that is blocking view of a traffic signal, traffic or street sign" %}
-          tom.jensen@portlandoregon.gov
-        {% elseif data.report_tree_issue == "Vegetation blocking a streetlight" %}
-          streetlighting@portlandoregon.gov
-        {% elseif data.report_vegetation_source == "Other publicly owned land" %}
-          pdxroads@portlandoregon.gov
-        {% elseif data.report_signage_type == "Unauthorized No Parking signs or obstructions to prevent parking" %}
-          PBOTparkingcontrol@portlandoregon.gov
-        {% endif %}
-      '#whitespace': trim
-      '#ajax': true
     actions:
       '#type': webform_actions
       '#title': 'Submit button(s)'
       '#submit__label': Submit
+  computed_email_recipient:
+    '#type': webform_computed_twig
+    '#title': 'Email Routing:'
+    '#title_display': inline
+    '#admin_title': 'Computed Email Recipient'
+    '#access_create_roles':
+      - authenticated
+    '#display_on': form
+    '#mode': text
+    '#template': |
+      {% if data.report_issue_type == "Sidewalk in need of repair" %}
+        sidewalkrepair@portlandoregon.gov
+      {% elseif data.report_temporary_item == "Mulch" or data.report_temporary_item == "A-board sign" or data.report_outdoor_dining_item == "A-board sign" or data.report_vegetation_source == "Private property" or data.report_signage_type == "A-board sign" %}
+        codec@portlandoregon.gov
+      {% elseif data.report_construction_work_zone_item == "Cuts in the roadway surface" %}
+        pbotutilityinspectors@portlandoregon.gov
+      {% elseif data.report_permanent_structure == "Outdoor seating, tables, dining structures" %}
+        OutdoorDiningPDX@portlandoregon.gov
+      {% elseif data.report_temporary_item == "Garbage/recycling bins" %}
+        wasteinfo@portlandoregon.gov
+      {% elseif data.report_outdoor_dining_item == "Outdoor seating, tables, dining structure" %}
+        OutdoorDiningPDX@portlandoregon.gov
+      {% elseif data.report_tree_issue == "A tree or vegetation that is blocking view of a traffic signal, traffic or street sign" %}
+        tom.jensen@portlandoregon.gov
+      {% elseif data.report_tree_issue == "Vegetation blocking a streetlight" %}
+        streetlighting@portlandoregon.gov
+      {% elseif data.report_vegetation_source == "Other publicly owned land" %}
+        pdxroads@portlandoregon.gov
+      {% elseif data.report_signage_type == "Unauthorized No Parking signs or obstructions to prevent parking" %}
+        PBOTparkingcontrol@portlandoregon.gov
+      {% elseif data.report_vegetation_source == "Parking strip, median, or other parts of the street or right-of-way" %}
+        pdxroads@portlandoregon.gov
+      {% elseif data.report_vegetation_source == "Park or natural area" or data.report_vegetation_source == "Something else, or unsure" %}
+        trees@portlandoregon.gov
+      {% endif %}
+    '#whitespace': trim
+    '#ajax': true
   report_ticket_id:
     '#type': hidden
     '#title': 'Report Ticket Id'
@@ -709,15 +744,13 @@ handlers:
       enabled:
         ':input[name="support_agent_use_only[test_submission]"]':
           unchecked: true
-        ':input[name="report_vegetation_source"]':
-          '!value': 'Park or natural area'
         ':input[name="computed_email_recipient"]':
           empty: true
     weight: -50
     settings:
       requester_name: contact_name
       requester_email: contact_email
-      subject: 'Obstruction in the right-of-way: [webform_submission:values:report_issue_type]'
+      subject: '[webform_submission:values:report_issue_type]'
       comment: '[webform_submission:values:computed_description:html]'
       tags: 'drupal webform [webform_submission:values:computed_tags]'
       priority: normal
@@ -795,38 +828,6 @@ handlers:
       priority: normal
       status: new
       group_id: '4549352062487'
-      assignee_id: ''
-      type: incident
-      collaborators: ''
-      custom_fields: "6353388345367: 'report_row_obstruction'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n1500013095781: '[webform_submission:uuid]'\r\n21326872476311: ['[webform_submission:values:computed_compliance_subtype]', 'computed_compliance_subtype']\r\n7557381052311: ['[webform_submission:values:report_obstruction_details]', 'report_obstruction_details']"
-      ticket_id_field: report_ticket_id
-      ticket_form_id: '20531514301207'
-      recipient: ''
-      ticket_fork_field: ''
-  submit_to_zendesk_park_issue:
-    id: zendesk
-    handler_id: submit_to_zendesk_park_issue
-    label: 'Submit to Zendesk (PP&R Maintenance group)'
-    notes: ''
-    status: true
-    conditions:
-      enabled:
-        ':input[name="support_agent_use_only[test_submission]"]':
-          unchecked: true
-        ':input[name="report_vegetation_source"]':
-          value: 'Park or natural area'
-        ':input[name="computed_email_recipient"]':
-          empty: true
-    weight: -49
-    settings:
-      requester_name: contact_name
-      requester_email: contact_email
-      subject: 'Obstruction in the right-of-way: [webform_submission:values:report_issue_type]'
-      comment: '[webform_submission:values:computed_description:html]'
-      tags: 'drupal webform [webform_submission:values:computed_tags]'
-      priority: normal
-      status: new
-      group_id: '14482054292375'
       assignee_id: ''
       type: incident
       collaborators: ''

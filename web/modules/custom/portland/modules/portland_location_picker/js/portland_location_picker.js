@@ -5,7 +5,7 @@
 
   // Here's how to reverse geolocate a park. Note the x/y values in the geometry parameter:
   // https://www.portlandmaps.com/arcgis/rest/services/Public/Parks_Misc/MapServer/2/query?geometry=%7B%22x%22%3A-122.55203425884248%2C%22y%22%3A45.53377174783918%2C%22spatialReference%22%3A%7B%22wkid%22%3A4326%7D%7D&geometryType=esriGeometryPoint&spacialRel=esriSpatialRelIntersects&returnGeometry=false&returnTrueCurves=false&returnIdsOnly=false&returnCountOnly=false&returnDistinctValues=false&f=pjson"
-  // returns an object that includes the park name. 
+  // returns an object that includes the park name.
 
   /**
    * Attach the machine-readable name form element behavior.
@@ -45,6 +45,8 @@
         const DEFAULT_INCIDENT_ICON_URL = "/modules/custom/portland/modules/portland_location_picker/images/map_marker_incident.png";
         const DEFAULT_SOLVED_ICON_URL = "/modules/custom/portland/modules/portland_location_picker/images/map_marker_incident_solved.png";
         const ERROR_MODAL_DEFAULT_TEXT = 'Please try again in a few moments. If the error persists, let us know using the <a href="/feedback?subject=The%20page%20looks%20broken">website feedback form</a>. You can also call us at <a href="tel:311">311</a>&nbsp;or&nbsp;<a href="tel:+15038234000">503-823-4000</a>.';
+        const NO_MATCHING_ADDRESS_TEXT = "Sorry, we were unable to locate that address. Please try a different address nearby, or zoom in and find it on the map.";
+        const NO_MATCHING_ADDRESS_TEXT_VERIFY_MODE = "Sorry, we were unable to locate that address. Please verify the address was entered correctly.";
         const REVERSE_GEOCODE_URL = 'https://www.portlandmaps.com/api/intersects/?geometry=%7B%20%22x%22:%20${x},%20%22y%22:%20${y},%20%22spatialReference%22:%20%7B%20%22wkid%22:%20%223857%22%7D%20%7D&include=all&detail=1&api_key=${apiKey}';
         const API_BOUNDARY_URL = "https://www.portlandmaps.com/arcgis/rest/services/Public/Boundaries/MapServer/0/query";
         const API_PARKS_BOUNDARY_URL = "https://www.portlandmaps.com/arcgis/rest/services/Public/Parks_Misc/MapServer/2/query?where=1%3D1&f=geojson";
@@ -257,24 +259,10 @@
           // Set up pick links //////////////////////////////////
           $(document).on('click', 'a.pick', function (e) {
             e.preventDefault();
-            // get address data from link
-            var address = $(this).data('pick-address');
-            // put selected address in search field
-            $('#location_search').val(address);
-            showVerifiedLocation(address);
+            const candidate = JSON.parse($(this).data('candidate'));
+            // now that the user has made a selection, pass back the single candidate
+            processLocationData([candidate]);
             suggestionsModal.dialog('close');
-            // locate address on map
-            var lat = $(this).data('lat');
-            var lng = $(this).data('lng');
-            var latlng = new L.LatLng(lat, lng);
-            if (latlng.lat && latlng.lng) {
-              doMapClick(latlng);
-              setVerified();
-            } else {
-              showStatusModal(VERIFIED_NO_COORDS);
-              setLatLngHiddenFields(latlng.lat, latlng.lng);
-              setVerified();
-            }
           });
 
           // set up status modal ///////////////////////////////
@@ -296,6 +284,7 @@
         }
 
         function restoreLocationFromPostback() {
+          var verifiedAddress = addressVerify ? $('input[name=' + elementId + '\\[location_address\\]]').val() : undefined;
           var lat = $('input[name=' + elementId + '\\[location_lat\\]]').val();
           var lng = $('input[name=' + elementId + '\\[location_lon\\]]').val();
           if (lat && lng && lat !== "0" && lng !== "0") {
@@ -305,14 +294,14 @@
               if (boundaryLayer) {
                 setLocationMarker(lat, lng);
                 doZoomAndCenter(lat, lng);
-                doMapClick(new L.LatLng(lat, lng));
+                doMapClick(new L.LatLng(lat, lng), verifiedAddress);
 
               } else {
                 setTimeout(function () {
                   if (boundaryLayer) {
                     setLocationMarker(lat, lng);
                     doZoomAndCenter(lat, lng);
-                    doMapClick(new L.LatLng(lat, lng));
+                    doMapClick(new L.LatLng(lat, lng), verifiedAddress);
 
                   } else {
                     restoreLocationFromPostback();
@@ -323,7 +312,7 @@
             } else {
               setLocationMarker(lat, lng);
               doZoomAndCenter(lat, lng);
-              doMapClick(new L.LatLng(lat, lng));
+              doMapClick(new L.LatLng(lat, lng), verifiedAddress);
             }
 
             // WARNING: Need to wait until boundaryLayer and regions layers are loaded, if applicable
@@ -335,7 +324,7 @@
           // set up search field with autocomplete ////////////////////////////
           $('#location_search').autocomplete({
             source: function (request, response) {
-              const searchTerm = request.term;
+              const searchTerm = encodeURIComponent(request.term);
               var apiUrl = `https://www.portlandmaps.com/api/suggest/?intersections=1&landmarks=1&alt_coords=1&api_key=${apiKey}&query=${searchTerm}`;
 
               $.ajax({
@@ -353,16 +342,19 @@
             minLength: 3,
             select: function (event, ui) {
               var address = ui.item.address;
-              address += ui.item.attributes.city ? ", " + ui.item.attributes.city : "";
-              // address += ui.item.attributes.state ? ", " + ui.item.attributes.state : "";
-              // address += ui.item.attributes.zip_code ? "  " + ui.item.attributes.zip_code : "";
-              $(this).val(ui.item.address);
+              // if in address verify mode, add all details to address
+              if (addressVerify) {
+                address = buildFullAddress(ui.item);
+              }
+
+              $(this).val(address);
               var lat = ui.item.attributes.lat;
               var lon = ui.item.attributes.lon;
               var latlon = new L.LatLng(lat, lon);
-              reverseGeolocate(latlon);
+              clearLocationFields()
+              reverseGeolocate(latlon, true, address);
+              setVerified();
               $(this).autocomplete('close');
-              $('.verified-checkmark.address').removeClass('invisible');
               return false; // returning true causes the field to be cleared
             },
             response: function (event, ui) {
@@ -372,10 +364,7 @@
             create: function () {
               $(this).data('ui-autocomplete')._renderItem = function (ul, item) {
                 var address = item.address;
-                var fullAddress = item.address;
-                fullAddress += item.attributes.city ? ", " + item.attributes.city : "";
-                fullAddress += item.attributes.state ? ", " + item.attributes.state : "";
-                fullAddress += item.attributes.zip_code ? "  " + item.attributes.zip_code : "";
+                var fullAddress = buildFullAddress(item);
 
                 var lat = item.attributes.lat;
                 var lon = item.attributes.lon;
@@ -404,7 +393,7 @@
 
           if (boundaryUrl) {
             $.ajax({
-              url: boundaryUrl, 
+              url: boundaryUrl,
               success: function (cityBoundaryResponse) {
                 var cityBoundaryFeatures = cityBoundaryResponse.features;
                 boundaryLayer = L.geoJson(cityBoundaryFeatures, cityLimitsProperties).addTo(map);
@@ -457,7 +446,7 @@
 
                         incidentsLoop:
                         // loop backwards becasue we're going to remove incidents that are attached to assets
-                        // and move the incident 
+                        // and move the incident
                         for (var j = incidentsFeatures.length - 1; j >= 0; j--) {
 
                           // is the incident associated with the asset?
@@ -487,7 +476,7 @@
                 if (regionsLayerSource) {
                   showLoader();
                   $.ajax({
-                    url: regionsLayerSource, 
+                    url: regionsLayerSource,
                     async: false,
                     success: function (regionsResponse) {
                       regionsFeatures = regionsResponse.features;
@@ -808,15 +797,15 @@
           }
         }
 
-        function doMapClick(latlng) {
+        function doMapClick(latlng, verifiedAddress) {
           // show loading indicator
           showLoader();
 
           // normally when the map is clicked, we want to zoom to the clicked location
-          // and perform reverse geocoding. 
+          // and perform reverse geocoding.
 
-          // if primary layer behavior is selection-only, or geofencing is enabled, 
-          // don't allow location selection, but still zoom in on that location and 
+          // if primary layer behavior is selection-only, or geofencing is enabled,
+          // don't allow location selection, but still zoom in on that location and
           // display location description.
 
           resetClickedMarker();
@@ -828,7 +817,7 @@
             locateControlContaier.style.backgroundImage = 'url("/modules/custom/portland/modules/portland_location_picker/images/map_locate.png")';
           }
 
-          reverseGeolocate(latlng);
+          reverseGeolocate(latlng, true, verifiedAddress);
         }
 
         function showLoader() {
@@ -869,10 +858,10 @@
           var inLayer = leafletPip.pointInLayer(latlng, testLayer, false);
           if (inLayer.length > 0) {
             // NOTE: The following code would be problematic if we allow multiple copies of the widget or alternate naming conventions.
-            $('input[name=' + elementId + '\\[location_region_id\\]]').val(inLayer[0].feature.properties[regionIdPropertyName]);
+            $('input[name=' + elementId + '\\[location_region_id\\]]').val(inLayer[0].feature.properties[regionIdPropertyName]).trigger('change');
           } else {
             // clear region_id field
-            $('input[name=' + elementId + '\\[location_region_id\\]]').val("");
+            $('input[name=' + elementId + '\\[location_region_id\\]]').val("").trigger('change');
           }
           hideLoader();
         }
@@ -909,7 +898,7 @@
           captureSelectedAssetMarkerData(marker);
 
           // need to call reverseGeolocate in order to capture nearest address,
-          // this is the one instance where we don't want to zoom and center when clicking 
+          // this is the one instance where we don't want to zoom and center when clicking
           // an existing marker (2nd argument = false).
           reverseGeolocate(marker.latlng, true);
         }
@@ -939,7 +928,7 @@
           $('input[name=' + elementId + '\\[location_x\\]]').val('');
           $('input[name=' + elementId + '\\[location_y\\]]').val('');
           $('input[name=' + elementId + '\\[location_asset_id\\]]').val('');
-          $('input[name=' + elementId + '\\[location_region_id\\]]').val('');
+          $('input[name=' + elementId + '\\[location_region_id\\]]').val('').trigger('change');
           $('input[name=' + elementId + '\\[location_municipality_name\\]]').val('');
           $('input[name=' + elementId + '\\[location_attributes\\]]').val('');
 
@@ -951,7 +940,7 @@
 
         function setLocationDetails(results) {
           var location_type = "";
-          $('input[name=' + elementId + '\\[location_types\\]]').val("");
+          $('input[name^=' + elementId + '\\[location_type]').val("");
           $('input[name=' + elementId + '\\[location_attributes\\]]').val("");
           var internal_details = "";
           var type_count = 0;
@@ -1023,14 +1012,9 @@
             $('input[name=' + elementId + '\\[location_zipcode\\]]').val(zipcode);
           }
 
-          $('input[name=' + elementId + '\\[location_type_taxlot\\]]').trigger('change');
-          $('input[name=' + elementId + '\\[location_type_park\\]]').trigger('change');
-          $('input[name=' + elementId + '\\[location_type_waterbody\\]]').trigger('change');
-          $('input[name=' + elementId + '\\[location_type_trail\\]]').trigger('change');
-          $('input[name=' + elementId + '\\[location_type_stream\\]]').trigger('change');
-          $('input[name=' + elementId + '\\[location_type_street\\]]').trigger('change');
-          $('input[name=' + elementId + '\\[location_type_row\\]]').trigger('change');
-
+          $('input[name=' + elementId + '\\[location_attributes\\]]').trigger('change');
+          $('input[name=' + elementId + '\\[location_municipality_name\\]]').trigger('change');
+          $('input[name^=' + elementId + '\\[location_type]').trigger('change');
         }
 
         function removeTrailingComma(myStr) {
@@ -1053,13 +1037,13 @@
         }
 
         function verifyAddressPortlandMaps(address) {
-          var encodedAddress = encodeURI(address);
+          var encodedAddress = encodeURIComponent(address);
           // API documentation: https://www.portlandmaps.com/development/#suggest
           var url = "https://www.portlandmaps.com/api/suggest/?intersections=1&alt_coords=1&api_key=" + drupalSettings.portlandmaps_api_key + "&query=" + encodedAddress;
           $.ajax({
             url: url, success: function (response) {
               if (response.length < 1 || (response.candidates && response.candidates.length < 1)) {
-                showStatusModal("No matching locations found. Please try a different address and try again.");
+                showStatusModal(addressVerify ? NO_MATCHING_ADDRESS_TEXT_VERIFY_MODE : NO_MATCHING_ADDRESS_TEXT);
                 setUnverified();
                 return false;
               } else if (response.error) {
@@ -1078,14 +1062,21 @@
           if (candidates.length > 1) {
             // multiple candidates, how to handle? how about a modal dialog?
             suggestionsModal = $('#suggestions_modal');
-            var listMarkup = "<p>Please select an address by clicking it.</p><ul>";
+            suggestionsModal.html("<p>Please select an address by clicking it.</p>");
+            const listEl = $("<ul></ul>");
             for (var i = 0; i < candidates.length; i++) {
-              var c = candidates[i];
-              var fulladdress = buildFullAddress(c);
-              listMarkup += '<li><a href="#" class="pick" data-lat="' + c.attributes.lat + '" data-lng="' + c.attributes.lon + '" data-pick-address="' + c.address + '">' + fulladdress.toUpperCase() + '</a></li>';
+              const c = candidates[i];
+              const fullAddress = buildFullAddress(c);
+
+              const listItemEl = $("<li></li>");
+              const linkEl = $('<a href="#" class="pick"></a>');
+              linkEl.text(fullAddress.toUpperCase());
+              linkEl.data("candidate", JSON.stringify(c));
+
+              listItemEl.append(linkEl);
+              listEl.append(listItemEl);
             }
-            listMarkup += "</ul>";
-            suggestionsModal.html(listMarkup);
+            suggestionsModal.append(listEl);
             Drupal.dialog(suggestionsModal, {
               title: 'Multiple possible matches found',
               width: '600px',
@@ -1115,18 +1106,16 @@
             // the required lat/lon fields with zeroes so that the form can still be submitted. at least
             // it will capture the address, and the report will still be usable.
             if (lat && lng) {
-              doMapClick(new L.LatLng(lat, lng));
+              doMapClick(new L.LatLng(lat, lng), fulladdress);
               setVerified();
             } else {
               setLatLngHiddenFields(0, 0);
               showStatusModal(VERIFIED_NO_COORDS);
+              setVerified();
             }
-
-            setVerified();
-
           } else {
             // no matches found
-            showStatusModal("No matches found. Please try again.");
+            showStatusModal(addressVerify ? NO_MATCHING_ADDRESS_TEXT_VERIFY_MODE : NO_MATCHING_ADDRESS_TEXT);
           }
         }
 
@@ -1231,7 +1220,7 @@
           hideLoader();
         }
 
-        function reverseGeolocate(latlng, zoomAndCenter = true) {
+        function reverseGeolocate(latlng, zoomAndCenter = true, verifiedAddress) {
           setUnverified();
           shouldRecenterPark = false;
           var url = '';
@@ -1250,7 +1239,7 @@
               //   // location data not available, how to handle?
               //   console.log('Location not found');
               // }
-              processReverseLocationData(response, latlng.lat, latlng.lng, zoomAndCenter);
+              processReverseLocationData(response, latlng.lat, latlng.lng, zoomAndCenter, verifiedAddress);
             },
             error: function (e) {
               // if the PortlandMaps API is down, this is where we'll get stuck.
@@ -1310,13 +1299,13 @@
           return description.toUpperCase();
         }
 
-        function processReverseLocationData(data, lat, lng, zoomAndCenter = true) {
+        function processReverseLocationData(data, lat, lng, zoomAndCenter = true, verifiedAddress) {
           // KLUGE: Address data coming from PortlandMaps has a trailing space; trim it.
           if (data.describe) {
             var describe = data.describe.trim();
             data.describe = describe;
           }
-          
+
           var isWithinBounds = checkWithinBounds(new L.LatLng(lat, lng));
           var isVerifiedAddress = true;
           if (zoomAndCenter) {
@@ -1337,7 +1326,9 @@
             }
           }
 
-          var description = parseDescribeData(data, isWithinBounds);
+          // if in address verify mode, use the verified address from suggest API
+          // rather than the "described" address that is less accurate
+          var description = addressVerify ? verifiedAddress : parseDescribeData(data, isWithinBounds);
 
           showVerifiedLocation(description, lat, lng, isWithinBounds, isVerifiedAddress);
 
@@ -1371,7 +1362,7 @@
           };
 
           if (isVerifiedAddress) setVerified();
-          $('#location_address').val(description);
+          $('#location_address').val(description).trigger('change');
         }
 
         function hideVerifiedLocation() {
@@ -1403,10 +1394,14 @@
         }
 
         function buildFullAddress(c) {
-          return [c.address, c.attributes.city]
+          // Sometimes the PortlandMaps API erroneously returns a full address string  w/ city & state in the `address` field
+          // so let's split it by comma and only extract the first part which will be the address alone.
+          const address = c.address.split(',')[0];
+
+          return [address, c.attributes.city ? c.attributes.city + ' ' + c.attributes.state : '']
             .filter(Boolean)
             .join(', ')
-            + ' ' + (c.attributes.zip_code || '');
+            + (c.attributes.zip_code ? ' ' + c.attributes.zip_code : '');
         }
 
         function showStatusModal(message) {
