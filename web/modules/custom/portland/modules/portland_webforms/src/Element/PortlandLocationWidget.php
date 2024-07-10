@@ -20,7 +20,35 @@ use Drupal\webform\Element\WebformCompositeBase;
  * @see \Drupal\webform\Element\WebformCompositeBase
  * @see \Drupal\portland_webforms\Element\PortlandLocationWidget
  */
-class PortlandLocationWidget extends WebformCompositeBase {
+class PortlandLocationWidget extends WebformCompositeBase
+{
+  /**
+   * {@inheritdoc}
+   */
+  public function getInfo()
+  {
+    return [
+      '#input' => TRUE,
+      '#theme' => 'portland_location_widget',
+      '#pre_render' => [
+        [get_class($this), 'preRenderCompositeFormElement'],
+      ],
+    ];
+  }
+
+
+  /**
+   * Pre-render callback to prepare element for rendering.
+   */
+  public static function preRenderCompositeFormElement($element)
+  {
+    $element = parent::preRenderCompositeFormElement($element);
+    // Pass sub-elements to the template.
+    $element['#theme'] = 'portland_location_widget';
+    $element['#elements'] = $element['#element']['elements']; // Adjust as per your element structure
+    $element['#theme_wrappers'] = ['container'];
+    return $element;
+  }
 
   /**
    * {@inheritdoc}
@@ -29,12 +57,13 @@ class PortlandLocationWidget extends WebformCompositeBase {
    * 
    * How to programmatically set field conditions: https://www.drupal.org/docs/drupal-apis/form-api/conditional-form-fields
    */
-  public static function getCompositeElements(array $element) {
+  public static function getCompositeElements(array $element)
+  {
 
     $nodes = \Drupal::entityTypeManager()->getStorage('node')->loadByProperties(['type' => 'park_facility', 'status' => 1]);
 
     $element_id = "report_location"; // default element machine name
-    
+
     if (array_key_exists("#webform_key", $element)) {
       $element_id = $element['#webform_key'];
     }

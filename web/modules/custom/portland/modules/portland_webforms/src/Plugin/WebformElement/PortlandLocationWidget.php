@@ -5,6 +5,8 @@ namespace Drupal\portland_webforms\Plugin\WebformElement;
 use Drupal\webform\Plugin\WebformElement\WebformCompositeBase;
 use Drupal\webform\WebformSubmissionInterface;
 
+// use Drupal\webform\Element\WebformCompositeBase;
+
 /**
  * Provides a 'portland_location_widget' element.
  *
