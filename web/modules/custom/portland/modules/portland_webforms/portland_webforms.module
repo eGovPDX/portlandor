@@ -14,7 +14,7 @@ function portland_webforms_form_alter(&$form, &$form_state, $form_id) {
     $flattened = WebformElementHelper::getFlattened($form['elements']);
     foreach ($flattened as $key => $value) {
       if (array_key_exists('#type', $flattened[$key]) && $flattened[$key]['#type'] == "portland_location_widget") {
-        $form['#attached']['library'][] = 'portland_webforms/portland_webforms';
+        $form['#attached']['library'][] = 'portland_webforms/portland_location_picker';
         $form['#attached']['drupalSettings']['portlandmaps_api_key'] = \Drupal::service('key.repository')->getKey('portlandmaps_api')->getKeyValue();
         $library_attached = true;
         break;
@@ -30,17 +30,21 @@ function portland_webforms_form_alter(&$form, &$form_state, $form_id) {
  * @param FormStateInterface $form_state
  * @param array              $context
  */
-function portland_webforms_webform_element_alter(array &$element, FormStateInterface $form_state, array $context) {
+function portland_portland_webforms_webform_element_alter(array &$element, FormStateInterface $form_state, array $context) {
 
+  // TODO: need a better way to handle this. in some forms, the location widget may be hidden due to conditional
+  // logic and never used, but this is causing it to still require a value. Can we make sub-elements conditionally
+  // required? Or can we detect whether the parent element is conditionally required?
+  
+  // // add a custom validation constraint to the map element; 
+  // // it will check lat/lng to validate that a location has been selected.
+  // if (array_key_exists('#id', $element) && $element['#id'] == "location_map") {
+  //   $element['#element_validate'][] = [
+  //       'Drupal\portland_location_picker\Validate\GeolocationValidationConstraint',
+  //       'validate'
+  //   ];
+  // } 
 
-}
-
-function portland_webforms_theme() {
-  return [
-    'portland_webforms' => [
-      'render element' => 'element',
-      'template' => 'location-widget',
-    ],
-  ];
+ 
 }
 

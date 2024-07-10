@@ -1,6 +1,4 @@
-var LocationWidget = LocationWidget || {};
-
-(function ($, Drupal, drupalSettings, L, LocationWidget) {
+(function ($, Drupal, drupalSettings, L) {
 
   var initialized = false;
   var map;
@@ -17,15 +15,15 @@ var LocationWidget = LocationWidget || {};
    * @prop {Drupal~behaviorAttach} attach
    *   Attaches machine-name behaviors.
    */
-  Drupal.behaviors.locationWidgetBehavior = {
-    attach: function (context, settings) {
+  Drupal.behaviors.portland_location_widget = {
+    attach: function (context) {
 
-      LocationWidget.Core.init();
-      LocationWidget.Layers.init();
+      var test = $('main');
 
-      // $(once('portland_location_widget', 'fieldset.portland-location-widget--wrapper', context)).each(function () {
-      //   alert("Location Widget is plugged in!");
-      // });
+      $(once('portland_location_widget', 'fieldset.portland-location-widget--wrapper', context)).each(function () {
+
+
+      });
     }
   };
-})(jQuery, Drupal, drupalSettings, L, LocationWidget);
+})(jQuery, Drupal, drupalSettings, L);

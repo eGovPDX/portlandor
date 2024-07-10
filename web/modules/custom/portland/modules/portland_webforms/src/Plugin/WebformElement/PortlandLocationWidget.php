@@ -10,8 +10,8 @@ use Drupal\webform\WebformSubmissionInterface;
  *
  * @WebformElement(
  *   id = "portland_location_widget",
- *   label = @Translation("Portland Location Widget"),
- *   description = @Translation("Provides an element for selecting a location by map or address and storing the lat/lng coordiantes. WARNING: Only one instance of a location picker widget is supported in a webform, and the machine name must be 'report_location.'"),
+ *   label = @Translation("Portland location widget"),
+ *   description = @Translation("Provides an element for selecting a location by map or address."),
  *   category = @Translation("Composite elements"),
  *   multiline = TRUE,
  *   composite = TRUE,
@@ -37,43 +37,9 @@ class PortlandLocationWidget extends WebformCompositeBase {
     // needed, such as in a handler that is sending data to an external system, the sub-field needs to be
     // specified in the token, such as [webform_submission:values:location:place_name].
     $lines = [];
-    // $lines[] = '<p>';
+    $lines[] = '<p>';
 
-    // if (isset($value['place_name']) && $value['place_name']) {
-    //   $lines[] = '<strong>Location name:</strong> ' . $value['place_name'];
-    // }
-    // if (isset($value['location_address']) && $value['location_address']) {
-    //   $lines[] = '<strong>Address:</strong>&nbsp;<a href="https://www.google.com/maps/place/' . $value['location_address'] . '">' . $value['location_address'] . '</a>';
-    // }
-    // if (isset($value['location_lat']) && isset($value['location_lon']) && $value['location_lat']) {
-    //   $latlon = $value['location_lat'] . ',' . $value['location_lon'];
-    //   $lines[] = '<strong>Lat/lng:</strong>&nbsp;<a href="https://www.google.com/maps/place/' . $latlon . '">' . $latlon . '</a>';
-    // }
-    // if (isset($value['location_municipality_name']) && $value['location_municipality_name']) {
-    //   $lines[] = '<strong>Municipality:</strong> ' . $value['location_municipality_name'];
-    // }
-    // if (isset($value['location_zipcode']) && $value['location_zipcode']) {
-    //   $lines[] = '<strong>Zipcode:</strong> ' . $value['location_zipcode'];
-    // }
-    // if (isset($value['location_details']) && $value['location_details']) {
-    //   $lines[] = '<strong>Location details:</strong> ' . $value['location_details'];
-    // }
-    // if (isset($value['location_types']) && $value['location_types']) {
-    //   $lines[] = '<strong>Location type(s):</strong> ' . $value['location_types'];
-    // }
-    // if (isset($value['location_attributes']) && $value['location_attributes']) {
-    //   $lines[] = '<strong>Location attributes:</strong> ' . $value['location_attributes'];
-    // }
-    // if (isset($value['location_asset_id']) && $value['location_asset_id']) {
-    //   $lines[] = '<strong>Asset ID:</strong> ' . $value['location_asset_id'];
-    // }
-    // if (isset($value['location_region_id']) && $value['location_region_id']) {
-    //   $lines[] = '<strong>Region ID:</strong> ' . $value['location_region_id'];
-    // }
-    // if (isset($value['location_search']) && $value['location_search']) {
-    //   $lines[] = '<strong>Search query:</strong> ' . $value['location_search'];
-    // }
-    // $lines[] = '</p>';
+    $lines[] = '</p>';
     return $lines;
   }
 
@@ -88,43 +54,7 @@ class PortlandLocationWidget extends WebformCompositeBase {
     // needed, such as in a handler that is sending data to an external system, the sub-field needs to be
     // specified in the token, such as [webform_submission:values:location:place_name].
     $lines = [];
-    // $lines[] = '';
-    // if (isset($value['place_name']) && $value['place_name']) {
-    //   $lines[] = 'Location name: ' . $value['place_name'];
-    // }
-    // if (isset($value['location_address']) && $value['location_address']) {
-    //   $lines[] = 'Address: ' . $value['location_address'];
-    //   $lines[] = 'Map link: https://www.google.com/maps/place/' . $value['location_address'];
-    // }
-    // if (isset($value['location_lat']) && isset($value['location_lon']) && $value['location_lat']) {
-    //   $latlon = $value['location_lat'] . ',' . $value['location_lon'];
-    //   $lines[] = 'Lat/lng: ' . $latlon;
-    //   $lines[] = 'Map link: https://www.google.com/maps/place/' . $latlon;
-    // }
-    // if (isset($value['location_municipality_name']) && $value['location_municipality_name']) {
-    //   $lines[] = 'Municipality: ' . $value['location_municipality_name'];
-    // }
-    // if (isset($value['location_zipcode']) && $value['location_zipcode']) {
-    //   $lines[] = 'Region ID: ' . $value['location_zipcode'];
-    // }
-    // if (isset($value['location_details']) && $value['location_details']) {
-    //   $lines[] = 'Location details: ' . $value['location_details'];
-    // }
-    // if (isset($value['location_types']) && $value['location_types']) {
-    //   $lines[] = 'Location type(s): ' . $value['location_types'];
-    // }    
-    // if (isset($value['location_attributes']) && $value['location_attributes']) {
-    //   $lines[] = 'Location details: ' . $value['location_attributes'];
-    // }
-    // if (isset($value['location_asset_id']) && $value['location_asset_id']) {
-    //   $lines[] = 'Asset ID: ' . $value['location_asset_id'];
-    // }
-    // if (isset($value['location_region_id']) && $value['location_region_id']) {
-    //   $lines[] = 'Region ID: ' . $value['location_region_id'];
-    // }
-    // if (isset($value['location_search']) && $value['location_search']) {
-    //   $lines[] = 'Search query: ' . $value['location_search'];
-    // }
+    $lines[] = '';
     return $lines;
   }
 
@@ -165,32 +95,32 @@ class PortlandLocationWidget extends WebformCompositeBase {
     // $requireBoundary = array_key_exists('#require_boundary', $element) ? $element['#require_boundary'] : FALSE;
     // $outOfBoundsMessage = array_key_exists('#out_of_bounds_message', $element) ? $element['#out_of_bounds_message'] : "The location you selected is not within our service area. Please try a different location.";
 
-    // $element['#attached']['drupalSettings']['webform']['portland_location_picker']['address_verify'] = $addressVerify;
-    // $element['#attached']['drupalSettings']['webform']['portland_location_picker']['element_id'] = $element_id;
-    // $element['#attached']['drupalSettings']['webform']['portland_location_picker']['primary_layer_source'] = $primaryLayerSource;
-    // $element['#attached']['drupalSettings']['webform']['portland_location_picker']['incidents_layer_source'] = $incidentsLayerSource;
-    // $element['#attached']['drupalSettings']['webform']['portland_location_picker']['regions_layer_source'] = $regionsLayerSource;
-    // $element['#attached']['drupalSettings']['webform']['portland_location_picker']['primary_layer_behavior'] = $primaryLayerBehavior;
-    // $element['#attached']['drupalSettings']['webform']['portland_location_picker']['primary_layer_type'] = $primaryLayerType;
-    // $element['#attached']['drupalSettings']['webform']['portland_location_picker']['primary_marker'] = $primaryMarker;
-    // $element['#attached']['drupalSettings']['webform']['portland_location_picker']['selected_marker'] = $selectedMarker;
-    // $element['#attached']['drupalSettings']['webform']['portland_location_picker']['incident_marker'] = $incidentMarker;
-    // $element['#attached']['drupalSettings']['webform']['portland_location_picker']['disable_popup'] = $disablePopup;
-    // $element['#attached']['drupalSettings']['webform']['portland_location_picker']['verify_button_text'] = $verifyButtonText;
-    // $element['#attached']['drupalSettings']['webform']['portland_location_picker']['primary_feature_name'] = $primaryFeatureName;
-    // $element['#attached']['drupalSettings']['webform']['portland_location_picker']['feature_layer_visible_zoom'] = $featureLayerVisibleZoom;
-    // $element['#attached']['drupalSettings']['webform']['portland_location_picker']['display_city_limits'] = $displayCityLimits;
-    // $element['#attached']['drupalSettings']['webform']['portland_location_picker']['require_city_limits'] = $requireCityLimits;
-    // $element['#attached']['drupalSettings']['webform']['portland_location_picker']['require_city_limits_plus_parks'] = $requireCityLimitsPlusParks;
-    // $element['#attached']['drupalSettings']['webform']['portland_location_picker']['location_types'] = $locationTypes;
-    // $element['#attached']['drupalSettings']['webform']['portland_location_picker']['disable_place_name_autofill'] = $disablePlaceNameAutofill;
-    // $element['#attached']['drupalSettings']['webform']['portland_location_picker']['region_id_property_name'] = $regionIdPropertyName;
+    // $element['#attached']['drupalSettings']['webform']['portland_location_widget']['address_verify'] = $addressVerify;
+    // $element['#attached']['drupalSettings']['webform']['portland_location_widget']['element_id'] = $element_id;
+    // $element['#attached']['drupalSettings']['webform']['portland_location_widget']['primary_layer_source'] = $primaryLayerSource;
+    // $element['#attached']['drupalSettings']['webform']['portland_location_widget']['incidents_layer_source'] = $incidentsLayerSource;
+    // $element['#attached']['drupalSettings']['webform']['portland_location_widget']['regions_layer_source'] = $regionsLayerSource;
+    // $element['#attached']['drupalSettings']['webform']['portland_location_widget']['primary_layer_behavior'] = $primaryLayerBehavior;
+    // $element['#attached']['drupalSettings']['webform']['portland_location_widget']['primary_layer_type'] = $primaryLayerType;
+    // $element['#attached']['drupalSettings']['webform']['portland_location_widget']['primary_marker'] = $primaryMarker;
+    // $element['#attached']['drupalSettings']['webform']['portland_location_widget']['selected_marker'] = $selectedMarker;
+    // $element['#attached']['drupalSettings']['webform']['portland_location_widget']['incident_marker'] = $incidentMarker;
+    // $element['#attached']['drupalSettings']['webform']['portland_location_widget']['disable_popup'] = $disablePopup;
+    // $element['#attached']['drupalSettings']['webform']['portland_location_widget']['verify_button_text'] = $verifyButtonText;
+    // $element['#attached']['drupalSettings']['webform']['portland_location_widget']['primary_feature_name'] = $primaryFeatureName;
+    // $element['#attached']['drupalSettings']['webform']['portland_location_widget']['feature_layer_visible_zoom'] = $featureLayerVisibleZoom;
+    // $element['#attached']['drupalSettings']['webform']['portland_location_widget']['display_city_limits'] = $displayCityLimits;
+    // $element['#attached']['drupalSettings']['webform']['portland_location_widget']['require_city_limits'] = $requireCityLimits;
+    // $element['#attached']['drupalSettings']['webform']['portland_location_widget']['require_city_limits_plus_parks'] = $requireCityLimitsPlusParks;
+    // $element['#attached']['drupalSettings']['webform']['portland_location_widget']['location_types'] = $locationTypes;
+    // $element['#attached']['drupalSettings']['webform']['portland_location_widget']['disable_place_name_autofill'] = $disablePlaceNameAutofill;
+    // $element['#attached']['drupalSettings']['webform']['portland_location_widget']['region_id_property_name'] = $regionIdPropertyName;
 
 
-    // $element['#attached']['drupalSettings']['webform']['portland_location_picker']['boundary_url'] = $boundaryUrl;
-    // $element['#attached']['drupalSettings']['webform']['portland_location_picker']['display_boundary'] = $displayBoundary;
-    // $element['#attached']['drupalSettings']['webform']['portland_location_picker']['require_boundary'] = $requireBoundary;
-    // $element['#attached']['drupalSettings']['webform']['portland_location_picker']['out_of_bounds_message'] = $outOfBoundsMessage;
+    // $element['#attached']['drupalSettings']['webform']['portland_location_widget']['boundary_url'] = $boundaryUrl;
+    // $element['#attached']['drupalSettings']['webform']['portland_location_widget']['display_boundary'] = $displayBoundary;
+    // $element['#attached']['drupalSettings']['webform']['portland_location_widget']['require_boundary'] = $requireBoundary;
+    // $element['#attached']['drupalSettings']['webform']['portland_location_widget']['out_of_bounds_message'] = $outOfBoundsMessage;
   }
 
 }
