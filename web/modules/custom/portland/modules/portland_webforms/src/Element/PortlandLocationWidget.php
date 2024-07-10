@@ -38,14 +38,12 @@ class PortlandLocationWidget extends WebformCompositeBase
 
 
   /**
-   * Pre-render callback to prepare element for rendering.
+   * {@inheritdoc}
    */
-  public static function preRenderCompositeFormElement($element)
-  {
+  public static function preRenderCompositeFormElement( $element) {
     $element = parent::preRenderCompositeFormElement($element);
     // Pass sub-elements to the template.
     $element['#theme'] = 'portland_location_widget';
-    $element['#elements'] = $element['#element']['elements']; // Adjust as per your element structure
     $element['#theme_wrappers'] = ['container'];
     return $element;
   }
@@ -68,29 +66,29 @@ class PortlandLocationWidget extends WebformCompositeBase
       $element_id = $element['#webform_key'];
     }
 
-    // $element['location_search'] = [
-    //   '#type' => 'textfield',
-    //   '#title' => t('Location Search'),
-    //   '#id' => 'location_search',
-    //   '#attributes' => ['class' => ['location-widget-address'], 'autocomplete' => 'off'],
-    //   '#description' => t('Search the map for an address, cross streets, park, or community center. Or use the map to click a location.'),
-    //   '#description_display' => 'before',
-    // ];
+    $element['location_search'] = [
+      '#type' => 'textfield',
+      '#title' => t('Location Search'),
+      '#id' => 'location_search',
+      '#attributes' => ['class' => ['location-widget-address'], 'autocomplete' => 'off'],
+      '#description' => t('Search the map for an address, cross streets, park, or community center. Or use the map to click a location.'),
+      '#description_display' => 'before',
+    ];
     // $element['precision_text'] = [
     //   '#type' => 'markup',
     //   '#title' => 'Precision',
     //   '#title_display' => 'invisible',
     //   '#markup' => '<div class="alert alert--info next-steps visually-hidden precision_text" aria-hidden="true" id="precision_text"><strong>IMPORTANT:</strong> To help us provide better service, please click, tap, or drag the marker to the precise location on the map.</div>',
     // ];
-    $element['location_map'] = [
-      '#type' => 'markup',
-      '#id' => 'location_map',
-      '#title' => 'Location map',
-      '#description' => '',
-      '#description_display' => 'before',
-      '#title_display' => 'invisible',
-      '#markup' => '<h2>My map</h2><div id="location_map_container" class="location-map"></div><div class="loader-container" role="status"><div class="loader"></div><div class="visually-hidden">Loading...</div></div>',
-    ];
+    // $element['location_map'] = [
+    //   '#type' => 'markup',
+    //   '#id' => 'location_map',
+    //   '#title' => 'Location map',
+    //   '#description' => '',
+    //   '#description_display' => 'before',
+    //   '#title_display' => 'invisible',
+    //   '#markup' => '<h2>My map</h2><div id="location_map_container" class="location-map"></div><div class="loader-container" role="status"><div class="loader"></div><div class="visually-hidden">Loading...</div></div>',
+    // ];
     // $element['suggestions_modal'] = [
     //   '#type' => 'markup',
     //   '#title' => 'Suggestions',
