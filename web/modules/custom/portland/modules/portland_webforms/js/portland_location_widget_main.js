@@ -22,6 +22,7 @@
 
       $(once('portland_location_widget', 'fieldset.portland-location-widget--wrapper', context)).each(function () {
 
+        alert("It's plugged in!");
 
       });
     }
