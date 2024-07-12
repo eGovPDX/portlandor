@@ -36,10 +36,14 @@ class PortlandLocationWidget extends WebformCompositeBase
       '#title_display' => 'invisible',
       '#markup' => '<div class="alert alert--info next-steps visually-hidden precision_text" aria-hidden="true" id="precision_text"><strong>IMPORTANT:</strong> To help us provide better service, please click, tap, or drag the marker to the precise location on the map.</div>',
     ];
-    $element['location_address'] = [
-      '#type' => 'textfield',
-      '#title' => t('Location Address'),
-      '#attributes' => ['class' => ['location-picker-address'], 'autocomplete' => 'off', 'id' => 'location_address']
+    $element['location_map'] = [
+      '#type' => 'markup',
+      '#id' => 'location_map',
+      '#title' => 'Location map',
+      '#description' => '',
+      '#description_display' => 'before',
+      '#title_display' => 'invisible',
+      '#markup' => '<div id="location_map_container" class="location-map"></div><div class="loader-container" role="status"><div class="loader"></div><div class="visually-hidden">Loading...</div></div>',
     ];
 
     return $element;

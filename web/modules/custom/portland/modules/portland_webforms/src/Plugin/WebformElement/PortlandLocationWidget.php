@@ -68,5 +68,7 @@ class PortlandLocationWidget extends WebformCompositeBase {
     if (array_key_exists("#webform_key", $element)) {
       $element_id = $element['#webform_key'];
     }
+
+    $element['#attached']['drupalSettings']['webform']['portland_location_widget']['element_id'] = $element_id;
   }
 }
