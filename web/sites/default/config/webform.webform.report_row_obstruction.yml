@@ -143,6 +143,7 @@ elements: |-
         'Extension cord': 'Extension cord'
         'Hazardous waste': 'Hazardous waste -- Human feces, used syringes, etc.'
         Other: Other
+        'Messy sidewalk': 'Messy sidewalk -- Gravel, mud, debris, etc.'
       '#other__description': 'Please describe'
       '#states':
         visible:
@@ -298,7 +299,7 @@ elements: |-
             value: 'Outdoor seating, tables, dining structure'
         - or
         - ':input[name="report_tree_issue"]':
-            value: 'A tree or vegetation that is blocking view of a traffic signal, traffic or street sign'
+            value: 'A tree or vegetation that is blocking view of a traffic signal, traffic or street sign, or visibility at an intersection'
         - or
         - ':input[name="report_tree_issue"]':
             value: 'Vegetation blocking a streetlight'
@@ -338,6 +339,7 @@ elements: |-
         '#type': portland_location_picker
         '#title': 'Location of the obstruction'
         '#location_search__title': Location
+        '#location_lat__required': true
         '#place_name__access': false
         '#location_details__access': false
         '#location_details__title': 'Obstruction Details'
@@ -384,11 +386,11 @@ elements: |-
             - or
             - ':input[name="report_signage_type"]':
                 value: 'A-board sign'
-      contact_email:
+      contact_home_address:
         '#type': textfield
-        '#title': Email
-        '#pattern': '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
-        '#pattern_error': 'Please enter a correctly formatted email address, such as myname@example.com.'
+        '#title': 'Home Address'
+        '#description': '<p>Please provide a complete, valid address.</p>'
+        '#description_display': before
         '#states':
           required:
             - ':input[name="report_temporary_item"]':
@@ -409,6 +411,29 @@ elements: |-
         '#type': textfield
         '#title': Phone
         '#input_mask': '(999) 999-9999'
+        '#states':
+          required:
+            - ':input[name="report_temporary_item"]':
+                value: Mulch
+            - or
+            - ':input[name="report_temporary_item"]':
+                value: 'A-board sign'
+            - or
+            - ':input[name="report_outdoor_dining_item"]':
+                value: 'A-board sign'
+            - or
+            - ':input[name="report_vegetation_source"]':
+                value: 'Private property'
+            - or
+            - ':input[name="report_signage_type"]':
+                value: 'A-board sign'
+      contact_email:
+        '#type': textfield
+        '#title': Email
+        '#description': '<p><span style="-webkit-text-stroke-width:0px;background-color:rgb(255, 255, 255);color:rgb(21, 25, 30);display:inline !important;float:none;font-family:&quot;Open Sans&quot;, &quot;Helvetica Neue&quot;, Helvetica, Arial, sans-serif;font-size:14px;font-style:normal;font-variant-caps:normal;font-variant-ligatures:normal;font-weight:400;letter-spacing:normal;orphans:2;text-align:start;text-decoration-color:initial;text-decoration-style:initial;text-decoration-thickness:initial;text-indent:0px;text-transform:none;white-space:normal;widows:2;word-spacing:0px;">We will only use your email address to respond to your report if needed.</span></p>'
+        '#description_display': before
+        '#pattern': '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        '#pattern_error': 'Please enter a correctly formatted email address, such as myname@example.com.'
     section_public_records_statement:
       '#type': webform_section
       '#title': 'Public Records Statement'
@@ -529,8 +554,8 @@ elements: |-
       {% if data.report_location.location_lat and data.report_location.location_lon %}
         Lat/Lon: <a href="https://www.google.com/maps/place/{{ data.report_location.location_lat }},{{ data.report_location.location_lon }}">{{ data.report_location.location_lat }},{{ data.report_location.location_lon }}</a><br>
       {% endif %}
-      {% if data.report_location.location_details %}
-        {{ data.report_location.location_details }}
+      {% if data.report_location.location_attributes %}
+        {{ data.report_location.location_attributes }}
       {% endif %}
     '#ajax': true
   computed_compliance_subtype:
@@ -547,6 +572,22 @@ elements: |-
         {{ data.report_temporary_item is iterable ? "" : data.report_temporary_item }}
       {% elseif data.report_issue_type == "Trees or vegetation" %}
         {{ data.report_tree_issue is iterable ? "" : data.report_tree_issue }}
+      {% endif %}
+    '#whitespace': trim
+    '#ajax': true
+  computed_compliance_type:
+    '#type': webform_computed_twig
+    '#title': 'Computed Compliance Type'
+    '#mode': text
+    '#template': |
+      {% if data.report_issue_type == "Construction work zone item" %}
+        20710237949079_construction
+      {% elseif data.report_issue_type == "Permanent structure" %}
+        20710237949079_permanent_structure
+      {% elseif data.report_issue_type == "Temporary item" %}
+        20710237949079_temporary_item
+      {% else %}
+        20710237949079_row_type_other
       {% endif %}
     '#whitespace': trim
     '#ajax': true
@@ -759,53 +800,11 @@ handlers:
       assignee_id: ''
       type: incident
       collaborators: ''
-      custom_fields: "6353388345367: 'report_row_obstruction'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n1500013095781: '[webform_submission:uuid]'\r\n21326872476311: ['[webform_submission:values:computed_compliance_subtype]', 'computed_compliance_subtype']\r\n7557381052311: ['[webform_submission:values:report_obstruction_details]', 'report_obstruction_details']"
+      custom_fields: "6353388345367: 'report_row_obstruction'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n1500013095781: '[webform_submission:uuid]'\r\n21326872476311: ['[webform_submission:values:computed_compliance_subtype]', 'computed_compliance_subtype']\r\n7557381052311: ['[webform_submission:values:report_obstruction_details]', 'report_obstruction_details']\r\n20710237949079: ['[webform_submission:values:computed_compliance_type]', 'computed_compliance_type']"
       ticket_id_field: report_ticket_id
       ticket_form_id: '20531514301207'
       recipient: ''
       ticket_fork_field: ''
-  email:
-    id: email
-    handler_id: email
-    label: 'Submit by email'
-    notes: 'Sends the report by email to the recipient specified in the computed_email_recipient field.'
-    status: true
-    conditions:
-      enabled:
-        ':input[name="computed_email_recipient"]':
-          filled: true
-        ':input[name="support_agent_use_only[test_submission]"]':
-          unchecked: true
-    weight: -47
-    settings:
-      states:
-        - completed
-      to_mail: '[webform_submission:values:computed_email_recipient]'
-      to_options: {  }
-      bcc_mail: ''
-      bcc_options: {  }
-      cc_mail: ''
-      cc_options: {  }
-      from_mail: noreply@portlandoregon.gov
-      from_options: {  }
-      from_name: _default
-      reply_to: ''
-      return_path: ''
-      sender_mail: ''
-      sender_name: ''
-      subject: 'Obstruction in the right-of-way: [webform_submission:values:report_issue_type]'
-      body: "<p><em>This email was sent by Portland.gov. Do no reply.</em></p>\r\n\r\n<p>[webform_submission:values:computed_description:html]</p>"
-      excluded_elements: {  }
-      ignore_access: false
-      exclude_empty: true
-      exclude_empty_checkbox: false
-      exclude_attachments: false
-      html: true
-      attachments: false
-      twig: false
-      theme_name: ''
-      parameters: {  }
-      debug: false
   test_submit_to_zendesk:
     id: zendesk
     handler_id: test_submit_to_zendesk
@@ -831,51 +830,63 @@ handlers:
       assignee_id: ''
       type: incident
       collaborators: ''
-      custom_fields: "6353388345367: 'report_row_obstruction'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n1500013095781: '[webform_submission:uuid]'\r\n21326872476311: ['[webform_submission:values:computed_compliance_subtype]', 'computed_compliance_subtype']\r\n7557381052311: ['[webform_submission:values:report_obstruction_details]', 'report_obstruction_details']"
+      custom_fields: "6353388345367: 'report_row_obstruction'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n1500013095781: '[webform_submission:uuid]'\r\n20710237949079: ['[webform_submission:values:computed_compliance_type]', 'computed_compliance_type']\r\n21326872476311: ['[webform_submission:values:computed_compliance_subtype]', 'computed_compliance_subtype']\r\n7557381052311: ['[webform_submission:values:report_obstruction_details]', 'report_obstruction_details']"
       ticket_id_field: report_ticket_id
       ticket_form_id: '20531514301207'
       recipient: ''
       ticket_fork_field: ''
-  submit_by_email:
-    id: email
-    handler_id: submit_by_email
-    label: 'TEST: Submit by email'
-    notes: 'Sends a test email to gregory.clapp@portlandoregon.gov.'
+  submit_to_zendesk_311_for_triage:
+    id: zendesk
+    handler_id: submit_to_zendesk_311_for_triage
+    label: 'TEST: Submit to Zendesk (requires additional triage)'
+    notes: 'If routing is to an email address, send to 311 group for triage, then add a private note in an update with the computed email recipient and instrucitons.'
+    status: true
+    conditions:
+      enabled:
+        ':input[name="support_agent_use_only[test_submission]"]':
+          checked: true
+        ':input[name="computed_email_recipient"]':
+          filled: true
+    weight: 2
+    settings:
+      requester_name: contact_name
+      requester_email: contact_email
+      subject: '[webform_submission:values:report_issue_type]'
+      comment: '[webform_submission:values:computed_description:html]'
+      tags: 'drupal webform [webform_submission:values:computed_tags]'
+      priority: normal
+      status: new
+      group_id: '4549352062487'
+      assignee_id: ''
+      type: incident
+      collaborators: ''
+      custom_fields: "6353388345367: 'report_row_obstruction'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n1500013095781: '[webform_submission:uuid]'\r\n21326872476311: ['[webform_submission:values:computed_compliance_subtype]', 'computed_compliance_subtype']\r\n7557381052311: ['[webform_submission:values:report_obstruction_details]', 'report_obstruction_details']\r\n20710237949079: ['[webform_submission:values:computed_compliance_type]', 'computed_compliance_type']"
+      ticket_id_field: report_ticket_id
+      ticket_form_id: '20531514301207'
+      recipient: ''
+      ticket_fork_field: ''
+  zendesk_update_request:
+    id: zendesk_update_ticket
+    handler_id: zendesk_update_request
+    label: 'Update ticket with triage instructions'
+    notes: ''
     status: true
     conditions:
       enabled:
         ':input[name="computed_email_recipient"]':
           filled: true
-        ':input[name="support_agent_use_only[test_submission]"]':
-          checked: true
-    weight: 4
+    weight: 3
     settings:
-      states:
-        - completed
-      to_mail: gregory.clapp@portlandoregon.gov
-      to_options: {  }
-      bcc_mail: ''
-      bcc_options: {  }
-      cc_mail: ''
-      cc_options: {  }
-      from_mail: noreply@portlandoregon.gov
-      from_options: {  }
-      from_name: _default
-      reply_to: ''
-      return_path: ''
-      sender_mail: ''
-      sender_name: ''
-      subject: 'TEST: Obstruction in the right-of-way: [webform_submission:values:report_issue_type]'
-      body: "<p><strong>This is a test. This email would normally have been sent to&nbsp;[webform_submission:values:computed_email_recipient:html].</strong></p>\r\n\r\n<p>[webform_submission:values:computed_description:html]</p>"
-      excluded_elements: {  }
-      ignore_access: false
-      exclude_empty: true
-      exclude_empty_checkbox: false
-      exclude_attachments: false
-      html: true
-      attachments: false
-      twig: false
-      theme_name: ''
-      parameters: {  }
-      debug: false
+      comment: "<h3>This ticket requires additional traige</h3>\r\n<p>Please review this ticket to verify the email routing below is correct.</p>\r\n<p><strong>Computed recipient:</strong> [webform_submission:values:computed_email_recipient]</p>"
+      comment_private: 1
+      tags: ''
+      priority: ''
+      status: ''
+      group_id: ''
+      assignee_id: ''
+      type: ''
+      collaborators: ''
+      custom_fields: ''
+      ticket_id_field: report_ticket_id
+      ticket_form_id: '20531514301207'
 variants: {  }
