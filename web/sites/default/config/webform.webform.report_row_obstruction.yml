@@ -578,6 +578,7 @@ elements: |-
   computed_compliance_type:
     '#type': webform_computed_twig
     '#title': 'Computed Compliance Type'
+    '#display_on': none
     '#mode': text
     '#template': |
       {% if data.report_issue_type == "Construction work zone item" %}
@@ -590,6 +591,21 @@ elements: |-
         20710237949079_row_type_other
       {% endif %}
     '#whitespace': trim
+    '#ajax': true
+  computed_triage_message:
+    '#type': webform_computed_twig
+    '#title': 'Computed Triage Message'
+    '#display_on': none
+    '#mode': html
+    '#template': |-
+      {% if data.computed_email_recipient != "" or data.report_tree_issue == "None of the above" or data.report_vegetation_source == "Parking strip, median, or other parts of the street or right-of-way" or data.report_vegetation_source == "Park or natural area" or data.report_vegetation_source == "Something else, or unsure" %}
+        <h3>This ticket requires additional traige</h3>
+        {% if data.computed_email_recipient != "" %}
+          <p>Please review this ticket to verify the email routing below is correct.</p>
+          <p><strong>Computed recipient:</strong> {{ data.computed_email_recipient }}</p>
+        {% endif %}
+      {% endif %}
+    '#whitespace': spaceless
     '#ajax': true
 css: ''
 javascript: ''
@@ -845,7 +861,7 @@ handlers:
       enabled:
         ':input[name="support_agent_use_only[test_submission]"]':
           checked: true
-        ':input[name="computed_email_recipient"]':
+        ':input[name="computed_triage_message"]':
           filled: true
     weight: 2
     settings:
@@ -873,7 +889,7 @@ handlers:
     status: true
     conditions:
       enabled:
-        ':input[name="computed_email_recipient"]':
+        ':input[name="computed_triage_message"]':
           filled: true
     weight: 3
     settings:
