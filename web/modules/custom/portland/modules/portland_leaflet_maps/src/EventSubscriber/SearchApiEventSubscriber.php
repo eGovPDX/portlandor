@@ -31,8 +31,13 @@ class SearchApiEventSubscriber implements EventSubscriberInterface {
       $search_id = $query->getSearchId();
 
       // If we find an attachment view query, we use the same query alter as the page because they belong together
-      if (strpos($search_id, 'views_attachment:park_finder__attachment_1') === 0) {
+      if (str_contains($search_id, 'views_attachment:park_finder__attachment_1')) {
         $search_id = 'search_api:views_page__park_finder__page_1';
+
+        // Add the active filters.
+        $facet_manager->alterQuery($query, $search_id);
+      } else if (str_contains($search_id, 'views_attachment:construction_map__')) {
+        $search_id = 'search_api:views_page__construction_map__page_1';
 
         // Add the active filters.
         $facet_manager->alterQuery($query, $search_id);
