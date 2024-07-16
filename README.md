@@ -286,3 +286,4 @@ You can run the full regression text as done by the Dev CI build by running: `la
 
 ### Run tests in CI
 All tests will be run in a CI job. When a test fails, a screenshot of the last visited page can be found in the artifacts.
+
