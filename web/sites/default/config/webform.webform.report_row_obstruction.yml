@@ -604,7 +604,7 @@ elements: |-
     '#display_on': none
     '#mode': html
     '#template': |
-      {% if data.computed_email_recipient != "" or data.report_tree_issue == "None of the above" or data.report_vegetation_source == "Parking strip, median, or other parts of the street or right-of-way" or data.report_vegetation_source == "Park or natural area" or data.report_vegetation_source == "Something else, or unsure" %}
+      {% if (data.report_tree_issue == "None of the above" or data.report_vegetation_source == "Parking strip, median, or other parts of the street or right-of-way" or data.report_vegetation_source == "Park or natural area" or data.report_vegetation_source == "Something else, or unsure") and data.report_vegetation_source != "Private property" %}
         <h3>This ticket requires additional triage</h3>
         <p><strong>Attention 311 CSR:</strong> this ticket came from the ROW Obstruction form and may need further triage/investigation to ensure it reaches the appropriate resolving entity. If you have any issues tracking down who this should be forwarded to, contact John Dutt.</p>
         {% if data.computed_email_recipient != "" %}
@@ -612,6 +612,15 @@ elements: |-
         {% endif %}
       {% endif %}
     '#whitespace': spaceless
+    '#ajax': true
+  computed_requires_additional_triage:
+    '#type': webform_computed_twig
+    '#title': 'Requires Additional Triage?'
+    '#access_create_roles':
+      - authenticated
+    '#mode': text
+    '#template': '{% if (data.report_tree_issue == "None of the above" or data.report_vegetation_source == "Parking strip, median, or other parts of the street or right-of-way" or data.report_vegetation_source == "Park or natural area" or data.report_vegetation_source == "Something else, or unsure") and data.report_vegetation_source != "Private property" %}Yes{% else %}No{% endif %}'
+    '#whitespace': trim
     '#ajax': true
 css: ''
 javascript: ''
@@ -909,4 +918,92 @@ handlers:
       ticket_form_id: '20531514301207'
       recipient: ''
       ticket_fork_field: ''
+  email:
+    id: email
+    handler_id: email
+    label: 'Submit by email'
+    notes: 'Sends the report by email to the recipient specified in the computed_email_recipient field unless marked for additional triage.'
+    status: true
+    conditions:
+      enabled:
+        ':input[name="computed_email_recipient"]':
+          filled: true
+        ':input[name="computed_triage_message"]':
+          empty: true
+        ':input[name="support_agent_use_only[test_submission]"]':
+          unchecked: true
+    weight: 0
+    settings:
+      states:
+        - completed
+      to_mail: '[webform_submission:values:computed_email_recipient]'
+      to_options: {  }
+      bcc_mail: ''
+      bcc_options: {  }
+      cc_mail: ''
+      cc_options: {  }
+      from_mail: noreply@portlandoregon.gov
+      from_options: {  }
+      from_name: _default
+      reply_to: ''
+      return_path: ''
+      sender_mail: ''
+      sender_name: ''
+      subject: 'Obstruction in the right-of-way: [webform_submission:values:report_issue_type]'
+      body: '<p><em>This email was sent by Portland.gov. Do no reply.</em></p><p>[webform_submission:values:computed_description:html]</p>'
+      excluded_elements: {  }
+      ignore_access: false
+      exclude_empty: true
+      exclude_empty_checkbox: false
+      exclude_attachments: false
+      html: true
+      attachments: false
+      twig: false
+      theme_name: ''
+      parameters: {  }
+      debug: false
+  test_submit_by_email:
+    id: email
+    handler_id: test_submit_by_email
+    label: 'TEST: Submit by email'
+    notes: 'Sends a test email to gregory.clapp@portlandoregon.gov.'
+    status: true
+    conditions:
+      enabled:
+        ':input[name="computed_email_recipient"]':
+          filled: true
+        ':input[name="computed_triage_message"]':
+          empty: true
+        ':input[name="support_agent_use_only[test_submission]"]':
+          checked: true
+    weight: 5
+    settings:
+      states:
+        - completed
+      to_mail: gregory.clapp@portlandoregon.gov
+      to_options: {  }
+      bcc_mail: ''
+      bcc_options: {  }
+      cc_mail: ''
+      cc_options: {  }
+      from_mail: noreply@portlandoregon.gov
+      from_options: {  }
+      from_name: _default
+      reply_to: ''
+      return_path: ''
+      sender_mail: ''
+      sender_name: ''
+      subject: 'Obstruction in the right-of-way: [webform_submission:values:report_issue_type]'
+      body: '<p><strong>This is a test. This email would normally have been sent to&nbsp;[webform_submission:values:computed_email_recipient:html].</strong></p><p>[webform_submission:values:computed_description:html]</p>'
+      excluded_elements: {  }
+      ignore_access: false
+      exclude_empty: true
+      exclude_empty_checkbox: false
+      exclude_attachments: false
+      html: true
+      attachments: false
+      twig: false
+      theme_name: ''
+      parameters: {  }
+      debug: false
 variants: {  }
