@@ -120,8 +120,27 @@ AddressVerifierView.prototype._setUpInputFieldAndAutocomplete = function () {
         }.bind(this),
         minLength: 3,
         select: function (event, ui) {
-            self.$input.val(ui.item.fullAddress);
+            self.$input.val(ui.item.street);
+            self.$element.find('#location_address_city').val(ui.item.city);
+
+            // Find the select element
+            var element = self.$element.find('#location_address_state');
+
+            // Find the option with the text matching the full state name
+            var option = element.find('option').filter(function () {
+                return self.$(this).text().toUpperCase() === ui.item.state.toUpperCase();
+            });
+
+            // Get the value of the found option
+            var value = option.val();
+
+            // Set the select list's value to the found value
+            self.$element.find('#location_address_state').val(value);
+
+            self.$element.find('#location_address_zip').val(ui.item.zipCode);
             self.$input.autocomplete('close');
+            
+            // TODO: preven this from setting full address in field
             self._setVerified(self.$checkmark, self.$button, self.$element, ui.item);
             return false; // returning true causes the field to be cleared
         },
