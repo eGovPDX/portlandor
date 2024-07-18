@@ -183,6 +183,11 @@ class PortlandAddressVerifier extends WebformCompositeBase {
       '#title' => t('Coordinates Y'),
       '#attributes' => [ 'id' => 'location_y']
     ];
+    $element['location_taxlot_id'] = [
+      '#type' => 'hidden',
+      '#title' => t('Taxlot ID'),
+      '#attributes' => [ 'id' => 'location_taxlot_id']
+    ];
     $element['location_address_label'] = [
       '#type' => 'hidden',
       '#title' => t('Address Label'),
