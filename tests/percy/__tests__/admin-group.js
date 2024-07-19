@@ -60,7 +60,6 @@ describe('SuperAdmin user test', () => {
         expect(text_content).toEqual(expect.stringContaining('Add Bureau/office'));
         await page.type('#edit-label-0-value', 'Percy Test Group');
         await page.type('#edit-field-official-organization-name-0-value', 'Official name of Percy test group');
-        await page.select('#edit-field-migration-status', 'Complete')
         await page.type('#edit-field-summary-0-value', 'This is a test summary for the Percy Test group');
         // Must expand the admin fields group in order to input Group Path
         await page.click('details#edit-group-administrative-fields');
