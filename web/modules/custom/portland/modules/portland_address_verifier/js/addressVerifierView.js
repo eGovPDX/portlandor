@@ -121,31 +121,9 @@ AddressVerifierView.prototype._setUpInputFieldAndAutocomplete = function () {
         }.bind(this),
         minLength: 3,
         select: function (event, ui) {
-            self.$input.val(ui.item.street);
-            self.$element.find('#location_address_city').val(ui.item.city);
 
-            // Find the select element
-            var element = self.$element.find('#location_address_state');
+            self._selectAddress(ui.item);
 
-            // Find the option with the text matching the full state name
-            var option = element.find('option').filter(function () {
-                return self.$(this).text().toUpperCase() === ui.item.state.toUpperCase();
-            });
-
-            // Get the value of the found option
-            var value = option.val();
-
-            // Set the select list's value to the found value
-            self.$element.find('#location_address_state').val(value);
-
-            self.$element.find('#location_address_zip').val(ui.item.zipCode);
-            self.$input.autocomplete('close');
-            
-            // TODO: preven this from setting full address in field
-            self._setVerified(self.$checkmark, self.$button, self.$element, ui.item);
-            if (self.settings.lookup_taxlot) {
-                self._getTaxLotNumber(ui.item);
-            }
             return false; // returning true causes the field to be cleared
         },
         response: function (event, ui) {
@@ -162,6 +140,36 @@ AddressVerifierView.prototype._setUpInputFieldAndAutocomplete = function () {
         }
     });
 
+}
+
+AddressVerifierView.prototype._selectAddress = function (item) {
+    var self = this;
+
+    self.$input.val(item.street);
+    self.$element.find('#location_address_city').val(item.city);
+
+    // Find the select element
+    var element = self.$element.find('#location_address_state');
+
+    // Find the option with the text matching the full state name
+    var option = element.find('option').filter(function () {
+        return self.$(this).text().toUpperCase() === item.state.toUpperCase();
+    });
+
+    // Get the value of the found option
+    var value = option.val();
+
+    // Set the select list's value to the found value
+    self.$element.find('#location_address_state').val(value);
+
+    self.$element.find('#location_address_zip').val(item.zipCode);
+    self.$input.autocomplete('close');
+    
+    // TODO: preven this from setting full address in field
+    self._setVerified(self.$checkmark, self.$button, self.$element, item);
+    if (self.settings.lookup_taxlot) {
+        self._getTaxLotNumber(item);
+    }
 }
 
 AddressVerifierView.prototype._showSuggestions = function (address) {
@@ -181,9 +189,12 @@ AddressVerifierView.prototype._showSuggestions = function (address) {
                     listItem.find('a.pick').on('click', function (e) {
                         e.preventDefault();
                         var item = self.$(this).data('item');
+
+                        // user has clicked a suggestion in the modal dialog.......
+                        self._selectAddress(item);
                         // now that the user has made a selection, pass back the single candidate
-                        self.$input.val(item.fullAddress);
-                        self._setVerified(self.$checkmark, self.$button, self.$element, item);
+                        // self.$input.val(item.fullAddress);
+                        // self._setVerified(self.$checkmark, self.$button, self.$element, item);
                         self.$suggestModal.dialog('close');
                     });
                     list.append(listItem);
@@ -231,18 +242,11 @@ AddressVerifierView.prototype._resetSuggestModal = function () {
 AddressVerifierView.prototype._showNotFoundModal = function () {
     var self = this;
     var inputVal = self.$input.val().trim();
-    this.$notFoundModal.html(`<p><strong>${NOT_VERIFIED_MESSAGE}</strong> ${NOT_VERIFIED_REASONS}</p><p>${IF_CERTAIN_MESSAGE}</p><p><input type="text" id="enteredAddress" class="form-text form-control" value="${inputVal}"></p>`);
+    this.$notFoundModal.html(`<p><strong>${NOT_VERIFIED_MESSAGE}</strong> ${NOT_VERIFIED_REASONS}</p><p>${IF_CERTAIN_MESSAGE}</p></p>`);
     Drupal.dialog(this.$notFoundModal, {
         width: '600px',
         buttons: [{
-            text: "Use this address",
-            class: 'btn-primary',
-            click: function () {
-                self.$notFoundModal.dialog('close');
-                self._useUnverified()
-            }
-        }, {
-            text: "Cancel",
+            text: "Okay",
             class: 'btn-default',
             click: function () {
                 self.$notFoundModal.dialog('close');
@@ -287,8 +291,8 @@ AddressVerifierView.prototype._setVerified = function ($checkmark, $button, $ele
     $button.addClass("disabled button--info");
 
     // populate hidden sub-elements for address data
-    $element.find('#location_address').val(item.fullAddress);
-    $element.find('#location_street').val(item.street);
+    $element.find('#location_address_street').val(item.street);
+    //$element.find('#location_street').val(item.street);
     $element.find('#location_street_number').val(item.streetNumber);
     $element.find('#location_street_quadrant').val(item.streetQuadrant);
     $element.find('#location_street_name').val(item.streetName);
@@ -344,8 +348,8 @@ AddressVerifierView.prototype._useUnverified = function () {
     this.$status.addClass("invisible");
     // this.$checkmark.removeClass("invisible").addClass("fa-triangle-exclamation unverified");
     this.$status.removeClass("invisible").addClass("unverified").text(UNVERIFIED_WARNING_MESSAGE);
-    var input = this.$notFoundModal.find("#enteredAddress").val();
-    this.$input.val(input);
+    // var input = this.$notFoundModal.find("#enteredAddress").val();
+    // this.$input.val(input);
     this.$button.prop("disabled", "disabled");
     this.$button.removeClass("button--primary");
     this.$button.addClass("disabled button--info");
