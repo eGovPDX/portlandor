@@ -93,11 +93,14 @@ class PortlandAddressVerifier extends WebformCompositeBase {
     $verifyButtonText = array_key_exists('#verify_button_text', $element) ? $element['#verify_button_text'] : "Verify";
     $element['#attached']['drupalSettings']['webform']['portland_address_verifier']['verify_button_text'] = $verifyButtonText;
 
-    $lookupTaxlot = array_key_exists('#lookup_taxlot', $element) && strtolower($element['#lookup_taxlot']) == "0";
+    $lookupTaxlot = array_key_exists('#lookup_taxlot', $element) && strtolower($element['#lookup_taxlot']) == 1;
     $element['#attached']['drupalSettings']['webform']['portland_address_verifier']['lookup_taxlot'] = $lookupTaxlot;
 
     $showMailingLabel = array_key_exists('#show_mailing_label', $element) && strtolower($element['#show_mailing_label']) == "0";
     $element['#attached']['drupalSettings']['webform']['portland_address_verifier']['show_mailing_label'] = $showMailingLabel;
+
+    $findUnincorporated = array_key_exists('#find_unincorporated', $element) && strtolower($element['#find_unincorporated']) == "0";
+    $element['#attached']['drupalSettings']['webform']['portland_address_verifier']['find_unincorporated'] = $findUnincorporated;
   }
 
 }

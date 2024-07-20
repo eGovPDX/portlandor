@@ -22,7 +22,7 @@ Default value: "Verify"
 **lookup_taxlot**
 When true, performs an additional API call to get the taxlot ID number from PortlandMaps.
 Allowed values: 1|0
-Default value: "0"
+Default value: 0
 
 **address_type**
 Allows functionality to toggle between street address or mailing address verification, or both, depending on the use case.
@@ -33,4 +33,9 @@ NOTE: This parameter is not yet implemented; currently defaults to "any"
 **show_mailing_label**
 Displays the address as it would appear on a mailing label. Can be used for visual inspection of the full address prior to submission.
 Allowed values: 1|0
-Default value: "0"
+Default value: 0
+
+**find_unincorporated**
+Some addresses are technically outside of incorporated areas but are related by zipcode to a nearby city. If this property is true, an additional call is made to the Intersects API to retrieve the zipcode city and use that instead of "UNINCORPORATED."
+Allowed values: 1|0
+Default value: 0

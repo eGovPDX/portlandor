@@ -26,15 +26,19 @@ AddressVerifierModel.locationItem = function (data, $element = null, isSingleton
     this.unit = "";
 }
 
+const REVERSE_GEOCODE_URL = 'https://www.portlandmaps.com/api/intersects/?geometry=%7B%20%22x%22:%20${x},%20%22y%22:%20${y},%20%22spatialReference%22:%20%7B%20%22wkid%22:%20%223857%22%7D%20%7D&include=all&detail=1&api_key=${apiKey}';
+
+
 function AddressVerifierModel(jQuery, element, apiKey) {
     this.$ = jQuery;
     this.element = element;
     this.apiKey = apiKey;
+    this.intersectsLocation = null;
 }
 
 AddressVerifierModel.prototype.fetchAutocompleteItems = function (addrSearch, $element) {
     const apiKey = this.apiKey;
-    const apiUrl = `https://www.portlandmaps.com/api/suggest/?intersections=1&elements=1&landmarks=1&alt_coords=1&api_key=${apiKey}&query=${encodeURIComponent(addrSearch)}`;
+    var apiUrl = `https://www.portlandmaps.com/api/suggest/?intersections=1&elements=1&landmarks=1&alt_coords=1&api_key=${apiKey}&query=${encodeURIComponent(addrSearch)}`;
 
     return this.$.ajax({
         url: apiUrl,
@@ -67,29 +71,6 @@ AddressVerifierModel.prototype.fetchAutocompleteItems = function (addrSearch, $e
     });
 };
 
-AddressVerifierModel.prototype.reverseGeocode = function(lat, lon, callback, $element) {
-    var coords = this._getSphericalMercCoords(lat, lon);
-    const REVERSE_GEOCODE_URL = 'https://www.portlandmaps.com/api/intersects/?geometry=%7B%20%22x%22:%20${x},%20%22y%22:%20${y},%20%22spatialReference%22:%20%7B%20%22wkid%22:%20%223857%22%7D%20%7D&include=all&detail=1&api_key=${apiKey}';
-    url = REVERSE_GEOCODE_URL;
-    url = url.replace('${x}', coords.x).replace('${y}', coords.y).replace('${apiKey}', this.apiKey);
-    var self = this;
-
-    this.$.ajax({
-        url: url, success: function (response) {
-          var propertyId = response.detail.taxlot[0].property_id;
-          callback(propertyId, $element);
-        },
-        error: function (e) {
-          // if the PortlandMaps API is down, this is where we'll get stuck.
-          // any way to fail the location lookup gracefull and still let folks submit?
-          // at least display an error message.
-          console.error(e);
-          //showErrorModal("An error occurred while attemping to obtain location information from PortlandMaps.com.");
-        }
-
-      });
-}
-
 AddressVerifierModel.prototype._getSphericalMercCoords = function (lat, lon) {
   // Radius of the Earth in meters
   const R = 6378137;
@@ -116,20 +97,12 @@ AddressVerifierModel.locationItem.prototype.parseStreetData = function(street) {
 
 // static functions
 
-AddressVerifierModel.buildFullAddress = function (item, $element) {
+AddressVerifierModel.buildFullAddress = function (item) {
     var streetAddress = item.address + (item.unit ? " " + item.unit : "");
     return [streetAddress, item.attributes.jurisdiction ? item.attributes.jurisdiction + ', ' + item.attributes.state : '']
         .filter(Boolean)
         .join(', ')
         + (item.attributes.zip_code ? ' ' + item.attributes.zip_code : '');
-}
-
-AddressVerifierModel.updateFullAddress = function (item, $element) {
-    var streetAddress = item.street + (item.unit ? " " + item.unit : "");
-    return [streetAddress, item.city ? item.city + ', ' + item.state : '']
-        .filter(Boolean)
-        .join(', ')
-        + (item.zip ? ' ' + item.attributes.zip_code : '');
 }
 
 AddressVerifierModel.buildMailingLabel = function (item, $element, useHtml = false) {
@@ -141,5 +114,29 @@ AddressVerifierModel.buildMailingLabel = function (item, $element, useHtml = fal
     }
     label += lineBreak + item.city + ", " + item.state + " " + item.zipCode;
     return label;
+}
+
+AddressVerifierModel.prototype.updateLocationFromIntersects = function(lat, lon, item, callback, view) {
+    var xy = this._getSphericalMercCoords(lat, lon);
+    url = REVERSE_GEOCODE_URL;
+    url = url.replace('${x}', xy.x).replace('${y}', xy.y).replace('${apiKey}', this.apiKey);
+    var self = this;
+
+    this.$.ajax({
+        url: url, success: function (response) {
+            item.taxlotId = response.detail.taxlot[0].property_id;
+            item.city = response.detail.zipcode[0].name;
+
+            self.fullAddress = AddressVerifierModel.updateFullAddress(item);
+            callback(item, view);
+        },
+        error: function (e) {
+            // if the PortlandMaps API is down, this is where we'll get stuck.
+            // any way to fail the location lookup gracefull and still let folks submit?
+            // at least display an error message.
+            console.error(e);
+            //showErrorModal("An error occurred while attemping to obtain location information from PortlandMaps.com.");
+        }
+    });
 }
 
