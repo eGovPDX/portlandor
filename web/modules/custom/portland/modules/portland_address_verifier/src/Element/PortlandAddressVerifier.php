@@ -63,17 +63,17 @@ class PortlandAddressVerifier extends WebformCompositeBase {
       '#more' => '<p><em>Address data is provided by <a href="https://portlandmaps.com" target="_blank">PortlandMaps.com</a>. We can only verify addresses in the Portland metro area that are included in the PortlandMaps.com database. We\'re currently unable to verify unit numbers and P.O. boxes, but you may still submit your address if you\'re certain it\'s correct.</em></p>',
     ];
     $element['location_address_street_number'] = [
-      '#type' => 'textfield',
+      '#type' => 'hidden',
       '#title' => t('Street Number'),
       '#attributes' => ['id' => 'location_address_street_number']
     ];
     $element['location_address_street_quadrant'] = [
-      '#type' => 'textfield',
+      '#type' => 'hidden',
       '#title' => t('Street Quadrant'),
       '#attributes' => ['id' => 'location_address_street_quadrant']
     ];
     $element['location_address_street_name'] = [
-      '#type' => 'textfield',
+      '#type' => 'hidden',
       '#title' => t('Street Name'),
       '#attributes' => ['id' => 'location_address_street_name']
     ];
