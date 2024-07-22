@@ -2,8 +2,7 @@
 
 namespace Drupal\portland\EventSubscriber;
 
-use Drupal\search_api\Event\QueryPreExecuteEvent;
-use Drupal\search_api\Event\SearchApiEvents;
+use Drupal\search_api_solr\Event\PreQueryEvent;
 use Drupal\search_api_solr\Event\PostCreateIndexDocumentsEvent;
 use Drupal\search_api_solr\Event\SearchApiSolrEvents;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
@@ -45,7 +44,7 @@ class SearchApiEventSubscriber implements EventSubscriberInterface {
    * Alter Solr query to boost relevancy score based on aggregated_sorting_date.
    */
   public function solrPreQuery(PreQueryEvent $event): void {
-    $query = $event->getQuery();
+    $query = $event->getSearchApiQuery();
     $solarium_query = $event->getSolariumQuery();
 
     // Only modify the query for sitewide search
