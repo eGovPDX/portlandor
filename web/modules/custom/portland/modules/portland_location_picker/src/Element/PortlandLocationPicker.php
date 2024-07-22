@@ -75,7 +75,7 @@ class PortlandLocationPicker extends WebformCompositeBase {
       '#markup' => '<div id="status_modal" class="visually-hidden"></div>',
     ];
     $element['location_address'] = [
-      '#type' => 'hidden',
+      '#type' => 'textfield',
       '#title' => t('Location Address'),
       '#attributes' => ['class' => ['location-picker-address'], 'autocomplete' => 'off', 'id' => 'location_address']
     ];

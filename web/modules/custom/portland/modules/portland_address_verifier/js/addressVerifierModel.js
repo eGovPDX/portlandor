@@ -6,7 +6,7 @@ AddressVerifierModel.locationItem = function (data, $element = null, isSingleton
         var arrAddress = data.address.split(', ');
         data.address = arrAddress[0];
     }
-    this.fullAddress = AddressVerifierModel.buildFullAddress(data, $element).toUpperCase();
+    this.fullAddress = AddressVerifierModel.buildFullAddress(data.address, data.unit, data.attributes.jurisdiction, data.attributes.zip_code).toUpperCase();
     this.displayAddress = data.address.toUpperCase() + ', ' + data.attributes.jurisdiction.toUpperCase();
     this.street = data.address.toUpperCase();
     this.streetNumber = data.attributes.address_number;
@@ -97,13 +97,28 @@ AddressVerifierModel.locationItem.prototype.parseStreetData = function(street) {
 
 // static functions
 
-AddressVerifierModel.buildFullAddress = function (item) {
-    var streetAddress = item.address + (item.unit ? " " + item.unit : "");
-    return [streetAddress, item.attributes.jurisdiction ? item.attributes.jurisdiction + ', ' + item.attributes.state : '']
-        .filter(Boolean)
-        .join(', ')
-        + (item.attributes.zip_code ? ' ' + item.attributes.zip_code : '');
+AddressVerifierModel.buildFullAddress = function (address, city, state, zip, unit = null) {
+    var fullAddress = address;
+    fullAddress += unit ? " " + unit : "";
+    fullAddress += ", " + city + ", " + state + "  " + zip;
+    return fullAddress;
 }
+
+// AddressVerifierModel.buildFullAddressX = function (item, $element) {
+//     var streetAddress = item.address + (item.unit ? " " + item.unit : "");
+//     return [streetAddress, item.attributes.jurisdiction ? item.attributes.jurisdiction + ', ' + item.attributes.state : '']
+//         .filter(Boolean)
+//         .join(', ')
+//         + (item.attributes.zip_code ? ' ' + item.attributes.zip_code : '');
+// }
+
+// AddressVerifierModel.updateFullAddress = function (item) {
+//     var streetAddress = item.street + (item.unit ? " " + item.unit : "");
+//     return [streetAddress, item.city ? item.city + ', ' + item.state : '']
+//         .filter(Boolean)
+//         .join(', ')
+//         + (item.zip ? ' ' + item.attributes.zip_code : '');
+// }
 
 AddressVerifierModel.buildMailingLabel = function (item, $element, useHtml = false) {
     var lineBreak = useHtml ? "<br>" : "\r\n";
@@ -120,14 +135,13 @@ AddressVerifierModel.prototype.updateLocationFromIntersects = function(lat, lon,
     var xy = this._getSphericalMercCoords(lat, lon);
     url = REVERSE_GEOCODE_URL;
     url = url.replace('${x}', xy.x).replace('${y}', xy.y).replace('${apiKey}', this.apiKey);
-    var self = this;
+    // var self = this;
 
     this.$.ajax({
         url: url, success: function (response) {
             item.taxlotId = response.detail.taxlot[0].property_id;
             item.city = response.detail.zipcode[0].name;
-
-            self.fullAddress = AddressVerifierModel.updateFullAddress(item);
+            item.fullAddress = AddressVerifierModel.buildFullAddress(item.street, item.city, item.state, item.zipCode);
             callback(item, view);
         },
         error: function (e) {

@@ -1255,6 +1255,19 @@
         function parseDescribeData(data, isWithinBounds) {
           var description = "";
 
+          var city = "";
+          if (data.detail.city && data.detail.city[0].name != null) {
+            city = data.detail.city[0].name;
+          } else {
+            city = data.detail.zipcode[0].name;
+          }
+            
+          if (description) {
+              description += ", " + city.toUpperCase();
+          } else {
+              description = city.toUpperCase();
+          }
+
           // if park, get park name
           if (data.park && data.detail.park[0].name != null) {
             description = data.detail.park[0].name.toUpperCase();
@@ -1264,18 +1277,10 @@
           } else if (data.waterbody && data.detail.waterbody[0].name != null) {
             description = data.detail.waterbody[0].name.toUpperCase();
           } else {
-            // if within boudns, use data description. otherwise just city and zip
+            // if within bounds, use data description. otherwise just city and zip
             // be displayed.
             if (isWithinBounds) {
               description = data.describe ? data.describe.toUpperCase() : "";
-            }
-          }
-
-          if (data.detail.city && data.detail.city[0].name != null) {
-            if (description) {
-              description += ", " + data.detail.city[0].name.toUpperCase();
-            } else {
-              description = data.detail.city[0].name.toUpperCase();
             }
           }
 
@@ -1288,6 +1293,7 @@
           }
 
           if (data.detail.zipcode && data.detail.zipcode[0].zip != null) {
+            description += ", " + city;
             description += "  " + data.detail.zipcode[0].zip;
           }
 
@@ -1329,6 +1335,8 @@
           // if in address verify mode, use the verified address from suggest API
           // rather than the "described" address that is less accurate
           var description = addressVerify ? verifiedAddress : parseDescribeData(data, isWithinBounds);
+
+          // TODO: Do we need to do an additional lookup for city name?
 
           showVerifiedLocation(description, lat, lng, isWithinBounds, isVerifiedAddress);
 

@@ -78,10 +78,14 @@ AddressVerifierView.prototype._setUpUnitNumberField = function () {
     // add onchange handler to unit number field to add unit number to address
     this.$element.find('#unit_number').on('keyup', function (e) {
         var unit = self.$(this).val();
-        var json = self.$element.find('#location_data').val();
+        var $locationData = self.$element.find('#location_data');
+        var json = $locationData.val();
         if (json) {
             var item = JSON.parse(json);
             item.unit = unit;
+            item.fullAddress = AddressVerifierModel.buildFullAddress(item.street, item.city, item.state, item.zipCode, unit);
+            item.displayAddress = item.street + (unit ? " " + unit : "") + ", " + item.city;
+            $locationData.val(JSON.stringify(item));
             self.$element.find('#location_address_label').val(AddressVerifierModel.buildMailingLabel(item, self.$element));
             self.$element.find('#mailing_label').html(AddressVerifierModel.buildMailingLabel(item, self.$element, true));
         }
@@ -214,7 +218,7 @@ AddressVerifierView.prototype._setStateByLabel = function (view, state) {
     // Get the value of the found option
     var value = option.val();
     // Set the select list's value to the found value
-    view.$element.find('#location_address_state').val(value);
+    view.$element.find('#location_state').val(value);
 }
 
 AddressVerifierView.prototype._showSuggestions = function (address) {
@@ -369,10 +373,10 @@ AddressVerifierView.prototype._useUnverified = function () {
     this.isVerified = true;
 }
 
-AddressVerifierView.prototype.updateAddressUI = function (address) {
-    // Update the UI with the verified address data
-    alert('Putting the validated address in the UI');
-};
+// AddressVerifierView.prototype.updateAddressUI = function (address) {
+//     // Update the UI with the verified address data
+//     alert('Putting the validated address in the UI');
+// };
 
 // AddressVerifierView.prototype._getTaxLotNumber = function (item) {
 //     var lat = item.lat;
