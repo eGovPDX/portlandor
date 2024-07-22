@@ -50,7 +50,7 @@ class SearchApiEventSubscriber implements EventSubscriberInterface {
     // Only modify the query for sitewide search
     $search_id = $query->getSearchId();
     if (!str_contains($search_id, "search_api_page:search_portland_gov")
-      || !str_contains($search_id, "search_api_autocomplete:search_portland_gov")) {
+      && !str_contains($search_id, "search_api_autocomplete:search_portland_gov")) {
       return;
     }
 
