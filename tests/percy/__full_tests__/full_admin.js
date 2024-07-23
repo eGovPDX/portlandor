@@ -84,7 +84,6 @@ describe('Full regression test suite for Admin', () => {
         '#edit-field-official-organization-name-0-value',
         `Official name of ${TEST_GROUP_NAME}`
       );
-      await page.select('#edit-field-migration-status', 'Complete');
       await page.type(
         '#edit-field-summary-0-value',
         `This is a test summary for the ${TEST_GROUP_PATH}`
