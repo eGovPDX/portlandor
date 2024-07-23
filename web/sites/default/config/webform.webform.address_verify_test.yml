@@ -1,7 +1,9 @@
 uuid: 24e9aed3-9064-4874-80fb-33c121f0d7d0
 langcode: en
 status: open
-dependencies: {  }
+dependencies:
+  module:
+    - portland_smartsheet
 weight: 0
 open: null
 close: null
@@ -18,7 +20,19 @@ elements: |-
     '#type': portland_address_verifier
     '#title': 'Verified Address'
     '#required': true
-    '#lookup_taxlot': 1
+    '#find_unincorporated': 1
+  mailing_label:
+    '#type': webform_computed_twig
+    '#title': 'Mailing Label'
+    '#mode': html
+    '#template': |-
+      {{ data.verified_address.location_address }}
+      {% if data.verified_address.unit_number %}
+        {{ data.verified_address.unit_number }}
+      {% endif %}<br>
+      {{ data.verified_address.location_city }}, {{ data.verified_address.location_state }}  {{ data.verified_address.location_zip }}
+    '#whitespace': spaceless
+    '#ajax': true
 css: ''
 javascript: ''
 settings:
@@ -202,5 +216,27 @@ access:
     roles: {  }
     users: {  }
     permissions: {  }
-handlers: {  }
+handlers:
+  smartsheet_add_row_to_existing_sheet:
+    id: smartsheet_add_row
+    handler_id: smartsheet_add_row_to_existing_sheet
+    label: 'Smartsheet: add row to existing sheet'
+    notes: ''
+    status: true
+    conditions: {  }
+    weight: 0
+    settings:
+      column_mappings:
+        2050410715238276: 'verified_address:location_address'
+        6554010342608772: 'verified_address:location_address_street_number'
+        4302210528923524: 'verified_address:location_address_street_quadrant'
+        8805810156294020: 'verified_address:location_address_street_name'
+        220823366619012: 'verified_address:unit_number'
+        4724422993989508: 'verified_address:location_city'
+      multiple_rows_enable: null
+      multiple_rows_field: ''
+      multiple_rows_separator: ''
+      row_location: toBottom
+      sheet_id: '6181644901764996'
+      upload_attachments: '1'
 variants: {  }

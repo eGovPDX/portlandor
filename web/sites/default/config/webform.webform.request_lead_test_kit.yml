@@ -103,15 +103,22 @@ elements: |-
       computed_street_name:
         '#type': webform_computed_twig
         '#title': 'Computed Street Name'
-        '#wrapper_attributes':
-          class:
-            - d-none
         '#display_on': none
         '#mode': text
         '#template': |
           {% set addressLines = data.report_location.location_address|split(", ") %}
           {% set arrAddress = addressLines[0]|split(" ") %}
-          {{ arrAddress[2] ~ ' ' ~ arrAddress[3] }}
+          {{ arrAddress[2] }}
+        '#whitespace': trim
+      computed_street_type:
+        '#type': webform_computed_twig
+        '#title': 'Computed Street Type'
+        '#display_on': none
+        '#mode': text
+        '#template': |
+          {% set addressLines = data.report_location.location_address|split(", ") %}
+          {% set arrAddress = addressLines[0]|split(" ") %}
+          {{ arrAddress[3] }}
         '#whitespace': trim
       computed_city:
         '#type': webform_computed_twig
@@ -159,63 +166,71 @@ elements: |-
         '#display_on': none
         '#mode': text
         '#template': '{{ data.report_location.location_address }}'
-    computed_location_is_selected:
-      '#type': webform_computed_twig
-      '#title': 'Location Is Selected'
-      '#wrapper_attributes':
-        class:
-          - d-none
-      '#display_on': form
-      '#mode': text
-      '#template': '{{ data.report_location.location_address ? 1 : 0 }}'
-      '#whitespace': trim
-      '#ajax': true
-    computed_region_is_selected:
-      '#type': webform_computed_twig
-      '#title': 'Region Is Selected'
-      '#wrapper_attributes':
-        class:
-          - d-none
-        style: d-none
-      '#display_on': form
-      '#mode': text
-      '#template': '{{ data.report_location.location_region_id ? 1 : 0 }}'
-      '#whitespace': trim
-      '#ajax': true
-    computed_provider:
-      '#type': webform_computed_token
-      '#title': 'Water Provider'
-      '#wrapper_attributes':
-        class:
-          - d-none
-        style: d-none
-      '#mode': text
-      '#template': '[webform_submission:values:report_location:location_region_id:clear]'
-      '#ajax': true
-    computed_is_eligible:
-      '#type': webform_computed_twig
-      '#title': 'Computed Is Eligible'
-      '#wrapper_attributes':
-        class:
-          - d-none
-      '#mode': text
-      '#template': |-
-        {% if data.report_location.location_region_id == "Burlington Water District" or
-              data.report_location.location_region_id == "Gresham, City of" or
-              data.report_location.location_region_id == "Tualatin, City of" or
-              data.report_location.location_region_id == "Lake Grove Water District" or
-              data.report_location.location_region_id == "Lorna Portland Water" or
-              data.report_location.location_region_id == "Lusted Water District" or
-              data.report_location.location_region_id == "Palatine Hill Water District" or
-              data.report_location.location_region_id == "Pleasant Home Water District" or
-              data.report_location.location_region_id == "Portland Water Bureau" or
-              data.report_location.location_region_id == "Raleigh Water District" or
-              data.report_location.location_region_id == "Rockwood Water PUD" or
-              data.report_location.location_region_id == "Tualatin Valley Water District" or
-              data.report_location.location_region_id == "Valley View Water District" or
-              data.report_location.location_region_id == "West Slope Water District" %}Yes{% else %}No{% endif %}
-      '#whitespace': trim
-      '#ajax': true
+      computed_location_is_selected:
+        '#type': webform_computed_twig
+        '#title': 'Location Is Selected'
+        '#wrapper_attributes':
+          class:
+            - d-none
+        '#display_on': form
+        '#mode': text
+        '#template': '{{ data.report_location.location_address ? 1 : 0 }}'
+        '#whitespace': trim
+        '#ajax': true
+      computed_region_is_selected:
+        '#type': webform_computed_twig
+        '#title': 'Region Is Selected'
+        '#wrapper_attributes':
+          class:
+            - d-none
+          style: d-none
+        '#display_on': form
+        '#mode': text
+        '#template': '{{ data.report_location.location_region_id ? 1 : 0 }}'
+        '#whitespace': trim
+        '#ajax': true
+      computed_provider:
+        '#type': webform_computed_token
+        '#title': 'Water Provider'
+        '#wrapper_attributes':
+          class:
+            - d-none
+          style: d-none
+        '#mode': text
+        '#template': '[webform_submission:values:report_location:location_region_id:clear]'
+        '#ajax': true
+      computed_is_eligible:
+        '#type': webform_computed_twig
+        '#title': 'Computed Is Eligible'
+        '#wrapper_attributes':
+          class:
+            - d-none
+        '#mode': text
+        '#template': |-
+          {% if data.report_location.location_region_id == "Burlington Water District" or
+                data.report_location.location_region_id == "Gresham, City of" or
+                data.report_location.location_region_id == "Tualatin, City of" or
+                data.report_location.location_region_id == "Lake Grove Water District" or
+                data.report_location.location_region_id == "Lorna Portland Water" or
+                data.report_location.location_region_id == "Lusted Water District" or
+                data.report_location.location_region_id == "Palatine Hill Water District" or
+                data.report_location.location_region_id == "Pleasant Home Water District" or
+                data.report_location.location_region_id == "Portland Water Bureau" or
+                data.report_location.location_region_id == "Raleigh Water District" or
+                data.report_location.location_region_id == "Rockwood Water PUD" or
+                data.report_location.location_region_id == "Tualatin Valley Water District" or
+                data.report_location.location_region_id == "Valley View Water District" or
+                data.report_location.location_region_id == "West Slope Water District" %}Yes{% else %}No{% endif %}
+        '#whitespace': trim
+        '#ajax': true
+    report_location_confirmed:
+      '#type': checkbox
+      '#title': 'I have verified that the sampling address displayed above is correct'
+      '#required': true
+      '#states':
+        visible:
+          ':input[name="computed_location_is_selected"]':
+            value: '1'
     container_location_selected:
       '#type': container
       '#states':
@@ -305,8 +320,14 @@ elements: |-
             computed_mailing_address:
               '#type': webform_computed_twig
               '#title': 'Computed Mailing Address'
-              '#display_on': none
-              '#template': '{{ data.contact_mailing_address.location_address_label }}'
+              '#display_on': form
+              '#mode': text
+              '#template': |-
+                {{ data.verified_address.location_address }}
+                {% if data.verified_address.unit_number %}
+                  {{ data.verified_address.unit_number }}
+                {% endif %} {{ data.verified_address.location_city }}, {{ data.verified_address.location_state }}  {{ data.verified_address.location_zip }}
+              '#whitespace': trim
               '#ajax': true
         request_where_hear:
           '#type': webform_select_other
@@ -522,15 +543,18 @@ handlers:
     weight: -50
     settings:
       column_mappings:
+        900263222398852: ''
         3324483248279428: __submission_id
-        2198583341436804: computed_street_number
-        6702182968807300: computed_street_quadrant
-        4450383155122052: computed_street_name
-        8953982782492548: computed_unit_number
-        2726686279028612: computed_city
+        3700198204460932: ''
+        2198583341436804: 'report_location:location_street_number'
+        6702182968807300: 'report_location:location_street_quadrant'
+        4450383155122052: 'report_location:location_street_name'
+        3359787799760772: 'report_location:location_street_type'
+        8953982782492548: 'report_location:location_details'
+        2726686279028612: 'report_location:location_municipality_name'
         7230285906399108: computed_state
-        1600786372185988: computed_zip
-        8059086315933572: computed_address
+        1600786372185988: 'report_location:location_zipcode'
+        8059086315933572: 'report_location:location_address'
         6104385999556484: computed_provider
         3852586185871236: contact_first_name
         8356185813241732: contact_last_name

@@ -7,7 +7,7 @@ AddressVerifierModel.locationItem = function (data, $element = null, isSingleton
         data.address = arrAddress[0];
     }
     this.fullAddress = AddressVerifierModel.buildFullAddress(data.address, data.unit, data.attributes.jurisdiction, data.attributes.zip_code).toUpperCase();
-    this.displayAddress = data.address.toUpperCase() + ', ' + data.attributes.jurisdiction.toUpperCase();
+    this.displayAddress = data.address.toUpperCase();// + ', ' + data.attributes.jurisdiction.toUpperCase();
     this.street = data.address.toUpperCase();
     this.streetNumber = data.attributes.address_number;
     this.streetQuadrant = data.attributes.street_direction;

@@ -1364,6 +1364,17 @@
           $('#location-text-lat').text(lat);
           $('#location-text-lng').text(lng);
 
+          // KLUDGE: There is a single use case where we need the street number, quadrant, name, type and direction.
+          // The suggest API returns those values, but it's not being called in all cases. Future iterations of the
+          // widget will utilize that, but for now, we're just going to do some ugly string parsing.
+          var arrAddressLines = description.split(', ');
+          var arrStreet = arrAddressLines[0].split(' ');
+          $('#location_street_number').val(arrStreet[0]);
+          $('#location_street_quadrant').val(arrStreet[1]);
+          $('#location_street_name').val(arrStreet[2]);
+          $('#location_street_type').val(arrStreet[3]);
+          $('#location_street_direction').val(arrStreet[4]);
+
           // if verify mode, also put location description in address field
           if (addressVerify) {
             $('#location_search').val(description);

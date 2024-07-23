@@ -86,8 +86,8 @@ AddressVerifierView.prototype._setUpUnitNumberField = function () {
             item.fullAddress = AddressVerifierModel.buildFullAddress(item.street, item.city, item.state, item.zipCode, unit);
             item.displayAddress = item.street + (unit ? " " + unit : "") + ", " + item.city;
             $locationData.val(JSON.stringify(item));
-            self.$element.find('#location_address_label').val(AddressVerifierModel.buildMailingLabel(item, self.$element));
-            self.$element.find('#mailing_label').html(AddressVerifierModel.buildMailingLabel(item, self.$element, true));
+            // self.$element.find('#location_address_label').val(AddressVerifierModel.buildMailingLabel(item, self.$element));
+            // self.$element.find('#mailing_label').html(AddressVerifierModel.buildMailingLabel(item, self.$element, true));
         }
     });
 }
@@ -199,9 +199,9 @@ AddressVerifierView.prototype._setVerified = function (item, view = this) {
     view.$element.find('#location_x').val(item.x);
     view.$element.find('#location_y').val(item.y);
     view.$element.find('#location_taxlot_id').val(item.taxlotId);
-    view.$element.find('#location_address_label').val(AddressVerifierModel.buildMailingLabel(item, view.$element));
-    view.$element.find('#mailing_label').html(AddressVerifierModel.buildMailingLabel(item, view.$element, true));
-    view.$element.find('#location_address_label_markup').removeClass('d-none');
+    // view.$element.find('#location_address_label').val(AddressVerifierModel.buildMailingLabel(item, view.$element));
+    // view.$element.find('#mailing_label').html(AddressVerifierModel.buildMailingLabel(item, view.$element, true));
+    // view.$element.find('#location_address_label_markup').removeClass('d-none');
     view.$element.find('#location_verification_status').val("Verified");
     view.$element.find('#location_data').val(JSON.stringify(item));
     view.isVerified = true;
@@ -347,12 +347,12 @@ AddressVerifierView.prototype._resetVerified = function ($checkmark, $button) {
     $element.find('#location_y').val("");
     $element.find('#location_taxlot_id').val("");
     $element.find('#location_is_unincorporated').val("");
-    $element.find('#address_label').val("");
-    $element.find('#location_address_label_markup').addClass('d-none');
+    // $element.find('#address_label').val("");
+    // $element.find('#location_address_label_markup').addClass('d-none');
     $element.find('#location_verification_status').val("");
     $element.find('#location_data').val("");
-    this.$element.find('#container_unit').removeClass('d-none');
-    this.$element.find('#location_address_label_markup').removeClass('d-none');
+    // this.$element.find('#container_unit').removeClass('d-none');
+    // this.$element.find('#location_address_label_markup').removeClass('d-none');
     this.isVerified = false;
 }
 
@@ -368,8 +368,8 @@ AddressVerifierView.prototype._useUnverified = function () {
     this.$button.removeClass("button--primary");
     this.$button.addClass("disabled button--info");
     this.$element.find('#location_verification_status').val("Forced");
-    this.$element.find('#container_unit').addClass('d-none');
-    this.$element.find('#location_address_label_markup').addClass('d-none');
+    // this.$element.find('#container_unit').addClass('d-none');
+    // this.$element.find('#location_address_label_markup').addClass('d-none');
     this.isVerified = true;
 }
 

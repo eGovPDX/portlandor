@@ -29,6 +29,43 @@ class PortlandAddressVerifier extends WebformCompositeBase {
   /**
    * {@inheritdoc}
    */
+  public function getInfo() {
+    return parent::getInfo() + [
+      '#pre_render' => [
+        [get_class($this), 'preRenderCompositeElement'],
+      ],
+    ];
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function preRenderCompositeElement($element) {
+    $element['#element_validate'][] = [get_class(), 'validateMyCompositeElement'];
+    return $element;
+  }
+
+  /**
+   * Custom validation handler.
+   */
+  public static function validateMyCompositeElement(&$element, FormStateInterface $form_state, &$complete_form) {
+    // Check if the element is visible based on your conditional logic.
+    $visible = TRUE; // Replace this with your actual visibility check.
+
+    if (!$visible) {
+      // Loop through child elements and remove 'required' property if not visible.
+      foreach ($element['#webform_composite_elements'] as $key => $child) {
+        $form_state->setValueForElement($child, NULL);
+        if (isset($element[$key]['#required']) && $element[$key]['#required']) {
+          $element[$key]['#required'] = FALSE;
+        }
+      }
+    }
+  }
+
+  /**
+   * {@inheritdoc}
+   */
   protected function formatHtmlItemValue(array $element, WebformSubmissionInterface $webform_submission, array $options = []) {
     $value = $this->getValue($element, $webform_submission, $options);
 
@@ -99,7 +136,7 @@ class PortlandAddressVerifier extends WebformCompositeBase {
     $showMailingLabel = array_key_exists('#show_mailing_label', $element) && strtolower($element['#show_mailing_label']) == "0";
     $element['#attached']['drupalSettings']['webform']['portland_address_verifier']['show_mailing_label'] = $showMailingLabel;
 
-    $findUnincorporated = array_key_exists('#find_unincorporated', $element) && strtolower($element['#find_unincorporated']) == "0";
+    $findUnincorporated = array_key_exists('#find_unincorporated', $element) && strtolower($element['#find_unincorporated']) == "1";
     $element['#attached']['drupalSettings']['webform']['portland_address_verifier']['find_unincorporated'] = $findUnincorporated;
   }
 
