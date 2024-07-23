@@ -1,53 +1,51 @@
 /**
  * @file
- * Back to top button.
- *
- * Display back to top button at viewheight * 1.5.
+ * Add a link to expand or collapse all accordion sections.
  */
 (function ($, Drupal) {
-  function waitForElementToExist(selector) {
-    return new Promise(resolve => {
-      if (document.querySelector(selector)) {
-        return resolve(document.querySelector(selector));
-      }
+  // Keep track of which accordion has already been processed
+  var accordionIdsProcessed = [];
+  const observer = new MutationObserver(function (records, observer) {
+    var accordionNodes = document.querySelectorAll("div.aria-accordion");
+    accordionNodes.forEach(function(accordionNode, index) {
+      if(accordionIdsProcessed.includes(accordionNode.id)) return;
 
-      const observer = new MutationObserver(() => {
-        if (document.querySelector(selector)) {
-          resolve(document.querySelector(selector));
-          observer.disconnect();
+      var accordion = $(accordionNode);
+      var heading_id_array = accordion.find('.aria-accordion__heading > button').map(function () { return jQuery(this).attr("id") });
+      var heading_id_string = Array.prototype.join.call(heading_id_array, ' ');
+      var panel_id_array = accordion.find('div.aria-accordion__panel').map(function () { return jQuery(this).attr("id") });
+      var panel_id_string = Array.prototype.join.call(panel_id_array, ' ');
+      var aria_controls_string = heading_id_string + ' ' + panel_id_string;
+
+      accordion.prepend('<p class="toggle-accordian-text text-end d-block mb-1"><a href="javascript:void(0)" class="toggle-accordion" aria-expanded="false" aria-controls="' + aria_controls_string + '"></a></p>');
+
+      accordion.delegate(
+        'a.toggle-accordion',
+        'click',
+        function () {
+          var toggleControl = $(this);
+          toggleControl.toggleClass('active');
+          toggleControl.hasClass('active') ? (
+            accordion.find('.aria-accordion__heading > button').attr('aria-expanded', 'true'),
+            accordion.find('div.aria-accordion__panel').attr("hidden", false),
+            toggleControl.attr("aria-expanded", "true")
+          ) : (
+            accordion.find('.aria-accordion__heading > button').attr('aria-expanded', 'false'),
+            accordion.find('div.aria-accordion__panel').attr("hidden", true),
+            toggleControl.attr("aria-expanded", "false")
+          );
         }
-      });
+      );
 
-      observer.observe(document.body, {
-        subtree: true,
-        childList: true,
-      });
+      accordionIdsProcessed.push(accordionNode.id);
     });
-  }
+  });
 
-  Drupal.behaviors.cloudyExpandAllAccordion = {
-    attach: function (context, settings) {
-      waitForElementToExist('div.aria-accordion').then(element => {
-        var accordion = $(element);
-        accordion.prepend('<p class="toggle-accordian-text text-end d-block mb-1"><a href="javascript:void(0)" class="toggle-accordion"></a></p>')
-
-        accordion.delegate(
-          'a.toggle-accordion',
-          'click',
-          function () {
-            var toggleControl = $(this);
-            toggleControl.toggleClass('active'),
-              toggleControl.hasClass('active') ? (
-                accordion.find('.aria-accordion__heading > button').attr('aria-expanded', 'true'),
-                accordion.find('div.aria-accordion__panel').attr("hidden", false)
-              ) : (
-                accordion.find('.aria-accordion__heading > button').attr('aria-expanded', 'false'),
-                accordion.find('div.aria-accordion__panel').attr("hidden", true)
-              )
-          }
-        );
-      });
-
+  observer.observe(
+    document.body,
+    {
+      subtree: true,
+      childList: true,
     }
-  };
+  );
 })(jQuery, Drupal);
