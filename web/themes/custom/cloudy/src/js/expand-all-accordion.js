@@ -11,11 +11,8 @@
       if(accordionIdsProcessed.includes(accordionNode.id)) return;
 
       var accordion = $(accordionNode);
-      var heading_id_array = accordion.find('.aria-accordion__heading > button').map(function () { return jQuery(this).attr("id") });
-      var heading_id_string = Array.prototype.join.call(heading_id_array, ' ');
       var panel_id_array = accordion.find('div.aria-accordion__panel').map(function () { return jQuery(this).attr("id") });
-      var panel_id_string = Array.prototype.join.call(panel_id_array, ' ');
-      var aria_controls_string = heading_id_string + ' ' + panel_id_string;
+      var aria_controls_string = Array.prototype.join.call(panel_id_array, ' ');
 
       accordion.prepend('<p class="toggle-accordian-text text-end d-block mb-1"><a href="javascript:void(0)" class="toggle-accordion" aria-expanded="false" aria-controls="' + aria_controls_string + '"></a></p>');
 
