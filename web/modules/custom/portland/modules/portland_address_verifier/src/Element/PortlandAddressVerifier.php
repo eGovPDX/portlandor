@@ -59,8 +59,6 @@ class PortlandAddressVerifier extends WebformCompositeBase {
       '#description_display' => 'before',
       '#required_error' => 'Please enter an address and verify it.',
       '#required' => TRUE,
-      // '#more_title' => 'More info',
-      // '#more' => '<p><em>Address data is provided by <a href="https://portlandmaps.com" target="_blank">PortlandMaps.com</a>. We can only verify addresses in the Portland metro area that are included in the PortlandMaps.com database. We\'re currently unable to verify unit numbers and P.O. boxes, but you may still submit your address if you\'re certain it\'s correct.</em></p>',
     ];
     $element['location_address_street_number'] = [
       '#type' => 'hidden',
@@ -91,7 +89,6 @@ class PortlandAddressVerifier extends WebformCompositeBase {
       '#wrapper_attributes' => [
         'class' => ['webform-city'],
       ],
-      '#required' => TRUE,
     ];
     $element['location_state'] = [
       '#type' => 'select',
@@ -100,7 +97,6 @@ class PortlandAddressVerifier extends WebformCompositeBase {
       '#default_value' => 'OR',
       '#id' => 'location_state',
       '#wrapper_attributes' => ['class' => ['webform-state']],
-      '#required' => TRUE,
     ];
     $element['location_zip'] = [
       '#type' => 'textfield',
@@ -108,14 +104,7 @@ class PortlandAddressVerifier extends WebformCompositeBase {
       '#id' => 'location_zip',
       '#attributes' => ['class' => ['webform-zip']],
       '#wrapper_attributes' => ['class' => ['webform-zip']],
-      '#required' => TRUE,
     ];
-    // $element['location_address_label_markup'] = [
-    //   '#type' => 'markup',
-    //   '#title' => t('Mailing label example'),
-    //   '#title_display' => 'invisible',
-    //   '#markup' => '<div id="location_address_label_markup" class="mailing-label d-none"><p><em>This is how the address would appear on a mailing label:</em></p><div id="mailing_label"></div></div>',
-    // ];
     $element['suggestions_modal'] = [
       '#type' => 'markup',
       '#title' => 'Suggestions',
@@ -134,33 +123,6 @@ class PortlandAddressVerifier extends WebformCompositeBase {
       '#title_display' => 'invisible',
       '#markup' => '<div id="not_found_modal" class="visually-hidden"></div>',
     ];
-    // $element['verify_button'] = [
-    //   '#type' => 'button',
-    //   '#value' => t('Verify Address'),
-    //   '#attributes' => [
-    //     'class' => ['button', 'button--primary', 'js-form-submit', 'form-submit', 'btn-verify'],
-    //   ],
-    // ];
-    // $element['location_street'] = [
-    //   '#type' => 'textfield',
-    //   '#title' => t('Street'),
-    //   '#attributes' => ['id' => 'location_street']
-    // ];
-    // $element['location_city'] = [
-    //   '#type' => 'textfield',
-    //   '#title' => t('City'),
-    //   '#attributes' => ['id' => 'location_city']
-    // ];
-    // $element['location_state'] = [
-    //   '#type' => 'textfield',
-    //   '#title' => t('State'),
-    //   '#attributes' => ['id' => 'location_state']
-    // ];
-    // $element['location_zip'] = [
-    //   '#type' => 'textfield',
-    //   '#title' => t('Zip'),
-    //   '#attributes' => [ 'id' => 'location_zip']
-    // ];
     $element['location_lat'] = [
       '#type' => 'hidden',
       '#title' => t('Latitude'),
