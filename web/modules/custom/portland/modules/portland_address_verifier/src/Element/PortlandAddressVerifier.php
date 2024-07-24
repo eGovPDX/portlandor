@@ -58,7 +58,6 @@ class PortlandAddressVerifier extends WebformCompositeBase {
       '#description' => t('Begin typing to see a list of possible address matches in the Portland metro area. Do not incude unit number.'),
       '#description_display' => 'before',
       '#required_error' => 'Please enter an address and verify it.',
-      '#required' => TRUE,
     ];
     $element['location_address_street_number'] = [
       '#type' => 'hidden',
