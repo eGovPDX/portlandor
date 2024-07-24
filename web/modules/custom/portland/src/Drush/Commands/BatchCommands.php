@@ -218,7 +218,6 @@ final class BatchCommands extends DrushCommands
     'field_logo_svg',
     'field_address',
     'field_menu_link',
-    'field_migration_status',
     'field_parent_group',
     'field_featured_groups',
     'field_search_keywords',
