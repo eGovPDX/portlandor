@@ -259,24 +259,10 @@
           // Set up pick links //////////////////////////////////
           $(document).on('click', 'a.pick', function (e) {
             e.preventDefault();
-            // get address data from link
-            var address = $(this).data('pick-address');
-            // put selected address in search field
-            $('#location_search').val(address);
-            showVerifiedLocation(address);
+            const candidate = JSON.parse($(this).data('candidate'));
+            // now that the user has made a selection, pass back the single candidate
+            processLocationData([candidate]);
             suggestionsModal.dialog('close');
-            // locate address on map
-            var lat = $(this).data('lat');
-            var lng = $(this).data('lng');
-            var latlng = new L.LatLng(lat, lng);
-            if (latlng.lat && latlng.lng) {
-              doMapClick(latlng);
-              setVerified();
-            } else {
-              showStatusModal(VERIFIED_NO_COORDS);
-              setLatLngHiddenFields(latlng.lat, latlng.lng);
-              setVerified();
-            }
           });
 
           // set up status modal ///////////////////////////////
@@ -367,8 +353,8 @@
               var latlon = new L.LatLng(lat, lon);
               clearLocationFields()
               reverseGeolocate(latlon, true, address);
+              setVerified();
               $(this).autocomplete('close');
-              $('.verified-checkmark.address').removeClass('invisible');
               return false; // returning true causes the field to be cleared
             },
             response: function (event, ui) {
@@ -378,10 +364,7 @@
             create: function () {
               $(this).data('ui-autocomplete')._renderItem = function (ul, item) {
                 var address = item.address;
-                var fullAddress = item.address;
-                fullAddress += item.attributes.city ? ", " + item.attributes.city : "";
-                fullAddress += item.attributes.state ? ", " + item.attributes.state : "";
-                fullAddress += item.attributes.zip_code ? "  " + item.attributes.zip_code : "";
+                var fullAddress = buildFullAddress(item);
 
                 var lat = item.attributes.lat;
                 var lon = item.attributes.lon;
@@ -875,10 +858,10 @@
           var inLayer = leafletPip.pointInLayer(latlng, testLayer, false);
           if (inLayer.length > 0) {
             // NOTE: The following code would be problematic if we allow multiple copies of the widget or alternate naming conventions.
-            $('input[name=' + elementId + '\\[location_region_id\\]]').val(inLayer[0].feature.properties[regionIdPropertyName]);
+            $('input[name=' + elementId + '\\[location_region_id\\]]').val(inLayer[0].feature.properties[regionIdPropertyName]).trigger('change');
           } else {
             // clear region_id field
-            $('input[name=' + elementId + '\\[location_region_id\\]]').val("");
+            $('input[name=' + elementId + '\\[location_region_id\\]]').val("").trigger('change');
           }
           hideLoader();
         }
@@ -945,7 +928,7 @@
           $('input[name=' + elementId + '\\[location_x\\]]').val('');
           $('input[name=' + elementId + '\\[location_y\\]]').val('');
           $('input[name=' + elementId + '\\[location_asset_id\\]]').val('');
-          $('input[name=' + elementId + '\\[location_region_id\\]]').val('');
+          $('input[name=' + elementId + '\\[location_region_id\\]]').val('').trigger('change');
           $('input[name=' + elementId + '\\[location_municipality_name\\]]').val('');
           $('input[name=' + elementId + '\\[location_attributes\\]]').val('');
 
@@ -957,7 +940,7 @@
 
         function setLocationDetails(results) {
           var location_type = "";
-          $('input[name=' + elementId + '\\[location_types\\]]').val("");
+          $('input[name^=' + elementId + '\\[location_type]').val("");
           $('input[name=' + elementId + '\\[location_attributes\\]]').val("");
           var internal_details = "";
           var type_count = 0;
@@ -1029,15 +1012,9 @@
             $('input[name=' + elementId + '\\[location_zipcode\\]]').val(zipcode);
           }
 
+          $('input[name=' + elementId + '\\[location_attributes\\]]').trigger('change');
           $('input[name=' + elementId + '\\[location_municipality_name\\]]').trigger('change');
-          $('input[name=' + elementId + '\\[location_type_taxlot\\]]').trigger('change');
-          $('input[name=' + elementId + '\\[location_type_park\\]]').trigger('change');
-          $('input[name=' + elementId + '\\[location_type_waterbody\\]]').trigger('change');
-          $('input[name=' + elementId + '\\[location_type_trail\\]]').trigger('change');
-          $('input[name=' + elementId + '\\[location_type_stream\\]]').trigger('change');
-          $('input[name=' + elementId + '\\[location_type_street\\]]').trigger('change');
-          $('input[name=' + elementId + '\\[location_type_row\\]]').trigger('change');
-
+          $('input[name^=' + elementId + '\\[location_type]').trigger('change');
         }
 
         function removeTrailingComma(myStr) {
@@ -1085,14 +1062,21 @@
           if (candidates.length > 1) {
             // multiple candidates, how to handle? how about a modal dialog?
             suggestionsModal = $('#suggestions_modal');
-            var listMarkup = "<p>Please select an address by clicking it.</p><ul>";
+            suggestionsModal.html("<p>Please select an address by clicking it.</p>");
+            const listEl = $("<ul></ul>");
             for (var i = 0; i < candidates.length; i++) {
-              var c = candidates[i];
-              var fulladdress = buildFullAddress(c);
-              listMarkup += '<li><a href="#" class="pick" data-lat="' + c.attributes.lat + '" data-lng="' + c.attributes.lon + '" data-pick-address="' + c.address + '">' + fulladdress.toUpperCase() + '</a></li>';
+              const c = candidates[i];
+              const fullAddress = buildFullAddress(c);
+
+              const listItemEl = $("<li></li>");
+              const linkEl = $('<a href="#" class="pick"></a>');
+              linkEl.text(fullAddress.toUpperCase());
+              linkEl.data("candidate", JSON.stringify(c));
+
+              listItemEl.append(linkEl);
+              listEl.append(listItemEl);
             }
-            listMarkup += "</ul>";
-            suggestionsModal.html(listMarkup);
+            suggestionsModal.append(listEl);
             Drupal.dialog(suggestionsModal, {
               title: 'Multiple possible matches found',
               width: '600px',
@@ -1127,10 +1111,8 @@
             } else {
               setLatLngHiddenFields(0, 0);
               showStatusModal(VERIFIED_NO_COORDS);
+              setVerified();
             }
-
-            setVerified();
-
           } else {
             // no matches found
             showStatusModal(addressVerify ? NO_MATCHING_ADDRESS_TEXT_VERIFY_MODE : NO_MATCHING_ADDRESS_TEXT);
@@ -1412,7 +1394,11 @@
         }
 
         function buildFullAddress(c) {
-          return [c.address, c.attributes.city ? c.attributes.city + ' ' + c.attributes.state : '']
+          // Sometimes the PortlandMaps API erroneously returns a full address string  w/ city & state in the `address` field
+          // so let's split it by comma and only extract the first part which will be the address alone.
+          const address = c.address.split(',')[0];
+
+          return [address, c.attributes.city ? c.attributes.city + ' ' + c.attributes.state : '']
             .filter(Boolean)
             .join(', ')
             + (c.attributes.zip_code ? ' ' + c.attributes.zip_code : '');
