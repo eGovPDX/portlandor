@@ -1005,6 +1005,10 @@
           if (results.detail.city) {
             var city_name = results.detail.city[0].name;
             $('input[name=' + elementId + '\\[location_municipality_name\\]]').val(city_name);
+          } else {
+            // city is unincorporated; get municipality data from zipcode
+            var city_name = results.detail.zipcode[0].name;
+            $('input[name=' + elementId + '\\[location_municipality_name\\]]').val(city_name);
           }
 
           if (results.detail.zipcode) {
