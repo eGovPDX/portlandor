@@ -1003,11 +1003,11 @@
           $('input[name=' + elementId + '\\[location_attributes\\]]').val(internal_details);
 
           if (results.detail.city) {
-            var city_name = results.detail.city[0].name;
+            var city_name = results.detail.city[0].name.toUpperCase();
             $('input[name=' + elementId + '\\[location_municipality_name\\]]').val(city_name);
           } else {
             // city is unincorporated; get municipality data from zipcode
-            var city_name = results.detail.zipcode[0].name;
+            var city_name = results.detail.zipcode[0].name.toUpperCase();
             $('input[name=' + elementId + '\\[location_municipality_name\\]]').val(city_name);
           }
 
@@ -1261,9 +1261,9 @@
 
           var city = "";
           if (data.detail.city && data.detail.city[0].name != null) {
-            city = data.detail.city[0].name;
+            city = data.detail.city[0].name.toUpperCase();
           } else {
-            city = data.detail.zipcode[0].name;
+            city = data.detail.zipcode[0].name.toUpperCase();
           }
             
           if (description) {
