@@ -67,6 +67,45 @@ AddressVerifierModel.prototype.fetchAutocompleteItems = function (addrSearch, $e
     });
 };
 
+AddressVerifierModel.prototype.reverseGeocode = function(lat, lon, callback, $element) {
+    var coords = this._getSphericalMercCoords(lat, lon);
+    const REVERSE_GEOCODE_URL = 'https://www.portlandmaps.com/api/intersects/?geometry=%7B%20%22x%22:%20${x},%20%22y%22:%20${y},%20%22spatialReference%22:%20%7B%20%22wkid%22:%20%223857%22%7D%20%7D&include=all&detail=1&api_key=${apiKey}';
+    url = REVERSE_GEOCODE_URL;
+    url = url.replace('${x}', coords.x).replace('${y}', coords.y).replace('${apiKey}', this.apiKey);
+    var self = this;
+
+    this.$.ajax({
+        url: url, success: function (response) {
+          var propertyId = response.detail.taxlot[0].property_id;
+          callback(propertyId, $element);
+        },
+        error: function (e) {
+          // if the PortlandMaps API is down, this is where we'll get stuck.
+          // any way to fail the location lookup gracefull and still let folks submit?
+          // at least display an error message.
+          console.error(e);
+          //showErrorModal("An error occurred while attemping to obtain location information from PortlandMaps.com.");
+        }
+
+      });
+}
+
+AddressVerifierModel.prototype._getSphericalMercCoords = function (lat, lon) {
+  // Radius of the Earth in meters
+  const R = 6378137;
+  
+  // Convert the longitude from degrees to radians
+  const x = lon * (Math.PI / 180) * R;
+  
+  // Convert the latitude from degrees to radians
+  const latRad = lat * (Math.PI / 180);
+  
+  // Calculate the y value using the Mercator projection formula
+  const y = R * Math.log(Math.tan((Math.PI / 4) + (latRad / 2)));
+  
+  return { x, y };
+}
+
 AddressVerifierModel.locationItem.prototype.parseStreetData = function(street) {
     // Assuming street is in the format "1234 NW Main St"
     const streetParts = street.split(' ');
