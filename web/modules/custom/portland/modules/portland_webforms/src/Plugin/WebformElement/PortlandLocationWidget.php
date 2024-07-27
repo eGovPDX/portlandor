@@ -63,7 +63,7 @@ class PortlandLocationWidget extends WebformCompositeBase {
   public function prepare(array &$element, WebformSubmissionInterface $webform_submission = NULL) {
     parent::prepare($element, $webform_submission);
 
-    $element_id = "report_location";
+    $element_id = $element['#webform_key'];
     
     if (array_key_exists("#webform_key", $element)) {
       $element_id = $element['#webform_key'];

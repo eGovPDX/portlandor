@@ -22,6 +22,8 @@ class PortlandLocationWidget extends WebformCompositeBase
    */
   public static function getCompositeElements(array $element)
   {
+    $element_id = $element['#webform_key'];
+    
     $element['location_search'] = [
       '#type' => 'textfield',
       '#title' => t('Location Search'),
@@ -43,7 +45,7 @@ class PortlandLocationWidget extends WebformCompositeBase
       '#description' => '',
       '#description_display' => 'before',
       '#title_display' => 'invisible',
-      '#markup' => '<div id="location_map_container" class="location-map"></div><div class="loader-container" role="status"><div class="loader"></div><div class="visually-hidden">Loading...</div></div>',
+      '#markup' => '<div id="' . $element_id . '_map_container" class="location-map"></div><div class="loader-container" role="status"><div class="loader"></div><div class="visually-hidden">Loading...</div></div>',
     ];
 
     return $element;
