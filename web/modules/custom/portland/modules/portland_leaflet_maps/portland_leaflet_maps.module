@@ -51,20 +51,6 @@ function portland_leaflet_maps_preprocess_leaflet_map(&$variables) {
 }
 
 /**
- * Preprocess function for leaflet_more_maps.
- */
-function portland_leaflet_maps_preprocess_media__map(&$variables) {
-  if ( strpos($_SERVER['HTTP_USER_AGENT'], 'Trident') || strpos($_SERVER['HTTP_USER_AGENT'], 'Edge') ) {
-    $variables['isEdgeOrIE'] = 'true';
-  }
-  else {
-    $variables['isEdgeOrIE'] = 'false';
-  }
-
-  unset($variables["content"]["field_map_embed"]);
-}
-
-/**
  * Implements hook_leaflet_map_info_alter().
  */
 function portland_leaflet_maps_leaflet_map_info_alter(&$map_info) {
@@ -75,46 +61,37 @@ function portland_leaflet_maps_leaflet_map_info_alter(&$map_info) {
  * Assemble default map info.
  */
 function _portland_leaflet_maps_assemble_default_map_info(&$map_info, $default_settings = array()) {
-  // Use headless protocol rather than logic based on global $is_https;
-  $prot = '//';
-
-  // As used by most.
-  $zxy = '{z}/{x}/{y}.png';
-  // As used by Esri.
-  $zyx = '{z}/{y}/{x}.png';
-  // Used by PortlandMaps
+  // Coordinate format used by PortlandMaps
   $zyx_only = '{z}/{y}/{x}';
 
-  // portlandmaps https://portlandmaps.com
-  $attr_portlandmaps = 'Tiles by <a href="https://portlandmaps.com">portlandmaps.com</a>. ';
+  $attr_portlandmaps = '<a href="https://www.portlandmaps.com">PortlandMaps</a>';
 
   $map_info['portlandmaps_color'] = array(
     'label' => 'PortlandMaps.com Basemap_Color_Complete (zoom 0..22)',
     'description' => t('portlandmaps.com Basemap_Color_Complete Maps'),
-    'settings' =>  $default_settings + array('maxZoom' => 22),
-    'layers' => array(
-      'layer' => array(
-        'urlTemplate' => $prot . "www.portlandmaps.com/arcgis/rest/services/Public/Basemap_Color_Complete/MapServer/tile/$zyx_only",
-      ),
-    ),
+    'settings' =>  $default_settings + ['maxZoom' => 22],
+    'layers' => [
+      'layer' => [
+        'urlTemplate' => "https://www.portlandmaps.com/arcgis/rest/services/Public/Basemap_Color_Complete/MapServer/tile/$zyx_only",
+        'options' => [
+          'attribution' => $attr_portlandmaps,
+        ],
+      ],
+    ],
   );
 
   $map_info['portlandmaps_park'] = array(
     'label' => 'PortlandMaps.com Park_Amenities (zoom 0..22)',
     'description' => t('portlandmaps.com Park_Amenities Maps'),
-    'settings' =>  $default_settings + array('maxZoom' => 22),
-    // The order is important. From bottom to top: color basemap, building outlines, park amenities (only available at a few zoom levels)
-    'layers' => array(
-      'layer #1' => array(
-        'urlTemplate' => $prot . "www.portlandmaps.com/arcgis/rest/services/Public/Basemap_Color_Complete/MapServer/tile/$zyx_only",
-      ),
-      'layer #2' => array(
-        'urlTemplate' => $prot . "www.portlandmaps.com/arcgis/rest/services/Public/Basemap_Color_Buildings/MapServer/tile/$zyx_only",
-      ),
-      'layer #3' => array(
-        'urlTemplate' => $prot . "www.portlandmaps.com/arcgis/rest/services/Public/Park_Amenities/MapServer/tile/$zyx_only",
-      ),
-    ),
+    'settings' =>  $default_settings + ['maxZoom' => 22],
+    'layers' => [
+      'layer' => [
+        'urlTemplate' => "https://www.portlandmaps.com/arcgis/rest/services/Public/Basemap_Color_Complete/MapServer/tile/$zyx_only",
+        'options' => [
+          'attribution' => $attr_portlandmaps,
+        ],
+      ],
+    ],
   );
 }
 
@@ -126,7 +103,7 @@ function portland_leaflet_maps_entity_view_alter(array &$build,
                             EntityViewDisplayInterface $display) {
   // Abort if this function is called for a "related" item on a page
   if ($display->getMode() == "related") return;
-  
+
   // Do not use portlandmaps_id when viewing Park Finder
   $current_path = \Drupal::service('path.current')->getPath();
   if (strpos($current_path, '/parks/search') === 0) return;
@@ -138,43 +115,6 @@ function portland_leaflet_maps_entity_view_alter(array &$build,
           $entity->field_geo_map->value = '';
           $build['#attached']['drupalSettings']['portlandmaps_layer'] = $entity->field_portlandmaps_layer->value;
           $build['#attached']['drupalSettings']['portlandmaps_id'] = $entity->field_portlandmaps_id->value;
-    }
-  }
-}
-
-/**
- * Implements hook_search_api_solr_query_alter.
- */
-// Alter the Solr query to add filter query for bounding box if it's in the query string
-function portland_leaflet_maps_search_api_solr_query_alter(QueryInterface $solarium_query, \Drupal\search_api\Query\QueryInterface $query) {
-  // If the bounding box (bbox) is in the query string
-  if (isset($_GET['bbox'])) {
-    // Get the left, top, right and bottom from the url.
-    list($bottom, $left, $top, $right) = explode(',', $_GET['bbox']);
-    // Add it to the query.
-    $solarium_query->addParam('fq', "locs_field_geolocation:[$bottom,$left TO $top,$right]");
-  }
-}
-
-// https://www.drupal.org/project/facets/issues/2826650#comment-11985765
-/**
- * Implements hook_search_api_query_alter.
- *
- * @param \Drupal\search_api\Query\QueryInterface $query
- */
-function portland_leaflet_maps_search_api_query_alter(\Drupal\search_api\Query\QueryInterface &$query) {
-  if ($query->getIndex()->getServerInstance()->supportsFeature('search_api_facets')) {
-    /** @var \Drupal\facets\FacetManager\DefaultFacetManager $facet_manager */
-    $facet_manager = \Drupal::service('facets.manager');
-
-    $search_id = $query->getSearchId();
-
-    // If we find an attachment view query, we use the same query alter as the page because they belong together
-    if (strpos($search_id, 'views_attachment:park_finder__attachment_1') === 0) {
-      $search_id = 'search_api:views_page__park_finder__page_1';
-
-      // Add the active filters.
-      $facet_manager->alterQuery($query, $search_id);
     }
   }
 }
@@ -215,7 +155,7 @@ function portland_leaflet_maps_views_pre_render(ViewExecutable $view) {
   else if ($view->id() == 'geo_map' && $view->total_rows == 1) {
     $entity = $view->result[0]->_entity;
     // If editor provides no geo_map value and choose NOT to load map from PortlandMaps, do not show the map
-    if ($entity->bundle() === 'construction_project' && !$entity->field_geo_map->value && 
+    if ($entity->bundle() === 'construction_project' && !$entity->field_geo_map->value &&
       !$entity->field_load_map_from_portlandmaps->value) {
       $view->result = [];
       $view->total_rows = 0;
