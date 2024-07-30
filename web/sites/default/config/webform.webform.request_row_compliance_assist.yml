@@ -1,0 +1,629 @@
+uuid: 331fcb54-70f4-42b9-af3e-331af0fa3911
+langcode: en
+status: open
+dependencies:
+  module:
+    - portland
+    - portland_zendesk
+third_party_settings:
+  portland:
+    disable_demographic_form_prompt: 0
+    exclude_from_json: {  }
+weight: 0
+open: null
+close: null
+uid: 60
+template: false
+archive: false
+id: request_row_compliance_assist
+title: 'Request Right of Way Compliance Assistance (Internal)'
+description: ''
+categories:
+  - Request
+elements: |-
+  markup_please_log_in:
+    '#type': webform_markup
+    '#access_create_roles':
+      - anonymous
+    '#markup': '<div class="alert alert--info next-steps"><h2>Ineligibility Notice</h2><p class="mb-0">This form is for internal bureau use only. Please log in to access it.</p></div>'
+  section_internal_use_only:
+    '#type': webform_section
+    '#title': 'Internal Use Only'
+    '#title_display': invisible
+    '#title_tag': ''
+    '#access_create_roles':
+      - authenticated
+    section_workgroup:
+      '#type': webform_section
+      '#title': Workgroup
+      request_workgroup:
+        '#type': radios
+        '#title': 'Please select your workgroup'
+        '#options':
+          'Outdoor Dining': 'Outdoor Dining'
+          'Utility Permits': 'Utility Permits'
+          'Temporary Street Use Permitting (TSUP)': 'Temporary Street Use Permitting (TSUP)'
+          'PBOT Compliance': 'PBOT Compliance'
+          Other: Other
+        '#required': true
+    container_workgroup_selected:
+      '#type': container
+      '#states':
+        visible:
+          ':input[name="request_workgroup"]':
+            checked: true
+      section_request_type:
+        '#type': webform_section
+        '#title': 'Request Type'
+        '#states':
+          visible:
+            ':input[name="request_workgroup"]':
+              '!value': 'PBOT Compliance'
+        request_type:
+          '#type': radios
+          '#title': 'What category best describes the issue related to this request?'
+          '#options':
+            'Permit Violation': 'Permit Violation'
+            Non-Payment: Non-Payment
+            'Unpermitted Work': 'Unpermitted Work'
+            Other: Other
+          '#required': true
+      section_ticket_type:
+        '#type': webform_section
+        '#title': 'Ticket Type'
+        '#states':
+          visible:
+            - ':input[name="request_workgroup"]':
+                value: 'PBOT Compliance'
+        ticket_type:
+          '#type': radios
+          '#title': 'Select ticket type'
+          '#options':
+            Obstruction: Obstruction
+            Referral: Referral
+          '#options_display': side_by_side
+          '#required': true
+        ticket_assign_to:
+          '#type': radios
+          '#title': 'Select user to assign to'
+          '#options':
+            'Dan Barton': 'Dan Barton'
+            'Nameer Ezat-Agha': 'Nameer Ezat-Agha'
+            'Unassigned/Not Sure': 'Unassigned/Not Sure'
+      section_ticket_info:
+        '#type': webform_section
+        '#title': 'Ticket Info'
+        '#states':
+          visible:
+            - ':input[name="request_workgroup"]':
+                value: 'PBOT Compliance'
+        ticket_source:
+          '#type': radios
+          '#title': Source
+          '#options':
+            Workgroup: Workgroup
+            'Community Member': 'Community Member'
+          '#options_display': side_by_side
+          '#required': true
+        ticket_referred_by:
+          '#type': webform_select_other
+          '#title': 'Ticket Referred By'
+          '#options': row_issue_referred_by
+          '#other__option_label': 'Something else...'
+          '#other__placeholder': 'Please describe...'
+        ticket_referral_category:
+          '#type': radios
+          '#title': 'Ticket Category'
+          '#options':
+            'Permit Violation': 'Permit Violation'
+            Non-Payment: Non-Payment
+            'Unpermitted Work': 'Unpermitted Work'
+            Other: Other
+          '#states':
+            visible:
+              ':input[name="ticket_type"]':
+                value: Referral
+        ticket_obstruction_category:
+          '#type': radios
+          '#title': 'Ticket Category'
+          '#options':
+            'Permanent Item': 'Permanent Item'
+            'Temporary Item': 'Temporary Item'
+            'Construction Item': 'Construction Item'
+            Other: Other
+          '#states':
+            visible:
+              ':input[name="ticket_type"]':
+                value: Obstruction
+        ticket_priority:
+          '#type': radios
+          '#title': 'Ticket Priority'
+          '#options':
+            Low: Low
+            Normal: Normal
+            High: High
+            Urgent: Urgent
+          '#options_display': side_by_side
+      section_requester_contact:
+        '#type': webform_section
+        '#title': 'Requester Contact'
+        requester_contact_name:
+          '#type': textfield
+          '#title': 'Requester name'
+          '#states':
+            required:
+              ':input[name="request_workgroup"]':
+                '!value': 'PBOT Compliance'
+        requester_contact_email:
+          '#type': textfield
+          '#title': 'Requester email'
+          '#pattern': '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+          '#pattern_error': 'Please enter a correctly formatted email address, such as myname@example.com.'
+        requester_contact_phone:
+          '#type': tel
+          '#title': 'Requester phone'
+      section_permittee_info:
+        '#type': webform_section
+        '#title': 'Permittee Info'
+        '#states':
+          visible:
+            - ':input[name="request_workgroup"]':
+                value: 'Outdoor Dining'
+            - or
+            - ':input[name="request_workgroup"]':
+                value: 'Utility Permits'
+            - or
+            - ':input[name="request_workgroup"]':
+                value: 'Temporary Street Use Permitting (TSUP)'
+            - or
+            - ':input[name="ticket_type"]':
+                value: Referral
+        permittee_business:
+          '#type': textfield
+          '#title': 'Name of business'
+          '#required': true
+        permittee_name:
+          '#type': textfield
+          '#title': 'Permittee name'
+          '#required': true
+        permittee_email:
+          '#type': textfield
+          '#title': 'Permittee email'
+          '#pattern': '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+          '#pattern_error': 'Please enter a correctly formatted email address, such as myname@example.com.'
+        permittee_phone:
+          '#type': tel
+          '#title': 'Permittee phone'
+        permit_number:
+          '#type': textfield
+          '#title': 'Permit number'
+      section_odp_questions:
+        '#type': webform_section
+        '#title': 'More Info'
+        '#states':
+          visible:
+            - ':input[name="request_workgroup"]':
+                value: 'Outdoor Dining'
+        more_info_issues:
+          '#type': checkboxes
+          '#title': 'Do any of the following issues apply?'
+          '#options':
+            'Is there currently a safety issue?': 'Is there currently a safety issue?'
+            'Is there an active permit?': 'Is there an active permit?'
+            'Is this buisness current on all fee payments?': 'Is this buisness current on all fee payments?'
+            'Is there active insurance on file for the business?': 'Is there active insurance on file for the business?'
+            'If needed, does the business have neighbor consent?': 'If needed, does the business have neighbor consent?'
+            'Are structural changes needed?': 'Are structural changes needed?'
+          '#required': true
+      section_issue_narrative:
+        '#type': webform_section
+        '#title': 'Issue Narrative'
+        '#title_display': invisible
+        '#title_tag': ''
+        '#states':
+          visible:
+            - ':input[name="request_workgroup"]':
+                value: 'Outdoor Dining'
+            - or
+            - ':input[name="request_workgroup"]':
+                value: 'Utility Permits'
+            - or
+            - ':input[name="request_workgroup"]':
+                value: 'Temporary Street Use Permitting (TSUP)'
+            - or
+            - ':input[name="request_workgroup"]':
+                value: 'PBOT Compliance'
+            - or
+            - ':input[name="request_workgroup"]':
+                value: Other
+        issue_narrative_description:
+          '#type': textarea
+          '#title': 'Please provide details on what the issue is and what steps have been taken to resolve the issue.'
+          '#counter_type': character
+          '#counter_maximum': 2000
+          '#required': true
+      section_location:
+        '#type': webform_section
+        '#title': Location
+        '#states':
+          visible:
+            - ':input[name="request_workgroup"]':
+                value: 'Outdoor Dining'
+            - or
+            - ':input[name="request_workgroup"]':
+                value: 'Utility Permits'
+            - or
+            - ':input[name="request_workgroup"]':
+                value: 'Temporary Street Use Permitting (TSUP)'
+            - or
+            - ':input[name="request_workgroup"]':
+                value: 'PBOT Compliance'
+            - or
+            - ':input[name="request_workgroup"]':
+                value: Other
+        report_location:
+          '#type': portland_location_picker
+          '#title': 'Search the map for an address, cross streets, park, or community center. Or use the map to click a location.'
+      section_document_uploads:
+        '#type': webform_section
+        '#title': 'Supporting documentation'
+        '#states':
+          visible:
+            - ':input[name="request_workgroup"]':
+                value: 'Outdoor Dining'
+            - or
+            - ':input[name="request_workgroup"]':
+                value: 'Utility Permits'
+            - or
+            - ':input[name="request_workgroup"]':
+                value: 'Temporary Street Use Permitting (TSUP)'
+            - or
+            - ':input[name="request_workgroup"]':
+                value: Other
+        documents_uploads:
+          '#type': webform_document_file
+          '#title': 'Supporting Documents or Images'
+          '#multiple': 6
+          '#file_placeholder': '<p>Upload up to 6 of the following supported documents: compliance log, email records, inspection report, fee summary, photos of issue</p>'
+          '#max_filesize': '30'
+          '#file_extensions': 'txt rtf pdf doc docx odt ppt pptx odp xls xlsx ods jpg jpeg png'
+          '#sanitize': true
+          '#attachment_image_style': webform_report_uploaded_image
+      section_public_records_statement:
+        '#type': webform_section
+        '#title': 'Public Records Statement'
+        public_records_statement_standard:
+          '#type': webform_markup
+          '#markup': 'Information you provide to the City is a public record and may be subject to release under Oregon&rsquo;s <a data-renderer-mark="true" href="https://www.doj.state.or.us/oregon-department-of-justice/public-records/attorney-generals-public-records-and-meetings-manual/i-public-records/#:~:text=Under%20Oregon''s%20Public%20Records%20Law,committee%20of%20the%20Legislative%20Assembly" title="https://www.doj.state.or.us/oregon-department-of-justice/public-records/attorney-generals-public-records-and-meetings-manual/i-public-records/#:~:text=Under%20Oregon''s%20Public%20Records%20Law,committee%20of%20the%20Legislative%20Assembly">Public Records Law</a>. This law classifies certain information as available to the public on request. See our <a data-renderer-mark="true" href="/help/about/privacy" title="https://www.portland.gov/help/about/privacy">privacy statement</a> for more information.'
+        public_records_statement_required:
+          '#type': webform_markup
+          '#markup': 'The information you provide in this form is considered a public record under Oregon&rsquo;s <a data-renderer-mark="true" href="https://www.doj.state.or.us/oregon-department-of-justice/public-records/attorney-generals-public-records-and-meetings-manual/i-public-records/#:~:text=Under%20Oregon''s%20Public%20Records%20Law,committee%20of%20the%20Legislative%20Assembly" title="https://www.doj.state.or.us/oregon-department-of-justice/public-records/attorney-generals-public-records-and-meetings-manual/i-public-records/#:~:text=Under%20Oregon''s%20Public%20Records%20Law,committee%20of%20the%20Legislative%20Assembly">Public Records Law</a> and is available to the public on request.'
+      support_agent_use_only:
+        '#type': portland_support_agent_widget
+        '#title': 'Support Agent Use Only'
+        '#access_create_roles':
+          - authenticated
+        '#access_update_roles':
+          - support_agent
+          - administrator
+        '#access_view_roles':
+          - support_agent
+          - administrator
+        '#zendesk_request_number__access': false
+        '#employee_notes_panel__access': false
+        '#escalate_issue__access': false
+      actions:
+        '#type': webform_actions
+        '#title': 'Submit button(s)'
+  request_ticket_id:
+    '#type': hidden
+    '#title': 'Request Ticket ID'
+  computed_description:
+    '#type': webform_computed_twig
+    '#title': 'Computed Description'
+    '#mode': html
+    '#template': |
+      <p><strong>Internal Compliance Request</strong></p>
+
+      {% if data.request_workgroup and data.request_workgroup is not iterable %}
+        <p><strong>Workgroup:</strong> {{ data.request_workgroup }}</p>
+      {% endif %}
+
+      {% if data.request_type and data.request_type is not iterable %}
+        <p><strong>Request type:</strong> {{ data.request_type }}</p>
+      {% endif %}
+
+      {% if data.ticket_type and data.ticket_type is not iterable %}
+        <p><strong>Ticket type:</strong> {{ data.ticket_type }}</p>
+      {% endif %}
+
+      {% if data.ticket_assign_to and data.ticket_assign_to is not iterable %}
+        <p><strong>Assign ticket to:</strong> {{ data.ticket_assign_to }}</p>
+      {% endif %}
+
+      {% if data.ticket_source and data.ticket_source is not iterable %}
+        <p><strong>Ticket source:</strong> {{ data.ticket_source }}</p>
+      {% endif %}
+
+      {% if data.ticket_referred_by and data.ticket_referred_by is not iterable %}
+        <p><strong>Referred by:</strong> {{ data.ticket_referred_by }}</p>
+      {% endif %}
+
+      {% if data.ticket_referral_category and data.ticket_referral_category is not iterable %}
+        <p><strong>Ticket category:</strong> {{ data.ticket_referral_category }}</p>
+      {% endif %}
+
+      {% if data.ticket_obstruction_category and data.ticket_obstruction_category is not iterable %}
+        <p><strong>Ticket category:</strong> {{ data.ticket_obstruction_category }}</p>
+      {% endif %}
+
+      {% if data.ticket_priority and data.ticket_priority is not iterable %}
+        <p><strong>Ticket priority:</strong> {{ data.ticket_priority }}</p>
+      {% endif %}
+
+      {% if data.requester_contact_name %}
+        <p><strong>Requester name:</strong> {{ data.requester_contact_name }}</p>
+      {% endif %}
+
+      {% if data.requester_contact_email %}
+        <p><strong>Requester email:</strong> {{ data.requester_contact_email }}</p>
+      {% endif %}
+
+      {% if data.requester_contact_phone %}
+        <p><strong>Requester phone:</strong> {{ data.requester_contact_phone }}</p>
+      {% endif %}
+
+      {% if data.permittee_business %}
+        <p><strong>Name of business:</strong> {{ data.permittee_business }}</p>
+      {% endif %}
+
+      {% if data.permittee_name %}
+        <p><strong>Permittee name:</strong> {{ data.permittee_name }}</p>
+      {% endif %}
+
+      {% if data.permittee_email %}
+        <p><strong>Permittee email:</strong> {{ data.permittee_email }}</p>
+      {% endif %}
+
+      {% if data.permittee_phone %}
+        <p><strong>Permittee phone:</strong> {{ data.permittee_phone }}</p>
+      {% endif %}
+
+      {% if data.permit_number %}
+        <p><strong>Permit number:</strong> {{ data.permit_number }}</p>
+      {% endif %}
+
+      {% if data.more_info_issues|length > 0 %}
+      <p class="mb-0"><strong>Additional issues:</strong><br>
+        <ul>
+        {% for value in data.more_info_issues %}
+          <li>{{ value }}</li>
+        {% endfor %}
+        </ul></p>
+      {% endif %}
+
+      <p><strong>Location</strong><br>
+      {% if data.report_location.place_name %}
+        {{ data.report_location.place_name }}<br>
+      {% endif %}
+      {% if data.report_location.location_address %}
+        {{ data.report_location.location_address }}<br>
+      {% endif %}
+      {% if data.report_location.location_lat and data.report_location.location_lon %}
+        Lat/Lon: <a href="https://www.google.com/maps/place/{{ data.report_location.location_lat }},{{ data.report_location.location_lon }}">{{ data.report_location.location_lat }},{{ data.report_location.location_lon }}</a><br>
+      {% endif %}
+      {% if data.report_location.location_attributes %}
+        {{ data.report_location.location_attributes }}
+      {% endif %}
+    '#whitespace': spaceless
+    '#ajax': true
+css: ''
+javascript: ''
+settings:
+  ajax: false
+  ajax_scroll_top: form
+  ajax_progress_type: ''
+  ajax_effect: ''
+  ajax_speed: null
+  page: true
+  page_submit_path: ''
+  page_confirm_path: ''
+  page_theme_name: ''
+  form_title: both
+  form_submit_once: false
+  form_open_message: ''
+  form_close_message: ''
+  form_exception_message: ''
+  form_previous_submissions: true
+  form_confidential: false
+  form_confidential_message: ''
+  form_disable_remote_addr: false
+  form_convert_anonymous: false
+  form_prepopulate: false
+  form_prepopulate_source_entity: false
+  form_prepopulate_source_entity_required: false
+  form_prepopulate_source_entity_type: ''
+  form_unsaved: false
+  form_disable_back: false
+  form_submit_back: false
+  form_disable_autocomplete: false
+  form_novalidate: false
+  form_disable_inline_errors: false
+  form_required: false
+  form_autofocus: false
+  form_details_toggle: false
+  form_reset: false
+  form_access_denied: default
+  form_access_denied_title: ''
+  form_access_denied_message: ''
+  form_access_denied_attributes: {  }
+  form_file_limit: ''
+  form_attributes: {  }
+  form_method: ''
+  form_action: ''
+  share: false
+  share_node: false
+  share_theme_name: ''
+  share_title: true
+  share_page_body_attributes: {  }
+  submission_label: ''
+  submission_exception_message: ''
+  submission_locked_message: ''
+  submission_log: false
+  submission_excluded_elements: {  }
+  submission_exclude_empty: false
+  submission_exclude_empty_checkbox: false
+  submission_views: {  }
+  submission_views_replace: {  }
+  submission_user_columns: {  }
+  submission_user_duplicate: false
+  submission_access_denied: default
+  submission_access_denied_title: ''
+  submission_access_denied_message: ''
+  submission_access_denied_attributes: {  }
+  previous_submission_message: ''
+  previous_submissions_message: ''
+  autofill: false
+  autofill_message: ''
+  autofill_excluded_elements: {  }
+  wizard_progress_bar: true
+  wizard_progress_pages: false
+  wizard_progress_percentage: false
+  wizard_progress_link: false
+  wizard_progress_states: false
+  wizard_start_label: ''
+  wizard_preview_link: false
+  wizard_confirmation: true
+  wizard_confirmation_label: ''
+  wizard_auto_forward: true
+  wizard_auto_forward_hide_next_button: false
+  wizard_keyboard: true
+  wizard_track: ''
+  wizard_prev_button_label: ''
+  wizard_next_button_label: ''
+  wizard_toggle: false
+  wizard_toggle_show_label: ''
+  wizard_toggle_hide_label: ''
+  wizard_page_type: container
+  wizard_page_title_tag: h2
+  preview: 0
+  preview_label: ''
+  preview_title: ''
+  preview_message: ''
+  preview_attributes: {  }
+  preview_excluded_elements: {  }
+  preview_exclude_empty: true
+  preview_exclude_empty_checkbox: false
+  draft: none
+  draft_multiple: false
+  draft_auto_save: false
+  draft_saved_message: ''
+  draft_loaded_message: ''
+  draft_pending_single_message: ''
+  draft_pending_multiple_message: ''
+  confirmation_type: page
+  confirmation_url: ''
+  confirmation_title: ''
+  confirmation_message: ''
+  confirmation_attributes: {  }
+  confirmation_back: true
+  confirmation_back_label: ''
+  confirmation_back_attributes: {  }
+  confirmation_exclude_query: false
+  confirmation_exclude_token: false
+  confirmation_update: false
+  limit_total: null
+  limit_total_interval: null
+  limit_total_message: ''
+  limit_total_unique: false
+  limit_user: null
+  limit_user_interval: null
+  limit_user_message: ''
+  limit_user_unique: false
+  entity_limit_total: null
+  entity_limit_total_interval: null
+  entity_limit_user: null
+  entity_limit_user_interval: null
+  purge: none
+  purge_days: null
+  results_disabled: false
+  results_disabled_ignore: false
+  results_customize: false
+  token_view: false
+  token_update: false
+  token_delete: false
+  serial_disabled: false
+access:
+  create:
+    roles:
+      - anonymous
+      - authenticated
+    users: {  }
+    permissions: {  }
+  view_any:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  update_any:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  delete_any:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  purge_any:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  view_own:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  update_own:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  delete_own:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  administer:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  test:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  configuration:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+handlers:
+  zendesk_new_request:
+    id: zendesk
+    handler_id: zendesk_new_request
+    label: 'New internal ROW Compliance request'
+    notes: ''
+    status: true
+    conditions: {  }
+    weight: 0
+    settings:
+      requester_name: requester_contact_name
+      requester_email: requester_contact_email
+      subject: '[webform_submission:values:computed_subject]'
+      comment: '[webform_submission:values:computed_description:html]'
+      tags: 'drupal webform'
+      priority: normal
+      status: new
+      recipient: ''
+      group_id: '4549352062487'
+      assignee_id: ''
+      type: incident
+      collaborators: ''
+      custom_fields: "6353388345367: 'request_row_compliance_assistance'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n1500013095781: '[webform_submission:uuid]'\r\n20710237949079: ['[webform_submission:values:ticket_referred_by]', 'ticket_referred_by']"
+      ticket_id_field: request_ticket_id
+      ticket_fork_field: ''
+      ticket_form_id: '25259252488471'
+variants: {  }
