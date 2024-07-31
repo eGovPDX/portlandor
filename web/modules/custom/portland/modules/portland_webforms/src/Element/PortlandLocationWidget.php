@@ -22,12 +22,12 @@ class PortlandLocationWidget extends WebformCompositeBase
    */
   public static function getCompositeElements(array $element)
   {
-    $element_id = $element['#webform_key'];
+    $element_id = array_key_exists("#webform_key", $element) ? $element['#webform_key'] : "";
     
     $element['location_search'] = [
       '#type' => 'textfield',
       '#title' => t('Location Search'),
-      '#id' => 'location_search',
+      '#id' => $element_id . '_location_search',
       '#attributes' => ['class' => ['location-widget-address'], 'autocomplete' => 'off'],
       '#description' => t('Search the map for an address, cross streets, park, or community center. Or use the map to click a location.'),
       '#description_display' => 'before',
@@ -45,7 +45,7 @@ class PortlandLocationWidget extends WebformCompositeBase
       '#description' => '',
       '#description_display' => 'before',
       '#title_display' => 'invisible',
-      '#markup' => '<div id="' . $element_id . '_map_container" class="location-map"></div><div class="loader-container" role="status"><div class="loader"></div><div class="visually-hidden">Loading...</div></div>',
+      '#markup' => '<div id="' . $element_id . '_map_container" class="location-map" tabindex="0"></div><div class="loader-container" role="status"><div class="loader"></div><div class="visually-hidden">' . t('Loading...') . '</div></div>',
     ];
 
     return $element;
