@@ -27,6 +27,7 @@ const MUST_PROVIDE_ADDRESS_MESSAGE = "You must enter an address or partial addre
 const UNVERIFIED_WARNING_MESSAGE = "We're unable to verify this address. If you're certain this is the full, correct address, you may proceed without verification."
 const VERIFIED_MESSAGE = "Address is verified!";
 
+
 AddressVerifierView.prototype.renderAddressVerifier = function () {
 
     var self = this; // preserve refernece to "this" for use inside functions.
@@ -123,6 +124,9 @@ AddressVerifierView.prototype._setUpInputFieldAndAutocomplete = function () {
             self.$input.val(ui.item.fullAddress);
             self.$input.autocomplete('close');
             self._setVerified(self.$checkmark, self.$button, self.$element, ui.item);
+            if (self.settings.lookup_taxlot) {
+                self._getTaxLotNumber(ui.item);
+            }
             return false; // returning true causes the field to be cleared
         },
         response: function (event, ui) {
@@ -337,3 +341,13 @@ AddressVerifierView.prototype.updateAddressUI = function (address) {
     alert('Putting the validated address in the UI');
 };
 
+AddressVerifierView.prototype._getTaxLotNumber = function (item) {
+    var lat = item.lat;
+    var lon = item.lon;
+    this.model.reverseGeocode(lat, lon, this.handleTaxlotId, this.$element);
+}
+
+AddressVerifierView.prototype.handleTaxlotId = function (taxlotId, $element) {
+    $element.find('#location_taxlot_id').val(taxlotId);
+    alert($element.find('#location_taxlot_id').val());
+}
