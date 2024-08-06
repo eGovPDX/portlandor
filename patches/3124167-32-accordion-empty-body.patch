@@ -1,0 +1,116 @@
+diff --git a/README.md b/README.md
+index 8090a00..c3d8e28 100644
+--- a/README.md
++++ b/README.md
+@@ -21,12 +21,14 @@ gets triggered on the accordion element.
+ 
+ INSTALLATION:
+ --------
+-1. Install & Enable the module
+-2. Open Administration > Configuration > Content authoring >
++1. Download external library from https://github.com/smillart/WAI-ARIA-Patterns-And-Widgets.
++2. Place the library in the root libraries folder (/libraries).
++3. Install & Enable the module
++4. Open Administration > Configuration > Content authoring >
+    Text formats and editors (admin/config/content/formats)
+-3. Edit a text format's settings (usually Basic HTML)
+-4. Drag n Drop the Accordion -button to the toolbar to show it to the editors
+-5. Review available options at /admin/config/content/ckeditor-accordion
++5. Edit a text format's settings (usually Basic HTML)
++6. Drag n Drop the Accordion -button to the toolbar to show it to the editors
++7. Review available options at /admin/config/content/ckeditor-accordion
+ 
+ 
+ TODO:
+diff --git a/ckeditor_accordion.libraries.yml b/ckeditor_accordion.libraries.yml
+index 79775c6..3e81f41 100644
+--- a/ckeditor_accordion.libraries.yml
++++ b/ckeditor_accordion.libraries.yml
+@@ -25,3 +25,23 @@ accordion.frontend:
+     - core/drupal
+     - core/drupalSettings
+     - core/once
++accordion_accessible_style:
++  version: 1.x
++  css:
++    theme:
++      css/ckeditor-accessible-accordion.css: {}
++  dependencies:
++    - core/drupal
++    - ckeditor_accordion/libraries.smillart.wai-aria-patterns-and-widgets
++libraries.smillart.wai-aria-patterns-and-widgets:
++  remote: https://github.com/smillart/WAI-ARIA-Patterns-And-Widgets
++  version: 1.x
++  license:
++    name: MIT
++    url: https://github.com/smillart/WAI-ARIA-Patterns-And-Widgets/blob/master/LICENSE
++    gpl-compatible: true
++  css:
++    theme:
++      /libraries/wai-aria-patterns-and-widgets/dist/accordion/css/accordion.min.css: {}
++  js:
++    /libraries/wai-aria-patterns-and-widgets/dist/accordion/js/accordion.min.js: {}
+diff --git a/ckeditor_accordion.module b/ckeditor_accordion.module
+index cda8f86..7d7ba81 100644
+--- a/ckeditor_accordion.module
++++ b/ckeditor_accordion.module
+@@ -11,8 +11,15 @@
+ function ckeditor_accordion_page_attachments_alter(array &$page) {
+   $config = \Drupal::config('ckeditor_accordion.settings');
+ 
+-  // Attaches css assets globally.
+-  $page['#attached']['library'][] = 'ckeditor_accordion/accordion.frontend';
++// Attaches accordion accessible style library.
++  if (file_exists(DRUPAL_ROOT . '/libraries/wai-aria-patterns-and-widgets')) {
++    $page['#attached']['library'][] = 'ckeditor_accordion/accordion_accessible_style';
++  }
++  else {
++    // Attaches accordion library if accessible library
++    // does not exist in libraris folder.
++    $page['#attached']['library'][] = 'ckeditor_accordion/accordion.frontend';
++  }
+ 
+   // Pass settings to JavaScript.
+   $page['#attached']['drupalSettings']['ckeditorAccordion']['accordionStyle'] = [
+diff --git a/src/Form/CkeditorAccordionSettingsForm.php b/src/Form/CkeditorAccordionSettingsForm.php
+index ec2e3af..420bf1b 100644
+--- a/src/Form/CkeditorAccordionSettingsForm.php
++++ b/src/Form/CkeditorAccordionSettingsForm.php
+@@ -2,6 +2,7 @@
+ 
+ namespace Drupal\ckeditor_accordion\Form;
+ 
++use Drupal\Component\Utility\Html;
+ use Drupal\Core\Form\ConfigFormBase;
+ use Drupal\Core\Form\FormStateInterface;
+ 
+@@ -58,7 +59,20 @@ class CkeditorAccordionSettingsForm extends ConfigFormBase {
+       '#title' => $this->t('Open tabs with hash using anchor links or on page load'),
+       '#return_value' => 1,
+       '#default_value' => $config->get('open_tabs_with_hash') ?? 0,
+-      '#description' => $this->t('With this, your accordion row titles are hashed and used as links to the row. For example, if your accordion title is "Frequently Asked Questions", you can link to it using href="#FrequentlyAskedQuestions".'),
++      '#description' => $this->t('With this, your accordion row titles are hashed and used as links to the row. For example, if your accordion title is "Frequently Asked Questions", you can link to it using href="#FrequentlyAskedQuestions".')
++    ];
++
++    $variant_options = [];
++    foreach (\Drupal::service('plugin.manager.ckeditor_accordion_variant')->getDefinitions() as $variant_id => $values) {
++      $variant_options[$values['id']] = Html::escape($values['label']->render() . ': ' . $values['description']->render());
++    }
++
++    $form['variant'] = [
++      '#type' => 'radios',
++      '#title' => $this->t('Variant'),
++      '#description' => $this->t('Select the variant to be used.'),
++      '#options' => $variant_options,
++      '#default_value' => $config->get('variant'),
+     ];
+ 
+     return parent::buildForm($form, $form_state);
+@@ -75,6 +89,7 @@ class CkeditorAccordionSettingsForm extends ConfigFormBase {
+     $config->set('keep_rows_open', $values['keep_rows_open']);
+     $config->set('animate_accordion_toggle', $values['animate_accordion_toggle']);
+     $config->set('open_tabs_with_hash', $values['open_tabs_with_hash']);
++    $config->set('variant', $values['variant']);
+     $config->save();
+ 
+     parent::submitForm($form, $form_state);
