@@ -4,6 +4,7 @@ status: open
 dependencies:
   module:
     - portland
+    - portland_zendesk
 third_party_settings:
   portland:
     disable_demographic_form_prompt: 0
@@ -77,6 +78,49 @@ elements: |-
       - authenticated
     '#zendesk_request_number__access': false
     '#escalate_issue__access': false
+  computed_description:
+    '#type': webform_computed_twig
+    '#title': 'Computed Description'
+    '#display_on': none
+    '#mode': html
+    '#template': |-
+      <h2>Request Language Service</h2>
+
+      {% if data.request_how is not iterable %}
+        <p><strong>I would like to request:</strong> {{ data.request_type }}</p>
+      {% endif %}
+
+      {% if data.request_subtype is not iterable %}
+        <p><strong>Type of request:</strong> {{ data.request_subtype }}</p>
+      {% endif %}
+
+      <p><strong>Description of request:</strong><br>{{ data.request_description }}</p>
+
+      {% if data.request_language is not iterable %}
+        <p><strong>Requested language:</strong><br>{{ data.request_language }}</p>
+      {% endif %}
+
+      <h3>Contact Information</h3>
+
+      {% if data.contact_name %}
+        <p><strong>Name:</strong> {{ data.contact_name }}</p>
+      {% endif %}
+
+      {% if data.contact_email %}
+        <p><strong>Email:</strong> {{ data.contact_email }}</p>
+      {% endif %}
+
+      {% if data.contact_phone %}
+        <p><strong>Phone:</strong> {{ data.contact_phone }}</p>
+      {% endif %}
+
+      {% if data.contact_preferred_method is not iterable %}
+      <p><strong>Preferred contact method:</strong> {{ data.contact_preferred_method }}</p>
+      {% endif %}
+    '#whitespace': spaceless
+  request_ticket_id:
+    '#type': hidden
+    '#title': 'Request Ticket Id'
 css: ''
 javascript: ''
 settings:
@@ -260,5 +304,61 @@ access:
     roles: {  }
     users: {  }
     permissions: {  }
-handlers: {  }
+handlers:
+  zendesk_new_request:
+    id: zendesk
+    handler_id: zendesk_new_request
+    label: 'Zendesk new request'
+    notes: ''
+    status: true
+    conditions:
+      disabled:
+        ':input[name="support_agent_use_only[test_submission]"]':
+          checked: true
+    weight: 0
+    settings:
+      requester_name: contact_name
+      requester_email: contact_email
+      subject: 'Language service reqeust'
+      comment: '[webform_submission:values:computed_description:html]'
+      tags: 'drupal webform'
+      priority: normal
+      status: new
+      recipient: ''
+      group_id: '25323298932503'
+      assignee_id: ''
+      type: incident
+      collaborators: ''
+      custom_fields: "6353388345367: 'request_language_services_parks'"
+      ticket_id_field: request_ticket_id
+      ticket_fork_field: ''
+      ticket_form_id: '25433711903895'
+  test_zendesk_new_request:
+    id: zendesk
+    handler_id: test_zendesk_new_request
+    label: 'TEST: Zendesk new request'
+    notes: ''
+    status: true
+    conditions:
+      enabled:
+        ':input[name="support_agent_use_only[test_submission]"]':
+          checked: true
+    weight: 1
+    settings:
+      requester_name: contact_name
+      requester_email: contact_email
+      subject: 'Language service reqeust'
+      comment: '[webform_submission:values:computed_description:html]'
+      tags: 'drupal webform'
+      priority: normal
+      status: new
+      recipient: ''
+      group_id: '4549352062487'
+      assignee_id: ''
+      type: incident
+      collaborators: ''
+      custom_fields: "6353388345367: 'test_request_language_services_parks'"
+      ticket_id_field: request_ticket_id
+      ticket_fork_field: ''
+      ticket_form_id: '25433711903895'
 variants: {  }
