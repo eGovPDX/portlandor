@@ -31,7 +31,7 @@
 
     // feature.entity_id is the map ID: "1371"
     var mapid = "leaflet-map-media-map-"+ feature.entity_id +"-field-geo-file";
-    
+
     let div_selector = "div#leaflet-map-media-map-" + feature.entity_id + "-field-geo-file";
     var map = jQuery(div_selector).data('leaflet').lMap;
     if( !map ) {
@@ -176,9 +176,9 @@ jQuery(document)
   });
 
   // Add a button to redo search in map
-  if( window.location.pathname === '/parks/finder' && jQuery('div.leaflet-control-search').length === 0 ) {
+  if( window.location.pathname === '/parks/search' && jQuery('div.leaflet-control-search').length === 0 ) {
     jQuery('div.leaflet-top.leaflet-left')
-      .after('<div class="leaflet-control-search leaflet-bar leaflet-control d-none"><a class="leaflet-control-search-button leaflet-bar-part" href="#" title="Search in map" style="width:100%;font-size:1.1em;">Redo search in map</a></div>');
+      .after('<div class="leaflet-control-search leaflet-bar leaflet-control d-none"><a class="leaflet-control-search-button leaflet-bar-part" href="#" style="width:100%;font-size:1.1em;">' + Drupal.t('Search this area') + '</a></div>');
     jQuery('.leaflet-control-search-button').on('click', function(e) {
       var bounds = drupalSettings.map.getBounds();
       var bottomLeftTopRight = encodeURIComponent(bounds.getSouth().toFixed(5) + ',' + bounds.getWest().toFixed(5) + ',' + bounds.getNorth().toFixed(5) + ',' + bounds.getEast().toFixed(5));

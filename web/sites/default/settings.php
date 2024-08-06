@@ -139,17 +139,7 @@ switch ($env) {
     break;
 }
 
-// Set the core to "Demo" on the Demo multidev
-if($env == 'demo') {
-  $config['search_api.server.searchstax']['backend_config']['connector_config']['core'] = 'Demo';
-}
-else if($env == 'live') {
-  $config['search_api.server.searchstax']['backend_config']['connector_config']['core'] = 'Production';
-}
-else {
-  $config['search_api.server.searchstax']['backend_config']['connector_config']['core'] = 'Test';
-}
-
+$settings['search_api_solr.site_hash'] = 'portland';
 
 // Overwrite Google Tag Manager environment setting in 'live' production site.
 if (isset($_ENV['PANTHEON_ENVIRONMENT'])) {
@@ -169,9 +159,9 @@ $config['file.settings']['make_unused_managed_files_temporary'] = TRUE;
 
 
 // Configure Redis (code borrowed from https://docs.pantheon.io/object-cache/drupal)
-if (isset($_ENV['PANTHEON_ENVIRONMENT']) && $_ENV['PANTHEON_ENVIRONMENT'] !== 'lando' 
+if (isset($_ENV['PANTHEON_ENVIRONMENT']) && $_ENV['PANTHEON_ENVIRONMENT'] !== 'lando'
     && !\Drupal\Core\Installer\InstallerKernel::installationAttempted() && extension_loaded('redis')) {
-  
+
   // Set Redis as the default backend for any cache bin not otherwise specified.
   $settings['cache']['default'] = 'cache.backend.redis';
 
@@ -185,7 +175,7 @@ if (isset($_ENV['PANTHEON_ENVIRONMENT']) && $_ENV['PANTHEON_ENVIRONMENT'] !== 'l
 
   $settings['redis_compress_length'] = 100;
   $settings['redis_compress_level'] = 1;
-  
+
   $settings['cache_prefix']['default'] = 'pantheon-redis';
 
   $settings['cache']['bins']['form'] = 'cache.backend.database'; // Use the database for forms

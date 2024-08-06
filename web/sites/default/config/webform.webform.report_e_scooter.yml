@@ -55,6 +55,7 @@ elements: |-
         visible:
           ':input[name="report_issue[radios]"]':
             value: 'improperly parked'
+      '#required': true
     report_private_property:
       '#type': radios
       '#title': 'Is the e-scooter parked on private property?'
@@ -64,17 +65,16 @@ elements: |-
         visible:
           ':input[name="report_blocking"]':
             value: 'No'
+      '#required': true
     report_company:
       '#type': radios
       '#title': 'Electric scooter (e-scooter) company'
-      '#description': 'Which e-scooter company does the scooter belong to? Or, what color is the e-scooter?'
+      '#description': '<p>Which e-scooter company does the scooter belong to? Or, what color is the e-scooter?</p>'
       '#description_display': before
       '#prepopulate': true
       '#options':
-        Bird: 'Bird (black)'
-        Bolt: 'Bolt (black and yellow)'
         Lime: 'Lime (green)'
-        Spin: 'Spin (orange)'
+        Lyft: 'Lyft (black/orange)'
         'E-scooter company not specified': 'Not sure'
       '#states':
         optional:
@@ -166,6 +166,8 @@ elements: |-
     '#access_view_roles':
       - support_agent
       - administrator
+    '#zendesk_request_number__access': false
+    '#employee_notes_panel__access': false
     '#escalate_issue__access': false
   company_sla:
     '#type': webform_computed_twig
@@ -186,14 +188,18 @@ elements: |-
     '#template': |
       {% set response = 'NA' %}
 
-      {% if data.report_issue == 'improperly parked' and data.report_blocking == 'Yes' %}
-        {% set response = '1' %}
-      {% elseif data.report_issue == 'improperly parked' and data.report_blocking == 'No' %}
-        {% set response = '24' %}
+      {% if data.report_issue == 'improperly parked' %}
+        {% if data.report_blocking == 'Yes' %}
+          {% set response = '1.5' %}
+        {% elseif data.report_private_property == 'Yes' %}
+          {% set response = '24' %}
+        {% else %}
+          {% set response = '48' %}
+        {% endif %}
       {% elseif data.report_issue == 'damaged' %}
-        {% set response = '1' %}
+        {% set response = '12' %}
       {% elseif data.report_issue == 'scooter not working' %}
-        {% set response = '1' %}
+        {% set response = '12' %}
       {% endif %}
 
       {{ response }}
@@ -234,18 +240,20 @@ elements: |-
     '#type': webform_computed_twig
     '#title': 'Computed Urgency'
     '#display_on': none
-    '#template': '{% if data.company_sla == "1" %}Urgent {% endif %}'
+    '#template': "{% if data.report_issue == 'improperly parked' and data.report_blocking == 'Yes' %}URGENT {% endif %}"
+    '#ajax': true
   computed_urgency_text:
     '#type': webform_computed_twig
     '#title': 'Computed Urgency Text'
     '#display_on': none
     '#template': |-
-      {% if data.company_sla == "1" %}
-        Please note, due to the nature of this report, the response time dictated by the City’s Administrative Rule is 60 MINUTES.
-      {% elseif data.company_sla == "24" %}
-        Please note, due to the nature of this report, the response time dictated by the City’s Administrative Rule is 24 HOURS.
+      {% if data.company_sla == "1.5" %}
+        Please note, due to the nature of this report, the response time dictated by the City’s Administrative Rule is 90 MINUTES.
+      {% elseif data.company_sla == "12" or data.company_sla == "24" or data.company_sla == "48" %}
+        Please note, due to the nature of this report, the response time dictated by the City’s Administrative Rule is {{ data.company_sla }} HOURS.
       {% endif %}
     '#whitespace': trim
+    '#ajax': true
   computed_resolution_url:
     '#type': webform_computed_twig
     '#title': 'Computed Resolution URL'
@@ -263,19 +271,15 @@ elements: |-
   computed_recipient:
     '#type': webform_computed_twig
     '#title': 'Computed Recipient'
-    '#admin_notes': 'If this computed field changes, it needs to be updated in all webforms that send notifications to scooter companies.'
+    '#admin_notes': '<p>If this computed field changes, it needs to be updated in all webforms that send notifications to scooter companies.</p>'
     '#display_on': view
     '#template': |-
-      {% if data.report_company == "Bird" %}
-      portland311@bird.co
-      {% elseif data.report_company == "Bolt" %}
-      BoltPDX@micromobility.com
-      {% elseif data.report_company == "Lime" %}
+      {% if data.report_company == "Lime" %}
       help-portland@li.me
-      {% elseif data.report_company == "Spin" %}
-      portland_warehouse-aaaabebkw557a3vu7d3cteq4vi@spin-org.slack.com
+      {% elseif data.report_company == "Lyft" %}
+      portland-escalations@lyft.com
       {% elseif data.report_company == "E-scooter company not specified" %}
-      portland311@bird.co,BoltPDX@micromobility.com,help-portland@li.me,portland_warehouse-aaaabebkw557a3vu7d3cteq4vi@spin-org.slack.com
+      help-portland@li.me,portland-escalations@lyft.com
       {% endif %}
     '#whitespace': trim
     '#store': true
@@ -677,30 +681,6 @@ handlers:
       theme_name: ''
       parameters: {  }
       debug: false
-  zendesk_update_interaction_ticket:
-    id: zendesk_update_ticket
-    handler_id: zendesk_update_interaction_ticket
-    label: 'Zendesk update customer support interaction request'
-    notes: 'Updates an existing Zendesk "interaction request" and links it to the issue request. Enabled if an Zendesk Request Number value has been provided.'
-    status: true
-    conditions:
-      enabled:
-        ':input[name="support_agent_use_only[zendesk_request_number]"]':
-          filled: true
-    weight: -44
-    settings:
-      comment: "<h1>E-scooter Report</h1>\r\n<p><b>Linked Issue Request: <a href=\"https://portlandoregon.zendesk.com/agent/tickets/[webform_submission:values:report_ticket_id]\">[webform_submission:values:report_ticket_id]</a></b></p>\r\n\r\n[webform_submission:values:html]\r\n\r\n"
-      comment_private: 1
-      tags: ''
-      priority: ''
-      status: ''
-      group_id: ''
-      assignee_id: ''
-      type: ''
-      collaborators: ''
-      custom_fields: "8692493739543: '[webform_submission:values:report_ticket_id]'"
-      ticket_id_field: zendesk_request_number
-      ticket_form_id: ''
   create_zendesk_ticket_developer_test:
     id: zendesk
     handler_id: create_zendesk_ticket_developer_test

@@ -19,7 +19,7 @@ class RedirectList extends FieldItemList implements FieldItemListInterface {
   /**
    * Compute the values.
    */
-  protected function computeValue(){
+  protected function computeValue() {
     $entity = $this->getEntity();
     $nid = $entity->Id();
     $type = $entity->getEntityTypeId();
@@ -51,29 +51,34 @@ class RedirectList extends FieldItemList implements FieldItemListInterface {
     if ($this->valueComputed) {
       $entity = $this->getEntity();
 
-      // retrieve all existing redirects for this contnet; then delete them
+      // retrieve all existing redirects for this content
       $type = $entity->getEntityTypeId();
-      $nid = $entity->Id();
-      $redirects = \Drupal::service('redirect.repository')->findByDestinationUri(["internal:/$type/$nid", "entity:$type/$nid"]);
-      foreach($redirects as $key => $redirect) {
-        $redirect->delete();
+      $nid = $entity->id();
+      $content_lang = \Drupal::languageManager()->getCurrentLanguage(LanguageInterface::TYPE_CONTENT)->getId();
+      // get all existing redirects in current content language
+      $existing_redirects = array_filter(
+        \Drupal::service('redirect.repository')->findByDestinationUri(["internal:/$type/$nid", "entity:$type/$nid"]),
+        fn($r) => $r->language->value === $content_lang,
+      );
+      // turn field_redirects into an array of paths, removing starting and trailing slash
+      $new_redirect_paths = array_map(fn($r) => trim($r['value'], '/'), $entity->get('field_redirects')->getValue());
+      foreach ($existing_redirects as $redirect) {
+        // delete any redirects that aren't in the new redirect field value
+        if (!in_array($redirect->getSource()['path'], $new_redirect_paths)) $redirect->delete();
       }
 
-      // recreate new redirects for this content
-      $redirect_redirect = "entity:$type/" . $nid;
-      $field_redirects = $entity->get('field_redirects');
-      foreach ($field_redirects as $delta => $value) {
-        $redirect_source = $value->value;
-        // remove leading slash from value; we inserted it before displaying in form to be more user friendly
-        if (substr($redirect_source, 0, 1) == "/") {
-          $redirect_source = substr($redirect_source, 1, strlen($redirect_source));
+      $existing_redirect_paths = array_map(fn($r) => $r->getSource()['path'], $existing_redirects);
+      foreach ($new_redirect_paths as $redirect_source) {
+        // create any redirects from the new field value that don't exist in the DB
+        if (!in_array($redirect_source, $existing_redirect_paths)) {
+          $redirect_redirect = "entity:$type/" . $nid;
+          Redirect::create([
+            'redirect_source' => $redirect_source,
+            'redirect_redirect' => $redirect_redirect,
+            'language' => $content_lang,
+            'status_code' => 301,
+          ])->save();
         }
-        Redirect::create([
-          'redirect_source' => $redirect_source,
-          'redirect_redirect' => $redirect_redirect,
-          'language' => 'en',
-          'status_code' => 301,
-        ])->save();
       }
     }
     return parent::postSave($update);
