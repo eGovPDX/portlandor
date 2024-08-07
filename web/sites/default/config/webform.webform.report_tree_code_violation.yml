@@ -360,8 +360,6 @@ elements: |-
       {% if data.report_tree_causing_issues and data.report_tree_causing_issues is not iterable %}
         {% if data.report_tree_causing_issues == "Blocking a streetlight" %}
           streetlighting@portlandoregon.gov
-        {% elseif data.report_tree_causing_issues == "Blocking view of a traffic signal, traffic sign, or street sign" or data.report_tree_causing_issues == "Blocking visibility at an intersection" %}
-          Tom Jensen
         {% endif %}
       {% endif %}
     '#whitespace': trim
@@ -374,6 +372,16 @@ elements: |-
       Tree Code Violation: 
       {% if data.report_issue is not iterable %}
         {{ data.report_issue }}
+      {% endif %}
+    '#whitespace': trim
+  computed_tom_jensen_triage:
+    '#type': webform_computed_twig
+    '#title': 'Computed Tom Jensen Triage'
+    '#display_on': none
+    '#mode': text
+    '#template': |
+      {% if data.report_tree_causing_issues and data.report_tree_causing_issues is not iterable and data.report_tree_causing_issues == "Blocking view of a traffic signal, traffic sign, or street sign" or data.report_tree_causing_issues == "Blocking visibility at an intersection" %}
+        Yes
       {% endif %}
     '#whitespace': trim
   request_ticket_id:
@@ -566,13 +574,17 @@ handlers:
   zendesk_new_request:
     id: zendesk
     handler_id: zendesk_new_request
-    label: 'Zendesk new request'
-    notes: 'Currently routing to Developer Test Group until final routing is decided.'
+    label: 'Create ticket in PP&R: Urban Forestry group'
+    notes: 'Enabled if Computed Email is empty, Computed Tom Jensen Triage is empty, and Test Submission is unchecked.'
     status: true
     conditions:
       enabled:
         ':input[name="computed_email_recipient"]':
           empty: true
+        ':input[name="computed_tom_jensen_triage"]':
+          empty: true
+        ':input[name="support_agent_use_only[test_submission]"]':
+          unchecked: true
     weight: 0
     settings:
       requester_name: contact_name
@@ -583,12 +595,140 @@ handlers:
       priority: normal
       status: new
       recipient: ''
-      group_id: '4549352062487'
-      assignee_id: '376597733073'
+      group_id: '22777004934807'
+      assignee_id: ''
       type: incident
       collaborators: ''
       custom_fields: "6353388345367: 'report_tree_code_violation'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n1500013095781: '[webform_submission:uuid]'\r\n"
       ticket_id_field: request_ticket_id
       ticket_fork_field: ''
-      ticket_form_id: '4990038807319'
+      ticket_form_id: '25484007225111'
+  test_zendesk_new_request:
+    id: zendesk
+    handler_id: test_zendesk_new_request
+    label: 'TEST: Create ticket in PP&R: Urban Forestry group'
+    notes: 'Enabled if Computed Recipient is empty and Test Submission is checked.'
+    status: true
+    conditions:
+      enabled:
+        ':input[name="computed_email_recipient"]':
+          empty: true
+        ':input[name="support_agent_use_only[test_submission]"]':
+          checked: true
+    weight: 1
+    settings:
+      requester_name: contact_name
+      requester_email: contact_email
+      subject: '[webform_submission:values:computed_subject]'
+      comment: '[webform_submission:values:computed_description:html]'
+      tags: 'drupal webform'
+      priority: normal
+      status: new
+      recipient: ''
+      group_id: '22777004934807'
+      assignee_id: ''
+      type: incident
+      collaborators: ''
+      custom_fields: "6353388345367: 'report_tree_code_violation'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n1500013095781: '[webform_submission:uuid]'\r\n"
+      ticket_id_field: request_ticket_id
+      ticket_fork_field: ''
+      ticket_form_id: '25484007225111'
+  email:
+    id: email
+    handler_id: email
+    label: 'Email to computed recipient'
+    notes: 'Enabled if Computed Recipient is filled and Test Submission is unchecked'
+    status: true
+    conditions:
+      enabled:
+        ':input[name="computed_email_recipient"]':
+          filled: true
+        ':input[name="support_agent_use_only[test_submission]"]':
+          unchecked: true
+    weight: 2
+    settings:
+      states:
+        - completed
+      to_mail: '[webform_submission:values:computed_email_recipient]'
+      to_options: {  }
+      bcc_mail: ''
+      bcc_options: {  }
+      cc_mail: ''
+      cc_options: {  }
+      from_mail: _default
+      from_options: {  }
+      from_name: _default
+      reply_to: ''
+      return_path: ''
+      sender_mail: ''
+      sender_name: ''
+      subject: '[webform_submission:values:computed_subject]'
+      body: '<p>[webform_submission:values:computed_description:html]</p>'
+      excluded_elements: {  }
+      ignore_access: false
+      exclude_empty: true
+      exclude_empty_checkbox: false
+      exclude_attachments: false
+      html: true
+      attachments: false
+      twig: false
+      theme_name: ''
+      parameters: {  }
+      debug: false
+  create_ticket_for_john_dutt_triage:
+    id: zendesk
+    handler_id: create_ticket_for_john_dutt_triage
+    label: 'Create ticket for John Dutt triage'
+    notes: 'Enabled if Computed Email is empty, Computed Tom Jensen Triage is Yes, and Test Submission is unchecked. Creates ticket in 311 group and assigns to John Dutt. Additional update handler fires later to add triage note.'
+    status: true
+    conditions:
+      enabled:
+        ':input[name="computed_email_recipient"]':
+          empty: true
+        ':input[name="computed_tom_jensen_triage"]':
+          value: 'Yes'
+        ':input[name="support_agent_use_only[test_submission]"]':
+          unchecked: true
+    weight: 3
+    settings:
+      requester_name: contact_name
+      requester_email: contact_email
+      subject: '[webform_submission:values:computed_subject]'
+      comment: '[webform_submission:values:computed_description:html]'
+      tags: 'drupal webform'
+      priority: normal
+      status: new
+      recipient: ''
+      group_id: '360006087813'
+      assignee_id: '378631802594'
+      type: incident
+      collaborators: ''
+      custom_fields: "6353388345367: 'report_tree_code_violation'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n1500013095781: '[webform_submission:uuid]'\r\n"
+      ticket_id_field: request_ticket_id
+      ticket_fork_field: ''
+      ticket_form_id: '25484007225111'
+  update_ticket_for_triage:
+    id: zendesk_update_ticket
+    handler_id: update_ticket_for_triage
+    label: 'Update ticket for triage'
+    notes: 'Enabled if Computed Tom Jensen Triage is Yes. Updates newly created ticket with triage instructions.'
+    status: true
+    conditions:
+      enabled:
+        ':input[name="computed_tom_jensen_triage"]':
+          filled: true
+    weight: 4
+    settings:
+      comment: "<h3>This ticket requires additional triage</h3>\r\n<p><strong>Attention:</strong> This ticket came from the Report a Tree Code Violation form. It may need to be forwarded to Tom Jensen but requires additional triage first.</p>\r\n"
+      comment_private: 1
+      tags: ''
+      priority: ''
+      status: ''
+      group_id: '360006087813'
+      assignee_id: '378631802594'
+      type: ''
+      collaborators: ''
+      custom_fields: ''
+      ticket_id_field: request_ticket_id
+      ticket_form_id: '25484007225111'
 variants: {  }
