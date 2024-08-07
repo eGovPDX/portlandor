@@ -20,7 +20,7 @@ description: ''
 categories:
   - Report
 elements: |-
-  report_what:
+  report_issue:
     '#type': radios
     '#title': 'What are you trying to report?'
     '#options':
@@ -29,38 +29,38 @@ elements: |-
       'Unpermitted or improper tree planting, pruning, or removal': 'Unpermitted or improper tree planting, pruning, or removal'
       'Tree grates interfering with street trees': 'Tree grates interfering with street trees'
       'Sidewalk buckling due to tree roots': 'Sidewalk buckling due to tree roots'
+    '#required': true
   markup_continue:
     '#type': webform_markup
     '#states':
       visible:
-        ':input[name="report_what"]':
+        ':input[name="report_issue"]':
           unchecked: true
     '#markup': '<p><strong>Please make a selection to continue.</strong></p>'
-  report_is_blocking:
-    '#type': radios
-    '#title': 'Is the tree blocking traffic or causing an urgent hazard in the street or sidewalk?'
-    '#options': yes_no
-    '#options_display': side_by_side
-    '#states':
-      visible:
-        ':input[name="report_what"]':
-          value: 'A fallen tree, downed limbs, or dead/dying trees'
-  markup_trip_hazard:
-    '#type': webform_markup
-    '#states':
-      visible:
-        ':input[name="report_what"]':
-          value: 'Sidewalk buckling due to tree roots'
-    '#markup': '<div class="alert alert--info next-steps"><h2>Next Steps</h2><p class="mb-0">Please report this through the <a href="https://www.portlandoregon.gov/transportation/index.cfm?&amp;category_id=176&amp;c=81511">Sidewalk Trip Hazards form</a>.</p></div>'
-  container_not_trip_hazard:
+  container_fallen:
     '#type': container
     '#states':
-      invisible:
-        - ':input[name="report_what"]':
-            unchecked: true
-        - or
-        - ':input[name="report_what"]':
-            value: 'Sidewalk buckling due to tree roots'
+      visible:
+        ':input[name="report_issue"]':
+          value: 'A fallen tree, downed limbs, or dead/dying trees'
+    report_is_blocking:
+      '#type': radios
+      '#title': 'Is the tree blocking traffic or causing an urgent hazard in the street or sidewalk?'
+      '#options': yes_no
+      '#options_display': side_by_side
+    markup_urgent_hazard:
+      '#type': webform_markup
+      '#states':
+        visible:
+          ':input[name="report_is_blocking"]':
+            value: 'Yes'
+      '#markup': '<div class="alert alert--warning next-steps"><h2>Urgent</h2><p class="mb-0">Please call <a href="tel:+1-503-823-8733">503-823-8733 (TREE)</a> to report this urgent issue.</p></div>'
+  container_branches_blocking:
+    '#type': container
+    '#states':
+      visible:
+        ':input[name="report_issue"]':
+          value: 'Tree branches hanging too low or blocking part of the street or sidewalk'
     report_tree_causing_issues:
       '#type': radios
       '#title': 'Is the tree causing any of the following issues?'
@@ -69,152 +69,165 @@ elements: |-
         'Blocking visibility at an intersection': 'Blocking visibility at an intersection'
         'Blocking a streetlight': 'Blocking a streetlight'
         'None of these': 'None of these'
-      '#states':
-        visible:
-          ':input[name="report_what"]':
-            value: 'Tree branches hanging too low or blocking part of the street or sidewalk'
-    markup_urgent_hazard:
+      '#required': true
+  container_trip_hazard:
+    '#type': container
+    '#states':
+      visible:
+        ':input[name="report_issue"]':
+          value: 'Sidewalk buckling due to tree roots'
+    markup_trip_hazard:
       '#type': webform_markup
-      '#states':
-        visible:
-          ':input[name="report_is_blocking"]':
-            value: 'Yes'
-      '#markup': '<div class="alert alert--warning next-steps"><h2>Urgent</h2><p class="mb-0">Please call <a href="tel:+1-503-823-8733">503-823-8733 (TREE)</a> to report this urgent issue.</p></div>'
-  container_not_blocking:
+      '#markup': '<div class="alert alert--info next-steps"><h2>Next Steps</h2><p class="mb-0">Please report this through the <a href="https://www.portlandoregon.gov/transportation/index.cfm?&amp;category_id=176&amp;c=81511">Sidewalk Trip Hazards form</a>.</p></div>'
+  container_tree_info:
+    '#type': container
+    '#states':
+      visible:
+        ':input[name="report_issue"]':
+          value: 'Unpermitted or improper tree planting, pruning, or removal'
+    report_improper_type:
+      '#type': webform_radios_other
+      '#title': 'What type of issue are you reporting?'
+      '#options':
+        'Street tree planting without a permit': 'Street tree planting without a permit'
+        'Pruning without a permit': 'Pruning without a permit'
+        'Topped tree': 'Topped tree'
+        'Tree removal without a permit': 'Tree removal without a permit'
+        'Failure to plant when required': 'Failure to plant when required'
+      '#other__option_label': 'Something else...'
+      '#other__placeholder': 'Please describe...'
+      '#required': true
+    report_tree_number:
+      '#type': number
+      '#title': 'Number of Trees'
+      '#required': true
+      '#min': 1
+    report_tree_species:
+      '#type': textfield
+      '#title': 'Tree Species'
+    report_tree_diameter:
+      '#type': number
+      '#title': 'Tree Diameter'
+      '#description': '<p>Measure the diameter at roughly 4.5 feet above the ground. <a href="/trees/tree-care-and-resources/how-measure-tree" target="_blank">More information...</a></p>'
+      '#description_display': before
+      '#min': 1
+  container_submit:
     '#type': container
     '#states':
       invisible:
-        - ':input[name="report_is_blocking"]':
-            value: 'Yes'
+        - ':input[name="report_issue"]':
+            unchecked: true
+        - or
+        - ':input[name="report_issue"]':
+            value: 'Sidewalk buckling due to tree roots'
         - or
         - ':input[name="report_is_blocking"]':
             unchecked: true
-    container_tree_info:
+        - or
+        - ':input[name="report_is_blocking"]':
+            value: 'Yes'
+      visible:
+        - ':input[name="report_issue"]':
+            value: 'Unpermitted or improper tree planting, pruning, or removal'
+        - or
+        - ':input[name="report_issue"]':
+            value: 'Tree grates interfering with street trees'
+        - or
+        - ':input[name="report_tree_causing_issues"]':
+            checked: true
+    report_location:
+      '#type': portland_location_picker
+      '#title': Location
+      '#title_display': none
+      '#location_search__title': Location
+      '#place_name__access': false
+      '#location_details__access': false
+      '#require_boundary': true
+      '#boundary_url': 'https://www.portlandmaps.com/arcgis/rest/services/Public/COP_OpenData_Boundary/MapServer/182/query?outFields=*&where=1%3D1&f=geojson'
+    report_location_type:
+      '#type': radios
+      '#title': 'Where is the tree located?'
+      '#options':
+        'Private property': 'Private property'
+        'Parking strip, median, or other parts of the street or right-of-way': 'Parking strip, median, or other parts of the street or right-of-way'
+        'Park or natural area': 'Park or natural area'
+        'Something else, or unsure...': 'Something else, or unsure...'
+      '#required': true
+      '#states':
+        invisible:
+          ':input[name="report_issue"]':
+            value: 'Tree grates interfering with street trees'
+    container_private_property:
       '#type': container
       '#states':
         visible:
-          ':input[name="report_what"]':
-            value: 'Unpermitted or improper tree planting, pruning, or removal'
-      report_improper_type:
-        '#type': webform_radios_other
-        '#title': 'What type of issue are you reporting?'
-        '#options':
-          'Street tree planting without a permit': 'Street tree planting without a permit'
-          'Pruning without a permit': 'Pruning without a permit'
-          'Topped tree': 'Topped tree'
-          'Tree removal without a permit': 'Tree removal without a permit'
-          'Failure to plant when required': 'Failure to plant when required'
-        '#other__option_label': 'Something else...'
-        '#other__placeholder': 'Please describe...'
-      report_tree_species:
-        '#type': textfield
-        '#title': 'Tree Species'
-        '#required': true
-      report_tree_number:
-        '#type': number
-        '#title': 'Number of Trees'
-        '#required': true
-        '#min': 1
-      report_tree_diameter:
-        '#type': number
-        '#title': 'Tree Diameter'
-        '#description': '<p>Diameter at breast height, or DBH, is the standard for measuring trees. DBH refers to the tree diameter measured at 4.5 feet above the ground. <a href="/trees/tree-care-and-resources/how-measure-tree" target="_blank">More information...</a></p>'
-        '#description_display': before
-        '#required': true
-        '#min': 1
-    container_submit:
-      '#type': container
-      report_location:
-        '#type': portland_location_picker
-        '#title': Location
-        '#title_display': none
-        '#location_search__title': Location
-        '#place_name__access': false
-        '#location_details__access': false
-        '#require_boundary': true
-        '#boundary_url': 'https://www.portlandmaps.com/arcgis/rest/services/Public/COP_OpenData_Boundary/MapServer/182/query?outFields=*&where=1%3D1&f=geojson'
-      container_not_tree_grates:
-        '#type': container
-      location_type:
-        '#type': radios
-        '#title': 'Where is the tree located?'
-        '#options':
-          'Private property': 'Private property'
-          'Parking strip, median, or other parts of the street or right-of-way': 'Parking strip, median, or other parts of the street or right-of-way'
-          'Park or natural area': 'Park or natural area'
-          'Something else, or unsure...': 'Something else, or unsure...'
-        '#required': true
-      container_private_property:
-        '#type': container
-        '#states':
-          visible:
-            ':input[name="location_type"]':
-              value: 'Private property'
-        report_location_private_details:
-          '#type': textarea
-          '#title': 'Additional private property location details'
-        report_location_private_property_occupied:
-          '#type': radios
-          '#title': 'Is the Property Occupied?'
-          '#options':
-            'Yes': 'Yes'
-            'No': 'No'
-            Unknown: Unknown
-          '#options_display': side_by_side
-          '#empty_option': '- Select -'
-        report_location_private_relationship:
-          '#type': select
-          '#title': 'What is your relationship to the property where the tree is located?'
-          '#options':
-            Owner: Owner
-            Manager: Manager
-            'Occupant or tenant': 'Occupant or tenant'
-            Arborist: Arborist
-            Neighbor: Neighbor
-            Other: Other
-        report_location_private_permission:
-          '#type': radios
-          '#title': 'Do you give permission to our inspector to access your property to view the potential violation'
-          '#options': yes_no
-          '#options_display': side_by_side
-      container_not_private:
-        '#type': container
-        '#states':
-          visible:
-            ':input[name="location_type"]':
-              '!value': 'Private property'
-        markup_location_type_other:
-          '#type': webform_markup
-          '#states':
-            visible:
-              ':input[name="location_type"]':
-                value: 'Something else, or unsure'
-          '#markup': '<p>Please describe in the Additional Location Details field below.</p>'
-        location_additional_details:
-          '#type': textarea
-          '#title': 'Additional Location Details'
-          '#description': '<p>Please provide any other details that might help us find the location of the tree.</p>'
-          '#description_display': before
-      report_additional_details:
+          ':input[name="report_location_type"]':
+            value: 'Private property'
+      report_location_private_details:
         '#type': textarea
-        '#title': 'Additional Details'
-        '#description': '<p>Please provide any relevant information that will help us understand the issue.</p>'
+        '#title': 'Additional private property location details'
+        '#description': '<p>Please provide any other details that might help us find the location of the tree, such as front yard, backyard, side yard, etc.</p>'
         '#description_display': before
-      report_photo:
-        '#type': webform_image_file
-        '#title': Photo
-        '#file_extensions': 'gif jpg jpeg png'
-        '#sanitize': true
-        '#attachment_image_style': webform_report_uploaded_image
+      report_location_private_property_occupied:
+        '#type': radios
+        '#title': 'Is the Property Occupied?'
+        '#options':
+          'Yes': 'Yes'
+          'No': 'No'
+          Unknown: Unknown
+        '#options_display': side_by_side
+        '#empty_option': '- Select -'
+      report_location_private_relationship:
+        '#type': select
+        '#title': 'What is your relationship to the property where the tree is located?'
+        '#options':
+          Owner: Owner
+          Manager: Manager
+          'Occupant or tenant': 'Occupant or tenant'
+          Arborist: Arborist
+          Neighbor: Neighbor
+          Other: Other
+      report_location_private_permission:
+        '#type': radios
+        '#title': 'Do you give permission to our inspector to access your property to view the potential violation'
+        '#options': yes_no
+        '#options_display': side_by_side
+    container_not_private:
+      '#type': container
+      '#states':
+        visible:
+          ':input[name="report_location_type"]':
+            '!value': 'Private property'
+      markup_location_type_other:
+        '#type': webform_markup
+        '#states':
+          visible:
+            ':input[name="report_location_type"]':
+              value: 'Something else, or unsure'
+        '#markup': '<p>Please describe in the Additional Location Details field below.</p>'
+      report_location_additional_details:
+        '#type': textarea
+        '#title': 'Additional Location Details'
+        '#description': '<p>Please provide any other details that might help us find the location of the tree.</p>'
+        '#description_display': before
+    report_additional_details:
+      '#type': textarea
+      '#title': 'Additional Details'
+      '#description': '<p>Please provide any relevant information that will help us understand the issue.</p>'
+      '#description_display': before
+    report_photo:
+      '#type': webform_image_file
+      '#title': Photo
+      '#file_extensions': 'gif jpg jpeg png'
+      '#sanitize': true
+      '#attachment_image_style': webform_report_uploaded_image
     section_your_information:
       '#type': webform_section
-      '#title': 'Your Information'
+      '#title': 'Your Contact Information'
+      '#description': '<p>In case we have questions about your report.</p>'
       contact_name:
         '#type': textfield
         '#title': Name
-        '#description': '<p>In case we need to follow-up with you for additional information.</p>'
-        '#description_display': before
-        '#required': true
       contact_phone:
         '#type': textfield
         '#title': Phone
@@ -230,6 +243,7 @@ elements: |-
           visible:
             ':input[name="report_location_private_permission"]':
               value: 'Yes'
+        '#location_address_label__access': false
     section_public_records_statement:
       '#type': webform_section
       '#title': 'Public Records Statement'
@@ -239,9 +253,99 @@ elements: |-
     support_agent_use_only:
       '#type': portland_support_agent_widget
       '#title': 'Support Agent Use Only'
+      '#zendesk_request_number__access': false
+      '#employee_notes_panel__access': false
+      '#escalate_issue__access': false
     actions:
       '#type': webform_actions
       '#title': 'Submit button(s)'
+  computed_description:
+    '#type': webform_computed_twig
+    '#title': 'Computed Description'
+    '#mode': html
+    '#template': |+
+      <h2>Tree Code Violation</h2>
+
+      <p><strong>Issue:</strong><br>
+      {{ data.report_issue is not iterable ? data.report_issue : "" }}{% if data.report_tree_causing_issues and data.report_tree_causing_issues is not iterable %}: <em>{{ data.report_tree_causing_issues }}</em>{% endif %}{% if data.report_improper_type and data.report_improper_type is not iterable %}: <em>{{ data.report_improper_type }}</em>{% endif %}
+      </p>
+
+      {% if data.report_tree_number %}
+        <p><strong>Number of trees:</strong> {{ data.report_tree_number }}</p>
+      {% endif %}
+
+      {% if data.report_tree_species %}
+        <p><strong>Number of trees:</strong> {{ data.report_tree_species }}</p>
+      {% endif %}
+
+      {% if data.report_tree_diameter %}
+        <p><strong>Number of trees:</strong> {{ data.report_tree_diameter }}</p>
+      {% endif %}
+
+      <p><strong>Location</strong><br>
+      {% if data.report_location.place_name %}
+        {{ data.report_location.place_name }}<br>
+      {% endif %}
+      {% if data.report_location.location_address %}
+        {{ data.report_location.location_address }}<br>
+      {% endif %}
+      {% if data.report_location.location_lat and data.report_location.location_lon %}
+        Lat/Lon: <a href="https://www.google.com/maps/place/{{ data.report_location.location_lat }},{{ data.report_location.location_lon }}">{{ data.report_location.location_lat }},{{ data.report_location.location_lon }}</a><br>
+      {% endif %}
+      {% if data.report_location.location_attributes %}
+        {{ data.report_location.location_attributes }}
+      {% endif %}
+
+      {% if data.report_location_type and data.report_location_type is not iterable %}
+        <p><strong>Where is the tree located?</strong> {{ data.report_location_type }}</p>
+      {% endif %}
+
+      {% if data.report_location_private_details %}
+        <p><strong>Additional property details:</strong> {{ data.report_location_private_details }}
+      {% endif %}
+
+      {% if data.report_location_private_property_occupied and data.report_location_private_property_occupied is not iterable %}
+        <p><strong>Is property occupied?</strong> {{ data.report_location_private_property_occupied }}</p>
+      {% endif %}
+
+      {% if data.report_location_private_relationship and data.report_location_private_relationship is not iterable %}
+        <p><strong>Relationship to location:</strong> {{ data.report_location_private_relationship }}</p>
+      {% endif %}
+
+      {% if data.report_location_private_permission and data.report_location_private_permission is not iterable %}
+        <p><strong>Permission to access property:</strong> {{ data.report_location_private_permission }}</p>
+      {% endif %}
+
+      {% if data.report_location_additional_details %}
+        <p><strong>Additional location details:</strong> {{ data.report_location_additional_details }}
+      {% endif %}
+
+      {% if data.report_additional_details %}
+        <p><strong>Additional report details:</strong> {{ data.report_additional_details }}
+      {% endif %}
+
+      <h3>Contact Information</h3>
+
+      <p>
+      {% if data.contact_name %}
+        <strong>Name:</strong> {{ data.contact_name }}<br>
+      {% endif %}
+      {% if data.contact_phone %}
+        <strong>Phone:</strong> {{ data.contact_phone }}<br>
+      {% endif %}
+      {% if data.contact_email %}
+        <strong>Email:</strong> {{ data.contact_email }}
+      {% endif %}
+      </p>
+
+      {% if data.contact_address %}
+        <p><strong>Address:</strong> {{ data.contact_address.location_address }}, {{ data.contact_address.location_city }}, {{ data.contact_address.location_state }}  {{ data.contact_address.location_zip }}</p>
+      {% endif %}
+
+
+
+    '#whitespace': spaceless
+    '#ajax': true
 css: ''
 javascript: ''
 settings:
