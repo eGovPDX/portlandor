@@ -4,6 +4,7 @@ status: open
 dependencies:
   module:
     - portland
+    - portland_zendesk
 third_party_settings:
   portland:
     disable_demographic_form_prompt: 0
@@ -20,6 +21,11 @@ description: ''
 categories:
   - Report
 elements: |-
+  markup_editor_warning:
+    '#type': webform_markup
+    '#access_create_roles':
+      - administrator
+    '#markup': '<div class="alert alert--warning next-steps"><h2>Editor Alert</h2><p class="mb-0">This form contains logic that is dependent on select/radio option values. If values change, the logic needs to be reviewed</p></div>'
   report_issue:
     '#type': radios
     '#title': 'What are you trying to report?'
@@ -152,7 +158,6 @@ elements: |-
         'Parking strip, median, or other parts of the street or right-of-way': 'Parking strip, median, or other parts of the street or right-of-way'
         'Park or natural area': 'Park or natural area'
         'Something else, or unsure...': 'Something else, or unsure...'
-      '#required': true
       '#states':
         invisible:
           ':input[name="report_issue"]':
@@ -262,6 +267,7 @@ elements: |-
   computed_description:
     '#type': webform_computed_twig
     '#title': 'Computed Description'
+    '#display_on': none
     '#mode': html
     '#template': |+
       <h2>Tree Code Violation</h2>
@@ -345,7 +351,34 @@ elements: |-
 
 
     '#whitespace': spaceless
-    '#ajax': true
+  computed_email_recipient:
+    '#type': webform_computed_twig
+    '#title': 'Computed Email Recipient'
+    '#display_on': none
+    '#mode': text
+    '#template': |-
+      {% if data.report_tree_causing_issues and data.report_tree_causing_issues is not iterable %}
+        {% if data.report_tree_causing_issues == "Blocking a streetlight" %}
+          streetlighting@portlandoregon.gov
+        {% elseif data.report_tree_causing_issues == "Blocking view of a traffic signal, traffic sign, or street sign" or data.report_tree_causing_issues == "Blocking visibility at an intersection" %}
+          Tom Jensen
+        {% endif %}
+      {% endif %}
+    '#whitespace': trim
+  computed_subject:
+    '#type': webform_computed_twig
+    '#title': 'Computed Subject'
+    '#display_on': none
+    '#mode': text
+    '#template': |-
+      Tree Code Violation: 
+      {% if data.report_issue is not iterable %}
+        {{ data.report_issue }}
+      {% endif %}
+    '#whitespace': trim
+  request_ticket_id:
+    '#type': hidden
+    '#title': 'Request Ticket Id'
 css: ''
 javascript: ''
 settings:
@@ -529,5 +562,33 @@ access:
     roles: {  }
     users: {  }
     permissions: {  }
-handlers: {  }
+handlers:
+  zendesk_new_request:
+    id: zendesk
+    handler_id: zendesk_new_request
+    label: 'Zendesk new request'
+    notes: 'Currently routing to Developer Test Group until final routing is decided.'
+    status: true
+    conditions:
+      enabled:
+        ':input[name="computed_email_recipient"]':
+          empty: true
+    weight: 0
+    settings:
+      requester_name: contact_name
+      requester_email: contact_email
+      subject: '[webform_submission:values:computed_subject]'
+      comment: '[webform_submission:values:computed_description:html]'
+      tags: 'drupal webform'
+      priority: normal
+      status: new
+      recipient: ''
+      group_id: '4549352062487'
+      assignee_id: '376597733073'
+      type: incident
+      collaborators: ''
+      custom_fields: "6353388345367: 'report_tree_code_violation'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n1500013095781: '[webform_submission:uuid]'\r\n"
+      ticket_id_field: request_ticket_id
+      ticket_fork_field: ''
+      ticket_form_id: '4990038807319'
 variants: {  }
