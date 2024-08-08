@@ -28,16 +28,6 @@ elements: |-
     '#options':
       'Spoken interpretation for the registration process and account set-up for Portland Parks & Recreation': 'Spoken interpretation for the registration process and account set-up for Portland Parks & Recreation'
       'Something else...': 'Something else...'
-  request_subtype:
-    '#type': radios
-    '#title': 'Type of Request'
-    '#options':
-      'Spoken – need interpreter or verbal assistance': 'Spoken – need interpreter or verbal assistance'
-      'Written – need translation of document / information': 'Written – need translation of document / information'
-    '#states':
-      visible:
-        ':input[name="request_type"]':
-          value: 'Something else...'
   request_description:
     '#type': textarea
     '#title': 'Description of Request'
@@ -46,7 +36,7 @@ elements: |-
   request_language:
     '#type': webform_select_other
     '#title': 'Requested Language'
-    '#options': languages
+    '#options': languages_ppr
     '#other__option_label': 'Something else...'
     '#other__placeholder': 'Please describe...'
   contact_information:
@@ -66,7 +56,7 @@ elements: |-
       '#required': true
     contact_preferred_method:
       '#type': radios
-      '#title': 'How do you prefer to be contacted i we have questions about your request?'
+      '#title': 'How do you prefer to be contacted if we have questions about your request?'
       '#options':
         Phone: Phone
         Email: Email
@@ -308,14 +298,19 @@ handlers:
   zendesk_new_request:
     id: zendesk
     handler_id: zendesk_new_request
-    label: 'Zendesk new request'
-    notes: ''
+    label: 'Route ticket to PP&R: Customer Service Center group'
+    notes: 'Disabled if Test Submission is checked or selected language is ASL.'
     status: true
     conditions:
       disabled:
-        ':input[name="support_agent_use_only[test_submission]"]':
-          checked: true
-    weight: 0
+        -
+          ':input[name="support_agent_use_only[test_submission]"]':
+            checked: true
+        - or
+        -
+          ':input[name="request_language[select]"]':
+            value: 'American Sign Language (ASL)'
+    weight: -50
     settings:
       requester_name: contact_name
       requester_email: contact_email
@@ -325,7 +320,7 @@ handlers:
       priority: normal
       status: new
       recipient: ''
-      group_id: '25323298932503'
+      group_id: '25374710282903'
       assignee_id: ''
       type: incident
       collaborators: ''
@@ -343,7 +338,7 @@ handlers:
       enabled:
         ':input[name="support_agent_use_only[test_submission]"]':
           checked: true
-    weight: 1
+    weight: -48
     settings:
       requester_name: contact_name
       requester_email: contact_email
@@ -358,6 +353,39 @@ handlers:
       type: incident
       collaborators: ''
       custom_fields: "6353388345367: 'test_request_language_services_parks'"
+      ticket_id_field: request_ticket_id
+      ticket_fork_field: ''
+      ticket_form_id: '25433711903895'
+  route_ticket_to_pp_r_inclusion_services_group:
+    id: zendesk
+    handler_id: route_ticket_to_pp_r_inclusion_services_group
+    label: 'Route ticket to PP&R: Inclusion Services group'
+    notes: 'Enabled if Test Submission is unchecked and selected language is ASL.'
+    status: true
+    conditions:
+      enabled:
+        -
+          ':input[name="support_agent_use_only[test_submission]"]':
+            unchecked: true
+        - or
+        -
+          ':input[name="request_language[select]"]':
+            value: 'American Sign Language (ASL)'
+    weight: -49
+    settings:
+      requester_name: contact_name
+      requester_email: contact_email
+      subject: 'Language service reqeust'
+      comment: '[webform_submission:values:computed_description:html]'
+      tags: 'drupal webform'
+      priority: normal
+      status: new
+      recipient: ''
+      group_id: '25323298932503'
+      assignee_id: ''
+      type: incident
+      collaborators: ''
+      custom_fields: "6353388345367: 'request_language_services_parks'"
       ticket_id_field: request_ticket_id
       ticket_fork_field: ''
       ticket_form_id: '25433711903895'
