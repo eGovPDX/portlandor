@@ -73,5 +73,8 @@ class PortlandLocationWidget extends WebformCompositeBase {
     // get custom properties as they're defined in the element's Advanced config tab Custom Settings field 
     $mapLayers = array_key_exists('#layers', $element) ? $element['#layers'] : "";
     $element['#attached']['drupalSettings']['webform']['portland_location_widget']['layers'] = $mapLayers;
+
+    $primaryBoundary = array_key_exists('#primary_boundary', $element) ? $element['#primary_boundary'] : "";
+    $element['#attached']['drupalSettings']['webform']['portland_location_widget']['primary_boundary'] = $primaryBoundary;
   }
 }

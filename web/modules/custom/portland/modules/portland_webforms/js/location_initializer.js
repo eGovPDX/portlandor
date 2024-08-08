@@ -9,6 +9,7 @@ class LocationWidget {
     this.baseLayer = null;  // Declare baseLayer as an instance property
     this.aerialLayer = null;  // Declare aerialLayer as an instance property
     this.layersConfig = this.settings.layers;
+    this.primaryBoundaryConfig = this.settings.primary_boundary;
     this.initMap();
   }
 
@@ -37,7 +38,18 @@ class LocationWidget {
       attribution: this.constants.DEFAULTS.BASEMAP_ATTRIBUTION
     });
     
-    // Add other layers if needed
+    // Add primary boundary layer
+
+    // Add configured layers
+    for (var i = 0; i < this.layersConfig.length; i++) {
+      this.initializeLayer(this.layersConfig[i]);
+    }
+  }
+
+  initializeLayer(layer) {
+    var name = layer.name;
+    var description = layer.description;
+    var url = layer.url;
   }
 
   addControls() {
