@@ -8,6 +8,7 @@ class LocationWidget {
     this.currentView = "base";  // Also declare currentView as an instance property
     this.baseLayer = null;  // Declare baseLayer as an instance property
     this.aerialLayer = null;  // Declare aerialLayer as an instance property
+    this.layersConfig = this.settings.layers;
     this.initMap();
   }
 

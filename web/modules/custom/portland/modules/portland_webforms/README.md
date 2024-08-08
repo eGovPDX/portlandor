@@ -4,7 +4,7 @@
 
 ### Configuration Parameters ###
 
-#### city_boundary ####
+#### primary_boundary ####
 Type: object
 
 primary_boundary:
@@ -58,3 +58,66 @@ layers:
     enforce_boundary: "false"
     
 ```
+
+
+Suggested format from Chet:
+
+## Custom Webform Element Parameters
+
+This section describes the custom parameters used in the Drupal 10 webform element advanced tab custom properties field.
+
+### Parameters
+
+#### `layers`
+An array of layer objects, each defining a specific data layer to be included in the map. Each layer object contains the following properties:
+
+##### Properties:
+
+- **`name`**: *(string)*  
+  The name of the layer.
+  - **Usage**: This is displayed as the title for the layer.
+  - **Example**: `"Current Graffiti Reports"`
+
+- **`description`**: *(string)*  
+  A brief description of the layer.
+  - **Usage**: Provides additional context about the layer.
+  - **Example**: `"All open and recently solved graffiti reports"`
+
+- **`url`**: *(string)*  
+  The API endpoint or URL where the layer data can be fetched from.
+  - **Usage**: Used to retrieve data for the layer.
+  - **Example**: `"/api/tickets/graffiti"`
+
+- **`type`**: *(string)*  
+  The type of data the layer represents. Possible values are `"incident"` for individual reports or `"boundary"` for defined regions.
+  - **Usage**: Indicates how the layer data should be interpreted.
+  - **Example**: `"incident"`
+
+- **`behavior`**: *(string)*  
+  Describes the layer's behavior, typically `"informational"` for data that provides information without any enforcement.
+  - **Usage**: Defines how the layer should behave within the application.
+  - **Example**: `"informational"`
+
+- **`enforce_boundary`**: *(string, optional)*  
+  Indicates whether the boundary should be enforced. The default value is `"false"`.
+  - **Usage**: If set to `"true"`, actions outside this boundary might be restricted.
+  - **Default**: `"false"`
+  - **Example**: `"false"`
+
+### Example Configuration
+
+Below is an example YAML configuration:
+
+```yaml
+layers:
+  - name: "Current Graffiti Reports"
+    description: "All open and recently solved graffiti reports"
+    url: "/api/tickets/graffiti"
+    type: "incident"
+    behavior: "informational"
+  - name: "Graffiti Resolution Zones"
+    description: "Defines regions around the city where contractors are assigned"
+    url: ""
+    type: "boundary"
+    behavior: "informational"
+    enforce_boundary: "false"
