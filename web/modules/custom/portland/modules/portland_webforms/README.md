@@ -1,26 +1,65 @@
 # Portland Webforms
 
-## Location Widget ##
+## Location Widget
 
-### Configuration Parameters ###
+### Configuration Parameters
 
-#### primary_boundary ####
-Type: object
+#### `primary_boundary`
+Defines properties of the map's default primary boundary.
 
-primary_boundary:
-- enabled [true|false*]
-- visible [true*|false]
-- enforce [true*|false]
-- url [string] - *the url/path to the geojson file that defines the city boundary; defaults to the city limits may be overridden if the service has a different jurisdiction footprint*
-- border_style [string] - NOT IMPLEMENTED
+##### Properties:
 
-#### layers ####
-Type: array, unlimited
+- **`enabled`**: *(true/false)*
+  - **Usage**: Determines whether the default layer is enabled.
+  - **Default**: true
 
-layer:
-- name \[string\]
-- description \[string\]
-- url \[string\]
+- **`visible`**: *(true/false)*
+  - **Usage**: Determines whether the default layer is visible.
+  - **Default**: true
+
+- **`enforce`**: *(true/false)*
+  - **Usage**: Determines whether the default layer is enforced as a geofencing boundary.
+  - **Default**: true
+
+- **`url`**: *(string)*
+  - **Usage**: The url/path to the geojson file that defines the city boundary; defaults to the city limits may be overridden if the service has a different jurisdiction footprint.
+  - **Example**: `"https://www.portlandmaps.com/arcgis/rest/services/Public/Boundaries/MapServer/0/query"`
+
+- **`boundary_message`**: *(string)*
+  - **Usage**: The message that's displayed if the user clicks outside the boundary if `enforce` is true.
+  - **Default**: `"You've selected a location outside the Portland city limits. Please try again."`
+
+- **`border_style`**: *(string)*
+  - **Usage**: *NOT IMPLEMENTED* 
+
+#### `layers` ####`
+An array of layer objects, each defining a specific data layer to be included in the map. Each layer object contains the following properties:
+
+- **`name`**: *(string)*  
+  The name of the layer.
+  - **Example**: `"Current Graffiti Reports"`
+
+- **`description`**: *(string)*  
+  A brief description of the layer.
+  - **Example**: `"All open and recently solved graffiti reports"`
+
+- **`url`**: *(string)*  
+  The API endpoint or URL where the layer data can be fetched from.
+  - **Example**: `"/api/tickets/graffiti"`
+
+- **`type`**: *(string)*  
+  The type of data the layer represents. Possible values are `"asset"` for assets such as park amenities, `"incident"` for individual reports, or `"boundary"` for defined regions.
+  - **Example**: `"incident"`
+  - **Default**: `"asset"`
+  - **`visible_border`**: *(true/false)*
+  - **`border_style`**: *(true/false)*
+  - **`capture_id`**: *(true/false)*
+  - **`capture_id_parameter`**: *(true/false)*
+  - **`enforce_boundary`**: *(true/false)*
+  - **`boundary_message`**: *(true/false)*
+
+
+
 - type \[**asset**|incident|boundary\]
   - *definitions*
     - *asset - a layer of assets that can be dispalyed for informational purposes or used for location selection*
