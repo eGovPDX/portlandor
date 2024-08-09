@@ -14,7 +14,7 @@
         let containerId = settings.element_id + '_map_container_' + index;
         $(element).attr('id', containerId);
 
-        let location = new LocationWidget(containerId, settings, constants);
+        let location = new LocationWidget(containerId, settings, constants, $, L);
         // alert(location.message);
       });
     }

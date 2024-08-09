@@ -1,5 +1,5 @@
 class LocationWidget {
-  constructor(mapElementId, settings, constants) {
+  constructor(mapElementId, settings, constants, $, L) {
     this.mapElementId = mapElementId;
     this.settings = settings;
     this.constants = constants;
@@ -8,12 +8,16 @@ class LocationWidget {
     this.currentView = "base";  // Also declare currentView as an instance property
     this.baseLayer = null;  // Declare baseLayer as an instance property
     this.aerialLayer = null;  // Declare aerialLayer as an instance property
-    this.layersConfig = this.settings.layers;
+    this.layersConfig = this.settings.layers; // array of layer configuration data
+    this.layers = []; // array to hold data about the map layers (incidents, boundaries, assets, etc.)
     this.primaryBoundaryConfig = this.settings.primary_boundary;
+    this.$ = $;
+    this.L = L;
     this.initMap();
   }
 
   initMap() {
+    this.debug("Initializing map " + this.settings.element_id);
     this.map = new L.Map(this.mapElementId, {
       center: new L.LatLng(this.constants.DEFAULTS.LATITUDE, this.constants.DEFAULTS.LONGITUDE),
       zoom: this.constants.DEFAULTS.ZOOM,
@@ -28,17 +32,34 @@ class LocationWidget {
   }
 
   addLayers() {
+    var self = this;
+
     this.baseLayer = L.tileLayer(this.constants.URLS.BASEMAP_TILE_LAYER, {
       attribution: this.constants.DEFAULTS.BASEMAP_ATTRIBUTION
     });
     this.map.addLayer(this.baseLayer);
-    
+
     // Define aerial layer (replace with the actual URL or logic)
     this.aerialLayer = L.tileLayer(this.constants.URLS.AERIAL_TILE_LAYER, {
       attribution: this.constants.DEFAULTS.BASEMAP_ATTRIBUTION
     });
-    
+
     // Add primary boundary layer
+    this.initializeLayer({
+      name: self.settings.primary_boundary.name || "Primary Boundary Layer",
+      url: self.settings.primary_boundary.url || this.constants.URLS.API_BOUNDARY,
+      type: this.constants.LAYER_TYPE.BOUNDARY,
+      behavior: this.constants.LAYER_BEHAVIOR.INFORMATIONAL,
+      visible: self.settings.primary_boundary.visible == "false" || true,
+      enforce: self.settings.primary_boundary.enforce == "false" || true,
+      boundaryProperties: {
+        color: 'red',
+        fillOpacity: 0,
+        weight: 1,
+        dashArray: "2 4",
+        interactive: false
+      }
+    });
 
     // Add configured layers
     for (var i = 0; i < this.layersConfig.length; i++) {
@@ -46,10 +67,46 @@ class LocationWidget {
     }
   }
 
+  debug(message) {
+    if (this.constants.DEBUG) console.log(message);
+  }
+
   initializeLayer(layer) {
-    var name = layer.name;
-    var description = layer.description;
-    var url = layer.url;
+    var self = this;
+    this.$.ajax({
+      url: layer.url,
+      success: function (response) {
+        var features = response.features;
+
+        switch (layer.type) {
+          case self.constants.LAYER_TYPE.ASSET:
+            self.debug(features.length + " assets found for layer "  + layer.name);
+            break;
+
+          case self.constants.LAYER_TYPE.INCIDENT:
+            self.debug(features.length + " incidents found for layer "  + layer.name);
+            break;
+
+          case self.constants.LAYER_TYPE.BOUNDARY:
+            self.debug(features.length + " features found for layer "  + layer.name);
+            var boundaryLayer = self.L.geoJson(features, layer.boundaryProperties).addTo(self.map);
+            if (boundaryLayer.municipality) {
+              boundaryLayer.municipality = features[0].properties.CITYNAME;
+            }
+            break;
+
+          default:
+            self.debug("Invalid layer type: \"" + layer.type + "\"");
+        }
+
+        self.debug(layer.name + " fully loaded.");
+      },
+      error: function (e) {
+        console.error(e);
+        // TODO: display error message to user
+      }
+    })
+
   }
 
   addControls() {

@@ -65,7 +65,7 @@ An array of layer objects, each defining a specific data layer to be included in
     - *asset - a layer of assets that can be dispalyed for informational purposes or used for location selection*
     - *incident - a layer of incidents that can be dispalyed for informational purposes or used for location selection*
     - *boundary - a polygon or polygons used for determining whether a feature is within a defined region; can be used for geofencing*
-  - visible_border \[**true**|false\]
+  - visible \[**true**|false\]
   - border_style \[string\]
   - capture_id \[**true**|false\]
   - id_parameter \[string\] - *the parameter name of the object property to be captured if capture_id is true*
