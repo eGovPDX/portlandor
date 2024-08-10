@@ -50,15 +50,9 @@ class LocationWidget {
       url: self.settings.primary_boundary.url || this.constants.URLS.API_BOUNDARY,
       type: this.constants.LAYER_TYPE.BOUNDARY,
       behavior: this.constants.LAYER_BEHAVIOR.INFORMATIONAL,
-      visible: self.settings.primary_boundary.visible == "false" || true,
-      enforce: self.settings.primary_boundary.enforce == "false" || true,
-      boundaryProperties: {
-        color: 'red',
-        fillOpacity: 0,
-        weight: 1,
-        dashArray: "2 4",
-        interactive: false
-      }
+      visible: self.settings.primary_boundary.visible === false ? false : true,
+      enforce: self.settings.primary_boundary.enforce === false ? false : true,
+      boundaryProperties: self.settings.primary_boundary.visible === false ? this.constants.PRIMARY_BOUNDARY_INVISIBLE_PROPERTIES : this.constants.PRIMARY_BOUNDARY_VISIBLE_PROPERTIES
     });
 
     // Add configured layers
@@ -85,6 +79,28 @@ class LocationWidget {
 
           case self.constants.LAYER_TYPE.INCIDENT:
             self.debug(features.length + " incidents found for layer "  + layer.name);
+
+            var newLayer = L.geoJson(features, {
+              coordsToLatLng: function (coords) {
+                return new L.LatLng(coords[1], coords[0]);
+              },
+              pointToLayer: function (feature, latlng) {
+                var icon = L.icon(self.constants.DEFAULT_FEATURE_ICON_PROPERTIES);
+                return L.marker(latlng, {
+                  icon: icon,
+                  draggable: false,
+                  riseOnHover: true,
+                  iconSize: self.constants.DEFAULT_ICON_SIZE
+                });
+              },
+              onEachFeature: function (feature, layer) {
+                self.debug(feature);
+              },
+              interactive: false
+            });
+            newLayer.addTo(self.map);
+            self.layers.push(newLayer);
+  
             break;
 
           case self.constants.LAYER_TYPE.BOUNDARY:

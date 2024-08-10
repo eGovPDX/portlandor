@@ -45,7 +45,7 @@ class PortlandLocationWidget extends WebformCompositeBase
       '#description' => '',
       '#description_display' => 'before',
       '#title_display' => 'invisible',
-      '#markup' => '<div id="' . $element_id . '_map_container" class="location-map" tabindex="0"></div><div class="loader-container" role="status"><div class="loader"></div><div class="visually-hidden">' . t('Loading...') . '</div></div>',
+      '#markup' => '<div id="' . $element_id . '" class="location-map" tabindex="0"></div><div class="loader-container" role="status"><div class="loader"></div><div class="visually-hidden">' . t('Loading...') . '</div></div>',
     ];
 
     return $element;

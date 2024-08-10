@@ -30,6 +30,59 @@ if (typeof GlobalConstants === 'undefined') {
       };
 
       this.DEBUG = true;
+
+      // Leaflet configuration property objects; don't use uppercase for property names /////////////////////////////
+
+      this.PRIMARY_BOUNDARY_VISIBLE_PROPERTIES = {
+        color: 'red',
+        fillOpacity: 0,
+        weight: 1,
+        dashArray: "2 4",
+        interactive: false
+      }
+
+      this.PRIMARY_BOUNDARY_INVISIBLE_PROPERTIES = {
+        color: 'transparent',
+        fillOpacity: 0,
+        weight: 0,
+        interactive: false
+      }
+
+      this.DEFAULT_ICON_SIZE = [27, 41];
+      this.DEFAULT_ICON_SHADOW_SIZE = [0, 0];
+      this.DEFAULT_ICON_ANCHOR = [13, 41];
+      this.DEFAULT_ICON_SHADOW_ANCHOR = [0, 0];
+      this.DEFAULT_ICON_POPUP_ANCHOR = [0, -41];
+
+      this.DEFAULT_FEATURE_ICON_PROPERTIES = {
+        iconUrl: "/modules/custom/portland/modules/portland_webforms/images/map_marker_default.png",
+        iconSize: this.DEFAULT_ICON_SIZE,
+        shadowSize: this.DEFAULT_ICON_SHADOW_SIZE,
+        iconAnchor: this.DEFAULT_ICON_ANCHOR,
+        shadowAnchor: this.DEFAULT_ICON_SHADOW_ANCHOR,
+        popupAnchor: this.DEFAULT_ICON_POPUP_ANCHOR,
+        className: "feature"
+      };
+
+      this.DEFAULT_INCIDENT_ICON_PROPERTIES = {
+        iconUrl: "/modules/custom/portland/modules/portland_webforms/images/map_marker_incident.png",
+        iconSize: this.DEFAULT_ICON_SIZE,
+        shadowSize: this.DEFAULT_ICON_SHADOW_SIZE,
+        iconAnchor: this.DEFAULT_ICON_ANCHOR,
+        shadowAnchor: this.DEFAULT_ICON_SHADOW_ANCHOR,
+        popupAnchor: this.DEFAULT_ICON_POPUP_ANCHOR,
+        className: "incident"
+      };
+
+      this.DEFAULT_SOLVED_ICON_PROPERTIES = {
+        iconUrl: "/modules/custom/portland/modules/portland_webforms/images/map_marker_incident_solved.png",
+        iconSize: this.DEFAULT_ICON_SIZE,
+        shadowSize: this.DEFAULT_ICON_SHADOW_SIZE,
+        iconAnchor: this.DEFAULT_ICON_ANCHOR,
+        shadowAnchor: this.DEFAULT_ICON_SHADOW_ANCHOR,
+        popupAnchor: this.DEFAULT_ICON_POPUP_ANCHOR,
+        className: "incident solved"
+      };
     }
   }
 }
