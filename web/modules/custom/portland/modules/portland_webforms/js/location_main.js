@@ -7,11 +7,13 @@
         const elementId = $(element).attr('id'); // this should match what's on line 25 of PortlandLocationWidget.php
 
         const settings = drupalSettings.webform.portland_location_widget[elementId];
+        
         const apiKey = drupalSettings.portlandmaps_api_key;
+        settings.apiKey = apiKey;
 
         // TODO: review scoping of variables
         let constants = new GlobalConstants();
-        //let api = new GlobalApi(constants);
+        let api = new GlobalApi(constants);
 
         // Ensure each map container has a unique ID // TODO: Do we need this?
         let containerId = settings.id;// + '_map_container_' + index;

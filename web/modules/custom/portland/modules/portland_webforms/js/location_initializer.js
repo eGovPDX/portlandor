@@ -13,6 +13,7 @@ class LocationWidget {
     this.primaryBoundaryConfig = this.settings.primary_boundary;
     this.$ = $;
     this.L = L;
+    this.api = new GlobalApi(constants);
     this.initMap();
   }
 
@@ -149,12 +150,14 @@ class LocationWidget {
   }
 
   addEventListeners() {
+
+    // binding "this" to the handler call, so that it's available in the functions
     this.map.on('click', this.handleMapClick.bind(this));
     // Add other event listeners
   }
 
-  handleMapClick(e) {
-    alert('map clicked');
+  async handleMapClick(e) {
+
     this.showLoader();
     this.resetMapClick();
     const latlng = e.latlng;
@@ -163,23 +166,45 @@ class LocationWidget {
     // - reset clicked marker
     // - clear location fields
 
-    // when map is clicked, we want to zoom the clicked location and perform reverse geocoding
+    // Call the reverseGeocode function and process the result
+    try {
+      const result = await this.api.reverseGeocode(latlng.lng, latlng.lat, this.settings.apiKey);
+      this.processGeocodeResult(result); // Function to handle the API response
+    } catch (error) {
+      console.error("Reverse geocode failed:", error);
+    } finally {
+      this.hideLoader();
+    }
 
-    // if how do multiple layers handle the map clicks? previously it was just the primary layer that could accept clicks.
 
 
   }
+
+  processGeocodeResult(result) {
+    if (result && result.data) {
+      // Example of processing the result and displaying it
+      const address = result.data.address; // Adjust based on your API response structure
+      console.log("Address found:", address);
+
+      // Optionally display the address on the map
+      const marker = L.marker(this.map.getCenter()).addTo(this.map);
+      marker.bindPopup(`<strong>Address:</strong> ${address}`).openPopup();
+    } else {
+      console.error("No data found in reverse geocode result.");
+    }
+  }
+
 
   resetMapClick() {
     // rests clicked marker and location fields to prepare for a new map click
   }
 
   showLoader() {
-    $('.loader-container').css("display","flex");
+    this.$('.loader-container').css("display","flex");
   }
 
   hideLoader() {
-    $('.loader-container').css("display","none");
+    this.$('.loader-container').css("display","none");
   }
 
   handleSelfLocateButtonClick() {
