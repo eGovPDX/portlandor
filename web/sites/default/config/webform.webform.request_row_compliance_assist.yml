@@ -40,11 +40,11 @@ elements: |-
         '#type': radios
         '#title': 'Please select your workgroup'
         '#options':
-          'Outdoor Dining': 'Outdoor Dining'
-          'Utility Permits': 'Utility Permits'
-          'Temporary Street Use Permitting (TSUP)': 'Temporary Street Use Permitting (TSUP)'
+          22987332152471_outdoor_dining: 'Outdoor Dining'
+          22987332152471_utility_permits: 'Utility Permits'
+          22987332152471_tsup: 'Temporary Street Use Permits (TSUP)'
           'PBOT Compliance': 'PBOT Compliance'
-          Other: Other
+          22987332152471_row_other: Other
         '#required': true
     container_workgroup_selected:
       '#type': container
@@ -312,9 +312,13 @@ elements: |-
         '#zendesk_request_number__access': false
         '#employee_notes_panel__access': false
         '#escalate_issue__access': false
-      actions:
-        '#type': webform_actions
-        '#title': 'Submit button(s)'
+  actions:
+    '#type': webform_actions
+    '#title': 'Submit button(s)'
+    '#states':
+      visible:
+        ':input[name="request_workgroup"]':
+          checked: true
   request_ticket_id:
     '#type': hidden
     '#title': 'Request Ticket ID'
@@ -430,7 +434,14 @@ elements: |-
     '#title': 'Computed Tags'
     '#display_on': none
     '#mode': text
-    '#template': '{{ data.ticket_referred_by|raw }}'
+    '#template': |+
+      {% if data.request_workgroup and data.request_workgroup is not iterable and data.request_workgroup == "PBOT Compliance" %}
+        {{ data.ticket_referred_by|raw }}
+      {% else %}
+        {{ data.request_workgroup|raw }}
+      {% endif %}
+
+
     '#whitespace': trim
 css: ''
 javascript: ''
