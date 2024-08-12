@@ -38,6 +38,9 @@ class LocationWidget {
       attribution: this.constants.DEFAULTS.BASEMAP_ATTRIBUTION
     });
     this.map.addLayer(this.baseLayer);
+    //this.map.on('click', this.handleMapClick);
+
+    // this.addEventListeners();
 
     // Define aerial layer (replace with the actual URL or logic)
     this.aerialLayer = L.tileLayer(this.constants.URLS.AERIAL_TILE_LAYER, {
@@ -151,8 +154,32 @@ class LocationWidget {
   }
 
   handleMapClick(e) {
+    alert('map clicked');
+    this.showLoader();
+    this.resetMapClick();
     const latlng = e.latlng;
-    // Handle map click
+    // TODO: RESET MAP CLICK:
+    // - show ajax loader
+    // - reset clicked marker
+    // - clear location fields
+
+    // when map is clicked, we want to zoom the clicked location and perform reverse geocoding
+
+    // if how do multiple layers handle the map clicks? previously it was just the primary layer that could accept clicks.
+
+
+  }
+
+  resetMapClick() {
+    // rests clicked marker and location fields to prepare for a new map click
+  }
+
+  showLoader() {
+    $('.loader-container').css("display","flex");
+  }
+
+  hideLoader() {
+    $('.loader-container').css("display","none");
   }
 
   handleSelfLocateButtonClick() {
