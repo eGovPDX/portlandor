@@ -41,11 +41,11 @@ elements: |-
         '#type': radios
         '#title': 'Please select your workgroup'
         '#options':
-          22987332152471_outdoor_dining: 'Outdoor Dining'
-          22987332152471_utility_permits: 'Utility Permits'
-          22987332152471_tsup: 'Temporary Street Use Permits (TSUP)'
+          'Outdoor Dining': 'Outdoor Dining'
+          'Utility Permits': 'Utility Permits'
+          'Temporary Street Use Permits (TSUP)': 'Temporary Street Use Permits (TSUP)'
           'PBOT Compliance': 'PBOT Compliance'
-          22987332152471_row_other: Other
+          Other: Other
         '#required': true
     markup_continue:
       '#type': webform_markup
@@ -87,10 +87,10 @@ elements: |-
         '#type': radios
         '#title': 'What category best describes the issue related to this request?'
         '#options':
-          25599798075287_permit_violation: 'Permit Violation'
-          25599798075287_non_payment: Non-Payment
-          25599798075287_unpermitted: 'Unpermitted Work'
-          25599798075287_other: Other
+          'Permit Violation': 'Permit Violation'
+          Non-Payment: Non-Payment
+          'Unpermitted Work': 'Unpermitted Work'
+          Other: Other
         '#required': true
         '#states':
           invisible:
@@ -119,8 +119,8 @@ elements: |-
         '#type': radios
         '#title': Source
         '#options':
-          20710180788759_workgroup: Workgroup
-          20710180788759_community_member: 'Community Member'
+          Workgroup: Workgroup
+          'Community Member': 'Community Member'
         '#options_display': side_by_side
         '#required': true
       ticket_referred_by:
@@ -133,10 +133,10 @@ elements: |-
         '#type': radios
         '#title': 'Referral Category'
         '#options':
-          25599798075287_permit_violation: 'Permit Violation'
-          25599798075287_non_payment: Non-Payment
-          25599798075287_unpermitted: 'Unpermitted Work'
-          25599798075287_other: Other
+          'Permit Violation': 'Permit Violation'
+          Non-Payment: Non-Payment
+          'Unpermitted Work': 'Unpermitted Work'
+          Other: Other
         '#states':
           visible:
             ':input[name="ticket_type"]':
@@ -145,10 +145,10 @@ elements: |-
         '#type': radios
         '#title': 'Obstruction Category'
         '#options':
-          20710237949079_permanent_structure: 'Permanent Item'
-          20710237949079_temporary_item: 'Temporary Item'
-          20710237949079_construction: 'Construction Item'
-          20710237949079_row_type_other: Other
+          'Permanent Item': 'Permanent Item'
+          'Temporary Item': 'Temporary Item'
+          'Construction Item': 'Construction Item'
+          Other: Other
         '#states':
           visible:
             ':input[name="ticket_type"]':
@@ -168,13 +168,13 @@ elements: |-
       '#states':
         visible:
           - ':input[name="request_workgroup"]':
-              value: 22987332152471_outdoor_dining
+              value: 'Outdoor Dining'
           - or
           - ':input[name="request_workgroup"]':
-              value: 22987332152471_tsup
+              value: 'Temporary Street Use Permits (TSUP)'
           - or
           - ':input[name="request_workgroup"]':
-              value: 22987332152471_utility_permits
+              value: 'Utility Permits'
           - or
           - ':input[name="ticket_type"]':
               value: Referral
@@ -204,7 +204,7 @@ elements: |-
       '#states':
         visible:
           ':input[name="request_workgroup"]':
-            value: 22987332152471_outdoor_dining
+            value: 'Outdoor Dining'
       request_odp_safety:
         '#type': radios
         '#title': 'Is this currently a safety issue?'
@@ -283,16 +283,16 @@ elements: |-
       '#states':
         visible:
           - ':input[name="request_workgroup"]':
-              value: 22987332152471_outdoor_dining
+              value: 'Outdoor Dining'
           - or
           - ':input[name="request_workgroup"]':
-              value: 22987332152471_utility_permits
+              value: 'Utility Permits'
           - or
           - ':input[name="request_workgroup"]':
-              value: 22987332152471_tsup
+              value: 'Temporary Street Use Permits (TSUP)'
           - or
           - ':input[name="request_workgroup"]':
-              value: 22987332152471_row_other
+              value: Other
       request_uploads:
         '#type': webform_document_file
         '#title': 'Upload any supporting documentation you have'
@@ -431,24 +431,57 @@ elements: |-
     '#title': 'Computed Tags'
     '#display_on': form
     '#mode': text
-    '#template': |+
-      {% if data.request_workgroup and data.request_workgroup is not iterable and data.request_workgroup == "PBOT Compliance" %}
-        {{ data.ticket_source }} {{ data.ticket_referred_by|raw }} {{ data.ticket_referral_category|raw }} {{ data.ticket_obstruction_category|raw }} {{ data.ticket_priority|raw }}
-      {% else %}
-        {{ data.request_workgroup|raw }} {{ data.request_type|raw }}
+    '#template': |
+      {% if data.request_workgroup and data.request_workgroup is not iterable %}
+
+        {% if data.request_workgroup == "PBOT Compliance" %}
+        
+          {% if data.ticket_source == "Workgroup" %}20710180788759_workgroup
+          {% elseif data.ticket_source == "Community Member" %}20710180788759_community_member
+          {% endif %}
+        
+          {{ data.ticket_referred_by|raw }}
+          
+          {% if data.ticket_referral_category == "Permit Violation" %}25599798075287_permit_violation
+          {% elseif data.ticket_referral_category == "Non-Payment" %}25599798075287_non_payment
+          {% elseif data.ticket_referral_category == "Unpermitted Work" %}25599798075287_unpermitted
+          {% elseif data.ticket_referral_category == "Other" %}25599798075287_other
+          {% endif %}
+          
+          {% if data.ticket_obstruction_category == "Permanent Item" %}20710237949079_permanent_structure
+          {% elseif data.ticket_obstruction_category == "Temporary Item" %}20710237949079_temporary_item
+          {% elseif data.ticket_obstruction_category == "Construction Item" %}20710237949079_construction
+          {% elseif data.ticket_obstruction_category == "Other" %}20710237949079_row_type_other
+          {% endif %}
+          
+          {{ data.ticket_priority|raw }}
+          
+        {% else %}
+        
+          {% if data.request_workgroup == "Outdoor Dining" %}22987332152471_outdoor_dining
+          {% elseif data.request_workgroup == "Utility Permits" %}22987332152471_utility_permits
+          {% elseif data.request_workgroup == "Temporary Street Use Permits (TSUP)" %}22987332152471_tsup
+          {% elseif data.request_workgroup == "Other" %}22987332152471_row_other
+          {% endif %}
+          
+          {% if data.request_type == "Permit Violation" %}25599798075287_permit_violation
+          {% elseif data.request_type == "Non-Payment" %}25599798075287_non_payment
+          {% elseif data.request_type == "Unpermitted Work" %}25599798075287_unpermitted
+          {% elseif data.request_type == "Other" %}25599798075287_other
+          {% endif %}
+          
+          {% if data.request_workgroup == "Outdoor Dining" %}
+            {{ data.request_odp_safety == "Yes" ? "25600482981655_safety" : "" }} 
+            {{ data.request_odp_permitted == "Yes" ? "25600482981655_permitted" : "" }} 
+            {{ data.request_odp_good_standing == "Yes" ? "25600482981655_good_standing" : "" }} 
+            {{ data.request_odp_insurance == "Yes" ? "25600482981655_insurance" : "" }} 
+            {{ data.request_odp_nc_violation == "No" ? "25600482981655_nc_violation" : "" }} 
+            {{ data.request_odp_structural == "Yes" ? "25600482981655_structural" : "" }} 
+          {% endif %}
+          
+        {% endif %}
+        
       {% endif %}
-
-      {% if data.request_workgroup and data.request_workgroup is not iterable and data.request_workgroup == "22987332152471_outdoor_dining" %}
-        {{ data.request_odp_safety == "Yes" ? "25600482981655_safety" : "" }} 
-        {{ data.request_odp_permitted == "Yes" ? "25600482981655_permitted" : "" }} 
-        {{ data.request_odp_good_standing == "Yes" ? "25600482981655_good_standing" : "" }} 
-        {{ data.request_odp_insurance == "Yes" ? "25600482981655_insurance" : "" }} 
-        {{ data.request_odp_nc_violation == "No" ? "" : "25600482981655_nc_violation" }} 
-        {{ data.request_odp_structural == "Yes" ? "25600482981655_structural" : "" }} 
-      {% endif %}
-
-
-
     '#whitespace': trim
     '#ajax': true
 css: ''
