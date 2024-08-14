@@ -124,11 +124,18 @@ elements: |-
         '#options_display': side_by_side
         '#required': true
       ticket_referred_by:
-        '#type': webform_select_other
+        '#type': select
         '#title': 'Ticket Referred By'
         '#options': row_issue_referred_by
         '#other__option_label': 'Something else...'
         '#other__placeholder': 'Please describe...'
+      ticket_referred_by_other:
+        '#type': textfield
+        '#title': 'Who referred the ticket?'
+        '#states':
+          visible:
+            ':input[name="ticket_referred_by"]':
+              value: 22987332152471_row_other
       ticket_referral_category:
         '#type': radios
         '#title': 'Referral Category'
@@ -348,7 +355,7 @@ elements: |-
     '#title': 'Computed Description'
     '#display_on': none
     '#mode': html
-    '#template': |+
+    '#template': |
       <p><strong>Internal Compliance Request</strong></p>
 
       {% if data.request_workgroup and data.request_workgroup is not iterable %}
@@ -374,7 +381,7 @@ elements: |-
       {% if data.ticket_source and data.ticket_source is not iterable %}
         <p><strong>Ticket info</strong></p>
         <p><strong>Ticket source:</strong> {{ data.ticket_source }}<br>
-        <strong>Ticket referred by:</strong> {{ data.ticket_referred_by }}<br>
+        <strong>Ticket referred by:</strong> {{ data.ticket_referred_by }}{% if data.ticket_referred_by == "22987332152471_row_other" %}: {{ data.ticket_referred_by_other }}{% endif %}<br>
         <strong>Ticket referral category:</strong> {{ data.ticket_referral_category }}<br>
         <strong>Ticket obstruction category:</strong> {{ data.ticket_obstruction_category }}<br>
         <strong>Ticket priority:</strong> {{ data.ticket_priority }}</p>
@@ -396,7 +403,7 @@ elements: |-
         <strong>Is this business current on all fee payments?</strong> {{ data.request_odp_good_standing }}<br>
         <strong>Is there active insurance on file for the business?</strong> {{ data.request_odp_insurance }}<br>
         <strong>If needed, does business have neighbor consent?</strong> {{ data.request_odp_nc_violation }}<br>
-        <p><strong>Are structural changes needed?</strong> {{ data.request_odp_structural }}</p>
+        <strong>Are structural changes needed?</strong> {{ data.request_odp_structural }}</p>
       {% endif %}
 
       <p><strong>Details</strong><br>
@@ -416,8 +423,6 @@ elements: |-
       {% if data.report_location.location_attributes %}
         {{ data.report_location.location_attributes }}
       {% endif %}
-
-
     '#whitespace': spaceless
   computed_subject:
     '#type': webform_computed_twig
