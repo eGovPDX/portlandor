@@ -115,7 +115,7 @@ class SmartsheetHandler extends WebformHandlerBase {
       foreach ($webform_fields as $key => $value) {
         $title = $value['#admin_title'] ?? $value['#title'] ?? NULL;
         if (empty($title)) continue;
-
+        
         $options[$key] = $title;
       }
 

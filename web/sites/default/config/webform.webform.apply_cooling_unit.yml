@@ -152,16 +152,15 @@ elements: |-
           - authenticated
       apply_csr_override_notes:
         '#type': textfield
-        '#title': 'Override notes'
-        '#description': 'Please provide a reason for overriding.'
+        '#title': Notes
+        '#description': '<p>Provide any notes or requests (e.g. Spanish-speaking installer) from the community member. <strong>If address is overridden:</strong> you must provide a reason for overriding.&nbsp;</p>'
         '#description_display': before
-        '#required': true
-        '#access_create_roles':
-          - authenticated
         '#states':
-          visible:
+          required:
             ':input[name="apply_csr_override"]':
               checked: true
+        '#access_create_roles':
+          - authenticated
       markup_check_eligibility:
         '#type': webform_markup
         '#states':
@@ -280,6 +279,12 @@ elements: |-
     '#display_on': none
     '#mode': text
     '#template': '{{ data.report_location.location_address }}'
+  computed_location_latlon:
+    '#type': webform_computed_twig
+    '#title': 'Computed Location Lat/Lon'
+    '#display_on': none
+    '#mode': text
+    '#template': "{{ data.report_location.location_lat ? (data.report_location.location_lat ~ ',' ~ data.report_location.location_lon) : '' }}"
   computed_vulnerabilities:
     '#type': webform_computed_twig
     '#title': 'Computed Vulnerabilities'
@@ -292,6 +297,12 @@ elements: |-
     '#display_on': none
     '#mode': text
     '#template': '{{ data.support_agent_use_only and data.support_agent_use_only.employee_email ? "Yes" : "No" }}'
+  computed_311_agent:
+    '#type': webform_computed_twig
+    '#title': 'Computed 311 Agent'
+    '#display_on': none
+    '#mode': text
+    '#template': '{{ data.support_agent_use_only.employee_email|raw }}'
   computed_confirmation_message:
     '#type': webform_computed_twig
     '#title': 'Computed Confirmation Message'
@@ -300,17 +311,17 @@ elements: |-
     '#template': |-
       <p>Thank you for your interest in receiving a cooling unit from Cooling Portland: <a href="https://www.earthadvantage.org/climate-justice/hrp-information.html">A PCEF-Funded Climate Resilience Program!</a>
       </p>
-      <p><strong>What Happens Next?</strong></p>
-      <p>The Cooling Portland program prioritizes applicants who are most at risk for heat related illness:</p>
+      <h2>What Happens Next?</h2>
+      <p>The Cooling Portland program is currently receiving a high volume of applications and wait times for units are increasing. Your application is currently on a waitlist. A Community Distribution Partner (CDP) will review and process your application and reach out directly to coordinate installation.</p>
+      <p><strong>If you have already applied to receive a unit through the program, please <u>do not call 311</u> to check on the status of your application.</strong></p>
+      <p>Unit distribution is assigned according to risk, with priority going to those who are most vulnerable to heat-related hazards:</p>
       <ul>
       <li>People aged 60 or older</li>
       <li>People who live alone</li>
       <li>People who have medical conditions that increase the likelihood of heat related illness</li>
       </ul>
-      <p>If you have two or more of the above risk factors, your application will be assigned to a Community Distribution Partner (CDP) who will reach out to you directly to coordinate an installation. Your assigned CDP will make every effort to contact you as soon as possible. <strong>Please do not contact 311 to follow up on your installation.</strong></p>
-      <p>If you do not have two or more of the above risk factors, you will be placed on a waitlist and assigned to a CDP once our priority applicants have received their units.</p>
-      <p><strong>When Will I Get My Unit?</strong></p>
-      <p>Please note that <strong>there is no guaranteed timeline for when you will receive a cooling unit</strong> and yours will vary based on demand and availability. Your assigned CDP will contact you directly to schedule a time to install your unit.</p>
+      <h2>When Will I Get My Unit?</h2>
+      <p>Distribution partners are working as quickly as possible to process applications and schedule installations. Please note that <u>there is no guaranteed timeline for when you will receive a cooling unit</u> and based on the current waitlist, your installation may not be scheduled before late summer or early fall.</p>
       <p>
           <strong>If you need assistance getting to a cooling center, please dial <a href="tel:211">2-1-1</a>.</strong>
       </p>
@@ -575,6 +586,7 @@ handlers:
         340473775345540: __submission_id
         2882544658763652: ''
         4450738099933060: ''
+        1114308311469956: ''
         1648037863575428: ''
         8512044192976772: ''
         4844073402716036: contact_name
@@ -590,6 +602,8 @@ handlers:
         1185297541844868: ''
         5267859075714948: apply_csr_override_notes
         6322089718927236: computed_submitted_by_311
+        5606672530886532: computed_311_agent
+        5962690733494148: computed_location_latlon
       multiple_rows_enable: null
       multiple_rows_field: ''
       multiple_rows_separator: ''

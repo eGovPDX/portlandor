@@ -123,11 +123,11 @@ function portland_groups_group_update(GroupInterface $group)
     // Batch process 50 items for each iteration
     $limit = 50;
     $batch_job = array(
-      'title' => t("Bulk updating URL aliases for content, media, and subgroups in {$group->label->value}"),
+      'title' => t("Bulk updating URL aliases for content and media in {$group->label->value}"),
       'init_message' => t('Starting the URL alias updating process'),
       'operations' => [
-        ['Drupal\portland_groups\UpdateAliasInBatch::updateGroupContentAlias', [ 
-          $non_user_entities, 
+        ['Drupal\portland_groups\UpdateAliasInBatch::updateGroupContentAlias', [
+          $non_user_entities,
           $limit,
         ]],
       ],
@@ -211,15 +211,6 @@ function _portland_groups_synchronize_entity_group_ownership($entity)
       }
       // assign to new group
       _portland_groups_add_entity_to_group($entity, $new_owner_group, $plugin_id);
-
-      // If the primary group in the English version is updated, update other translations.
-      if($entity->langcode->value === "en") {
-        $languages = $entity->getTranslationLanguages();
-        foreach ($languages as $id => $language) {
-          if($id === "en") continue;
-          $entity->getTranslation($id)->save();
-        }
-      }
     } else {
       $new_group = Group::load($new_owner_group);
       if ($new_group) {

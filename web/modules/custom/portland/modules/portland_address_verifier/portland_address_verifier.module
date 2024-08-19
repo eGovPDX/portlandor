@@ -1,0 +1,27 @@
+<?php
+
+use Drupal\webform\Utility\WebformElementHelper;
+use Drupal\Core\Form\FormStateInterface;
+
+/**
+ * Implements hook_form_alter 
+ */
+function portland_address_verifier_form_alter(&$form, &$form_state, $form_id) {
+  // if elements array exists, this may be a webform. flatten the elements array and look for
+  // the location verifier field. if it exists, attach the library.
+  $library_attached = false;
+  if (!$library_attached && array_key_exists("elements", $form)) {
+    $flattened = WebformElementHelper::getFlattened($form['elements']);
+    foreach ($flattened as $key => $value) {
+      if (array_key_exists('#type', $flattened[$key]) && $flattened[$key]['#type'] == "portland_address_verifier") {
+        $form['#attached']['library'][] = 'portland_address_verifier/portland_address_verifier';
+        $form['#attached']['drupalSettings']['portlandmaps_api_key'] = \Drupal::service('key.repository')->getKey('portlandmaps_api')->getKeyValue();
+        $library_attached = true;
+        break;
+      }
+    }
+  }
+}
+
+
+
