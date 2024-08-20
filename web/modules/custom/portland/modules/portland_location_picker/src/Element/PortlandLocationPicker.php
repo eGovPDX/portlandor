@@ -89,6 +89,11 @@ class PortlandLocationPicker extends WebformCompositeBase {
       '#title' => 'Taxlot',
       '#attributes' => ['id' => 'location_type_taxlot'],
     ];
+    $element['location_taxlot_id'] = [
+      '#type' => 'hidden',
+      '#title' => 'Taxlot ID',
+      '#attributes' => ['id' => 'location_taxlot_id'],
+    ];
     $element['location_type_park'] = [
       '#type' => 'hidden',
       '#title' => 'Park',
