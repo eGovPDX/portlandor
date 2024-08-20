@@ -47,12 +47,7 @@ elements: |-
         visible:
           ':input[name="what_are_you_trying_to_report"]':
             value: 'Safety issue involving park users'
-      '#markup': |-
-        <div class="alert alert--info next-steps">
-        <h2>Next Steps</h2>
-
-        <p>Please contact the <a href="/parks/rangers">Portland Park Rangers Call Center</a>. If this is an emergency, <a href="tel:911">call 911</a> immediately.</p>
-        </div>
+      '#markup': '<div class="alert alert--info next-steps"><h2>Next Steps</h2><p>Please contact the Portland Park rangers at <a href="tel:+1-503-823-1637">503-823-1637</a> or email <a href="mailto:rangercallcenter@portlandoregon.gov">rangercallcenter@portlandoregon.gov</a>.</p><p class="mb-0">If this is an emergency, <a href="tel:911">call 911</a> immediately.</p></div>'
     markup_tree_issue:
       '#type': webform_markup
       '#states':
@@ -171,6 +166,8 @@ elements: |-
       report_what_needs_attention:
         '#type': webform_radios_other
         '#title': 'What needs attention?'
+        '#description': '<p>Please do not use this section for urgent or hazardous tree reporting.</p>'
+        '#description_display': before
         '#options': maintenance_issue_areas
         '#other__option_label': 'Something else...'
         '#other__placeholder': 'Please describe...'
@@ -251,7 +248,7 @@ elements: |-
         '#states':
           visible:
             ':input[name="report_what_needs_attention[radios]"]':
-              value: 'Water feature such as pool, splash pad, or interactive fountain'
+              value: 'Water feature such as drinking fountain, sprinkler or pool/splash pad'
       report_basic_amenity_issue:
         '#type': radios
         '#title': 'What is the issue?'
@@ -919,7 +916,7 @@ handlers:
     id: zendesk
     handler_id: route_to_parks_maintenance_zendesk
     label: 'Route to Parks Maintenance (Zendesk)'
-    notes: 'Default routing for maintenance reports. Disabled if any of the following are true: 1) Feedback about a staff encounter, 2) Art/Mural/Monument/Sculpture, 3) Test Submission box checked. '
+    notes: 'Default routing for maintenance reports. Disabled if any of the following are true: 1) Feedback about a staff encounter, 2) Art/Mural/Monument/Sculpture, 3) Non-urgent tree maintenance issue, 4) community garden is selected, 5) Test Submission box checked. '
     status: true
     conditions:
       disabled:
@@ -934,6 +931,14 @@ handlers:
         -
           ':input[name="support_agent_use_only[test_submission]"]':
             checked: true
+        - or
+        -
+          ':input[name="report_what_needs_attention[radios]"]':
+            value: 'Non-urgent tree maintenance issue'
+        - or
+        -
+          ':input[name="report_is_park"]':
+            value: 'Community garden'
     weight: -50
     settings:
       requester_name: contact_name
@@ -1091,6 +1096,18 @@ handlers:
         -
           ':input[name="what_are_you_trying_to_report"]':
             value: 'Feedback about a staff encounter'
+        - or
+        -
+          ':input[name="report_basic_amenity[radios]"]':
+            value: Art/mural/monument/sculpture
+        - or
+        -
+          ':input[name="report_what_needs_attention[radios]"]':
+            value: 'Non-urgent tree maintenance issue'
+        - or
+        -
+          ':input[name="report_is_park"]':
+            value: 'Community garden'
     weight: -43
     settings:
       comment: 'Resolution URL: <a href="[webform_submission:values:resolution_url]&report_ticket_id=[webform_submission:values:report_ticket_id]">[webform_submission:values:resolution_url]&report_ticket_id=[webform_submission:values:report_ticket_id]</a>'
@@ -1143,7 +1160,7 @@ handlers:
           value: 'Feedback about a staff encounter'
         ':input[name="support_agent_use_only[test_submission]"]':
           unchecked: true
-    weight: -47
+    weight: -46
     settings:
       states:
         - completed
@@ -1161,6 +1178,48 @@ handlers:
       sender_mail: ''
       sender_name: ''
       subject: 'Parks Issue: Feedback about a staff encounter'
+      body: '<p>[webform_submission:values:computed_issue_description:html]</p>'
+      excluded_elements: {  }
+      ignore_access: false
+      exclude_empty: true
+      exclude_empty_checkbox: false
+      exclude_attachments: false
+      html: true
+      attachments: false
+      twig: false
+      theme_name: ''
+      parameters: {  }
+      debug: false
+  non_urgent_tree_issue_email:
+    id: email
+    handler_id: non_urgent_tree_issue_email
+    label: 'Non-Urgent Tree Issue (Email)'
+    notes: 'Sends an email to trees@portlandoregon.gov. Enabled if A) "Non-urgent tree maintenance issue" is selected, and B) Test Submission is NOT checked.'
+    status: true
+    conditions:
+      enabled:
+        ':input[name="report_what_needs_attention[radios]"]':
+          value: 'Non-urgent tree maintenance issue'
+        ':input[name="support_agent_use_only[test_submission]"]':
+          unchecked: true
+    weight: -47
+    settings:
+      states:
+        - completed
+      to_mail: greg.clapp@portlandoregon.gov
+      to_options: {  }
+      bcc_mail: ''
+      bcc_options: {  }
+      cc_mail: ''
+      cc_options: {  }
+      from_mail: noreply@portlandoregon.gov
+      from_options: {  }
+      from_name: _default
+      reply_to: ''
+      return_path: ''
+      sender_mail: ''
+      sender_name: ''
+      subject: _default
       body: '<p>[webform_submission:values:computed_issue_description:html]</p>'
       excluded_elements: {  }
       ignore_access: false
