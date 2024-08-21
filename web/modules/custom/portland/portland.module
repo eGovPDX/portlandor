@@ -1527,25 +1527,28 @@ function portland_preprocess_fieldset(&$variables): void {
 
 /**
  * Validates that the council document associated with an impact statement
- * doesn't already have an existing one of the same type
+ * doesn't already have an existing one of the same type, to prevent duplicates.
  */
 function _validate_council_impact_statement_type(array &$form, FormStateInterface $form_state) {
+  $current_relation = $form_state->getFormObject()->getEntity();
   $council_document_id = $form_state->getValue('field_council_document')[0]['target_id'] ?? null;
   $impact_statement_type_tid = $form_state->getValue('field_impact_statement_type')[0]['target_id'] ?? null;
   if (is_null($council_document_id) || is_null($impact_statement_type_tid)) {
     return;
   }
 
-  $existing_relation = \Drupal::entityTypeManager()->getStorage('relation')->loadByProperties([
+  $existing_relations = \Drupal::entityTypeManager()->getStorage('relation')->loadByProperties([
     'field_council_document' => $council_document_id,
     'field_impact_statement_type' => $impact_statement_type_tid,
   ]);
-  if (count($existing_relation) !== 0) {
+  $existing_relation = reset($existing_relations);
+  // if an existing relation of the same type exists, and it's not the one we're currently editing, throw an error
+  if ($existing_relation && $existing_relation->id() !== $current_relation->id()) {
     $form_state->setErrorByName(
       'field_impact_statement_type',
       t(
         'An impact statement of this type on this council document already exists. Please <a href="@link">edit it</a> instead.',
-        [ '@link' => reset($existing_relation)->toUrl('edit-form')->toString() ],
+        [ '@link' => $existing_relation->toUrl('edit-form')->toString() ],
       ),
     );
   }
