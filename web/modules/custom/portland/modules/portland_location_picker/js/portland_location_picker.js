@@ -129,6 +129,10 @@
         var requireBoundary = drupalSettings.webform && drupalSettings.webform.portland_location_picker.require_boundary === true ? true : false;
         var outOfBoundsMessage = drupalSettings.webform ? drupalSettings.webform.portland_location_picker.out_of_bounds_message : "";
 
+        var clickQueryUrl = drupalSettings.webform ? drupalSettings.webform.portland_location_picker.click_query_url : "";
+        var clickQueryPropertyPath = drupalSettings.webform ? drupalSettings.webform.portland_location_picker.click_query_property_path : "";
+        var clickQueryDestinationField = drupalSettings.webform ? drupalSettings.webform.portland_location_picker.click_query_destination_field : "";
+
         var apiKey = drupalSettings.portlandmaps_api_key;
 
         var locationType;
@@ -1324,6 +1328,12 @@
               setLocationMarker(lat, lng, isWithinBounds);
               checkRegion(latlng)
             }
+
+            // CLICK QUERY kludge
+            // if clickQuery is configured, we want to call the API at that url and then process the results.
+            if (clickQueryUrl && clickQueryPropertyPath) {
+              doClickQuery(latlng);
+            }
           }
 
           // if in address verify mode, use the verified address from suggest API
@@ -1338,6 +1348,54 @@
           }
 
           setLocationDetails(data);
+        }
+
+        function doClickQuery(latlng) {
+          var sphericalMerc = L.Projection.SphericalMercator.project(L.latLng(latlng.lat, latlng.lng));
+          var x = sphericalMerc.x;
+          var y = sphericalMerc.y;
+          var url = clickQueryUrl.replace('{{x}}', x).replace('{{y}}', y);
+
+          $.ajax({
+            url: url,
+            success: function (results) {
+              // get the property specified by clickQueryPropertyPath
+              newValue = getPropertyByPath(results, clickQueryPropertyPath);
+
+              // store the property in the specified field, but add it as comma delimited if there's
+              // already a value in the field
+              var value = $('#' + clickQueryDestinationField).val();
+              if (value) {
+                value = value + "," + newValue;
+              } else {
+                value = newValue;
+              }
+              $('#' + clickQueryDestinationField).val(value);
+            },
+            error: function (e) {
+              // Handle any error cases
+              console.error(e);
+            }
+          });
+        }
+
+        function getPropertyByPath(jsonObject, path) {
+          const keys = path.split('.');
+        
+          return keys.reduce((obj, key) => {
+            if (!obj) return undefined;
+        
+            // Check if the key includes an array index, like 'features[0]'
+            const arrayIndexMatch = key.match(/(.+)\[(\d+)\]$/);
+        
+            if (arrayIndexMatch) {
+              const arrayKey = arrayIndexMatch[1];
+              const index = arrayIndexMatch[2];
+              return obj[arrayKey] && obj[arrayKey][index] !== undefined ? obj[arrayKey][index] : undefined;
+            } else {
+              return obj[key] !== undefined ? obj[key] : undefined;
+            }
+          }, jsonObject);
         }
 
         function showVerifiedLocation(description, lat, lng, isWithinBounds, isVerifiedAddress) {
