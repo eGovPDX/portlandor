@@ -936,6 +936,10 @@
           $('input[name=' + elementId + '\\[location_municipality_name\\]]').val('');
           $('input[name=' + elementId + '\\[location_attributes\\]]').val('');
 
+          if (clickQueryUrl && clickQueryPropertyPath) {
+            $('#' + clickQueryDestinationField).val('').trigger('change');
+          }
+
           // only clear place name if autofill is disabled
           if (!disablePlaceNameAutofill) {
             $('input[name=' + elementId + '\\[place_name\\]]').val('');
@@ -1328,12 +1332,12 @@
               setLocationMarker(lat, lng, isWithinBounds);
               checkRegion(latlng)
             }
+          }
 
-            // CLICK QUERY kludge
-            // if clickQuery is configured, we want to call the API at that url and then process the results.
-            if (clickQueryUrl && clickQueryPropertyPath) {
-              doClickQuery(latlng);
-            }
+          // CLICK QUERY kludge
+          // if clickQuery is configured, we want to call the API at that url and then process the results.
+          if (clickQueryUrl && clickQueryPropertyPath) {
+            doClickQuery(latlng);
           }
 
           // if in address verify mode, use the verified address from suggest API
@@ -1360,17 +1364,9 @@
             url: url,
             success: function (results) {
               // get the property specified by clickQueryPropertyPath
-              newValue = getPropertyByPath(results, clickQueryPropertyPath);
+              var newValue = getPropertyByPath(results, clickQueryPropertyPath);
 
-              // store the property in the specified field, but add it as comma delimited if there's
-              // already a value in the field
-              var value = $('#' + clickQueryDestinationField).val();
-              if (value) {
-                value = value + "," + newValue;
-              } else {
-                value = newValue;
-              }
-              $('#' + clickQueryDestinationField).val(value);
+              $('#' + clickQueryDestinationField).val(newValue);
             },
             error: function (e) {
               // Handle any error cases
@@ -1381,13 +1377,13 @@
 
         function getPropertyByPath(jsonObject, path) {
           const keys = path.split('.');
-        
+
           return keys.reduce((obj, key) => {
             if (!obj) return undefined;
-        
+
             // Check if the key includes an array index, like 'features[0]'
             const arrayIndexMatch = key.match(/(.+)\[(\d+)\]$/);
-        
+
             if (arrayIndexMatch) {
               const arrayKey = arrayIndexMatch[1];
               const index = arrayIndexMatch[2];
