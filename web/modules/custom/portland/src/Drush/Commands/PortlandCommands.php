@@ -27,6 +27,7 @@ class PortlandCommands extends DrushCommands {
     } else {
       $this->logger()->notice('Budget Office Financial Impact Analysis impact statement type not found. Creating new term.');
       $term = $term_storage->create([
+        'vid' => 'council_impact_statement_type',
         'name' => 'Budget Office Financial Impact Analysis',
       ]);
       $term->save();
