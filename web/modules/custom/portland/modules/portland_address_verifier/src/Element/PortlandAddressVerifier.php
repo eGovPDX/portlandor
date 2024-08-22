@@ -4,6 +4,8 @@ namespace Drupal\portland_address_verifier\Element;
 
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\webform\Element\WebformCompositeBase;
+use Drupal\webform\Entity\WebformOptions;
+
 
 /**
  * Provides a 'portland_address_verifier'.
@@ -46,52 +48,61 @@ class PortlandAddressVerifier extends WebformCompositeBase {
     //   $element_id = $element['#webform_key'];
     // }
 
+    $state_codes = WebformOptions::load('state_codes')->getOptions();
+
     $element['location_address'] = [
       '#type' => 'textfield',
       '#title' => t('Address'),
       '#id' => 'location_address',
       '#attributes' => ['autocomplete' => 'off'],
-      '#description' => t('Begin typing to see a list of possible address matches. Do not incude unit number.'),
+      '#description' => t('Begin typing to see a list of possible address matches in the Portland metro area. Do not incude unit number.'),
       '#description_display' => 'before',
-      // '#required' => TRUE,
-      '#required_error' => 'Please enter an address and verify it.'
+      '#required_error' => 'Please enter an address and verify it.',
     ];
-    $element['container_unit'] = [
-      '#type' => 'container',
-      '#id' => 'container_unit',
-      '#title' => 'container_unit' // undefined array key #title error thrown if no title on this container (?!)
+    $element['location_address_street_number'] = [
+      '#type' => 'hidden',
+      '#title' => t('Street Number'),
+      '#attributes' => ['id' => 'location_address_street_number']
     ];
-    $element['container_unit']['has_unit'] = [
-      '#type' => 'checkbox',
-      '#title' => t('This address has a unit number (apartment, suite, floor, unit, etc.)'),
-      '#id' => 'has_unit',
+    $element['location_address_street_quadrant'] = [
+      '#type' => 'hidden',
+      '#title' => t('Street Quadrant'),
+      '#attributes' => ['id' => 'location_address_street_quadrant']
     ];
-    $element['container_unit']['unit_number'] = [
+    $element['location_address_street_name'] = [
+      '#type' => 'hidden',
+      '#title' => t('Street Name'),
+      '#attributes' => ['id' => 'location_address_street_name']
+    ];
+    $element['unit_number'] = [
       '#type' => 'textfield',
       '#title' => t('Unit Number'),
       '#id' => 'unit_number',
       '#attributes' => ['autocomplete' => 'off'],
-      // '#description' => t('If there is an apartment, suite, floor or other unit number, enter it here exactly as it should appear in your address.'),
-      // '#description_display' => 'before',
       '#placeholder' => t('e.g. #101, APT 101, or UNIT 101'),
-      '#states' => [
-        'visible' => [
-          ':input[id="has_unit"]' => ['checked' => TRUE],
-        ],
+    ];
+    $element['location_city'] = [
+      '#type' => 'textfield',
+      '#title' => t('City'),
+      '#id' => 'location_city',
+      '#wrapper_attributes' => [
+        'class' => ['webform-city'],
       ],
     ];
-    $element['location_address_label_markup'] = [
-      '#type' => 'markup',
-      '#title' => t('Mailing label example'),
-      '#title_display' => 'invisible',
-      // '#help' => t('This is how the address would appear on a mailing label.'),
-      // '#help_display' => 'title_after',
-      '#markup' => '<div id="location_address_label_markup" class="mailing-label d-none"><p><em>This is how the address would appear on a mailing label:</em></p><div id="mailing_label"></div></div>',
-      // '#states' => [
-      //   'hidden' => [
-      //     ':input[id="location_address"]' => ['filled' => FALSE],
-      //   ],
-      // ],
+    $element['location_state'] = [
+      '#type' => 'select',
+      '#title' => t('State'),
+      '#options' => $state_codes,
+      '#default_value' => 'OR',
+      '#id' => 'location_state',
+      '#wrapper_attributes' => ['class' => ['webform-state']],
+    ];
+    $element['location_zip'] = [
+      '#type' => 'textfield',
+      '#title' => t('ZIP Code'),
+      '#id' => 'location_zip',
+      '#attributes' => ['class' => ['webform-zip']],
+      '#wrapper_attributes' => ['class' => ['webform-zip']],
     ];
     $element['suggestions_modal'] = [
       '#type' => 'markup',
@@ -110,41 +121,6 @@ class PortlandAddressVerifier extends WebformCompositeBase {
       '#title' => 'Address Not Found',
       '#title_display' => 'invisible',
       '#markup' => '<div id="not_found_modal" class="visually-hidden"></div>',
-    ];
-    $element['location_street'] = [
-      '#type' => 'hidden',
-      '#title' => t('Street'),
-      '#attributes' => ['id' => 'location_street']
-    ];
-    $element['location_street_number'] = [
-      '#type' => 'hidden',
-      '#title' => t('Street Number'),
-      '#attributes' => ['id' => 'location_street_number']
-    ];
-    $element['location_street_quadrant'] = [
-      '#type' => 'hidden',
-      '#title' => t('Street Quadrant'),
-      '#attributes' => ['id' => 'location_street_quadrant']
-    ];
-    $element['location_street_name'] = [
-      '#type' => 'hidden',
-      '#title' => t('Street Name'),
-      '#attributes' => ['id' => 'location_street_name']
-    ];
-    $element['location_city'] = [
-      '#type' => 'hidden',
-      '#title' => t('City'),
-      '#attributes' => ['id' => 'location_city']
-    ];
-    $element['location_state'] = [
-      '#type' => 'hidden',
-      '#title' => t('State'),
-      '#attributes' => ['id' => 'location_state']
-    ];
-    $element['location_zip'] = [
-      '#type' => 'hidden',
-      '#title' => t('Zip'),
-      '#attributes' => [ 'id' => 'location_zip']
     ];
     $element['location_lat'] = [
       '#type' => 'hidden',
@@ -171,6 +147,11 @@ class PortlandAddressVerifier extends WebformCompositeBase {
       '#title' => t('Taxlot ID'),
       '#attributes' => [ 'id' => 'location_taxlot_id']
     ];
+    $element['location_is_unincorporated'] = [
+      '#type' => 'hidden',
+      '#title' => t('Is Unincorporated'),
+      '#attributes' => [ 'id' => 'location_is_unincorporated']
+    ];
     $element['location_address_label'] = [
       '#type' => 'hidden',
       '#title' => t('Address Label'),
@@ -180,7 +161,6 @@ class PortlandAddressVerifier extends WebformCompositeBase {
       '#type' => 'hidden',
       '#title' => t('Verification Status'),
       '#attributes' => [ 'id' => 'location_verification_status'],
-      // '#required' => TRUE,
       '#required_error' => 'Please verify the address before continuing.'
     ];
     $element['location_data'] = [
