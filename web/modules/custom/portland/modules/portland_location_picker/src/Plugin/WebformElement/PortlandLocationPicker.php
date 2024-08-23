@@ -165,6 +165,11 @@ class PortlandLocationPicker extends WebformCompositeBase {
     $requireBoundary = array_key_exists('#require_boundary', $element) ? $element['#require_boundary'] : FALSE;
     $outOfBoundsMessage = array_key_exists('#out_of_bounds_message', $element) ? $element['#out_of_bounds_message'] : "The location you selected is not within our service area. Please try a different location.";
 
+    // in this URL, the {{x}} and {{y}} tokens need to be replaced with real values.
+    $clickQueryUrl = array_key_exists('#click_query_url', $element) ? $element['#click_query_url'] : '';
+    $clickQueryPropertyPath = array_key_exists('#click_query_property_path', $element) ? $element['#click_query_property_path'] : '';
+    $clickQueryDestinationField = array_key_exists('#click_query_destination_field', $element) ? $element['#click_query_destination_field'] : 'location_region_id';
+
     $element['#attached']['drupalSettings']['webform']['portland_location_picker']['address_verify'] = $addressVerify;
     $element['#attached']['drupalSettings']['webform']['portland_location_picker']['element_id'] = $element_id;
     $element['#attached']['drupalSettings']['webform']['portland_location_picker']['primary_layer_source'] = $primaryLayerSource;
@@ -191,6 +196,10 @@ class PortlandLocationPicker extends WebformCompositeBase {
     $element['#attached']['drupalSettings']['webform']['portland_location_picker']['display_boundary'] = $displayBoundary;
     $element['#attached']['drupalSettings']['webform']['portland_location_picker']['require_boundary'] = $requireBoundary;
     $element['#attached']['drupalSettings']['webform']['portland_location_picker']['out_of_bounds_message'] = $outOfBoundsMessage;
+
+    $element['#attached']['drupalSettings']['webform']['portland_location_picker']['click_query_url'] = $clickQueryUrl;
+    $element['#attached']['drupalSettings']['webform']['portland_location_picker']['click_query_property_path'] = $clickQueryPropertyPath;
+    $element['#attached']['drupalSettings']['webform']['portland_location_picker']['click_query_destination_field'] = $clickQueryDestinationField;
   }
 
 }
