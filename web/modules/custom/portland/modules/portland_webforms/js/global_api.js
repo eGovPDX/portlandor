@@ -4,10 +4,12 @@ class GlobalApi {
     this.constants = constants;
   }
 
-  async reverseGeocode(lat, lng, apiKey) {
-    const url = this.constants.URLS.REVERSE_GEOCODE.replace('${x}', lng).replace('${y}', lat).replace('${apiKey}', apiKey);
-    const response = await fetch(url);
-    return response.json();
+  async reverseGeocode(latlng, apiKey) {
+    var xy = L.Projection.SphericalMercator.project(latlng);
+    var url = this.constants.URLS.REVERSE_GEOCODE.replace('{{x}}', xy.x).replace('{{y}}', xy.y).replace('{{apiKey}}', apiKey);
+    var response = await fetch(url);
+    response = response.json();
+    return response;
   }
 
   // Other API methods

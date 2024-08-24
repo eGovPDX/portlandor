@@ -66,7 +66,7 @@ class LocationWidget {
   }
 
   debug(message) {
-    if (this.constants.DEBUG) console.log(message);
+    if (this.constants.DEBUG) GlobalUtilities.debug(message);
   }
 
   initializeLayer(layer) {
@@ -168,27 +168,22 @@ class LocationWidget {
 
     // Call the reverseGeocode function and process the result
     try {
-      const result = await this.api.reverseGeocode(latlng.lng, latlng.lat, this.settings.apiKey);
-      this.processGeocodeResult(result); // Function to handle the API response
+      const result = await this.api.reverseGeocode(latlng, this.settings.apiKey);
+      this.processGeocodeResult(result, latlng); // Function to handle the API response
     } catch (error) {
       console.error("Reverse geocode failed:", error);
     } finally {
       this.hideLoader();
     }
-
-
-
   }
 
-  processGeocodeResult(result) {
-    if (result && result.data) {
-      // Example of processing the result and displaying it
-      const address = result.data.address; // Adjust based on your API response structure
-      console.log("Address found:", address);
-
-      // Optionally display the address on the map
-      const marker = L.marker(this.map.getCenter()).addTo(this.map);
-      marker.bindPopup(`<strong>Address:</strong> ${address}`).openPopup();
+  processGeocodeResult(result, latlng) {
+    if (result && result.describe) {
+      result.latlng = latlng;
+      result.xy = L.Projection.SphericalMercator.project(latlng);
+      var location = GlobalUtilities.locationFactory("intersects", result);
+      this.debug("Location found: " + location.displayAddress);
+      this.debug("Lat/Lng: " + location.lat + "," + location.lng);
     } else {
       console.error("No data found in reverse geocode result.");
     }

@@ -70,11 +70,39 @@ class PortlandLocationWidget extends WebformCompositeBase {
     }
     $element['#attached']['drupalSettings']['webform']['portland_location_widget'][$element_id]['id'] = $element_id;
 
-    // get custom properties as they're defined in the element's Advanced config tab Custom Settings field 
+    // custom properties defined in the element's Advanced config tab Custom Settings field 
+
+    // default_zoom
+    $defaultZoom = array_key_exists('#default_zoom', $element) ? $element['#default_zoom'] : 11;
+    $element['#attached']['drupalSettings']['webform']['portland_location_widget'][$element_id]['default_zoom'] = $defaultZoom;
+
+    // location_type
+    $locationType = array_key_exists('#location_type', $element) ? $element['#location_type'] : "point";
+    $element['#attached']['drupalSettings']['webform']['portland_location_widget'][$element_id]['location_type'] = $locationType;
+
+    // location_marker
+    $locationMarker = array_key_exists('#location_marker', $element) ? $element['#location_marker'] : "/modules/custom/modules/portland_webforms/images/map_marker.png";
+    $element['#attached']['drupalSettings']['webform']['portland_location_widget'][$element_id]['location_marker'] = $locationMarker;
+
+    // location_line_style - NOT YET IMPLEMENTED
+
+    // location_polygon_style - NOT YET IMPLEMENTED
+
+    // primary boundary - Defines properties of the map's default primary boundary, typically the city limits.
+    // child properties are defined in the element's custom properties YAML. See the README for more information.
+    $primaryBoundary = array_key_exists('#primary_boundary', $element) ? $element['#primary_boundary'] : "";
+    $element['#attached']['drupalSettings']['webform']['portland_location_widget'][$element_id]['primary_boundary'] = $primaryBoundary;
+
+    // layers - An array of layer definitions, each defining a specific data layer to be included in the map.
+    // child properties are defined in the element's custom properties YAML. See the README for more information.
     $mapLayers = array_key_exists('#layers', $element) ? $element['#layers'] : "";
     $element['#attached']['drupalSettings']['webform']['portland_location_widget'][$element_id]['layers'] = $mapLayers;
 
-    $primaryBoundary = array_key_exists('#primary_boundary', $element) ? $element['#primary_boundary'] : "";
-    $element['#attached']['drupalSettings']['webform']['portland_location_widget'][$element_id]['primary_boundary'] = $primaryBoundary;
+    // queries - An array of query definitions, each defining a specific data query to be performed when the map is clicked and coordinates are provided.
+    // child properties are defined in the element's custom properties YAML. See the README for more information.
+    $queries = array_key_exists('#queries', $element) ? $element['#queries'] : "";
+    $element['#attached']['drupalSettings']['webform']['portland_location_widget'][$element_id]['queries'] = $queries;
+
+    
   }
 }
