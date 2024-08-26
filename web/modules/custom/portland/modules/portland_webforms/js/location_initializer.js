@@ -71,6 +71,9 @@ class LocationWidget {
     if (this.constants.DEBUG) GlobalUtilities.debug(message);
   }
 
+  // This is the main function for initializing geoJSON layers. It's called for each element of the 
+  // layer config array. The layer is rendered using the L.geoJson function. The resulting layer, along
+  // with its configuration properties, is stored in a global layers array that can be accessed later.
   initializeLayer(layer) {
     var self = this;
     this.$.ajax({
@@ -80,10 +83,13 @@ class LocationWidget {
 
         switch (layer.type) {
           case self.constants.LAYER_TYPE.ASSET:
+            // asset and incident layer types assume features are points.
             self.debug(features.length + " assets found for layer " + layer.name);
             break;
 
           case self.constants.LAYER_TYPE.INCIDENT:
+            // asset and incident layer types assume features are points.
+
             self.debug(features.length + " incidents found for layer " + layer.name);
 
             var newLayer = L.geoJson(features, {
@@ -104,6 +110,7 @@ class LocationWidget {
               },
               interactive: false
             });
+            newLayer.json = response;
             newLayer.config = layer;
             newLayer.addTo(self.map);
             self.layers.push(newLayer);
@@ -111,14 +118,18 @@ class LocationWidget {
             break;
 
           case self.constants.LAYER_TYPE.BOUNDARY:
+            // a boundary layer assumes that the featuers are regions/polygons. they can be used
+            // later in Point-in-Polygon (PiP) operations.
+
             self.debug(features.length + " features found for layer " + layer.name);
-            var boundaryLayer = self.L.geoJson(features, layer.boundaryProperties).addTo(self.map);
-            if (boundaryLayer.municipality) {
-              boundaryLayer.municipality = features[0].properties.CITYNAME;
+            var newLayer = self.L.geoJson(features, layer.boundaryProperties).addTo(self.map);
+            if (newLayer.municipality) {
+              newLayer.municipality = features[0].properties.CITYNAME;
             }
-            boundaryLayer.config = layer;
-            boundaryLayer.addTo(self.map);
-            self.layers.push(boundaryLayer);
+            newLayer.json = response;
+            newLayer.config = layer;
+            newLayer.addTo(self.map);
+            self.layers.push(newLayer);
             break;
 
           default:
@@ -184,22 +195,50 @@ class LocationWidget {
       }
 
       // perform layer actions
+      for (var i = 0; i < this.layers.length; i++) {
+        switch (this.layers[i].config.type) {
+          case "boundary":
+            // what happens when a boundary layer is clicked? call isLocationValid()
+            // - check whether click is within boundary:
+            //   - if not within boundary and enforce==true, then return false.
+            //   - if within boundary, return region ID from parameter defined in capture_property_path
+            var valid = this.isLocationValid(this.layers[i], this.selectedLocation);
+            //var layerResult = this.isWithinBoundary(this.layers[i], this.selectedLocation);
+            break;
 
-      // check if boundary and boundary enforced
-      var validBoundary = this.checkBoundary(location);
+          case "asset":
+            // what happens when an asset layer is clicked? we handle the asset being
+            // clicked in a handler on the marker. whether we still allow the marker to
+            // be set elsewhere on the map is determined by the behavior of the asset 
+            // layer, if single_select or multi_select.
 
-      // any regions clicked? capture region ID?
+            // if any asset layers are 
 
-      // check all layers. selection allowed? perform actions for each layer
 
-      // set marker
-      if (validBoundary) {
-        this.setMarker();
+            this.LAYER_BEHAVIOR = {
+              INFORMATIONAL: 'informational',
+              SINGLE_SELECT: 'single_select',
+              MULTI_SELECT: 'multi_select',
+              OPTIONAL_SELECT: 'optional_select'
+            };
+            // we need to know whether an asset marker is clicked, rather than the layer.
+            // marker click will get handled elsewhere, do we just ignore the layer click then?
+            break;
+
+          case "incident":
+            // similar to asset layer, we really just want to handle when the incident marker
+            // is clicked. otherwise, we allow location to be set. 
+            break;
+
+          default:
+            break;
+
+        }
       }
 
 
     } catch (error) {
-      console.error("Reverse geocode failed:", error);
+      this.debug(error.message + " You may have selected a location outside our service area.");
       // TODO: display error message to user in modal dialog
     } finally {
       this.hideLoader();
@@ -216,11 +255,11 @@ class LocationWidget {
     var draggable = true;
 
     // marker icon: this.constants.DEFAULT_ICON_SELECTED_LOCATION
-    this.selectedMarker = this.L.marker([this.selectedLocation.lat, this.selectedLocation.lng], { 
-      icon: this.L.icon(this.constants.DEFAULT_ICON_SELECTED_LOCATION), 
-      draggable: draggable, 
-      riseOnHover: true, 
-      iconSize: this.constants.DEFAULT_ICON_SIZE 
+    this.selectedMarker = this.L.marker([this.selectedLocation.lat, this.selectedLocation.lng], {
+      icon: this.L.icon(this.constants.DEFAULT_ICON_SELECTED_LOCATION),
+      draggable: draggable,
+      riseOnHover: true,
+      iconSize: this.constants.DEFAULT_ICON_SIZE
     }).addTo(this.map);
 
     // if address marker is moved, we want to capture the new coordinates
@@ -233,13 +272,15 @@ class LocationWidget {
 
   }
 
-  checkBoundary(location) {
-
-    for (var i = 0; i < this.layers.length; i++) {
-      if (this.layers[i].config.type == this.constants.LAYER_TYPE.BOUNDARY) {
-        this.debug(this.layers[i].config.name + " is a boundary layer.");
-      }
-    }
+  // Handles when a boundary layer is clicked.
+  // - check whether click is within boundary:
+  //   - if not within boundary and enforce==true, then return false.
+  //   - if within boundary, return region ID from parameter defined in capture_property_path
+  isLocationValid(layer, location) {
+    var latlng = L.latLng(location.lat, location.lng);
+    var isWithin = leafletPip.pointInLayer(latlng, layer);
+    if (isWithin.length < 1 && layer.config.enforce) return false;
+    // valid click; get and return region ID. need access to result json (in layer.json).
     return true;
   }
 
