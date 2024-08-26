@@ -47,12 +47,7 @@ elements: |-
         visible:
           ':input[name="what_are_you_trying_to_report"]':
             value: 'Safety issue involving park users'
-      '#markup': |-
-        <div class="alert alert--info next-steps">
-        <h2>Next Steps</h2>
-
-        <p>Please contact the <a href="/parks/rangers">Portland Park Rangers Call Center</a>. If this is an emergency, <a href="tel:911">call 911</a> immediately.</p>
-        </div>
+      '#markup': '<div class="alert alert--info next-steps"><h2>Next Steps</h2><p>Please contact the Portland Park rangers at <a href="tel:+1-503-823-1637">503-823-1637</a> or email <a href="mailto:rangercallcenter@portlandoregon.gov">rangercallcenter@portlandoregon.gov</a>.</p><p class="mb-0">If this is an emergency, <a href="tel:911">call 911</a> immediately.</p></div>'
     markup_tree_issue:
       '#type': webform_markup
       '#states':
@@ -146,10 +141,8 @@ elements: |-
       '#place_name__description_display': invisible
       '#require_boundary': false
       '#display_boundary': false
-      '#primary_layer_behavior': informational
-      '#primary_layer_type': region-hidden
-      '#primary_layer_source': 'https://www.portlandmaps.com/arcgis/rest/services/Public/Parks_Administrative_Boundaries/MapServer/1/query?where=1%3D1&f=geojson'
-      '#region_id_property_name': Name
+      '#click_query_url': 'https://www.portlandmaps.com/arcgis/rest/services/Public/Tickets_Layers/MapServer/0/query?where=1%3D1&timeRelation=esriTimeRelationOverlaps&geometry={{x}}%2C{{y}}&geometryType=esriGeometryPoint&spatialRel=esriSpatialRelIntersects&units=esriSRUnit_Foot&outFields=area_detail%2Carea_count&returnGeometry=false&returnTrueCurves=false&returnIdsOnly=false&returnCountOnly=false&returnZ=false&returnM=false&returnDistinctValues=false&returnExtentOnly=false&sqlFormat=none&featureEncoding=esriDefault&f=geojson'
+      '#click_query_property_path': 'features[0].properties.AREA_DETAIL'
     report_location_notes:
       '#type': textfield
       '#title': 'Location Notes'
@@ -170,6 +163,8 @@ elements: |-
       report_what_needs_attention:
         '#type': webform_radios_other
         '#title': 'What needs attention?'
+        '#description': '<p>Please do not use this section for urgent or hazardous tree reporting.</p>'
+        '#description_display': before
         '#options': maintenance_issue_areas
         '#other__option_label': 'Something else...'
         '#other__placeholder': 'Please describe...'
@@ -250,7 +245,7 @@ elements: |-
         '#states':
           visible:
             ':input[name="report_what_needs_attention[radios]"]':
-              value: 'Water feature such as pool, splash pad, or interactive fountain'
+              value: 'Water feature such as drinking fountain, sprinkler or pool/splash pad'
       report_basic_amenity_issue:
         '#type': radios
         '#title': 'What is the issue?'
@@ -412,6 +407,18 @@ elements: |-
             '#description': '<p>We will only use your email address to respond to your report if needed.</p>'
             '#pattern': '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
             '#pattern_error': 'Please enter a correctly formatted email address, such as myname@example.com.'
+            '#states':
+              required:
+                ':input[name="contact_phone"]':
+                  empty: true
+          contact_phone:
+            '#type': textfield
+            '#title': Phone
+            '#input_mask': '(999) 999-9999'
+            '#states':
+              required:
+                ':input[name="contact_email"]':
+                  empty: true
       section_public_records_statement:
         '#type': webform_section
         '#title': 'Public Records Statement'
@@ -643,7 +650,10 @@ elements: |-
       	{{ data.contact_name }}<br>
       {% endif %}
       {% if data.contact_email %}
-      	<a href="mailto:{{ data.contact_email }}">{{ data.contact_email }}</a>
+      	<a href="mailto:{{ data.contact_email }}">{{ data.contact_email }}</a><br>
+      {% endif %}
+      {% if data.contact_phone %}
+      	{{ data.contact_phone }}<br>
       {% endif %}
       {% endif %}
     '#ajax': true
@@ -896,7 +906,7 @@ handlers:
       enabled:
         ':input[name="support_agent_use_only[test_submission]"]':
           checked: true
-    weight: -45
+    weight: -49
     settings:
       requester_name: contact_name
       requester_email: contact_email
@@ -918,7 +928,7 @@ handlers:
     id: zendesk
     handler_id: route_to_parks_maintenance_zendesk
     label: 'Route to Parks Maintenance (Zendesk)'
-    notes: 'Default routing for maintenance reports. Disabled if any of the following are true: 1) Feedback about a staff encounter, 2) Art/Mural/Monument/Sculpture, 3) Test Submission box checked. '
+    notes: 'Default routing for maintenance reports. Disabled if any of the following are true: 1) Feedback about a staff encounter, 2) Art/Mural/Monument/Sculpture, 3) Non-urgent tree maintenance issue, 4) community garden is selected, 5) Test Submission box checked. '
     status: true
     conditions:
       disabled:
@@ -933,6 +943,10 @@ handlers:
         -
           ':input[name="support_agent_use_only[test_submission]"]':
             checked: true
+        - or
+        -
+          ':input[name="report_what_needs_attention[radios]"]':
+            value: 'Non-urgent tree maintenance issue'
     weight: -50
     settings:
       requester_name: contact_name
@@ -963,7 +977,7 @@ handlers:
           value: Art/Mural/Monument/Sculpture
         ':input[name="support_agent_use_only[test_submission]"]':
           unchecked: true
-    weight: -49
+    weight: -48
     settings:
       states:
         - completed
@@ -1005,7 +1019,7 @@ handlers:
           value: 'Community garden'
         ':input[name="support_agent_use_only[test_submission]"]':
           unchecked: true
-    weight: -48
+    weight: -47
     settings:
       states:
         - completed
@@ -1035,61 +1049,25 @@ handlers:
       theme_name: ''
       parameters: {  }
       debug: false
-  test_email:
-    id: email
-    handler_id: test_email
-    label: 'Route email to logged in developer'
-    notes: "Enabled when the Test Submission box is checked in the Customer Service Use Only block. Sends the email to the logged in user, which will be a site administrator, since that's the only group that has permissions to see the checkbox."
-    status: false
-    conditions:
-      enabled:
-        ':input[name="support_agent_use_only[test_submission]"]':
-          checked: true
-    weight: -44
-    settings:
-      states:
-        - completed
-      to_mail: '[current-user:mail]'
-      to_options: {  }
-      bcc_mail: ''
-      bcc_options: {  }
-      cc_mail: ''
-      cc_options: {  }
-      from_mail: noreply@portlandoregon.gov
-      from_options: {  }
-      from_name: _default
-      reply_to: ''
-      return_path: ''
-      sender_mail: ''
-      sender_name: ''
-      subject: _default
-      body: '<p>[webform_submission:values:computed_issue_description:html]</p>'
-      excluded_elements: {  }
-      ignore_access: false
-      exclude_empty: true
-      exclude_empty_checkbox: false
-      exclude_attachments: false
-      html: true
-      attachments: false
-      twig: false
-      theme_name: ''
-      parameters: {  }
-      debug: false
   zendesk_update_request:
     id: zendesk_update_ticket
     handler_id: zendesk_update_request
     label: 'Update Zendesk request with full resolution URL including ticket ID'
-    notes: ''
+    notes: 'Enabled if there is a report_ticket_id value.'
     status: true
     conditions:
       disabled:
         -
-          ':input[name="support_agent_use_only[test_submission]"]':
-            checked: true
-        - or
-        -
           ':input[name="what_are_you_trying_to_report"]':
             value: 'Feedback about a staff encounter'
+        - or
+        -
+          ':input[name="report_basic_amenity[radios]"]':
+            value: Art/mural/monument/sculpture
+        - or
+        -
+          ':input[name="report_what_needs_attention[radios]"]':
+            value: 'Non-urgent tree maintenance issue'
     weight: -43
     settings:
       comment: 'Resolution URL: <a href="[webform_submission:values:resolution_url]&report_ticket_id=[webform_submission:values:report_ticket_id]">[webform_submission:values:resolution_url]&report_ticket_id=[webform_submission:values:report_ticket_id]</a>'
@@ -1104,32 +1082,6 @@ handlers:
       custom_fields: "6355783758871: '[webform_submission:values:resolution_url]&report_ticket_id=[webform_submission:values:report_ticket_id]'"
       ticket_id_field: report_ticket_id
       ticket_form_id: '15142080018711'
-  update_zendesk_request_with_full_resolution_url_including_ticket:
-    id: zendesk_update_ticket
-    handler_id: update_zendesk_request_with_full_resolution_url_including_ticket
-    label: 'TEST: Update Zendesk request with full resolution URL including ticket ID'
-    notes: ''
-    status: true
-    conditions:
-      enabled:
-        ':input[name="support_agent_use_only[test_submission]"]':
-          checked: true
-        ':input[name="what_are_you_trying_to_report"]':
-          '!value': 'Feedback about a staff encounter'
-    weight: -42
-    settings:
-      comment: 'Resolution URL: <a href="[webform_submission:values:resolution_url]&report_ticket_id=[webform_submission:values:report_ticket_id]">[webform_submission:values:resolution_url]&report_ticket_id=[webform_submission:values:report_ticket_id]</a>'
-      comment_private: 1
-      tags: ''
-      priority: ''
-      status: ''
-      group_id: ''
-      assignee_id: ''
-      type: ''
-      collaborators: ''
-      custom_fields: "6355783758871: '[webform_submission:values:resolution_url]&report_ticket_id=[webform_submission:values:report_ticket_id]'"
-      ticket_id_field: report_ticket_id
-      ticket_form_id: '4990038807319'
   staff_issue_email:
     id: email
     handler_id: staff_issue_email
@@ -1142,7 +1094,7 @@ handlers:
           value: 'Feedback about a staff encounter'
         ':input[name="support_agent_use_only[test_submission]"]':
           unchecked: true
-    weight: -47
+    weight: -45
     settings:
       states:
         - completed
@@ -1160,6 +1112,48 @@ handlers:
       sender_mail: ''
       sender_name: ''
       subject: 'Parks Issue: Feedback about a staff encounter'
+      body: '<p>[webform_submission:values:computed_issue_description:html]</p>'
+      excluded_elements: {  }
+      ignore_access: false
+      exclude_empty: true
+      exclude_empty_checkbox: false
+      exclude_attachments: false
+      html: true
+      attachments: false
+      twig: false
+      theme_name: ''
+      parameters: {  }
+      debug: false
+  non_urgent_tree_issue_email:
+    id: email
+    handler_id: non_urgent_tree_issue_email
+    label: 'Non-Urgent Tree Issue (Email)'
+    notes: 'Sends an email to trees@portlandoregon.gov. Enabled if A) "Non-urgent tree maintenance issue" is selected, and B) Test Submission is NOT checked.'
+    status: true
+    conditions:
+      enabled:
+        ':input[name="report_what_needs_attention[radios]"]':
+          value: 'Non-urgent tree maintenance issue'
+        ':input[name="support_agent_use_only[test_submission]"]':
+          unchecked: true
+    weight: -46
+    settings:
+      states:
+        - completed
+      to_mail: trees@portlandoregon.gov
+      to_options: {  }
+      bcc_mail: ''
+      bcc_options: {  }
+      cc_mail: ''
+      cc_options: {  }
+      from_mail: noreply@portlandoregon.gov
+      from_options: {  }
+      from_name: _default
+      reply_to: ''
+      return_path: ''
+      sender_mail: ''
+      sender_name: ''
+      subject: _default
       body: '<p>[webform_submission:values:computed_issue_description:html]</p>'
       excluded_elements: {  }
       ignore_access: false
