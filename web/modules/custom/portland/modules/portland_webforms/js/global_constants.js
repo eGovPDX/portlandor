@@ -1,6 +1,8 @@
 if (typeof GlobalConstants === 'undefined') {
   window.GlobalConstants = class GlobalConstants {
     constructor() {
+      this.DEBUG = true;
+
       this.DEFAULTS = {
         LATITUDE: 45.54,
         LONGITUDE: -122.65,
@@ -29,7 +31,9 @@ if (typeof GlobalConstants === 'undefined') {
         MULTI_SELECT: 'multi_select'
       };
 
-      this.DEBUG = true;
+      this.REVGEOCODE_TYPE = {
+        INTERSECTS: 'intersects'
+      }
 
       // Leaflet configuration property objects; don't use uppercase for property names /////////////////////////////
 
@@ -82,6 +86,16 @@ if (typeof GlobalConstants === 'undefined') {
         shadowAnchor: this.DEFAULT_ICON_SHADOW_ANCHOR,
         popupAnchor: this.DEFAULT_ICON_POPUP_ANCHOR,
         className: "incident solved"
+      };
+
+      this.DEFAULT_ICON_SELECTED_LOCATION = {
+        iconUrl: "/modules/custom/portland/modules/portland_webforms/images/map_marker_default_selected.png",
+        iconSize: this.DEFAULT_ICON_SIZE,
+        shadowSize: this.DEFAULT_ICON_SHADOW_SIZE,
+        iconAnchor: this.DEFAULT_ICON_ANCHOR,
+        shadowAnchor: this.DEFAULT_ICON_SHADOW_ANCHOR,
+        popupAnchor: this.DEFAULT_ICON_POPUP_ANCHOR,
+        className: "selected-location"
       };
     }
   }

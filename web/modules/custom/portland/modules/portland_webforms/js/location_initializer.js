@@ -15,6 +15,8 @@ class LocationWidget {
     this.L = L;
     this.api = new GlobalApi(constants);
     this.initMap();
+    this.selectedLocation = null;
+    this.selectedMarker = null;
   }
 
   initMap() {
@@ -78,11 +80,11 @@ class LocationWidget {
 
         switch (layer.type) {
           case self.constants.LAYER_TYPE.ASSET:
-            self.debug(features.length + " assets found for layer "  + layer.name);
+            self.debug(features.length + " assets found for layer " + layer.name);
             break;
 
           case self.constants.LAYER_TYPE.INCIDENT:
-            self.debug(features.length + " incidents found for layer "  + layer.name);
+            self.debug(features.length + " incidents found for layer " + layer.name);
 
             var newLayer = L.geoJson(features, {
               coordsToLatLng: function (coords) {
@@ -102,17 +104,21 @@ class LocationWidget {
               },
               interactive: false
             });
+            newLayer.config = layer;
             newLayer.addTo(self.map);
             self.layers.push(newLayer);
-  
+
             break;
 
           case self.constants.LAYER_TYPE.BOUNDARY:
-            self.debug(features.length + " features found for layer "  + layer.name);
+            self.debug(features.length + " features found for layer " + layer.name);
             var boundaryLayer = self.L.geoJson(features, layer.boundaryProperties).addTo(self.map);
             if (boundaryLayer.municipality) {
               boundaryLayer.municipality = features[0].properties.CITYNAME;
             }
+            boundaryLayer.config = layer;
+            boundaryLayer.addTo(self.map);
+            self.layers.push(boundaryLayer);
             break;
 
           default:
@@ -169,37 +175,103 @@ class LocationWidget {
     // Call the reverseGeocode function and process the result
     try {
       const result = await this.api.reverseGeocode(latlng, this.settings.apiKey);
-      this.processGeocodeResult(result, latlng); // Function to handle the API response
+
+      this.selectedLocation = this.processGeocodeResult(result, latlng);
+
+      if (!this.selectedLocation) {
+        // display error message
+        throw new Error("Location could not be determined.");
+      }
+
+      // perform layer actions
+
+      // check if boundary and boundary enforced
+      var validBoundary = this.checkBoundary(location);
+
+      // any regions clicked? capture region ID?
+
+      // check all layers. selection allowed? perform actions for each layer
+
+      // set marker
+      if (validBoundary) {
+        this.setMarker();
+      }
+
+
     } catch (error) {
       console.error("Reverse geocode failed:", error);
+      // TODO: display error message to user in modal dialog
     } finally {
       this.hideLoader();
     }
+  }
+
+  setMarker(loation) {
+    // remove previous location marker
+    if (this.selectedMarker) {
+      this.map.removeLayer(this.selectedMarker);
+      this.selectedMarker = null;
+    }
+
+    var draggable = true;
+
+    // marker icon: this.constants.DEFAULT_ICON_SELECTED_LOCATION
+    this.selectedMarker = this.L.marker([this.selectedLocation.lat, this.selectedLocation.lng], { 
+      icon: this.L.icon(this.constants.DEFAULT_ICON_SELECTED_LOCATION), 
+      draggable: draggable, 
+      riseOnHover: true, 
+      iconSize: this.constants.DEFAULT_ICON_SIZE 
+    }).addTo(this.map);
+
+    // if address marker is moved, we want to capture the new coordinates
+    // locationMarker.off();
+    // locationMarker.on('dragend', function (e) {
+    //   var latlng = locationMarker.getLatLng();
+    //   setLatLngHiddenFields(latlng.lat, latlng.lng);
+    //   reverseGeolocate(latlng);
+    // });
+
+  }
+
+  checkBoundary(location) {
+
+    for (var i = 0; i < this.layers.length; i++) {
+      if (this.layers[i].config.type == this.constants.LAYER_TYPE.BOUNDARY) {
+        this.debug(this.layers[i].config.name + " is a boundary layer.");
+      }
+    }
+    return true;
   }
 
   processGeocodeResult(result, latlng) {
     if (result && result.describe) {
       result.latlng = latlng;
       result.xy = L.Projection.SphericalMercator.project(latlng);
-      var location = GlobalUtilities.locationFactory("intersects", result);
+      var location = GlobalUtilities.locationFactory(this.constants.REVGEOCODE_TYPE.INTERSECTS, result);
       this.debug("Location found: " + location.displayAddress);
       this.debug("Lat/Lng: " + location.lat + "," + location.lng);
+      return location;
     } else {
       console.error("No data found in reverse geocode result.");
+      return null;
     }
   }
 
 
   resetMapClick() {
     // rests clicked marker and location fields to prepare for a new map click
+
+    // reset location 
+    this.selectedLocation = null;
+
   }
 
   showLoader() {
-    this.$('.loader-container').css("display","flex");
+    this.$('.loader-container').css("display", "flex");
   }
 
   hideLoader() {
-    this.$('.loader-container').css("display","none");
+    this.$('.loader-container').css("display", "none");
   }
 
   handleSelfLocateButtonClick() {
