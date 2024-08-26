@@ -134,9 +134,8 @@ elements: |-
         visible:
           ':input[name="report_issue_category[select]"]':
             value: 'Trail or facility hazard'
-  incident_details:
-    '#type': webform_section
-    '#title': 'Incident details'
+  container_continue:
+    '#type': container
     '#states':
       visible:
         - ':input[name="report_issue_type_crime[select]"]':
@@ -153,232 +152,175 @@ elements: |-
         - or
         - ':input[name="report_issue_type_trail_facility_hazard[select]"]':
             filled: true
-    report_incident_date_and_time:
-      '#type': datetime
-      '#title': 'Incident date and time'
-      '#states':
-        required:
-          - ':input[name="report_issue_type_crime[select]"]':
-              filled: true
-          - or
-          - ':input[name="report_issue_type_environmental_hazard[select]"]':
-              filled: true
-          - or
-          - ':input[name="report_issue_type_medical[select]"]':
-              filled: true
-          - or
-          - ':input[name="report_issue_type_violations_safety[select]"]':
-              filled: true
-          - or
-          - ':input[name="report_issue_type_trail_facility_hazard[select]"]':
-              filled: true
-      '#date_time_step': '60'
-    report_description:
-      '#type': textarea
-      '#title': 'Incident narrative / damage details'
-      '#description': '<ul><li>What happened and where?&nbsp;</li><li>Who was involved/injured?&nbsp;</li><li>Who witnessed it?</li><li>Suspect information, if any?</li><li>Estimated repair costs, if any?</li></ul>'
-      '#description_display': before
-      '#required': true
-      '#counter_type': character
-      '#counter_maximum': 2000
-    report_photo:
-      '#type': webform_image_file
-      '#title': Photo
-      '#description': '<p>If appropriate, please include a photo of the issue you are reporting.</p>'
-      '#description_display': before
-      '#file_preview': name
-      '#max_filesize': '30'
-      '#file_extensions': 'jpg jpeg png'
-      '#file_name': 'report_[webform_submission:sid]'
-      '#sanitize': true
-      '#max_resolution': 1280x1280
-      '#attachment_image_style': webform_report_uploaded_image
-  location:
-    '#type': webform_section
-    '#title': Location
-    '#states':
-      visible:
-        - ':input[name="report_issue_type_crime[select]"]':
-            filled: true
         - or
-        - ':input[name="report_issue_type_environmental_hazard[select]"]':
-            filled: true
-        - or
-        - ':input[name="report_issue_type_medical[select]"]':
-            filled: true
-        - or
-        - ':input[name="report_issue_type_violations_safety[select]"]':
-            filled: true
-        - or
-        - ':input[name="report_issue_type_trail_facility_hazard[select]"]':
-            filled: true
-    report_location_type:
-      '#type': radios
-      '#title': 'Where is the issue located?'
-      '#prepopulate': true
-      '#options':
-        'Park or natural area': 'Park or natural area'
-        'Community center': 'Community center'
-        'Community garden': 'Community garden'
-      '#default_value': 'Park or natural area'
-    report_location_community_center:
-      '#type': select
-      '#title': 'Community Center'
-      '#prepopulate': true
-      '#options':
-        'Community Music Center': 'Community Music Center'
-        'Charles Jordan Community Center': 'Charles Jordan Community Center'
-        'East Portland Community Center': 'East Portland Community Center'
-        'Fulton Park Community Center': 'Fulton Park Community Center'
-        'Interstate Firehouse Cultural Center': 'Interstate Firehouse Cultural Center'
-        'Matt Dishman Community Center': 'Matt Dishman Community Center'
-        'Montavilla Community Center': 'Montavilla Community Center'
-        'Mt. Scott Community Center': 'Mt. Scott Community Center'
-        'Multnomah Arts Center': 'Multnomah Arts Center'
-        'Peninsula Park Community Center': 'Peninsula Park Community Center'
-        'Sellwood Community Center': 'Sellwood Community Center'
-        'Southwest Community Center': 'Southwest Community Center'
-        'St. Johns Community Center': 'St. Johns Community Center'
-        'Woodstock Community Center': 'Woodstock Community Center'
-      '#required': true
-      '#states':
-        visible:
-          ':input[name="report_location_type"]':
-            value: 'Community center'
-    report_location_community_garden:
-      '#type': textfield
-      '#title': 'Community Garden Name/Location'
-      '#required': true
-      '#states':
-        visible:
-          ':input[name="report_location_type"]':
-            value: 'Community garden'
-    report_location:
-      '#type': portland_location_picker
-      '#title': 'Location of Issue'
-      '#prepopulate': true
-      '#states':
-        visible:
-          ':input[name="report_location_type"]':
-            value: 'Park or natural area'
-      '#location_map__description': 'Please place the marker as close to the incident or issue as possible. You may click or drag it to any location on the map.'
-      '#place_name__title': 'Park Name'
-      '#location_details__access': false
-      '#location_details__help': 'Please provide information to help us find this site.'
-      '#place_name__description_display': invisible
-      '#require_boundary': false
-      '#display_boundary': false
-      '#primary_layer_behavior': informational
-      '#primary_layer_type': region-hidden
-      '#primary_layer_source': 'https://www.portlandmaps.com/arcgis/rest/services/Public/Parks_Administrative_Boundaries/MapServer/1/query?where=1%3D1&f=geojson'
-      '#region_id_property_name': Name
-    computed_location_address:
-      '#type': webform_computed_twig
-      '#title': 'Computed Location Address'
-      '#display_on': none
-      '#mode': text
-      '#template': |-
-        {% if data.report_location_type == "Park or natural area" %}
-          {{ data.report_location.location_address }}
-        {% elseif data.report_location_type == "Community center" %}
-          {{ data.report_location_community_center }}
-        {% else %}
-          {{ data.report_location_community_garden }}
-        {% endif %}
-      '#ajax': true
-  contact_information:
-    '#type': webform_section
-    '#title': 'Contact information'
-    '#states':
-      visible:
-        - ':input[name="report_issue_type_crime[select]"]':
-            filled: true
-        - or
-        - ':input[name="report_issue_type_environmental_hazard[select]"]':
-            filled: true
-        - or
-        - ':input[name="report_issue_type_medical[select]"]':
-            filled: true
-        - or
-        - ':input[name="report_issue_type_violations_safety[select]"]':
-            filled: true
-        - or
-        - ':input[name="report_issue_type_trail_facility_hazard[select]"]':
-            filled: true
-    contact_name:
-      '#type': textfield
-      '#title': Name
-      '#required': true
-    contact_phone:
-      '#type': textfield
-      '#title': Phone
-      '#input_mask': '(999) 999-9999'
-      '#required': true
-    contact_email:
-      '#type': textfield
-      '#title': Email
-      '#description': '<p>We will only use your email address to respond to your report if needed.</p>'
-      '#pattern': '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
-      '#pattern_error': 'Please enter a correctly formatted email address, such as myname@example.com.'
-  additional_details:
-    '#type': webform_section
-    '#title': 'Additional Details'
-    '#states':
-      visible:
-        - ':input[name="report_issue_type_crime[select]"]':
-            filled: true
-        - or
-        - ':input[name="report_issue_type_environmental_hazard[select]"]':
-            filled: true
-        - or
-        - ':input[name="report_issue_type_medical[select]"]':
-            filled: true
-        - or
-        - ':input[name="report_issue_type_violations_safety[select]"]':
-            filled: true
-        - or
-        - ':input[name="report_issue_type_trail_facility_hazard[select]"]':
-            filled: true
-    details_other_steps:
-      '#type': checkboxes
-      '#title': 'What other steps have you taken?'
-      '#options':
-        'I notified my supervisor. THIS IS REQUIRED!': 'I notified my supervisor. THIS IS REQUIRED!'
-        'I placed a work order for the damage': 'I placed a work order for the damage'
-        'I called 911, but no one responded': 'I called 911, but no one responded'
-        'I called 911 and police or fire responded': 'I called 911 and police or fire responded'
-        'I submitted an online police report': 'I submitted an online police report'
-    details_police_info:
-      '#type': textfield
-      '#title': 'PPB Case Number / officer information (if 911 responded)'
-    details_file_upload:
-      '#type': webform_document_file
-      '#title': 'Form upload(s)'
-      '#multiple': 4
-      '#file_preview': name
-      '#file_extensions': pdf
-    markup_pre_submit:
-      '#type': webform_markup
-      '#markup': '<div class="alert alert--info next-steps"><h2>Please Note</h2><ul><li>For guest accidents and employee injuries, additional forms are needed. Please refer to the Red Book.&nbsp;</li><li>For criminal activity, remember to also fill out an online police report.</li></ul><p><strong>Except for specific health/injury information for employees or visitors, all submissions are considered public record.</strong> If you have questions, please reach out to the safety team or a supervisor by phone before submitting.</p></div>'
-  actions:
-    '#type': webform_actions
-    '#title': 'Submit button(s)'
-    '#states':
-      visible:
-        - ':input[name="report_issue_type_crime[select]"]':
-            filled: true
-        - or
-        - ':input[name="report_issue_type_environmental_hazard[select]"]':
-            filled: true
-        - or
-        - ':input[name="report_issue_type_medical[select]"]':
-            filled: true
-        - or
-        - ':input[name="report_issue_type_violations_safety[select]"]':
-            filled: true
-        - or
-        - ':input[name="report_issue_type_trail_facility_hazard[select]"]':
-            filled: true
+        - ':input[name="report_issue_category[select]"]':
+            value: '_other_'
+    incident_details:
+      '#type': webform_section
+      '#title': 'Incident details'
+      report_incident_date_and_time:
+        '#type': datetime
+        '#title': 'Incident date and time'
+        '#states':
+          required:
+            - ':input[name="report_issue_type_crime[select]"]':
+                filled: true
+            - or
+            - ':input[name="report_issue_type_environmental_hazard[select]"]':
+                filled: true
+            - or
+            - ':input[name="report_issue_type_medical[select]"]':
+                filled: true
+            - or
+            - ':input[name="report_issue_type_violations_safety[select]"]':
+                filled: true
+            - or
+            - ':input[name="report_issue_type_trail_facility_hazard[select]"]':
+                filled: true
+        '#date_time_step': '60'
+      report_description:
+        '#type': textarea
+        '#title': 'Incident narrative / damage details'
+        '#description': '<ul><li>What happened and where?&nbsp;</li><li>Who was involved/injured?&nbsp;</li><li>Who witnessed it?</li><li>Suspect information, if any?</li><li>Estimated repair costs, if any?</li></ul>'
+        '#description_display': before
+        '#required': true
+        '#counter_type': character
+        '#counter_maximum': 2000
+      report_photo:
+        '#type': webform_image_file
+        '#title': Photo
+        '#description': '<p>If appropriate, please include a photo of the issue you are reporting.</p>'
+        '#description_display': before
+        '#file_preview': name
+        '#max_filesize': '30'
+        '#file_extensions': 'jpg jpeg png'
+        '#file_name': 'report_[webform_submission:sid]'
+        '#sanitize': true
+        '#max_resolution': 1280x1280
+        '#attachment_image_style': webform_report_uploaded_image
+    location:
+      '#type': webform_section
+      '#title': Location
+      report_location_type:
+        '#type': radios
+        '#title': 'Where is the issue located?'
+        '#prepopulate': true
+        '#options':
+          'Park or natural area': 'Park or natural area'
+          'Community center': 'Community center'
+          'Community garden': 'Community garden'
+          'Office or maintenance facility': 'Office or maintenance facility'
+        '#default_value': 'Park or natural area'
+      report_location_community_center:
+        '#type': select
+        '#title': 'Community Center'
+        '#prepopulate': true
+        '#options':
+          'Community Music Center': 'Community Music Center'
+          'Charles Jordan Community Center': 'Charles Jordan Community Center'
+          'East Portland Community Center': 'East Portland Community Center'
+          'Fulton Park Community Center': 'Fulton Park Community Center'
+          'Interstate Firehouse Cultural Center': 'Interstate Firehouse Cultural Center'
+          'Matt Dishman Community Center': 'Matt Dishman Community Center'
+          'Montavilla Community Center': 'Montavilla Community Center'
+          'Mt. Scott Community Center': 'Mt. Scott Community Center'
+          'Multnomah Arts Center': 'Multnomah Arts Center'
+          'Peninsula Park Community Center': 'Peninsula Park Community Center'
+          'Sellwood Community Center': 'Sellwood Community Center'
+          'Southwest Community Center': 'Southwest Community Center'
+          'St. Johns Community Center': 'St. Johns Community Center'
+          'Woodstock Community Center': 'Woodstock Community Center'
+        '#required': true
+        '#states':
+          visible:
+            ':input[name="report_location_type"]':
+              value: 'Community center'
+      report_location_community_garden:
+        '#type': textfield
+        '#title': 'Community Garden Name/Location'
+        '#required': true
+        '#states':
+          visible:
+            ':input[name="report_location_type"]':
+              value: 'Community garden'
+      report_location:
+        '#type': portland_location_picker
+        '#title': 'Location of Issue'
+        '#prepopulate': true
+        '#states':
+          visible:
+            ':input[name="report_location_type"]':
+              value: 'Park or natural area'
+        '#location_map__description': 'Please place the marker as close to the incident or issue as possible. You may click or drag it to any location on the map.'
+        '#place_name__title': 'Park Name'
+        '#location_details__access': false
+        '#location_details__help': 'Please provide information to help us find this site.'
+        '#place_name__description_display': invisible
+        '#require_boundary': false
+        '#display_boundary': false
+        '#primary_layer_behavior': informational
+        '#primary_layer_type': region-hidden
+        '#primary_layer_source': 'https://www.portlandmaps.com/arcgis/rest/services/Public/Parks_Administrative_Boundaries/MapServer/1/query?where=1%3D1&f=geojson'
+        '#region_id_property_name': Name
+      computed_location_address:
+        '#type': webform_computed_twig
+        '#title': 'Computed Location Address'
+        '#display_on': none
+        '#mode': text
+        '#template': |-
+          {% if data.report_location_type == "Park or natural area" %}
+            {{ data.report_location.location_address }}
+          {% elseif data.report_location_type == "Community center" %}
+            {{ data.report_location_community_center }}
+          {% else %}
+            {{ data.report_location_community_garden }}
+          {% endif %}
+        '#ajax': true
+    contact_information:
+      '#type': webform_section
+      '#title': 'Contact information'
+      contact_name:
+        '#type': textfield
+        '#title': Name
+        '#required': true
+      contact_phone:
+        '#type': textfield
+        '#title': Phone
+        '#input_mask': '(999) 999-9999'
+        '#required': true
+      contact_email:
+        '#type': textfield
+        '#title': Email
+        '#description': '<p>We will only use your email address to respond to your report if needed.</p>'
+        '#pattern': '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        '#pattern_error': 'Please enter a correctly formatted email address, such as myname@example.com.'
+    additional_details:
+      '#type': webform_section
+      '#title': 'Additional Details'
+      details_other_steps:
+        '#type': checkboxes
+        '#title': 'What other steps have you taken?'
+        '#options':
+          'I notified my supervisor. THIS IS REQUIRED!': 'I notified my supervisor. THIS IS REQUIRED!'
+          'I placed a work order for the damage': 'I placed a work order for the damage'
+          'I called 911, but no one responded': 'I called 911, but no one responded'
+          'I called 911 and police or fire responded': 'I called 911 and police or fire responded'
+          'I submitted an online police report': 'I submitted an online police report'
+      details_police_info:
+        '#type': textfield
+        '#title': 'PPB Case Number / officer information (if 911 responded)'
+      details_file_upload:
+        '#type': webform_document_file
+        '#title': 'Form upload(s)'
+        '#multiple': 4
+        '#file_preview': name
+        '#file_extensions': pdf
+      markup_pre_submit:
+        '#type': webform_markup
+        '#markup': '<div class="alert alert--info next-steps"><h2>Please Note</h2><ul><li>For guest accidents and employee injuries, additional forms are needed. Please refer to the Red Book.&nbsp;</li><li>For criminal activity, remember to also fill out an online police report.</li></ul><p><strong>Except for specific health/injury information for employees or visitors, all submissions are considered public record.</strong> If you have questions, please reach out to the safety team or a supervisor by phone before submitting.</p></div>'
+    actions:
+      '#type': webform_actions
+      '#title': 'Submit button(s)'
   request_ticket_id:
     '#type': hidden
     '#title': 'Zendesk Ticket ID'
@@ -479,7 +421,7 @@ elements: |-
     '#mode': text
     '#template': |-
       {% if data.report_injury == "Yes, I was injured and I called my supervisor" %}
-      injury_supervisor_contacted 
+      injury_supervisor_contacted
       {% endif %}
     '#whitespace': trim
     '#ajax': true
