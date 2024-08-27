@@ -14,7 +14,7 @@
       var panel_id_array = accordion.find('div.aria-accordion__panel').map(function () { return jQuery(this).attr("id") });
       var aria_controls_string = Array.prototype.join.call(panel_id_array, ' ');
 
-      accordion.prepend('<p class="toggle-accordian-text text-end d-block mb-1"><a href="javascript:void(0)" class="toggle-accordion" aria-expanded="false" aria-controls="' + aria_controls_string + '"></a></p>');
+      accordion.prepend('<p class="toggle-accordion-text text-end d-block mb-1"><a href="javascript:void(0)" class="toggle-accordion" aria-expanded="false" aria-controls="' + aria_controls_string + '"></a></p>');
 
       accordion.delegate(
         'a.toggle-accordion',
