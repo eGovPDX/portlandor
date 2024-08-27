@@ -57,7 +57,7 @@ class LocationWidget {
       type: this.constants.LAYER_TYPE.BOUNDARY,
       behavior: this.constants.LAYER_BEHAVIOR.INFORMATIONAL,
       visible: self.settings.primary_boundary.visible === false ? false : true,
-      enforce: self.settings.primary_boundary.enforce === false ? false : true,
+      boundary_enforce: self.settings.primary_boundary.boundary_enforce === false ? false : true,
       boundaryProperties: self.settings.primary_boundary.visible === false ? this.constants.PRIMARY_BOUNDARY_INVISIBLE_PROPERTIES : this.constants.PRIMARY_BOUNDARY_VISIBLE_PROPERTIES
     });
 
@@ -200,8 +200,8 @@ class LocationWidget {
           case "boundary":
             // what happens when a boundary layer is clicked? call isLocationValid()
             // - check whether click is within boundary:
-            //   - if not within boundary and enforce==true, then return false.
-            //   - if within boundary, return region ID from parameter defined in capture_property_path
+            //   - if not within boundary and boundary_enforce==true, then return false.
+            //   - if within boundary, return region ID from parameter defined in feature_property_path
             var valid = this.isLocationValid(this.layers[i], this.selectedLocation);
             //var layerResult = this.isWithinBoundary(this.layers[i], this.selectedLocation);
             break;
@@ -274,13 +274,17 @@ class LocationWidget {
 
   // Handles when a boundary layer is clicked.
   // - check whether click is within boundary:
-  //   - if not within boundary and enforce==true, then return false.
-  //   - if within boundary, return region ID from parameter defined in capture_property_path
+  //   - if not within boundary and boundary_enforce==true, then return false.
+  //   - if within boundary, return region ID from parameter defined in feature_property_path
   isLocationValid(layer, location) {
     var latlng = L.latLng(location.lat, location.lng);
     var isWithin = leafletPip.pointInLayer(latlng, layer);
-    if (isWithin.length < 1 && layer.config.enforce) return false;
+    if (isWithin.length < 1 && layer.config.boundary_enforce) return false;
     // valid click; get and return region ID. need access to result json (in layer.json).
+    if (layer.config.feature_property_path && layer.config.property_destination_field) {
+      var property = GlobalUtilities.getPropertyByPath(layer.json, layer.config.feature_property_path)
+      if (property) return property;
+    }
     return true;
   }
 

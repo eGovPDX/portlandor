@@ -37,7 +37,7 @@ Defines properties of the map's default primary boundary.
   - **Usage**: Determines whether the default layer is visible.
   - **Default**: true
 
-- **`enforce`**: *(true/false)*
+- **`boundary_enforce`**: *(true/false)*
   - **Usage**: Determines whether the default layer is enforced as a geofencing boundary.
   - **Default**: true
 
@@ -46,7 +46,7 @@ Defines properties of the map's default primary boundary.
   - **Example**: `"https://www.portlandmaps.com/arcgis/rest/services/Public/Boundaries/MapServer/0/query"`
 
 - **`boundary_message`**: *(string)*
-  - **Usage**: The message that's displayed if the user clicks outside the boundary if `enforce` is true.
+  - **Usage**: The message that's displayed if the user clicks outside the boundary if `boundary_enforce` is true.
   - **Default**: You've selected a location outside the Portland city limits. Please try again.
 
 - **`border_style`**: *(string)*
@@ -78,12 +78,12 @@ An array of layer definitions, each defining a specific data layer to be include
   - multi_select - multiple assets or incidents may be selected. NOT IMPLEMENTED
   - **Default**: informational
 
-- **`capture_property_path`**: *(string)*  
+- **`feature_property_path`**: *(string)*  
   The path to the property of the asset/incident/region that is to be captured from the JSON returned by the API call. Uses standard javascript notation for arrays and objects.
   - **Example**: features[0].details.asset_id
 
-- **`capture_property_destination_field`**: *(string)*  
-  The ID of the webform field that will be used to store the value represented by capture_property_path. The default is location_region_id, which is a built-in sub-element, but any webform field with a unique ID can be used.
+- **`property_destination_field`**: *(string)*  
+  The ID of the webform field that will be used to store the value represented by feature_property_path. The default is location_region_id, which is a built-in sub-element, but any webform field with a unique ID can be used.
   - **Default**: location_region_id
 
 - **`feature_zoom`**: *(integer)*  
@@ -96,12 +96,12 @@ An array of layer definitions, each defining a specific data layer to be include
 - **`boundary_style`**: *(true/false)*  
   - If boundary, specifies the boundary style.
 
-- **`boundary_enforced`**: *(true/false)*  
+- **`boundary_enforce`**: *(true/false)*  
   If boundary, specifies whether to allow location selections outside the boundary.
   - **Default**: true
 
 - **`boundary_message`**: *(true/false)*  
-  The error message displayed when a click is outside the boundary and enforce_boundary is true.
+  The error message displayed when a click is outside the boundary and boundary_enforce is true.
   - **Default**: You've selected a location outside our service area. Please try again.
 
 - **`feature_marker`**: *(string)*  
@@ -207,7 +207,7 @@ These are hidden fields used to store data from API queries and make it availabl
   - **Example**: TaxlotID:R123456,ParkID:249,TrailID:449977,TrailName:I-205 Bike Path
 
 - **`location_region_id`**:  
-  A comma-delimited list of region IDs in which the location falls. There may be multiple layers/regions on the map that have their own ID, so labels and values are colon-delimited like location attributes. The webform field into which the region ID is stored can be specified in the layer configuration property capture_property_destination_field.
+  A comma-delimited list of region IDs in which the location falls. There may be multiple layers/regions on the map that have their own ID, so labels and values are colon-delimited like location attributes. The webform field into which the region ID is stored can be specified in the layer configuration property property_destination_field.
   - **Example**: NaturalInventory:Forest Park,ServiceZones:Washington Park Service Zone,NatureZones:West
 
 - **`location_asset_id`**:  

@@ -30,6 +30,27 @@ class GlobalUtilities {
         }
         return location;
     }
-    
-    
+
+    static getPropertyByPath(jsonObject, path) {
+        const keys = path.split('.');
+
+        return keys.reduce((obj, key) => {
+            if (!obj) return undefined;
+
+            // Check if the key includes an array index, like 'features[0]'
+            const arrayIndexMatch = key.match(/(.+)\[(\d+)\]$/);
+
+            if (arrayIndexMatch) {
+                const arrayKey = arrayIndexMatch[1];
+                const index = arrayIndexMatch[2];
+                return obj[arrayKey] && obj[arrayKey][index] !== undefined ? obj[arrayKey][index] : undefined;
+            } else {
+                return obj[key] !== undefined ? obj[key] : undefined;
+            }
+        }, jsonObject);
+    }
+
+
+
+
 }
