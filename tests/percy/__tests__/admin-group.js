@@ -84,9 +84,9 @@ describe('SuperAdmin user test', () => {
         await page.waitForNavigation();
 
         text_content = await page.evaluate(() => document.querySelector('.page-title').textContent);
-        expect(text_content).toEqual(expect.stringContaining('Add Bureau/office: Group membership'));
+        expect(text_content).toEqual(expect.stringContaining('Group membership'));
         await page.type('#edit-entity-id-0-target-id', 'Ally Admin (62)');
-        selector = '#edit-group-roles-bureau-office-admin';
+        selector = '#edit-group-roles-base-group-admin';
         await page.evaluate((selector) => document.querySelector(selector).click(), selector);
         // Submit form
         await page.keyboard.press('Enter');
