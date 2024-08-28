@@ -55,10 +55,11 @@ describe('SuperAdmin user test', () => {
         }
 
         // Create the test group
-        await page.goto(`${HOME_PAGE}/group/add/bureau_office`);
+        await page.goto(`${HOME_PAGE}/group/add/base_group`);
         text_content = await page.evaluate(() => document.querySelector('.page-title').textContent);
-        expect(text_content).toEqual(expect.stringContaining('Add Bureau/office'));
+        expect(text_content).toEqual(expect.stringContaining('Add Base group'));
         await page.type('#edit-label-0-value', 'Percy Test Group');
+        await page.select("#edit-field-group-subtype", "850"); // Bureau/office
         await page.type('#edit-field-official-organization-name-0-value', 'Official name of Percy test group');
         await page.type('#edit-field-summary-0-value', 'This is a test summary for the Percy Test group');
         // Must expand the admin fields group in order to input Group Path
