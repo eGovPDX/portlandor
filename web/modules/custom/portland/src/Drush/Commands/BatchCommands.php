@@ -437,6 +437,8 @@ final class BatchCommands extends DrushCommands
         echo "+";
         $count = 0;
       }
+      unset($plugin);
+      unset($entityBundle);
     }
 
     // Update all usage of the original group
@@ -528,6 +530,10 @@ final class BatchCommands extends DrushCommands
                   $source_entity->save();
                   echo ".";
                 }
+                unset($orig_group_uuid);
+                unset($group_to_create_uuid);
+                unset($text_to_be_replaced);
+                unset($replacement_text);
                 break;
             }
           }
@@ -565,6 +571,7 @@ final class BatchCommands extends DrushCommands
                 unset($parent_groups);
                 break;
             }
+            unset($field_name);
           }
           unset($source_group);
         }
