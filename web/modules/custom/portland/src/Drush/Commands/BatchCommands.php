@@ -576,6 +576,7 @@ final class BatchCommands extends DrushCommands
           unset($source_group);
         }
       }
+      gc_collect_cycles();
     }
     echo PHP_EOL . "Updated usage for $group_type_name: $group_name" . PHP_EOL;
   }
