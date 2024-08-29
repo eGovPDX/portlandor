@@ -440,6 +440,7 @@ final class BatchCommands extends DrushCommands
       unset($plugin);
       unset($entityBundle);
     }
+    unset($group_contents);
 
     // Update all usage of the original group
     /*
@@ -579,5 +580,6 @@ final class BatchCommands extends DrushCommands
       gc_collect_cycles();
     }
     echo PHP_EOL . "Updated usage for $group_type_name: $group_name" . PHP_EOL;
+    unset($usage_list);
   }
 }
