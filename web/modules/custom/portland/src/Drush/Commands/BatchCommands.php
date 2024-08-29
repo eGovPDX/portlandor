@@ -431,7 +431,7 @@ final class BatchCommands extends DrushCommands
       // Add content/member to the new group
       $group_to_create_id = $group_to_create->id();
       $group_contents = $group->getContent();
-      echo "Number of content to migrate: " . count($group_contents) . PHP_EOL;
+      echo "Content to migrate: " . count($group_contents) . PHP_EOL;
       $count = 0;
       foreach ($group_contents as $group_content) {
         $group_content->gid->target_id = $group_to_create_id;
@@ -460,6 +460,7 @@ final class BatchCommands extends DrushCommands
         unset($entityBundle);
       }
       unset($group_contents);
+      echo PHP_EOL . "Migrated content for $group_type_name: $group_name" . PHP_EOL;
     }
 
     //////////////////////////////////////////////
@@ -491,9 +492,9 @@ final class BatchCommands extends DrushCommands
 
       $usage_service = \Drupal::service('entity_usage.usage');
       $usage_list = $usage_service->listSources($group);
-      echo "Number of usages in groups: " . count($usage_list["group"]) . PHP_EOL;
-      echo "Number of usages in nodes: " . count($usage_list["node"]) . PHP_EOL;
-      echo "Number of usages in media: " . count($usage_list["media"]) . PHP_EOL;
+      if(array_key_exists("group", $usage_list)) echo "Usages in groups: " . count($usage_list["group"]) . PHP_EOL;
+      if(array_key_exists("node", $usage_list)) echo "Usages in nodes: " . count($usage_list["node"]) . PHP_EOL;
+      if(array_key_exists("media", $usage_list)) echo "Usages in media: " . count($usage_list["media"]) . PHP_EOL;
 
       // Three source types: [group, node, media]
       foreach ($usage_list as $source_type => $usage_list_by_type) {
