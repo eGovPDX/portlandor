@@ -65,8 +65,8 @@ class CouncilVotesFormatter extends FormatterBase {
       // create an array of <li> elements for each council member's last name
       $voter_list = array_map(
         fn ($m) =>
-          $m->field_name[0]->value
-            ? '<li>' . end(explode(' ', $m->field_name[0]->value)) . '</li>'
+          ($m->field_abbreviated_name[0]->value ?? $m->field_name[0]->value)
+            ? '<li>' . ($m->field_abbreviated_name[0]->value ?? $m->field_name[0]->value) . '</li>'
             : '',
         $voters);
       // create an accessible list tree of voters
