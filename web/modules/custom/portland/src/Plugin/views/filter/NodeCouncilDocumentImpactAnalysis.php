@@ -45,7 +45,7 @@ class NodeCouncilDocumentImpactAnalysis extends TaxonomyIndexTid implements Cont
   }
 
   /**
-   * Limit the operators available from the parent class the to only those which make sense for this filter.
+   * Limit the operators available from the parent class to only those which make sense for this filter.
    */
   public function operators() {
     $operators = [
