@@ -71,7 +71,7 @@ elements: |-
         'Trail or facility hazard': 'Trail or facility hazard'
       '#required': true
     report_issue_type_crime:
-      '#type': webform_select_other
+      '#type': select
       '#title': 'What type of crime?'
       '#options':
         Arson: Arson
@@ -82,24 +82,26 @@ elements: |-
         'Physical assault': 'Physical assault'
         Theft: Theft
         Trespassing: Trespassing
+        Other: Other
       '#required': true
       '#states':
         visible:
           ':input[name="report_issue_category"]':
             value: 'Crime related'
     report_issue_type_environmental_hazard:
-      '#type': webform_select_other
+      '#type': select
       '#title': 'What type of environmental/infrastructure hazard?'
       '#options':
         Dumping/trash: Dumping/trash
         'Ecological damage': 'Ecological damage'
+        Other: Other
       '#required': true
       '#states':
         visible:
           ':input[name="report_issue_category"]':
             value: 'Environmental/infrastructure hazard'
     report_issue_type_medical:
-      '#type': webform_select_other
+      '#type': select
       '#title': 'What type of medical event/first aid issue?'
       '#options':
         'Initial care provided': 'Initial care provided'
@@ -107,13 +109,14 @@ elements: |-
         'Mental health crisis': 'Mental health crisis'
         'Wellness check': 'Wellness check'
         'Wound care': 'Wound care'
+        Other: Other
       '#required': true
       '#states':
         visible:
           ':input[name="report_issue_category"]':
             value: 'Medical event/first aid'
     report_issue_type_violations_safety:
-      '#type': webform_select_other
+      '#type': select
       '#title': 'What type of park violation or safety issue?'
       '#options':
         Alcohol/smoking: Alcohol/smoking
@@ -127,16 +130,18 @@ elements: |-
         'Vehicle damage - public': 'Vehicle damage - public'
         'Verbal threats or harassment': 'Verbal threats or harassment'
         'Other Park Rule (Title 20) Violation': 'Other Park Rule (Title 20) Violation'
+        Other: Other
       '#required': true
       '#states':
         visible:
           ':input[name="report_issue_category"]':
             value: 'Park violation or safety issue'
     report_issue_type_trail_facility_hazard:
-      '#type': webform_select_other
+      '#type': select
       '#title': 'What type of trail/facility hazard?'
       '#options':
         'Trail Maintenance': 'Trail Maintenance'
+        Other: Other
       '#required': true
       '#states':
         visible:
@@ -146,19 +151,19 @@ elements: |-
     '#type': container
     '#states':
       visible:
-        - ':input[name="report_issue_type_crime[select]"]':
+        - ':input[name="report_issue_type_crime"]':
             filled: true
         - or
-        - ':input[name="report_issue_type_environmental_hazard[select]"]':
+        - ':input[name="report_issue_type_environmental_hazard"]':
             filled: true
         - or
-        - ':input[name="report_issue_type_medical[select]"]':
+        - ':input[name="report_issue_type_medical"]':
             filled: true
         - or
-        - ':input[name="report_issue_type_violations_safety[select]"]':
+        - ':input[name="report_issue_type_violations_safety"]':
             filled: true
         - or
-        - ':input[name="report_issue_type_trail_facility_hazard[select]"]':
+        - ':input[name="report_issue_type_trail_facility_hazard"]':
             filled: true
     incident_details:
       '#type': webform_section
@@ -168,19 +173,19 @@ elements: |-
         '#title': 'Incident date and time'
         '#states':
           required:
-            - ':input[name="report_issue_type_crime[select]"]':
+            - ':input[name="report_issue_type_crime"]':
                 filled: true
             - or
-            - ':input[name="report_issue_type_environmental_hazard[select]"]':
+            - ':input[name="report_issue_type_environmental_hazard"]':
                 filled: true
             - or
-            - ':input[name="report_issue_type_medical[select]"]':
+            - ':input[name="report_issue_type_medical"]':
                 filled: true
             - or
-            - ':input[name="report_issue_type_violations_safety[select]"]':
+            - ':input[name="report_issue_type_violations_safety"]':
                 filled: true
             - or
-            - ':input[name="report_issue_type_trail_facility_hazard[select]"]':
+            - ':input[name="report_issue_type_trail_facility_hazard"]':
                 filled: true
         '#date_time_step': '60'
       report_description:
@@ -235,6 +240,14 @@ elements: |-
           sort:
             field: title
             direction: ASC
+      report_location_name_text:
+        '#type': textfield
+        '#title': 'Location Name'
+        '#states':
+          visible:
+            ':input[name="report_location_type"]':
+              value: 'Office or maintenance facility'
+        '#required': true
       report_location:
         '#type': portland_location_picker
         '#title': 'Location of Issue'
@@ -255,8 +268,9 @@ elements: |-
         '#mode': text
         '#template': |
           {% set location_name = webform_token('[webform_submission:values:report_location_name]', webform_submission) %}
-          {{ location_name ?? data.report_location.location_address ?? '' }}
-        '#ajax': true
+          {% set location_name_text = data.report_location_name_text %}
+          {% if location_name %}{{ location_name }}{% elseif location_name_text %}{{ location_name_text }}{% else %}{{ data.report_location.location_address }}{% endif %}
+        '#whitespace': trim
     contact_information:
       '#type': webform_section
       '#title': 'Contact information'
@@ -360,7 +374,8 @@ elements: |-
 
       <p><strong>Issue location:</strong><br>
         {{ data.report_location_type }}<br>
-        {{ webform_token('[webform_submission:values:report_location_name]', webform_submission) }}<br>
+        {% if data.report_location_name %}{{ webform_token('[webform_submission:values:report_location_name]', webform_submission) }}<br>{% endif %}
+        {% if data.report_location_name_text %}{{ data.report_location_name_text }}<br>{% endif %}
         {% if data.report_location.location_address %}
           {{ data.report_location.location_address }}<br>
           Lat/lon: <a href="https://www.google.com/maps/place/{{ data.report_location.location_lat }},{{ data.report_location.location_lon }}">{{ data.report_location.location_lat }},{{ data.report_location.location_lon }}</a>
@@ -388,7 +403,6 @@ elements: |-
       {% endif %}
 
     '#whitespace': spaceless
-    '#ajax': true
   computed_subject:
     '#type': webform_computed_twig
     '#title': 'Computed Subject'
@@ -513,8 +527,8 @@ settings:
   draft_pending_multiple_message: ''
   confirmation_type: page
   confirmation_url: ''
-  confirmation_title: ''
-  confirmation_message: ''
+  confirmation_title: 'Submission received'
+  confirmation_message: '<p>Your incident report has been received and will be triaged to get the most appropriate visibility and response. If you provided an email address, please check your email for a copy of your submission.</p><p><strong>Report ID:</strong> [webform_submission:values:request_ticket_id]</p><p>[webform_submission:values:computed_issue_description:html]</p>'
   confirmation_attributes: {  }
   confirmation_back: true
   confirmation_back_label: ''
