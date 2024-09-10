@@ -2,6 +2,7 @@
 
 namespace Drupal\portland\Plugin\Field\FieldFormatter;
 
+use Drupal\Core\Cache\Cache;
 use Drupal\Core\Field\FieldItemListInterface;
 use Drupal\Core\Field\FormatterBase;
 
@@ -39,7 +40,8 @@ class CouncilVotesFormatter extends FormatterBase {
   public function viewElements(FieldItemListInterface $items, $langcode) {
     // group the vote entities by vote type and extract the council member's group entity
     $grouped_votes = [];
-    foreach ($items->referencedEntities() as $entity) {
+    $referenced_entities = $items->referencedEntities();
+    foreach ($referenced_entities as $entity) {
       $vote_type = $entity->field_voted_as_follows[0]->value;
       // KLUDGE: City Charter uses the word "Aye" but all of our existing votes are hard-coded to "Yea" since it's an open text field
       // if the vote type is Yea, replace with the correct wording
@@ -56,6 +58,9 @@ class CouncilVotesFormatter extends FormatterBase {
       '#tag' => 'ul',
       '#attributes' => [
         'class' => 'list-unstyled',
+      ],
+      '#cache' => [
+        'tags' => Cache::buildTags('group', array_map(fn($e) => $e->field_council_member[0]->target_id, $referenced_entities)),
       ],
     ];
     foreach ($grouped_votes as $vote_type => $voters) {
