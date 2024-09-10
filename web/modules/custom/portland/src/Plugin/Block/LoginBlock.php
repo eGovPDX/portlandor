@@ -31,12 +31,13 @@ class LoginBlock extends BlockBase {
      */
     public function build() {
       $logged_in = \Drupal::currentUser()->isAuthenticated();
-      $destination = \Drupal::request()->getRequestUri();
+      $destination = \Drupal::request()->query->get('destination');
+      $query_string = empty($destination) ? "" : "?destination=$destination";
       $markup = "";
       if ($logged_in) {
-        $markup = '<a href="/user/logout?destination=' . $destination . '">Editor log out</a>';
+        $markup = '<a href="/user/logout' . $query_string . '">Editor log out</a>';
       } else {
-        $markup = '<a href="/user/login?destination=' . $destination . '">Editor log in</a>';
+        $markup = '<a href="/user/login' . $query_string . '">Editor log in</a>';
       }
       $render_array = [
         '#markup' => $markup
