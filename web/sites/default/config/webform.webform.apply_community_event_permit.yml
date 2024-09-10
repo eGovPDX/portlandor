@@ -315,21 +315,17 @@ elements: |-
   resolution_url:
     '#type': webform_computed_twig
     '#title': 'Resolution URL'
+    '#display_on': none
     '#mode': text
     '#template': |
       https://{{ webform_token('[site:url-brief]', webform_submission, [], options) }}/form/apply-community-event-resolution?original_submission_key={{ uuid }}&apply_event_name={{ data.apply_event_name }}&apply_event_start_date={{ data.apply_event_start_date }}&apply_event_end_date={{ data.apply_event_end_date }}&report_ticket_id=
     '#whitespace': trim
-    '#ajax': true
-  test_computed:
-    '#type': webform_computed_twig
-    '#title': 'Test Computed'
-    '#template': "{{ webform_token('[webform_submission:values:apply_row_requested]', webform_submission) }}"
   computed_description:
     '#type': webform_computed_twig
     '#title': 'Computed Description'
+    '#display_on': none
     '#mode': html
-    '#template': |+
-
+    '#template': |-
       <h2>Community Event Permit Application</h2>
 
       <h3>Organization Information</h3>
@@ -416,8 +412,16 @@ elements: |-
       {% if data.apply_alcohol_served and data.apply_alcohol_served is not iterable %}
       <p><strong>Will alcohol be served in the right-of-way?</strong> {{ data.apply_alcohol_served }}</p>
       {% endif %}
-
-    '#ajax': true
+  report_ticket_id:
+    '#type': hidden
+    '#title': 'Report Ticket Id'
+  computed_dates:
+    '#type': webform_computed_twig
+    '#title': 'Computed Dates'
+    '#display_on': none
+    '#mode': text
+    '#template': '{{ data.apply_event_start_date }}{% if data.apply_event_end_date %}-{{ data.apply_event_end_date }}{% endif %}'
+    '#whitespace': trim
 css: ''
 javascript: ''
 settings: {  }
@@ -434,8 +438,8 @@ handlers:
     settings:
       requester_name: contact_name
       requester_email: contact_email
-      subject: '[webform_submission:values:apply_event_name] - [webform_submission:values:apply_event_dates]'
-      comment: '[webform_submission:values:html]'
+      subject: '[webform_submission:values:apply_event_name] - [webform_submission:values:computed_dates]'
+      comment: '[webform_submission:values:computed_description:html]'
       tags: 'drupal webform'
       priority: normal
       status: new
@@ -445,7 +449,28 @@ handlers:
       type: problem
       collaborators: ''
       custom_fields: "26252241925015: ['[webform_submission:values:apply_nonprofit_status]', 'apply_nonprofit_status']\r\n26253458420759: ['[webform_submission:values:apply_org_name]', 'apply_org_name']\r\n26252998858135: ['[webform_submission:values:apply_event_name]', 'apply_event_name']\r\n26252965203991: '[current-date:html_date]'\r\n1500013095781: '[webform_submission:uuid]'"
-      ticket_id_field: ''
+      ticket_id_field: report_ticket_id
       ticket_fork_field: ''
+      ticket_form_id: '26251939645591'
+  zendesk_update_request:
+    id: zendesk_update_ticket
+    handler_id: zendesk_update_request
+    label: 'Update Zendesk request with full resolution URL including ticket ID'
+    notes: ''
+    status: true
+    conditions: {  }
+    weight: 0
+    settings:
+      comment: 'Resolution URL: <a href="[webform_submission:values:resolution_url]&report_ticket_id=[webform_submission:values:report_ticket_id]">[webform_submission:values:resolution_url]&report_ticket_id=[webform_submission:values:report_ticket_id]</a>'
+      comment_private: 1
+      tags: ''
+      priority: ''
+      status: ''
+      group_id: ''
+      assignee_id: ''
+      type: ''
+      collaborators: ''
+      custom_fields: "6355783758871: '[webform_submission:values:resolution_url]&report_ticket_id=[webform_submission:values:report_ticket_id]'"
+      ticket_id_field: report_ticket_id
       ticket_form_id: '26251939645591'
 variants: {  }
