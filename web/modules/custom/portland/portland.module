@@ -1253,7 +1253,7 @@ function portland_toolbar_alter(&$items)
  */
 function portland_views_query_alter($view, $query)
 {
-  if ($view->id() == 'document_revisions' && $view->current_display === 'page') {
+  if ($view->id() === 'document_revisions' && $view->current_display === 'page') {
     // The sub-query that will show the unique file count for each Document
     $subquery = \Drupal::database()->select('media_revision__field_document', 'media_revision__field_document');
     $subquery->addField('media_revision__field_document', 'entity_id');
@@ -1522,5 +1522,58 @@ function portland_preprocess_fieldset(&$variables): void {
   // Clear the duplicated error message for Updated date/time in News
   if($variables["attributes"]["id"] === "edit-field-updated-on-0") {
     unset($variables["errors"]);
+  }
+}
+
+/**
+ * Validates that the council document associated with an impact statement
+ * doesn't already have an existing one of the same type, to prevent duplicates.
+ */
+function _validate_council_impact_statement_type(array &$form, FormStateInterface $form_state) {
+  $current_relation = $form_state->getFormObject()->getEntity();
+  $council_document_id = $form_state->getValue('field_council_document')[0]['target_id'] ?? null;
+  $impact_statement_type_tid = $form_state->getValue('field_impact_statement_type')[0]['target_id'] ?? null;
+  if (is_null($council_document_id) || is_null($impact_statement_type_tid)) {
+    return;
+  }
+
+  $existing_relations = \Drupal::entityTypeManager()->getStorage('relation')->loadByProperties([
+    'field_council_document' => $council_document_id,
+    'field_impact_statement_type' => $impact_statement_type_tid,
+  ]);
+  $existing_relation = reset($existing_relations);
+  // if an existing relation of the same type exists, and it's not the one we're currently editing, throw an error
+  if ($existing_relation && $existing_relation->id() !== $current_relation->id()) {
+    $form_state->setErrorByName(
+      'field_impact_statement_type',
+      t(
+        'An impact statement of this type on this council document already exists. Please <a href="@link">edit it</a> instead.',
+        [ '@link' => $existing_relation->toUrl('edit-form')->toString() ],
+      ),
+    );
+  }
+}
+
+function portland_form_relation_form_alter(array &$form, FormStateInterface $form_state) {
+  $relation = $form_state->getFormObject()->getEntity();
+  if ($relation->bundle() === 'council_impact_statement') {
+    // Add validation to ensure only one impact statement of each type is added
+    $form['field_impact_statement_type']['#element_validate'] = ['_validate_council_impact_statement_type'];
+
+    if ($relation->isNew()) {
+      // Auto-fill the impact statement type if the user has a filter saved in the impact analysis view.
+      $req = \Drupal::request();
+      if ($req->hasSession()) {
+        $user_analysis_filter_value = $req->getSession()->get('views')['manage_council_documents']['page_impact_statements']['needs_analysis'] ?? null;
+        $form['field_impact_statement_type']['widget']['#default_value'] = $user_analysis_filter_value;
+      }
+
+      // Auto-fill the council document field based on the query param.
+      $query_council_document_id = $req->query->get('council_document_id');
+      if ($query_council_document_id) {
+        $node = \Drupal::entityTypeManager()->getStorage('node')->load($query_council_document_id);
+        $form['field_council_document']['widget'][0]['target_id']['#default_value'] = $node ?? null;
+      }
+    }
   }
 }

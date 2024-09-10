@@ -730,6 +730,7 @@
         }
 
         function handleMapClick(e) {
+          L.DomEvent.stopPropagation(e);
           doMapClick(e.latlng);
         }
 
