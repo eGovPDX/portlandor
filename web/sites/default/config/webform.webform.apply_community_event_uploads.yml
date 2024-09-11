@@ -1,4 +1,4 @@
-uuid: a4e3131e-d3c4-4cd8-a95f-738ee9db6ad1
+uuid: 371e266c-3714-4298-a252-b8f97934c7c0
 langcode: en
 status: open
 dependencies:
@@ -15,7 +15,7 @@ close: null
 uid: 60
 template: false
 archive: false
-id: apply_community_event_resolution
+id: apply_community_event_uploads
 title: 'Apply Community Event Permit - Uploads'
 description: '<p>This is a resolution-style form used to upload documentation to community event permit applications, which are essentially Zendesk tickets.</p>'
 categories: {  }
@@ -61,69 +61,98 @@ elements: |-
         visible:
           ':input[name="apply_event_end_date"]':
             filled: true
-    horizontal_rule_01:
-      '#type': webform_horizontal_rule
     container_community_member:
       '#type': container
       '#states':
         visible:
           ':input[name="role"]':
             '!value': te
-      upload_site_plan:
+      upload_type:
+        '#type': webform_select_other
+        '#title': 'What type of document are you uploading?'
+        '#options':
+          site_plan: 'Site Plan'
+          insurance_certificate: 'Insurance - Certificate of Insurance'
+          insurance_endorsement: 'Insurance - Additional Insured Endorsement'
+          neighborhood_tracking: 'Neighborhood Notification - Tracking Form'
+          neighborhood_flyer: 'Neighborhood Notification - Flyer'
+          event_flyer: 'Event Flyer'
+          beneficiary_letter: 'Non-Profit Beneficiary Letter'
+        '#other__option_label': 'Something else...'
+        '#other__placeholder': 'Please describe'
+      computed_upload_type:
+        '#type': webform_computed_twig
+        '#title': 'Computed Upload Type Name'
+        '#display_on': form
+        '#mode': text
+        '#template': "{{ webform_token('[webform_submission:values:upload_type:#options]', webform_submission, [], options) }}"
+        '#whitespace': trim
+        '#ajax': true
+      markup_site_plan:
+        '#type': webform_markup
+        '#states':
+          visible:
+            ':input[name="upload_type[select]"]':
+              value: site_plan
+        '#markup': "<p>Please provide a site plan showing the areas being used and equipment in the street closure. A 12' wide emergency lane is required and must be shown on the site plan. People may occupy the emergency lane, but objects may not be placed in it.</p>"
+      markup_insurance_certificate:
+        '#type': webform_markup
+        '#states':
+          visible:
+            ':input[name="upload_type[select]"]':
+              value: insurance_certificate
+        '#markup': '<p>Please upload the <strong>Certificate of Insurance</strong>. Learn more about <a href="/transportation/permitting/row-insurance">Insurance requirements for permits in the right-of-way</a>.</p>'
+      markup_insurance_endorsement:
+        '#type': webform_markup
+        '#states':
+          visible:
+            ':input[name="upload_type[select]"]':
+              value: insurance_endorsement
+        '#markup': '<p>Please upload the <strong>Additional Insured Endorsement</strong>. Learn more about <a href="/transportation/permitting/row-insurance">Insurance requirements for permits in the right-of-way</a>.</p>'
+      markup_neighborhood_tracking:
+        '#type': webform_markup
+        '#states':
+          visible:
+            ':input[name="upload_type[select]"]':
+              value: neighborhood_tracking
+        '#markup': '<p>Please upload the <strong>neighborhood notification tracking form</strong>. You must notify all residences and businesses inside the street closure.</p>'
+      markup_neighborhood_flyer:
+        '#type': webform_markup
+        '#states':
+          visible:
+            ':input[name="upload_type[select]"]':
+              value: neighborhood_flyer
+        '#markup': '<p>Please upload a copy of the <strong>neighborhood notification flyer</strong> you used to notify residences and businesses inside the street closure.</p>'
+      markup_event_flyer:
+        '#type': webform_markup
+        '#states':
+          visible:
+            ':input[name="upload_type[select]"]':
+              value: event_flyer
+        '#markup': '<p>Please upload a copy of the <strong>event flyer or poster</strong> used to advertise the event.</p>'
+      markup_beneficiary_letter:
+        '#type': webform_markup
+        '#states':
+          visible:
+            ':input[name="upload_type[select]"]':
+              value: beneficiary_letter
+        '#markup': '<p>Please upload a <strong>letter of association</strong> with the event’s non-profit beneficiary.&nbsp;The letter should be on the non-profit’s letterhead and signed by one of their officers.</p>'
+      markup_other:
+        '#type': webform_markup
+        '#states':
+          visible:
+            ':input[name="upload_type[select]"]':
+              value: _other_
+        '#markup': '<p>Use this option to upload any additional documents we request. You may only upload one document at a time.</p>'
+      upload_document:
         '#type': managed_file
-        '#title': 'Upload Site Plan'
-        '#file_placeholder': "<p><em>Provide a site plan showing the areas being used and equipment in the street closure. A 12' wide emergency lane is required and must be shown on the site plan. People may occupy the emergency lane, but objects may not be placed in it.</em></p>"
+        '#title': 'Upload Your Document'
+        '#states':
+          visible:
+            ':input[name="upload_type[select]"]':
+              filled: true
         '#file_extensions': 'jpg png pdf doc docx zip'
-        '#file_name': 'site_plan_[webform_submission:values:report_ticket_id]_[webform_submission:values:apply_event_name]'
-        '#sanitize': true
-      horizontal_rule_02:
-        '#type': webform_horizontal_rule
-      upload_insurance:
-        '#type': managed_file
-        '#title': 'Upload Certificate of Insurance'
-        '#file_placeholder': '<p><em>Provide your <strong>Certificate of Insurance</strong> as outlined in the </em><a href="/transportation/permitting/row-insurance"><em>insurance requirements for permits in the public right-of-way</em></a><em>.</em></p>'
-        '#file_extensions': 'jpg png pdf doc docx zip'
-        '#file_name': 'insurance_[webform_submission:values:report_ticket_id]_[webform_submission:values:apply_event_name]'
-        '#sanitize': true
-      upload_additional_endorsement:
-        '#type': managed_file
-        '#title': 'Upload Additional Insured Endorsement'
-        '#file_placeholder': '<p><em>Provide your <strong>Additional Insured Endorsement</strong> as outlined in the </em><a href="/transportation/permitting/row-insurance"><em>insurance requirements for permits in the public right-of-way</em></a><em>.</em></p>'
-        '#file_extensions': 'jpg png pdf doc docx zip'
-        '#file_name': 'additional_endorsement_[webform_submission:values:report_ticket_id]_[webform_submission:values:apply_event_name]'
-        '#sanitize': true
-      horizontal_rule_03:
-        '#type': webform_horizontal_rule
-      upload_neighborhood_notification:
-        '#type': managed_file
-        '#title': 'Upload neighborhood notification tracking form'
-        '#file_placeholder': '<p><em>Please return the notification tracking form and a copy of the notification flyer you have distributed. You must notify all the residents and businesses inside the street closure.</em></p>'
-        '#file_extensions': 'jpg png pdf doc docx zip'
-        '#file_name': 'neighbor_notification_[webform_submission:values:report_ticket_id]_[webform_submission:values:apply_event_name]'
-        '#sanitize': true
-      upload_neighborhood_notification_flyer:
-        '#type': managed_file
-        '#title': 'Upload neighborhood notification flyer'
-        '#file_placeholder': '<p><em>Please upload a copy of the notification flyer you have distributed. You must notify all the residents and businesses inside the street closure.</em></p>'
-        '#file_extensions': 'jpg png pdf doc docx zip'
-        '#file_name': 'neighbor_flyer_[webform_submission:values:report_ticket_id]_[webform_submission:values:apply_event_name]'
-        '#sanitize': true
-      horizontal_rule_04:
-        '#type': webform_horizontal_rule
-      upload_event_flyer:
-        '#type': managed_file
-        '#title': 'Upload Event Flyer'
-        '#file_extensions': 'jpg png pdf doc docx zip'
-        '#file_name': 'event_flyer_[webform_submission:values:report_ticket_id]_[webform_submission:values:apply_event_name]'
-        '#sanitize': true
-      horizontal_rule_05:
-        '#type': webform_horizontal_rule
-      upload_nonprofit_letter:
-        '#type': managed_file
-        '#title': 'Upload Non-Profit Beneficiary Letter'
-        '#file_placeholder': "<p>Please provide a letter of association with the event's non-profit beneficiary. The letter should be on the non-profit's letterhead and signed by one of their officers.</p>"
-        '#file_extensions': 'jpg png pdf doc docx zip'
-        '#file_name': 'nonprofit_letter_[webform_submission:values:report_ticket_id]_[webform_submission:values:apply_event_name]'
+        '#file_name': '[webform_submission:values:upload_type:raw]_[webform_submission:values:report_ticket_id]_[webform_submission:values:apply_event_name]'
         '#sanitize': true
     container_traffic_engineer:
       '#type': container
@@ -137,11 +166,16 @@ elements: |-
         '#file_extensions': pdf
         '#file_name': 'traffic_control_plan_[webform_submission:values:report_ticket_id]_[webform_submission:values:apply_event_name]'
         '#sanitize': true
-    horizontal_rule_06:
-      '#type': webform_horizontal_rule
     actions:
       '#type': webform_actions
       '#title': 'Submit button(s)'
+      '#states':
+        visible:
+          - ':input[name="upload_type[select]"]':
+              filled: true
+          - or
+          - ':input[name="role"]':
+              value: te
   report_ticket_id:
     '#type': hidden
     '#title': 'Request Ticket Id'
@@ -352,7 +386,7 @@ handlers:
     conditions: {  }
     weight: 0
     settings:
-      comment: 'An attachment has been uploaded to your application: <strong>[webform_submission:value:computed_upload_type]</strong>'
+      comment: 'An attachment has been uploaded to your application: <strong>[webform_submission:values:computed_upload_type]</strong>'
       comment_private: 0
       tags: ''
       priority: ''
