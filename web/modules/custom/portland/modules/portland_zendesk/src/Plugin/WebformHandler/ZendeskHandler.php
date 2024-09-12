@@ -575,8 +575,12 @@ class ZendeskHandler extends WebformHandlerBase
             $file = File::load($file_id);
 
             if ($file) {
-              // Sanitize the original filename.
-              $cleaned_filename = $this->sanitizeFilename($file->getFilename());
+              // Get the original filename and its extension.
+              $original_filename = $file->getFilename();
+              $file_extension = pathinfo($original_filename, PATHINFO_EXTENSION);
+
+              // Sanitize the original filename without the extension.
+              $cleaned_filename = $this->sanitizeFilename(pathinfo($original_filename, PATHINFO_FILENAME));
 
               // Replace tokens in the filename pattern.
               $transformed_filename = \Drupal::token()->replace($filename_pattern, [
@@ -584,8 +588,11 @@ class ZendeskHandler extends WebformHandlerBase
                 'filename' => $cleaned_filename,
               ]);
 
+              // Append the original file extension to the transformed filename.
+              $final_filename = $transformed_filename . '.' . $file_extension;
+
               // Set the transformed filename on the file entity.
-              $file->setFilename($transformed_filename);
+              $file->setFilename($final_filename);
               $file->save();
 
               // Update the file data in the submission fields with the transformed filename.
@@ -607,7 +614,7 @@ class ZendeskHandler extends WebformHandlerBase
       }
     }
   }
-  
+
   public function sendToZendesk(array &$form, FormStateInterface &$form_state, $webform_submission)
   {
     // NOTE: This function will run both when a webform is created, and when it's updated, so this handler
