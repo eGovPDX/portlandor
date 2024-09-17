@@ -32,7 +32,7 @@ class LoginBlock extends BlockBase {
     public function build() {
       $logged_in = \Drupal::currentUser()->isAuthenticated();
       $destination = \Drupal::request()->query->get('destination');
-      $query_string = empty($destination) ? "" : "?destination=$destination";
+      $query_string = empty($destination) ? "?destination=/" : "?destination=$destination";
       $markup = "";
       if ($logged_in) {
         $markup = '<a href="/user/logout' . $query_string . '">Editor log out</a>';
