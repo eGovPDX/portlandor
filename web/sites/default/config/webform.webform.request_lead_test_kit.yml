@@ -54,30 +54,38 @@ elements: |-
           value: 'Portland-area residence'
     request_verified_testing_address:
       '#type': portland_address_verifier
-      '#title': 'Testing Address'
+      '#title': 'Sampling Address'
+      '#location_address__title': 'Sampling Address'
+      '#location_address__description': '<strong>This is the location where you want to test the water.</strong> Begin typing to see a list of possible address matches in the Portland metro area.'
       '#secondary_query_url': 'https://www.portlandmaps.com/arcgis/rest/services/Public/Utilities_Water/MapServer/6/query?where=1=1&f=json&outFields=WaterProvider&geometryType=esriGeometryPoint'
       '#secondary_query_capture_property': features.attributes.WaterProvider
       '#secondary_query_capture_field': location_capture_field
-      '#verify_button_text': 'Verify Me'
+    markup_continue:
+      '#type': webform_markup
+      '#states':
+        visible:
+          ':input[name="computed_location_is_selected"]':
+            '!value': '1'
+      '#markup': '<p><strong>Enter and verify an address to continue.</strong></p>'
     container_location_data:
       '#type': container
       computed_location_is_selected:
         '#type': webform_computed_twig
-        '#title': 'Location Is Selected'
-        '#display_on': form
-        '#mode': text
-        '#template': '{{ data.request_verified_testing_address.location_address ? 1 : 0 }}'
-        '#whitespace': trim
+        '#title': 'Computed Location Is Selected'
+        '#wrapper_attributes':
+          class:
+            - d-none
+        '#template': '{{ data.request_verified_testing_address.location_verification_status == "Verified" }}'
         '#ajax': true
-      computed_provider:
-        '#type': webform_computed_token
+      request_water_provider:
+        '#type': hidden
         '#title': 'Water Provider'
-        '#mode': text
-        '#template': '[webform_submission:values:request_verified_testing_address:location_capture_field:clear]'
-        '#ajax': true
       computed_is_eligible:
         '#type': webform_computed_twig
         '#title': 'Computed Is Eligible'
+        '#wrapper_attributes':
+          class:
+            - d-none
         '#mode': text
         '#template': |-
           {% if data.request_verified_testing_address.location_capture_field == "Burlington Water District" or
@@ -122,7 +130,7 @@ elements: |-
               <h2 class="mt-0">
                   Not Eligible
               </h2>
-              <p><strong>Water provider: {{ data.report_location.location_region_id ?: "N/A" }}</strong></p>
+              <p><strong>Water provider: {{ data.request_verified_testing_address.location_capture_field ?: "N/A" }}</strong></p>
               <p class="mb-0">The location of your sampling address is not eligible for free testing from the Portland Water Bureau. Contact your water provider to see if they provide free testing. You can also pay a laboratory to test your water, find a lab at <a href="https://orelap.state.or.us/searchLabs">https://orelap.state.or.us/searchLabs</a>.
               </p>
           </div>
@@ -141,7 +149,7 @@ elements: |-
           '#template': |-
             <div class="alert alert--info next-steps mb-10">
                 <h2 class="mt-0">
-                    Water provider: [webform_submission:values:computed_provider]
+                    Water provider: [webform_submission:values:request_verified_testing_address:location_capture_field]
                 </h2>
                 <p class="mb-0">
                     You are eligible for free testing from the Portland Water Bureau. Please complete and submit this form to receive a kit.
@@ -188,6 +196,7 @@ elements: |-
             contact_mailing_address:
               '#type': portland_address_verifier
               '#title': 'Mailing Address'
+              '#location_address__title': 'Mailing Address'
               '#location_address__states':
                 required:
                   ':input[name="contact_mailing_address_same"]':

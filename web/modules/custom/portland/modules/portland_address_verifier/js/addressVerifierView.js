@@ -168,6 +168,9 @@ AddressVerifierView.prototype._selectAddress = function (item) {
     if (this.settings.secondary_query_url && this.settings.secondary_query_capture_property && this.settings.secondary_query_capture_field) {
         this.model.callSecondaryQuery(this.settings.secondary_query_url, item.x, item.y, self._processSecondaryResults, self, this.settings.secondary_query_capture_property, this.settings.secondary_query_capture_field, this.$);
     }
+
+    // blur address field after setting
+    self.$element.find('#location_address').blur();
 }
 
 AddressVerifierView.prototype._processSecondaryResults = function (results, view = this, capturePath, captureField, $) {
