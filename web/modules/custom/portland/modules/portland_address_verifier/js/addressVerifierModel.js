@@ -43,20 +43,20 @@ AddressVerifierModel.prototype.fetchAutocompleteItems = function (addrSearch, $e
     return this.$.ajax({
         url: apiUrl,
         method: 'GET'
-    }).then(function(response) {
+    }).then(function (response) {
         if (response && response.candidates && Array.isArray(response.candidates)) {
             // KLUDGE: There's an issue with the PortlandMaps suggests API where the data is
             // formatted differently when there is only a single candidate returned, as opposed
             // to multiple candidates. The locationItem object constructor avoids this issue
             // by always assembling the address from its component parts if we send the isSingleton flag.
-            
+
             if (response.candidates.length > 1) {
-                return response.candidates.map(function(candidate) {
+                return response.candidates.map(function (candidate) {
                     var retItem = new AddressVerifierModel.locationItem(candidate, $element);
                     return retItem;
                 });
             } else if (response.candidates.length == 1) {
-                return response.candidates.map(function(candidate) {
+                return response.candidates.map(function (candidate) {
                     var retItem = new AddressVerifierModel.locationItem(candidate, $element, true);
                     return retItem;
                 });
@@ -72,22 +72,22 @@ AddressVerifierModel.prototype.fetchAutocompleteItems = function (addrSearch, $e
 };
 
 AddressVerifierModel.prototype._getSphericalMercCoords = function (lat, lon) {
-  // Radius of the Earth in meters
-  const R = 6378137;
-  
-  // Convert the longitude from degrees to radians
-  const x = lon * (Math.PI / 180) * R;
-  
-  // Convert the latitude from degrees to radians
-  const latRad = lat * (Math.PI / 180);
-  
-  // Calculate the y value using the Mercator projection formula
-  const y = R * Math.log(Math.tan((Math.PI / 4) + (latRad / 2)));
-  
-  return { x, y };
+    // Radius of the Earth in meters
+    const R = 6378137;
+
+    // Convert the longitude from degrees to radians
+    const x = lon * (Math.PI / 180) * R;
+
+    // Convert the latitude from degrees to radians
+    const latRad = lat * (Math.PI / 180);
+
+    // Calculate the y value using the Mercator projection formula
+    const y = R * Math.log(Math.tan((Math.PI / 4) + (latRad / 2)));
+
+    return { x, y };
 }
 
-AddressVerifierModel.locationItem.prototype.parseStreetData = function(street) {
+AddressVerifierModel.locationItem.prototype.parseStreetData = function (street) {
     // Assuming street is in the format "1234 NW Main St"
     const streetParts = street.split(' ');
     this.streetNumber = streetParts.shift();
@@ -131,7 +131,7 @@ AddressVerifierModel.buildMailingLabel = function (item, $element, useHtml = fal
     return label;
 }
 
-AddressVerifierModel.prototype.updateLocationFromIntersects = function(lat, lon, item, callback, view) {
+AddressVerifierModel.prototype.updateLocationFromIntersects = function (lat, lon, item, callback, view) {
     var xy = this._getSphericalMercCoords(lat, lon);
     url = REVERSE_GEOCODE_URL;
     url = url.replace('${x}', xy.x).replace('${y}', xy.y).replace('${apiKey}', this.apiKey);
@@ -153,4 +153,43 @@ AddressVerifierModel.prototype.updateLocationFromIntersects = function(lat, lon,
         }
     });
 }
+
+AddressVerifierModel.prototype.callSecondaryQuery = function (url, x, y, callback, view, capturePath, captureField, $) {
+    url = url + "&geometry=" + x + "," + y;
+    this.$.ajax({
+        url: url, success: function (response) {
+            callback(response, view, capturePath, captureField, $);
+        },
+        error: function (e) {
+            // if the PortlandMaps API is down, this is where we'll get stuck.
+            // any way to fail the location lookup gracefull and still let folks submit?
+            // at least display an error message.
+            console.error(e);
+        }
+    });
+}
+
+AddressVerifierModel.getPropertyByPath = function (jsonObject, path) {
+    const keys = path.split('.');
+
+    return keys.reduce((obj, key) => {
+        if (!obj) return undefined;
+
+        // Automatically use the first element if the current object is an array
+        if (Array.isArray(obj)) {
+            obj = obj[0];
+        }
+
+        // Check if the key includes an array index, like 'features[0]'
+        const arrayIndexMatch = key.match(/(.+)\[(\d+)\]$/);
+
+        if (arrayIndexMatch) {
+            const arrayKey = arrayIndexMatch[1];
+            const index = parseInt(arrayIndexMatch[2], 10);
+            return obj[arrayKey] && obj[arrayKey][index] !== undefined ? obj[arrayKey][index] : undefined;
+        } else {
+            return obj[key] !== undefined ? obj[key] : undefined;
+        }
+    }, jsonObject);
+};
 

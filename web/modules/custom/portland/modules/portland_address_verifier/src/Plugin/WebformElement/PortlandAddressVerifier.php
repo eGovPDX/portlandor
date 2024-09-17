@@ -138,6 +138,15 @@ class PortlandAddressVerifier extends WebformCompositeBase {
 
     $findUnincorporated = array_key_exists('#find_unincorporated', $element) && strtolower($element['#find_unincorporated']) == "1";
     $element['#attached']['drupalSettings']['webform']['portland_address_verifier']['find_unincorporated'] = $findUnincorporated;
+
+    $secondaryQueryUrl = array_key_exists('#secondary_query_url', $element) ? $element['#secondary_query_url'] : false;
+    $element['#attached']['drupalSettings']['webform']['portland_address_verifier']['secondary_query_url'] = $secondaryQueryUrl;
+
+    $secondaryQueryCaptureProperty = array_key_exists('#secondary_query_capture_property', $element) ? $element['#secondary_query_capture_property'] : false;
+    $element['#attached']['drupalSettings']['webform']['portland_address_verifier']['secondary_query_capture_property'] = $secondaryQueryCaptureProperty;
+
+    $secondaryQueryCaptureField = array_key_exists('#secondary_query_capture_field', $element) ? $element['#secondary_query_capture_field'] : false;
+    $element['#attached']['drupalSettings']['webform']['portland_address_verifier']['secondary_query_capture_field'] = $secondaryQueryCaptureField;
   }
 
 }
