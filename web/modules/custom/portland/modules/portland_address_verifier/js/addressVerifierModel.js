@@ -6,15 +6,16 @@ AddressVerifierModel.locationItem = function (data, $element = null, isSingleton
         var arrAddress = data.address.split(', ');
         data.address = arrAddress[0];
     }
-    this.fullAddress = AddressVerifierModel.buildFullAddress(data.address, data.unit, data.attributes.jurisdiction, data.attributes.zip_code).toUpperCase();
+    this.fullAddress = AddressVerifierModel.buildFullAddress(data.address, data.attributes.city, data.attributes.state, data.attributes.zip_code, data.unit).toUpperCase();
     this.displayAddress = data.address.toUpperCase();// + ', ' + data.attributes.jurisdiction.toUpperCase();
     this.street = data.address.toUpperCase();
     this.streetNumber = data.attributes.address_number;
     this.streetQuadrant = data.attributes.street_direction;
     this.streetDirectionSuffix = data.attributes.street_direction_suffix ? data.attributes.street_direction_suffix.trim() : "";
-    this.streetName = data.attributes.street_name + " " + data.attributes.street_type;
+    this.streetName = data.attributes.street_name;
+    this.streetType = data.attributes.street_type;
     if (this.streetDirectionSuffix) {
-        this.streetName += " " + this.streetDirectionSuffix;
+        this.streetType += " " + this.streetDirectionSuffix;
     }
     this.city = data.attributes.jurisdiction.toUpperCase();
     this.state = data.attributes.state.toUpperCase();
@@ -99,8 +100,8 @@ AddressVerifierModel.locationItem.prototype.parseStreetData = function (street) 
 
 AddressVerifierModel.buildFullAddress = function (address, city, state, zip, unit = null) {
     var fullAddress = address;
-    fullAddress += unit ? " " + unit : "";
-    fullAddress += ", " + city + ", " + state + "  " + zip;
+    fullAddress += unit ? ", " + unit : "";
+    fullAddress += ", " + city + ", " + state + " " + zip;
     return fullAddress;
 }
 

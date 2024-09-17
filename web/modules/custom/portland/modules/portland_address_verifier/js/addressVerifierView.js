@@ -84,9 +84,9 @@ AddressVerifierView.prototype._setUpUnitNumberField = function () {
             var item = JSON.parse(json);
             item.unit = unit;
             item.fullAddress = AddressVerifierModel.buildFullAddress(item.street, item.city, item.state, item.zipCode, unit);
-            item.displayAddress = item.street + (unit ? " " + unit : "") + ", " + item.city;
+            item.displayAddress = item.street + (unit ? ", " + unit : "") + ", " + item.city;
             $locationData.val(JSON.stringify(item));
-            // self.$element.find('#location_address_label').val(AddressVerifierModel.buildMailingLabel(item, self.$element));
+            self.$element.find('#location_full_address').val(item.fullAddress);
             // self.$element.find('#mailing_label').html(AddressVerifierModel.buildMailingLabel(item, self.$element, true));
         }
     });
@@ -202,9 +202,11 @@ AddressVerifierView.prototype._setVerified = function (item, view = this) {
     // populate hidden sub-elements for address data
     view.$element.find('#location_address').val(item.street);
     //$element.find('#location_street').val(item.street);
+    view.$element.find('#location_full_address').val(item.fullAddress);
     view.$element.find('#location_address_street_number').val(item.streetNumber);
     view.$element.find('#location_address_street_quadrant').val(item.streetQuadrant);
     view.$element.find('#location_address_street_name').val(item.streetName);
+    view.$element.find('#location_address_street_type').val(item.streetType);
     view.$element.find('#location_city').val(item.city);
     view._setStateByLabel(view, item.state);
     view.$element.find('#location_zip').val(item.zipCode);
@@ -349,9 +351,11 @@ AddressVerifierView.prototype._resetVerified = function ($checkmark, $button) {
     // clear hidden sub-elements for address data
     var $element = this.$(this.element);
     $element.find('#location_address').val("");
+    $element.find('#location_full_address').val("");
     $element.find('#location_address_street_number').val("");
     $element.find('#location_address_street_quadrant').val("");
     $element.find('#location_address_street_name').val("");
+    $element.find('#location_address_street_type').val("");
     $element.find('#location_city').val("");
     $element.find('#location_state').val("");
     $element.find('#location_zip').val("");
