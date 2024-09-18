@@ -16,6 +16,10 @@
   If location_type is "point," the URL path to the point marker.
   - **Default**: /modules/custom/modules/portland_webforms/images/map_marker.png
 
+- **`locate_button_text`**: *(string)*
+  The text to be displayed on the Locate (search) button)
+  - **Default**: Locate
+
 - **`location_line_style`**: *(TBD)*
   If location_type is "line," then this is the style specification for the line. FOR FUTURE DEVELOPMENT.
   - **Default**: ""
@@ -24,20 +28,24 @@
   If location_type is "polygon," then this is the style specification for the polygon. FOR FUTURE DEVELOPMENT.
   - **Default**: ""
 
+- **`find_unincorporated`**: *(1/0)*
+  If this property is 1 (true) and location is in an unincorporated area, the municipality associated with the location's zipcode will be used. If an address suggestion from the Suggest API is selected, an additional call to the Intersects API will be required to find the related municipality, since the former doens't include that data.
+  - **Default**: "1"
+
 #### `primary_boundary`
 Defines properties of the map's default primary boundary.
 
 ##### Properties:
 
-- **`enabled`**: *(true/false)*
+- **`enabled`**: *(1/0)*
   - **Usage**: Determines whether the default layer is enabled.
   - **Default**: true
 
-- **`visible`**: *(true/false)*
+- **`visible`**: *(1/0)*
   - **Usage**: Determines whether the default layer is visible.
   - **Default**: true
 
-- **`boundary_enforce`**: *(true/false)*
+- **`boundary_enforce`**: *(1/0)*
   - **Usage**: Determines whether the default layer is enforced as a geofencing boundary.
   - **Default**: true
 
@@ -82,25 +90,25 @@ An array of layer definitions, each defining a specific data layer to be include
   The path to the property of the asset/incident/region that is to be captured from the JSON returned by the API call. Uses standard javascript notation for arrays and objects.
   - **Example**: features[0].details.asset_id
 
-- **`property_destination_field`**: *(string)*  
+- **`property_capture_field`**: *(string)*  
   The ID of the webform field that will be used to store the value represented by feature_property_path. The default is location_region_id, which is a built-in sub-element, but any webform field with a unique ID can be used.
   - **Default**: location_region_id
 
 - **`feature_zoom`**: *(integer)*  
-  The zoom level at which to display the features from the layer. This is useful when there are a larege number of assets, incidents or regions, such that the display would be slow to load and render. If specified and the current zoom is equal to or greater than this value, the extent geometry is passed to the API query in order to filter the results before display.
+  The zoom level at which to display the features from the layer. This is useful when used in conjunction with filter_by_extent when there are a larege number of assets, incidents or regions, such that the display would be slow to load and render. If specified and the current zoom is equal to or greater than this value, the extent geometry is passed to the API query in order to filter the results before display.
 
-- **`boundary_visible`**: *(true/false)*  
+- **`boundary_visible`**: *(1/0)*  
   If boundary, specifies whether the border is visible.
   - **Default**: false
 
-- **`boundary_style`**: *(true/false)*  
+- **`boundary_style`**: *(TBD)*  
   - If boundary, specifies the boundary style.
 
-- **`boundary_enforce`**: *(true/false)*  
+- **`boundary_enforce`**: *(1/0)*  
   If boundary, specifies whether to allow location selections outside the boundary.
   - **Default**: true
 
-- **`boundary_message`**: *(true/false)*  
+- **`boundary_message`**: *(1/0)*  
   The error message displayed when a click is outside the boundary and boundary_enforce is true.
   - **Default**: You've selected a location outside our service area. Please try again.
 
@@ -116,7 +124,7 @@ An array of layer definitions, each defining a specific data layer to be include
   The URL path to the icon used to signify that an incident is solved. Used when displaying historical incidents or those that have been recently solved.
   - **Default**: /modules/custom/modules/portland_webforms/images/map_marker_incident_solved.png
 
-- **`filter_by_extent`**: *(true/false)*  
+- **`filter_by_extent`**: *(1/0)*  
   When true, the current map extent coordinates are passed to the API for filtering purposes.
   - **Default**: true
 
@@ -135,14 +143,66 @@ An array of query definitions, each defining a specific data query to be perform
   The API endpoint or URL of the query.
   - **Example**: /api/tickets/graffiti
 
+- - **`feature_property_path`**: *(string)*  
+  The path to the property of the asset/incident/region that is to be captured from the JSON returned by the API call. Uses standard javascript notation for arrays and objects.
+  - **Example**: features[0].details.asset_id
+
+- **`property_capture_field`**: *(string)*  
+  The ID of the webform field that will be used to store the value represented by feature_property_path. The default is location_region_id, which is a built-in sub-element, but any webform field with a unique ID can be used.
+  - **Default**: location_region_id
+
+### Configuration Example
+
+```default_zoom: 11
+location_type: point
+location_marker: /modules/custom/modules/portland_webforms/images/map_marker.png
+primary_boundary:
+  enabled: true
+  visible: true
+  boundary_enforce: true
+  url: 'https://www.portlandmaps.com/arcgis/rest/services/Public/Boundaries/MapServer/0/query?where=1%3D1&objectIds=35&outFields=*&returnGeometry=true&f=geojson'
+  boundary_message: 'You''ve selected a location outside the Portland city limits. Please try again.'
+layers:
+  - name: 'Current Graffiti Reports'
+    description: 'All open and recently solved graffiti reports in Portland'
+    url: /api/tickets/graffiti
+    type: incident
+    behavior: informational
+    feature_property_path: features[0].details.asset_id
+    property_capture_field: location_region_id
+    feature_zoom: 15
+    boundary_visible: false
+    boundary_enforce: true
+    boundary_message: 'You''ve selected a location outside our service area. Please try again.'
+    feature_marker: /modules/custom/modules/portland_webforms/images/map_marker_default.png
+    feature_marker_selected: /modules/custom/modules/portland_webforms/images/map_marker_default_selected.png
+    feature_marker_solved: /modules/custom/modules/portland_webforms/images/map_marker_incident_solved.png
+    filter_by_extent: true
+  - name: 'Trash Cans'
+    description: 'All city-managed trash cans'
+    url: /api/tickets/trashcans
+    type: asset
+    behavior: multi_select
+    feature_property_path: features[0].details.asset_id
+    property_capture_field: location_asset_id
+    feature_zoom: 16
+    filter_by_extent: true
+queries:
+  - name: 'Park Regions'
+    description: 'Returns the PP&R region in which a point is located.'
+    url: 'https://www.portlandmaps.com/arcgis/rest/services/Public/Tickets_Layers/MapServer/0/query?where=1%3D1&geometry={{x}}%2C{{y}}&geometryType=esriGeometryPoint&outFields=area_detail%2Carea_count&f=geojson'
+    feature_property_path: 'location_region_id'
+    property_capture_field: 'features[0].properties.AREA_DETAIL'
+```
+
 ### Widget Sub-Elements
 
 #### Data Collection Sub-Elements
 
 These are form elements used to capture input from the user.
 
-- **`location_address`**:  
-  Used to capture the first line of the location address, and doubles as the main address search and autocomplete field.
+- **`location_address`**: 
+  Used to capture the first line of the location address, and doubles as the main address search and autocomplete field. Example: 1234 NE Fake St NB
 
 - **`location_unit`**:  
   Used to capture the unit number of a location, if applicable.
@@ -182,6 +242,21 @@ These are markup elements generally used to display information to the user but 
 
 These are hidden fields used to store data from API queries and make it available to downstream processes, such as sending in webform handlers to email recipients and APIs.
 
+- **`location_address_street_number`**:  
+  The street number portion of the address. Not frequently used but available if needed. Example: 1234, as in **1234** NE Fake St NB
+
+- **`location_address_street_direction`**:  
+  The street direction portion of the address. Not frequently used but available if needed. Example: NE, as in 1234 **NE** Fake St NB
+
+- **`location_address_street_name`**:  
+  The street name portion of the address. Not frequently used but available if needed. Example: Fake, as in 1234 NE **Fake** St NB
+
+- **`location_address_street_type`**:  
+  The street type portion of the address. Not frequently used but available if needed. Example: St, as in 1234 NE Fake **St** NB
+
+- **`location_address_street_suffix`**:  
+  The street suffix portion of the address. Not frequently used but available if needed. Example: NB, as in 1234 NE Fake St **NB**
+
 - **`location_lat`**:  
   The latitude of the location.
   - **Example**: 45.54020270827299
@@ -207,8 +282,19 @@ These are hidden fields used to store data from API queries and make it availabl
   - **Example**: TaxlotID:R123456,ParkID:249,TrailID:449977,TrailName:I-205 Bike Path
 
 - **`location_region_id`**:  
-  A comma-delimited list of region IDs in which the location falls. There may be multiple layers/regions on the map that have their own ID, so labels and values are colon-delimited like location attributes. The webform field into which the region ID is stored can be specified in the layer configuration property property_destination_field.
+  A comma-delimited list of region IDs in which the location falls. There may be multiple layers/regions on the map that have their own ID, so labels and values are colon-delimited like location attributes. The webform field into which the region ID is stored can be specified in the layer configuration property property_capture_field.
   - **Example**: NaturalInventory:Forest Park,ServiceZones:Washington Park Service Zone,NatureZones:West
 
 - **`location_asset_id`**:  
   When assets are used for selection, such as trash cans or park amenities, this is the field that stores the ID of the selected asset.
+
+- **`location_taxlot_id`**:  
+  When available, captures the Portland taxlot ID (R-number). Typically only private property lots and parks have taxlot IDs.
+  - **Example**: R123456
+
+- **`location_is_unincorporated`**:  
+  If the selected location is in an unincorporated area, this will be set to 1 (true).
+
+- **`location_verification_status`**:  
+  If the selected location is in an unincorporated area, this will be set to 1 (true).
+

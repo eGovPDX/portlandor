@@ -24,9 +24,9 @@ class PortlandLocationWidget extends WebformCompositeBase
   {
     $element_id = array_key_exists("#webform_key", $element) ? $element['#webform_key'] : "";
     
-    $element['location_search'] = [
+    $element['location_address'] = [
       '#type' => 'textfield',
-      '#title' => t('Location Search'),
+      '#title' => t('Location Address'),
       '#id' => $element_id . '_location_search',
       '#attributes' => ['class' => ['location-widget-address'], 'autocomplete' => 'off'],
       '#description' => t('Search the map for an address, cross streets, park, or community center. Or use the map to click a location.'),
@@ -49,7 +49,52 @@ class PortlandLocationWidget extends WebformCompositeBase
     ];
 
     // hidden fields to store data about the location
-    
+    $element['location_lat'] = [
+      '#type' => 'hidden',
+      '#title' => t('Latitude'),
+      '#attributes' => [ 'id' => 'location_lat']
+    ];
+    $element['location_lon'] = [
+      '#type' => 'hidden',
+      '#title' => t('Longitude'),
+      '#attributes' => [ 'id' => 'location_lon']
+    ];
+    $element['location_x'] = [
+      '#type' => 'hidden',
+      '#title' => t('Coordinates X'),
+      '#attributes' => [ 'id' => 'location_x']
+    ];
+    $element['location_y'] = [
+      '#type' => 'hidden',
+      '#title' => t('Coordinates Y'),
+      '#attributes' => [ 'id' => 'location_y']
+    ];
+    $element['location_taxlot_id'] = [
+      '#type' => 'hidden',
+      '#title' => t('Taxlot ID'),
+      '#attributes' => [ 'id' => 'location_taxlot_id']
+    ];
+    $element['location_is_unincorporated'] = [
+      '#type' => 'hidden',
+      '#title' => t('Is Unincorporated'),
+      '#attributes' => [ 'id' => 'location_is_unincorporated']
+    ];
+    $element['location_address_label'] = [
+      '#type' => 'hidden',
+      '#title' => t('Address Label'),
+      '#attributes' => [ 'id' => 'location_address_label']
+    ];
+    $element['location_verification_status'] = [
+      '#type' => 'hidden',
+      '#title' => t('Verification Status'),
+      '#attributes' => [ 'id' => 'location_verification_status'],
+      '#required_error' => 'Please verify the address before continuing.'
+    ];
+    $element['location_data'] = [
+      '#type' => 'hidden',
+      '#title' => t('Location Data'),
+      '#attributes' => [ 'id' => 'location_data']
+    ];
 
     return $element;
   }

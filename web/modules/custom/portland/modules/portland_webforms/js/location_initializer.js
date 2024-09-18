@@ -281,7 +281,7 @@ class LocationWidget {
     var isWithin = leafletPip.pointInLayer(latlng, layer);
     if (isWithin.length < 1 && layer.config.boundary_enforce) return false;
     // valid click; get and return region ID. need access to result json (in layer.json).
-    if (layer.config.feature_property_path && layer.config.property_destination_field) {
+    if (layer.config.feature_property_path && layer.config.property_capture_field) {
       var property = GlobalUtilities.getPropertyByPath(layer.json, layer.config.feature_property_path)
       if (property) return property;
     }
