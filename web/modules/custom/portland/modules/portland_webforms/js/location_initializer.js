@@ -13,10 +13,10 @@ class LocationWidget {
     this.primaryBoundaryConfig = this.settings.primary_boundary;
     this.$ = $;
     this.L = L;
-    this.api = new GlobalApi(constants);
-    this.initMap();
     this.selectedLocation = null;
     this.selectedMarker = null;
+    this.api = new GlobalApi(constants);
+    this.initMap();
   }
 
   initMap() {
@@ -27,44 +27,58 @@ class LocationWidget {
       gestureHandling: true,
       zoomControl: false
     });
-    // Add layers, controls, and event listeners
-    this.addLayers();
-    this.addControls();
-    this.addEventListeners();
-    this.message = "It's plugged in!";
+
+    // layers consist of the base layer, aerial view layer, primary boundary layer (city limits), as well as
+    // any custom layers configured in YAML code in the element's Advanced > Custom Properties field. custom
+    // layers can be regions, assets, or incidents. see the README.md file for details.
+    this.initLayers();
+
+    // controls are comprised of on-screen map controls, such as zoom, aerial view, self-locate, etc.
+    this.initMapControls();
+
+    // this function adds event listeners to the map, such as the map click handler. map clicks initiate the
+    // reverse geocoding functions, as well as any additional queries that are configured in the YAML config.
+    this.initEventListeners();
+
+    this.debug("Primary initialization complete.");
   }
 
-  addLayers() {
+  initLayers() {
     var self = this;
 
+    this.initBaseLayer();
+    this.initAerialLayer();
+    this.initPrimaryBoundayLayer();
+
+    // init custom layers
+    for (var i = 0; i < this.layersConfig.length; i++) {
+      this.initLayer(this.layersConfig[i]);
+    }
+  }
+
+  initBaseLayer() {
     this.baseLayer = L.tileLayer(this.constants.URLS.BASEMAP_TILE_LAYER, {
       attribution: this.constants.DEFAULTS.BASEMAP_ATTRIBUTION
     });
     this.map.addLayer(this.baseLayer);
-    //this.map.on('click', this.handleMapClick);
+  }
 
-    // this.addEventListeners();
-
-    // Define aerial layer (replace with the actual URL or logic)
+  initAerialLayer() {
     this.aerialLayer = L.tileLayer(this.constants.URLS.AERIAL_TILE_LAYER, {
       attribution: this.constants.DEFAULTS.BASEMAP_ATTRIBUTION
     });
+  }
 
-    // Add primary boundary layer
-    this.initializeLayer({
-      name: self.settings.primary_boundary.name || "Primary Boundary Layer",
-      url: self.settings.primary_boundary.url || this.constants.URLS.API_BOUNDARY,
+  initPrimaryBoundayLayer() {
+    this.initLayer({
+      name: this.settings.primary_boundary.name || "Primary Boundary Layer",
+      url: this.settings.primary_boundary.url || this.constants.URLS.API_BOUNDARY,
       type: this.constants.LAYER_TYPE.BOUNDARY,
       behavior: this.constants.LAYER_BEHAVIOR.INFORMATIONAL,
-      visible: self.settings.primary_boundary.visible === false ? false : true,
-      boundary_enforce: self.settings.primary_boundary.boundary_enforce === false ? false : true,
-      boundaryProperties: self.settings.primary_boundary.visible === false ? this.constants.PRIMARY_BOUNDARY_INVISIBLE_PROPERTIES : this.constants.PRIMARY_BOUNDARY_VISIBLE_PROPERTIES
+      visible: this.settings.primary_boundary.visible === false ? false : true,
+      boundary_enforce: this.settings.primary_boundary.boundary_enforce === false ? false : true,
+      boundaryProperties: this.settings.primary_boundary.visible === false ? this.constants.PRIMARY_BOUNDARY_INVISIBLE_PROPERTIES : this.constants.PRIMARY_BOUNDARY_VISIBLE_PROPERTIES
     });
-
-    // Add configured layers
-    for (var i = 0; i < this.layersConfig.length; i++) {
-      this.initializeLayer(this.layersConfig[i]);
-    }
   }
 
   debug(message) {
@@ -74,7 +88,7 @@ class LocationWidget {
   // This is the main function for initializing geoJSON layers. It's called for each element of the 
   // layer config array. The layer is rendered using the L.geoJson function. The resulting layer, along
   // with its configuration properties, is stored in a global layers array that can be accessed later.
-  initializeLayer(layer) {
+  initLayer(layer) {
     var self = this;
     this.$.ajax({
       url: layer.url,
@@ -146,7 +160,7 @@ class LocationWidget {
 
   }
 
-  addControls() {
+  initMapControls() {
     // zoom control /////////////////////
     this.map.addControl(new L.control.zoom({ position: 'topright' }));
 
@@ -166,84 +180,85 @@ class LocationWidget {
     this.map.addControl(new AerialViewControl());
   }
 
-  addEventListeners() {
+  initEventListeners() {
 
     // binding "this" to the handler call, so that it's available in the functions
-    this.map.on('click', this.handleMapClick.bind(this));
+    var self = this;
+    this.map.on('click', LocationEventHandlers.handleMapClick.bind(this, self));
     // Add other event listeners
   }
 
-  async handleMapClick(e) {
+  // async handleMapClick(e) {
 
-    this.showLoader();
-    this.resetMapClick();
-    const latlng = e.latlng;
-    // TODO: RESET MAP CLICK:
-    // - show ajax loader
-    // - reset clicked marker
-    // - clear location fields
+  //   this.showLoader();
+  //   this.resetMapClick();
+  //   const latlng = e.latlng;
+  //   // TODO: RESET MAP CLICK:
+  //   // - show ajax loader
+  //   // - reset clicked marker
+  //   // - clear location fields
 
-    // Call the reverseGeocode function and process the result
-    try {
-      const result = await this.api.reverseGeocode(latlng, this.settings.apiKey);
+  //   // Call the reverseGeocode function and process the result
+  //   try {
+  //     const result = await this.api.reverseGeocode(latlng, this.settings.apiKey);
 
-      this.selectedLocation = this.processGeocodeResult(result, latlng);
+  //     this.selectedLocation = this.processGeocodeResult(result, latlng);
 
-      if (!this.selectedLocation) {
-        // display error message
-        throw new Error("Location could not be determined.");
-      }
+  //     if (!this.selectedLocation) {
+  //       // display error message
+  //       throw new Error("Location could not be determined.");
+  //     }
 
-      // perform layer actions
-      for (var i = 0; i < this.layers.length; i++) {
-        switch (this.layers[i].config.type) {
-          case "boundary":
-            // what happens when a boundary layer is clicked? call isLocationValid()
-            // - check whether click is within boundary:
-            //   - if not within boundary and boundary_enforce==true, then return false.
-            //   - if within boundary, return region ID from parameter defined in feature_property_path
-            var valid = this.isLocationValid(this.layers[i], this.selectedLocation);
-            //var layerResult = this.isWithinBoundary(this.layers[i], this.selectedLocation);
-            break;
+  //     // perform layer actions
+  //     for (var i = 0; i < this.layers.length; i++) {
+  //       switch (this.layers[i].config.type) {
+  //         case "boundary":
+  //           // what happens when a boundary layer is clicked? call isLocationValid()
+  //           // - check whether click is within boundary:
+  //           //   - if not within boundary and boundary_enforce==true, then return false.
+  //           //   - if within boundary, return region ID from parameter defined in feature_property_path
+  //           var valid = this.isLocationValid(this.layers[i], this.selectedLocation);
+  //           //var layerResult = this.isWithinBoundary(this.layers[i], this.selectedLocation);
+  //           break;
 
-          case "asset":
-            // what happens when an asset layer is clicked? we handle the asset being
-            // clicked in a handler on the marker. whether we still allow the marker to
-            // be set elsewhere on the map is determined by the behavior of the asset 
-            // layer, if single_select or multi_select.
+  //         case "asset":
+  //           // what happens when an asset layer is clicked? we handle the asset being
+  //           // clicked in a handler on the marker. whether we still allow the marker to
+  //           // be set elsewhere on the map is determined by the behavior of the asset 
+  //           // layer, if single_select or multi_select.
 
-            // if any asset layers are 
-
-
-            this.LAYER_BEHAVIOR = {
-              INFORMATIONAL: 'informational',
-              SINGLE_SELECT: 'single_select',
-              MULTI_SELECT: 'multi_select',
-              OPTIONAL_SELECT: 'optional_select'
-            };
-            // we need to know whether an asset marker is clicked, rather than the layer.
-            // marker click will get handled elsewhere, do we just ignore the layer click then?
-            break;
-
-          case "incident":
-            // similar to asset layer, we really just want to handle when the incident marker
-            // is clicked. otherwise, we allow location to be set. 
-            break;
-
-          default:
-            break;
-
-        }
-      }
+  //           // if any asset layers are 
 
 
-    } catch (error) {
-      this.debug(error.message + " You may have selected a location outside our service area.");
-      // TODO: display error message to user in modal dialog
-    } finally {
-      this.hideLoader();
-    }
-  }
+  //           this.LAYER_BEHAVIOR = {
+  //             INFORMATIONAL: 'informational',
+  //             SINGLE_SELECT: 'single_select',
+  //             MULTI_SELECT: 'multi_select',
+  //             OPTIONAL_SELECT: 'optional_select'
+  //           };
+  //           // we need to know whether an asset marker is clicked, rather than the layer.
+  //           // marker click will get handled elsewhere, do we just ignore the layer click then?
+  //           break;
+
+  //         case "incident":
+  //           // similar to asset layer, we really just want to handle when the incident marker
+  //           // is clicked. otherwise, we allow location to be set. 
+  //           break;
+
+  //         default:
+  //           break;
+
+  //       }
+  //     }
+
+
+  //   } catch (error) {
+  //     this.debug(error.message + " You may have selected a location outside our service area.");
+  //     // TODO: display error message to user in modal dialog
+  //   } finally {
+  //     this.hideLoader();
+  //   }
+  // }
 
   setMarker(loation) {
     // remove previous location marker
