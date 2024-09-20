@@ -105,7 +105,8 @@ AddressVerifierView.prototype._setUpInputFieldAndAutocomplete = function () {
     });
 
     this.$input.on('keyup', function () {
-        if (self.$(this).val().length > 3 && self.isVerified) {
+        var length = self.$(this).val().length;
+        if ((length > 3 || length < 1) && self.isVerified) {
             self._resetVerified(self.$checkmark, self.$button);
         }
     });
@@ -350,25 +351,25 @@ AddressVerifierView.prototype._resetVerified = function ($checkmark, $button) {
 
     // clear hidden sub-elements for address data
     var $element = this.$(this.element);
-    $element.find('#location_address').val("");
-    $element.find('#location_full_address').val("");
-    $element.find('#location_address_street_number').val("");
-    $element.find('#location_address_street_quadrant').val("");
-    $element.find('#location_address_street_name').val("");
-    $element.find('#location_address_street_type').val("");
-    $element.find('#location_city').val("");
-    $element.find('#location_state').val("");
-    $element.find('#location_zip').val("");
-    $element.find('#location_lat').val("");
-    $element.find('#location_lon').val("");
-    $element.find('#location_x').val("");
-    $element.find('#location_y').val("");
-    $element.find('#location_taxlot_id').val("");
-    $element.find('#location_is_unincorporated').val("");
+    this.$element.find('#location_address').val("");
+    this.$element.find('#location_full_address').val("");
+    this.$element.find('#location_address_street_number').val("");
+    this.$element.find('#location_address_street_quadrant').val("");
+    this.$element.find('#location_address_street_name').val("");
+    this.$element.find('#location_address_street_type').val("");
+    this.$element.find('#location_city').val("");
+    this.$element.find('#location_state').val("");
+    this.$element.find('#location_zip').val("");
+    this.$element.find('#location_lat').val("");
+    this.$element.find('#location_lon').val("");
+    this.$element.find('#location_x').val("");
+    this.$element.find('#location_y').val("");
+    this.$element.find('#location_taxlot_id').val("");
+    this.$element.find('#location_is_unincorporated').val("");
     // $element.find('#address_label').val("");
     // $element.find('#location_address_label_markup').addClass('d-none');
-    $element.find('#location_verification_status').val("");
-    $element.find('#location_data').val("");
+    this.$element.find('#location_verification_status').val("");
+    this.$element.find('#location_data').val("");
     // this.$element.find('#container_unit').removeClass('d-none');
     // this.$element.find('#location_address_label_markup').removeClass('d-none');
     this.isVerified = false;
