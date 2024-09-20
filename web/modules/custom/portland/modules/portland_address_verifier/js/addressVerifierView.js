@@ -201,7 +201,7 @@ AddressVerifierView.prototype._setVerified = function (item, view = this) {
     // TODO: if configured, set the taxlot id
 
     // populate hidden sub-elements for address data
-    view.$element.find('#location_address').val(item.street);
+    view.$element.find('#location_address').val(item.street).trigger('change');
     //$element.find('#location_street').val(item.street);
     view.$element.find('#location_full_address').val(item.fullAddress);
     view.$element.find('#location_address_street_number').val(item.streetNumber);
@@ -351,7 +351,7 @@ AddressVerifierView.prototype._resetVerified = function ($checkmark, $button) {
 
     // clear hidden sub-elements for address data
     var $element = this.$(this.element);
-    this.$element.find('#location_address').val("");
+    //this.$element.find('#location_address').val("");
     this.$element.find('#location_full_address').val("");
     this.$element.find('#location_address_street_number').val("");
     this.$element.find('#location_address_street_quadrant').val("");
