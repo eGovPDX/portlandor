@@ -11,7 +11,7 @@ use Drupal\webform\Plugin\WebformElement\WebformCompositeBase;
  *   id = "portland_ajax_indicator",
  *   label = @Translation("Portland Ajax Indicator"),
  *   description = @Translation("Provides an element that displays a progress spinner whenever an ajax operation occurs in a webform."),
- *   category = @Translation("Composite elements"),
+ *   category = @Translation("Portland elements"),
  *   multiline = TRUE,
  *   composite = TRUE,
  *   states_wrapper = TRUE,

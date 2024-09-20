@@ -12,7 +12,7 @@ use Drupal\webform\WebformSubmissionInterface;
  *   id = "portland_address_verifier",
  *   label = @Translation("Portland Address Verifier"),
  *   description = @Translation("Provides an element for verifying an address in Portland."),
- *   category = @Translation("Composite elements"),
+ *   category = @Translation("Portland elements"),
  *   multiline = TRUE,
  *   composite = TRUE,
  *   states_wrapper = TRUE,

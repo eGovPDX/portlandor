@@ -12,7 +12,7 @@ use Drupal\webform\WebformSubmissionInterface;
  *   id = "portland_location_picker",
  *   label = @Translation("Portland location picker"),
  *   description = @Translation("Provides an element for selecting a location by map or address and storing the lat/lng coordiantes. WARNING: Only one instance of a location picker widget is supported in a webform, and the machine name must be 'report_location.'"),
- *   category = @Translation("Composite elements"),
+ *   category = @Translation("Portland elements"),
  *   multiline = TRUE,
  *   composite = TRUE,
  *   states_wrapper = TRUE,
