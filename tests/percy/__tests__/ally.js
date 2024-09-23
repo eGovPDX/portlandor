@@ -65,7 +65,7 @@ describe('Ally Admin user test', () => {
     try {
       await page.goto(`${HOME_PAGE}/powr/content/add/group_membership?destination=/powr/members`);
       await page.type('#edit-entity-id-0-target-id', 'Oliver Outsider');
-      await page.click('#edit-group-roles-project-editor');
+      await page.click('#edit-group-roles-base-group-editor');
       selector = 'input#edit-submit';
       await page.evaluate((selector) => document.querySelector(selector).click(), selector);
       await page.waitForNavigation();
