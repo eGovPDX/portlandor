@@ -26,7 +26,7 @@ class PortlandAjaxIndicator extends WebformCompositeBase
       '#type' => 'markup',
       '#title' => 'Ajax Progress Indicator',
       '#title_display' => 'invisible',
-      '#markup' => '<div id="ajax-status"><img src="/modules/custom/portland/modules/portland_webforms/images/loading.png" alt="Loading..."></div>',
+      '#markup' => '<div id="ajax-status"><img src="/modules/custom/portland/modules/portland_webforms/images/loading-spinner.png" alt="Loading..."></div>',
     ];
     return $element;
   }
