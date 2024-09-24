@@ -17,8 +17,8 @@ AddressVerifierModel.locationItem = function (data, $element = null, isSingleton
     if (this.streetDirectionSuffix) {
         this.streetType += " " + this.streetDirectionSuffix;
     }
-    this.city = data.attributes.jurisdiction.toUpperCase();
-    this.state = data.attributes.state.toUpperCase();
+    this.city = data.attributes.jurisdiction ? data.attributes.jurisdiction.toUpperCase() : "";
+    this.state = data.attributes.state ? data.attributes.state.toUpperCase() : "";
     this.zipCode = data.attributes.zip_code;
     this.lat = data.attributes.lat;
     this.lon = data.attributes.lon;

@@ -1,20 +1,20 @@
 (function ($, Drupal) {
   Drupal.behaviors.ajaxStatusIndicator = {
     attach: function (context, settings) {
-      // Show the loader when an AJAX call starts
+      // Show the overlay and spinner when an AJAX call starts
       $(document).ajaxStart(function () {
-        $('#ajax-status').show(); // Show the loader
+        $('#ajax-overlay').show(); // Show the overlay
       });
 
-      // Hide the loader when the AJAX call completes
+      // Hide the overlay and spinner when AJAX call completes
       $(document).ajaxStop(function () {
-        $('#ajax-status').hide(); // Hide the loader
+        //$('#ajax-overlay').hide(); // Hide the overlay
       });
 
       // Optionally, handle AJAX errors
       $(document).ajaxError(function () {
         alert('An error occurred while processing the request.');
-        $('#ajax-status').hide();
+        $('#ajax-overlay').hide(); // Hide the overlay on error
       });
     }
   };
