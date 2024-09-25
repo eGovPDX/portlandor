@@ -8,7 +8,7 @@
 
       // Hide the overlay and spinner when AJAX call completes
       $(document).ajaxStop(function () {
-        //$('#ajax-overlay').hide(); // Hide the overlay
+        $('#ajax-overlay').hide(); // Hide the overlay
       });
 
       // Optionally, handle AJAX errors
