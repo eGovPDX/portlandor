@@ -177,7 +177,7 @@ AddressVerifierView.prototype._selectAddress = function (item) {
 AddressVerifierView.prototype._processSecondaryResults = function (results, view = this, capturePath, captureField, $) {
     // get property value from results as indicated by path (can we access this.settings here?)
     var propertyValue = AddressVerifierModel.getPropertyByPath(results, capturePath);
-    $('#' + captureField).val(propertyValue);
+    view.$element.find('#' + captureField).val(propertyValue);
 }
 
 // this is hte method that handles the location item once its data is complete.
@@ -209,6 +209,7 @@ AddressVerifierView.prototype._setVerified = function (item, view = this) {
     view.$element.find('#location_address_street_name').val(item.streetName);
     view.$element.find('#location_address_street_type').val(item.streetType);
     view.$element.find('#location_city').val(item.city);
+    view.$element.find('#location_jurisdiction').val(item.jurisdiction);
     view._setStateByLabel(view, item.state);
     view.$element.find('#location_zip').val(item.zipCode);
     view.$element.find('#location_lat').val(item.lat);
@@ -358,6 +359,7 @@ AddressVerifierView.prototype._resetVerified = function ($checkmark, $button) {
     this.$element.find('#location_address_street_name').val("");
     this.$element.find('#location_address_street_type').val("");
     this.$element.find('#location_city').val("");
+    this.$element.find('#location_jurisdiction').val("");
     this.$element.find('#location_state').val("");
     this.$element.find('#location_zip').val("");
     this.$element.find('#location_lat').val("");
