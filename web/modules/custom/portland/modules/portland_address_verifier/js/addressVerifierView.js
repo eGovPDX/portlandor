@@ -20,9 +20,6 @@ var $element;
 var $input;
 var $suggestModal;
 var $statusModal;
-const NOT_VERIFIED_MESSAGE = "We're unable to verify this address.";
-const NOT_VERIFIED_REASONS = "This sometimes happens with new addresses, PO boxes, and multi-family buildings with unit numbers.";
-const IF_CERTAIN_MESSAGE = "If you're certain the address is correct, you may use it without verification.";
 const MUST_PROVIDE_ADDRESS_MESSAGE = "You must enter an address or partial address to verify.";
 const UNVERIFIED_WARNING_MESSAGE = "We're unable to verify this address. If you're certain this is the full, correct address, you may proceed without verification."
 const VERIFIED_MESSAGE = "Address is verified!";
@@ -208,10 +205,10 @@ AddressVerifierView.prototype._setVerified = function (item, view = this) {
     view.$element.find('#location_address_street_quadrant').val(item.streetQuadrant);
     view.$element.find('#location_address_street_name').val(item.streetName);
     view.$element.find('#location_address_street_type').val(item.streetType);
-    view.$element.find('#location_city').val(item.city);
+    view.$element.find('#location_city').val(item.city).trigger('change');
     view.$element.find('#location_jurisdiction').val(item.jurisdiction);
     view._setStateByLabel(view, item.state);
-    view.$element.find('#location_zip').val(item.zipCode);
+    view.$element.find('#location_zip').val(item.zipCode).trigger('change');
     view.$element.find('#location_lat').val(item.lat);
     view.$element.find('#location_lon').val(item.lon);
     view.$element.find('#location_x').val(item.x);
@@ -220,7 +217,7 @@ AddressVerifierView.prototype._setVerified = function (item, view = this) {
     // view.$element.find('#location_address_label').val(AddressVerifierModel.buildMailingLabel(item, view.$element));
     // view.$element.find('#mailing_label').html(AddressVerifierModel.buildMailingLabel(item, view.$element, true));
     // view.$element.find('#location_address_label_markup').removeClass('d-none');
-    view.$element.find('#location_verification_status').val("Verified");
+    view.$element.find('#location_verification_status').val("Verified").trigger('change');
     view.$element.find('#location_data').val(JSON.stringify(item));
     view.isVerified = true;
     console.log(JSON.stringify(item));
@@ -309,7 +306,7 @@ AddressVerifierView.prototype._resetSuggestModal = function () {
 AddressVerifierView.prototype._showNotFoundModal = function () {
     var self = this;
     var inputVal = self.$input.val().trim();
-    this.$notFoundModal.html(`<p><strong>${NOT_VERIFIED_MESSAGE}</strong> ${NOT_VERIFIED_REASONS}</p><p>${IF_CERTAIN_MESSAGE}</p></p>`);
+    this.$notFoundModal.html(`<p><strong>${this.settings.not_verified_heading}</strong> ${this.settings.not_verified_reasons}</p><p>${this.settings.not_verified_remedy}</p></p>`);
     Drupal.dialog(this.$notFoundModal, {
         width: '600px',
         buttons: [{
@@ -358,10 +355,10 @@ AddressVerifierView.prototype._resetVerified = function ($checkmark, $button) {
     this.$element.find('#location_address_street_quadrant').val("");
     this.$element.find('#location_address_street_name').val("");
     this.$element.find('#location_address_street_type').val("");
-    this.$element.find('#location_city').val("");
+    this.$element.find('#location_city').val("").trigger('change');
     this.$element.find('#location_jurisdiction').val("");
-    this.$element.find('#location_state').val("");
-    this.$element.find('#location_zip').val("");
+    this.$element.find('#location_state').val("").trigger('change');
+    this.$element.find('#location_zip').val("").trigger('change');
     this.$element.find('#location_lat').val("");
     this.$element.find('#location_lon').val("");
     this.$element.find('#location_x').val("");
@@ -370,7 +367,7 @@ AddressVerifierView.prototype._resetVerified = function ($checkmark, $button) {
     this.$element.find('#location_is_unincorporated').val("");
     // $element.find('#address_label').val("");
     // $element.find('#location_address_label_markup').addClass('d-none');
-    this.$element.find('#location_verification_status').val("");
+    this.$element.find('#location_verification_status').val("").trigger('change');
     this.$element.find('#location_data').val("");
     // this.$element.find('#container_unit').removeClass('d-none');
     // this.$element.find('#location_address_label_markup').removeClass('d-none');

@@ -74,11 +74,11 @@ class PortlandAddressVerifier extends WebformCompositeBase {
     // needed, such as in a handler that is sending data to an external system, the sub-field needs to be
     // specified in the token, such as [webform_submission:values:location:place_name].
     $lines = [];
-    $address;
+    $address = "";
 
     if ($value['location_verification_status'] == 'Verified') {
       $address = $value['address_label'];
-      $address = str_replace("\r\n", "<br>", $label);
+      $address = str_replace("\r\n", "<br>", $address);
     } else {
       $address = $value['location_address'];
     }
@@ -147,6 +147,15 @@ class PortlandAddressVerifier extends WebformCompositeBase {
 
     $secondaryQueryCaptureField = array_key_exists('#secondary_query_capture_field', $element) ? $element['#secondary_query_capture_field'] : false;
     $element['#attached']['drupalSettings']['webform']['portland_address_verifier']['secondary_query_capture_field'] = $secondaryQueryCaptureField;
+
+    $notVerifiedHeading = array_key_exists('#not_verified_heading', $element) ? $element['#not_verified_heading'] : "We're unable to verify this address.";
+    $element['#attached']['drupalSettings']['webform']['portland_address_verifier']['not_verified_heading'] = $notVerifiedHeading;
+
+    $notVerifiedReasons = array_key_exists('#not_verified_reasons', $element) ? $element['#not_verified_reasons'] : "This sometimes happens with new addresses, PO boxes, and multi-family buildings with unit numbers.";
+    $element['#attached']['drupalSettings']['webform']['portland_address_verifier']['not_verified_reasons'] = $notVerifiedReasons;
+
+    $notVerifiedRemedy = array_key_exists('#not_verified_remedy', $element) ? $element['#not_verified_remedy'] : "If you're certain the address is correct, you may use it without verification.";
+    $element['#attached']['drupalSettings']['webform']['portland_address_verifier']['not_verified_remedy'] = $notVerifiedRemedy;
   }
 
 }
