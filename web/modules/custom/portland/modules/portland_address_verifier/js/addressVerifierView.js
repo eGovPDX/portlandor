@@ -22,7 +22,7 @@ var $suggestModal;
 var $statusModal;
 const NOT_VERIFIED_MESSAGE = "We're unable to verify this address.";
 const NOT_VERIFIED_REASONS = "This sometimes happens with new addresses, PO boxes, and multi-family buildings with unit numbers.";
-const IF_CERTAIN_MESSAGE = "If you are certain this is the full, correct address, you may use it without verification.";
+const IF_CERTAIN_MESSAGE = "If you're certain the address is correct, you may use it without verification.";
 const MUST_PROVIDE_ADDRESS_MESSAGE = "You must enter an address or partial address to verify.";
 const UNVERIFIED_WARNING_MESSAGE = "We're unable to verify this address. If you're certain this is the full, correct address, you may proceed without verification."
 const VERIFIED_MESSAGE = "Address is verified!";
