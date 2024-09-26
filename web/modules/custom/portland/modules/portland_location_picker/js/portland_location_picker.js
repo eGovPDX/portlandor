@@ -1012,11 +1012,7 @@
           $('input[name=' + elementId + '\\[location_attributes\\]]').val(internal_details);
 
           if (results.detail.city) {
-            var city_name = results.detail.city[0].name.toUpperCase();
-            $('input[name=' + elementId + '\\[location_municipality_name\\]]').val(city_name);
-          } else {
-            // city is unincorporated; get municipality data from zipcode
-            var city_name = results.detail.zipcode[0].name.toUpperCase();
+            var city_name = results.detail.city[0].name;
             $('input[name=' + elementId + '\\[location_municipality_name\\]]').val(city_name);
           }
 
@@ -1268,19 +1264,6 @@
         function parseDescribeData(data, isWithinBounds) {
           var description = "";
 
-          var city = "";
-          if (data.detail.city && data.detail.city[0].name != null) {
-            city = data.detail.city[0].name.toUpperCase();
-          } else {
-            city = data.detail.zipcode[0].name.toUpperCase();
-          }
-            
-          if (description) {
-              description += ", " + city.toUpperCase();
-          } else {
-              description = city.toUpperCase();
-          }
-
           // if park, get park name
           if (data.park && data.detail.park[0].name != null) {
             description = data.detail.park[0].name.toUpperCase();
@@ -1290,10 +1273,18 @@
           } else if (data.waterbody && data.detail.waterbody[0].name != null) {
             description = data.detail.waterbody[0].name.toUpperCase();
           } else {
-            // if within bounds, use data description. otherwise just city and zip
+            // if within boudns, use data description. otherwise just city and zip
             // be displayed.
             if (isWithinBounds) {
               description = data.describe ? data.describe.toUpperCase() : "";
+            }
+          }
+
+          if (data.detail.city && data.detail.city[0].name != null) {
+            if (description) {
+              description += ", " + data.detail.city[0].name.toUpperCase();
+            } else {
+              description = data.detail.city[0].name.toUpperCase();
             }
           }
 
@@ -1306,7 +1297,6 @@
           }
 
           if (data.detail.zipcode && data.detail.zipcode[0].zip != null) {
-            description += ", " + city;
             description += "  " + data.detail.zipcode[0].zip;
           }
 
@@ -1354,8 +1344,6 @@
           // if in address verify mode, use the verified address from suggest API
           // rather than the "described" address that is less accurate
           var description = addressVerify ? verifiedAddress : parseDescribeData(data, isWithinBounds);
-
-          // TODO: Do we need to do an additional lookup for city name?
 
           showVerifiedLocation(description, lat, lng, isWithinBounds, isVerifiedAddress);
 
@@ -1422,17 +1410,6 @@
           $('#location-text-value').text(description);
           $('#location-text-lat').text(lat);
           $('#location-text-lng').text(lng);
-
-          // KLUDGE: There is a single use case where we need the street number, quadrant, name, type and direction.
-          // The suggest API returns those values, but it's not being called in all cases. Future iterations of the
-          // widget will utilize that, but for now, we're just going to do some ugly string parsing.
-          var arrAddressLines = description.split(', ');
-          var arrStreet = arrAddressLines[0].split(' ');
-          $('#location_street_number').val(arrStreet[0]);
-          $('#location_street_quadrant').val(arrStreet[1]);
-          $('#location_street_name').val(arrStreet[2]);
-          $('#location_street_type').val(arrStreet[3]);
-          $('#location_street_direction').val(arrStreet[4]);
 
           // if verify mode, also put location description in address field
           if (addressVerify) {
