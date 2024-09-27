@@ -2,13 +2,13 @@
 
 namespace Drupal\portland_relations\Form;
 
-use Drupal\Core\Entity\EntityForm;
+use Drupal\Core\Entity\BundleEntityFormBase;
 use Drupal\Core\Form\FormStateInterface;
 
 /**
  * Class RelationTypeForm.
  */
-class RelationTypeForm extends EntityForm {
+class RelationTypeForm extends BundleEntityFormBase {
 
   /**
    * {@inheritdoc}
@@ -35,7 +35,12 @@ class RelationTypeForm extends EntityForm {
       '#disabled' => !$relation_type->isNew(),
     ];
 
-    /* You will need additional form elements for your custom properties. */
+    $form['new_revision'] = [
+      '#type' => 'checkbox',
+      '#title' => $this->t('Create new revision'),
+      '#default_value' => $relation_type->shouldCreateNewRevision(),
+      '#description' => $this->t('Create a new revision by default for this relation type.'),
+    ];
 
     return $form;
   }

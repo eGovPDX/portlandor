@@ -40,7 +40,8 @@ use Drupal\Core\Config\Entity\ConfigEntityBundleBase;
  *   config_export = {
  *     "id",
  *     "label",
- *     "uuid"
+ *     "new_revision",
+ *     "uuid",
  *   }
  * )
  */
@@ -60,4 +61,17 @@ class RelationType extends ConfigEntityBundleBase implements RelationTypeInterfa
    */
   protected $label;
 
+  /**
+   * The default revision setting for relations of this type.
+   *
+   * @var bool
+   */
+  protected $new_revision;
+
+  /**
+   * {@inheritdoc}
+   */
+  public function shouldCreateNewRevision() {
+    return $this->new_revision;
+  }
 }

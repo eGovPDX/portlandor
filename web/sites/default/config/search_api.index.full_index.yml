@@ -13,6 +13,7 @@ dependencies:
     - field.storage.node.field_construction_estimate
     - field.storage.node.field_construction_type
     - field.storage.node.field_contract_scope
+    - field.storage.taxonomy_term.field_council_district
     - field.storage.node.field_council_document_status
     - field.storage.node.field_council_document_type
     - field.storage.node.field_date_of_final_disposition
@@ -70,6 +71,7 @@ dependencies:
     - field.storage.group.field_neighborhood
     - field.storage.group.field_search_keywords
     - field.storage.group.field_start_date
+    - field.storage.group.field_group_subtype
     - field.storage.group.field_topics
     - search_api.server.pantheon_solr8
   module:
@@ -306,6 +308,14 @@ field_settings:
     dependencies:
       config:
         - field.storage.node.field_contract_scope
+  field_council_district:
+    label: 'Council districts'
+    datasource_id: 'entity:taxonomy_term'
+    property_path: field_council_district
+    type: integer
+    dependencies:
+      config:
+        - field.storage.taxonomy_term.field_council_district
   field_council_document_status:
     label: 'Council Document Status'
     datasource_id: 'entity:node'
@@ -812,6 +822,16 @@ field_settings:
     dependencies:
       config:
         - field.storage.group.field_start_date
+  group_subtype:
+    label: 'Group subtype » Taxonomy term » Name'
+    datasource_id: 'entity:group'
+    property_path: 'field_group_subtype:entity:name'
+    type: string
+    dependencies:
+      config:
+        - field.storage.group.field_group_subtype
+      module:
+        - taxonomy
   group_title:
     label: 'Group Title'
     datasource_id: 'entity:group'
@@ -890,6 +910,7 @@ field_settings:
       view_mode:
         'entity:group':
           advisory_group: default
+          base_group: default
           bureau_office: default
           elected_official: default
           program: default
@@ -910,7 +931,9 @@ field_settings:
         'entity:taxonomy_term':
           coalition: ''
           community_actions: ''
+          council_district: ''
           neighborhood: ''
+          service_area: ''
           topics: ''
   status:
     label: 'Content Published'
@@ -958,7 +981,7 @@ field_settings:
       module:
         - taxonomy
   type:
-    label: 'Group Type'
+    label: 'Legacy Group Type'
     datasource_id: 'entity:group'
     property_path: type
     type: string
@@ -1012,6 +1035,7 @@ datasource_settings:
       selected:
         - coalition
         - community_actions
+        - council_district
         - neighborhood
         - service_area
         - topics
@@ -1106,7 +1130,6 @@ processor_settings:
       - group_topic_name
       - portland_content_type_name_field
       - portland_group_title_field
-      - rendered_item
       - term_description
       - term_name
       - term_name_2

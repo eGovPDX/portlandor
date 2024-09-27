@@ -170,6 +170,8 @@ build_and_deploy: &build_and_deploy
           # Don't check the repo host key
           export GIT_SSH_COMMAND="ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no"
 
+          terminus self:plugin:reload
+
           if [[ $CIRCLE_USERNAME = "" ]]; then
             # Set CIRCLE_USERNAME for builds triggered by GitHub actions
             echo 'export CIRCLE_USERNAME="BTS eGov"' >> $BASH_ENV && source $BASH_ENV
@@ -273,7 +275,15 @@ build_and_deploy: &build_and_deploy
             if grep -Fxq "$PANTHEON_ENV" ./env_list.txt; then
               echo "Multidev already exists, no need to reset index tracker"
             else
-              echo "Reseting index tracker because index is empty on new multidev"
+              echo "Resetting Solr server on new multidev"
+              terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- en devel search_api_solr_devel search_api_solr_admin
+              terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- search-api-solr:devel-delete-all pantheon_solr8
+              terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- search-api:server-disable pantheon_solr8
+              terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- search-api:server-enable pantheon_solr8
+              terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- search-api:enable-all
+              terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- cim -y
+
+              echo "Resetting index tracker because index is empty on new multidev"
               terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- search-api:reset-tracker
             fi
             echo "Begin indexing the Solr server"
@@ -535,7 +545,7 @@ workflows:
             branches:
               only:
                 - master
-                - pgov-1078
+                - pgov-1236
   # The update database workflow runs when the scheduled pipeline named "Update Sandbox
   # Database" runs. Scheduled pipelines are configured in the CircleCI web UI at
   # https://app.circleci.com/settings/project/github/eGovPDX/portlandor/triggers
