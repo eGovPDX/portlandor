@@ -174,7 +174,7 @@ AddressVerifierView.prototype._selectAddress = function (item) {
 AddressVerifierView.prototype._processSecondaryResults = function (results, view = this, capturePath, captureField, $) {
     // get property value from results as indicated by path (can we access this.settings here?)
     var propertyValue = AddressVerifierModel.getPropertyByPath(results, capturePath);
-    view.$element.find('#' + captureField).val(propertyValue);
+    view.$element.find('#' + captureField).val(propertyValue).trigger('change');
 }
 
 // this is hte method that handles the location item once its data is complete.
