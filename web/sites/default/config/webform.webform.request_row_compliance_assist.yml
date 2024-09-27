@@ -98,15 +98,15 @@ elements: |-
               value: 'PBOT Compliance'
       requester_contact_name:
         '#type': textfield
-        '#title': 'Requester Name'
+        '#title': 'Your Name'
         '#required': true
       requester_contact_phone:
         '#type': textfield
-        '#title': 'Requester Phone'
+        '#title': 'Your Phone'
         '#input_mask': '(999) 999-9999'
       requester_contact_email:
         '#type': textfield
-        '#title': 'Requester Email'
+        '#title': 'Your Email'
         '#pattern': '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
         '#pattern_error': 'Please enter a correctly formatted email address, such as myname@example.com.'
     section_ticket_info:
@@ -440,7 +440,7 @@ elements: |-
   computed_tags:
     '#type': webform_computed_twig
     '#title': 'Computed Tags'
-    '#display_on': none
+    '#display_on': form
     '#mode': text
     '#template': |-
       {% if data.request_workgroup and data.request_workgroup is not iterable %}
@@ -493,8 +493,9 @@ elements: |-
         {% endif %}
         
       {% endif %}
-      row_compliance_internal
+      {% if data.ticket_type != "Obstruction" %}row_compliance_internal{% endif %}
     '#whitespace': trim
+    '#ajax': true
 css: ''
 javascript: ''
 settings:
@@ -771,7 +772,7 @@ handlers:
     id: zendesk
     handler_id: new_internal_row_compliance_request
     label: 'New internal ROW Compliance request (general)'
-    notes: 'Disabled if not assign to Dan, not assign to Nameer, and not a test ticket. Sets ticket priority using tags (eg. priority_high) and triggers.'
+    notes: 'Disabled if not assign to Dan, not assign to Nameer, and not a test ticket. Sets ticket priority using tags (eg. priority_high) and triggers. IMPORTANT NOTE FOR ALL HANDLERS: If obstruction, a trigger in Zendesk will update the ticket to use the non-internal ROW Compliance form.'
     status: true
     conditions:
       disabled:
