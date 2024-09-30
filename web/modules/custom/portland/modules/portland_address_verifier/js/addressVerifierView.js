@@ -101,9 +101,8 @@ AddressVerifierView.prototype._setUpInputFieldAndAutocomplete = function () {
         }
     });
 
-    this.$input.on('keyup', function () {
-        var length = self.$(this).val().length;
-        if ((length > 3 || length < 1) && self.isVerified) {
+    this.$input.on('input', function () {
+        if (self.isVerified) {
             self._resetVerified(self.$checkmark, self.$button);
         }
     });
