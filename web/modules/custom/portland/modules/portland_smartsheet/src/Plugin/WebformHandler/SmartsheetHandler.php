@@ -115,15 +115,13 @@ class SmartsheetHandler extends WebformHandlerBase {
       foreach ($webform_fields as $key => $value) {
         $title = $value['#admin_title'] ?? $value['#title'] ?? NULL;
         if (empty($title)) continue;
-        
-        if (array_key_exists("#webform_composite_elements", $value)) {
-          // there are child elements
-          foreach ($value['#webform_composite_elements'] as $key2 => $value2) {
-            if (!str_starts_with($key2, "#")) {
-              // if it doesn't start with #, it's a sub-element
-              $subkey = $key . ":" . $key2;
-              $subvalue = $title . " > " . $value2["#title"];
-              $options[$subkey] = $subvalue;
+
+        // If this element is composite and has children, add them all as options.
+        if (array_key_exists('#webform_composite_elements', $value)) {
+          foreach ($value['#webform_composite_elements'] as $composite_element) {
+            if (isset($composite_element['#webform_composite_key'])) {
+              $composite_key = $composite_element['#webform_composite_key'];
+              $options[$composite_key] = $title . ' > ' . $composite_element['#title'];
             }
           }
         } else {
@@ -135,7 +133,8 @@ class SmartsheetHandler extends WebformHandlerBase {
         fn($col) => [
           ['data' => ['#markup' => '<strong>' . htmlentities($col->title) . '</strong>']],
           ['data' => [
-            '#type' => 'select',
+            '#type' => 'select2',
+            '#required' => false,
             '#name' => "settings[column_mappings][{$col->id}]",
             '#value' => $this->configuration['column_mappings'][$col->id] ?? '',
             '#options' => $options
@@ -260,7 +259,7 @@ class SmartsheetHandler extends WebformHandlerBase {
       // skip empty mappings
       if ($field_id === "") continue;
 
-      // if $field_id is a sub-element, the parent/sub relationship will be denoted with a colon (verified_address:location_address) 
+      // if $field_id is a sub-element, the parent/sub relationship will be denoted with a colon (verified_address:location_address)
       if (str_contains($field_id, ":")) {
         $arrField = explode(":", $field_id);
         $parent = $arrField[0];
