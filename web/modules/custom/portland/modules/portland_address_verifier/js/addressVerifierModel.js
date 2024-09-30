@@ -175,13 +175,12 @@ AddressVerifierModel.getPropertyByPath = function (jsonObject, path) {
     const keys = path.split('.');
 
     return keys.reduce((obj, key) => {
-        if (!obj) return undefined;
-
         // Automatically use the first element if the current object is an array
         if (Array.isArray(obj)) {
             obj = obj[0];
         }
 
+        if (!obj) return undefined;
         // Check if the key includes an array index, like 'features[0]'
         const arrayIndexMatch = key.match(/(.+)\[(\d+)\]$/);
 
