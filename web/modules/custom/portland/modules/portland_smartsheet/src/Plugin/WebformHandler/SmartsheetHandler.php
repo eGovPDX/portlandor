@@ -257,14 +257,14 @@ class SmartsheetHandler extends WebformHandlerBase {
     $cells = [];
     foreach ($column_mappings as $col_id => $field_id) {
       // skip empty mappings
-      if ($field_id === "") continue;
+      if ($field_id === '') continue;
 
-      // if $field_id is a sub-element, the parent/sub relationship will be denoted with a colon (verified_address:location_address)
-      if (str_contains($field_id, ":")) {
-        $arrField = explode(":", $field_id);
-        $parent = $arrField[0];
-        $sub = $arrField[1];
-        $field_data = $fields[$parent][$sub];
+      // if $field_id is a sub-element, the parent/sub relationship will be denoted with a double underscore (verified_address__location_address)
+      if (str_contains($field_id, '__')) {
+        $keys = explode('__', $field_id);
+        $parent = $keys[0];
+        $child = $keys[1];
+        $field_data = $fields[$parent][$child];
       } else {
         $field_data = $fields[$field_id];
       }
