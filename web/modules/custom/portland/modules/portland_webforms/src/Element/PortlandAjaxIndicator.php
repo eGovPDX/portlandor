@@ -2,7 +2,6 @@
 
 namespace Drupal\portland_webforms\Element;
 
-use Drupal\Core\Form\FormStateInterface;
 use Drupal\webform\Element\WebformCompositeBase;
 
 /**
@@ -26,8 +25,19 @@ class PortlandAjaxIndicator extends WebformCompositeBase
       '#type' => 'markup',
       '#title' => 'Ajax Progress Indicator',
       '#title_display' => 'invisible',
-      '#markup' => '<div id="ajax-overlay" aria-hidden="true" aria-labelledby="loading-message" role="dialog">  <div id="ajax-status" role="status" aria-live="assertive">    <img src="/modules/custom/portland/modules/portland_webforms/images/loading_spinner.png" alt="Loading...">    <p id="loading-message" class="visually-hidden">Loading, please wait...</p>  </div></div>',
+      '#markup' => <<<EOD
+      <div id="ajax-overlay" aria-live="assertive" aria-hidden="true" aria-labelledby="loading-message" role="status">
+        <div class="card bg-primary border-0 text-white shadow">
+          <div class="card-body d-flex align-items-center">
+            <div class="spinner-border"></div>
+            <span id="loading-message" class="ms-4">Loading...</span>
+          </div>
+        </div>
+      </div>
+      EOD
     ];
+    $element['#attached']['library'][] = 'portland_webforms/portland_ajax_indicator';
+
     return $element;
   }
 }
