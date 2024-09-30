@@ -73,33 +73,31 @@ elements: |-
     container_location_selected:
       '#type': container
       '#states':
-        invisible-slide:
+        invisible:
           ':input[name="request_verified_testing_address[location_verification_status]"]':
             '!value': Verified
       ajax_indicator:
         '#type': portland_ajax_indicator
         '#title': 'Ajax Indicator'
-      computed_not_eligible_msg:
-        '#type': webform_computed_twig
-        '#title': 'Computed Not Eligible Message'
+      markup_not_eligible_msg:
+        '#type': webform_markup
+        '#title': 'Not Eligible Message'
         '#title_display': none
         '#states':
           visible:
             ':input[name="request_verified_testing_address[location_capture_field]"]':
               value:
                 '!pattern': 'Burlington Water District|Gresham, City of|Tualatin, City of|Lake Grove Water District|Lorna Portland Water|Lusted Water District|Palatine Hill Water District|Pleasant Home Water District|Portland Water Bureau|Raleigh Water District|Rockwood Water PUD|Tualatin Valley Water District|Valley View Water District|West Slope Water District'
-        '#mode': html
-        '#template': |-
+        '#markup': |-
           <div class="alert alert--info next-steps mb-10">
               <h2 class="mt-0">
                   Not Eligible
               </h2>
-              <p><strong>Water provider: {{ data.request_verified_testing_address.location_capture_field ?: "N/A" }}</strong></p>
+              <p><strong>Water provider: <span class="water-provider"></span></strong></p>
               <p>The location of your sampling address is not eligible for free testing from the Portland Water Bureau. Contact your water provider to see if they provide free testing. You can also pay a laboratory to test your water, find a lab at <a href="https://orelap.state.or.us/searchLabs">https://orelap.state.or.us/searchLabs</a>.
               </p>
               <p class="mb-0">If you believe this is incorrect, please contact us at <a href="tel:+1-503-823-7525">503-823-7525</a> or <a href="mailto:WBWaterLine@portlandoregon.gov">WBWaterLine@portlandoregon.gov</a>.</p>
           </div>
-        '#ajax': true
       container_eligible:
         '#type': container
         '#states':
@@ -133,21 +131,19 @@ elements: |-
                 value: 'Valley View Water District'
             - ':input[name="request_verified_testing_address[location_capture_field]"]':
                 value: 'West Slope Water District'
-        computed_eligible_message:
-          '#type': webform_computed_token
+        markup_eligible_message:
+          '#type': webform_markup
           '#title': 'Eligible Message'
           '#title_display': none
-          '#mode': html
-          '#template': |-
+          '#markup': |-
             <div class="alert alert--info next-steps mb-10">
                 <h2 class="mt-0">
-                    Water provider: [webform_submission:values:request_verified_testing_address:location_capture_field]
+                    Water provider: <span class="water-provider"></span>
                 </h2>
                 <p class="mb-0">
                     You are eligible for free testing from the Portland Water Bureau. Please complete and submit this form to receive a kit.
                 </p>
             </div>
-          '#ajax': true
         container_contact:
           '#type': webform_section
           '#title': 'Your Contact Information'
@@ -237,7 +233,7 @@ elements: |-
           '#type': webform_actions
           '#title': 'Submit button(s)'
 css: ''
-javascript: ''
+javascript: "(($) => {\r\n  Drupal.behaviors.waterProviderListener = {\r\n    attach() {\r\n      $('#location_capture_field').change((e) => $('.water-provider').text(e.target.value || 'N/A'));\r\n    }\r\n  };\r\n})(jQuery);"
 settings:
   ajax: false
   ajax_scroll_top: form
@@ -433,22 +429,22 @@ handlers:
         900263222398852: ''
         3324483248279428: __submission_id
         3700198204460932: ''
-        2198583341436804: 'request_verified_testing_address__location_address_street_number'
-        6702182968807300: 'request_verified_testing_address__location_address_street_quadrant'
-        4450383155122052: 'request_verified_testing_address__location_address_street_name'
-        3359787799760772: 'request_verified_testing_address__location_address_street_type'
-        8953982782492548: 'request_verified_testing_address__unit_number'
-        2726686279028612: 'request_verified_testing_address__location_city'
-        7230285906399108: 'request_verified_testing_address__location_state'
-        1600786372185988: 'request_verified_testing_address__location_zip'
-        8059086315933572: 'request_verified_testing_address__location_full_address'
-        6104385999556484: 'request_verified_testing_address__location_capture_field'
+        2198583341436804: request_verified_testing_address__location_address_street_number
+        6702182968807300: request_verified_testing_address__location_address_street_quadrant
+        4450383155122052: request_verified_testing_address__location_address_street_name
+        3359787799760772: request_verified_testing_address__location_address_street_type
+        8953982782492548: request_verified_testing_address__unit_number
+        2726686279028612: request_verified_testing_address__location_city
+        7230285906399108: request_verified_testing_address__location_state
+        1600786372185988: request_verified_testing_address__location_zip
+        8059086315933572: request_verified_testing_address__location_full_address
+        6104385999556484: request_verified_testing_address__location_capture_field
         3852586185871236: contact_first_name
         8356185813241732: contact_last_name
         1037836418764676: contact_phone
         5541436046135172: contact_email
         3289636232449924: contact_preferred_language
-        7793235859820420: 'contact_mailing_address__location_full_address'
+        7793235859820420: contact_mailing_address__location_full_address
         2163736325607300: request_where_hear
         6667335952977796: request_comments
       multiple_rows_enable: null
