@@ -1,0 +1,17 @@
+diff --git a/pantheon_advanced_page_cache.module b/pantheon_advanced_page_cache.module
+index aaf7300..a6c77ba 100644
+--- a/pantheon_advanced_page_cache.module
++++ b/pantheon_advanced_page_cache.module
+@@ -17,6 +17,12 @@ function pantheon_advanced_page_cache_file_update(EntityInterface $file) {
+   // No matter what, the file's base URL needs to be cleared out.
+   $paths_to_clear = [$file->createFileUrl()];
+ 
++  $file_uri = $file->getFileUri();
++  // Skip any files on the private filesystem as they aren't cached.
++  if (str_starts_with($file_uri, 'private://')) {
++    return;
++  }
++  
+   // If this is an image, we need to clear the edge cache paths for every
+   // image style, or those won't work.
+   if ((class_exists(ImageStyle)) && (strpos($file->getMimeType(), 'image', 0) === 0)) {

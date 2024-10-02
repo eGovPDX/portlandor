@@ -12,7 +12,7 @@ use Drupal\webform\WebformSubmissionInterface;
  *   id = "portland_support_agent_widget",
  *   label = @Translation("Portland support agent widget"),
  *   description = @Translation("Provides a composite element for identifying the logged-in employee who completed the form and linking the resulting Zendesk request to an interaction request. IMPORTANT: There may only be one instance of this widget in a form, and it must have the machine name 'support_agent_use_only.'"),
- *   category = @Translation("Composite elements"),
+ *   category = @Translation("Portland elements"),
  *   multiline = TRUE,
  *   composite = TRUE,
  *   states_wrapper = TRUE,

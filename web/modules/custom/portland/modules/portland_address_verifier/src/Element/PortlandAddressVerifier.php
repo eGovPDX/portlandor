@@ -59,6 +59,11 @@ class PortlandAddressVerifier extends WebformCompositeBase {
       '#description_display' => 'before',
       '#required_error' => 'Please enter an address and verify it.',
     ];
+    $element['location_full_address'] = [
+      '#type' => 'hidden',
+      '#title' => t('Full Address'),
+      '#attributes' => ['id' => 'location_full_address']
+    ];
     $element['location_address_street_number'] = [
       '#type' => 'hidden',
       '#title' => t('Street Number'),
@@ -73,6 +78,11 @@ class PortlandAddressVerifier extends WebformCompositeBase {
       '#type' => 'hidden',
       '#title' => t('Street Name'),
       '#attributes' => ['id' => 'location_address_street_name']
+    ];
+    $element['location_address_street_type'] = [
+      '#type' => 'hidden',
+      '#title' => t('Street Type'),
+      '#attributes' => ['id' => 'location_address_street_type']
     ];
     $element['unit_number'] = [
       '#type' => 'textfield',
@@ -103,6 +113,11 @@ class PortlandAddressVerifier extends WebformCompositeBase {
       '#id' => 'location_zip',
       '#attributes' => ['class' => ['webform-zip']],
       '#wrapper_attributes' => ['class' => ['webform-zip']],
+    ];
+    $element['location_jurisdiction'] = [
+      '#type' => 'hidden',
+      '#title' => t('Jurisdiction'),
+      '#id' => 'location_jurisdiction',
     ];
     $element['suggestions_modal'] = [
       '#type' => 'markup',
@@ -162,6 +177,11 @@ class PortlandAddressVerifier extends WebformCompositeBase {
       '#title' => t('Verification Status'),
       '#attributes' => [ 'id' => 'location_verification_status'],
       '#required_error' => 'Please verify the address before continuing.'
+    ];
+    $element['location_capture_field'] = [
+      '#type' => 'hidden',
+      '#title' => t('Capture Field'),
+      '#attributes' => [ 'id' => 'location_capture_field'],
     ];
     $element['location_data'] = [
       '#type' => 'hidden',
