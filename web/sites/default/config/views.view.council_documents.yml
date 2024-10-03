@@ -20,6 +20,7 @@ dependencies:
     - field.storage.relation.field_agenda_item_number
     - field.storage.relation.field_agenda_sub_item_number
     - node.type.council_document
+    - taxonomy.vocabulary.council_committee
     - taxonomy.vocabulary.council_document_status
     - user.role.administrator
     - user.role.anonymous
@@ -29,6 +30,7 @@ dependencies:
     - user.role.council_author
     - user.role.council_clerk
   content:
+    - 'taxonomy_term:council_committee:7e9d0dac-e638-4764-8dfc-23e9a4eb4118'
     - 'taxonomy_term:council_document_status:580781d7-c574-402c-b884-b2c55b050ff9'
     - 'taxonomy_term:council_document_status:bd320817-c68b-4f1c-929a-8e133907fc00'
   module:
@@ -723,6 +725,19 @@ display:
       sorts: {  }
       arguments: {  }
       filters:
+        status:
+          id: status
+          table: node_field_data
+          field: status
+          entity_type: node
+          entity_field: status
+          plugin_id: boolean
+          value: '1'
+          group: 1
+          expose:
+            operator: ''
+            operator_limit_selection: false
+            operator_list: {  }
         type:
           id: type
           table: node_field_data
@@ -1029,25 +1044,12 @@ display:
           multi_type: separator
           separator: ', '
           field_api_classes: false
-      empty:
-        area:
-          id: area
-          table: views
-          field: area
-          relationship: none
-          group_type: group
-          admin_label: ''
-          plugin_id: text
-          empty: true
-          content:
-            value: 'There are no documents assigned to [current-page:title] at this time'
-            format: full_html
-          tokenize: false
+      empty: {  }
       arguments:
-        field_committee_target_id:
-          id: field_committee_target_id
-          table: node__field_committee
-          field: field_committee_target_id
+        field_assigned_committee_target_id:
+          id: field_assigned_committee_target_id
+          table: node__field_assigned_committee
+          field: field_assigned_committee_target_id
           relationship: none
           group_type: group
           admin_label: ''
@@ -1082,7 +1084,6 @@ display:
           validate_options: {  }
           break_phrase: false
           not: false
-          target_entity_type_id: taxonomy_term
       filters:
         type:
           id: type
@@ -1142,6 +1143,52 @@ display:
           hierarchy: false
           limit: true
           error_message: true
+        field_assigned_committee_target_id:
+          id: field_assigned_committee_target_id
+          table: node__field_assigned_committee
+          field: field_assigned_committee_target_id
+          relationship: none
+          group_type: group
+          admin_label: ''
+          plugin_id: taxonomy_index_tid
+          operator: not
+          value:
+            950: 950
+          group: 1
+          exposed: false
+          expose:
+            operator_id: ''
+            label: ''
+            description: ''
+            use_operator: false
+            operator: ''
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: ''
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+            reduce: false
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
+          reduce_duplicates: false
+          vid: council_committee
+          type: select
+          hierarchy: false
+          limit: true
+          error_message: true
       filter_groups:
         operator: AND
         groups:
@@ -1149,11 +1196,22 @@ display:
       defaults:
         empty: false
         title: false
+        relationships: false
         fields: false
         arguments: false
         filters: false
         filter_groups: false
         header: false
+      relationships:
+        field_assigned_committee:
+          id: field_assigned_committee
+          table: node__field_assigned_committee
+          field: field_assigned_committee
+          relationship: none
+          group_type: group
+          admin_label: 'field_assigned_committee: Taxonomy term'
+          plugin_id: standard
+          required: false
       display_description: ''
       header: {  }
       display_extenders:
@@ -1161,6 +1219,7 @@ display:
           metatags: {  }
           tokenize: false
       block_description: 'Council Documents by Committee'
+      block_hide_empty: true
     cache_metadata:
       max-age: -1
       contexts:
