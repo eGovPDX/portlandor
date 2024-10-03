@@ -52,216 +52,98 @@ elements: |-
       visible:
         ':input[name="request_where"]':
           value: 'Portland-area residence'
-    report_location:
-      '#type': portland_location_picker
-      '#title': Location
-      '#location_search__title': "Select a location to determine whether you're eligible"
-      '#location_lat__required': true
-      '#place_name__access': false
-      '#location_details__title': 'Unit Number'
-      '#location_details__placeholder': 'e.g. 101, APT 101 or UNIT 101'
-      '#location_details__description': 'If your location has an apartment, unit, suite, or other number or designation, please provide it here.'
-      '#location_details__type': textfield
-      '#location_details__counter_type': ''
-      '#location_details__states':
+    request_verified_testing_address:
+      '#type': portland_address_verifier
+      '#title': 'Sampling Address'
+      '#location_address__title': 'Sampling Address'
+      '#location_address__description': '<strong>This is the location where you want to test the water.</strong> Begin typing to see a list of possible address matches in the Portland metro area. Please no PO boxes.'
+      '#secondary_query_url': 'https://www.portlandmaps.com/arcgis/rest/services/Public/Utilities_Water/MapServer/6/query?where=1=1&f=json&outFields=WaterProvider&geometryType=esriGeometryPoint'
+      '#secondary_query_capture_property': features.attributes.WaterProvider
+      '#secondary_query_capture_field': location_capture_field
+      '#find_unincorporated': 1
+      '#not_verified_reasons': "Please make sure you've provided a valid physical address  in the Portland metro area and try again."
+      '#not_verified_remedy': 'If you need assistance, please contact us at <strong><a href="tel:+1-503-823-7525">503-823-7525</a></strong> or <strong><a href="mailto:WBWaterLine@portlandoregon.gov">WBWaterLine@portlandoregon.gov</a></strong>.'
+    markup_continue:
+      '#type': webform_markup
+      '#states':
         visible:
-          ':input[name="computed_location_is_selected"]':
-            value: '1'
-      '#primary_layer_behavior': informational
-      '#primary_layer_type': region-hidden
-      '#primary_layer_source': 'https://www.portlandmaps.com/arcgis/rest/services/Public/Utilities_Water/MapServer/6/query?where=1=1&f=geojson&outFields=WaterProvider'
-      '#region_id_property_name': WaterProvider
-      '#require_boundary': false
-    container_location_data:
-      '#type': container
-      computed_street_number:
-        '#type': webform_computed_twig
-        '#title': 'Computed Street Number'
-        '#wrapper_attributes':
-          class:
-            - d-none
-        '#display_on': none
-        '#mode': text
-        '#template': |
-          {% set addressLines = data.report_location.location_address|split(", ") %}
-          {% set arrAddress = addressLines[0]|split(" ") %}
-          {{ arrAddress[0] }}
-        '#whitespace': trim
-      computed_street_quadrant:
-        '#type': webform_computed_twig
-        '#title': 'Computed Street Quadrant'
-        '#wrapper_attributes':
-          class:
-            - d-none
-        '#display_on': none
-        '#mode': text
-        '#template': |
-          {% set addressLines = data.report_location.location_address|split(", ") %}
-          {% set arrAddress = addressLines[0]|split(" ") %}
-          {{ arrAddress[1] }}
-        '#whitespace': trim
-      computed_street_name:
-        '#type': webform_computed_twig
-        '#title': 'Computed Street Name'
-        '#wrapper_attributes':
-          class:
-            - d-none
-        '#display_on': none
-        '#mode': text
-        '#template': |
-          {% set addressLines = data.report_location.location_address|split(", ") %}
-          {% set arrAddress = addressLines[0]|split(" ") %}
-          {{ arrAddress[2] ~ ' ' ~ arrAddress[3] }}
-        '#whitespace': trim
-      computed_city:
-        '#type': webform_computed_twig
-        '#title': 'Computed City'
-        '#wrapper_attributes':
-          class:
-            - d-none
-        '#display_on': none
-        '#mode': text
-        '#template': '{{ data.report_location.location_municipality_name }}'
-        '#whitespace': trim
-      computed_state:
-        '#type': webform_computed_twig
-        '#title': 'Computed State'
-        '#wrapper_attributes':
-          class:
-            - d-none
-        '#display_on': none
-        '#mode': text
-        '#template': OR
-        '#whitespace': trim
-      computed_zip:
-        '#type': webform_computed_twig
-        '#title': 'Computed Zipcode'
-        '#wrapper_attributes':
-          class:
-            - d-none
-        '#display_on': none
-        '#mode': text
-        '#template': '{{ data.report_location.location_zipcode }}'
-        '#whitespace': trim
-      computed_unit_number:
-        '#type': webform_computed_twig
-        '#title': 'Computed Unit Number'
-        '#wrapper_attributes':
-          class:
-            - d-none
-        '#display_on': none
-        '#mode': text
-        '#template': '{{ data.report_location.location_details }}'
-        '#whitespace': trim
-      computed_address:
-        '#type': webform_computed_twig
-        '#title': 'Computed Address'
-        '#display_on': none
-        '#mode': text
-        '#template': '{{ data.report_location.location_address }}'
-    computed_location_is_selected:
-      '#type': webform_computed_twig
-      '#title': 'Location Is Selected'
-      '#wrapper_attributes':
-        class:
-          - d-none
-      '#display_on': form
-      '#mode': text
-      '#template': '{{ data.report_location.location_address ? 1 : 0 }}'
-      '#whitespace': trim
-      '#ajax': true
-    computed_region_is_selected:
-      '#type': webform_computed_twig
-      '#title': 'Region Is Selected'
-      '#wrapper_attributes':
-        class:
-          - d-none
-        style: d-none
-      '#display_on': form
-      '#mode': text
-      '#template': '{{ data.report_location.location_region_id ? 1 : 0 }}'
-      '#whitespace': trim
-      '#ajax': true
-    computed_provider:
-      '#type': webform_computed_token
-      '#title': 'Water Provider'
-      '#wrapper_attributes':
-        class:
-          - d-none
-        style: d-none
-      '#mode': text
-      '#template': '[webform_submission:values:report_location:location_region_id:clear]'
-      '#ajax': true
-    computed_is_eligible:
-      '#type': webform_computed_twig
-      '#title': 'Computed Is Eligible'
-      '#wrapper_attributes':
-        class:
-          - d-none
-      '#mode': text
-      '#template': |-
-        {% if data.report_location.location_region_id == "Burlington Water District" or
-              data.report_location.location_region_id == "Gresham, City of" or
-              data.report_location.location_region_id == "Tualatin, City of" or
-              data.report_location.location_region_id == "Lake Grove Water District" or
-              data.report_location.location_region_id == "Lorna Portland Water" or
-              data.report_location.location_region_id == "Lusted Water District" or
-              data.report_location.location_region_id == "Palatine Hill Water District" or
-              data.report_location.location_region_id == "Pleasant Home Water District" or
-              data.report_location.location_region_id == "Portland Water Bureau" or
-              data.report_location.location_region_id == "Raleigh Water District" or
-              data.report_location.location_region_id == "Rockwood Water PUD" or
-              data.report_location.location_region_id == "Tualatin Valley Water District" or
-              data.report_location.location_region_id == "Valley View Water District" or
-              data.report_location.location_region_id == "West Slope Water District" %}Yes{% else %}No{% endif %}
-      '#whitespace': trim
-      '#ajax': true
+          ':input[name="request_verified_testing_address[location_verification_status]"]':
+            '!value': Verified
+      '#markup': '<p><strong>To continue, please enter and verify the sampling address.</strong> We need a verified address in order to determine eligibility. If you need assistance, please contact us at <a href="tel:+1-503-823-7525">503-823-7525</a> or <a href="mailto:WBWaterLine@portlandoregon.gov">WBWaterLine@portlandoregon.gov</a>.</p>'
     container_location_selected:
       '#type': container
       '#states':
-        visible:
-          ':input[name="computed_location_is_selected"]':
-            value: '1'
-      computed_not_eligible_msg:
-        '#type': webform_computed_twig
-        '#title': 'Computed Not Eligible Message'
+        invisible:
+          ':input[name="request_verified_testing_address[location_verification_status]"]':
+            '!value': Verified
+      ajax_indicator:
+        '#type': portland_ajax_indicator
+        '#title': 'Ajax Indicator'
+      markup_not_eligible_msg:
+        '#type': webform_markup
+        '#title': 'Not Eligible Message'
         '#title_display': none
         '#states':
           visible:
-            ':input[name="computed_is_eligible"]':
-              value: 'No'
-        '#mode': html
-        '#template': |-
+            ':input[name="request_verified_testing_address[location_capture_field]"]':
+              value:
+                '!pattern': 'Burlington Water District|Gresham, City of|Tualatin, City of|Lake Grove Water District|Lorna Portland Water|Lusted Water District|Palatine Hill Water District|Pleasant Home Water District|Portland Water Bureau|Raleigh Water District|Rockwood Water PUD|Tualatin Valley Water District|Valley View Water District|West Slope Water District'
+        '#markup': |-
           <div class="alert alert--info next-steps mb-10">
               <h2 class="mt-0">
                   Not Eligible
               </h2>
-              <p><strong>Water provider: {{ data.report_location.location_region_id ?: "N/A" }}</strong></p>
-              <p class="mb-0">The location of your sampling address is not eligible for free testing from the Portland Water Bureau. Contact your water provider to see if they provide free testing. You can also pay a laboratory to test your water, find a lab at <a href="https://orelap.state.or.us/searchLabs">https://orelap.state.or.us/searchLabs</a>.
+              <p><strong>Water provider: <span class="water-provider"></span></strong></p>
+              <p>The location of your sampling address is not eligible for free testing from the Portland Water Bureau. Contact your water provider to see if they provide free testing. You can also pay a laboratory to test your water, find a lab at <a href="https://orelap.state.or.us/searchLabs">https://orelap.state.or.us/searchLabs</a>.
               </p>
+              <p class="mb-0">If you believe this is incorrect, please contact us at <a href="tel:+1-503-823-7525">503-823-7525</a> or <a href="mailto:WBWaterLine@portlandoregon.gov">WBWaterLine@portlandoregon.gov</a>.</p>
           </div>
-        '#ajax': true
       container_eligible:
         '#type': container
         '#states':
           visible:
-            ':input[name="computed_is_eligible"]':
-              value: 'Yes'
-        computed_eligible_message:
-          '#type': webform_computed_token
+            - ':input[name="request_verified_testing_address[location_capture_field]"]':
+                value: 'Burlington Water District'
+            - or
+            - ':input[name="request_verified_testing_address[location_capture_field]"]':
+                value: 'Gresham, City of'
+            - ':input[name="request_verified_testing_address[location_capture_field]"]':
+                value: 'Tualatin, City of"'
+            - ':input[name="request_verified_testing_address[location_capture_field]"]':
+                value: 'Lake Grove Water District'
+            - ':input[name="request_verified_testing_address[location_capture_field]"]':
+                value: 'Lorna Portland Water'
+            - ':input[name="request_verified_testing_address[location_capture_field]"]':
+                value: 'Lusted Water District'
+            - ':input[name="request_verified_testing_address[location_capture_field]"]':
+                value: 'Palatine Hill Water District'
+            - ':input[name="request_verified_testing_address[location_capture_field]"]':
+                value: 'Pleasant Home Water District'
+            - ':input[name="request_verified_testing_address[location_capture_field]"]':
+                value: 'Portland Water Bureau'
+            - ':input[name="request_verified_testing_address[location_capture_field]"]':
+                value: 'Raleigh Water District'
+            - ':input[name="request_verified_testing_address[location_capture_field]"]':
+                value: 'Rockwood Water PUD'
+            - ':input[name="request_verified_testing_address[location_capture_field]"]':
+                value: 'Tualatin Valley Water District'
+            - ':input[name="request_verified_testing_address[location_capture_field]"]':
+                value: 'Valley View Water District'
+            - ':input[name="request_verified_testing_address[location_capture_field]"]':
+                value: 'West Slope Water District'
+        markup_eligible_message:
+          '#type': webform_markup
           '#title': 'Eligible Message'
           '#title_display': none
-          '#mode': html
-          '#template': |-
+          '#markup': |-
             <div class="alert alert--info next-steps mb-10">
                 <h2 class="mt-0">
-                    Water provider: [webform_submission:values:computed_provider]
+                    Water provider: <span class="water-provider"></span>
                 </h2>
                 <p class="mb-0">
                     You are eligible for free testing from the Portland Water Bureau. Please complete and submit this form to receive a kit.
                 </p>
             </div>
-          '#ajax': true
         container_contact:
           '#type': webform_section
           '#title': 'Your Contact Information'
@@ -302,12 +184,34 @@ elements: |-
             contact_mailing_address:
               '#type': portland_address_verifier
               '#title': 'Mailing Address'
+              '#location_address__title': 'Mailing Address'
+              '#location_address__states':
+                required:
+                  ':input[name="contact_mailing_address_same"]':
+                    value: 'No'
+              '#location_city__states':
+                required:
+                  ':input[name="contact_mailing_address_same"]':
+                    value: 'No'
+              '#location_state__states':
+                required:
+                  ':input[name="contact_mailing_address_same"]':
+                    value: 'No'
+              '#location_zip__states':
+                required:
+                  ':input[name="contact_mailing_address_same"]':
+                    value: 'No'
             computed_mailing_address:
               '#type': webform_computed_twig
               '#title': 'Computed Mailing Address'
               '#display_on': none
-              '#template': '{{ data.contact_mailing_address.location_address_label }}'
-              '#ajax': true
+              '#mode': text
+              '#template': |-
+                {{ data.verified_address.location_address }}
+                {% if data.verified_address.unit_number %}
+                  {{ data.verified_address.unit_number }}
+                {% endif %} {{ data.verified_address.location_city }}, {{ data.verified_address.location_state }}  {{ data.verified_address.location_zip }}
+              '#whitespace': trim
         request_where_hear:
           '#type': webform_select_other
           '#title': 'Where did you hear about this testing program?'
@@ -329,7 +233,7 @@ elements: |-
           '#type': webform_actions
           '#title': 'Submit button(s)'
 css: ''
-javascript: ''
+javascript: "(($) => {\r\n  Drupal.behaviors.waterProviderListener = {\r\n    attach() {\r\n      $('#location_capture_field').change((e) => $('.water-provider').text(e.target.value || 'N/A'));\r\n    }\r\n  };\r\n})(jQuery);"
 settings:
   ajax: false
   ajax_scroll_top: form
@@ -435,7 +339,7 @@ settings:
   confirmation_type: page
   confirmation_url: ''
   confirmation_title: 'Request received'
-  confirmation_message: '<p>Thank you for ordering a lead test kit from the Portland Water Bureau. We have received your request and will mail a kit to you shortly. Once you mail your water sample back to us, it will take 4-6 weeks to get your result.</p><p>Questions? Contact us anytime at <a href="tel:+1-503-823-7525">503-823-7525</a> or <a href="mailto:WBWaterLine@portlandoregon.gov">WBWaterLine@portlandoregon.gov</a>.</p>'
+  confirmation_message: '<p>Thank you for ordering a lead test kit from the Portland Water Bureau. We have received your request and will mail a kit to you shortly. Once you mail your water sample back to us, it will take 4-6 weeks to get your result.</p><p>Questions? Contact us anytime at <a href="tel:+1-503-823-7525"><strong>503-823-7525</strong></a> or <a href="mailto:WBWaterLine@portlandoregon.gov"><strong>WBWaterLine@portlandoregon.gov</strong></a>.</p>'
   confirmation_attributes: {  }
   confirmation_back: true
   confirmation_back_label: ''
@@ -522,28 +426,31 @@ handlers:
     weight: -50
     settings:
       column_mappings:
+        900263222398852: ''
         3324483248279428: __submission_id
-        2198583341436804: computed_street_number
-        6702182968807300: computed_street_quadrant
-        4450383155122052: computed_street_name
-        8953982782492548: computed_unit_number
-        2726686279028612: computed_city
-        7230285906399108: computed_state
-        1600786372185988: computed_zip
-        8059086315933572: computed_address
-        6104385999556484: computed_provider
+        3700198204460932: ''
+        2198583341436804: request_verified_testing_address__location_address_street_number
+        6702182968807300: request_verified_testing_address__location_address_street_quadrant
+        4450383155122052: request_verified_testing_address__location_address_street_name
+        3359787799760772: request_verified_testing_address__location_address_street_type
+        8953982782492548: request_verified_testing_address__unit_number
+        2726686279028612: request_verified_testing_address__location_city
+        7230285906399108: request_verified_testing_address__location_state
+        1600786372185988: request_verified_testing_address__location_zip
+        8059086315933572: request_verified_testing_address__location_full_address
+        6104385999556484: request_verified_testing_address__location_capture_field
         3852586185871236: contact_first_name
         8356185813241732: contact_last_name
         1037836418764676: contact_phone
         5541436046135172: contact_email
         3289636232449924: contact_preferred_language
-        7793235859820420: computed_mailing_address
+        7793235859820420: contact_mailing_address__location_full_address
         2163736325607300: request_where_hear
         6667335952977796: request_comments
       multiple_rows_enable: null
       multiple_rows_field: ''
       multiple_rows_separator: ''
-      row_location: toBottom
+      row_location: toTop
       sheet_id: '4934804453674884'
       upload_attachments: '1'
   email:

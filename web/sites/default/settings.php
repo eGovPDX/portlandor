@@ -16,6 +16,16 @@ $settings['container_yamls'][] = __DIR__ . '/monolog.services.yml';
 $settings['entity_update_backup'] = FALSE;
 
 /**
+ * State caching.
+ *
+ * State caching uses the cache collector pattern to cache all requested keys
+ * from the state API in a single cache entry, which can greatly reduce the
+ * amount of database queries. However, some sites may use state with a
+ * lot of dynamic keys which could result in a very large cache.
+ */
+$settings['state_cache'] = TRUE;
+
+/**
  * Include the Pantheon-specific settings file.
  *
  * n.b. The settings.pantheon.php file makes some changes

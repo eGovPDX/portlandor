@@ -6,18 +6,20 @@ AddressVerifierModel.locationItem = function (data, $element = null, isSingleton
         var arrAddress = data.address.split(', ');
         data.address = arrAddress[0];
     }
-    this.fullAddress = AddressVerifierModel.buildFullAddress(data.address, data.unit, data.attributes.jurisdiction, data.attributes.zip_code).toUpperCase();
+    this.fullAddress = AddressVerifierModel.buildFullAddress(data.address, data.attributes.city, data.attributes.state, data.attributes.zip_code, data.unit).toUpperCase();
     this.displayAddress = data.address.toUpperCase();// + ', ' + data.attributes.jurisdiction.toUpperCase();
     this.street = data.address.toUpperCase();
     this.streetNumber = data.attributes.address_number;
     this.streetQuadrant = data.attributes.street_direction;
     this.streetDirectionSuffix = data.attributes.street_direction_suffix ? data.attributes.street_direction_suffix.trim() : "";
-    this.streetName = data.attributes.street_name + " " + data.attributes.street_type;
+    this.streetName = data.attributes.street_name;
+    this.streetType = data.attributes.street_type;
     if (this.streetDirectionSuffix) {
-        this.streetName += " " + this.streetDirectionSuffix;
+        this.streetType += " " + this.streetDirectionSuffix;
     }
-    this.city = data.attributes.jurisdiction.toUpperCase();
-    this.state = data.attributes.state.toUpperCase();
+    this.city = data.attributes.city;
+    this.jurisdiction = data.attributes.jurisdiction;
+    this.state = data.attributes.state ? data.attributes.state.toUpperCase() : "";
     this.zipCode = data.attributes.zip_code;
     this.lat = data.attributes.lat;
     this.lon = data.attributes.lon;
@@ -43,20 +45,20 @@ AddressVerifierModel.prototype.fetchAutocompleteItems = function (addrSearch, $e
     return this.$.ajax({
         url: apiUrl,
         method: 'GET'
-    }).then(function(response) {
+    }).then(function (response) {
         if (response && response.candidates && Array.isArray(response.candidates)) {
             // KLUDGE: There's an issue with the PortlandMaps suggests API where the data is
             // formatted differently when there is only a single candidate returned, as opposed
             // to multiple candidates. The locationItem object constructor avoids this issue
             // by always assembling the address from its component parts if we send the isSingleton flag.
-            
+
             if (response.candidates.length > 1) {
-                return response.candidates.map(function(candidate) {
+                return response.candidates.map(function (candidate) {
                     var retItem = new AddressVerifierModel.locationItem(candidate, $element);
                     return retItem;
                 });
             } else if (response.candidates.length == 1) {
-                return response.candidates.map(function(candidate) {
+                return response.candidates.map(function (candidate) {
                     var retItem = new AddressVerifierModel.locationItem(candidate, $element, true);
                     return retItem;
                 });
@@ -72,22 +74,22 @@ AddressVerifierModel.prototype.fetchAutocompleteItems = function (addrSearch, $e
 };
 
 AddressVerifierModel.prototype._getSphericalMercCoords = function (lat, lon) {
-  // Radius of the Earth in meters
-  const R = 6378137;
-  
-  // Convert the longitude from degrees to radians
-  const x = lon * (Math.PI / 180) * R;
-  
-  // Convert the latitude from degrees to radians
-  const latRad = lat * (Math.PI / 180);
-  
-  // Calculate the y value using the Mercator projection formula
-  const y = R * Math.log(Math.tan((Math.PI / 4) + (latRad / 2)));
-  
-  return { x, y };
+    // Radius of the Earth in meters
+    const R = 6378137;
+
+    // Convert the longitude from degrees to radians
+    const x = lon * (Math.PI / 180) * R;
+
+    // Convert the latitude from degrees to radians
+    const latRad = lat * (Math.PI / 180);
+
+    // Calculate the y value using the Mercator projection formula
+    const y = R * Math.log(Math.tan((Math.PI / 4) + (latRad / 2)));
+
+    return { x, y };
 }
 
-AddressVerifierModel.locationItem.prototype.parseStreetData = function(street) {
+AddressVerifierModel.locationItem.prototype.parseStreetData = function (street) {
     // Assuming street is in the format "1234 NW Main St"
     const streetParts = street.split(' ');
     this.streetNumber = streetParts.shift();
@@ -99,8 +101,13 @@ AddressVerifierModel.locationItem.prototype.parseStreetData = function(street) {
 
 AddressVerifierModel.buildFullAddress = function (address, city, state, zip, unit = null) {
     var fullAddress = address;
+<<<<<<< HEAD
     fullAddress += unit ? " " + unit : "";
     fullAddress += ", " + city + ", " + state + "  " + zip;
+=======
+    fullAddress += unit ? ", " + unit : "";
+    fullAddress += ", " + city + ", " + state + " " + zip;
+>>>>>>> master
     return fullAddress;
 }
 
@@ -131,7 +138,11 @@ AddressVerifierModel.buildMailingLabel = function (item, $element, useHtml = fal
     return label;
 }
 
+<<<<<<< HEAD
 AddressVerifierModel.prototype.updateLocationFromIntersects = function(lat, lon, item, callback, view) {
+=======
+AddressVerifierModel.prototype.updateLocationFromIntersects = function (lat, lon, item, callback, view) {
+>>>>>>> master
     var xy = this._getSphericalMercCoords(lat, lon);
     url = REVERSE_GEOCODE_URL;
     url = url.replace('${x}', xy.x).replace('${y}', xy.y).replace('${apiKey}', this.apiKey);
@@ -154,3 +165,44 @@ AddressVerifierModel.prototype.updateLocationFromIntersects = function(lat, lon,
     });
 }
 
+<<<<<<< HEAD
+=======
+AddressVerifierModel.prototype.callSecondaryQuery = function (url, x, y, callback, view, capturePath, captureField, $) {
+    url = url + "&geometry=" + x + "," + y;
+    this.$.ajax({
+        url: url, success: function (response) {
+            callback(response, view, capturePath, captureField, $);
+        },
+        error: function (e) {
+            // if the PortlandMaps API is down, this is where we'll get stuck.
+            // any way to fail the location lookup gracefull and still let folks submit?
+            // at least display an error message.
+            console.error(e);
+        }
+    });
+}
+
+AddressVerifierModel.getPropertyByPath = function (jsonObject, path) {
+    const keys = path.split('.');
+
+    return keys.reduce((obj, key) => {
+        // Automatically use the first element if the current object is an array
+        if (Array.isArray(obj)) {
+            obj = obj[0];
+        }
+
+        if (!obj) return undefined;
+        // Check if the key includes an array index, like 'features[0]'
+        const arrayIndexMatch = key.match(/(.+)\[(\d+)\]$/);
+
+        if (arrayIndexMatch) {
+            const arrayKey = arrayIndexMatch[1];
+            const index = parseInt(arrayIndexMatch[2], 10);
+            return obj[arrayKey] && obj[arrayKey][index] !== undefined ? obj[arrayKey][index] : undefined;
+        } else {
+            return obj[key] !== undefined ? obj[key] : undefined;
+        }
+    }, jsonObject);
+};
+
+>>>>>>> master
