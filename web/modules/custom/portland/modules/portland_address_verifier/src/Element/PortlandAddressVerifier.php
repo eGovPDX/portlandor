@@ -59,18 +59,6 @@ class PortlandAddressVerifier extends WebformCompositeBase {
       '#description_display' => 'before',
       '#required_error' => 'Please enter an address and verify it.',
     ];
-<<<<<<< HEAD
-    $element['location_address_street_number'] = [
-      '#type' => 'hidden',
-      '#title' => t('Street Number'),
-      '#attributes' => ['id' => 'location_address_street_number']
-    ];
-    $element['location_address_street_quadrant'] = [
-      '#type' => 'hidden',
-      '#title' => t('Street Quadrant'),
-      '#attributes' => ['id' => 'location_address_street_quadrant']
-    ];
-=======
     $element['location_full_address'] = [
       '#type' => 'hidden',
       '#title' => t('Full Address'),
@@ -86,20 +74,16 @@ class PortlandAddressVerifier extends WebformCompositeBase {
       '#title' => t('Street Quadrant'),
       '#attributes' => ['id' => 'location_address_street_quadrant']
     ];
->>>>>>> master
     $element['location_address_street_name'] = [
       '#type' => 'hidden',
       '#title' => t('Street Name'),
       '#attributes' => ['id' => 'location_address_street_name']
     ];
-<<<<<<< HEAD
-=======
     $element['location_address_street_type'] = [
       '#type' => 'hidden',
       '#title' => t('Street Type'),
       '#attributes' => ['id' => 'location_address_street_type']
     ];
->>>>>>> master
     $element['unit_number'] = [
       '#type' => 'textfield',
       '#title' => t('Unit Number'),

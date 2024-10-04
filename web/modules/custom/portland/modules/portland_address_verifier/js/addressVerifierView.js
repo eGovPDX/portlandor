@@ -20,12 +20,6 @@ var $element;
 var $input;
 var $suggestModal;
 var $statusModal;
-<<<<<<< HEAD
-const NOT_VERIFIED_MESSAGE = "We're unable to verify this address.";
-const NOT_VERIFIED_REASONS = "This sometimes happens with new addresses, PO boxes, and multi-family buildings with unit numbers.";
-const IF_CERTAIN_MESSAGE = "If you are certain this is the full, correct address, you may use it without verification.";
-=======
->>>>>>> master
 const MUST_PROVIDE_ADDRESS_MESSAGE = "You must enter an address or partial address to verify.";
 const UNVERIFIED_WARNING_MESSAGE = "We're unable to verify this address. If you're certain this is the full, correct address, you may proceed without verification."
 const VERIFIED_MESSAGE = "Address is verified!";
@@ -87,15 +81,9 @@ AddressVerifierView.prototype._setUpUnitNumberField = function () {
             var item = JSON.parse(json);
             item.unit = unit;
             item.fullAddress = AddressVerifierModel.buildFullAddress(item.street, item.city, item.state, item.zipCode, unit);
-<<<<<<< HEAD
-            item.displayAddress = item.street + (unit ? " " + unit : "") + ", " + item.city;
-            $locationData.val(JSON.stringify(item));
-            // self.$element.find('#location_address_label').val(AddressVerifierModel.buildMailingLabel(item, self.$element));
-=======
             item.displayAddress = item.street + (unit ? ", " + unit : "") + ", " + item.city;
             $locationData.val(JSON.stringify(item));
             self.$element.find('#location_full_address').val(item.fullAddress);
->>>>>>> master
             // self.$element.find('#mailing_label').html(AddressVerifierModel.buildMailingLabel(item, self.$element, true));
         }
     });
@@ -209,16 +197,6 @@ AddressVerifierView.prototype._setVerified = function (item, view = this) {
     // TODO: if configured, set the taxlot id
 
     // populate hidden sub-elements for address data
-<<<<<<< HEAD
-    view.$element.find('#location_address').val(item.street);
-    //$element.find('#location_street').val(item.street);
-    view.$element.find('#location_address_street_number').val(item.streetNumber);
-    view.$element.find('#location_address_street_quadrant').val(item.streetQuadrant);
-    view.$element.find('#location_address_street_name').val(item.streetName);
-    view.$element.find('#location_city').val(item.city);
-    view._setStateByLabel(view, item.state);
-    view.$element.find('#location_zip').val(item.zipCode);
-=======
     view.$element.find('#location_address').val(item.street).trigger('change');
     //$element.find('#location_street').val(item.street);
     view.$element.find('#location_full_address').val(item.fullAddress);
@@ -230,7 +208,6 @@ AddressVerifierView.prototype._setVerified = function (item, view = this) {
     view.$element.find('#location_jurisdiction').val(item.jurisdiction);
     view._setStateByLabel(view, item.state);
     view.$element.find('#location_zip').val(item.zipCode).trigger('change');
->>>>>>> master
     view.$element.find('#location_lat').val(item.lat);
     view.$element.find('#location_lon').val(item.lon);
     view.$element.find('#location_x').val(item.x);
@@ -239,11 +216,7 @@ AddressVerifierView.prototype._setVerified = function (item, view = this) {
     // view.$element.find('#location_address_label').val(AddressVerifierModel.buildMailingLabel(item, view.$element));
     // view.$element.find('#mailing_label').html(AddressVerifierModel.buildMailingLabel(item, view.$element, true));
     // view.$element.find('#location_address_label_markup').removeClass('d-none');
-<<<<<<< HEAD
-    view.$element.find('#location_verification_status').val("Verified");
-=======
     view.$element.find('#location_verification_status').val("Verified").trigger('change');
->>>>>>> master
     view.$element.find('#location_data').val(JSON.stringify(item));
     view.isVerified = true;
     console.log(JSON.stringify(item));
@@ -332,11 +305,7 @@ AddressVerifierView.prototype._resetSuggestModal = function () {
 AddressVerifierView.prototype._showNotFoundModal = function () {
     var self = this;
     var inputVal = self.$input.val().trim();
-<<<<<<< HEAD
-    this.$notFoundModal.html(`<p><strong>${NOT_VERIFIED_MESSAGE}</strong> ${NOT_VERIFIED_REASONS}</p><p>${IF_CERTAIN_MESSAGE}</p></p>`);
-=======
     this.$notFoundModal.html(`<p><strong>${this.settings.not_verified_heading}</strong> ${this.settings.not_verified_reasons}</p><p>${this.settings.not_verified_remedy}</p></p>`);
->>>>>>> master
     Drupal.dialog(this.$notFoundModal, {
         width: '600px',
         buttons: [{
@@ -379,25 +348,6 @@ AddressVerifierView.prototype._resetVerified = function ($checkmark, $button) {
 
     // clear hidden sub-elements for address data
     var $element = this.$(this.element);
-<<<<<<< HEAD
-    $element.find('#location_address').val("");
-    $element.find('#location_address_street_number').val("");
-    $element.find('#location_address_street_quadrant').val("");
-    $element.find('#location_address_street_name').val("");
-    $element.find('#location_city').val("");
-    $element.find('#location_state').val("");
-    $element.find('#location_zip').val("");
-    $element.find('#location_lat').val("");
-    $element.find('#location_lon').val("");
-    $element.find('#location_x').val("");
-    $element.find('#location_y').val("");
-    $element.find('#location_taxlot_id').val("");
-    $element.find('#location_is_unincorporated').val("");
-    // $element.find('#address_label').val("");
-    // $element.find('#location_address_label_markup').addClass('d-none');
-    $element.find('#location_verification_status').val("");
-    $element.find('#location_data').val("");
-=======
     //this.$element.find('#location_address').val("");
     this.$element.find('#location_full_address').val("");
     this.$element.find('#location_address_street_number').val("");
@@ -418,7 +368,6 @@ AddressVerifierView.prototype._resetVerified = function ($checkmark, $button) {
     // $element.find('#location_address_label_markup').addClass('d-none');
     this.$element.find('#location_verification_status').val("").trigger('change');
     this.$element.find('#location_data').val("");
->>>>>>> master
     // this.$element.find('#container_unit').removeClass('d-none');
     // this.$element.find('#location_address_label_markup').removeClass('d-none');
     this.isVerified = false;
@@ -455,8 +404,4 @@ AddressVerifierView.prototype._useUnverified = function () {
 // AddressVerifierView.prototype.handleTaxlotId = function (taxlotId, $element) {
 //     $element.find('#location_taxlot_id').val(taxlotId);
 //     // alert($element.find('#location_taxlot_id').val());
-<<<<<<< HEAD
 // }
-=======
-// }
->>>>>>> master

@@ -101,13 +101,8 @@ AddressVerifierModel.locationItem.prototype.parseStreetData = function (street) 
 
 AddressVerifierModel.buildFullAddress = function (address, city, state, zip, unit = null) {
     var fullAddress = address;
-<<<<<<< HEAD
-    fullAddress += unit ? " " + unit : "";
-    fullAddress += ", " + city + ", " + state + "  " + zip;
-=======
     fullAddress += unit ? ", " + unit : "";
     fullAddress += ", " + city + ", " + state + " " + zip;
->>>>>>> master
     return fullAddress;
 }
 
@@ -138,11 +133,7 @@ AddressVerifierModel.buildMailingLabel = function (item, $element, useHtml = fal
     return label;
 }
 
-<<<<<<< HEAD
-AddressVerifierModel.prototype.updateLocationFromIntersects = function(lat, lon, item, callback, view) {
-=======
 AddressVerifierModel.prototype.updateLocationFromIntersects = function (lat, lon, item, callback, view) {
->>>>>>> master
     var xy = this._getSphericalMercCoords(lat, lon);
     url = REVERSE_GEOCODE_URL;
     url = url.replace('${x}', xy.x).replace('${y}', xy.y).replace('${apiKey}', this.apiKey);
@@ -165,8 +156,6 @@ AddressVerifierModel.prototype.updateLocationFromIntersects = function (lat, lon
     });
 }
 
-<<<<<<< HEAD
-=======
 AddressVerifierModel.prototype.callSecondaryQuery = function (url, x, y, callback, view, capturePath, captureField, $) {
     url = url + "&geometry=" + x + "," + y;
     this.$.ajax({
@@ -205,4 +194,3 @@ AddressVerifierModel.getPropertyByPath = function (jsonObject, path) {
     }, jsonObject);
 };
 
->>>>>>> master
