@@ -92,7 +92,8 @@ class HttpFetcher extends FeedsFetcher {
     }
 
     try {
-      $response = $this->client->get($url, $options);
+      // $response = $this->client->get($url, $options);
+      $response = $this->client->getAsync($url, $options)->wait();
     }
     catch (RequestException $e) {
       $args = ['%site' => $url, '%error' => $e->getMessage()];
