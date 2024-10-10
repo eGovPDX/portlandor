@@ -16,7 +16,7 @@ uid: 60
 template: false
 archive: false
 id: report_tree_code_violation
-title: 'Report Tree Code Violation'
+title: 'Report Tree Issue'
 description: ''
 categories:
   - Report
@@ -79,10 +79,60 @@ elements: |-
         '#title': 'Is the tree causing any of the following issues?'
         '#options':
           'Blocking view of a traffic signal, traffic sign, or street sign': 'Blocking view of a traffic signal, traffic sign, or street sign'
-          'Blocking visibility at an intersection': 'Blocking visibility at an intersection'
           'Blocking a streetlight': 'Blocking a streetlight'
-          'None of these': 'None of these'
+          'Blocking visibility at an intersection': 'Blocking visibility at an intersection'
+          'Something else': 'Something else'
         '#required': true
+      report_vegetation_source:
+        '#type': radios
+        '#title': 'Where is the vegetation growing from?'
+        '#options':
+          'Private property': 'Private property'
+          'Parking strip, median, or other parts of the street or right-of-way': 'Parking strip, median, or other parts of the street or right-of-way'
+          'Park or natural area': 'Park or natural area'
+          'Something else': 'Something else -- Please describe in the Additional Tree Issue Details box below'
+        '#required': true
+        '#states':
+          visible:
+            - ':input[name="report_tree_causing_issues"]':
+                value: 'Blocking visibility at an intersection'
+            - or
+            - ':input[name="report_tree_causing_issues"]':
+                value: 'Something else'
+      computed_email_recipient:
+        '#type': webform_computed_twig
+        '#title': 'Computed Email Recipient'
+        '#display_on': none
+        '#mode': text
+        '#template': |-
+          {% if data.report_tree_causing_issues == "Blocking view of a traffic signal, traffic sign, or street sign" %}
+            tom.jensen@portlandoregon.gov
+          {% elseif data.report_tree_causing_issues == "Blocking a streetlight" %}
+            streetlighting@portlandoregon.gov
+          {% elseif data.report_vegetation_source == "Private property" %}
+            codec@portlandoregon.gov
+          {% elseif data.report_vegetation_source == "Parking strip, median, or other parts of the street or right-of-way" %}
+            pdxroads@portlandoregon.gov
+          {% endif %}
+        '#whitespace': trim
+      computed_triage_message:
+        '#type': webform_computed_twig
+        '#title': 'Computed Triage Message'
+        '#display_on': none
+        '#mode': html
+        '#template': |-
+          {% if (data.report_tree_causing_issues == "Something else" 
+                 or data.report_vegetation_source == "Parking strip, median, or other parts of the street or right-of-way" 
+                 or data.report_vegetation_source == "Park or natural area" 
+                 or data.report_vegetation_source == "Something else") 
+                  and data.report_vegetation_source != "Private property" %}
+            <h3>This ticket requires additional triage</h3>
+            <p><strong>Attention 311 CSR:</strong> this ticket came from the ROW Obstruction form and may need further triage/investigation to ensure it reaches the appropriate resolving entity. If you have any issues tracking down who this should be forwarded to, contact John Dutt.</p>
+            {% if data.computed_email_recipient != "" %}
+              <p><strong>Computed recipient:</strong> {{ data.computed_email_recipient }}</p>
+            {% endif %}
+          {% endif %}
+        '#whitespace': spaceless
     container_trip_hazard:
       '#type': container
       '#states':
@@ -392,21 +442,6 @@ elements: |-
 
 
     '#whitespace': spaceless
-  computed_email_recipient:
-    '#type': webform_computed_twig
-    '#title': 'Computed Email Recipient'
-    '#display_on': form
-    '#mode': text
-    '#template': |
-      {% if data.report_location.location_type_park == "true" %}
-        trees@portlandoregon.gov
-      {% elseif data.report_tree_causing_issues and data.report_tree_causing_issues is not iterable %}
-        {% if data.report_tree_causing_issues == "Blocking a streetlight" %}
-          streetlighting@portlandoregon.gov
-        {% endif %}
-      {% endif %}
-    '#whitespace': trim
-    '#ajax': true
   computed_subject:
     '#type': webform_computed_twig
     '#title': 'Computed Subject'
@@ -625,7 +660,7 @@ handlers:
       enabled:
         ':input[name="computed_email_recipient"]':
           empty: true
-        ':input[name="computed_tom_jensen_triage"]':
+        ':input[name="computed_triage_message"]':
           empty: true
         ':input[name="support_agent_use_only[test_submission]"]':
           unchecked: true
@@ -725,10 +760,8 @@ handlers:
     status: true
     conditions:
       enabled:
-        ':input[name="computed_email_recipient"]':
-          empty: true
-        ':input[name="computed_tom_jensen_triage"]':
-          value: 'Yes'
+        ':input[name="computed_triage_message"]':
+          filled: true
         ':input[name="support_agent_use_only[test_submission]"]':
           unchecked: true
     weight: 3
@@ -757,7 +790,7 @@ handlers:
     status: true
     conditions:
       enabled:
-        ':input[name="computed_tom_jensen_triage"]':
+        ':input[name="computed_triage_message"]':
           filled: true
     weight: 4
     settings:
