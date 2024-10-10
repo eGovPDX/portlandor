@@ -471,6 +471,8 @@ class ZendeskUpdateHandler extends WebformHandlerBase
     // gets used in token replacement and in custom field if needed.
     // NOTE: This will always occur when the ZendeskUpdateHandler is called after ZendeskHandler; the
     // assumption is that if we're updating a ticket right after creating one, they're related.
+    // WARNING: The machine name report_ticket_id is hard coded. If you use any other name, this won't work!
+    // TODO: Make this dynamic so that this name isn't required; it's not always a report.
     $webform_submission->setElementData('report_ticket_id', $form_state->getValue('report_ticket_id'));
 
     $submission_fields = $webform_submission->toArray(TRUE);
