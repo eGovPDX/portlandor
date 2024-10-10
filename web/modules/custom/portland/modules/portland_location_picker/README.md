@@ -148,6 +148,15 @@ These properties are set in the Advanced tab of the Location Picker element. Dat
 
 - ***location_types*** - NOT IMPLEMENTED. Configurable to contain a list of location type codes that are used by the parent form. Can be used to inform widget functionaltiy. For example, if only "park" is included, only parks-specific functionality is enabled.
 
+- ***region_id_property_name*** - The property name of the feature property that holds the region value we want to capture. Assumes the value is located at features[x].properties[y][regionIdPropertyName]. Defaults to 'region_id.'
+
+- ***click_query_url*** - When provided, a function is called on map click that passes the x,y coordinates to this API URL, which then processes the returned JSON data. The property value at click_query_property_path is put in the form field click_query_destination_field.
+
+- ***click_query_property_path*** - The path to the property to be retrieved from the click query resutls. Example: features.attributes.AREA_DETAIL
+
+- ***click_query_destination_field*** - The ID of the form field into which the property value should be saved. Uses jQuery to populate field. Example: if the field ID provided is "location_property_id," the jQuery selector would look like this: $('#location_property_id').val([the_value])
+
+
 ### Example of custom properties
 
 This is the advanced properties configuration used in the Report a Problem with a Public Trash Can reporting form. The first six properties are used to manipulate how the widget and its subelements are rendered. The remaining properties are from the list above and are used to configure the geoJSON layers and how the user interacts with them.

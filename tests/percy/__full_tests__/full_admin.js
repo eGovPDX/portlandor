@@ -72,25 +72,25 @@ describe('Full regression test suite for Admin', () => {
       }
 
       // Create a new group
-      await page.goto(`${HOME_PAGE}/group/add/bureau_office`);
+      await page.goto(`${HOME_PAGE}/group/add/base_group`);
       text_content = await page.evaluate(
         () => document.querySelector('.page-title').textContent
       );
       expect(text_content).toEqual(
-        expect.stringContaining('Add Bureau/office')
+        expect.stringContaining('Add Base group')
       );
       await page.type('#edit-label-0-value', TEST_GROUP_NAME);
+      await page.select("#edit-field-group-subtype", "850");
       await page.type(
         '#edit-field-official-organization-name-0-value',
         `Official name of ${TEST_GROUP_NAME}`
       );
-      await page.select('#edit-field-migration-status', 'Complete');
       await page.type(
         '#edit-field-summary-0-value',
         `This is a test summary for the ${TEST_GROUP_PATH}`
       );
       // Must expand the admin fields group in order to input Group Path
-      await page.click('details#edit-group-administrative-fields');
+      await page.click('details#edit-group-administrative-fields-site');
       await page.type('#edit-field-group-path-0-value', TEST_GROUP_PATH);
 
       // Group needs to be published to be added to content in following test
@@ -152,10 +152,9 @@ describe('Full regression test suite for Admin', () => {
         await this.page.select("#edit-field-severity", "20");
         //Alert Text
         await this.page.evaluate(() => {
-          document
-            .querySelector("iframe.cke_wysiwyg_frame")
-            .contentDocument.querySelector("body p").textContent =
-            "Full regression test alert text";
+          ck5 = Drupal.CKEditor5Instances.keys().next().value;
+          editor = Drupal.CKEditor5Instances.get(ck5);
+          editor.setData('Full regression test alert text');
         });
         //Revision text
         await this.page.type(
@@ -192,10 +191,10 @@ describe('Full regression test suite for Admin', () => {
         () => document.querySelector('.page-title').textContent
       );
       expect(text_content).toEqual(
-        expect.stringContaining('Add Bureau/office: Group membership')
+        expect.stringContaining('Add Base group: Group membership')
       );
       await page.type('#edit-entity-id-0-target-id', 'Ally Admin (62)');
-      selector = '#edit-group-roles-bureau-office-admin';
+      selector = '#edit-group-roles-base-group-admin';
       await page.evaluate(
         (selector) => document.querySelector(selector).click(),
         selector
@@ -328,10 +327,9 @@ describe('Full regression test suite for Admin', () => {
 
         // Update the CKEditor content
         await this.page.evaluate(() => {
-          document
-            .querySelector('iframe.cke_wysiwyg_frame')
-            .contentDocument.querySelector('body p').textContent =
-            'Body content for the test city service';
+          ck5 = Drupal.CKEditor5Instances.keys().next().value;
+          editor = Drupal.CKEditor5Instances.get(ck5);
+          editor.setData('Body content for the test city service');
         });
         await this.page.type(
           '#edit-revision-log-0-value',
@@ -393,10 +391,9 @@ describe('Full regression test suite for Admin', () => {
 
         // Update the CKEditor content
         await this.page.evaluate(() => {
-          document
-            .querySelector('iframe.cke_wysiwyg_frame')
-            .contentDocument.querySelector('body p').textContent =
-            'Body content for the test construction';
+          ck5 = Drupal.CKEditor5Instances.keys().next().value;
+          editor = Drupal.CKEditor5Instances.get(ck5);
+          editor.setData('Body content for the test construction');
         });
 
         await this.page.type(
@@ -493,10 +490,9 @@ describe('Full regression test suite for Admin', () => {
         await this.page.type('input#edit-field-end-time-0-value', '04:00pm');
 
         await this.page.evaluate(() => {
-          document
-            .querySelector('iframe.cke_wysiwyg_frame')
-            .contentDocument.querySelector('body p').textContent =
-            'Body content for the test event';
+          ck5 = Drupal.CKEditor5Instances.keys().next().value;
+          editor = Drupal.CKEditor5Instances.get(ck5);
+          editor.setData('Body content for the test event');
         });
         await this.page.type(
           '#edit-revision-log-0-value',
@@ -601,10 +597,9 @@ describe('Full regression test suite for Admin', () => {
         );
 
         await this.page.evaluate(() => {
-          document
-            .querySelector('iframe.cke_wysiwyg_frame')
-            .contentDocument.querySelector('body p').textContent =
-            'Body content for the test news';
+          ck5 = Drupal.CKEditor5Instances.keys().next().value;
+          editor = Drupal.CKEditor5Instances.get(ck5);
+          editor.setData('Body content for the test news');
         });
         await this.page.type(
           '#edit-revision-log-0-value',
@@ -647,10 +642,9 @@ describe('Full regression test suite for Admin', () => {
 
         // Update the CKEditor content
         await this.page.evaluate(() => {
-          document
-            .querySelector('iframe.cke_wysiwyg_frame')
-            .contentDocument.querySelector('body p').textContent =
-            'Body content for the test notification';
+          ck5 = Drupal.CKEditor5Instances.keys().next().value;
+          editor = Drupal.CKEditor5Instances.get(ck5);
+          editor.setData('Body content for the test notification');
         });
 
         await this.page.type(
@@ -805,10 +799,9 @@ describe('Full regression test suite for Admin', () => {
           video_url
         );
         await this.page.evaluate(() => {
-          document
-            .querySelector('iframe[title="Rich Text Editor, Transcript field"]')
-            .contentDocument.querySelector('body p').textContent =
-            'Transcript content for the test video';
+          ck5 = Drupal.CKEditor5Instances.keys().next().value;
+          editor = Drupal.CKEditor5Instances.get(ck5);
+          editor.setData('Transcript content for the test video');
         });
         selector = 'details#edit-group-attribution';
         await this.page.evaluate(

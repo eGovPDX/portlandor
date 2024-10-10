@@ -1,0 +1,511 @@
+diff --git a/config/schema/subpathauto.schema.yml b/config/schema/subpathauto.schema.yml
+index 1cbc9e8..a921d62 100644
+--- a/config/schema/subpathauto.schema.yml
++++ b/config/schema/subpathauto.schema.yml
+@@ -5,6 +5,9 @@ subpathauto.settings:
+     depth:
+       type: integer
+       label: 'Maximum depth of sub-paths to alias'
++    denylist:
++      type: string
++      label: 'Denylist'
+     redirect_support:
+       type: boolean
+       label: 'If set to TRUE, redirects will be taken into account when resolving sub aliases.'
+diff --git a/src/Form/SettingsForm.php b/src/Form/SettingsForm.php
+index ec57808..8a42b79 100644
+--- a/src/Form/SettingsForm.php
++++ b/src/Form/SettingsForm.php
+@@ -68,6 +68,12 @@ class SettingsForm extends ConfigFormBase {
+         $this->t('If checked, redirects will be taken into account when resolving sub aliases.'):
+         $this->t('If checked, redirects will be taken into account when resolving sub aliases. The redirect module should be installed for this setting.'),
+     ];
++    $form['denylist'] = [
++      '#type' => 'textarea',
++      '#title' => $this->t('Ignore subpathauto on the following paths (denylist)'),
++      '#default_value' => $config->get('denylist'),
++      '#description' => $this->t('Enter a path per line to be ignored.'),
++    ];
+ 
+     return parent::buildForm($form, $form_state);
+   }
+@@ -78,6 +84,7 @@ class SettingsForm extends ConfigFormBase {
+   public function submitForm(array &$form, FormStateInterface $form_state) {
+     $values = $form_state->getValues();
+     $this->config('subpathauto.settings')
++      ->set('denylist', $values['denylist'])
+       ->set('depth', $values['depth'])
+       ->set('redirect_support', $values['redirect_support'])
+       ->save();
+diff --git a/src/PathProcessor.php b/src/PathProcessor.php
+index f9d9f58..c3b5206 100644
+--- a/src/PathProcessor.php
++++ b/src/PathProcessor.php
+@@ -6,6 +6,7 @@ use Drupal\Core\Config\ConfigFactoryInterface;
+ use Drupal\Core\Extension\ModuleHandlerInterface;
+ use Drupal\Core\Language\LanguageInterface;
+ use Drupal\Core\Language\LanguageManagerInterface;
++use Drupal\Core\Path\PathMatcherInterface;
+ use Drupal\Core\Path\PathValidatorInterface;
+ use Drupal\Core\PathProcessor\InboundPathProcessorInterface;
+ use Drupal\Core\PathProcessor\OutboundPathProcessorInterface;
+@@ -54,6 +55,13 @@ class PathProcessor implements InboundPathProcessorInterface, OutboundPathProces
+    */
+   protected $moduleHandler;
+ 
++  /**
++   * Path matcher.
++   *
++   * @var \Drupal\Core\Path\PathMatcherInterface
++   */
++  private $pathMatcher;
++
+   /**
+    * Whether it is recursive call or not.
+    *
+@@ -68,6 +76,13 @@ class PathProcessor implements InboundPathProcessorInterface, OutboundPathProces
+    */
+   protected $hasRedirectModuleSupport;
+ 
++  /**
++   * Denylist.
++   *
++   * @var string
++   */
++  protected $denylist = '';
++
+   /**
+    * Builds PathProcessor object.
+    *
+@@ -77,14 +92,25 @@ class PathProcessor implements InboundPathProcessorInterface, OutboundPathProces
+    *   The language manager.
+    * @param \Drupal\Core\Config\ConfigFactoryInterface $config_factory
+    *   The config factory.
++   * @param \Drupal\Core\Path\PathMatcherInterface $path_matcher
++   *   The path matcher.
+    * @param \Drupal\Core\Extension\ModuleHandlerInterface $module_handler
+    *   The module handler service.
+    */
+-  public function __construct(InboundPathProcessorInterface $path_processor, LanguageManagerInterface $language_manager, ConfigFactoryInterface $config_factory, ModuleHandlerInterface $module_handler = NULL) {
++  public function __construct(
++    InboundPathProcessorInterface $path_processor,
++    LanguageManagerInterface $language_manager,
++    ConfigFactoryInterface $config_factory,
++    PathMatcherInterface   $path_matcher,
++    ModuleHandlerInterface $module_handler = NULL
++  ) {
+     $this->pathProcessor = $path_processor;
+     $this->languageManager = $language_manager;
+     $this->configFactory = $config_factory;
++    $this->pathMatcher = $path_matcher;
++    $this->denylist = $this->configFactory->get('subpathauto.settings')->get('denylist');
+     $this->moduleHandler = $module_handler;
++
+     if (empty($this->moduleHandler)) {
+       @trigger_error('Calling PathProcessor::__construct() without the $module_handler argument is deprecated in subpathauto:8.x-1.2 and the $module_handler argument will be required in subpathauto:2.0. See https://www.drupal.org/project/subpathauto/issues/3175637', E_USER_DEPRECATED);
+       $this->moduleHandler = \Drupal::service('module_handler');
+@@ -95,6 +121,11 @@ class PathProcessor implements InboundPathProcessorInterface, OutboundPathProces
+    * {@inheritdoc}
+    */
+   public function processInbound($path, Request $request) {
++    // We don't process denylisted paths.
++    if (!empty($this->denylist) && $this->pathMatcher->matchPath($path, $this->denylist)) {
++      return $path;
++    }
++    
+     $request_path = $this->getPath($request->getPathInfo());
+ 
+     // The path won't be processed if the path has been already modified by
+@@ -155,6 +186,12 @@ class PathProcessor implements InboundPathProcessorInterface, OutboundPathProces
+    * {@inheritdoc}
+    */
+   public function processOutbound($path, &$options = [], Request $request = NULL, BubbleableMetadata $bubbleableMetadata = NULL) {
++
++    // We don't process denylisted paths.
++    if (!empty($this->denylist) && $this->pathMatcher->matchPath($path, $this->denylist)) {
++      return $path;
++    }
++
+     $original_path = $path;
+     $subpath = [];
+     $max_depth = $this->getMaxDepth();
+@@ -250,6 +287,10 @@ class PathProcessor implements InboundPathProcessorInterface, OutboundPathProces
+    *   Whether path is valid or not.
+    */
+   protected function isValidPath($path) {
++    // Ignore allowed paths and return false.
++    if (!empty($this->denylist) && $this->pathMatcher->matchPath($path, $this->denylist)) {
++      return FALSE;
++    }
+     $this->recursiveCall = TRUE;
+     $is_valid = (bool) $this->getPathValidator()->getUrlIfValidWithoutAccessCheck($path);
+     $this->recursiveCall = FALSE;
+diff --git a/subpathauto.links.menu.yml b/subpathauto.links.menu.yml
+index 2ce42c1..272e1a1 100644
+--- a/subpathauto.links.menu.yml
++++ b/subpathauto.links.menu.yml
+@@ -3,4 +3,5 @@ subpathauto.settings.form:
+   parent: system.admin_config_search
+   description: 'Configure the subpathauto module.'
+   route_name: subpathauto.admin_settings
++  base_route: entity.path_alias.collection
+   weight: 25
+diff --git a/subpathauto.services.yml b/subpathauto.services.yml
+index 2ef9cd1..62015b5 100644
+--- a/subpathauto.services.yml
++++ b/subpathauto.services.yml
+@@ -1,7 +1,7 @@
+ services:
+   path_processor_subpathauto:
+     class: Drupal\subpathauto\PathProcessor
+-    arguments: ['@path_alias.path_processor', '@language_manager', '@config.factory', '@module_handler']
++    arguments: ['@path_alias.path_processor', '@language_manager', '@config.factory', '@path.matcher', '@module_handler']
+     tags:
+       - { name: path_processor_inbound, priority: 50 }
+       - { name: path_processor_outbound, priority: 50 }
+diff --git a/tests/src/Functional/SubPathautoFunctionalTest.php b/tests/src/Functional/SubPathautoFunctionalTest.php
+index 76ccca8..c274bf8 100644
+--- a/tests/src/Functional/SubPathautoFunctionalTest.php
++++ b/tests/src/Functional/SubPathautoFunctionalTest.php
+@@ -46,17 +46,17 @@ class SubPathautoFunctionalTest extends BrowserTestBase {
+     // we have to rebuild it.
+     $this->rebuildContainer();
+ 
+-    $aliasStorage = \Drupal::entityTypeManager()
++    $alias_storage = \Drupal::entityTypeManager()
+       ->getStorage('path_alias');
+ 
+-    $path_alias = $aliasStorage->create([
++    $path_alias = $alias_storage->create([
+       'path' => '/node/1',
+       'alias' => '/kittens',
+     ]);
+     $path_alias->save();
+ 
+-    $alias_white_list = $this->container->get('path_alias.whitelist');
+-    $alias_white_list->set('node', TRUE);
++    $alias_allow_list = $this->container->get('path_alias.whitelist');
++    $alias_allow_list->set('node', TRUE);
+ 
+     $admin_user = $this->drupalCreateUser([
+       'bypass node access',
+diff --git a/tests/src/Kernel/SubPathautoKernelTest.php b/tests/src/Kernel/SubPathautoKernelTest.php
+index 09009f6..2a8a73c 100644
+--- a/tests/src/Kernel/SubPathautoKernelTest.php
++++ b/tests/src/Kernel/SubPathautoKernelTest.php
+@@ -4,6 +4,7 @@ namespace Drupal\Tests\subpathauto\Kernel;
+ 
+ use Drupal\KernelTests\KernelTestBase;
+ use Drupal\language\Plugin\LanguageNegotiation\LanguageNegotiationUrl;
++use Drupal\node\Entity\Node;
+ use Drupal\path_alias\PathAliasInterface;
+ use Drupal\redirect\Entity\Redirect;
+ use Drupal\Tests\node\Traits\NodeCreationTrait;
+@@ -84,7 +85,31 @@ class SubPathautoKernelTest extends KernelTestBase {
+     $this->pathAliasStorage = \Drupal::entityTypeManager()->getStorage('path_alias');
+     $this->redirectStorage = \Drupal::entityTypeManager()->getStorage('redirect');
+     $this->pathProcessor = $this->container->get('path_processor_subpathauto');
+-    $this->container->get('path_alias.whitelist')->set('node', TRUE);
++
++    $alias_allow_list = $this->container->get('path_alias.whitelist');
++
++    // Add node with id 2 to the denylist.
++    $config_factory = $this->container->get('config.factory');
++    $config_factory->getEditable('subpathauto.settings')->set('denylist', "/node/2\n/node/2/*");
++
++    Node::create(['type' => 'page', 'title' => 'test'])->save();
++    Node::create(['type' => 'page', 'title' => 'test 2'])->save();
++
++    $alias_storage = \Drupal::entityTypeManager()
++      ->getStorage('path_alias');
++
++    $path_alias = $alias_storage->create([
++      'path' => '/node/1',
++      'alias' => '/kittens',
++    ]);
++    $path_alias->save();
++    $path_alias = $alias_storage->create([
++      'path' => '/node/2',
++      'alias' => '/puppies',
++    ]);
++    $path_alias->save();
++
++    $alias_allow_list->set('node', TRUE);
+ 
+     User::create(['uid' => 0, 'name' => 'anonymous user'])->save();
+ 
+@@ -100,6 +125,10 @@ class SubPathautoKernelTest extends KernelTestBase {
+    * Tests inbound URL processing.
+    */
+   public function testProcessInbound(): void {
++    // Denylisted paths should not be converted.
++    $processed = $this->pathProcessor->processInbound('/puppies', Request::create('/puppies'));
++    $this->assertEquals('/puppies', $processed);
++
+     $this->createNode();
+     $path_alias = $this->createAlias('/node/1', '/kittens');
+ 
+@@ -150,6 +179,10 @@ class SubPathautoKernelTest extends KernelTestBase {
+    * Tests outbound URL processing.
+    */
+   public function testProcessOutbound(): void {
++    // Denylisted paths should not be converted.
++    $processed = $this->pathProcessor->processOutbound('/node/2');
++    $this->assertEquals('/node/2', $processed);
++
+     $this->createNode();
+     $this->createAlias('/node/1', '/kittens');
+ 
+diff --git a/tests/src/Unit/SubPathautoTest.php b/tests/src/Unit/SubPathautoTest.php
+index a083760..a70e037 100644
+--- a/tests/src/Unit/SubPathautoTest.php
++++ b/tests/src/Unit/SubPathautoTest.php
+@@ -57,6 +57,13 @@ class SubPathautoTest extends UnitTestCase {
+    */
+   protected $languageNegotiation;
+ 
++  /**
++   * The mocked path matcher.
++   *
++   * @var \Drupal\Core\Path\PathMatcherInterface|\PHPUnit_Framework_MockObject_MockObject
++   */
++  protected $pathMatcher;
++
+   /**
+    * Language negotiation settings.
+    *
+@@ -76,6 +83,13 @@ class SubPathautoTest extends UnitTestCase {
+    */
+   protected $pathProcessor;
+ 
++  /**
++   * The module handler service.
++   *
++   * @var \Drupal\Core\Extension\ModuleHandlerInterface
++   */
++  protected $moduleHandler;
++
+   /**
+    * List of aliases used in the tests.
+    *
+@@ -83,6 +97,7 @@ class SubPathautoTest extends UnitTestCase {
+    */
+   protected $aliases = [
+     '/content/first-node' => '/node/1',
++    '/content/second-node' => '/node/2',
+     '/content/first-node-test' => '/node/1/test',
+     '/malicious-path' => '/admin',
+     '' => '<front>',
+@@ -98,12 +113,25 @@ class SubPathautoTest extends UnitTestCase {
+       ->disableOriginalConstructor()
+       ->getMock();
+ 
++    $this->aliasProcessor->expects($this->any())
++      ->method('processInbound')
++      ->willReturnCallback([$this, 'pathAliasCallback']);
++
++    $this->aliasProcessor->expects($this->any())
++      ->method('processOutbound')
++      ->willReturnCallback([$this, 'aliasByPathCallback']);
++
+     $this->languageManager = $this->createMock('Drupal\Core\Language\LanguageManagerInterface');
+     $this->languageManager->expects($this->any())
+       ->method('getCurrentLanguage')
+       ->willReturn(new Language(Language::$defaultValues));
+ 
+     $this->pathValidator = $this->createMock('Drupal\Core\Path\PathValidatorInterface');
++    $this->pathValidator->expects($this->any())
++      ->method('getUrlIfValidWithoutAccessCheck')
++      ->willReturn(new Url('any_route'));
++
++    $this->pathMatcher = $this->createMock('Drupal\Core\Path\PathMatcherInterface');
+     $this->languageNegotiation = $this->createMock('Drupal\Core\Config\ConfigBase');
+ 
+     $this->subPathautoSettings = $this->createMock('Drupal\Core\Config\ConfigBase');
+@@ -133,14 +161,14 @@ class SubPathautoTest extends UnitTestCase {
+       ->method('get')
+       ->willReturn($this->languageNegotiationSettings);
+ 
+-    $module_handler = $this->getMockBuilder('Drupal\Core\Extension\ModuleHandler')
++    $this->moduleHandler = $this->getMockBuilder('Drupal\Core\Extension\ModuleHandler')
+       ->disableOriginalConstructor()
+       ->getMock();
+-    $module_handler->expects($this->any())
++    $this->moduleHandler->expects($this->any())
+       ->method('moduleExists')
+       ->willReturn(FALSE);
+ 
+-    $this->pathProcessor = new PathProcessor($this->aliasProcessor, $this->languageManager, $this->configFactory, $module_handler);
++    $this->pathProcessor = new PathProcessor($this->aliasProcessor, $this->languageManager, $this->configFactory, $this->pathMatcher, $this->moduleHandler);
+     $this->pathProcessor->setPathValidator($this->pathValidator);
+   }
+ 
+@@ -148,15 +176,7 @@ class SubPathautoTest extends UnitTestCase {
+    * @covers ::processInbound
+    */
+   public function testInboundSubPath(): void {
+-    $this->aliasProcessor->expects($this->any())
+-      ->method('processInbound')
+-      ->willReturnCallback([$this, 'pathAliasCallback']);
+-    $this->pathValidator->expects($this->any())
+-      ->method('getUrlIfValidWithoutAccessCheck')
+-      ->willReturn(new Url('any_route'));
+-    $this->subPathautoSettings->expects($this->atLeastOnce())
+-      ->method('get')
+-      ->willReturn(0);
++    $this->mockSubPathautoSettings();
+ 
+     // Look up a subpath of the 'content/first-node' alias.
+     $processed = $this->pathProcessor->processInbound('/content/first-node/a', Request::create('/content/first-node/a'));
+@@ -189,16 +209,7 @@ class SubPathautoTest extends UnitTestCase {
+    * @covers ::processInbound
+    */
+   public function testInboundPathProcessorMaxDepth(): void {
+-    $this->pathValidator->expects($this->any())
+-      ->method('getUrlIfValidWithoutAccessCheck')
+-      ->willReturn(new Url('any_route'));
+-    $this->subPathautoSettings->expects($this->exactly(2))
+-      ->method('get')
+-      ->willReturn(3);
+-
+-    $this->aliasProcessor->expects($this->any())
+-      ->method('processInbound')
+-      ->willReturnCallback([$this, 'pathAliasCallback']);
++    $this->mockSubPathautoSettings(3);
+ 
+     // Subpath shouldn't be processed since the iterations has been limited.
+     $processed = $this->pathProcessor->processInbound('/content/first-node/first/second/third/fourth', Request::create('/content/first-node/first/second/third/fourth'));
+@@ -223,12 +234,7 @@ class SubPathautoTest extends UnitTestCase {
+    * @covers ::processOutbound
+    */
+   public function testOutboundSubPath(): void {
+-    $this->aliasProcessor->expects($this->any())
+-      ->method('processOutbound')
+-      ->willReturnCallback([$this, 'aliasByPathCallback']);
+-    $this->subPathautoSettings->expects($this->atLeastOnce())
+-      ->method('get')
+-      ->willReturn(0);
++    $this->mockSubPathautoSettings();
+ 
+     // Look up a subpath of the 'content/first-node' alias.
+     $processed = $this->pathProcessor->processOutbound('/node/1/a');
+@@ -256,16 +262,7 @@ class SubPathautoTest extends UnitTestCase {
+    * @covers ::processOutbound
+    */
+   public function testOutboundPathProcessorMaxDepth(): void {
+-    $this->pathValidator->expects($this->any())
+-      ->method('getUrlIfValidWithoutAccessCheck')
+-      ->willReturn(new Url('any_route'));
+-    $this->subPathautoSettings->expects($this->exactly(2))
+-      ->method('get')
+-      ->willReturn(3);
+-
+-    $this->aliasProcessor->expects($this->any())
+-      ->method('processOutbound')
+-      ->willReturnCallback([$this, 'aliasByPathCallback']);
++    $this->mockSubPathautoSettings(3);
+ 
+     // Subpath shouldn't be processed since the iterations has been limited.
+     $processed = $this->pathProcessor->processOutbound('/node/1/first/second/third/fourth');
+@@ -300,7 +297,7 @@ class SubPathautoTest extends UnitTestCase {
+    * @return string
+    *   The path represented by the alias, or the alias if no path was found.
+    */
+-  public function pathAliasCallback($path) {
++  public function pathAliasCallback($path): string {
+     return $this->aliases[$path] ?? $path;
+   }
+ 
+@@ -313,9 +310,91 @@ class SubPathautoTest extends UnitTestCase {
+    * @return string
+    *   An alias that represents the path, or path if no alias was found.
+    */
+-  public function aliasByPathCallback($path) {
++  public function aliasByPathCallback($path): string {
+     $aliases = array_flip($this->aliases);
+     return $aliases[$path] ?? $path;
+   }
+ 
++  /**
++   * Get path processor with denylist settings.
++   *
++   * @return Drupal\subpathauto\PathProcessor $path_processor
++   *   Path processor with denylist settings.
++   */
++  protected function getPathProcessorWithDenylist() {
++    // We want to use original method matchPath.
++    $path_matcher = $this->getMockBuilder('Drupal\Core\Path\PathMatcher')
++      ->disableOriginalConstructor()
++      ->onlyMethods(['isFrontPage', 'getFrontPagePath'])
++      ->getMock();
++
++    $this->mockSubPathautoSettings(0, "/node/2\n/node/2/*");
++    // Recreate path processor to set denylist value in constructor.
++    $path_processor = new PathProcessor($this->aliasProcessor, $this->languageManager, $this->configFactory, $path_matcher, $this->moduleHandler);
++    $path_processor->setPathValidator($this->pathValidator);
++
++    return $path_processor;
++  }
++
++  /**
++   * @covers ::processInbound
++   */
++  public function testInboundDenylist() {
++    $path_processor = $this->getPathProcessorWithDenylist();
++
++    // Path in denylist.
++    $processed = $path_processor->processInbound('/content/second-node/edit', Request::create('/content/second-node/edit'));
++    $this->assertEquals('/content/second-node/edit', $processed);
++
++    // Path is not in denylist.
++    $processed = $path_processor->processInbound('/content/first-node/edit', Request::create('/content/first-node/edit'));
++    $this->assertEquals('/node/1/edit', $processed);
++  }
++
++  /**
++   * @covers ::processOutbound
++   */
++  public function testOutboundDenylist() {
++    $path_processor = $this->getPathProcessorWithDenylist();
++
++    $this->mockSubPathautoSettings();
++
++    // Path in denylist.
++    $processed = $path_processor->processOutbound('/node/2/edit');
++    $this->assertEquals('/node/2/edit', $processed);
++
++    // Path is not in denylist.
++    $processed = $path_processor->processOutbound('/node/1/edit');
++    $this->assertEquals('/content/first-node/edit', $processed);
++  }
++
++  /**
++   * Mock subpathauto settings with current params.
++   *
++   * @param int $depth
++   *   Depth.
++   * @param $denylist
++   *   Denylist.
++   */
++  protected function mockSubPathautoSettings($depth = 0, $denylist = ''): void {
++    $this->subPathautoSettings->expects($this->any())
++      ->method('get')
++      ->with($this->logicalOr(
++        $this->equalTo('depth'),
++        $this->equalTo('denylist')
++      ))
++      ->will($this->returnCallback(
++        function($param) use ($depth, $denylist) {
++          if ($param == 'depth') {
++            return $depth;
++          }
++          elseif ($param == 'denylist') {
++            return $denylist;
++          }
++
++          return NULL;
++        }
++      ));
++  }
++
+ }

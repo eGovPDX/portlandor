@@ -35,7 +35,7 @@ describe('SuperAdmin user test', () => {
   afterAll(async () => {
     await browser.close()
   })
-  
+
   // it(
   //   'The site is in good status',
   //   async () => {

@@ -20,25 +20,37 @@ commands:
             - ".git"
   install_terminus_and_login:
     steps:
+      - run:
+          name: Get latest Terminus release
+          command: |
+            echo 'export TERMINUS_RELEASE=$(curl --silent "https://api.github.com/repos/pantheon-systems/terminus/releases/latest" | jq -r .tag_name)'  >> $BASH_ENV && source $BASH_ENV
+            echo $TERMINUS_RELEASE > ~/terminus_release.txt
+            echo "Latest Terminus release: $TERMINUS_RELEASE"
       - restore_cache:
           name: Restore Terminus Cache
           keys:
-            - terminus-cache-{{ .Environment.CIRCLE_BRANCH }}-v3
-            - ~/.terminus
+            - terminus-cache-v1-{{ checksum "~/terminus_release.txt" }}
+            - terminus-cache-v1-
       - run:
           name: Install Terminus
           command: |
-            if [ ! -f "/tmp/vendor/pantheon-systems/terminus/bin/terminus" ]; then
-              cd /tmp && composer require pantheon-systems/terminus:^3
-              # Temporary workaround to https://github.com/pantheon-systems/terminus/issues/2336
-              cd /tmp && composer require league/container:3.4.1
-              /tmp/vendor/bin/terminus self:plugin:install terminus-build-tools-plugin
+            export CURRENT_TERMINUS_VERSION=$(~/terminus/terminus self:info --field terminus_version 2>/dev/null)
+            echo "Latest Terminus release: $TERMINUS_RELEASE"
+            echo "Current Terminus version: $CURRENT_TERMINUS_VERSION"
+            if [ ! -d "$HOME/terminus" ] || [ "$CURRENT_TERMINUS_VERSION" != $TERMINUS_RELEASE ]; then
+              mkdir -p ~/terminus && cd ~/terminus
+              echo "Installing Terminus v$TERMINUS_RELEASE"
+              curl -L https://github.com/pantheon-systems/terminus/releases/download/$TERMINUS_RELEASE/terminus.phar --output terminus
+              chmod +x terminus
+              ./terminus self:plugin:reload
+              ./terminus self:plugin:install terminus-build-tools-plugin
             fi
+            echo 'export PATH=$PATH:~/terminus' >> $BASH_ENV
       - save_cache:
           name: Save Terminus cache
-          key: terminus-cache-{{ .Environment.CIRCLE_BRANCH }}-v3
+          key: terminus-cache-v1-{{ checksum "~/terminus_release.txt" }}
           paths:
-            - "/tmp/vendor"
+            - ~/terminus
             - ~/.terminus
       - run:
           name: Authenticate Terminus
@@ -57,7 +69,7 @@ commands:
             cd /home/circleci/app/tests/percy
             export PERCY_POSTINSTALL_BROWSER=true
             yarn install --frozen-lockfile
-            node node_modules/puppeteer/install.js
+            node node_modules/puppeteer/install.mjs
       - save_cache:
           name: Save Jest and Percy dependencies cache
           key: jest-{{ checksum "tests/percy/yarn.lock" }}-v2
@@ -74,8 +86,6 @@ commands:
             echo "    HostkeyAlgorithms +ssh-rsa" >> ~/.ssh/config
             echo "    PubkeyAcceptedAlgorithms +ssh-rsa" >> ~/.ssh/config
 
-            # Add terminus into path
-            echo 'export PATH=/tmp/vendor/bin:/home/circleci/app/vendor/bin:$PATH' >> $BASH_ENV && source $BASH_ENV
             terminus aliases
 
             # Don't check for host key for Pantheon sites
@@ -88,6 +98,9 @@ commands:
               echo 'export SITE_NAME=${CIRCLE_BRANCH}' >> $BASH_ENV && source $BASH_ENV
             fi
             cd /home/circleci/app
+
+            # Turn off warning that the site is in GIT mode
+            echo 'export TERMINUS_HIDE_GIT_MODE_WARNING=1' >> $BASH_ENV && source $BASH_ENV
 
 #Jobs
 
@@ -157,11 +170,13 @@ build_and_deploy: &build_and_deploy
           # Don't check the repo host key
           export GIT_SSH_COMMAND="ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no"
 
+          terminus self:plugin:reload
+
           if [[ $CIRCLE_USERNAME = "" ]]; then
             # Set CIRCLE_USERNAME for builds triggered by GitHub actions
             echo 'export CIRCLE_USERNAME="BTS eGov"' >> $BASH_ENV && source $BASH_ENV
           fi
-          
+
           # Git operations
           # Set the git commit user name and email address so it's clear in Pantheon log who made the change
           git config --global user.name $CIRCLE_USERNAME
@@ -170,7 +185,9 @@ build_and_deploy: &build_and_deploy
           git remote add pantheon ssh://codeserver.dev.5c6715db-abac-4633-ada8-1c9efe354629@codeserver.dev.5c6715db-abac-4633-ada8-1c9efe354629.drush.in:2222/~/repository.git
           # Force add all files to include those excluded by .gitignore
           # Before force-adding, remove large folders we don't need on Pantheon
-          cd /home/circleci/app && find ./web/modules -name .git -type d -prune -exec rm -rf "{}" \;
+          cd /home/circleci/app
+          find /home/circleci/app/web/modules -name .git -type d -prune -exec rm -rf "{}" \;
+          find /home/circleci/app/web/libraries -name .git -type d -prune -exec rm -rf "{}" \;
           rm -rf /home/circleci/app/web/themes/custom/cloudy/node_modules
 
           # Fetch the remote branch
@@ -188,7 +205,7 @@ build_and_deploy: &build_and_deploy
           if [ $ORIGIN_TRANSLATION_HASH == $PANTHEON_TRANSLATION_HASH ]; then
             echo 'export HAS_TRANSLATION_CHANGES=0' >> "$BASH_ENV" && source $BASH_ENV
           fi
-          
+
           git add -f /home/circleci/app
           # Pantheon site will use the wrong DB if the local is kept
           git rm --cache  web/sites/default/settings.local.php --ignore-unmatch
@@ -249,13 +266,24 @@ build_and_deploy: &build_and_deploy
           echo "Rebuilding cache..."
           terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- cr
 
+          # Post our custom Solr schema to Pantheon's Solr server
+          terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- search-api-pantheon:postSchema pantheon_solr8 ../private/solr-conf
+
           if [[ $CIRCLE_BRANCH != "master" ]]; then
             # Begin indexing the Solr server. For new multidevs, indexing will take some time
             # and will continue running after the CircleCI build finishes.
             if grep -Fxq "$PANTHEON_ENV" ./env_list.txt; then
               echo "Multidev already exists, no need to reset index tracker"
             else
-              echo "Reseting index tracker because index is empty on new multidev"
+              echo "Resetting Solr server on new multidev"
+              terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- en search_api_solr_admin
+              terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- search-api-solr:delete-all pantheon_solr8
+              terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- search-api:server-disable pantheon_solr8
+              terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- search-api:server-enable pantheon_solr8
+              terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- search-api:enable-all
+              terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- cim -y
+
+              echo "Resetting index tracker because index is empty on new multidev"
               terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- search-api:reset-tracker
             fi
             echo "Begin indexing the Solr server"
@@ -453,8 +481,8 @@ clone_live_database: &clone_live_database
           fi
 
           echo "Cloning DB from Live to $PANTHEON_ENV..."
-          terminus env:clone-content $CIRCLE_PROJECT_REPONAME.live $PANTHEON_ENV --db-only -y
-          terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV deploy
+          terminus env:clone-content $CIRCLE_PROJECT_REPONAME.live $PANTHEON_ENV --db-only -y || terminus env:clone-content $CIRCLE_PROJECT_REPONAME.live $PANTHEON_ENV --db-only -y
+          terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV deploy || terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV deploy
 
           # Reindex the Solr server. Indexing will take some time
           # and will continue running after the CircleCI build finishes.
@@ -494,7 +522,7 @@ jobs:
     <<: *clone_live_database
 
 orbs:
-  percy: percy/agent@0.1.2
+# percy: percy/agent@0.1.2
   slack: circleci/slack@4.4.2
 
 # Declare a workflow that runs all of our jobs in parallel.
@@ -517,6 +545,7 @@ workflows:
             branches:
               only:
                 - master
+                - pgov-1236
   # The update database workflow runs when the scheduled pipeline named "Update Sandbox
   # Database" runs. Scheduled pipelines are configured in the CircleCI web UI at
   # https://app.circleci.com/settings/project/github/eGovPDX/portlandor/triggers
@@ -524,7 +553,7 @@ workflows:
     when:
       and:
         - equal: [ scheduled_pipeline, << pipeline.trigger_source >> ]
-        - or: 
+        - or:
           - equal: [ "Update Sandbox Database", << pipeline.schedule.name >> ]
           - equal: [ "Update Dev Database", << pipeline.schedule.name >> ]
     jobs:
@@ -542,4 +571,3 @@ workflows:
   #           branches:
   #             only:
   #               # - master
-  #               - powr-3508

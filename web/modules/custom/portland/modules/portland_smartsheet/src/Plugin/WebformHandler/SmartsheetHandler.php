@@ -110,20 +110,31 @@ class SmartsheetHandler extends WebformHandlerBase {
 
       $columns = $client->listAllColumns();
       $webform_fields = $this->getWebformFields();
-      $webform_fields['__submission_id'] = ['#title' => 'Submission ID'];
+      $webform_fields['_submission_id_'] = ['#title' => 'Submission ID'];
       $options = ['' => 'None'];
       foreach ($webform_fields as $key => $value) {
         $title = $value['#admin_title'] ?? $value['#title'] ?? NULL;
         if (empty($title)) continue;
 
-        $options[$key] = $title;
+        // If this element is composite and has children, add them all as options.
+        if (array_key_exists('#webform_composite_elements', $value)) {
+          foreach ($value['#webform_composite_elements'] as $composite_element) {
+            if (isset($composite_element['#webform_composite_key'])) {
+              $composite_key = $composite_element['#webform_composite_key'];
+              $options[$composite_key] = $title . ' > ' . $composite_element['#title'];
+            }
+          }
+        } else {
+          $options[$key] = $title;
+        }
       }
 
       $form['column_mappings_container']['table']['#rows'] = array_map(
         fn($col) => [
           ['data' => ['#markup' => '<strong>' . htmlentities($col->title) . '</strong>']],
           ['data' => [
-            '#type' => 'select',
+            '#type' => 'select2',
+            '#required' => false,
             '#name' => "settings[column_mappings][{$col->id}]",
             '#value' => $this->configuration['column_mappings'][$col->id] ?? '',
             '#options' => $options
@@ -246,12 +257,21 @@ class SmartsheetHandler extends WebformHandlerBase {
     $cells = [];
     foreach ($column_mappings as $col_id => $field_id) {
       // skip empty mappings
-      if ($field_id === "") continue;
+      if ($field_id === '') continue;
 
-      $field_data = $fields[$field_id];
+      // if $field_id is a sub-element, the parent/sub relationship will be denoted with a double underscore (verified_address__location_address)
+      if (str_contains($field_id, '__')) {
+        $keys = explode('__', $field_id);
+        $parent = $keys[0];
+        $child = $keys[1];
+        $field_data = $fields[$parent][$child];
+      } else {
+        $field_data = $fields[$field_id];
+      }
+
       $cells[] = [
         'columnId' => (int) $col_id,
-        'value' => is_array($field_data) ? join(',', $field_data) : $field_data,
+        'value' => is_array($field_data) ? join(';', $field_data) : $field_data,
       ];
     }
 
@@ -272,7 +292,7 @@ class SmartsheetHandler extends WebformHandlerBase {
     $submission_id = $submission_arr['sid'] !== '' ? $submission_arr['sid'] : $submission_arr['uuid'];
     $fields = [
       ...$submission_arr['data'],
-      '__submission_id' => $submission_id,
+      '_submission_id_' => $submission_id,
     ];
 
     $multiple_rows_enable = $this->configuration['multiple_rows_enable'];

@@ -180,10 +180,14 @@ class ZendeskHandler extends WebformHandlerBase
         // order groups by name
         asort($groups);
 
-        // get list of all admin and agent users to populate assignee field
-        $response_agents = $client->users()->findAll([ 'role' => 'agent' ]);
-        $response_admins = $client->users()->findAll([ 'role' => 'admin' ]);
-        $users = array_merge( $response_agents->users, $response_admins->users );
+        // Get list of all admin and agent users to populate assignee field.
+        // The users findAll call only returns 100 results, and the zendesk_api_client_php
+        // library doesn't have an iterator call for users. Have to iterate manually,
+        // which is done in the function getUsersByRole.
+
+        $admin_users = $this->getUsersByRole($client, 'admin');
+        $agent_users = $this->getUsersByRole($client, 'agent');
+        $users = array_merge($admin_users, $agent_users);
 
         // store found agents
         foreach($users as $user){
@@ -438,6 +442,28 @@ class ZendeskHandler extends WebformHandlerBase
       return parent::buildConfigurationForm($form, $form_state);
   }
 
+  protected function getUsersByRole($client, $role) {
+    $users = [];
+    $params = ['role' => $role];
+    $response = $client->users()->findAll($params);
+    
+    // Add the initial set of users
+    $users = array_merge($users, $response->users);
+
+    // Handle pagination
+    while ($response->next_page) {
+        // Extract the next page number from the next_page URL
+        $nextPage = parse_url($response->next_page, PHP_URL_QUERY);
+        parse_str($nextPage, $queryParams);
+        $params['page'] = $queryParams['page'];
+        
+        $response = $client->users()->findAll($params);
+        $users = array_merge($users, $response->users);
+    }
+
+    return $users;
+  }
+
   /**
    * Saves handler settings to config
    * {@inheritdoc}
@@ -625,7 +651,7 @@ class ZendeskHandler extends WebformHandlerBase
         // in Zendesk. also, the default filter isn't working. so we'll just clear out any values that start with a token
         // string. at present, custom values will only include the tokens, not additional string values, so this approach
         // is fine for now but may need to be extended to remove the token code from within a longer string.
-        if (substr($value, 0, 27) == "[webform_submission:values:") {
+        if (is_string($value) && substr($value, 0, 27) == "[webform_submission:values:") {
           $value = "";
         }
 

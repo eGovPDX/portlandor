@@ -157,27 +157,75 @@ elements: |-
         Friend: Friend
         'Social media': 'Social media (Facebook, Twitter, Instagram, etc.)'
       '#other__option_label': 'Other (please specify)'
-  section_contact:
-    '#type': webform_section
-    '#title': 'Your Contact Information'
+  container_submit:
+    '#type': container
     '#states':
       visible:
         ':input[name="engage_reason"]':
           checked: true
-    contact_name:
-      '#type': textfield
-      '#title': Name
-      '#required': true
-    contact_email:
-      '#type': textfield
-      '#title': Email
-      '#required': true
-      '#pattern': '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
-      '#pattern_error': 'Please enter a correctly formatted email address, such as myname@example.com.'
-    contact_phone:
-      '#type': textfield
-      '#title': Phone
-      '#input_mask': '(999) 999-9999'
+    section_contact:
+      '#type': webform_section
+      '#title': 'Your Contact Information'
+      contact_name:
+        '#type': textfield
+        '#title': Name
+        '#required': true
+      contact_email:
+        '#type': textfield
+        '#title': Email
+        '#required': true
+        '#pattern': '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        '#pattern_error': 'Please enter a correctly formatted email address, such as myname@example.com.'
+      contact_phone:
+        '#type': textfield
+        '#title': Phone
+        '#input_mask': '(999) 999-9999'
+    section_additional_information:
+      '#type': webform_section
+      '#title': 'Additional Information'
+      '#states':
+        visible:
+          ':input[name="engage_reason"]':
+            value: 'Provide a comment, ask a question or give feedback'
+      your_zip_code:
+        '#type': textfield
+        '#title': 'Your ZIP Code'
+        '#input_mask': '99999'
+      submit_on_behalf:
+        '#type': radios
+        '#title': 'Are you submitting comments of behalf of an organization?'
+        '#options':
+          'No': 'No'
+          'Yes': 'Yes'
+        '#options_display': side_by_side
+        '#default_value': 'No'
+      submit_on_behalf_organization:
+        '#type': textfield
+        '#title': 'Organization Name'
+        '#states':
+          visible:
+            ':input[name="submit_on_behalf"]':
+              value: 'Yes'
+      subscribe_to_monthly_transition_updates:
+        '#type': radios
+        '#title': 'Subscribe to monthly transition updates?'
+        '#options': yes_no
+        '#options_display': side_by_side
+    public_records_statement:
+      '#type': webform_section
+      '#title': 'Public Records Statement'
+      markup_public_records_statement:
+        '#type': webform_markup
+        '#markup': '<p>Information you provide to the City is a public record and may be subject to release under Oregon’s <a data-renderer-mark="true" href="https://www.doj.state.or.us/oregon-department-of-justice/public-records/attorney-generals-public-records-and-meetings-manual/i-public-records/#:~:text=Under%20Oregon''s%20Public%20Records%20Law,committee%20of%20the%20Legislative%20Assembly" title="https://www.doj.state.or.us/oregon-department-of-justice/public-records/attorney-generals-public-records-and-meetings-manual/i-public-records/#:~:text=Under%20Oregon''s%20Public%20Records%20Law,committee%20of%20the%20Legislative%20Assembly">Public Records Law</a>. This law classifies certain information as available to the public on request. See our <a data-renderer-mark="true" href="/help/about/privacy" title="https://www.portland.gov/help/about/privacy">privacy statement</a> for more information.</p>'
+    support_agent_use_only:
+      '#type': portland_support_agent_widget
+      '#title': 'Support Agent Use Only'
+      '#access_create_roles':
+        - authenticated
+      '#escalate_issue__access': false
+    actions:
+      '#type': webform_actions
+      '#title': 'Submit button(s)'
   computed_contact_address:
     '#type': webform_computed_token
     '#title': 'Computed Address'
@@ -210,13 +258,21 @@ elements: |-
     '#display_on': none
     '#mode': html
     '#template': "{{ data.engage_meeting_alternate_datetime|date('m/d/y g:i a') }}"
-  actions:
-    '#type': webform_actions
-    '#title': 'Submit button(s)'
-    '#states':
-      visible:
-        ':input[name="engage_reason"]':
-          checked: true
+  computed_today_date:
+    '#type': webform_computed_twig
+    '#title': "Computed Today's Date"
+    '#display_on': none
+    '#mode': text
+    '#template': '{{ "now"|date("Y-m-d") }}'
+    '#whitespace': trim
+    '#ajax': true
+  computed_submission_method:
+    '#type': webform_computed_twig
+    '#title': 'Computed Submission Method'
+    '#display_on': none
+    '#mode': text
+    '#template': Webform
+    '#whitespace': trim
 css: ''
 javascript: ''
 settings:
@@ -492,4 +548,86 @@ handlers:
       theme_name: ''
       parameters: {  }
       debug: false
+  smartsheet_add_row_to_existing_sheet_1:
+    id: smartsheet_add_row
+    handler_id: smartsheet_add_row_to_existing_sheet_1
+    label: 'Smartsheet: add row to existing sheet'
+    notes: ''
+    status: true
+    conditions:
+      enabled:
+        ':input[name="engage_reason"]':
+          value: 'Provide a comment, ask a question or give feedback'
+    weight: 0
+    settings:
+      column_mappings:
+        5420364151607172: contact_name
+        3168564337921924: submit_on_behalf
+        7672163965292420: submit_on_behalf_organization
+        2042664431079300: contact_email
+        5691778972733316: contact_phone
+        6546264058449796: computed_today_date
+        4294464244764548: computed_submission_method
+        8798063872135044: engage_question_or_feedback
+        213077082460036: ''
+        4716676709830532: ''
+        6452605854109572: your_zip_code
+        2464876896145284: ''
+        6968476523515780: ''
+        1338976989302660: ''
+        5842576616673156: ''
+        3590776802987908: ''
+        8094376430358404: ''
+        776027035881348: ''
+        5279626663251844: ''
+        3027826849566596: ''
+        7531426476937092: ''
+        1901926942723972: ''
+        6405526570094468: ''
+        4153726756409220: ''
+        8657326383779716: ''
+        494552059170692: ''
+        4998151686541188: ''
+        2746351872855940: ''
+        7249951500226436: ''
+        1620451966013316: ''
+        6124051593383812: ''
+        3872251779698564: ''
+        8375851407069060: ''
+        1057502012592004: ''
+        5561101639962500: ''
+        3309301826277252: ''
+        7812901453647748: ''
+        2183401919434628: ''
+        6687001546805124: ''
+        4435201733119876: ''
+        8938801360490372: ''
+        37155222015876: ''
+        4540754849386372: ''
+        2288955035701124: ''
+        6792554663071620: ''
+        1163055128858500: ''
+        5666654756228996: ''
+        3414854942543748: ''
+        7918454569914244: ''
+        600105175437188: ''
+        5103704802807684: ''
+        2851904989122436: ''
+        7355504616492932: ''
+        1726005082279812: ''
+        6229604709650308: ''
+        3977804895965060: ''
+        8481404523335556: ''
+        318630198726532: ''
+        4822229826097028: ''
+        2570430012411780: ''
+        7074029639782276: ''
+        1444530105569156: ''
+        5948129732939652: ''
+      multiple_rows_enable: null
+      multiple_rows_field: ''
+      multiple_rows_separator: ''
+      row_location: toBottom
+      sheet_id: '1797552139620228'
+      upload_attachments: '1'
 variants: {  }

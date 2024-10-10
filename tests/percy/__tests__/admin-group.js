@@ -55,15 +55,15 @@ describe('SuperAdmin user test', () => {
         }
 
         // Create the test group
-        await page.goto(`${HOME_PAGE}/group/add/bureau_office`);
+        await page.goto(`${HOME_PAGE}/group/add/base_group`);
         text_content = await page.evaluate(() => document.querySelector('.page-title').textContent);
-        expect(text_content).toEqual(expect.stringContaining('Add Bureau/office'));
+        expect(text_content).toEqual(expect.stringContaining('Add Base group'));
         await page.type('#edit-label-0-value', 'Percy Test Group');
+        await page.select("#edit-field-group-subtype", "850"); // Bureau/office
         await page.type('#edit-field-official-organization-name-0-value', 'Official name of Percy test group');
-        await page.select('#edit-field-migration-status', 'Complete')
         await page.type('#edit-field-summary-0-value', 'This is a test summary for the Percy Test group');
         // Must expand the admin fields group in order to input Group Path
-        await page.click('details#edit-group-administrative-fields');
+        await page.click('#edit-group-administrative-fields-site');
         await page.type('#edit-field-group-path-0-value', 'percy-test-group');
         // Publish group
         await page.select("#edit-moderation-state-0-state", "published");
@@ -84,9 +84,9 @@ describe('SuperAdmin user test', () => {
         await page.waitForNavigation();
 
         text_content = await page.evaluate(() => document.querySelector('.page-title').textContent);
-        expect(text_content).toEqual(expect.stringContaining('Add Bureau/office: Group membership'));
+        expect(text_content).toEqual(expect.stringContaining('Group membership'));
         await page.type('#edit-entity-id-0-target-id', 'Ally Admin (62)');
-        selector = '#edit-group-roles-bureau-office-admin';
+        selector = '#edit-group-roles-base-group-admin';
         await page.evaluate((selector) => document.querySelector(selector).click(), selector);
         // Submit form
         await page.keyboard.press('Enter');

@@ -410,7 +410,7 @@ class MigrateBodyContentAndLinkedMedia extends ProcessPluginBase {
 
   protected function getMediaType($filename) {
     $ext = pathinfo($filename, PATHINFO_EXTENSION);
-    switch ($ext) {
+    switch (strtolower($ext)) {
       case "jpg":
       case "jpeg":
       case "png":

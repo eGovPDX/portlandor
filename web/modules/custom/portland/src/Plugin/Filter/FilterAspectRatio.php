@@ -12,7 +12,7 @@ use Drupal\filter\Plugin\FilterBase;
  * @Filter(
  *   id = "filter_aspect_ratio",
  *   title = @Translation("Set aspect ratio"),
- *   description = @Translation("Uses a <code>data-aspect-ratio</code> attribute on <code>&lt;data-media&gt;</code> tags to set aspect ratio."),
+ *   description = @Translation("Uses a <code>data-aspect-ratio</code> attribute on <code>&lt;drupal-entity&gt;</code> tags to set aspect ratio."),
  *   type = Drupal\filter\Plugin\FilterInterface::TYPE_TRANSFORM_REVERSIBLE
  * )
  */
@@ -30,19 +30,19 @@ class FilterAspectRatio extends FilterBase {
       foreach ($xpath->query('//*[@data-entity-uuid]') as $node) {
         // Check if it's an iframe
         $uuid = $node->getAttribute('data-entity-uuid');
-        if(empty($uuid)) continue;
+        if (empty($uuid)) continue;
 
         $entity_loaded_by_uuid = \Drupal::entityTypeManager()->getStorage('media')->loadByProperties(['uuid' => $uuid]);
-        if(count($entity_loaded_by_uuid) == 0) continue;
+        if (count($entity_loaded_by_uuid) == 0) continue;
         $entity_loaded_by_uuid = reset($entity_loaded_by_uuid);
-        if($entity_loaded_by_uuid->bundle() != 'iframe_embed') continue;
+        if ($entity_loaded_by_uuid->bundle() != 'iframe_embed') continue;
 
         // Read the data-aspect-ratio attribute's value, then delete it.
         $aspect_ratio = $node->getAttribute('data-aspect-ratio');
         $node->removeAttribute('data-aspect-ratio');
 
         // Default ratio is 16x9
-        if( empty($aspect_ratio)) {
+        if (empty($aspect_ratio)) {
           $node->setAttribute('style', 'aspect-ratio: 16/9');
         }
         // Only allow pre-defined ratios

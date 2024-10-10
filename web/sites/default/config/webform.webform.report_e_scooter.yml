@@ -55,6 +55,7 @@ elements: |-
         visible:
           ':input[name="report_issue[radios]"]':
             value: 'improperly parked'
+      '#required': true
     report_private_property:
       '#type': radios
       '#title': 'Is the e-scooter parked on private property?'
@@ -64,17 +65,16 @@ elements: |-
         visible:
           ':input[name="report_blocking"]':
             value: 'No'
+      '#required': true
     report_company:
       '#type': radios
       '#title': 'Electric scooter (e-scooter) company'
-      '#description': 'Which e-scooter company does the scooter belong to? Or, what color is the e-scooter?'
+      '#description': '<p>Which e-scooter company does the scooter belong to? Or, what color is the e-scooter?</p>'
       '#description_display': before
       '#prepopulate': true
       '#options':
-        Bird: 'Bird (black)'
-        Bolt: 'Bolt (black and yellow)'
         Lime: 'Lime (green)'
-        Spin: 'Spin (orange)'
+        Lyft: 'BIKETOWN (Lyft) (grey/orange) -- Scooters only, no bikes.'
         'E-scooter company not specified': 'Not sure'
       '#states':
         optional:
@@ -166,6 +166,8 @@ elements: |-
     '#access_view_roles':
       - support_agent
       - administrator
+    '#zendesk_request_number__access': false
+    '#employee_notes_panel__access': false
     '#escalate_issue__access': false
   company_sla:
     '#type': webform_computed_twig
@@ -186,14 +188,18 @@ elements: |-
     '#template': |
       {% set response = 'NA' %}
 
-      {% if data.report_issue == 'improperly parked' and data.report_blocking == 'Yes' %}
-        {% set response = '1' %}
-      {% elseif data.report_issue == 'improperly parked' and data.report_blocking == 'No' %}
-        {% set response = '24' %}
+      {% if data.report_issue == 'improperly parked' %}
+        {% if data.report_blocking == 'Yes' %}
+          {% set response = '1.5' %}
+        {% elseif data.report_private_property == 'Yes' %}
+          {% set response = '24' %}
+        {% else %}
+          {% set response = '48' %}
+        {% endif %}
       {% elseif data.report_issue == 'damaged' %}
-        {% set response = '1' %}
+        {% set response = '12' %}
       {% elseif data.report_issue == 'scooter not working' %}
-        {% set response = '1' %}
+        {% set response = '12' %}
       {% endif %}
 
       {{ response }}
@@ -234,18 +240,20 @@ elements: |-
     '#type': webform_computed_twig
     '#title': 'Computed Urgency'
     '#display_on': none
-    '#template': '{% if data.company_sla == "1" %}Urgent {% endif %}'
+    '#template': "{% if data.report_issue == 'improperly parked' and data.report_blocking == 'Yes' %}URGENT {% endif %}"
+    '#ajax': true
   computed_urgency_text:
     '#type': webform_computed_twig
     '#title': 'Computed Urgency Text'
     '#display_on': none
     '#template': |-
-      {% if data.company_sla == "1" %}
-        Please note, due to the nature of this report, the response time dictated by the City’s Administrative Rule is 60 MINUTES.
-      {% elseif data.company_sla == "24" %}
-        Please note, due to the nature of this report, the response time dictated by the City’s Administrative Rule is 24 HOURS.
+      {% if data.company_sla == "1.5" %}
+        Please note, due to the nature of this report, the response time dictated by the City’s Administrative Rule is 90 MINUTES.
+      {% elseif data.company_sla == "12" or data.company_sla == "24" or data.company_sla == "48" %}
+        Please note, due to the nature of this report, the response time dictated by the City’s Administrative Rule is {{ data.company_sla }} HOURS.
       {% endif %}
     '#whitespace': trim
+    '#ajax': true
   computed_resolution_url:
     '#type': webform_computed_twig
     '#title': 'Computed Resolution URL'
@@ -263,19 +271,15 @@ elements: |-
   computed_recipient:
     '#type': webform_computed_twig
     '#title': 'Computed Recipient'
-    '#admin_notes': 'If this computed field changes, it needs to be updated in all webforms that send notifications to scooter companies.'
+    '#admin_notes': '<p>If this computed field changes, it needs to be updated in all webforms that send notifications to scooter companies.</p>'
     '#display_on': view
     '#template': |-
-      {% if data.report_company == "Bird" %}
-      portland311@bird.co
-      {% elseif data.report_company == "Bolt" %}
-      BoltPDX@micromobility.com
-      {% elseif data.report_company == "Lime" %}
+      {% if data.report_company == "Lime" %}
       help-portland@li.me
-      {% elseif data.report_company == "Spin" %}
-      portland_warehouse-aaaabebkw557a3vu7d3cteq4vi@spin-org.slack.com
+      {% elseif data.report_company == "Lyft" %}
+      portland-escalations@lyft.com
       {% elseif data.report_company == "E-scooter company not specified" %}
-      portland311@bird.co,BoltPDX@micromobility.com,help-portland@li.me,portland_warehouse-aaaabebkw557a3vu7d3cteq4vi@spin-org.slack.com
+      help-portland@li.me,portland-escalations@lyft.com
       {% endif %}
     '#whitespace': trim
     '#store': true
@@ -487,7 +491,7 @@ handlers:
     id: zendesk
     handler_id: zendesk_create_ticket
     label: 'Create Zendesk Ticket'
-    notes: 'Uses the Zendesk tickets API to create a new e-scooter report ticket in the sandbox and assign it to the E-scooter Response group. Sends notification to selected e-scooter company. Covers all issue types except Riding on Sidewalk.'
+    notes: 'Creates a Zendesk ticket in the E-scooter Response group. Enabled if not Riding on Sidewalk or Test Submission. Does not set Resolution URL--that occurs in follow-up update handler. Email notification to scooter company is sent in a follow-up email handler.'
     status: true
     conditions:
       enabled:
@@ -507,7 +511,7 @@ handlers:
       assignee_id: ''
       type: incident
       collaborators: ''
-      custom_fields: "1900004448785: ['[webform_submission:values:report_company:raw]', 'report_company']\r\n1500012801562: ['[webform_submission:values:company_sla]', 'company_sla']\r\n1500012801542: ['[webform_submission:values:report_asset_id]', 'report_asset_id']\r\n1500013095781: '[webform_submission:uuid]'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n6353388345367: 'report_e_scooter'\r\n6355783758871: ['[webform_submission:values:computed_resolution_url]', 'computed_resolution_url']"
+      custom_fields: "1900004448785: ['[webform_submission:values:report_company:raw]', 'report_company']\r\n1500012801562: ['[webform_submission:values:company_sla]', 'company_sla']\r\n1500012801542: ['[webform_submission:values:report_asset_id]', 'report_asset_id']\r\n1500013095781: '[webform_submission:uuid]'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n6353388345367: 'report_e_scooter'\r\n"
       ticket_id_field: report_ticket_id
       group_id: '1500006561502'
       ticket_form_id: '1500003352322'
@@ -537,7 +541,7 @@ handlers:
       assignee_id: '1505212728301'
       type: incident
       collaborators: ''
-      custom_fields: "1900004448785: ['[webform_submission:values:report_company:raw]', 'report_company']\r\n1500012801562: ['[webform_submission:values:company_sla]', 'company_sla']\r\n1500012801542: ['[webform_submission:values:report_asset_id]', 'report_asset_id']\r\n1500013095781: '[webform_submission:uuid]'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n6353388345367: 'report_e_scooter'\r\n6355783758871: ['[webform_submission:values:computed_resolution_url]', 'computed_resolution_url']"
+      custom_fields: "1900004448785: ['[webform_submission:values:report_company:raw]', 'report_company']\r\n1500012801562: ['[webform_submission:values:company_sla]', 'company_sla']\r\n1500012801542: ['[webform_submission:values:report_asset_id]', 'report_asset_id']\r\n1500013095781: '[webform_submission:uuid]'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n6353388345367: 'report_e_scooter'\r\n"
       ticket_id_field: report_ticket_id
       group_id: ''
       ticket_form_id: '1500003352322'
@@ -577,7 +581,7 @@ handlers:
       sender_mail: ''
       sender_name: ''
       subject: '[webform_submission:values:computed_urgency]Portland E-scooter Report [webform_submission:values:report_ticket_id]: [webform_submission:values:report_issue]'
-      body: "<p>The following e-scooter issue was reported to the City of Portland. [webform_submission:values:computed_urgency_text]</p>\r\n\r\n<p><strong>What is the issue with the e-scooter?</strong> [webform_submission:values:report_issue]</p>\r\n\r\n<p><strong>E-scooter company:</strong> [webform_submission:values:report_company:raw]</p>\r\n\r\n<p><strong>Is the e-scooter blocking a sidewalk, trail, bike lane, driveway, street, transit stop or other type of transportation lane?</strong> [webform_submission:values:computed_blocking]</p>\r\n\r\n<p><strong>Is the e-scooter parked on private property?</strong> [webform_submission:values:computed_private_property]</p>\r\n\r\n<p><strong>E-scooter ID:</strong> [webform_submission:values:report_asset_id]</p>\r\n\r\n<p><strong>Location:</strong><br />\r\nAddress: <a href=\"https://www.google.com/maps/place/[webform_submission:values:report_location:location_address]\">[webform_submission:values:report_location:location_address]</a><br />\r\nLat/Lon: <a href=\"https://www.google.com/maps/place/[webform_submission:values:report_location:location_lat],[webform_submission:values:report_location:location_lon]\">[webform_submission:values:report_location:location_lat],[webform_submission:values:report_location:location_lon]</a><br />\r\nPlace name: [webform_submission:values:report_location:place_name]<br />\r\nAdditional details: [webform_submission:values:report_location:location_details]</p>\r\n\r\n<p><strong>Service Level Expectation (hours):</strong> [webform_submission:values:company_sla]</p>\r\n\r\n<p><strong>Support Ticket ID:</strong>&nbsp;[webform_submission:values:report_ticket_id]</p>\r\n\r\n<div style=\"padding: 10px 20px; background-color: #dddddd;\">\r\n<p><strong><a href=\"[webform_submission:values:computed_resolution_url]\">Report resolution of this issue</a></strong></p>\r\n</div>"
+      body: '<p>The following e-scooter issue was reported to the City of Portland. [webform_submission:values:computed_urgency_text]</p><p><strong>What is the issue with the e-scooter?</strong> [webform_submission:values:report_issue]</p><p><strong>E-scooter company:</strong> [webform_submission:values:report_company:raw]</p><p><strong>Is the e-scooter blocking a sidewalk, trail, bike lane, driveway, street, transit stop or other type of transportation lane?</strong> [webform_submission:values:computed_blocking]</p><p><strong>Is the e-scooter parked on private property?</strong> [webform_submission:values:computed_private_property]</p><p><strong>E-scooter ID:</strong> [webform_submission:values:report_asset_id]</p><p><strong>Location:</strong><br>Address: <a href="https://www.google.com/maps/place/[webform_submission:values:report_location:location_address]">[webform_submission:values:report_location:location_address]</a><br>Lat/Lon: <a href="https://www.google.com/maps/place/[webform_submission:values:report_location:location_lat],[webform_submission:values:report_location:location_lon]">[webform_submission:values:report_location:location_lat],[webform_submission:values:report_location:location_lon]</a><br>Place name: [webform_submission:values:report_location:place_name]<br>Additional details: [webform_submission:values:report_location:location_details]</p><p><strong>Service Level Expectation (hours):</strong> [webform_submission:values:company_sla]</p><p><strong>Support Ticket ID:</strong>&nbsp;[webform_submission:values:report_ticket_id]</p><div style="background-color:#dddddd;padding:10px 20px;"><p><a href="[webform_submission:values:computed_resolution_url]&amp;report_ticket_id=[webform_submission:values:report_ticket_id]"><strong>Report resolution of this issue</strong></a></p></div>'
       excluded_elements: {  }
       ignore_access: false
       exclude_empty: true
@@ -665,7 +669,7 @@ handlers:
       sender_mail: ''
       sender_name: ''
       subject: '[webform_submission:values:computed_urgency]Portland E-scooter Report [webform_submission:values:report_ticket_id]: [webform_submission:values:report_issue]'
-      body: "<p>The following e-scooter issue was reported to the City of Portland. [webform_submission:values:computed_urgency_text]</p>\r\n\r\n<p style=\"border: solid 1px red; padding: 5px;\"><strong>NOTE: The e-scooter company was not specified in this report. Please check your records to determine whether you have an e-scooter deployed at this location and respond accordingly. If not, you may disregard this report.</strong></p>\r\n\r\n<p><strong>What is the issue with the e-scooter?</strong> [webform_submission:values:report_issue]</p>\r\n\r\n<p><strong>E-scooter company:</strong> [webform_submission:values:report_company:raw]</p>\r\n\r\n<p><strong>Is the e-scooter blocking a sidewalk, trail, bike lane, driveway, street, transit stop or other type of transportation lane?</strong> [webform_submission:values:computed_blocking]</p>\r\n\r\n<p><strong>Is the e-scooter parked on private property?</strong> [webform_submission:values:computed_private_property]</p>\r\n\r\n<p><strong>E-scooter ID:</strong> [webform_submission:values:report_asset_id]</p>\r\n\r\n<p><strong>Location:</strong><br />\r\nAddress: <a href=\"https://www.google.com/maps/place/[webform_submission:values:report_location:location_address]\">[webform_submission:values:report_location:location_address]</a><br />\r\nLat/Lon: <a href=\"https://www.google.com/maps/place/[webform_submission:values:report_location:location_lat],[webform_submission:values:report_location:location_lon]\">[webform_submission:values:report_location:location_lat],[webform_submission:values:report_location:location_lon]</a><br />\r\nPlace name: [webform_submission:values:report_location:place_name]<br />\r\nAdditional details: [webform_submission:values:report_location:location_details]</p>\r\n\r\n<p><strong>Service Level Expectation (hours):</strong> [webform_submission:values:company_sla]</p>\r\n\r\n<p><strong>Support Ticket ID:</strong>&nbsp;[webform_submission:values:report_ticket_id]</p>\r\n\r\n<div style=\"padding: 10px 20px; background-color: #dddddd;\">\r\n<p><strong><a href=\"[webform_submission:values:computed_resolution_url]\">Report resolution of this issue</a></strong></p>\r\n</div>"
+      body: '<p>The following e-scooter issue was reported to the City of Portland. [webform_submission:values:computed_urgency_text]</p><p style="border:solid 1px red;padding:5px;"><strong>NOTE: The e-scooter company was not specified in this report. Please check your records to determine whether you have an e-scooter deployed at this location and respond accordingly. If not, you may disregard this report.</strong></p><p><strong>What is the issue with the e-scooter?</strong> [webform_submission:values:report_issue]</p><p><strong>E-scooter company:</strong> [webform_submission:values:report_company:raw]</p><p><strong>Is the e-scooter blocking a sidewalk, trail, bike lane, driveway, street, transit stop or other type of transportation lane?</strong> [webform_submission:values:computed_blocking]</p><p><strong>Is the e-scooter parked on private property?</strong> [webform_submission:values:computed_private_property]</p><p><strong>E-scooter ID:</strong> [webform_submission:values:report_asset_id]</p><p><strong>Location:</strong><br>Address: <a href="https://www.google.com/maps/place/[webform_submission:values:report_location:location_address]">[webform_submission:values:report_location:location_address]</a><br>Lat/Lon: <a href="https://www.google.com/maps/place/[webform_submission:values:report_location:location_lat],[webform_submission:values:report_location:location_lon]">[webform_submission:values:report_location:location_lat],[webform_submission:values:report_location:location_lon]</a><br>Place name: [webform_submission:values:report_location:place_name]<br>Additional details: [webform_submission:values:report_location:location_details]</p><p><strong>Service Level Expectation (hours):</strong> [webform_submission:values:company_sla]</p><p><strong>Support Ticket ID:</strong>&nbsp;[webform_submission:values:report_ticket_id]</p><div style="background-color:#dddddd;padding:10px 20px;"><p><a href="[webform_submission:values:computed_resolution_url]&amp;report_ticket_id=[webform_submission:values:report_ticket_id]"><strong>Report resolution of this issue</strong></a></p></div>'
       excluded_elements: {  }
       ignore_access: false
       exclude_empty: true
@@ -677,30 +681,6 @@ handlers:
       theme_name: ''
       parameters: {  }
       debug: false
-  zendesk_update_interaction_ticket:
-    id: zendesk_update_ticket
-    handler_id: zendesk_update_interaction_ticket
-    label: 'Zendesk update customer support interaction request'
-    notes: 'Updates an existing Zendesk "interaction request" and links it to the issue request. Enabled if an Zendesk Request Number value has been provided.'
-    status: true
-    conditions:
-      enabled:
-        ':input[name="support_agent_use_only[zendesk_request_number]"]':
-          filled: true
-    weight: -44
-    settings:
-      comment: "<h1>E-scooter Report</h1>\r\n<p><b>Linked Issue Request: <a href=\"https://portlandoregon.zendesk.com/agent/tickets/[webform_submission:values:report_ticket_id]\">[webform_submission:values:report_ticket_id]</a></b></p>\r\n\r\n[webform_submission:values:html]\r\n\r\n"
-      comment_private: 1
-      tags: ''
-      priority: ''
-      status: ''
-      group_id: ''
-      assignee_id: ''
-      type: ''
-      collaborators: ''
-      custom_fields: "8692493739543: '[webform_submission:values:report_ticket_id]'"
-      ticket_id_field: zendesk_request_number
-      ticket_form_id: ''
   create_zendesk_ticket_developer_test:
     id: zendesk
     handler_id: create_zendesk_ticket_developer_test
@@ -723,10 +703,34 @@ handlers:
       assignee_id: ''
       type: incident
       collaborators: ''
-      custom_fields: "1900004448785: ['[webform_submission:values:report_company:raw]', 'report_company']\r\n1500012801562: ['[webform_submission:values:company_sla]', 'company_sla']\r\n1500012801542: ['[webform_submission:values:report_asset_id]', 'report_asset_id']\r\n1500013095781: '[webform_submission:uuid]'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n6353388345367: 'report_e_scooter'\r\n6355783758871: ['[webform_submission:values:computed_resolution_url]', 'computed_resolution_url']"
+      custom_fields: "1900004448785: ['[webform_submission:values:report_company:raw]', 'report_company']\r\n1500012801562: ['[webform_submission:values:company_sla]', 'company_sla']\r\n1500012801542: ['[webform_submission:values:report_asset_id]', 'report_asset_id']\r\n1500013095781: '[webform_submission:uuid]'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n6353388345367: 'report_e_scooter'\r\n"
       ticket_id_field: report_ticket_id
       group_id: '4549352062487'
       ticket_form_id: '1500003352322'
       recipient: ''
       ticket_fork_field: ''
+  zendesk_update_request:
+    id: zendesk_update_ticket
+    handler_id: zendesk_update_request
+    label: 'Update Zendesk request with full resolution URL including ticket ID'
+    notes: ''
+    status: true
+    conditions:
+      enabled:
+        ':input[name="report_issue[radios]"]':
+          '!value': 'riding on sidewalk'
+    weight: 0
+    settings:
+      comment: 'Resolution URL: <a href="[webform_submission:values:computed_resolution_url]&report_ticket_id=[webform_submission:values:report_ticket_id]">[webform_submission:values:computed_resolution_url]&report_ticket_id=[webform_submission:values:report_ticket_id]</a>'
+      comment_private: 1
+      tags: ''
+      priority: ''
+      status: ''
+      group_id: ''
+      assignee_id: ''
+      type: ''
+      collaborators: ''
+      custom_fields: "6355783758871: '[webform_submission:values:computed_resolution_url]&report_ticket_id=[webform_submission:values:report_ticket_id]'"
+      ticket_id_field: report_ticket_id
+      ticket_form_id: '1500003352322'
 variants: {  }

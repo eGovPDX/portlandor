@@ -4,11 +4,13 @@ status: true
 dependencies:
   config:
     - entity_browser.browser.image_browser_embed
+    - field.field.group.elected_official.field_abbreviated_name
     - field.field.group.elected_official.field_active_elected_official
     - field.field.group.elected_official.field_address
     - field.field.group.elected_official.field_body_content
     - field.field.group.elected_official.field_commissioner_number
     - field.field.group.elected_official.field_contact
+    - field.field.group.elected_official.field_council_district
     - field.field.group.elected_official.field_disable_legacy_paths_block
     - field.field.group.elected_official.field_email
     - field.field.group.elected_official.field_enable_blog_menu_item
@@ -32,7 +34,6 @@ dependencies:
     - field.field.group.elected_official.field_linkedin_link
     - field.field.group.elected_official.field_location
     - field.field.group.elected_official.field_menu_link
-    - field.field.group.elected_official.field_migration_status
     - field.field.group.elected_official.field_name
     - field.field.group.elected_official.field_nextdoor_link
     - field.field.group.elected_official.field_official_title
@@ -52,6 +53,7 @@ dependencies:
   module:
     - address
     - cleave
+    - conditional_fields
     - content_moderation
     - entity_browser
     - field_group
@@ -90,9 +92,11 @@ third_party_settings:
     group_administrative_fields:
       children:
         - field_group_path
+        - field_abbreviated_name
         - field_active_elected_official
         - field_voting_council_member
         - field_commissioner_number
+        - field_council_district
         - field_search_keywords
         - path
         - field_menu_link
@@ -185,9 +189,17 @@ targetEntityType: group
 bundle: elected_official
 mode: default
 content:
+  field_abbreviated_name:
+    type: string_textfield
+    weight: 3
+    region: content
+    settings:
+      size: 60
+      placeholder: ''
+    third_party_settings: {  }
   field_active_elected_official:
     type: boolean_checkbox
-    weight: 3
+    weight: 4
     region: content
     settings:
       display_label: true
@@ -208,7 +220,7 @@ content:
     third_party_settings: {  }
   field_commissioner_number:
     type: number
-    weight: 5
+    weight: 6
     region: content
     settings:
       placeholder: ''
@@ -223,6 +235,30 @@ content:
       size: 60
       placeholder: ''
     third_party_settings: {  }
+  field_council_district:
+    type: options_select
+    weight: 7
+    region: content
+    settings: {  }
+    third_party_settings:
+      conditional_fields:
+        32351b56-299c-4243-8223-a1e4e178396c:
+          entity_type: group
+          bundle: elected_official
+          dependee: field_voting_council_member
+          settings:
+            state: visible
+            reset: true
+            condition: checked
+            grouping: AND
+            values_set: 1
+            value: ''
+            values: {  }
+            value_form:
+              value: false
+            effect: show
+            effect_options: {  }
+            selector: ''
   field_disable_legacy_paths_block:
     type: boolean_checkbox
     weight: 10
@@ -248,7 +284,7 @@ content:
       conditional_fields: {  }
   field_enable_body_content:
     type: boolean_checkbox
-    weight: 10
+    weight: 12
     region: content
     settings:
       display_label: true
@@ -407,13 +443,7 @@ content:
     third_party_settings: {  }
   field_menu_link:
     type: menu_link_default
-    weight: 8
-    region: content
-    settings: {  }
-    third_party_settings: {  }
-  field_migration_status:
-    type: options_select
-    weight: 1
+    weight: 10
     region: content
     settings: {  }
     third_party_settings: {  }
@@ -487,7 +517,7 @@ content:
     third_party_settings: {  }
   field_routing_email:
     type: email_default
-    weight: 9
+    weight: 11
     region: content
     settings:
       placeholder: ''
@@ -495,7 +525,7 @@ content:
     third_party_settings: {  }
   field_search_keywords:
     type: string_textfield
-    weight: 6
+    weight: 8
     region: content
     settings:
       size: 60
@@ -524,7 +554,7 @@ content:
     third_party_settings: {  }
   field_voting_council_member:
     type: boolean_checkbox
-    weight: 4
+    weight: 5
     region: content
     settings:
       display_label: true
@@ -559,7 +589,7 @@ content:
     third_party_settings: {  }
   path:
     type: path
-    weight: 7
+    weight: 9
     region: content
     settings: {  }
     third_party_settings: {  }

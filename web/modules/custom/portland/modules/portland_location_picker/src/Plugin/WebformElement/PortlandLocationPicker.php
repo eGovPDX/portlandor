@@ -62,7 +62,7 @@ class PortlandLocationPicker extends WebformCompositeBase {
       $lines[] = '<strong>Location type(s):</strong> ' . $value['location_types'];
     }
     if (isset($value['location_attributes']) && $value['location_attributes']) {
-      $lines[] = '<strong>Location details:</strong> ' . $value['location_attributes'];
+      $lines[] = '<strong>Location attributes:</strong> ' . $value['location_attributes'];
     }
     if (isset($value['location_asset_id']) && $value['location_asset_id']) {
       $lines[] = '<strong>Asset ID:</strong> ' . $value['location_asset_id'];
@@ -123,7 +123,7 @@ class PortlandLocationPicker extends WebformCompositeBase {
       $lines[] = 'Region ID: ' . $value['location_region_id'];
     }
     if (isset($value['location_search']) && $value['location_search']) {
-      $lines[] = 'Region ID: ' . $value['location_search'];
+      $lines[] = 'Search query: ' . $value['location_search'];
     }
     return $lines;
   }
@@ -158,11 +158,17 @@ class PortlandLocationPicker extends WebformCompositeBase {
     $requireCityLimitsPlusParks = array_key_exists('#require_city_limits_plus_parks', $element) ? $element['#require_city_limits_plus_parks'] : FALSE;
     $locationTypes = array_key_exists('#location_types', $element) ? $element['#location_types'] : 'park,row,stream,street,taxlot,trail,waterbody';
     $disablePlaceNameAutofill = array_key_exists('#disable_place_name_autofill', $element) ? $element['#disable_place_name_autofill'] : FALSE;
+    $regionIdPropertyName = array_key_exists('#region_id_property_name', $element) ? $element['#region_id_property_name'] : 'region_id';
     
     $boundaryUrl = array_key_exists('#boundary_url', $element) ? $element['#boundary_url'] : 'https://www.portlandmaps.com/arcgis/rest/services/Public/Boundaries/MapServer/0/query?where=1%3D1&objectIds=35&outFields=*&returnGeometry=true&f=geojson';
     $displayBoundary = array_key_exists('#display_boundary', $element) ? $element['#display_boundary'] : TRUE;
     $requireBoundary = array_key_exists('#require_boundary', $element) ? $element['#require_boundary'] : FALSE;
     $outOfBoundsMessage = array_key_exists('#out_of_bounds_message', $element) ? $element['#out_of_bounds_message'] : "The location you selected is not within our service area. Please try a different location.";
+
+    // in this URL, the {{x}} and {{y}} tokens need to be replaced with real values.
+    $clickQueryUrl = array_key_exists('#click_query_url', $element) ? $element['#click_query_url'] : '';
+    $clickQueryPropertyPath = array_key_exists('#click_query_property_path', $element) ? $element['#click_query_property_path'] : '';
+    $clickQueryDestinationField = array_key_exists('#click_query_destination_field', $element) ? $element['#click_query_destination_field'] : 'location_region_id';
 
     $element['#attached']['drupalSettings']['webform']['portland_location_picker']['address_verify'] = $addressVerify;
     $element['#attached']['drupalSettings']['webform']['portland_location_picker']['element_id'] = $element_id;
@@ -183,11 +189,17 @@ class PortlandLocationPicker extends WebformCompositeBase {
     $element['#attached']['drupalSettings']['webform']['portland_location_picker']['require_city_limits_plus_parks'] = $requireCityLimitsPlusParks;
     $element['#attached']['drupalSettings']['webform']['portland_location_picker']['location_types'] = $locationTypes;
     $element['#attached']['drupalSettings']['webform']['portland_location_picker']['disable_place_name_autofill'] = $disablePlaceNameAutofill;
+    $element['#attached']['drupalSettings']['webform']['portland_location_picker']['region_id_property_name'] = $regionIdPropertyName;
+
 
     $element['#attached']['drupalSettings']['webform']['portland_location_picker']['boundary_url'] = $boundaryUrl;
     $element['#attached']['drupalSettings']['webform']['portland_location_picker']['display_boundary'] = $displayBoundary;
     $element['#attached']['drupalSettings']['webform']['portland_location_picker']['require_boundary'] = $requireBoundary;
     $element['#attached']['drupalSettings']['webform']['portland_location_picker']['out_of_bounds_message'] = $outOfBoundsMessage;
+
+    $element['#attached']['drupalSettings']['webform']['portland_location_picker']['click_query_url'] = $clickQueryUrl;
+    $element['#attached']['drupalSettings']['webform']['portland_location_picker']['click_query_property_path'] = $clickQueryPropertyPath;
+    $element['#attached']['drupalSettings']['webform']['portland_location_picker']['click_query_destination_field'] = $clickQueryDestinationField;
   }
 
 }
