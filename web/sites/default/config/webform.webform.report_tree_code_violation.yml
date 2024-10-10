@@ -76,16 +76,16 @@ elements: |-
             value: 'Tree branches hanging too low or blocking part of the street or sidewalk'
       report_tree_causing_issues:
         '#type': radios
-        '#title': 'Is the tree causing any of the following issues?'
+        '#title': 'What is the issue with the tree?'
         '#options':
           'Blocking view of a traffic signal, traffic sign, or street sign': 'Blocking view of a traffic signal, traffic sign, or street sign'
           'Blocking a streetlight': 'Blocking a streetlight'
           'Blocking visibility at an intersection': 'Blocking visibility at an intersection'
-          'Something else': 'Something else'
+          'Something else': 'Something else -- Please describe in the Additional Tree Issue Details field below.'
         '#required': true
       report_vegetation_source:
         '#type': radios
-        '#title': 'Where is the vegetation growing from?'
+        '#title': 'Where is the tree growing from?'
         '#options':
           'Private property': 'Private property'
           'Parking strip, median, or other parts of the street or right-of-way': 'Parking strip, median, or other parts of the street or right-of-way'
@@ -160,31 +160,6 @@ elements: |-
         '#other__option_label': 'Something else...'
         '#other__placeholder': 'Please describe...'
         '#required': true
-      report_tree_number:
-        '#type': number
-        '#title': 'Number of Trees'
-        '#states':
-          visible:
-            ':input[name="report_tree_number"]':
-              filled: true
-        '#min': 1
-      report_tree_species:
-        '#type': textfield
-        '#title': 'Tree Species'
-        '#states':
-          visible:
-            ':input[name="report_tree_species"]':
-              filled: true
-      report_tree_diameter:
-        '#type': number
-        '#title': 'Tree Diameter'
-        '#description': '<p>Measure the diameter at roughly 4.5 feet above the ground. <a href="/trees/tree-care-and-resources/how-measure-tree" target="_blank">More information...</a></p>'
-        '#description_display': before
-        '#states':
-          visible:
-            ':input[name="report_tree_diameter"]':
-              filled: true
-        '#min': 1
       report_tree_details:
         '#type': webform_custom_composite
         '#title': 'Tree Details'
@@ -198,10 +173,11 @@ elements: |-
           species:
             '#type': webform_select_other
             '#options': common_tree_species
+            '#required': true
             '#title': Species
           diameter:
             '#type': textfield
-            '#title': Diameter
+            '#title': 'Diameter in feet'
             '#size': 25%
     container_submit:
       '#type': container
@@ -237,27 +213,11 @@ elements: |-
         '#location_details__access': false
         '#require_boundary': true
         '#boundary_url': 'https://www.portlandmaps.com/arcgis/rest/services/Public/COP_OpenData_Boundary/MapServer/182/query?outFields=*&where=1%3D1&f=geojson'
-      report_location_type:
-        '#type': radios
-        '#title': 'Where is the tree located?'
-        '#options':
-          'Private property': 'Private property'
-          'Parking strip, median, or other parts of the street or right-of-way': 'Parking strip, median, or other parts of the street or right-of-way'
-          'Park or natural area': 'Park or natural area'
-          'Something else, or unsure...': 'Something else, or unsure...'
-        '#states':
-          invisible:
-            - ':input[name="report_issue"]':
-                value: 'Tree grates interfering with street trees'
-            - or
-            - ':input[name="report_location[location_type_park]"]':
-                value: 'true'
-        '#required': true
       container_private_property:
         '#type': container
         '#states':
           visible:
-            ':input[name="report_location_type"]':
+            ':input[name="report_vegetation_source"]':
               value: 'Private property'
         report_location_private_details:
           '#type': textarea
@@ -292,15 +252,8 @@ elements: |-
         '#type': container
         '#states':
           visible:
-            ':input[name="report_location_type"]':
+            ':input[name="report_vegetation_source"]':
               '!value': 'Private property'
-        markup_location_type_other:
-          '#type': webform_markup
-          '#states':
-            visible:
-              ':input[name="report_location_type"]':
-                value: 'Something else, or unsure'
-          '#markup': '<p>Please describe in the Additional Location Details field below.</p>'
         report_location_additional_details:
           '#type': textarea
           '#title': 'Additional Location Details'
@@ -358,26 +311,33 @@ elements: |-
   computed_description:
     '#type': webform_computed_twig
     '#title': 'Computed Description'
-    '#display_on': none
+    '#display_on': form
     '#mode': html
-    '#template': |+
-      <h2>Tree Code Violation</h2>
+    '#template': |-
+      <h2>Tree Issue</h2>
 
-      <p><strong>Issue:</strong><br>
-      {{ data.report_issue is not iterable ? data.report_issue : "" }}{% if data.report_tree_causing_issues and data.report_tree_causing_issues is not iterable %}: <em>{{ data.report_tree_causing_issues }}</em>{% endif %}{% if data.report_improper_type and data.report_improper_type is not iterable %}: <em>{{ data.report_improper_type }}</em>{% endif %}
-      </p>
+      <p><strong>What are you trying to report?</strong> {{ data.report_issue is not iterable ? data.report_issue : "" }}</p>
 
-      {% if data.report_tree_number %}
-        <p><strong>Number of trees:</strong> {{ data.report_tree_number }}</p>
+      {% if data.report_tree_causing_issues and data.report_tree_causing_issues is not iterable %}
+      <p><strong>What is the issue with the tree?</strong> {{ data.report_tree_causing_issues }}</p>
       {% endif %}
 
-      {% if data.report_tree_species %}
-        <p><strong>Number of trees:</strong> {{ data.report_tree_species }}</p>
+      {% if data.report_vegetation_source and data.report_vegetation_source is not iterable %}
+      <p><strong>Where is the tree growing from?</strong> {{ data.report_vegetation_source }}</p>
       {% endif %}
 
-      {% if data.report_tree_diameter %}
-        <p><strong>Number of trees:</strong> {{ data.report_tree_diameter }}</p>
+      {% if data.report_improper_type and data.report_improper_type is not iterable %}
+      <p><strong>What type of issue are you reporting?</strong> {{ data.report_improper_type }}</p>
       {% endif %}
+
+      {% if data.report_tree_details and data.report_tree_details is not iterable %}
+      {% if data.report_tree_details %}
+        {% for tree in data.report_tree_details %}
+          <strong>Tree {{ loop.index }}:</strong> Species: {{ tree.species }}{% if tree.diameter %}, Diameter: {{ tree.diameter }} feet{% endif %}<br>
+        {% endfor %}
+      {% else %}
+        No trees were submitted.
+      {% endif %}{% endif %}
 
       <p><strong>Location</strong><br>
       {% if data.report_location.place_name %}
@@ -391,10 +351,6 @@ elements: |-
       {% endif %}
       {% if data.report_location.location_attributes %}
         {{ data.report_location.location_attributes }}
-      {% endif %}
-
-      {% if data.report_location_type and data.report_location_type is not iterable %}
-        <p><strong>Where is the tree located?</strong> {{ data.report_location_type }}</p>
       {% endif %}
 
       {% if data.report_location_private_details %}
@@ -438,10 +394,8 @@ elements: |-
       {% if data.contact_address %}
         <p><strong>Address:</strong> {{ data.contact_address.location_address }}, {{ data.contact_address.location_city }}, {{ data.contact_address.location_state }}  {{ data.contact_address.location_zip }}</p>
       {% endif %}
-
-
-
     '#whitespace': spaceless
+    '#ajax': true
   computed_subject:
     '#type': webform_computed_twig
     '#title': 'Computed Subject'
@@ -463,10 +417,10 @@ elements: |-
         Yes
       {% endif %}
     '#whitespace': trim
-  request_ticket_id:
+  report_ticket_id:
     '#type': hidden
-    '#title': 'Request Ticket Id'
-css: "#report_tree_details_table table {\r\n  border-collapse: separate;\r\n  border-spacing: 0 5px;\r\n}\r\n#report_tree_details_table td { padding: 0 20px 5px 5px; }\r\n#report_tree_details_table table tr { margin-bottom: 5px; }\r\n#report_tree_details_table table tr:nth-child(2n) {\r\n  background-color: #cccccc;\r\n}\r\n#report_tree_details_table table th {\r\n  background-color: none;\r\n}\r\n"
+    '#title': 'Report Ticket Id'
+css: "#report_tree_details_table table {\r\n  border-collapse: separate;\r\n  border-spacing: 0 5px;\r\n  width: auto;\r\n}\r\n#report_tree_details_table td { padding: 0 20px 0 0; }\r\n#report_tree_details_table table tr { margin-bottom: 5px; }\r\n#report_tree_details_table table th {\r\n  background-color: none;\r\n}\r\n"
 javascript: ''
 settings:
   ajax: false
@@ -679,7 +633,7 @@ handlers:
       type: incident
       collaborators: ''
       custom_fields: "6353388345367: 'report_tree_code_violation'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n1500013095781: '[webform_submission:uuid]'\r\n"
-      ticket_id_field: request_ticket_id
+      ticket_id_field: report_ticket_id
       ticket_fork_field: ''
       ticket_form_id: '25484007225111'
   test_zendesk_new_request:
@@ -707,7 +661,7 @@ handlers:
       type: incident
       collaborators: ''
       custom_fields: "6353388345367: 'report_tree_code_violation'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n1500013095781: '[webform_submission:uuid]'\r\n"
-      ticket_id_field: request_ticket_id
+      ticket_id_field: report_ticket_id
       ticket_fork_field: ''
       ticket_form_id: '25484007225111'
   email:
@@ -779,7 +733,7 @@ handlers:
       type: incident
       collaborators: ''
       custom_fields: "6353388345367: 'report_tree_code_violation'\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n1500013095781: '[webform_submission:uuid]'\r\n"
-      ticket_id_field: request_ticket_id
+      ticket_id_field: report_ticket_id
       ticket_fork_field: ''
       ticket_form_id: '25484007225111'
   update_ticket_for_triage:
@@ -804,6 +758,6 @@ handlers:
       type: ''
       collaborators: ''
       custom_fields: ''
-      ticket_id_field: request_ticket_id
+      ticket_id_field: report_ticket_id
       ticket_form_id: '25484007225111'
 variants: {  }
