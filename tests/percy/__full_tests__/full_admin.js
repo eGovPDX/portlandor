@@ -90,7 +90,7 @@ describe('Full regression test suite for Admin', () => {
         `This is a test summary for the ${TEST_GROUP_PATH}`
       );
       // Must expand the admin fields group in order to input Group Path
-      await page.click('details#edit-group-administrative-fields-site');
+      await page.click('details#edit-group-path-and-redirects');
       await page.type('#edit-field-group-path-0-value', TEST_GROUP_PATH);
 
       // Group needs to be published to be added to content in following test
