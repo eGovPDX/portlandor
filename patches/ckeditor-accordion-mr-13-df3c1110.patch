@@ -1,9 +1,42 @@
+From b22cca8851df429cfab6b162b23a5a6274ce55de Mon Sep 17 00:00:00 2001
+From: sascha <sascha.meissner@werk21.de>
+Date: Thu, 1 Feb 2024 11:28:38 +0100
+Subject: [PATCH 01/11] Issue #3124167: Rebased origin/2.x, rerolled and
+ applied patch 32
+
+---
+ README.md                                     |  12 +-
+ ckeditor_accordion.api.php                    |  32 ++++
+ ckeditor_accordion.libraries.yml              |  20 +++
+ ckeditor_accordion.module                     |  11 +-
+ ckeditor_accordion.services.yml               |   4 +
+ .../install/ckeditor_accordion.settings.yml   |   3 +
+ css/ckeditor-accessible-accordion.css         | 105 +++++++++++++
+ src/Annotation/CkeditorAccordionVariant.php   |  43 +++++
+ src/Form/CkeditorAccordionSettingsForm.php    |  15 ++
+ .../CkeditorAccordionVariantDefault.php       |  41 +++++
+ src/Plugin/CkeditorAccordionVariantBase.php   |  79 ++++++++++
+ .../CkeditorAccordionVariantInterface.php     |  15 ++
+ .../CkeditorAccordionVariantManager.php       |  33 ++++
+ src/Plugin/Filter/CKEditorAccordion.php       | 147 ++++++++++++++++++
+ 14 files changed, 553 insertions(+), 7 deletions(-)
+ create mode 100644 ckeditor_accordion.api.php
+ create mode 100644 ckeditor_accordion.services.yml
+ create mode 100644 config/install/ckeditor_accordion.settings.yml
+ create mode 100644 css/ckeditor-accessible-accordion.css
+ create mode 100644 src/Annotation/CkeditorAccordionVariant.php
+ create mode 100644 src/Plugin/CkeditorAccordionVariant/CkeditorAccordionVariantDefault.php
+ create mode 100644 src/Plugin/CkeditorAccordionVariantBase.php
+ create mode 100644 src/Plugin/CkeditorAccordionVariantInterface.php
+ create mode 100644 src/Plugin/CkeditorAccordionVariantManager.php
+ create mode 100644 src/Plugin/Filter/CKEditorAccordion.php
+
 diff --git a/README.md b/README.md
 index 8090a00..c3d8e28 100644
 --- a/README.md
 +++ b/README.md
 @@ -21,12 +21,14 @@ gets triggered on the accordion element.
- 
+
  INSTALLATION:
  --------
 -1. Install & Enable the module
@@ -19,8 +52,8 @@ index 8090a00..c3d8e28 100644
 +5. Edit a text format's settings (usually Basic HTML)
 +6. Drag n Drop the Accordion -button to the toolbar to show it to the editors
 +7. Review available options at /admin/config/content/ckeditor-accordion
- 
- 
+
+
  TODO:
 diff --git a/ckeditor_accordion.api.php b/ckeditor_accordion.api.php
 new file mode 100644
@@ -95,7 +128,7 @@ index cda8f86..7d7ba81 100644
 @@ -11,8 +11,15 @@
  function ckeditor_accordion_page_attachments_alter(array &$page) {
    $config = \Drupal::config('ckeditor_accordion.settings');
- 
+
 -  // Attaches css assets globally.
 -  $page['#attached']['library'][] = 'ckeditor_accordion/accordion.frontend';
 +// Attaches accordion accessible style library.
@@ -107,7 +140,7 @@ index cda8f86..7d7ba81 100644
 +    // does not exist in libraris folder.
 +    $page['#attached']['library'][] = 'ckeditor_accordion/accordion.frontend';
 +  }
- 
+
    // Pass settings to JavaScript.
    $page['#attached']['drupalSettings']['ckeditorAccordion']['accordionStyle'] = [
 diff --git a/ckeditor_accordion.services.yml b/ckeditor_accordion.services.yml
@@ -290,25 +323,21 @@ index 0000000..0f35659
 +
 +}
 diff --git a/src/Form/CkeditorAccordionSettingsForm.php b/src/Form/CkeditorAccordionSettingsForm.php
-index ec2e3af..420bf1b 100644
+index ec2e3af..3d3e326 100644
 --- a/src/Form/CkeditorAccordionSettingsForm.php
 +++ b/src/Form/CkeditorAccordionSettingsForm.php
 @@ -2,6 +2,7 @@
- 
+
  namespace Drupal\ckeditor_accordion\Form;
- 
+
 +use Drupal\Component\Utility\Html;
  use Drupal\Core\Form\ConfigFormBase;
  use Drupal\Core\Form\FormStateInterface;
- 
-@@ -58,7 +59,20 @@ class CkeditorAccordionSettingsForm extends ConfigFormBase {
-       '#title' => $this->t('Open tabs with hash using anchor links or on page load'),
-       '#return_value' => 1,
-       '#default_value' => $config->get('open_tabs_with_hash') ?? 0,
--      '#description' => $this->t('With this, your accordion row titles are hashed and used as links to the row. For example, if your accordion title is "Frequently Asked Questions", you can link to it using href="#FrequentlyAskedQuestions".'),
-+      '#description' => $this->t('With this, your accordion row titles are hashed and used as links to the row. For example, if your accordion title is "Frequently Asked Questions", you can link to it using href="#FrequentlyAskedQuestions".')
-+    ];
-+
+
+@@ -61,6 +62,19 @@ class CkeditorAccordionSettingsForm extends ConfigFormBase {
+       '#description' => $this->t('With this, your accordion row titles are hashed and used as links to the row. For example, if your accordion title is "Frequently Asked Questions", you can link to it using href="#FrequentlyAskedQuestions".'),
+     ];
+
 +    $variant_options = [];
 +    foreach (\Drupal::service('plugin.manager.ckeditor_accordion_variant')->getDefinitions() as $variant_id => $values) {
 +      $variant_options[$values['id']] = Html::escape($values['label']->render() . ': ' . $values['description']->render());
@@ -320,16 +349,18 @@ index ec2e3af..420bf1b 100644
 +      '#description' => $this->t('Select the variant to be used.'),
 +      '#options' => $variant_options,
 +      '#default_value' => $config->get('variant'),
-     ];
- 
++    ];
++
      return parent::buildForm($form, $form_state);
+   }
+
 @@ -75,6 +89,7 @@ class CkeditorAccordionSettingsForm extends ConfigFormBase {
      $config->set('keep_rows_open', $values['keep_rows_open']);
      $config->set('animate_accordion_toggle', $values['animate_accordion_toggle']);
      $config->set('open_tabs_with_hash', $values['open_tabs_with_hash']);
 +    $config->set('variant', $values['variant']);
      $config->save();
- 
+
      parent::submitForm($form, $form_state);
 diff --git a/src/Plugin/CkeditorAccordionVariant/CkeditorAccordionVariantDefault.php b/src/Plugin/CkeditorAccordionVariant/CkeditorAccordionVariantDefault.php
 new file mode 100644
@@ -525,10 +556,10 @@ index 0000000..4da23e8
 +}
 diff --git a/src/Plugin/Filter/CKEditorAccordion.php b/src/Plugin/Filter/CKEditorAccordion.php
 new file mode 100644
-index 0000000..5db3a68
+index 0000000..6445083
 --- /dev/null
 +++ b/src/Plugin/Filter/CKEditorAccordion.php
-@@ -0,0 +1,149 @@
+@@ -0,0 +1,147 @@
 +<?php
 +
 +namespace Drupal\ckeditor_accordion\Plugin\Filter;
@@ -590,8 +621,6 @@ index 0000000..5db3a68
 +    // Load the text into a dom object.
 +    $dom = new \DOMDocument();
 +    libxml_use_internal_errors(true);
-+    // Skip further processing if the text is empty
-+    if(empty($text)) return new FilterProcessResult($text);
 +    $dom->loadHTML(mb_convert_encoding($text, 'HTML-ENTITIES', 'UTF-8'));
 +    libxml_clear_errors();
 +    $xpath = new \DOMXPath($dom);
@@ -678,3 +707,342 @@ index 0000000..5db3a68
 +    $element->parentNode->replaceChild($new_element, $element);
 +  }
 +}
+--
+GitLab
+
+
+From ff51cdbae8458e2c7954ef0c960c940f14024dd0 Mon Sep 17 00:00:00 2001
+From: sascha <sascha.meissner@werk21.de>
+Date: Thu, 1 Feb 2024 14:02:32 +0100
+Subject: [PATCH 02/11] Issue #3124167: Updated readme to also enable
+ CKEditorAccordion Filter in text-format
+
+---
+ README.md | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/README.md b/README.md
+index c3d8e28..d9a196c 100644
+--- a/README.md
++++ b/README.md
+@@ -28,7 +28,8 @@ INSTALLATION:
+    Text formats and editors (admin/config/content/formats)
+ 5. Edit a text format's settings (usually Basic HTML)
+ 6. Drag n Drop the Accordion -button to the toolbar to show it to the editors
+-7. Review available options at /admin/config/content/ckeditor-accordion
++7. At "Enabled Filters", enable "CKEditor Accordion"
++8. Review available options at /admin/config/content/ckeditor-accordion
+
+
+ TODO:
+--
+GitLab
+
+
+From e2cb86119373fb652aa299efbbddb57556760c60 Mon Sep 17 00:00:00 2001
+From: sascha <sascha.meissner@werk21.de>
+Date: Fri, 2 Feb 2024 11:27:27 +0100
+Subject: [PATCH 03/11] Issue #3124167: Add case-sensititve correct
+ library-name WAI-ARIA-Patterns-And-Widgets
+
+---
+ ckeditor_accordion.module | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/ckeditor_accordion.module b/ckeditor_accordion.module
+index 7d7ba81..aad2d4e 100644
+--- a/ckeditor_accordion.module
++++ b/ckeditor_accordion.module
+@@ -12,7 +12,7 @@ function ckeditor_accordion_page_attachments_alter(array &$page) {
+   $config = \Drupal::config('ckeditor_accordion.settings');
+
+ // Attaches accordion accessible style library.
+-  if (file_exists(DRUPAL_ROOT . '/libraries/wai-aria-patterns-and-widgets')) {
++  if (file_exists(DRUPAL_ROOT . '/libraries/WAI-ARIA-Patterns-And-Widgets')) {
+     $page['#attached']['library'][] = 'ckeditor_accordion/accordion_accessible_style';
+   }
+   else {
+--
+GitLab
+
+
+From bad4be78caf884001b6a8adad76425de160324fb Mon Sep 17 00:00:00 2001
+From: sascha <sascha.meissner@werk21.de>
+Date: Fri, 2 Feb 2024 11:33:35 +0100
+Subject: [PATCH 04/11] Issue #3124167: Also use case-sensititve correct
+ library-name in libraries.yml ...
+
+---
+ ckeditor_accordion.libraries.yml | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/ckeditor_accordion.libraries.yml b/ckeditor_accordion.libraries.yml
+index 3e81f41..a1f89ba 100644
+--- a/ckeditor_accordion.libraries.yml
++++ b/ckeditor_accordion.libraries.yml
+@@ -42,6 +42,6 @@ libraries.smillart.wai-aria-patterns-and-widgets:
+     gpl-compatible: true
+   css:
+     theme:
+-      /libraries/wai-aria-patterns-and-widgets/dist/accordion/css/accordion.min.css: {}
++      /libraries/WAI-ARIA-Patterns-And-Widgets/dist/accordion/css/accordion.min.css: {}
+   js:
+-    /libraries/wai-aria-patterns-and-widgets/dist/accordion/js/accordion.min.js: {}
++    /libraries/WAI-ARIA-Patterns-And-Widgets/dist/accordion/js/accordion.min.js: {}
+--
+GitLab
+
+
+From 1ecb3af0084768244fb2dab46ad323458558ec9c Mon Sep 17 00:00:00 2001
+From: sascha <sascha.meissner@werk21.de>
+Date: Fri, 2 Feb 2024 11:40:31 +0100
+Subject: [PATCH 05/11] Issue #3124167: Fix DOMDocument::loadHTML(): Argument
+ #1 () must not be empty ... when source is empty
+
+---
+ src/Plugin/Filter/CKEditorAccordion.php | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
+
+diff --git a/src/Plugin/Filter/CKEditorAccordion.php b/src/Plugin/Filter/CKEditorAccordion.php
+index 6445083..ec5a81a 100644
+--- a/src/Plugin/Filter/CKEditorAccordion.php
++++ b/src/Plugin/Filter/CKEditorAccordion.php
+@@ -20,6 +20,7 @@ class CKEditorAccordion extends FilterBase {
+    * {@inheritdoc}
+    */
+   public function process($text, $langcode) {
++    kint("AHHDSADHJASHJDSA");
+     // Get selected variant.
+     $config = \Drupal::config('ckeditor_accordion.settings');
+     $variant = \Drupal::service('plugin.manager.ckeditor_accordion_variant')->createInstance($config->get('variant'));
+@@ -59,7 +60,11 @@ class CKEditorAccordion extends FilterBase {
+     // Load the text into a dom object.
+     $dom = new \DOMDocument();
+     libxml_use_internal_errors(true);
+-    $dom->loadHTML(mb_convert_encoding($text, 'HTML-ENTITIES', 'UTF-8'));
++    $text = mb_convert_encoding($text, 'HTML-ENTITIES', 'UTF-8');
++    if (empty($text)) {
++      return new FilterProcessResult($text);
++    }
++    $dom->loadHTML($text);
+     libxml_clear_errors();
+     $xpath = new \DOMXPath($dom);
+
+--
+GitLab
+
+
+From 5a116d21902d08c5ff624e3904bf78934278f79b Mon Sep 17 00:00:00 2001
+From: sascha <sascha.meissner@werk21.de>
+Date: Fri, 2 Feb 2024 11:43:06 +0100
+Subject: [PATCH 06/11] Issue #3124167: Remove accidentially commited debug
+ message ...
+
+---
+ src/Plugin/Filter/CKEditorAccordion.php | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/src/Plugin/Filter/CKEditorAccordion.php b/src/Plugin/Filter/CKEditorAccordion.php
+index ec5a81a..71a3b08 100644
+--- a/src/Plugin/Filter/CKEditorAccordion.php
++++ b/src/Plugin/Filter/CKEditorAccordion.php
+@@ -20,7 +20,6 @@ class CKEditorAccordion extends FilterBase {
+    * {@inheritdoc}
+    */
+   public function process($text, $langcode) {
+-    kint("AHHDSADHJASHJDSA");
+     // Get selected variant.
+     $config = \Drupal::config('ckeditor_accordion.settings');
+     $variant = \Drupal::service('plugin.manager.ckeditor_accordion_variant')->createInstance($config->get('variant'));
+--
+GitLab
+
+
+From f3fc51508df61a1d00abe78d91d267842b769198 Mon Sep 17 00:00:00 2001
+From: sascha <sascha.meissner@werk21.de>
+Date: Mon, 5 Feb 2024 14:02:13 +0100
+Subject: [PATCH 07/11] Issue #3124167: added missing fix from patch#30
+
+---
+ src/Plugin/Filter/CKEditorAccordion.php | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/src/Plugin/Filter/CKEditorAccordion.php b/src/Plugin/Filter/CKEditorAccordion.php
+index 71a3b08..497eaca 100644
+--- a/src/Plugin/Filter/CKEditorAccordion.php
++++ b/src/Plugin/Filter/CKEditorAccordion.php
+@@ -93,6 +93,9 @@ class CKEditorAccordion extends FilterBase {
+     }
+
+     $new_text = $dom->saveXml($dom->documentElement);
++    // Strip out html and body tags.
++    $new_text = str_replace('<html><body>', '', $new_text);
++    $new_text = str_replace('</body></html>', '', $new_text);
+
+     return new FilterProcessResult($new_text);
+   }
+--
+GitLab
+
+
+From 855828f62ce8a54dc7cf9c67384bb2592af67457 Mon Sep 17 00:00:00 2001
+From: sascha <sascha.meissner@werk21.de>
+Date: Fri, 9 Feb 2024 15:27:13 +0100
+Subject: [PATCH 08/11] Issue #3124167: Use Drupals HTML utility to fix various
+ errors with DomDocument->loadHtml
+
+---
+ src/Plugin/Filter/CKEditorAccordion.php | 15 +++++----------
+ 1 file changed, 5 insertions(+), 10 deletions(-)
+
+diff --git a/src/Plugin/Filter/CKEditorAccordion.php b/src/Plugin/Filter/CKEditorAccordion.php
+index 497eaca..e765399 100644
+--- a/src/Plugin/Filter/CKEditorAccordion.php
++++ b/src/Plugin/Filter/CKEditorAccordion.php
+@@ -5,6 +5,7 @@ namespace Drupal\ckeditor_accordion\Plugin\Filter;
+ use Drupal\filter\FilterProcessResult;
+ use Drupal\filter\Plugin\FilterBase;
+ use Drupal\Core\Form\FormStateInterface;
++use Drupal\Component\Utility\Html;
+
+ /**
+  * @Filter(
+@@ -55,16 +56,13 @@ class CKEditorAccordion extends FilterBase {
+     }
+
+     $initial_class_name = 'ckeditor-accordion';
+-
+-    // Load the text into a dom object.
+-    $dom = new \DOMDocument();
+-    libxml_use_internal_errors(true);
+     $text = mb_convert_encoding($text, 'HTML-ENTITIES', 'UTF-8');
+     if (empty($text)) {
+       return new FilterProcessResult($text);
+     }
+-    $dom->loadHTML($text);
+-    libxml_clear_errors();
++
++    // Load the text into a dom object.
++    $dom = Html::load($text);
+     $xpath = new \DOMXPath($dom);
+
+     // Find and replace title tags.
+@@ -92,10 +90,7 @@ class CKEditorAccordion extends FilterBase {
+       $this->replaceElementTag($dom, $accordion, $tags['target']['list']['tag'], $tags['target']['list']['attributes']);
+     }
+
+-    $new_text = $dom->saveXml($dom->documentElement);
+-    // Strip out html and body tags.
+-    $new_text = str_replace('<html><body>', '', $new_text);
+-    $new_text = str_replace('</body></html>', '', $new_text);
++    $new_text = Html::serialize($dom);
+
+     return new FilterProcessResult($new_text);
+   }
+--
+GitLab
+
+
+From b9e1931dbae15cf75f4467d78627142f9cd35f0a Mon Sep 17 00:00:00 2001
+From: Batuhan Celikbas <batuhan.celikbas@finalist.nl>
+Date: Thu, 21 Mar 2024 14:50:51 +0100
+Subject: [PATCH 09/11] Issue #3124167: Fixed PHP 8.2 Deprecation error for
+ mb_convert_encoding
+
+Deprecated function: mb_convert_encoding(): Handling HTML entities via mbstring is deprecated;
+---
+ src/Plugin/Filter/CKEditorAccordion.php | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/Plugin/Filter/CKEditorAccordion.php b/src/Plugin/Filter/CKEditorAccordion.php
+index e765399..b61458e 100644
+--- a/src/Plugin/Filter/CKEditorAccordion.php
++++ b/src/Plugin/Filter/CKEditorAccordion.php
+@@ -56,7 +56,7 @@ class CKEditorAccordion extends FilterBase {
+     }
+
+     $initial_class_name = 'ckeditor-accordion';
+-    $text = mb_convert_encoding($text, 'HTML-ENTITIES', 'UTF-8');
++    $text = htmlspecialchars_decode(iconv( 'UTF-8', 'ISO-8859-1', htmlentities($text, ENT_COMPAT, 'UTF-8')), ENT_QUOTES);
+     if (empty($text)) {
+       return new FilterProcessResult($text);
+     }
+--
+GitLab
+
+
+From 220e8cc7faca756a4b57fd6f1f952882e0ee2755 Mon Sep 17 00:00:00 2001
+From: Arantxio Gottmers <arantxio.gottmers@finalist.nl>
+Date: Wed, 22 May 2024 13:26:36 +0200
+Subject: [PATCH 10/11] Issue #3124167: Fix Detected an illegal character in
+ input string
+
+---
+ src/Plugin/Filter/CKEditorAccordion.php | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/Plugin/Filter/CKEditorAccordion.php b/src/Plugin/Filter/CKEditorAccordion.php
+index b61458e..1609447 100644
+--- a/src/Plugin/Filter/CKEditorAccordion.php
++++ b/src/Plugin/Filter/CKEditorAccordion.php
+@@ -56,7 +56,7 @@ class CKEditorAccordion extends FilterBase {
+     }
+
+     $initial_class_name = 'ckeditor-accordion';
+-    $text = htmlspecialchars_decode(iconv( 'UTF-8', 'ISO-8859-1', htmlentities($text, ENT_COMPAT, 'UTF-8')), ENT_QUOTES);
++    $text = mb_encode_numericentity($text, [0x80, 0x10FFFF, 0, ~0], 'UTF-8');
+     if (empty($text)) {
+       return new FilterProcessResult($text);
+     }
+--
+GitLab
+
+
+From df3c1110b8a1437bac5c0498304bad8c995dbef7 Mon Sep 17 00:00:00 2001
+From: Oden <hello@odensc.com>
+Date: Tue, 15 Oct 2024 16:36:00 -0700
+Subject: [PATCH 11/11] Issue #3124167: Handle lowercase library names (e.g.
+ when WAI ARIA library is installed with Composer)
+
+---
+ ckeditor_accordion.module | 19 +++++++++++++++++--
+ 1 file changed, 17 insertions(+), 2 deletions(-)
+
+diff --git a/ckeditor_accordion.module b/ckeditor_accordion.module
+index aad2d4e..e44f950 100644
+--- a/ckeditor_accordion.module
++++ b/ckeditor_accordion.module
+@@ -5,14 +5,29 @@
+  * Functionality for CKEditor Accordion.
+  */
+
++ /**
++ * Implements hook_library_info_alter().
++ */
++function ckeditor_accordion_library_info_alter(&$libraries, $extension) {
++  $library = 'libraries.smillart.wai-aria-patterns-and-widgets';
++  if ($extension === 'ckeditor_accordion' && isset($libraries[$library])) {
++    // If the library is installed in a lowercase directory (e.g. with Composer), override the filenames from capitalized.
++    if (file_exists(DRUPAL_ROOT . '/libraries/wai-aria-patterns-and-widgets')) {
++      $libraries[$library]['css']['theme'] = ['/libraries/wai-aria-patterns-and-widgets/dist/accordion/css/accordion.min.css' => []];
++      $libraries[$library]['js'] = ['/libraries/wai-aria-patterns-and-widgets/dist/accordion/js/accordion.min.js' => []];
++    }
++  }
++}
++
+ /**
+  * Implements hook_page_attachments_alter().
+  */
+ function ckeditor_accordion_page_attachments_alter(array &$page) {
+   $config = \Drupal::config('ckeditor_accordion.settings');
+
+-// Attaches accordion accessible style library.
+-  if (file_exists(DRUPAL_ROOT . '/libraries/WAI-ARIA-Patterns-And-Widgets')) {
++  // Attaches accordion accessible style library.
++  if (file_exists(DRUPAL_ROOT . '/libraries/WAI-ARIA-Patterns-And-Widgets')
++    || file_exists(DRUPAL_ROOT . '/libraries/wai-aria-patterns-and-widgets')) {
+     $page['#attached']['library'][] = 'ckeditor_accordion/accordion_accessible_style';
+   }
+   else {
+--
+GitLab
