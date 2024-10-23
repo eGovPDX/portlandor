@@ -63,7 +63,7 @@ describe('SuperAdmin user test', () => {
         await page.type('#edit-field-official-organization-name-0-value', 'Official name of Percy test group');
         await page.type('#edit-field-summary-0-value', 'This is a test summary for the Percy Test group');
         // Must expand the admin fields group in order to input Group Path
-        await page.click('#edit-group-administrative-fields-site');
+        await page.click('#edit-group-path-and-redirects');
         await page.type('#edit-field-group-path-0-value', 'percy-test-group');
         // Publish group
         await page.select("#edit-moderation-state-0-state", "published");
