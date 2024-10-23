@@ -281,14 +281,15 @@ function _remove_file_usage_from_previous_revision($entity) {
   if (($entity_type_id !== 'node' && $entity_type_id !== 'media')
     || !$entity->getEntityType()->isRevisionable()) return;
 
+  $entity_id = $entity->id();
   $entity_storage = \Drupal::entityTypeManager()->getStorage($entity_type_id);
   // Retrieve the revision before this one
   $previous_vid = key($entity_storage->getQuery()
+      ->accessCheck(TRUE)
       ->allRevisions()
-      ->condition($entity_type_id === 'node' ? 'nid' : 'mid', $entity->id())
+      ->condition($entity_type_id === 'node' ? 'nid' : 'mid', $entity_id)
       ->sort('vid', 'DESC')
       ->range(1, 1)
-      ->accessCheck()
       ->execute());
   if (empty($previous_vid)) return;
 
@@ -296,15 +297,24 @@ function _remove_file_usage_from_previous_revision($entity) {
   if (!$previous_revision->hasTranslation($langcode)) return;
 
   $previous_revision_translated = $previous_revision->getTranslation($langcode);
+
   foreach ($previous_revision_translated->getFields() as $field) {
     if ($field instanceof FileFieldItemList) {
       foreach ($field as $item) {
+        // Get all FIDs from the current revision
+        $latest_revision_file_ids = array_map(fn($file) => $file['target_id'], $entity->get($field->getName())->getValue());
         $file = $item->entity;
-        // Remove 1 usage count from the old revision's file.
-        // If the new revision still uses the old file, the new revision will be the source of usage for the file.
-        // If the new revision uses a new file, the old revision will no longer be a source of usage,
-        // allowing the file to be marked as temporary and get deleted.
-        if ($file) \Drupal::service('file.usage')->delete($file, 'file', $entity_type_id, $entity->id(), 1);
+        // If the file from the previous revision was deleted in the current revision,
+        // delete all file usages for it.
+        if ($file && !in_array($file->id(), $latest_revision_file_ids)) {
+          \Drupal::service('file.usage')->delete($file, 'file', $entity_type_id, $entity_id, 0);
+          \Drupal::logger('portland')->info('File (ID: %id) "%path" usage cleared. Current user ID: %user_id. Request URI: %request_uri', [
+            '%id' => $file->id(),
+            '%path' => $file->getFileUri(),
+            '%user_id' => \Drupal::currentUser()->id(),
+            '%request_uri' => \Drupal::request()->getRequestUri(),
+          ]);
+        }
       }
     }
   }
