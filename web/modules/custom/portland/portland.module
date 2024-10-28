@@ -1262,6 +1262,21 @@ function portland_views_query_alter($view, $query)
 }
 
 /**
+ * Implements hook_views_post_execute().
+ */
+function portland_views_post_execute(ViewExecutable $view) {
+  // Set custom fill color on council district boundary maps.
+  if ($view->id() === 'council_districts' && $view->current_display === 'entity_view_district_map') {
+    $fill_color = $view->result[0]?->_entity?->field_color?->getString();
+    if ($fill_color && preg_match("/^#[a-f0-9]{6}$/i", $fill_color)) {
+      $path_config = json_decode($view->style_plugin->options['path']);
+      $path_config->fillColor = $fill_color;
+      $view->style_plugin->options['path'] = json_encode($path_config);
+    }
+  }
+}
+
+/**
  * Implements hook_preprocess_views_view_field().
  */
 function portland_preprocess_views_view_field(&$variables)
