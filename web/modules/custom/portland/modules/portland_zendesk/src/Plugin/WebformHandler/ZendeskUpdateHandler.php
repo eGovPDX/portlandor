@@ -44,24 +44,44 @@ class ZendeskUpdateHandler extends WebformHandlerBase
 {
 
   /**
+   * The webform element plugin manager.
+   *
+   * @var \Drupal\webform\Plugin\WebformElementManagerInterface
+   */
+  protected $element_manager;
+
+  /**
+   * The language manager service.
+   *
+   * @var \Drupal\Core\Language\LanguageManagerInterface
+   */
+  protected $language_manager;
+
+  /**
+   * The webform token manager.
+   *
    * @var WebformTokenManagerInterface $token_manager
    */
   protected $token_manager;
 
   /**
+   * The transliteration service.
+   *
+   * @var \Drupal\Component\Transliteration\TransliterationInterface
+   */
+  protected $transliteration;
+
+  /**
    * {@inheritdoc}
    */
   public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition) {
+    $static = parent::create($container, $configuration, $plugin_id, $plugin_definition);
+    $static->element_manager = $container->get('plugin.manager.webform.element');
+    $static->language_manager = $container->get('language_manager');
+    $static->token_manager = $container->get('webform.token_manager');
+    $static->transliteration = $container->get('transliteration');
 
-      /**
-       * @var WebformTokenManagerInterface $webform_token_manager
-       */
-
-      $static = parent::create($container, $configuration, $plugin_id, $plugin_definition);
-      $webform_token_manager = $container->get('webform.token_manager');
-      $static->setTokenManager( $webform_token_manager );
-
-      return $static;
+    return $static;
   }
 
   /**
@@ -335,7 +355,7 @@ class ZendeskUpdateHandler extends WebformHandlerBase
     ];
 
     // display link for token variables
-    $form['token_link'] = $this->getTokenManager()->buildTreeLink();
+    $form['token_link'] = $this->token_manager->buildTreeLink();
 
     return parent::buildConfigurationForm($form, $form_state);
   }
@@ -344,7 +364,7 @@ class ZendeskUpdateHandler extends WebformHandlerBase
     $users = [];
     $params = ['role' => $role];
     $response = $client->users()->findAll($params);
-    
+
     // Add the initial set of users
     $users = array_merge($users, $response->users);
 
@@ -354,7 +374,7 @@ class ZendeskUpdateHandler extends WebformHandlerBase
         $nextPage = parse_url($response->next_page, PHP_URL_QUERY);
         parse_str($nextPage, $queryParams);
         $params['page'] = $queryParams['page'];
-        
+
         $response = $client->users()->findAll($params);
         $users = array_merge($users, $response->users);
     }
@@ -474,7 +494,7 @@ class ZendeskUpdateHandler extends WebformHandlerBase
     $webform_submission->setElementData('report_ticket_id', $form_state->getValue('report_ticket_id'));
 
     $submission_fields = $webform_submission->toArray(TRUE);
-    $configuration = $this->getTokenManager()->replace($this->configuration, $webform_submission);
+    $configuration = $this->token_manager->replace($this->configuration, $webform_submission);
 
     // if the update handler is configured to use the ticket id field zendesk_request_number,
     // it's a sub-element of the support agent widget, so it needs to be retrieved differently...
@@ -528,7 +548,9 @@ class ZendeskUpdateHandler extends WebformHandlerBase
     }
 
     // get list of all webform fields with a file field type
-    $file_fields = $this->getWebformFieldsWithFiles();
+    $file_fields = $this->getWebform()->getElementsManagedFiles();
+    // get all webform elements
+    $elements = $this->getWebform()->getElementsInitializedAndFlattened();
 
     // attempt to send request to update zendesk ticket
     try {
@@ -540,32 +562,48 @@ class ZendeskUpdateHandler extends WebformHandlerBase
       $ticket = $client->tickets()->find($zendesk_ticket_id)->ticket;
 
       // Checks for files in submission values and uploads them if found
-      foreach($submission_fields['data'] as $key => $submission_field){
-        if( in_array($key, $file_fields) && !empty($submission_field) ){
-
-          // pack file index/indices into an array for looping
-          if( is_array( $submission_field ) ){
-            $file_indices = $submission_field;
-          } else {
-            $file_indices = []; // clear var
-            $file_indices[] = $submission_field;
+      foreach ($submission_fields['data'] as $field_key => $field_data) {
+        if (in_array($field_key, $file_fields) && !empty($field_data)) {
+          $fid_to_element = [];
+          $element = $elements[$field_key];
+          $element_plugin = $this->element_manager->getElementInstance($element);
+          // If forking is enabled off of this field, we can assume it doesn't contain multiple values
+          $multiple = $field_key === $this->configuration['ticket_fork_field'] ? false : $element_plugin->hasMultipleValues($element);
+          // Get fids from composite sub-elements.
+          // Adapted from WebformSubmissionForm::getUploadedManagedFileIds
+          if ($element_plugin instanceof \Drupal\webform\Plugin\WebformElement\WebformCompositeBase) {
+            $managed_file_keys = $element_plugin->getManagedFiles($element);
+            // Convert single composite value to array of multiple composite values.
+            $data = $multiple ? $field_data : [$field_data];
+            foreach ($data as $item) {
+              foreach ($managed_file_keys as $manage_file_key) {
+                if ($item[$manage_file_key]) {
+                  $fid_to_element[$item[$manage_file_key]] = $element["#webform_composite_elements"][$manage_file_key] ?? null;
+                }
+              }
+            }
+          }
+          else {
+            foreach ((array) $field_data as $fid) {
+              $fid_to_element[$fid] = $element;
+            }
           }
 
-          // individually attach each uploaded file per file submission_field
-          foreach( $file_indices as $file_index) {
-            // get file from index for upload
-            $file = File::load($file_index);
+          // individually attach each uploaded file
+          foreach ($fid_to_element as $fid => $element) {
+            $file = File::load($fid);
 
             // add uploads key to Zendesk comment, if not already present
             if ($file && !array_key_exists('uploads', $request['comment'])) {
               $request['comment']['uploads'] = [];
             }
 
+            if ($element) $filename = $this->transformFilename($file->getFilename(), $element, $webform_submission);;
             // upload file and get response
             $attachment = $client->attachments()->upload([
               'file' => $file->getFileUri(),
               'type' => $file->getMimeType(),
-              'name' => $file->getFileName(),
+              'name' => $filename,
             ]);
 
             // add upload token to comment
@@ -620,6 +658,49 @@ class ZendeskUpdateHandler extends WebformHandlerBase
   }
 
   /**
+   * Code mostly adapted from WebformManagedFileBase::getFileDestinationUri.
+   *
+   * Replace tokens and sanitizes filename according to element settings.
+   */
+  private function transformFilename(string $filename, array $element, WebformSubmissionInterface $webform_submission) {
+    $destination_extension = pathinfo($filename, PATHINFO_EXTENSION);
+    $destination_basename = substr(pathinfo($filename, PATHINFO_BASENAME), 0, -strlen(".$destination_extension"));
+
+    // Replace tokens in file name.
+    if (isset($element['#file_name']) && $element['#file_name']) {
+      $destination_basename = $this->token_manager->replace($element['#file_name'], $webform_submission);
+    }
+
+    // Sanitize filename.
+    // @see http://stackoverflow.com/questions/2021624/string-sanitizer-for-filename
+    // @see \Drupal\webform_attachment\Element\WebformAttachmentBase::getFileName
+    if (!empty($element['#sanitize'])) {
+      $destination_extension = mb_strtolower($destination_extension);
+
+      $destination_basename = mb_strtolower($destination_basename);
+      $destination_basename = $this->transliteration->transliterate($destination_basename, $this->language_manager->getCurrentLanguage()->getId(), '-');
+      $destination_basename = preg_replace('([^\w\s\d\-_~,;:\[\]\(\].]|[\.]{2,})', '', $destination_basename);
+      $destination_basename = preg_replace('/\s+/', '-', $destination_basename);
+      $destination_basename = trim($destination_basename, '-');
+
+      // If the basename is empty use the element's key, composite key, or type.
+      if (empty($destination_basename)) {
+        if (isset($element['#webform_key'])) {
+          $destination_basename = $element['#webform_key'];
+        }
+        elseif (isset($element['#webform_composite_key'])) {
+          $destination_basename = $element['#webform_composite_key'];
+        }
+        else {
+          $destination_basename = $element['#type'];
+        }
+      }
+    }
+
+    return $destination_basename . '.' . $destination_extension;
+  }
+
+  /**
    * Submits a Zendesk ticket once the Webform has been submitted and saved
    * {@inheritdoc}
    */
@@ -664,13 +745,6 @@ class ZendeskUpdateHandler extends WebformHandlerBase
    */
   public function getTokenManager(){
     return $this->token_manager;
-  }
-
-  /**
-   * @return array
-   */
-  protected function getWebformFieldsWithFiles(){
-    return $this->getWebform()->getElementsManagedFiles();
   }
 
   // Deprecated functions
