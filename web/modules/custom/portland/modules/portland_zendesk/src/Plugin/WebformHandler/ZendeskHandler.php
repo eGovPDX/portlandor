@@ -1,12 +1,5 @@
 <?php
 
-/**
- * Created by PhpStorm.
- * User: Steven
- * Date: 2019-05-18
- * Time: 10:05 AM
- */
-
 namespace Drupal\portland_zendesk\Plugin\WebformHandler;
 
 use Drupal\Core\Form\FormStateInterface;
@@ -18,9 +11,6 @@ use Drupal\webform\WebformTokenManagerInterface;
 use Drupal\Core\Serialization\Yaml;
 use Drupal\file\Entity\File;
 use Drupal\portland_zendesk\Utils\Utility;
-//use Drupal\Component\Utility\FileSystem;
-// use Drupal\Core\File\FileSystem;
-// use Drupal\Component\Utility\Filename;
 
 /**
  * Form submission to Zendesk handler.
