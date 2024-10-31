@@ -93,6 +93,7 @@ class ZendeskUpdateHandler extends WebformHandlerBase
     return [
       'comment' => '',
       'comment_private' => false,
+      'skip_attachments' => false,
       'tags' => '',
       'priority' => '',
       'status' => '',
@@ -336,6 +337,13 @@ class ZendeskUpdateHandler extends WebformHandlerBase
       '#default_value' => $this->configuration['comment_private']
     ];
 
+    $form['skip_attachments'] = [
+      '#type' => 'checkbox',
+      '#title' => $this->t('Skip Attachments'),
+      '#description' => $this->t('Check this box if you want to skip uploading files from the submission (e.g. on a update handler that runs immediately after submission).'),
+      '#default_value' => $this->configuration['skip_attachments']
+    ];
+
     $form['custom_fields'] = [
       '#type' => 'webform_codemirror',
       '#mode' => 'yaml',
@@ -561,54 +569,56 @@ class ZendeskUpdateHandler extends WebformHandlerBase
       // get existing ticket values
       $ticket = $client->tickets()->find($zendesk_ticket_id)->ticket;
 
-      // Checks for files in submission values and uploads them if found
-      foreach ($submission_fields['data'] as $field_key => $field_data) {
-        if (in_array($field_key, $file_fields) && !empty($field_data)) {
-          $fid_to_element = [];
-          $element = $elements[$field_key];
-          $element_plugin = $this->element_manager->getElementInstance($element);
-          // If forking is enabled off of this field, we can assume it doesn't contain multiple values
-          $multiple = $field_key === $this->configuration['ticket_fork_field'] ? false : $element_plugin->hasMultipleValues($element);
-          // Get fids from composite sub-elements.
-          // Adapted from WebformSubmissionForm::getUploadedManagedFileIds
-          if ($element_plugin instanceof \Drupal\webform\Plugin\WebformElement\WebformCompositeBase) {
-            $managed_file_keys = $element_plugin->getManagedFiles($element);
-            // Convert single composite value to array of multiple composite values.
-            $data = $multiple ? $field_data : [$field_data];
-            foreach ($data as $item) {
-              foreach ($managed_file_keys as $manage_file_key) {
-                if ($item[$manage_file_key]) {
-                  $fid_to_element[$item[$manage_file_key]] = $element["#webform_composite_elements"][$manage_file_key] ?? null;
+      if (!$this->configuration['skip_attachments']) {
+        // Checks for files in submission values and uploads them if found
+        foreach ($submission_fields['data'] as $field_key => $field_data) {
+          if (in_array($field_key, $file_fields) && !empty($field_data)) {
+            $fid_to_element = [];
+            $element = $elements[$field_key];
+            $element_plugin = $this->element_manager->getElementInstance($element);
+            // If forking is enabled off of this field, we can assume it doesn't contain multiple values
+            $multiple = $field_key === $this->configuration['ticket_fork_field'] ? false : $element_plugin->hasMultipleValues($element);
+            // Get fids from composite sub-elements.
+            // Adapted from WebformSubmissionForm::getUploadedManagedFileIds
+            if ($element_plugin instanceof \Drupal\webform\Plugin\WebformElement\WebformCompositeBase) {
+              $managed_file_keys = $element_plugin->getManagedFiles($element);
+              // Convert single composite value to array of multiple composite values.
+              $data = $multiple ? $field_data : [$field_data];
+              foreach ($data as $item) {
+                foreach ($managed_file_keys as $manage_file_key) {
+                  if ($item[$manage_file_key]) {
+                    $fid_to_element[$item[$manage_file_key]] = $element["#webform_composite_elements"][$manage_file_key] ?? null;
+                  }
                 }
               }
             }
-          }
-          else {
-            foreach ((array) $field_data as $fid) {
-              $fid_to_element[$fid] = $element;
-            }
-          }
-
-          // individually attach each uploaded file
-          foreach ($fid_to_element as $fid => $element) {
-            $file = File::load($fid);
-
-            // add uploads key to Zendesk comment, if not already present
-            if ($file && !array_key_exists('uploads', $request['comment'])) {
-              $request['comment']['uploads'] = [];
+            else {
+              foreach ((array) $field_data as $fid) {
+                $fid_to_element[$fid] = $element;
+              }
             }
 
-            if ($element) $filename = $this->transformFilename($file->getFilename(), $element, $webform_submission);;
-            // upload file and get response
-            $attachment = $client->attachments()->upload([
-              'file' => $file->getFileUri(),
-              'type' => $file->getMimeType(),
-              'name' => $filename,
-            ]);
+            // individually attach each uploaded file
+            foreach ($fid_to_element as $fid => $element) {
+              $file = File::load($fid);
 
-            // add upload token to comment
-            if ($attachment && isset($attachment->upload->token)) {
-              $request['comment']['uploads'][] = $attachment->upload->token;
+              // add uploads key to Zendesk comment, if not already present
+              if ($file && !array_key_exists('uploads', $request['comment'])) {
+                $request['comment']['uploads'] = [];
+              }
+
+              if ($element) $filename = $this->transformFilename($file->getFilename(), $element, $webform_submission);;
+              // upload file and get response
+              $attachment = $client->attachments()->upload([
+                'file' => $file->getFileUri(),
+                'type' => $file->getMimeType(),
+                'name' => $filename,
+              ]);
+
+              // add upload token to comment
+              if ($attachment && isset($attachment->upload->token)) {
+                $request['comment']['uploads'][] = $attachment->upload->token;
+              }
             }
           }
         }
