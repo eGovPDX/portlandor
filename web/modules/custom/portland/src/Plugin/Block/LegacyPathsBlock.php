@@ -4,7 +4,7 @@ namespace Drupal\portland\Plugin\Block;
 
 use Drupal\Core\Block\BlockBase;
 use Drupal\Core\Cache\Cache;
-use Drupal\group\Entity\GroupContent;
+use Drupal\group\Entity\GroupRelationship;
 
 /**
  * Provides a Portland legacy paths block.
@@ -51,7 +51,7 @@ class LegacyPathsBlock extends BlockBase {
       if (isset($entity)) {
         // it's a node, so retrieve its parent group
         $groups = [];
-        $group_contents = GroupContent::loadByEntity($entity);
+        $group_contents = GroupRelationship::loadByEntity($entity);
         foreach ($group_contents as $group_content) {
           $groups[] = $group_content->getGroup();
         }
