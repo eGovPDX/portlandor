@@ -51,12 +51,12 @@ class ZendeskHandler extends WebformHandlerBase
      * @var WebformTokenManagerInterface $webform_token_manager
      */
 
-    $instance = parent::create($container, $configuration, $plugin_id, $plugin_definition);
+    $static = parent::create($container, $configuration, $plugin_id, $plugin_definition);
     $webform_token_manager = $container->get('webform.token_manager');
-    $instance->setTokenManager($webform_token_manager);
-    $instance->fileSystem = $container->get('file_system');
+    $static->setTokenManager($webform_token_manager);
+    $static->fileSystem = $container->get('file_system');
 
-    return $instance;
+    return $static;
   }
 
   /**
