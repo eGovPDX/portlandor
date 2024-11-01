@@ -1,8 +1,12 @@
 <?php
 
 namespace Drupal\portland_zendesk\Plugin\WebformHandler;
+use Drupal\Core\Config\ConfigFactoryInterface;
+use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Logger\LoggerChannelFactoryInterface;
 use Drupal\webform\Plugin\WebformHandlerBase;
+use Drupal\webform\WebformSubmissionConditionsValidatorInterface;
 use Drupal\webform\WebformSubmissionInterface;
 use Drupal\portland_zendesk\Client\ZendeskClient;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -44,24 +48,20 @@ class ZendeskUpdateHandler extends WebformHandlerBase
    */
   protected $token_manager;
 
-  protected $fileSystem;
-
   /**
    * {@inheritdoc}
    */
-  public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition)
-  {
+  public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition) {
 
-    /**
-     * @var WebformTokenManagerInterface $webform_token_manager
-     */
+      /**
+       * @var WebformTokenManagerInterface $webform_token_manager
+       */
 
-    $static = parent::create($container, $configuration, $plugin_id, $plugin_definition);
-    $webform_token_manager = $container->get('webform.token_manager');
-    $static->setTokenManager($webform_token_manager);
-    $static->fileSystem = $container->get('file_system');
+      $static = parent::create($container, $configuration, $plugin_id, $plugin_definition);
+      $webform_token_manager = $container->get('webform.token_manager');
+      $static->setTokenManager( $webform_token_manager );
 
-    return $static;
+      return $static;
   }
 
   /**
@@ -91,7 +91,7 @@ class ZendeskUpdateHandler extends WebformHandlerBase
    */
   public function defaultConfigurationNames()
   {
-    return array_keys($this->defaultConfiguration());
+      return array_keys( $this->defaultConfiguration() );
   }
 
   /**
@@ -131,8 +131,8 @@ class ZendeskUpdateHandler extends WebformHandlerBase
       // get list of all groups
       $response_groups = $client->groups()->findAll();
       // store found groups
-      foreach ($response_groups->groups as $group) {
-        $groups[$group->id] = $group->name;
+      foreach($response_groups->groups as $group){
+        $groups[ $group->id ] = $group->name;
       }
       // order groups by name
       asort($groups);
@@ -147,8 +147,8 @@ class ZendeskUpdateHandler extends WebformHandlerBase
       $users = array_merge($admin_users, $agent_users);
 
       // store found agents
-      foreach ($users as $user) {
-        $assignees[$user->id] = $user->name;
+      foreach($users as $user){
+        $assignees[ $user->id ] = $user->name;
       }
 
       // order agents by name
@@ -156,10 +156,10 @@ class ZendeskUpdateHandler extends WebformHandlerBase
 
       // get list of ticket fields and assign them to an array by id->title
       $response_fields = $client->ticketFields()->findAll();
-      if ($response_fields->ticket_fields) {
-        foreach ($response_fields->ticket_fields as $field) {
+      if( $response_fields->ticket_fields ) {
+        foreach($response_fields->ticket_fields as $field) {
           // exclude system ticket fields and inactive fields
-          if (!in_array($field->title, $form_field_exclusions) && $field->active) {
+          if( !in_array($field->title,$form_field_exclusions) && $field->active ) {
             $form_ticket_fields[$field->id] = $field->title;
           }
         }
@@ -170,17 +170,18 @@ class ZendeskUpdateHandler extends WebformHandlerBase
 
       // Get all active ticket forms from Zendesk
       $ticket_forms = $client->get("ticket_forms?active=true")->ticket_forms;
-    } catch (\Exception $e) {
-      // Encode HTML entities to prevent broken markup from breaking the page.
-      $message = nl2br(htmlentities($e->getMessage()));
+    }
+    catch( \Exception $e ){
+        // Encode HTML entities to prevent broken markup from breaking the page.
+        $message = nl2br(htmlentities($e->getMessage()));
 
-      // Log error message.
-      $this->getLogger()->error('Retrieval of groups or assignees for @form webform Zendesk handler failed. @exception: @message. Click to edit @link.', [
-        '@exception' => get_class($e),
-        '@form' => $this->getWebform()->label(),
-        '@message' => $message,
-        'link' => $this->getWebform()->toLink($this->t('Edit'), 'handlers')->toString(),
-      ]);
+        // Log error message.
+        $this->getLogger()->error('Retrieval of groups or assignees for @form webform Zendesk handler failed. @exception: @message. Click to edit @link.', [
+            '@exception' => get_class($e),
+            '@form' => $this->getWebform()->label(),
+            '@message' => $message,
+            'link' => $this->getWebform()->toLink($this->t('Edit'), 'handlers')->toString(),
+        ]);
     }
 
     // build form fields
@@ -253,7 +254,7 @@ class ZendeskUpdateHandler extends WebformHandlerBase
       '#default_value' => $this->configuration['group_id'],
       '#required' => false
     ];
-    if (!empty($groups)) {
+    if(!empty($groups) ){
       $form['group_id']['#type'] = 'select';
       $form['group_id']['#options'] = ['' => '- None/No Change -'] + $groups;
       $form['group_id']['#description'] = $this->t('The group to which the ticket should be assigned. Set either Ticket Group or Ticket Assignee, but not both.');
@@ -268,11 +269,12 @@ class ZendeskUpdateHandler extends WebformHandlerBase
       '#default_value' => $this->configuration['assignee_id'],
       '#required' => false
     ];
-    if (! empty($assignees)) {
+    if(! empty($assignees) ){
       $form['assignee_id']['#type'] = 'webform_select_other';
       $form['assignee_id']['#options'] = ['' => '- None/No Change -'] + $assignees;
       $form['assignee_id']['#description'] = $this->t('The assignee to which the ticket should be assigned. Set either Ticket Group or Ticket Assignee, but not both. Typically tickets created by webforms should not be assigned to individual users, but tickets that are created as Solved must have an individual assignee. In this case, use the Portland.gov Support service account.');
-    } else {
+    }
+    else {
       $form['assignee_id']['#type'] = 'textfield';
       $form['assignee_id']['#attribute'] = [
         'type' => 'number'
@@ -293,7 +295,7 @@ class ZendeskUpdateHandler extends WebformHandlerBase
       '#default_value' => $this->configuration['ticket_form_id'],
       '#required' => false
     ];
-    if (!empty($ticket_forms)) {
+    if(!empty($ticket_forms) ){
       $form['ticket_form_id']['#type'] = 'select';
       $form['ticket_form_id']['#options'] = ['' => '- None -'] + array_column($ticket_forms, 'name', 'id');
       $form['ticket_form_id']['#description'] = $this->t('The form to use on the ticket');
@@ -320,16 +322,16 @@ class ZendeskUpdateHandler extends WebformHandlerBase
       '#title' => $this->t('Ticket Custom Fields'),
       '#help' => $this->t('Custom form fields for the ticket'),
       '#description' => $this->t(
-        '<div id="help">To set the value of one or more custom fields in the new Zendesk ticket, in <a href="https://learn.getgrav.org/16/advanced/yaml#mappings" target="_blank">YAML format</a>, specify a list of pairs consisting of IDs and values. You may find the custom field ID when viewing the list of <a href="https://' . $zendesk_subdomain . '.zendesk.com/agent/admin/ticket_fields" target="_blank">Ticket Fields</a> in Zendesk, or by clicking "<strong>Field Reference</strong>" below for a list of available fields. Values may be plain text, or Drupal webform tokens/placeholders. <p class="">Eg. <code class="CodeMirror"><span>12345678</span>: <span>\'foobar\'</span></code></p> </div>'
+          '<div id="help">To set the value of one or more custom fields in the new Zendesk ticket, in <a href="https://learn.getgrav.org/16/advanced/yaml#mappings" target="_blank">YAML format</a>, specify a list of pairs consisting of IDs and values. You may find the custom field ID when viewing the list of <a href="https://'.$zendesk_subdomain.'.zendesk.com/agent/admin/ticket_fields" target="_blank">Ticket Fields</a> in Zendesk, or by clicking "<strong>Field Reference</strong>" below for a list of available fields. Values may be plain text, or Drupal webform tokens/placeholders. <p class="">Eg. <code class="CodeMirror"><span>12345678</span>: <span>\'foobar\'</span></code></p> </div>'
       ),
       '#default_value' => $this->configuration['custom_fields'],
       '#description_display' => 'before',
       '#attributes' => [
-        'placeholder' => '146455678: \'[webform_submission:values:email]\''
+          'placeholder' => '146455678: \'[webform_submission:value:email]\''
       ],
       '#required' => false,
       '#more_title' => 'Field Reference',
-      '#more' => '<div class="zd-ticket-reference">' . Utility::convertTable($form_ticket_fields) . '</div>',
+      '#more' => '<div class="zd-ticket-reference">' . Utility::convertTable($form_ticket_fields) .'</div>',
     ];
 
     // display link for token variables
@@ -338,24 +340,23 @@ class ZendeskUpdateHandler extends WebformHandlerBase
     return parent::buildConfigurationForm($form, $form_state);
   }
 
-  protected function getUsersByRole($client, $role)
-  {
+  protected function getUsersByRole($client, $role) {
     $users = [];
     $params = ['role' => $role];
     $response = $client->users()->findAll($params);
-
+    
     // Add the initial set of users
     $users = array_merge($users, $response->users);
 
     // Handle pagination
     while ($response->next_page) {
-      // Extract the next page number from the next_page URL
-      $nextPage = parse_url($response->next_page, PHP_URL_QUERY);
-      parse_str($nextPage, $queryParams);
-      $params['page'] = $queryParams['page'];
-
-      $response = $client->users()->findAll($params);
-      $users = array_merge($users, $response->users);
+        // Extract the next page number from the next_page URL
+        $nextPage = parse_url($response->next_page, PHP_URL_QUERY);
+        parse_str($nextPage, $queryParams);
+        $params['page'] = $queryParams['page'];
+        
+        $response = $client->users()->findAll($params);
+        $users = array_merge($users, $response->users);
     }
 
     return $users;
@@ -387,6 +388,7 @@ class ZendeskUpdateHandler extends WebformHandlerBase
     ];
     * --------------------------------------------------------------------------------------------------------------
     */
+
   }
 
   /**
@@ -398,8 +400,8 @@ class ZendeskUpdateHandler extends WebformHandlerBase
     parent::submitConfigurationForm($form, $form_state);
 
     $submission_value = $form_state->getValues();
-    foreach ($this->configuration as $key => $value) {
-      if (isset($submission_value[$key])) {
+    foreach($this->configuration as $key => $value){
+      if(isset($submission_value[$key])){
         $this->configuration[$key] = $submission_value[$key];
       }
     }
@@ -408,8 +410,7 @@ class ZendeskUpdateHandler extends WebformHandlerBase
   /**
    * {@inheritdoc}
    */
-  public function validateForm(array &$form, FormStateInterface $form_state, WebformSubmissionInterface $webform_submission)
-  {
+  public function validateForm(array &$form, FormStateInterface $form_state, WebformSubmissionInterface $webform_submission) {
     // the file upload button triggers the validation handler, which is undesired.
     // in order to prevent that, we need to determine the triggering element for the submission.
     // call our validation function only if it's not an upload button. be extra careful about
@@ -432,7 +433,7 @@ class ZendeskUpdateHandler extends WebformHandlerBase
     }
   }
 
-  /**
+   /**
    * Submit ticket update to Zendesk API and validate there were no errors. If an error occurs,
    * fail the webform validation and don't allow the form to be submitted.
    *
@@ -441,24 +442,10 @@ class ZendeskUpdateHandler extends WebformHandlerBase
    * in a custom handler is performed after all the built-in webform validation, so this is a
    * safe approach.
    */
-  private function sendToZendeskAndValidateNoError(FormStateInterface $form_state)
-  {
+  private function sendToZendeskAndValidateNoError(FormStateInterface $form_state) {
     if (!$form_state->hasAnyErrors()) {
-
-      // Create a webform submission object from form_state.
-      // Since we're doing this in the validate phase, instead of postSave, we need to manually generate
-      // a webform_submission object from form_state and pull form values from that for the API submission.
-
-      $webform_submission = $form_state->getFormObject()->getEntity();
-
-      // Get submission fields as array.
-      $submission_fields = $webform_submission->toArray(TRUE);
-
-      // Apply filename transformations.
-      $this->transformFilenames($submission_fields, $webform_submission);
-
       // comment out the line below to test the error handling
-      $success = $this->sendToZendesk($form_state, $webform_submission);
+      $success = $this->sendToZendesk($form_state);
       if (!$success) {
         // throw error and don't let form submit
         \Drupal::messenger()->addError(t('There was a problem communicating with our support system. Please try again in a few minutes. If the error persists, please <a href="/feedback?subject=The page looks broken&feedback=Report could not be submitted to the support ticketing system.">contact us</a>.'));
@@ -467,103 +454,18 @@ class ZendeskUpdateHandler extends WebformHandlerBase
     }
   }
 
-  /**
-   * Sanitize the filename to remove any unwanted or unsafe characters.
-   *
-   * @param string $filename
-   *   The original filename to sanitize.
-   *
-   * @return string
-   *   The sanitized filename.
-   */
-  private function sanitizeFilename($filename)
-  {
-    // Replace unwanted characters with underscores or remove them.
-    return preg_replace('/[^a-zA-Z0-9-_\.]/', '_', $filename);
-  }
-
-  /**
-   * Apply filename transformations manually during validation phase.
-   */
-  private function transformFilenames(array &$submission_fields, WebformSubmissionInterface $webform_submission, array $elements = [], string $parent_key = '')
-  {
-    // If no elements are passed, get the full element structure.
-    if (empty($elements)) {
-      $webform = $webform_submission->getWebform();
-      $elements = $webform->getElementsDecoded();
-    }
-
-    // Iterate through each element to find those with filename patterns or nested elements.
-    foreach ($elements as $element_key => $element) {
-      // Construct the full key path for nested elements.
-      $full_key = $parent_key ? "{$parent_key}.{$element_key}" : $element_key;
-
-      // Check if the element has a filename pattern.
-      if (isset($element['#file_name'])) {
-        $filename_pattern = $element['#file_name'];
-
-        // Check if the submission includes files for this element.
-        if (!empty($submission_fields['data'][$element_key])) {
-          $file_ids = $submission_fields['data'][$element_key];
-
-          // Ensure file IDs are in an array for consistent processing.
-          if (!is_array($file_ids)) {
-            $file_ids = [$file_ids];
-          }
-
-          // Process each file ID.
-          foreach ($file_ids as &$file_id) {
-            $file = File::load($file_id);
-
-            if ($file) {
-              // Get the original filename and its extension.
-              $original_filename = $file->getFilename();
-              $file_extension = pathinfo($original_filename, PATHINFO_EXTENSION);
-
-              // Sanitize the original filename without the extension.
-              $cleaned_filename = $this->sanitizeFilename(pathinfo($original_filename, PATHINFO_FILENAME));
-
-              // Replace tokens in the filename pattern.
-              $transformed_filename = \Drupal::token()->replace($filename_pattern, [
-                'webform_submission' => $webform_submission,
-                'filename' => $cleaned_filename,
-              ]);
-
-              // Append the original file extension to the transformed filename.
-              $final_filename = $transformed_filename . '.' . $file_extension;
-
-              // Set the transformed filename on the file entity.
-              $file->setFilename($final_filename);
-              $file->save();
-
-              // Update the file data in the submission fields with the transformed filename.
-              $file_id = $file->id();
-            }
-          }
-
-          // Update the submission fields with the processed file IDs.
-          $submission_fields['data'][$element_key] = count($file_ids) === 1 ? reset($file_ids) : $file_ids;
-        }
-      }
-
-      // Check if the element has children and traverse them recursively.
-      if (isset($element['#type']) && in_array($element['#type'], ['container', 'section', 'details', 'fieldset']) && !empty($element['#children'])) {
-        $this->transformFilenames($submission_fields, $webform_submission, $element['#children'], $full_key);
-      } elseif (is_array($element)) {
-        // Recursively process nested arrays to ensure all levels are checked.
-        $this->transformFilenames($submission_fields, $webform_submission, $element, $full_key);
-      }
-    }
-  }
-
-  public function sendToZendesk(FormStateInterface $form_state, $webform_submission)
+  public function sendToZendesk(FormStateInterface $form_state)
   {
     // NOTE: This will run for both new and update webform submissions, so this handler should only
     // be used on forms that don't allow updating. Otherwise, a new Zendesk ticket will be created
     // on every submit of the form.
 
+    // Since we're doing this in the validate phase, instead of postSave, we need to manually generate
+    // a webform_submission object from form_state and pull form values from that for the API submission.
+
     // declare working variables
     $request = [];
+    $webform_submission = $form_state->getFormObject()->getEntity();
 
     // manually put the report_ticket_id value in the webform submission object, so that it
     // gets used in token replacement and in custom field if needed.
@@ -593,15 +495,14 @@ class ZendeskUpdateHandler extends WebformHandlerBase
     }
 
     // clean up tags
-    $request['tags'] = Utility::cleanTags($request['tags']);
-    $request['collaborators'] = preg_split("/[^a-z0-9_\-@\.']+/i", $request['collaborators']);
+    $request['tags'] = Utility::cleanTags( $request['tags'] );
+    $request['collaborators'] = preg_split("/[^a-z0-9_\-@\.']+/i", $request['collaborators'] );
     if (!empty($request['ticket_form_id'])) $request['ticket_form_id'] = $this->configuration['ticket_form_id'];
 
-    if (!isset($request['comment']['body'])) {
+    if(!isset($request['comment']['body'])){
       $comment = $request['comment'];
       $request['comment'] = [
-        'html_body' => $comment,
-        'public' => !$request['comment_private']
+        'html_body' => $comment, 'public' => !$request['comment_private']
       ];
     }
 
@@ -609,7 +510,7 @@ class ZendeskUpdateHandler extends WebformHandlerBase
     $custom_fields = Yaml::decode($request['custom_fields']);
     unset($request['custom_fields']);
     $request['custom_fields'] = [];
-    if ($custom_fields) {
+    if($custom_fields) {
       foreach ($custom_fields as $key => $value) {
         // KLUGE: this is a kludge to prevent querystring ampersands from being escaped in the resolution_url custom field,
         // which prevents the URL from being usable in Zendesk emails, since it doesn't unescape them in triggers. For the
@@ -639,11 +540,11 @@ class ZendeskUpdateHandler extends WebformHandlerBase
       $ticket = $client->tickets()->find($zendesk_ticket_id)->ticket;
 
       // Checks for files in submission values and uploads them if found
-      foreach ($submission_fields['data'] as $key => $submission_field) {
-        if (in_array($key, $file_fields) && !empty($submission_field)) {
+      foreach($submission_fields['data'] as $key => $submission_field){
+        if( in_array($key, $file_fields) && !empty($submission_field) ){
 
           // pack file index/indices into an array for looping
-          if (is_array($submission_field)) {
+          if( is_array( $submission_field ) ){
             $file_indices = $submission_field;
           } else {
             $file_indices = []; // clear var
@@ -651,7 +552,7 @@ class ZendeskUpdateHandler extends WebformHandlerBase
           }
 
           // individually attach each uploaded file per file submission_field
-          foreach ($file_indices as $file_index) {
+          foreach( $file_indices as $file_index) {
             // get file from index for upload
             $file = File::load($file_index);
 
@@ -699,7 +600,9 @@ class ZendeskUpdateHandler extends WebformHandlerBase
       // create ticket
       $updated_ticket = $client->tickets()->update($zendesk_ticket_id, $request);
       $confirm_zendesk_ticket_id = $updated_ticket->ticket->id;
-    } catch (\Exception $e) {
+
+    }
+    catch( \Exception $e ){
 
       // Encode HTML entities to prevent broken markup from breaking the page.
       $message = nl2br(htmlentities($e->getMessage()));
@@ -720,7 +623,10 @@ class ZendeskUpdateHandler extends WebformHandlerBase
    * Submits a Zendesk ticket once the Webform has been submitted and saved
    * {@inheritdoc}
    */
-  public function postSave(WebformSubmissionInterface $webform_submission, $update = TRUE) {}
+  public function postSave(WebformSubmissionInterface $webform_submission, $update = TRUE)
+  {
+
+  }
 
   /**
    * Displays a list of configured values on the Handlers page
@@ -733,14 +639,14 @@ class ZendeskUpdateHandler extends WebformHandlerBase
     $excluded_fields = [];
 
     // loop through fields to display an at-a-glance summary of settings
-    foreach ($configNames as $configName) {
-      if (! in_array($configName, $excluded_fields)) {
+    foreach($configNames as $configName){
+      if(! in_array($configName, $excluded_fields) ) {
         $markup[] = '<strong>' . $this->t($configName) . ': </strong>' . ($this->configuration[$configName]);
       }
     }
 
     return [
-      '#markup' => implode('<br>', $markup),
+      '#markup' => implode('<br>',$markup),
     ];
   }
 
@@ -748,8 +654,7 @@ class ZendeskUpdateHandler extends WebformHandlerBase
    * Token manager setter
    * @param WebformTokenManagerInterface $token_manager
    */
-  public function setTokenManager(WebformTokenManagerInterface $token_manager)
-  {
+  public function setTokenManager( WebformTokenManagerInterface $token_manager ){
     $this->token_manager = $token_manager;
   }
 
@@ -757,16 +662,14 @@ class ZendeskUpdateHandler extends WebformHandlerBase
    * Token manager getter
    * @return WebformTokenManagerInterface
    */
-  public function getTokenManager()
-  {
+  public function getTokenManager(){
     return $this->token_manager;
   }
 
   /**
    * @return array
    */
-  protected function getWebformFieldsWithFiles()
-  {
+  protected function getWebformFieldsWithFiles(){
     return $this->getWebform()->getElementsManagedFiles();
   }
 
@@ -777,8 +680,7 @@ class ZendeskUpdateHandler extends WebformHandlerBase
    * @return bool
    * @deprecated
    */
-  protected function checkIsNameField(array $field)
-  {
+  protected function checkIsNameField( array $field ){
     return Utility::checkIsNameField($field);
   }
 
@@ -787,8 +689,7 @@ class ZendeskUpdateHandler extends WebformHandlerBase
    * @return bool
    * @deprecated
    */
-  protected function checkIsEmailField(array $field)
-  {
+  protected function checkIsEmailField( array $field ){
     return Utility::checkIsEmailField($field);
   }
 
@@ -797,8 +698,7 @@ class ZendeskUpdateHandler extends WebformHandlerBase
    * @return bool
    * @deprecated
    */
-  protected function checkIsHiddenField(array $field)
-  {
+  protected function checkIsHiddenField( array $field ){
     return Utility::checkIsHiddenField($field);
   }
 
@@ -807,8 +707,7 @@ class ZendeskUpdateHandler extends WebformHandlerBase
    * @return bool
    * @deprecated
    */
-  protected function checkIsGroupingField(array $field)
-  {
+  protected function checkIsGroupingField( array $field ){
     return Utility::checkIsGroupingField($field);
   }
 
@@ -817,8 +716,7 @@ class ZendeskUpdateHandler extends WebformHandlerBase
    * @return string
    * @deprecated
    */
-  protected function cleanTags($text = '')
-  {
+  protected function cleanTags( $text = '' ){
     return Utility::cleanTags($text);
   }
 
@@ -827,8 +725,7 @@ class ZendeskUpdateHandler extends WebformHandlerBase
    * @return string
    * @deprecated
    */
-  protected function convertTags($text = '')
-  {
+  protected function convertTags( $text = '' ){
     return Utility::convertTags($text);
   }
 
@@ -837,8 +734,7 @@ class ZendeskUpdateHandler extends WebformHandlerBase
    * @return string
    * @deprecated
    */
-  protected function convertName($name_parts)
-  {
+  protected function convertName( $name_parts ){
     return Utility::convertName($name_parts);
   }
 
@@ -847,8 +743,7 @@ class ZendeskUpdateHandler extends WebformHandlerBase
    * @return string
    * @deprecated
    */
-  protected function convertTable($set)
-  {
+  protected function convertTable( $set ){
     return Utility::convertTable($set);
   }
 }
