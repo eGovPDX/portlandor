@@ -186,4 +186,30 @@ final class BatchCommands extends DrushCommands
       }
     }
   }
+
+
+  /**
+   * Drush command to reset the user sync process so the next cron run will restart the sync process.
+   */
+  #[CLI\Command(name: 'portland:reset_user_sync')]
+  #[CLI\Usage(name: 'portland:reset_user_sync', description: 'Reset the user sync process')]
+  public function reset_user_sync()
+  {
+    // Clear all items in the queue
+    /** @var QueueFactory $queue_factory */
+    $queue_factory = \Drupal::service('queue');
+    /** @var QueueInterface $queue */
+    $queue = $queue_factory->get('user_sync');
+    if( $queue != null ) $queue->deleteQueue();
+
+    // Set the Day of Week to today
+    \Drupal::state()->set('pgov.user_sync.day_of_week', date("l"));
+
+    // Delete variables tracking user sync progress
+    \Drupal::state()->deleteMultiple([
+      'pgov.user_sync.stop',
+      'pgov.user_sync.last_sync_date.portlandoregon.gov',
+      'pgov.user_sync.resume_url.portlandoregon.gov',
+    ]);
+  }  
 }
