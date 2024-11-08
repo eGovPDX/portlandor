@@ -40,6 +40,7 @@ elements: |-
       '#title': 'Is someone living in the vehicle or is it part of an encampment?'
       '#options': yes_no
       '#required': true
+      '#prepopulate': true
     markup_campsite_stop:
       '#type': webform_markup
       '#states':
@@ -148,8 +149,9 @@ elements: |-
           '#location_municipality_name__access': false
           '#location_private_owner__access': false
           '#location_is_portland__access': false
-          '#geojson_layer__access': false
-          '#geojson_layer_behavior__access': false
+          '#click_query_url': 'https://www.portlandmaps.com/arcgis/rest/services/Public/Geocoding_PDX/GeocodeServer/reverseGeocode?location=%7B%22x%22%3A{{x}}%2C+%22y%22%3A{{y}}%2C+%22spatialReference%22%3A%7B%22wkid%22+%3A+3857%7D%7D&f=json'
+          '#click_query_property_path': 'address.Address'
+          '#click_query_destination_field': 'report_closest_address'
           '#require_boundary': true
       container_abandoned_auto:
         '#type': webform_section
@@ -192,12 +194,16 @@ elements: |-
               '#title': 'License plate state'
               '#description': 'If the vehicle has a license plate, please select which state it&#39;s from.'
               '#description_display': before
+              '#autocomplete': 'off'
             license_plate_number:
               '#type': textfield
               '#title': 'License plate number'
               '#description': 'If the vehicle has a license plate, please enter the number.'
               '#description_display': before
               '#maxlength': 8
+              '#input_mask': '[*][*][*][*][*][*][*][*]'
+              '#pattern': '^[a-zA-Z0-9]{0,8}$'
+              '#pattern_error': 'License plate must be alphanumerical and maximum 8 characters.'
         container_submit:
           '#type': webform_section
           '#title': 'Finish your report'
@@ -210,7 +216,7 @@ elements: |-
             '#file_preview': 'medium:image'
             '#max_filesize': '30'
             '#file_extensions': 'jpg jpeg png'
-            '#file_name': 'report_[webform_submission:sid]'
+            '#file_name': 'vehicle-photo-[webform_submission:values:report_vehicle:color]-[webform_submission:values:report_vehicle:make]'
             '#sanitize': true
             '#max_resolution': 1280x1280
             '#attachment_image_style': webform_report_uploaded_image
@@ -264,6 +270,11 @@ elements: |-
   report_ticket_id:
     '#type': hidden
     '#title': 'Report Ticket ID'
+  report_closest_address:
+    '#type': hidden
+    '#title': 'Closest Address for AbAutos'
+    '#attributes':
+      id: report_closest_address
   computed_confirmation:
     '#type': webform_computed_twig
     '#title': 'Computed Confirmation'
