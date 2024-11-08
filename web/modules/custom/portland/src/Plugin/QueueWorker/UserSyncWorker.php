@@ -84,12 +84,13 @@ class UserSyncWorker extends QueueWorkerBase implements ContainerFactoryPluginIn
 
       // Look up user by Drupal user name (Principal name in AD)
       // Sometimes a user will be recreated with the same principal name but different AD ID
-      $users = \Drupal::entityTypeManager()->getStorage('user')->loadByProperties(['name' => $user_data['userPrincipalName']]);
+      // User name in Drupal has a limit of 60 characters
+      $userName = PortlandOpenIdConnectUtil::TrimUserName($user_data['userPrincipalName']);
+      $users = \Drupal::entityTypeManager()->getStorage('user')->loadByProperties(['name' => $userName]);
 
       // In PGOV, skip the user if it does not exist
       if(empty($users)) return;
 
-      // Create a new user if no user is found
       /** @var User $user */
       $user = array_values($users)[0];
       $user->status = $user_data['accountEnabled'];

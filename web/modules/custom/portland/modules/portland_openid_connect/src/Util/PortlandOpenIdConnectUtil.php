@@ -340,13 +340,12 @@ class PortlandOpenIdConnectUtil
     }
 
     // Leave 3 characters for a random number to reduce conflict
-    $countOfCharToRemove = strlen($userName) - 60 + 3;
     if(str_contains($userName, "@")) {
       $parts = explode("@", $userName);
-      return substr($parts[0], 0, -($countOfCharToRemove)) . rand(100, 999) . "@" . $parts[1];
+      return hash("md5", $parts[0]) . "@" . $parts[1];
     }
     else {
-      return substr($userName, 0, -($countOfCharToRemove)) . rand(100, 999);
+      return hash("md5", $userName);
     }
   }
 

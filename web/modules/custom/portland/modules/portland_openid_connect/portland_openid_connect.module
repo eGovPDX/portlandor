@@ -36,7 +36,7 @@ function portland_openid_connect_user_insert($user) {
  * Get state values: 
  *    drush state:get pgov.user_sync.stop
  *    drush state:get pgov.user_sync.day_of_week
- *    drush state:get pgov.user_sync.interval_in_days
+ *    drush state:get pgov.user_sync.sync_now
  *    drush state:get pgov.user_sync.batch_size
  *    drush state:get pgov.user_sync.last_sync_date.DOMAIN
  *    drush state:get pgov.user_sync.resume_url.DOMAIN
@@ -56,12 +56,14 @@ function portland_openid_connect_cron()
     return;
   }
 
-  // Get the day of the week to sync. Default is Saturday.
-  $sync_day = \Drupal::state()->get('pgov.user_sync.day_of_week') ?? "Saturday";
-  if(date("l") != $sync_day) return;
+  // Check if we need to sync now
+  $sync_now = (strtolower(\Drupal::state()->get('pgov.user_sync.sync_now')) === "true");
 
-  // Get the sync interval in days. Default is 7 days.
-  $sync_interval = \Drupal::state()->get('pgov.user_sync.interval_in_days') ?? "7";
+  // Get the day of the week to sync. Default is Saturday.
+  if( !$sync_now ) {
+    $sync_day = \Drupal::state()->get('pgov.user_sync.day_of_week') ?? "Saturday";
+    if(date("l") != $sync_day) return;
+  }
 
   // Get the last sync date. Default to 10/01/2024.
   $last_user_sync_date = \Drupal::state()->get("pgov.user_sync.last_sync_date.$domain");
@@ -69,7 +71,7 @@ function portland_openid_connect_cron()
 
   // Do nothing if the last sync was done within the interval
   $now = new DateTime();
-  if($now->diff($last_user_sync_date)->days < (int)$sync_interval) return;
+  if($now->diff($last_user_sync_date)->days < 7) return;
 
   // Call Microsoft Graph API to retrieve user info
   $tokens = _get_access_token();
@@ -79,6 +81,10 @@ function portland_openid_connect_cron()
   }
 
   _get_all_users($tokens['access_token']);
+
+  if(empty(\Drupal::state()->get("pgov.user_sync.resume_url.$domain"))) {
+    \Drupal::state()->delete("pgov.user_sync.sync_now");
+  }
 }
 
 /**
@@ -176,9 +182,9 @@ function _get_all_users($access_token)
     // lando drush state:del pgov.user_sync.resume_url.portlandoregon.gov
     $domain = "portlandoregon.gov";
     if ($resume_url = $system_state->get("pgov.user_sync.resume_url.$domain")) {
-      \Drupal::logger('portland OpenID')->notice("Resume retrieving user information for $domain");
+      \Drupal::logger('portland OpenID')->notice("Resuming user sync for $domain");
     } else {
-      \Drupal::logger('portland OpenID')->notice("Start retrieving user information for $domain");
+      \Drupal::logger('portland OpenID')->notice("Starting user sync for $domain");
     }
 
     // Get the user sync batch size. Default is 50 users
@@ -186,7 +192,7 @@ function _get_all_users($access_token)
 
     // If there is a resume link, use it. Otherwise start fresh
     // The hardcoded initial URL is intentional. It's only used for the first request.
-    $request_url = $resume_url ?? "https://graph.microsoft.com/v1.0/users?\$top=$batch_size&\$filter=endswith(mail,'@$domain')&\$orderby=userPrincipalName&\$count=true&\$select=id,accountEnabled,userPrincipalName,displayName,givenName,surname,mail";
+    $request_url = empty($resume_url) ? "https://graph.microsoft.com/v1.0/users?\$top=$batch_size&\$filter=endswith(mail,'@$domain')&\$orderby=userPrincipalName&\$count=true&\$select=id,accountEnabled,userPrincipalName,displayName,givenName,surname,mail" : $resume_url;
     // Queue up 10 items in each call
     $request_limit = 10;
     $request_count = 0;

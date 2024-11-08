@@ -202,8 +202,8 @@ final class BatchCommands extends DrushCommands
     $queue = $queue_factory->get('user_sync');
     if( $queue != null ) $queue->deleteQueue();
 
-    // Set the Day of Week to today
-    \Drupal::state()->set('pgov.user_sync.day_of_week', date("l"));
+    // Set the flag to start user sync in the next cron run
+    \Drupal::state()->set('pgov.user_sync.sync_now', "true");
 
     // Delete variables tracking user sync progress
     \Drupal::state()->deleteMultiple([
@@ -211,5 +211,7 @@ final class BatchCommands extends DrushCommands
       'pgov.user_sync.last_sync_date.portlandoregon.gov',
       'pgov.user_sync.resume_url.portlandoregon.gov',
     ]);
+
+    echo "The user sync process will start in the next cron run." . PHP_EOL;
   }  
 }
