@@ -9,7 +9,7 @@ const isProd = process.env.NODE_ENV === 'production';
 
 const config = {
   entry: {
-    cloudy: ['./src/css/index.scss', './src/js/index.js'],
+    cloudy: ['./src/css/cloudy.scss', './src/js/index.js'],
     'cloudy-ckeditor': ['./src/css/cloudy-ckeditor.scss'],
   },
   output: {
