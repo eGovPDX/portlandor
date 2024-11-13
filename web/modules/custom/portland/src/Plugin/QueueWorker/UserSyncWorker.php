@@ -68,6 +68,8 @@ class UserSyncWorker extends QueueWorkerBase implements ContainerFactoryPluginIn
    */
   public function processItem($data)
   {
+    $users_enabled = [];
+    $users_disabled = [];
     foreach ($data["users"] as $user_data) {
       // Skip accounts without first name, last name, userPrincipalName, or email. These are not people acount.
       if (
@@ -89,10 +91,14 @@ class UserSyncWorker extends QueueWorkerBase implements ContainerFactoryPluginIn
       $users = \Drupal::entityTypeManager()->getStorage('user')->loadByProperties(['name' => $userName]);
 
       // In PGOV, skip the user if it does not exist
-      if(empty($users)) return;
+      if(empty($users)) {
+        continue;
+      }
 
       /** @var User $user */
       $user = array_values($users)[0];
+      if($user_data['accountEnabled'] == 1 && $user->status->value == 0) $users_enabled []= $userName;
+      if($user_data['accountEnabled'] == 0 && $user->status->value == 1) $users_disabled []= $userName;
       $user->status = $user_data['accountEnabled'];
       $user->field_principal_name = $user_data['userPrincipalName'];
       $user->field_first_name = $user_data['givenName'];
@@ -106,5 +112,8 @@ class UserSyncWorker extends QueueWorkerBase implements ContainerFactoryPluginIn
         \Drupal::logger('portland OpenID')->error('Failed to save user ' . $user_data['userPrincipalName']);
       }
     }
+
+    if(count($users_enabled) > 0) \Drupal::logger('portland OpenID')->info("Enabed " . implode(",", $users_enabled));
+    if(count($users_disabled) > 0) \Drupal::logger('portland OpenID')->info("Disabled " . implode(",", $users_disabled));
   }
 }
