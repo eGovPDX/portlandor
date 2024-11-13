@@ -11,15 +11,15 @@ Drupal.behaviors.cloudyExpandAllAccordion = {
     window.addEventListener("DOMContentLoaded", () => {
       once("cloudyExpandAllAccordion", "div.aria-accordion", context).forEach((accordion) => {
         const accordionPanelIds = Array.from(
-          accordion.querySelectorAll("div.aria-accordion__panel")
+          accordion.querySelectorAll("div.aria-accordion__panel"),
         ).map((el) => el.getAttribute("id"));
         accordion.insertAdjacentHTML(
           "afterbegin",
           `
             <button type="button" class="toggle-accordion btn btn-link d-block ms-auto mb-1 p-0" aria-expanded="false" aria-controls="${accordionPanelIds.join(
-              " "
+              " ",
             )}">${this.STR_EXPAND_ALL}</a>
-          `
+          `,
         );
         accordion.addEventListener("click", (e) => {
           const toggleControl = e.target;
@@ -32,7 +32,7 @@ Drupal.behaviors.cloudyExpandAllAccordion = {
           accordion
             .querySelectorAll(".aria-accordion__panel")
             .forEach((el) =>
-              isExpanding ? el.removeAttribute("hidden") : el.setAttribute("hidden", "")
+              isExpanding ? el.removeAttribute("hidden") : el.setAttribute("hidden", ""),
             );
           toggleControl.setAttribute("aria-expanded", isExpanding ? "true" : "false");
           toggleControl.textContent = isExpanding ? this.STR_COLLAPSE_ALL : this.STR_EXPAND_ALL;

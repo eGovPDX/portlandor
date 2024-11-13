@@ -5,21 +5,19 @@
 
 // stylelint-disable selector-no-qualifying-type
 
-//
 // Textual form controls
-//
 
 .form-control {
-  //display: block;
-  //width: 100%; remove width as it plays havoc on Drupal fields
+  @include font-size($input-font-size);
+
   height: $input-height;
   padding: spacer(1) spacer(3);
   font-family: $input-font-family;
-  @include font-size($input-font-size);
   font-weight: $input-font-weight;
   line-height: $input-line-height;
   background-clip: padding-box;
   border: $input-border-width solid $cloudy-color-neutral-300;
+  border-radius: $border-radius-sm;
 
   // Note: This has no effect on <select>s in some browsers, due to the limited stylability of `<select>`s in CSS.
   @include border-radius($input-border-radius, 0);
@@ -40,13 +38,13 @@
   }
 
   // Disabled and read-only inputs
-  //
+
   // HTML5 says that controls under a fieldset > legend:first-child won't be
   // disabled if the fieldset is disabled. Due to implementation difficulty, we
   // don't honor that edge case; we style them as disabled anyway.
   &:disabled,
   &[readonly] {
-    background-color: $cloudy-color-neutral-200;
+    background-color: $light;
     // iOS fix for unreadable disabled content; see https://github.com/twbs/bootstrap/issues/11655.
     opacity: 1;
   }
@@ -68,12 +66,9 @@ select.form-control {
 .form-control-file,
 .form-control-range {
   display: block;
-  //width: 100%; remove width
 }
 
-//
 // Labels
-//
 
 // For use with horizontal and inline forms, when you need the label (or legend)
 // text to align with the form controls.
@@ -97,13 +92,12 @@ select.form-control {
 }
 
 // Readonly controls as plain text
-//
+
 // Apply class to a readonly input to make it appear like regular plain
 // text (without any border, background color, focus indicator)
 
 .form-control-plaintext {
   display: block;
-  //width: 100%; remove width
   padding-top: spacer(1);
   padding-bottom: spacer(1);
   margin-bottom: 0; // match inputs if this class comes on inputs with default margins
@@ -121,10 +115,10 @@ select.form-control {
 }
 
 // Form control sizing
-//
+
 // Build on `.form-control` with modifier classes to decrease or increase the
 // height and font-size of form controls.
-//
+
 // Repeated in `_input_group.scss` to avoid Sass extend issues.
 
 .form-control-sm {
@@ -154,7 +148,7 @@ textarea.form-control {
 }
 
 // Form groups
-//
+
 // Designed to help with the organization and spacing of vertical forms. For
 // horizontal forms, use the predefined grid classes.
 
@@ -169,7 +163,7 @@ textarea.form-control {
 }
 
 // Form grid
-//
+
 // Special replacement for our grid system's `.row` for tighter form layouts.
 
 .form-row {
@@ -186,8 +180,12 @@ textarea.form-control {
 }
 
 // Checkboxes and radios
-//
+
 // Indent the labels to position radios/checkboxes as hanging controls.
+
+.form-check-label {
+  margin-bottom: 0; // Override default `<label>` bottom margin
+}
 
 .form-check-input {
   margin-right: spacer(1);
@@ -195,10 +193,6 @@ textarea.form-control {
   &:disabled ~ .form-check-label {
     color: $cloudy-color-neutral-500;
   }
-}
-
-.form-check-label {
-  margin-bottom: 0; // Override default `<label>` bottom margin
 }
 
 .form-check-inline {
@@ -216,14 +210,24 @@ textarea.form-control {
   }
 }
 
+// Override core drupal class
+.form--inline {
+  display: flex;
+}
+
+.form--inline .form-item {
+  margin-right: spacer(4);
+  display: inline;
+  max-width: 100%; // We are adding a harmless max-width here to protect against floating items breaking outside their parent
+  // We target inputs with the `size` attribute here so that they respect our layout's margins and not overflow the layout
+  input[size] {
+    width: 100%;
+  }
+}
+
 // Fix spacing between radio items
 .form-checkboxes,
 .form-radios {
-  &.webform-options-display-side-by-side .form-item,
-  &.webform-options-display-buttons-horizontal .webform-options-display-buttons-wrapper {
-    margin-top: 0;
-  }
-
   .form-item,
   .webform-options-display-buttons-wrapper {
     margin-top: spacer(2);
@@ -232,6 +236,11 @@ textarea.form-control {
     &:first-of-type {
       margin-top: 0;
     }
+  }
+
+  &.webform-options-display-side-by-side .form-item,
+  &.webform-options-display-buttons-horizontal .webform-options-display-buttons-wrapper {
+    margin-top: 0;
   }
 }
 
@@ -244,12 +253,13 @@ textarea.form-control {
 .webform-required {
   margin-bottom: spacer(4);
 }
+
 // Inline forms
-//
+
 // Make forms appear inline(-block) by adding the `.form-inline` class. Inline
 // forms begin stacked on extra small (mobile) devices and then go inline when
 // viewports reach <768px.
-//
+
 // Requires wrapping inputs and labels with `.form-group` for proper display of
 // default HTML form controls and our custom form controls (e.g., input groups).
 
@@ -329,6 +339,12 @@ textarea.form-control {
 
 // START Cloudy-specific components
 
+label {
+  display: table;
+  font-weight: $font-weight-semibold;
+  margin-bottom: 0;
+}
+
 .form-inline label {
   justify-content: left;
 }
@@ -344,6 +360,7 @@ textarea.form-control {
 
 select.form-select {
   @extend .form-control;
+
   border-radius: 0.125rem;
   // We are adding max-width here to protect against situations where long select options would otherwise break out
   // of their parent container due to natural layout flow. Adding max-width here ensures our select will not disturb
@@ -360,8 +377,8 @@ select.form-select {
   @extend .align-self-end;
 }
 
-form .description p,
-.webform-element-description p {
+.webform-element-description p,
+form .description p {
   font-size: $font-size-sm !important;
   margin-bottom: 0;
 }
@@ -374,12 +391,6 @@ form .counter {
   margin-bottom: spacer(3);
 }
 
-label {
-  display: table;
-  font-weight: $font-weight-semibold;
-  margin-bottom: 0;
-}
-
 fieldset legend {
   float: none;
   font-size: 1rem !important;
@@ -387,32 +398,15 @@ fieldset legend {
 }
 
 .entity-content-form-footer {
-  border: $border-width solid $cloudy-color-neutral-200;
+  border: $border-width solid $light;
   padding: (spacer(4) * 1.5);
   margin-bottom: (spacer(4) * 2) !important;
-  background-color: $cloudy-color-neutral-200;
+  background-color: $light;
 }
 
 // Form control
 .view-filters {
   margin-bottom: spacer(8);
-}
-
-.form--inline {
-  display: flex;
-}
-
-.form--inline .form-item {
-  margin-right: spacer(4);
-  display: inline;
-  max-width: 100%; // We are adding a harmless max-width here to protect against floating items breaking outside their parent
-  // We target inputs with the `size` attribute here so that they respect our layout's margins and not overflow the layout
-  input[size] {
-    width: 100%;
-  }
-}
-.form-control {
-  border-radius: 0.125rem;
 }
 
 .invalid-feedback {
@@ -458,7 +452,7 @@ span.next-link .fas {
 .facets-widget {
   &-checkbox {
     padding: spacer(4);
-    background: $cloudy-color-neutral-200;
+    background: $light;
 
     ul {
       list-style: none;
@@ -470,6 +464,7 @@ span.next-link .fas {
 
 .facet-item {
   @extend .form-check;
+
   align-items: flex-start;
   display: flex;
   margin-bottom: spacer(2);
@@ -539,10 +534,6 @@ span.next-link .fas {
   }
 }
 
-.webform-required {
-  margin-bottom: 1rem;
-}
-
 img.inline-icon {
   height: 20px;
 }
@@ -553,7 +544,7 @@ fieldset#edit-support-agent-use-only--wrapper {
 }
 
 fieldset#edit-support-agent-use-only--wrapper .details-wrapper {
-  padding: 0px;
+  padding: 0;
 }
 
 // Fix select styling in Mozilla Firefox
