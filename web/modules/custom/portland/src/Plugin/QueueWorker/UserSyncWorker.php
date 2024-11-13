@@ -113,7 +113,7 @@ class UserSyncWorker extends QueueWorkerBase implements ContainerFactoryPluginIn
       }
     }
 
-    if(count($users_enabled) > 0) \Drupal::logger('portland OpenID')->info("Enabed " . implode(",", $users_enabled));
-    if(count($users_disabled) > 0) \Drupal::logger('portland OpenID')->info("Disabled " . implode(",", $users_disabled));
+    if(count($users_enabled) > 0) \Drupal::logger('portland OpenID')->info("Enabed " . count($users_enabled) . " users: " . implode(",", $users_enabled));
+    if(count($users_disabled) > 0) \Drupal::logger('portland OpenID')->info("Disabled " . count($users_disabled) . " users: " . implode(",", $users_disabled));
   }
 }
