@@ -336,6 +336,25 @@ elements: |-
         <p>If you requested a meeting with an elected official, and the request is approved, someone will reach out to you to schedule the meeting.</p>
         {% endif %}
       '#whitespace': trim
+  computed_districts:
+    '#type': webform_computed_twig
+    '#title': 'Computed Districts'
+    '#template': |
+      {% if data.feedback_recipients_entity is not empty %}
+        {% set district_labels = data.feedback_recipients_entity
+            |map(gid => 
+                drupal_field('field_council_district', 'group', gid, { label: 'hidden' })
+                |render
+                |striptags
+                |trim
+            )
+        %}
+
+        {{ district_labels|join(', ') }}
+      {% else %}
+        <p>No officials selected.</p>
+      {% endif %}
+    '#ajax': true
   actions:
     '#type': webform_actions
     '#title': 'Submit button(s)'
