@@ -59,6 +59,7 @@ elements: |-
   section_feedback_by_district:
     '#type': webform_section
     '#title': 'Provide comment or feedback to my district representatives'
+    '#title_display': invisible
     '#states':
       visible:
         ':input[name="request_purpose"]':
@@ -108,24 +109,39 @@ elements: |-
           <h3>You are in District {{ data.report_location.location_region_id }}!</h3>
           {% endif %}
         '#ajax': true
+      container_district_result:
+        '#type': container
+        '#attributes':
+          aria-live: polite
+        markup:
+          '#type': webform_markup
+          '#markup': '<p><strong>Please select a location above.</strong></p>'
   section_provide_testimony:
     '#type': webform_section
     '#title': 'Provide testimony on an agenda item'
+    '#title_display': invisible
     '#states':
       visible:
         ':input[name="request_purpose"]':
           value: provide_testimony
     testimony_instructions:
       '#type': webform_markup
-      '#markup': '<p>Written testimony may be submitted for specific agenda items by visiting the <a href="/council/agenda">Council agenda</a>. Written testimony will be distributed to members of Council and added to the public record if received before Council votes unless otherwise stated during the meeting or on the agenda.</p>'
+      '#markup': '<div class="alert alert--info next-steps"><h2>Next steps</h2><p class="mb-0">Written testimony may be submitted for specific agenda items by visiting the <a href="/council/agenda">Council agenda</a>. Written testimony will be distributed to members of Council and added to the public record if received before Council votes unless otherwise stated during the meeting or on the agenda.</p></div>'
   section_provide_feedback:
     '#type': webform_section
     '#title': 'Comment or feedback'
     '#title_display': invisible
     '#states':
       visible:
-        ':input[name="request_purpose"]':
-          value: provide_feedback_individual
+        - ':input[name="request_purpose"]':
+            value: provide_feedback_district
+          ':input[name="request_district"]':
+            checked: true
+        - or
+        - ':input[name="request_purpose"]':
+            value: provide_feedback_individual
+          ':input[name="request_recipient"]':
+            filled: true
     feedback_topics_entity:
       '#type': webform_entity_checkboxes
       '#title': 'Choose one or more topics'
@@ -222,17 +238,25 @@ elements: |-
     '#type': container
     '#states':
       visible:
-        - ':input[name="report_location[location_region_id]"]':
-            filled: true
+        - ':input[name="request_purpose"]':
+            value: provide_feedback_district
+          ':input[name="request_district"]':
+            checked: true
         - or
         - ':input[name="request_purpose"]':
             value: provide_feedback_individual
+          ':input[name="request_recipient"]':
+            filled: true
         - or
         - ':input[name="request_purpose"]':
             value: request_meeting
+          ':input[name="request_recipient"]':
+            filled: true
         - or
         - ':input[name="request_purpose"]':
             value: media_inquiry
+          ':input[name="request_recipient"]':
+            filled: true
     section_contact_information:
       '#type': webform_section
       '#title': 'Your Contact Information'
@@ -368,26 +392,25 @@ elements: |-
         <p>If you requested a meeting with an elected official, and the request is approved, someone will reach out to you to schedule the meeting.</p>
         {% endif %}
       '#whitespace': trim
-  computed_districts:
+  computed_districts_json:
     '#type': webform_computed_twig
-    '#title': 'Computed Districts'
-    '#template': |
-      {% if data.feedback_recipients_entity is not empty %}
-        {% set district_labels = data.feedback_recipients_entity
-            |map(gid => 
-                drupal_field('field_council_district', 'group', gid, { label: 'hidden' })
-                |render
-                |striptags
-                |trim
-            )
-        %}
-
-        {{ district_labels|join(', ') }}
-      {% else %}
-        <p>No officials selected.</p>
-      {% endif %}
-    '#ajax': true
-css: ''
+    '#title': 'Districts JSON'
+    '#display_on': none
+    '#mode': text
+    '#template': |-
+      {{ drupal_view_result('council_districts', 'block_council_district_by_number')
+        |map(row => {
+          'districtNum': row._entity.field_district_number.0.value,
+          'name': row._entity.name.0.value,
+          'url': path('entity.taxonomy_term.canonical', { 'taxonomy_term': row.tid }),
+          'html': drupal_entity('taxonomy_term', row.tid, 'default')|render,
+        })
+        |json_encode|raw }}
+  hidden_districts_json:
+    '#type': hidden
+    '#title': 'Hidden Districts JSON Element'
+    '#default_value': '[webform_submission:values:computed_districts_json]'
+css: "/* Reset the default font weight */\r\n.form-check .form-element-container label {\r\n    font-weight: normal;\r\n}\r\n\r\n/* Apply bold font-weight when the radio button is selected */\r\n.form-check-input:checked + label {\r\n    font-weight: bold;\r\n}\r\n"
 javascript: "(($, Drupal) => {\r\n  Drupal.behaviors.councilDistrictLookup = {\r\n    attach() {\r\n      const sectionEl = $(\"#edit-container-district-result\");\r\n      try {\r\n        const districts = JSON.parse($(\"input[name='hidden_districts_json']\").val());\r\n        $(\"input[name='report_location[location_region_id]']\").on(\"change\", (e) => {\r\n          if (e.target.value === \"\") return;\r\n\r\n          const district = districts.find((d) => d.districtNum === e.target.value);\r\n          if (!district) {\r\n            sectionEl.html(\r\n              `<p class=\"fw-bold invalid-feedback\">${Drupal.t(\"No district found for this location.\")}</p>`,\r\n            );\r\n            return;\r\n          }\r\n\r\n          sectionEl.html(\"\");\r\n          $(sectionEl, \"div\").append(\r\n            `<h2>${Drupal.t(\"You're in !district\", { \"!district\": `<a href=\"${district.url}\">${district.name}</a>` })}</h2>`,\r\n          );\r\n          $(sectionEl, \"div\").append(district.html);\r\n        });\r\n      } catch (e) {\r\n        sectionEl.html(\r\n          `<p class=\"fw-bold invalid-feedback\">${Drupal.t('There was an error loading districts, please try again later or <a href=\"/feedback\">contact website support</a>...')}</p>`,\r\n        );\r\n      }\r\n    },\r\n  };\r\n\r\n  Drupal.behaviors.councilDistrictBoundaries = {\r\n    attach() {\r\n      const districtColors = {\r\n        1: \"#7CB195\",\r\n        2: \"#9AC4EA\",\r\n        3: \"#FBD986\",\r\n        4: \"#C08FA4\",\r\n      };\r\n      const { lMap } = drupalSettings.webform.portland_location_picker;\r\n      fetch(\r\n        \"https://www.portlandmaps.com/arcgis/rest/services/Public/CGIS_Layers/MapServer/11/query?where=1%3D1&f=geojson\",\r\n      )\r\n        .then((res) => res.json())\r\n        .then(({ features }) => {\r\n          const layer = L.geoJson(features, {\r\n            coordsToLatLng(coords) {\r\n              return new L.LatLng(coords[1], coords[0]);\r\n            },\r\n            onEachFeature(feature, layer) {\r\n              const district = feature.properties.DISTRICT;\r\n\r\n              lMap.openTooltip(\r\n                Drupal.t(\"District @num\", { \"@num\": district }),\r\n                layer.getBounds().getCenter(),\r\n                {\r\n                  className: \"fs-6\",\r\n                  permanent: true,\r\n                  direction: \"center\",\r\n                  opacity: 1,\r\n                },\r\n              );\r\n              layer.setStyle({\r\n                color: \"#383838\",\r\n                fillColor: districtColors[district],\r\n                fillOpacity: 0.15,\r\n                weight: 1,\r\n              });\r\n            },\r\n          });\r\n\r\n          layer.addTo(lMap);\r\n        });\r\n    },\r\n  };\r\n})(jQuery, Drupal);\r\n"
 settings:
   ajax: false
