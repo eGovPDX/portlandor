@@ -35,7 +35,7 @@ elements: |-
     '#markup': '<p><strong>Please make a selection to continue.</strong></p>'
   request_recipient:
     '#type': webform_entity_select
-    '#title': 'Please select a recipient'
+    '#title': 'Please select an elected official'
     '#prepopulate': true
     '#empty_option': Select...
     '#required': true
@@ -64,58 +64,30 @@ elements: |-
       visible:
         ':input[name="request_purpose"]':
           value: provide_feedback_district
-    request_district:
-      '#type': radios
-      '#title': 'Select a district'
-      '#options':
-        'District 1': 'District 1'
-        'District 2': 'District 2'
-        'District 3': 'District 3'
-        'District 4': 'District 4'
-        "I'm not sure...": "I'm not sure..."
-    container_district_unsure:
-      '#type': container
+    report_location:
+      '#type': portland_location_picker
+      '#title': 'District Location'
       '#states':
         visible:
           ':input[name="request_district"]':
             value: "I'm not sure..."
-      report_location:
-        '#type': portland_location_picker
-        '#title': 'District Location'
-        '#states':
-          visible:
-            ':input[name="request_district"]':
-              value: "I'm not sure..."
-        '#location_search__title': 'Find your district'
-        '#location_search__description': 'Search for an address, or use the map to select an approximate location. This is only used to determine your district. We do not track your location using this tool.'
-        '#precision_text__access': false
-        '#place_name__access': false
-        '#location_details__access': false
-        '#display_boundary': false
-        '#require_boundary': true
-        '#out_of_bounds_message': 'The location you selected is not within the City of Portland. Please try a different location.'
-        '#click_query_url': 'https://www.portlandmaps.com/arcgis/rest/services/Public/CGIS_Layers/MapServer/11/query?where=1%3D1&geometry={{x}}%2C{{y}}&returnGeometry=false&geometryType=esriGeometryPoint&outFields=DISTRICT&f=geojson'
-        '#click_query_property_path': 'features[0].properties.DISTRICT'
-      computed_district:
-        '#type': webform_computed_twig
-        '#title': 'Computed District'
-        '#title_display': invisible
-        '#wrapper_attributes':
-          class:
-            - mt-0
-        '#mode': html
-        '#template': |-
-          {% if data.report_location.location_region_id %}
-          <h3>You are in District {{ data.report_location.location_region_id }}!</h3>
-          {% endif %}
-        '#ajax': true
-      container_district_result:
-        '#type': container
-        '#attributes':
-          aria-live: polite
-        markup:
-          '#type': webform_markup
-          '#markup': '<p><strong>Please select a location above.</strong></p>'
+      '#location_search__title': 'Select your district'
+      '#location_search__description': 'Use the map to select an approximate location, or search for an address. This is only used to determine your district. We do not track your location using this lookup tool.'
+      '#precision_text__access': false
+      '#place_name__access': false
+      '#location_details__access': false
+      '#display_boundary': false
+      '#require_boundary': true
+      '#out_of_bounds_message': 'The location you selected is not within the City of Portland. Please try a different location.'
+      '#click_query_url': 'https://www.portlandmaps.com/arcgis/rest/services/Public/CGIS_Layers/MapServer/11/query?where=1%3D1&geometry={{x}}%2C{{y}}&returnGeometry=false&geometryType=esriGeometryPoint&outFields=DISTRICT&f=geojson'
+      '#click_query_property_path': 'features[0].properties.DISTRICT'
+    container_district_result:
+      '#type': container
+      '#attributes':
+        aria-live: polite
+      markup:
+        '#type': webform_markup
+        '#markup': '<p><strong>Please select a location above.</strong></p>'
   section_provide_testimony:
     '#type': webform_section
     '#title': 'Provide testimony on an agenda item'
@@ -135,8 +107,8 @@ elements: |-
       visible:
         - ':input[name="request_purpose"]':
             value: provide_feedback_district
-          ':input[name="request_district"]':
-            checked: true
+          ':input[name="report_location[location_region_id]"]':
+            filled: true
         - or
         - ':input[name="request_purpose"]':
             value: provide_feedback_individual
@@ -224,6 +196,7 @@ elements: |-
   section_media_inquiry:
     '#type': webform_section
     '#title': 'Media Inquiry'
+    '#title_display': invisible
     '#states':
       visible:
         ':input[name="request_purpose"]':
@@ -240,8 +213,8 @@ elements: |-
       visible:
         - ':input[name="request_purpose"]':
             value: provide_feedback_district
-          ':input[name="request_district"]':
-            checked: true
+          ':input[name="report_location[location_region_id]"]':
+            filled: true
         - or
         - ':input[name="request_purpose"]':
             value: provide_feedback_individual
@@ -260,6 +233,9 @@ elements: |-
     section_contact_information:
       '#type': webform_section
       '#title': 'Your Contact Information'
+      '#title_tag': label
+      '#title_attributes':
+        style: 'font-size: 1.5rem; '
       contact_name:
         '#type': textfield
         '#title': Name
@@ -411,7 +387,7 @@ elements: |-
     '#title': 'Hidden Districts JSON Element'
     '#default_value': '[webform_submission:values:computed_districts_json]'
 css: "/* Reset the default font weight */\r\n.form-check .form-element-container label {\r\n    font-weight: normal;\r\n}\r\n\r\n/* Apply bold font-weight when the radio button is selected */\r\n.form-check-input:checked + label {\r\n    font-weight: bold;\r\n}\r\n"
-javascript: "(($, Drupal) => {\r\n  Drupal.behaviors.councilDistrictLookup = {\r\n    attach() {\r\n      const sectionEl = $(\"#edit-container-district-result\");\r\n      try {\r\n        const districts = JSON.parse($(\"input[name='hidden_districts_json']\").val());\r\n        $(\"input[name='report_location[location_region_id]']\").on(\"change\", (e) => {\r\n          if (e.target.value === \"\") return;\r\n\r\n          const district = districts.find((d) => d.districtNum === e.target.value);\r\n          if (!district) {\r\n            sectionEl.html(\r\n              `<p class=\"fw-bold invalid-feedback\">${Drupal.t(\"No district found for this location.\")}</p>`,\r\n            );\r\n            return;\r\n          }\r\n\r\n          sectionEl.html(\"\");\r\n          $(sectionEl, \"div\").append(\r\n            `<h2>${Drupal.t(\"You're in !district\", { \"!district\": `<a href=\"${district.url}\">${district.name}</a>` })}</h2>`,\r\n          );\r\n          $(sectionEl, \"div\").append(district.html);\r\n        });\r\n      } catch (e) {\r\n        sectionEl.html(\r\n          `<p class=\"fw-bold invalid-feedback\">${Drupal.t('There was an error loading districts, please try again later or <a href=\"/feedback\">contact website support</a>...')}</p>`,\r\n        );\r\n      }\r\n    },\r\n  };\r\n\r\n  Drupal.behaviors.councilDistrictBoundaries = {\r\n    attach() {\r\n      const districtColors = {\r\n        1: \"#7CB195\",\r\n        2: \"#9AC4EA\",\r\n        3: \"#FBD986\",\r\n        4: \"#C08FA4\",\r\n      };\r\n      const { lMap } = drupalSettings.webform.portland_location_picker;\r\n      fetch(\r\n        \"https://www.portlandmaps.com/arcgis/rest/services/Public/CGIS_Layers/MapServer/11/query?where=1%3D1&f=geojson\",\r\n      )\r\n        .then((res) => res.json())\r\n        .then(({ features }) => {\r\n          const layer = L.geoJson(features, {\r\n            coordsToLatLng(coords) {\r\n              return new L.LatLng(coords[1], coords[0]);\r\n            },\r\n            onEachFeature(feature, layer) {\r\n              const district = feature.properties.DISTRICT;\r\n\r\n              lMap.openTooltip(\r\n                Drupal.t(\"District @num\", { \"@num\": district }),\r\n                layer.getBounds().getCenter(),\r\n                {\r\n                  className: \"fs-6\",\r\n                  permanent: true,\r\n                  direction: \"center\",\r\n                  opacity: 1,\r\n                },\r\n              );\r\n              layer.setStyle({\r\n                color: \"#383838\",\r\n                fillColor: districtColors[district],\r\n                fillOpacity: 0.15,\r\n                weight: 1,\r\n              });\r\n            },\r\n          });\r\n\r\n          layer.addTo(lMap);\r\n        });\r\n    },\r\n  };\r\n})(jQuery, Drupal);\r\n"
+javascript: "(($, Drupal) => {\r\n  Drupal.behaviors.councilDistrictLookup = {\r\n    attach() {\r\n      const sectionEl = $(\"#edit-container-district-result\");\r\n      try {\r\n        const districts = JSON.parse($(\"input[name='hidden_districts_json']\").val());\r\n        $(\"input[name='report_location[location_region_id]']\").on(\"change\", (e) => {\r\n          if (e.target.value === \"\") return;\r\n\r\n          const district = districts.find((d) => d.districtNum === e.target.value);\r\n          if (!district) {\r\n            sectionEl.html(\r\n              `<p class=\"fw-bold invalid-feedback\">${Drupal.t(\"No district found for this location.\")}</p>`,\r\n            );\r\n            return;\r\n          }\r\n\r\n          sectionEl.html(\"\");\r\n          $(sectionEl, \"div\").append(\r\n            `<h2>${Drupal.t(\"You're in !district. Your message will be sent to these councilors...\", { \"!district\": `<a href=\"${district.url}\">${district.name}</a>` })}</h2>`,\r\n          );\r\n          $(sectionEl, \"div\").append(district.html);\r\n        });\r\n      } catch (e) {\r\n        sectionEl.html(\r\n          `<p class=\"fw-bold invalid-feedback\">${Drupal.t('There was an error loading districts, please try again later or <a href=\"/feedback\">contact website support</a>...')}</p>`,\r\n        );\r\n      }\r\n    },\r\n  };\r\n\r\n  Drupal.behaviors.councilDistrictBoundaries = {\r\n    attach() {\r\n      const districtColors = {\r\n        1: \"#7CB195\",\r\n        2: \"#9AC4EA\",\r\n        3: \"#FBD986\",\r\n        4: \"#C08FA4\",\r\n      };\r\n      const { lMap } = drupalSettings.webform.portland_location_picker;\r\n      fetch(\r\n        \"https://www.portlandmaps.com/arcgis/rest/services/Public/CGIS_Layers/MapServer/11/query?where=1%3D1&f=geojson\",\r\n      )\r\n        .then((res) => res.json())\r\n        .then(({ features }) => {\r\n          const layer = L.geoJson(features, {\r\n            coordsToLatLng(coords) {\r\n              return new L.LatLng(coords[1], coords[0]);\r\n            },\r\n            onEachFeature(feature, layer) {\r\n              const district = feature.properties.DISTRICT;\r\n\r\n              lMap.openTooltip(\r\n                Drupal.t(\"District @num\", { \"@num\": district }),\r\n                layer.getBounds().getCenter(),\r\n                {\r\n                  className: \"fs-6\",\r\n                  permanent: true,\r\n                  direction: \"center\",\r\n                  opacity: 1,\r\n                },\r\n              );\r\n              layer.setStyle({\r\n                color: \"#383838\",\r\n                fillColor: districtColors[district],\r\n                fillOpacity: 0.15,\r\n                weight: 1,\r\n              });\r\n            },\r\n          });\r\n\r\n          layer.addTo(lMap);\r\n        });\r\n    },\r\n  };\r\n})(jQuery, Drupal);\r\n"
 settings:
   ajax: false
   ajax_scroll_top: form
