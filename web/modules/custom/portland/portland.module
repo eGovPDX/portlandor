@@ -696,11 +696,9 @@ function portland_form_entity_browser_form_alter(&$form, &$form_state, $form_id)
 }
 
 /**
- * Implements hook_form_BASE_FORM_ID_alter().
- *
- * Override the node edit form to show a warning when editing the default translation, if there are translated versions.
+ * Show a warning when editing the default translation, if there are translated versions.
  */
-function portland_form_node_form_alter(&$form, &$form_state) {
+function _add_translation_warning(&$form, FormStateInterface $form_state) {
   $node = $form_state->getFormObject()->getEntity();
   // false = exclude default language
   $translation_langs = $node->getTranslationLanguages(false);
@@ -724,6 +722,42 @@ function portland_form_node_form_alter(&$form, &$form_state) {
       '#weight' => 99,
     ];
   }
+}
+
+/**
+ * If current user has Council President role and editing a council document where:
+ * - the state is Council President Review: hide all fields except the President Only Fields.
+ * - the state is not Council President Review: hide the President Only Fields.
+ */
+function _check_council_president_state(&$form, FormStateInterface $form_state) {
+  $node = $form_state->getFormObject()->getEntity();
+  $user_roles = \Drupal::currentUser()->getRoles();
+  if ($node->bundle() === 'council_document' && in_array('council_president', $user_roles)) {
+    if ($node->moderation_state->value === 'president_review') {
+      // Hide title field
+      $form['title']['#access'] = false;
+      // Make recommended committee field required
+      $form['field_president_committee']['widget']['#required'] = true;
+      // Hide all other fields
+      foreach ($form as $key => &$element) {
+        if (str_starts_with($key, 'field_') && $key !== 'field_president_committee') {
+          $element['#access'] = false;
+        }
+      }
+    } else {
+      $form['field_president_committee']['#access'] = false;
+    }
+  }
+}
+
+/**
+ * Implements hook_form_BASE_FORM_ID_alter().
+ *
+ * Override the node edit form
+ */
+function portland_form_node_form_alter(&$form, FormStateInterface $form_state) {
+  _add_translation_warning($form, $form_state);
+  _check_council_president_state($form, $form_state);
 }
 
 /**
