@@ -209,6 +209,8 @@ final class BatchCommands extends DrushCommands
     \Drupal::state()->deleteMultiple([
       'pgov.user_sync.stop',
       'pgov.user_sync.last_sync_date.portlandoregon.gov',
+      'pgov.user_sync.last_check_removals_date.portlandoregon.gov',
+      'pgov.user_sync.drupal_user_offset',
       'pgov.user_sync.resume_url.portlandoregon.gov',
     ]);
 

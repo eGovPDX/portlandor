@@ -7,9 +7,10 @@ use Drupal\Core\Datetime\DrupalDateTime;
 /**
  * Implement hook_ENTITY_TYPE_presave()
  */
-function portland_openid_connect_user_presave($user) {
+function portland_openid_connect_user_presave($user)
+{
   // If this is an existing user and the status is updated
-  if( $user->original !== null && $user->status->value !== $user->original->status->value) {
+  if ($user->original !== null && $user->status->value !== $user->original->status->value) {
     $now = new DrupalDateTime('now', 'UTC');
     $user->set('field_status_updated_on', $now->format('Y-m-d\TH:i:s'));
   }
@@ -18,7 +19,8 @@ function portland_openid_connect_user_presave($user) {
 /**
  * Implement hook_ENTITY_TYPE_insert()
  */
-function portland_openid_connect_user_insert($user) {
+function portland_openid_connect_user_insert($user)
+{
   // Set default admin language for new users to English
   $user = $user->set('preferred_admin_langcode', 'en');
 }
@@ -35,6 +37,7 @@ function portland_openid_connect_user_insert($user) {
  *    drush state:get pgov.user_sync.sync_now
  *    drush state:get pgov.user_sync.batch_size
  *    drush state:get pgov.user_sync.last_sync_date.portlandoregon.gov
+ *    drush state:get pgov.user_sync.last_check_removals_date.portlandoregon.gov
  *    drush state:get pgov.user_sync.resume_url.portlandoregon.gov
  * To start sync from a fresh state:
  *    drush portland:get_group_content
@@ -55,18 +58,25 @@ function portland_openid_connect_cron()
   $sync_now = (strtolower(\Drupal::state()->get('pgov.user_sync.sync_now')) === "true");
 
   // Get the day of the week to sync. Default is Saturday.
-  if( !$sync_now ) {
+  if (!$sync_now) {
     $sync_day = \Drupal::state()->get('pgov.user_sync.day_of_week') ?? "Saturday";
-    if(date("l") != $sync_day) return;
+    if (date("l") != $sync_day) return;
   }
 
   // Get the last sync date. Default to 10/01/2024.
   $last_user_sync_date = \Drupal::state()->get("pgov.user_sync.last_sync_date.$domain");
   $last_user_sync_date = empty($last_user_sync_date) ? (new DateTime("2024-10-01")) : new DateTime($last_user_sync_date);
+  $last_check_removals_date = \Drupal::state()->get("pgov.user_sync.last_check_removals_date.$domain");
+  $last_check_removals_date = empty($last_check_removals_date) ? (new DateTime("2024-10-01")) : new DateTime($last_check_removals_date);
 
-  // Do nothing if the last sync was done within the interval
+  // Do nothing if the last sync was done within 7 days
   $now = new DateTime();
-  if($now->diff($last_user_sync_date)->days < 7) return;
+  $skip_user_sync = ($now->diff($last_user_sync_date)->days < 7);
+  $skip_user_removal_check = ($now->diff($last_check_removals_date)->days < 7);
+  if($skip_user_sync && $skip_user_removal_check) {
+    \Drupal::state()->delete("pgov.user_sync.sync_now");
+    return;
+  }
 
   // Call Microsoft Graph API to retrieve user info
   $tokens = _get_access_token();
@@ -75,13 +85,51 @@ function portland_openid_connect_cron()
     return;
   }
 
-  _get_all_users($tokens['access_token']);
-
-  if(empty(\Drupal::state()->get("pgov.user_sync.resume_url.$domain"))) {
-    \Drupal::state()->delete("pgov.user_sync.sync_now");
-  }
+  if( !$skip_user_sync ) _get_all_users($tokens['access_token']);
+  if( !$skip_user_removal_check ) _update_users_removed_from_ad($tokens['access_token']);
 }
 
+function _update_users_removed_from_ad($access_token)
+{
+  $drupal_user_offset = \Drupal::state()->get('pgov.user_sync.drupal_user_offset') ?? 0;
+  $drupal_user_limit = 100;
+  $domain = "portlandoregon.gov";
+
+  if ($drupal_user_offset == 0) {
+    \Drupal::logger('portland OpenID')->notice("Start checking for users removed in AD $domain");
+  }
+
+  // Get 100 enabled users at a time and add the array into the queue
+  $userStorage = \Drupal::entityTypeManager()->getStorage('user');
+  $query = $userStorage->getQuery();
+  $uids = $query
+    ->condition('status', '1')
+    ->sort('uid', 'ASC')
+    ->range($drupal_user_offset, $drupal_user_limit)
+    ->accessCheck(FALSE)
+    ->execute();
+
+  $users = $userStorage->loadMultiple($uids);
+  /** @var QueueFactory $queue_factory */
+  $queue_factory = \Drupal::service('queue');
+  /** @var QueueInterface $queue */
+  $queue = $queue_factory->get('user_sync');
+  $queue->createItem([
+    "access_token" => $access_token,
+    "domain" => $domain,
+    "user_type" => "drupal",
+    "users" => $users
+  ]);
+
+  // Update the user offset
+  \Drupal::state()->set('pgov.user_sync.drupal_user_offset', $drupal_user_offset + count($uids));
+  // Done when the returned user count is less than the limit
+  if (count($uids) < $drupal_user_limit) {
+    \Drupal::logger('portland OpenID')->notice("Finished checking for users removed in AD $domain");
+    \Drupal::state()->set("pgov.user_sync.last_check_removals_date.$domain", (new DateTime())->format('Y-m-d'));
+    return;
+  }
+}
 /**
  * Use the access token to get user info
  */
@@ -101,67 +149,72 @@ function _get_all_users($access_token)
     ],
   ];
 
-  try {
-    // Run this command to restart the sync process next time
-    // lando drush state:del pgov.user_sync.resume_url.portlandoregon.gov
-    $domain = "portlandoregon.gov";
-    if ($resume_url = $system_state->get("pgov.user_sync.resume_url.$domain")) {
-      \Drupal::logger('portland OpenID')->notice("Resuming user sync for $domain");
-    } else {
-      \Drupal::logger('portland OpenID')->notice("Starting user sync for $domain");
-    }
+  // Run this command to restart the sync process next time
+  // lando drush state:del pgov.user_sync.resume_url.portlandoregon.gov
+  $domain = "portlandoregon.gov";
+  if ($resume_url = $system_state->get("pgov.user_sync.resume_url.$domain")) {
+    \Drupal::logger('portland OpenID')->notice("Resuming user sync for $domain");
+  } else {
+    \Drupal::logger('portland OpenID')->notice("Starting user sync for $domain");
+  }
 
-    // Get the user sync batch size. Default is 50 users
-    $batch_size = \Drupal::state()->get('pgov.user_sync.batch_size') ?? "100";
+  // Get the user sync batch size. Default is 100 users
+  $batch_size = \Drupal::state()->get('pgov.user_sync.batch_size') ?? "100";
 
-    // If there is a resume link, use it. Otherwise start fresh
-    // The hardcoded initial URL is intentional. It's only used for the first request.
-    $request_url = empty($resume_url) ? "https://graph.microsoft.com/v1.0/users?\$top=$batch_size&\$filter=endswith(mail,'@$domain')&\$orderby=userPrincipalName&\$count=true&\$select=id,accountEnabled,userPrincipalName,displayName,givenName,surname,mail" : $resume_url;
-    // Queue up 10 items in each call
-    $request_limit = 10;
-    $request_count = 0;
-    $response_data = null;
-    while (strlen($request_url) > 0 && $request_count < $request_limit) {
+  // If there is a resume link, use it. Otherwise start fresh
+  // The hardcoded initial URL is intentional. It's only used for the first request.
+  $request_url = empty($resume_url) ? "https://graph.microsoft.com/v1.0/users?\$top=$batch_size&\$filter=endswith(mail,'@$domain')&\$orderby=userPrincipalName&\$count=true&\$select=id,accountEnabled,userPrincipalName,displayName,givenName,surname,mail" : $resume_url;
+  // Queue up 10 items in each call
+  $request_limit = 10;
+  $request_count = 0;
+  $response_data = null;
+  while (strlen($request_url) > 0 && $request_count < $request_limit) {
+    try {
       $response = $client->get($request_url, $options);
-      $response_data = json_decode((string) $response->getBody(), TRUE);
-      
-      /** @var QueueFactory $queue_factory */
-      $queue_factory = \Drupal::service('queue');
-      /** @var QueueInterface $queue */
-      $queue = $queue_factory->get('user_sync');
-      $queue->createItem([
-        "access_token" => $access_token,
-        "domain" => $domain,
-        "users" => $response_data['value']
-      ]);
-
-      if( isset($response_data['@odata.nextLink']) ) {
-        $request_url = $response_data['@odata.nextLink'] ?? '';
-        $request_count++;
-      }
-      else {
-        break;
-      }
+    } catch (RequestException $e) {
+      $variables = [
+        '@message' => "Failed to list users for domain $domain",
+        '@error_message' => $e->getMessage(),
+      ];
+      \Drupal::logger('portland OpenID')->error('@message. Details: @error_message', $variables);
+      return false;
+    }
+    $response_data = json_decode((string) $response->getBody(), TRUE);
+    if (empty($response_data)) {
+      \Drupal::logger('portland OpenID')->info("No response data when listing users for domain $domain.");
+      continue;
     }
 
-    // When there is @odata.nextLink, prepare for the next run
-    if( isset($response_data['@odata.nextLink']) ) {
-      $system_state->set("pgov.user_sync.resume_url.$domain", $response_data['@odata.nextLink']);
-      \Drupal::logger('portland OpenID')->info("@odata.nextLink updated for domain $domain.");
+    /** @var QueueFactory $queue_factory */
+    $queue_factory = \Drupal::service('queue');
+    /** @var QueueInterface $queue */
+    $queue = $queue_factory->get('user_sync');
+    $queue->createItem([
+      "access_token" => $access_token,
+      "domain" => $domain,
+      "user_type" => "entra_id",
+      "users" => $response_data['value']
+    ]);
+
+    if (isset($response_data['@odata.nextLink'])) {
+      $request_url = $response_data['@odata.nextLink'] ?? '';
+      $request_count++;
+    } else {
+      // All users have been retrieved when there is no nextLink
+      break;
     }
-    // When there is no @odata.nextLink, there is no more user to sync
-    else {
-      \Drupal::state()->set("pgov.user_sync.last_sync_date.$domain", (new DateTime())->format('Y-m-d'));
-      $system_state->set("pgov.user_sync.resume_url.$domain", '');
-      \Drupal::logger('portland OpenID')->info("All users have been sychronized in domain $domain.");
-    }
-  } catch (RequestException $e) {
-    $variables = [
-      '@message' => 'Could not retrieve user information',
-      '@error_message' => $e->getMessage(),
-    ];
-    \Drupal::logger('portland OpenID')->error('@message. Details: @error_message', $variables);
-    return false;
+  }
+
+  // When there is @odata.nextLink, prepare for the next run
+  if (isset($response_data['@odata.nextLink'])) {
+    $system_state->set("pgov.user_sync.resume_url.$domain", $response_data['@odata.nextLink']);
+    \Drupal::logger('portland OpenID')->info("@odata.nextLink updated for domain $domain.");
+  }
+  // When there is no @odata.nextLink, there is no more user to sync
+  else {
+    \Drupal::state()->set("pgov.user_sync.last_sync_date.$domain", (new DateTime())->format('Y-m-d'));
+    $system_state->set("pgov.user_sync.resume_url.$domain", '');
+    \Drupal::logger('portland OpenID')->info("All users have been sychronized in domain $domain.");
   }
 }
 
