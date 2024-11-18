@@ -61,7 +61,7 @@ class CouncilVotesFormatter extends FormatterBase {
       '#type' => 'html_tag',
       '#tag' => 'ul',
       '#attributes' => [
-        'class' => 'list-unstyled',
+        'class' => 'list-unstyled mb-0',
       ],
       '#cache' => [
         'tags' => Cache::buildTags('group', array_map(fn($e) => $e->field_council_member[0]->target_id, $referenced_entities)),
@@ -84,10 +84,7 @@ class CouncilVotesFormatter extends FormatterBase {
         '#tag' => 'li',
         'label' => [
           '#type' => 'html_tag',
-          '#tag' => 'span',
-          '#attributes' => [
-            'aria-label' => $this->t('@amt council members voted @type', [ '@amt' => $vote_count, '@type' => $vote_type ]),
-          ],
+          '#tag' => 'strong',
           '#value' => "$vote_type ($vote_count): ",
         ],
         'list' => [
