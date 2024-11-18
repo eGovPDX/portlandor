@@ -41,6 +41,10 @@ class CouncilVotesFormatter extends FormatterBase {
     // group the vote entities by vote type and extract the council member's group entity
     $grouped_votes = [];
     $referenced_entities = $items->referencedEntities();
+    if (count($referenced_entities) === 0) {
+      return [];
+    }
+
     foreach ($referenced_entities as $entity) {
       $vote_type = $entity->field_voted_as_follows[0]->value;
       // KLUDGE: City Charter uses the word "Aye" but all of our existing votes are hard-coded to "Yea" since it's an open text field
