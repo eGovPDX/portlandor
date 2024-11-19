@@ -109,17 +109,19 @@ function _update_users_removed_from_ad($access_token)
     ->accessCheck(FALSE)
     ->execute();
 
-  $users = $userStorage->loadMultiple($uids);
-  /** @var QueueFactory $queue_factory */
-  $queue_factory = \Drupal::service('queue');
-  /** @var QueueInterface $queue */
-  $queue = $queue_factory->get('user_sync');
-  $queue->createItem([
-    "access_token" => $access_token,
-    "domain" => $domain,
-    "user_type" => "drupal",
-    "users" => $users
-  ]);
+  if (count($uids) > 0) {
+    $users = $userStorage->loadMultiple($uids);
+    /** @var QueueFactory $queue_factory */
+    $queue_factory = \Drupal::service('queue');
+    /** @var QueueInterface $queue */
+    $queue = $queue_factory->get('user_sync');
+    $queue->createItem([
+      "access_token" => $access_token,
+      "domain" => $domain,
+      "user_type" => "drupal",
+      "users" => $users
+    ]);
+  }
 
   // Update the user offset
   \Drupal::state()->set('pgov.user_sync.drupal_user_offset', $drupal_user_offset + count($uids));
