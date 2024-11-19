@@ -91,6 +91,7 @@ class UserSyncWorker extends QueueWorkerBase implements ContainerFactoryPluginIn
     foreach ($data["users"] as $user) {
       if( $user->field_is_distribution_list->value ) continue;
       if (in_array(strtolower($user->getEmail()), array_map('strtolower', $skip_emails))) continue;
+      if ( !str_ends_with(strtolower($user->getEmail()), "@portlandoregon.gov") ) continue;
 
       $request_url = 'https://graph.microsoft.com/v1.0/users?$count=true&$search="mail:' . $user->getEmail() . '"';
       $found_user_in_AD = false;
