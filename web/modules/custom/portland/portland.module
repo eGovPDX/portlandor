@@ -725,38 +725,47 @@ function _add_translation_warning(&$form, FormStateInterface $form_state) {
 }
 
 /**
- * If current user has Council President role and editing a council document where:
- * - the state is Council President Review: hide all fields except the President Only Fields.
- * - the state is not Council President Review: hide the President Only Fields.
- */
-function _check_council_president_state(&$form, FormStateInterface $form_state) {
-  $node = $form_state->getFormObject()->getEntity();
-  $user_roles = \Drupal::currentUser()->getRoles();
-  if ($node->bundle() === 'council_document' && in_array('council_president', $user_roles)) {
-    if ($node->moderation_state->value === 'president_review') {
-      // Hide title field
-      $form['title']['#access'] = false;
-      // Make recommended committee field required
-      $form['field_president_committee']['widget']['#required'] = true;
-      // Hide all other fields
-      foreach ($form as $key => &$element) {
-        if (str_starts_with($key, 'field_') && $key !== 'field_president_committee') {
-          $element['#access'] = false;
-        }
-      }
-    } else {
-      $form['field_president_committee']['#access'] = false;
-    }
-  }
-}
-
-/**
  * Implements hook_form_BASE_FORM_ID_alter().
  *
  * Override the node edit form
  */
 function portland_form_node_form_alter(&$form, FormStateInterface $form_state) {
   _add_translation_warning($form, $form_state);
+}
+
+/**
+ * If current user has Council President role and editing a council document where
+ * the state is Council President Review: hide all fields except the President Only Fields.
+ * If current user is not Council Clerk/Admin or user is Council President and the state is not Council President Review: hide the President Only Fields.
+ */
+function _check_council_president_state(&$form, FormStateInterface $form_state) {
+  $node = $form_state->getFormObject()->getEntity();
+  $user_roles = \Drupal::currentUser()->getRoles();
+  if ($node->bundle() === 'council_document') {
+    if (in_array('council_president', $user_roles) && $node->moderation_state->value === 'president_review') {
+      // Hide title field
+      $form['title']['#access'] = false;
+      // Make recommended committee field required and expand field group
+      $form['field_president_committee']['widget']['#required'] = true;
+      $form['group_council_president']['#open'] = true;
+      // Hide all other non-president fields
+      foreach ($form as $key => &$element) {
+        if ((str_starts_with($key, 'field_') || str_starts_with($key, 'group_'))
+          && ($key !== 'field_president_committee' && $key !== 'group_council_president')) {
+          $element['#access'] = false;
+        }
+      }
+    } else if (!in_array('administrator', $user_roles) && !in_array('council_clerk', $user_roles)) {
+      $form['field_president_committee']['#access'] = false;
+      $form['group_council_president']['#access'] = false;
+    }
+  }
+}
+
+/**
+ * Implements hook_field_group_build_pre_render_alter().
+ */
+function portland_field_group_form_process_build_alter(array &$form, FormStateInterface $form_state) {
   _check_council_president_state($form, $form_state);
 }
 
