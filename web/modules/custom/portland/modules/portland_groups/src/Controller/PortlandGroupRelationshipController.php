@@ -10,15 +10,18 @@ use Drupal\group\Entity\Controller\GroupRelationshipController;
 use Drupal\group\Entity\GroupInterface;
 use Drupal\user\PrivateTempStoreFactory;
 use Symfony\Component\DependencyInjection\ContainerInterface;
+use Drupal\group\Entity\GroupRelationshipType;
+use Drupal\node\Entity\NodeType;
+use Drupal\media\Entity\MediaType;
 
 use Drupal\Core\Config\Entity;
 use Symfony\Component\HttpKernel;
 use Drupal\Core\Plugin;
 
 /**
- * Returns responses for 'group_media' GroupContent routes.
+ * Returns responses for 'group_node' GroupRelationship routes.
  */
-class PortlandGroupMediaController extends GroupRelationshipController {
+class PortlandGroupRelationshipController extends GroupRelationshipController {
 
     /**
      * {@inheritdoc}
@@ -33,7 +36,7 @@ class PortlandGroupMediaController extends GroupRelationshipController {
         }
 
         // Overwrite the label and description for all of the displayed bundles.
-        $media_storage_handler = $this->entityTypeManager->getStorage('media_type');
+        $storage_handler = $this->entityTypeManager->getStorage('node_type');
         $page_bundles = $this->addPageBundles($group, $create_mode, $base_plugin_id);
 
         // We want the $build['#bundles'] array to be sorted by bundle label, but it's
@@ -41,15 +44,18 @@ class PortlandGroupMediaController extends GroupRelationshipController {
         // We need to build a new array using the bundle label as the array index.
         $new_bundles = [];
         foreach ($page_bundles as $plugin_id => $bundle_name) {
-            $pluginID = $bundle_name->getPlugin()->getPluginId();
-            // Only handle Media types here. Content are handled by PortlanController next door.
-            if(strpos($pluginID, 'group_media:') !== 0) continue;
+            // Don't process Media types. They are handled by PortlanMediaController next door.
+            if(strpos($plugin_id, 'group_media:') === 0) {
+                unset($build['#bundles'][$bundle_name]);
+                continue;
+            }
             if (!empty($build['#bundles'][$plugin_id])) {
+                $pluginID = $bundle_name->getPlugin()->getPluginId();
                 $plugin = $group->getGroupType()->getPlugin($pluginID);
                 $plugin_bundle = $plugin->getPluginDefinition()->getEntityBundle();
-                $bundle_label = $media_storage_handler->load($plugin_bundle)->label();
-                $bundle_id = $media_storage_handler->load($plugin_bundle)->id();
-                $bundle_desc = \Drupal::config('media.type.' . $bundle_id)->get('description');
+                $bundle_label = $storage_handler->load($plugin_bundle)->label();
+                $bundle_id = $storage_handler->load($plugin_bundle)->id();
+                $bundle_desc = \Drupal::config('node.type.' . $bundle_id)->get('description');
 
                 $new_bundles[$bundle_label] = $build['#bundles'][$plugin_id];
                 $new_bundles[$bundle_label]['label'] = $bundle_label;
@@ -66,4 +72,34 @@ class PortlandGroupMediaController extends GroupRelationshipController {
         return $build;
     }
 
+    /**
+     * The _title_callback for the entity.group_content.create_form route.
+     *
+     * @param \Drupal\group\Entity\GroupInterface $group
+     *   The group to create the group content in.
+     * @param string $plugin_id
+     *   The group content enabler to create content with.
+     *
+     * @return string
+     *   The page title.
+     */
+    public function createFormTitle(GroupInterface $group, $plugin_id) {
+        /** @var \Drupal\gnode\Plugin\Group\Relation\GroupNode $plugin */
+        $plugin = $group->getGroupType()->getPlugin($plugin_id);
+        $entity_type = $plugin->getPluginDefinition()->getEntityTypeId();
+        $plugin_bundle = $plugin->getPluginDefinition()->getEntityBundle();
+        switch ($entity_type) {
+            case "media":
+                $content_type = MediaType::load($plugin_bundle);
+                break;
+            case "node":
+                $content_type = NodeType::load($plugin_bundle);
+                break;
+            default:
+                $content_type = "undefined";
+        }
+        $return = $this->t('Create @name in @group', ['@name' => $content_type->label(), '@group' => $group->label()]);
+        return $return;
+    }
 }
+
