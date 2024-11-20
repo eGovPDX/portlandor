@@ -51,7 +51,7 @@ describe('Full regression test suite for Admin', () => {
     await browser.close();
   });
 
-  it('Admin can create a group and add Ally as admin', async () => {
+  it('Admin can create a group', async () => {
     try {
       let text_content = '',
         selector = '';
@@ -191,7 +191,7 @@ describe('Full regression test suite for Admin', () => {
         () => document.querySelector('.page-title').textContent
       );
       expect(text_content).toEqual(
-        expect.stringContaining('Add Base group: Group membership')
+        expect.stringContaining('Add Group membership')
       );
       await page.type('#edit-entity-id-0-target-id', 'Ally Admin (62)');
       selector = '#edit-group-roles-base-group-admin';
@@ -229,7 +229,7 @@ describe('Full regression test suite for Admin', () => {
   });
 
   // Masquerade as Ally
-  it('Ally can create Page', async () => {
+  it('Ally can create page', async () => {
     try {
       var pageTester = Object.create(ContentTester);
       pageTester.init({
