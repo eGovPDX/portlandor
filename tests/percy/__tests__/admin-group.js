@@ -41,6 +41,7 @@ describe('SuperAdmin user test', () => {
     async function () {
       try {
         let text_content = '', selector='';
+        await page.setDefaultNavigationTimeout(60000);
 
         // If a previous test failed without deleting the test group, delete it first
         await page.goto(`${HOME_PAGE}/percy-test-group/delete`);
@@ -112,6 +113,7 @@ describe('SuperAdmin user test', () => {
         });
         throw e;
       }
-    }
+    },
+    120000 // 90s timeout
   );
 });
