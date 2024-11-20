@@ -1,6 +1,6 @@
 <?php
 
-use \Drupal\group\Entity\GroupContent;
+use \Drupal\group\Entity\GroupRelationship;
 use \Drupal\group\Entity\Group;
 use \Drupal\group\Entity\GroupInterface;
 
@@ -75,7 +75,7 @@ function _portland_groups_populate_field_display_groups(&$form, &$form_state)
  */
 function _portland_groups_inline_entity_populate_field_display_groups(&$form, &$form_state)
 {
-  // if new erntity, prepopulate with parent group, which is stored in a session var.
+  // if new entity, prepopulate with parent group, which is stored in a session var.
   if ($form['#entity']->isNew()) {
     $session = \Drupal::request()->getSession();
     $group_id = $session->get('parent_group_id');
@@ -113,7 +113,7 @@ function portland_groups_group_update(GroupInterface $group)
 
   // only update URL aliases if group_path changes
   if ($group_path != $orig_group_path) {
-    $group_entities = $group->getContentEntities();
+    $group_entities = $group->getRelatedEntities();
     $non_user_entities = [];
     foreach ($group_entities as $group_entity) {
       if ($group_entity->bundle() === "user") continue; // Skip users
@@ -157,12 +157,11 @@ function _portland_groups_synchronize_entity_group_ownership($entity) {
 
   // start building entity type id; we only support node and media entity types
   // if other, return immediately and avoid unnecessary processing.
-  $plugin_id = ":";
   $entity_type = $entity->getEntityTypeId();
   if ($entity_type == "node") {
-    $plugin_id = "group_node" . $plugin_id . $entity->bundle();
+    $plugin_id = "group_node:" . $entity->bundle();
   } else if ($entity_type == "media") {
-    $plugin_id = "group_media" . $plugin_id . $entity->bundle();
+    $plugin_id = "group_media:" . $entity->bundle();
   } else {
     return;
   }
@@ -203,7 +202,7 @@ function _portland_groups_synchronize_entity_group_ownership($entity) {
         // remove from old group
         $old_group = Group::load($orig_owner_group);
         if ($old_group) {
-          $current_node = $old_group->getContent($plugin_id, ['entity_id' => $eid]);
+          $current_node = $old_group->getRelationshipsByEntity($entity, $plugin_id);
           if (count($current_node) > 0) {
             $content = array_values($current_node)[0];
             $content->delete();
@@ -217,7 +216,7 @@ function _portland_groups_synchronize_entity_group_ownership($entity) {
       if ($new_group) {
         // When the Display In field has a group but there is no group content node,
         // add a group content node
-        $current_node = $new_group->getContent($plugin_id, ['entity_id' => $eid]);
+        $current_node = $new_group->getRelationshipsByEntity($entity, $plugin_id);
         if (count($current_node) == 0) {
           _portland_groups_add_entity_to_group($entity, $new_owner_group, $plugin_id);
         } else if (count($current_node) > 1) {
@@ -228,7 +227,7 @@ function _portland_groups_synchronize_entity_group_ownership($entity) {
         }
 
         // POWR-2800 One entity added to many different groups, delete all but the first Displayed In group
-        $group_content_nodes = GroupContent::loadByEntity($entity);
+        $group_content_nodes = GroupRelationship::loadByEntity($entity);
         if (count($group_content_nodes) > 1) {
           foreach ($group_content_nodes as $group_content_node) {
             if ($group_content_node->getGroup()->id() != $new_owner_group) {
@@ -246,11 +245,10 @@ function _portland_groups_add_entity_to_group($entity, $group_id, $plugin_id)
   // make sure entity isn't already in group; the entity may already be assigned to
   // the group by virtue of having been created in that context.
   $group = Group::load($group_id);
-  // $group->addContent($entity, $plugin_id);
 
   // use this code if we ever need to check if a node is in a group before adding it.
-  $current_node = $group->getContent($plugin_id, ['entity_id' => $entity->id()]);
+  $current_node = $group->getRelationshipsByEntity($entity, $plugin_id);
   if (!$current_node || count($current_node) < 1) {
-    $group->addContent($entity, $plugin_id);
+    $group->addRelationship($entity, $plugin_id);
   }
 }
