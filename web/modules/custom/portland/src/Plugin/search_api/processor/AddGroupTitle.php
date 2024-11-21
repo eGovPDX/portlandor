@@ -6,7 +6,7 @@ use Drupal\search_api\Datasource\DatasourceInterface;
 use Drupal\search_api\Item\ItemInterface;
 use Drupal\search_api\Processor\ProcessorPluginBase;
 use Drupal\search_api\Processor\ProcessorProperty;
-use Drupal\group\Entity\GroupContentType;
+use Drupal\group\Entity\GroupRelationshipType;
 use Drupal\node\NodeInterface;
 use Drupal\node\NodeTypeInterface;
 
@@ -73,7 +73,7 @@ class AddGroupTitle extends ProcessorPluginBase {
       $plugin_id = 'group_node:' . $node->bundle();
 
       // Only act if there are group content types for this node type.
-      $group_content_types = GroupContentType::loadByContentPluginId($plugin_id);
+      $group_content_types = GroupRelationshipType::loadByPluginId($plugin_id);
       if (empty($group_content_types)) {
         return;
       }
