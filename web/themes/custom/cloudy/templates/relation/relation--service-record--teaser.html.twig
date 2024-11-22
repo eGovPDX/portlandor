@@ -1,34 +1,63 @@
 {% set term_start_timestamp = content.field_term_date.0.start_date['#attributes']['datetime']|date('Y-m-d')|date('U') %}
 {% set term_end_timestamp = content.field_term_date.0.end_date['#attributes']['datetime']|date('Y-m-d')|date('U') %}
-<div class="d-flex mb-2">
+<div class="d-flex mb-2 p-2 {% if 'now'|date('U') < term_start_timestamp %}bg-body-tertiary rounded{% endif %}">
+  {% if 'now'|date('U') < term_start_timestamp %}
   <i class="fas fa-circle-check mt-1"></i>
+  {% else %}
+  <i class="fas fa-clock-rotate-left mt-1"></i>
+  {% endif %}
   <span>
     <strong class="fw-semibold">{{ content.field_city_official_type.0 }}: </strong>
     {% if content.field_elected_date.0 %}
       {% if 'now'|date('U') < term_end_timestamp %}
-        Elected as {{ content.field_city_official_type.0 }}
-        {% if content.field_council_district.0 %} for {{content.field_council_district.0}}{% endif %}
-        in {{ content.field_elected_date.0 }}
         {% if 'now'|date('U') < term_start_timestamp %}
-        and will begin their term of office on{{ ' ' }}{{ content.field_term_date.0.start_date|render|trim|raw }}.
+          {% if content.field_council_district.0 %}
+            {{ 'Elected as @type for <a href=":district_url">@district_name</a> in @elected_date and will begin their term of office in @start_date.'|t({
+              '@type': content.field_city_official_type.0['#plain_text'],
+              ':district_url': content.field_council_district.0['#url'].toString(),
+              '@district_name': content.field_council_district.0['#title'],
+              '@elected_date': content.field_elected_date.0['#text'],
+              '@start_date': content.field_term_date.0.start_date['#text'],
+            }) }}
+          {% else %}
+            {{ 'Elected as @type in @elected_date and will begin their term of office in @start_date.'|t({
+              '@type': content.field_city_official_type.0['#plain_text'],
+              '@elected_date': content.field_elected_date.0['#text'],
+              '@start_date': content.field_term_date.0.start_date['#text'],
+            }) }}
+          {% endif %}
         {% elseif 'now'|date('U') > term_start_timestamp %}
-        and began their term of office on{{ ' ' }}{{ content.field_term_date.0.start_date|render|trim|raw }}.
+          {% if content.field_council_district.0 %}
+            {{ 'Elected as @type for <a href=":district_url">@district_name</a> in @elected_date and began their term of office in @start_date.'|t({
+              '@type': content.field_city_official_type.0['#plain_text'],
+              ':district_url': content.field_council_district.0['#url'].toString(),
+              '@district_name': content.field_council_district.0['#title'],
+              '@elected_date': content.field_elected_date.0['#text'],
+              '@start_date': content.field_term_date.0.start_date['#text'],
+            }) }}
+          {% else %}
+            {{ 'Elected as @type in @elected_date and began their term of office in @start_date.'|t({
+              '@type': content.field_city_official_type.0['#plain_text'],
+              '@elected_date': content.field_elected_date.0['#text'],
+              '@start_date': content.field_term_date.0.start_date['#text'],
+            }) }}
+          {% endif %}
         {% endif %}
       {% else %}
         {{ 'Served as an elected @type from @start_year until @end_year.'|t({ '@type': content.field_city_official_type.0['#plain_text'], '@start_year': term_start_timestamp|date('Y'), '@end_year': term_end_timestamp|date('Y') }) }}
       {% endif %}
     {% else %}
       {% if 'now'|date('U') < term_end_timestamp %}
-        Elected as {{ content.field_city_official_type.0 }}
-        {% if content.field_council_district.0 %} for {{content.field_council_district.0}}{% endif %}
-        in {{ content.field_elected_date.0 }}
-        {% if 'now'|date('U') < term_start_timestamp %}
-        and will begin their term of office on{{ ' ' }}{{ content.field_term_date.0.start_date|render|trim|raw }}.
-        {% elseif 'now'|date('U') > term_start_timestamp %}
-        and began their term of office on{{ ' ' }}{{ content.field_term_date.0.start_date|render|trim|raw }}.
-        {% endif %}
+        {{ 'Appointed as @type in @start_date.'|t({
+          '@type': content.field_city_official_type.0['#plain_text'],
+          '@start_date': content.field_term_date.0.start_date['#text'],
+        }) }}
       {% else %}
-        {{ 'Served as @type from @start_year until @end_year.'|t({ '@type': content.field_city_official_type.0['#plain_text'], '@start_year': term_start_timestamp|date('Y'), '@end_year': term_end_timestamp|date('Y') }) }}
+        {{ 'Served as @type from @start_year until @end_year.'|t({
+          '@type': content.field_city_official_type.0['#plain_text'],
+          '@start_year': term_start_timestamp|date('Y'),
+          '@end_year': term_end_timestamp|date('Y'),
+        }) }}
       {% endif %}
     {% endif %}
   </span>
