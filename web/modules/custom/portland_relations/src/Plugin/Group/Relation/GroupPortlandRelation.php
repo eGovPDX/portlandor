@@ -4,20 +4,21 @@ namespace Drupal\portland_relations\Plugin\Group\Relation;
 
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
-use Drupal\group\Plugin\Annotation\GroupRelationType;
+use Drupal\group\Plugin\Attribute\GroupRelationType;
 use Drupal\group\Plugin\Group\Relation\GroupRelationBase;
 
 /**
  * Provides a group relation type for nodes.
  */
 #[GroupRelationType(
-  id: 'group_custom_entity',
-  entity_type_id: 'custom_entity',
-  label: new TranslatableMarkup('Group custom entity'),
-  description: new TranslatableMarkup('Adds custom entity to groups both publicly and privately.'),
+  id: 'group_portland_relation',
+  entity_type_id: 'relation',
+  label: new TranslatableMarkup('Group Portland Relation'),
+  description: new TranslatableMarkup('Adds Portland Relation entity type to groups both publicly and privately.'),
   reference_label: new TranslatableMarkup('Title'),
-  reference_description: new TranslatableMarkup('The title of the custom entity to add to the group'),
+  reference_description: new TranslatableMarkup('The title of the relation type to add to the group'),
   entity_access: TRUE,
+  deriver: 'Drupal\portland_relations\Plugin\Group\Relation\GroupPortlandRelationDeriver',
 )]
 class GroupPortlandRelation extends GroupRelationBase {
   /**
@@ -50,6 +51,7 @@ class GroupPortlandRelation extends GroupRelationBase {
    */
   public function calculateDependencies() {
     $dependencies = parent::calculateDependencies();
+    $dependencies['config'][] = 'portland_relations.relation_type.' . $this->getRelationType()->getEntityBundle();
     return $dependencies;
   }
 }
