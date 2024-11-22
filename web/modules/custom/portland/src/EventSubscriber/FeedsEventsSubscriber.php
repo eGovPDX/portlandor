@@ -230,9 +230,9 @@ class FeedsEventsSubscriber implements EventSubscriberInterface {
     $pluginId = 'group_'.$entity->getEntityTypeId().':'.$entity->bundle();
     $group = Group::load($gid);
     if( $group == null ) return;
-    $relation = $group->getContentByEntityId($pluginId, $entity->id());
+    $relation = $group->getRelationshipsByEntity($entity, $pluginId);
     if (!$relation) {
-      $group->addContent($entity, 'group_'.$entity->getEntityTypeId().':'.$entity->bundle());
+      $group->addRelationship($entity, $pluginId);
     }
   }
 
