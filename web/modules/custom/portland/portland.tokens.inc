@@ -2,7 +2,7 @@
 
 use Drupal\group\Entity\Group;
 use Drupal\Core\Render\BubbleableMetadata;
-use Drupal\group\Entity\GroupContent;
+use Drupal\group\Entity\GroupRelationship;
 
 /**
  * Implements hook_token_info().

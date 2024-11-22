@@ -107,7 +107,7 @@ commands:
 ## Job to build and deploy to Pantheon
 build_and_deploy: &build_and_deploy
   docker:
-    - image: cimg/php:8.1-node
+    - image: cimg/php:8.3-node
       auth:
         username: egovpdx
         password: $DOCKERHUB_PASSWORD
@@ -246,7 +246,7 @@ build_and_deploy: &build_and_deploy
           terminus build:workflow:wait $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV "Sync code on $PANTHEON_ENV"
 
           echo "Rebuilding cache..."
-          terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- cr
+          terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- cr || true
           echo "Running database updates..."
           terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- updb -y
           echo "Importing config..."
@@ -347,9 +347,9 @@ build_and_deploy: &build_and_deploy
             fi
           fi
 
-visual_regression: &visual_regression
+basic_tests: &basic_tests
   docker:
-    - image: cimg/php:8.1-browsers
+    - image: cimg/php:8.3-browsers
       auth:
         username: egovpdx
         password: $DOCKERHUB_PASSWORD
@@ -396,7 +396,7 @@ visual_regression: &visual_regression
 
 full_regression: &full_regression
   docker:
-    - image: cimg/php:8.1-browsers
+    - image: cimg/php:8.3-browsers
       auth:
         username: egovpdx
         password: $DOCKERHUB_PASSWORD
@@ -458,7 +458,7 @@ full_regression: &full_regression
 
 clone_live_database: &clone_live_database
   docker:
-    - image: cimg/php:8.1-browsers
+    - image: cimg/php:8.3-browsers
       auth:
         username: egovpdx
         password: $DOCKERHUB_PASSWORD
@@ -514,8 +514,8 @@ clone_live_database: &clone_live_database
 jobs:
   deploy:
     <<: *build_and_deploy
-  visual_regression:
-    <<: *visual_regression
+  basic_tests:
+    <<: *basic_tests
   full_regression:
     <<: *full_regression
   clone_live_database:
@@ -534,12 +534,12 @@ workflows:
         equal: [ scheduled_pipeline, << pipeline.trigger_source >> ]
     jobs:
       - deploy
-      - visual_regression:
+      - basic_tests:
           requires:
             - deploy
       - full_regression:
           requires:
-            - visual_regression
+            - basic_tests
           context: eGovPDX
           filters:
             branches:

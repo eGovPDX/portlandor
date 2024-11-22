@@ -15,10 +15,10 @@ use Drupal\user\Entity\User;
 use Drupal\group\GroupMembershipLoaderInterface;
 use Drupal\group\Entity\GroupInterface;
 use Drupal\group\Entity\GroupTypeInterface;
-use Drupal\group\Entity\GroupContentTypeInterface;
+use Drupal\group\Entity\GroupRelationshipTypeInterface;
 use Drupal\pathauto\Form\PathautoBulkUpdateForm;
 use Drupal\Core\Render\BubbleableMetadata;
-use Drupal\group\Entity\GroupContent;
+use Drupal\group\Entity\GroupRelationship;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Cache\Cache;
 use Drupal\Core\Mail\MailManagerInterface;
@@ -43,7 +43,7 @@ function getGroupIdsByEntity($entity)
   }
   $group_ids = [];
 
-  $group_contents = GroupContent::loadByEntity($entity);
+  $group_contents = GroupRelationship::loadByEntity($entity);
   foreach ($group_contents as $group_content) {
     $group_ids[] = $group_content->getGroup()->id();
   }
@@ -904,7 +904,8 @@ function portland_cron()
 
       if (count($theview->result)) {
         // Render the view and append to results
-        $results .= \Drupal::service('renderer')->render($theview->render());
+        // PGOV-1234 Fix the error in cron "LogicException: Render context is empty"
+        $results .= \Drupal::service('renderer')->renderInIsolation($theview->render());
       }
     }
 
@@ -1221,7 +1222,7 @@ function portland_views_pre_render(ViewExecutable $view)
 function portland_toolbar_alter(&$items)
 {
   $account = Drupal::currentUser();
-  if (!in_array('administrator', $account->getRoles())) {
+  if (!in_array('administrator', $account->getRoles(FALSE))) {
     $items['administration']['tab']['#attributes']['class'][] = 'd-none';
     $items['administration']['tray']['toolbar_administration']['#attributes']['class'][] = 'd-none';
     // Some views like /my-content are displayed in the Claro theme which doesn't have the `d-none` CSS
@@ -1518,7 +1519,7 @@ function portland_local_tasks_alter(&$local_tasks): void {
  */
 function portland_preprocess_fieldset(&$variables): void {
   // Clear the duplicated error message for Updated date/time in News
-  if($variables["attributes"]["id"] === "edit-field-updated-on-0") {
+  if(isset($variables["attributes"]["id"]) && $variables["attributes"]["id"] === "edit-field-updated-on-0") {
     unset($variables["errors"]);
   }
 }
