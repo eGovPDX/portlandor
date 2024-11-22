@@ -118,6 +118,7 @@ elements: |-
         '#title': 'Physical address of applicant organization'
         '#required': true
         '#location_address__title': 'Physical address of applicant organization'
+        '#location_address__required': true
         '#location_full_address__required': true
   page_event_info:
     '#type': webform_wizard_page
@@ -133,7 +134,7 @@ elements: |-
       event_name_escaped:
         '#type': webform_computed_twig
         '#title': 'Event Name Escaped'
-        '#display_on': form
+        '#display_on': none
         '#mode': text
         '#template': '{{ data.apply_event_name | replace({"''": "''''"}) }}'
         '#whitespace': trim
@@ -143,6 +144,7 @@ elements: |-
       apply_multiple_dates:
         '#type': checkbox
         '#title': 'This event spans multiple days'
+        '#description': '<p>For example, a weekend event that spans Saturday and Sunday.</p>'
       container_dates:
         '#type': container
         '#attributes':
@@ -155,6 +157,7 @@ elements: |-
           '#wrapper_attributes':
             class:
               - mt-0
+          '#date_date_min': today
         apply_event_end_date:
           '#type': date
           '#title': 'End date'
@@ -168,15 +171,11 @@ elements: |-
           '#wrapper_attributes':
             class:
               - mt-0
-      apply_event_times:
-        '#type': textfield
-        '#title': 'Start and end times'
-        '#required': true
-        '#description': '<p>Include any time that the right-of-way will be used for this event, including load-in/out.</p>'
-        '#description_display': before
+          '#date_date_min': today-1
       apply_recurring:
         '#type': checkbox
-        '#title': 'This event is recurring'
+        '#title': 'This event reoccurs on a regular basis'
+        '#description': '<p>Weekly, monthly, etc.</p>'
       container_recurring:
         '#type': container
         '#states':
@@ -203,27 +202,12 @@ elements: |-
             Sa: Sa
             Su: Su
           '#options_display': side_by_side
-        apply_recurrence_end:
-          '#type': radios
-          '#title': 'How many times does it occur?'
-          '#options':
-            'A specific number of times...': 'A specific number of times...'
-            'Until this date...': 'Until this date...'
-            Indefinitely: Indefinitely
-        apply_recurrence_end_date:
-          '#type': date
-          '#title': 'End Date'
-          '#states':
-            visible:
-              ':input[name="apply_recurrence_end"]':
-                value: 'Until this date...'
-        apply_occurances_number:
-          '#type': textfield
-          '#title': 'Number of occurrances'
-          '#states':
-            visible:
-              ':input[name="apply_recurrence_end"]':
-                value: 'A specific number of times'
+      apply_event_times:
+        '#type': textfield
+        '#title': 'Start and end times'
+        '#required': true
+        '#description': '<p>Include any time that the right-of-way will be used for this event, including load-in/out.</p>'
+        '#description_display': before
       apply_event_open_to_public:
         '#type': radios
         '#title': 'Will the event be open to the public?'
@@ -263,6 +247,7 @@ elements: |-
         '#type': radios
         '#title': 'Will your event include amplified sound?'
         '#options': yes_no
+        '#required': true
       markup_noise_variance:
         '#type': webform_markup
         '#states':
@@ -293,6 +278,7 @@ elements: |-
         '#type': radios
         '#title': 'Will alcohol be served in the right-of-way?'
         '#options': yes_no
+        '#required': true
       markup_olcc_permit:
         '#type': webform_markup
         '#states':
@@ -310,13 +296,15 @@ elements: |-
     report_location:
       '#type': portland_location_picker
       '#title': 'Where are you planning to host your event?'
-      '#description': '<p>Please place the pin near the center of where you plan to host your event.</p>'
-      '#help_display': element_before
       '#required': true
+      '#location_map__description': 'Please place the pin near the center of where you plan to host your event.'
+      '#location_map__description_display': after
+      '#require_city_limits': true
+      '#out_of_bounds_message': 'The location you selected is not within the Portland city limits. Please try a different location.'
     apply_location_details:
       '#type': textfield
-      '#title': 'Location details'
-      '#description': 'Which street or right-of-way would you like to close for this event? Example: SW Main Street between SW 5th Avenue and SW 6th Avenue'
+      '#title': 'Street Closure Details'
+      '#description': '<p>Which street or right-of-way would you like to close for this event? Example: SW Main Street between SW 5th Avenue and SW 6th Avenue</p>'
       '#description_display': before
       '#required': true
     apply_location_association:
@@ -461,9 +449,6 @@ elements: |-
         {% if data.apply_recurring and data.apply_recurrence is not iterable %}
           <br><strong>How often does it occur?</strong> {{ data.apply_recurrence }}
           <br><strong>On what days does it occur?</strong> {{ data.apply_occurences_days | join(', ') }}
-          <br><strong>How many times does it occur?</strong> {{ data.apply_recurrence_end }}
-          {% if data.apply_recurrence_end == "A specific number of times" %}<br><strong>Number of occurrances</strong> {{ data.apply_occurrances_number }}{% endif %}
-          {% if data.apply_recurrence_end == "Until this date..." %}<br><strong>End Date:</strong> {{ data.apply_recurrence_end_date }}{% endif %}
         {% endif %}
         {% if data.apply_event_open_to_public and data.apply_event_open_to_public is not iterable %}
           <br><strong>Open to the public?</strong> {{ data.apply_event_open_to_public }}
@@ -736,6 +721,7 @@ handlers:
       custom_fields: "6355783758871: '[webform_submission:values:resolution_url]&report_ticket_id=[webform_submission:values:report_ticket_id]'"
       ticket_id_field: report_ticket_id
       ticket_form_id: '26251939645591'
+      skip_attachments: false
   test_zendesk_new_request:
     id: zendesk
     handler_id: test_zendesk_new_request
