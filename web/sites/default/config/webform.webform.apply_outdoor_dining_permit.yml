@@ -9,7 +9,7 @@ third_party_settings:
   portland:
     disable_demographic_form_prompt: 0
     exclude_from_json:
-      computed_org_name: computed_org_name
+      computed_ivr: computed_ivr
 weight: 0
 open: null
 close: null
@@ -74,11 +74,23 @@ elements: |-
         'No': 'No'
         'Not sure': 'Not sure'
       '#required': true
+    apply_previous_ivr:
+      '#type': textfield
+      '#title': 'Please provide your IVR number'
+      '#states':
+        visible:
+          ':input[name="apply_previous_permits"]':
+            value: 'Yes'
     apply_notes:
       '#type': textarea
       '#title': 'Is there anything you’d like for us to note when processing your application?'
       '#description': '<p>Please inform us of any important details or notes you would like us to be aware of. Example: Any changes in ownership, outdoor dining space, etc.</p>'
       '#description_display': before
+    computed_ivr:
+      '#type': webform_computed_twig
+      '#title': 'Computed IVR'
+      '#display_on': none
+      '#template': '{% if data.apply_previous_ivr %}{{ data.apply_previous_ivr }}{% endif %}'
   section_contact:
     '#type': webform_section
     '#title': 'Your Contact Information'
@@ -88,7 +100,7 @@ elements: |-
       '#description_display': before
       '#required': true
     contact_email:
-      '#type': textfield
+      '#type': webform_email_confirm
       '#title': Email
       '#description': '<p>We will use your email to confirm your submission and respond if necessary.</p>'
       '#description_display': before
@@ -138,6 +150,18 @@ elements: |-
       '#type': checkbox
       '#title': 'I understand that by accepting an Outdoor Dining Permit I agree to adhere and follow the permit conditions as specified in the permit conditions and Outdoor Dining Permit Design Requirements.'
       '#required': true
+    apply_acknowlegement_authorized:
+      '#type': checkbox
+      '#title': 'I acknowledge that I am an owner or authorized representative of the business seeking an Outdoor Dining Permit and if, if approved, I am responsible for maintaining the full scope of my occupancy under my Outdoor Dining permit, including any permitted space that extends to a neighboring frontage.  '
+      '#required': true
+    apply_acknowledgement_ownership_changes:
+      '#type': checkbox
+      '#title': 'I understand that if the tenancy and/or property ownership of the neighboring property changes, PBOT may require me to submit an updated consent letter to continue utilizing any space abutting a frontage when the property changes ownership.  '
+      '#required': true
+    apply_acknowledge_consent_revokable:
+      '#type': checkbox
+      '#title': 'I understand that consent to occupy neighboring space as part of my Outdoor Dining Permit is revocable in nature; and if such consent is revoked that my business is responsible for the removal of any structure placed in the right of way under my Outdoor Dining permit, including any applicable portion of my Outdoor Dining Permit extending into a neighboring frontage. '
+      '#required': true
   resolution_url:
     '#type': webform_computed_twig
     '#title': 'Resolution URL'
@@ -164,48 +188,34 @@ elements: |-
     '#title': 'Computed Description'
     '#display_on': none
     '#mode': html
-    '#template': |
+    '#template': |+
       <h2>Outdoor Dining Permit Application</h2>
 
-      <h3>Organization Information</h3>
+      <h3>Proposed Site Information</h3>
 
       <p>
-        <strong>Name of business/organization:</strong> {{ data.apply_org_name }}<br>
-      </p>
-
-      <p>
+        <strong>Business/Organization Name:</strong> {{ data.apply_org_name }}<br>
         <strong>Site address:</strong> {{ data.apply_site_address.location_address }}, {{ data.apply_site_address.location_city }}, {{ data.apply_site_address.location_state }} {{ data.apply_site_address.location_zip }}
       </p>
 
-      <p>
-        <strong>Type of permit:</strong> {{ data.apply_permit_type | join(', ') }}
-      </p>
+      <h2>Permit Details</h2>
 
       <p>
-        <strong>Previous permits?</strong> {{ data.apply_previous_permits and data.apply_previous_permits is not iterable ? data.apply_previous_permits : "" }}
-      </p>
-
-      <p>
+        <strong>What kind of permit are you requesting?</strong> {{ data.apply_permit_type | join(', ') }}
+        <strong>Have you had the following permits for this location before: Healthy
+      Businesses Permit, Sidewalk Cafe Permit or Street Seats Permit?</strong> {{ data.apply_previous_permits and data.apply_previous_permits is not iterable ? data.apply_previous_permits : "" }}
         <strong>Additional notes:</strong> {{ data.apply_notes }}
       </p>
 
-      <h3>Contact Information</h3>
+      <h3>Your Contact Information</h3>
 
       <p>
-        <strong>Name:</strong> {{ data.contact_name }}
-      </p>
-
-      <p>
-        <strong>Email:</strong> {{ data.contact_name }}
-      </p>
-
-      <p>
-        <strong>Phone:</strong> {{ data.contact_name }}
-      </p>
-
-      <p>
+        <strong>Name:</strong> {{ data.contact_name }}<br>
+        <strong>Email:</strong> {{ data.contact_name }}<br>
+        <strong>Phone:</strong> {{ data.contact_name }}<br>
         <strong>Mailing address:</strong> {{ data.contact_mailing_address.location_address }}, {{ data.contact_mailing_address.location_city }}, {{ data.contact_mailing_address.location_state }} {{ data.contact_mailing_address.location_zip }}
       </p>
+
   support_agent_use_only:
     '#type': portland_support_agent_widget
     '#title': 'Support Agent Use Only'
@@ -363,8 +373,8 @@ handlers:
     settings:
       requester_name: contact_name
       requester_email: contact_email
-      subject: '[webform_submission:values:apply_org_name:raw] - [webform_submission:values:apply_permit_type]'
-      comment: '[webform_submission:values:computed_description]'
+      subject: '[webform_submission:values:apply_org_name:raw] - [webform_submission:values:apply_site_address:location_address]'
+      comment: '[webform_submission:values:computed_description:html]'
       tags: 'drupal webform'
       priority: normal
       status: new
@@ -373,7 +383,7 @@ handlers:
       assignee_id: ''
       type: question
       collaborators: ''
-      custom_fields: "6353388345367: 'apply_outdoor_dining'\r\n26253458420759: ['[webform_submission:values:org_name_escaped:htmldecode]', 'apply_org_name']\r\n25600783638295: ['[webform_submission:values:contact_phone]', 'contact_phone']\r\n1500012743961: ['[webform_submission:values:apply_site_address:location_address]', 'apply_site_address:location_address']\r\n26252965203991: '[current-date:html_date]'\r\n26630232631319: ['[webform_submission:values:apply_permit_type]', 'apply_permit_type']\r\n14639926333463: ['[webform_submission:values:apply_ivr_number]', 'apply_ivr_number']\r\n1500013095781: '[webform_submission:uuid]'\r\n"
+      custom_fields: "6353388345367: 'apply_outdoor_dining'\r\n26253458420759: ['[webform_submission:values:org_name_escaped:htmldecode]', 'apply_org_name']\r\n25600783638295: ['[webform_submission:values:contact_phone]', 'contact_phone']\r\n1500012743961: ['[webform_submission:values:apply_site_address:location_address]', 'apply_site_address:location_address']\r\n26252965203991: '[current-date:html_date]'\r\n26630232631319: ['[webform_submission:values:apply_permit_type]', 'apply_permit_type']\r\n14639926333463: ['[webform_submission:values:computed_ivr]', 'apply_ivr_number']\r\n1500013095781: '[webform_submission:uuid]'\r\n"
       ticket_id_field: report_ticket_id
       ticket_fork_field: ''
       ticket_form_id: '26628296208535'
