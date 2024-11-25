@@ -30,6 +30,13 @@ Allowed values: street|mailing|any
 Default value: "any"
 NOTE: This parameter is not yet implemented; currently defaults to "any"
 
+**address_suggest**
+Controls whether address suggestions are provided after user starts typing in address field. The default is to enable this
+behavior, but it can be disabled in use cases where the address may not be in the Portland area (it can only suggest
+addresses that are in the PortlandMaps database).
+Allowed values: 1|0
+Default value: 1
+
 **show_mailing_label**
 Displays the address as it would appear on a mailing label. Can be used for visual inspection of the full address prior to submission.
 Allowed values: 1|0
