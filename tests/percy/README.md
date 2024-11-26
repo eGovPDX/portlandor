@@ -7,12 +7,12 @@ lando rebuild -y
 ```
 
 ### Running tests
-Runs all `visual_regression` tests locally (takes ~2 minutes)
+Runs all `basic_tests` tests locally (takes ~2 minutes)
 ```
 lando jest
 ```
 
-Runs a single `visual_regression` test like `admin.js`
+Runs a single `basic_tests` test like `admin.js`
 ```
 lando jest admin
 ```
@@ -22,31 +22,31 @@ Runs the `full_regression` tests locally (takes ~5 minutes)
 lando jest-full
 ```
 
-The `visual_regression` tests will be run during each build.
+The `basic_tests` tests will be run during each build.
 
 The `full_regression` test is configured to only run on certain branch like Release or Master.
 
 ## Intro
-The test code is written in JavaScript and relies on Puppeteer to interact with the browser and Jest to validate test result and run tests. In CI environment, it also uses Percy to capture and analyse visual differences. It's recommended to learn about [Puppeteer](https://developers.google.com/web/tools/puppeteer/get-started) and [Jest](https://jestjs.io/docs/getting-started) before writing tests.
+The test code is written in JavaScript and relies on Puppeteer to interact with the browser and Jest to validate test result and run tests. It's recommended to learn about [Puppeteer](https://developers.google.com/web/tools/puppeteer/get-started) and [Jest](https://jestjs.io/docs/getting-started) before writing tests.
 
 Tests are divided into two groups:
 
-- `visual_regression`
+- `basic_tests`
 - `full_regression`
 
-The first group `visual_regression` contains essential tests that must be run during each build. Currently it duplicates the original build tests written in Behat. To reduce build time, the test runtime should be limited to under 3 minutes.
+The first group `basic_tests` contains essential tests that must be run during each build. Currently it duplicates the original build tests written in Behat. To reduce build time, the test runtime should be limited to under 3 minutes.
 
 The second group `full_regression` is a full test suite that is meant to give the developer or build lead higher confidence that the code change didn't cause any major regressions. The first implementation covers the CRUD operations on all group content types and media types in a bureau/office. More tests will be added in the future.
 
 IMPORTANT: Tests **must** be independent and have no side effect in other tests.
 ## Writing tests
-Tests in the `visual_regression` group are under the folder `__tests__` and organized by the following users:
+Tests in the `basic_tests` group are under the folder `__tests__` and organized by the following users:
 - anonymous
 - ally
 - marty
 - admin
 
-### Add visual_regression test
+### Add basic_tests test
 To add new test:
 1. Identify which user the test should run as.
 2. Edit the test file. Copy an existing test `it()` and modify the test code inside `async () => {...}`
