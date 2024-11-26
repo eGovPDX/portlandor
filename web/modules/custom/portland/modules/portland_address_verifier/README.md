@@ -33,7 +33,8 @@ NOTE: This parameter is not yet implemented; currently defaults to "any"
 **address_suggest**
 Controls whether address suggestions are provided after user starts typing in address field. The default is to enable this
 behavior, but it can be disabled in use cases where the address may not be in the Portland area (it can only suggest
-addresses that are in the PortlandMaps database).
+addresses that are in the PortlandMaps database). IMPORTANT NOTE: When suggestions are disabled and the Verify button is
+not present, the location_full_address does not get populated. The individual address parts need to be called individually.
 Allowed values: 1|0
 Default value: 1
 
