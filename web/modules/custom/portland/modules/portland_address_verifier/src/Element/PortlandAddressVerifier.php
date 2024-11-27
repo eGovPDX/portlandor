@@ -42,11 +42,14 @@ class PortlandAddressVerifier extends WebformCompositeBase {
 
     $nodes = \Drupal::entityTypeManager()->getStorage('node')->loadByProperties(['type' => 'park_facility', 'status' => 1]);
 
-    // $element_id = "report_location";
-    
-    // if (array_key_exists("#webform_key", $element)) {
-    //   $element_id = $element['#webform_key'];
-    // }
+    $element_id = "";
+    if (array_key_exists("#webform_key", $element)) {
+      $element_id = $element['#webform_key'];
+      $element['#wrapper_attributes'] = [
+        'class' => ['portland-address-verifier'],
+        'id' => $element_id
+      ];
+    }
 
     $state_codes = WebformOptions::load('state_codes')->getOptions();
 
