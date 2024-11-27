@@ -29,8 +29,10 @@ AddressVerifierView.prototype.renderAddressVerifier = function () {
 
     var self = this; // preserve refernece to "this" for use inside functions.
 
-    this._setUpVerifyButton();
-    this._setUpInputFieldAndAutocomplete();
+    if (this.settings.address_suggest) {
+        this._setUpVerifyButton();
+        this._setUpInputFieldAndAutocomplete();
+    }
     this._setUpUnitNumberField();
 
 };
