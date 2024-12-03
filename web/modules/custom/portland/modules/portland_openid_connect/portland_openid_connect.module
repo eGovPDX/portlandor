@@ -38,6 +38,7 @@ function portland_openid_connect_user_insert($user)
  *    drush state:get pgov.user_sync.batch_size
  *    drush state:get pgov.user_sync.last_sync_date.portlandoregon.gov
  *    drush state:get pgov.user_sync.last_check_removals_date.portlandoregon.gov
+ *    drush state:get pgov.user_sync.drupal_user_offset
  *    drush state:get pgov.user_sync.resume_url.portlandoregon.gov
  * To start sync from a fresh state:
  *    drush portland:get_group_content
@@ -128,6 +129,7 @@ function _update_users_removed_from_ad($access_token)
   // Done when the returned user count is less than the limit
   if (count($uids) < $drupal_user_limit) {
     \Drupal::logger('portland OpenID')->notice("Finished checking for users removed in AD $domain");
+    \Drupal::state()->set("pgov.user_sync.drupal_user_offset", 0);
     \Drupal::state()->set("pgov.user_sync.last_check_removals_date.$domain", (new DateTime())->format('Y-m-d'));
     return;
   }
