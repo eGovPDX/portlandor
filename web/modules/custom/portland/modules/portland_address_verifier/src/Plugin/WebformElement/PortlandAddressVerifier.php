@@ -118,44 +118,43 @@ class PortlandAddressVerifier extends WebformCompositeBase {
   public function prepare(array &$element, WebformSubmissionInterface $webform_submission = NULL) {
     parent::prepare($element, $webform_submission);
 
-    // $machine_name = "veriifed_address";
-    
-    // if (array_key_exists("#webform_key", $element)) {
-    //   $machine_name = $element['#webform_key'];
-    // }
+    $machine_name = $element['#webform_key'];
 
     $addressType = array_key_exists('#address_type', $element) && strtolower($element['#address_type']) == "any";
-    $element['#attached']['drupalSettings']['webform']['portland_address_verifier']['address_type'] = $addressType;
+    $element['#attached']['drupalSettings']['webform']['portland_address_verifier'][$machine_name]['address_type'] = $addressType;
+
+    $addressSuggest = array_key_exists('#address_suggest', $element) && strtolower($element['#address_suggest']) == "0" ? false : true;
+    $element['#attached']['drupalSettings']['webform']['portland_address_verifier'][$machine_name]['address_suggest'] = $addressSuggest;
 
     $verifyButtonText = array_key_exists('#verify_button_text', $element) ? $element['#verify_button_text'] : "Verify";
-    $element['#attached']['drupalSettings']['webform']['portland_address_verifier']['verify_button_text'] = $verifyButtonText;
+    $element['#attached']['drupalSettings']['webform']['portland_address_verifier'][$machine_name]['verify_button_text'] = $verifyButtonText;
 
     $lookupTaxlot = array_key_exists('#lookup_taxlot', $element) && strtolower($element['#lookup_taxlot']) == 1;
-    $element['#attached']['drupalSettings']['webform']['portland_address_verifier']['lookup_taxlot'] = $lookupTaxlot;
+    $element['#attached']['drupalSettings']['webform']['portland_address_verifier'][$machine_name]['lookup_taxlot'] = $lookupTaxlot;
 
     $showMailingLabel = array_key_exists('#show_mailing_label', $element) && strtolower($element['#show_mailing_label']) == "0";
-    $element['#attached']['drupalSettings']['webform']['portland_address_verifier']['show_mailing_label'] = $showMailingLabel;
+    $element['#attached']['drupalSettings']['webform']['portland_address_verifier'][$machine_name]['show_mailing_label'] = $showMailingLabel;
 
     $findUnincorporated = array_key_exists('#find_unincorporated', $element) && strtolower($element['#find_unincorporated']) == "1";
-    $element['#attached']['drupalSettings']['webform']['portland_address_verifier']['find_unincorporated'] = $findUnincorporated;
+    $element['#attached']['drupalSettings']['webform']['portland_address_verifier'][$machine_name]['find_unincorporated'] = $findUnincorporated;
 
     $secondaryQueryUrl = array_key_exists('#secondary_query_url', $element) ? $element['#secondary_query_url'] : false;
-    $element['#attached']['drupalSettings']['webform']['portland_address_verifier']['secondary_query_url'] = $secondaryQueryUrl;
+    $element['#attached']['drupalSettings']['webform']['portland_address_verifier'][$machine_name]['secondary_query_url'] = $secondaryQueryUrl;
 
     $secondaryQueryCaptureProperty = array_key_exists('#secondary_query_capture_property', $element) ? $element['#secondary_query_capture_property'] : false;
-    $element['#attached']['drupalSettings']['webform']['portland_address_verifier']['secondary_query_capture_property'] = $secondaryQueryCaptureProperty;
+    $element['#attached']['drupalSettings']['webform']['portland_address_verifier'][$machine_name]['secondary_query_capture_property'] = $secondaryQueryCaptureProperty;
 
     $secondaryQueryCaptureField = array_key_exists('#secondary_query_capture_field', $element) ? $element['#secondary_query_capture_field'] : false;
-    $element['#attached']['drupalSettings']['webform']['portland_address_verifier']['secondary_query_capture_field'] = $secondaryQueryCaptureField;
+    $element['#attached']['drupalSettings']['webform']['portland_address_verifier'][$machine_name]['secondary_query_capture_field'] = $secondaryQueryCaptureField;
 
     $notVerifiedHeading = array_key_exists('#not_verified_heading', $element) ? $element['#not_verified_heading'] : "We're unable to verify this address.";
-    $element['#attached']['drupalSettings']['webform']['portland_address_verifier']['not_verified_heading'] = $notVerifiedHeading;
+    $element['#attached']['drupalSettings']['webform']['portland_address_verifier'][$machine_name]['not_verified_heading'] = $notVerifiedHeading;
 
     $notVerifiedReasons = array_key_exists('#not_verified_reasons', $element) ? $element['#not_verified_reasons'] : "This sometimes happens with new addresses, PO boxes, and multi-family buildings with unit numbers.";
-    $element['#attached']['drupalSettings']['webform']['portland_address_verifier']['not_verified_reasons'] = $notVerifiedReasons;
+    $element['#attached']['drupalSettings']['webform']['portland_address_verifier'][$machine_name]['not_verified_reasons'] = $notVerifiedReasons;
 
     $notVerifiedRemedy = array_key_exists('#not_verified_remedy', $element) ? $element['#not_verified_remedy'] : "If you're certain the address is correct, you may use it without verification.";
-    $element['#attached']['drupalSettings']['webform']['portland_address_verifier']['not_verified_remedy'] = $notVerifiedRemedy;
+    $element['#attached']['drupalSettings']['webform']['portland_address_verifier'][$machine_name]['not_verified_remedy'] = $notVerifiedRemedy;
   }
 
 }

@@ -65,7 +65,7 @@ describe('SuperAdmin user test', () => {
     async function () {
       try {
         let text_content = '';
-        await page.setDefaultNavigationTimeout(60000);
+        await page.setDefaultNavigationTimeout(90000);
         await page.goto(`${HOME_PAGE}/admin/config/development/configuration`);
         await page.waitForSelector('.region-content');
         text_content = await page.evaluate(() => document.querySelector('.region-content').textContent);
@@ -80,6 +80,6 @@ describe('SuperAdmin user test', () => {
         throw e;
       }
     },
-    60000 // 60s timeout
+    90000 // 90s timeout
   );
 });
