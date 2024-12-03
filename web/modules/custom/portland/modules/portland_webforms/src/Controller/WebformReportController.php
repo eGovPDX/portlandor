@@ -139,7 +139,7 @@ class WebformReportController
     $output = fopen('php://temp', 'r+');
 
     // Add headers.
-    fputcsv($output, ['Webform ID', 'Webform Title', 'Element Key', 'Element Type', 'Element Title', 'Required']);
+    fputcsv($output, ['Webform Machine Name', 'Webform Title', 'Element Title', 'Element Key', 'Element Type', 'Required', 'Webform ID in Zendesk']);
 
     // Add rows.
     foreach ($rows as $row) {
