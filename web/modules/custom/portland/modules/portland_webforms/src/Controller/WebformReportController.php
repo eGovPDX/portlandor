@@ -8,25 +8,51 @@ use Symfony\Component\HttpFoundation\Response;
 class WebformReportController
 {
 
-  public function generateCsv()
-  {
+  public function generateCsv() {
     $webforms = Webform::loadMultiple();
     $rows = [];
 
     foreach ($webforms as $webform) {
-      $elements = $webform->getElementsDecoded(); // Decode the elements.
-      $flattened_elements = $this->flattenElements($elements);
+        $elements = $webform->getElementsDecoded(); // Decode the elements.
+        $flattened_elements = $this->flattenElements($elements);
 
-      foreach ($flattened_elements as $key => $element) {
-        $rows[] = [
-          'Webform ID' => $webform->id(),
-          'Webform Title' => $webform->label(),
-          'Element Key' => $key,
-          'Element Type' => $element['#type'] ?? 'Unknown',
-          'Element Title' => $element['#title'] ?? 'No title',
-          'Required' => !empty($element['#required']) ? 'Yes' : 'No',
-        ];
-      }
+        // Initialize the custom field value.
+        $zendesk_custom_field = '';
+
+        // Iterate through all handlers.
+        $handlers = $webform->getHandlers();
+        foreach ($handlers as $handler) {
+            if ($handler->getPluginDefinition()['id'] === 'zendesk') { // Match the handler type.
+                $handler_settings = $handler->getConfiguration()['settings'];
+
+                if (!empty($handler_settings['custom_fields'])) {
+                    try {
+                        $custom_fields = \Symfony\Component\Yaml\Yaml::parse($handler_settings['custom_fields']);
+                        if (isset($custom_fields['6353388345367'])) {
+                            $zendesk_custom_field = $custom_fields['6353388345367'];
+                        }
+                    } catch (\Exception $e) {
+                        \Drupal::logger('webform_report')->error('Error parsing YAML for webform @id: @error', [
+                            '@id' => $webform->id(),
+                            '@error' => $e->getMessage(),
+                        ]);
+                    }
+                }
+            }
+        }
+
+        // Add a row for each flattened element.
+        foreach ($flattened_elements as $key => $element) {
+            $rows[] = [
+                'Webform Machine Name' => $webform->id(),
+                'Webform Title' => $webform->label(),
+                'Element Title' => $element['#title'] ?? 'No title',
+                'Element Key' => $key,
+                'Element Type' => $element['#type'] ?? 'Unknown',
+                'Required' => !empty($element['#required']) ? 'Required' : '',
+                'Webform ID in Zendesk' => $zendesk_custom_field,
+            ];
+        }
     }
 
     // Generate CSV content.
@@ -34,16 +60,16 @@ class WebformReportController
 
     // Return CSV response.
     return new Response(
-      $csvContent,
-      200,
-      [
-        'Content-Type' => 'text/csv',
-        'Content-Disposition' => 'attachment; filename="webform_report.csv"',
-      ]
+        $csvContent,
+        200,
+        [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="webform_report.csv"',
+        ]
     );
-  }
+}
 
-  /**
+/**
    * Flattens a hierarchical array of webform elements into a single-level array.
    *
    * @param array $elements
