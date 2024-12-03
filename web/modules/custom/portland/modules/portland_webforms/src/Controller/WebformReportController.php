@@ -4,6 +4,8 @@ namespace Drupal\portland_webforms\Controller;
 
 use Drupal\webform\Entity\Webform;
 use Symfony\Component\HttpFoundation\Response;
+use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Access\AccessResult;
 
 class WebformReportController
 {
@@ -152,4 +154,22 @@ class WebformReportController
 
     return $csvContent;
   }
+
+  /**
+   * Access check for the webform report route.
+   *
+   * @param \Drupal\Core\Session\AccountInterface $account
+   *   The account object of the current user.
+   *
+   * @return \Drupal\Core\Access\AccessResult
+   *   The access result.
+   */
+  public static function access(AccountInterface $account) {
+    // Check if the user is authenticated.
+    if ($account->isAuthenticated()) {
+      return AccessResult::allowed();
+    }
+    return AccessResult::forbidden();
+  }
+
 }
