@@ -10,65 +10,74 @@ use Drupal\Core\Access\AccessResult;
 class WebformReportController
 {
 
-  public function generateCsv() {
-    $webforms = Webform::loadMultiple();
-    $rows = [];
+/**
+ * Generates the webform report in CSV format.
+ */
+public function generateCsv() {
+  $webforms = Webform::loadMultiple();
+  $rows = [];
 
-    foreach ($webforms as $webform) {
-        $elements = $webform->getElementsDecoded(); // Decode the elements.
-        $flattened_elements = $this->flattenElements($elements);
+  foreach ($webforms as $webform) {
+      $elements = $webform->getElementsDecoded(); // Decode the elements.
+      $flattened_elements = $this->flattenElements($elements);
 
-        // Initialize the custom field value.
-        $zendesk_custom_field = '';
+      // Find entities referencing this webform.
+      $embedded_locations = $this->getEmbeddedLocations($webform->id());
 
-        // Iterate through all handlers.
-        $handlers = $webform->getHandlers();
-        foreach ($handlers as $handler) {
-            if ($handler->getPluginDefinition()['id'] === 'zendesk') { // Match the handler type.
-                $handler_settings = $handler->getConfiguration()['settings'];
+      foreach ($flattened_elements as $key => $element) {
+          $rows[] = [
+              'Webform ID' => $webform->id(),
+              'Webform Title' => $webform->label(),
+              'Element Key' => $key,
+              'Element Type' => $element['#type'] ?? 'Unknown',
+              'Element Title' => $element['#title'] ?? 'No title',
+              'Required' => !empty($element['#required']) ? 'Yes' : 'No',
+              'Embedded Locations' => implode(', ', $embedded_locations),
+          ];
+      }
+  }
 
-                if (!empty($handler_settings['custom_fields'])) {
-                    try {
-                        $custom_fields = \Symfony\Component\Yaml\Yaml::parse($handler_settings['custom_fields']);
-                        if (isset($custom_fields['6353388345367'])) {
-                            $zendesk_custom_field = $custom_fields['6353388345367'];
-                        }
-                    } catch (\Exception $e) {
-                        \Drupal::logger('webform_report')->error('Error parsing YAML for webform @id: @error', [
-                            '@id' => $webform->id(),
-                            '@error' => $e->getMessage(),
-                        ]);
-                    }
-                }
-            }
-        }
+  // Generate CSV content.
+  $csvContent = $this->generateCsvContent($rows);
 
-        // Add a row for each flattened element.
-        foreach ($flattened_elements as $key => $element) {
-            $rows[] = [
-                'Webform Machine Name' => $webform->id(),
-                'Webform Title' => $webform->label(),
-                'Element Title' => $element['#title'] ?? 'No title',
-                'Element Key' => $key,
-                'Element Type' => $element['#type'] ?? 'Unknown',
-                'Required' => !empty($element['#required']) ? 'Required' : '',
-                'Webform ID in Zendesk' => $zendesk_custom_field,
-            ];
-        }
-    }
+  // Return CSV response.
+  return new Response(
+      $csvContent,
+      200,
+      [
+          'Content-Type' => 'text/csv',
+          'Content-Disposition' => 'attachment; filename="webform_report.csv"',
+      ]
+  );
+}
 
-    // Generate CSV content.
-    $csvContent = $this->generateCsvContent($rows);
+/**
+ * Finds the entities where a webform is embedded.
+ *
+ * @param string $webform_id
+ *   The ID of the webform.
+ *
+ * @return array
+ *   An array of entity titles or labels where the webform is embedded.
+ */
+protected function getEmbeddedLocations($webform_id) {
+  $query = \Drupal::entityTypeManager()->getStorage('node')->getQuery();
+  $query->condition('field_webform', $webform_id); // Replace 'field_webform' with the correct field name if needed.
+  $query->condition('type', 'city_service'); // Filter by content type if necessary.
+  $query->accessCheck(TRUE); // Ensure access checks are performed.
 
-    // Return CSV response.
-    return new Response(
-        $csvContent,
-        200,
-        [
-            'Content-Type' => 'text/csv',
-            'Content-Disposition' => 'attachment; filename="webform_report.csv"',
-        ]
-    );
+  $node_ids = $query->execute();
+
+  if (empty($node_ids)) {
+      return ['Not embedded'];
+  }
+
+  $nodes = \Drupal::entityTypeManager()->getStorage('node')->loadMultiple($node_ids);
+  $embedded_locations = [];
+  foreach ($nodes as $node) {
+      $embedded_locations[] = $node->label();
+  }
+  return $embedded_locations;
 }
 
 /**
@@ -141,7 +150,7 @@ class WebformReportController
     $output = fopen('php://temp', 'r+');
 
     // Add headers.
-    fputcsv($output, ['Webform Machine Name', 'Webform Title', 'Element Title', 'Element Key', 'Element Type', 'Required', 'Webform ID in Zendesk']);
+    fputcsv($output, ['Webform Machine Name', 'Webform Title', 'Element Title', 'Element Key', 'Element Type', 'Required', 'Webform ID in Zendesk', 'Embedded Locations']);
 
     // Add rows.
     foreach ($rows as $row) {
