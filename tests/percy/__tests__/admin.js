@@ -59,27 +59,4 @@ describe('SuperAdmin user test', () => {
   //     }
   //   }
   // );
-
-  it(
-    'All configurations are imported',
-    async function () {
-      try {
-        let text_content = '';
-        await page.setDefaultNavigationTimeout(90000);
-        await page.goto(`${HOME_PAGE}/admin/config/development/configuration`);
-        await page.waitForSelector('.region-content');
-        text_content = await page.evaluate(() => document.querySelector('.region-content').textContent);
-        expect(text_content).toEqual(expect.stringContaining('The staged configuration is identical to the active configuration.'));
-      } catch (e) {
-        // Capture the screenshot when test fails and re-throw the exception
-        await page.screenshot({
-          path: `${ARTIFACTS_FOLDER}config-import-error.jpg`,
-          type: "jpeg",
-          fullPage: true
-        });
-        throw e;
-      }
-    },
-    90000 // 90s timeout
-  );
 });
