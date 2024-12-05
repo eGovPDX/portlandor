@@ -4,8 +4,6 @@ namespace Drupal\portland_webforms\Controller;
 
 use Drupal\webform\Entity\Webform;
 use Symfony\Component\HttpFoundation\Response;
-use Drupal\Core\Session\AccountInterface;
-use Drupal\Core\Access\AccessResult;
 
 class WebformReportController
 {
