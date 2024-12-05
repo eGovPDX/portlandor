@@ -15,6 +15,24 @@ class WebformReportController
    */
   public function generateCsv()
   {
+    // Define the cache ID for this report.
+    $cid = 'webform_report_cache';
+
+    // Check if the report is already cached.
+    $cache = \Drupal::cache()->get($cid);
+    if ($cache && !empty($cache->data)) {
+      // Return the cached CSV response.
+      return new Response(
+        $cache->data,
+        200,
+        [
+          'Content-Type' => 'text/csv',
+          'Content-Disposition' => 'attachment; filename="webform_report.csv"',
+        ]
+      );
+    }
+
+    // Generate the report data.
     $webforms = Webform::loadMultiple();
     $rows = [];
 
@@ -45,7 +63,10 @@ class WebformReportController
     // Generate CSV content.
     $csvContent = $this->generateCsvContent($rows);
 
-    // Return CSV response.
+    // Cache the generated CSV content for 1 hour.
+    \Drupal::cache()->set($cid, $csvContent, time() + 3600);
+
+    // Return the generated response.
     return new Response(
       $csvContent,
       200,
@@ -217,23 +238,5 @@ class WebformReportController
     fclose($output);
 
     return $csvContent;
-  }
-
-  /**
-   * Access check for the webform report route.
-   *
-   * @param \Drupal\Core\Session\AccountInterface $account
-   *   The account object of the current user.
-   *
-   * @return \Drupal\Core\Access\AccessResult
-   *   The access result.
-   */
-  public static function access(AccountInterface $account)
-  {
-    // Check if the user is authenticated.
-    if ($account->isAuthenticated()) {
-      return AccessResult::allowed();
-    }
-    return AccessResult::forbidden();
   }
 }
