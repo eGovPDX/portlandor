@@ -13,12 +13,12 @@ index 1cbc9e8..a921d62 100644
        type: boolean
        label: 'If set to TRUE, redirects will be taken into account when resolving sub aliases.'
 diff --git a/src/Form/SettingsForm.php b/src/Form/SettingsForm.php
-index ec57808..8a42b79 100644
+index 78e7898..fc6a31a 100644
 --- a/src/Form/SettingsForm.php
 +++ b/src/Form/SettingsForm.php
-@@ -68,6 +68,12 @@ class SettingsForm extends ConfigFormBase {
-         $this->t('If checked, redirects will be taken into account when resolving sub aliases.'):
-         $this->t('If checked, redirects will be taken into account when resolving sub aliases. The redirect module should be installed for this setting.'),
+@@ -72,6 +72,12 @@ class SettingsForm extends ConfigFormBase {
+       $this->t('If checked, redirects will be taken into account when resolving sub aliases.') :
+       $this->t('If checked, redirects will be taken into account when resolving sub aliases. The redirect module should be installed for this setting.'),
      ];
 +    $form['denylist'] = [
 +      '#type' => 'textarea',
@@ -29,7 +29,7 @@ index ec57808..8a42b79 100644
  
      return parent::buildForm($form, $form_state);
    }
-@@ -78,6 +84,7 @@ class SettingsForm extends ConfigFormBase {
+@@ -82,6 +88,7 @@ class SettingsForm extends ConfigFormBase {
    public function submitForm(array &$form, FormStateInterface $form_state) {
      $values = $form_state->getValues();
      $this->config('subpathauto.settings')
@@ -38,7 +38,7 @@ index ec57808..8a42b79 100644
        ->set('redirect_support', $values['redirect_support'])
        ->save();
 diff --git a/src/PathProcessor.php b/src/PathProcessor.php
-index f9d9f58..c3b5206 100644
+index f0fd10b..d64468e 100644
 --- a/src/PathProcessor.php
 +++ b/src/PathProcessor.php
 @@ -6,6 +6,7 @@ use Drupal\Core\Config\ConfigFactoryInterface;
@@ -77,7 +77,7 @@ index f9d9f58..c3b5206 100644
    /**
     * Builds PathProcessor object.
     *
-@@ -77,14 +92,25 @@ class PathProcessor implements InboundPathProcessorInterface, OutboundPathProces
+@@ -77,14 +92,19 @@ class PathProcessor implements InboundPathProcessorInterface, OutboundPathProces
     *   The language manager.
     * @param \Drupal\Core\Config\ConfigFactoryInterface $config_factory
     *   The config factory.
@@ -86,14 +86,8 @@ index f9d9f58..c3b5206 100644
     * @param \Drupal\Core\Extension\ModuleHandlerInterface $module_handler
     *   The module handler service.
     */
--  public function __construct(InboundPathProcessorInterface $path_processor, LanguageManagerInterface $language_manager, ConfigFactoryInterface $config_factory, ModuleHandlerInterface $module_handler = NULL) {
-+  public function __construct(
-+    InboundPathProcessorInterface $path_processor,
-+    LanguageManagerInterface $language_manager,
-+    ConfigFactoryInterface $config_factory,
-+    PathMatcherInterface   $path_matcher,
-+    ModuleHandlerInterface $module_handler = NULL
-+  ) {
+-  public function __construct(InboundPathProcessorInterface $path_processor, LanguageManagerInterface $language_manager, ConfigFactoryInterface $config_factory, ?ModuleHandlerInterface $module_handler = NULL) {
++  public function __construct(InboundPathProcessorInterface $path_processor, LanguageManagerInterface $language_manager, ConfigFactoryInterface $config_factory, PathMatcherInterface $path_matcher, ModuleHandlerInterface $module_handler = NULL) {
      $this->pathProcessor = $path_processor;
      $this->languageManager = $language_manager;
      $this->configFactory = $config_factory;
@@ -102,9 +96,9 @@ index f9d9f58..c3b5206 100644
      $this->moduleHandler = $module_handler;
 +
      if (empty($this->moduleHandler)) {
-       @trigger_error('Calling PathProcessor::__construct() without the $module_handler argument is deprecated in subpathauto:8.x-1.2 and the $module_handler argument will be required in subpathauto:2.0. See https://www.drupal.org/project/subpathauto/issues/3175637', E_USER_DEPRECATED);
-       $this->moduleHandler = \Drupal::service('module_handler');
-@@ -95,6 +121,11 @@ class PathProcessor implements InboundPathProcessorInterface, OutboundPathProces
+       @trigger_error('Calling PathProcessor::__construct() without the $module_handler argument is deprecated in subpathauto:8.x-1.2 and the $module_handler argument will be required in subpathauto:2.0.0. See https://www.drupal.org/project/subpathauto/issues/3175637', E_USER_DEPRECATED);
+       // @phpstan-ignore-next-line
+@@ -96,6 +116,11 @@ class PathProcessor implements InboundPathProcessorInterface, OutboundPathProces
     * {@inheritdoc}
     */
    public function processInbound($path, Request $request) {
@@ -116,20 +110,20 @@ index f9d9f58..c3b5206 100644
      $request_path = $this->getPath($request->getPathInfo());
  
      // The path won't be processed if the path has been already modified by
-@@ -155,6 +186,12 @@ class PathProcessor implements InboundPathProcessorInterface, OutboundPathProces
+@@ -155,7 +180,11 @@ class PathProcessor implements InboundPathProcessorInterface, OutboundPathProces
+   /**
     * {@inheritdoc}
     */
-   public function processOutbound($path, &$options = [], Request $request = NULL, BubbleableMetadata $bubbleableMetadata = NULL) {
-+
+-  public function processOutbound($path, &$options = [], ?Request $request = NULL, ?BubbleableMetadata $bubbleableMetadata = NULL) {
++  public function processOutbound($path, &$options = [], Request $request = NULL, BubbleableMetadata $bubbleableMetadata = NULL) {
 +    // We don't process denylisted paths.
 +    if (!empty($this->denylist) && $this->pathMatcher->matchPath($path, $this->denylist)) {
 +      return $path;
 +    }
-+
      $original_path = $path;
      $subpath = [];
      $max_depth = $this->getMaxDepth();
-@@ -250,6 +287,10 @@ class PathProcessor implements InboundPathProcessorInterface, OutboundPathProces
+@@ -252,6 +281,10 @@ class PathProcessor implements InboundPathProcessorInterface, OutboundPathProces
     *   Whether path is valid or not.
     */
    protected function isValidPath($path) {
@@ -164,7 +158,7 @@ index 2ef9cd1..62015b5 100644
        - { name: path_processor_inbound, priority: 50 }
        - { name: path_processor_outbound, priority: 50 }
 diff --git a/tests/src/Functional/SubPathautoFunctionalTest.php b/tests/src/Functional/SubPathautoFunctionalTest.php
-index 76ccca8..c274bf8 100644
+index 7f415d9..65a0096 100644
 --- a/tests/src/Functional/SubPathautoFunctionalTest.php
 +++ b/tests/src/Functional/SubPathautoFunctionalTest.php
 @@ -46,17 +46,17 @@ class SubPathautoFunctionalTest extends BrowserTestBase {
@@ -190,17 +184,17 @@ index 76ccca8..c274bf8 100644
      $admin_user = $this->drupalCreateUser([
        'bypass node access',
 diff --git a/tests/src/Kernel/SubPathautoKernelTest.php b/tests/src/Kernel/SubPathautoKernelTest.php
-index 09009f6..2a8a73c 100644
+index ec3efc0..51109d2 100644
 --- a/tests/src/Kernel/SubPathautoKernelTest.php
 +++ b/tests/src/Kernel/SubPathautoKernelTest.php
-@@ -4,6 +4,7 @@ namespace Drupal\Tests\subpathauto\Kernel;
- 
- use Drupal\KernelTests\KernelTestBase;
+@@ -8,6 +8,7 @@ use Drupal\Tests\node\Traits\NodeCreationTrait;
+ use Drupal\Tests\user\Traits\UserCreationTrait;
  use Drupal\language\Plugin\LanguageNegotiation\LanguageNegotiationUrl;
+ use Drupal\node\Entity\NodeType;
 +use Drupal\node\Entity\Node;
  use Drupal\path_alias\PathAliasInterface;
  use Drupal\redirect\Entity\Redirect;
- use Drupal\Tests\node\Traits\NodeCreationTrait;
+ use Drupal\user\Entity\User;
 @@ -84,7 +85,31 @@ class SubPathautoKernelTest extends KernelTestBase {
      $this->pathAliasStorage = \Drupal::entityTypeManager()->getStorage('path_alias');
      $this->redirectStorage = \Drupal::entityTypeManager()->getStorage('redirect');
@@ -245,7 +239,7 @@ index 09009f6..2a8a73c 100644
      $this->createNode();
      $path_alias = $this->createAlias('/node/1', '/kittens');
  
-@@ -150,6 +179,10 @@ class SubPathautoKernelTest extends KernelTestBase {
+@@ -149,6 +178,10 @@ class SubPathautoKernelTest extends KernelTestBase {
     * Tests outbound URL processing.
     */
    public function testProcessOutbound(): void {
@@ -257,7 +251,7 @@ index 09009f6..2a8a73c 100644
      $this->createAlias('/node/1', '/kittens');
  
 diff --git a/tests/src/Unit/SubPathautoTest.php b/tests/src/Unit/SubPathautoTest.php
-index a083760..a70e037 100644
+index 896cf4c..86eabf0 100644
 --- a/tests/src/Unit/SubPathautoTest.php
 +++ b/tests/src/Unit/SubPathautoTest.php
 @@ -57,6 +57,13 @@ class SubPathautoTest extends UnitTestCase {
