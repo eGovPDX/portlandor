@@ -22,17 +22,21 @@ public function generateCsv() {
       $flattened_elements = $this->flattenElements($elements);
 
       // Find entities referencing this webform.
-      $embedded_locations = $this->getEmbeddedLocations($webform->id());
+      //$embedded_locations = $this->getEmbeddedLocations($webform->id());
+
+      // Extract the custom field value from the webform handler.
+      $custom_field_value = $this->getCustomFieldValue($webform, '6353388345367');
 
       foreach ($flattened_elements as $key => $element) {
           $rows[] = [
-              'Webform ID' => $webform->id(),
+              'Webform ID' => $webform->id(), // Correct Webform ID
               'Webform Title' => $webform->label(),
               'Element Key' => $key,
+              'Element Title' => $element['#title'] ?? '',
               'Element Type' => $element['#type'] ?? 'Unknown',
-              'Element Title' => $element['#title'] ?? 'No title',
               'Required' => !empty($element['#required']) ? 'Yes' : 'No',
-              'Embedded Locations' => implode(', ', $embedded_locations),
+              'Webform ID in Zendesk' => $custom_field_value, // Custom field value
+              //'Embedded Location' => implode(', ', $embedded_locations), // Embedded locations
           ];
       }
   }
@@ -52,33 +56,62 @@ public function generateCsv() {
 }
 
 /**
- * Finds the entities where a webform is embedded.
+ * Gets the value of a specific custom field from the webform handler configuration.
  *
- * @param string $webform_id
- *   The ID of the webform.
+ * @param \Drupal\webform\Entity\Webform $webform
+ *   The webform entity.
+ * @param string $field_id
+ *   The custom field ID to extract.
  *
- * @return array
- *   An array of entity titles or labels where the webform is embedded.
+ * @return string
+ *   The value of the custom field, or 'Not configured' if not found.
  */
-protected function getEmbeddedLocations($webform_id) {
-  $query = \Drupal::entityTypeManager()->getStorage('node')->getQuery();
-  $query->condition('field_webform', $webform_id); // Replace 'field_webform' with the correct field name if needed.
-  $query->condition('type', 'city_service'); // Filter by content type if necessary.
-  $query->accessCheck(TRUE); // Ensure access checks are performed.
+protected function getCustomFieldValue(Webform $webform, $field_id) {
+  $handlers = $webform->getHandlers();
+  foreach ($handlers as $handler) {
+      $configuration = $handler->getConfiguration();
+      if (isset($configuration['settings']['custom_fields'])) {
+          $custom_fields = $configuration['settings']['custom_fields'];
+          // Parse the custom_fields YAML or JSON into an array.
+          $custom_fields_array = \Drupal\Component\Serialization\Yaml::decode($custom_fields);
 
-  $node_ids = $query->execute();
-
-  if (empty($node_ids)) {
-      return ['Not embedded'];
+          // Check if the desired field exists and return its value.
+          if (isset($custom_fields_array[$field_id])) {
+              return $custom_fields_array[$field_id];
+          }
+      }
   }
-
-  $nodes = \Drupal::entityTypeManager()->getStorage('node')->loadMultiple($node_ids);
-  $embedded_locations = [];
-  foreach ($nodes as $node) {
-      $embedded_locations[] = $node->label();
-  }
-  return $embedded_locations;
+  return '';
 }
+
+// /**
+//  * Finds the entities where a webform is embedded.
+//  *
+//  * @param string $webform_id
+//  *   The ID of the webform.
+//  *
+//  * @return array
+//  *   An array of entity titles or labels where the webform is embedded.
+//  */
+// protected function getEmbeddedLocations($webform_id) {
+//   $query = \Drupal::entityTypeManager()->getStorage('node')->getQuery();
+//   $query->condition('field_webform', $webform_id); // Replace 'field_webform' with the correct field name if needed.
+//   $query->condition('type', 'city_service'); // Filter by content type if necessary.
+//   $query->accessCheck(TRUE); // Ensure access checks are performed.
+
+//   $node_ids = $query->execute();
+
+//   if (empty($node_ids)) {
+//       return [''];
+//   }
+
+//   $nodes = \Drupal::entityTypeManager()->getStorage('node')->loadMultiple($node_ids);
+//   $embedded_locations = [];
+//   foreach ($nodes as $node) {
+//       $embedded_locations[] = $node->label();
+//   }
+//   return $embedded_locations;
+// }
 
 /**
    * Flattens a hierarchical array of webform elements into a single-level array.
@@ -150,7 +183,15 @@ protected function getEmbeddedLocations($webform_id) {
     $output = fopen('php://temp', 'r+');
 
     // Add headers.
-    fputcsv($output, ['Webform Machine Name', 'Webform Title', 'Element Title', 'Element Key', 'Element Type', 'Required', 'Webform ID in Zendesk', 'Embedded Locations']);
+    fputcsv($output, [
+      'Webform Machine Name', 
+      'Webform Title', 
+      'Element Key', 
+      'Element Title', 
+      'Element Type', 
+      'Required', 
+      'Webform ID in Zendesk'
+    ]);
 
     // Add rows.
     foreach ($rows as $row) {
