@@ -928,6 +928,7 @@
           // get populated by the location, such as lat, lon, address, region id, etc.
           // every map click essentially resets the previous click. this function clears
           // the relevant location fields.
+          $('input[name=' + elementId + '\\[location_address\\]]').val('').trigger('change');
           $('input[name=' + elementId + '\\[location_lat\\]]').val('');
           $('input[name=' + elementId + '\\[location_lon\\]]').val('');
           $('input[name=' + elementId + '\\[location_x\\]]').val('');

@@ -1,0 +1,755 @@
+uuid: 10b07c62-8f4e-4342-9edd-9c8bbedaa0c5
+langcode: en
+status: open
+dependencies:
+  module:
+    - portland
+    - portland_zendesk
+third_party_settings:
+  portland:
+    disable_demographic_form_prompt: 0
+    exclude_from_json: {  }
+weight: 0
+open: null
+close: null
+uid: 60
+template: false
+archive: false
+id: apply_community_event
+title: 'Apply Community Event Permit'
+description: ''
+categories: {  }
+elements: |-
+  page_applicant_info:
+    '#type': webform_wizard_page
+    '#title': 'Applicant Information'
+    section_organization_info:
+      '#type': webform_section
+      '#title': 'Organization Information'
+      '#title_tag': h3
+      apply_org_name:
+        '#type': textfield
+        '#title': 'Name of business/organization applying for permit'
+        '#description': '<p>Include DBA ("doing business as") if applicable</p>'
+        '#description_display': before
+        '#required': true
+      apply_nonprofit_status:
+        '#type': radios
+        '#title': 'Are you a non-profit?'
+        '#options': yes_no
+        '#required': true
+      apply_has_nonprofit_partner:
+        '#type': radios
+        '#title': 'For-profit organizations hosting a community event require a non-profit beneficiary. Do you have a non-profit partner/beneficiary?'
+        '#required': true
+        '#options': yes_no
+        '#states':
+          visible:
+            ':input[name="apply_nonprofit_status"]':
+              value: 'No'
+      markup_has_nonprofit:
+        '#type': webform_markup
+        '#states':
+          visible:
+            ':input[name="apply_has_nonprofit_partner"]':
+              value: 'Yes'
+        '#admin_title': 'Has nonprofit partner'
+        '#markup': '<div class="alert alert--info next-steps"><h2 class="mt-0">Next Steps</h2><p class="mb-0">Please enter the name and Tax ID of the non-profit partner below. The non-profit organization will also need to submit a letter confirming their association. You will receive more information about this step in your confirmation email.</p></div>'
+      markup_no_nonprofit:
+        '#type': webform_markup
+        '#states':
+          visible:
+            ':input[name="apply_has_nonprofit_partner"]':
+              value: 'No'
+        '#admin_title': "Doesn't have nonprofit partner"
+        '#markup': '<div class="alert alert--warning next-steps"><h2 class="mt-0">Next Steps</h2><p class="mb-0">You will need to identify a non-profit partner at least 30 days prior to the event. The non-profit organization will need to submit a letter confirming their association. You will receive more information about this step in your confirmation email.</p></div>'
+      apply_nonprofit_partner_name:
+        '#type': textfield
+        '#title': 'Non-profit name'
+        '#required': true
+        '#states':
+          visible:
+            ':input[name="apply_has_nonprofit_partner"]':
+              value: 'Yes'
+      apply_nonprofit_tax_id:
+        '#type': textfield
+        '#title': 'Non-profit tax ID (EIN)'
+        '#placeholder': XX-XXXXXXX
+        '#required': true
+        '#pattern': '^\d{2}\-?\d{7}$'
+        '#pattern_error': 'Please enter a valid EIN.'
+        '#states':
+          visible:
+            - ':input[name="apply_nonprofit_status"]':
+                value: 'Yes'
+            - or
+            - ':input[name="apply_has_nonprofit_partner"]':
+                value: 'Yes'
+      organization_name_escaped:
+        '#type': webform_computed_twig
+        '#title': 'Organization Name Escaped'
+        '#display_on': none
+        '#mode': text
+        '#template': '{{ data.apply_org_name | replace({"''": "''''"}) }}'
+        '#whitespace': trim
+    section_contact:
+      '#type': webform_section
+      '#title': 'Your Contact Information'
+      '#title_tag': h3
+      contact_name:
+        '#type': textfield
+        '#title': Name
+        '#required': true
+      contact_email:
+        '#type': webform_email_confirm
+        '#title': Email
+        '#description': '<p>We will use your email to confirm your submission and respond if necessary.</p>'
+        '#pattern': '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        '#pattern_error': 'Please enter a correctly formatted email address, such as myname@example.com.'
+        '#required': true
+      contact_phone:
+        '#type': textfield
+        '#title': Phone
+        '#description': 'Please provide your phone number in case we need additional information.'
+        '#input_mask': '(999) 999-9999'
+        '#required': true
+      apply_business_address:
+        '#type': portland_address_verifier
+        '#title': 'Physical address of applicant organization'
+        '#required': true
+        '#location_address__title': 'Physical address of applicant organization'
+        '#location_address__required': true
+        '#location_full_address__required': true
+  page_event_info:
+    '#type': webform_wizard_page
+    '#title': 'Event Details'
+    event_details:
+      '#type': webform_section
+      '#title': 'Event Details'
+      '#title_tag': h3
+      apply_event_name:
+        '#type': textfield
+        '#title': 'Name of event'
+        '#required': true
+      event_name_escaped:
+        '#type': webform_computed_twig
+        '#title': 'Event Name Escaped'
+        '#display_on': none
+        '#mode': text
+        '#template': '{{ data.apply_event_name | replace({"''": "''''"}) }}'
+        '#whitespace': trim
+      apply_event_website:
+        '#type': textfield
+        '#title': 'Event website'
+      apply_multiple_dates:
+        '#type': checkbox
+        '#title': 'This event spans multiple days'
+        '#description': '<p>For example, a weekend event that spans Saturday and Sunday.</p>'
+      container_dates:
+        '#type': container
+        '#attributes':
+          class:
+            - form--inline
+        apply_event_start_date:
+          '#type': date
+          '#title': 'Start date'
+          '#required': true
+          '#wrapper_attributes':
+            class:
+              - mt-0
+          '#date_date_min': today
+        apply_event_end_date:
+          '#type': date
+          '#title': 'End date'
+          '#states':
+            visible:
+              ':input[name="apply_multiple_dates"]':
+                checked: true
+            required:
+              ':input[name="apply_multiple_dates"]':
+                checked: true
+          '#wrapper_attributes':
+            class:
+              - mt-0
+          '#date_date_min': today-1
+      apply_recurring:
+        '#type': checkbox
+        '#title': 'This event reoccurs on a regular basis'
+        '#description': '<p>Weekly, monthly, etc.</p>'
+      container_recurring:
+        '#type': container
+        '#states':
+          visible:
+            ':input[name="apply_recurring"]':
+              checked: true
+        apply_recurrence:
+          '#type': webform_radios_other
+          '#title': 'How often does the event occur?'
+          '#options':
+            Weekly: Weekly
+            Bi-Weekly: Bi-Weekly
+            Monthly: Monthly
+          '#other__placeholder': 'Please describe...'
+        apply_occurences_days:
+          '#type': checkboxes
+          '#title': 'On what days does it occur?'
+          '#options':
+            M: M
+            Tu: Tu
+            W: W
+            Th: Th
+            F: F
+            Sa: Sa
+            Su: Su
+          '#options_display': side_by_side
+      apply_event_times:
+        '#type': textfield
+        '#title': 'Start and end times'
+        '#required': true
+        '#description': '<p>Include any time that the right-of-way will be used for this event, including load-in/out.</p>'
+        '#description_display': before
+      apply_event_open_to_public:
+        '#type': radios
+        '#title': 'Will the event be open to the public?'
+        '#description': '<p>Community events held on public right-of-way must be open to the public.</p>'
+        '#description_display': before
+        '#options':
+          'Yes, it will be open to the public and free to attend': 'Yes, it will be open to the public and free to attend'
+          'Yes, it will be open to the public but ticketed': 'Yes, it will be open to the public but ticketed'
+        '#required': true
+      apply_event_purpose:
+        '#type': textarea
+        '#title': 'What is the purpose of the event?'
+        '#required': true
+      apply_event_commemorate:
+        '#type': radios
+        '#title': 'Will the event commemorate or celebrate black, indigenous, people of color, or ethnic minorities?'
+        '#options': yes_no
+        '#description': '<p>Community events held on public right-of-way must be open to the public.</p>'
+        '#description_display': before
+      apply_event_commemorate_details:
+        '#type': textarea
+        '#title': 'Please provide some details how this event commemorates or celebrates these communities:'
+        '#required': true
+        '#states':
+          visible:
+            ':input[name="apply_event_commemorate"]':
+              value: 'Yes'
+      apply_event_attendees:
+        '#type': number
+        '#title': 'Expected number of attendees:'
+        '#min': 1
+        '#step': 1
+        '#required': true
+        '#description': '<p>Please include event staff, vendors and participants.</p>'
+        '#description_display': before
+      apply_amplified_sound:
+        '#type': radios
+        '#title': 'Will your event include amplified sound?'
+        '#options': yes_no
+        '#required': true
+      markup_noise_variance:
+        '#type': webform_markup
+        '#states':
+          visible:
+            ':input[name="apply_amplified_sound"]':
+              value: 'Yes'
+        '#admin_title': 'Needs noise variance'
+        '#markup': '<div class="alert alert--info next-steps"><h2 class="mt-0">Next Steps</h2><p class="mb-0">Amplified sound at events must obtain a <a target="_blank" href="/ppd/noise/apply-noise-variance">Noise Variance</a> from the Bureau of Development Services. You will receive more information about this requirement in your confirmation email.</p></div>'
+    section_food_merchandise:
+      '#type': webform_section
+      '#title': 'Food and Merchandise Sales'
+      apply_items_sold:
+        '#type': radios
+        '#title': 'Will any items, including food or merchandise, be sold at this event?'
+        '#options': yes_no
+        '#required': true
+      apply_number_of_vendors:
+        '#type': number
+        '#title': 'Number of vendors'
+        '#required': true
+        '#states':
+          visible:
+            ':input[name="apply_items_sold"]':
+              value: 'Yes'
+        '#min': 1
+        '#step': 1
+      apply_alcohol_served:
+        '#type': radios
+        '#title': 'Will alcohol be served in the right-of-way?'
+        '#options': yes_no
+        '#required': true
+      markup_olcc_permit:
+        '#type': webform_markup
+        '#states':
+          visible:
+            ':input[name="apply_alcohol_served"]':
+              value: 'Yes'
+        '#admin_title': 'Needs OLCC permit'
+        '#markup': '<div class="alert alert--info next-steps"><h2 class="mt-0">Next Steps</h2><p>Events with alcohol must meet all licensing and permitting requirements of the Oregon Liquor Control Commission (OLCC) and City of Portland''s Liquor Licensing Program. In addition to submitting this permit application, you will also need to <a target="_blank" href="/ppd/liquor/apply-temporary-liquor-license">apply for a Temporary Liquor License</a>. You will also receive this information in your confirmation email.</p></div>'
+  page_event_location:
+    '#type': webform_wizard_page
+    '#title': 'Event Location'
+    markup_location_title:
+      '#type': webform_markup
+      '#markup': '<h3>Event Location</h3>'
+    report_location:
+      '#type': portland_location_picker
+      '#title': 'Where are you planning to host your event?'
+      '#required': true
+      '#location_map__description': 'Please place the pin near the center of where you plan to host your event.'
+      '#location_map__description_display': after
+      '#require_city_limits': true
+      '#out_of_bounds_message': 'The location you selected is not within the Portland city limits. Please try a different location.'
+    apply_location_details:
+      '#type': textfield
+      '#title': 'Street Closure Details'
+      '#description': '<p>Which street or right-of-way would you like to close for this event? Example: SW Main Street between SW 5th Avenue and SW 6th Avenue</p>'
+      '#description_display': before
+      '#required': true
+    apply_location_association:
+      '#type': textarea
+      '#title': 'What is the reason you have selected this location?'
+      '#description': 'Please let us know why you have chosen this location to host the proposed event. For example, is your business located here? Does it help you reach your intended audience?'
+      '#description_display': before
+    apply_previous_event:
+      '#type': select
+      '#title': 'Have you held an event at this location in the past?'
+      '#options': yes_no
+      '#required': true
+    apply_previous_event_date:
+      '#type': date
+      '#title': 'Most recent event date:'
+      '#states':
+        visible:
+          ':input[name="apply_previous_event"]':
+            value: 'Yes'
+    apply_row_requested:
+      '#type': webform_checkboxes_other
+      '#title': 'Which parts of the right-of-way areas to you want to use?'
+      '#options':
+        Street: Street
+        Sidewalk: Sidewalk
+        Parking: Parking
+        Lane: Lane
+      '#required': true
+    apply_reserved_parking:
+      '#type': radios
+      '#title': 'Will you need to reserve parking areas outside of the event for load in/out?'
+      '#options': yes_no
+    apply_parking_spaces:
+      '#type': number
+      '#title': 'How many spaces?'
+      '#min': 1
+      '#step': 1
+      '#required': true
+      '#states':
+        visible:
+          ':input[name="apply_reserved_parking"]':
+            value: 'Yes'
+    apply_parking_location:
+      '#type': textfield
+      '#title': 'Desired location'
+      '#required': true
+      '#states':
+        visible:
+          ':input[name="apply_reserved_parking"]':
+            value: 'Yes'
+    apply_row_equipment:
+      '#type': webform_checkboxes_other
+      '#title': 'What equipment or items do you plan to place in the right-of-way for the event?'
+      '#options':
+        Tables: Tables
+        Chairs: Chairs
+        Canopies: Canopies
+        Tents: Tents
+        Heaters: Heaters
+        Merchandise: Merchandise
+        'Fencing or barriers': 'Fencing or barriers'
+        'Portable toilets': 'Portable toilets'
+        Stage: Stage
+  page_acknowledgements:
+    '#type': webform_wizard_page
+    '#title': Acknowledgments
+    markup_sales:
+      '#type': webform_markup
+      '#markup': '<h3>Acknowledgments</h3>'
+    apply_insurance:
+      '#type': checkbox
+      '#title': 'I acknowledge that I will need to submit proof of insurance before my permit application can be reviewed and approved.'
+      '#description': '<p>The City of Portland requires a certificate of liability insurance and an additional insured endorsement to be on file with the City prior to issuance of permits to use the right-of-way. <a target="_blank" href="/transportation/permitting/row-insurance">Learn more about these requirements.</a> You will receive more information about this requirement in your confirmation email.</p>'
+      '#required': true
+    apply_cannabis_prohibited:
+      '#type': checkbox
+      '#title': 'I agree that cannabis will NOT be sold, displayed, or consumed in the right-of-way.'
+      '#description': '<p>Please contact the City''s <a target="_blank" href="/ppd/cannabis">Cannabis Program</a> with any questions about this requirement.</p>'
+      '#required': true
+    apply_site_plan:
+      '#type': checkbox
+      '#title': 'I acknowledge that I will need to submit a site plan my permit application can be reviewed and approved.'
+      '#required': true
+      '#description': '<p>You will be required to submit a site plan showing the street space you are requesting, a 12-foot unobstructed emergency lane through your proposed closure, and any items and equipment that you intend to place in the space. The site plan must be submitted and approved before a permit can be issued. You will receive more information about this requirement in your confirmation email.</p>'
+    apply_neighbor_notification:
+      '#type': checkbox
+      '#title': 'I acknowledge that I will need to notify all neighbors and submit proof of neighbor notification before my permit application being reviewed and approved.'
+      '#required': true
+      '#description': '<p>You are required to notify all businesses and residents adjacent to the street closure and submit your flyer and tracking forms to PBOT. Be sure to talk to neighbors and area businesses so you know what you will need to include in your site plan to ensure proper access for all. Doing this kind of outreach is also a great way to form partnerships, pool resources, and get the community excited about your event. You will receive more information about this requirement in your confirmation email</p>'
+  resolution_url:
+    '#type': webform_computed_twig
+    '#title': 'Resolution URL'
+    '#display_on': none
+    '#mode': text
+    '#template': |
+      https://{{ webform_token('[site:url-brief]', webform_submission, [], options) }}/form/apply-community-event-uploads?original_submission_key={{ uuid }}&apply_event_name={{ data.apply_event_name|url_encode }}&apply_event_start_date={{ data.apply_event_start_date }}&apply_event_end_date={{ data.apply_event_end_date }}
+    '#whitespace': trim
+  computed_description:
+    '#type': webform_computed_twig
+    '#title': 'Computed Description'
+    '#display_on': none
+    '#mode': html
+    '#template': |+
+      <h2>Community Event Permit Application</h2>
+
+      <h3>Organization Information</h3>
+
+      <p>
+        <strong>Name of business/organization:</strong> {{ data.apply_org_name }}<br>
+        <strong>Non-profit?</strong> {{ data.apply_nonprofit_status }}<br>
+
+        {% if data.apply_has_nonprofit_partner and data.apply_has_nonprofit_partner is not iterable %}
+          <strong>Has non-profit partner?</strong> {{ data.apply_has_nonprofit_partner }}<br>
+          <strong>Non-profit partner:</strong> {{ data.apply_nonprofit_partner_name }}<br>
+        {% endif %}
+
+        <strong>Non-profit tax ID:</strong> {{ data.apply_nonprofit_tax_id }}
+      </p>
+
+      <h3>Contact Information</h3>
+
+      <p>
+        <strong>Name:</strong> {{ data.contact_name }}<br>
+        {% if data.contact_email is not iterable %}
+          <strong>Email:</strong> {{ data.contact_email }}<br>
+        {% endif %}
+        <strong>Phone:</strong> {{ data.contact_phone }}<br>
+        <strong>Physical address of applicant organization:</strong> {{ data.apply_business_address.location_address }}, {{ data.apply_business_address.location_city }}, {{ data.apply_business_address.location_state }} {{ data.apply_business_address.location_zip }}
+      </p>
+
+      <h3>Event Details</h3>
+
+      <p>
+        <strong>Event name:</strong> {{ data.apply_event_name }}
+        {% if data.apply_event_website %}
+          <br><strong>Website:</strong> {{ data.apply_event_website }}
+        {% endif %}
+        <br><strong>Start date:</strong> {{ data.apply_event_start_date }}
+        {% if data.apply_event_end_date %}
+          <br><strong>End date:</strong> {{ data.apply_event_end_date }}
+        {% endif %}
+        {% if data.apply_recurring and data.apply_recurrence is not iterable %}
+          <br><strong>How often does it occur?</strong> {{ data.apply_recurrence }}
+          <br><strong>On what days does it occur?</strong> {{ data.apply_occurences_days | join(', ') }}
+        {% endif %}
+        {% if data.apply_event_open_to_public and data.apply_event_open_to_public is not iterable %}
+          <br><strong>Open to the public?</strong> {{ data.apply_event_open_to_public }}
+        {% endif %}
+        {% if data.apply_amplified_sound and data.apply_amplified_sound is not iterable %}
+          <br><strong>Will there be amplified sound?</strong> {{ data.apply_amplified_sound }}
+        {% endif %}
+
+      <br><strong>Purpose of event:</strong> {{ data.apply_event_purpose }}
+
+      {% if data.apply_event_commemorate and data.apply_event_commemorate is not iterable %}
+        <br><strong>Will the event commemorate/celebrate minorities?</strong> {{ data.apply_event_commemorate }}
+        {% if data.apply_event_commemorate_details %}<br><strong>Please describe:</strong> {{ data.apply_event_commemorate_details }}{% endif %}
+      {% endif %}
+
+      <br><strong>Number of attendees:</strong> {{ data.apply_event_attendees }}</p>
+
+      <h3>Food and Merchandise Sales</h3>
+
+      <p>
+        {% if data.apply_items_sold is not iterable %}
+          <strong>Will food, merchandise, etc., be sold at this event?</strong> {{ data.apply_items_sold }}<br>
+          {% if data.apply_number_of_vendors %}<strong>Number of vendors:</strong> {{ data.apply_number_of_vendors }}<br>{% endif %}
+        {% endif %}
+        {% if data.apply_alcohol_served is not iterable %}
+          <strong>Will alcohol be served in the right-of-way?</strong> {{ data.apply_alcohol_served }}<br>
+        {% endif %}
+      </p>
+
+      <h3>Event Location</h3>
+
+      <p><strong>Location</strong><br>
+        {% if data.report_location.place_name %}
+          {{ data.report_location.place_name }}<br>
+        {% endif %}
+        {% if data.report_location.location_address %}
+          {{ data.report_location.location_address }}<br>
+        {% endif %}
+        {% if data.report_location.location_lat and data.report_location.location_lon %}
+          Lat/Lon: <a href="https://www.google.com/maps/place/{{ data.report_location.location_lat }},{{ data.report_location.location_lon }}">{{ data.report_location.location_lat }},{{ data.report_location.location_lon }}</a><br>
+        {% endif %}
+        {% if data.report_location.location_attributes %}
+          {{ data.report_location.location_attributes }}
+        {% endif %}
+      </p>
+
+      {% if data.apply_location_association %}<p><strong>Reason for location:</strong> {{ data.apply_location_association }}</p>{% endif %}
+
+      <p>
+        {% if data.apply_previous_event and data.apply_previous_event is not iterable %}
+          <strong>Location used previously?</strong> {{ data.apply_previous_event }}<br>
+          {% if data.apply_previous_event_date %}<strong>Date last used:</strong> {{ data.apply_previous_event_date }}<br>{% endif %}
+        {% endif %}
+
+          <strong>Which part of the the right-of-way will be used?</strong> {{ data.apply_row_requested | join(', ') }}<br>
+
+          <strong>Need reserved parking outside event for loading?</strong> {{ data.apply_reserved_parking }}<br>
+          {% if data.apply_parking_spaces %}<strong>How many parking spaces?</strong> {{ data.apply_parking_spaces }}<br>
+          <strong>Desired location:</strong> {{ data.apply_parking_location }}<br>{% endif %}
+
+          <strong>What equipment will be placed in the right-of-way?</strong> {{ data.apply_row_equipment | join(', ') }}
+      </p>
+
+  report_ticket_id:
+    '#type': hidden
+    '#title': 'Report Ticket Id'
+  computed_dates:
+    '#type': webform_computed_twig
+    '#title': 'Computed Dates'
+    '#display_on': none
+    '#mode': text
+    '#template': "{{ data.apply_event_start_date|date('m/d/Y') }}{% if data.apply_event_end_date %}—{{ data.apply_event_end_date|date('m/d/Y') }}{% endif %}"
+    '#whitespace': trim
+  support_agent_use_only:
+    '#type': portland_support_agent_widget
+    '#title': 'Support Agent Use Only'
+    '#access_create_roles':
+      - authenticated
+    '#zendesk_request_number__access': false
+    '#employee_notes_panel__access': false
+    '#escalate_issue__access': false
+  actions:
+    '#type': webform_actions
+    '#title': 'Submit button(s)'
+    '#attributes':
+      class:
+        - mt-10
+css: ''
+javascript: ''
+settings:
+  ajax: true
+  ajax_scroll_top: form
+  ajax_progress_type: throbber
+  ajax_effect: ''
+  ajax_speed: null
+  page: true
+  page_submit_path: ''
+  page_confirm_path: ''
+  page_theme_name: ''
+  form_title: both
+  form_submit_once: false
+  form_open_message: ''
+  form_close_message: ''
+  form_exception_message: ''
+  form_previous_submissions: true
+  form_confidential: false
+  form_confidential_message: ''
+  form_disable_remote_addr: false
+  form_convert_anonymous: false
+  form_prepopulate: false
+  form_prepopulate_source_entity: false
+  form_prepopulate_source_entity_required: false
+  form_prepopulate_source_entity_type: ''
+  form_unsaved: false
+  form_disable_back: false
+  form_submit_back: false
+  form_disable_autocomplete: false
+  form_novalidate: false
+  form_disable_inline_errors: false
+  form_required: false
+  form_autofocus: false
+  form_details_toggle: false
+  form_reset: false
+  form_access_denied: default
+  form_access_denied_title: ''
+  form_access_denied_message: ''
+  form_access_denied_attributes: {  }
+  form_file_limit: ''
+  form_attributes: {  }
+  form_method: ''
+  form_action: ''
+  share: false
+  share_node: false
+  share_theme_name: ''
+  share_title: true
+  share_page_body_attributes: {  }
+  submission_label: ''
+  submission_exception_message: ''
+  submission_locked_message: ''
+  submission_log: false
+  submission_excluded_elements: {  }
+  submission_exclude_empty: false
+  submission_exclude_empty_checkbox: false
+  submission_views: {  }
+  submission_views_replace: {  }
+  submission_user_columns: {  }
+  submission_user_duplicate: false
+  submission_access_denied: default
+  submission_access_denied_title: ''
+  submission_access_denied_message: ''
+  submission_access_denied_attributes: {  }
+  previous_submission_message: ''
+  previous_submissions_message: ''
+  autofill: false
+  autofill_message: ''
+  autofill_excluded_elements: {  }
+  wizard_progress_bar: true
+  wizard_progress_pages: false
+  wizard_progress_percentage: false
+  wizard_progress_link: false
+  wizard_progress_states: false
+  wizard_start_label: ''
+  wizard_preview_link: false
+  wizard_confirmation: true
+  wizard_confirmation_label: ''
+  wizard_auto_forward: true
+  wizard_auto_forward_hide_next_button: false
+  wizard_keyboard: true
+  wizard_track: ''
+  wizard_prev_button_label: ''
+  wizard_next_button_label: ''
+  wizard_toggle: false
+  wizard_toggle_show_label: ''
+  wizard_toggle_hide_label: ''
+  wizard_page_type: container
+  wizard_page_title_tag: h2
+  preview: 0
+  preview_label: ''
+  preview_title: ''
+  preview_message: ''
+  preview_attributes: {  }
+  preview_excluded_elements: {  }
+  preview_exclude_empty: true
+  preview_exclude_empty_checkbox: false
+  draft: none
+  draft_multiple: false
+  draft_auto_save: false
+  draft_saved_message: ''
+  draft_loaded_message: ''
+  draft_pending_single_message: ''
+  draft_pending_multiple_message: ''
+  confirmation_type: page
+  confirmation_url: ''
+  confirmation_title: 'Application received'
+  confirmation_message: '<p><strong>Thank you for submitting a Community Event permit application!</strong></p><p>You will receive a confirmation by email that outlines next steps, including a list of documentation we need in order to process your application. An upload link will be provided. If you have any questions, concerns, or wish to provide additional info, please reply to the email.</p><p>Due to a high volume of requests, we estimate 5-10 business days to review your application and respond. Approval time varies.</p><p>Permit Application #[webform_submission:values:report_ticket_id]</p>'
+  confirmation_attributes: {  }
+  confirmation_back: true
+  confirmation_back_label: ''
+  confirmation_back_attributes: {  }
+  confirmation_exclude_query: false
+  confirmation_exclude_token: false
+  confirmation_update: false
+  limit_total: null
+  limit_total_interval: null
+  limit_total_message: ''
+  limit_total_unique: false
+  limit_user: null
+  limit_user_interval: null
+  limit_user_message: ''
+  limit_user_unique: false
+  entity_limit_total: null
+  entity_limit_total_interval: null
+  entity_limit_user: null
+  entity_limit_user_interval: null
+  purge: none
+  purge_days: null
+  results_disabled: false
+  results_disabled_ignore: false
+  results_customize: false
+  token_view: false
+  token_update: false
+  token_delete: false
+  serial_disabled: false
+access: {  }
+handlers:
+  zendesk_new_request:
+    id: zendesk
+    handler_id: zendesk_new_request
+    label: 'Zendesk new request'
+    notes: ''
+    status: true
+    conditions:
+      enabled:
+        ':input[name="support_agent_use_only[test_submission]"]':
+          unchecked: true
+    weight: -50
+    settings:
+      requester_name: contact_name
+      requester_email: contact_email
+      subject: '[webform_submission:values:apply_event_name:htmldecode] - [webform_submission:values:computed_dates]'
+      comment: '[webform_submission:values:computed_description:html]'
+      tags: 'drupal webform'
+      priority: normal
+      status: new
+      recipient: ''
+      group_id: '26254291616791'
+      assignee_id: ''
+      type: problem
+      collaborators: ''
+      custom_fields: "6353388345367: 'apply_community_event'\r\n26252241925015: ['[webform_submission:values:apply_nonprofit_status]', 'apply_nonprofit_status']\r\n26253458420759: ['[webform_submission:values:organization_name_escaped:htmldecode]', 'apply_org_name']\r\n26252998858135: ['[webform_submission:values:event_name_escaped:htmldecode]', 'apply_event_name']\r\n26252965203991: '[current-date:html_date]'\r\n12280733221015: ['[webform_submission:values:apply_event_start_date:html_date]', 'apply_event_start_date']\r\n12280737894935: ['[webform_submission:values:apply_event_end_date:html_date]', 'apply_event_end_date']\r\n1500013095781: '[webform_submission:uuid]'\r\n"
+      ticket_id_field: report_ticket_id
+      ticket_fork_field: ''
+      ticket_form_id: '26251939645591'
+  zendesk_update_request:
+    id: zendesk_update_ticket
+    handler_id: zendesk_update_request
+    label: 'Update Zendesk request with full resolution URL including ticket ID'
+    notes: ''
+    status: true
+    conditions: {  }
+    weight: -48
+    settings:
+      comment: 'Resolution URL: <a href="[webform_submission:values:resolution_url]&report_ticket_id=[webform_submission:values:report_ticket_id]">[webform_submission:values:resolution_url]&report_ticket_id=[webform_submission:values:report_ticket_id]</a>'
+      comment_private: 1
+      tags: ''
+      priority: ''
+      status: ''
+      group_id: ''
+      assignee_id: ''
+      type: ''
+      collaborators: ''
+      custom_fields: "6355783758871: '[webform_submission:values:resolution_url]&report_ticket_id=[webform_submission:values:report_ticket_id]'"
+      ticket_id_field: report_ticket_id
+      ticket_form_id: '26251939645591'
+      skip_attachments: false
+  test_zendesk_new_request:
+    id: zendesk
+    handler_id: test_zendesk_new_request
+    label: 'TEST: Zendesk new request'
+    notes: ''
+    status: true
+    conditions:
+      enabled:
+        ':input[name="support_agent_use_only[test_submission]"]':
+          checked: true
+    weight: -49
+    settings:
+      requester_name: contact_name
+      requester_email: contact_email
+      subject: '[webform_submission:values:apply_event_name:htmldecode] - [webform_submission:values:computed_dates]'
+      comment: '[webform_submission:values:computed_description:html]'
+      tags: 'drupal webform'
+      priority: normal
+      status: new
+      recipient: ''
+      group_id: '4549352062487'
+      assignee_id: ''
+      type: problem
+      collaborators: ''
+      custom_fields: "6353388345367: 'apply_community_event'\r\n26252241925015: ['[webform_submission:values:apply_nonprofit_status]', 'apply_nonprofit_status']\r\n26253458420759: ['[webform_submission:values:organization_name_escaped:htmldecode]', 'apply_org_name']\r\n26252998858135: ['[webform_submission:values:event_name_escaped:htmldecode]', 'apply_event_name']\r\n26252965203991: '[current-date:html_date]'\r\n12280733221015: ['[webform_submission:values:apply_event_start_date:html_date]', 'apply_event_start_date']\r\n12280737894935: ['[webform_submission:values:apply_event_end_date:html_date]', 'apply_event_end_date']\r\n1500013095781: '[webform_submission:uuid]'\r\n"
+      ticket_id_field: report_ticket_id
+      ticket_fork_field: ''
+      ticket_form_id: '26251939645591'
+variants: {  }
