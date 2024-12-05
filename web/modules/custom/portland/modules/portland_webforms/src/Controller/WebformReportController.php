@@ -66,18 +66,41 @@ public function generateCsv() {
  * @return string
  *   The value of the custom field, or 'Not configured' if not found.
  */
+/**
+ * Gets the value of a specific custom field from the webform handler configuration.
+ *
+ * @param \Drupal\webform\Entity\Webform $webform
+ *   The webform entity.
+ * @param string $field_id
+ *   The custom field ID to extract.
+ *
+ * @return string
+ *   The value of the custom field, or 'Not configured' if not found.
+ */
 protected function getCustomFieldValue(Webform $webform, $field_id) {
   $handlers = $webform->getHandlers();
   foreach ($handlers as $handler) {
       $configuration = $handler->getConfiguration();
       if (isset($configuration['settings']['custom_fields'])) {
           $custom_fields = $configuration['settings']['custom_fields'];
-          // Parse the custom_fields YAML or JSON into an array.
-          $custom_fields_array = \Drupal\Component\Serialization\Yaml::decode($custom_fields);
+          
+          // Safely parse the custom_fields YAML or JSON into an array.
+          try {
+              $custom_fields_array = \Drupal\Component\Serialization\Yaml::decode($custom_fields);
+          } catch (\Exception $e) {
+              \Drupal::logger('webform_report')->error('Failed to parse custom fields: @error', ['@error' => $e->getMessage()]);
+              continue;
+          }
 
-          // Check if the desired field exists and return its value.
+          // Check if the desired field exists.
           if (isset($custom_fields_array[$field_id])) {
-              return $custom_fields_array[$field_id];
+              $value = $custom_fields_array[$field_id];
+
+              // Handle single values or arrays.
+              if (is_array($value)) {
+                  return implode(', ', $value); // Convert array to string.
+              }
+              return $value;
           }
       }
   }
