@@ -10,14 +10,15 @@ use Drupal\Core\Access\AccessResult;
 class WebformReportController
 {
 
-/**
- * Generates the webform report in CSV format.
- */
-public function generateCsv() {
-  $webforms = Webform::loadMultiple();
-  $rows = [];
+  /**
+   * Generates the webform report in CSV format.
+   */
+  public function generateCsv()
+  {
+    $webforms = Webform::loadMultiple();
+    $rows = [];
 
-  foreach ($webforms as $webform) {
+    foreach ($webforms as $webform) {
       $elements = $webform->getElementsDecoded(); // Decode the elements.
       $flattened_elements = $this->flattenElements($elements);
 
@@ -28,115 +29,105 @@ public function generateCsv() {
       $custom_field_value = $this->getCustomFieldValue($webform, '6353388345367');
 
       foreach ($flattened_elements as $key => $element) {
-          $rows[] = [
-              'Webform ID' => $webform->id(), // Correct Webform ID
-              'Webform Title' => $webform->label(),
-              'Element Key' => $key,
-              'Element Title' => $element['#title'] ?? '',
-              'Element Type' => $element['#type'] ?? 'Unknown',
-              'Required' => !empty($element['#required']) ? 'Yes' : 'No',
-              'Webform ID in Zendesk' => $custom_field_value, // Custom field value
-              //'Embedded Location' => implode(', ', $embedded_locations), // Embedded locations
-          ];
+        $rows[] = [
+          'Webform ID' => $webform->id(), // Correct Webform ID
+          'Webform Title' => $webform->label(),
+          'Element Key' => $key,
+          'Element Title' => $element['#title'] ?? '',
+          'Element Type' => $element['#type'] ?? 'Unknown',
+          'Required' => !empty($element['#required']) ? 'Yes' : 'No',
+          'Webform ID in Zendesk' => $custom_field_value, // Custom field value
+          //'Embedded Location' => implode(', ', $embedded_locations), // Embedded locations
+        ];
       }
-  }
+    }
 
-  // Generate CSV content.
-  $csvContent = $this->generateCsvContent($rows);
+    // Generate CSV content.
+    $csvContent = $this->generateCsvContent($rows);
 
-  // Return CSV response.
-  return new Response(
+    // Return CSV response.
+    return new Response(
       $csvContent,
       200,
       [
-          'Content-Type' => 'text/csv',
-          'Content-Disposition' => 'attachment; filename="webform_report.csv"',
+        'Content-Type' => 'text/csv',
+        'Content-Disposition' => 'attachment; filename="webform_report.csv"',
       ]
-  );
-}
+    );
+  }
 
-/**
- * Gets the value of a specific custom field from the webform handler configuration.
- *
- * @param \Drupal\webform\Entity\Webform $webform
- *   The webform entity.
- * @param string $field_id
- *   The custom field ID to extract.
- *
- * @return string
- *   The value of the custom field, or 'Not configured' if not found.
- */
-/**
- * Gets the value of a specific custom field from the webform handler configuration.
- *
- * @param \Drupal\webform\Entity\Webform $webform
- *   The webform entity.
- * @param string $field_id
- *   The custom field ID to extract.
- *
- * @return string
- *   The value of the custom field, or 'Not configured' if not found.
- */
-protected function getCustomFieldValue(Webform $webform, $field_id) {
-  $handlers = $webform->getHandlers();
-  foreach ($handlers as $handler) {
+  /**
+   * Gets the value of a specific custom field from the webform handler configuration.
+   *
+   * @param \Drupal\webform\Entity\Webform $webform
+   *   The webform entity.
+   * @param string $field_id
+   *   The custom field ID to extract.
+   *
+   * @return string
+   *   The value of the custom field, or 'Not configured' if not found.
+   */
+  protected function getCustomFieldValue(Webform $webform, $field_id)
+  {
+    $handlers = $webform->getHandlers();
+    foreach ($handlers as $handler) {
       $configuration = $handler->getConfiguration();
       if (isset($configuration['settings']['custom_fields'])) {
-          $custom_fields = $configuration['settings']['custom_fields'];
-          
-          // Safely parse the custom_fields YAML or JSON into an array.
-          try {
-              $custom_fields_array = \Drupal\Component\Serialization\Yaml::decode($custom_fields);
-          } catch (\Exception $e) {
-              \Drupal::logger('webform_report')->error('Failed to parse custom fields: @error', ['@error' => $e->getMessage()]);
-              continue;
-          }
+        $custom_fields = $configuration['settings']['custom_fields'];
 
-          // Check if the desired field exists.
-          if (isset($custom_fields_array[$field_id])) {
-              $value = $custom_fields_array[$field_id];
+        // Safely parse the custom_fields YAML or JSON into an array.
+        try {
+          $custom_fields_array = \Drupal\Component\Serialization\Yaml::decode($custom_fields);
+        } catch (\Exception $e) {
+          \Drupal::logger('webform_report')->error('Failed to parse custom fields: @error', ['@error' => $e->getMessage()]);
+          continue;
+        }
 
-              // Handle single values or arrays.
-              if (is_array($value)) {
-                  return implode(', ', $value); // Convert array to string.
-              }
-              return $value;
+        // Check if the desired field exists.
+        if (isset($custom_fields_array[$field_id])) {
+          $value = $custom_fields_array[$field_id];
+
+          // Handle single values or arrays.
+          if (is_array($value)) {
+            return implode(', ', $value); // Convert array to string.
           }
+          return $value;
+        }
       }
+    }
+    return '';
   }
-  return '';
-}
 
-// /**
-//  * Finds the entities where a webform is embedded.
-//  *
-//  * @param string $webform_id
-//  *   The ID of the webform.
-//  *
-//  * @return array
-//  *   An array of entity titles or labels where the webform is embedded.
-//  */
-// protected function getEmbeddedLocations($webform_id) {
-//   $query = \Drupal::entityTypeManager()->getStorage('node')->getQuery();
-//   $query->condition('field_webform', $webform_id); // Replace 'field_webform' with the correct field name if needed.
-//   $query->condition('type', 'city_service'); // Filter by content type if necessary.
-//   $query->accessCheck(TRUE); // Ensure access checks are performed.
+  // /**
+  //  * Finds the entities where a webform is embedded.
+  //  *
+  //  * @param string $webform_id
+  //  *   The ID of the webform.
+  //  *
+  //  * @return array
+  //  *   An array of entity titles or labels where the webform is embedded.
+  //  */
+  // protected function getEmbeddedLocations($webform_id) {
+  //   $query = \Drupal::entityTypeManager()->getStorage('node')->getQuery();
+  //   $query->condition('field_webform', $webform_id); // Replace 'field_webform' with the correct field name if needed.
+  //   $query->condition('type', 'city_service'); // Filter by content type if necessary.
+  //   $query->accessCheck(TRUE); // Ensure access checks are performed.
 
-//   $node_ids = $query->execute();
+  //   $node_ids = $query->execute();
 
-//   if (empty($node_ids)) {
-//       return [''];
-//   }
+  //   if (empty($node_ids)) {
+  //       return [''];
+  //   }
 
-//   $nodes = \Drupal::entityTypeManager()->getStorage('node')->loadMultiple($node_ids);
-//   $embedded_locations = [];
-//   foreach ($nodes as $node) {
-//       $embedded_locations[] = $node->label();
-//   }
-//   return $embedded_locations;
-// }
+  //   $nodes = \Drupal::entityTypeManager()->getStorage('node')->loadMultiple($node_ids);
+  //   $embedded_locations = [];
+  //   foreach ($nodes as $node) {
+  //       $embedded_locations[] = $node->label();
+  //   }
+  //   return $embedded_locations;
+  // }
 
-/**
+  /**
    * Flattens a hierarchical array of webform elements into a single-level array.
    *
    * @param array $elements
@@ -207,12 +198,12 @@ protected function getCustomFieldValue(Webform $webform, $field_id) {
 
     // Add headers.
     fputcsv($output, [
-      'Webform Machine Name', 
-      'Webform Title', 
-      'Element Key', 
-      'Element Title', 
-      'Element Type', 
-      'Required', 
+      'Webform Machine Name',
+      'Webform Title',
+      'Element Key',
+      'Element Title',
+      'Element Type',
+      'Required',
       'Webform ID in Zendesk'
     ]);
 
@@ -237,12 +228,12 @@ protected function getCustomFieldValue(Webform $webform, $field_id) {
    * @return \Drupal\Core\Access\AccessResult
    *   The access result.
    */
-  public static function access(AccountInterface $account) {
+  public static function access(AccountInterface $account)
+  {
     // Check if the user is authenticated.
     if ($account->isAuthenticated()) {
       return AccessResult::allowed();
     }
     return AccessResult::forbidden();
   }
-
 }
