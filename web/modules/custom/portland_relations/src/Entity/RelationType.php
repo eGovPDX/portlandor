@@ -66,7 +66,7 @@ class RelationType extends ConfigEntityBundleBase implements RelationTypeInterfa
    *
    * @var bool
    */
-  protected $new_revision;
+  protected $new_revision = false;
 
   /**
    * {@inheritdoc}
