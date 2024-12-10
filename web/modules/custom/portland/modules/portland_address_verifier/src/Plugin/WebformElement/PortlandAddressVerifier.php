@@ -76,7 +76,7 @@ class PortlandAddressVerifier extends WebformCompositeBase {
     $lines = [];
     $address = "";
 
-    if ($value['location_verification_status'] == 'Verified') {
+    if ($value['location_verification_status'] == 'Verified' && array_key_exists('address_label', $value)) {
       $address = $value['address_label'];
       $address = str_replace("\r\n", "<br>", $address);
     } else {
