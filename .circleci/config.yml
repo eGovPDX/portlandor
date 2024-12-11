@@ -252,6 +252,16 @@ build_and_deploy: &build_and_deploy
           echo "Importing config..."
           # Retry config import once if it fails
           terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- cim -y || terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- cim -y
+
+          # Check config status after config import
+          if terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- config:status | grep -q 'No differences'
+          then
+            echo "The staged configuration is identical to the active configuration."
+          else
+            echo "The staged configuration is different from the active configuration. Check the config sync page."
+            exit 1
+          fi
+
           if [ $HAS_TRANSLATION_CHANGES -eq 1 ]; then
             echo "Importing interface translations..."
             terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- locale:check
@@ -381,9 +391,6 @@ basic_tests: &basic_tests
               echo 'export MARTY_LOGIN=$(terminus drush ${CIRCLE_PROJECT_REPONAME}.${SITE_NAME} -- uli --mail marty.member@portlandoregon.gov)' > $BASH_ENV && source $BASH_ENV
               npm run jest-test -- ${TESTFILE}
             elif [[ ${TESTFILE} == *"admin-group"* ]]; then
-              echo 'export KEVIN_LOGIN=$(terminus drush ${CIRCLE_PROJECT_REPONAME}.${SITE_NAME} -- uli --mail xinju.wang@portlandoregon.gov)' > $BASH_ENV && source $BASH_ENV
-              npm run jest-test -- ${TESTFILE}
-            elif [[ ${TESTFILE} == *"admin"* ]]; then
               echo 'export SUPERADMIN_LOGIN=$(terminus drush ${CIRCLE_PROJECT_REPONAME}.${SITE_NAME} -- uli --name superAdmin)' > $BASH_ENV && source $BASH_ENV
               npm run jest-test -- ${TESTFILE}
             elif [[ ${TESTFILE} == *"anonymous"* ]]; then
@@ -545,7 +552,7 @@ workflows:
             branches:
               only:
                 - master
-                - pgov-1236
+                - pgov-1318
   # The update database workflow runs when the scheduled pipeline named "Update Sandbox
   # Database" runs. Scheduled pipelines are configured in the CircleCI web UI at
   # https://app.circleci.com/settings/project/github/eGovPDX/portlandor/triggers
