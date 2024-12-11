@@ -44,11 +44,11 @@ class PortlandAddressVerifier extends WebformCompositeBase {
 
     $element_id = "";
     if (array_key_exists("#webform_key", $element)) {
-      $element_id = $element['#webform_key'];
-      $element['#wrapper_attributes'] = [
-        'class' => ['portland-address-verifier'],
-        'id' => $element_id
-      ];
+      // $element_id = $element['#webform_key'];
+      // $element['#wrapper_attributes'] = [
+      //   'class' => ['portland-address-verifier'],
+      //   'id' => $element_id
+      // ];
     }
 
     $state_codes = WebformOptions::load('state_codes')->getOptions();
