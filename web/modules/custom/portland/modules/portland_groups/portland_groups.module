@@ -42,6 +42,45 @@ function portland_groups_form_media_form_alter(&$form, $form_state, $form_id)
 }
 
 /**
+ * The TID of the "Generic" group subtype taxonomy term.
+ */
+const GROUP_SUBTYPE_GENERIC_TID = 979;
+/**
+ * Implements hook_form_BASE_FORM_ID_alter().
+ *
+ * Restrict the Generic group subtype to those with permissions to use it.
+ */
+function portland_groups_form_group_form_alter(&$form, $form_state, $form_id)
+{
+  $group = $form_state->getFormObject()->getEntity();
+  $user = \Drupal::currentUser();
+  if (array_key_exists('field_group_subtype', $form) && !$user->hasPermission('use generic group subtype')) {
+    if ($group->get('field_group_subtype')->target_id === (string) GROUP_SUBTYPE_GENERIC_TID) {
+      // if group is already Generic, disable the field completely so they can't switch it back
+      $form['field_group_subtype']['#disabled'] = true;
+    } else {
+      // else just hide the option
+      unset($form['field_group_subtype']['widget']['#options'][GROUP_SUBTYPE_GENERIC_TID]);
+    }
+  }
+}
+
+/**
+ * Implements hook_preprocess_group().
+ *
+ * Hide the group subtype field from display if it's Generic.
+ */
+function portland_groups_preprocess_group(&$variables) {
+  $content = &$variables['content'];
+  if (!array_key_exists('field_group_subtype', $content)) return;
+
+  $group = $variables['group'];
+  if ($group->get('field_group_subtype')->target_id === (string) GROUP_SUBTYPE_GENERIC_TID) {
+    unset($content['field_group_subtype']);
+  }
+}
+
+/**
  * Implements hook_inline_entity_form_entity_form_alter().
  */
 function portland_groups_inline_entity_form_entity_form_alter(&$entity_form, &$form_state)
