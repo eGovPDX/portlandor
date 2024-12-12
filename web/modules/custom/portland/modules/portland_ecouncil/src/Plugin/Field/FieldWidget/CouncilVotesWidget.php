@@ -1,6 +1,6 @@
 <?php
 
-namespace Drupal\portland\Plugin\Field\FieldWidget;
+namespace Drupal\portland_ecouncil\Plugin\Field\FieldWidget;
 
 use Drupal\Component\Utility\SortArray;
 use Drupal\Core\Entity\EntityFieldManagerInterface;

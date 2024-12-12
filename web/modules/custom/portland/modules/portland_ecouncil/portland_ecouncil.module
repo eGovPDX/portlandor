@@ -1,0 +1,127 @@
+<?php
+
+use Drupal\Core\Form\FormStateInterface;
+
+/**
+ * Helper function that checks if the node should have its title overwritten
+ */
+function _should_overwrite_council_document_title($node) {
+  if ($node != null && $node->bundle() == 'council_document') {
+    $document_status_entity = $node->field_council_document_status->entity;
+
+    if ($document_status_entity != null) {
+      return false;
+    } else {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+/**
+ * Implements hook_entity_prepare_view()
+ */
+function portland_ecouncil_entity_prepare_view($entity_type_id, array $entities, array $displays, $view_mode) {
+  if ($entities == null) return;
+  $node = $entities[0];
+  // We only want to rewrite the node title for the full page view mode. Other view modes will call
+  // the title or the full_document_title as needed.
+  if ($node != null && _should_overwrite_council_document_title($node) && $view_mode === 'full') {
+    // Display the Full Document Title as Title
+    $node->title->value = $node->field_full_document_title->value;
+    $node->field_full_document_title->value = '';
+  }
+}
+
+/**
+ * Validates that the council document associated with an impact statement
+ * doesn't already have an existing one of the same type, to prevent duplicates.
+ */
+function _validate_council_impact_statement_type(array &$form, FormStateInterface $form_state) {
+  $current_relation = $form_state->getFormObject()->getEntity();
+  $council_document_id = $form_state->getValue('field_council_document')[0]['target_id'] ?? null;
+  $impact_statement_type_tid = $form_state->getValue('field_impact_statement_type')[0]['target_id'] ?? null;
+  if (is_null($council_document_id) || is_null($impact_statement_type_tid)) {
+    return;
+  }
+
+  $existing_relations = \Drupal::entityTypeManager()->getStorage('relation')->loadByProperties([
+    'field_council_document' => $council_document_id,
+    'field_impact_statement_type' => $impact_statement_type_tid,
+  ]);
+  $existing_relation = reset($existing_relations);
+  // if an existing relation of the same type exists, and it's not the one we're currently editing, throw an error
+  if ($existing_relation && $existing_relation->id() !== $current_relation->id()) {
+    $form_state->setErrorByName(
+      'field_impact_statement_type',
+      t(
+        'An impact statement of this type on this council document already exists. Please <a href="@link">edit it</a> instead.',
+        [ '@link' => $existing_relation->toUrl('edit-form')->toString() ],
+      ),
+    );
+  }
+}
+
+/**
+ * Implements hook_form_BASE_FORM_ID_alter().
+ */
+function portland_ecouncil_form_relation_form_alter(array &$form, FormStateInterface $form_state) {
+  $relation = $form_state->getFormObject()->getEntity();
+  if ($relation->bundle() === 'council_impact_statement') {
+    // Add validation to ensure only one impact statement of each type is added
+    $form['field_impact_statement_type']['#element_validate'] = ['_validate_council_impact_statement_type'];
+
+    if ($relation->isNew()) {
+      // Auto-fill the impact statement type if the user has a filter saved in the impact analysis view.
+      $req = \Drupal::request();
+      if ($req->hasSession()) {
+        $user_analysis_filter_value = $req->getSession()->get('views')['manage_council_documents']['page_impact_statements']['needs_analysis'] ?? null;
+        $form['field_impact_statement_type']['widget']['#default_value'] = $user_analysis_filter_value;
+      }
+
+      // Auto-fill the council document field based on the query param.
+      $query_council_document_id = $req->query->get('council_document_id');
+      if ($query_council_document_id) {
+        $node = \Drupal::entityTypeManager()->getStorage('node')->load($query_council_document_id);
+        $form['field_council_document']['widget'][0]['target_id']['#default_value'] = $node ?? null;
+      }
+    }
+  }
+}
+
+/**
+ * If current user has Council President role and editing a council document where
+ * the state is Council President Review: hide all fields except the President Only Fields.
+ * If current user is not Council Clerk/Admin or user is Council President and the state is not Council President Review: hide the President Only Fields.
+ */
+function _check_council_president_state(&$form, FormStateInterface $form_state) {
+  $node = $form_state->getFormObject()->getEntity();
+  if ($node->bundle() === 'council_document') {
+    $user_roles = \Drupal::currentUser()->getRoles();
+    if (in_array('council_president', $user_roles) && $node->moderation_state->value === 'president_review') {
+      // Hide title field
+      $form['title']['#access'] = false;
+      // Make recommended committee field required and expand field group
+      $form['field_president_committee']['widget']['#required'] = true;
+      $form['group_council_president']['#open'] = true;
+      // Hide all other non-president fields
+      foreach ($form as $key => &$element) {
+        if ((str_starts_with($key, 'field_') || str_starts_with($key, 'group_'))
+          && ($key !== 'field_president_committee' && $key !== 'group_council_president')) {
+          $element['#access'] = false;
+        }
+      }
+    } else if (!in_array('administrator', $user_roles) && !in_array('council_clerk', $user_roles)) {
+      $form['field_president_committee']['#access'] = false;
+      $form['group_council_president']['#access'] = false;
+    }
+  }
+}
+
+/**
+ * Implements hook_field_group_build_pre_render_alter().
+ */
+function portland_ecouncil_field_group_form_process_build_alter(array &$form, FormStateInterface $form_state) {
+  _check_council_president_state($form, $form_state);
+}
