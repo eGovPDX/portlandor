@@ -876,25 +876,13 @@ function _notify_reviewer($entity, $entity_event_type)
   $revision_log_output = $node->revision_log->value ?
     "<div><h3>Revision log:</h3>\r\n" . $node->revision_log->value . "</div>\r\n<p/>\r\n<div>" : '';
 
-  $moderation_state_message = [
-    'review' => 'In review',
-    'draft' => 'Draft',
-    'archived' => 'Unpublished',
-    'published' => 'Published',
-    'unpublished' => 'Unpublished',
-    'bureau_review' => 'Bureau Review',
-    'attorney_review' => 'Attorney Review',
-    'code_review' => 'Code Review',
-    'budget_office_review' => 'Budget Office Review',
-    'policy_editor_review' => 'Policy Editor Review',
-    'elected_review' => 'Elected Review',
-    'council_clerk_review' => 'Council Clerk Review',
-    'ready_for_agenda' => 'Ready for Agenda',
-    'cancelled' => 'Cancelled (To Be Deleted)',
-  ];
+  /** @var \Drupal\content_moderation\ModerationInformation $moderation_info */
+  $moderation_info = \Drupal::service('content_moderation.moderation_information');
+  $moderation_state_id = $latest_rev->moderation_state->value;
+  $moderation_state_message = $moderation_info->getWorkflowForEntity($latest_rev)->getTypePlugin()->getState($moderation_state_id)->label();
 
   // send email for any moderation state except draft
-  if ($latest_rev->moderation_state->value != 'draft') {
+  if ($moderation_state_id !== 'draft') {
     $key = 'portland_notify_reviewers';
     $params['title'] = 'Portland.gov reviewer update';
     $langcode = \Drupal::currentUser()->getPreferredLangcode();
@@ -902,7 +890,7 @@ function _notify_reviewer($entity, $entity_event_type)
       "/revisions/" . $node->vid->value . "/view\"> " . $latest_rev->label() .
       "</a> . You will be notified of all changes to this content.<p/>" .
       "<a href=\"" . $node->revision_uid->entity->toUrl()->toString(). "\">" . $node->revision_uid->entity->label() .
-      "</a> " . $status_message . " a new <strong>" . $moderation_state_message[$latest_rev->moderation_state->value] .
+      "</a> " . $status_message . " a new <strong>" . $moderation_state_message .
       "</strong> revision at " .
       \Drupal::service('date.formatter')->format($node->changed->value, 'custom', 'l Y/n/j g:i A') .
       ".<p/>" . $revision_log_output;
