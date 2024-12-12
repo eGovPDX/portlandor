@@ -99,11 +99,11 @@ class PortlandAddressVerifier extends WebformCompositeBase {
     // needed, such as in a handler that is sending data to an external system, the sub-field needs to be
     // specified in the token, such as [webform_submission:values:location:place_name].
     $lines = [];
-    $address;
+    $address = "";
 
     if ($value['location_verification_status'] == 'Verified') {
       $address = $value['address_label'];
-      $address = str_replace("<br>", "\r\n", $label);
+      $address = str_replace("<br>", "\r\n", $address);
     } else {
       $address = $value['location_address'];
     }
@@ -118,7 +118,8 @@ class PortlandAddressVerifier extends WebformCompositeBase {
   public function prepare(array &$element, WebformSubmissionInterface $webform_submission = NULL) {
     parent::prepare($element, $webform_submission);
 
-    $machine_name = $element['#webform_key'];
+    $machine_name = "edit-" . $element['#webform_key'] . "--wrapper";
+    $machine_name = str_replace("_", "-", $machine_name);
 
     $addressType = array_key_exists('#address_type', $element) && strtolower($element['#address_type']) == "any";
     $element['#attached']['drupalSettings']['webform']['portland_address_verifier'][$machine_name]['address_type'] = $addressType;
