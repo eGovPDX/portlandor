@@ -47,24 +47,40 @@ class WebformReportController extends ControllerBase {
 
       foreach ($webforms as $webform) {
         $elements = $webform->getElementsInitializedFlattenedAndHasValue(); // Decode the elements.
-
+        // Extract the custom field value from the webform handler.
+        $custom_field_value = $this->getCustomFieldValue($webform, '6353388345367');
         // Find entities referencing this webform.
         //$embedded_locations = $this->getEmbeddedLocations($webform->id());
 
-        // Extract the custom field value from the webform handler.
-        $custom_field_value = $this->getCustomFieldValue($webform, '6353388345367');
+        $common_columns = [
+          'Webform ID' => $webform->id(),
+          'Webform ID in Zendesk' => $custom_field_value,
+          'Webform Title' => $webform->label(),
+        ];
 
         foreach ($elements as $key => $element) {
           $rows[] = [
-            'Webform ID' => $webform->id(), // Correct Webform ID
-            'Webform Title' => $webform->label(),
+            ...$common_columns,
             'Element Key' => $key,
             'Element Title' => trim(strip_tags($element['#title'])) ?? '',
             'Element Type' => $element['#type'] ?? 'Unknown',
             'Required' => !empty($element['#required']) ? 'Yes' : 'No',
-            'Webform ID in Zendesk' => $custom_field_value, // Custom field value
             //'Embedded Location' => implode(', ', $embedded_locations), // Embedded locations
           ];
+
+          if (array_key_exists('#webform_composite_elements', $element)) {
+            foreach ($element['#webform_composite_elements'] as $composite_key => $composite_element) {
+              if (isset($composite_element['#webform_composite_key'])) {
+                $rows[] = [
+                  ...$common_columns,
+                  'Element Key' => $key . ':' . $composite_key,
+                  'Element Title' => trim(strip_tags($composite_element['#title'])) ?? '',
+                  'Element Type' => $composite_element['#type'] ?? 'Unknown',
+                  'Required' => !empty($composite_element['#required']) ? 'Yes' : 'No',
+                ];
+              }
+            }
+          }
         }
       }
 
