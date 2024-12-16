@@ -5,7 +5,6 @@ namespace Drupal\portland_relations\Entity;
 use Drupal\Core\Field\BaseFieldDefinition;
 use Drupal\Core\Entity\RevisionableContentEntityBase;
 use Drupal\Core\Entity\EntityChangedTrait;
-use Drupal\Core\Entity\EntityPublishedTrait;
 use Drupal\Core\Entity\EntityTypeInterface;
 
 /**
@@ -73,7 +72,6 @@ use Drupal\Core\Entity\EntityTypeInterface;
 class Relation extends RevisionableContentEntityBase implements RelationInterface {
 
   use EntityChangedTrait;
-  use EntityPublishedTrait;
 
   /**
    * Since we have old relations that don't have a revision_created field in the database,
