@@ -1,47 +1,105 @@
-uuid: 24e9aed3-9064-4874-80fb-33c121f0d7d0
+uuid: 1e5a5cb4-81ed-43e8-9597-190829011804
 langcode: en
 status: open
 dependencies:
   module:
-    - portland_smartsheet
+    - portland_zendesk
 weight: 0
 open: null
 close: null
-uid: 60
+uid: 221
 template: false
 archive: false
-id: address_verify_test
-title: 'Test Address Verifier'
+id: request_food_truck_information
+title: 'Request Information about the Food Truck Pilot Program'
 description: ''
-categories:
-  - Test
+categories: {  }
 elements: |-
-  verified_address:
-    '#type': portland_address_verifier
-    '#title': 'Verified Address'
+  request_choose_option:
+    '#type': checkboxes
+    '#title': 'What would you like to learn more about?'
+    '#description': '<p>Please select an option below so we can connect you to the appropriate contact</p>'
+    '#description_display': before
+    '#options':
+      'Food truck operator interested in participating in the pilot program': 'Food truck operator interested in participating in the pilot program'
+      'Interested in hosting food trucks at my property': 'Interested in hosting food trucks at my property'
+      'Comments or Questions': 'Comments or Questions'
     '#required': true
-    '#find_unincorporated': 1
-  mailing_label:
+  request_property_location:
+    '#type': portland_address_verifier
+    '#title': 'Location of your property'
+    '#required': true
+    '#states':
+      visible:
+        ':input[name="request_choose_option[Interested in hosting food trucks at my property]"]':
+          checked: true
+    '#location_address__title': 'Site Address'
+  request_comments_questions:
+    '#type': textarea
+    '#title': 'Please share your comments and or questions about the food truck pilot program'
+    '#states':
+      visible:
+        ':input[name="request_choose_option[Comments or Questions]"]':
+          checked: true
+    '#required': true
+  section_contact:
+    '#type': webform_section
+    '#title': 'Your Contact Information'
+    '#states':
+      visible:
+        - ':input[name="request_choose_option[Food truck operator interested in participating in the pilot program]"]':
+            checked: true
+        - or
+        - ':input[name="request_choose_option[Interested in hosting food trucks at my property]"]':
+            checked: true
+        - or
+        - ':input[name="request_choose_option[Comments or Questions]"]':
+            checked: true
+    contact_name:
+      '#type': textfield
+      '#title': Name
+      '#required': true
+    contact_email:
+      '#type': textfield
+      '#title': Email
+      '#description': '<p>We will use your email to confirm your submission and respond if necessary.</p>'
+      '#required': true
+      '#pattern': '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+      '#pattern_error': 'Please enter a correctly formatted email address, such as myname@example.com.'
+    contact_phone:
+      '#type': textfield
+      '#title': Phone
+      '#description': 'Please provide your phone number in case we need additional information.'
+      '#input_mask': '(999) 999-9999'
+      '#required': true
+  request_ticket_id:
+    '#type': hidden
+    '#title': 'Request Ticket Id'
+  computed_description:
     '#type': webform_computed_twig
-    '#title': 'Mailing Label'
+    '#title': 'Computed Description'
+    '#display_on': none
     '#mode': html
     '#template': |-
-      {{ data.verified_address.location_address }}
-      {% if data.verified_address.unit_number %}
-        {{ data.verified_address.unit_number }}
-      {% endif %}<br>
-      {{ data.verified_address.location_city }}, {{ data.verified_address.location_state }}  {{ data.verified_address.location_zip }}
-    '#whitespace': spaceless
-    '#ajax': true
-  ajax_indicator:
-    '#type': portland_ajax_indicator
-    '#title': 'Ajax Indicator'
-  verified_address_2:
-    '#type': portland_address_verifier
-    '#title': 'Verified Address 2'
-    '#required': true
-    '#find_unincorporated': 1
-    '#address_suggest': 0
+      <h2>Request Information about the Food Truck Pilot Program</h2>
+
+      <h2>Request Details</h2>
+
+      <p>
+        <strong>What would you like to learn more about?</strong> {{ data.request_choose_option | join(', ') }}
+        <br>
+        <strong>Location of your property.</strong> {{ data.request_property_location.location_full_address }}<br>
+      <strong>Please share your comments and or questions about the food truck pilot program.</strong>
+      {{ data.request_comments_questions }}
+      </p>
+
+      <h3>Your Contact Information</h3>
+
+      <p>
+        <strong>Name:</strong> {{ data.contact_name }}<br>
+        <strong>Email:</strong> {{ data.contact_email }}<br>
+        <strong>Phone:</strong> {{ data.contact_phone }}<br>
+      </p>
 css: ''
 javascript: ''
 settings:
@@ -226,26 +284,29 @@ access:
     users: {  }
     permissions: {  }
 handlers:
-  smartsheet_add_row_to_existing_sheet:
-    id: smartsheet_add_row
-    handler_id: smartsheet_add_row_to_existing_sheet
-    label: 'Smartsheet: add row to existing sheet'
+  zendesk_new_request:
+    id: zendesk
+    handler_id: zendesk_new_request
+    label: 'Create Zendesk Ticket'
     notes: ''
     status: true
     conditions: {  }
     weight: 0
     settings:
-      column_mappings:
-        2050410715238276: verified_address__location_address
-        6554010342608772: verified_address__location_address_street_number
-        4302210528923524: verified_address__location_address_street_quadrant
-        8805810156294020: verified_address__location_address_street_name
-        220823366619012: verified_address__unit_number
-        4724422993989508: verified_address__location_city
-      multiple_rows_enable: null
-      multiple_rows_field: ''
-      multiple_rows_separator: ''
-      row_location: toTop
-      sheet_id: '6181644901764996'
-      upload_attachments: '1'
+      requester_name: contact_name
+      requester_email: contact_email
+      subject: 'New Food Truck Pilot Program Information Request'
+      comment: '[webform_submission:values:computed_description:html]'
+      tags: 'drupal webform'
+      priority: normal
+      status: new
+      recipient: ''
+      group_id: '27670904017047'
+      assignee_id: ''
+      type: incident
+      collaborators: ''
+      custom_fields: "6353388345367: 'request_food_truck_information'\r\n1500012743961: ['[webform_submission:values:request_property_location:location_full_address]', 'request_property_location:location_full_address']\r\n25600783638295: ['[webform_submission:values:contact_phone]', 'contact_phone']"
+      ticket_id_field: request_ticket_id
+      ticket_fork_field: ''
+      ticket_form_id: '28288719280919'
 variants: {  }
