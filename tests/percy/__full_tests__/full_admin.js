@@ -241,7 +241,7 @@ describe('Full regression test suite for Admin', () => {
           'Page type',
           'Summary',
           'Body content',
-          'Legacy path',
+          'URL redirects',
         ],
         homepageUrl: HOME_PAGE,
         testGroupPath: TEST_GROUP_PATH,
