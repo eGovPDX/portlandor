@@ -460,6 +460,7 @@ elements: |-
   computed_subject:
     '#type': webform_computed_twig
     '#title': 'Computed Subject'
+    '#display_on': view
     '#mode': text
     '#template': |
       {% if data.request_purpose == "provide_feedback_district" or data.request_purpose == "provide_feedback_individual" %}
@@ -470,10 +471,10 @@ elements: |-
         Media inquiry {{ data.contact_name ? "from " ~ data.contact_name : "" }}
       {% endif %}
     '#whitespace': spaceless
-    '#ajax': true
   computed_recipient:
     '#type': webform_computed_twig
     '#title': 'Computed Recipient'
+    '#display_on': view
     '#mode': text
     '#template': |+
       {% set recipient = "" %}
@@ -516,7 +517,6 @@ elements: |-
 
 
     '#whitespace': trim
-    '#ajax': true
 css: "/* Reset the default font weight */\r\n.form-check .form-element-container label {\r\n    font-weight: normal;\r\n}\r\n\r\n/* Apply bold font-weight when the radio button is selected */\r\n.form-check-input:checked + label {\r\n    font-weight: bold;\r\n}\r\n"
 javascript: "(($, Drupal) => {\r\n\r\nDrupal.behaviors.councilDistrictBoundaries = {\r\n  attach() {\r\n    const districtColors = {\r\n      1: \"#7CB195\",\r\n      2: \"#9AC4EA\",\r\n      3: \"#FBD986\",\r\n      4: \"#C08FA4\",\r\n    };\r\n    const { lMap } = drupalSettings.webform.portland_location_picker;\r\n    let districtLayer; // Track the layer\r\n\r\n    fetch(\r\n      \"https://www.portlandmaps.com/arcgis/rest/services/Public/CGIS_Layers/MapServer/11/query?where=1%3D1&f=geojson\",\r\n    )\r\n      .then((res) => res.json())\r\n      .then(({ features }) => {\r\n        // Check if the layer is already added\r\n        if (districtLayer && lMap.hasLayer(districtLayer)) {\r\n          return; // Do nothing if the layer is already on the map\r\n        }\r\n\r\n        districtLayer = L.geoJson(features, {\r\n          coordsToLatLng(coords) {\r\n            return new L.LatLng(coords[1], coords[0]);\r\n          },\r\n          onEachFeature(feature, layer) {\r\n            const district = feature.properties.DISTRICT;\r\n\r\n            lMap.openTooltip(\r\n              Drupal.t(\"District @num\", { \"@num\": district }),\r\n              layer.getBounds().getCenter(),\r\n              {\r\n                className: \"fs-6\",\r\n                permanent: true,\r\n                direction: \"center\",\r\n                opacity: 1,\r\n              },\r\n            );\r\n            layer.setStyle({\r\n              color: \"#383838\",\r\n              fillColor: districtColors[district],\r\n              fillOpacity: 0.15,\r\n              weight: 1,\r\n            });\r\n          },\r\n        });\r\n\r\n        districtLayer.addTo(lMap);\r\n      });\r\n  },\r\n};\r\n})(jQuery, Drupal);\r\n"
 settings:
