@@ -390,65 +390,6 @@ elements: |-
     actions:
       '#type': webform_actions
       '#title': 'Submit button(s)'
-  computed_recipient_list:
-    '#type': webform_computed_twig
-    '#title': 'Recipient list'
-    '#display_on': none
-    '#mode': text
-    '#template': |-
-      {% if data.purpose and data.purpose == "provide_feedback_specific_elected" %}
-        {% if data.feedback_specific_not_sure == "1" %}
-          311@portlandoregon.gov
-        {% else %}
-          {{ data.feedback_recipients_entity
-              |map(gid => drupal_field('field_routing_email', 'group', gid, { label: 'hidden' })|render|striptags|trim)
-              |join(',') }},
-        {% endif %}
-      {% elseif data.purpose and data.purpose == "Request a meeting with an elected official" %}
-        {% if webform_token('[webform_submission:values:meeting_recipients_entity]', webform_submission) != null %}
-          {{ webform_token('[webform_submission:values:meeting_recipients_entity:entity:field_routing_email]', webform_submission) }}
-        {% endif %}
-      {% elseif data.purpose and data.purpose == "provide_feedback" %}
-        {{ drupal_view_result('electeds', 'active_elected_reference')
-            |map(row => row._entity.field_routing_email.0.value)
-            |join(',') }}
-      {% elseif data.purpose and data.purpose == "provide_feedback_council" %}
-        {{ drupal_view_result('electeds', 'voting_elected_reference')
-            |map(row => row._entity.field_routing_email.0.value)
-            |join(',') }}
-      {% endif %}
-    '#whitespace': spaceless
-    '#store': true
-  computed_confirmation_message:
-    '#type': webform_computed_twig
-    '#title': 'Computed Confirmation Message'
-    '#display_on': none
-    '#mode': html
-    '#template': |-
-      <p>We appreciate your feedback.</p>
-
-      {% if data.purpose == "Request a meeting with an elected official" %}
-      <p>If you requested a meeting with an elected official, and the request is approved, someone will reach out to you to schedule the meeting.</p>
-      {% endif %}
-    '#whitespace': trim
-  computed_districts_json:
-    '#type': webform_computed_twig
-    '#title': 'Districts JSON'
-    '#display_on': none
-    '#mode': text
-    '#template': |-
-      {{ drupal_view_result('council_districts', 'block_council_district_by_number')
-        |map(row => {
-          'districtNum': row._entity.field_district_number.0.value,
-          'name': row._entity.name.0.value,
-          'url': path('entity.taxonomy_term.canonical', { 'taxonomy_term': row.tid }),
-          'html': drupal_entity('taxonomy_term', row.tid, 'default')|render,
-        })
-        |json_encode|raw }}
-  hidden_districts_json:
-    '#type': hidden
-    '#title': 'Hidden Districts JSON Element'
-    '#default_value': '[webform_submission:values:computed_districts_json]'
   support_agent_use_only:
     '#type': portland_support_agent_widget
     '#title': 'Support Agent Use Only'
@@ -481,7 +422,7 @@ elements: |-
 
       {% if data.request_purpose is not iterable %}
 
-        {% if data.request_purpose == "'Provide comment or feedback to my district representatives'" %}
+        {% if data.request_purpose == "Provide comment or feedback to my district representatives" %}
           {# request to district reps #}
           
           {% if data.request_district == "Not sure..." %}
@@ -561,6 +502,18 @@ elements: |-
 
       {% endif %}
     '#ajax': true
+  computed_confirmation_message:
+    '#type': webform_computed_twig
+    '#title': 'Computed Confirmation Message'
+    '#display_on': none
+    '#mode': html
+    '#template': |-
+      <p>Thank you! Your submission has been sent.</p>
+
+      {% if data.request_purpose == "Request a meeting with an elected official" %}
+      <p>If you requested a meeting with an elected official, and the request is approved, someone will reach out to you to schedule the meeting.</p>
+      {% endif %}
+    '#whitespace': trim
 css: "/* Reset the default font weight */\r\n.form-check .form-element-container label {\r\n    font-weight: normal;\r\n}\r\n\r\n/* Apply bold font-weight when the radio button is selected */\r\n.form-check-input:checked + label {\r\n    font-weight: bold;\r\n}\r\n"
 javascript: "(($, Drupal) => {\r\n\r\nDrupal.behaviors.councilDistrictBoundaries = {\r\n  attach() {\r\n    const districtColors = {\r\n      1: \"#7CB195\",\r\n      2: \"#9AC4EA\",\r\n      3: \"#FBD986\",\r\n      4: \"#C08FA4\",\r\n    };\r\n    const { lMap } = drupalSettings.webform.portland_location_picker;\r\n    let districtLayer; // Track the layer\r\n\r\n    fetch(\r\n      \"https://www.portlandmaps.com/arcgis/rest/services/Public/CGIS_Layers/MapServer/11/query?where=1%3D1&f=geojson\",\r\n    )\r\n      .then((res) => res.json())\r\n      .then(({ features }) => {\r\n        // Check if the layer is already added\r\n        if (districtLayer && lMap.hasLayer(districtLayer)) {\r\n          return; // Do nothing if the layer is already on the map\r\n        }\r\n\r\n        districtLayer = L.geoJson(features, {\r\n          coordsToLatLng(coords) {\r\n            return new L.LatLng(coords[1], coords[0]);\r\n          },\r\n          onEachFeature(feature, layer) {\r\n            const district = feature.properties.DISTRICT;\r\n\r\n            lMap.openTooltip(\r\n              Drupal.t(\"District @num\", { \"@num\": district }),\r\n              layer.getBounds().getCenter(),\r\n              {\r\n                className: \"fs-6\",\r\n                permanent: true,\r\n                direction: \"center\",\r\n                opacity: 1,\r\n              },\r\n            );\r\n            layer.setStyle({\r\n              color: \"#383838\",\r\n              fillColor: districtColors[district],\r\n              fillOpacity: 0.15,\r\n              weight: 1,\r\n            });\r\n          },\r\n        });\r\n\r\n        districtLayer.addTo(lMap);\r\n      });\r\n  },\r\n};\r\n})(jQuery, Drupal);\r\n"
 settings:
@@ -701,7 +654,7 @@ settings:
   confirmation_type: page
   confirmation_url: ''
   confirmation_title: 'Thank you for your submission'
-  confirmation_message: "[webform_submission:values:computed_confirmation_message:htmldecode]<br />\r\n&nbsp;"
+  confirmation_message: '<p>[webform_submission:values:computed_confirmation_message:htmldecode]<br>&nbsp;</p>'
   confirmation_attributes: {  }
   confirmation_back: true
   confirmation_back_label: ''
@@ -778,14 +731,14 @@ access:
     users: {  }
     permissions: {  }
 handlers:
-  email_2:
+  send_email_to_selected_officials:
     id: email
-    handler_id: email_2
+    handler_id: send_email_to_selected_officials
     label: 'Send email to selected official(s)'
     notes: ''
     status: true
     conditions: {  }
-    weight: 6
+    weight: 1
     settings:
       states:
         - completed
