@@ -68,7 +68,7 @@ class RelativePathConstraintValidator extends ConstraintValidator {
           if (is_array($is_unique_in_system) && count($is_unique_in_system) > 0) {
             $path_link_message = " (<a href=\"$dup_path\" target=\"_blank\">$dup_path</a>)";
           }
-          $message = "The legacy path already exists in the system$path_link_message. A path cannot redirect to multiple pages.";;
+          $message = "The URL redirect already exists in the system$path_link_message. A path cannot redirect to multiple pages.";;
           $this->setViolation($message, $delta);
         }
 
