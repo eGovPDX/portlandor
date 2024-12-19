@@ -32,12 +32,11 @@ final class AddGroupMembershipAction extends ViewsBulkOperationsActionBase imple
    */
   public function execute(UserInterface $user = NULL) {
     if ($user === NULL || $this->configuration['group_id'] === 0) {
-      return $this->t('Invalid entity or configuarion.');
+      return $this->t('Invalid entity or configuration.');
     }
 
     $group_id = $this->configuration['group_id'];
     $role_ids = $this->configuration['role_ids'];
-    // $role_ids = array_diff($role_ids, [0]);   // Remove array elements with the value of "0"
     $group = \Drupal::entityTypeManager()->getStorage('group')->load($group_id);
     $membership = $group->getMember($user);
     if ($membership === FALSE) {
