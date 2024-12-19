@@ -1,6 +1,6 @@
 <?php
 
-namespace Drupal\portland\Plugin\Field\FieldFormatter;
+namespace Drupal\portland_ecouncil\Plugin\Field\FieldFormatter;
 
 use Drupal\Core\Cache\Cache;
 use Drupal\Core\Field\FieldItemListInterface;

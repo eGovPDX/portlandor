@@ -1,6 +1,6 @@
 <?php
 
-namespace Drupal\portland\Plugin\views\filter;
+namespace Drupal\portland_ecouncil\Plugin\views\filter;
 
 use Drupal\taxonomy\Plugin\views\filter\TaxonomyIndexTid;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
