@@ -100,6 +100,13 @@ elements: |-
       '#out_of_bounds_message': 'The location you selected is not within the City of Portland. Please try a different location.'
       '#click_query_url': 'https://www.portlandmaps.com/arcgis/rest/services/Public/CGIS_Layers/MapServer/11/query?where=1%3D1&geometry={{x}}%2C{{y}}&returnGeometry=false&geometryType=esriGeometryPoint&outFields=DISTRICT&f=geojson'
       '#click_query_property_path': 'features[0].properties.DISTRICT'
+    computed_district:
+      '#type': webform_computed_twig
+      '#title': 'Computed District'
+      '#display_on': view
+      '#mode': text
+      '#template': 'District {{ data.report_location.location_region_id }} selected on map'
+      '#whitespace': trim
     markup_district_1:
       '#type': webform_markup
       '#states':
@@ -335,32 +342,12 @@ elements: |-
           visible:
             ':input[name="contact_country"]':
               value: 'United States'
-        contact_street_address:
-          '#type': textfield
-          '#title': 'Street Address'
-        contact_unit_type:
-          '#type': webform_select_other
-          '#title': 'Unit Type'
-          '#options': unit_type
-        contact_unit_number:
-          '#type': textfield
-          '#title': 'Unit Number'
-          '#states':
-            visible:
-              ':input[name="contact_unit_type[select]"]':
-                '!value': ''
-        contact_city:
-          '#type': textfield
-          '#title': City
-        contact_state:
-          '#type': select
-          '#title': State
-          '#options': state_province_names
-        contact_postal_code:
-          '#type': textfield
-          '#title': 'ZIP/Postal Code'
-          '#input_mask': '99999[-9999]'
-          '#required': true
+        your_address:
+          '#type': portland_address_verifier
+          '#title': 'Your Address'
+          '#location_address__title': 'Your Address'
+          '#location_address__description_display': invisible
+          '#address_suggest': 0
       contact_international_address:
         '#type': textarea
         '#title': 'International Postal Address'
@@ -759,10 +746,12 @@ handlers:
       body: '<p>[webform_submission:values:html]</p>'
       excluded_elements:
         introductory_text: introductory_text
+        report_location: report_location
         testimony_instructions: testimony_instructions
         public_records_statement_text: public_records_statement_text
-        computed_recipient_list: computed_recipient_list
         computed_subject: computed_subject
+        computed_description: computed_description
+        computed_confirmation_message: computed_confirmation_message
       ignore_access: true
       exclude_empty: true
       exclude_empty_checkbox: true
