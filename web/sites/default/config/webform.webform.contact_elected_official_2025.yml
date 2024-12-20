@@ -1,7 +1,14 @@
 uuid: 502b5140-1ebb-41e4-ab73-2fde4fab8e7a
 langcode: en
 status: open
-dependencies: {  }
+dependencies:
+  module:
+    - portland
+third_party_settings:
+  portland:
+    disable_demographic_form_prompt: 0
+    exclude_from_json:
+      your_address: your_address
 weight: 0
 open: null
 close: null
@@ -41,18 +48,18 @@ elements: |-
     '#options':
       'Mayor Keith Wilson': 'Mayor Keith Wilson'
       'Auditor Simone Rede': 'Auditor Simone Rede'
-      'Councilor Candace Avalos, District 1': 'Councilor Candace Avalos, District 1'
-      'Councilor Loretta Smith, District 1': 'Councilor Loretta Smith, District 1'
-      'Councilor Jamie Dunphy, District 1': 'Councilor Jamie Dunphy, District 1'
-      'Councilor Elana Pirtle-Guiney, District 2': 'Councilor Elana Pirtle-Guiney, District 2'
-      'Councilor Dan Ryan, District 2': 'Councilor Dan Ryan, District 2'
-      'Councilor Sameer Kanal, District 2': 'Councilor Sameer Kanal, District 2'
-      'Councilor Steve Novick, District 3': 'Councilor Steve Novick, District 3'
-      'Councilor Angelita Morillo, District 3': 'Councilor Angelita Morillo, District 3'
-      'Councilor Tiffany Koyama Lane, District 3': 'Councilor Tiffany Koyama Lane, District 3'
-      'Councilor Olivia Clark, District 4': 'Councilor Olivia Clark, District 4'
-      'Councilor Mitch Green, District 4': 'Councilor Mitch Green, District 4'
-      'Councilor Eric Zimmerman, District 4': 'Councilor Eric Zimmerman, District 4'
+      'Councilor Candace Avalos': 'Councilor Candace Avalos, District 1'
+      'Councilor Loretta Smith': 'Councilor Loretta Smith, District 1'
+      'Councilor Jamie Dunphy': 'Councilor Jamie Dunphy, District 1'
+      'Councilor Elana Pirtle-Guiney': 'Councilor Elana Pirtle-Guiney, District 2'
+      'Councilor Dan Ryan': 'Councilor Dan Ryan, District 2'
+      'Councilor Sameer Kanal': 'Councilor Sameer Kanal, District 2'
+      'Councilor Steve Novick': 'Councilor Steve Novick, District 3'
+      'Councilor Angelita Morillo': 'Councilor Angelita Morillo, District 3'
+      'Councilor Tiffany Koyama Lane': 'Councilor Tiffany Koyama Lane, District 3'
+      'Councilor Olivia Clark': 'Councilor Olivia Clark, District 4'
+      'Councilor Mitch Green': 'Councilor Mitch Green, District 4'
+      'Councilor Eric Zimmerman': 'Councilor Eric Zimmerman, District 4'
     '#states':
       visible:
         - ':input[name="request_purpose"]':
@@ -348,6 +355,13 @@ elements: |-
           '#location_address__title': 'Your Address'
           '#location_address__description_display': invisible
           '#address_suggest': 0
+        computed_domestic_address:
+          '#type': webform_computed_twig
+          '#title': 'Your Address'
+          '#mode': text
+          '#template': '{% if data.your_address.location_address %}{{ data.your_address.location_address }}{% if data.your_address.unit_number %} {{ data.your_address.unit_number }}{% endif %}, {{ data.your_address.location_city }}, {{ data.your_address.location_state }} {{ data.your_address.location_zip }}{% endif %}'
+          '#whitespace': trim
+          '#ajax': true
       contact_international_address:
         '#type': textarea
         '#title': 'International Postal Address'
@@ -388,16 +402,34 @@ elements: |-
   computed_subject:
     '#type': webform_computed_twig
     '#title': 'Computed Subject'
-    '#display_on': view
+    '#display_on': none
     '#mode': text
     '#template': |
-      {% if data.request_purpose == "Provide comment or feedback to my district representatives" or data.request_purpose == "Provide comment or feedback to a specific elected official" %}
-        Comment or feedback {{ data.contact_name ? "from " ~ data.contact_name : "" }}{{ data.request_comment|length > 25 ? " - " ~ data.request_comment|slice(0,25) ~ "..." : "" }}
+      {% set subject = "" %}
+
+      {% if data.request_purpose == "Provide comment or feedback to my district representatives" %}
+        {% if data.request_district == "Not sure..." %}
+          {% set subject = "Comment or feedback for District " ~ data.report_location.location_region_id %}
+        {% elseif data.request_district %}
+          {% set subject = "Comment or feedback for District " ~ data.request_district %}  
+        {% endif %}
+
+      {% elseif data.request_purpose == "Provide comment or feedback to a specific elected official" %}
+        {% set subject = "Comment or feedback for " ~ data.request_recipient %}
+        
       {% elseif data.request_purpose == "Request a meeting with an elected official" %}
-        Meeting request {{ data.contact_name ? "from " ~ data.contact_name : "" }}
+        {% set subject = "Meeting request for " ~ data.request_recipient %}
+        
       {% elseif data.request_purpose == "Submit a media inquiry" %}
-        Media inquiry {{ data.contact_name ? "from " ~ data.contact_name : "" }}
+        {% set subject = "Media inquiry for " ~ data.request_recipient %}
+        
       {% endif %}
+
+      {% if data.contact_name %}
+        {% set subject = subject ~ " from " ~ data.contact_name %}
+        {% endif %}
+
+      {{ subject }}
     '#whitespace': spaceless
   computed_recipient:
     '#type': webform_computed_twig
@@ -427,13 +459,13 @@ elements: |-
 
           {% set name = data['request_recipient'] %}
 
-          {% if name == "Councilor Candace Avalos, District 1" or name == "Councilor Loretta Smith, District 1" or name == "Councilor Jamie Dunphy, District 1" %}
+          {% if name == "Councilor Candace Avalos" or name == "Councilor Loretta Smith" or name == "Councilor Jamie Dunphy" %}
             {% set recipient = "councildistrict1@portlandoregon.gov" %}
-          {% elseif name == "Councilor Elana Pirtle-Guiney, District 2" or name == "Councilor Dan Ryan, District 2" or name == "Councilor Sameer Kanal, District 2" %}
+          {% elseif name == "Councilor Elana Pirtle-Guiney" or name == "Councilor Dan Ryan" or name == "Councilor Sameer Kanal" %}
             {% set recipient = "councildistrict2@portlandoregon.gov" %}
-          {% elseif name == "Councilor Steve Novick, District 3" or name == "Councilor Angelita Morillo, District 3" or name == "Councilor Tiffany Koyama Lane, District 3" %}
+          {% elseif name == "Councilor Steve Novick" or name == "Councilor Angelita Morillo" or name == "Councilor Tiffany Koyama Lane" %}
             {% set recipient = "councildistrict3@portlandoregon.gov" %}
-          {% elseif name == "Councilor Olivia Clark, District 4" or name == "Councilor Mitch Green, District 4" or name == "Councilor Eric Zimmerman, District 4" %}
+          {% elseif name == "Councilor Olivia Clark" or name == "Councilor Mitch Green" or name == "Councilor Eric Zimmerman" %}
             {% set recipient = "councildistrict4@portlandoregon.gov" %}
           {% elseif name == "Mayor Keith Wilson" %}
             {% set recipient = "portlandmayor@portlandoregon.gov" %}
@@ -455,7 +487,7 @@ elements: |-
     '#display_on': none
     '#mode': html
     '#template': |-
-      <p>Thank you! Your submission has been sent.</p>
+      <p>Thank you for contacting us. We appreciate you taking the time to share your thoughts, concerns, or questions.</p>
 
       {% if data.request_purpose == "Request a meeting with an elected official" %}
       <p>If you requested a meeting with an elected official, and the request is approved, someone will reach out to you to schedule the meeting.</p>
@@ -708,9 +740,9 @@ handlers:
         introductory_text: introductory_text
         report_location: report_location
         testimony_instructions: testimony_instructions
+        your_address: your_address
         public_records_statement_text: public_records_statement_text
         computed_subject: computed_subject
-        computed_description: computed_description
         computed_confirmation_message: computed_confirmation_message
       ignore_access: true
       exclude_empty: true
