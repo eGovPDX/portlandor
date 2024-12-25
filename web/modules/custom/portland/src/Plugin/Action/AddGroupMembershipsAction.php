@@ -10,6 +10,7 @@ use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Plugin\PluginFormInterface;
 use Drupal\group\Entity\Group;
+use Drupal\group\Entity\GroupMembership;
 use Drupal\Core\Access\AccessResult;
 
 /**
@@ -22,15 +23,15 @@ use Drupal\Core\Access\AccessResult;
  *   confirm = FALSE,
  * )
  */
-final class AddGroupMembershipsAction extends ViewsBulkOperationsActionBase implements PluginFormInterface {
+class AddGroupMembershipsAction extends ViewsBulkOperationsActionBase implements PluginFormInterface {
 
   use StringTranslationTrait;
 
   /**
    * {@inheritdoc}
    */
-  public function execute(Group $group = NULL) {
-    if ($group === NULL || \count($this->configuration['user_id']) === 0) {
+  public function execute($entity = NULL) {
+    if ($entity === NULL || \count($this->configuration['user_id']) === 0) {
       return $this->t('Invalid entity or configuration.');
     }
 
@@ -41,6 +42,12 @@ final class AddGroupMembershipsAction extends ViewsBulkOperationsActionBase impl
 
     $role_ids = $this->configuration['role_ids'];
     foreach (\Drupal::entityTypeManager()->getStorage('user')->loadMultiple($user_ids) as $user) {
+      if ($entity instanceof \Drupal\group\Entity\Group) {
+        $group = $entity;
+      } elseif ($entity instanceof \Drupal\group\Entity\GroupMembership) {
+        $group = $entity->getGroup();
+      }
+
       $membership = $group->getMember($user);
       if ($membership === FALSE) {
         // Add user to the group with the assigned role(s)
@@ -80,10 +87,16 @@ final class AddGroupMembershipsAction extends ViewsBulkOperationsActionBase impl
     // Get the group roles associated with the first selected group
     // HACK ALERT: This code assumes that all selected groups are of the same group type
     // and thereby have the same roles.
-    $groups = $form_state->getStorage()['views_bulk_operations']['list'];
-    $first_key = array_keys($groups)[0];
-    $group_id = $groups[$first_key][0];
-    $roles = \Drupal::entityTypeManager()->getStorage('group')->load($group_id)->getGroupType()->getRoles(FALSE);
+    $list = $form_state->getStorage()['views_bulk_operations']['list'];
+    $first_key = array_keys($list)[0];
+    $entity_type = $list[$first_key][2];
+    $entity_id = $list[$first_key][0];
+    if ($entity_type == 'group') {
+      $roles = \Drupal::entityTypeManager()->getStorage('group')->load($entity_id)->getGroupType()->getRoles(FALSE);
+    } elseif ($entity_type == 'group_content') {
+      $roles = \Drupal::entityTypeManager()->getStorage('group_content')->load($entity_id)->getGroup()->getGroupType()->getRoles(FALSE);
+    }
+
     $role_options = array();
     foreach ($roles as $role) {
       $role_options[$role->id()] = $role->label();
@@ -95,7 +108,7 @@ final class AddGroupMembershipsAction extends ViewsBulkOperationsActionBase impl
       '#required' => TRUE,
       '#description' => $this->t('IMPORTANT: If a user already belongs to a selected group, this will remove their current roles and assign the roles selected here.'),
     ];
-    
+
     return $form;
   }
 
