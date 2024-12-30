@@ -15,9 +15,9 @@ function portland_legacy_redirects_entity_base_field_info($entity_type) {
   if ($entity_id === 'node' || $entity_id === 'group' || $entity_id === 'media') {
     $fields = [];
 
-    // add a field that allows the page's redirects (labeled as Legacy Paths) to be modified
+    // add a field that allows the page's redirects (labeled as URL redirects) to be modified
     // outside the redirects UI.
-    // TODO: this adds the field to EVERY node, even ones we don't want the Legacy Path for.
+    // TODO: this adds the field to EVERY node, even ones we don't want the URL redirect for.
     //       it's not harmful except that it adds extra processing. it basically runs through
     //       the validation routines but does nothing if not valid on a form where the field
     //       is disabled/hidden. the only way I can think of to prevent this is to create and
@@ -25,7 +25,7 @@ function portland_legacy_redirects_entity_base_field_info($entity_type) {
     //       determine whether the field is enabled in form view?
     $fields['field_redirects'] = BaseFieldDefinition::create('string')
       ->setName('field_redirects')
-      ->setLabel(t('Legacy path'))
+      ->setLabel(t('URL redirects'))
       ->setComputed(TRUE)
       ->setClass('\Drupal\portland_legacy_redirects\Field\RedirectList')
       ->setDisplayConfigurable('form', TRUE)
@@ -33,7 +33,7 @@ function portland_legacy_redirects_entity_base_field_info($entity_type) {
         'type' => 'text_textfield',
         'weight' => 50,
       ])
-      ->setDescription(t('This field is used to create redirects to this page from legacy pages in the old site. Multiple paths may be entered in case several pages have been combined during migration. Once these paths are created, they may only be modified or removed by an administrator. Paths must be relative and start with a slash. For example, the page "https://www.portlandoregon.gov/bts/39479" should be entered as "/bts/39479".').'<br><br>'.t('To redirect from a page that existed on Portland.gov provide the relative path here. This feature will not work on content that is still on Portland.gov including unpublished content. The content being redirected must completely deleted.'))
+      ->setDescription(t('This field is used to create redirects to this page from other URLs. Paths must be relative and start with a slash.').'<br><br>'.t('This feature will not work to redirect content that still exists on Portland.gov including unpublished content. The content being redirected must be completely deleted.'))
       ->setCardinality(FieldStorageDefinitionInterface::CARDINALITY_UNLIMITED)
       ->addConstraint('relative_path', []);;
 
@@ -44,11 +44,11 @@ function portland_legacy_redirects_entity_base_field_info($entity_type) {
 /**
  * Implements hook_form_BASE_FORM_ID_alter().
  *
- * The legacy path field is actually just a reference to the Drupal redirect table, not a field stored
+ * The URL redirect field is actually just a reference to the Drupal redirect table, not a field stored
  * on the node itself. That means we can't choose to hide it for translations like a normal field.
  *
  * This piece of custom code detects when the editor is editing a non-English translation and hides the
- * legacy paths field, because the field isn't actually translatable.
+ * URL redirects field, because the field isn't actually translatable.
  */
 function portland_legacy_redirects_form_node_form_alter(&$form) {
   $current_lang = \Drupal::languageManager()->getCurrentLanguage(LanguageInterface::TYPE_CONTENT)->getId();
@@ -59,7 +59,7 @@ function portland_legacy_redirects_form_node_form_alter(&$form) {
 
 /**
  * Implements hook_entity_bundle_field_info_alter().
- * Add the constraint for the Legacy Path field to validate input
+ * Add the constraint for the URL redirect field to validate input
  */
 function portland_legacy_redirects_entity_bundle_field_info_alter(&$fields, EntityTypeInterface $entity_type, $bundle) {
   // Only add constraint for the entity types specified in portland_legacy_redirects_entity_base_field_info
