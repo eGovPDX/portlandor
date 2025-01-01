@@ -74,7 +74,7 @@ class CouncilVotesWidget extends WidgetBase implements ContainerFactoryPluginInt
     $bundle_field_definitions = $this->entityFieldManager->getFieldDefinitions('relation', 'council_vote');
     $selection_handler = $this->selectionManager->getSelectionHandler($bundle_field_definitions['field_council_member']);
     $referenceable_entities = $selection_handler->getReferenceableEntities();
-    $options = $referenceable_entities['elected_official'];
+    $options = $referenceable_entities['elected_official'] ?? [];
 
     // Find any existing votes with old elected officials and add them as an option,
     // so the editor can see and edit/delete them.
