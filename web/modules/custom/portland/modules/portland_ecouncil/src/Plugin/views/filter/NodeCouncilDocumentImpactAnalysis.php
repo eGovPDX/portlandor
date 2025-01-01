@@ -3,6 +3,7 @@
 namespace Drupal\portland_ecouncil\Plugin\views\filter;
 
 use Drupal\taxonomy\Plugin\views\filter\TaxonomyIndexTid;
+use Drupal\Core\Cache\Cache;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Drupal\Core\Database\Connection;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
@@ -19,7 +20,6 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 class NodeCouncilDocumentImpactAnalysis extends TaxonomyIndexTid implements ContainerFactoryPluginInterface {
   protected Connection $database;
   protected EntityTypeManagerInterface $entityTypeManager;
-
 
   public function __construct(array $configuration, $plugin_id, $plugin_definition, VocabularyStorageInterface $vocabulary_storage, TermStorageInterface $term_storage, AccountInterface $current_user, Connection $database, EntityTypeManagerInterface $entity_type_manager) {
     parent::__construct($configuration, $plugin_id, $plugin_definition, $vocabulary_storage, $term_storage, $current_user);
@@ -103,5 +103,12 @@ class NodeCouncilDocumentImpactAnalysis extends TaxonomyIndexTid implements Cont
     }
     // Add our condition to the root query.
     $this->query->addWhere($this->options['group'], $condition);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getCacheTags() {
+    return Cache::mergeTags(parent::getCacheTags(), ['relation_list:council_impact_statement']);
   }
 }
