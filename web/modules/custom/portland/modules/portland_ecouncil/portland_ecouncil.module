@@ -1,6 +1,7 @@
 <?php
 
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\node\Entity\Node;
 
 /**
  * Helper function that checks if the node should have its title overwritten
@@ -95,7 +96,7 @@ function portland_ecouncil_form_relation_form_alter(array &$form, FormStateInter
  * the state is Council President Review: hide all fields except the President Only Fields.
  * If current user is not Council Clerk/Admin or user is Council President and the state is not Council President Review: hide the President Only Fields.
  */
-function _check_council_president_state(array &$form, FormStateInterface $form_state) {
+function _check_council_president_state(array &$form, Node $node) {
   $user_roles = \Drupal::currentUser()->getRoles();
   if (in_array('council_president', $user_roles) && $node->moderation_state->value === 'president_review') {
     // Hide title field
@@ -116,13 +117,13 @@ function _check_council_president_state(array &$form, FormStateInterface $form_s
   }
 }
 
-const COUNCIL_DOCUMENT_TYPE_PRESENTATION_TID = 75;
+const COUNCIL_DOCUMENT_TYPE_PRESENTATION_TID = 76;
 const COUNCIL_DOCUMENT_TYPE_PROCLAMATION_TID = 75;
 /**
  * "Presentation" type is presently unused/deprecated, but may be re-enabled at a later date.
  * "Proclamation" type should only be accessible to Council Clerk/admin.
  */
-function _hide_council_document_types(array &$form, FormStateInterface $form_state) {
+function _hide_council_document_types(array &$form) {
   unset($form['field_council_document_type']['widget']['#options'][COUNCIL_DOCUMENT_TYPE_PRESENTATION_TID]);
 
   $user_roles = \Drupal::currentUser()->getRoles();
@@ -135,7 +136,7 @@ function _hide_council_document_types(array &$form, FormStateInterface $form_sta
  * Council Document has some old list field options that can't be removed since they're used in old documents,
  * so we hide them from the edit form here.
  */
-function _hide_deprecated_field_values(array &$form, FormStateInterface $form_state) {
+function _hide_deprecated_field_values(array &$form) {
   unset($form['field_agenda_type']['widget']['#options']['four_fifths']);
   unset($form['field_agenda_type']['widget']['#options']['executive']);
 }
@@ -144,10 +145,11 @@ function _hide_deprecated_field_values(array &$form, FormStateInterface $form_st
  * Implements hook_field_group_build_pre_render_alter().
  */
 function portland_ecouncil_field_group_form_process_build_alter(array &$form, FormStateInterface $form_state) {
+  /** @var \Drupal\node\Entity\Node */
   $node = $form_state->getFormObject()->getEntity();
   if ($node->bundle() === 'council_document') {
-    _check_council_president_state($form, $form_state);
-    _hide_council_document_types($form, $form_state);
-    _hide_deprecated_field_values($form, $form_state);
+    _check_council_president_state($form, $node);
+    _hide_council_document_types($form);
+    _hide_deprecated_field_values($form);
   }
 }
