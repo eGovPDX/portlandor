@@ -140,20 +140,6 @@ function portland_group_insert(GroupInterface $group)
 function portland_theme($existing, $type, $theme, $path)
 {
   return [
-    'portland_alert' => [
-      'variables' => [
-        'dismissible' => false,
-        'type' => null,
-        'title' => null,
-        'text' => null,
-        'link_url' => null,
-        'link_text' => null,
-        'changed' => null,
-        'nid' => null,
-        'changed_timestamp' => null,
-      ],
-    ],
-
     'portland_revision_block' => [
       'variables' => [
         'alert_color' => null,
@@ -372,102 +358,6 @@ function portland_entity_delete($entity)
       break;
     default:
       // Skip other deletion events: redirect, group, etc.
-      break;
-  }
-}
-
-/**
- * Implements template_preprocess_paragraph
- */
-function portland_preprocess_paragraph(&$vars)
-{
-  switch ($vars['paragraph']->bundle()) {
-    case 'image':
-      $image = $vars['paragraph'];
-      if (
-        $image->hasField("field_image_alignment") &&
-        $image->field_image_alignment->value !== null
-      ) {
-        // If there is not an existing class array, create an empty array.
-        if (!isset($vars['attributes']['class'])) {
-          $vars['attributes']['class'] = [];
-        }
-        $vars['attributes']['class'] = array_merge(
-          $vars['attributes']['class'],
-          ['float-' . $image->field_image_alignment->value, 'image-align']
-        );
-      }
-      break;
-    case 'document':
-      // If there is not an existing class array, create an empty array.
-      if (!isset($vars['attributes']['class'])) {
-        $vars['attributes']['class'] = [];
-      };
-      $document = $vars['paragraph'];
-
-      if (
-        $document->hasField("field_document") &&
-        $document->field_document->entity !== null
-      ) {
-        // Map mimetype to font awesome icon names. Sources:
-        // https://api.drupal.org/api/drupal/includes%21file.mimetypes.inc/function/file_default_mimetype_mapping/7.x
-        // https://fontawesome.com/icons?d=gallery
-        $mimetypeToFontawesomeIcon = [
-          'text/plain' => 'file',
-          'application/pdf' => 'file-pdf',
-          'application/msword' => 'file-word', // *.doc
-          'application/vnd.openxmlformats-officedocument.wordprocessingml.document' => 'file-word', // *.docx
-          'application/vnd.ms-excel' => 'file-excel', // *.xls
-          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' => 'file-excel', // *.xlsx
-          'application/vnd.ms-powerpoint' => 'file-powerpoint', // *.ppt
-          'application/vnd.openxmlformats-officedocument.presentationml.presentation' => 'file-powerpoint',
-        ];
-
-        // Paragraph -> Media -> File
-        if (isset($document->field_document->entity->field_document->entity)) {
-          $vars['fileSize'] = format_size(
-            $document->field_document->entity->field_document->entity->getSize()
-          );
-          $vars['fileUrl'] = $document->field_document->entity->field_document->entity->createFileUrl();
-          $mimeType = $document->field_document->entity->field_document->entity->getMimeType();
-          // Set fontawesome icon based on mime type. Use "file" as the default in case no matching mime type is found.
-          $vars['fontawesomeIcon'] = array_key_exists($mimeType, $mimetypeToFontawesomeIcon) ?
-            $mimetypeToFontawesomeIcon[$mimeType] : 'file';
-        }
-      };
-      break;
-    case 'video':
-      // NOTE: audio files also use a YouTube video player and re-uses field_video_alignment
-      $video = $vars['paragraph'];
-      if (
-        $video->hasField("field_video_alignment") &&
-        $video->field_video_alignment->value !== null
-      ) {
-        // If there is not an existing class array, create an empty array.
-        if (!isset($vars['attributes']['class'])) {
-          $vars['attributes']['class'] = [];
-        }
-        $vars['attributes']['class'] = array_merge(
-          $vars['attributes']['class'],
-          ['float-' . $video->field_video_alignment->value, 'video-align']
-        );
-      }
-      break;
-    case 'quote':
-      $quote = $vars['paragraph'];
-      if (
-        $quote->hasField("field_alignment") &&
-        $quote->field_alignment->value !== null
-      ) {
-        // If there is not an existing class array, create an empty array.
-        if (!isset($vars['attributes']['class'])) {
-          $vars['attributes']['class'] = [];
-        }
-        $vars['attributes']['class'] = array_merge(
-          $vars['attributes']['class'],
-          ['float-' . $quote->field_alignment->value, 'quote-align']
-        );
-      }
       break;
   }
 }
@@ -979,25 +869,13 @@ function _notify_reviewer($entity, $entity_event_type)
   $revision_log_output = $node->revision_log->value ?
     "<div><h3>Revision log:</h3>\r\n" . $node->revision_log->value . "</div>\r\n<p/>\r\n<div>" : '';
 
-  $moderation_state_message = [
-    'review' => 'In review',
-    'draft' => 'Draft',
-    'archived' => 'Unpublished',
-    'published' => 'Published',
-    'unpublished' => 'Unpublished',
-    'bureau_review' => 'Bureau Review',
-    'attorney_review' => 'Attorney Review',
-    'code_review' => 'Code Review',
-    'budget_office_review' => 'Budget Office Review',
-    'policy_editor_review' => 'Policy Editor Review',
-    'elected_review' => 'Elected Review',
-    'council_clerk_review' => 'Council Clerk Review',
-    'ready_for_agenda' => 'Ready for Agenda',
-    'cancelled' => 'Cancelled (To Be Deleted)',
-  ];
+  /** @var \Drupal\content_moderation\ModerationInformation $moderation_info */
+  $moderation_info = \Drupal::service('content_moderation.moderation_information');
+  $moderation_state_id = $latest_rev->moderation_state->value;
+  $moderation_state_message = $moderation_info->getWorkflowForEntity($latest_rev)->getTypePlugin()->getState($moderation_state_id)->label();
 
   // send email for any moderation state except draft
-  if ($latest_rev->moderation_state->value != 'draft') {
+  if ($moderation_state_id !== 'draft') {
     $key = 'portland_notify_reviewers';
     $params['title'] = 'Portland.gov reviewer update';
     $langcode = \Drupal::currentUser()->getPreferredLangcode();
@@ -1005,7 +883,7 @@ function _notify_reviewer($entity, $entity_event_type)
       "/revisions/" . $node->vid->value . "/view\"> " . $latest_rev->label() .
       "</a> . You will be notified of all changes to this content.<p/>" .
       "<a href=\"" . $node->revision_uid->entity->toUrl()->toString(). "\">" . $node->revision_uid->entity->label() .
-      "</a> " . $status_message . " a new <strong>" . $moderation_state_message[$latest_rev->moderation_state->value] .
+      "</a> " . $status_message . " a new <strong>" . $moderation_state_message .
       "</strong> revision at " .
       \Drupal::service('date.formatter')->format($node->changed->value, 'custom', 'l Y/n/j g:i A') .
       ".<p/>" . $revision_log_output;
@@ -1121,43 +999,6 @@ function portland_mail_alter(&$message)
 }
 
 /**
- * Implements hook_entity_prepare_view()
- */
-function portland_entity_prepare_view($entity_type_id, array $entities, array $displays, $view_mode)
-{
-  if ($entities == null) return;
-  $node = $entities[0];
-  // We only want to rewrite the node title for the full page view mode. Other view modes will call
-  // the title or the full_document_title as needed.
-  if ($node != null && _should_overwrite_council_document_title($node) && $view_mode === 'full') {
-    // Display the Full Document Title as Title
-    $node->title->value = $node->field_full_document_title->value;
-    $node->field_full_document_title->value = '';
-  }
-}
-
-/**
- * Helper function that checks if the node should have its title overwritten
- */
-function _should_overwrite_council_document_title($node)
-{
-  if ($node != null && $node->bundle() == 'council_document') {
-    $document_status_entity = $node->field_council_document_status->entity;
-    $document_status = ($document_status_entity == null) ? '' : $document_status_entity->name->value;
-
-    $document_type_entity = $node->field_council_document_type->entity;
-    $document_type = ($document_type_entity == null) ? '' : $document_type_entity->name->value;
-
-    if (($document_status != null)) {
-      return false;
-    } else {
-      return true;
-    }
-  }
-  return false;
-}
-
-/**
  * Implements hook_form_FORM_ID_alter().
  *
  * Override the user login form to use the SAML login
@@ -1209,7 +1050,7 @@ function portland_views_pre_render(ViewExecutable $view)
       if ($nid && $type) {
         $redirects = \Drupal::service('redirect.repository')->findByDestinationUri(["internal:/$type/$nid", "entity:$type/$nid"]);
         if (empty($redirects)) {
-          unset($view->result[$key]); // Remove rows without legacy path
+          unset($view->result[$key]); // Remove rows without URL redirect
         }
       }
     }
@@ -1521,58 +1362,5 @@ function portland_preprocess_fieldset(&$variables): void {
   // Clear the duplicated error message for Updated date/time in News
   if(isset($variables["attributes"]["id"]) && $variables["attributes"]["id"] === "edit-field-updated-on-0") {
     unset($variables["errors"]);
-  }
-}
-
-/**
- * Validates that the council document associated with an impact statement
- * doesn't already have an existing one of the same type, to prevent duplicates.
- */
-function _validate_council_impact_statement_type(array &$form, FormStateInterface $form_state) {
-  $current_relation = $form_state->getFormObject()->getEntity();
-  $council_document_id = $form_state->getValue('field_council_document')[0]['target_id'] ?? null;
-  $impact_statement_type_tid = $form_state->getValue('field_impact_statement_type')[0]['target_id'] ?? null;
-  if (is_null($council_document_id) || is_null($impact_statement_type_tid)) {
-    return;
-  }
-
-  $existing_relations = \Drupal::entityTypeManager()->getStorage('relation')->loadByProperties([
-    'field_council_document' => $council_document_id,
-    'field_impact_statement_type' => $impact_statement_type_tid,
-  ]);
-  $existing_relation = reset($existing_relations);
-  // if an existing relation of the same type exists, and it's not the one we're currently editing, throw an error
-  if ($existing_relation && $existing_relation->id() !== $current_relation->id()) {
-    $form_state->setErrorByName(
-      'field_impact_statement_type',
-      t(
-        'An impact statement of this type on this council document already exists. Please <a href="@link">edit it</a> instead.',
-        [ '@link' => $existing_relation->toUrl('edit-form')->toString() ],
-      ),
-    );
-  }
-}
-
-function portland_form_relation_form_alter(array &$form, FormStateInterface $form_state) {
-  $relation = $form_state->getFormObject()->getEntity();
-  if ($relation->bundle() === 'council_impact_statement') {
-    // Add validation to ensure only one impact statement of each type is added
-    $form['field_impact_statement_type']['#element_validate'] = ['_validate_council_impact_statement_type'];
-
-    if ($relation->isNew()) {
-      // Auto-fill the impact statement type if the user has a filter saved in the impact analysis view.
-      $req = \Drupal::request();
-      if ($req->hasSession()) {
-        $user_analysis_filter_value = $req->getSession()->get('views')['manage_council_documents']['page_impact_statements']['needs_analysis'] ?? null;
-        $form['field_impact_statement_type']['widget']['#default_value'] = $user_analysis_filter_value;
-      }
-
-      // Auto-fill the council document field based on the query param.
-      $query_council_document_id = $req->query->get('council_document_id');
-      if ($query_council_document_id) {
-        $node = \Drupal::entityTypeManager()->getStorage('node')->load($query_council_document_id);
-        $form['field_council_document']['widget'][0]['target_id']['#default_value'] = $node ?? null;
-      }
-    }
   }
 }

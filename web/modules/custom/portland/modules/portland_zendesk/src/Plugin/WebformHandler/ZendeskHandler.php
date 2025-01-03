@@ -755,7 +755,7 @@ class ZendeskHandler extends WebformHandlerBase
             $data = $multiple ? $field_data : [$field_data];
             foreach ($data as $item) {
               foreach ($managed_file_keys as $manage_file_key) {
-                if ($item[$manage_file_key]) {
+                if (is_array($item) && $item[$manage_file_key]) {
                   $fid_to_element[$item[$manage_file_key]] = $element["#webform_composite_elements"][$manage_file_key] ?? null;
                 }
               }

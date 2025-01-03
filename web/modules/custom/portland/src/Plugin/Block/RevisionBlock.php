@@ -97,7 +97,6 @@ class RevisionBlock extends BlockBase {
     $nid = $node_current_revision->nid->value;
     $node_latest_vid = $node_latest_revision->vid->value;
     $node_current_vid = $node_current_revision->vid->value;
-    $node_current_is_archived = ($node_current_revision->moderation_state->value == 'archived');
     $node_default_vid = $node_default_revision->vid->value;
     $node_default_published = $node_default_revision->isPublished();
     $node_rh_action = count($node_current_revision->rh_action) ? $node_current_revision->rh_action[0]->value : 'bundle_default';
@@ -196,12 +195,16 @@ class RevisionBlock extends BlockBase {
         $result = "unpublished and waiting for attorney review";
         break;
 
-      case "budget_office_review":
-        $result = "unpublished and waiting for budget office review";
-        break;
-
       case "bureau_review":
         $result = "unpublished and waiting for bureau review";
+        break;
+
+      case "cancelled":
+        $result = "unpublished and cancelled (waiting for deletion)";
+        break;
+
+      case "code_review":
+        $result = "unpublished and waiting for code review";
         break;
 
       case "council_clerk_review":
@@ -214,6 +217,14 @@ class RevisionBlock extends BlockBase {
 
       case "policy_editor_review":
         $result = "unpublished and waiting for policy editor review";
+        break;
+
+      case "president_review":
+        $result = "unpublished and waiting for council president review";
+        break;
+
+      case "ready_for_agenda":
+        $result = "unpublished and ready for agenda";
         break;
 
       case "review":

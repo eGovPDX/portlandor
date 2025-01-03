@@ -40,17 +40,6 @@ class PortlandAddressVerifier extends WebformCompositeBase {
    */
   public static function getCompositeElements(array $element) {
 
-    $nodes = \Drupal::entityTypeManager()->getStorage('node')->loadByProperties(['type' => 'park_facility', 'status' => 1]);
-
-    $element_id = "";
-    if (array_key_exists("#webform_key", $element)) {
-      $element_id = $element['#webform_key'];
-      $element['#wrapper_attributes'] = [
-        'class' => ['portland-address-verifier'],
-        'id' => $element_id
-      ];
-    }
-
     $state_codes = WebformOptions::load('state_codes')->getOptions();
 
     $element['location_address'] = [
@@ -58,7 +47,7 @@ class PortlandAddressVerifier extends WebformCompositeBase {
       '#title' => t('Address'),
       '#id' => 'location_address',
       '#attributes' => ['autocomplete' => 'off'],
-      '#description' => t('Begin typing to see a list of possible address matches in the Portland metro area. Do not incude unit number.'),
+      '#description' => t('Begin typing to see a list of possible address matches in the Portland metro area, then select one. Do not incude unit number.'),
       '#description_display' => 'before',
       '#required_error' => 'Please enter an address and verify it.',
     ];

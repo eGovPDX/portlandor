@@ -1,27 +1,23 @@
-const path = require('path');
-const webpack = require('webpack');
-const CopyPlugin = require('copy-webpack-plugin');
+const path = require("path");
+const webpack = require("webpack");
+const CopyPlugin = require("copy-webpack-plugin");
 const CssMinimizerPlugin = require("css-minimizer-webpack-plugin");
-const MiniCssExtractPlugin = require('mini-css-extract-plugin');
-const RTLCSSPlugin = require('rtlcss-webpack-plugin');
+const ESLintPlugin = require("eslint-webpack-plugin");
+const MiniCssExtractPlugin = require("mini-css-extract-plugin");
+const RTLCSSPlugin = require("rtlcss-webpack-plugin");
+const StylelintPlugin = require("stylelint-webpack-plugin");
 
-const isProd = process.env.NODE_ENV === 'production';
+const isProd = process.env.NODE_ENV === "production";
 
 const config = {
   entry: {
-    cloudy: ['./src/cloudy.scss', './src/cloudy.js'],
-    'cloudy-ckeditor': ['./src/cloudy-ckeditor.scss'],
-    bootstrap: './src/js/bootstrap.js',
-    'back-to-top': './src/js/back-to-top.js',
-    'header-dropdown-toggle': './src/js/header-dropdown-toggle.js',
-    'search-field': './src/js/search-field.js',
-    'search-autocomplete': './src/js/search-autocomplete.js',
-    'expand-all-accordion': './src/js/expand-all-accordion.js'
+    "cloudy-ckeditor": ["./src/css/cloudy-ckeditor.scss"],
+    cloudy: ["./src/css/cloudy.scss", "./src/js/index.js"],
   },
   output: {
-    path: path.resolve(__dirname, './dist'),
-    publicPath: '/themes/custom/cloudy/dist/',
-    filename: '[name].bundle.js',
+    path: path.resolve(__dirname, "./dist"),
+    publicPath: "/themes/custom/cloudy/dist/",
+    filename: "[name].bundle.js",
   },
   /**
    * The externals configuration option provides a way of excluding dependencies from the output bundles.
@@ -30,60 +26,50 @@ const config = {
    * @link https://webpack.js.org/configuration/externals/
    */
   externals: {
-    jquery: 'jQuery',
-    Drupal: 'Drupal',
-    drupal: 'Drupal',
+    jquery: "jQuery",
+    Drupal: "Drupal",
+    drupal: "Drupal",
   },
   performance: {
     // Disable performance hints. Currently not anything we can do to reduce bundle size.
     hints: false,
     maxAssetSize: 60000000,
   },
-  devtool: isProd ? 'source-map' : 'cheap-module-source-map',
-  mode: isProd ? 'production' : 'development',
+  devtool: isProd ? "source-map" : "cheap-module-source-map",
+  mode: isProd ? "production" : "development",
   stats: {
     assets: true,
     assetsSpace: 50,
-    excludeAssets: [
-      /\.ttf/,
-      /\.woff2/,
-    ],
+    excludeAssets: [/\.ttf/, /\.woff2/],
     groupAssetsByChunk: false,
     groupAssetsByEmitStatus: false,
     modules: false,
   },
   watchOptions: {
-    ignored: [
-      'images/**/*.*',
-      'dist/**/*.*',
-      'templates/**/*.*',
-      'node_modules',
-    ]
+    ignored: ["images/**/*.*", "dist/**/*.*", "templates/**/*.*", "node_modules"],
   },
   plugins: [
     new webpack.ProgressPlugin(),
     new MiniCssExtractPlugin({
-      filename: '[name].bundle.css',
-      chunkFilename: '[id].bundle.css',
+      filename: "[name].bundle.css",
+      chunkFilename: "[id].bundle.css",
     }),
     new CopyPlugin({
-      patterns: [
-        { from: 'node_modules/@fortawesome/fontawesome-free/webfonts' },
-      ],
+      patterns: [{ from: "node_modules/@fortawesome/fontawesome-free/webfonts" }],
     }),
-    new RTLCSSPlugin('cloudy-rtl.bundle.css'),
+    new RTLCSSPlugin("cloudy-rtl.bundle.css"),
+    new ESLintPlugin({ configType: "flat" }),
+    new StylelintPlugin(),
   ],
   optimization: {
-    minimizer: [
-      new CssMinimizerPlugin(),
-    ],
+    minimizer: [new CssMinimizerPlugin()],
   },
   module: {
     rules: [
       {
         test: /\.js$/,
         use: {
-          loader: 'swc-loader',
+          loader: "swc-loader",
         },
       },
       {
@@ -91,27 +77,25 @@ const config = {
         use: [
           MiniCssExtractPlugin.loader,
           {
-            loader: 'css-loader',
+            loader: "css-loader",
             options: {
               url: false,
             },
           },
           {
-            loader: 'postcss-loader',
+            loader: "postcss-loader",
             options: {
               postcssOptions: {
-                plugins: [
-                  'postcss-preset-env',
-                ],
+                plugins: ["postcss-preset-env"],
               },
             },
           },
           {
-            loader: 'sass-loader',
+            loader: "sass-loader",
             options: {
               sassOptions: {
                 // Needed to preserve comments for RTLCSS
-                outputStyle: 'expanded',
+                outputStyle: "expanded",
               },
             },
           },

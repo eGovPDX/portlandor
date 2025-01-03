@@ -277,7 +277,7 @@ ERROR in ./src/cloudy-ckeditor.scss (./src/cloudy-ckeditor.scss.webpack[javascri
 Module build failed (from ./node_modules/sass-loader/dist/cjs.js):
 SassError: expected "{".
    ╷
-10 │     padding-left: ($cloudy-space-4 * 1.5);
+10 │     padding-left: (spacer(4) * 1.5);
    │                                          ^
    ╵
   src/components/_file.scss 10:42  @import

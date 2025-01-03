@@ -83,7 +83,7 @@ describe('Marty Member user test', () => {
       expect(text_content).toEqual(expect.stringContaining('Page type'));
       expect(text_content).toEqual(expect.stringContaining('Summary'));
       expect(text_content).toEqual(expect.stringContaining('Body content'));
-      expect(text_content).toEqual(expect.stringContaining('Legacy path'));
+      expect(text_content).toEqual(expect.stringContaining('URL redirects'));
 
       await page.type('#edit-title-0-value', 'Test page');
       await page.type('#edit-field-summary-0-value', 'Summary for the test page');
