@@ -68,6 +68,17 @@ final class EditGroupMembershipAction extends ViewsBulkOperationsActionBase impl
       '#description' => $this->t('IMPORTANT: This will remove the users\' current roles and assign the roles selected here.'),
     ];
     
+    // The "Items selected" list on group_content-based views has the user’s name. Include the 
+    // selected groups' name too.
+    $list = $form_state->getStorage()['views_bulk_operations']['list'];
+    $count = 0;
+    foreach ($list as $item) {
+      $entity_id = $item[0];
+      $username = $form['list']['#items'][$count];
+      $group = \Drupal::entityTypeManager()->getStorage('group_content')->load($entity_id)->getGroup();
+      $form['list']['#items'][$count++] = "$username in " . $group->label();
+    }
+
     return $form;
   }
 

@@ -4,6 +4,7 @@ namespace Drupal\portland\Plugin\Action;
 
 use Drupal\views_bulk_operations\Action\ViewsBulkOperationsActionBase;
 use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
 
 
@@ -35,6 +36,23 @@ class RemoveGroupMembershipAction extends ViewsBulkOperationsActionBase {
     }
   }
 
+  /**
+   * {@inheritdoc}
+   */
+  public function buildConfigurationForm(array $form, FormStateInterface $form_state) {
+    // The "Items selected" list on group_content-based views has the user’s name. Include the 
+    // selected groups' name too.
+    $list = $form_state->getStorage()['views_bulk_operations']['list'];
+    $count = 0;
+    foreach ($list as $item) {
+      $entity_id = $item[0];
+      $username = $form['list']['#items'][$count];
+      $group = \Drupal::entityTypeManager()->getStorage('group_content')->load($entity_id)->getGroup();
+      $form['list']['#items'][$count++] = "$username in " . $group->label();
+    }
+
+    return $form;
+  }
 
   /**
    * {@inheritdoc}
