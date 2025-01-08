@@ -43,7 +43,8 @@ elements: |-
       '#title': 'What would you like to do?'
       '#prepopulate': true
       '#options':
-        'Provide comment or feedback to my district representatives': 'Provide comment or feedback to my district representatives'
+        "Provide comment or feedback to my district's City Council members": "Provide comment or feedback to my district's City Council members"
+        'Provide comment or feedback to all elected officials': 'Provide comment or feedback to all elected officials'
         'Provide comment or feedback to a specific elected official': 'Provide comment or feedback to a specific elected official'
         'Request a meeting with an elected official': 'Request a meeting with an elected official'
         'Submit a media inquiry': 'Submit a media inquiry'
@@ -101,7 +102,7 @@ elements: |-
     '#states':
       visible:
         - ':input[name="request_purpose"]':
-            value: 'Provide comment or feedback to my district representatives'
+            value: "Provide comment or feedback to my district's City Council members"
         - or
         - ':input[name="prepopulate"]':
             value: district
@@ -357,6 +358,7 @@ elements: |-
         'Request a meeting': 'Request a meeting'
         'Submit a media inquiry': 'Submit a media inquiry'
       '#required': true
+      '#default_value': 'Provide comment or feedback'
   section_provide_feedback:
     '#type': webform_section
     '#title': 'Comment or feedback'
@@ -364,19 +366,19 @@ elements: |-
     '#states':
       visible:
         - ':input[name="request_purpose"]':
-            value: 'Provide comment or feedback to my district representatives'
+            value: "Provide comment or feedback to my district's City Council members"
           ':input[name="report_location[location_region_id]"]':
             filled: true
         - or
         - ':input[name="request_purpose"]':
-            value: 'Provide comment or feedback to my district representatives'
+            value: "Provide comment or feedback to my district's City Council members"
           ':input[name="request_district"]':
             value: 'Not sure...'
           ':input[name="report_location[location_region_id]"]':
             filled: true
         - or
         - ':input[name="request_purpose"]':
-            value: 'Provide comment or feedback to my district representatives'
+            value: "Provide comment or feedback to my district's City Council members"
           ':input[name="request_district"]':
             value:
               pattern: 1|2|3|4
@@ -397,6 +399,8 @@ elements: |-
             value: 'Provide comment or feedback'
           ':input[name="request_recipient"]':
             filled: true
+        - ':input[name="request_purpose"]':
+            value: 'Provide comment or feedback to all elected officials'
     feedback_topics_entity:
       '#type': webform_entity_checkboxes
       '#title': 'Choose one or more topics'
@@ -518,19 +522,19 @@ elements: |-
     '#states':
       visible:
         - ':input[name="request_purpose"]':
-            value: 'Provide comment or feedback to my district representatives'
+            value: "Provide comment or feedback to my district's City Council members"
           ':input[name="report_location[location_region_id]"]':
             filled: true
         - or
         - ':input[name="request_purpose"]':
-            value: 'Provide comment or feedback to my district representatives'
+            value: "Provide comment or feedback to my district's City Council members"
           ':input[name="request_district"]':
             value: 'Not sure...'
           ':input[name="report_location[location_region_id]"]':
             filled: true
         - or
         - ':input[name="request_purpose"]':
-            value: 'Provide comment or feedback to my district representatives'
+            value: "Provide comment or feedback to my district's City Council members"
           ':input[name="request_district"]':
             value:
               pattern: 1|2|3|4
@@ -582,6 +586,8 @@ elements: |-
             value: 'Submit a media inquiry'
           ':input[name="request_recipient"]':
             filled: true
+        - ':input[name="request_purpose"]':
+            value: 'Provide comment or feedback to all elected officials'
     section_contact_information:
       '#type': webform_section
       '#title': 'Your Contact Information'
@@ -667,7 +673,7 @@ elements: |-
     '#template': |
       {% set subject = "" %}
 
-      {% if data.request_purpose == "Provide comment or feedback to my district representatives" %}
+      {% if data.request_purpose == "Provide comment or feedback to my district's City Council members" %}
         {% if data.request_district == "Not sure..." %}
           {% set subject = "Feedback for District " ~ data.report_location.location_region_id %}
         {% elseif data.request_district %}
@@ -694,14 +700,13 @@ elements: |-
   computed_recipient:
     '#type': webform_computed_twig
     '#title': 'Computed Recipient'
-    '#display_on': view
     '#mode': text
-    '#template': |+
+    '#template': |
       {% set recipient = "" %}
 
       {% if data.request_purpose is not iterable or data.request_purpose_individual is not iterable %}
 
-        {% if data.request_purpose == "Provide comment or feedback to my district representatives" %}
+        {% if data.request_purpose == "Provide comment or feedback to my district's City Council members" %}
           {# request to district reps #}
           
           {% if data.request_district == "Not sure..." %}
@@ -713,7 +718,10 @@ elements: |-
             {% set recipient = "councildistrict" ~ data.request_district ~ "@portlandoregon.gov" %}
           
           {% endif %}
-            
+
+        {% elseif data.request_purpose == "Provide comment or feedback to all elected officials" %}
+            {% set recipient = "mayor@portlandoregon.gov,auditorsoffice@portlandoregon.gov,councildistrict1@portlandoregon.gov,councildistrict2@portlandoregon.gov,councildistrict3@portlandoregon.gov,councildistrict4@portlandoregon.gov" %}
+          
         {% else %}
           {# request to individual elected official #}
 
@@ -728,7 +736,11 @@ elements: |-
           {% elseif name == "Councilor Olivia Clark" or name == "Councilor Mitch Green" or name == "Councilor Eric Zimmerman" %}
             {% set recipient = "councildistrict4@portlandoregon.gov" %}
           {% elseif name == "Mayor Keith Wilson" %}
-            {% set recipient = "mayor@portlandoregon.gov" %}
+            {% if request_purpose == "Submit a media inquiry" or request_purpose_individual == "Submit a media inquiry" %}
+              {% set recipient = "press@portlandoregon.gov" %}      
+            {% else %}
+              {% set recipient = "mayor@portlandoregon.gov" %}
+            {% endif %}
           {% elseif name == "Auditor Simone Rede" %}
             {% set recipient = "auditorsoffice@portlandoregon.gov" %}
           {% endif %}
@@ -738,9 +750,8 @@ elements: |-
       {% endif %}
 
       {{ recipient }}
-
-
     '#whitespace': trim
+    '#ajax': true
   computed_confirmation_message:
     '#type': webform_computed_twig
     '#title': 'Computed Confirmation Message'
@@ -978,9 +989,14 @@ handlers:
     status: true
     conditions:
       disabled:
-        ':input[name="support_agent_use_only[test_submission]"]':
-          checked: true
-    weight: 1
+        -
+          ':input[name="support_agent_use_only[test_submission]"]':
+            checked: true
+        - or
+        -
+          ':input[name="request_purpose"]':
+            value: 'Provide comment or feedback to all elected officials'
+    weight: -50
     settings:
       states:
         - completed
@@ -1033,7 +1049,7 @@ handlers:
       enabled:
         ':input[name="support_agent_use_only[test_submission]"]':
           checked: true
-    weight: 1
+    weight: -48
     settings:
       states:
         - completed
@@ -1052,6 +1068,61 @@ handlers:
       sender_name: ''
       subject: 'TEST: [webform_submission:values:computed_subject]'
       body: '<p>[webform_submission:values:html]</p>'
+      excluded_elements:
+        introductory_text: introductory_text
+        report_location: report_location
+        markup_district_1: markup_district_1
+        markup_district_2: markup_district_2
+        markup_district_3: markup_district_3
+        markup_district_4: markup_district_4
+        testimony_instructions: testimony_instructions
+        contact_country: contact_country
+        your_address: your_address
+        public_records_statement_text: public_records_statement_text
+        computed_subject: computed_subject
+        computed_recipient: computed_recipient
+        computed_confirmation_message: computed_confirmation_message
+      ignore_access: true
+      exclude_empty: true
+      exclude_empty_checkbox: true
+      exclude_attachments: false
+      html: true
+      attachments: false
+      twig: false
+      theme_name: ''
+      parameters: {  }
+      debug: false
+  send_email_to_all_officials:
+    id: email
+    handler_id: send_email_to_all_officials
+    label: 'Send email to ALL officials'
+    notes: 'Sends a duplicate message to the mayor, auditor, and all districts. Includes a note that the same message has been sent to all officials.'
+    status: true
+    conditions:
+      enabled:
+        ':input[name="support_agent_use_only[test_submission]"]':
+          unchecked: true
+        ':input[name="request_purpose"]':
+          value: 'Provide comment or feedback to all elected officials'
+    weight: -49
+    settings:
+      states:
+        - completed
+      to_mail: '[webform_submission:values:computed_recipient]'
+      to_options: {  }
+      bcc_mail: ''
+      bcc_options: {  }
+      cc_mail: ''
+      cc_options: {  }
+      from_mail: '[webform_submission:values:contact_email_address:raw]'
+      from_options: {  }
+      from_name: '[webform_submission:values:contact_name:raw]'
+      reply_to: ''
+      return_path: ''
+      sender_mail: ''
+      sender_name: ''
+      subject: '[webform_submission:values:computed_subject]'
+      body: '<p style="color:red;"><strong>This message has been sent to the Mayor, Auditor, and all district inboxes.</strong></p><p>[webform_submission:values:html]</p>'
       excluded_elements:
         introductory_text: introductory_text
         report_location: report_location
