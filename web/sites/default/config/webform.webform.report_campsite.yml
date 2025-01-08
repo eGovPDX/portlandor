@@ -82,10 +82,11 @@ elements: |-
         '#location_asset_id__access': false
         '#location_region_id__access': false
         '#location_type__title': 'On what type of property is the campsite located?'
-        '#geojson_layer__access': false
-        '#geojson_layer_behavior__access': false
+        '#click_query_url': 'https://www.portlandmaps.com/arcgis/rest/services/Public/Geocoding_PDX/GeocodeServer/reverseGeocode?location=%7B%22x%22%3A{{x}}%2C+%22y%22%3A{{y}}%2C+%22spatialReference%22%3A%7B%22wkid%22+%3A+3857%7D%7D&f=json'
+        '#click_query_property_path': address.Address
+        '#click_query_destination_field': report_closest_address
         '#require_boundary': true
-        '#boundary_url': 'https://www.portlandmaps.com/arcgis/rest/services/Public/CGIS_Layers/MapServer/33/query?where=1%3D1&outFields=*&returnGeometry=true&f=geojson'
+        '#boundary_url': 'https://www.portlandmaps.com/arcgis/rest/services/Public/CGIS_Layers/MapServer/33/query?where=1%3D1&returnGeometry=true&f=geojson'
         '#out_of_bounds_message': 'You''ve selected a location outside our service area. Please try again, or call us at <a href="tel:311">3-1-1</a> or <a href="tel:+15038234000">503-823-4000</a> for assistance.'
         '#disable_place_name_autofill': true
       markup_private_property_stop:
@@ -220,12 +221,28 @@ elements: |-
               '#title': 'License plate state'
               '#description': 'If the vehicle has a license plate, please select which state it&#39;s from.'
               '#description_display': before
+              '#autocomplete': 'off'
             license_plate_number:
               '#type': textfield
               '#title': 'License plate number'
               '#description': 'If the vehicle has a license plate, please enter the number.'
               '#description_display': before
               '#maxlength': 8
+              '#input_mask': '[*][*][*][*][*][*][*][*]'
+              '#pattern': '^[a-zA-Z0-9]{0,8}$'
+              '#pattern_error': 'License plate must be alphanumerical and maximum 8 characters.'
+            photo:
+              '#type': webform_image_file
+              '#title': Vehicle photo
+              '#description': 'Please do not include photos where other people are present and identifiable.'
+              '#description_display': before
+              '#file_preview': 'medium:image'
+              '#max_filesize': '30'
+              '#file_extensions': 'jpg jpeg png'
+              '#file_name': 'vehicle-photo-[webform_submission:values:report_vehicle:color]-[webform_submission:values:report_vehicle:make]'
+              '#sanitize': true
+              '#max_resolution': 1280x1280
+              '#attachment_image_style': webform_report_uploaded_image
       container_submit:
         '#type': webform_section
         '#title': 'Finish your report'
@@ -241,14 +258,14 @@ elements: |-
                 checked: true
         report_photo:
           '#type': webform_image_file
-          '#title': Photos
+          '#title': Campsite photos
           '#multiple': 3
           '#description': 'If appropriate, please include up to 3 photos of the issue you are reporting. Please do not include photos where other people are present and identifiable.'
           '#description_display': before
           '#file_preview': 'medium:image'
           '#max_filesize': '30'
           '#file_extensions': 'jpg jpeg png'
-          '#file_name': 'report_[webform_submission:sid]'
+          '#file_name': 'campsite-photo-[webform_submission:uuid]'
           '#sanitize': true
           '#max_resolution': 1280x1280
           '#attachment_image_style': webform_report_uploaded_image
@@ -269,8 +286,11 @@ elements: |-
             '#input_mask': '(999) 999-9999'
             '#states':
               visible:
-                ':input[name="report_is_ada"]':
-                  value: 'yes'
+                - ':input[name="report_is_ada"]':
+                    value: 'yes'
+                - or
+                - ':input[name="report_visible_items[vehicle]"]':
+                    checked: true
           contact_email:
             '#type': textfield
             '#title': Email
@@ -305,6 +325,11 @@ elements: |-
   report_ticket_id:
     '#type': hidden
     '#title': 'Report Ticket ID'
+  report_closest_address:
+    '#type': hidden
+    '#title': 'Closest Address for AbAutos'
+    '#attributes':
+      id: report_closest_address
   computed_property_type:
     '#type': webform_computed_twig
     '#title': 'Computed Property Type'

@@ -29,7 +29,7 @@ The .lando.yml file included in this repo will set you up to connect to the corr
    2. Name the token something descriptive like "portlandor composer token."
    3. Set the expiration as long as you want, preferably a year.
    4. Under Repository Access, you can select *Public Repositories (read-only)*. The token doesn't need any access but just authenticates you to GitHub.
-5. **If this is a new clone of the repo:** before continuing to the next step you must run `lando composer install` and `lando yarn install` to install the appropriate dependencies.
+5. **If this is a new clone of the repo:** before continuing to the next step you must run `lando composer install` and `lando npm install` to install the appropriate dependencies.
 6. You have three options to get your database and files set up:
    1. If you're logged in with Terminus, run `lando latest` to automaticaly download and import the latest DB from Dev.
    2. Manually import the database
@@ -41,10 +41,55 @@ The .lando.yml file included in this repo will set you up to connect to the corr
         2. *This step should only be required if you are doing specific development that requires the filesystem to be copied locally. Otherwise, stage_file_proxy will handle it. The files backup is many GBs.*
 7. Run `git checkout master` and `lando refresh` to build your local environment to match the `master` branch. (This runs composer install, drush updb, drush cim, and drush cr.)
 8. You should now be able to visit https://portlandor.lndo.site in your browser.
-9. To enable XDebug, run `lando xdebug-on`. Run `lando xdebug-off` to turn it off for increased performance.
-10. When you are done with your development for the day, run `lando stop` to shut off your development containers or `lando poweroff` if you want to stop all lando containers.
+9. When you are done with your development for the day, run `lando stop` to shut off your development containers or `lando poweroff` if you want to stop all lando containers.
 
 See other Lando with Pantheon commands at https://docs.devwithlando.io/tutorials/pantheon.html.
+
+## Debugging and profiling
+
+### Debugging
+
+If you haven't already, you'll need to setup a debugging client in your host environment. For VS Code, create a file `.vscode/launch.json` in the root of the repo:
+
+```json
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Listen for XDebug",
+      "type": "php",
+      "request": "launch",
+      "hostname": "0.0.0.0",
+      "port": 9003,
+      "log": false,
+      "pathMappings": {
+        "/app/": "${workspaceFolder}/"
+      },
+      "xdebugSettings": {
+        "max_data": -1,
+      }
+    }
+  ]
+}
+```
+
+Afterwards, you can start the debugging client by navigating to the "Run and Debug" panel on the left side of VS Code and pressing the play button.
+
+To enable XDebug, run `lando xdebug-on`. Run `lando xdebug-off` to turn it off for increased performance.
+
+### Profiling
+
+To run XDebug in profiling mode, edit `xdebug.ini` in the root of the repo and change:
+
+```ini
+xdebug.mode = debug
+# CHANGE TO:
+xdebug.mode = profile
+```
+
+Refresh XDebug with a `lando xdebug-off` + `lando xdebug-on`. Then visit the page you wish to profile with the query param `?XDEBUG_TRIGGER=1`; the page may take a while to load.
+
+After it's done, you should see a `cachegrind.out.xxxx.gz` file in the root of the repo. Open this file with [PHP Profiler for VS Code](https://marketplace.visualstudio.com/items?itemName=DEVSENSE.profiler-php-vscode) or another Cachegrind viewer.
 
 ## Local development mode
 
@@ -232,7 +277,7 @@ ERROR in ./src/cloudy-ckeditor.scss (./src/cloudy-ckeditor.scss.webpack[javascri
 Module build failed (from ./node_modules/sass-loader/dist/cjs.js):
 SassError: expected "{".
    ╷
-10 │     padding-left: ($cloudy-space-4 * 1.5);
+10 │     padding-left: (spacer(4) * 1.5);
    │                                          ^
    ╵
   src/components/_file.scss 10:42  @import

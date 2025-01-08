@@ -11,6 +11,7 @@ dependencies:
     - field.field.node.council_document.field_budgetary_impact_worksheet
     - field.field.node.council_document.field_bureau
     - field.field.node.council_document.field_change_appropriations
+    - field.field.node.council_document.field_committee
     - field.field.node.council_document.field_community_impacts
     - field.field.node.council_document.field_confirmed_time_certain
     - field.field.node.council_document.field_contact
@@ -19,10 +20,11 @@ dependencies:
     - field.field.node.council_document.field_council_document_type
     - field.field.node.council_document.field_date_of_final_disposition
     - field.field.node.council_document.field_date_prepared
+    - field.field.node.council_document.field_document_number
     - field.field.node.council_document.field_documents_and_exhibits
+    - field.field.node.council_document.field_economic_impacts
     - field.field.node.council_document.field_efiles_link
     - field.field.node.council_document.field_financial_impacts
-    - field.field.node.council_document.field_finanicial_impact_analysis
     - field.field.node.council_document.field_full_document_title
     - field.field.node.council_document.field_introduced_by
     - field.field.node.council_document.field_is_amends_budget
@@ -31,11 +33,14 @@ dependencies:
     - field.field.node.council_document.field_is_portland_policy
     - field.field.node.council_document.field_needs_attorney_review
     - field.field.node.council_document.field_neighborhood
+    - field.field.node.council_document.field_president_committee
     - field.field.node.council_document.field_purpose_and_background
     - field.field.node.council_document.field_requested_council_date
     - field.field.node.council_document.field_requested_start_time
-    - field.field.node.council_document.field_reviewed_by_city_attorney
     - field.field.node.council_document.field_reviewer
+    - field.field.node.council_document.field_service_area
+    - field.field.node.council_document.field_staff_commitee_pref_info
+    - field.field.node.council_document.field_staff_committee_preference
     - field.field.node.council_document.field_substituted_by_council
     - field.field.node.council_document.field_time_requested
     - node.type.council_document
@@ -71,29 +76,15 @@ third_party_settings:
       children:
         - field_confirmed_time_certain
         - field_council_document_status
+        - field_committee
         - field_amended_by_council
-        - field_substituted_by_council
         - field_council_clerk
         - field_auditor
         - field_date_of_final_disposition
       label: 'Council Clerk Only'
       region: content
       parent_name: ''
-      weight: 2
-      format_type: details
-      format_settings:
-        classes: 'border border-danger'
-        id: ''
-        open: true
-        description: ''
-        required_fields: false
-    group_budget_office_only:
-      children:
-        - field_finanicial_impact_analysis
-      label: 'Budget Office Only'
-      region: content
-      parent_name: ''
-      weight: 22
+      weight: 3
       format_type: details
       format_settings:
         classes: 'border border-danger'
@@ -105,6 +96,7 @@ third_party_settings:
       children:
         - field_purpose_and_background
         - field_financial_impacts
+        - field_economic_impacts
         - field_community_impacts
         - field_100_renewable_goal
         - field_change_appropriations
@@ -112,7 +104,7 @@ third_party_settings:
       label: 'Impact Statement'
       region: content
       parent_name: ''
-      weight: 19
+      weight: 20
       format_type: details
       format_settings:
         classes: ''
@@ -122,18 +114,52 @@ third_party_settings:
         required_fields: true
     group_meeting_invitation_request:
       children: {  }
-      label: 'Meeting Invitation Request Form'
+      label: 'Council Meeting Participant List'
       region: content
       parent_name: ''
-      weight: 23
+      weight: 22
       format_type: details
       format_settings:
         classes: ''
         show_empty_fields: true
         id: ''
+        label_as_html: false
         open: true
-        description: "<a href=\"https://employees.portland.gov/council-clerk/resources/meeting-invitation-request-form\" target=\"_blank\" class=\"button button--primary\">Request Meeting Invites for Participants</a>\r\n<p>Use the form above to enter Zoom meeting invitation requests for staff and invited speakers.</p>"
+        description: "<a href=\"https://employees.portland.gov/council-clerk/resources/meeting-invitation-request-form\" target=\"_blank\" class=\"button button--primary\">Request Meeting Invites for Participants</a>\r\n<p>Use the form above to enter Zoom meeting invitation requests for staff and invited speakers.<br>Staff contacts will automatically be added to the Participant List and will receive Zoom meeting access.</p>"
         required_fields: false
+    group_council_president:
+      children:
+        - field_president_committee
+      label: 'Council President Only'
+      region: content
+      parent_name: ''
+      weight: 30
+      format_type: details
+      format_settings:
+        classes: ''
+        show_empty_fields: true
+        id: council-president-only
+        label_as_html: false
+        open: false
+        description: ''
+        required_fields: true
+    group_staff_committee_preference:
+      children:
+        - field_staff_committee_preference
+        - field_staff_commitee_pref_info
+      label: 'Staff Committee Preference'
+      region: content
+      parent_name: ''
+      weight: 29
+      format_type: details
+      format_settings:
+        classes: ''
+        show_empty_fields: false
+        id: ''
+        label_as_html: false
+        open: true
+        description: ''
+        required_fields: true
 id: node.council_document.default
 targetEntityType: node
 bundle: council_document
@@ -141,7 +167,7 @@ mode: default
 content:
   created:
     type: datetime_timestamp
-    weight: 27
+    weight: 26
     region: content
     settings: {  }
     third_party_settings: {  }
@@ -156,20 +182,20 @@ content:
       conditional_fields: {  }
   field_agenda_type:
     type: options_select
-    weight: 10
+    weight: 13
     region: content
     settings: {  }
     third_party_settings: {  }
   field_amended_by_council:
     type: boolean_checkbox
-    weight: 39
+    weight: 7
     region: content
     settings:
       display_label: true
     third_party_settings: {  }
   field_auditor:
     type: string_textfield
-    weight: 42
+    weight: 10
     region: content
     settings:
       size: 60
@@ -177,7 +203,7 @@ content:
     third_party_settings: {  }
   field_body_content:
     type: text_textarea
-    weight: 15
+    weight: 18
     region: content
     settings:
       rows: 5
@@ -211,7 +237,7 @@ content:
             selector: ''
   field_bureau:
     type: select2_entity_reference
-    weight: 14
+    weight: 17
     region: content
     settings:
       width: 100%
@@ -245,6 +271,12 @@ content:
     settings: {  }
     third_party_settings:
       conditional_fields: {  }
+  field_committee:
+    type: options_select
+    weight: 6
+    region: content
+    settings: {  }
+    third_party_settings: {  }
   field_community_impacts:
     type: text_textarea
     weight: 46
@@ -256,7 +288,7 @@ content:
       conditional_fields: {  }
   field_confirmed_time_certain:
     type: boolean_checkbox
-    weight: 37
+    weight: 4
     region: content
     settings:
       display_label: true
@@ -282,7 +314,7 @@ content:
             form_mode: default
   field_contact:
     type: entity_reference_autocomplete
-    weight: 16
+    weight: 19
     region: content
     settings:
       match_operator: CONTAINS
@@ -292,7 +324,7 @@ content:
     third_party_settings: {  }
   field_council_clerk:
     type: entity_reference_autocomplete
-    weight: 41
+    weight: 9
     region: content
     settings:
       match_operator: CONTAINS
@@ -302,28 +334,48 @@ content:
     third_party_settings: {  }
   field_council_document_status:
     type: options_select
-    weight: 38
+    weight: 5
     region: content
     settings: {  }
     third_party_settings: {  }
   field_council_document_type:
     type: options_select
-    weight: 3
+    weight: 5
     region: content
     settings: {  }
     third_party_settings: {  }
   field_date_of_final_disposition:
     type: datetime_default
-    weight: 43
+    weight: 11
     region: content
     settings: {  }
     third_party_settings: {  }
+  field_document_number:
+    type: string_textfield
+    weight: 0
+    region: content
+    settings:
+      size: 60
+      placeholder: ''
+    third_party_settings:
+      maxlength:
+        maxlength_js: null
+        maxlength_js_label: 'Content limited to @limit characters, remaining: <strong>@remaining</strong>'
+        maxlength_js_enforce: false
   field_documents_and_exhibits:
     type: file_generic
-    weight: 51
+    weight: 29
     region: content
     settings:
       progress_indicator: throbber
+    third_party_settings: {  }
+  field_economic_impacts:
+    type: text_textarea
+    weight: 45
+    region: content
+    settings:
+      rows: 5
+      placeholder: ''
     third_party_settings: {  }
   field_efiles_link:
     type: link_default
@@ -342,17 +394,9 @@ content:
       placeholder: ''
     third_party_settings:
       conditional_fields: {  }
-  field_finanicial_impact_analysis:
-    type: text_textarea
-    weight: 33
-    region: content
-    settings:
-      rows: 5
-      placeholder: ''
-    third_party_settings: {  }
   field_full_document_title:
     type: string_textarea
-    weight: 0
+    weight: 1
     region: content
     settings:
       rows: 2
@@ -365,7 +409,7 @@ content:
         maxlength_js_truncate_html: false
   field_introduced_by:
     type: select2_entity_reference
-    weight: 13
+    weight: 16
     region: content
     settings:
       width: 100%
@@ -394,7 +438,7 @@ content:
             form_mode: default
   field_is_amends_budget:
     type: boolean_checkbox
-    weight: 5
+    weight: 7
     region: content
     settings:
       display_label: true
@@ -406,11 +450,12 @@ content:
           dependee: field_council_document_type
           settings:
             state: visible
+            reset: false
             condition: value
             grouping: OR
             values_set: 3
             value: ''
-            values: "72\r\n73"
+            values: '73'
             value_form:
               -
                 target_id: '73'
@@ -420,7 +465,7 @@ content:
             form_mode: default
   field_is_code_change:
     type: boolean_checkbox
-    weight: 6
+    weight: 8
     region: content
     settings:
       display_label: true
@@ -444,7 +489,7 @@ content:
             form_mode: default
   field_is_emergency_ordinance:
     type: boolean_checkbox
-    weight: 4
+    weight: 6
     region: content
     settings:
       display_label: true
@@ -470,7 +515,7 @@ content:
             form_mode: default
   field_is_portland_policy:
     type: boolean_checkbox
-    weight: 7
+    weight: 9
     region: content
     settings:
       display_label: true
@@ -494,7 +539,7 @@ content:
             form_mode: default
   field_needs_attorney_review:
     type: boolean_checkbox
-    weight: 8
+    weight: 11
     region: content
     settings:
       display_label: true
@@ -506,11 +551,12 @@ content:
           dependee: field_council_document_type
           settings:
             state: visible
+            reset: false
             condition: value
             grouping: OR
             values_set: 3
             value: ''
-            values: "72\r\n73\r\n74"
+            values: '73'
             value_form: {  }
             effect: show
             effect_options: {  }
@@ -518,13 +564,19 @@ content:
             form_mode: default
   field_neighborhood:
     type: select2_entity_reference
-    weight: 7
+    weight: 11
     region: content
     settings:
       width: 100%
       autocomplete: false
       match_operator: CONTAINS
       match_limit: 10
+    third_party_settings: {  }
+  field_president_committee:
+    type: options_select
+    weight: 50
+    region: content
+    settings: {  }
     third_party_settings: {  }
   field_purpose_and_background:
     type: text_textarea
@@ -537,14 +589,14 @@ content:
       conditional_fields: {  }
   field_requested_council_date:
     type: datetime_default
-    weight: 9
+    weight: 12
     region: content
     settings: {  }
     third_party_settings:
       conditional_fields: {  }
   field_requested_start_time:
     type: time_widget
-    weight: 12
+    weight: 15
     region: content
     settings:
       enabled: false
@@ -588,7 +640,7 @@ content:
             selector: ''
   field_reviewer:
     type: entity_reference_autocomplete
-    weight: 24
+    weight: 23
     region: content
     settings:
       match_operator: CONTAINS
@@ -596,16 +648,33 @@ content:
       size: 60
       placeholder: ''
     third_party_settings: {  }
-  field_substituted_by_council:
-    type: boolean_checkbox
-    weight: 40
+  field_service_area:
+    type: select2_entity_reference
+    weight: 16
     region: content
     settings:
-      display_label: true
+      width: 100%
+      autocomplete: false
+      match_operator: CONTAINS
+      match_limit: 10
+    third_party_settings: {  }
+  field_staff_commitee_pref_info:
+    type: string_textarea
+    weight: 51
+    region: content
+    settings:
+      rows: 5
+      placeholder: ''
+    third_party_settings: {  }
+  field_staff_committee_preference:
+    type: options_select
+    weight: 15
+    region: content
+    settings: {  }
     third_party_settings: {  }
   field_time_requested:
     type: string_textfield
-    weight: 11
+    weight: 14
     region: content
     settings:
       size: 60
@@ -618,11 +687,12 @@ content:
           dependee: field_agenda_type
           settings:
             state: visible
+            reset: false
             condition: value
             grouping: OR
             values_set: 3
             value: ''
-            values: "regular\r\ntime_certain\r\nfour_fifths\r\nsuspension"
+            values: "regular\r\ntime_certain\r\nfour_fifths\r\nnine_twelfths\r\nsuspension"
             value_form: {  }
             effect: show
             effect_options: {  }
@@ -672,19 +742,19 @@ content:
               recurse: '0'
   moderation_state:
     type: moderation_state_default
-    weight: 25
+    weight: 24
     region: content
     settings: {  }
     third_party_settings: {  }
   path:
     type: path
-    weight: 29
+    weight: 28
     region: content
     settings: {  }
     third_party_settings: {  }
   title:
     type: string_textfield
-    weight: 1
+    weight: 2
     region: content
     settings:
       size: 60
@@ -692,7 +762,7 @@ content:
     third_party_settings: {  }
   uid:
     type: entity_reference_autocomplete
-    weight: 26
+    weight: 25
     region: content
     settings:
       match_operator: CONTAINS
@@ -701,14 +771,14 @@ content:
       placeholder: ''
     third_party_settings: {  }
   url_redirects:
-    weight: 28
+    weight: 27
     region: content
     settings: {  }
     third_party_settings: {  }
 hidden:
   field_date_prepared: true
   field_redirects: true
-  field_reviewed_by_city_attorney: true
+  field_substituted_by_council: true
   group_content: true
   langcode: true
   promote: true

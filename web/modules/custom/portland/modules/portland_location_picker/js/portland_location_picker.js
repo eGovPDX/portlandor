@@ -129,12 +129,16 @@
         var requireBoundary = drupalSettings.webform && drupalSettings.webform.portland_location_picker.require_boundary === true ? true : false;
         var outOfBoundsMessage = drupalSettings.webform ? drupalSettings.webform.portland_location_picker.out_of_bounds_message : "";
 
+        var clickQueryUrl = drupalSettings.webform ? drupalSettings.webform.portland_location_picker.click_query_url : "";
+        var clickQueryPropertyPath = drupalSettings.webform ? drupalSettings.webform.portland_location_picker.click_query_property_path : "";
+        var clickQueryDestinationField = drupalSettings.webform ? drupalSettings.webform.portland_location_picker.click_query_destination_field : "";
+
         var apiKey = drupalSettings.portlandmaps_api_key;
 
         var locationType;
         var locationTextBlock;
 
-        var cityLimitsProperties = {
+        var cityLimitsStyle = {
           color: 'red',
           fillOpacity: 0,
           weight: 1,
@@ -196,6 +200,7 @@
             zoom: DEFAULT_ZOOM,
             gestureHandling: true
           });
+          drupalSettings.webform.portland_location_picker.lMap = map;
           map.addLayer(baseLayer);
           map.addControl(new L.control.zoom({ position: ZOOM_POSITION }));
           map.addControl(new AerialControl());
@@ -269,9 +274,8 @@
           // this will display error messages, or a status indicator when performing slow ajax operations such as self geolocation
           statusModal = $('#status_modal');
 
-          if (displayBoundary && boundaryUrl != "") {
-            // defaults to true && [basic Portland boundary]
-            initailizeBounaryLayer();
+          if (boundaryUrl != "") {
+            initializeBoundaryLayer();
           }
 
           // INITIALIZE GEOJSON LAYERS //////////
@@ -385,7 +389,7 @@
           });
         }
 
-        function initailizeBounaryLayer() {
+        function initializeBoundaryLayer() {
           // new function. uses default Portland basic boundary from PortlandMaps with border visible by default.
           // visiblity and boundary URL (geoJSON) can be configure in widget custom properties.
           // boundary_url = "https://www.portlandmaps.com/arcgis/rest/services/Public/Boundaries/MapServer/0/query?where=1%3D1&objectIds=35&outFields=*&returnGeometry=true&f=geojson"
@@ -396,7 +400,7 @@
               url: boundaryUrl,
               success: function (cityBoundaryResponse) {
                 var cityBoundaryFeatures = cityBoundaryResponse.features;
-                boundaryLayer = L.geoJson(cityBoundaryFeatures, cityLimitsProperties).addTo(map);
+                boundaryLayer = L.geoJson(cityBoundaryFeatures, displayBoundary ? cityLimitsStyle : { opacity: 0, fillOpacity: 0 }).addTo(map);
                 if (boundaryLayer.municipality) {
                   boundaryLayer.municipality = cityBoundaryFeatures[0].properties.CITYNAME;
                 }
@@ -726,6 +730,7 @@
         }
 
         function handleMapClick(e) {
+          L.DomEvent.stopPropagation(e);
           doMapClick(e.latlng);
         }
 
@@ -923,6 +928,7 @@
           // get populated by the location, such as lat, lon, address, region id, etc.
           // every map click essentially resets the previous click. this function clears
           // the relevant location fields.
+          $('input[name=' + elementId + '\\[location_address\\]]').val('').trigger('change');
           $('input[name=' + elementId + '\\[location_lat\\]]').val('');
           $('input[name=' + elementId + '\\[location_lon\\]]').val('');
           $('input[name=' + elementId + '\\[location_x\\]]').val('');
@@ -931,6 +937,10 @@
           $('input[name=' + elementId + '\\[location_region_id\\]]').val('').trigger('change');
           $('input[name=' + elementId + '\\[location_municipality_name\\]]').val('');
           $('input[name=' + elementId + '\\[location_attributes\\]]').val('');
+
+          if (clickQueryUrl && clickQueryPropertyPath) {
+            $('#' + clickQueryDestinationField).val('').trigger('change');
+          }
 
           // only clear place name if autofill is disabled
           if (!disablePlaceNameAutofill) {
@@ -1326,6 +1336,12 @@
             }
           }
 
+          // CLICK QUERY kludge
+          // if clickQuery is configured, we want to call the API at that url and then process the results.
+          if (clickQueryUrl && clickQueryPropertyPath) {
+            doClickQuery(latlng);
+          }
+
           // if in address verify mode, use the verified address from suggest API
           // rather than the "described" address that is less accurate
           var description = addressVerify ? verifiedAddress : parseDescribeData(data, isWithinBounds);
@@ -1338,6 +1354,47 @@
           }
 
           setLocationDetails(data);
+        }
+
+        function doClickQuery(latlng) {
+          var sphericalMerc = L.Projection.SphericalMercator.project(L.latLng(latlng.lat, latlng.lng));
+          var x = sphericalMerc.x;
+          var y = sphericalMerc.y;
+          var url = clickQueryUrl.replace('{{x}}', x).replace('{{y}}', y);
+
+          $.ajax({
+            url: url,
+            success: function (results) {
+              // get the property specified by clickQueryPropertyPath
+              var newValue = getPropertyByPath(results, clickQueryPropertyPath);
+
+              $('#' + clickQueryDestinationField).val(newValue).trigger('change');
+            },
+            error: function (e) {
+              $('#' + clickQueryDestinationField).val('').trigger('change');
+              // Handle any error cases
+              console.error(e);
+            }
+          });
+        }
+
+        function getPropertyByPath(jsonObject, path) {
+          const keys = path.split('.');
+
+          return keys.reduce((obj, key) => {
+            if (!obj) return undefined;
+
+            // Check if the key includes an array index, like 'features[0]'
+            const arrayIndexMatch = key.match(/(.+)\[(\d+)\]$/);
+
+            if (arrayIndexMatch) {
+              const arrayKey = arrayIndexMatch[1];
+              const index = arrayIndexMatch[2];
+              return obj[arrayKey] && obj[arrayKey][index] !== undefined ? obj[arrayKey][index] : undefined;
+            } else {
+              return obj[key] !== undefined ? obj[key] : undefined;
+            }
+          }, jsonObject);
         }
 
         function showVerifiedLocation(description, lat, lng, isWithinBounds, isVerifiedAddress) {

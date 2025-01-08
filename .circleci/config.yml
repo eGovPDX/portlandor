@@ -19,7 +19,7 @@ commands:
           paths:
             - ".git"
   install_terminus_and_login:
-    steps:     
+    steps:
       - run:
           name: Get latest Terminus release
           command: |
@@ -107,7 +107,7 @@ commands:
 ## Job to build and deploy to Pantheon
 build_and_deploy: &build_and_deploy
   docker:
-    - image: cimg/php:8.1-node
+    - image: cimg/php:8.3-node
       auth:
         username: egovpdx
         password: $DOCKERHUB_PASSWORD
@@ -165,10 +165,12 @@ build_and_deploy: &build_and_deploy
     - run:
         name: Deploy to Pantheon
         when: on_success
-        no_output_timeout: 20m # allow 20 minutes instead of 10 minute default for script to complete
+        no_output_timeout: 30m # allow 30 minutes instead of 10 minute default for script to complete
         command: |
           # Don't check the repo host key
           export GIT_SSH_COMMAND="ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no"
+
+          terminus self:plugin:reload
 
           if [[ $CIRCLE_USERNAME = "" ]]; then
             # Set CIRCLE_USERNAME for builds triggered by GitHub actions
@@ -244,12 +246,22 @@ build_and_deploy: &build_and_deploy
           terminus build:workflow:wait $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV "Sync code on $PANTHEON_ENV"
 
           echo "Rebuilding cache..."
-          terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- cr
+          terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- cr || true
           echo "Running database updates..."
           terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- updb -y
           echo "Importing config..."
           # Retry config import once if it fails
           terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- cim -y || terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- cim -y
+
+          # Check config status after config import
+          if terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- config:status | grep -q 'No differences'
+          then
+            echo "The staged configuration is identical to the active configuration."
+          else
+            echo "The staged configuration is different from the active configuration. Check the config sync page."
+            exit 1
+          fi
+
           if [ $HAS_TRANSLATION_CHANGES -eq 1 ]; then
             echo "Importing interface translations..."
             terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- locale:check
@@ -266,14 +278,22 @@ build_and_deploy: &build_and_deploy
 
           # Post our custom Solr schema to Pantheon's Solr server
           terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- search-api-pantheon:postSchema pantheon_solr8 ../private/solr-conf
-          
+
           if [[ $CIRCLE_BRANCH != "master" ]]; then
             # Begin indexing the Solr server. For new multidevs, indexing will take some time
             # and will continue running after the CircleCI build finishes.
             if grep -Fxq "$PANTHEON_ENV" ./env_list.txt; then
               echo "Multidev already exists, no need to reset index tracker"
             else
-              echo "Reseting index tracker because index is empty on new multidev"
+              echo "Resetting Solr server on new multidev"
+              terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- en search_api_solr_admin
+              terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- search-api-solr:delete-all pantheon_solr8
+              terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- search-api:server-disable pantheon_solr8
+              terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- search-api:server-enable pantheon_solr8
+              terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- search-api:enable-all
+              terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- cim -y
+
+              echo "Resetting index tracker because index is empty on new multidev"
               terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- search-api:reset-tracker
             fi
             echo "Begin indexing the Solr server"
@@ -337,9 +357,9 @@ build_and_deploy: &build_and_deploy
             fi
           fi
 
-visual_regression: &visual_regression
+basic_tests: &basic_tests
   docker:
-    - image: cimg/php:8.1-browsers
+    - image: cimg/php:8.3-browsers
       auth:
         username: egovpdx
         password: $DOCKERHUB_PASSWORD
@@ -371,9 +391,6 @@ visual_regression: &visual_regression
               echo 'export MARTY_LOGIN=$(terminus drush ${CIRCLE_PROJECT_REPONAME}.${SITE_NAME} -- uli --mail marty.member@portlandoregon.gov)' > $BASH_ENV && source $BASH_ENV
               npm run jest-test -- ${TESTFILE}
             elif [[ ${TESTFILE} == *"admin-group"* ]]; then
-              echo 'export KEVIN_LOGIN=$(terminus drush ${CIRCLE_PROJECT_REPONAME}.${SITE_NAME} -- uli --mail xinju.wang@portlandoregon.gov)' > $BASH_ENV && source $BASH_ENV
-              npm run jest-test -- ${TESTFILE}
-            elif [[ ${TESTFILE} == *"admin"* ]]; then
               echo 'export SUPERADMIN_LOGIN=$(terminus drush ${CIRCLE_PROJECT_REPONAME}.${SITE_NAME} -- uli --name superAdmin)' > $BASH_ENV && source $BASH_ENV
               npm run jest-test -- ${TESTFILE}
             elif [[ ${TESTFILE} == *"anonymous"* ]]; then
@@ -386,7 +403,7 @@ visual_regression: &visual_regression
 
 full_regression: &full_regression
   docker:
-    - image: cimg/php:8.1-browsers
+    - image: cimg/php:8.3-browsers
       auth:
         username: egovpdx
         password: $DOCKERHUB_PASSWORD
@@ -448,7 +465,7 @@ full_regression: &full_regression
 
 clone_live_database: &clone_live_database
   docker:
-    - image: cimg/php:8.1-browsers
+    - image: cimg/php:8.3-browsers
       auth:
         username: egovpdx
         password: $DOCKERHUB_PASSWORD
@@ -504,8 +521,8 @@ clone_live_database: &clone_live_database
 jobs:
   deploy:
     <<: *build_and_deploy
-  visual_regression:
-    <<: *visual_regression
+  basic_tests:
+    <<: *basic_tests
   full_regression:
     <<: *full_regression
   clone_live_database:
@@ -524,18 +541,18 @@ workflows:
         equal: [ scheduled_pipeline, << pipeline.trigger_source >> ]
     jobs:
       - deploy
-      - visual_regression:
+      - basic_tests:
           requires:
             - deploy
       - full_regression:
           requires:
-            - visual_regression
+            - basic_tests
           context: eGovPDX
           filters:
             branches:
               only:
                 - master
-                - pgov-1078
+                - pgov-1318
   # The update database workflow runs when the scheduled pipeline named "Update Sandbox
   # Database" runs. Scheduled pipelines are configured in the CircleCI web UI at
   # https://app.circleci.com/settings/project/github/eGovPDX/portlandor/triggers

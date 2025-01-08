@@ -21,7 +21,7 @@ describe('SuperAdmin user test', () => {
 
     if (process.env.CIRCLECI) {
       // On CI, the CI script will call terminus to retrieve login URL
-      login_url = process.env.KEVIN_LOGIN;
+      login_url = process.env.SUPERADMIN_LOGIN;
       await page.goto(login_url);
     }
     else {
@@ -41,6 +41,7 @@ describe('SuperAdmin user test', () => {
     async function () {
       try {
         let text_content = '', selector='';
+        await page.setDefaultNavigationTimeout(60000);
 
         // If a previous test failed without deleting the test group, delete it first
         await page.goto(`${HOME_PAGE}/percy-test-group/delete`);
@@ -55,14 +56,15 @@ describe('SuperAdmin user test', () => {
         }
 
         // Create the test group
-        await page.goto(`${HOME_PAGE}/group/add/bureau_office`);
+        await page.goto(`${HOME_PAGE}/group/add/base_group`);
         text_content = await page.evaluate(() => document.querySelector('.page-title').textContent);
-        expect(text_content).toEqual(expect.stringContaining('Add Bureau/office'));
+        expect(text_content).toEqual(expect.stringContaining('Add Base group'));
         await page.type('#edit-label-0-value', 'Percy Test Group');
+        await page.select("#edit-field-group-subtype", "850"); // Bureau/office
         await page.type('#edit-field-official-organization-name-0-value', 'Official name of Percy test group');
         await page.type('#edit-field-summary-0-value', 'This is a test summary for the Percy Test group');
         // Must expand the admin fields group in order to input Group Path
-        await page.click('details#edit-group-administrative-fields');
+        await page.click('#edit-group-path-and-redirects');
         await page.type('#edit-field-group-path-0-value', 'percy-test-group');
         // Publish group
         await page.select("#edit-moderation-state-0-state", "published");
@@ -83,9 +85,9 @@ describe('SuperAdmin user test', () => {
         await page.waitForNavigation();
 
         text_content = await page.evaluate(() => document.querySelector('.page-title').textContent);
-        expect(text_content).toEqual(expect.stringContaining('Add Bureau/office: Group membership'));
+        expect(text_content).toEqual(expect.stringContaining('Group membership'));
         await page.type('#edit-entity-id-0-target-id', 'Ally Admin (62)');
-        selector = '#edit-group-roles-bureau-office-admin';
+        selector = '#edit-group-roles-base-group-admin';
         await page.evaluate((selector) => document.querySelector(selector).click(), selector);
         // Submit form
         await page.keyboard.press('Enter');
@@ -111,6 +113,7 @@ describe('SuperAdmin user test', () => {
         });
         throw e;
       }
-    }
+    },
+    120000 // 90s timeout
   );
 });

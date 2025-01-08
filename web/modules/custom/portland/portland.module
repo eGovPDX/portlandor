@@ -15,10 +15,10 @@ use Drupal\user\Entity\User;
 use Drupal\group\GroupMembershipLoaderInterface;
 use Drupal\group\Entity\GroupInterface;
 use Drupal\group\Entity\GroupTypeInterface;
-use Drupal\group\Entity\GroupContentTypeInterface;
+use Drupal\group\Entity\GroupRelationshipTypeInterface;
 use Drupal\pathauto\Form\PathautoBulkUpdateForm;
 use Drupal\Core\Render\BubbleableMetadata;
-use Drupal\group\Entity\GroupContent;
+use Drupal\group\Entity\GroupRelationship;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Cache\Cache;
 use Drupal\Core\Mail\MailManagerInterface;
@@ -27,6 +27,7 @@ use Drupal\Component\Utility\Html;
 use Drupal\views\Render\ViewsRenderPipelineMarkup;
 use Drupal\Core\Language\LanguageInterface;
 use Drupal\file\Plugin\Field\FieldType\FileFieldItemList;
+use Drupal\Core\Link;
 
 // This file concerns itself with setting up tokens with hooks
 include 'portland.tokens.inc';
@@ -42,7 +43,7 @@ function getGroupIdsByEntity($entity)
   }
   $group_ids = [];
 
-  $group_contents = GroupContent::loadByEntity($entity);
+  $group_contents = GroupRelationship::loadByEntity($entity);
   foreach ($group_contents as $group_content) {
     $group_ids[] = $group_content->getGroup()->id();
   }
@@ -139,20 +140,6 @@ function portland_group_insert(GroupInterface $group)
 function portland_theme($existing, $type, $theme, $path)
 {
   return [
-    'portland_alert' => [
-      'variables' => [
-        'dismissible' => false,
-        'type' => null,
-        'title' => null,
-        'text' => null,
-        'link_url' => null,
-        'link_text' => null,
-        'changed' => null,
-        'nid' => null,
-        'changed_timestamp' => null,
-      ],
-    ],
-
     'portland_revision_block' => [
       'variables' => [
         'alert_color' => null,
@@ -259,30 +246,6 @@ function portland_form_views_exposed_form_alter(&$form, &$form_state)
  */
 function portland_entity_insert($entity)
 {
-  switch ($entity->bundle()) {
-    case 'park_facility':
-      // Add this new Park Facility node to the Parks menu
-      $menu_link_service = \Drupal::service('plugin.manager.menu.link');
-      // Get the parent menu
-      $park_finder_menu = $menu_link_service->loadLinksByRoute('view.park_finder.page_1', [], 'site-map');
-      if (count($park_finder_menu)) {
-        $menu_link_service->addDefinition('park-' . $entity->id(), [
-          'menu_name' => 'site-map',
-          'route_name' => 'entity.node.canonical',
-          'route_parameters' => ['node' => $entity->id()],
-          'title' => $entity->label(),
-          'parent' => key($park_finder_menu), // Get the plugin ID of Park Finder link
-          'expanded' => false,
-          'enabled' => true,
-          'weight' => 0,
-        ]);
-      }
-      break;
-
-    default:
-      break;
-  }
-
   _notify_reviewer($entity, 'created');
 }
 
@@ -304,14 +267,15 @@ function _remove_file_usage_from_previous_revision($entity) {
   if (($entity_type_id !== 'node' && $entity_type_id !== 'media')
     || !$entity->getEntityType()->isRevisionable()) return;
 
+  $entity_id = $entity->id();
   $entity_storage = \Drupal::entityTypeManager()->getStorage($entity_type_id);
   // Retrieve the revision before this one
   $previous_vid = key($entity_storage->getQuery()
+      ->accessCheck(TRUE)
       ->allRevisions()
-      ->condition($entity_type_id === 'node' ? 'nid' : 'mid', $entity->id())
+      ->condition($entity_type_id === 'node' ? 'nid' : 'mid', $entity_id)
       ->sort('vid', 'DESC')
       ->range(1, 1)
-      ->accessCheck()
       ->execute());
   if (empty($previous_vid)) return;
 
@@ -319,15 +283,24 @@ function _remove_file_usage_from_previous_revision($entity) {
   if (!$previous_revision->hasTranslation($langcode)) return;
 
   $previous_revision_translated = $previous_revision->getTranslation($langcode);
+
   foreach ($previous_revision_translated->getFields() as $field) {
     if ($field instanceof FileFieldItemList) {
       foreach ($field as $item) {
+        // Get all FIDs from the current revision
+        $latest_revision_file_ids = array_map(fn($file) => $file['target_id'], $entity->get($field->getName())->getValue());
         $file = $item->entity;
-        // Remove 1 usage count from the old revision's file.
-        // If the new revision still uses the old file, the new revision will be the source of usage for the file.
-        // If the new revision uses a new file, the old revision will no longer be a source of usage,
-        // allowing the file to be marked as temporary and get deleted.
-        if ($file) \Drupal::service('file.usage')->delete($file, 'file', $entity_type_id, $entity->id(), 1);
+        // If the file from the previous revision was deleted in the current revision,
+        // delete all file usages for it.
+        if ($file && !in_array($file->id(), $latest_revision_file_ids)) {
+          \Drupal::service('file.usage')->delete($file, 'file', $entity_type_id, $entity_id, 0);
+          \Drupal::logger('portland')->info('File (ID: %id) "%path" usage cleared. Current user ID: %user_id. Request URI: %request_uri', [
+            '%id' => $file->id(),
+            '%path' => $file->getFileUri(),
+            '%user_id' => \Drupal::currentUser()->id(),
+            '%request_uri' => \Drupal::request()->getRequestUri(),
+          ]);
+        }
       }
     }
   }
@@ -372,15 +345,6 @@ function _build_log_message($entity)
  */
 function portland_entity_delete($entity)
 {
-  switch ($entity->bundle()) {
-    case 'park_facility':
-      // Delete the menu link for this park
-      \Drupal::service('menu.tree_storage')->delete('park-' . $entity->id());
-      break;
-    default:
-      break;
-  }
-
   // Log entity deletion event
   switch ($entity->getEntityTypeId()) {
     case 'group_content':
@@ -394,102 +358,6 @@ function portland_entity_delete($entity)
       break;
     default:
       // Skip other deletion events: redirect, group, etc.
-      break;
-  }
-}
-
-/**
- * Implements template_preprocess_paragraph
- */
-function portland_preprocess_paragraph(&$vars)
-{
-  switch ($vars['paragraph']->bundle()) {
-    case 'image':
-      $image = $vars['paragraph'];
-      if (
-        $image->hasField("field_image_alignment") &&
-        $image->field_image_alignment->value !== null
-      ) {
-        // If there is not an existing class array, create an empty array.
-        if (!isset($vars['attributes']['class'])) {
-          $vars['attributes']['class'] = [];
-        }
-        $vars['attributes']['class'] = array_merge(
-          $vars['attributes']['class'],
-          ['float-' . $image->field_image_alignment->value, 'image-align']
-        );
-      }
-      break;
-    case 'document':
-      // If there is not an existing class array, create an empty array.
-      if (!isset($vars['attributes']['class'])) {
-        $vars['attributes']['class'] = [];
-      };
-      $document = $vars['paragraph'];
-
-      if (
-        $document->hasField("field_document") &&
-        $document->field_document->entity !== null
-      ) {
-        // Map mimetype to font awesome icon names. Sources:
-        // https://api.drupal.org/api/drupal/includes%21file.mimetypes.inc/function/file_default_mimetype_mapping/7.x
-        // https://fontawesome.com/icons?d=gallery
-        $mimetypeToFontawesomeIcon = [
-          'text/plain' => 'file',
-          'application/pdf' => 'file-pdf',
-          'application/msword' => 'file-word', // *.doc
-          'application/vnd.openxmlformats-officedocument.wordprocessingml.document' => 'file-word', // *.docx
-          'application/vnd.ms-excel' => 'file-excel', // *.xls
-          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' => 'file-excel', // *.xlsx
-          'application/vnd.ms-powerpoint' => 'file-powerpoint', // *.ppt
-          'application/vnd.openxmlformats-officedocument.presentationml.presentation' => 'file-powerpoint',
-        ];
-
-        // Paragraph -> Media -> File
-        if (isset($document->field_document->entity->field_document->entity)) {
-          $vars['fileSize'] = format_size(
-            $document->field_document->entity->field_document->entity->getSize()
-          );
-          $vars['fileUrl'] = $document->field_document->entity->field_document->entity->createFileUrl();
-          $mimeType = $document->field_document->entity->field_document->entity->getMimeType();
-          // Set fontawesome icon based on mime type. Use "file" as the default in case no matching mime type is found.
-          $vars['fontawesomeIcon'] = array_key_exists($mimeType, $mimetypeToFontawesomeIcon) ?
-            $mimetypeToFontawesomeIcon[$mimeType] : 'file';
-        }
-      };
-      break;
-    case 'video':
-      // NOTE: audio files also use a YouTube video player and re-uses field_video_alignment
-      $video = $vars['paragraph'];
-      if (
-        $video->hasField("field_video_alignment") &&
-        $video->field_video_alignment->value !== null
-      ) {
-        // If there is not an existing class array, create an empty array.
-        if (!isset($vars['attributes']['class'])) {
-          $vars['attributes']['class'] = [];
-        }
-        $vars['attributes']['class'] = array_merge(
-          $vars['attributes']['class'],
-          ['float-' . $video->field_video_alignment->value, 'video-align']
-        );
-      }
-      break;
-    case 'quote':
-      $quote = $vars['paragraph'];
-      if (
-        $quote->hasField("field_alignment") &&
-        $quote->field_alignment->value !== null
-      ) {
-        // If there is not an existing class array, create an empty array.
-        if (!isset($vars['attributes']['class'])) {
-          $vars['attributes']['class'] = [];
-        }
-        $vars['attributes']['class'] = array_merge(
-          $vars['attributes']['class'],
-          ['float-' . $quote->field_alignment->value, 'quote-align']
-        );
-      }
       break;
   }
 }
@@ -584,6 +452,11 @@ function portland_system_breadcrumb_alter(Breadcrumb &$breadcrumb, RouteMatchInt
       } // skip if we can't load by term ID
       $links[$i]->setText($term->getName());
     }
+  }
+
+  $node = $route_match->getParameter('node');
+  if(!empty($node) && ($node instanceof Drupal\node\Entity\Node) && $node->bundle() == "park_facility") {
+    $breadcrumb->addLink(Link::createFromRoute(t("Find a park"), "view.park_finder.page_1"));
   }
 }
 
@@ -921,7 +794,8 @@ function portland_cron()
 
       if (count($theview->result)) {
         // Render the view and append to results
-        $results .= \Drupal::service('renderer')->render($theview->render());
+        // PGOV-1234 Fix the error in cron "LogicException: Render context is empty"
+        $results .= \Drupal::service('renderer')->renderInIsolation($theview->render());
       }
     }
 
@@ -995,25 +869,13 @@ function _notify_reviewer($entity, $entity_event_type)
   $revision_log_output = $node->revision_log->value ?
     "<div><h3>Revision log:</h3>\r\n" . $node->revision_log->value . "</div>\r\n<p/>\r\n<div>" : '';
 
-  $moderation_state_message = [
-    'review' => 'In review',
-    'draft' => 'Draft',
-    'archived' => 'Unpublished',
-    'published' => 'Published',
-    'unpublished' => 'Unpublished',
-    'bureau_review' => 'Bureau Review',
-    'attorney_review' => 'Attorney Review',
-    'code_review' => 'Code Review',
-    'budget_office_review' => 'Budget Office Review',
-    'policy_editor_review' => 'Policy Editor Review',
-    'elected_review' => 'Elected Review',
-    'council_clerk_review' => 'Council Clerk Review',
-    'ready_for_agenda' => 'Ready for Agenda',
-    'cancelled' => 'Cancelled (To Be Deleted)',
-  ];
+  /** @var \Drupal\content_moderation\ModerationInformation $moderation_info */
+  $moderation_info = \Drupal::service('content_moderation.moderation_information');
+  $moderation_state_id = $latest_rev->moderation_state->value;
+  $moderation_state_message = $moderation_info->getWorkflowForEntity($latest_rev)->getTypePlugin()->getState($moderation_state_id)->label();
 
   // send email for any moderation state except draft
-  if ($latest_rev->moderation_state->value != 'draft') {
+  if ($moderation_state_id !== 'draft') {
     $key = 'portland_notify_reviewers';
     $params['title'] = 'Portland.gov reviewer update';
     $langcode = \Drupal::currentUser()->getPreferredLangcode();
@@ -1021,7 +883,7 @@ function _notify_reviewer($entity, $entity_event_type)
       "/revisions/" . $node->vid->value . "/view\"> " . $latest_rev->label() .
       "</a> . You will be notified of all changes to this content.<p/>" .
       "<a href=\"" . $node->revision_uid->entity->toUrl()->toString(). "\">" . $node->revision_uid->entity->label() .
-      "</a> " . $status_message . " a new <strong>" . $moderation_state_message[$latest_rev->moderation_state->value] .
+      "</a> " . $status_message . " a new <strong>" . $moderation_state_message .
       "</strong> revision at " .
       \Drupal::service('date.formatter')->format($node->changed->value, 'custom', 'l Y/n/j g:i A') .
       ".<p/>" . $revision_log_output;
@@ -1137,43 +999,6 @@ function portland_mail_alter(&$message)
 }
 
 /**
- * Implements hook_entity_prepare_view()
- */
-function portland_entity_prepare_view($entity_type_id, array $entities, array $displays, $view_mode)
-{
-  if ($entities == null) return;
-  $node = $entities[0];
-  // We only want to rewrite the node title for the full page view mode. Other view modes will call
-  // the title or the full_document_title as needed.
-  if ($node != null && _should_overwrite_council_document_title($node) && $view_mode === 'full') {
-    // Display the Full Document Title as Title
-    $node->title->value = $node->field_full_document_title->value;
-    $node->field_full_document_title->value = '';
-  }
-}
-
-/**
- * Helper function that checks if the node should have its title overwritten
- */
-function _should_overwrite_council_document_title($node)
-{
-  if ($node != null && $node->bundle() == 'council_document') {
-    $document_status_entity = $node->field_council_document_status->entity;
-    $document_status = ($document_status_entity == null) ? '' : $document_status_entity->name->value;
-
-    $document_type_entity = $node->field_council_document_type->entity;
-    $document_type = ($document_type_entity == null) ? '' : $document_type_entity->name->value;
-
-    if (($document_status != null)) {
-      return false;
-    } else {
-      return true;
-    }
-  }
-  return false;
-}
-
-/**
  * Implements hook_form_FORM_ID_alter().
  *
  * Override the user login form to use the SAML login
@@ -1183,7 +1008,7 @@ function portland_form_user_login_form_alter(&$form, &$form_state)
   if(
     isset($_ENV['PANTHEON_ENVIRONMENT']) &&
     in_array($_ENV['PANTHEON_ENVIRONMENT'], [
-      'pgov-796', 'sandbox', 'demo', 'dev', 'test', 'live'])
+      'cddev', 'pgov-1166', 'sandbox', 'demo', 'dev', 'test', 'live'])
   ) {
     $destination = \Drupal::request()->get('destination');
 
@@ -1225,7 +1050,7 @@ function portland_views_pre_render(ViewExecutable $view)
       if ($nid && $type) {
         $redirects = \Drupal::service('redirect.repository')->findByDestinationUri(["internal:/$type/$nid", "entity:$type/$nid"]);
         if (empty($redirects)) {
-          unset($view->result[$key]); // Remove rows without legacy path
+          unset($view->result[$key]); // Remove rows without URL redirect
         }
       }
     }
@@ -1238,7 +1063,7 @@ function portland_views_pre_render(ViewExecutable $view)
 function portland_toolbar_alter(&$items)
 {
   $account = Drupal::currentUser();
-  if (!in_array('administrator', $account->getRoles())) {
+  if (!in_array('administrator', $account->getRoles(FALSE))) {
     $items['administration']['tab']['#attributes']['class'][] = 'd-none';
     $items['administration']['tray']['toolbar_administration']['#attributes']['class'][] = 'd-none';
     // Some views like /my-content are displayed in the Claro theme which doesn't have the `d-none` CSS
@@ -1253,7 +1078,7 @@ function portland_toolbar_alter(&$items)
  */
 function portland_views_query_alter($view, $query)
 {
-  if ($view->id() == 'document_revisions' && $view->current_display === 'page') {
+  if ($view->id() === 'document_revisions' && $view->current_display === 'page') {
     // The sub-query that will show the unique file count for each Document
     $subquery = \Drupal::database()->select('media_revision__field_document', 'media_revision__field_document');
     $subquery->addField('media_revision__field_document', 'entity_id');
@@ -1275,6 +1100,21 @@ function portland_views_query_alter($view, $query)
 
     // Force sorting on revision ID
     $query->addOrderBy('media_field_revision', 'vid', 'DESC');
+  }
+}
+
+/**
+ * Implements hook_views_post_execute().
+ */
+function portland_views_post_execute(ViewExecutable $view) {
+  // Set custom fill color on council district boundary maps.
+  if ($view->id() === 'council_districts' && $view->current_display === 'entity_view_district_map') {
+    $fill_color = $view->result[0]?->_entity?->field_color?->getString();
+    if ($fill_color && preg_match("/^#[a-f0-9]{6}$/i", $fill_color)) {
+      $path_config = json_decode($view->style_plugin->options['path']);
+      $path_config->fillColor = $fill_color;
+      $view->style_plugin->options['path'] = json_encode($path_config);
+    }
   }
 }
 
@@ -1520,7 +1360,7 @@ function portland_local_tasks_alter(&$local_tasks): void {
  */
 function portland_preprocess_fieldset(&$variables): void {
   // Clear the duplicated error message for Updated date/time in News
-  if($variables["attributes"]["id"] === "edit-field-updated-on-0") {
+  if(isset($variables["attributes"]["id"]) && $variables["attributes"]["id"] === "edit-field-updated-on-0") {
     unset($variables["errors"]);
   }
 }

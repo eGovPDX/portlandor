@@ -4,6 +4,7 @@ status: true
 dependencies:
   config:
     - entity_browser.browser.image_browser_embed
+    - field.field.group.elected_official.field_abbreviated_name
     - field.field.group.elected_official.field_active_elected_official
     - field.field.group.elected_official.field_address
     - field.field.group.elected_official.field_body_content
@@ -29,7 +30,10 @@ dependencies:
     - field.field.group.elected_official.field_featured_groups
     - field.field.group.elected_official.field_group_menu_toggle
     - field.field.group.elected_official.field_group_path
+    - field.field.group.elected_official.field_group_subtype
+    - field.field.group.elected_official.field_homepage_summary
     - field.field.group.elected_official.field_instagram
+    - field.field.group.elected_official.field_languages_spoken
     - field.field.group.elected_official.field_linkedin_link
     - field.field.group.elected_official.field_location
     - field.field.group.elected_official.field_menu_link
@@ -38,28 +42,25 @@ dependencies:
     - field.field.group.elected_official.field_official_title
     - field.field.group.elected_official.field_person_image
     - field.field.group.elected_official.field_phone
+    - field.field.group.elected_official.field_pronouns
     - field.field.group.elected_official.field_routing_email
     - field.field.group.elected_official.field_search_keywords
+    - field.field.group.elected_official.field_service_record
     - field.field.group.elected_official.field_shortname_or_acronym
     - field.field.group.elected_official.field_summary
     - field.field.group.elected_official.field_twitter
-    - field.field.group.elected_official.field_voting_council_member
     - field.field.group.elected_official.field_youtube_link
     - field.field.group.elected_official.layout_builder__layout
     - field.field.group.elected_official.layout_builder__translation
     - group.type.elected_official
     - workflows.workflow.editorial
   module:
-    - address
-    - cleave
-    - conditional_fields
     - content_moderation
     - entity_browser
+    - entity_browser_entity_form
     - field_group
-    - link
-    - menu_link
+    - ief_table_view_mode
     - path
-    - text
 third_party_settings:
   field_group:
     group_group_menu:
@@ -79,7 +80,7 @@ third_party_settings:
       label: 'Group Menu'
       region: content
       parent_name: ''
-      weight: 12
+      weight: 14
       format_type: details
       format_settings:
         classes: ''
@@ -90,20 +91,12 @@ third_party_settings:
         weight: 0
     group_administrative_fields:
       children:
-        - field_group_path
-        - field_active_elected_official
-        - field_voting_council_member
-        - field_commissioner_number
-        - field_council_district
         - field_search_keywords
         - path
-        - field_menu_link
-        - field_routing_email
-        - field_enable_body_content
       label: 'Administrative Fields (Site Admins Only)'
       region: content
       parent_name: ''
-      weight: 14
+      weight: 17
       format_type: details
       format_settings:
         classes: 'border border-danger'
@@ -114,12 +107,13 @@ third_party_settings:
         weight: 0
     group_paths_and_redirects:
       children:
+        - field_group_path
         - field_redirects
         - field_disable_legacy_paths_block
       label: 'Paths and Redirects'
       region: content
       parent_name: ''
-      weight: 13
+      weight: 15
       format_type: details
       format_settings:
         classes: ''
@@ -131,34 +125,27 @@ third_party_settings:
     group_contact:
       children:
         - field_contact
-        - field_email
-        - field_phone
-        - field_facebook
-        - field_instagram
-        - field_twitter
-        - field_linkedin_link
-        - field_nextdoor_link
-        - field_youtube_link
-        - field_address
-      label: 'Contact and Social Media'
+        - field_routing_email
+      label: 'Contact Information'
       region: content
       parent_name: ''
-      weight: 8
+      weight: 11
       format_type: details
       format_settings:
         classes: ''
+        show_empty_fields: false
         id: ''
+        label_as_html: false
         open: false
         description: ''
         required_fields: false
-        weight: 0
     group_location:
       children:
         - field_location
       label: Location
       region: content
       parent_name: ''
-      weight: 11
+      weight: 13
       format_type: details
       format_settings:
         classes: ''
@@ -168,12 +155,11 @@ third_party_settings:
         required_fields: true
         weight: 0
     group_body_content:
-      children:
-        - field_body_content
+      children: {  }
       label: 'Custom Menu'
-      region: content
+      region: hidden
       parent_name: ''
-      weight: 9
+      weight: 38
       format_type: details
       format_settings:
         classes: ''
@@ -182,35 +168,64 @@ third_party_settings:
         open: false
         description: ''
         required_fields: true
+    group_council_clerk_only:
+      children:
+        - field_abbreviated_name
+        - field_active_elected_official
+        - field_commissioner_number
+        - field_council_district
+      label: 'Council Clerk'
+      region: content
+      parent_name: ''
+      weight: 16
+      format_type: details
+      format_settings:
+        classes: ''
+        show_empty_fields: false
+        id: ''
+        label_as_html: false
+        open: false
+        description: ''
+        required_fields: true
+    group_service_record:
+      children:
+        - field_service_record
+      label: 'Service Record'
+      region: content
+      parent_name: ''
+      weight: 10
+      format_type: details
+      format_settings:
+        classes: ''
+        show_empty_fields: false
+        id: ''
+        label_as_html: false
+        open: false
+        description: ''
+        required_fields: true
 id: group.elected_official.default
 targetEntityType: group
 bundle: elected_official
 mode: default
 content:
+  field_abbreviated_name:
+    type: string_textfield
+    weight: 3
+    region: content
+    settings:
+      size: 60
+      placeholder: ''
+    third_party_settings: {  }
   field_active_elected_official:
     type: boolean_checkbox
-    weight: 3
+    weight: 4
     region: content
     settings:
       display_label: true
     third_party_settings: {  }
-  field_address:
-    type: address_default
-    weight: 22
-    region: content
-    settings: {  }
-    third_party_settings: {  }
-  field_body_content:
-    type: text_textarea
-    weight: 17
-    region: content
-    settings:
-      rows: 5
-      placeholder: ''
-    third_party_settings: {  }
   field_commissioner_number:
     type: number
-    weight: 5
+    weight: 6
     region: content
     settings:
       placeholder: ''
@@ -227,42 +242,35 @@ content:
     third_party_settings: {  }
   field_council_district:
     type: options_select
-    weight: 5
+    weight: 7
     region: content
     settings: {  }
     third_party_settings:
       conditional_fields:
-        32351b56-299c-4243-8223-a1e4e178396c:
+        0cb06ba0-b790-42f7-aebe-65284ebed216:
           entity_type: group
           bundle: elected_official
-          dependee: field_voting_council_member
+          dependee: field_group_subtype
           settings:
             state: visible
             reset: true
-            condition: checked
+            condition: value
             grouping: AND
             values_set: 1
             value: ''
             values: {  }
             value_form:
-              value: false
+              -
+                target_id: '976'
             effect: show
             effect_options: {  }
             selector: ''
   field_disable_legacy_paths_block:
     type: boolean_checkbox
-    weight: 10
-    region: content
-    settings:
-      display_label: true
-    third_party_settings: {  }
-  field_email:
-    type: email_default
     weight: 14
     region: content
     settings:
-      placeholder: ''
-      size: 60
+      display_label: true
     third_party_settings: {  }
   field_enable_blog_menu_item:
     type: boolean_checkbox
@@ -272,13 +280,6 @@ content:
       display_label: true
     third_party_settings:
       conditional_fields: {  }
-  field_enable_body_content:
-    type: boolean_checkbox
-    weight: 10
-    region: content
-    settings:
-      display_label: true
-    third_party_settings: {  }
   field_enable_council_votes:
     type: boolean_checkbox
     weight: 21
@@ -288,7 +289,7 @@ content:
     third_party_settings: {  }
   field_enable_events_menu_item:
     type: boolean_checkbox
-    weight: 22
+    weight: 23
     region: content
     settings:
       display_label: true
@@ -304,7 +305,7 @@ content:
       conditional_fields: {  }
   field_enable_past_meetings:
     type: boolean_checkbox
-    weight: 23
+    weight: 24
     region: content
     settings:
       display_label: true
@@ -318,7 +319,7 @@ content:
     third_party_settings: {  }
   field_enable_programs_menu_item:
     type: boolean_checkbox
-    weight: 24
+    weight: 25
     region: content
     settings:
       display_label: true
@@ -326,7 +327,7 @@ content:
       conditional_fields: {  }
   field_enable_projects_menu_item:
     type: boolean_checkbox
-    weight: 25
+    weight: 26
     region: content
     settings:
       display_label: true
@@ -354,17 +355,9 @@ content:
       display_label: true
     third_party_settings:
       conditional_fields: {  }
-  field_facebook:
-    type: string_textfield
-    weight: 16
-    region: content
-    settings:
-      size: 60
-      placeholder: ''
-    third_party_settings: {  }
   field_featured_content:
     type: entity_reference_autocomplete
-    weight: 5
+    weight: 7
     region: content
     settings:
       match_operator: CONTAINS
@@ -374,7 +367,7 @@ content:
     third_party_settings: {  }
   field_featured_groups:
     type: entity_reference_autocomplete
-    weight: 6
+    weight: 8
     region: content
     settings:
       match_operator: CONTAINS
@@ -391,7 +384,7 @@ content:
     third_party_settings: {  }
   field_group_path:
     type: string_textfield
-    weight: 2
+    weight: 12
     region: content
     settings:
       size: 60
@@ -400,25 +393,52 @@ content:
       maxlength:
         maxlength_js: 60
         maxlength_js_label: 'Content limited to @limit characters, remaining: <strong>@remaining</strong>'
-  field_instagram:
+  field_group_subtype:
+    type: options_select
+    weight: 1
+    region: content
+    settings: {  }
+    third_party_settings: {  }
+  field_homepage_summary:
+    type: string_textarea
+    weight: 3
+    region: content
+    settings:
+      rows: 2
+      placeholder: ''
+    third_party_settings:
+      maxlength:
+        maxlength_js: 200
+        maxlength_js_label: 'Content limited to @limit characters, remaining: <strong>@remaining</strong>'
+        maxlength_js_enforce: true
+      conditional_fields:
+        1a1d180a-df1d-4b8b-b080-2b82e5ce084a:
+          entity_type: group
+          bundle: elected_official
+          dependee: field_group_subtype
+          settings:
+            state: visible
+            reset: false
+            condition: value
+            grouping: AND
+            values_set: 3
+            value: ''
+            values: "974\r\n977\r\n978"
+            value_form: {  }
+            effect: show
+            effect_options: {  }
+            selector: ''
+  field_languages_spoken:
     type: string_textfield
-    weight: 17
+    weight: 6
     region: content
     settings:
       size: 60
       placeholder: ''
     third_party_settings: {  }
-  field_linkedin_link:
-    type: link_default
-    weight: 19
-    region: content
-    settings:
-      placeholder_url: ''
-      placeholder_title: ''
-    third_party_settings: {  }
   field_location:
     type: entity_browser_entity_reference
-    weight: 10
+    weight: 23
     region: content
     settings:
       entity_browser: locations_browser
@@ -431,12 +451,6 @@ content:
         view_mode: teaser
       selection_mode: selection_append
     third_party_settings: {  }
-  field_menu_link:
-    type: menu_link_default
-    weight: 8
-    region: content
-    settings: {  }
-    third_party_settings: {  }
   field_name:
     type: string_textfield
     weight: 2
@@ -445,25 +459,9 @@ content:
       size: 60
       placeholder: ''
     third_party_settings: {  }
-  field_nextdoor_link:
-    type: link_default
-    weight: 20
-    region: content
-    settings:
-      placeholder_url: ''
-      placeholder_title: ''
-    third_party_settings: {  }
-  field_official_title:
-    type: string_textfield
-    weight: 3
-    region: content
-    settings:
-      size: 60
-      placeholder: ''
-    third_party_settings: {  }
   field_person_image:
     type: entity_browser_entity_reference
-    weight: 7
+    weight: 9
     region: content
     settings:
       entity_browser: image_browser_embed
@@ -475,14 +473,6 @@ content:
       field_widget_display_settings:
         view_mode: responsive_4x5
       selection_mode: selection_append
-    third_party_settings: {  }
-  field_phone:
-    type: telephone_cleave
-    weight: 15
-    region: content
-    settings:
-      placeholder: ''
-      country: US
     third_party_settings: {  }
   field_portrait:
     type: image_focal_point
@@ -497,9 +487,17 @@ content:
       lightning_media:
         file_links: true
         remove_button: true
+  field_pronouns:
+    type: string_textfield
+    weight: 5
+    region: content
+    settings:
+      size: 60
+      placeholder: ''
+    third_party_settings: {  }
   field_redirects:
     type: string_textfield
-    weight: 9
+    weight: 13
     region: content
     settings:
       size: 60
@@ -507,7 +505,7 @@ content:
     third_party_settings: {  }
   field_routing_email:
     type: email_default
-    weight: 9
+    weight: 14
     region: content
     settings:
       placeholder: ''
@@ -515,12 +513,32 @@ content:
     third_party_settings: {  }
   field_search_keywords:
     type: string_textfield
-    weight: 6
+    weight: 11
     region: content
     settings:
       size: 60
       placeholder: ''
     third_party_settings: {  }
+  field_service_record:
+    type: inline_entity_form_complex_table_view_mode
+    weight: 20
+    region: content
+    settings:
+      form_mode: default
+      override_labels: true
+      label_singular: term
+      label_plural: terms
+      allow_new: true
+      allow_existing: false
+      match_operator: CONTAINS
+      allow_duplicate: false
+      collapsible: false
+      collapsed: false
+      revision: true
+      removed_reference: delete
+    third_party_settings:
+      entity_browser_entity_form:
+        entity_browser_id: _none
   field_summary:
     type: string_textarea
     weight: 4
@@ -534,29 +552,6 @@ content:
         maxlength_js_label: 'Content limited to @limit characters, remaining: <strong>@remaining</strong>'
         maxlength_js_enforce: true
         maxlength_js_truncate_html: true
-  field_twitter:
-    type: string_textfield
-    weight: 18
-    region: content
-    settings:
-      size: 60
-      placeholder: ''
-    third_party_settings: {  }
-  field_voting_council_member:
-    type: boolean_checkbox
-    weight: 4
-    region: content
-    settings:
-      display_label: true
-    third_party_settings: {  }
-  field_youtube_link:
-    type: link_default
-    weight: 21
-    region: content
-    settings:
-      placeholder_url: ''
-      placeholder_title: ''
-    third_party_settings: {  }
   group_body_content:
     weight: 26
     region: content
@@ -573,24 +568,24 @@ content:
     third_party_settings: {  }
   moderation_state:
     type: moderation_state_default
-    weight: 16
+    weight: 19
     region: content
     settings: {  }
     third_party_settings: {  }
   path:
     type: path
-    weight: 7
+    weight: 12
     region: content
     settings: {  }
     third_party_settings: {  }
   translation:
-    weight: 10
+    weight: 12
     region: content
     settings: {  }
     third_party_settings: {  }
   uid:
     type: entity_reference_autocomplete
-    weight: 15
+    weight: 18
     region: content
     settings:
       match_operator: CONTAINS
@@ -599,7 +594,20 @@ content:
       placeholder: ''
     third_party_settings: {  }
 hidden:
+  field_address: true
+  field_body_content: true
+  field_email: true
+  field_enable_body_content: true
+  field_facebook: true
+  field_instagram: true
+  field_linkedin_link: true
+  field_menu_link: true
+  field_nextdoor_link: true
+  field_official_title: true
+  field_phone: true
   field_shortname_or_acronym: true
+  field_twitter: true
+  field_youtube_link: true
   langcode: true
   layout_builder__layout: true
   layout_builder__translation: true

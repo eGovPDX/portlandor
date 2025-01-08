@@ -99,7 +99,7 @@ class MigrateParkDocuments extends ProcessPluginBase {
   protected function addEntityToGroup($group_id, $entity) {
     $group = Group::load($group_id);
     if( $group == NULL ) return;
-    $group->addContent($entity, 'group_'.$entity->getEntityTypeId().':'.$entity->bundle());
+    $group->addRelationship($entity, 'group_'.$entity->getEntityTypeId().':'.$entity->bundle());
   }
 
   protected function prepareDownloadDirectory() {

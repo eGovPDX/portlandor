@@ -1,0 +1,74 @@
+{% set now_timestamp = 'now'|date('U') %}
+{# truncate term date precision to the day #}
+{% set term_start_timestamp = content.field_term_date.0.start_date['#attributes']['datetime']|date('Y-m-d')|date('U') %}
+{% set term_end_timestamp = content.field_term_date.0.end_date['#attributes']['datetime']|date('Y-m-d')|date('U') %}
+{% set has_term_started = 'now'|date('U') > term_start_timestamp %}
+{% set has_term_ended = 'now'|date('U') > term_end_timestamp %}
+
+{% set placeholders = {
+  '@type': content.field_city_official_type.0['#plain_text'],
+  ':district_url': content.field_council_district.0['#url'].toString() ?: '',
+  '@district_name': content.field_council_district.0['#title'] ?: '',
+  '@elected_date': content.field_elected_date.0['#text'],
+  '@start_date': content.field_term_date.0.start_date['#text'],
+} %}
+
+{% if not has_term_started and not has_term_ended %}
+<h2 class="h5 mb-2">Upcoming position</h2>
+{% elseif has_term_started and not has_term_ended %}
+<h2 class="h5 mb-2">Current position</h2>
+{% endif %}
+<div class="d-flex">
+  {# past position #}
+  {% if has_term_ended %}
+  <i class="fas fa-clock-rotate-left mt-1"></i>
+  {# upcoming position #}
+  {% elseif not has_term_started and not has_term_ended %}
+  <i class="fas fa-forward mt-1"></i>
+  {# current position #}
+  {% else %}
+  <i class="fas fa-circle-check mt-1"></i>
+  {% endif %}
+
+  <span>
+    <strong class="fw-semibold">{{ content.field_city_official_type.0 }}: </strong>
+    {% if content.field_elected_date.0 %}
+      {% if has_term_ended %}
+        {% if content.field_council_district.0 %}
+          {{ 'Served as an elected @type for <a href=":district_url">@district_name</a> from @start_year until @end_year.'|t(placeholders|merge({
+            '@start_year': term_start_timestamp|date('Y'),
+            '@end_year': term_end_timestamp|date('Y')
+          })) }}
+        {% else %}
+          {{ 'Served as an elected @type from @start_year until @end_year.'|t(placeholders|merge({
+            '@start_year': term_start_timestamp|date('Y'),
+            '@end_year': term_end_timestamp|date('Y')
+          })) }}
+        {% endif %}
+      {% else %}
+        {% if has_term_started %}
+          {% if content.field_council_district.0 %}
+            {{ 'Elected as @type for <a href=":district_url">@district_name</a> in @elected_date and began their term of office in @start_date.'|t(placeholders) }}
+          {% else %}
+            {{ 'Elected as @type in @elected_date and began their term of office in @start_date.'|t(placeholders) }}
+          {% endif %}
+        {% else %}
+          {% if content.field_council_district.0 %}
+            {{ 'Elected as @type for <a href=":district_url">@district_name</a> in @elected_date and will begin their term of office in @start_date.'|t(placeholders) }}
+          {% else %}
+            {{ 'Elected as @type in @elected_date and will begin their term of office in @start_date.'|t(placeholders) }}
+          {% endif %}
+        {% endif %}
+      {% endif %}
+    {% else %}
+      {% if has_term_ended %}
+        {{ 'Served as @type from @start_year until @end_year.'|t(placeholders|merge({
+          '@start_year': term_start_timestamp|date('Y'),
+          '@end_year': term_end_timestamp|date('Y'),
+        })) }}
+      {% else %}
+        {{ 'Appointed as @type in @start_date.'|t(placeholders) }}
+      {% endif %}
+    {% endif %}
+  </span>
+</div>

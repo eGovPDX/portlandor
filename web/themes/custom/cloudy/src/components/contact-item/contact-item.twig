@@ -12,7 +12,6 @@
       level: level,
       style: style,
       text: heading.text,
-      classes: title ? ['mb-0'] : ''
     } only %}
   {% endif %}
   {{ title_suffix }}
@@ -20,6 +19,13 @@
     <span class="d-block mb-4">{{ title }}</span>
   {% endif %}
   <div class="cloudy-contact__resource">
+    {% if contact_link.url and contact_link.text %}
+      <div class="cloudy-contact-item__resource-wrapper">
+        {% apply spaceless %}
+        <a class="btn btn-cta-outline" href="{{ contact_link.url }}">{{ contact_link.text }}</a>
+        {% endapply %}
+      </div>
+    {% endif %}
     {% if email %}
       <div class="cloudy-contact-item__resource-wrapper">
         {% include "@components/link/link.twig" with {
@@ -97,7 +103,7 @@
     {% if fax %}
       <div class="cloudy-contact-item__resource-wrapper">
         {% apply spaceless %}
-          {% include '@elements/icon/icon.twig' with {
+          {% include '@components/icon/icon.twig' with {
             name: 'fax',
             size: 'xs'
           } only %}
@@ -106,12 +112,15 @@
       </div>
     {% endif %}
     {% if social.facebook or social.twitter or social.instagram or social.youtube.url or social.linkedin.url or social.nextdoor.url %}
-      {% include "@components/heading/heading.twig" with {
-        level,
-        style,
-        text: "Follow on Social Media"|t,
-        classes: email or phone ? ['mt-8']
-      } only %}
+      {# Don't show social media heading if contact only has social media #}
+      {% if contact_link.url or email or display_311 or phone or tty or oregon_relay or fax %}
+        {% include "@components/heading/heading.twig" with {
+          level,
+          style,
+          text: "Follow on Social Media"|t,
+          classes: ['mt-8']
+        } only %}
+        {% endif %}
       {% if social.facebook %}
         <div class="cloudy-contact-item__resource-wrapper">
           {% apply spaceless %}
