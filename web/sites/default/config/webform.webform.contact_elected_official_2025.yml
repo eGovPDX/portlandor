@@ -8,7 +8,12 @@ third_party_settings:
   portland:
     disable_demographic_form_prompt: 0
     exclude_from_json:
+      prepopulate: prepopulate
+      card: card
+      recipient: recipient
       your_address: your_address
+      computed_subject: computed_subject
+      computed_confirmation_message: computed_confirmation_message
 weight: 0
 open: null
 close: null
@@ -359,7 +364,7 @@ elements: |-
     '#states':
       visible:
         ':input[name="prepopulate"]':
-          filled: true
+          value: person
     request_purpose_individual:
       '#type': radios
       '#title': 'What would you like to do?'
@@ -389,6 +394,12 @@ elements: |-
         - or
         - ':input[name="request_purpose"]':
             value: "Provide comment or feedback to my district's City Council members"
+          ':input[name="request_district"]':
+            value:
+              pattern: 1|2|3|4
+        - or
+        - ':input[name="prepopulate"]':
+            value: district
           ':input[name="request_district"]':
             value:
               pattern: 1|2|3|4
@@ -681,7 +692,7 @@ elements: |-
   computed_subject:
     '#type': webform_computed_twig
     '#title': 'Computed Subject'
-    '#display_on': form
+    '#display_on': none
     '#mode': text
     '#template': |
       {% set subject = "" %}
@@ -693,6 +704,9 @@ elements: |-
           {% set subject = "Feedback for District " ~ data.request_district %}  
         {% endif %}
 
+      {% elseif data.request_purpose == "Provide comment or feedback to all elected officials" %}
+        {% set subject = "Feedback for all elected officials" %}
+        
       {% elseif data.request_purpose == "Provide comment or feedback to a specific elected official" or data.request_purpose_individual == "Provide comment or feedback" %}
         {% set subject = "Feedback for " ~ (data.request_recipient ? data.request_recipient : data.recipient) %}
         
@@ -713,17 +727,21 @@ elements: |-
 
       {{ subject }}
     '#whitespace': spaceless
-    '#ajax': true
   computed_recipient:
     '#type': webform_computed_twig
     '#title': 'Computed Recipient'
+    '#display_on': view
     '#mode': text
     '#template': |
       {% set recipient = "" %}
 
-      {% if data.request_purpose is not iterable or data.request_purpose_individual is not iterable %}
+      {% if data.request_purpose is not iterable and data.request_purpose_individual is not iterable %}
 
-        {% if data.request_purpose == "Provide comment or feedback to my district's City Council members" %}
+        {% if data.prepopulate == "district" and data.request_district and data.request_district != "Not sure..." %}
+          {# prepopulated district #}
+          {% set recipient = "councildistrict" ~ data.request_district ~ "@portlandoregon.gov" %}
+
+        {% elseif data.request_purpose == "Provide comment or feedback to my district's City Council members" %}
           {# request to district reps #}
           
           {% if data.request_district == "Not sure..." %}
@@ -768,7 +786,6 @@ elements: |-
 
       {{ recipient }}
     '#whitespace': trim
-    '#ajax': true
   computed_confirmation_message:
     '#type': webform_computed_twig
     '#title': 'Computed Confirmation Message'
