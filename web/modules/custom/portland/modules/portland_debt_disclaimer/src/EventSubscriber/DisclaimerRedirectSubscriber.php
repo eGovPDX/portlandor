@@ -36,9 +36,11 @@ class DisclaimerRedirectSubscriber implements EventSubscriberInterface {
     $request = $event->getRequest();
     $path = $request->getPathInfo();
     $path_prefix = \Drupal::config("portland_debt_disclaimer.settings")->get("path_prefix");
-    // Prevent redirect loops by checking if prefix is set
+    $redirect_to = \Drupal::config("portland_debt_disclaimer.settings")->get("redirect_to");
+    // Prevent redirect loops by checking if prefix is set and not equal to redirect path
     if ($path_prefix !== "/" &&
         $path_prefix !== "" &&
+        $path !== $redirect_to &&
         str_starts_with($path, $path_prefix)) {
       $cookie_name = \Drupal::config("portland_debt_disclaimer.settings")->get("cookie_name");
 
@@ -49,7 +51,6 @@ class DisclaimerRedirectSubscriber implements EventSubscriberInterface {
           $is_authenticated ||
           $is_crawler) return;
 
-      $redirect_to = \Drupal::config("portland_debt_disclaimer.settings")->get("redirect_to");
       $response = new RedirectResponse($redirect_to . "?destination=" . urlencode($path));
       $event->setResponse($response);
     }
