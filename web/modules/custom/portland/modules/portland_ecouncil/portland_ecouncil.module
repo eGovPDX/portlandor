@@ -1,7 +1,10 @@
 <?php
 
+use Drupal\Core\Breadcrumb\Breadcrumb;
+use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\EntityFormInterface;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\node\Entity\Node;
 
 /**
@@ -23,13 +26,17 @@ function _should_overwrite_council_document_title($node) {
 
 /**
  * Implements hook_entity_prepare_view()
+ *
+ * Switches council document title field depending on status.
+ * If status is null: use "Full Document Title" field as the title
+ * If status is filled: use the default title field
  */
 function portland_ecouncil_entity_prepare_view($entity_type_id, array $entities, array $displays, $view_mode) {
   if ($entities == null) return;
   $node = $entities[0];
-  // We only want to rewrite the node title for the full page view mode. Other view modes will call
+  // We only want to rewrite the node title for the full/search_result view modes. Other view modes will call
   // the title or the full_document_title as needed.
-  if ($node != null && _should_overwrite_council_document_title($node) && $view_mode === 'full') {
+  if ($node != null && _should_overwrite_council_document_title($node) && ($view_mode === 'full' || $view_mode === 'search_result')) {
     // Display the Full Document Title as Title
     $node->title->value = $node->field_full_document_title->value;
     $node->field_full_document_title->value = '';
@@ -155,5 +162,50 @@ function portland_ecouncil_field_group_form_process_build_alter(array &$element,
     _check_council_president_state($form, $node);
     _hide_council_document_types($form);
     _hide_deprecated_field_values($form);
+  }
+}
+
+const AGENDA_ITEM_DISPOSITION_ASSIGNED_TO_COMMITTEE_TID = 984;
+
+/**
+ * Implements hook_ENTITY_TYPE_update().
+ *
+ * When an agenda item is updated, update the associated council document's Assigned committee to match, if:
+ * - item disposition is "Assigned to Committee"; and
+ * - council document is not null; and
+ * - committee is not null; and
+ * - committee and is different from previous value
+ */
+function portland_ecouncil_relation_update(EntityInterface $relation) {
+  $council_doc = $relation->field_council_document->entity;
+  $original_committee = $relation->original->field_committee->entity;
+  $committee = $relation->field_committee->entity;
+  if ($relation->field_agenda_item_disposition->target_id === (string) AGENDA_ITEM_DISPOSITION_ASSIGNED_TO_COMMITTEE_TID
+      && $council_doc !== null
+      && $committee !== null
+      && $committee !== $original_committee) {
+    $committee_label = $committee->label();
+    $sub_item_number = $relation->field_agenda_sub_item_number->value ? '-' . $relation->field_agenda_sub_item_number->value : '';
+
+    $council_doc->field_committee->entity = $committee;
+    $council_doc->revision_log = "Assigned to {$committee_label} from Agenda Item {$relation->field_agenda_item_number->value}{$sub_item_number}.";
+    $council_doc->revision_uid = \Drupal::currentUser()->id();
+    $council_doc->save();
+  }
+}
+
+/**
+ * Implements hook_system_breadcrumb_alter().
+ *
+ * On council document pages, replace the "Council Documents" breadcrumb link with the committee, if set.
+ */
+function portland_ecouncil_system_breadcrumb_alter(Breadcrumb &$breadcrumb, RouteMatchInterface $route_match, array $context)
+{
+  $node = $route_match->getParameter('node');
+  if (!empty($node) && $node instanceof Node && $node->bundle() === 'council_document') {
+    $committee = $node->field_committee->entity;
+    if ($committee) {
+      $breadcrumb->addLink($committee->toLink());
+    }
   }
 }
