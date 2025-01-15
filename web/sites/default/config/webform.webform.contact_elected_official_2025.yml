@@ -8,7 +8,12 @@ third_party_settings:
   portland:
     disable_demographic_form_prompt: 0
     exclude_from_json:
+      prepopulate: prepopulate
+      card: card
+      recipient: recipient
       your_address: your_address
+      computed_subject: computed_subject
+      computed_confirmation_message: computed_confirmation_message
 weight: 0
 open: null
 close: null
@@ -21,63 +26,96 @@ description: '<p>Used to send feedback directly to elected officials and to requ
 categories:
   - Contact
 elements: |-
-  introductory_text:
-    '#type': webform_markup
-    '#markup': '<p>Provide feedback on policy or actions of the City of Portland, or request a meeting with the mayor, a district councilor, or the city auditor.&nbsp;</p>'
-  request_purpose:
-    '#type': radios
-    '#title': 'What would you like to do?'
+  prepopulate:
+    '#type': hidden
+    '#title': Prepopulate
     '#prepopulate': true
-    '#options':
-      'Provide comment or feedback to my district representatives': 'Provide comment or feedback to my district representatives'
-      'Provide comment or feedback to a specific elected official': 'Provide comment or feedback to a specific elected official'
-      'Request a meeting with an elected official': 'Request a meeting with an elected official'
-      'Submit a media inquiry': 'Submit a media inquiry'
-      provide_testimony: 'Provide testimony on an agenda item'
+  card:
+    '#type': hidden
+    '#title': 'Card (on/off)'
+    '#default_value': 'on'
+    '#prepopulate': true
+  recipient:
+    '#type': hidden
+    '#title': Recipient
+    '#prepopulate': true
+  container_default:
+    '#type': container
+    '#states':
+      invisible:
+        ':input[name="prepopulate"]':
+          filled: true
+    introductory_text:
+      '#type': webform_markup
+      '#markup': '<p>Provide feedback on policy or actions of the City of Portland, or request a meeting with the mayor, a district councilor, or the city auditor.&nbsp;</p>'
+    request_purpose:
+      '#type': radios
+      '#title': 'What would you like to do?'
+      '#prepopulate': true
+      '#options':
+        "Provide comment or feedback to my district's City Council members": "Provide comment or feedback to my district's City Council members"
+        'Provide comment or feedback to all elected officials': 'Provide comment or feedback to all elected officials'
+        'Provide comment or feedback to a specific elected official': 'Provide comment or feedback to a specific elected official'
+        'Request a meeting with an elected official': 'Request a meeting with an elected official'
+        'Submit a media inquiry': 'Submit a media inquiry'
+        provide_testimony: 'Provide testimony on an agenda item'
+      '#required': true
+    request_recipient:
+      '#type': select
+      '#title': 'Please select an elected official'
+      '#prepopulate': true
+      '#options':
+        'Mayor Keith Wilson': 'Mayor Keith Wilson'
+        'Auditor Simone Rede': 'Auditor Simone Rede'
+        'Councilor Candace Avalos': 'Councilor Candace Avalos, District 1'
+        'Councilor Jamie Dunphy': 'Councilor Jamie Dunphy, District 1'
+        'Councilor Loretta Smith': 'Councilor Loretta Smith, District 1'
+        'Councilor Dan Ryan': 'Councilor Dan Ryan, District 2'
+        'Councilor Elana Pirtle-Guiney': 'Councilor Elana Pirtle-Guiney, District 2'
+        'Councilor Sameer Kanal': 'Councilor Sameer Kanal, District 2'
+        'Councilor Angelita Morillo': 'Councilor Angelita Morillo, District 3'
+        'Councilor Steve Novick': 'Councilor Steve Novick, District 3'
+        'Councilor Tiffany Koyama Lane': 'Councilor Tiffany Koyama Lane, District 3'
+        'Councilor Eric Zimmerman': 'Councilor Eric Zimmerman, District 4'
+        'Councilor Mitch Green': 'Councilor Mitch Green, District 4'
+        'Councilor Olivia Clark': 'Councilor Olivia Clark, District 4'
+      '#states':
+        visible:
+          - ':input[name="request_purpose"]':
+              value: 'Provide comment or feedback to a specific elected official'
+          - or
+          - ':input[name="request_purpose"]':
+              value: 'Request a meeting with an elected official'
+          - or
+          - ':input[name="request_purpose"]':
+              value: 'Submit a media inquiry'
+          - or
+          - ':input[name="prepopulate"]':
+              value: person
   markup_continue:
     '#type': webform_markup
     '#states':
-      visible:
-        ':input[name="request_purpose"]':
-          unchecked: true
+      invisible:
+        - ':input[name="request_purpose_individual"]':
+            checked: true
+        - or
+        - ':input[name="request_purpose"]':
+            checked: true
+        - or
+        - ':input[name="prepopulate"]':
+            filled: true
     '#markup': '<p><strong>Please make a selection to continue.</strong></p>'
-  request_recipient:
-    '#type': select
-    '#title': 'Please select an elected official'
-    '#prepopulate': true
-    '#options':
-      'Mayor Keith Wilson': 'Mayor Keith Wilson'
-      'Auditor Simone Rede': 'Auditor Simone Rede'
-      'Councilor Candace Avalos': 'Councilor Candace Avalos, District 1'
-      'Councilor Loretta Smith': 'Councilor Loretta Smith, District 1'
-      'Councilor Jamie Dunphy': 'Councilor Jamie Dunphy, District 1'
-      'Councilor Elana Pirtle-Guiney': 'Councilor Elana Pirtle-Guiney, District 2'
-      'Councilor Dan Ryan': 'Councilor Dan Ryan, District 2'
-      'Councilor Sameer Kanal': 'Councilor Sameer Kanal, District 2'
-      'Councilor Steve Novick': 'Councilor Steve Novick, District 3'
-      'Councilor Angelita Morillo': 'Councilor Angelita Morillo, District 3'
-      'Councilor Tiffany Koyama Lane': 'Councilor Tiffany Koyama Lane, District 3'
-      'Councilor Olivia Clark': 'Councilor Olivia Clark, District 4'
-      'Councilor Mitch Green': 'Councilor Mitch Green, District 4'
-      'Councilor Eric Zimmerman': 'Councilor Eric Zimmerman, District 4'
-    '#states':
-      visible:
-        - ':input[name="request_purpose"]':
-            value: 'Provide comment or feedback to a specific elected official'
-        - or
-        - ':input[name="request_purpose"]':
-            value: 'Request a meeting with an elected official'
-        - or
-        - ':input[name="request_purpose"]':
-            value: 'Submit a media inquiry'
   section_feedback_by_district:
     '#type': webform_section
     '#title': 'Feedback by district'
     '#title_display': invisible
     '#states':
       visible:
-        ':input[name="request_purpose"]':
-          value: 'Provide comment or feedback to my district representatives'
+        - ':input[name="request_purpose"]':
+            value: "Provide comment or feedback to my district's City Council members"
+        - or
+        - ':input[name="prepopulate"]':
+            value: district
     request_district:
       '#type': select
       '#title': 'Select your district'
@@ -107,23 +145,6 @@ elements: |-
       '#out_of_bounds_message': 'The location you selected is not within the City of Portland. Please try a different location.'
       '#click_query_url': 'https://www.portlandmaps.com/arcgis/rest/services/Public/CGIS_Layers/MapServer/11/query?where=1%3D1&geometry={{x}}%2C{{y}}&returnGeometry=false&geometryType=esriGeometryPoint&outFields=DISTRICT&f=geojson'
       '#click_query_property_path': 'features[0].properties.DISTRICT'
-    computed_district:
-      '#type': webform_computed_twig
-      '#title': District
-      '#title_display': none
-      '#states':
-        visible:
-          ':input[name="request_district"]':
-            value: 'Not sure...'
-      '#display_on': view
-      '#mode': text
-      '#template': |-
-        {% if data.report_location.location_region_id %}
-          District {{ data.report_location.location_region_id }} selected on map
-        {% else %}
-          No district selected
-        {% endif %}
-      '#whitespace': trim
     markup_district_1:
       '#type': webform_markup
       '#states':
@@ -133,7 +154,7 @@ elements: |-
           - or
           - ':input[name="report_location[location_region_id]"]':
               value: '1'
-      '#markup': '<p><strong>Your message will be sent to:</strong></p><div class="container p-0"><ul class="list-unstyled row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4"><li class="col"><div class="views-field views-field-nothing"><div class="card"><div class="card-body"><div class="contextual-region media media--type-image media--view-mode-elected-official-thumbnail d-none"><div class="field field--label-hidden field--name-image field--type-image mb-0 d-none"><div class="mb-0"><span class="field-content"><img class="rounded-circle img-fluid" loading="eager" rounded="" src="/sites/default/files/styles/elected_official_thumbnail_80x80/public/2021/image.jpg?itok=weyFCLd6" width="80" height="80" alt="[Name] photo"></span></div></div></div><h3 class="card-title mt-2"><span class="field-content">Councilor Candace Avalos</span></h3><p class="card-subtitle mb-2 text-muted"><span class="field-content">District 1</span></p></div></div></div></li><li class="col"><div class="views-field views-field-nothing"><div class="card"><div class="card-body"><div class="contextual-region media media--type-image media--view-mode-elected-official-thumbnail d-none"><div class="field field--label-hidden field--name-image field--type-image mb-0 d-none"><div class="mb-0"><span class="field-content"><img class="rounded-circle img-fluid" loading="eager" rounded="" src="/sites/default/files/styles/elected_official_thumbnail_80x80/public/2021/image.jpg?itok=weyFCLd6" width="80" height="80" alt="[Name] photo"></span></div></div></div><h3 class="card-title mt-2"><span class="field-content">Councilor Loretta Smith</span></h3><p class="card-subtitle mb-2 text-muted"><span class="field-content">District 1</span></p></div></div></div></li><li class="col"><div class="views-field views-field-nothing"><div class="card"><div class="card-body"><div class="contextual-region media media--type-image media--view-mode-elected-official-thumbnail d-none"><div class="field field--label-hidden field--name-image field--type-image mb-0 d-none"><div class="mb-0"><span class="field-content"><img class="rounded-circle img-fluid" loading="eager" rounded="" src="/sites/default/files/styles/elected_official_thumbnail_80x80/public/2021/image.jpg?itok=weyFCLd6" width="80" height="80" alt="[Name] photo"></span></div></div></div><h3 class="card-title mt-2"><span class="field-content">Councilor Jamie Dunphy</span></h3><p class="card-subtitle mb-2 text-muted"><span class="field-content">District 1</span></p></div></div></div></li></ul></div>'
+      '#markup': '<p><strong>You selected District 1. Your message will be sent to:</strong></p><div class="container p-0"><ul class="list-unstyled row row-cols-1 row-cols-md-2 row-cols-lg-3 g-8 pt-4 pt-lg-0"><li class="col"><div class="card h-100 border-0 bg-transparent flex-row align-items-center"><div class="flex-shrink-0 me-4 rounded-circle overflow-hidden"><div class="contextual-region media media--type-image media--view-mode-elected-official-thumbnail"><img class="img-fluid" loading="eager" src="/sites/default/files/styles/elected_official_thumbnail_80x80/public/2025/Avalos---IMG_8716---crop-edited2---web.jpg?itok=Y0cQ74sA" width="80" height="80" alt="Candace Avalos"></div></div><div class="card-body p-0"><p class="h5 card-title mb-0"><a class="stretched-link" href="/council/districts/1/candace-avalos">Candace Avalos</a></p><p><span class="h6 fw-normal card-subtitle">District 1 Councilor</span></p></div></div></li><li class="col"><div class="card h-100 border-0 bg-transparent flex-row align-items-center"><div class="flex-shrink-0 me-4 rounded-circle overflow-hidden"><div class="contextual-region media media--type-image media--view-mode-elected-official-thumbnail"><img class="img-fluid" loading="eager" src="/sites/default/files/styles/elected_official_thumbnail_80x80/public/2025/Dunphy---IMG_8672---crop-edited2---web.jpg?itok=xWcbiPXg" width="80" height="80" alt="Jamie Dunphy"></div></div><div class="card-body p-0"><p class="h5 card-title mb-0"><a class="stretched-link" href="/council/districts/1/jamie-dunphy">Jamie Dunphy</a></p><p><span class="h6 fw-normal card-subtitle">District 1 Councilor</span></p></div></div></li><li class="col"><div class="card h-100 border-0 bg-transparent flex-row align-items-center"><div class="flex-shrink-0 me-4 rounded-circle overflow-hidden"><div class="contextual-region media media--type-image media--view-mode-elected-official-thumbnail"><img class="img-fluid" loading="eager" src="/sites/default/files/styles/elected_official_thumbnail_80x80/public/2025/Smith---IMG_9141---crop-edited2---web.jpg?itok=inbWOnih" width="80" height="80" alt="Loretta Smith"></div></div><div class="card-body p-0"><p class="h5 card-title mb-0"><a class="stretched-link" href="/council/districts/1/loretta-smith">Loretta Smith</a></p><p><span class="h6 fw-normal card-subtitle">District 1 Councilor</span></p></div></div></li></ul></div>'
     markup_district_2:
       '#type': webform_markup
       '#states':
@@ -143,7 +164,7 @@ elements: |-
           - or
           - ':input[name="report_location[location_region_id]"]':
               value: '2'
-      '#markup': '<p><strong>Your message will be sent to:</strong></p><div class="container p-0"><ul class="list-unstyled row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4"><li class="col"><div class="views-field views-field-nothing"><div class="card"><div class="card-body"><div class="contextual-region media media--type-image media--view-mode-elected-official-thumbnail d-none"><div class="field field--label-hidden field--name-image field--type-image mb-0 d-none"><div class="mb-0"><span class="field-content"><img class="rounded-circle img-fluid" loading="eager" rounded="" src="/sites/default/files/styles/elected_official_thumbnail_80x80/public/2021/image.jpg?itok=weyFCLd6" width="80" height="80" alt="[Name] photo"></span></div></div></div><h3 class="card-title mt-2"><span class="field-content">Councilor Elana Pirtle-Guiney</span></h3><p class="card-subtitle mb-2 text-muted"><span class="field-content">District 2</span></p></div></div></div></li><li class="col"><div class="views-field views-field-nothing"><div class="card"><div class="card-body"><div class="contextual-region media media--type-image media--view-mode-elected-official-thumbnail d-none"><div class="field field--label-hidden field--name-image field--type-image mb-0 d-none"><div class="mb-0"><span class="field-content"><img class="rounded-circle img-fluid" loading="eager" rounded="" src="/sites/default/files/styles/elected_official_thumbnail_80x80/public/2021/image.jpg?itok=weyFCLd6" width="80" height="80" alt="[Name] photo"></span></div></div></div><h3 class="card-title mt-2"><span class="field-content">Councilor Dan Ryan</span></h3><p class="card-subtitle mb-2 text-muted"><span class="field-content">District 2</span></p></div></div></div></li><li class="col"><div class="views-field views-field-nothing"><div class="card"><div class="card-body"><div class="contextual-region media media--type-image media--view-mode-elected-official-thumbnail d-none"><div class="field field--label-hidden field--name-image field--type-image mb-0 d-none"><div class="mb-0"><span class="field-content"><img class="rounded-circle img-fluid" loading="eager" rounded="" src="/sites/default/files/styles/elected_official_thumbnail_80x80/public/2021/image.jpg?itok=weyFCLd6" width="80" height="80" alt="[Name] photo"></span></div></div></div><h3 class="card-title mt-2"><span class="field-content">Councilor Sameer Kanal</span></h3><p class="card-subtitle mb-2 text-muted"><span class="field-content">District 2</span></p></div></div></div></li></ul></div>'
+      '#markup': '<p><strong>You selected District 2.&nbsp;Your message will be sent to:</strong></p><div class="container p-0"><ul class="list-unstyled row row-cols-1 row-cols-md-2 row-cols-lg-3 g-8 pt-4 pt-lg-0"><li class="col"><div class="card h-100 border-0 bg-transparent flex-row align-items-center"><div class="flex-shrink-0 me-4 rounded-circle overflow-hidden"><div class="contextual-region media media--type-image media--view-mode-elected-official-thumbnail"><img class="img-fluid" loading="eager" src="/sites/default/files/styles/elected_official_thumbnail_80x80/public/2025/Ryan---IMG_8965---crop-edited2---web_0.jpg?itok=ELJT0mFq" width="80" height="80" alt="Dan Ryan"></div></div><div class="card-body p-0"><p class="h5 card-title mb-0"><a class="stretched-link" href="/council/districts/2/dan-ryan">Dan Ryan</a></p><p><span class="h6 fw-normal card-subtitle">District 2 Councilor</span></p></div></div></li><li class="col"><div class="card h-100 border-0 bg-transparent flex-row align-items-center"><div class="flex-shrink-0 me-4 rounded-circle overflow-hidden"><div class="contextual-region media media--type-image media--view-mode-elected-official-thumbnail"><img class="img-fluid" loading="eager" src="/sites/default/files/styles/elected_official_thumbnail_80x80/public/2025/Pirtle-Guiney---IMG_8935---crop-edited2---web.jpg?itok=o0pzEXWM" width="80" height="80" alt="Elana Pirtle-Guiney"></div></div><div class="card-body p-0"><p class="h5 card-title mb-0"><a class="stretched-link" href="/council/districts/2/elana-pirtle-guiney">Elana Pirtle-Guiney</a></p><p><span class="h6 fw-normal card-subtitle">District 2 Councilor</span></p></div></div></li><li class="col"><div class="card h-100 border-0 bg-transparent flex-row align-items-center"><div class="flex-shrink-0 me-4 rounded-circle overflow-hidden"><div class="contextual-region media media--type-image media--view-mode-elected-official-thumbnail"><img class="img-fluid" loading="eager" src="/sites/default/files/styles/elected_official_thumbnail_80x80/public/2025/Kanal---IMG_9048---crop-edited2---web.jpg?itok=UYPRZ0gf" width="80" height="80" alt="Sameer Kanal"></div></div><div class="card-body p-0"><p class="h5 card-title mb-0"><a class="stretched-link" href="/council/districts/2/sameer-kanal">Sameer Kanal</a></p><p><span class="h6 fw-normal card-subtitle">District 2 Councilor</span></p></div></div></li></ul></div>'
     markup_district_3:
       '#type': webform_markup
       '#states':
@@ -153,7 +174,7 @@ elements: |-
           - or
           - ':input[name="report_location[location_region_id]"]':
               value: '3'
-      '#markup': '<p><strong>Your message will be sent to:</strong></p><div class="container p-0"><ul class="list-unstyled row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4"><li class="col"><div class="views-field views-field-nothing"><div class="card"><div class="card-body"><div class="contextual-region media media--type-image media--view-mode-elected-official-thumbnail d-none"><div class="field field--label-hidden field--name-image field--type-image mb-0 d-none"><div class="mb-0"><span class="field-content"><img class="rounded-circle img-fluid" loading="eager" rounded="" src="/sites/default/files/styles/elected_official_thumbnail_80x80/public/2021/image.jpg?itok=weyFCLd6" width="80" height="80" alt="[Name] photo"></span></div></div></div><h3 class="card-title mt-2"><span class="field-content">Councilor Steve Novick</span></h3><p class="card-subtitle mb-2 text-muted"><span class="field-content">District 3</span></p></div></div></div></li><li class="col"><div class="views-field views-field-nothing"><div class="card"><div class="card-body"><div class="contextual-region media media--type-image media--view-mode-elected-official-thumbnail d-none"><div class="field field--label-hidden field--name-image field--type-image mb-0 d-none"><div class="mb-0"><span class="field-content"><img class="rounded-circle img-fluid" loading="eager" rounded="" src="/sites/default/files/styles/elected_official_thumbnail_80x80/public/2021/image.jpg?itok=weyFCLd6" width="80" height="80" alt="[Name] photo"></span></div></div></div><h3 class="card-title mt-2"><span class="field-content">Councilor Angelita Morillo</span></h3><p class="card-subtitle mb-2 text-muted"><span class="field-content">District 3</span></p></div></div></div></li><li class="col"><div class="views-field views-field-nothing"><div class="card"><div class="card-body"><div class="contextual-region media media--type-image media--view-mode-elected-official-thumbnail d-none"><div class="field field--label-hidden field--name-image field--type-image mb-0 d-none"><div class="mb-0"><span class="field-content"><img class="rounded-circle img-fluid" loading="eager" rounded="" src="/sites/default/files/styles/elected_official_thumbnail_80x80/public/2021/image.jpg?itok=weyFCLd6" width="80" height="80" alt="[Name] photo"></span></div></div></div><h3 class="card-title mt-2"><span class="field-content">Councilor Tiffany Koyama Lane</span></h3><p class="card-subtitle mb-2 text-muted"><span class="field-content">District 3</span></p></div></div></div></li></ul></div>'
+      '#markup': '<p><strong>You selected District 3.&nbsp;Your message will be sent to:</strong></p><div class="container p-0"><ul class="list-unstyled row row-cols-1 row-cols-md-2 row-cols-lg-3 g-8 pt-4 pt-lg-0"><li class="col"><div class="card h-100 border-0 bg-transparent flex-row align-items-center"><div class="flex-shrink-0 me-4 rounded-circle overflow-hidden"><div class="contextual-region media media--type-image media--view-mode-elected-official-thumbnail"><img class="img-fluid" loading="eager" src="/sites/default/files/styles/elected_official_thumbnail_80x80/public/2025/Morillo---IMG_9092---crop-edited2---web.jpg?itok=WZrGgy5Q" width="80" height="80" alt="Angelita Morillo"></div></div><div class="card-body p-0"><p class="h5 card-title mb-0"><a class="stretched-link" href="/council/districts/3/angelita-morillo">Angelita Morillo</a></p><p><span class="h6 fw-normal card-subtitle">District 3 Councilor</span></p></div></div></li><li class="col"><div class="card h-100 border-0 bg-transparent flex-row align-items-center"><div class="flex-shrink-0 me-4 rounded-circle overflow-hidden"><div class="contextual-region media media--type-image media--view-mode-elected-official-thumbnail"><img class="img-fluid" loading="eager" src="/sites/default/files/styles/elected_official_thumbnail_80x80/public/2025/Novick---IMG_9553---crop-edited2---web.jpg?itok=7y8K1Gdo" width="80" height="80" alt="Steve Novick"></div></div><div class="card-body p-0"><p class="h5 card-title mb-0"><a class="stretched-link" href="/council/districts/3/steve-novick">Steve Novick</a></p><p><span class="h6 fw-normal card-subtitle">District 3 Councilor</span></p></div></div></li><li class="col"><div class="card h-100 border-0 bg-transparent flex-row align-items-center"><div class="flex-shrink-0 me-4 rounded-circle overflow-hidden"><div class="contextual-region media media--type-image media--view-mode-elected-official-thumbnail"><img class="img-fluid" loading="eager" src="/sites/default/files/styles/elected_official_thumbnail_80x80/public/2025/Koyama-Lane---IMG_9037---crop-edited2---web.jpg?itok=Aj8ZX9M_" width="80" height="80" alt="Tiffany Koyama Lane"></div></div><div class="card-body p-0"><p class="h5 card-title mb-0"><a class="stretched-link" href="/council/districts/3/tiffany-koyama-lane">Tiffany Koyama Lane</a></p><p><span class="h6 fw-normal card-subtitle">District 3 Councilor</span></p></div></div></li></ul></div>'
     markup_district_4:
       '#type': webform_markup
       '#states':
@@ -163,7 +184,170 @@ elements: |-
           - or
           - ':input[name="report_location[location_region_id]"]':
               value: '4'
-      '#markup': '<p><strong>Your message will be sent to:</strong></p><div class="container p-0"><ul class="list-unstyled row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4"><li class="col"><div class="views-field views-field-nothing"><div class="card"><div class="card-body"><div class="contextual-region media media--type-image media--view-mode-elected-official-thumbnail d-none"><div class="field field--label-hidden field--name-image field--type-image mb-0 d-none"><div class="mb-0"><span class="field-content"><img class="rounded-circle img-fluid" loading="eager" rounded="" src="/sites/default/files/styles/elected_official_thumbnail_80x80/public/2021/image.jpg?itok=weyFCLd6" width="80" height="80" alt="[Name] photo"></span></div></div></div><h3 class="card-title mt-2"><span class="field-content">Councilor Olivia Clark</span></h3><p class="card-subtitle mb-2 text-muted"><span class="field-content">District 4</span></p></div></div></div></li><li class="col"><div class="views-field views-field-nothing"><div class="card"><div class="card-body"><div class="contextual-region media media--type-image media--view-mode-elected-official-thumbnail d-none"><div class="field field--label-hidden field--name-image field--type-image mb-0 d-none"><div class="mb-0"><span class="field-content"><img class="rounded-circle img-fluid" loading="eager" rounded="" src="/sites/default/files/styles/elected_official_thumbnail_80x80/public/2021/image.jpg?itok=weyFCLd6" width="80" height="80" alt="[Name] photo"></span></div></div></div><h3 class="card-title mt-2"><span class="field-content">Councilor Mitch Green</span></h3><p class="card-subtitle mb-2 text-muted"><span class="field-content">District 4</span></p></div></div></div></li><li class="col"><div class="views-field views-field-nothing"><div class="card"><div class="card-body"><div class="contextual-region media media--type-image media--view-mode-elected-official-thumbnail d-none"><div class="field field--label-hidden field--name-image field--type-image mb-0 d-none"><div class="mb-0"><span class="field-content"><img class="rounded-circle img-fluid" loading="eager" rounded="" src="/sites/default/files/styles/elected_official_thumbnail_80x80/public/2021/image.jpg?itok=weyFCLd6" width="80" height="80" alt="[Name] photo"></span></div></div></div><h3 class="card-title mt-2"><span class="field-content">Councilor Eric Zimmerman</span></h3><p class="card-subtitle mb-2 text-muted"><span class="field-content">District 4</span></p></div></div></div></li></ul></div>'
+      '#markup': '<p><strong>You selected District 4.&nbsp;Your message will be sent to:</strong></p><div class="container p-0"><ul class="list-unstyled row row-cols-1 row-cols-md-2 row-cols-lg-3 g-8 pt-4 pt-lg-0"><li class="col"><div class="card h-100 border-0 bg-transparent flex-row align-items-center"><div class="flex-shrink-0 me-4 rounded-circle overflow-hidden"><div class="contextual-region media media--type-image media--view-mode-elected-official-thumbnail"><img class="img-fluid" loading="eager" src="/sites/default/files/styles/elected_official_thumbnail_80x80/public/2025/Zimmerman---IMG_8838a---crop-edited2---web_0.jpg?itok=Z-7snwwu" width="80" height="80" alt="Eric Zimmerman"></div></div><div class="card-body p-0"><p class="h5 card-title mb-0"><a class="stretched-link" href="/council/districts/4/eric-zimmerman">Eric Zimmerman</a></p><p><span class="h6 fw-normal card-subtitle">District 4 Councilor</span></p></div></div></li><li class="col"><div class="card h-100 border-0 bg-transparent flex-row align-items-center"><div class="flex-shrink-0 me-4 rounded-circle overflow-hidden"><div class="contextual-region media media--type-image media--view-mode-elected-official-thumbnail"><img class="img-fluid" loading="eager" src="/sites/default/files/styles/elected_official_thumbnail_80x80/public/2025/Green---IMG_8827---crop-edited2---web.jpg?itok=pSSlirJT" width="80" height="80" alt="Mitch Green"></div></div><div class="card-body p-0"><p class="h5 card-title mb-0"><a class="stretched-link" href="/council/districts/4/mitch-green">Mitch Green</a></p><p><span class="h6 fw-normal card-subtitle">District 4 Councilor</span></p></div></div></li><li class="col"><div class="card h-100 border-0 bg-transparent flex-row align-items-center"><div class="flex-shrink-0 me-4 rounded-circle overflow-hidden"><div class="contextual-region media media--type-image media--view-mode-elected-official-thumbnail"><img class="img-fluid" loading="eager" src="/sites/default/files/styles/elected_official_thumbnail_80x80/public/2025/Clark---IMG_9110---crop-edited2---web.jpg?itok=RTn4ZDkX" width="80" height="80" alt="Olivia Clark"></div></div><div class="card-body p-0"><p class="h5 card-title mb-0"><a class="stretched-link" href="/council/districts/4/olivia-clark">Olivia Clark</a></p><p><span class="h6 fw-normal card-subtitle">District 4 Councilor</span></p></div></div></li></ul></div>'
+  container_cards_hidden:
+    '#type': container
+    '#states':
+      invisible:
+        ':input[name="card"]':
+          value: 'off'
+    section_feedback_by_official:
+      '#type': webform_section
+      '#title': 'Feedback by official'
+      '#title_display': invisible
+      '#states':
+        visible:
+          - ':input[name="request_purpose"]':
+              value: 'Provide comment or feedback to a specific elected official'
+          - or
+          - ':input[name="request_purpose"]':
+              value: 'Request a meeting with an elected official'
+          - or
+          - ':input[name="request_purpose"]':
+              value: 'Submit a media inquiry'
+          - or
+          - ':input[name="prepopulate"]':
+              value: person
+      markup_avalos:
+        '#type': webform_markup
+        '#states':
+          visible:
+            - ':input[name="request_recipient"]':
+                value: 'Councilor Candace Avalos'
+            - or
+            - ':input[name="recipient"]':
+                value: 'Councilor Candace Avalos'
+        '#markup': '<div class="card h-100 border-0 bg-transparent flex-row align-items-center"><div class="flex-shrink-0 me-4 rounded-circle overflow-hidden"><div class="contextual-region media media--type-image media--view-mode-elected-official-thumbnail"><img class="img-fluid" loading="eager" src="/sites/default/files/styles/elected_official_thumbnail_80x80/public/2025/Avalos---IMG_8716---crop-edited2---web.jpg?itok=Y0cQ74sA" width="80" height="80" alt="Candace Avalos"></div></div><div class="card-body p-0"><p class="h5 card-title mb-0">Candace Avalos</p><p><span class="h6 fw-normal card-subtitle">District 1 Councilor</span></p></div></div>'
+      markup_dunphy:
+        '#type': webform_markup
+        '#states':
+          visible:
+            - ':input[name="request_recipient"]':
+                value: 'Councilor Jamie Dunphy'
+            - or
+            - ':input[name="recipient"]':
+                value: 'Councilor Jamie Dunphy'
+        '#markup': '<div class="card h-100 border-0 bg-transparent flex-row align-items-center"><div class="flex-shrink-0 me-4 rounded-circle overflow-hidden"><div class="contextual-region media media--type-image media--view-mode-elected-official-thumbnail"><img class="img-fluid" loading="eager" src="/sites/default/files/styles/elected_official_thumbnail_80x80/public/2025/Dunphy---IMG_8672---crop-edited2---web.jpg?itok=xWcbiPXg" width="80" height="80" alt="Jamie Dunphy"></div></div><div class="card-body p-0"><p class="h5 card-title mb-0">Jamie Dunphy</p><p><span class="h6 fw-normal card-subtitle">District 1 Councilor</span></p></div></div>'
+      markup_smith:
+        '#type': webform_markup
+        '#states':
+          visible:
+            - ':input[name="request_recipient"]':
+                value: 'Councilor Loretta Smith'
+            - or
+            - ':input[name="recipient"]':
+                value: 'Councilor Loretta Smith'
+        '#markup': '<div class="card h-100 border-0 bg-transparent flex-row align-items-center"><div class="flex-shrink-0 me-4 rounded-circle overflow-hidden"><div class="contextual-region media media--type-image media--view-mode-elected-official-thumbnail"><img class="img-fluid" loading="eager" src="/sites/default/files/styles/elected_official_thumbnail_80x80/public/2025/Smith---IMG_9141---crop-edited2---web.jpg?itok=inbWOnih" width="80" height="80" alt="Loretta Smith"></div></div><div class="card-body p-0"><p class="h5 card-title mb-0">Loretta Smith</p><p><span class="h6 fw-normal card-subtitle">District 1 Councilor</span></p></div></div>'
+      markup_ryan:
+        '#type': webform_markup
+        '#states':
+          visible:
+            - ':input[name="request_recipient"]':
+                value: 'Councilor Dan Ryan'
+            - or
+            - ':input[name="recipient"]':
+                value: 'Councilor Dan Ryan'
+        '#markup': '<div class="card h-100 border-0 bg-transparent flex-row align-items-center"><div class="flex-shrink-0 me-4 rounded-circle overflow-hidden"><div class="contextual-region media media--type-image media--view-mode-elected-official-thumbnail"><img class="img-fluid" loading="eager" src="/sites/default/files/styles/elected_official_thumbnail_80x80/public/2025/Ryan---IMG_8965---crop-edited2---web_0.jpg?itok=ELJT0mFq" width="80" height="80" alt="Dan Ryan"></div></div><div class="card-body p-0"><p class="h5 card-title mb-0">Dan Ryan</p><p><span class="h6 fw-normal card-subtitle">District 2 Councilor</span></p></div></div>'
+      markup_pirtle_guiney:
+        '#type': webform_markup
+        '#states':
+          visible:
+            - ':input[name="request_recipient"]':
+                value: 'Councilor Elana Pirtle-Guiney'
+            - or
+            - ':input[name="recipient"]':
+                value: 'Councilor Elana Pirtle-Guiney'
+        '#markup': '<div class="card h-100 border-0 bg-transparent flex-row align-items-center"><div class="flex-shrink-0 me-4 rounded-circle overflow-hidden"><div class="contextual-region media media--type-image media--view-mode-elected-official-thumbnail"><img class="img-fluid" loading="eager" src="/sites/default/files/styles/elected_official_thumbnail_80x80/public/2025/Pirtle-Guiney---IMG_8935---crop-edited2---web.jpg?itok=o0pzEXWM" width="80" height="80" alt="Elana Pirtle-Guiney"></div></div><div class="card-body p-0"><p class="h5 card-title mb-0">Elana Pirtle-Guiney</p><p><span class="h6 fw-normal card-subtitle">District 2 Councilor</span></p></div></div>'
+      markup_kanal:
+        '#type': webform_markup
+        '#states':
+          visible:
+            - ':input[name="request_recipient"]':
+                value: 'Councilor Sameer Kanal'
+            - or
+            - ':input[name="recipient"]':
+                value: 'Councilor Sameer Kanal'
+        '#markup': '<div class="card h-100 border-0 bg-transparent flex-row align-items-center"><div class="flex-shrink-0 me-4 rounded-circle overflow-hidden"><div class="contextual-region media media--type-image media--view-mode-elected-official-thumbnail"><img class="img-fluid" loading="eager" src="/sites/default/files/styles/elected_official_thumbnail_80x80/public/2025/Kanal---IMG_9048---crop-edited2---web.jpg?itok=UYPRZ0gf" width="80" height="80" alt="Sameer Kanal"></div></div><div class="card-body p-0"><p class="h5 card-title mb-0">Sameer Kanal</p><p><span class="h6 fw-normal card-subtitle">District 2 Councilor</span></p></div></div>'
+      markup_morillo:
+        '#type': webform_markup
+        '#states':
+          visible:
+            - ':input[name="request_recipient"]':
+                value: 'Councilor Angelita Morillo'
+            - or
+            - ':input[name="recipient"]':
+                value: 'Councilor Angelita Morillo'
+        '#markup': '<div class="card h-100 border-0 bg-transparent flex-row align-items-center"><div class="flex-shrink-0 me-4 rounded-circle overflow-hidden"><div class="contextual-region media media--type-image media--view-mode-elected-official-thumbnail"><img class="img-fluid" loading="eager" src="/sites/default/files/styles/elected_official_thumbnail_80x80/public/2025/Morillo---IMG_9092---crop-edited2---web.jpg?itok=WZrGgy5Q" width="80" height="80" alt="Angelita Morillo"></div></div><div class="card-body p-0"><p class="h5 card-title mb-0">Angelita Morillo</p><p><span class="h6 fw-normal card-subtitle">District 3 Councilor</span></p></div></div>'
+      markup_novick:
+        '#type': webform_markup
+        '#states':
+          visible:
+            - ':input[name="request_recipient"]':
+                value: 'Councilor Steve Novick'
+            - or
+            - ':input[name="recipient"]':
+                value: 'Councilor Steve Novick'
+        '#markup': '<div class="card h-100 border-0 bg-transparent flex-row align-items-center"><div class="flex-shrink-0 me-4 rounded-circle overflow-hidden"><div class="contextual-region media media--type-image media--view-mode-elected-official-thumbnail"><img class="img-fluid" loading="eager" src="/sites/default/files/styles/elected_official_thumbnail_80x80/public/2025/Novick---IMG_9553---crop-edited2---web.jpg?itok=7y8K1Gdo" width="80" height="80" alt="Steve Novick"></div></div><div class="card-body p-0"><p class="h5 card-title mb-0">Steve Novick</p><p><span class="h6 fw-normal card-subtitle">District 3 Councilor</span></p></div></div>'
+      markup_lane:
+        '#type': webform_markup
+        '#states':
+          visible:
+            - ':input[name="request_recipient"]':
+                value: 'Councilor Tiffany Koyama Lane'
+            - or
+            - ':input[name="recipient"]':
+                value: 'Councilor Tiffany Koyama Lane'
+        '#markup': '<div class="card h-100 border-0 bg-transparent flex-row align-items-center"><div class="flex-shrink-0 me-4 rounded-circle overflow-hidden"><div class="contextual-region media media--type-image media--view-mode-elected-official-thumbnail"><img class="img-fluid" loading="eager" src="/sites/default/files/styles/elected_official_thumbnail_80x80/public/2025/Koyama-Lane---IMG_9037---crop-edited2---web.jpg?itok=Aj8ZX9M_" width="80" height="80" alt="Tiffany Koyama Lane"></div></div><div class="card-body p-0"><p class="h5 card-title mb-0">Tiffany Koyama Lane</p><p><span class="h6 fw-normal card-subtitle">District 3 Councilor</span></p></div></div>'
+      markup_zimmerman:
+        '#type': webform_markup
+        '#states':
+          visible:
+            - ':input[name="request_recipient"]':
+                value: 'Councilor Eric Zimmerman'
+            - or
+            - ':input[name="recipient"]':
+                value: 'Councilor Eric Zimmerman'
+        '#markup': '<div class="card h-100 border-0 bg-transparent flex-row align-items-center"><div class="flex-shrink-0 me-4 rounded-circle overflow-hidden"><div class="contextual-region media media--type-image media--view-mode-elected-official-thumbnail"><img class="img-fluid" loading="eager" src="/sites/default/files/styles/elected_official_thumbnail_80x80/public/2025/Zimmerman---IMG_8838a---crop-edited2---web_0.jpg?itok=Z-7snwwu" width="80" height="80" alt="Eric Zimmerman"></div></div><div class="card-body p-0"><p class="h5 card-title mb-0">Eric Zimmerman</p><p><span class="h6 fw-normal card-subtitle">District 4 Councilor</span></p></div></div>'
+      markup_green:
+        '#type': webform_markup
+        '#states':
+          visible:
+            - ':input[name="request_recipient"]':
+                value: 'Councilor Mitch Green'
+            - or
+            - ':input[name="recipient"]':
+                value: 'Councilor Mitch Green'
+        '#markup': '<div class="card h-100 border-0 bg-transparent flex-row align-items-center"><div class="flex-shrink-0 me-4 rounded-circle overflow-hidden"><div class="contextual-region media media--type-image media--view-mode-elected-official-thumbnail"><img class="img-fluid" loading="eager" src="/sites/default/files/styles/elected_official_thumbnail_80x80/public/2025/Green---IMG_8827---crop-edited2---web.jpg?itok=pSSlirJT" width="80" height="80" alt="Mitch Green"></div></div><div class="card-body p-0"><p class="h5 card-title mb-0">Mitch Green</p><p><span class="h6 fw-normal card-subtitle">District 4 Councilor</span></p></div></div>'
+      markup_clark:
+        '#type': webform_markup
+        '#states':
+          visible:
+            - ':input[name="request_recipient"]':
+                value: 'Councilor Olivia Clark'
+            - or
+            - ':input[name="recipient"]':
+                value: 'Councilor Olivia Clark'
+        '#markup': '<div class="card h-100 border-0 bg-transparent flex-row align-items-center"><div class="flex-shrink-0 me-4 rounded-circle overflow-hidden"><div class="contextual-region media media--type-image media--view-mode-elected-official-thumbnail"><img class="img-fluid" loading="eager" src="/sites/default/files/styles/elected_official_thumbnail_80x80/public/2025/Clark---IMG_9110---crop-edited2---web.jpg?itok=RTn4ZDkX" width="80" height="80" alt="Olivia Clark"></div></div><div class="card-body p-0"><p class="h5 card-title mb-0">Olivia Clark</p><p><span class="h6 fw-normal card-subtitle">District 4 Councilor</span></p></div></div>'
+      markup_wilson:
+        '#type': webform_markup
+        '#states':
+          visible:
+            - ':input[name="request_recipient"]':
+                value: 'Mayor Keith Wilson'
+            - or
+            - ':input[name="recipient"]':
+                value: 'Mayor Keith Wilson'
+        '#markup': '<div class="card h-100 border-0 bg-transparent flex-row"><div class="align-self-start flex-shrink-0 me-4 rounded-circle overflow-hidden"><div class="contextual-region media media--type-image media--view-mode-elected-official-thumbnail"><img class="img-fluid" loading="eager" src="/sites/default/files/styles/elected_official_thumbnail_80x80/public/2024/Wilson-Blue-Background_0.png?itok=bCWP1tkb" width="80" height="80" alt="A man wearing a light blue, collared shirt smiles while posing for a portrait."></div></div><div class="card-body p-0"><p class="h5 card-title mb-0">Keith Wilson</p><p><span class="h6 card-subtitle">Mayor</span></p></div></div>'
+      markup_rede:
+        '#type': webform_markup
+        '#states':
+          visible:
+            - ':input[name="request_recipient"]':
+                value: 'Auditor Simone Rede'
+            - or
+            - ':input[name="recipient"]':
+                value: 'Auditor Simone Rede'
+        '#markup': '<div class="card h-100 border-0 bg-transparent flex-row"><div class="align-self-start flex-shrink-0 me-4 rounded-circle overflow-hidden"><div class="contextual-region media media--type-image media--view-mode-elected-official-thumbnail"><img class="img-fluid" loading="eager" src="/sites/default/files/styles/elected_official_thumbnail_80x80/public/2022/auditor-simone-rede_1.jpg?itok=FZLghPzN" width="80" height="80" alt="Auditor Simone Rede with cherry blossom trees in background"></div></div><div class="card-body p-0"><p class="h5 card-title mb-0">Simone Rede</p><p><span class="h6 card-subtitle">City Auditor</span></p></div></div>'
   section_provide_testimony:
     '#type': webform_section
     '#title': 'Provide testimony on an agenda item'
@@ -174,7 +358,22 @@ elements: |-
           value: provide_testimony
     testimony_instructions:
       '#type': webform_markup
-      '#markup': '<div class="alert alert--info next-steps"><h2>Next steps</h2><p class="mb-0">Written testimony may be submitted for specific agenda items by visiting the <a href="/council/agenda">Council agenda</a>. Written testimony will be distributed to members of Council and added to the public record if received before Council votes unless otherwise stated during the meeting or on the agenda.</p></div>'
+      '#markup': '<div class="alert alert--info next-steps"><h2>Next steps</h2><p class="mb-0">Written testimony may be submitted for specific agenda items by visiting the <a href="/council/agenda">Council agenda</a>.</p></div>'
+  container_prepopulate:
+    '#type': container
+    '#states':
+      visible:
+        ':input[name="prepopulate"]':
+          value: person
+    request_purpose_individual:
+      '#type': radios
+      '#title': 'What would you like to do?'
+      '#prepopulate': true
+      '#options':
+        'Provide comment or feedback': 'Provide comment or feedback'
+        'Request a meeting': 'Request a meeting'
+        'Submit a media inquiry': 'Submit a media inquiry'
+      '#required': true
   section_provide_feedback:
     '#type': webform_section
     '#title': 'Comment or feedback'
@@ -182,19 +381,25 @@ elements: |-
     '#states':
       visible:
         - ':input[name="request_purpose"]':
-            value: 'Provide comment or feedback to my district representatives'
+            value: "Provide comment or feedback to my district's City Council members"
           ':input[name="report_location[location_region_id]"]':
             filled: true
         - or
         - ':input[name="request_purpose"]':
-            value: 'Provide comment or feedback to my district representatives'
+            value: "Provide comment or feedback to my district's City Council members"
           ':input[name="request_district"]':
             value: 'Not sure...'
           ':input[name="report_location[location_region_id]"]':
             filled: true
         - or
         - ':input[name="request_purpose"]':
-            value: 'Provide comment or feedback to my district representatives'
+            value: "Provide comment or feedback to my district's City Council members"
+          ':input[name="request_district"]':
+            value:
+              pattern: 1|2|3|4
+        - or
+        - ':input[name="prepopulate"]':
+            value: district
           ':input[name="request_district"]':
             value:
               pattern: 1|2|3|4
@@ -203,6 +408,20 @@ elements: |-
             value: 'Provide comment or feedback to a specific elected official'
           ':input[name="request_recipient"]':
             filled: true
+        - or
+        - ':input[name="request_purpose_individual"]':
+            value: 'Provide comment or feedback'
+          ':input[name="recipient"]':
+            filled: true
+        - or
+        - ':input[name="prepopulate"]':
+            value: person
+          ':input[name="request_purpose_individual"]':
+            value: 'Provide comment or feedback'
+          ':input[name="request_recipient"]':
+            filled: true
+        - ':input[name="request_purpose"]':
+            value: 'Provide comment or feedback to all elected officials'
     feedback_topics_entity:
       '#type': webform_entity_checkboxes
       '#title': 'Choose one or more topics'
@@ -223,16 +442,44 @@ elements: |-
       '#counter_type': character
       '#counter_maximum': 1000
       '#required': true
+    request_has_attachments:
+      '#type': radios
+      '#title': 'Would you like to attach images or documents?'
+      '#options': yes_no
+      '#options_display': side_by_side
+    request_attachments:
+      '#type': managed_file
+      '#title': 'Attach up to 3 files'
+      '#multiple': 3
+      '#states':
+        visible:
+          ':input[name="request_has_attachments"]':
+            value: 'Yes'
+      '#max_filesize': '10'
+      '#file_extensions': 'jpg jpeg png pdf doc docx xls xlsx'
+      '#sanitize': true
   section_request_meeting:
     '#type': webform_section
     '#title': 'Request a meeting or to speak at an event'
     '#title_display': invisible
     '#states':
       visible:
-        ':input[name="request_purpose"]':
-          value: 'Request a meeting with an elected official'
-        ':input[name="request_recipient"]':
-          filled: true
+        - ':input[name="request_purpose"]':
+            value: 'Request a meeting with an elected official'
+          ':input[name="request_recipient"]':
+            filled: true
+        - or
+        - ':input[name="request_purpose_individual"]':
+            value: 'Request a meeting'
+          ':input[name="recipient"]':
+            filled: true
+        - or
+        - ':input[name="prepopulate"]':
+            value: person
+          ':input[name="request_purpose_individual"]':
+            value: 'Request a meeting'
+          ':input[name="request_recipient"]':
+            filled: true
     meeting_event_type:
       '#type': webform_radios_other
       '#title': 'To what would you like to invite them?'
@@ -288,10 +535,21 @@ elements: |-
     '#title_display': invisible
     '#states':
       visible:
-        ':input[name="request_purpose"]':
-          value: 'Submit a media inquiry'
-        ':input[name="request_recipient"]':
-          filled: true
+        - ':input[name="request_purpose"]':
+            value: 'Submit a media inquiry'
+          ':input[name="request_recipient"]':
+            filled: true
+        - or
+        - ':input[name="request_purpose_individual"]':
+            value: 'Submit a media inquiry'
+          ':input[name="recipient"]':
+            filled: true
+        - ':input[name="prepopulate"]':
+            value: person
+          ':input[name="request_purpose_individual"]':
+            value: 'Submit a media inquiry'
+          ':input[name="request_recipient"]':
+            filled: true
     request_media_inquiry_details:
       '#type': textarea
       '#title': 'Please provide the details of your inquiry'
@@ -301,19 +559,19 @@ elements: |-
     '#states':
       visible:
         - ':input[name="request_purpose"]':
-            value: 'Provide comment or feedback to my district representatives'
+            value: "Provide comment or feedback to my district's City Council members"
           ':input[name="report_location[location_region_id]"]':
             filled: true
         - or
         - ':input[name="request_purpose"]':
-            value: 'Provide comment or feedback to my district representatives'
+            value: "Provide comment or feedback to my district's City Council members"
           ':input[name="request_district"]':
             value: 'Not sure...'
           ':input[name="report_location[location_region_id]"]':
             filled: true
         - or
         - ':input[name="request_purpose"]':
-            value: 'Provide comment or feedback to my district representatives'
+            value: "Provide comment or feedback to my district's City Council members"
           ':input[name="request_district"]':
             value:
               pattern: 1|2|3|4
@@ -332,6 +590,41 @@ elements: |-
             value: 'Submit a media inquiry'
           ':input[name="request_recipient"]':
             filled: true
+        - or
+        - ':input[name="request_purpose_individual"]':
+            value: 'Provide comment or feedback'
+          ':input[name="recipient"]':
+            filled: true
+        - or
+        - ':input[name="request_purpose_individual"]':
+            value: 'Request a meeting'
+          ':input[name="recipient"]':
+            filled: true
+        - or
+        - ':input[name="request_purpose_individual"]':
+            value: 'Submit a media inquiry'
+          ':input[name="recipient"]':
+            filled: true
+        - ':input[name="prepopulate"]':
+            value: person
+          ':input[name="request_purpose_individual"]':
+            value: 'Provide comment or feedback'
+          ':input[name="request_recipient"]':
+            filled: true
+        - ':input[name="prepopulate"]':
+            value: person
+          ':input[name="request_purpose_individual"]':
+            value: 'Request a meeting'
+          ':input[name="request_recipient"]':
+            filled: true
+        - ':input[name="prepopulate"]':
+            value: person
+          ':input[name="request_purpose_individual"]':
+            value: 'Submit a media inquiry'
+          ':input[name="request_recipient"]':
+            filled: true
+        - ':input[name="request_purpose"]':
+            value: 'Provide comment or feedback to all elected officials'
     section_contact_information:
       '#type': webform_section
       '#title': 'Your Contact Information'
@@ -342,6 +635,9 @@ elements: |-
         '#type': textfield
         '#title': Name
         '#required': true
+      contact_company:
+        '#type': textfield
+        '#title': Company
       contact_email_address:
         '#type': textfield
         '#title': 'Email Address'
@@ -406,9 +702,10 @@ elements: |-
     '#title': 'Support Agent Use Only'
     '#access_create_roles':
       - authenticated
-    '#zendesk_request_number__access': false
+    '#support_agent_widget_title__description': 'If you need to request changes to this form, please contact <a href="mailto:webforms@portlandoregon.gov">webforms@portlandoregon.gov</a>.'
     '#employee_notes_panel__access': false
     '#escalate_issue__access': false
+    '#zendesk_request_number__access': false
   computed_subject:
     '#type': webform_computed_twig
     '#title': 'Computed Subject'
@@ -417,27 +714,33 @@ elements: |-
     '#template': |
       {% set subject = "" %}
 
-      {% if data.request_purpose == "Provide comment or feedback to my district representatives" %}
+      {% if data.request_purpose == "Provide comment or feedback to my district's City Council members" %}
         {% if data.request_district == "Not sure..." %}
           {% set subject = "Feedback for District " ~ data.report_location.location_region_id %}
         {% elseif data.request_district %}
           {% set subject = "Feedback for District " ~ data.request_district %}  
         {% endif %}
 
-      {% elseif data.request_purpose == "Provide comment or feedback to a specific elected official" %}
-        {% set subject = "Feedback for " ~ data.request_recipient %}
+      {% elseif data.request_purpose == "Provide comment or feedback to all elected officials" %}
+        {% set subject = "Feedback for all elected officials" %}
         
-      {% elseif data.request_purpose == "Request a meeting with an elected official" %}
-        {% set subject = "Meeting request for " ~ data.request_recipient %}
+      {% elseif data.request_purpose == "Provide comment or feedback to a specific elected official" or data.request_purpose_individual == "Provide comment or feedback" %}
+        {% set subject = "Feedback for " ~ (data.request_recipient ? data.request_recipient : data.recipient) %}
         
-      {% elseif data.request_purpose == "Submit a media inquiry" %}
-        {% set subject = "Media inquiry for " ~ data.request_recipient %}
+      {% elseif data.request_purpose == "Request a meeting with an elected official" or data.request_purpose_individual == "Request a meeting" %}
+        {% set subject = "Meeting request for " ~ (data.request_recipient ? data.request_recipient : data.recipient) %}
+        
+      {% elseif data.request_purpose == "Submit a media inquiry" or data.request_purpose_individual == "Submit a media inquiry" %}
+        {% set subject = "Media inquiry for " ~ (data.request_recipient ? data.request_recipient : data.recipient) %}
         
       {% endif %}
 
       {% if data.contact_name %}
         {% set subject = subject ~ " from " ~ data.contact_name %}
+        {% if data.contact_company %}
+          {% set subject = subject ~ ", " ~ data.contact_company %}
         {% endif %}
+      {% endif %}
 
       {{ subject }}
     '#whitespace': spaceless
@@ -446,12 +749,16 @@ elements: |-
     '#title': 'Computed Recipient'
     '#display_on': view
     '#mode': text
-    '#template': |+
+    '#template': |
       {% set recipient = "" %}
 
-      {% if data.request_purpose is not iterable %}
+      {% if data.request_purpose is not iterable and data.request_purpose_individual is not iterable %}
 
-        {% if data.request_purpose == "Provide comment or feedback to my district representatives" %}
+        {% if data.prepopulate == "district" and data.request_district and data.request_district != "Not sure..." %}
+          {# prepopulated district #}
+          {% set recipient = "councildistrict" ~ data.request_district ~ "@portlandoregon.gov" %}
+
+        {% elseif data.request_purpose == "Provide comment or feedback to my district's City Council members" %}
           {# request to district reps #}
           
           {% if data.request_district == "Not sure..." %}
@@ -463,11 +770,14 @@ elements: |-
             {% set recipient = "councildistrict" ~ data.request_district ~ "@portlandoregon.gov" %}
           
           {% endif %}
-            
+
+        {% elseif data.request_purpose == "Provide comment or feedback to all elected officials" %}
+            {% set recipient = "mayor@portlandoregon.gov,auditorsoffice@portlandoregon.gov,councildistrict1@portlandoregon.gov,councildistrict2@portlandoregon.gov,councildistrict3@portlandoregon.gov,councildistrict4@portlandoregon.gov" %}
+          
         {% else %}
           {# request to individual elected official #}
 
-          {% set name = data['request_recipient'] %}
+          {% set name = data.recipient ? data.recipient : data.request_recipient %}
 
           {% if name == "Councilor Candace Avalos" or name == "Councilor Loretta Smith" or name == "Councilor Jamie Dunphy" %}
             {% set recipient = "councildistrict1@portlandoregon.gov" %}
@@ -488,8 +798,6 @@ elements: |-
       {% endif %}
 
       {{ recipient }}
-
-
     '#whitespace': trim
   computed_confirmation_message:
     '#type': webform_computed_twig
@@ -499,8 +807,8 @@ elements: |-
     '#template': |-
       <p>We appreciate you taking the time to share your thoughts, concerns, or questions.</p>
 
-      {% if data.request_purpose == "Request a meeting with an elected official" %}
-      <p>If you requested a meeting with an elected official, and the request is approved, someone will reach out to you to schedule the meeting.</p>
+      {% if data.request_purpose == "Request a meeting with an elected official" or data.request_purpose_individual == "Request a meeting" %}
+      <p>If you requested a meeting and the request is approved, a member of our staff will reach out to you soon to schedule the meeting.</p>
       {% endif %}
     '#whitespace': trim
 css: ''
@@ -726,8 +1034,16 @@ handlers:
     label: 'Send email to selected official(s)'
     notes: ''
     status: true
-    conditions: {  }
-    weight: 1
+    conditions:
+      disabled:
+        -
+          ':input[name="support_agent_use_only[test_submission]"]':
+            checked: true
+        - or
+        -
+          ':input[name="request_purpose"]':
+            value: 'Provide comment or feedback to all elected officials'
+    weight: -50
     settings:
       states:
         - completed
@@ -746,6 +1062,114 @@ handlers:
       sender_name: ''
       subject: '[webform_submission:values:computed_subject]'
       body: '<p>[webform_submission:values:html]</p>'
+      excluded_elements:
+        introductory_text: introductory_text
+        report_location: report_location
+        markup_district_1: markup_district_1
+        markup_district_2: markup_district_2
+        markup_district_3: markup_district_3
+        markup_district_4: markup_district_4
+        testimony_instructions: testimony_instructions
+        contact_country: contact_country
+        your_address: your_address
+        public_records_statement_text: public_records_statement_text
+        computed_subject: computed_subject
+        computed_recipient: computed_recipient
+        computed_confirmation_message: computed_confirmation_message
+      ignore_access: true
+      exclude_empty: true
+      exclude_empty_checkbox: true
+      exclude_attachments: false
+      html: true
+      attachments: false
+      twig: false
+      theme_name: ''
+      parameters: {  }
+      debug: false
+  test_send_email_to_selected_officials:
+    id: email
+    handler_id: test_send_email_to_selected_officials
+    label: 'TEST: Send email to selected official(s)'
+    notes: 'When the Test Submission box is checked (administrator only), this handler sends the submission to webforms@portlandoregon.gov. Change it to your own address in the multidev environment for testing purposes.'
+    status: true
+    conditions:
+      enabled:
+        ':input[name="support_agent_use_only[test_submission]"]':
+          checked: true
+    weight: -48
+    settings:
+      states:
+        - completed
+      to_mail: webforms@portlandoregon.gov
+      to_options: {  }
+      bcc_mail: ''
+      bcc_options: {  }
+      cc_mail: ''
+      cc_options: {  }
+      from_mail: '[webform_submission:values:contact_email_address:raw]'
+      from_options: {  }
+      from_name: '[webform_submission:values:contact_name:raw]'
+      reply_to: ''
+      return_path: ''
+      sender_mail: ''
+      sender_name: ''
+      subject: 'TEST: [webform_submission:values:computed_subject]'
+      body: '<p>[webform_submission:values:html]</p>'
+      excluded_elements:
+        introductory_text: introductory_text
+        report_location: report_location
+        markup_district_1: markup_district_1
+        markup_district_2: markup_district_2
+        markup_district_3: markup_district_3
+        markup_district_4: markup_district_4
+        testimony_instructions: testimony_instructions
+        contact_country: contact_country
+        your_address: your_address
+        public_records_statement_text: public_records_statement_text
+        computed_subject: computed_subject
+        computed_recipient: computed_recipient
+        computed_confirmation_message: computed_confirmation_message
+      ignore_access: true
+      exclude_empty: true
+      exclude_empty_checkbox: true
+      exclude_attachments: false
+      html: true
+      attachments: false
+      twig: false
+      theme_name: ''
+      parameters: {  }
+      debug: false
+  send_email_to_all_officials:
+    id: email
+    handler_id: send_email_to_all_officials
+    label: 'Send email to ALL officials'
+    notes: 'Sends a duplicate message to the mayor, auditor, and all districts. Includes a note that the same message has been sent to all officials.'
+    status: true
+    conditions:
+      enabled:
+        ':input[name="support_agent_use_only[test_submission]"]':
+          unchecked: true
+        ':input[name="request_purpose"]':
+          value: 'Provide comment or feedback to all elected officials'
+    weight: -49
+    settings:
+      states:
+        - completed
+      to_mail: '[webform_submission:values:computed_recipient]'
+      to_options: {  }
+      bcc_mail: ''
+      bcc_options: {  }
+      cc_mail: ''
+      cc_options: {  }
+      from_mail: '[webform_submission:values:contact_email_address:raw]'
+      from_options: {  }
+      from_name: '[webform_submission:values:contact_name:raw]'
+      reply_to: ''
+      return_path: ''
+      sender_mail: ''
+      sender_name: ''
+      subject: '[webform_submission:values:computed_subject]'
+      body: '<p style="color:red;"><strong>This message has been sent to the Mayor, Auditor, and all district inboxes.</strong></p><p>[webform_submission:values:html]</p>'
       excluded_elements:
         introductory_text: introductory_text
         report_location: report_location
