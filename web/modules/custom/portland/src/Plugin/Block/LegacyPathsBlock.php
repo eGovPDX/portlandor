@@ -24,8 +24,7 @@ use Drupal\group\Entity\GroupRelationship;
  * )
  */
 class LegacyPathsBlock extends BlockBase {
-    private static $pog_base_url = "https://www.portlandoregon.gov";
-    private static $help_text = "This content page replaces the following pages on the old portlandoregon.gov website. Users on the old site will be redirected here when they hit these URLs. Use the links below to test that the legacy paths are correct. <em>This block is only visible to members of the Publishers role.</em>";
+    private static $help_text = "These are the URL redirects that redirect to this page. They may include shortcut links, URLs from previous revisions, and legacy paths from the portlandoregon.gov migration.";
 
     /**
      * {@inheritdoc}
@@ -88,7 +87,6 @@ class LegacyPathsBlock extends BlockBase {
 
       $render_array = [
         '#theme' => 'portland_legacy_paths_block',
-        '#pog_base_url' => self::$pog_base_url,
         '#legacy_paths' => $legacy_paths,
         '#help_text' => t(self::$help_text),
       ];
