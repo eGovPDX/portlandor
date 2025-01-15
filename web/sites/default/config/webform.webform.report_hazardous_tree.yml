@@ -44,9 +44,22 @@ elements: |-
     '#type': radios
     '#title': 'Is there an electrical hazard present?'
     '#options':
-      1: 'Yes'
-      2: 'No'
-      3: Unknown
+      'Yes': 'Yes'
+      'No': 'No'
+      Unknown: Unknown
+  computed_int_report_electrical_issues:
+    '#type': webform_computed_twig
+    '#title': 'Computed Int for TreePlotter - report_electrical_issues'
+    '#display_on': none
+    '#mode': text
+    '#template': |-
+      {% set int_mapping = {
+        'Yes': 1,
+        'No': 2,
+        'Unknown': 3,
+      } %}
+      {{ int_mapping[data.report_electrical_issues] }}
+    '#whitespace': trim
   markup_electrical_hazard:
     '#type': webform_markup
     '#states':
@@ -63,9 +76,22 @@ elements: |-
     '#type': radios
     '#title': 'What is the road condition?'
     '#options':
-      1: 'Road Fully Blocked'
-      2: 'Road Partially Blocked'
-      3: 'Road Unaffected'
+      'Road Fully Blocked': 'Road Fully Blocked'
+      'Road Partially Blocked': 'Road Partially Blocked'
+      'Road Unaffected': 'Road Unaffected'
+  computed_int_report_road_condition:
+    '#type': webform_computed_twig
+    '#title': 'Computed Int for TreePlotter - report_road_condition'
+    '#display_on': none
+    '#mode': text
+    '#template': |-
+      {% set int_mapping = {
+        'Road Fully Blocked': 1,
+        'Road Partially Blocked': 2,
+        'Road Unaffected': 3,
+      } %}
+      {{ int_mapping[data.report_road_condition] }}
+    '#whitespace': trim
   contact_name:
     '#type': textfield
     '#title': Name
@@ -392,13 +418,13 @@ handlers:
       completed_custom_data: |-
         data:
           job_id: null
-          # 4 = emergency
-          priority: 4
+          # 5 = 311 Emergency
+          request_source: 5
           client_address_num_street: '[webform_submission:values:report_location:location_address:raw]'
           lat: '(double) [webform_submission:values:report_location:location_lat]'
           lng: '(double) [webform_submission:values:report_location:location_lon]'
-          electrical_hazard: '(int) [webform_submission:values:report_electrical_issues:raw]'
-          road_condition: '(int) [webform_submission:values:report_road_condition:raw]'
+          electrical_hazard: '(int) [webform_submission:values:computed_int_report_electrical_issues:raw]'
+          road_condition: '(int) [webform_submission:values:computed_int_report_road_condition:raw]'
           comments: '[webform_submission:values:report_caller_notes:raw]'
           client_first_name: '[webform_submission:values:contact_name]'
           client_phone: '[webform_submission:values:contact_phone]'
