@@ -240,7 +240,7 @@ class ZendeskHandler extends WebformHandlerBase
         }
 
         // order ticket fields by name
-        asort($form_ticket_fields);
+        // asort($form_ticket_fields);
 
         // Get all active ticket forms from Zendesk
         $ticket_forms = $client->get("ticket_forms?active=true")->ticket_forms;
@@ -307,6 +307,13 @@ class ZendeskHandler extends WebformHandlerBase
           'task' => 'Task'
         ],
         '#required' => false
+      ];
+
+      $form['container_test']['incident_child_problem'] = [
+        '#type' => 'checkbox',
+        '#title' => $this->t('This ticket is the child of a Problem ticket.'),
+        '#description' => $this->t('Use the Zendesk Ticket ID field to identify the parent Problem.'),
+        '#default_value' => $this->configuration['incident_child_problem'] ?? 0
       ];
 
       // space separated tags
@@ -461,6 +468,24 @@ class ZendeskHandler extends WebformHandlerBase
         '#default_value' => $this->configuration['ticket_fork_field'],
         '#required' => false
       ];
+
+      $form['subject']['#weight'] = -10; // Place first
+      $form['comment']['#weight'] = -10;
+      $form['requester_name']['#weight'] = -10;
+      $form['requester_email']['#weight'] = -10;
+      $form['collaborators']['#weight'] = -7; // CCs
+      $form['tags']['#weight'] = -5;
+      $form['ticket_id_field']['#weight'] = -4;
+      $form['type']['#weight'] = -3; // Ticket Type
+      $form['incident_child_problem']['#weight'] = -2; // Checkbox
+      $form['priority']['#weight'] = -1;
+      $form['status']['#weight'] = 0;
+      $form['recipient']['#weight'] = 1;
+      $form['group_id']['#weight'] = 2;
+      $form['assignee_id']['#weight'] = 3;
+      $form['ticket_form_id']['#weight'] = 4;
+      $form['ticket_fork_field']['#weight'] = 5;
+      $form['custom_fields']['#weight'] = 6;
 
       // TODO: remove once zendesk PHP library is updated for PHP 8.2
       error_reporting($error_level);
