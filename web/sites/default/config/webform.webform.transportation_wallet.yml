@@ -40,10 +40,17 @@ elements: |-
         '#title': 'Which Transportation Wallet package would you like to sign up for?'
         '#prepopulate': true
         '#options':
-          1: 'Option 1: Individual - TriMet Honored Citizen 1-year Pass'
-          2: 'Option 2: Individual - Transit, BIKETOWN for All, and prepaid Visa card'
-          3: 'Option 3: Household - Transit, BIKETOWN for All, and prepaid Visa card'
+          wallet_option_1: 'Option 1: Individual - TriMet Honored Citizen 1-year Pass'
+          wallet_option_2: 'Option 2: Individual - Transit, BIKETOWN for All, and prepaid Visa card'
+          wallet_option_3: 'Option 3: Household - Transit, BIKETOWN for All, and prepaid Visa card'
         '#required': true
+      computed_wallet_option:
+        '#type': webform_computed_twig
+        '#title': 'Computed Wallet Option'
+        '#mode': text
+        '#template': '{{ data.apply_wallet_package }}'
+        '#whitespace': trim
+        '#ajax': true
   page_wallet_info:
     '#type': webform_wizard_page
     '#title': 'Wallet information'
@@ -55,9 +62,9 @@ elements: |-
       '#mode': html
       '#template': |-
         {% set radios_options = {
-          '1': 'Option 1: Individual - TriMet Honored Citizen 1-year Pass',
-          '2': 'Option 2: Individual - Transit, BIKETOWN for All, and prepaid Visa card',
-          '3': 'Option 3: Household - Transit, BIKETOWN for All, and prepaid Visa card'
+          'wallet_option_1': 'Option 1: Individual - TriMet Honored Citizen 1-year Pass',
+          'wallet_option_2': 'Option 2: Individual - Transit, BIKETOWN for All, and prepaid Visa card',
+          'wallet_option_3': 'Option 3: Household - Transit, BIKETOWN for All, and prepaid Visa card'
         } %}
         <h2>{{ radios_options[data.apply_wallet_package] }}</h3>
         <p>&nbsp;</p>
@@ -74,7 +81,7 @@ elements: |-
       '#states':
         visible:
           ':input[name="apply_wallet_package"]':
-            value: '3'
+            value: wallet_option_3
     section_hop_card_details:
       '#type': webform_section
       '#title': 'Your Hop card details'
@@ -86,7 +93,7 @@ elements: |-
                 greater: '1'
           - or
           - ':input[name="apply_wallet_package"]':
-              '!value': '3'
+              '!value': wallet_option_3
       '#attributes':
         id: member_1_container
       contact_first_name:
@@ -108,17 +115,17 @@ elements: |-
         '#type': radios
         '#title': 'What type of Hop card do you have?'
         '#options':
-          'Adult Hop card': 'Adult Hop card -- <img width="200px" src="https://www.portland.gov/sites/default/files/2024/fares-hopcard-adult.png" />'
-          'Honored Citizen Hop card': 'Honored Citizen Hop card -- <img width="200px" src="https://www.portland.gov/sites/default/files/2024/fares-hopcard-honored.png" />'
-          'Personalized Honored Citizen Hop card': 'Personalized Honored Citizen Hop card -- <img width="200px" src="https://www.portland.gov/sites/default/files/2024/fares-hopcard-honored-photoid.png" />'
-          'TriMet LIFT Hop card': 'TriMet LIFT Hop card -- <img width="200px" src="https://www.portland.gov/sites/default/files/2024/fares-hopcard-lift.png" />'
+          adult_hop_card: 'Adult Hop card -- <img width="200px" src="https://www.portland.gov/sites/default/files/2024/fares-hopcard-adult.png" />'
+          honored_citizen_hop_card: 'Honored Citizen Hop card -- <img width="200px" src="https://www.portland.gov/sites/default/files/2024/fares-hopcard-honored.png" />'
+          personalized_honored_citizen_hop_card: 'Personalized Honored Citizen Hop card -- <img width="200px" src="https://www.portland.gov/sites/default/files/2024/fares-hopcard-honored-photoid.png" />'
+          trimet_lift_hop_card: 'TriMet LIFT Hop card -- <img width="200px" src="https://www.portland.gov/sites/default/files/2024/fares-hopcard-lift.png" />'
         '#required': true
         '#states':
           visible:
             ':input[name="apply_has_hop_card"]':
               value: 'Yes'
             ':input[name="apply_wallet_package"]':
-              value: '1'
+              value: wallet_option_1
       apply_hop_card_number:
         '#type': textfield
         '#title': 'Please enter your 16-digit Hop card number'
@@ -134,27 +141,27 @@ elements: |-
               value: 'Yes'
           visible:
             - ':input[name="apply_current_hop_card"]':
-                value: 'Honored Citizen Hop card'
+                value: honored_citizen_hop_card
             - or
             - ':input[name="apply_current_hop_card"]':
-                value: 'Personalized Honored Citizen Hop card'
+                value: personalized_honored_citizen_hop_card
             - or
             - ':input[name="apply_wallet_package"]':
-                value: '2'
+                value: wallet_option_2
               ':input[name="apply_has_hop_card"]':
                 value: 'Yes'
             - or
             - ':input[name="apply_wallet_package"]':
-                value: '3'
+                value: wallet_option_3
               ':input[name="apply_has_hop_card"]':
                 value: 'Yes'
       apply_hop_card_needed:
         '#type': radios
         '#title': 'What type of Hop card do you need?'
         '#options':
-          'I need an Adult Hop card (18+)': 'I need an Adult Hop card (18+)'
-          'I need an Honored Citizen Hop Card (66+)': 'I need an Honored Citizen Hop Card (66+)'
-          'I need a Low-Income Reduced Fare Hop card and will email the Hop card number when I receive it': 'I need a Low-Income Reduced Fare Hop card and will email the Hop card number when I receive it'
+          adult_hop_card: 'I need an Adult Hop card (18+)'
+          honored_citizen_hop_card: 'I need an Honored Citizen Hop Card (66+)'
+          low_income_hop_card: 'I need a Low-Income Reduced Fare Hop card and will email the Hop card number when I receive it'
         '#required': true
         '#states':
           visible:
@@ -165,9 +172,9 @@ elements: |-
         '#states':
           visible:
             ':input[name="apply_wallet_package"]':
-              value: '2'
+              value: wallet_option_2
             ':input[name="apply_hop_card_needed"]':
-              value: 'I need a Low-Income Reduced Fare Hop card and will email the Hop card number when I receive it'
+              value: low_income_hop_card
         '#markup': '<div class="alert alert--info next-steps"><h2>Important</h2><p>Once you receive your Hop card, you must email the 16-digit Hop card number to <a href="mailto:wallet@portlandoregon.gov">wallet@portlandoregon.gov</a>.</p></div>'
       container_honored_citizen:
         '#type': container
@@ -176,17 +183,17 @@ elements: |-
           '#states':
             visible:
               - ':input[name="apply_current_hop_card"]':
-                  value: 'Adult Hop card'
+                  value: adult_hop_card
               - xor
               - ':input[name="apply_wallet_package"]':
-                  value: '1'
+                  value: wallet_option_1
                 ':input[name="apply_hop_card_needed"]':
-                  value: 'I need a Low-Income Reduced Fare Hop card and will email the Hop card number when I receive it'
+                  value: low_income_hop_card
               - xor
               - ':input[name="apply_wallet_package"]':
-                  value: '1'
+                  value: wallet_option_1
                 ':input[name="apply_hop_card_needed"]':
-                  value: 'I need an Adult Hop card (18+)'
+                  value: adult_hop_card
           '#admin_title': 'Next Steps'
           '#markup': '<div class="alert alert--info next-steps"><h2>Next Steps</h2><p>In order to receive a TriMet Honored Citizen 1-year Pass through Transportation Wallet, you must have a Personalized Honored Citizen TriMet Hop card. Please complete the following steps to ensure that your registration is complete.<br><br>1. Continue filling out this form so that we have your information.<br>2. Apply for your <a href="https://trimet.org/income/application.htm" target="_blank">Honored Citizen Hop card</a> as soon as possible.<br>3. Once you have received your Honored Citizen Hop card, email <a href="mailto:wallet@portlandoregon.gov" target="_blank">wallet@portlandoregon.gov</a> &nbsp;with your Hop card number so your annual pass can be added to it.</p></div>'
         apply_next_steps_choice:
@@ -199,17 +206,17 @@ elements: |-
           '#states':
             visible:
               - ':input[name="apply_current_hop_card"]':
-                  value: 'Adult Hop card'
+                  value: adult_hop_card
               - xor
               - ':input[name="apply_wallet_package"]':
-                  value: '1'
+                  value: wallet_option_1
                 ':input[name="apply_hop_card_needed"]':
-                  value: 'I need a Low-Income Reduced Fare Hop card and will email the Hop card number when I receive it'
+                  value: low_income_hop_card
               - xor
               - ':input[name="apply_wallet_package"]':
-                  value: '1'
+                  value: wallet_option_1
                 ':input[name="apply_hop_card_needed"]':
-                  value: 'I need an Adult Hop card (18+)'
+                  value: adult_hop_card
         apply_trimet_lift_is_yes:
           '#type': radios
           '#title': 'Unfortunately, we are unable to load the Honored Citizen 1-year Pass to a TriMet LIFT Hop card. What would you like to do?'
@@ -220,7 +227,7 @@ elements: |-
           '#states':
             visible:
               ':input[name="apply_current_hop_card"]':
-                value: 'TriMet LIFT Hop card'
+                value: trimet_lift_hop_card
         markup_switch_button:
           '#type': webform_markup
           '#states':
@@ -232,6 +239,21 @@ elements: |-
                   value: 'I want to start over and select Option 2 ($200 Hop Card, BIKETOWN for All, and $75 prepaid Visa card).'
           '#admin_title': 'Switch Button'
           '#markup': '<a class="btn btn-primary" href="?">Start Over</a>'
+      computed_hop_card_type:
+        '#type': webform_computed_twig
+        '#title': 'Computed Hop Card Type'
+        '#mode': text
+        '#template': |-
+          {% if data.apply_wallet_package == 'wallet_option_1' %}
+            honored_citizen_hop_card
+          {% elseif data.apply_wallet_package == 'wallet_option_2' or data.apply_wallet_package == 'wallet_option_3' %}
+            {% if data.apply_has_hop_card == 'No' %}
+              {{ data.apply_hop_card_needed }}
+            {% endif %}
+            {# if Yes, leave blank. there are no options, and we don't ask what kind of card. #}
+          {% endif %}
+        '#whitespace': trim
+        '#ajax': true
     markup_household_size_1:
       '#type': webform_markup
       '#states':
@@ -247,10 +269,10 @@ elements: |-
       '#states':
         visible:
           ':input[name="apply_wallet_package"]':
-            value: '3'
+            value: wallet_option_3
           ':input[name="apply_household_size"]':
             value:
-              greater: '1'
+              greater: wallet_option_1
       section_household_member_2:
         '#type': webform_section
         '#title': 'Household Member 2'
@@ -272,9 +294,10 @@ elements: |-
           '#description_display': before
           '#options':
             'YES, this person has a Hop card': 'YES, this person has a Hop card'
-            'No, this person needs an Adult Hop card (18+)': 'No, this person needs an Adult Hop card (18+)'
-            'No, this person needs an Honored Citizen Hop Card (66+)': 'No, this person needs an Honored Citizen Hop Card (66+)'
-            'No, this person needs a Low-Income Reduced Fare Hop card': 'No, this person needs a Low-Income Reduced Fare Hop card'
+            adult_hop_card: 'No, this person needs an Adult Hop card (18+)'
+            honored_citizen_hop_card: 'No, this person needs an Honored Citizen Hop Card (66+)'
+            low_income_hop_card: 'No, this person needs a Low-Income Reduced Fare Hop card'
+            youth_hop_card: 'Youth Hop card (7-17)'
             'This person does not need a Hop card': 'This person does not need a Hop card'
           '#other__option_label': ''
           '#other__title': ''
@@ -333,9 +356,10 @@ elements: |-
           '#description_display': before
           '#options':
             'YES, this person has a Hop card': 'YES, this person has a Hop card'
-            'No, this person needs an Adult Hop card (18+)': 'No, this person needs an Adult Hop card (18+)'
-            'No, this person needs an Honored Citizen Hop Card (66+)': 'No, this person needs an Honored Citizen Hop Card (66+)'
-            'No, this person needs a Low-Income Reduced Fare Hop card': 'No, this person needs a Low-Income Reduced Fare Hop card'
+            adult_hop_card: 'No, this person needs an Adult Hop card (18+)'
+            honored_citizen_hop_card: 'No, this person needs an Honored Citizen Hop Card (66+)'
+            low_income_hop_card: 'No, this person needs a Low-Income Reduced Fare Hop card'
+            youth_hop_card: 'Youth Hop card (7-17)'
             'This person does not need a Hop card': 'This person does not need a Hop card'
           '#other__option_label': ''
           '#other__title': ''
@@ -394,9 +418,10 @@ elements: |-
           '#description_display': before
           '#options':
             'YES, this person has a Hop card': 'YES, this person has a Hop card'
-            'No, this person needs an Adult Hop card (18+)': 'No, this person needs an Adult Hop card (18+)'
-            'No, this person needs an Honored Citizen Hop Card (66+)': 'No, this person needs an Honored Citizen Hop Card (66+)'
-            'No, this person needs a Low-Income Reduced Fare Hop card': 'No, this person needs a Low-Income Reduced Fare Hop card'
+            adult_hop_card: 'No, this person needs an Adult Hop card (18+)'
+            honored_citizen_hop_card: 'No, this person needs an Honored Citizen Hop Card (66+)'
+            low_income_hop_card: 'No, this person needs a Low-Income Reduced Fare Hop card'
+            youth_hop_card: 'Youth Hop card (7-17)'
             'This person does not need a Hop card': 'This person does not need a Hop card'
           '#other__option_label': ''
           '#other__title': ''
@@ -455,9 +480,10 @@ elements: |-
           '#description_display': before
           '#options':
             'YES, this person has a Hop card': 'YES, this person has a Hop card'
-            'No, this person needs an Adult Hop card (18+)': 'No, this person needs an Adult Hop card (18+)'
-            'No, this person needs an Honored Citizen Hop Card (66+)': 'No, this person needs an Honored Citizen Hop Card (66+)'
-            'No, this person needs a Low-Income Reduced Fare Hop card': 'No, this person needs a Low-Income Reduced Fare Hop card'
+            adult_hop_card: 'No, this person needs an Adult Hop card (18+)'
+            honored_citizen_hop_card: 'No, this person needs an Honored Citizen Hop Card (66+)'
+            low_income_hop_card: 'No, this person needs a Low-Income Reduced Fare Hop card'
+            youth_hop_card: 'Youth Hop card (7-17)'
             'This person does not need a Hop card': 'This person does not need a Hop card'
           '#other__option_label': ''
           '#other__title': ''
@@ -835,7 +861,7 @@ elements: |-
         '#states':
           visible:
             ':input[name="apply_wallet_package"]':
-              '!value': '1'
+              '!value': wallet_option_1
         '#date_date_max': '18 years ago'
         '#date_date_format': m/d/Y
       contact_address_verifier:
@@ -854,6 +880,12 @@ elements: |-
         '#mode': text
         '#template': '{{ data.contact_first_name }} {{ data.contact_last_name }}'
         '#whitespace': trim
+      computed_date_of_birth:
+        '#type': webform_computed_twig
+        '#title': 'Computed Date of Birth'
+        '#display_on': none
+        '#mode': text
+        '#template': "{{ data.apply_date_of_birth|date('Y-m-d') }}"
     section_optional_survey:
       '#type': webform_section
       '#title': 'A few more questions (optional survey)'
@@ -902,6 +934,12 @@ elements: |-
     '#access_create_roles':
       - authenticated
     '#escalate_issue__access': false
+  computed_tags:
+    '#type': webform_computed_twig
+    '#title': 'Computed Tags'
+    '#display_on': none
+    '#mode': text
+    '#template': '{{ data.apply_wallet_package }} {{ data.apply_hop_card_needed }}'
 css: ".webform-multiple-table table {\r\n    width: inherit !important;\r\n}\r\n\r\n.webform-multiple-table tbody tr:hover,\r\n.webform-multiple-table tbody tr:focus {\r\n    background: inherit !important;\r\n}\r\n\r\n.webform-scale {\r\n    margin-top: 0.5rem;\r\n    width: 100%;\r\n}\r\n\r\n.webform-scale .webform-scale-options {\r\n    display: flex;\r\n    justify-content: space-around;\r\n    margin: 0 2rem;\r\n}\r\n\r\n.webform-scale .webform-scale-option label {\r\n    line-height: inherit !important;\r\n}\r\n\r\n.webform-scale .webform-scale-text {\r\n    display: flex;\r\n    justify-content: space-between;\r\n    height: unset;\r\n    line-height: unset;\r\n}\r\n\r\n.webform-scale .webform-scale-text-min, .webform-scale .webform-scale-text-max {\r\n    position: unset;\r\n    width: 25%;\r\n    text-align: center !important;\r\n}\r\n\r\n.card-header.card-header-opt-1 {\r\n    background: rgba(240, 92, 73, 0.33);\r\n}\r\n\r\n.card-header.card-header-opt-2 {\r\n    background: rgba(124, 66, 118, 0.33);\r\n}\r\n\r\n.card-header.card-header-opt-3 {\r\n    background: rgba(0, 160, 174, 0.33);\r\n}\r\n\r\n#member_2_container, #member_3_container, #member_4_container, #member_5_container {\r\n  border: 1px solid black;\r\n  padding: 15px 15px 0 15px;\r\n  margin-bottom: 5px;\r\n}\r\n\r\ndiv.form-disabled input[type=submit] { \r\n  color: white; cursor: not-allowed; \r\n}\r\n\r\n.webform-submission-transportation-wallet-form .form-text {\r\n  display: inline-block;\r\n}"
 javascript: ''
 settings:
@@ -1089,37 +1127,41 @@ handlers:
   zendesk_new_request:
     id: zendesk
     handler_id: zendesk_new_request
-    label: 'Zendesk new request'
+    label: 'Zendesk new request - Individual applicant'
     notes: ''
     status: true
     conditions:
-      disabled:
+      enabled:
         ':input[name="support_agent_use_only[test_submission]"]':
-          checked: true
+          unchecked: true
+        ':input[name="apply_wallet_package"]':
+          '!value': '3'
     weight: 0
     settings:
       requester_name: computed_full_name
       requester_email: contact_email
       subject: 'Transportation Wallet Application'
       comment: '[webform_submission:values:html]'
-      tags: 'drupal webform'
+      tags: 'drupal webform [webform_submission:values:computed_tags]'
       priority: normal
       status: new
       recipient: ''
-      group_id: '27146129932439'
+      group_id: '4549352062487'
       assignee_id: ''
-      type: problem
+      type: incident
       collaborators: ''
-      custom_fields: ''
+      custom_fields: "27985303578775: ['[webform_submission:values:computed_date_of_birth]', 'computed_date_of_birth']\r\n29284110563479: ['[webform_submission:values:apply_wallet_package]', 'apply_wallet_package']\r\n27985321767319: ['[webform_submission:values:computed_hop_card_type]', 'computed_hop_card_type']\r\n27985342383639: ['[webform_submission:values:apply_hop_card_number]', 'apply_hop_card_number']\r\n27985354792087: '0'\r\n27773229365143: ['[webform_submission:values:contact_address_verifier:location_address] [webform_submission:values:contact_address_verifier:unit_number], [webform_submission:values:contact_address_verifier:location_city], [webform_submission:values:contact_address_verifier:location_state] [webform_submission:values:contact_address_verifier:location_zip]', 'contact_address_verifier']\r\n25600783638295: ['[webform_submission:values:contact_phone]', 'contact_phone']"
       ticket_id_field: request_ticket_id
       ticket_fork_field: ''
       ticket_form_id: '26628122071575'
+      child_incident: 0
+      parent_ticket_id_field: ''
   test_zendesk_new_request:
     id: zendesk
     handler_id: test_zendesk_new_request
     label: 'TEST: Zendesk new request'
     notes: ''
-    status: true
+    status: false
     conditions:
       enabled:
         ':input[name="support_agent_use_only[test_submission]"]':
@@ -1136,10 +1178,44 @@ handlers:
       recipient: ''
       group_id: '4549352062487'
       assignee_id: ''
-      type: problem
+      type: incident
       collaborators: ''
       custom_fields: ''
       ticket_id_field: request_ticket_id
       ticket_fork_field: ''
       ticket_form_id: '26628122071575'
+      child_incident: 0
+      parent_ticket_id_field: ''
+  zendesk_new_request_household_applicant_1:
+    id: zendesk
+    handler_id: zendesk_new_request_household_applicant_1
+    label: 'Zendesk new request - Household applicant #1'
+    notes: ''
+    status: false
+    conditions:
+      enabled:
+        ':input[name="support_agent_use_only[test_submission]"]':
+          unchecked: true
+        ':input[name="apply_wallet_package"]':
+          value: '3'
+    weight: 2
+    settings:
+      requester_name: computed_full_name
+      requester_email: contact_email
+      subject: 'Transportation Wallet Application'
+      comment: "This is part of a household application. This submission is for the primary applicant.\r\n\r\n[webform_submission:values:html]"
+      tags: 'drupal webform'
+      priority: normal
+      status: new
+      recipient: ''
+      group_id: '27146129932439'
+      assignee_id: ''
+      type: problem
+      collaborators: ''
+      custom_fields: "27985303578775: ['[webform_submission:values:computed_date_of_birth]', 'computed_date_of_birth']\r\n27985278586647: ['[webform_submission:values:apply_wallet_package]', 'apply_wallet_package']\r\n27985321767319: ['[webform_submission:values:computed_hop_card_type]', 'computed_hop_card_type']\r\n27985342383639: ['[webform_submission:values:apply_hop_card_number]', 'apply_hop_card_number']\r\n27985354792087: '0'\r\n27773229365143: ['[webform_submission:values:contact_address_verifier:location_address] [webform_submission:values:contact_address_verifier:unit_number], [webform_submission:values:contact_address_verifier:location_city], [webform_submission:values:contact_address_verifier:location_state] [webform_submission:values:contact_address_verifier:location_zip]', 'contact_address_verifier']\r\n25600783638295: ['[webform_submission:values:contact_phone]', 'contact_phone']"
+      ticket_id_field: request_ticket_id
+      ticket_fork_field: ''
+      ticket_form_id: '26628122071575'
+      child_incident: 0
+      parent_ticket_id_field: ''
 variants: {  }

@@ -631,12 +631,18 @@ class ZendeskHandler extends WebformHandlerBase
       $data = $webform_submission->getData();
     }
 
+    if ($zendesk_parent_ticket_id_field_name) {
+      // field is $data[$zendesk_parent_ticket_id_field_name]
+    }
+
     // if name field is set and present, add ticket ID to hidden Zendesk Ticket ID field
     if ($zendesk_ticket_id_field_name && array_key_exists( $zendesk_ticket_id_field_name, $data ) && $new_ticket_id){
       $data[$zendesk_ticket_id_field_name] = $new_ticket_id;
       $form_state->setValue($zendesk_ticket_id_field_name, $new_ticket_id);
       $form['values'][$zendesk_ticket_id_field_name] = $new_ticket_id;
     }
+
+    // if this is a Problem ticket and parent ticket ID field is present, add new ticket ID there too
 
     return $new_ticket_id; // if a null is returned, an error/try-again message will be displayed to the user
   }
