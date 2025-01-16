@@ -77,7 +77,8 @@ describe('Marty Member user test', () => {
       text_content = await page.evaluate(() => document.querySelector('div.region-content dl').textContent);
       expect(text_content).toEqual(expect.stringContaining('Add Page'));
 
-      await page.goto(`${HOME_PAGE}/powr/content/create/group_node:page`, { waitUntil: 'networkidle2' });
+      await page.goto(`${HOME_PAGE}/powr/content/create/group_node:page`, { waitUntil: 'load' });
+      await page.waitForNetworkIdle({idleTime: 500});
       text_content = await page.evaluate(() => document.querySelector('#node-page-form').textContent);
       expect(text_content).toEqual(expect.stringContaining('Title'));
       expect(text_content).toEqual(expect.stringContaining('Page type'));
