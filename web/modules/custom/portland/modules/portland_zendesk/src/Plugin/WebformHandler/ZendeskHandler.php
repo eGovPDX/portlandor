@@ -22,7 +22,7 @@ use Drupal\file\Entity\File;
 use Drupal\portland_zendesk\Utils\Utility;
 use Drupal\webform\Entity\Webform;
 use Drupal\webform\WebformSubmissionForm;
-
+use Drupal\Core\Logger\RfcLogLevel;
 
 /**
  * Form submission to Zendesk handler.
@@ -105,7 +105,7 @@ class ZendeskHandler extends WebformHandlerBase
       'group_id' => '',
       'assignee_id' => '',
       'type' => 'question',
-      'child_incident' => '',
+      'is_child_incident' => '',
       'collaborators' => '',
       'custom_fields' => '',
       'ticket_id_field' => '',
@@ -311,11 +311,11 @@ class ZendeskHandler extends WebformHandlerBase
         '#required' => false
       ];
 
-      $form['child_incident'] = [
+      $form['is_child_incident'] = [
         '#type' => 'checkbox',
         '#title' => $this->t('This ticket is the child of a Problem ticket.'),
-        '#description' => $this->t('Use the Zendesk Ticket ID field to identify the parent Problem.'),
-        '#default_value' => $this->configuration['child_incident'] ?? 0
+        '#description' => $this->t('Uses the value in the Zendesk Parent Ticket ID field to identify the parent Problem.'),
+        '#default_value' => $this->configuration['is_child_incident'] ?? 0
       ];
 
       // space separated tags
@@ -465,8 +465,8 @@ class ZendeskHandler extends WebformHandlerBase
 
       $form['parent_ticket_id_field'] = [
         '#type' => 'webform_select_other',
-        '#title' => $this->t('Zendesk Ticket ID Field'),
-        '#description' => $this->t('The name of the hidden field which will store the parent ticket ID in a Problem-Incident relationship. This field automatically gets filled with the created Ticket ID unless child_incident is true.'),
+        '#title' => $this->t('Zendesk Parent Ticket ID Field'),
+        '#description' => $this->t('The name of the hidden field which will store the parent ticket ID in a Problem-Incident relationship. This field automatically gets filled with the created Ticket ID unless is_child_incident is true.'),
         '#default_value' => $this->configuration['parent_ticket_id_field'],
         '#options' => $options['hidden'],
         '#required' => false
@@ -587,6 +587,9 @@ class ZendeskHandler extends WebformHandlerBase
     $new_ticket_id = 0;
     $zendesk_ticket_id_field_name = $this->configuration['ticket_id_field'];
     $zendesk_parent_ticket_id_field_name = $this->configuration['parent_ticket_id_field'];
+    $is_child = $this->configuration['is_child_incident'];
+
+    \Drupal::logger('custom_module')->log(RfcLogLevel::INFO, 'Is child?: <pre>@debug</pre>', [ '@debug' => $is_child ]);
 
     // tickets will be forked on the field identified in the config value 'ticket_fork_field'
     $fork_field_name = $this->configuration['ticket_fork_field'];
@@ -597,10 +600,21 @@ class ZendeskHandler extends WebformHandlerBase
 
     // check for a report_ticket_id value in the form state; if a handler previously submitted
     // a ticket, the ID should be available to subsequent handlers.
-    $prev_ticket_id = $form_state->getValue('report_ticket_id');
+    // TODO: Can we use $zendesk_ticket_id_field_name here instead of hard coding report_ticket_id?
+    $prev_ticket_id = $form_state->getValue($zendesk_ticket_id_field_name);
     if ($prev_ticket_id) {
-      $webform_submission->setElementData('report_ticket_id', $prev_ticket_id);
+      $webform_submission->setElementData($zendesk_ticket_id_field_name, $prev_ticket_id);
     }
+
+    // check for a parent_ticket_id value in the form state; if a handler previously submitted
+    // a ticket, the ID should be available to subsequent handlers.
+    // TODO: Can we use $zendesk_ticket_id_field_name here instead of hard coding report_ticket_id?
+    $parent_ticket_id = $form_state->getValue($zendesk_parent_ticket_id_field_name);
+    if ($parent_ticket_id) {
+      $webform_submission->setElementData($zendesk_parent_ticket_id_field_name, $parent_ticket_id);
+    }
+
+    // the 2nd time through, $prev_ticket_id and $parent_ticket_id are both set
 
     if ($fork_field_name) {
       // if the handler has a fork field configured, grab the values array from that field so we can
@@ -631,26 +645,36 @@ class ZendeskHandler extends WebformHandlerBase
       $data = $webform_submission->getData();
     }
 
-    if ($zendesk_parent_ticket_id_field_name) {
-      // field is $data[$zendesk_parent_ticket_id_field_name]
-    }
-
-    // if name field is set and present, add ticket ID to hidden Zendesk Ticket ID field
-    if ($zendesk_ticket_id_field_name && array_key_exists( $zendesk_ticket_id_field_name, $data ) && $new_ticket_id){
+    // if field is set and present, add ticket ID to hidden Zendesk Ticket ID field
+    // NOTE: Only do this if $prev_ticket_id isn't already set
+    if (!$prev_ticket_id && $zendesk_ticket_id_field_name && array_key_exists( $zendesk_ticket_id_field_name, $data ) && $new_ticket_id){
       $data[$zendesk_ticket_id_field_name] = $new_ticket_id;
       $form_state->setValue($zendesk_ticket_id_field_name, $new_ticket_id);
       $form['values'][$zendesk_ticket_id_field_name] = $new_ticket_id;
     }
 
     // if this is a Problem ticket and parent ticket ID field is present, add new ticket ID there too
+    if (!$parent_ticket_id && $zendesk_parent_ticket_id_field_name && array_key_exists( $zendesk_parent_ticket_id_field_name, $data ) && $new_ticket_id && !$is_child){
+      $data[$zendesk_parent_ticket_id_field_name] = $new_ticket_id;
+      $form_state->setValue($zendesk_parent_ticket_id_field_name, $new_ticket_id);
+      $form['values'][$zendesk_parent_ticket_id_field_name] = $new_ticket_id;
+    }
 
     return $new_ticket_id; // if a null is returned, an error/try-again message will be displayed to the user
   }
 
   public function submitTicket(WebformSubmissionInterface $webform_submission, $configuration) {
+    $zendesk_parent_ticket_id_field_name = $this->configuration['parent_ticket_id_field'];
+    $is_child = $this->configuration['is_child_incident'];
+
     $submission_fields = $webform_submission->toArray(TRUE);
     $new_ticket_id = 0;
     $request = [];
+
+    if ($is_child && array_key_exists('parent_ticket_id', $submission_fields['data'])) {
+      $parent_ticket_id = $submission_fields['data'][$zendesk_parent_ticket_id_field_name];
+      $request['problem_id'] = $parent_ticket_id;
+    }
 
     // Allow for either values coming from other fields or static/tokens
     foreach ($this->defaultConfigurationNames() as $field) {
@@ -778,7 +802,7 @@ class ZendeskHandler extends WebformHandlerBase
     $zendesk_ticket_id_field_name = $configuration['ticket_id_field'];
 
 
-
+    $zendesk_ticket_id = $submission_fields['data'][$configuration['ticket_id_field']];
 
 
 
