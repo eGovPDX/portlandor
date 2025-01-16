@@ -105,9 +105,11 @@ class ZendeskHandler extends WebformHandlerBase
       'group_id' => '',
       'assignee_id' => '',
       'type' => 'question',
+      'child_incident' => '',
       'collaborators' => '',
       'custom_fields' => '',
       'ticket_id_field' => '',
+      'parent_ticket_id_field' => '',
       'ticket_fork_field' => '',
       'ticket_form_id' => '',
     ];
@@ -240,7 +242,7 @@ class ZendeskHandler extends WebformHandlerBase
         }
 
         // order ticket fields by name
-        // asort($form_ticket_fields);
+        asort($form_ticket_fields);
 
         // Get all active ticket forms from Zendesk
         $ticket_forms = $client->get("ticket_forms?active=true")->ticket_forms;
@@ -309,11 +311,11 @@ class ZendeskHandler extends WebformHandlerBase
         '#required' => false
       ];
 
-      $form['container_test']['incident_child_problem'] = [
+      $form['child_incident'] = [
         '#type' => 'checkbox',
         '#title' => $this->t('This ticket is the child of a Problem ticket.'),
         '#description' => $this->t('Use the Zendesk Ticket ID field to identify the parent Problem.'),
-        '#default_value' => $this->configuration['incident_child_problem'] ?? 0
+        '#default_value' => $this->configuration['child_incident'] ?? 0
       ];
 
       // space separated tags
@@ -461,6 +463,15 @@ class ZendeskHandler extends WebformHandlerBase
         '#required' => false
       ];
 
+      $form['parent_ticket_id_field'] = [
+        '#type' => 'webform_select_other',
+        '#title' => $this->t('Zendesk Ticket ID Field'),
+        '#description' => $this->t('The name of the hidden field which will store the parent ticket ID in a Problem-Incident relationship. This field automatically gets filled with the created Ticket ID unless child_incident is true.'),
+        '#default_value' => $this->configuration['parent_ticket_id_field'],
+        '#options' => $options['hidden'],
+        '#required' => false
+      ];
+
       $form['ticket_fork_field'] = [
         '#type' => 'textfield',
         '#title' => $this->t('Zendesk Ticket Fork Field'),
@@ -476,6 +487,7 @@ class ZendeskHandler extends WebformHandlerBase
       $form['collaborators']['#weight'] = -7; // CCs
       $form['tags']['#weight'] = -5;
       $form['ticket_id_field']['#weight'] = -4;
+      $form['parent_ticket_id_field']['#weight'] = -4;
       $form['type']['#weight'] = -3; // Ticket Type
       $form['incident_child_problem']['#weight'] = -2; // Checkbox
       $form['priority']['#weight'] = -1;
@@ -574,6 +586,7 @@ class ZendeskHandler extends WebformHandlerBase
 
     $new_ticket_id = 0;
     $zendesk_ticket_id_field_name = $this->configuration['ticket_id_field'];
+    $zendesk_parent_ticket_id_field_name = $this->configuration['parent_ticket_id_field'];
 
     // tickets will be forked on the field identified in the config value 'ticket_fork_field'
     $fork_field_name = $this->configuration['ticket_fork_field'];
@@ -753,6 +766,15 @@ class ZendeskHandler extends WebformHandlerBase
 
     // set external_id to connect zendesk ticket with submission ID
     $request['external_id'] = $webform_submission->id();
+
+    // child incident handler //////////////////////////////////////////
+    // retrieve the name of the field in which to store the created Zendesk Ticket ID
+    $zendesk_ticket_id_field_name = $configuration['ticket_id_field'];
+
+
+
+
+
 
     // get list of all webform fields with a file field type
     $file_fields = $this->getWebform()->getElementsManagedFiles();
