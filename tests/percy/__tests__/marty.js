@@ -78,7 +78,7 @@ describe('Marty Member user test', () => {
       expect(text_content).toEqual(expect.stringContaining('Add Page'));
 
       await page.goto(`${HOME_PAGE}/powr/content/create/group_node:page`, { waitUntil: 'load' });
-      await page.waitForNetworkIdle({idleTime: 3000});
+      await page.waitForNetworkIdle({idleTime: 10000});
       text_content = await page.evaluate(() => document.querySelector('#node-page-form').textContent);
       expect(text_content).toEqual(expect.stringContaining('Title'));
       expect(text_content).toEqual(expect.stringContaining('Page type'));
