@@ -36,9 +36,10 @@ describe("Homepage", () => {
     async () => {
       await page.goto(HOME_PAGE);
       // Gets page title
-      const title = await page.evaluate(
-        () => document.querySelector("h1").textContent
-      );
+      const title = await page
+        .locator('h1')
+        .map(h1 => h1.textContent)
+        .wait();
       // Compares it with the intended behavior
       expect(title).toBe("Welcome to Portland, Oregon");
       // await percySnapshot(page, "Anonymous - Home page");
