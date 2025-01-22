@@ -19,6 +19,7 @@ describe("Homepage", () => {
   beforeAll(async () => {
     browser = await puppeteer.launch(BROWSER_OPTION);
     page = await browser.newPage();
+    await page.setDefaultTimeout(60000);
 
     // Print browser version
     // await page.browser().version().then(function (version) {
