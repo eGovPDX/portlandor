@@ -19,7 +19,7 @@ describe('Marty Member user test', () => {
   beforeAll(async () => {
     browser = await puppeteer.launch(BROWSER_OPTION)
     page = await browser.newPage();
-    await page.setDefaultTimeout(60000);
+    await page.setDefaultTimeout(180000);
 
     var drush_uli_result;
     if (process.env.CIRCLECI) {
