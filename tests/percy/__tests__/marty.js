@@ -19,7 +19,7 @@ describe('Marty Member user test', () => {
   beforeAll(async () => {
     browser = await puppeteer.launch(BROWSER_OPTION)
     page = await browser.newPage();
-    await page.setDefaultTimeout(180000);
+    await page.setDefaultTimeout(30000);
 
     var drush_uli_result;
     if (process.env.CIRCLECI) {
@@ -78,7 +78,6 @@ describe('Marty Member user test', () => {
       expect(text_content).toEqual(expect.stringContaining('Add Page'));
 
       await page.goto(`${HOME_PAGE}/powr/content/create/group_node:page`, { waitUntil: 'networkidle2' });
-      // await page.waitForNetworkIdle({idleTime: 10000});
       text_content = await page.evaluate(() => document.querySelector('#node-page-form').textContent);
       expect(text_content).toEqual(expect.stringContaining('Title'));
       expect(text_content).toEqual(expect.stringContaining('Page type'));
