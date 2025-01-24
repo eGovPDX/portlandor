@@ -17,6 +17,13 @@ $kernel = new DrupalKernel('prod', $autoloader);
 
 $request = Request::createFromGlobals();
 $response = $kernel->handle($request);
+
+// Hack to allow Auth0 to work with Drupal.
+if (str_contains($request->getPathInfo(), '/auth0')) {
+  require('auth0/index.php');
+  exit;
+}
+
 $response->send();
 
 $kernel->terminate($request, $response);
