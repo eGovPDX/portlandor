@@ -44,13 +44,6 @@ elements: |-
           wallet_option_2: 'Option 2: Individual - Transit, BIKETOWN for All, and prepaid Visa card'
           wallet_option_3: 'Option 3: Household - Transit, BIKETOWN for All, and prepaid Visa card'
         '#required': true
-      computed_wallet_option:
-        '#type': webform_computed_twig
-        '#title': 'Computed Wallet Option'
-        '#mode': text
-        '#template': '{{ data.apply_wallet_package }}'
-        '#whitespace': trim
-        '#ajax': true
   page_wallet_info:
     '#type': webform_wizard_page
     '#title': 'Wallet information'
@@ -242,7 +235,9 @@ elements: |-
       computed_hop_card_type:
         '#type': webform_computed_twig
         '#title': 'Computed Hop Card Type'
-        '#display_on': none
+        '#wrapper_attributes':
+          class:
+            - d-none
         '#mode': text
         '#template': |-
           {% if data.apply_wallet_package == 'wallet_option_1' %}
@@ -257,7 +252,7 @@ elements: |-
       primary_household_member_display:
         '#type': webform_computed_twig
         '#title': 'Primary Household Member Display'
-        '#display_on': none
+        '#display_on': form
         '#template': |-
           <strong>Card holder name:</strong> {{ data.contact_first_name }} {{ data.contact_last_name }}<br>
           {% if data.apply_has_hop_card == "Yes" %}
@@ -266,10 +261,11 @@ elements: |-
           {% else %}
             <strong>Needs Hop card type:</strong> {{ data.apply_hop_card_needed }}<br>
           {% endif %}
+        '#ajax': true
       primary_applicant_ticket_subject:
         '#type': webform_computed_twig
         '#title': 'Primary Applicant Ticket Subject'
-        '#display_on': form
+        '#display_on': none
         '#mode': text
         '#template': |-
           {% if data.apply_wallet_package == "wallet_option_1" or data.apply_wallet_package == "wallet_option_2" %}
@@ -278,7 +274,13 @@ elements: |-
             Household Wallet Application - Primary - {{ data.contact_first_name }} {{ data.contact_last_name }}
           {% endif %}
         '#whitespace': trim
-        '#ajax': true
+      computed_tags_primary:
+        '#type': webform_computed_twig
+        '#title': 'Computed Tags Primary'
+        '#display_on': none
+        '#mode': text
+        '#template': '{{ data.apply_wallet_package ~ " " ~ data.computed_hop_card_type }}'
+        '#whitespace': trim
     markup_household_size_1:
       '#type': webform_markup
       '#states':
@@ -318,12 +320,12 @@ elements: |-
           '#description': '<p>Children under the age of 7 do not need to pay a fare.</p>'
           '#description_display': before
           '#options':
-            'YES, this person has a Hop card': 'YES, this person has a Hop card'
+            already_has_hop_card: 'YES, this person has a Hop card'
             adult_hop_card: 'No, this person needs an Adult Hop card (18+)'
             honored_citizen_hop_card: 'No, this person needs an Honored Citizen Hop Card (66+)'
             low_income_hop_card: 'No, this person needs a Low-Income Reduced Fare Hop card'
             youth_hop_card: 'No, this person needs a Youth Hop card (7-17)'
-            none: 'This person does not need a Hop card'
+            hop_card_not_needed: 'This person does not need a Hop card'
           '#other__option_label': ''
           '#other__title': ''
           '#other__placeholder': ''
@@ -346,7 +348,7 @@ elements: |-
           '#states':
             visible:
               ':input[name="has_hop_card_2"]':
-                value: 'YES, this person has a Hop card'
+                value: already_has_hop_card
           '#required': true
         needs_biketown_2:
           '#type': checkbox
@@ -358,11 +360,11 @@ elements: |-
         household_member_2_display:
           '#type': webform_computed_twig
           '#title': 'Household Member 2 Display'
-          '#display_on': none
+          '#display_on': form
           '#mode': html
           '#template': |
             <strong>Card holder name:</strong> {{ data.first_name_2 }} {{ data.last_name_2 }}<br>
-            {% if data.has_hop_card_2 == "YES, this person has a Hop card" %}
+            {% if data.has_hop_card_2 == "already_has_hop_card" %}
               <strong>Card number:</strong> {{ data.hop_card_number_2 }}<br>
             {% else %}
               <strong>Type of Hop card needed:</strong> {{ data.has_hop_card_2 }}<br>
@@ -370,12 +372,20 @@ elements: |-
             <strong>Needs BIKETOWN for All?</strong> {{ data.needs_biketown_2 == 1 ? "Yes" : "No" }}<br><br>
             <strong>Primary applicant:</strong> {{ data.contact_first_name }} {{ data.contact_last_name }}
           '#whitespace': spaceless
+          '#ajax': true
         household_member_2_ticket_subject:
           '#type': webform_computed_twig
           '#title': 'Household Member 2 Ticket Subject'
           '#display_on': none
           '#mode': text
           '#template': 'Household Wallet Application - Member 2 - {{ data.first_name_2 }} {{ data.last_name_2 }}'
+          '#whitespace': trim
+        computed_tags_member_2:
+          '#type': webform_computed_twig
+          '#title': 'Computed Tags Member 1'
+          '#display_on': none
+          '#mode': text
+          '#template': '{{ "wallet_option_3 " ~ data.has_hop_card_2 }}'
           '#whitespace': trim
       section_household_member_3:
         '#type': webform_section
@@ -402,12 +412,12 @@ elements: |-
           '#description': '<p>Children under the age of 7 do not need to pay a fare.</p>'
           '#description_display': before
           '#options':
-            'YES, this person has a Hop card': 'YES, this person has a Hop card'
+            already_has_hop_card: 'YES, this person has a Hop card'
             adult_hop_card: 'No, this person needs an Adult Hop card (18+)'
             honored_citizen_hop_card: 'No, this person needs an Honored Citizen Hop Card (66+)'
             low_income_hop_card: 'No, this person needs a Low-Income Reduced Fare Hop card'
             youth_hop_card: 'No, this person needs a Youth Hop card (7-17)'
-            none: 'This person does not need a Hop card'
+            hop_card_not_needed: 'This person does not need a Hop card'
           '#other__option_label': ''
           '#other__title': ''
           '#other__placeholder': ''
@@ -430,7 +440,7 @@ elements: |-
           '#states':
             visible:
               ':input[name="has_hop_card_3"]':
-                value: 'YES, this person has a Hop card'
+                value: already_has_hop_card
           '#required': true
         needs_biketown_3:
           '#type': checkbox
@@ -446,7 +456,7 @@ elements: |-
           '#mode': html
           '#template': |
             <strong>Card holder name:</strong> {{ data.first_name_3 }} {{ data.last_name_3 }}<br>
-            {% if data.has_hop_card_3 == "YES, this person has a Hop card" %}
+            {% if data.has_hop_card_3 == "already_has_hop_card" %}
               <strong>Card number:</strong> {{ data.hop_card_number_3 }}<br>
             {% else %}
               <strong>Type of Hop card needed:</strong> {{ data.has_hop_card_3 }}<br>
@@ -460,6 +470,13 @@ elements: |-
           '#display_on': none
           '#mode': text
           '#template': 'Household Wallet Application - Member 3 - {{ data.first_name_3 }} {{ data.last_name_3 }}'
+          '#whitespace': trim
+        computed_tags_member_3:
+          '#type': webform_computed_twig
+          '#title': 'Computed Tags Member 3'
+          '#display_on': none
+          '#mode': text
+          '#template': '{{ "wallet_option_3 " ~ data.has_hop_card_3 }}'
           '#whitespace': trim
       section_household_member_4:
         '#type': webform_section
@@ -486,12 +503,12 @@ elements: |-
           '#description': '<p>Children under the age of 7 do not need to pay a fare.</p>'
           '#description_display': before
           '#options':
-            'YES, this person has a Hop card': 'YES, this person has a Hop card'
+            already_has_hop_card: 'YES, this person has a Hop card'
             adult_hop_card: 'No, this person needs an Adult Hop card (18+)'
             honored_citizen_hop_card: 'No, this person needs an Honored Citizen Hop Card (66+)'
             low_income_hop_card: 'No, this person needs a Low-Income Reduced Fare Hop card'
             youth_hop_card: 'No, this person needs a Youth Hop card (7-17)'
-            none: 'This person does not need a Hop card'
+            hop_card_not_needed: 'This person does not need a Hop card'
           '#other__option_label': ''
           '#other__title': ''
           '#other__placeholder': ''
@@ -514,7 +531,7 @@ elements: |-
           '#states':
             visible:
               ':input[name="has_hop_card_4"]':
-                value: 'YES, this person has a Hop card'
+                value: already_has_hop_card
           '#required': true
         needs_biketown_4:
           '#type': checkbox
@@ -530,7 +547,7 @@ elements: |-
           '#mode': html
           '#template': |
             <strong>Card holder name:</strong> {{ data.first_name_4 }} {{ data.last_name_4 }}<br>
-            {% if data.has_hop_card_4 == "YES, this person has a Hop card" %}
+            {% if data.has_hop_card_4 == "already_has_hop_card" %}
               <strong>Card number:</strong> {{ data.hop_card_number_4 }}<br>
             {% else %}
               <strong>Type of Hop card needed:</strong> {{ data.has_hop_card_4 }}<br>
@@ -544,6 +561,13 @@ elements: |-
           '#display_on': none
           '#mode': text
           '#template': 'Household Wallet Application - Member 4 - {{ data.first_name_4 }} {{ data.last_name_4 }}'
+          '#whitespace': trim
+        computed_tags_member_4:
+          '#type': webform_computed_twig
+          '#title': 'Computed Tags Member 4'
+          '#display_on': none
+          '#mode': text
+          '#template': '{{ "wallet_option_3 " ~ data.has_hop_card_4 }}'
           '#whitespace': trim
       section_household_member_5:
         '#type': webform_section
@@ -570,17 +594,22 @@ elements: |-
           '#description': '<p>Children under the age of 7 do not need to pay a fare.</p>'
           '#description_display': before
           '#options':
-            'YES, this person has a Hop card': 'YES, this person has a Hop card'
+            already_has_hop_card: 'YES, this person has a Hop card'
             adult_hop_card: 'No, this person needs an Adult Hop card (18+)'
             honored_citizen_hop_card: 'No, this person needs an Honored Citizen Hop Card (66+)'
             low_income_hop_card: 'No, this person needs a Low-Income Reduced Fare Hop card'
             youth_hop_card: 'No, this person needs a Youth Hop card (7-17)'
-            none: 'This person does not need a Hop card'
+            hop_card_not_needed: 'This person does not need a Hop card'
           '#other__option_label': ''
           '#other__title': ''
           '#other__placeholder': ''
           '#other__maxlength': ''
           '#required': true
+          '#states':
+            visible:
+              ':input[name="apply_household_size"]':
+                value:
+                  greater_equal: '5'
           '#other__input_mask': '9{0,16}'
           '#other__pattern': '^[0-9]{16}$'
           '#other__pattern_error': 'Hop card number must be 16 digits.'
@@ -598,7 +627,7 @@ elements: |-
           '#states':
             visible:
               ':input[name="has_hop_card_5"]':
-                value: 'YES, this person has a Hop card'
+                value: already_has_hop_card
           '#required': true
         needs_biketown_5:
           '#type': checkbox
@@ -614,7 +643,7 @@ elements: |-
           '#mode': html
           '#template': |
             <strong>Card holder name:</strong> {{ data.first_name_5 }} {{ data.last_name_5 }}<br>
-            {% if data.has_hop_card_5 == "YES, this person has a Hop card" %}
+            {% if data.has_hop_card_5 == "already_has_hop_card" %}
               <strong>Card number:</strong> {{ data.hop_card_number_5 }}<br>
             {% else %}
               <strong>Type of Hop card needed:</strong> {{ data.has_hop_card_5 }}<br>
@@ -628,6 +657,13 @@ elements: |-
           '#display_on': none
           '#mode': text
           '#template': 'Household Wallet Application - Member 5 - {{ data.first_name_5 }} {{ data.last_name_5 }}'
+          '#whitespace': trim
+        computed_tags_member_5:
+          '#type': webform_computed_twig
+          '#title': 'Computed Tags Member 5'
+          '#display_on': none
+          '#mode': text
+          '#template': '{{ "wallet_option_3 " ~ data.has_hop_card_5 }}'
           '#whitespace': trim
       markup_01:
         '#type': webform_markup
@@ -673,7 +709,7 @@ elements: |-
     computed_household_total_funds:
       '#type': webform_computed_twig
       '#title': 'Available Funds'
-      '#title_display': none
+      '#title_display': before
       '#wrapper_attributes':
         class:
           - d-none
@@ -690,7 +726,7 @@ elements: |-
         {% elseif data.apply_household_size == 5 %}
           {% set total = 300 %}
         {% endif %}
-        {{ total }}
+        {{ total|number_format }}
       '#whitespace': trim
       '#ajax': true
     household_members_split:
@@ -702,43 +738,35 @@ elements: |-
       '#template': |-
         {# NOTE: Need to account for household members who don't need a card! #}
         {% set split = 1 %}
-        {% if data.has_hop_card_2 != "none" %}{% set split = split + 1 %}{% endif %}
-        {% if data.has_hop_card_3 != "none" %}{% set split = split + 1 %}{% endif %}
-        {% if data.has_hop_card_4 != "none" %}{% set split = split + 1 %}{% endif %}
-        {% if data.has_hop_card_5 != "none" %}{% set split = split + 1 %}{% endif %}
-        {{ split }}
+        {% if data.apply_household_size >= 2 and data.has_hop_card_2 != "hop_card_not_needed" %}{% set split = split + 1 %}{% endif %}
+        {% if data.apply_household_size >= 3 and data.has_hop_card_3 != "hop_card_not_needed" %}{% set split = split + 1 %}{% endif %}
+        {% if data.apply_household_size >= 4 and data.has_hop_card_4 != "hop_card_not_needed" %}{% set split = split + 1 %}{% endif %}
+        {% if data.apply_household_size >= 5 and data.has_hop_card_5 != "hop_card_not_needed" %}{% set split = split + 1 %}{% endif %}
+
+        {{ split|number_format }}
+      '#whitespace': trim
       '#ajax': true
     computed_even_split_amount:
       '#type': webform_computed_twig
       '#title': 'Computed even split amount'
-      '#display_on': view
+      '#wrapper_attributes':
+        class:
+          - d-none
       '#mode': text
-      '#template': |
-        {% if data.apply_household_size and data.computed_household_total_funds %}
-          {# NOTE: Need to account for household members who don't need a card! #}
-          {% set split = 1 %}
-          {% if data.has_hop_card_2 != "none" %}{% set split = split + 1 %}{% endif %}
-          {% if data.has_hop_card_3 != "none" %}{% set split = split + 1 %}{% endif %}
-          {% if data.has_hop_card_4 != "none" %}{% set split = split + 1 %}{% endif %}
-          {% if data.has_hop_card_5 != "none" %}{% set split = split + 1 %}{% endif %}
-          {{ (data.computed_household_total_funds / split)|round(2, 'common')|number_format(2, '.', ',') }}
+      '#template': |-
+        {% if data.household_members_split > 0 %}
+          {% set amount = data.computed_household_total_funds / data.household_members_split %}
+          {{ amount }}
         {% endif %}
       '#whitespace': trim
+      '#ajax': true
     computed_available_funds_display:
       '#type': webform_computed_twig
       '#title': 'Available Funds Display'
       '#title_display': none
       '#display_on': form
       '#mode': text
-      '#template': |-
-        {# NOTE: Need to account for household members who don't need a card! #}
-        {% set split = 1 %}
-        {% if data.has_hop_card_2 != "none" %}{% set split = split + 1 %}{% endif %}
-        {% if data.has_hop_card_3 != "none" %}{% set split = split + 1 %}{% endif %}
-        {% if data.has_hop_card_4 != "none" %}{% set split = split + 1 %}{% endif %}
-        {% if data.has_hop_card_5 != "none" %}{% set split = split + 1 %}{% endif %}
-
-        <p><strong>You have ${{ data.computed_household_total_funds }} available to divide between {{ split }} household members.</strong></p>
+      '#template': '<p><strong>You have ${{ data.computed_household_total_funds }} available to divide between {{ data.household_members_split }} household members.</strong></p>'
       '#whitespace': spaceless
       '#ajax': true
     apply_funds_split:
@@ -749,30 +777,6 @@ elements: |-
         'Custom split...': 'Custom split...'
       '#required': true
       '#default_value': 'Evenly among all members'
-    funds_per_card:
-      '#type': webform_computed_twig
-      '#title': 'Funds per card'
-      '#title_display': none
-      '#states':
-        visible:
-          ':input[name="apply_funds_split"]':
-            value: 'Evenly among all members'
-      '#display_on': form
-      '#mode': html
-      '#template': |-
-        {% if data.apply_household_size and data.apply_household_size %}
-
-          {# NOTE: Need to account for household members who don't need a card! #}
-          {% set split = 1 %}
-          {% if data.has_hop_card_2 != "none" %}{% set split = split + 1 %}{% endif %}
-          {% if data.has_hop_card_3 != "none" %}{% set split = split + 1 %}{% endif %}
-          {% if data.has_hop_card_4 != "none" %}{% set split = split + 1 %}{% endif %}
-          {% if data.has_hop_card_5 != "none" %}{% set split = split + 1 %}{% endif %}
-
-          <p>${{ (data.computed_household_total_funds / split)|round(2, 'common')|number_format(2, '.', ',') }} will be put on each card.</p>
-        {% endif %}
-      '#whitespace': trim
-      '#ajax': true
     markup_custom_split_help:
       '#type': webform_markup
       '#states':
@@ -785,7 +789,7 @@ elements: |-
       '#states':
         visible:
           ':input[name="apply_funds_split"]':
-            value: 'Custom split...'
+            checked: true
       container_member1:
         '#type': container
         '#attributes':
@@ -796,9 +800,10 @@ elements: |-
         computed_name_member_1:
           '#type': webform_computed_twig
           '#title': You
+          '#title_display': none
           '#display_on': form
           '#mode': text
-          '#template': '{{ data.contact_first_name }} {{ data.contact_last_name }}'
+          '#template': '<strong>You:</strong> {{ data.contact_first_name }} {{ data.contact_last_name }}'
           '#whitespace': trim
         funds_member_1:
           '#type': textfield
@@ -806,6 +811,17 @@ elements: |-
           '#field_prefix': $
           '#maxlength': 3
           '#size': 10
+          '#states':
+            visible:
+              ':input[name="apply_funds_split"]':
+                value: 'Custom split...'
+        markup_even_split_member_1:
+          '#type': webform_markup
+          '#states':
+            visible:
+              ':input[name="apply_funds_split"]':
+                value: 'Evenly among all members'
+          '#markup': '<p>$[webform_submission:values:computed_even_split_amount] will be put on this card.</p>'
       container_member2:
         '#type': container
         '#attributes':
@@ -816,9 +832,10 @@ elements: |-
         computed_name_member_2:
           '#type': webform_computed_twig
           '#title': 'Household member #2'
+          '#title_display': none
           '#display_on': form
           '#mode': text
-          '#template': '{{ data.first_name_2 }} {{ data.last_name_2 }}'
+          '#template': '<strong>Household member #2:</strong> {{ data.first_name_2 }} {{ data.last_name_2 }}'
           '#whitespace': trim
           '#ajax': true
         funds_member_2:
@@ -830,14 +847,25 @@ elements: |-
           '#states':
             visible:
               ':input[name="has_hop_card_2"]':
-                '!value': none
+                '!value': hop_card_not_needed
+              ':input[name="apply_funds_split"]':
+                value: 'Custom split...'
         markup_nocard_2:
           '#type': webform_markup
           '#states':
             visible:
               ':input[name="has_hop_card_2"]':
-                value: none
+                value: hop_card_not_needed
           '#markup': '<p>You indicated this person does not need a Hop card.</p>'
+        markup_even_split_member_2:
+          '#type': webform_markup
+          '#states':
+            visible:
+              ':input[name="apply_funds_split"]':
+                value: 'Evenly among all members'
+              ':input[name="has_hop_card_2"]':
+                '!value': hop_card_not_needed
+          '#markup': '<p>$[webform_submission:values:computed_even_split_amount] will be put on this card.</p>'
       container_member3:
         '#type': container
         '#states':
@@ -853,9 +881,10 @@ elements: |-
         computed_name_member_3:
           '#type': webform_computed_twig
           '#title': 'Household member #3'
+          '#title_display': none
           '#display_on': form
           '#mode': text
-          '#template': '{{ data.first_name_3 }} {{ data.last_name_3 }}'
+          '#template': '<strong>Household member #3:</strong> {{ data.first_name_3 }} {{ data.last_name_3 }}'
           '#whitespace': trim
           '#ajax': true
         funds_member_3:
@@ -867,14 +896,25 @@ elements: |-
           '#states':
             visible:
               ':input[name="has_hop_card_3"]':
-                '!value': none
+                '!value': hop_card_not_needed
+              ':input[name="apply_funds_split"]':
+                value: 'Custom split...'
         markup_nocard_3:
           '#type': webform_markup
           '#states':
             visible:
               ':input[name="has_hop_card_3"]':
-                value: none
+                value: hop_card_not_needed
           '#markup': '<p>You indicated this person does not need a Hop card.</p>'
+        markup_even_split_member_3:
+          '#type': webform_markup
+          '#states':
+            visible:
+              ':input[name="apply_funds_split"]':
+                value: 'Evenly among all members'
+              ':input[name="has_hop_card_3"]':
+                '!value': hop_card_not_needed
+          '#markup': '<p>$[webform_submission:values:computed_even_split_amount] will be put on this card.</p>'
       container_member4:
         '#type': container
         '#states':
@@ -890,9 +930,10 @@ elements: |-
         computed_name_member_4:
           '#type': webform_computed_twig
           '#title': 'Household member #4'
+          '#title_display': none
           '#display_on': form
           '#mode': text
-          '#template': '{{ data.first_name_4 }} {{ data.last_name_4 }}'
+          '#template': '<strong>Household member #4:</strong> {{ data.first_name_4 }} {{ data.last_name_4 }}'
           '#whitespace': trim
         funds_member_4:
           '#type': textfield
@@ -903,14 +944,25 @@ elements: |-
           '#states':
             visible:
               ':input[name="has_hop_card_4"]':
-                '!value': none
+                '!value': hop_card_not_needed
+              ':input[name="apply_funds_split"]':
+                value: 'Custom split...'
         markup_nocard_4:
           '#type': webform_markup
           '#states':
             visible:
               ':input[name="has_hop_card_4"]':
-                value: none
+                value: hop_card_not_needed
           '#markup': '<p>You indicated this person does not need a Hop card.</p>'
+        markup_even_split_member_4:
+          '#type': webform_markup
+          '#states':
+            visible:
+              ':input[name="apply_funds_split"]':
+                value: 'Evenly among all members'
+              ':input[name="has_hop_card_4"]':
+                '!value': hop_card_not_needed
+          '#markup': '<p>$[webform_submission:values:computed_even_split_amount] will be put on this card.</p>'
       container_member5:
         '#type': container
         '#states':
@@ -926,9 +978,10 @@ elements: |-
         computed_name_member_5:
           '#type': webform_computed_twig
           '#title': 'Household member #5'
+          '#title_display': none
           '#display_on': form
           '#mode': text
-          '#template': '{{ data.first_name_5 }} {{ data.last_name_5 }}'
+          '#template': '<strong>Household member #5:</strong> {{ data.first_name_5 }} {{ data.last_name_5 }}'
           '#whitespace': trim
         funds_member_5:
           '#type': textfield
@@ -939,14 +992,25 @@ elements: |-
           '#states':
             visible:
               ':input[name="has_hop_card_5"]':
-                '!value': none
+                '!value': hop_card_not_needed
+              ':input[name="apply_funds_split"]':
+                value: 'Custom split...'
         markup_nocard_5:
           '#type': webform_markup
           '#states':
             visible:
               ':input[name="has_hop_card_5"]':
-                value: none
+                value: hop_card_not_needed
           '#markup': '<p>You indicated this person does not need a Hop card.</p>'
+        markup_even_split_member_5:
+          '#type': webform_markup
+          '#states':
+            visible:
+              ':input[name="apply_funds_split"]':
+                value: 'Evenly among all members'
+              ':input[name="has_hop_card_5"]':
+                '!value': hop_card_not_needed
+          '#markup': '<p>$[webform_submission:values:computed_even_split_amount] will be put on this card.</p>'
       computed_remaining_amount:
         '#type': webform_computed_twig
         '#title': 'Remaining amount'
@@ -963,6 +1027,10 @@ elements: |-
         '#type': webform_computed_twig
         '#title': 'Remaining amount message'
         '#title_display': none
+        '#states':
+          visible:
+            ':input[name="apply_funds_split"]':
+              value: 'Custom split...'
         '#display_on': form
         '#mode': html
         '#template': |
@@ -989,7 +1057,6 @@ elements: |-
         {% else %}
           {{ data.funds_member_1 }}
         {% endif %}
-      '#ajax': true
     computed_card_amount_2:
       '#type': webform_computed_twig
       '#title': 'Computed Card Amount 2'
@@ -1003,7 +1070,6 @@ elements: |-
         {% else %}
           {{ data.funds_member_2 }}
         {% endif %}
-      '#ajax': true
     computed_card_amount_3:
       '#type': webform_computed_twig
       '#title': 'Computed Card Amount 3'
@@ -1017,7 +1083,6 @@ elements: |-
         {% else %}
           {{ data.funds_member_3 }}
         {% endif %}
-      '#ajax': true
     computed_card_amount_4:
       '#type': webform_computed_twig
       '#title': 'Computed Card Amount 4'
@@ -1031,7 +1096,6 @@ elements: |-
         {% else %}
           {{ data.funds_member_4 }}
         {% endif %}
-      '#ajax': true
     computed_card_amount_5:
       '#type': webform_computed_twig
       '#title': 'Computed Card Amount 5'
@@ -1045,7 +1109,6 @@ elements: |-
         {% else %}
           {{ data.funds_member_5 }}
         {% endif %}
-      '#ajax': true
     actions_01:
       '#type': webform_actions
       '#title': 'Previous Button'
@@ -1184,6 +1247,12 @@ elements: |-
       apply_travel_experience_text:
         '#type': textarea
         '#title': 'Anything else you want to tell us about your experience traveling in Portland?'
+    support_agent_use_only:
+      '#type': portland_support_agent_widget
+      '#title': 'Support Agent Use Only'
+      '#access_create_roles':
+        - authenticated
+      '#escalate_issue__access': false
   apply_org:
     '#type': hidden
     '#title': 'Organization Name'
@@ -1195,12 +1264,6 @@ elements: |-
   request_ticket_id:
     '#type': hidden
     '#title': 'Request Ticket Id'
-  support_agent_use_only:
-    '#type': portland_support_agent_widget
-    '#title': 'Support Agent Use Only'
-    '#access_create_roles':
-      - authenticated
-    '#escalate_issue__access': false
   computed_tags:
     '#type': webform_computed_twig
     '#title': 'Computed Tags'
@@ -1405,7 +1468,7 @@ handlers:
         ':input[name="support_agent_use_only[test_submission]"]':
           unchecked: true
         ':input[name="apply_wallet_package"]':
-          '!value': '3'
+          '!value': wallet_option_3
     weight: 0
     settings:
       requester_name: computed_full_name
@@ -1426,7 +1489,7 @@ handlers:
       ticket_form_id: '26628122071575'
       child_incident: 0
       parent_ticket_id_field: ''
-      is_child_incident: ''
+      is_child_incident: 0
   test_zendesk_new_request:
     id: zendesk
     handler_id: test_zendesk_new_request
@@ -1473,8 +1536,8 @@ handlers:
       requester_name: computed_full_name
       requester_email: contact_email
       subject: '[webform_submission:values:primary_applicant_ticket_subject]'
-      comment: "<strong>This is part of a household application. This submission is for Household Member #1 (Primary)</strong>\r\n\r\n[webform_submission:values:html]"
-      tags: 'drupal webform'
+      comment: "<h3>Wallet Application for Primary Household Member</h3>\r\n\r\n[webform_submission:values:primary_household_member_display]\r\n\r\n<hr>\r\n<h3>Full application:</h3>\r\n\r\n[webform_submission:values:html]"
+      tags: 'drupal webform [webform_submission:values:apply_wallet_package:raw] [webform_submission:values:computed_hop_card_type:raw]'
       priority: normal
       status: new
       recipient: ''
@@ -1505,7 +1568,7 @@ handlers:
       requester_email: contact_email
       subject: '[webform_submission:values:household_member_2_ticket_subject]'
       comment: "<h3>Wallet Application for Household Member #2</h3>\r\n\r\n[webform_submission:values:household_member_2_display]\r\n\r\n<hr>\r\n<h3>Full application:</h3>\r\n\r\n[webform_submission:values:html]"
-      tags: 'drupal webform'
+      tags: 'drupal webform [webform_submission:values:apply_wallet_package:raw] [webform_submission:values:has_hop_card_2:raw]'
       priority: normal
       status: new
       recipient: ''
@@ -1539,7 +1602,7 @@ handlers:
       requester_email: contact_email
       subject: '[webform_submission:values:household_member_3_ticket_subject]'
       comment: "<h3>Wallet Application for Household Member #3</h3>\r\n\r\n[webform_submission:values:household_member_3_display]\r\n\r\n<hr>\r\n<h3>Full application:</h3>\r\n\r\n[webform_submission:values:html]"
-      tags: 'drupal webform'
+      tags: 'drupal webform [webform_submission:values:apply_wallet_package:raw] [webform_submission:values:has_hop_card_3:raw]'
       priority: normal
       status: new
       recipient: ''
@@ -1573,7 +1636,7 @@ handlers:
       requester_email: contact_email
       subject: '[webform_submission:values:household_member_4_ticket_subject]'
       comment: "<h3>Wallet Application for Household Member #4</h3>\r\n\r\n[webform_submission:values:household_member_4_display]\r\n\r\n<hr>\r\n<h3>Full application:</h3>\r\n\r\n[webform_submission:values:html]"
-      tags: 'drupal webform'
+      tags: 'drupal webform [webform_submission:values:apply_wallet_package:raw] [webform_submission:values:has_hop_card_4:raw]'
       priority: normal
       status: new
       recipient: ''
@@ -1607,7 +1670,7 @@ handlers:
       requester_email: contact_email
       subject: '[webform_submission:values:household_member_5_ticket_subject]'
       comment: "<h3>Wallet Application for Household Member #5</h3>\r\n\r\n[webform_submission:values:household_member_5_display]\r\n\r\n<hr>\r\n<h3>Full application:</h3>\r\n\r\n[webform_submission:values:html]"
-      tags: 'drupal webform'
+      tags: 'drupal webform [webform_submission:values:apply_wallet_package:raw] [webform_submission:values:has_hop_card_5:raw]'
       priority: normal
       status: new
       recipient: ''
