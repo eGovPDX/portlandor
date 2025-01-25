@@ -22,7 +22,6 @@ use Drupal\file\Entity\File;
 use Drupal\portland_zendesk\Utils\Utility;
 use Drupal\webform\Entity\Webform;
 use Drupal\webform\WebformSubmissionForm;
-use Drupal\Core\Logger\RfcLogLevel;
 
 /**
  * Form submission to Zendesk handler.
@@ -588,8 +587,6 @@ class ZendeskHandler extends WebformHandlerBase
     $zendesk_ticket_id_field_name = $this->configuration['ticket_id_field'];
     $zendesk_parent_ticket_id_field_name = $this->configuration['parent_ticket_id_field'];
     $is_child = $this->configuration['is_child_incident'];
-
-    \Drupal::logger('custom_module')->log(RfcLogLevel::INFO, 'Is child?: <pre>@debug</pre>', [ '@debug' => $is_child ]);
 
     // tickets will be forked on the field identified in the config value 'ticket_fork_field'
     $fork_field_name = $this->configuration['ticket_fork_field'];
