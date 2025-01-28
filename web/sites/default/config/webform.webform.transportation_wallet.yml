@@ -24,10 +24,6 @@ elements: |-
   page_wallet_choice:
     '#type': webform_wizard_page
     '#title': 'Choose your Wallet'
-    '#states':
-      invisible:
-        ':input[name="choice_prefilled"]':
-          '!value': ''
     '#states_clear': false
     section_wallet_choice:
       '#type': webform_section
@@ -671,9 +667,8 @@ elements: |-
     '#title': 'Funds Distribution'
     '#states':
       visible:
-        ':input[name="apply_household_size"]':
-          value:
-            greater_equal: '2'
+        ':input[name="apply_wallet_package"]':
+          value: wallet_option_3
     computed_household_total_funds:
       '#type': webform_computed_twig
       '#title': 'Available Funds'
@@ -1322,6 +1317,12 @@ elements: |-
     '#type': hidden
     '#title': 'Organization Name'
     '#prepopulate': true
+  computed_amount_options_1_2:
+    '#type': webform_computed_twig
+    '#title': 'Computed Amount Options 1 & 2'
+    '#display_on': form
+    '#template': '{% if data.apply_wallet_package == "wallet_option_2" %}200{% elseif data.apply_wallet_package == "wallet_option_1" %}unlimited{% endif %}'
+    '#ajax': true
 css: ".webform-multiple-table table {\r\n    width: inherit !important;\r\n}\r\n\r\n.webform-multiple-table tbody tr:hover,\r\n.webform-multiple-table tbody tr:focus {\r\n    background: inherit !important;\r\n}\r\n\r\n.webform-scale {\r\n    margin-top: 0.5rem;\r\n    width: 100%;\r\n}\r\n\r\n.webform-scale .webform-scale-options {\r\n    display: flex;\r\n    justify-content: space-around;\r\n    margin: 0 2rem;\r\n}\r\n\r\n.webform-scale .webform-scale-option label {\r\n    line-height: inherit !important;\r\n}\r\n\r\n.webform-scale .webform-scale-text {\r\n    display: flex;\r\n    justify-content: space-between;\r\n    height: unset;\r\n    line-height: unset;\r\n}\r\n\r\n.webform-scale .webform-scale-text-min, .webform-scale .webform-scale-text-max {\r\n    position: unset;\r\n    width: 25%;\r\n    text-align: center !important;\r\n}\r\n\r\n.card-header.card-header-opt-1 {\r\n    background: rgba(240, 92, 73, 0.33);\r\n}\r\n\r\n.card-header.card-header-opt-2 {\r\n    background: rgba(124, 66, 118, 0.33);\r\n}\r\n\r\n.card-header.card-header-opt-3 {\r\n    background: rgba(0, 160, 174, 0.33);\r\n}\r\n\r\n#member_2_container, #member_3_container, #member_4_container, #member_5_container {\r\n  border: 1px solid black;\r\n  padding: 15px 15px 0 15px;\r\n  margin-bottom: 5px;\r\n}\r\n\r\ndiv.form-disabled input[type=submit] { \r\n  color: white; cursor: not-allowed; \r\n}\r\n\r\n.webform-submission-transportation-wallet-form .form-text {\r\n  display: inline-block;\r\n}\r\n\r\n#calculator-submit-button input:disabled {\r\n  background-color: #ccc; /* Light gray background */\r\n  color: #666;           /* Darker gray text */\r\n  border-color: #999;    /* Match the gray theme for the border */\r\n  cursor: not-allowed;   /* Indicate that the button is disabled */\r\n  opacity: 0.6;          /* Optional: Make it semi-transparent */\r\n}"
 javascript: "(function ($, Drupal) {\r\n  Drupal.behaviors.updateSubmitButtonState = {\r\n    attach: function (context) {\r\n    \r\n      // find the button\r\n      var $submit = $(context).find('#calculator-submit-button');\r\n      \r\n      if ($submit.length) {\r\n      \r\n        // if this is an even split, don't calculate the total remaining\r\n        var $evenSplit = $(context).find('[value=\"Evenly among all members\"]');\r\n        \r\n        if (!$evenSplit.is(':checked')) {\r\n        \r\n          // get the total available\r\n          var total = $(context).find('[name=\"computed_household_total_funds\"]').val();\r\n\r\n          // get the amount fields\r\n          var $field1 = $(context).find('[name=\"funds_member_1\"]');\r\n          var $field2 = $(context).find('[name=\"funds_member_2\"]');\r\n          var $field3 = $(context).find('[name=\"funds_member_3\"]');\r\n          var $field4 = $(context).find('[name=\"funds_member_4\"]');\r\n          var $field5 = $(context).find('[name=\"funds_member_5\"]');\r\n\r\n          var val1 = $field1.length && $field1.val() > 0 ? $field1.val() : 0;\r\n          var val2 = $field2.length && $field2.val() > 0 ? $field2.val() : 0;\r\n          var val3 = $field3.length && $field3.val() > 0 ? $field3.val() : 0;\r\n          var val4 = $field4.length && $field4.val() > 0 ? $field4.val() : 0;\r\n          var val5 = $field5.length && $field5.val() > 0 ? $field5.val() : 0;\r\n\r\n          var allocated = parseInt(val1) + parseInt(val2) + parseInt(val3) + parseInt(val4) + parseInt(val5);\r\n\r\n          if (total - allocated === 0) {\r\n            $('#calculator-submit-button input').prop('disabled', false);\r\n          } else {\r\n            $('#calculator-submit-button input').prop('disabled', true);\r\n          }        \r\n        } else {\r\n          $('#calculator-submit-button input').prop('disabled', false);\r\n        }\r\n      }\r\n    }\r\n  };\r\n})(jQuery, Drupal);\r\n"
 settings:
@@ -1522,7 +1523,7 @@ handlers:
     settings:
       requester_name: computed_full_name
       requester_email: contact_email
-      subject: 'Transportation Wallet Application'
+      subject: 'Transportation Wallet Application - [webform_submission:values:primary_applicant_ticket_subject]'
       comment: "<h2>Applicant Information</h2>\r\n\r\n[webform_submission:values:primary_household_member_display]\r\n\r\n<div style=\"padding: 10px; background-color: #eeeeee;\">\r\n<h3>Full application:</h3>\r\n<hr>\r\n[webform_submission:values:html]\r\n</div>"
       tags: 'drupal webform [webform_submission:values:computed_tags]'
       priority: normal
@@ -1532,7 +1533,7 @@ handlers:
       assignee_id: ''
       type: incident
       collaborators: ''
-      custom_fields: "27985303578775: ['[webform_submission:values:computed_date_of_birth]', 'computed_date_of_birth']\r\n29284110563479: ['[webform_submission:values:apply_wallet_package]', 'apply_wallet_package']\r\n27985321767319: ['[webform_submission:values:computed_hop_card_type]', 'computed_hop_card_type']\r\n27985342383639: ['[webform_submission:values:apply_hop_card_number]', 'apply_hop_card_number']\r\n27773229365143: ['[webform_submission:values:contact_address_verifier:location_address] [webform_submission:values:contact_address_verifier:unit_number], [webform_submission:values:contact_address_verifier:location_city], [webform_submission:values:contact_address_verifier:location_state] [webform_submission:values:contact_address_verifier:location_zip]', 'contact_address_verifier']\r\n25600783638295: ['[webform_submission:values:contact_phone]', 'contact_phone']\r\n26253458420759: ['[webform_submission:values:organization_name]', 'organization_name']"
+      custom_fields: "27985303578775: ['[webform_submission:values:computed_date_of_birth]', 'computed_date_of_birth']\r\n29284110563479: ['[webform_submission:values:apply_wallet_package]', 'apply_wallet_package']\r\n27985321767319: ['[webform_submission:values:computed_hop_card_type]', 'computed_hop_card_type']\r\n27985342383639: ['[webform_submission:values:apply_hop_card_number]', 'apply_hop_card_number']\r\n27985354792087: ['[webform_submission:values:computed_amount_options_1_2]', 'computed_amount_options_1_2']\r\n27773229365143: ['[webform_submission:values:contact_address_verifier:location_address] [webform_submission:values:contact_address_verifier:unit_number], [webform_submission:values:contact_address_verifier:location_city], [webform_submission:values:contact_address_verifier:location_state] [webform_submission:values:contact_address_verifier:location_zip]', 'contact_address_verifier']\r\n25600783638295: ['[webform_submission:values:contact_phone]', 'contact_phone']\r\n26253458420759: ['[webform_submission:values:organization_name]', 'organization_name']"
       ticket_id_field: request_ticket_id
       ticket_fork_field: ''
       ticket_form_id: '26628122071575'
@@ -1555,7 +1556,7 @@ handlers:
     settings:
       requester_name: computed_full_name
       requester_email: contact_email
-      subject: 'Transportation Wallet Application'
+      subject: 'Transportation Wallet Application - [webform_submission:values:primary_applicant_ticket_subject]'
       comment: "<h2>Applicant Information</h2>\r\n\r\n[webform_submission:values:primary_household_member_display]\r\n\r\n<div style=\"padding: 10px; background-color: #eeeeee;\">\r\n<h3>Full application:</h3>\r\n<hr>\r\n[webform_submission:values:html]\r\n</div>"
       tags: 'drupal webform'
       priority: normal
@@ -1565,7 +1566,7 @@ handlers:
       assignee_id: ''
       type: incident
       collaborators: ''
-      custom_fields: "27985303578775: ['[webform_submission:values:computed_date_of_birth]', 'computed_date_of_birth']\r\n29284110563479: ['[webform_submission:values:apply_wallet_package]', 'apply_wallet_package']\r\n27985321767319: ['[webform_submission:values:computed_hop_card_type]', 'computed_hop_card_type']\r\n27985342383639: ['[webform_submission:values:apply_hop_card_number]', 'apply_hop_card_number']\r\n27773229365143: ['[webform_submission:values:contact_address_verifier:location_address] [webform_submission:values:contact_address_verifier:unit_number], [webform_submission:values:contact_address_verifier:location_city], [webform_submission:values:contact_address_verifier:location_state] [webform_submission:values:contact_address_verifier:location_zip]', 'contact_address_verifier']\r\n25600783638295: ['[webform_submission:values:contact_phone]', 'contact_phone']\r\n26253458420759: ['[webform_submission:values:organization_name]', 'organization_name']"
+      custom_fields: "27985303578775: ['[webform_submission:values:computed_date_of_birth]', 'computed_date_of_birth']\r\n29284110563479: ['[webform_submission:values:apply_wallet_package]', 'apply_wallet_package']\r\n27985321767319: ['[webform_submission:values:computed_hop_card_type]', 'computed_hop_card_type']\r\n27985342383639: ['[webform_submission:values:apply_hop_card_number]', 'apply_hop_card_number']\r\n27985354792087: ['[webform_submission:values:computed_amount_options_1_2]', 'computed_amount_options_1_2']\r\n27773229365143: ['[webform_submission:values:contact_address_verifier:location_address] [webform_submission:values:contact_address_verifier:unit_number], [webform_submission:values:contact_address_verifier:location_city], [webform_submission:values:contact_address_verifier:location_state] [webform_submission:values:contact_address_verifier:location_zip]', 'contact_address_verifier']\r\n25600783638295: ['[webform_submission:values:contact_phone]', 'contact_phone']\r\n26253458420759: ['[webform_submission:values:organization_name]', 'organization_name']"
       ticket_id_field: request_ticket_id
       ticket_fork_field: ''
       ticket_form_id: '26628122071575'
