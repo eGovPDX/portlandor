@@ -11,9 +11,9 @@ third_party_settings:
     exclude_from_json:
       permit_date_unenforceable_agree: permit_date_unenforceable_agree
       friendly_permit_type: friendly_permit_type
-      computed_days_of_week: computed_days_of_week
       computed_permit_reason: computed_permit_reason
       computed_permit_street_name: computed_permit_street_name
+      computed_tags: computed_tags
 weight: 0
 open: null
 close: null
@@ -43,9 +43,108 @@ elements: |-
         general: 'I have a general permit question'
       '#options_display': buttons_vertical
       '#required': true
+  page_contact_info:
+    '#type': webform_wizard_page
+    '#title': 'Contact Info'
+    '#states':
+      invisible:
+        ':input[name="wizard_permit_need"]':
+          value: general
+    contact_full_legal_name:
+      '#type': textfield
+      '#title': 'Full name'
+      '#required': true
+    contact_company:
+      '#type': textfield
+      '#title': 'Company name (if applicable)'
+      '#description': |-
+        You must either work for this company or be authorized to represent them.<br />
+        <br />
+        The permit will be issued with this company as the permit holder, and the permit holder is the liable party for any damages<br />
+        <br />
+        If your permit requires an insurance certificate, the company name on that certificate must exactly match the company name provided on this permit application.<br />
+        <br />
+        Any refunds of permit fees will be issued to this company name, regardless of payment method.
+    contact_phone:
+      '#type': textfield
+      '#title': 'Best phone number to reach you at'
+      '#input_mask': 999-999-9999
+      '#required': true
+    contact_email:
+      '#type': webform_email_confirm
+      '#title': 'Email address'
+      '#confirm__title': 'Confirm email address'
+      '#description': 'Primary communication will be done through email, please check your spam folder.'
+      '#description_display': before
+      '#required': true
+      '#pattern': '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+      '#pattern_error': 'Please enter a correctly formatted email address, such as myname@example.com.'
+    contact_applicant_type:
+      '#type': radios
+      '#title': 'Do any of the below apply to you? (Only if applicable, otherwise leave empty)'
+      '#prepopulate': true
+      '#options':
+        fun: 'I am performing work for a Franchise Utility Company'
+        contractor: 'The City of Portland has contracted me for this work'
+        bureau: 'This work is being performed by the City of Portland for the City'
+        sidewalk_repair: 'I have been directed by MIP to submit a Sidewalk Notification'
+        '': 'None of the above'
+      '#options_display': buttons_vertical
+    contact_fun_company:
+      '#type': webform_radios_other
+      '#title': 'Which company?'
+      '#prepopulate': true
+      '#states':
+        visible:
+          ':input[name="contact_applicant_type"]':
+            value: fun
+      '#options':
+        'Astound Broadband': 'Astound Broadband'
+        Comcast: Comcast
+        'Crown Castle': 'Crown Castle'
+        MCI/Verizon: MCI/Verizon
+        'NW Natural': 'NW Natural'
+        'Pacific Power': 'Pacific Power'
+        PGE: PGE
+        Windstream: Windstream
+        'Zayo Group': 'Zayo Group'
+      '#options_display': buttons_vertical
+    contact_bureau:
+      '#type': webform_radios_other
+      '#title': 'For which bureau are you under contract for this work?'
+      '#prepopulate': true
+      '#states':
+        visible:
+          - ':input[name="contact_applicant_type"]':
+              value: contractor
+          - or
+          - ':input[name="contact_applicant_type"]':
+              value: bureau
+      '#options':
+        BES: BES
+        BPS: BPS
+        PBOT: PBOT
+        'PP&R': 'PP&R'
+        PWB: PWB
+      '#options_display': buttons_vertical
+    support_agent_use_only:
+      '#type': portland_support_agent_widget
+      '#title': 'Support Agent Use Only'
+      '#states':
+        visible:
+          - ':input[name="wizard_permit_need"]':
+              value: general
+          - or
+          - ':input[name="permit_type"]':
+              '!value': unknown
+      '#wrapper_attributes':
+        style: 'background-color: #ccc; padding: 15px;'
+      '#access_create_roles':
+        - support_agent
+        - administrator
   page_existing_permit:
     '#type': webform_wizard_page
-    '#title': 'Permit Details'
+    '#title': 'Request Details'
     '#states':
       visible:
         - ':input[name="permit_type"]':
@@ -260,10 +359,18 @@ elements: |-
       '#location_type__access': false
       '#location_park_container__access': false
       '#location_private_owner__access': false
+      '#precision_text__access': false
       '#waterway_instructions__access': false
       '#require_boundary': true
       '#click_query_url': 'https://www.portlandmaps.com/arcgis/rest/services/Public/Tickets_Layers/MapServer/1/query?where=1%3D1&geometry={{x}}%2C{{y}}&returnGeometry=false&geometryType=esriGeometryPoint&outFields=meterdistr&f=geojson'
       '#click_query_property_path': 'features[0].properties.meterdistr'
+    markup_taxlot_warning:
+      '#type': webform_markup
+      '#states':
+        visible:
+          ':input[name="report_location[location_type_taxlot]"]':
+            value: 'true'
+      '#markup': '<div class="webform-alert alert alert--warning" aria-hidden="true"><strong>IMPORTANT:</strong> Your location appears to be within a property/tax lot. Please click, tap, or drag the map marker to a precise location within the right of way.</div>'
   page_dates:
     '#type': webform_wizard_page
     '#title': Dates
@@ -308,15 +415,72 @@ elements: |-
       '#type': webform_markup
       '#admin_title': 'Date Error'
       '#markup': '<p aria-live="polite" class="date-error fw-bold invalid-feedback">Please select a date above to continue.</p>'
+    container_moratorium:
+      '#type': container
+      '#states':
+        visible:
+          ':input[name="hidden_moratorium_details"]':
+            '!value': ''
+      markup_moratorium:
+        '#type': webform_markup
+        '#markup': '<div class="webform-alert alert alert--warning">The location you have selected is subject to a <span class="moratorium-category"></span> moratorium affecting <strong class="moratorium-restriction-type"></strong>. The moratorium runs through <strong class="moratorium-dates"></strong>. (<a href="/transportation/permitting/temporary-street-use-permitting-tsup#toc-moratorium-dates-and-maps">More information on moratoriums</a>).</div>'
+      moratorium_choice:
+        '#type': radios
+        '#title': 'How would you like to handle the moratorium?'
+        '#options':
+          change_dates: 'I will change my dates'
+          moving: 'I am moving'
+          overnight: 'I will operate from 10 pm - 6 am'
+          has_appeal: 'I already have an appeal'
+          submit_appeal: 'I would like to submit an appeal to the Moratorium Committee'
+        '#options_display': buttons_vertical
+        '#required': true
+      moratorium_appeal_description:
+        '#type': textarea
+        '#title': 'Describe how your situation is an emergency that poses an immediate threat to life safety or property damage:'
+        '#required': true
+        '#states':
+          visible:
+            ':input[name="moratorium_choice"]':
+              value: submit_appeal
+      moratorium_appeal_number:
+        '#type': textfield
+        '#title': 'Please enter your appeal application number:'
+        '#required': true
+        '#states':
+          visible:
+            ':input[name="moratorium_choice"]':
+              value: has_appeal
+      markup_change_dates:
+        '#type': webform_markup
+        '#states':
+          visible:
+            ':input[name="moratorium_choice"]':
+              value: change_dates
+        '#admin_title': 'Change Dates Message'
+        '#markup': '<p class="fw-bold invalid-feedback">Please change the dates above to continue.</p>'
     container_date_unenforceable:
       '#type': container
       '#states':
         visible:
-          ':input[name="permit_date_span"]':
-            value:
-              greater: '0'
-          ':input[name="permit_date_unenforceable"]':
-            value: 'true'
+          - ':input[name="permit_date_span"]':
+              value:
+                greater: '0'
+            ':input[name="permit_date_unenforceable"]':
+              value: 'true'
+            ':input[name="permit_type"]':
+              value: ''
+          - or
+          - ':input[name="permit_date_span"]':
+              value:
+                greater: '0'
+            ':input[name="permit_date_unenforceable"]':
+              value: 'true'
+            ':input[name="permit_type"]':
+              value:
+                pattern: bureau|contractor|fun
+            ':input[name="permit_location_metered"]':
+              value: 'true'
       markup_date_unenforceable_parking:
         '#type': webform_markup
         '#states':
@@ -332,18 +496,14 @@ elements: |-
           visible:
             ':input[name="permit_type"]':
               value:
-                pattern: traffic_control
-        '#admin_title': 'Date Unenforceable Message - Traffic Control'
+                '!pattern': parking_only|7day
+        '#admin_title': 'Date Unenforceable Message - Other'
         '#markup': '<p><strong>Requesting immediate dates:</strong> The start date you selected is sooner than we can typically accommodate, and we may be unable to meet your requested start date. As soon as we are able to process your application, we will let you know the soonest start date we can manage.</p>'
       permit_date_unenforceable_agree:
         '#type': checkbox
         '#title': 'I understand the above'
         '#required': true
         '#required_error': 'You must acknowledge this.'
-    permit_type_value:
-      '#type': hidden
-      '#title': 'Permit Type (hidden, used for JS)'
-      '#default_value': '[webform_submission:values:permit_type]'
     permit_date_span:
       '#type': hidden
       '#title': 'Date Span (hidden, computed by JS)'
@@ -352,6 +512,9 @@ elements: |-
       '#type': hidden
       '#title': 'Is Date Unenforceable (hidden, computed by JS)'
       '#default_value': ''
+    hidden_moratorium_details:
+      '#type': hidden
+      '#title': 'Hidden - Moratorium Details, if any (computed by JS)'
     actions_wizard_prev:
       '#type': webform_actions
       '#title': 'Previous Button'
@@ -388,8 +551,8 @@ elements: |-
     '#title': 'Parking Spaces'
     '#states':
       visible:
-        ':input[name="wizard_permit_need"]':
-          value: parking
+        ':input[name="permit_type"]':
+          pattern: 7day|parking_only
     permit_amount_20ft_spaces:
       '#type': number
       '#title': 'How many 20ft spaces will you require?'
@@ -432,7 +595,7 @@ elements: |-
             checked: true
   page_7day_permit:
     '#type': webform_wizard_page
-    '#title': 'Permit Details'
+    '#title': 'Request Details'
     '#states':
       visible:
         ':input[name="permit_type"]':
@@ -506,7 +669,7 @@ elements: |-
             checked: true
   page_simple_permit:
     '#type': webform_wizard_page
-    '#title': 'Permit Details'
+    '#title': 'Request Details'
     '#states':
       visible:
         ':input[name="permit_type"]':
@@ -682,19 +845,75 @@ elements: |-
             checked: true
   page_complex_permit:
     '#type': webform_wizard_page
-    '#title': 'Permit Details'
+    '#title': 'Request Details'
     '#states':
       visible:
         ':input[name="permit_type"]':
           value:
-            pattern: traffic_control
-    '#admin_title': 'Complex Permit'
-    markup_complex_permit_introduction:
+            pattern: traffic_control|fun|bureau|contractor|sidewalk_repair
+    '#admin_title': 'Complex Permit (Traffic Control/FUN/Bureau/Contractor/Sidewalk Repair)'
+    markup_complex_permit_introduction_traffic_control:
       '#type': processed_text
+      '#states':
+        visible:
+          ':input[name="permit_type"]':
+            value: traffic_control
       '#text': |
         <h2>Apply for a permit with Traffic Control</h2>
 
         <p>This permit is required for the temporary use or closure of a sidewalk, bike/traffic lane, or street, and any associated parking.</p>
+
+        <h3>Required Documents</h3>
+      '#format': simple_editor
+    markup_complex_permit_introduction_fun:
+      '#type': processed_text
+      '#states':
+        visible:
+          ':input[name="permit_type"]':
+            value: fun
+      '#text': |
+        <h2>Submit a Franchise Utility Notification</h2>
+
+        <p>This Notification is a condition of the Franchise Utility Notification (FUN) permit. Parties eligible to use this form have been issued an annual FUN Permit.</p>
+
+        <h3>Required Documents</h3>
+      '#format': simple_editor
+    markup_complex_permit_introduction_bureau:
+      '#type': processed_text
+      '#states':
+        visible:
+          ':input[name="permit_type"]':
+            value: bureau
+      '#text': |
+        <h2>Notification of City Bureau Work in the Right of Way</h2>
+
+        <p>This Notification serves to coordinate work in the Right of Way</p>
+
+        <h3>Required Documents</h3>
+      '#format': simple_editor
+    markup_complex_permit_introduction_contractor:
+      '#type': processed_text
+      '#states':
+        visible:
+          ':input[name="permit_type"]':
+            value: contractor
+      '#text': |
+        <h2>Notification of Contracted City Bureau Work in the Right of Way</h2>
+
+        <p>This Notification serves to coordinate contracted work in the Right of Way being performed by companies under contract for the City of Portland or City Partner Agencies.</p>
+
+        <h3>Required Documents</h3>
+      '#format': simple_editor
+    markup_complex_permit_introduction_sidewalk_repair:
+      '#type': processed_text
+      '#states':
+        visible:
+          ':input[name="permit_type"]':
+            value: sidewalk_repair
+      '#text': |
+        <h2>Notification of Sidewalk Repair Work</h2>
+
+        <p>If you have obtained a Voluntary Sidewalk Repair Permit, Mandatory Sidewalk Repair Permit, or Minor Improvement Permit and need close the sidewalk to perform the work, please use this form to notify PBOT of your sidewalk closure dates. Please reference your permit number below.</p>
 
         <h3>Required Documents</h3>
       '#format': simple_editor
@@ -715,6 +934,12 @@ elements: |-
       complex_permit_acknowledge_supervision:
         '#type': checkbox
         '#title': 'By checking this box, I certify that the person implementing traffic control measures will be under the supervision of a competent person experienced and knowledgeable in safely setting up temporary traffic control devices.'
+        '#states':
+          visible:
+            ':input[name="wizard_permit_need"]':
+              value: traffic
+            ':input[name="permit_type"]':
+              '!value': sidewalk_repair
         '#required': true
         '#required_error': 'You must certify.'
       complex_permit_acknowlege_insurance:
@@ -744,7 +969,7 @@ elements: |-
               checked: true
     section_complex_permit_details:
       '#type': webform_section
-      '#title': 'Permit Details'
+      '#title': 'Request Details'
       '#title_tag': h3
       complex_permit_street_name:
         '#type': textfield
@@ -814,9 +1039,13 @@ elements: |-
           visible:
             ':input[name="complex_permit_street_confirmation"]':
               checked: true
-        complex_permit_work_type:
+        complex_permit_traffic_control_work_type:
           '#type': webform_select_other
           '#title': 'What type of work is this request for?'
+          '#states':
+            visible:
+              ':input[name="permit_type"]':
+                pattern: traffic_control
           '#options':
             utility_work: 'Utility Work'
             building_construction: 'Building Construction'
@@ -824,15 +1053,67 @@ elements: |-
           '#other__option_label': Other
           '#other__placeholder': 'If other, please specify'
           '#required': true
+        complex_permit_fun_work_type:
+          '#type': webform_select_other
+          '#title': 'What type of work is this request for?'
+          '#states':
+            visible:
+              ':input[name="permit_type"]':
+                value: fun
+          '#options':
+            maintenance: Maintenance
+            new_infrastructure: 'New Infrastructure'
+            vegetation: 'Vegetation Management'
+            inspection: Inspection
+          '#other__option_label': Other
+          '#other__placeholder': 'If other, please specify'
+          '#required': true
+        complex_permit_bureau_work_type:
+          '#type': webform_select_other
+          '#title': 'What type of work is this request for?'
+          '#states':
+            visible:
+              ':input[name="permit_type"]':
+                value: bureau
+          '#options':
+            maintenance: Maintenance
+            new_infrastructure: 'New Infrastructure'
+            clearance: Clearance
+            loading: 'Loading / Unloading'
+          '#other__option_label': Other
+          '#other__placeholder': 'If other, please specify'
+          '#required': true
+        complex_permit_contractor_work_type:
+          '#type': webform_select_other
+          '#title': 'What type of work is this request for?'
+          '#states':
+            visible:
+              ':input[name="permit_type"]':
+                value: contractor
+          '#options':
+            maintenance: Maintenance
+            new_infrastructure: 'New Infrastructure'
+            clearance: Clearance
+            loading: 'Loading / Unloading'
+          '#other__option_label': Other
+          '#other__placeholder': 'If other, please specify'
+          '#required': true
         complex_permit_closure_type:
           '#type': checkboxes
           '#title': 'What type of closure(s) are you requesting?'
+          '#states':
+            visible:
+              ':input[name="wizard_permit_need"]':
+                value: traffic_control
+              ':input[name="permit_type"]':
+                '!value': sidewalk_repair
           '#options':
             street: Street
             bike_lane: 'Bike Lane'
             lane: Lane
-            sidewalk: Sidewalk
-            sidewalk_use: 'Sidewalk use (4ft clearance)'
+            sidewalk_use: 'Sidewalk Use (with ADA Clearance)'
+            sidewalk: 'Sidewalk Closure'
+            parking: Parking
           '#required': true
         complex_permit_lanes_affected:
           '#type': number
@@ -872,6 +1153,13 @@ elements: |-
         complex_permit_parking_spaces_affected:
           '#type': number
           '#title': 'How many parking spaces will you be impacting?'
+          '#states':
+            visible:
+              - ':input[name="complex_permit_closure_type[parking]"]':
+                  checked: true
+              - or
+              - ':input[name="wizard_permit_need"]':
+                  value: parking
           '#description_display': before
           '#required': true
           '#min': 0
@@ -879,6 +1167,10 @@ elements: |-
         complex_permit_bds_associated:
           '#type': webform_radios_other
           '#title': 'Is this request associated with a permit issued by the Bureau of Development services (i.e. building permit, trade permit, etc)?'
+          '#states':
+            visible:
+              ':input[name="permit_type"]':
+                pattern: traffic_control
           '#options':
             'No': 'No'
           '#options_display': buttons_horizontal
@@ -894,6 +1186,10 @@ elements: |-
         complex_permit_work_description:
           '#type': textarea
           '#title': 'Work Description'
+          '#states':
+            invisible:
+              ':input[name="permit_type"]':
+                value: sidewalk_repair
           '#description': '<p>Please provide a clear description of your proposed work.</p>'
           '#placeholder': 'e.g. "closing a single travel lane and the adjacent sidewalk during crane lift onto the roof at 1120 SW 5th Ave."'
           '#required': true
@@ -939,7 +1235,7 @@ elements: |-
       '#description_display': before
   page_placeholder_permit:
     '#type': webform_wizard_page
-    '#title': Permit
+    '#title': 'Request Details'
     '#states':
       visible:
         ':input[name="wizard_permit_need"]':
@@ -947,71 +1243,33 @@ elements: |-
         ':input[name="permit_type"]':
           value: unknown
     '#admin_title': 'Placeholder permit page'
-  page_contact_info:
-    '#type': webform_wizard_page
-    '#title': 'Contact Info'
-    '#states':
-      invisible:
-        ':input[name="wizard_permit_need"]':
-          value: general
-    contact_full_legal_name:
-      '#type': textfield
-      '#title': 'Full Legal Name'
-      '#required': true
-    contact_company:
-      '#type': textfield
-      '#title': 'Company name (if applicable)'
-      '#description': |-
-        You must either work for this company or be authorized to represent them.<br />
-        <br />
-        The permit will be issued with this company as the permit holder, and the permit holder is the liable party for any damages<br />
-        <br />
-        If your permit requires an insurance certificate, the company name on that certificate must exactly match the company name provided on this permit application.<br />
-        <br />
-        Any refunds of permit fees will be issued to this company name, regardless of payment method.
-    contact_phone:
-      '#type': textfield
-      '#title': 'Best Phone Number to reach you at'
-      '#input_mask': 999-999-9999
-      '#required': true
-    contact_email:
-      '#type': webform_email_confirm
-      '#title': 'Email Address'
-      '#confirm__title': 'Confirm Email Address'
-      '#description': 'Primary communication will be done through email, please check your spam folder.'
-      '#description_display': before
-      '#required': true
-      '#pattern': '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
-      '#pattern_error': 'Please enter a correctly formatted email address, such as myname@example.com.'
-    support_agent_use_only:
-      '#type': portland_support_agent_widget
-      '#title': 'Support Agent Use Only'
-      '#states':
-        visible:
-          - ':input[name="wizard_permit_need"]':
-              value: general
-          - or
-          - ':input[name="permit_type"]':
-              '!value': unknown
-      '#wrapper_attributes':
-        style: 'background-color: #ccc; padding: 15px;'
-      '#access_create_roles':
-        - support_agent
-        - administrator
   hidden_moratorium_data:
     '#type': hidden
-    '#title': 'JSON Moratorium Data (used for JS)'
+    '#title': 'Hidden - JSON Moratorium Data (used for JS)'
+  hidden_location_busy:
+    '#type': textfield
+    '#title': 'Hidden - Is Location Busy (set by JS)'
   permit_type:
     '#type': webform_computed_twig
     '#title': 'Computed permit type'
     '#wrapper_attributes':
       class:
-        - d-none
+        - d-block
     '#display_on': form
     '#mode': text
     '#template': |-
       {% set permit_type = "unknown" %}
-      {% if data.wizard_permit_need == "parking" %}
+      {% if data.wizard_permit_need == "existing_permit" %}
+        {% set permit_type = "existing_permit" %}
+        {% if data.wizard_existing_permit_situation == "change" %}
+          {% set permit_type = "change_request" %}
+        {% elseif data.wizard_existing_permit_situation == "extend" or data.wizard_existing_permit_situation == "renew" %}
+          {% set permit_type = "renewal_request" %}
+        {% endif %}
+      {# special applicant type (e.g. fun, bureau, contractor, sidewalk_repair) overrides the permit type in all cases except existing permit #}
+      {% elseif data.contact_applicant_type != "" %}
+        {% set permit_type = data.contact_applicant_type %}
+      {% elseif data.wizard_permit_need == "parking" %}
         {% set permit_type = "parking_only" %}
 
         {% if data.permit_location_metered == "false" and data.permit_street_28ft_wide == "Yes" and data.permit_restricted_parking_zone == "No" %}
@@ -1022,13 +1280,6 @@ elements: |-
           {% set permit_type = "lt_traffic_control" %}
         {% else %}
           {% set permit_type = "traffic_control" %}
-        {% endif %}
-      {% elseif data.wizard_permit_need == "existing_permit" %}
-        {% set permit_type = "existing_permit" %}
-        {% if data.wizard_existing_permit_situation == "change" %}
-          {% set permit_type = "change_request" %}
-        {% elseif data.wizard_existing_permit_situation == "extend" or data.wizard_existing_permit_situation == "renew" %}
-          {% set permit_type = "renewal_request" %}
         {% endif %}
       {% endif %}
 
@@ -1051,17 +1302,25 @@ elements: |-
       } %}
       {{ name_map[data.permit_type]|default('Unknown') }}
     '#whitespace': trim
-  computed_days_of_week:
+  computed_tags:
     '#type': webform_computed_twig
-    '#title': 'Computed days of week'
-    '#display_on': none
+    '#title': 'Computed tags'
+    '#display_on': form
     '#mode': text
     '#template': |-
+      {# add tags to set Days of Week custom field #}
       {% for day in data.permit_date_days_of_week %}
-        22193428346135_{{ day }},
+        22193428346135_{{ day }}
       {% endfor %}
+
+      {# add tag based on applicant type #}
+      {{ data.contact_applicant_type }}
+
+      {% if data.hidden_moratorium_details %}
+        moratorium {{ data.moratorium_choice }}
+      {% endif %}
     '#whitespace': trim
-    '#store': true
+    '#ajax': true
   computed_permit_reason:
     '#type': webform_computed_twig
     '#title': 'Computed permit reason'
@@ -1070,7 +1329,7 @@ elements: |-
     '#template': |-
       {{ webform_token('[webform_submission:values:simple_permit_reason:clear]', webform_submission)
         |default(webform_token('[webform_submission:values:7day_permit_reason:clear]', webform_submission))
-        |default(data.complex_permit_work_type is iterable ? '' : webform_token('[webform_submission:values:complex_permit_work_type:clear]', webform_submission)) }}
+        |default(webform_token('[webform_submission:values:complex_permit_' ~ (data.permit_type|replace({ 'lt_': '' })) ~ '_work_type:clear]', webform_submission)) }}
     '#whitespace': trim
     '#store': true
   computed_permit_street_name:
@@ -1115,9 +1374,9 @@ elements: |-
     '#mode': text
     '#template': |-
       {% if data.permit_type == 'parking_only' %}
-      {% set permit_number = data.simple_permit_bds_associated is iterable ? '' : data.simple_permit_bds_associated %}
+      {% set permit_number = data.simple_permit_bds_associated %}
       {% elseif data.permit_type == 'traffic_control' or data.permit_type == 'lt_traffic_control' %}
-      {% set permit_number = data.complex_permit_bds_associated is iterable ? '' : data.complex_permit_bds_associated %}
+      {% set permit_number = data.complex_permit_bds_associated %}
       {% endif %}
       {{ permit_number == 'No' ? '' : permit_number }}
     '#whitespace': trim
@@ -1125,13 +1384,52 @@ elements: |-
   computed_ticket_description:
     '#type': webform_computed_twig
     '#title': 'Computed ticket description'
-    '#display_on': none
+    '#display_on': form
     '#mode': text
+    '#ajax': true
     '#template': |-
+      {% if false %}
+      {% block contact_info %}
+        <h3>Contact Info</h3>
+        <ul>
+          <li>Full Name: <strong>{{ webform_token('[webform_submission:values:contact_full_legal_name]', webform_submission) }}</strong></li>
+          {% if data.contact_company %}
+          <li>Company Name: <strong>{{ webform_token('[webform_submission:values:contact_company]', webform_submission) }}</strong></li>
+          {% endif %}
+          <li>Phone Number: <strong>{{ webform_token('[webform_submission:values:contact_phone]', webform_submission) }}</strong></li>
+          <li>Email Address: <strong>{{ data.contact_email is iterable ? '' : webform_token('[webform_submission:values:contact_email]', webform_submission) }}</strong></li>
+          {% if data.contact_applicant_type %}
+          <li>Type of Applicant: <strong>{{ webform_token('[webform_submission:values:contact_applicant_type]', webform_submission) }}</strong></li>
+          {% if data.contact_bureau %}
+          <li>Bureau: <strong>{{ webform_token('[webform_submission:values:contact_bureau]', webform_submission) }}</strong></li>
+          {% endif %}
+          {% if data.contact_fun_company %}
+          <li>FUN Company: <strong>{{ webform_token('[webform_submission:values:contact_fun_company]', webform_submission) }}</strong></li>
+          {% endif %}
+          {% endif %}
+        </ul>
+      {% endblock %}
+      {% endif %}
+
       {% set location_search = webform_token('[webform_submission:values:report_location:location_search:clear]', webform_submission) %}
       {% if data.permit_type == "parking_only" %}
         <h2>Your application</h2>
         <p><strong>You Requested:</strong> {{ webform_token('[webform_submission:values:wizard_permit_need]', webform_submission) }}</p>
+        {% if data.hidden_moratorium_details %}
+        <h3>Moratorium</h3>
+        <p><strong>Based on the dates and location you provided, there is a moratorium in place for this location. You may not be able to obtain a permit for this location.</strong></p>
+        <ul>
+          <li>Moratorium details: <strong>{{ data.hidden_moratorium_details }}</strong></li>
+          <li>Exception provided: <strong>{{ webform_token('[webform_submission:values:moratorium_choice]', webform_submission) }}</strong></li>
+          {% if data.moratorium_appeal_number %}
+          <li>Appeal application number: <strong>{{ webform_token('[webform_submission:values:moratorium_appeal_number]', webform_submission) }}</strong></li>
+          {% endif %}
+        </ul>
+        {% if data.moratorium_appeal_description %}
+        <p><strong>Appeal description:</strong></p>
+        <p>{{ webform_token('[webform_submission:values:moratorium_appeal_description]', webform_submission) }}</p>
+        {% endif %}
+        {% endif %}
         <h3>Location</h3>
         <ul>
           <li>At the address: <strong>{{ webform_token('[webform_submission:values:report_location:location_address]', webform_submission) }}</strong>{% if location_search %}<em> (you entered: {{ location_search }})</em>{% endif %}</li>
@@ -1154,23 +1452,15 @@ elements: |-
         <h3>Permit details</h3>
         <ul>
           <li>How many 20ft spaces: <strong>{{ webform_token('[webform_submission:values:permit_amount_20ft_spaces]', webform_submission) }}</strong></li>
-          <li>Requested use: <strong>{{ webform_token('[webform_submission:values:simple_permit_reason]', webform_submission) }}</strong></li>
-          <li>Requested for: <strong>{{ data.simple_permit_occupying is iterable ? '' : webform_token('[webform_submission:values:simple_permit_occupying]', webform_submission) }}</strong></li>
+          <li>Requested use: <strong>{{ data.computed_permit_reason }}</strong></li>
+          <li>Requested for: <strong>{{ webform_token('[webform_submission:values:simple_permit_occupying]', webform_submission) }}</strong></li>
           <li>Associated BDS permit number: <strong>{{ webform_token('[webform_submission:values:computed_bds_permit_number]', webform_submission) }}</strong></li>
         </ul>
         {% if data.simple_permit_additional_info %}
         <p><strong>Additional Info:</strong></p>
         <p>{{ webform_token('[webform_submission:values:simple_permit_additional_info]', webform_submission) }}</p>
         {% endif %}
-        <h3>Contact Info</h3>
-        <ul>
-          <li>Full Legal Name: <strong>{{ webform_token('[webform_submission:values:contact_full_legal_name]', webform_submission) }}</strong></li>
-          {% if data.contact_company %}
-          <li>Company Name: <strong>{{ webform_token('[webform_submission:values:contact_company]', webform_submission) }}</strong></li>
-          {% endif %}
-          <li>Phone Number: <strong>{{ webform_token('[webform_submission:values:contact_phone]', webform_submission) }}</strong></li>
-          <li>Email Address: <strong>{{ data.contact_email is iterable ? '' : webform_token('[webform_submission:values:contact_email]', webform_submission) }}</strong></li>
-        </ul>
+        {{ block('contact_info') }}
         <h3>Acknowledgements</h3>
         <p>As part of submitting this application, you agreed with the conditions of this permit:</p>
         <ul>
@@ -1181,6 +1471,21 @@ elements: |-
       {% elseif data.permit_type == "7day" %}
         <h2>Your application</h2>
         <p><strong>You Requested:</strong> {{ webform_token('[webform_submission:values:wizard_permit_need]', webform_submission) }}</p>
+        {% if data.hidden_moratorium_details %}
+        <h3>Moratorium</h3>
+        <p><strong>Based on the dates and location you provided, there is a moratorium in place for this location. You may not be able to obtain a permit for this location.</strong></p>
+        <ul>
+          <li>Moratorium details: <strong>{{ data.hidden_moratorium_details }}</strong></li>
+          <li>Exception provided: <strong>{{ webform_token('[webform_submission:values:moratorium_choice]', webform_submission) }}</strong></li>
+          {% if data.moratorium_appeal_number %}
+          <li>Appeal application number: <strong>{{ webform_token('[webform_submission:values:moratorium_appeal_number]', webform_submission) }}</strong></li>
+          {% endif %}
+        </ul>
+        {% if data.moratorium_appeal_description %}
+        <p><strong>Appeal description:</strong></p>
+        <p>{{ webform_token('[webform_submission:values:moratorium_appeal_description]', webform_submission) }}</p>
+        {% endif %}
+        {% endif %}
         <h3>Location</h3>
         <ul>
           <li>At the address: <strong>{{ webform_token('[webform_submission:values:report_location:location_address]', webform_submission) }}</strong>{% if location_search %}<em> (you entered: {{ location_search }})</em>{% endif %}</li>
@@ -1198,17 +1503,9 @@ elements: |-
         <h3>Permit details</h3>
         <ul>
           <li>How many 20ft spaces: <strong>{{ webform_token('[webform_submission:values:permit_amount_20ft_spaces]', webform_submission) }}</strong></li>
-          <li>Requested use: <strong>{{ webform_token('[webform_submission:values:7day_permit_reason]', webform_submission) }}</strong></li>
+          <li>Requested use: <strong>{{ data.computed_permit_reason }}</strong></li>
         </ul>
-        <h3>Contact Info</h3>
-        <ul>
-          <li>Full Legal Name: <strong>{{ webform_token('[webform_submission:values:contact_full_legal_name]', webform_submission) }}</strong></li>
-          {% if data.contact_company %}
-          <li>Company Name: <strong>{{ webform_token('[webform_submission:values:contact_company]', webform_submission) }}</strong></li>
-          {% endif %}
-          <li>Phone Number: <strong>{{ webform_token('[webform_submission:values:contact_phone]', webform_submission) }}</strong></li>
-          <li>Email Address: <strong>{{ data.contact_email is iterable ? '' : webform_token('[webform_submission:values:contact_email]', webform_submission) }}</strong></li>
-        </ul>
+        {{ block('contact_info') }}
         <h3>Acknowledgements</h3>
         <p>As part of submitting this application, you agreed with the conditions of this permit:</p>
         <ul>
@@ -1217,9 +1514,24 @@ elements: |-
           <li>You understand that this permit is only for moving, utility work, property maintenance, construction, and event loading/unloading.</li>
           <li>You understand that obtaining this permit does not automatically reserve a specific parking space, nor guarantee availability of a space to reserve.</li>
         </ul>
-      {% elseif data.permit_type == "traffic_control" or data.permit_type == "lt_traffic_control" %}
+      {% elseif data.permit_type in ["traffic_control", "lt_traffic_control", "fun", "contractor", "bureau", "sidewalk_repair"] %}
         <h2>Your application</h2>
         <p><strong>You Requested:</strong> {{ webform_token('[webform_submission:values:wizard_permit_need]', webform_submission) }}</p>
+        {% if data.hidden_moratorium_details %}
+        <h3>Moratorium</h3>
+        <p><strong>Based on the dates and location you provided, there is a moratorium in place for this location. You may not be able to obtain a permit for this location.</strong></p>
+        <ul>
+          <li>Moratorium details: <strong>{{ data.hidden_moratorium_details }}</strong></li>
+          <li>Exception provided: <strong>{{ webform_token('[webform_submission:values:moratorium_choice]', webform_submission) }}</strong></li>
+          {% if data.moratorium_appeal_number %}
+          <li>Appeal application number: <strong>{{ webform_token('[webform_submission:values:moratorium_appeal_number]', webform_submission) }}</strong></li>
+          {% endif %}
+        </ul>
+        {% if data.moratorium_appeal_description %}
+        <p><strong>Appeal description:</strong></p>
+        <p>{{ webform_token('[webform_submission:values:moratorium_appeal_description]', webform_submission) }}</p>
+        {% endif %}
+        {% endif %}
         <h3>Location</h3>
         <ul>
           <li>At the address: <strong>{{ webform_token('[webform_submission:values:report_location:location_address]', webform_submission) }}</strong>{% if location_search %}<em> (you entered: {{ location_search }})</em>{% endif %}</li>
@@ -1227,6 +1539,9 @@ elements: |-
           <li>Side of the street: <strong>{{ webform_token('[webform_submission:values:complex_permit_street_side]', webform_submission) }}</strong></li>
           <li>Between cross street: <strong>{{ webform_token('[webform_submission:values:complex_permit_cross_street_left]', webform_submission) }}</strong></li>
           <li>And cross street: <strong>{{ webform_token('[webform_submission:values:complex_permit_cross_street_right]', webform_submission) }}</strong></li>
+          {% if data.hidden_location_busy %}
+          <li>Busy: <strong>Yes</strong></li>
+          {% endif %}
         </ul>
         <h3>Dates</h3>
         {% if data.permit_date_unenforceable_agree %}
@@ -1240,7 +1555,9 @@ elements: |-
         </ul>
         <h3>Permit details</h3>
         <ul>
-          <li>Type of work: <strong>{{ data.complex_permit_work_type is iterable ? '' : webform_token('[webform_submission:values:complex_permit_work_type]', webform_submission) }}</strong></li>
+          {% if data.contact_applicant_type != "sidewalk_repair" %}
+          <li>Type of work: <strong>{{ data.computed_permit_reason }}</strong></li>
+          {% endif %}
           <li>Type of closure(s): <strong>{{ webform_token('[webform_submission:values:complex_permit_closure_type]', webform_submission) }}</strong></li>
           <li>Lanes affected: <strong>{{ webform_token('[webform_submission:values:complex_permit_lanes_affected]', webform_submission) }}</strong></li>
           <li>Parking spaces affected: <strong>{{ webform_token('[webform_submission:values:complex_permit_parking_spaces_affected]', webform_submission) }}</strong></li>
@@ -1252,15 +1569,7 @@ elements: |-
         <p><strong>Additional Info:</strong></p>
         <p>{{ webform_token('[webform_submission:values:complex_permit_additional_info]', webform_submission) }}</p>
         {% endif %}
-        <h3>Contact Info</h3>
-        <ul>
-          <li>Full Legal Name: <strong>{{ webform_token('[webform_submission:values:contact_full_legal_name]', webform_submission) }}</strong></li>
-          {% if data.contact_company %}
-          <li>Company Name: <strong>{{ webform_token('[webform_submission:values:contact_company]', webform_submission) }}</strong></li>
-          {% endif %}
-          <li>Phone Number: <strong>{{ webform_token('[webform_submission:values:contact_phone]', webform_submission) }}</strong></li>
-          <li>Email Address: <strong>{{ data.contact_email is iterable ? '' : webform_token('[webform_submission:values:contact_email]', webform_submission) }}</strong></li>
-        </ul>
+        {{ block('contact_info') }}
         <h3>Acknowledgements</h3>
         <p>As part of submitting this application, you agreed with the conditions of this permit:</p>
         <ul>
@@ -1279,21 +1588,13 @@ elements: |-
           <li>Amount of items to change: <strong>{{ webform_token('[webform_submission:values:change_request_items_to_change]', webform_submission) }}</strong></li>
           <li>Identifying Number: <strong>{{ data.change_request_id|default([])|map(id => '#' ~ id)|join(', ') }}</strong></li>
           <li>Location of permit(s): <strong>{{ webform_token('[webform_submission:values:change_request_location]', webform_submission) }}</strong></li>
-          <li>Type of change requested: <strong>{{ data.change_request_change_type is iterable ? '' : webform_token('[webform_submission:values:change_request_change_type]', webform_submission) }}</strong></li>
+          <li>Type of change requested: <strong>{{ webform_token('[webform_submission:values:change_request_change_type]', webform_submission) }}</strong></li>
         </ul>
         {% if data.change_request_additional_info %}
         <p><strong>Change details:</strong></p>
         <p>{{ webform_token('[webform_submission:values:change_request_additional_info]', webform_submission) }}</p>
         {% endif %}
-        <h3>Contact Info</h3>
-        <ul>
-          <li>Full Legal Name: <strong>{{ webform_token('[webform_submission:values:contact_full_legal_name]', webform_submission) }}</strong></li>
-          {% if data.contact_company %}
-          <li>Company Name: <strong>{{ webform_token('[webform_submission:values:contact_company]', webform_submission) }}</strong></li>
-          {% endif %}
-          <li>Phone Number: <strong>{{ webform_token('[webform_submission:values:contact_phone]', webform_submission) }}</strong></li>
-          <li>Email Address: <strong>{{ data.contact_email is iterable ? '' : webform_token('[webform_submission:values:contact_email]', webform_submission) }}</strong></li>
-        </ul>
+        {{ block('contact_info') }}
         <h3>Acknowledgements</h3>
         <p>As part of submitting this request, you agreed with the following conditions:</p>
         <ul>
@@ -1318,15 +1619,7 @@ elements: |-
           <li>Start date: <strong>{{ data.renewal_request_permit_date_start|date('D, m/d/Y') }}</strong></li>
           <li>End date: <strong>{{ data.renewal_request_permit_date_end|date('D, m/d/Y') }}</strong></li>
         </ul>
-        <h3>Contact Info</h3>
-        <ul>
-          <li>Full Legal Name: <strong>{{ webform_token('[webform_submission:values:contact_full_legal_name]', webform_submission) }}</strong></li>
-          {% if data.contact_company %}
-          <li>Company Name: <strong>{{ webform_token('[webform_submission:values:contact_company]', webform_submission) }}</strong></li>
-          {% endif %}
-          <li>Phone Number: <strong>{{ webform_token('[webform_submission:values:contact_phone]', webform_submission) }}</strong></li>
-          <li>Email Address: <strong>{{ data.contact_email is iterable ? '' : webform_token('[webform_submission:values:contact_email]', webform_submission) }}</strong></li>
-        </ul>
+        {{ block('contact_info') }}
         <h3>Acknowledgements</h3>
         <p>As part of submitting this request, you agreed with the following conditions:</p>
         <ul>
@@ -1380,7 +1673,7 @@ elements: |-
     '#title': 'Assessment Prefilled (skips first page)'
     '#prepopulate': true
 css: ''
-javascript: "(function ($, Drupal) {\r\n  Drupal.behaviors.tsupMoratoriumCheck = {\r\n    attach() {\r\n      $(document).ajaxComplete(function () {\r\n        const locationPickerEl = document.querySelector(\r\n          \"[data-drupal-selector='edit-report-location']\"\r\n        );\r\n        if (!locationPickerEl) return;\r\n\r\n        locationPickerEl.addEventListener(\"location-picked\", () => {\r\n          const x = document.querySelector(\"#location_x\").value;\r\n          const y = document.querySelector(\"#location_y\").value;\r\n          fetch(\r\n            `https://www.portlandmaps.com/arcgis/rest/services/Public/PBOT_Permitting/MapServer/3/query?where=1%3D1&geometry=${x},${y}&geometryType=esriGeometryPoint&spatialRel=esriSpatialRelIntersects&distance=50&units=esriSRUnit_Foot&relationParam=&outFields=*&returnGeometry=false&f=geojson`\r\n          )\r\n            .then((res) => res.json())\r\n            .then(({ features }) => {\r\n              document.querySelector(\r\n                \"input[name='hidden_moratorium_data']\"\r\n              ).value = JSON.stringify(features);\r\n              // const startDates = features.map(f => f.properties.MoratoriumStartDate);\r\n              // const endDates = features.map(f => f.properties.MoratoriumEndDate);\r\n              // // find the soonest start date and the latest end date in order to check date range isn't within a moratorium\r\n              // const minStartDate = Math.min(...startDates);\r\n              // const maxEndDate = Math.max(...endDates);\r\n              // console.log(minStartDate,maxEndDate);\r\n            });\r\n        });\r\n      });\r\n    },\r\n  };\r\n\r\n  Drupal.behaviors.tsupDateCalculator = {\r\n    attach() {\r\n      const isDateSame = (a, b) =>\r\n        a.getFullYear() === b.getFullYear() &&\r\n        a.getMonth() === b.getMonth() &&\r\n        a.getDate() === b.getDate();\r\n      const dayNameToNum = {\r\n        sunday: 0,\r\n        monday: 1,\r\n        tuesday: 2,\r\n        wednesday: 3,\r\n        thursday: 4,\r\n        friday: 5,\r\n        saturday: 6,\r\n      };\r\n\r\n      function setDateSpan(amtDays) {\r\n        $(\"input[name='permit_date_span']\").val(amtDays);\r\n        $(\"input[name='permit_date_span']\").trigger(\"change\");\r\n      }\r\n\r\n      function getEarliestStartDate() {\r\n        const permitType = $(\"input[name='permit_type']\").val();\r\n        const isMetered =\r\n          $(\"input[name='permit_location_metered']\").val() === \"true\";\r\n\r\n        const startDateOffsetDays = permitType.includes(\"traffic_control\")\r\n          ? 12\r\n          : isMetered\r\n          ? 3\r\n          : 4;\r\n        const earliestStartDate = new Date();\r\n        earliestStartDate.setDate(\r\n          earliestStartDate.getDate() + startDateOffsetDays\r\n        );\r\n        earliestStartDate.setHours(0);\r\n        earliestStartDate.setMinutes(0);\r\n        earliestStartDate.setSeconds(0);\r\n        earliestStartDate.setMilliseconds(0);\r\n\r\n        return earliestStartDate;\r\n      }\r\n\r\n      function calculateDateSpan() {\r\n        const moratoriumFeatures = JSON.parse(\r\n          $(\"input[name='hidden_moratorium_data']\").val() || \"[]\"\r\n        );\r\n        const isMetered =\r\n          $(\"input[name='permit_location_metered']\").val() === \"true\";\r\n\r\n        const daysOfWeek =\r\n          $(\"input[name*='permit_date_days_of_week']\")\r\n            .filter(\":checked\")\r\n            .map((_, el) => dayNameToNum[el.value])\r\n            .get() || [];\r\n        const startValue = $(\"input[name='permit_date_start']\").val();\r\n        const endValue = $(\"input[name='permit_date_end']\").val();\r\n        if (!startValue || !endValue) return;\r\n        $(\".date-calculator\").html(\"\");\r\n        $(\".date-error\").text(\"\");\r\n\r\n        const startDate = new Date(startValue + \"T00:00\");\r\n        const endDate = new Date(endValue + \"T00:00\");\r\n        if (startDate.getTime() > endDate.getTime()) {\r\n          $(\".date-error\").text(\r\n            \"Your start date cannot be later than your end date.\"\r\n          );\r\n          setDateSpan(0);\r\n          return;\r\n        }\r\n\r\n        if (daysOfWeek.length === 0) {\r\n          $(\".date-error\").text(\r\n            \"You must select the days of the week you'd like your permit to be active.\"\r\n          );\r\n          setDateSpan(0);\r\n          return;\r\n        }\r\n\r\n        // if start date is too early, mark as unenforceable\r\n        $(\"input[name='permit_date_unenforceable']\")\r\n          .val(startDate.getTime() < getEarliestStartDate().getTime())\r\n          .trigger(\"change\");\r\n\r\n        let amtDays = 0;\r\n        // non-metered billing is calculated by the raw date range,\r\n        // regardless of any days of the week selected. only restrict days if metered\r\n        if (!isMetered || daysOfWeek.includes(startDate.getDay())) amtDays++;\r\n\r\n        const curDate = new Date(startValue + \"T00:00\");\r\n        const daysOfWeekFound = {};\r\n        // check the start date and mark if we found the day of the week, as the while loop below will\r\n        // skip the first day.\r\n        const startDay = startDate.getDay();\r\n        if (daysOfWeek.includes(startDay)) daysOfWeekFound[startDay] = true;\r\n\r\n        while (!isDateSame(curDate, endDate)) {\r\n          curDate.setDate(curDate.getDate() + 1);\r\n\r\n          const day = curDate.getDay();\r\n          // reference comment above -- non-metered ignores days of week selected\r\n          if (!isMetered || daysOfWeek.includes(day)) {\r\n            amtDays++;\r\n            daysOfWeekFound[day] = true;\r\n          }\r\n        }\r\n\r\n        setDateSpan(amtDays);\r\n\r\n        if (amtDays === 0 || !daysOfWeek.every((day) => daysOfWeekFound[day])) {\r\n          $(\".date-error\").text(\r\n            \"The time period you selected does not contain all of the days of the week you selected.\"\r\n          );\r\n          setDateSpan(0);\r\n          return;\r\n        }\r\n\r\n        const amtWeeks = Math.ceil(amtDays / 7);\r\n        if (amtWeeks > 26) {\r\n          $(\".date-error\").text(\r\n            \"The maximum date selection for a permit is 26 weeks. Please reduce your date range.\"\r\n          );\r\n          setDateSpan(0);\r\n          return;\r\n        }\r\n\r\n\t\t\t\tconst foundMoratorium = moratoriumFeatures.find(\r\n\t\t\t\t\t(f) =>\r\n\t\t\t\t\t\tstartDate.getTime() >= f.properties.MoratoriumStartDate &&\r\n\t\t\t\t\t\tstartDate.getTime() < f.properties.MoratoriumEndDate\r\n\t\t\t\t);\r\n        if (\r\n          foundMoratorium\r\n        ) {\r\n          $(\".date-error\").text(\r\n            `The location you've selected is within a moratorium from ${new Date(foundMoratorium.properties.MoratoriumStartDate).toLocaleDateString()} to ${new Date(foundMoratorium.properties.MoratoriumEndDate).toLocaleDateString()} (#${foundMoratorium.properties.MoratoriumID}).`\r\n          );\r\n          setDateSpan(0);\r\n          return;\r\n        }\r\n\r\n        if (isMetered) {\r\n          $(\".date-calculator\").html(\r\n            `You've requested <strong>${\r\n              amtDays === 1 ? \"1 day\" : `${amtDays} days`\r\n            }</strong> of closure.`\r\n          );\r\n        } else if (amtDays > 7) {\r\n          // we only show weeks date range if >1 week\r\n          $(\".date-calculator\").html(\r\n            `The date range you have selected spans <strong>${amtWeeks} weeks</strong>. The fees in this area are calculated on a weekly basis.`\r\n          );\r\n        }\r\n      }\r\n\r\n      $(document).ajaxComplete(function () {\r\n        $(\r\n          \"input[name='permit_date_start'], input[name='permit_date_end'], input[name*='permit_date_days_of_week']\"\r\n        ).change(calculateDateSpan);\r\n        calculateDateSpan();\r\n\r\n        const earliestStartDate = getEarliestStartDate();\r\n        $(\".earliest-start-date\").text(earliestStartDate.toLocaleDateString());\r\n      });\r\n    },\r\n  };\r\n})(jQuery, Drupal);\r\n"
+javascript: "(function ($, Drupal) {\r\n  const resetMoratoriumData = (features) => {\r\n    const dataEl = document.querySelector(\r\n      \"input[name='hidden_moratorium_data']\"\r\n    );\r\n    if (!dataEl) return;\r\n\r\n    dataEl.value = \"[]\";\r\n  };\r\n\r\n  const appendMoratoriumData = (features) => {\r\n    const dataEl = document.querySelector(\r\n      \"input[name='hidden_moratorium_data']\"\r\n    );\r\n    if (!dataEl) return;\r\n\r\n    const moratoriumData = JSON.parse(dataEl.value || \"[]\");\r\n    moratoriumData.push(...features);\r\n    dataEl.value = JSON.stringify(moratoriumData);\r\n  };\r\n\r\n  const resetBusyValue = (val) => {\r\n    const busyEl = document.querySelector(\"input[name='hidden_location_busy']\");\r\n    if (!busyEl) return;\r\n\r\n    busyEl.value = \"\";\r\n  };\r\n\r\n  const appendBusyIfData = (name, features) => {\r\n    const busyEl = document.querySelector(\"input[name='hidden_location_busy']\");\r\n    if (!busyEl) return;\r\n\r\n    if (features.length > 0)\r\n      busyEl.value = busyEl.value\r\n        .split(\",\")\r\n        .filter(Boolean)\r\n        .concat(name)\r\n        .join(\",\");\r\n  };\r\n\r\n  Drupal.behaviors.tsupLayerCheck = {\r\n    FEATURE_LAYERS: {\r\n      holidayMoratoriums: {\r\n        url: \"https://www.portlandmaps.com/arcgis/rest/services/Public/PBOT_Permitting/MapServer/3/query\",\r\n        query: {\r\n          where: \"1=1\",\r\n          spatialRel: \"esriSpatialRelIntersects\",\r\n          distance: 50,\r\n          units: \"esriSRUnit_Foot\",\r\n          outFields: \"*\",\r\n        },\r\n        handler: appendMoratoriumData,\r\n      },\r\n      roseFestivalMoratoriums: {\r\n        url: \"https://www.portlandmaps.com/arcgis/rest/services/Public/PBOT_Permitting/MapServer/4/query\",\r\n        query: {\r\n          where: \"1=1\",\r\n          spatialRel: \"esriSpatialRelIntersects\",\r\n          distance: 50,\r\n          units: \"esriSRUnit_Foot\",\r\n          outFields: \"*\",\r\n        },\r\n        handler: appendMoratoriumData,\r\n      },\r\n      busLines: {\r\n        url: \"https://www.portlandmaps.com/arcgis/rest/services/Public/Transit/MapServer/8/query\",\r\n        query: {\r\n          where: \"1=1\",\r\n          spatialRel: \"esriSpatialRelIntersects\",\r\n          distance: 50,\r\n          units: \"esriSRUnit_Foot\",\r\n          outFields: \"ROUTE\",\r\n        },\r\n        handler: appendBusyIfData.bind(this, \"busLines\"),\r\n      },\r\n      trafficSignals: {\r\n        url: \"https://www.portlandmaps.com/arcgis/rest/services/Public/PBOT_Assets/MapServer/199/query\",\r\n        query: {\r\n          where: \"1=1\",\r\n          spatialRel: \"esriSpatialRelIntersects\",\r\n          distance: 250,\r\n          units: \"esriSRUnit_Foot\",\r\n        },\r\n        handler: appendBusyIfData.bind(this, \"trafficSignals\"),\r\n      },\r\n      lineMarkings: {\r\n        url: \"https://www.portlandmaps.com/arcgis/rest/services/Public/Transportation/MapServer/65/query\",\r\n        query: {\r\n          // MLCenterlineST, MLTrafficLaneST, MLTurnLaneST\r\n          where: \"LineType IN (3611, 3612, 3616)\",\r\n          spatialRel: \"esriSpatialRelIntersects\",\r\n          distance: 50,\r\n          units: \"esriSRUnit_Foot\",\r\n          resultRecordCount: 1,\r\n        },\r\n        handler: appendBusyIfData.bind(this, \"lineMarkings\"),\r\n      },\r\n    },\r\n\r\n    attach(context) {\r\n      once(\r\n        \"tsupLayerCheck\",\r\n        \"[data-drupal-selector='edit-report-location']\",\r\n        context\r\n      ).forEach((el) => {\r\n        el.addEventListener(\"location-picked\", () => {\r\n          resetMoratoriumData();\r\n          resetBusyValue();\r\n\r\n          const x = document.querySelector(\"#location_x\").value;\r\n          const y = document.querySelector(\"#location_y\").value;\r\n          for (const [key, { url, query }] of Object.entries(\r\n            this.FEATURE_LAYERS\r\n          )) {\r\n            fetch(\r\n              `${url}?${new URLSearchParams({\r\n                ...query,\r\n                geometry: `${x},${y}`,\r\n                geometryType: \"esriGeometryPoint\",\r\n                returnGeometry: false,\r\n                f: \"geojson\",\r\n              })}`\r\n            )\r\n              .then((res) => res.json())\r\n              .then(({ features }) =>\r\n                this.FEATURE_LAYERS[key].handler(features)\r\n              );\r\n          }\r\n        });\r\n      });\r\n    },\r\n  };\r\n\r\n  Drupal.behaviors.tsupDateCalculator = {\r\n    FRIENDLY_MORATORIUM_CATEGORIES: {\r\n      HOLIDAY: \"Holiday\",\r\n      ROSEFESTIVAL: \"Rose Festival\",\r\n    },\r\n    FRIENDLY_MORATORIUM_RESTRICTION_TYPES: {\r\n      \"TRAVEL-SIDEWALK\": \"travel lanes and sidewalks\",\r\n      \"PARK-TRAVEL-SIDEWALK\": \"parking, travel lanes, and sidewalks\",\r\n    },\r\n\r\n    attach(context) {\r\n      const isDateSame = (a, b) =>\r\n        a.getFullYear() === b.getFullYear() &&\r\n        a.getMonth() === b.getMonth() &&\r\n        a.getDate() === b.getDate();\r\n      const dayNameToNum = {\r\n        sunday: 0,\r\n        monday: 1,\r\n        tuesday: 2,\r\n        wednesday: 3,\r\n        thursday: 4,\r\n        friday: 5,\r\n        saturday: 6,\r\n      };\r\n\r\n      const setDateSpan = (amtDays) => {\r\n        $(\"input[name='permit_date_span']\").val(amtDays);\r\n        $(\"input[name='permit_date_span']\").trigger(\"change\");\r\n      };\r\n\r\n      const getEarliestStartDate = () => {\r\n        const permitType = $(\"input[name='permit_type']\").val();\r\n        const isMetered =\r\n          $(\"input[name='permit_location_metered']\").val() === \"true\";\r\n\r\n        const startDateOffsetDays = permitType.includes(\"traffic_control\")\r\n          ? 12\r\n          : isMetered\r\n          ? 3\r\n          : 4;\r\n        const earliestStartDate = new Date();\r\n        earliestStartDate.setDate(\r\n          earliestStartDate.getDate() + startDateOffsetDays\r\n        );\r\n        earliestStartDate.setHours(0);\r\n        earliestStartDate.setMinutes(0);\r\n        earliestStartDate.setSeconds(0);\r\n        earliestStartDate.setMilliseconds(0);\r\n\r\n        return earliestStartDate;\r\n      };\r\n\r\n      const calculateDateSpan = () => {\r\n        const moratoriumFeatures = JSON.parse(\r\n          $(\"input[name='hidden_moratorium_data']\").val() || \"[]\"\r\n        );\r\n        const isMetered =\r\n          $(\"input[name='permit_location_metered']\").val() === \"true\";\r\n        const permitType = $(\"input[name='permit_type']\").val();\r\n\r\n        const daysOfWeek =\r\n          $(\"input[name*='permit_date_days_of_week']\")\r\n            .filter(\":checked\")\r\n            .map((_, el) => dayNameToNum[el.value])\r\n            .get() || [];\r\n        const startValue = $(\"input[name='permit_date_start']\").val();\r\n        const endValue = $(\"input[name='permit_date_end']\").val();\r\n        if (!startValue || !endValue) return;\r\n        $(\".date-calculator\").html(\"\");\r\n        $(\".date-error\").text(\"\");\r\n\r\n        const startDate = new Date(startValue + \"T00:00\");\r\n        const endDate = new Date(endValue + \"T00:00\");\r\n        if (\r\n          isNaN(startDate.getTime()) ||\r\n          isNaN(endDate.getTime()) ||\r\n          startDate.getTime() > endDate.getTime()\r\n        ) {\r\n          $(\".date-error\").text(\r\n            \"Your start date cannot be later than your end date.\"\r\n          );\r\n          setDateSpan(0);\r\n          return;\r\n        }\r\n\r\n        if (daysOfWeek.length === 0) {\r\n          $(\".date-error\").text(\r\n            \"You must select the days of the week you'd like your permit to be active.\"\r\n          );\r\n          setDateSpan(0);\r\n          return;\r\n        }\r\n\r\n        // if start date is too early, mark as unenforceable\r\n        $(\"input[name='permit_date_unenforceable']\")\r\n          .val(startDate.getTime() < getEarliestStartDate().getTime())\r\n          .trigger(\"change\");\r\n\r\n        let amtDays = 0;\r\n        // non-metered billing is calculated by the raw date range,\r\n        // regardless of any days of the week selected. only restrict days if metered\r\n        if (!isMetered || daysOfWeek.includes(startDate.getDay())) amtDays++;\r\n\r\n        const curDate = new Date(startValue + \"T00:00\");\r\n        const daysOfWeekFound = {};\r\n        // check the start date and mark if we found the day of the week, as the while loop below will\r\n        // skip the first day.\r\n        const startDay = startDate.getDay();\r\n        if (daysOfWeek.includes(startDay)) daysOfWeekFound[startDay] = true;\r\n\r\n        while (!isDateSame(curDate, endDate)) {\r\n          curDate.setDate(curDate.getDate() + 1);\r\n\r\n          const day = curDate.getDay();\r\n          // reference comment above -- non-metered ignores days of week selected\r\n          if (!isMetered || daysOfWeek.includes(day)) {\r\n            amtDays++;\r\n            daysOfWeekFound[day] = true;\r\n          }\r\n        }\r\n\r\n        setDateSpan(amtDays);\r\n\r\n        if (amtDays === 0 || !daysOfWeek.every((day) => daysOfWeekFound[day])) {\r\n          $(\".date-error\").text(\r\n            \"The time period you selected does not contain all of the days of the week you selected.\"\r\n          );\r\n          setDateSpan(0);\r\n          return;\r\n        }\r\n        \r\n        const amtWeeks = Math.ceil(amtDays / 7);\r\n        // max range is 28 days for fun/contractor/bureau/sidewalk_repair, else 26 weeks.\r\n        if (permitType === \"fun\" || permitType === \"contractor\" || permitType === \"bureau\" || permitType === \"sidewalk_repair\") {\r\n          if (amtDays > 28) {\r\n            $(\".date-error\").text(\r\n              \"The maximum date selection for your permit is 28 days. Please reduce your date range.\"\r\n            );\r\n            setDateSpan(0);\r\n            return;\r\n          }\r\n        } else {\r\n          if (amtWeeks > 26) {\r\n            $(\".date-error\").text(\r\n              \"The maximum date selection for your permit is 26 weeks. Please reduce your date range.\"\r\n            );\r\n            setDateSpan(0);\r\n            return;\r\n          }\r\n        }\r\n        \r\n        let foundMoratorium = moratoriumFeatures.find(\r\n          (f) =>\r\n            startDate.getTime() <= f.properties.MoratoriumEndDate &&\r\n            endDate.getTime() >= f.properties.MoratoriumStartDate\r\n        );\r\n        const moratoriumChoice = $(\r\n          \"input[name=permit_date_moratorium_choice]:checked\"\r\n        ).val();\r\n        // If the user has selected a moratorium exception other than changing the dates, we bypass the moratorium check.\r\n        const bypassMoratoriumCheck =\r\n          moratoriumChoice && moratoriumChoice !== \"change_dates\";\r\n        if (foundMoratorium) {\r\n          const category = foundMoratorium.properties.MoratoriumCategory;\r\n          const restrictionType =\r\n            foundMoratorium.properties.MoratoriumRestrictionType;\r\n          // Travel-Sidewalk is not applicable to parking-only permits.\r\n          const isApplicable =\r\n            restrictionType === \"TRAVEL-SIDEWALK\"\r\n              ? permitType !== \"parking_only\"\r\n              : true;\r\n          if (isApplicable && !bypassMoratoriumCheck) {\r\n            const friendlyCategory =\r\n              this.FRIENDLY_MORATORIUM_CATEGORIES[category] || category;\r\n            const friendlyRestrictionType =\r\n              this.FRIENDLY_MORATORIUM_RESTRICTION_TYPES[restrictionType] ||\r\n              restrictionType;\r\n            const friendlyDates = `${new Date(\r\n              foundMoratorium.properties.MoratoriumStartDate\r\n            ).toLocaleDateString()} to ${new Date(\r\n              foundMoratorium.properties.MoratoriumEndDate\r\n            ).toLocaleDateString()}`;\r\n            $(\".moratorium-category\").text(friendlyCategory);\r\n            $(\".moratorium-restriction-type\").text(friendlyRestrictionType);\r\n            $(\".moratorium-dates\").text(friendlyDates);\r\n            $(\"input[name='hidden_moratorium_details']\")\r\n              .val(\r\n                `${friendlyCategory}, ${friendlyDates} (${friendlyRestrictionType})`\r\n              )\r\n              .trigger(\"change\");\r\n            setDateSpan(0);\r\n\r\n            // Hide \"I am moving\" option if permit type is not parking-only\r\n            $(\"input[name=permit_date_moratorium_choice][value=moving]\")\r\n              .parent()\r\n              .css(\"display\", permitType === \"parking_only\" ? \"\" : \"none\");\r\n\r\n            return;\r\n          } else {\r\n            $(\"input[name='hidden_moratorium_details']\")\r\n              .val(\"\")\r\n              .trigger(\"change\");\r\n          }\r\n        } else {\r\n          $(\"input[name='hidden_moratorium_details']\")\r\n              .val(\"\")\r\n              .trigger(\"change\");\r\n        }\r\n\r\n        if (isMetered) {\r\n          $(\".date-calculator\").html(\r\n            `You've requested <strong>${\r\n              amtDays === 1 ? \"1 day\" : `${amtDays} days`\r\n            }</strong> of closure.`\r\n          );\r\n        } else if (amtDays > 7) {\r\n          // we only show weeks date range if >1 week\r\n          $(\".date-calculator\").html(\r\n            `The date range you have selected spans <strong>${amtWeeks} weeks</strong>. The fees in this area are calculated on a weekly basis.`\r\n          );\r\n        }\r\n      };\r\n\r\n      once(\r\n        \"tsupDateCalculator\",\r\n        \"input[name='permit_date_start']\",\r\n        context\r\n      ).forEach(() => {\r\n        $(\r\n          \"input[name='permit_date_start'], input[name='permit_date_end'], input[name*='permit_date_days_of_week'], input[name='permit_date_moratorium_choice']\"\r\n        ).change(calculateDateSpan);\r\n        calculateDateSpan();\r\n\r\n        const earliestStartDate = getEarliestStartDate();\r\n        $(\".earliest-start-date\").text(earliestStartDate.toLocaleDateString());\r\n      });\r\n    },\r\n  };\r\n})(jQuery, Drupal);\r\n"
 settings:
   ajax: true
   ajax_scroll_top: form
@@ -1584,14 +1877,14 @@ handlers:
       requester_email: contact_email
       subject: 'Temporary Street Use Permit Application ([webform_submission:values:friendly_permit_type])'
       comment: '[webform_submission:values:computed_ticket_description:raw]'
-      tags: 'drupal webform tsup'
+      tags: 'drupal webform tsup [webform_submission:values:computed_tags]'
       priority: normal
       status: new
       group_id: '12281750992407'
       assignee_id: ''
       type: incident
       collaborators: ''
-      custom_fields: "6353388345367: 'apply_tsup'\r\n1500013095781: '[webform_submission:uuid]'\r\n12281632679959: ['12281632679959_[webform_submission:values:permit_type]', 'permit_type']\r\n1900004448785: ['[webform_submission:values:contact_company]', 'contact_company']\r\n12280609857559: ['[webform_submission:values:computed_bds_permit_number]', 'computed_bds_permit_number']\r\n12281140173719: ['[webform_submission:values:computed_num_spaces]', 'computed_num_spaces']\r\n12280733221015: ['[webform_submission:values:computed_date_start]', 'computed_date_start']\r\n12280737894935: ['[webform_submission:values:computed_date_end]', 'computed_date_end']\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n9205221816983: ['[webform_submission:values:report_location:location_type:raw]', 'report_location:location_type']\r\n12281548831383: ['[webform_submission:values:complex_permit_closure_type]', 'complex_permit_closure_type']\r\n14564469123095: ['[webform_submission:values:permit_location_metered]', 'permit_location_metered']\r\n22193428346135: [[[webform_submission:values:computed_days_of_week:raw]], 'permit_date_days_of_week']\r\n22195736298263: '[webform_submission:values:computed_permit_reason]'\r\n22195822294935: '[webform_submission:values:computed_permit_street_name]'"
+      custom_fields: "6353388345367: 'apply_tsup'\r\n1500013095781: '[webform_submission:uuid]'\r\n12281632679959: ['12281632679959_[webform_submission:values:permit_type]', 'permit_type']\r\n1900004448785: ['[webform_submission:values:contact_company]', 'contact_company']\r\n12280609857559: ['[webform_submission:values:computed_bds_permit_number]', 'computed_bds_permit_number']\r\n12281140173719: ['[webform_submission:values:computed_num_spaces]', 'computed_num_spaces']\r\n12280733221015: ['[webform_submission:values:computed_date_start]', 'computed_date_start']\r\n12280737894935: ['[webform_submission:values:computed_date_end]', 'computed_date_end']\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n9205221816983: ['[webform_submission:values:report_location:location_type:raw]', 'report_location:location_type']\r\n12281548831383: ['[webform_submission:values:complex_permit_closure_type]', 'complex_permit_closure_type']\r\n14564469123095: ['[webform_submission:values:permit_location_metered]', 'permit_location_metered']\r\n22195736298263: '[webform_submission:values:computed_permit_reason]'\r\n22195822294935: '[webform_submission:values:computed_permit_street_name]'\r\n29548818770327: ['[webform_submission:values:contact_bureau]', 'contact_bureau']\r\n29548879671575: ['[webform_submission:values:contact_fun_company]', 'contact_fun_company']"
       ticket_id_field: report_ticket_id
       ticket_form_id: '12280613877783'
       recipient: tsup@portlandoregon.gov
@@ -1614,14 +1907,14 @@ handlers:
       requester_email: contact_email
       subject: 'Temporary Street Use Permit Application ([webform_submission:values:friendly_permit_type])'
       comment: '[webform_submission:values:computed_ticket_description:raw]'
-      tags: 'drupal webform tsup'
+      tags: 'drupal webform tsup [webform_submission:values:computed_tags]'
       priority: normal
       status: new
       group_id: '4549352062487'
       assignee_id: ''
       type: incident
       collaborators: ''
-      custom_fields: "6353388345367: 'apply_tsup'\r\n1500013095781: '[webform_submission:uuid]'\r\n12281632679959: ['12281632679959_[webform_submission:values:permit_type]', 'permit_type']\r\n1900004448785: ['[webform_submission:values:contact_company]', 'contact_company']\r\n12280609857559: ['[webform_submission:values:computed_bds_permit_number]', 'computed_bds_permit_number']\r\n12281140173719: ['[webform_submission:values:computed_num_spaces]', 'computed_num_spaces']\r\n12280733221015: ['[webform_submission:values:computed_date_start]', 'computed_date_start']\r\n12280737894935: ['[webform_submission:values:computed_date_end]', 'computed_date_end']\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n9205221816983: ['[webform_submission:values:report_location:location_type:raw]', 'report_location:location_type']\r\n12281548831383: ['[webform_submission:values:complex_permit_closure_type]', 'complex_permit_closure_type']\r\n14564469123095: ['[webform_submission:values:permit_location_metered]', 'permit_location_metered']\r\n22193428346135: [[[webform_submission:values:computed_days_of_week:raw]], 'permit_date_days_of_week']\r\n22195736298263: '[webform_submission:values:computed_permit_reason]'\r\n22195822294935: '[webform_submission:values:computed_permit_street_name]'"
+      custom_fields: "6353388345367: 'apply_tsup'\r\n1500013095781: '[webform_submission:uuid]'\r\n12281632679959: ['12281632679959_[webform_submission:values:permit_type]', 'permit_type']\r\n1900004448785: ['[webform_submission:values:contact_company]', 'contact_company']\r\n12280609857559: ['[webform_submission:values:computed_bds_permit_number]', 'computed_bds_permit_number']\r\n12281140173719: ['[webform_submission:values:computed_num_spaces]', 'computed_num_spaces']\r\n12280733221015: ['[webform_submission:values:computed_date_start]', 'computed_date_start']\r\n12280737894935: ['[webform_submission:values:computed_date_end]', 'computed_date_end']\r\n5581480390679: ['[webform_submission:values:report_location:location_lat]', 'report_location:location_lat']\r\n5581490332439: ['[webform_submission:values:report_location:location_lon]', 'report_location:location_lon']\r\n13407901552407: ['[webform_submission:values:report_location:location_x]', 'report_location:location_x']\r\n13407918835095: ['[webform_submission:values:report_location:location_y]', 'report_location:location_y']\r\n1500012743961: ['[webform_submission:values:report_location:location_address]', 'report_location:location_address']\r\n9205221816983: ['[webform_submission:values:report_location:location_type:raw]', 'report_location:location_type']\r\n12281548831383: ['[webform_submission:values:complex_permit_closure_type]', 'complex_permit_closure_type']\r\n14564469123095: ['[webform_submission:values:permit_location_metered]', 'permit_location_metered']\r\n22195736298263: '[webform_submission:values:computed_permit_reason]'\r\n22195822294935: '[webform_submission:values:computed_permit_street_name]'\r\n29548818770327: ['[webform_submission:values:contact_bureau]', 'contact_bureau']\r\n29548879671575: ['[webform_submission:values:contact_fun_company]', 'contact_fun_company']"
       ticket_id_field: report_ticket_id
       ticket_form_id: '4990038807319'
       recipient: tsup@portlandoregon.gov
