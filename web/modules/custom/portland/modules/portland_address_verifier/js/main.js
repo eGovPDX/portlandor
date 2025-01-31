@@ -3,8 +3,8 @@
       attach: function (context) {
         $(once('address-verifier', '.portland-address-verifier--wrapper', context)).each(function () {
           const $element = $(this);
-          const elementId =  $element.attr('id');
-  
+          const elementId =  $element.attr('id').replace(/--[^-]+--wrapper$/, '--wrapper');
+
           const apiKey = drupalSettings.portlandmaps_api_key;
   
           // Always initialize the model, view, and controller regardless of visibility
