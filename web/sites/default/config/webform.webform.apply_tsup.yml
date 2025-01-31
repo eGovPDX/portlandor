@@ -858,7 +858,8 @@ elements: |-
       '#states':
         visible:
           ':input[name="permit_type"]':
-            value: traffic_control
+            value:
+              pattern: traffic_control
       '#text': |
         <h2>Apply for a permit with Traffic Control</h2>
 
@@ -1129,6 +1130,8 @@ elements: |-
             visible:
               ':input[name="wizard_permit_need"]':
                 value: traffic
+              ':input[name="permit_type"]':
+                '!value': sidewalk_repair
           markup_documents_traffic_control:
             '#type': webform_markup
             '#states':
@@ -1207,6 +1210,17 @@ elements: |-
           '#required': true
           '#options':
             parking_only: 'I am only requesting parking and will not be impacting traffic in any way, I will submit a Parking Diagram.'
+        complex_permit_sidewalk_repair_closure:
+          '#type': radios
+          '#title': 'Until Sidewalk repairs are completed I will:'
+          '#states':
+            visible:
+              ':input[name="permit_type"]':
+                value: sidewalk_repair
+          '#required': true
+          '#options':
+            open_with_clearance: 'Maintain 4ft of clearance along the entire sidewalk path in accordance with ADA requirements and allow pedestrian access at all times.'
+            closed: 'Completely close the sidewalk, allowing no pedestrian access.'
         complex_permit_traffic_documents:
           '#type': webform_document_file
           '#title': 'Please upload the required document(s):'
@@ -1219,11 +1233,22 @@ elements: |-
           '#file_help': help
           '#max_filesize': '30'
           '#file_extensions': 'pdf jpg jpeg png'
+        complex_permit_sidewalk_repair_documents:
+          '#type': webform_document_file
+          '#title': 'Upload any plans or supporting documentation (e.g. a map of the closure)'
+          '#states':
+            visible:
+              ':input[name="permit_type"]':
+                value: sidewalk_repair
+          '#multiple': 8
+          '#file_help': help
+          '#max_filesize': '30'
+          '#file_extensions': 'pdf jpg jpeg png'
         container_acknowledgements:
           '#type': container
           complex_permit_acknowledge_supervision:
             '#type': checkbox
-            '#title': 'By checking this box, I certify that the person implementing traffic control measures will be under the supervision of a competent person experienced and knowledgeable in safely setting up temporary traffic control devices.'
+            '#title': 'I certify that the person implementing traffic control measures will be under the supervision of a competent person experienced and knowledgeable in safely setting up temporary traffic control devices.'
             '#states':
               visible:
                 ':input[name="wizard_permit_need"]':
@@ -1232,9 +1257,19 @@ elements: |-
                   '!value': sidewalk_repair
             '#required': true
             '#required_error': 'You must certify.'
+          complex_permit_acknowledge_properties:
+            '#type': checkbox
+            '#title': 'I have notified adjacent properties of the forthcoming work, in accordance with the Work Notification Requirements presented in the Temporary Traffic Control Manual.'
+            '#required': true
+            '#required_error': 'You must notify adjacent properties.'
           complex_permit_acknowlege_insurance:
             '#type': checkbox
             '#title': 'My insurance information is on file or is being submitted'
+            '#states':
+              visible:
+                ':input[name="permit_type"]':
+                  value:
+                    pattern: traffic_control
             '#description': |-
               An <strong>Insurance Certificate</strong> must be on file naming the City of Portland as additionally insured.<br/><br/>
 
@@ -1243,25 +1278,59 @@ elements: |-
               For more information about the insurance requirements, please visit our <a target="_blank" href="/transportation/permitting/insurance-and-bond-requirements-permits-public-right-way">Insurance page</a>.
             '#required': true
             '#required_error': 'Your insurance information must be on file.'
-            '#states':
-              visible:
-                ':input[name="complex_permit_acknowledge_supervision"]':
-                  checked: true
           complex_permit_acknowledge_trimet:
             '#type': checkbox
             '#title': 'I have notified TriMet if my work is along a transit route.'
             '#description': 'If your work is along a TriMet transit route, you are required to notify them at least five business days in advance of your work. Email TriMet at <a href="mailto:foc@trimet.org">foc@trimet.org</a> before you submit this application.'
             '#required': true
             '#required_error': 'You must notify TriMet if your work is along a transit route.'
-            '#states':
-              visible:
-                ':input[name="complex_permit_acknowlege_insurance"]':
-                  checked: true
         complex_permit_requested_times:
           '#type': textfield
           '#title': 'Requested Start and End times (include AM or PM)'
           '#placeholder': 'e.g. 7am-4pm or All Hours'
           '#required': true
+        complex_permit_sidewalk_permit_number:
+          '#type': textfield
+          '#title': 'What is your Sidewalk Repair permit number that requires notification?'
+          '#states':
+            visible:
+              ':input[name="permit_type"]':
+                value: sidewalk_repair
+          '#required': true
+        complex_permit_duration_impact:
+          '#type': textfield
+          '#title': 'Expected duration of work / ROW impact?'
+          '#states':
+            visible:
+              ':input[name="permit_type"]':
+                value:
+                  '!pattern': traffic_control|sidewalk_repair
+          '#required': true
+        complex_permit_billing_info:
+          '#type': textfield
+          '#title': 'Billing information'
+          '#description': 'Please provide either a City of Portland SAP code for payment or an email address where we can send an invoice at the end of the month.'
+          '#states':
+            visible:
+              ':input[name="permit_type"]':
+                value:
+                  'pattern': bureau|contractor
+          '#required': true
+        complex_permit_bureau_contact:
+          '#type': textfield
+          '#title': 'Provide the first and last name of your City Bureau contact'
+          '#states':
+            visible:
+              ':input[name="permit_type"]':
+                value: contractor
+          '#required': true
+        complex_permit_job_number:
+          '#type': textfield
+          '#title': 'Job number?'
+          '#states':
+            visible:
+              ':input[name="permit_type"]':
+                value: fun
         complex_permit_work_description:
           '#type': textarea
           '#title': 'Work Description'
@@ -1276,16 +1345,56 @@ elements: |-
           '#type': textarea
           '#title': 'Additional Info'
           '#description': "<p>Please provide us with any additional information here, such as location, purpose, time, that didn't fit in anywhere above.</p>"
-        complex_permit_acknowledge_conditions:
-          '#type': checkbox
-          '#title': 'I have read and agree with the conditions of this permit (see below).'
-          '#description': |-
-            By applying to obtain this permit from the City of Portland, the permittee agrees to comply with all permit conditions, including, without limitation, the permit conditions stated here:<br />
-            <a target="_blank" href="/transportation/permitting/documents/temporary-street-use-permit-conditions/download">Conditions of a Permit to Use a Dedicated Street Area</a><br />
-            <a target="_blank" href="/transportation/permitting/documents/non-metered-parking-reservation-overview/download">Parking Enforcement verification procedure</a><br />
-            <a target="_blank" href="/transportation/permitting/temporary-street-use-permitting-tsup#toc-fees">Change Fee and Refund Policies</a>
-          '#required': true
-          '#required_error': 'You must agree with the permit conditions.'
+        markup_sidewalk_repair_parking:
+          '#type': webform_markup
+          '#states':
+            visible:
+              ':input[name="permit_type"]':
+                value: sidewalk_repair
+          '#markup': '<p>If you need to reserve any parking adjacent to your jobsite, you may do so via <a href="http://www.tsup.info">separate application at www.tsup.info</a>.</p>'
+        container_tocs:
+          '#type': container
+          '#states':
+            visible:
+              ':input[name="permit_type"]':
+                '!value': sidewalk_repair
+          complex_permit_acknowledge_conditions:
+            '#type': checkbox
+            '#title': 'I have read and agree with the conditions of this permit (see below).'
+            '#description': |-
+              By applying to obtain this permit from the City of Portland, the permittee agrees to comply with all permit conditions, including, without limitation, the permit conditions stated here:<br />
+            '#required': true
+            '#required_error': 'You must agree with the permit conditions.'
+          markup_toc_traffic_control:
+            '#type': markup
+            '#states':
+              visible:
+                ':input[name="permit_type"]':
+                  value:
+                    pattern: traffic_control
+            '#markup': |-
+              <a target="_blank" href="/transportation/permitting/documents/temporary-street-use-permit-conditions/download">Conditions of a Permit to Use a Dedicated Street Area</a><br />
+          container_is_parking:
+            '#type': container
+            '#states':
+              visible:
+                - ':input[name="wizard_permit_need"]':
+                    value: parking
+                - or
+                - ':input[name="complex_permit_closure_type[parking]"]':
+                    checked: true
+            markup_toc_nonmetered_parking_enforcement:
+              '#type': markup
+              '#states':
+                visible:
+                  ':input[name="permit_location_metered"]':
+                    value: 'false'
+              '#markup': |-
+                <a target="_blank" href="/transportation/permitting/documents/non-metered-parking-reservation-overview/download">Parking Enforcement verification procedure</a><br />
+          markup_toc_change_fee:
+            '#type': markup
+            '#markup': |-
+              <a target="_blank" href="/transportation/permitting/temporary-street-use-permitting-tsup#toc-fees">Change Fee and Refund Policies</a>
   page_general:
     '#type': webform_wizard_page
     '#title': Question
@@ -1641,13 +1750,23 @@ elements: |-
           {% if data.contact_applicant_type != "sidewalk_repair" %}
           <li>Type of work: <strong>{{ data.computed_permit_reason }}</strong></li>
           {% endif %}
+          {% if data.complex_permit_closure_type %}
           <li>Type of closure(s): <strong>{{ webform_token('[webform_submission:values:complex_permit_closure_type]', webform_submission) }}</strong></li>
-          <li>Lanes affected: <strong>{{ webform_token('[webform_submission:values:complex_permit_lanes_affected]', webform_submission) }}</strong></li>
-          <li>Parking spaces affected: <strong>{{ webform_token('[webform_submission:values:complex_permit_parking_spaces_affected]', webform_submission) }}</strong></li>
-          <li>Associated BDS permit number: <strong>{{ webform_token('[webform_submission:values:computed_bds_permit_number]', webform_submission) }}</strong></li>
+          <li>Lanes affected: <strong>{{ webform_token('[webform_submission:values:complex_permit_lanes_affected]', webform_submission) ?: '0' }}</strong></li>
+          <li>Parking spaces affected: <strong>{{ webform_token('[webform_submission:values:complex_permit_parking_spaces_affected]', webform_submission) ?: '0' }}</strong></li>
+          {% endif %}
+          {% if data.complex_permit_sidewalk_repair_closure %}<li>Sidewalk closure: <strong>{{ webform_token('[webform_submission:values:complex_permit_sidewalk_repair_closure]', webform_submission) }}</strong></li>{% endif %}
+          {% if data.complex_permit_duration_impact %}<li>Expected duration of work / ROW impact: <strong>{{ webform_token('[webform_submission:values:complex_permit_duration_impact]', webform_submission) }}</strong></li>{% endif %}
+          {% if data.complex_permit_sidewalk_permit_number %}<li>Sidewalk Repair permit number: <strong>{{ webform_token('[webform_submission:values:complex_permit_sidewalk_permit_number]', webform_submission) }}</strong></li>{% endif %}
+          {% if data.complex_permit_job_number %}<li>Job number: <strong>{{ webform_token('[webform_submission:values:complex_permit_job_number]', webform_submission) }}</strong></li>{% endif %}
+          {% if data.complex_permit_billing_info %}<li>Billing information: <strong>{{ webform_token('[webform_submission:values:complex_permit_billing_info]', webform_submission) }}</strong></li>{% endif %}
+          {% if data.complex_permit_bureau_contact %}<li>Bureau contact: <strong>{{ webform_token('[webform_submission:values:complex_permit_bureau_contact]', webform_submission) }}</strong></li>{% endif %}
+          {% if data.computed_bds_permit_number %}<li>Associated BDS permit number: <strong>{{ webform_token('[webform_submission:values:computed_bds_permit_number]', webform_submission) }}</strong></li>{% endif %}
         </ul>
+        {% if data.complex_permit_work_description %}
         <p><strong>Work Description:</strong></p>
         <p>{{ webform_token('[webform_submission:values:complex_permit_work_description]', webform_submission) }}</p>
+        {% endif %}
         {% if data.complex_permit_additional_info %}
         <p><strong>Additional Info:</strong></p>
         <p>{{ webform_token('[webform_submission:values:complex_permit_additional_info]', webform_submission) }}</p>
@@ -1656,12 +1775,22 @@ elements: |-
         <h3>Acknowledgements</h3>
         <p>As part of submitting this application, you agreed with the conditions of this permit:</p>
         <ul>
+          {% if data.permit_type == "traffic_control" %}
           <li><a href="https://www.portland.gov/transportation/permitting/documents/temporary-street-use-permit-conditions/download" target="_blank">Conditions of a Permit to Use a Dedicated Street Area</a></li>
+          {% endif %}
+          {% if (data.wizard_permit_need == "parking" or "parking" in data.complex_permit_closure_type) and data.permit_location_metered == "true" %}
           <li><a href="https://www.portland.gov/transportation/permitting/documents/non-metered-parking-reservation-overview/download" target="_blank">Parking Enforcement verification procedure</a></li>
-          <li><a href="https://www.portland.gov/transportation/permitting/temporary-street-use-permitting-tsup#toc-fees" target="_blank">Change Fee and Refund Policies</a></li>
+          {% endif %}
+          {% if data.complex_permit_acknowledge_supervision %}
           <li>You certify that the person implementing traffic control measures will be under the supervision of a competent person experienced and knowledgeable in safely setting up temporary traffic control devices.</li>
+          {% endif %}
+          {% if data.complex_permit_acknowlege_insurance %}
           <li><a href="https://www.portland.gov/transportation/permitting/insurance-and-bond-requirements-permits-public-right-way" target="_blank">Your insurance information is on file or is being submitted,</a> naming the City of Portland as additionally insured.</li>
+          {% endif %}
+          {% if data.complex_permit_acknowledge_trimet %}
           <li>You have notified TriMet if your work is along a transit route.</li>
+          {% endif %}
+          <li><a href="https://www.portland.gov/transportation/permitting/temporary-street-use-permitting-tsup#toc-fees" target="_blank">Change Fee and Refund Policies</a></li>
         </ul>
       {% elseif data.permit_type == "change_request" %}
         <h2>Your change request</h2>
