@@ -591,7 +591,6 @@ class ZendeskHandler extends WebformHandlerBase
 
     // check for a report_ticket_id value in the form state; if a handler previously submitted
     // a ticket, the ID should be available to subsequent handlers.
-    // TODO: Can we use $zendesk_ticket_id_field_name here instead of hard coding report_ticket_id?
     $prev_ticket_id = $form_state->getValue($zendesk_ticket_id_field_name);
     if ($prev_ticket_id) {
       $webform_submission->setElementData($zendesk_ticket_id_field_name, $prev_ticket_id);
@@ -599,7 +598,6 @@ class ZendeskHandler extends WebformHandlerBase
 
     // check for a parent_ticket_id value in the form state; if a handler previously submitted
     // a ticket, the ID should be available to subsequent handlers.
-    // TODO: Can we use $zendesk_ticket_id_field_name here instead of hard coding report_ticket_id?
     $parent_ticket_id = $form_state->getValue($zendesk_parent_ticket_id_field_name);
     if ($parent_ticket_id) {
       $webform_submission->setElementData($zendesk_parent_ticket_id_field_name, $parent_ticket_id);
@@ -787,15 +785,6 @@ class ZendeskHandler extends WebformHandlerBase
 
     // set external_id to connect zendesk ticket with submission ID
     $request['external_id'] = $webform_submission->id();
-
-    // child incident handler //////////////////////////////////////////
-    // retrieve the name of the field in which to store the created Zendesk Ticket ID
-    $zendesk_ticket_id_field_name = $configuration['ticket_id_field'];
-
-
-    $zendesk_ticket_id = $submission_fields['data'][$configuration['ticket_id_field']];
-
-
 
     // get list of all webform fields with a file field type
     $file_fields = $this->getWebform()->getElementsManagedFiles();
