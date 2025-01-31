@@ -17,10 +17,7 @@
    */
   Drupal.behaviors.portland_location_picker = {
     attach: function (context) {
-
-      var test = $('main');
-
-      $(once('location_picker', 'fieldset.portland-location-picker--wrapper', context)).each(function () {
+      once('location_picker', 'fieldset.portland-location-picker--wrapper', context).forEach(function (locationPickerEl) {
 
         // CONSTANTS //////////
         const DEFAULT_LATITUDE = 45.54;
@@ -1497,6 +1494,9 @@
             $('.verified-checkmark.' + type).removeClass('invisible');
             $('.location-verify.' + type).prop('disabled', true);
           }
+
+          const event = new Event("location-picked");
+          locationPickerEl.dispatchEvent(event);
         }
 
         function setUnverified(type = "address") {
