@@ -111,47 +111,18 @@ elements: |-
         '#type': radios
         '#title': 'What type of Hop card do you have?'
         '#options':
-          'Adult Hop card': 'Adult Hop card -- <img width="200px" src="https://www.portland.gov/sites/default/files/2024/fares-hopcard-adult.png" />'
-          'Honored Citizen Hop card': 'Honored Citizen Hop card -- <img width="200px" src="https://www.portland.gov/sites/default/files/2024/fares-hopcard-honored.png" />'
-          'Personalized Honored Citizen Hop card': 'Personalized Honored Citizen Hop card -- <img width="200px" src="https://www.portland.gov/sites/default/files/2024/fares-hopcard-honored-photoid.png" />'
-          'TriMet LIFT Hop card': 'TriMet LIFT Hop card -- <img width="200px" src="https://www.portland.gov/sites/default/files/2024/fares-hopcard-lift.png" />'
+          adult_hop_card: 'Adult Hop card -- <img width="200px" alt="A blue TriMet adult Hop card" src="https://www.portland.gov/sites/default/files/2024/fares-hopcard-adult.png" />'
+          honored_citizen_hop_card: |-
+            Honored Citizen Hop card -- <img width="200px" alt="A blue TriMet Honored Citizen Hop card" src="https://www.portland.gov/sites/default/files/2024/fares-hopcard-honored.png" /> or
+            <img width="200px" alt="A white TriMet personalized Honored Citizen Hop card with the bearer's photo" src="https://www.portland.gov/sites/default/files/2024/fares-hopcard-honored-photoid.png" />
+          trimet_lift_hop_card: 'TriMet LIFT Hop card -- <img width="200px" alt="A white TriMet LIFT Hop Card personalized with the bearer''s photo" src="https://www.portland.gov/sites/default/files/2024/fares-hopcard-lift.png" />'
         '#required': true
         '#states':
           visible:
             ':input[name="apply_has_hop_card"]':
               value: 'Yes'
             ':input[name="apply_wallet_package"]':
-              value: wallet_option_1
-      apply_hop_card_number:
-        '#type': textfield
-        '#title': 'Please enter your 16-digit Hop card number'
-        '#maxlength': 16
-        '#input_mask': '9{0,16}'
-        '#required': true
-        '#pattern': '^[0-9]{16}$'
-        '#pattern_error': 'Hop card number must be 16 digits.'
-        '#counter_type': character
-        '#counter_minimum': 16
-        '#counter_maximum': 16
-        '#states':
-          visible:
-            - ':input[name="apply_current_hop_card"]':
-                value: 'Honored Citizen Hop card'
-            - or
-            - ':input[name="apply_current_hop_card"]':
-                value: 'Personalized Honored Citizen Hop card'
-            - or
-            - ':input[name="apply_wallet_package"]':
-                value: wallet_option_2
-              ':input[name="apply_has_hop_card"]':
-                value: 'Yes'
-            - or
-            - ':input[name="apply_wallet_package"]':
-                value: wallet_option_3
-              ':input[name="apply_has_hop_card"]':
-                value: 'Yes'
-        '#attributes':
-          inputmode: numeric
+              '!value': wallet_option_3
       apply_hop_card_needed:
         '#type': radios
         '#title': 'What type of Hop card do you need?'
@@ -194,20 +165,22 @@ elements: |-
           '#type': webform_markup
           '#states':
             visible:
-              - ':input[name="apply_current_hop_card"]':
-                  value: 'Adult Hop card'
-              - xor
-              - ':input[name="apply_wallet_package"]':
-                  value: wallet_option_1
-                ':input[name="apply_hop_card_needed"]':
-                  value: personalized_honored_citizen_hop_card
-              - xor
-              - ':input[name="apply_wallet_package"]':
-                  value: wallet_option_1
-                ':input[name="apply_hop_card_needed"]':
-                  value: adult_hop_card
+              ':input[name="apply_wallet_package"]':
+                value: wallet_option_1
+              ':input[name="apply_current_hop_card"]':
+                value: adult_hop_card
           '#admin_title': 'Next Steps'
           '#markup': '<div class="alert alert--info next-steps"><h2>Next Steps</h2><p>In order to receive an Option 1 card, you must have an Honored Citizen Hop card through TriMet. Please follow the below steps to complete your Wallet registration.</p><ol><li>Continue filling out this form so that we have your information.</li><li>Apply for your <a href="https://trimet.org/income/application.htm" target="_blank">Honored Citizen Hop card</a> as soon as possible.</li><li>Once you have received your Honored Citizen Hop card, email <a href="mailto:wallet@portlandoregon.gov">wallet@portlandoregon.gov</a> with your 16-digit card number so we can process your annual pass.</li></ol></div>'
+        markup_next_steps_honored_citizen_option_2:
+          '#type': webform_markup
+          '#states':
+            visible:
+              ':input[name="apply_hop_card_needed"]':
+                value: personalized_honored_citizen_hop_card
+              ':input[name="apply_has_hop_card"]':
+                value: 'No'
+          '#admin_title': 'Next Steps'
+          '#markup': '<div class="alert alert--info next-steps"><h2>Next Steps</h2><ol><li>Continue filling out this form so that we have your information.</li><li>Apply for your <a href="https://trimet.org/income/application.htm" target="_blank">Honored Citizen Hop card</a> as soon as possible.</li><li>Once you have received your Honored Citizen Hop card, email <a href="mailto:wallet@portlandoregon.gov">wallet@portlandoregon.gov</a> with your 16-digit card number so we can process your annual pass.</li></ol></div>'
         apply_next_steps_choice:
           '#type': radios
           '#title': 'How would you like to proceed?'
@@ -240,7 +213,9 @@ elements: |-
           '#states':
             visible:
               ':input[name="apply_current_hop_card"]':
-                value: 'TriMet LIFT Hop card'
+                value: trimet_lift_hop_card
+              ':input[name="apply_wallet_package"]':
+                value: wallet_option_1
         markup_switch_button:
           '#type': webform_markup
           '#states':
@@ -252,26 +227,77 @@ elements: |-
                   value: 'I want to start over and select Option 2 ($200 Hop card, BIKETOWN for All, and $75 prepaid Visa card).'
           '#admin_title': 'Switch Button'
           '#markup': '<a class="btn btn-primary" href="?">Start Over</a>'
-        markup_next_steps_honored_citizen_option_2:
-          '#type': webform_markup
-          '#states':
-            visible:
-              ':input[name="apply_wallet_package"]':
-                value: wallet_option_2
-              ':input[name="apply_hop_card_needed_opt_2_3"]':
-                value: personalized_honored_citizen_hop_card
-          '#admin_title': 'Next Steps'
-          '#markup': '<div class="alert alert--info next-steps"><h2>Next Steps</h2><ol><li>Continue filling out this form so that we have your information.</li><li>Apply for your <a href="https://trimet.org/income/application.htm" target="_blank">Honored Citizen Hop card</a> as soon as possible.</li><li>Once you have received your Honored Citizen Hop card, email <a href="mailto:wallet@portlandoregon.gov">wallet@portlandoregon.gov</a> with your 16-digit card number so we can process your annual pass.</li></ol></div>'
-        markup_next_steps_honored_citizen_option_3:
-          '#type': webform_markup
-          '#states':
-            visible:
-              ':input[name="apply_wallet_package"]':
-                value: wallet_option_3
-              ':input[name="apply_hop_card_needed_opt_2_3"]':
-                value: personalized_honored_citizen_hop_card
-          '#admin_title': 'Next Steps'
-          '#markup': '<div class="alert alert--info next-steps"><h2>Next Steps</h2><ol><li>Continue filling out this form so that we have your information.</li><li>Apply for your <a href="https://trimet.org/income/application.htm" target="_blank">Honored Citizen Hop card</a> as soon as possible.</li><li>Once you have received your Honored Citizen Hop card, email <a href="mailto:wallet@portlandoregon.gov">wallet@portlandoregon.gov</a> with your 16-digit card number so we can process your annual pass.</li></ol></div>'
+      apply_hop_card_number:
+        '#type': textfield
+        '#title': 'Please enter your 16-digit Hop card number (option 1)'
+        '#maxlength': 16
+        '#input_mask': '9{0,16}'
+        '#required': true
+        '#pattern': '^[0-9]{16}$'
+        '#pattern_error': 'Hop card number must be 16 digits.'
+        '#counter_type': character
+        '#counter_minimum': 16
+        '#counter_maximum': 16
+        '#states':
+          visible:
+            ':input[name="apply_wallet_package"]':
+              value: wallet_option_1
+            ':input[name="apply_current_hop_card"]':
+              value: honored_citizen_hop_card
+        '#attributes':
+          inputmode: numeric
+      apply_hop_card_number_opt_2:
+        '#type': textfield
+        '#title': 'Please enter your 16-digit Hop card number (option 2)'
+        '#maxlength': 16
+        '#input_mask': '9{0,16}'
+        '#required': true
+        '#pattern': '^[0-9]{16}$'
+        '#pattern_error': 'Hop card number must be 16 digits.'
+        '#counter_type': character
+        '#counter_minimum': 16
+        '#counter_maximum': 16
+        '#states':
+          visible:
+            ':input[name="apply_wallet_package"]':
+              value: wallet_option_2
+            ':input[name="apply_has_hop_card"]':
+              value: 'Yes'
+        '#attributes':
+          inputmode: numeric
+      apply_hop_card_number_opt_3:
+        '#type': textfield
+        '#title': 'Please enter your 16-digit Hop card number (option 3)'
+        '#maxlength': 16
+        '#input_mask': '9{0,16}'
+        '#required': true
+        '#pattern': '^[0-9]{16}$'
+        '#pattern_error': 'Hop card number must be 16 digits.'
+        '#counter_type': character
+        '#counter_minimum': 16
+        '#counter_maximum': 16
+        '#states':
+          visible:
+            ':input[name="apply_wallet_package"]':
+              value: wallet_option_3
+            ':input[name="apply_has_hop_card"]':
+              value: 'Yes'
+        '#attributes':
+          inputmode: numeric
+      computed_hop_card_number:
+        '#type': webform_computed_twig
+        '#title': 'Computed Hop Card Number'
+        '#display_on': view
+        '#mode': text
+        '#template': |-
+          {% if data.apply_wallet_package	== "wallet_option_1" and data.apply_hop_card_number %}
+            {{ data.apply_hop_card_number }}
+          {% elseif data.apply_wallet_package	== "wallet_option_2" and data.apply_hop_card_number_opt_2 %}
+            {{ data.apply_hop_card_number_opt_2 }}
+          {% elseif data.apply_wallet_package	== "wallet_option_3" and data.apply_hop_card_number_opt_3 %}
+            {{ data.apply_hop_card_number_opt_3 }}
+          {% endif %}
+        '#whitespace': trim
       computed_hop_card_type:
         '#type': webform_computed_twig
         '#title': 'Computed Hop card Type'
@@ -287,16 +313,17 @@ elements: |-
           {% else %}
             {% if data.apply_has_hop_card == 'No' %}
               {{ data.apply_hop_card_needed_opt_2_3 }}
+            {% else %}
+              {{ data.apply_current_hop_card }}
             {% endif %}
-            {# if opt 2 or 3, we don't ask what kind of hop card, so leave that blank #}
           {% endif %}
         '#whitespace': trim
-      computed_tags_primary:
+      computed_primary_full_name:
         '#type': webform_computed_twig
-        '#title': 'Computed Tags Primary'
+        '#title': 'Computed Primary Full Name'
         '#display_on': none
         '#mode': text
-        '#template': '{{ data.apply_wallet_package ~ " " ~ data.computed_hop_card_type }}'
+        '#template': '{{ data.contact_first_name }} {{ data.contact_last_name }}'
         '#whitespace': trim
     markup_household_size_1:
       '#type': webform_markup
@@ -382,13 +409,6 @@ elements: |-
                 value: personalized_honored_citizen_hop_card
           '#admin_title': 'Next Steps'
           '#markup': '<div class="alert alert--info next-steps"><h2>Next Steps</h2><ol><li>Continue filling out this form so that we have this person''s information.</li><li>Apply for the <a href="https://trimet.org/income/application.htm" target="_blank">Honored Citizen Hop card</a> as soon as possible.</li><li>Once the Honored Citizen Hop card has been received, email <a href="mailto:wallet@portlandoregon.gov">wallet@portlandoregon.gov</a> with the 16-digit card number so we can process the annual pass.</li></ol></div>'
-        computed_tags_member_2:
-          '#type': webform_computed_twig
-          '#title': 'Computed Tags Member 1'
-          '#display_on': none
-          '#mode': text
-          '#template': '{{ "wallet_option_3 " ~ data.has_hop_card_2 }}'
-          '#whitespace': trim
       section_household_member_3:
         '#type': webform_section
         '#title': 'Household Member 3'
@@ -459,13 +479,6 @@ elements: |-
                 value: personalized_honored_citizen_hop_card
           '#admin_title': 'Next Steps'
           '#markup': '<div class="alert alert--info next-steps"><h2>Next Steps</h2><ol><li>Continue filling out this form so that we have this person''s information.</li><li>Apply for the <a href="https://trimet.org/income/application.htm" target="_blank">Honored Citizen Hop card</a> as soon as possible.</li><li>Once the Honored Citizen Hop card has been received, email <a href="mailto:wallet@portlandoregon.gov">wallet@portlandoregon.gov</a> with the 16-digit card number so we can process the annual pass.</li></ol></div>'
-        computed_tags_member_3:
-          '#type': webform_computed_twig
-          '#title': 'Computed Tags Member 3'
-          '#display_on': none
-          '#mode': text
-          '#template': '{{ "wallet_option_3 " ~ data.has_hop_card_3 }}'
-          '#whitespace': trim
       section_household_member_4:
         '#type': webform_section
         '#title': 'Household Member 4'
@@ -536,13 +549,6 @@ elements: |-
                 value: personalized_honored_citizen_hop_card
           '#admin_title': 'Next Steps'
           '#markup': '<div class="alert alert--info next-steps"><h2>Next Steps</h2><ol><li>Continue filling out this form so that we have this person''s information.</li><li>Apply for the <a href="https://trimet.org/income/application.htm" target="_blank">Honored Citizen Hop card</a> as soon as possible.</li><li>Once the Honored Citizen Hop card has been received, email <a href="mailto:wallet@portlandoregon.gov">wallet@portlandoregon.gov</a> with the 16-digit card number so we can process the annual pass.</li></ol></div>'
-        computed_tags_member_4:
-          '#type': webform_computed_twig
-          '#title': 'Computed Tags Member 4'
-          '#display_on': none
-          '#mode': text
-          '#template': '{{ "wallet_option_3 " ~ data.has_hop_card_4 }}'
-          '#whitespace': trim
       section_household_member_5:
         '#type': webform_section
         '#title': 'Household Member 5'
@@ -618,13 +624,6 @@ elements: |-
                 value: personalized_honored_citizen_hop_card
           '#admin_title': 'Next Steps'
           '#markup': '<div class="alert alert--info next-steps"><h2>Next Steps</h2><ol><li>Continue filling out this form so that we have this person''s information.</li><li>Apply for the <a href="https://trimet.org/income/application.htm" target="_blank">Honored Citizen Hop card</a> as soon as possible.</li><li>Once the Honored Citizen Hop card has been received, email <a href="mailto:wallet@portlandoregon.gov">wallet@portlandoregon.gov</a> with the 16-digit card number so we can process the annual pass.</li></ol></div>'
-        computed_tags_member_5:
-          '#type': webform_computed_twig
-          '#title': 'Computed Tags Member 5'
-          '#display_on': none
-          '#mode': text
-          '#template': '{{ "wallet_option_3 " ~ data.has_hop_card_5 }}'
-          '#whitespace': trim
     computed_household_total_funds:
       '#type': webform_computed_twig
       '#title': 'Available Funds'
@@ -1252,12 +1251,6 @@ elements: |-
   request_ticket_id:
     '#type': hidden
     '#title': 'Request Ticket Id'
-  computed_tags:
-    '#type': webform_computed_twig
-    '#title': 'Computed Tags'
-    '#display_on': none
-    '#mode': text
-    '#template': '{{ data.apply_wallet_package }} {{ data.apply_hop_card_needed }}'
   parent_ticket_id:
     '#type': hidden
     '#title': 'Parent Ticket Id'
@@ -1265,12 +1258,68 @@ elements: |-
     '#type': hidden
     '#title': 'Organization Name'
     '#prepopulate': true
+  computed_household_container_subject:
+    '#type': webform_computed_twig
+    '#title': 'Computed Household Container Subject'
+    '#display_on': none
+    '#mode': text
+    '#template': 'Wallet Application - Household, {{ data.apply_household_size }} members - {{ data.contact_address_verifier.location_address }}{% if data.contact_address_verifier.unit_number %} {{ data.contact_address_verifier.unit_number }}{% endif %}, {{ data.contact_address_verifier.location_city }}'
+    '#whitespace': trim
   computed_amount_options_1_2:
     '#type': webform_computed_twig
     '#title': 'Computed Amount Options 1 & 2'
-    '#display_on': none
+    '#display_on': view
     '#mode': text
     '#template': '{% if data.apply_wallet_package == "wallet_option_2" %}200{% endif %}'
+    '#whitespace': trim
+  computed_tags_options_1_2:
+    '#type': webform_computed_twig
+    '#title': 'Computed Tags Options 1 & 2'
+    '#display_on': none
+    '#mode': text
+    '#template': '29758569828631_full {{ data.apply_wallet_package ~ " " ~ data.computed_hop_card_type }}'
+    '#whitespace': trim
+  computed_tags_household_container:
+    '#type': webform_computed_twig
+    '#title': 'Computed Tags Household Container'
+    '#display_on': none
+    '#mode': text
+    '#template': '29758569828631_household {{ data.apply_wallet_package }}'
+    '#whitespace': trim
+  computed_tags_member_1:
+    '#type': webform_computed_twig
+    '#title': 'Computed Tags Member 1'
+    '#display_on': none
+    '#mode': text
+    '#template': 'wallet_option_3 household_member household_member_primary 29758569828631_individual {{ data.computed_hop_card_type }}'
+    '#whitespace': trim
+  computed_tags_member_2:
+    '#type': webform_computed_twig
+    '#title': 'Computed Tags Member 2'
+    '#display_on': none
+    '#mode': text
+    '#template': 'wallet_option_3 household_member 29758569828631_individual {{ data.has_hop_card_2 }}'
+    '#whitespace': trim
+  computed_tags_member_3:
+    '#type': webform_computed_twig
+    '#title': 'Computed Tags Member 3'
+    '#display_on': none
+    '#mode': text
+    '#template': 'wallet_option_3 household_member 29758569828631_individual {{ data.has_hop_card_3 }}'
+    '#whitespace': trim
+  computed_tags_member_4:
+    '#type': webform_computed_twig
+    '#title': 'Computed Tags Member 4'
+    '#display_on': none
+    '#mode': text
+    '#template': 'wallet_option_3 household_member 29758569828631_individual {{ data.has_hop_card_4 }}'
+    '#whitespace': trim
+  computed_tags_member_5:
+    '#type': webform_computed_twig
+    '#title': 'Computed Tags Member 5'
+    '#display_on': none
+    '#mode': text
+    '#template': 'wallet_option_3 household_member 29758569828631_individual {{ data.has_hop_card_5 }}'
     '#whitespace': trim
 css: ".webform-multiple-table table {\r\n    width: inherit !important;\r\n}\r\n\r\n.webform-multiple-table tbody tr:hover,\r\n.webform-multiple-table tbody tr:focus {\r\n    background: inherit !important;\r\n}\r\n\r\n.webform-scale {\r\n    margin-top: 0.5rem;\r\n    width: 100%;\r\n}\r\n\r\n.webform-scale .webform-scale-options {\r\n    display: flex;\r\n    justify-content: space-around;\r\n    margin: 0 2rem;\r\n}\r\n\r\n.webform-scale .webform-scale-option label {\r\n    line-height: inherit !important;\r\n}\r\n\r\n.webform-scale .webform-scale-text {\r\n    display: flex;\r\n    justify-content: space-between;\r\n    height: unset;\r\n    line-height: unset;\r\n}\r\n\r\n.webform-scale .webform-scale-text-min, .webform-scale .webform-scale-text-max {\r\n    position: unset;\r\n    width: 25%;\r\n    text-align: center !important;\r\n}\r\n\r\n.card-header.card-header-opt-1 {\r\n    background: rgba(240, 92, 73, 0.33);\r\n}\r\n\r\n.card-header.card-header-opt-2 {\r\n    background: rgba(124, 66, 118, 0.33);\r\n}\r\n\r\n.card-header.card-header-opt-3 {\r\n    background: rgba(0, 160, 174, 0.33);\r\n}\r\n\r\n#member_2_container, #member_3_container, #member_4_container, #member_5_container {\r\n  border: 1px solid black;\r\n  padding: 15px 15px 0 15px;\r\n  margin-bottom: 5px;\r\n}\r\n\r\ndiv.form-disabled input[type=submit] { \r\n  color: white; cursor: not-allowed; \r\n}\r\n\r\n.webform-submission-transportation-wallet-form .form-text {\r\n  display: inline-block;\r\n}\r\n\r\n#calculator-submit-button input:disabled {\r\n  background-color: #ccc; /* Light gray background */\r\n  color: #666;           /* Darker gray text */\r\n  border-color: #999;    /* Match the gray theme for the border */\r\n  cursor: not-allowed;   /* Indicate that the button is disabled */\r\n  opacity: 0.6;          /* Optional: Make it semi-transparent */\r\n}"
 javascript: "(function ($, Drupal, once) {\r\n  Drupal.behaviors.updateSubmitButtonState = {\r\n    attach: function (context) {\r\n      \r\n      var $wizardPage = once('funds-distribution-handler', '[data-webform-key=\"page_funds_distribution\"]', context);\r\n      \r\n      if ($wizardPage.length) {\r\n      \r\n        // find the input field\r\n        var $field1 = $(context).find('[name=\"funds_member_1\"], [name=\"funds_member_2\"], [name=\"funds_member_3\"], [name=\"funds_member_4\"], [name=\"funds_member_5\"]');\r\n        \r\n        // get the available amount and number of members values\r\n        var funds = $(context).find('#available-funds').text();\r\n        var members = $(context).find('#household-members').text();\r\n        \r\n        // Ensure the event listener is only attached once\r\n        $field1.off('input change').on('input change', function () {\r\n          \r\n          // hide all messages\r\n          var $messageRemaining = $(context).find('#message-remaining').addClass('d-none');\r\n          var $messageOk = $(context).find('#message-ok').addClass('d-none');\r\n          var $messageOver = $(context).find('#message-over').addClass('d-none');\r\n          \r\n          // if the selection is switched to even split, enable the Next button and exit function\r\n          if ($('[name=\"apply_funds_split\"][value=\"Evenly among all members\"]').is(':checked')) {\r\n            $('#calculator-submit-button input').prop('disabled', false);\r\n            return;\r\n          }\r\n          \r\n          // get allocation values\r\n          var $field1 = $(context).find('[name=\"funds_member_1\"]');\r\n          var $field2 = $(context).find('[name=\"funds_member_2\"]');\r\n          var $field3 = $(context).find('[name=\"funds_member_3\"]');\r\n          var $field4 = $(context).find('[name=\"funds_member_4\"]');\r\n          var $field5 = $(context).find('[name=\"funds_member_5\"]');\r\n          var val1 = $field1.length && $field1.val() > 0 ? $field1.val() : 0;\r\n          var val2 = $field2.length && $field2.val() > 0 ? $field2.val() : 0;\r\n          var val3 = $field3.length && $field3.val() > 0 ? $field3.val() : 0;\r\n          var val4 = $field4.length && $field4.val() > 0 ? $field4.val() : 0;\r\n          var val5 = $field5.length && $field5.val() > 0 ? $field5.val() : 0;\r\n\r\n          var allocated = parseInt(val1) + parseInt(val2) + parseInt(val3) + parseInt(val4) + parseInt(val5);\r\n          \r\n          if (allocated == funds) {\r\n            $messageOk.removeClass('d-none');\r\n            $('#calculator-submit-button input').prop('disabled', false);\r\n          } else if (allocated > funds) {\r\n            $messageOver.removeClass('d-none');\r\n            var over = (funds - allocated) * -1;\r\n            var $spanOver = $(context).find('#allocated-over');\r\n            if ($spanOver.length) $spanOver.text(over);\r\n            $('#calculator-submit-button input').prop('disabled', true);\r\n          } else if (allocated < funds) {\r\n            $messageRemaining.removeClass('d-none');\r\n            var remaining = funds - allocated;\r\n            var $spanRemaining = $(context).find('#remaining-amt');\r\n            if ($spanRemaining.length) $spanRemaining.text(remaining);\r\n            $('#calculator-submit-button input').prop('disabled', true);\r\n          }\r\n          \r\n        });\r\n      }\r\n    }\r\n  };\r\n})(jQuery, Drupal, once);\r\n"
@@ -1468,13 +1517,13 @@ handlers:
           unchecked: true
         ':input[name="apply_wallet_package"]':
           '!value': wallet_option_3
-    weight: 0
+    weight: -50
     settings:
-      requester_name: computed_full_name
+      requester_name: computed_primary_full_name
       requester_email: contact_email
       subject: 'Wallet Application - [webform_submission:values:contact_first_name] [webform_submission:values:contact_last_name]'
       comment: "<h2>Applicant Information</h2>\r\n\r\n[webform_submission:values:primary_household_member_display]\r\n\r\n<div style=\"padding: 10px; background-color: #eeeeee;\">\r\n<h3>Full application:</h3>\r\n<hr>\r\n[webform_submission:values:html]\r\n</div>"
-      tags: 'drupal webform [webform_submission:values:computed_tags]'
+      tags: 'drupal webform [webform_submission:values:computed_tags_options_1_2]'
       priority: normal
       status: new
       recipient: ''
@@ -1482,7 +1531,7 @@ handlers:
       assignee_id: ''
       type: incident
       collaborators: ''
-      custom_fields: "27985303578775: ['[webform_submission:values:apply_date_of_birth:Y]-[webform_submission:values:apply_date_of_birth:m]-[webform_submission:values:apply_date_of_birth:d]', 'apply_date_of_birth']\r\n29284110563479: ['[webform_submission:values:apply_wallet_package]', 'apply_wallet_package']\r\n27985321767319: ['[webform_submission:values:computed_hop_card_type]', 'computed_hop_card_type']\r\n27985342383639: ['[webform_submission:values:apply_hop_card_number]', 'apply_hop_card_number']\r\n27985354792087: ['[webform_submission:values:computed_amount_options_1_2]', 'computed_amount_options_1_2']\r\n27773229365143: ['[webform_submission:values:contact_address_verifier:location_address] [webform_submission:values:contact_address_verifier:unit_number], [webform_submission:values:contact_address_verifier:location_city], [webform_submission:values:contact_address_verifier:location_state] [webform_submission:values:contact_address_verifier:location_zip]', 'contact_address_verifier']\r\n25600783638295: ['[webform_submission:values:contact_phone]', 'contact_phone']\r\n26253458420759: ['[webform_submission:values:organization_name]', 'organization_name']"
+      custom_fields: "26253458420759: ['[webform_submission:values:organization_name]', 'organization_name']\r\n29284110563479: ['[webform_submission:values:apply_wallet_package]', 'apply_wallet_package']\r\n27773229365143: ['[webform_submission:values:contact_address_verifier:location_address] [webform_submission:values:contact_address_verifier:unit_number], [webform_submission:values:contact_address_verifier:location_city], [webform_submission:values:contact_address_verifier:location_state] [webform_submission:values:contact_address_verifier:location_zip]', 'contact_address_verifier']\r\n25600783638295: ['[webform_submission:values:contact_phone]', 'contact_phone']\r\n27985303578775: ['[webform_submission:values:apply_date_of_birth:Y]-[webform_submission:values:apply_date_of_birth:m]-[webform_submission:values:apply_date_of_birth:d]', 'apply_date_of_birth']\r\n27985321767319: ['[webform_submission:values:computed_hop_card_type]', 'computed_hop_card_type']\r\n27985342383639: ['[webform_submission:values:computed_hop_card_number]', 'apply_hop_card_number']\r\n29730647639063: ['[webform_submission:values:computed_amount_options_1_2]', 'computed_amount_options_1_2']\r\n"
       ticket_id_field: request_ticket_id
       ticket_fork_field: ''
       ticket_form_id: '26628122071575'
@@ -1501,13 +1550,13 @@ handlers:
           checked: true
         ':input[name="apply_wallet_package"]':
           '!value': wallet_option_3
-    weight: 1
+    weight: -49
     settings:
-      requester_name: computed_full_name
+      requester_name: computed_primary_full_name
       requester_email: contact_email
       subject: 'Wallet Application - [webform_submission:values:contact_first_name] [webform_submission:values:contact_last_name]'
       comment: "<h2>Applicant Information</h2>\r\n\r\n[webform_submission:values:primary_household_member_display]\r\n\r\n<div style=\"padding: 10px; background-color: #eeeeee;\">\r\n<h3>Full application:</h3>\r\n<hr>\r\n[webform_submission:values:html]\r\n</div>"
-      tags: 'drupal webform'
+      tags: 'drupal webform developer_test [webform_submission:values:computed_tags_options_1_2]'
       priority: normal
       status: new
       recipient: ''
@@ -1515,17 +1564,17 @@ handlers:
       assignee_id: ''
       type: incident
       collaborators: ''
-      custom_fields: "27985303578775: ['[webform_submission:values:apply_date_of_birth:Y]-[webform_submission:values:apply_date_of_birth:m]-[webform_submission:values:apply_date_of_birth:d]', 'apply_date_of_birth']\r\n29284110563479: ['[webform_submission:values:apply_wallet_package]', 'apply_wallet_package']\r\n27985321767319: ['[webform_submission:values:computed_hop_card_type]', 'computed_hop_card_type']\r\n27985342383639: ['[webform_submission:values:apply_hop_card_number]', 'apply_hop_card_number']\r\n27985354792087: ['[webform_submission:values:computed_amount_options_1_2]', 'computed_amount_options_1_2']\r\n27773229365143: ['[webform_submission:values:contact_address_verifier:location_address] [webform_submission:values:contact_address_verifier:unit_number], [webform_submission:values:contact_address_verifier:location_city], [webform_submission:values:contact_address_verifier:location_state] [webform_submission:values:contact_address_verifier:location_zip]', 'contact_address_verifier']\r\n25600783638295: ['[webform_submission:values:contact_phone]', 'contact_phone']\r\n26253458420759: ['[webform_submission:values:organization_name]', 'organization_name']"
+      custom_fields: "26253458420759: ['[webform_submission:values:organization_name]', 'organization_name']\r\n29284110563479: ['[webform_submission:values:apply_wallet_package]', 'apply_wallet_package']\r\n27773229365143: ['[webform_submission:values:contact_address_verifier:location_address] [webform_submission:values:contact_address_verifier:unit_number], [webform_submission:values:contact_address_verifier:location_city], [webform_submission:values:contact_address_verifier:location_state] [webform_submission:values:contact_address_verifier:location_zip]', 'contact_address_verifier']\r\n25600783638295: ['[webform_submission:values:contact_phone]', 'contact_phone']\r\n27985303578775: ['[webform_submission:values:apply_date_of_birth:Y]-[webform_submission:values:apply_date_of_birth:m]-[webform_submission:values:apply_date_of_birth:d]', 'apply_date_of_birth']\r\n27985321767319: ['[webform_submission:values:computed_hop_card_type]', 'computed_hop_card_type']\r\n27985342383639: ['[webform_submission:values:computed_hop_card_number]', 'apply_hop_card_number']\r\n29730647639063: ['[webform_submission:values:computed_amount_options_1_2]', 'computed_amount_options_1_2']\r\n"
       ticket_id_field: request_ticket_id
       ticket_fork_field: ''
       ticket_form_id: '26628122071575'
       child_incident: 0
       parent_ticket_id_field: ''
       is_child_incident: 0
-  zendesk_new_request_household_applicant_1:
+  zendesk_new_request_household_container_ticket:
     id: zendesk
-    handler_id: zendesk_new_request_household_applicant_1
-    label: 'Zendesk new request - Household applicant #1'
+    handler_id: zendesk_new_request_household_container_ticket
+    label: 'Zendesk new request - Household - container ticket'
     notes: ''
     status: true
     conditions:
@@ -1534,13 +1583,13 @@ handlers:
           value: wallet_option_3
         ':input[name="support_agent_use_only[test_submission]"]':
           unchecked: true
-    weight: 2
+    weight: -48
     settings:
-      requester_name: computed_full_name
+      requester_name: computed_primary_full_name
       requester_email: contact_email
-      subject: 'Wallet Application - Primary - [webform_submission:values:contact_first_name] [webform_submission:values:contact_last_name]'
-      comment: "<h2>Primary Applicant Information</h2>\r\n\r\n[webform_submission:values:primary_household_member_display]\r\n\r\n<div style=\"padding: 10px; background-color: #eeeeee;\">\r\n<h3>Full application:</h3>\r\n<hr>\r\n[webform_submission:values:html]\r\n</div>"
-      tags: 'drupal webform [webform_submission:values:apply_wallet_package:raw] [webform_submission:values:computed_hop_card_type:raw]'
+      subject: '[webform_submission:values:computed_household_container_subject]'
+      comment: '[webform_submission:values:html]'
+      tags: 'drupal webform [webform_submission:values:computed_tags_household_container]'
       priority: normal
       status: new
       recipient: ''
@@ -1548,17 +1597,17 @@ handlers:
       assignee_id: ''
       type: problem
       collaborators: ''
-      custom_fields: "27985303578775: ['[webform_submission:values:apply_date_of_birth:Y]-[webform_submission:values:apply_date_of_birth:m]-[webform_submission:values:apply_date_of_birth:d]', 'apply_date_of_birth']\r\n29284110563479: ['[webform_submission:values:apply_wallet_package]', 'apply_wallet_package']\r\n27985321767319: ['[webform_submission:values:computed_hop_card_type]', 'computed_hop_card_type']\r\n27985342383639: ['[webform_submission:values:apply_hop_card_number]', 'apply_hop_card_number']\r\n27985354792087: ['[webform_submission:values:computed_card_amount_1]', 'computed_card_amount_1']\r\n27773229365143: ['[webform_submission:values:contact_address_verifier:location_address] [webform_submission:values:contact_address_verifier:unit_number], [webform_submission:values:contact_address_verifier:location_city], [webform_submission:values:contact_address_verifier:location_state] [webform_submission:values:contact_address_verifier:location_zip]', 'contact_address_verifier']\r\n25600783638295: ['[webform_submission:values:contact_phone]', 'contact_phone']\r\n26253458420759: ['[webform_submission:values:organization_name]', 'organization_name']"
+      custom_fields: "26253458420759: ['[webform_submission:values:organization_name]', 'organization_name']\r\n29284110563479: ['[webform_submission:values:apply_wallet_package]', 'apply_wallet_package']\r\n27773229365143: ['[webform_submission:values:contact_address_verifier:location_address] [webform_submission:values:contact_address_verifier:unit_number], [webform_submission:values:contact_address_verifier:location_city], [webform_submission:values:contact_address_verifier:location_state] [webform_submission:values:contact_address_verifier:location_zip]', 'contact_address_verifier']\r\n25600783638295: ['[webform_submission:values:contact_phone]', 'contact_phone']\r\n"
       ticket_id_field: request_ticket_id
       ticket_fork_field: ''
       ticket_form_id: '26628122071575'
       child_incident: 1
       parent_ticket_id_field: parent_ticket_id
       is_child_incident: 0
-  zendesk_new_request_household_applicant_2:
+  zendesk_new_request_household_member_1:
     id: zendesk
-    handler_id: zendesk_new_request_household_applicant_2
-    label: 'Zendesk new request - Household applicant #2'
+    handler_id: zendesk_new_request_household_member_1
+    label: 'Zendesk new request - Household - member 1'
     notes: ''
     status: true
     conditions:
@@ -1567,13 +1616,13 @@ handlers:
           value: wallet_option_3
         ':input[name="support_agent_use_only[test_submission]"]':
           unchecked: true
-    weight: 3
+    weight: -47
     settings:
-      requester_name: computed_full_name
+      requester_name: computed_primary_full_name
       requester_email: contact_email
-      subject: 'Wallet Application - Member 2 - [webform_submission:values:first_name_2] [webform_submission:values:last_name_2]'
-      comment: "<h2>Wallet Application for Household Member 2</h2>\r\n\r\n[webform_submission:values:household_member_2_display]\r\n\r\n<h2>Primary Applicant</h2>\r\n\r\n[webform_submission:values:primary_household_member_display]\r\n\r\n<div style=\"padding: 10px; background-color: #eeeeee;\">\r\n<h3>Full application:</h3>\r\n<hr>\r\n[webform_submission:values:html]\r\n</div>"
-      tags: 'drupal webform [webform_submission:values:apply_wallet_package:raw] [webform_submission:values:has_hop_card_2:raw]'
+      subject: 'Wallet Application - Member 1 - [webform_submission:values:contact_first_name] [webform_submission:values:contact_last_name]'
+      comment: "<h2>Primary Applicant Information</h2>\r\n\r\n[webform_submission:values:primary_household_member_display]\r\n\r\n<div style=\"padding: 10px; background-color: #eeeeee;\">\r\n<h3>Full application:</h3>\r\n<hr>\r\n[webform_submission:values:html]\r\n</div>"
+      tags: 'drupal webform [webform_submission:values:computed_tags_member_1]'
       priority: normal
       status: new
       recipient: ''
@@ -1581,35 +1630,68 @@ handlers:
       assignee_id: ''
       type: incident
       collaborators: ''
-      custom_fields: "27985303578775: ['[webform_submission:values:date_of_birth_member_2:Y]-[webform_submission:values:date_of_birth_member_2:m]-[webform_submission:values:date_of_birth_member_2:d]', 'computed_date_of_birth_member_2']\r\n29284110563479: ['[webform_submission:values:apply_wallet_package]', 'apply_wallet_package']\r\n27985321767319: ['[webform_submission:values:has_hop_card_2]', 'has_hop_card_2']\r\n27985342383639: ['[webform_submission:values:hop_card_number_2]', 'hop_card_number_2']\r\n27985354792087: ['[webform_submission:values:computed_card_amount_2]', 'computed_card_amount_2']\r\n27773229365143: ['[webform_submission:values:contact_address_verifier:location_address] [webform_submission:values:contact_address_verifier:unit_number], [webform_submission:values:contact_address_verifier:location_city], [webform_submission:values:contact_address_verifier:location_state] [webform_submission:values:contact_address_verifier:location_zip]', 'contact_address_verifier']\r\n26253458420759: ['[webform_submission:values:organization_name]', 'organization_name']"
+      custom_fields: "27985303578775: ['[webform_submission:values:apply_date_of_birth:Y]-[webform_submission:values:apply_date_of_birth:m]-[webform_submission:values:apply_date_of_birth:d]', 'apply_date_of_birth']\r\n27985321767319: ['[webform_submission:values:computed_hop_card_type]', 'computed_hop_card_type']\r\n27985342383639: ['[webform_submission:values:computed_hop_card_number]', 'apply_hop_card_number']\r\n29730647639063: ['[webform_submission:values:computed_card_amount_1]', 'computed_card_amount_1']\r\n"
       ticket_id_field: request_ticket_id
       ticket_fork_field: ''
       ticket_form_id: '26628122071575'
       child_incident: 1
       parent_ticket_id_field: parent_ticket_id
       is_child_incident: 1
-  zendesk_new_request_household_applicant_3:
+  zendesk_new_request_household_member_2:
     id: zendesk
-    handler_id: zendesk_new_request_household_applicant_3
-    label: 'Zendesk new request - Household applicant #3'
+    handler_id: zendesk_new_request_household_member_2
+    label: 'Zendesk new request - Household - member 2'
     notes: ''
     status: true
     conditions:
       enabled:
         ':input[name="apply_wallet_package"]':
           value: wallet_option_3
+        ':input[name="support_agent_use_only[test_submission]"]':
+          unchecked: true
+    weight: -46
+    settings:
+      requester_name: computed_primary_full_name
+      requester_email: contact_email
+      subject: 'Wallet Application - Member 2 - [webform_submission:values:first_name_2] [webform_submission:values:last_name_2]'
+      comment: "<h2>Wallet Application for Household Member 2</h2>\r\n\r\n[webform_submission:values:household_member_2_display]\r\n\r\n<h2>Primary Applicant Information</h2>\r\n\r\n[webform_submission:values:primary_household_member_display]\r\n\r\n<div style=\"padding: 10px; background-color: #eeeeee;\">\r\n<h3>Full application:</h3>\r\n<hr>\r\n[webform_submission:values:html]\r\n</div>"
+      tags: 'drupal webform [webform_submission:values:computed_tags_member_2]'
+      priority: normal
+      status: new
+      recipient: ''
+      group_id: '27146129932439'
+      assignee_id: ''
+      type: incident
+      collaborators: ''
+      custom_fields: "27985303578775: ['[webform_submission:values:date_of_birth_member_2:Y]-[webform_submission:values:date_of_birth_member_2:m]-[webform_submission:values:date_of_birth_member_2:d]', 'date_of_birth_member_2']\r\n27985321767319: ['[webform_submission:values:has_hop_card_2]', 'has_hop_card_2']\r\n27985342383639: ['[webform_submission:values:hop_card_number_2]', 'hop_card_number_2']\r\n29730647639063: ['[webform_submission:values:computed_card_amount_2]', 'computed_card_amount_2']\r\n"
+      ticket_id_field: request_ticket_id
+      ticket_fork_field: ''
+      ticket_form_id: '26628122071575'
+      child_incident: 1
+      parent_ticket_id_field: parent_ticket_id
+      is_child_incident: 1
+  zendesk_new_request_household_member_3:
+    id: zendesk
+    handler_id: zendesk_new_request_household_member_3
+    label: 'Zendesk new request - Household - member 3'
+    notes: ''
+    status: true
+    conditions:
+      enabled:
+        ':input[name="apply_wallet_package"]':
+          value: wallet_option_3
+        ':input[name="support_agent_use_only[test_submission]"]':
+          unchecked: true
         ':input[name="apply_household_size"]':
           value:
             greater_equal: '3'
-        ':input[name="support_agent_use_only[test_submission]"]':
-          unchecked: true
-    weight: 4
+    weight: -45
     settings:
-      requester_name: computed_full_name
+      requester_name: computed_primary_full_name
       requester_email: contact_email
       subject: 'Wallet Application - Member 3 - [webform_submission:values:first_name_3] [webform_submission:values:last_name_3]'
-      comment: "<h2>Wallet Application for Household Member 3</h2>\r\n\r\n[webform_submission:values:household_member_3_display]\r\n\r\n<h2>Primary Applicant</h2>\r\n\r\n[webform_submission:values:primary_household_member_display]\r\n\r\n<div style=\"padding: 10px; background-color: #eeeeee;\">\r\n<h3>Full application:</h3>\r\n<hr>\r\n[webform_submission:values:html]\r\n</div>"
-      tags: 'drupal webform [webform_submission:values:apply_wallet_package:raw] [webform_submission:values:has_hop_card_3:raw]'
+      comment: "<h2>Wallet Application for Household Member 3</h2>\r\n\r\n[webform_submission:values:household_member_3_display]\r\n\r\n<h2>Primary Applicant Information</h2>\r\n\r\n[webform_submission:values:primary_household_member_display]\r\n\r\n<div style=\"padding: 10px; background-color: #eeeeee;\">\r\n<h3>Full application:</h3>\r\n<hr>\r\n[webform_submission:values:html]\r\n</div>"
+      tags: 'drupal webform [webform_submission:values:computed_tags_member_3]'
       priority: normal
       status: new
       recipient: ''
@@ -1617,35 +1699,35 @@ handlers:
       assignee_id: ''
       type: incident
       collaborators: ''
-      custom_fields: "27985303578775: ['[webform_submission:values:date_of_birth_member_3:Y]-[webform_submission:values:date_of_birth_member_3:m]-[webform_submission:values:date_of_birth_member_3:d]', 'computed_date_of_birth_member_3']\r\n29284110563479: ['[webform_submission:values:apply_wallet_package]', 'apply_wallet_package']\r\n27985321767319: ['[webform_submission:values:has_hop_card_3]', 'has_hop_card_3']\r\n27985342383639: ['[webform_submission:values:hop_card_number_3]', 'hop_card_number_3']\r\n27985354792087: ['[webform_submission:values:computed_card_amount_3]', 'computed_card_amount_3']\r\n27773229365143: ['[webform_submission:values:contact_address_verifier:location_address] [webform_submission:values:contact_address_verifier:unit_number], [webform_submission:values:contact_address_verifier:location_city], [webform_submission:values:contact_address_verifier:location_state] [webform_submission:values:contact_address_verifier:location_zip]', 'contact_address_verifier']\r\n26253458420759: ['[webform_submission:values:organization_name]', 'organization_name']\r\n"
+      custom_fields: "27985303578775: ['[webform_submission:values:date_of_birth_member_3:Y]-[webform_submission:values:date_of_birth_member_3:m]-[webform_submission:values:date_of_birth_member_3:d]', 'date_of_birth_member_3']\r\n27985321767319: ['[webform_submission:values:has_hop_card_3]', 'has_hop_card_3']\r\n27985342383639: ['[webform_submission:values:hop_card_number_3]', 'hop_card_number_3']\r\n29730647639063: ['[webform_submission:values:computed_card_amount_3]', 'computed_card_amount_3']\r\n"
       ticket_id_field: request_ticket_id
       ticket_fork_field: ''
       ticket_form_id: '26628122071575'
       child_incident: 1
       parent_ticket_id_field: parent_ticket_id
       is_child_incident: 1
-  zendesk_new_request_household_applicant_4:
+  zendesk_new_request_household_member_4:
     id: zendesk
-    handler_id: zendesk_new_request_household_applicant_4
-    label: 'Zendesk new request - Household applicant #4'
+    handler_id: zendesk_new_request_household_member_4
+    label: 'Zendesk new request - Household - member 4'
     notes: ''
     status: true
     conditions:
       enabled:
         ':input[name="apply_wallet_package"]':
           value: wallet_option_3
+        ':input[name="support_agent_use_only[test_submission]"]':
+          unchecked: true
         ':input[name="apply_household_size"]':
           value:
             greater_equal: '4'
-        ':input[name="support_agent_use_only[test_submission]"]':
-          unchecked: true
-    weight: 5
+    weight: -44
     settings:
-      requester_name: computed_full_name
+      requester_name: computed_primary_full_name
       requester_email: contact_email
       subject: 'Wallet Application - Member 4 - [webform_submission:values:first_name_4] [webform_submission:values:last_name_4]'
-      comment: "<h2>Wallet Application for Household Member 4</h2>\r\n\r\n[webform_submission:values:household_member_4_display]\r\n\r\n<h2>Primary Applicant</h2>\r\n\r\n[webform_submission:values:primary_household_member_display]\r\n\r\n<div style=\"padding: 10px; background-color: #eeeeee;\">\r\n<h3>Full application:</h3>\r\n<hr>\r\n[webform_submission:values:html]\r\n</div>"
-      tags: 'drupal webform [webform_submission:values:apply_wallet_package:raw] [webform_submission:values:has_hop_card_4:raw]'
+      comment: "<h2>Wallet Application for Household Member 4</h2>\r\n\r\n[webform_submission:values:household_member_4_display]\r\n\r\n<h2>Primary Applicant Information</h2>\r\n\r\n[webform_submission:values:primary_household_member_display]\r\n\r\n<div style=\"padding: 10px; background-color: #eeeeee;\">\r\n<h3>Full application:</h3>\r\n<hr>\r\n[webform_submission:values:html]\r\n</div>"
+      tags: 'drupal webform [webform_submission:values:computed_tags_member_4]'
       priority: normal
       status: new
       recipient: ''
@@ -1653,53 +1735,17 @@ handlers:
       assignee_id: ''
       type: incident
       collaborators: ''
-      custom_fields: "27985303578775: ['[webform_submission:values:date_of_birth_member_4:Y]-[webform_submission:values:date_of_birth_member_4:m]-[webform_submission:values:date_of_birth_member_4:d]', 'computed_date_of_birth_member_4']\r\n29284110563479: ['[webform_submission:values:apply_wallet_package]', 'apply_wallet_package']\r\n27985321767319: ['[webform_submission:values:has_hop_card_4]', 'has_hop_card_4']\r\n27985342383639: ['[webform_submission:values:hop_card_number_4]', 'hop_card_number_4']\r\n27985354792087: ['[webform_submission:values:computed_card_amount_4]', 'computed_card_amount_4']\r\n27773229365143: ['[webform_submission:values:contact_address_verifier:location_address] [webform_submission:values:contact_address_verifier:unit_number], [webform_submission:values:contact_address_verifier:location_city], [webform_submission:values:contact_address_verifier:location_state] [webform_submission:values:contact_address_verifier:location_zip]', 'contact_address_verifier']\r\n26253458420759: ['[webform_submission:values:organization_name]', 'organization_name']\r\n"
+      custom_fields: "27985303578775: ['[webform_submission:values:date_of_birth_member_4:Y]-[webform_submission:values:date_of_birth_member_4:m]-[webform_submission:values:date_of_birth_member_4:d]', 'date_of_birth_member_4']\r\n27985321767319: ['[webform_submission:values:has_hop_card_4]', 'has_hop_card_4']\r\n27985342383639: ['[webform_submission:values:hop_card_number_4]', 'hop_card_number_4']\r\n29730647639063: ['[webform_submission:values:computed_card_amount_4]', 'computed_card_amount_4']\r\n"
       ticket_id_field: request_ticket_id
       ticket_fork_field: ''
       ticket_form_id: '26628122071575'
       child_incident: 1
       parent_ticket_id_field: parent_ticket_id
       is_child_incident: 1
-  zendesk_new_request_household_applicant_5:
+  test_zendesk_new_request_household_container_ticket:
     id: zendesk
-    handler_id: zendesk_new_request_household_applicant_5
-    label: 'Zendesk new request - Household applicant #5'
-    notes: ''
-    status: true
-    conditions:
-      enabled:
-        ':input[name="apply_wallet_package"]':
-          value: wallet_option_3
-        ':input[name="apply_household_size"]':
-          value:
-            greater_equal: '5'
-        ':input[name="support_agent_use_only[test_submission]"]':
-          unchecked: true
-    weight: 6
-    settings:
-      requester_name: computed_full_name
-      requester_email: contact_email
-      subject: 'Wallet Application - Member 5 - [webform_submission:values:first_name_5] [webform_submission:values:last_name_5]'
-      comment: "<h2>Wallet Application for Household Member 5</h2>\r\n\r\n[webform_submission:values:household_member_5_display]\r\n\r\n<h2>Primary Applicant</h2>\r\n\r\n[webform_submission:values:primary_household_member_display]\r\n\r\n<div style=\"padding: 10px; background-color: #eeeeee;\">\r\n<h3>Full application:</h3>\r\n<hr>\r\n[webform_submission:values:html]\r\n</div>"
-      tags: 'drupal webform [webform_submission:values:apply_wallet_package:raw] [webform_submission:values:has_hop_card_5:raw]'
-      priority: normal
-      status: new
-      recipient: ''
-      group_id: '27146129932439'
-      assignee_id: ''
-      type: incident
-      collaborators: ''
-      custom_fields: "27985303578775: ['[webform_submission:values:date_of_birth_member_5:Y]-[webform_submission:values:date_of_birth_member_5:m]-[webform_submission:values:date_of_birth_member_5:d]', 'computed_date_of_birth_member_5']\r\n29284110563479: ['[webform_submission:values:apply_wallet_package]', 'apply_wallet_package']\r\n27985321767319: ['[webform_submission:values:has_hop_card_5]', 'has_hop_card_5']\r\n27985342383639: ['[webform_submission:values:hop_card_number_5]', 'hop_card_number_5']\r\n27985354792087: ['[webform_submission:values:computed_card_amount_5]', 'computed_card_amount_5']\r\n27773229365143: ['[webform_submission:values:contact_address_verifier:location_address] [webform_submission:values:contact_address_verifier:unit_number], [webform_submission:values:contact_address_verifier:location_city], [webform_submission:values:contact_address_verifier:location_state] [webform_submission:values:contact_address_verifier:location_zip]', 'contact_address_verifier']\r\n26253458420759: ['[webform_submission:values:organization_name]', 'organization_name']\r\n"
-      ticket_id_field: request_ticket_id
-      ticket_fork_field: ''
-      ticket_form_id: '26628122071575'
-      child_incident: 1
-      parent_ticket_id_field: parent_ticket_id
-      is_child_incident: 1
-  test_zendesk_new_request_household_applicant_1:
-    id: zendesk
-    handler_id: test_zendesk_new_request_household_applicant_1
-    label: 'TEST: Zendesk new request - Household applicant #1'
+    handler_id: test_zendesk_new_request_household_container_ticket
+    label: 'TEST: Zendesk new request - Household - container ticket'
     notes: ''
     status: true
     conditions:
@@ -1708,13 +1754,13 @@ handlers:
           value: wallet_option_3
         ':input[name="support_agent_use_only[test_submission]"]':
           checked: true
-    weight: 7
+    weight: -42
     settings:
-      requester_name: computed_full_name
+      requester_name: computed_primary_full_name
       requester_email: contact_email
-      subject: 'Wallet Application - Primary - [webform_submission:values:contact_first_name] [webform_submission:values:contact_last_name]'
-      comment: "<h2>Primary Applicant Information</h2>\r\n\r\n[webform_submission:values:primary_household_member_display]\r\n\r\n<div style=\"padding: 10px; background-color: #eeeeee;\">\r\n<h3>Full application:</h3>\r\n<hr>\r\n[webform_submission:values:html]\r\n</div>"
-      tags: 'drupal webform [webform_submission:values:apply_wallet_package:raw] [webform_submission:values:computed_hop_card_type:raw]'
+      subject: '[webform_submission:values:computed_household_container_subject]'
+      comment: '[webform_submission:values:html]'
+      tags: 'drupal webform developer_test [webform_submission:values:computed_tags_household_container]'
       priority: normal
       status: new
       recipient: ''
@@ -1722,17 +1768,17 @@ handlers:
       assignee_id: ''
       type: problem
       collaborators: ''
-      custom_fields: "27985303578775: ['[webform_submission:values:apply_date_of_birth:Y]-[webform_submission:values:apply_date_of_birth:m]-[webform_submission:values:apply_date_of_birth:d]', 'apply_date_of_birth']\r\n29284110563479: ['[webform_submission:values:apply_wallet_package]', 'apply_wallet_package']\r\n27985321767319: ['[webform_submission:values:computed_hop_card_type]', 'computed_hop_card_type']\r\n27985342383639: ['[webform_submission:values:apply_hop_card_number]', 'apply_hop_card_number']\r\n27985354792087: ['[webform_submission:values:computed_card_amount_1]', 'computed_card_amount_1']\r\n27773229365143: ['[webform_submission:values:contact_address_verifier:location_address] [webform_submission:values:contact_address_verifier:unit_number], [webform_submission:values:contact_address_verifier:location_city], [webform_submission:values:contact_address_verifier:location_state] [webform_submission:values:contact_address_verifier:location_zip]', 'contact_address_verifier']\r\n25600783638295: ['[webform_submission:values:contact_phone]', 'contact_phone']\r\n26253458420759: ['[webform_submission:values:organization_name]', 'organization_name']"
+      custom_fields: "26253458420759: ['[webform_submission:values:organization_name]', 'organization_name']\r\n29284110563479: ['[webform_submission:values:apply_wallet_package]', 'apply_wallet_package']\r\n27773229365143: ['[webform_submission:values:contact_address_verifier:location_address] [webform_submission:values:contact_address_verifier:unit_number], [webform_submission:values:contact_address_verifier:location_city], [webform_submission:values:contact_address_verifier:location_state] [webform_submission:values:contact_address_verifier:location_zip]', 'contact_address_verifier']\r\n25600783638295: ['[webform_submission:values:contact_phone]', 'contact_phone']\r\n"
       ticket_id_field: request_ticket_id
       ticket_fork_field: ''
       ticket_form_id: '26628122071575'
       child_incident: 1
       parent_ticket_id_field: parent_ticket_id
       is_child_incident: 0
-  test_zendesk_new_request_household_applicant_2:
+  zendesk_new_request_household_member_5:
     id: zendesk
-    handler_id: test_zendesk_new_request_household_applicant_2
-    label: 'TEST: Zendesk new request - Household applicant #2'
+    handler_id: zendesk_new_request_household_member_5
+    label: 'Zendesk new request - Household - member 5'
     notes: ''
     status: true
     conditions:
@@ -1740,122 +1786,50 @@ handlers:
         ':input[name="apply_wallet_package"]':
           value: wallet_option_3
         ':input[name="support_agent_use_only[test_submission]"]':
-          checked: true
-    weight: 8
-    settings:
-      requester_name: computed_full_name
-      requester_email: contact_email
-      subject: 'Wallet Application - Member 2 - [webform_submission:values:first_name_2] [webform_submission:values:last_name_2]'
-      comment: "<h2>Wallet Application for Household Member 2</h2>\r\n\r\n[webform_submission:values:household_member_2_display]\r\n\r\n<h2>Primary Applicant</h2>\r\n\r\n[webform_submission:values:primary_household_member_display]\r\n\r\n<div style=\"padding: 10px; background-color: #eeeeee;\">\r\n<h3>Full application:</h3>\r\n<hr>\r\n[webform_submission:values:html]\r\n</div>"
-      tags: 'drupal webform [webform_submission:values:apply_wallet_package:raw] [webform_submission:values:has_hop_card_2:raw]'
-      priority: normal
-      status: new
-      recipient: ''
-      group_id: '4549352062487'
-      assignee_id: ''
-      type: incident
-      collaborators: ''
-      custom_fields: "27985303578775: ['[webform_submission:values:date_of_birth_member_2:Y]-[webform_submission:values:date_of_birth_member_2:m]-[webform_submission:values:date_of_birth_member_2:d]', 'computed_date_of_birth_member_2']\r\n29284110563479: ['[webform_submission:values:apply_wallet_package]', 'apply_wallet_package']\r\n27985321767319: ['[webform_submission:values:has_hop_card_2]', 'has_hop_card_2']\r\n27985342383639: ['[webform_submission:values:hop_card_number_2]', 'hop_card_number_2']\r\n27985354792087: ['[webform_submission:values:computed_card_amount_2]', 'computed_card_amount_2']\r\n27773229365143: ['[webform_submission:values:contact_address_verifier:location_address] [webform_submission:values:contact_address_verifier:unit_number], [webform_submission:values:contact_address_verifier:location_city], [webform_submission:values:contact_address_verifier:location_state] [webform_submission:values:contact_address_verifier:location_zip]', 'contact_address_verifier']\r\n26253458420759: ['[webform_submission:values:organization_name]', 'organization_name']\r\n"
-      ticket_id_field: request_ticket_id
-      ticket_fork_field: ''
-      ticket_form_id: '26628122071575'
-      child_incident: 1
-      parent_ticket_id_field: parent_ticket_id
-      is_child_incident: 1
-  test_zendesk_new_request_household_applicant_3:
-    id: zendesk
-    handler_id: test_zendesk_new_request_household_applicant_3
-    label: 'TEST: Zendesk new request - Household applicant #3'
-    notes: ''
-    status: true
-    conditions:
-      enabled:
-        ':input[name="apply_wallet_package"]':
-          value: wallet_option_3
-        ':input[name="apply_household_size"]':
-          value:
-            greater_equal: '3'
-        ':input[name="support_agent_use_only[test_submission]"]':
-          checked: true
-    weight: 9
-    settings:
-      requester_name: computed_full_name
-      requester_email: contact_email
-      subject: 'Wallet Application - Member 3 - [webform_submission:values:first_name_3] [webform_submission:values:last_name_3]'
-      comment: "<h2>Wallet Application for Household Member 3</h2>\r\n\r\n[webform_submission:values:household_member_3_display]\r\n\r\n<h2>Primary Applicant</h2>\r\n\r\n[webform_submission:values:primary_household_member_display]\r\n\r\n<div style=\"padding: 10px; background-color: #eeeeee;\">\r\n<h3>Full application:</h3>\r\n<hr>\r\n[webform_submission:values:html]\r\n</div>"
-      tags: 'drupal webform [webform_submission:values:apply_wallet_package:raw] [webform_submission:values:has_hop_card_3:raw]'
-      priority: normal
-      status: new
-      recipient: ''
-      group_id: '4549352062487'
-      assignee_id: ''
-      type: incident
-      collaborators: ''
-      custom_fields: "27985303578775: ['[webform_submission:values:date_of_birth_member_3:Y]-[webform_submission:values:date_of_birth_member_3:m]-[webform_submission:values:date_of_birth_member_3:d]', 'computed_date_of_birth_member_3']\r\n29284110563479: ['[webform_submission:values:apply_wallet_package]', 'apply_wallet_package']\r\n27985321767319: ['[webform_submission:values:has_hop_card_3]', 'has_hop_card_3']\r\n27985342383639: ['[webform_submission:values:hop_card_number_3]', 'hop_card_number_3']\r\n27985354792087: ['[webform_submission:values:computed_card_amount_3]', 'computed_card_amount_3']\r\n27773229365143: ['[webform_submission:values:contact_address_verifier:location_address] [webform_submission:values:contact_address_verifier:unit_number], [webform_submission:values:contact_address_verifier:location_city], [webform_submission:values:contact_address_verifier:location_state] [webform_submission:values:contact_address_verifier:location_zip]', 'contact_address_verifier']\r\n26253458420759: ['[webform_submission:values:organization_name]', 'organization_name']\r\n"
-      ticket_id_field: request_ticket_id
-      ticket_fork_field: ''
-      ticket_form_id: '26628122071575'
-      child_incident: 1
-      parent_ticket_id_field: parent_ticket_id
-      is_child_incident: 1
-  test_zendesk_new_request_household_applicant_4:
-    id: zendesk
-    handler_id: test_zendesk_new_request_household_applicant_4
-    label: 'TEST: Zendesk new request - Household applicant #4'
-    notes: ''
-    status: true
-    conditions:
-      enabled:
-        ':input[name="apply_wallet_package"]':
-          value: wallet_option_3
-        ':input[name="apply_household_size"]':
-          value:
-            greater_equal: '4'
-        ':input[name="support_agent_use_only[test_submission]"]':
-          checked: true
-    weight: 10
-    settings:
-      requester_name: computed_full_name
-      requester_email: contact_email
-      subject: 'Wallet Application - Member 4 - [webform_submission:values:first_name_4] [webform_submission:values:last_name_4]'
-      comment: "<h2>Wallet Application for Household Member 4</h2>\r\n\r\n[webform_submission:values:household_member_4_display]\r\n\r\n<h2>Primary Applicant</h2>\r\n\r\n[webform_submission:values:primary_household_member_display]\r\n\r\n<div style=\"padding: 10px; background-color: #eeeeee;\">\r\n<h3>Full application:</h3>\r\n<hr>\r\n[webform_submission:values:html]\r\n</div>"
-      tags: 'drupal webform [webform_submission:values:apply_wallet_package:raw] [webform_submission:values:has_hop_card_4:raw]'
-      priority: normal
-      status: new
-      recipient: ''
-      group_id: '4549352062487'
-      assignee_id: ''
-      type: incident
-      collaborators: ''
-      custom_fields: "27985303578775: ['[webform_submission:values:date_of_birth_member_4:Y]-[webform_submission:values:date_of_birth_member_4:m]-[webform_submission:values:date_of_birth_member_4:d]', 'computed_date_of_birth_member_4']\r\n29284110563479: ['[webform_submission:values:apply_wallet_package]', 'apply_wallet_package']\r\n27985321767319: ['[webform_submission:values:has_hop_card_4]', 'has_hop_card_4']\r\n27985342383639: ['[webform_submission:values:hop_card_number_4]', 'hop_card_number_4']\r\n27985354792087: ['[webform_submission:values:computed_card_amount_4]', 'computed_card_amount_4']\r\n27773229365143: ['[webform_submission:values:contact_address_verifier:location_address] [webform_submission:values:contact_address_verifier:unit_number], [webform_submission:values:contact_address_verifier:location_city], [webform_submission:values:contact_address_verifier:location_state] [webform_submission:values:contact_address_verifier:location_zip]', 'contact_address_verifier']\r\n26253458420759: ['[webform_submission:values:organization_name]', 'organization_name']\r\n"
-      ticket_id_field: request_ticket_id
-      ticket_fork_field: ''
-      ticket_form_id: '26628122071575'
-      child_incident: 1
-      parent_ticket_id_field: parent_ticket_id
-      is_child_incident: 1
-  test_zendesk_new_request_household_applicant_5:
-    id: zendesk
-    handler_id: test_zendesk_new_request_household_applicant_5
-    label: 'TEST: Zendesk new request - Household applicant #5'
-    notes: ''
-    status: true
-    conditions:
-      enabled:
-        ':input[name="apply_wallet_package"]':
-          value: wallet_option_3
+          unchecked: true
         ':input[name="apply_household_size"]':
           value:
             greater_equal: '5'
-        ':input[name="support_agent_use_only[test_submission]"]':
-          checked: true
-    weight: 11
+    weight: -43
     settings:
-      requester_name: computed_full_name
+      requester_name: computed_primary_full_name
       requester_email: contact_email
       subject: 'Wallet Application - Member 5 - [webform_submission:values:first_name_5] [webform_submission:values:last_name_5]'
-      comment: "<h2>Wallet Application for Household Member 5</h2>\r\n\r\n[webform_submission:values:household_member_5_display]\r\n\r\n<h2>Primary Applicant</h2>\r\n\r\n[webform_submission:values:primary_household_member_display]\r\n\r\n<div style=\"padding: 10px; background-color: #eeeeee;\">\r\n<h3>Full application:</h3>\r\n<hr>\r\n[webform_submission:values:html]\r\n</div>"
-      tags: 'drupal webform [webform_submission:values:apply_wallet_package:raw] [webform_submission:values:has_hop_card_5:raw]'
+      comment: "<h2>Wallet Application for Household Member 5</h2>\r\n\r\n[webform_submission:values:household_member_5_display]\r\n\r\n<h2>Primary Applicant Information</h2>\r\n\r\n[webform_submission:values:primary_household_member_display]\r\n\r\n<div style=\"padding: 10px; background-color: #eeeeee;\">\r\n<h3>Full application:</h3>\r\n<hr>\r\n[webform_submission:values:html]\r\n</div>"
+      tags: 'drupal webform [webform_submission:values:computed_tags_member_5]'
+      priority: normal
+      status: new
+      recipient: ''
+      group_id: '27146129932439'
+      assignee_id: ''
+      type: incident
+      collaborators: ''
+      custom_fields: "27985303578775: ['[webform_submission:values:date_of_birth_member_5:Y]-[webform_submission:values:date_of_birth_member_5:m]-[webform_submission:values:date_of_birth_member_5:d]', 'date_of_birth_member_5']\r\n27985321767319: ['[webform_submission:values:has_hop_card_5]', 'has_hop_card_4']\r\n27985342383639: ['[webform_submission:values:hop_card_number_5]', 'hop_card_number_5']\r\n29730647639063: ['[webform_submission:values:computed_card_amount_5]', 'computed_card_amount_5']\r\n"
+      ticket_id_field: request_ticket_id
+      ticket_fork_field: ''
+      ticket_form_id: '26628122071575'
+      child_incident: 1
+      parent_ticket_id_field: parent_ticket_id
+      is_child_incident: 1
+  test_zendesk_new_request_household_member_1:
+    id: zendesk
+    handler_id: test_zendesk_new_request_household_member_1
+    label: 'TEST: Zendesk new request - Household - member 1'
+    notes: ''
+    status: true
+    conditions:
+      enabled:
+        ':input[name="apply_wallet_package"]':
+          value: wallet_option_3
+        ':input[name="support_agent_use_only[test_submission]"]':
+          checked: true
+    weight: -41
+    settings:
+      requester_name: computed_primary_full_name
+      requester_email: contact_email
+      subject: 'Wallet Application - Member 1 - [webform_submission:values:contact_first_name] [webform_submission:values:contact_last_name]'
+      comment: "<h2>Primary Applicant Information</h2>\r\n\r\n[webform_submission:values:primary_household_member_display]\r\n\r\n<div style=\"padding: 10px; background-color: #eeeeee;\">\r\n<h3>Full application:</h3>\r\n<hr>\r\n[webform_submission:values:html]\r\n</div>"
+      tags: 'drupal webform developer_test [webform_submission:values:computed_tags_member_1]'
       priority: normal
       status: new
       recipient: ''
@@ -1863,7 +1837,148 @@ handlers:
       assignee_id: ''
       type: incident
       collaborators: ''
-      custom_fields: "27985303578775: ['[webform_submission:values:date_of_birth_member_5:Y]-[webform_submission:values:date_of_birth_member_5:m]-[webform_submission:values:date_of_birth_member_5:d]', 'computed_date_of_birth_member_5']\r\n29284110563479: ['[webform_submission:values:apply_wallet_package]', 'apply_wallet_package']\r\n27985321767319: ['[webform_submission:values:has_hop_card_5]', 'has_hop_card_5']\r\n27985342383639: ['[webform_submission:values:hop_card_number_5]', 'hop_card_number_5']\r\n27985354792087: ['[webform_submission:values:computed_card_amount_5]', 'computed_card_amount_5']\r\n27773229365143: ['[webform_submission:values:contact_address_verifier:location_address] [webform_submission:values:contact_address_verifier:unit_number], [webform_submission:values:contact_address_verifier:location_city], [webform_submission:values:contact_address_verifier:location_state] [webform_submission:values:contact_address_verifier:location_zip]', 'contact_address_verifier']\r\n26253458420759: ['[webform_submission:values:organization_name]', 'organization_name']\r\n"
+      custom_fields: "27985303578775: ['[webform_submission:values:apply_date_of_birth:Y]-[webform_submission:values:apply_date_of_birth:m]-[webform_submission:values:apply_date_of_birth:d]', 'apply_date_of_birth']\r\n27985321767319: ['[webform_submission:values:computed_hop_card_type]', 'computed_hop_card_type']\r\n27985342383639: ['[webform_submission:values:computed_hop_card_number]', 'apply_hop_card_number']\r\n29730647639063: ['[webform_submission:values:computed_card_amount_1]', 'computed_card_amount_1']\r\n"
+      ticket_id_field: request_ticket_id
+      ticket_fork_field: ''
+      ticket_form_id: '26628122071575'
+      child_incident: 1
+      parent_ticket_id_field: parent_ticket_id
+      is_child_incident: 1
+  test_zendesk_new_request_household_member_4:
+    id: zendesk
+    handler_id: test_zendesk_new_request_household_member_4
+    label: 'TEST: Zendesk new request - Household - member 4'
+    notes: ''
+    status: true
+    conditions:
+      enabled:
+        ':input[name="apply_wallet_package"]':
+          value: wallet_option_3
+        ':input[name="support_agent_use_only[test_submission]"]':
+          checked: true
+        ':input[name="apply_household_size"]':
+          value:
+            greater_equal: '4'
+    weight: -38
+    settings:
+      requester_name: computed_primary_full_name
+      requester_email: contact_email
+      subject: 'Wallet Application - Member 4 - [webform_submission:values:first_name_4] [webform_submission:values:last_name_4]'
+      comment: "<h2>Wallet Application for Household Member 4</h2>\r\n\r\n[webform_submission:values:household_member_4_display]\r\n\r\n<h2>Primary Applicant Information</h2>\r\n\r\n[webform_submission:values:primary_household_member_display]\r\n\r\n<div style=\"padding: 10px; background-color: #eeeeee;\">\r\n<h3>Full application:</h3>\r\n<hr>\r\n[webform_submission:values:html]\r\n</div>"
+      tags: 'drupal webform developer_test [webform_submission:values:computed_tags_member_4]'
+      priority: normal
+      status: new
+      recipient: ''
+      group_id: '4549352062487'
+      assignee_id: ''
+      type: incident
+      collaborators: ''
+      custom_fields: "27985303578775: ['[webform_submission:values:date_of_birth_member_4:Y]-[webform_submission:values:date_of_birth_member_4:m]-[webform_submission:values:date_of_birth_member_4:d]', 'date_of_birth_member_4']\r\n27985321767319: ['[webform_submission:values:has_hop_card_4]', 'has_hop_card_4']\r\n27985342383639: ['[webform_submission:values:hop_card_number_4]', 'hop_card_number_4']\r\n29730647639063: ['[webform_submission:values:computed_card_amount_4]', 'computed_card_amount_4']\r\n"
+      ticket_id_field: request_ticket_id
+      ticket_fork_field: ''
+      ticket_form_id: '26628122071575'
+      child_incident: 1
+      parent_ticket_id_field: parent_ticket_id
+      is_child_incident: 1
+  test_zendesk_new_request_household_member_2:
+    id: zendesk
+    handler_id: test_zendesk_new_request_household_member_2
+    label: 'TEST: Zendesk new request - Household - member 2'
+    notes: ''
+    status: true
+    conditions:
+      enabled:
+        ':input[name="apply_wallet_package"]':
+          value: wallet_option_3
+        ':input[name="support_agent_use_only[test_submission]"]':
+          checked: true
+    weight: -40
+    settings:
+      requester_name: computed_primary_full_name
+      requester_email: contact_email
+      subject: 'Wallet Application - Member 2 - [webform_submission:values:first_name_2] [webform_submission:values:last_name_2]'
+      comment: "<h2>Wallet Application for Household Member 2</h2>\r\n\r\n[webform_submission:values:household_member_2_display]\r\n\r\n<h2>Primary Applicant Information</h2>\r\n\r\n[webform_submission:values:primary_household_member_display]\r\n\r\n<div style=\"padding: 10px; background-color: #eeeeee;\">\r\n<h3>Full application:</h3>\r\n<hr>\r\n[webform_submission:values:html]\r\n</div>"
+      tags: 'drupal webform developer_test [webform_submission:values:computed_tags_member_2]'
+      priority: normal
+      status: new
+      recipient: ''
+      group_id: '4549352062487'
+      assignee_id: ''
+      type: incident
+      collaborators: ''
+      custom_fields: "27985303578775: ['[webform_submission:values:date_of_birth_member_2:Y]-[webform_submission:values:date_of_birth_member_2:m]-[webform_submission:values:date_of_birth_member_2:d]', 'date_of_birth_member_2']\r\n27985321767319: ['[webform_submission:values:has_hop_card_2]', 'has_hop_card_2']\r\n27985342383639: ['[webform_submission:values:hop_card_number_2]', 'hop_card_number_2']\r\n29730647639063: ['[webform_submission:values:computed_card_amount_2]', 'computed_card_amount_2']\r\n"
+      ticket_id_field: request_ticket_id
+      ticket_fork_field: ''
+      ticket_form_id: '26628122071575'
+      child_incident: 1
+      parent_ticket_id_field: parent_ticket_id
+      is_child_incident: 1
+  test_zendesk_new_request_household_member_3:
+    id: zendesk
+    handler_id: test_zendesk_new_request_household_member_3
+    label: 'TEST: Zendesk new request - Household - member 3'
+    notes: ''
+    status: true
+    conditions:
+      enabled:
+        ':input[name="apply_wallet_package"]':
+          value: wallet_option_3
+        ':input[name="support_agent_use_only[test_submission]"]':
+          checked: true
+        ':input[name="apply_household_size"]':
+          value:
+            greater_equal: '3'
+    weight: -39
+    settings:
+      requester_name: computed_primary_full_name
+      requester_email: contact_email
+      subject: 'Wallet Application - Member 3 - [webform_submission:values:first_name_3] [webform_submission:values:last_name_3]'
+      comment: "<h2>Wallet Application for Household Member 3</h2>\r\n\r\n[webform_submission:values:household_member_3_display]\r\n\r\n<h2>Primary Applicant Information</h2>\r\n\r\n[webform_submission:values:primary_household_member_display]\r\n\r\n<div style=\"padding: 10px; background-color: #eeeeee;\">\r\n<h3>Full application:</h3>\r\n<hr>\r\n[webform_submission:values:html]\r\n</div>"
+      tags: 'drupal webform developer_test [webform_submission:values:computed_tags_member_3]'
+      priority: normal
+      status: new
+      recipient: ''
+      group_id: '4549352062487'
+      assignee_id: ''
+      type: incident
+      collaborators: ''
+      custom_fields: "27985303578775: ['[webform_submission:values:date_of_birth_member_3:Y]-[webform_submission:values:date_of_birth_member_3:m]-[webform_submission:values:date_of_birth_member_3:d]', 'date_of_birth_member_3']\r\n27985321767319: ['[webform_submission:values:has_hop_card_3]', 'has_hop_card_3']\r\n27985342383639: ['[webform_submission:values:hop_card_number_3]', 'hop_card_number_3']\r\n29730647639063: ['[webform_submission:values:computed_card_amount_3]', 'computed_card_amount_3']\r\n"
+      ticket_id_field: request_ticket_id
+      ticket_fork_field: ''
+      ticket_form_id: '26628122071575'
+      child_incident: 1
+      parent_ticket_id_field: parent_ticket_id
+      is_child_incident: 1
+  test_zendesk_new_request_household_member_5:
+    id: zendesk
+    handler_id: test_zendesk_new_request_household_member_5
+    label: 'TEST: Zendesk new request - Household - member 5'
+    notes: ''
+    status: true
+    conditions:
+      enabled:
+        ':input[name="apply_wallet_package"]':
+          value: wallet_option_3
+        ':input[name="support_agent_use_only[test_submission]"]':
+          checked: true
+        ':input[name="apply_household_size"]':
+          value:
+            greater_equal: '4'
+    weight: 13
+    settings:
+      requester_name: computed_primary_full_name
+      requester_email: contact_email
+      subject: 'Wallet Application - Member 5 - [webform_submission:values:first_name_5] [webform_submission:values:last_name_5]'
+      comment: "<h2>Wallet Application for Household Member 5</h2>\r\n\r\n[webform_submission:values:household_member_5_display]\r\n\r\n<h2>Primary Applicant Information</h2>\r\n\r\n[webform_submission:values:primary_household_member_display]\r\n\r\n<div style=\"padding: 10px; background-color: #eeeeee;\">\r\n<h3>Full application:</h3>\r\n<hr>\r\n[webform_submission:values:html]\r\n</div>"
+      tags: 'drupal webform developer_test [webform_submission:values:computed_tags_member_5]'
+      priority: normal
+      status: new
+      recipient: ''
+      group_id: '4549352062487'
+      assignee_id: ''
+      type: incident
+      collaborators: ''
+      custom_fields: "27985303578775: ['[webform_submission:values:date_of_birth_member_5:Y]-[webform_submission:values:date_of_birth_member_5:m]-[webform_submission:values:date_of_birth_member_5:d]', 'date_of_birth_member_5']\r\n27985321767319: ['[webform_submission:values:has_hop_card_5]', 'has_hop_card_4']\r\n27985342383639: ['[webform_submission:values:hop_card_number_5]', 'hop_card_number_5']\r\n29730647639063: ['[webform_submission:values:computed_card_amount_5]', 'computed_card_amount_5']\r\n"
       ticket_id_field: request_ticket_id
       ticket_fork_field: ''
       ticket_form_id: '26628122071575'
