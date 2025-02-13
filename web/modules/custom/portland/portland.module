@@ -225,6 +225,164 @@ function portland_node_presave($node)
   if (strpos($current_path, '/cron') === 0  || $current_path == '/admin/config/system/cron') {
     $node->revision_log->value = 'Scheduled update';
   }
+
+  // Check if we need to send a GovDelivery bulletin email. Set a flag if 'send email' checkbox
+  // is checked and node is being published for the first time.
+  // Note: This process can't be done in one hook. In hook_node_presave() we can check for changed
+  // field values and modify a field value but the node hasn't been saved yet so it doesn't have a
+  // node ID or URL which is required to send the email. So that part will happen in
+  // hook_node_update() after it's saved.
+  if ($node->hasField("field_send_email") && $node->get("field_send_email")->value 
+      && $node->get('moderation_state')->getString() == "published"
+      && ($node->isNew() || $node->original->get('moderation_state')->getString() != "published")
+      ) {
+    // Reset send email checkbox
+    // $node->set('field_send_email', 0);
+
+    // Set a flag for this request so that we can continue in portland_node_update()
+    $_REQUEST['send_govdelivery_email'] = TRUE;
+  }
+}
+
+/**
+ * Implements hook_node_update().
+ */
+function portland_node_update($node)
+{
+  if (isset($_REQUEST['send_govdelivery_email']) && $_REQUEST['send_govdelivery_email']) {
+    _add_node_to_govdelivery_queue($node);
+  }
+}
+
+/**
+ * Add node to GovDelivery bulletin emails.
+ */
+function _add_node_to_govdelivery_queue($node)
+{
+  $gid = $node->get("field_display_groups")->first()->getValue()['target_id'];
+  $group = \Drupal::entityTypeManager()->getStorage('group')->load($gid);
+  $group_name = $group->label();
+
+  // Check if there is a custom GovDelivery topic code set for the group
+  $group_topic_code = $group->get("field_govdelivery_topic_code")->value;
+  $use_custom_newsletter = false;
+  if ($group_topic_code != null) {
+    $type = $node->get("field_" . $node->bundle() . "_type")->getString();
+    $enable_for_types = $group->get("field_enable_for_" . $node->bundle() . "_types")->getString();
+    $enable_for_types = explode(",", $enable_for_types);
+    if (in_array($type, $enable_for_types)) {
+      $use_custom_newsletter = true;
+    }
+    $only_custom_newsletter = $group->get("field_only_custom_newsletter")->value == true;
+  }
+  
+  if (!$use_custom_newsletter || !$only_custom_newsletter) {
+    // Get the GovDelivery topic code from the group's associated service area or council district.
+    // Look in parent group(s) if no service area or council district is associated with the current group.
+    if ($group->bundle() == "base_group") {
+      $field_name = "field_service_area";
+      $associated_taxonomy_name = "service area";
+    } elseif ($group->bundle() == "elected_official") {
+      $field_name = "field_council_district";
+      $associated_taxonomy_name = "council district";
+    }
+    try {
+      $tid = $group->get($field_name)->getValue()[0]['target_id'];
+      while ($tid == null) {
+        $gid = $group->get("field_parent_group")->getValue()[0]['target_id'];
+        if ($gid == null && !$use_custom_newsletter) {
+          throw new \Exception("GovDelivery email not sent. There is no $associated_taxonomy_name associated with this entity's group or parent group(s).");
+        }
+        $group = \Drupal::entityTypeManager()->getStorage('group')->load($gid);
+        $tid = $group->get($field_name)->getValue()[0]['target_id'];
+      }
+      $associated_taxonomy = \Drupal::entityTypeManager()->getStorage('taxonomy_term')->load($tid);
+      $topic_code = $associated_taxonomy->get("field_govdelivery_topic_code")->value;
+      if ($topic_code == null && !$use_custom_newsletter) {
+        throw new \Exception("GovDelivery email not sent. There is no GovDelivery topic code assigned to the $associated_taxonomy_name associated with this entity's group or parent group(s).");
+      }
+    } catch (\Exception $e) {
+      if (!$use_custom_newsletter) {
+        \Drupal::messenger()->addMessage($e->getMessage(), 'warning');
+        return;
+      } elseif (!$only_custom_newsletter) {
+        $topic_code = null;
+      }
+    }
+  }
+  
+  if ($use_custom_newsletter) {
+    if ($only_custom_newsletter || $topic_code == null) {
+      $topic_code = $group_topic_code;
+    } else {
+      // Combine the service area/council district topic code with the custom group topic code
+      $topic_code = $topic_code . ", " . $group_topic_code;
+    }
+  }
+
+  // Build the email content
+  $body = sprintf('<p class="groupHeading">%s %s</p>', $group_name, ucfirst($node->bundle()));
+  $body .= sprintf('<h2>%s</h2>', $node->getTitle());
+  
+  // If the node is an event, render the group date twig template and include the output in the email body
+  if ($node->bundle() == 'event') {
+    $twig = \Drupal::service('twig');
+    $template = 'themes/custom/cloudy/templates/field/field-group-html-element--group-date--content.html.twig';
+    
+    $variables = [
+      'element' => [
+        'field_display_date' => [''],
+        'field_display_date_toggle' => [0],
+        'field_start_date' => $node->get('field_start_date')->view('default'),
+        'field_end_date' => $node->get('field_end_date')->view('default'),
+        'field_start_time' => $node->get('field_start_time')->view('default'),
+        'field_end_time' => $node->get('field_end_time')->view('default'),
+      ],
+    ];
+    $group_date_output = trim($twig->render($template, $variables));
+    $body .= sprintf('<p>%s</p>', $group_date_output);
+  }
+  
+  $body .= sprintf('<p>%s</p>', $node->get("field_summary")->value);
+  $body .= sprintf('<p><a href="%s">Read more</a></p>', $node->toUrl()->setAbsolute()->toString());
+  $body .= "
+    <style>
+      .groupHeading {
+        margin-bottom: -1rem;
+        font-size: .9rem;
+        text-transform: uppercase;
+        color: #666;
+      }
+    </style>";
+  
+  // $topic_code can be a comma-delimited list, so send a separate email for each topic
+  // (If multiple topics are specified in the same email, the email won't use the correct
+  // header and footer configured for the topics.)
+  $topics = explode(",", $topic_code);
+  foreach ($topics as $topic) {
+    $topic = trim($topic);
+    
+    // Add an email to the GovDelivery queue
+    \Drupal::service('govdelivery_bulletins.add_bulletin_to_queue')
+      ->setFlag('dedupe', TRUE)  // Optional
+      ->setQueueUid($node->id() . "_" . $topic) // Optional
+      ->setSubject( sprintf("%s %s: %s", $group_name, ucfirst($node->bundle()), $node->getTitle()) )
+      ->setBody($body)
+      // ->setFromAddress('portlandOR_stage@public.govdelivery.com')
+      // ->setHeader("Some header text for the message.")  // Optional
+      // ->setFooter("Some footer text for the message.")  // Optional
+      // ->addCategory('sales')  // Optional
+      // ->addCategory('emergency')  // Optional
+      ->addTopic($topic)  // Optional
+      ->setXmlBool('click_tracking', TRUE)  // Optional
+      ->setXmlBool('open_tracking', TRUE)  // Optional
+      // ->setXmlBool('publish_rss', FALSE)  // Optional
+      // ->setXmlBool('share_content_enabled', FALSE)  // Optional
+      // ->setXmlBool('urgent', FALSE)  // Optional
+      ->addToQueueAndReset();
+  }
+  
+  \Drupal::messenger()->addMessage('GovDelivery email has been queued for delivery.');
 }
 
 /**
@@ -554,6 +712,15 @@ function portland_form_alter(&$form, &$form_state, $form_id)
   $form['#attributes']['novalidate'] = '';
   // TOOD: remove this once something similar is included in core, or the Drupal community
   // decides how it wants to handle accessible and usable validation.
+
+  // Form fields to move to the footer group
+  $footer_fields = ['field_send_email'];
+  foreach ($footer_fields as $field_name) {
+    if (array_key_exists($field_name, $form)) {
+      $form[$field_name]['#group'] = 'footer';
+    }
+  }
+  
 }
 
 /**
@@ -793,11 +960,25 @@ function _validate_group_group_path(&$form, FormStateInterface $form_state)
   }
 }
 
+
 /**
  * Implement hook_cron()
- * Retrieve a view and send it to powr@portlandoregon.gov
  */
 function portland_cron()
+{
+  // Send content notification email to powr@portlandoregon.gov
+  _send_content_email();
+
+  // Send queued GovDelivery emails
+  _process_govdelivery_queue();
+}
+
+
+/**
+ * Helper function to send content notification email.
+ * Retrieve a view and send it to powr@portlandoregon.gov
+ */
+function _send_content_email()
 {
   // In each cron run after 12pm, check if we've sent the content update summary email today.
   $hour = (int)(date('G')); // 0 to 23
@@ -861,6 +1042,17 @@ function portland_cron()
       \Drupal::state()->set('portland.last_daily_email_sent', date('m/d/Y'));
     }
   }
+}
+
+
+/**
+ * Helper function to send any queued GovDelivery email notifications
+ */
+function _process_govdelivery_queue()
+{
+  $queue_worker = \Drupal::service('plugin.manager.queue_worker');
+  $bulletinQueue_worker = $queue_worker->createInstance('govdelivery_bulletins');
+  $bulletinQueue_worker->processQueue();
 }
 
 
@@ -1297,7 +1489,7 @@ function portland_user_presave($user) {
 }
 
 /**
- * Implements hook_user_presave().
+ * Implements hook_form_user_form_alter().
  */
 function portland_form_user_form_alter(&$form, FormStateInterface $form_state) {
   // Hide the SAML notice message and SAML link to change password
