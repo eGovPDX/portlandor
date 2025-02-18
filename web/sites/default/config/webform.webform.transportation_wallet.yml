@@ -181,9 +181,19 @@ elements: |-
               ':input[name="apply_wallet_package"]':
                 value: wallet_option_1
               ':input[name="apply_current_hop_card"]':
-                value: adult_hop_card
+                value: 27985321767319_adult_hop_card
           '#admin_title': 'Next Steps'
           '#markup': '<div class="alert alert--info next-steps"><h2>Next Steps</h2><p>In order to receive an Option 1 card, you must have an Honored Citizen Hop card through TriMet. Please follow the below steps to complete your Wallet registration.</p><ol><li>Continue filling out this form so that we have your information.</li><li>Apply for your <a href="https://trimet.org/income/application.htm" target="_blank">Honored Citizen Hop card</a> as soon as possible.</li><li>Once you have received your Honored Citizen Hop card, email <a href="mailto:wallet@portlandoregon.gov">wallet@portlandoregon.gov</a> with your 16-digit card number so we can process your annual pass.</li></ol></div>'
+        markup_next_steps_honored_citizen_option_1:
+          '#type': webform_markup
+          '#states':
+            visible:
+              ':input[name="apply_hop_card_needed"]':
+                value: personalized_honored_citizen_hop_card
+              ':input[name="apply_has_hop_card"]':
+                value: 'No'
+          '#admin_title': 'Next Steps'
+          '#markup': '<div class="alert alert--info next-steps"><h2>Next Steps</h2><ol><li>Continue filling out this form so that we have your information.</li><li>Apply for your <a href="https://trimet.org/income/application.htm" target="_blank">Honored Citizen Hop card</a> as soon as possible.</li><li>Once you have received your Honored Citizen Hop card, email <a href="mailto:wallet@portlandoregon.gov">wallet@portlandoregon.gov</a> with your 16-digit card number so we can process your annual pass.</li></ol></div>'
         markup_next_steps_honored_citizen_option_2:
           '#type': webform_markup
           '#states':
@@ -675,7 +685,7 @@ elements: |-
     household_members_split:
       '#type': webform_computed_twig
       '#title': 'Household Members to Split'
-      '#display_on': form
+      '#display_on': none
       '#template': |
         {# NOTE: Need to account for household members who don't need a card or who are HC and get unlimited rides ($0) #}
         {% set split = 0 %}
@@ -692,7 +702,6 @@ elements: |-
 
         {{ split|number_format }}
       '#whitespace': trim
-      '#ajax': true
     computed_even_split_amount:
       '#type': webform_computed_twig
       '#title': 'Computed Even Split Amount'
@@ -806,11 +815,15 @@ elements: |-
             '#maxlength': 3
             '#size': 10
             '#states':
-              visible:
-                ':input[name="apply_hop_card_needed_opt_2_3"]':
-                  value: 27985321767319_adult_hop_card
-                ':input[name="apply_funds_split"]':
-                  '!value': 'Evenly among all members'
+              invisible:
+                - ':input[name="apply_hop_card_needed_opt_2_3"]':
+                    value: 27985321767319_honored_citizen_hop_card
+                - or
+                - ':input[name="apply_hop_card_needed_opt_2_3"]':
+                    value: personalized_honored_citizen_hop_card
+                - or
+                - ':input[name="apply_funds_split"]':
+                    value: 'Evenly among all members'
           markup_even_split_member_1:
             '#type': webform_markup
             '#states':
@@ -1020,13 +1033,13 @@ elements: |-
                 - ':input[name="apply_funds_split"]':
                     value: 'Custom split...'
                 - or
-                - ':input[name="has_hop_card_2"]':
+                - ':input[name="has_hop_card_4"]':
                     value: hop_card_not_needed
                 - or
-                - ':input[name="has_hop_card_2"]':
+                - ':input[name="has_hop_card_4"]':
                     value: 27985321767319_honored_citizen_hop_card
                 - or
-                - ':input[name="has_hop_card_2"]':
+                - ':input[name="has_hop_card_4"]':
                     value: personalized_honored_citizen_hop_card
             '#markup': '<p>$[webform_submission:values:computed_even_split_amount] will be put on this card.</p>'
           markup_hc_4:
@@ -1125,7 +1138,7 @@ elements: |-
             {% if members and data.apply_funds_split == "Evenly among all members" %}
               {{ data.computed_household_total_funds|number_format / members|number_format }}
             {% else %}
-              {{ data.funds_member_2 }}
+              {{ data.funds_member_1 }}
             {% endif %}
           {% endif %}
       computed_card_amount_2:
