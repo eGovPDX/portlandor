@@ -647,7 +647,7 @@ class ZendeskUpdateHandler extends WebformHandlerBase
       }
       // don't send empty assignee; get it from previous ticket
       if (!isset($request['assignee_id']) || $request['assignee_id'] == "") {
-        //$request['assignee_id'] = $ticket->assignee_id;
+        $request['assignee_id'] = $ticket->assignee_id;
       }
       // if tags not set, use previous value
       if (!isset($request['tags']) || $request['tags'] == "") {
