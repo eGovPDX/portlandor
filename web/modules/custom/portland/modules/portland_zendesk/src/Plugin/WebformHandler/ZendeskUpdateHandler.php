@@ -280,7 +280,7 @@ class ZendeskUpdateHandler extends WebformHandlerBase
     ];
     if(!empty($groups) ){
       $form['group_id']['#type'] = 'select';
-      $form['group_id']['#options'] = ['' => '- None/No Change -'] + $groups;
+      $form['group_id']['#options'] = ['' => '- No Change -'] + $groups;
       $form['group_id']['#description'] = $this->t('The group to which the ticket should be assigned. Set either Ticket Group or Ticket Assignee, but not both.');
     }
 
@@ -294,8 +294,8 @@ class ZendeskUpdateHandler extends WebformHandlerBase
       '#required' => false
     ];
     if(! empty($assignees) ){
-      $form['assignee_id']['#type'] = 'webform_select_other';
-      $form['assignee_id']['#options'] = ['' => '- None/No Change -'] + $assignees;
+      $form['assignee_id']['#type'] = 'select';
+      $form['assignee_id']['#options'] = ['' => '- No Change -'] + $assignees;
       $form['assignee_id']['#description'] = $this->t('The assignee to which the ticket should be assigned. Set either Ticket Group or Ticket Assignee, but not both. Typically tickets created by webforms should not be assigned to individual users, but tickets that are created as Solved must have an individual assignee. In this case, use the Portland.gov Support service account.');
     }
     else {
@@ -583,7 +583,7 @@ class ZendeskUpdateHandler extends WebformHandlerBase
             $element = $elements[$field_key];
             $element_plugin = $this->element_manager->getElementInstance($element);
             // If forking is enabled off of this field, we can assume it doesn't contain multiple values
-            $multiple = $field_key === $this->configuration['ticket_fork_field'] ? false : $element_plugin->hasMultipleValues($element);
+            $multiple = $element_plugin->hasMultipleValues($element);
             // Get fids from composite sub-elements.
             // Adapted from WebformSubmissionForm::getUploadedManagedFileIds
             if ($element_plugin instanceof \Drupal\webform\Plugin\WebformElement\WebformCompositeBase) {
@@ -645,7 +645,10 @@ class ZendeskUpdateHandler extends WebformHandlerBase
       if (!isset($request['group_id']) || $request['group_id'] == "") {
         $request['group_id'] = $ticket->group_id;
       }
-
+      // don't send empty assignee; get it from previous ticket
+      if (!isset($request['assignee_id']) || $request['assignee_id'] == "") {
+        //$request['assignee_id'] = $ticket->assignee_id;
+      }
       // if tags not set, use previous value
       if (!isset($request['tags']) || $request['tags'] == "") {
         $request['tags'] = $ticket->tags;
