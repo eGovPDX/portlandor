@@ -214,7 +214,7 @@ AddressVerifierView.prototype._setVerified = function (item, view = this) {
     view.$element.find('#location_lon').val(item.lon);
     view.$element.find('#location_x').val(item.x);
     view.$element.find('#location_y').val(item.y);
-    view.$element.find('#location_taxlot_id').val(item.taxlotId);
+    view.$element.find('#location_taxlot_id').val(item.taxlotId).trigger('change');
     // view.$element.find('#location_address_label').val(AddressVerifierModel.buildMailingLabel(item, view.$element));
     // view.$element.find('#mailing_label').html(AddressVerifierModel.buildMailingLabel(item, view.$element, true));
     // view.$element.find('#location_address_label_markup').removeClass('d-none');
