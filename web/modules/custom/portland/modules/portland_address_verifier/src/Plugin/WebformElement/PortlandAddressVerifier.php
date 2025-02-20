@@ -76,7 +76,7 @@ class PortlandAddressVerifier extends WebformCompositeBase {
     $lines = [];
     $address = "";
 
-    if ($value['location_verification_status'] == 'Verified') {
+    if ($value['location_verification_status'] == 'Verified' && array_key_exists('address_label', $value)) {
       $address = $value['address_label'];
       $address = str_replace("\r\n", "<br>", $address);
     } else {
@@ -118,7 +118,9 @@ class PortlandAddressVerifier extends WebformCompositeBase {
   public function prepare(array &$element, WebformSubmissionInterface $webform_submission = NULL) {
     parent::prepare($element, $webform_submission);
 
-    $machine_name = "edit-" . $element['#webform_key'] . "--wrapper";
+    $key = isset($element['#webform_key']) ? $element['#webform_key'] : "";
+
+    $machine_name = "edit-" . $key . "--wrapper";
     $machine_name = str_replace("_", "-", $machine_name);
 
     $addressType = array_key_exists('#address_type', $element) && strtolower($element['#address_type']) == "any";
