@@ -8,9 +8,11 @@ dependencies:
     - field.storage.group.field_enable_public_notices
     - field.storage.group.field_enable_reports
     - field.storage.group.field_group_path
+    - field.storage.node.field_featured_media
     - field.storage.node.field_published_on
     - field.storage.node.field_summary
     - field.storage.node.field_updated_on
+    - image.style.featured_2_1_600w
     - search_api.index.full_index
     - system.menu.main
     - taxonomy.vocabulary.news_type
@@ -22,8 +24,10 @@ dependencies:
   module:
     - datetime
     - group
+    - media
     - search_api
     - user
+    - views_rss
 id: news_index
 label: News
 module: views
@@ -170,10 +174,10 @@ display:
             use_highlighting: false
             multi_type: separator
             multi_separator: ', '
-        uid:
-          id: uid
+        field_featured_media:
+          id: field_featured_media
           table: search_api_datasource_full_index_entity_node
-          field: uid
+          field: field_featured_media
           relationship: none
           group_type: group
           admin_label: ''
@@ -221,9 +225,12 @@ display:
           empty_zero: false
           hide_alter_empty: true
           click_sort_column: target_id
-          type: entity_reference_label
+          type: media_thumbnail
           settings:
-            link: false
+            image_link: ''
+            image_style: featured_2_1_600w
+            image_loading:
+              attribute: lazy
           group_column: target_id
           group_columns: {  }
           group_rows: true
@@ -242,81 +249,21 @@ display:
             multi_type: separator
             multi_separator: ', '
             display_methods:
-              user:
+              document:
                 display_method: label
                 view_mode: default
-        field_published_on:
-          id: field_published_on
-          table: search_api_datasource_full_index_entity_node
-          field: field_published_on
-          relationship: none
-          group_type: group
-          admin_label: ''
-          entity_type: node
-          plugin_id: search_api_field
-          label: ''
-          exclude: false
-          alter:
-            alter_text: false
-            text: ''
-            make_link: false
-            path: ''
-            absolute: false
-            external: false
-            replace_spaces: false
-            path_case: none
-            trim_whitespace: false
-            alt: ''
-            rel: ''
-            link_class: ''
-            prefix: ''
-            suffix: ''
-            target: ''
-            nl2br: false
-            max_length: 0
-            word_boundary: true
-            ellipsis: true
-            more_link: false
-            more_link_text: ''
-            more_link_path: ''
-            strip_tags: false
-            trim: false
-            preserve_tags: ''
-            html: false
-          element_type: ''
-          element_class: ''
-          element_label_type: ''
-          element_label_class: ''
-          element_label_colon: false
-          element_wrapper_type: ''
-          element_wrapper_class: ''
-          element_default_classes: true
-          empty: ''
-          hide_empty: false
-          empty_zero: false
-          hide_alter_empty: true
-          click_sort_column: value
-          type: datetime_default
-          settings:
-            timezone_override: ''
-            format_type: medium
-          group_column: value
-          group_columns: {  }
-          group_rows: true
-          delta_limit: 0
-          delta_offset: 0
-          delta_reversed: false
-          delta_first_last: false
-          multi_type: separator
-          separator: ', '
-          field_api_classes: false
-          field_rendering: true
-          fallback_handler: search_api
-          fallback_options:
-            link_to_item: false
-            use_highlighting: false
-            multi_type: separator
-            multi_separator: ', '
+              iframe_embed:
+                display_method: label
+                view_mode: default
+              image:
+                display_method: label
+                view_mode: default
+              map:
+                display_method: label
+                view_mode: default
+              video:
+                display_method: label
+                view_mode: default
         nid:
           id: nid
           table: search_api_datasource_full_index_entity_node
@@ -329,8 +276,8 @@ display:
           label: ''
           exclude: false
           alter:
-            alter_text: false
-            text: ''
+            alter_text: true
+            text: '/node/{{ nid }}'
             make_link: false
             path: ''
             absolute: false
@@ -400,6 +347,78 @@ display:
             format_plural_values:
               - '1'
               - '@count'
+        field_published_on:
+          id: field_published_on
+          table: search_api_datasource_full_index_entity_node
+          field: field_published_on
+          relationship: none
+          group_type: group
+          admin_label: ''
+          entity_type: node
+          plugin_id: search_api_field
+          label: ''
+          exclude: false
+          alter:
+            alter_text: false
+            text: ''
+            make_link: false
+            path: ''
+            absolute: false
+            external: false
+            replace_spaces: false
+            path_case: none
+            trim_whitespace: false
+            alt: ''
+            rel: ''
+            link_class: ''
+            prefix: ''
+            suffix: ''
+            target: ''
+            nl2br: false
+            max_length: 0
+            word_boundary: true
+            ellipsis: true
+            more_link: false
+            more_link_text: ''
+            more_link_path: ''
+            strip_tags: false
+            trim: false
+            preserve_tags: ''
+            html: false
+          element_type: ''
+          element_class: ''
+          element_label_type: ''
+          element_label_class: ''
+          element_label_colon: false
+          element_wrapper_type: ''
+          element_wrapper_class: ''
+          element_default_classes: true
+          empty: ''
+          hide_empty: false
+          empty_zero: false
+          hide_alter_empty: true
+          click_sort_column: value
+          type: datetime_default
+          settings:
+            timezone_override: ''
+            format_type: rfc822
+          group_column: value
+          group_columns: {  }
+          group_rows: true
+          delta_limit: 0
+          delta_offset: 0
+          delta_reversed: false
+          delta_first_last: false
+          multi_type: separator
+          separator: ', '
+          field_api_classes: false
+          field_rendering: true
+          fallback_handler: search_api
+          fallback_options:
+            link_to_item: false
+            use_highlighting: false
+            multi_type: separator
+            multi_separator: ', '
       pager:
         type: full
         options:
@@ -799,6 +818,7 @@ display:
         - 'user.node_grants:view'
         - user.permissions
       tags:
+        - 'config:field.storage.node.field_featured_media'
         - 'config:field.storage.node.field_published_on'
         - 'config:field.storage.node.field_summary'
         - 'config:search_api.index.full_index'
@@ -1126,6 +1146,7 @@ display:
         - 'user.node_grants:view'
         - user.permissions
       tags:
+        - 'config:field.storage.node.field_featured_media'
         - 'config:field.storage.node.field_published_on'
         - 'config:field.storage.node.field_summary'
         - 'config:search_api.index.full_index'
@@ -2561,17 +2582,47 @@ display:
         operator: AND
         groups:
           1: AND
-      row:
+      style:
         type: rss_fields
         options:
-          title_field: title
-          link_field: search_api_url
-          description_field: field_summary
-          creator_field: uid
-          date_field: field_published_on
-          guid_field_options:
-            guid_field: nid
-            guid_field_is_permalink: true
+          uses_fields: false
+          channel:
+            core:
+              views_rss_core:
+                description: ''
+                language: ''
+                category: ''
+                image: ''
+                copyright: ''
+                managingEditor: ''
+                webMaster: ''
+                generator: ''
+                docs: ''
+                cloud: ''
+                ttl: null
+                skipHours: ''
+                skipDays: ''
+          feed_settings:
+            absolute_paths: true
+            feed_in_links: false
+      row:
+        type: views_rss_fields
+        options:
+          item:
+            core:
+              views_rss_core:
+                title: title
+                link: search_api_url
+                description: field_summary
+                author: ''
+                category: ''
+                comments: ''
+                enclosure: field_featured_media
+                guid: nid
+                pubDate: field_published_on
+            content:
+              views_rss_core:
+                encoded: ''
       defaults:
         cache: true
         title: false
@@ -2611,6 +2662,7 @@ display:
         - 'user.node_grants:view'
         - user.permissions
       tags:
+        - 'config:field.storage.node.field_featured_media'
         - 'config:field.storage.node.field_published_on'
         - 'config:field.storage.node.field_summary'
         - 'config:search_api.index.full_index'
@@ -2626,17 +2678,47 @@ display:
         options:
           offset: 0
           items_per_page: 25
-      row:
+      style:
         type: rss_fields
         options:
-          title_field: title
-          link_field: search_api_url
-          description_field: field_summary
-          creator_field: uid
-          date_field: field_published_on
-          guid_field_options:
-            guid_field: nid
-            guid_field_is_permalink: true
+          uses_fields: false
+          channel:
+            core:
+              views_rss_core:
+                description: ''
+                language: ''
+                category: ''
+                image: ''
+                copyright: ''
+                managingEditor: ''
+                webMaster: ''
+                generator: ''
+                docs: ''
+                cloud: ''
+                ttl: null
+                skipHours: ''
+                skipDays: ''
+          feed_settings:
+            absolute_paths: true
+            feed_in_links: false
+      row:
+        type: views_rss_fields
+        options:
+          item:
+            core:
+              views_rss_core:
+                title: title
+                link: search_api_url
+                description: field_summary
+                author: ''
+                category: ''
+                comments: ''
+                enclosure: field_featured_media
+                guid: nid
+                pubDate: field_published_on
+            content:
+              views_rss_core:
+                encoded: ''
       defaults:
         cache: true
         fields: true
@@ -2673,6 +2755,7 @@ display:
         - 'user.node_grants:view'
         - user.permissions
       tags:
+        - 'config:field.storage.node.field_featured_media'
         - 'config:field.storage.node.field_published_on'
         - 'config:field.storage.node.field_summary'
         - 'config:search_api.index.full_index'
@@ -2922,17 +3005,47 @@ display:
         operator: AND
         groups:
           1: AND
-      row:
+      style:
         type: rss_fields
         options:
-          title_field: title
-          link_field: search_api_url
-          description_field: field_summary
-          creator_field: uid
-          date_field: field_published_on
-          guid_field_options:
-            guid_field: nid
-            guid_field_is_permalink: true
+          uses_fields: false
+          channel:
+            core:
+              views_rss_core:
+                description: ''
+                language: ''
+                category: ''
+                image: ''
+                copyright: ''
+                managingEditor: ''
+                webMaster: ''
+                generator: ''
+                docs: ''
+                cloud: ''
+                ttl: null
+                skipHours: ''
+                skipDays: ''
+          feed_settings:
+            absolute_paths: true
+            feed_in_links: false
+      row:
+        type: views_rss_fields
+        options:
+          item:
+            core:
+              views_rss_core:
+                title: title
+                link: search_api_url
+                description: field_summary
+                author: ''
+                category: ''
+                comments: ''
+                enclosure: field_featured_media
+                guid: nid
+                pubDate: field_published_on
+            content:
+              views_rss_core:
+                encoded: ''
       defaults:
         cache: true
         title: false
@@ -2972,6 +3085,7 @@ display:
         - 'user.node_grants:view'
         - user.permissions
       tags:
+        - 'config:field.storage.node.field_featured_media'
         - 'config:field.storage.node.field_published_on'
         - 'config:field.storage.node.field_summary'
         - 'config:search_api.index.full_index'
@@ -3221,17 +3335,47 @@ display:
         operator: AND
         groups:
           1: AND
-      row:
+      style:
         type: rss_fields
         options:
-          title_field: title
-          link_field: search_api_url
-          description_field: field_summary
-          creator_field: uid
-          date_field: field_published_on
-          guid_field_options:
-            guid_field: nid
-            guid_field_is_permalink: true
+          uses_fields: false
+          channel:
+            core:
+              views_rss_core:
+                description: ''
+                language: ''
+                category: ''
+                image: ''
+                copyright: ''
+                managingEditor: ''
+                webMaster: ''
+                generator: ''
+                docs: ''
+                cloud: ''
+                ttl: null
+                skipHours: ''
+                skipDays: ''
+          feed_settings:
+            absolute_paths: true
+            feed_in_links: false
+      row:
+        type: views_rss_fields
+        options:
+          item:
+            core:
+              views_rss_core:
+                title: title
+                link: search_api_url
+                description: field_summary
+                author: ''
+                category: ''
+                comments: ''
+                enclosure: field_featured_media
+                guid: nid
+                pubDate: field_published_on
+            content:
+              views_rss_core:
+                encoded: ''
       defaults:
         cache: true
         title: false
@@ -3271,6 +3415,7 @@ display:
         - 'user.node_grants:view'
         - user.permissions
       tags:
+        - 'config:field.storage.node.field_featured_media'
         - 'config:field.storage.node.field_published_on'
         - 'config:field.storage.node.field_summary'
         - 'config:search_api.index.full_index'
@@ -3520,17 +3665,47 @@ display:
         operator: AND
         groups:
           1: AND
-      row:
+      style:
         type: rss_fields
         options:
-          title_field: title
-          link_field: search_api_url
-          description_field: field_summary
-          creator_field: uid
-          date_field: field_published_on
-          guid_field_options:
-            guid_field: nid
-            guid_field_is_permalink: true
+          uses_fields: false
+          channel:
+            core:
+              views_rss_core:
+                description: ''
+                language: ''
+                category: ''
+                image: ''
+                copyright: ''
+                managingEditor: ''
+                webMaster: ''
+                generator: ''
+                docs: ''
+                cloud: ''
+                ttl: null
+                skipHours: ''
+                skipDays: ''
+          feed_settings:
+            absolute_paths: true
+            feed_in_links: false
+      row:
+        type: views_rss_fields
+        options:
+          item:
+            core:
+              views_rss_core:
+                title: title
+                link: search_api_url
+                description: field_summary
+                author: ''
+                category: ''
+                comments: ''
+                enclosure: field_featured_media
+                guid: nid
+                pubDate: field_published_on
+            content:
+              views_rss_core:
+                encoded: ''
       defaults:
         cache: true
         title: false
@@ -3570,6 +3745,7 @@ display:
         - 'user.node_grants:view'
         - user.permissions
       tags:
+        - 'config:field.storage.node.field_featured_media'
         - 'config:field.storage.node.field_published_on'
         - 'config:field.storage.node.field_summary'
         - 'config:search_api.index.full_index'
@@ -3589,17 +3765,47 @@ display:
         type: search_api_tag
         options: {  }
       arguments: {  }
-      row:
+      style:
         type: rss_fields
         options:
-          title_field: title
-          link_field: search_api_url
-          description_field: field_summary
-          creator_field: uid
-          date_field: field_published_on
-          guid_field_options:
-            guid_field: nid
-            guid_field_is_permalink: true
+          uses_fields: false
+          channel:
+            core:
+              views_rss_core:
+                description: ''
+                language: ''
+                category: ''
+                image: ''
+                copyright: ''
+                managingEditor: ''
+                webMaster: ''
+                generator: ''
+                docs: ''
+                cloud: ''
+                ttl: null
+                skipHours: ''
+                skipDays: ''
+          feed_settings:
+            absolute_paths: true
+            feed_in_links: false
+      row:
+        type: views_rss_fields
+        options:
+          item:
+            core:
+              views_rss_core:
+                title: title
+                link: search_api_url
+                description: field_summary
+                author: ''
+                category: ''
+                comments: ''
+                enclosure: field_featured_media
+                guid: nid
+                pubDate: field_published_on
+            content:
+              views_rss_core:
+                encoded: ''
       defaults:
         cache: false
         relationships: false
@@ -3647,6 +3853,7 @@ display:
         - 'user.node_grants:view'
         - user.permissions
       tags:
+        - 'config:field.storage.node.field_featured_media'
         - 'config:field.storage.node.field_published_on'
         - 'config:field.storage.node.field_summary'
         - 'config:search_api.index.full_index'
@@ -3922,6 +4129,8 @@ display:
         - 'config:facets.facet.news_group_blog_published_on_month'
         - 'config:facets.facet.news_group_blog_published_on_year'
         - 'config:facets.facet.news_group_blog_topics'
+        - 'config:field.storage.node.field_featured_media'
+        - 'config:field.storage.node.field_feeds_guid'
         - 'config:field.storage.node.field_published_on'
         - 'config:field.storage.node.field_summary'
         - 'config:field.storage.node.field_updated_on'
@@ -3972,6 +4181,8 @@ display:
         - 'config:facets.facet.news_group_news_published_on_year'
         - 'config:facets.facet.news_group_news_topics'
         - 'config:facets.facet.news_group_news_type'
+        - 'config:field.storage.node.field_featured_media'
+        - 'config:field.storage.node.field_feeds_guid'
         - 'config:field.storage.node.field_published_on'
         - 'config:field.storage.node.field_summary'
         - 'config:field.storage.node.field_updated_on'
@@ -4248,6 +4459,8 @@ display:
       tags:
         - 'config:facets.facet.news_group_press_releases_published_on_month'
         - 'config:facets.facet.news_group_press_releases_published_on_year'
+        - 'config:field.storage.node.field_featured_media'
+        - 'config:field.storage.node.field_feeds_guid'
         - 'config:field.storage.node.field_published_on'
         - 'config:field.storage.node.field_summary'
         - 'config:field.storage.node.field_updated_on'
@@ -4527,6 +4740,8 @@ display:
         - 'config:facets.facet.news_group_notices_published_on_year'
         - 'config:facets.facet.news_group_notices_type'
         - 'config:facets.facet.news_group_public_notice_type'
+        - 'config:field.storage.node.field_featured_media'
+        - 'config:field.storage.node.field_feeds_guid'
         - 'config:field.storage.node.field_published_on'
         - 'config:field.storage.node.field_summary'
         - 'config:field.storage.node.field_updated_on'
@@ -4803,6 +5018,8 @@ display:
       tags:
         - 'config:facets.facet.news_group_reports_published_on_month'
         - 'config:facets.facet.news_group_reports_published_on_year'
+        - 'config:field.storage.node.field_featured_media'
+        - 'config:field.storage.node.field_feeds_guid'
         - 'config:field.storage.node.field_published_on'
         - 'config:field.storage.node.field_summary'
         - 'config:field.storage.node.field_updated_on'
@@ -4871,6 +5088,8 @@ display:
         - 'config:facets.facet.news_offered_by'
         - 'config:facets.facet.news_type'
         - 'config:facets.facet.sitewide_news_neighborhood'
+        - 'config:field.storage.node.field_featured_media'
+        - 'config:field.storage.node.field_feeds_guid'
         - 'config:field.storage.node.field_published_on'
         - 'config:field.storage.node.field_summary'
         - 'config:field.storage.node.field_updated_on'
