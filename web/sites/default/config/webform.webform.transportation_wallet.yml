@@ -188,10 +188,15 @@ elements: |-
           '#type': webform_markup
           '#states':
             visible:
-              ':input[name="apply_hop_card_needed"]':
-                value: personalized_honored_citizen_hop_card
-              ':input[name="apply_has_hop_card"]':
-                value: 'No'
+              - ':input[name="apply_hop_card_needed"]':
+                  value: personalized_honored_citizen_hop_card
+                ':input[name="apply_has_hop_card"]':
+                  value: 'No'
+              - or
+              - ':input[name="apply_current_hop_card"]':
+                  value: 27985321767319_trimet_lift_hop_card
+                ':input[name="apply_has_hop_card"]':
+                  value: 'Yes'
           '#admin_title': 'Next Steps'
           '#markup': '<div class="alert alert--info next-steps"><h2>Next Steps</h2><ol><li>Continue filling out this form so that we have your information.</li><li>Apply for your <a href="https://trimet.org/income/application.htm" target="_blank">Honored Citizen Hop card</a> as soon as possible.</li><li>Once you have received your Honored Citizen Hop card, email <a href="mailto:wallet@portlandoregon.gov">wallet@portlandoregon.gov</a> with your 16-digit card number so we can process your annual pass.</li></ol></div>'
         markup_next_steps_honored_citizen_option_2:
@@ -688,17 +693,15 @@ elements: |-
       '#display_on': none
       '#template': |
         {# NOTE: Need to account for household members who don't need a card or who are HC and get unlimited rides ($0) #}
-        {% set split = 0 %}
+        {% set split = 1 %}
 
-        {% if data.apply_household_size >= 2 and data.apply_hop_card_needed_opt_2_3 != "27985321767319_honored_citizen_hop_card" and data.apply_hop_card_needed_opt_2_3 != "personalized_honored_citizen_hop_card" %}{% set split = split + 1 %}{% endif %}
+        {% if data.apply_household_size >= 2 and data.has_hop_card_2 != "hop_card_not_needed" %}{% set split = split + 1 %}{% endif %}
 
-        {% if data.apply_household_size >= 2 and data.has_hop_card_2 != "hop_card_not_needed" and data.has_hop_card_2 != "27985321767319_honored_citizen_hop_card" and data.has_hop_card_2 != "personalized_honored_citizen_hop_card" %}{% set split = split + 1 %}{% endif %}
+        {% if data.apply_household_size >= 3 and data.has_hop_card_3 != "hop_card_not_needed" %}{% set split = split + 1 %}{% endif %}
 
-        {% if data.apply_household_size >= 3 and data.has_hop_card_3 != "hop_card_not_needed" and data.has_hop_card_3 != "27985321767319_honored_citizen_hop_card" and data.has_hop_card_3 != "personalized_honored_citizen_hop_card" %}{% set split = split + 1 %}{% endif %}
+        {% if data.apply_household_size >= 4 and data.has_hop_card_4 != "hop_card_not_needed" %}{% set split = split + 1 %}{% endif %}
 
-        {% if data.apply_household_size >= 4 and data.has_hop_card_4 != "hop_card_not_needed" and data.has_hop_card_4 != "27985321767319_honored_citizen_hop_card" and data.has_hop_card_4 != "personalized_honored_citizen_hop_card" %}{% set split = split + 1 %}{% endif %}
-
-        {% if data.apply_household_size >= 5 and data.has_hop_card_5 != "hop_card_not_needed" and data.has_hop_card_5 != "27985321767319_honored_citizen_hop_card" and data.has_hop_card_5 != "personalized_honored_citizen_hop_card" %}{% set split = split + 1 %}{% endif %}
+        {% if data.apply_household_size >= 5 and data.has_hop_card_5 != "hop_card_not_needed" %}{% set split = split + 1 %}{% endif %}
 
         {{ split|number_format }}
       '#whitespace': trim
@@ -816,26 +819,14 @@ elements: |-
             '#size': 10
             '#states':
               invisible:
-                - ':input[name="apply_hop_card_needed_opt_2_3"]':
-                    value: 27985321767319_honored_citizen_hop_card
-                - or
-                - ':input[name="apply_hop_card_needed_opt_2_3"]':
-                    value: personalized_honored_citizen_hop_card
-                - or
-                - ':input[name="apply_funds_split"]':
-                    value: 'Evenly among all members'
+                ':input[name="apply_funds_split"]':
+                  value: 'Evenly among all members'
           markup_even_split_member_1:
             '#type': webform_markup
             '#states':
               invisible:
-                - ':input[name="apply_funds_split"]':
-                    value: 'Custom split...'
-                - or
-                - ':input[name="apply_hop_card_needed_opt_2_3"]':
-                    value: 27985321767319_honored_citizen_hop_card
-                - or
-                - ':input[name="apply_hop_card_needed_opt_2_3"]':
-                    value: personalized_honored_citizen_hop_card
+                ':input[name="apply_funds_split"]':
+                  value: 'Custom split...'
             '#markup': '<p>$[webform_submission:values:computed_even_split_amount] will be put on this card.</p>'
           markup_hc_1:
             '#type': webform_markup
@@ -846,7 +837,7 @@ elements: |-
                 - or
                 - ':input[name="apply_hop_card_needed_opt_2_3"]':
                     value: personalized_honored_citizen_hop_card
-            '#markup': '<p>You indicated you need an Honored Citizen Hop card, which is good for unlimited rides.</p>'
+            '#markup': '<p>You indicated this person will contact TriMet to apply for an Honored Citizen Hop card. Once they email their 16-digit Honored Citizen Hop card number, funds will be added to their card.</p>'
         container_member2:
           '#type': webform_section
           '#title': 'Household Member 2'
@@ -871,12 +862,6 @@ elements: |-
                 - ':input[name="has_hop_card_2"]':
                     value: hop_card_not_needed
                 - or
-                - ':input[name="has_hop_card_2"]':
-                    value: 27985321767319_honored_citizen_hop_card
-                - or
-                - ':input[name="has_hop_card_2"]':
-                    value: personalized_honored_citizen_hop_card
-                - or
                 - ':input[name="apply_funds_split"]':
                     value: 'Evenly among all members'
           markup_nocard_2:
@@ -895,12 +880,6 @@ elements: |-
                 - or
                 - ':input[name="has_hop_card_2"]':
                     value: hop_card_not_needed
-                - or
-                - ':input[name="has_hop_card_2"]':
-                    value: 27985321767319_honored_citizen_hop_card
-                - or
-                - ':input[name="has_hop_card_2"]':
-                    value: personalized_honored_citizen_hop_card
             '#markup': '<p>$[webform_submission:values:computed_even_split_amount] will be put on this card.</p>'
           markup_hc_2:
             '#type': webform_markup
@@ -911,7 +890,7 @@ elements: |-
                 - or
                 - ':input[name="has_hop_card_2"]':
                     value: personalized_honored_citizen_hop_card
-            '#markup': '<p>You indicated this person needs an Honored Citizen Hop card, which is good for unlimited rides.</p>'
+            '#markup': '<p>You indicated this person will contact TriMet to apply for an Honored Citizen Hop card. Once they email their 16-digit Honored Citizen Hop card number, funds will be added to their card.</p>'
         container_member3:
           '#type': webform_section
           '#title': 'Household Member 3'
@@ -941,12 +920,6 @@ elements: |-
                 - ':input[name="has_hop_card_3"]':
                     value: hop_card_not_needed
                 - or
-                - ':input[name="has_hop_card_3"]':
-                    value: 27985321767319_honored_citizen_hop_card
-                - or
-                - ':input[name="has_hop_card_3"]':
-                    value: personalized_honored_citizen_hop_card
-                - or
                 - ':input[name="apply_funds_split"]':
                     value: 'Evenly among all members'
           markup_nocard_3:
@@ -965,12 +938,6 @@ elements: |-
                 - or
                 - ':input[name="has_hop_card_3"]':
                     value: hop_card_not_needed
-                - or
-                - ':input[name="has_hop_card_3"]':
-                    value: 27985321767319_honored_citizen_hop_card
-                - or
-                - ':input[name="has_hop_card_3"]':
-                    value: personalized_honored_citizen_hop_card
             '#markup': '<p>$[webform_submission:values:computed_even_split_amount] will be put on this card.</p>'
           markup_hc_3:
             '#type': webform_markup
@@ -981,7 +948,7 @@ elements: |-
                 - or
                 - ':input[name="has_hop_card_3"]':
                     value: personalized_honored_citizen_hop_card
-            '#markup': '<p>You indicated this person needs an Honored Citizen Hop card, which is good for unlimited rides.</p>'
+            '#markup': '<p>You indicated this person will contact TriMet to apply for an Honored Citizen Hop card. Once they email their 16-digit Honored Citizen Hop card number, funds will be added to their card.</p>'
         container_member4:
           '#type': webform_section
           '#title': 'Household Member 4'
@@ -1011,12 +978,6 @@ elements: |-
                 - ':input[name="has_hop_card_4"]':
                     value: hop_card_not_needed
                 - or
-                - ':input[name="has_hop_card_4"]':
-                    value: 27985321767319_honored_citizen_hop_card
-                - or
-                - ':input[name="has_hop_card_4"]':
-                    value: personalized_honored_citizen_hop_card
-                - or
                 - ':input[name="apply_funds_split"]':
                     value: 'Evenly among all members'
           markup_nocard_4:
@@ -1035,23 +996,17 @@ elements: |-
                 - or
                 - ':input[name="has_hop_card_4"]':
                     value: hop_card_not_needed
-                - or
-                - ':input[name="has_hop_card_4"]':
-                    value: 27985321767319_honored_citizen_hop_card
-                - or
-                - ':input[name="has_hop_card_4"]':
-                    value: personalized_honored_citizen_hop_card
             '#markup': '<p>$[webform_submission:values:computed_even_split_amount] will be put on this card.</p>'
           markup_hc_4:
             '#type': webform_markup
             '#states':
               visible:
-                - ':input[name="has_hop_card_5"]':
+                - ':input[name="has_hop_card_4"]':
                     value: 27985321767319_honored_citizen_hop_card
                 - or
-                - ':input[name="has_hop_card_5"]':
+                - ':input[name="has_hop_card_4"]':
                     value: personalized_honored_citizen_hop_card
-            '#markup': '<p>You indicated this person needs an Honored Citizen Hop card, which is good for unlimited rides.</p>'
+            '#markup': '<p>You indicated this person will contact TriMet to apply for an Honored Citizen Hop card. Once they email their 16-digit Honored Citizen Hop card number, funds will be added to their card.</p>'
         container_member5:
           '#type': webform_section
           '#title': 'Household Member 5'
@@ -1081,12 +1036,6 @@ elements: |-
                 - ':input[name="has_hop_card_5"]':
                     value: hop_card_not_needed
                 - or
-                - ':input[name="has_hop_card_5"]':
-                    value: 27985321767319_honored_citizen_hop_card
-                - or
-                - ':input[name="has_hop_card_5"]':
-                    value: personalized_honored_citizen_hop_card
-                - or
                 - ':input[name="apply_funds_split"]':
                     value: 'Evenly among all members'
           markup_nocard_5:
@@ -1105,12 +1054,6 @@ elements: |-
                 - or
                 - ':input[name="has_hop_card_2"]':
                     value: hop_card_not_needed
-                - or
-                - ':input[name="has_hop_card_2"]':
-                    value: 27985321767319_honored_citizen_hop_card
-                - or
-                - ':input[name="has_hop_card_2"]':
-                    value: personalized_honored_citizen_hop_card
             '#markup': '<p>$[webform_submission:values:computed_even_split_amount] will be put on this card.</p>'
           markup_hc_5:
             '#type': webform_markup
@@ -1121,7 +1064,7 @@ elements: |-
                 - or
                 - ':input[name="has_hop_card_5"]':
                     value: personalized_honored_citizen_hop_card
-            '#markup': '<p>You indicated this person needs an Honored Citizen Hop card, which is good for unlimited rides.</p>'
+            '#markup': '<p>You indicated this person will contact TriMet to apply for an Honored Citizen Hop card. Once they email their 16-digit Honored Citizen Hop card number, funds will be added to their card.</p>'
         markup_remaining_amount_message:
           '#type': webform_markup
           '#markup': '<div class="d-none" id="message-remaining"><p><strong>You have $<span id="remaining-amt">[webform_submission:values:computed_household_total_funds]</span> remaining to allocate between [webform_submission:values:household_members_split] eligible household members before you can continue.</strong></p></div><div class="d-none" id="message-ok"><p>You''ve allocated $<span id="allocated-amt">[webform_submission:values:computed_household_total_funds]</span> out of $<span id="total-amt-avail">[webform_submission:values:computed_household_total_funds]</span> between [webform_submission:values:household_members_split] household members.</p></div><div class="d-none" id="message-over"><p>You''ve allocated $<span id="allocated-over">0</span> too much. Before continuing, please make sure the total amount for all eligible household members equals $<span id="total-amt-avail">[webform_submission:values:computed_household_total_funds]</span>.</p></div>'
@@ -1130,16 +1073,13 @@ elements: |-
         '#title': 'Computed Card Amount 1'
         '#display_on': none
         '#mode': text
-        '#template': |-
+        '#template': |
           {% set members = data.apply_household_size ? data.household_members_split : 1 %}
-          {% set counted = data.apply_hop_card_needed_opt_2_3 != "27985321767319_honored_citizen_hop_card" and data.apply_hop_card_needed_opt_2_3 != "personalized_honored_citizen_hop_card" %}
 
-          {% if counted %}
-            {% if members and data.apply_funds_split == "Evenly among all members" %}
-              {{ data.computed_household_total_funds|number_format / members|number_format }}
-            {% else %}
-              {{ data.funds_member_1 }}
-            {% endif %}
+          {% if members and data.apply_funds_split == "Evenly among all members" %}
+            {{ data.computed_household_total_funds|number_format / members|number_format }}
+          {% else %}
+            {{ data.funds_member_1 }}
           {% endif %}
       computed_card_amount_2:
         '#type': webform_computed_twig
@@ -1148,7 +1088,7 @@ elements: |-
         '#mode': text
         '#template': |-
           {% set members = data.apply_household_size ? data.household_members_split : 1 %}
-          {% set counted = data.has_hop_card_2 != "hop_card_not_needed" and data.has_hop_card_2 != "27985321767319_honored_citizen_hop_card" and data.has_hop_card_2 != "personalized_honored_citizen_hop_card" %}
+          {% set counted = data.has_hop_card_2 != "hop_card_not_needed" %}
 
           {% if counted %}
             {% if members and data.apply_funds_split == "Evenly among all members" %}
@@ -1164,7 +1104,7 @@ elements: |-
         '#mode': text
         '#template': |-
           {% set members = data.apply_household_size ? data.household_members_split : 1 %}
-          {% set counted = data.has_hop_card_3 != "hop_card_not_needed" and data.has_hop_card_3 != "27985321767319_honored_citizen_hop_card" and data.has_hop_card_3 != "personalized_honored_citizen_hop_card" %}
+          {% set counted = data.has_hop_card_3 != "hop_card_not_needed" %}
 
           {% if counted %}
             {% if members and data.apply_funds_split == "Evenly among all members" %}
@@ -1180,7 +1120,7 @@ elements: |-
         '#mode': text
         '#template': |-
           {% set members = data.apply_household_size ? data.household_members_split : 1 %}
-          {% set counted = data.has_hop_card_4 != "hop_card_not_needed" and data.has_hop_card_4 != "27985321767319_honored_citizen_hop_card" and data.has_hop_card_4 != "personalized_honored_citizen_hop_card" %}
+          {% set counted = data.has_hop_card_4 != "hop_card_not_needed" %}
 
           {% if counted %}
             {% if members and data.apply_funds_split == "Evenly among all members" %}
@@ -1196,7 +1136,7 @@ elements: |-
         '#mode': text
         '#template': |-
           {% set members = data.apply_household_size ? data.household_members_split : 1 %}
-          {% set counted = data.has_hop_card_5 != "hop_card_not_needed" and data.has_hop_card_5 != "27985321767319_honored_citizen_hop_card" and data.has_hop_card_5 != "personalized_honored_citizen_hop_card" %}
+          {% set counted = data.has_hop_card_5 != "hop_card_not_needed" %}
 
           {% if counted %}
             {% if members and data.apply_funds_split == "Evenly among all members" %}
@@ -1511,6 +1451,8 @@ elements: |-
           29284635983383_honored_citizen 27985321767319_apply
         {% endif %}
         {{ data.computed_hop_card_type }}
+      {% elseif data.apply_wallet_package == "wallet_option_1" and data.apply_current_hop_card == '27985321767319_adult_hop_card' %}
+        29284635983383_honored_citizen 27985321767319_apply
       {% endif %}
     '#whitespace': trim
   computed_tags_member_2:
