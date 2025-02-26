@@ -1,4 +1,3 @@
-{% set elected_str = relation.field_reelected.value ? 'Re-elected' : 'Elected' %}
 {% set now_timestamp = 'now'|date('U') %}
 {# truncate term date precision to the day #}
 {% set term_start_timestamp = content.field_term_date.0.start_date['#attributes']['datetime']|date('Y-m-d')|date('U') %}
@@ -40,23 +39,25 @@
             '@end_year': term_end_timestamp|date('Y')
           })) }}
         {% else %}
-          {{ 'Served as an elected @type from @start_year through @end_year.'|t(placeholders|merge({
+          {{ 'Served as elected @type from @start_year through @end_year.'|t(placeholders|merge({
             '@start_year': term_start_timestamp|date('Y'),
             '@end_year': term_end_timestamp|date('Y')
           })) }}
         {% endif %}
       {% else %}
+        {% set reelected = relation.field_reelected.value %}
+        {% set elected_str = reelected ? 'Re-elected' : 'Elected' %}
         {% if has_term_started %}
           {% if content.field_council_district.0 %}
-            {{ (elected_str ~ ' as @type for <a href=":district_url">@district_name</a> in @elected_date and began their term of office in @start_date.')|t(placeholders) }}
+            {{ (elected_str ~ ' as @type for <a href=":district_url">@district_name</a> in @elected_date and began their' ~ (reelected ? ' current' : '') ~ ' term of office in @start_date.')|t(placeholders) }}
           {% else %}
-            {{ (elected_str ~ ' as @type in @elected_date and began their term of office in @start_date.')|t(placeholders) }}
+            {{ (elected_str ~ ' as @type in @elected_date and began their' ~ (reelected ? ' current' : '') ~ ' term of office in @start_date.')|t(placeholders) }}
           {% endif %}
         {% else %}
           {% if content.field_council_district.0 %}
-            {{ (elected_str ~ ' as @type for <a href=":district_url">@district_name</a> in @elected_date and will begin their term of office in @start_date.')|t(placeholders) }}
+            {{ (elected_str ~ ' as @type for <a href=":district_url">@district_name</a> in @elected_date and will begin their' ~ (reelected ? ' next' : '') ~ ' term of office in @start_date.')|t(placeholders) }}
           {% else %}
-            {{ (elected_str ~ ' as @type in @elected_date and will begin their term of office in @start_date.')|t(placeholders) }}
+            {{ (elected_str ~ ' as @type in @elected_date and will begin their' ~ (reelected ? ' next' : '') ~ ' term of office in @start_date.')|t(placeholders) }}
           {% endif %}
         {% endif %}
       {% endif %}
