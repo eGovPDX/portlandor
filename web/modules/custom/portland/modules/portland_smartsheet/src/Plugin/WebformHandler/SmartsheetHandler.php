@@ -349,7 +349,7 @@ class SmartsheetHandler extends WebformHandlerBase {
    * {@inheritdoc}
    */
   public function getSummary() {
-    $amt_mappings = count(array_filter($this->configuration['column_mappings'], fn($mapping) => $mapping !== ''));
+    $amt_mappings = is_null($this->configuration['column_mappings']) ? 0 : count(array_filter($this->configuration['column_mappings'], fn($mapping) => $mapping !== ''));
     $lines = ["{$amt_mappings} column mappings configured"];
     try {
       $client = new SmartsheetClient($this->configuration['sheet_id']);
