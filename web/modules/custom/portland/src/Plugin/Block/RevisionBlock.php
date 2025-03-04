@@ -196,7 +196,7 @@ class RevisionBlock extends BlockBase {
         break;
 
       case "bureau_review":
-        $result = "unpublished and waiting for bureau review";
+        $result = "unpublished and in review";
         break;
 
       case "cancelled":
