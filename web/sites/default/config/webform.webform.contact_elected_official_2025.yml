@@ -4,6 +4,7 @@ status: open
 dependencies:
   module:
     - portland
+    - portland_zendesk
 third_party_settings:
   portland:
     disable_demographic_form_prompt: 0
@@ -1215,6 +1216,9 @@ elements: |-
       <p><strong>This message has been sent to the Mayor and all Council Districts.</strong></p>
       {% endif %}
     '#whitespace': spaceless
+  request_ticket_id:
+    '#type': hidden
+    '#title': 'Request Ticket ID'
 css: ''
 javascript: "(($, Drupal) => {\r\n\r\nDrupal.behaviors.councilDistrictBoundaries = {\r\n  attach() {\r\n    const districtColors = {\r\n      1: \"#7CB195\",\r\n      2: \"#9AC4EA\",\r\n      3: \"#FBD986\",\r\n      4: \"#C08FA4\",\r\n    };\r\n    const { lMap } = drupalSettings.webform.portland_location_picker;\r\n    let districtLayer; // Track the layer\r\n\r\n    fetch(\r\n      \"https://www.portlandmaps.com/arcgis/rest/services/Public/CGIS_Layers/MapServer/11/query?where=1%3D1&f=geojson\",\r\n    )\r\n      .then((res) => res.json())\r\n      .then(({ features }) => {\r\n        // Check if the layer is already added\r\n        if (districtLayer && lMap.hasLayer(districtLayer)) {\r\n          return; // Do nothing if the layer is already on the map\r\n        }\r\n\r\n        districtLayer = L.geoJson(features, {\r\n          coordsToLatLng(coords) {\r\n            return new L.LatLng(coords[1], coords[0]);\r\n          },\r\n          onEachFeature(feature, layer) {\r\n            const district = feature.properties.DISTRICT;\r\n\r\n            lMap.openTooltip(\r\n              Drupal.t(\"District @num\", { \"@num\": district }),\r\n              layer.getBounds().getCenter(),\r\n              {\r\n                className: \"fs-6\",\r\n                permanent: true,\r\n                direction: \"center\",\r\n                opacity: 1,\r\n              },\r\n            );\r\n            layer.setStyle({\r\n              color: \"#383838\",\r\n              fillColor: districtColors[district],\r\n              fillOpacity: 0.15,\r\n              weight: 1,\r\n            });\r\n          },\r\n        });\r\n\r\n        districtLayer.addTo(lMap);\r\n      });\r\n  },\r\n};\r\n})(jQuery, Drupal);\r\n"
 settings:
@@ -1432,139 +1436,6 @@ access:
     users: {  }
     permissions: {  }
 handlers:
-  test_send_email_to_selected_officials:
-    id: email
-    handler_id: test_send_email_to_selected_officials
-    label: 'TEST: Send email to selected official(s)'
-    notes: 'When the Test Submission box is checked (administrator only), this handler sends the submission to webforms@portlandoregon.gov. Change it to your own address in the multidev environment for testing purposes.'
-    status: true
-    conditions:
-      enabled:
-        ':input[name="support_agent_use_only[test_submission]"]':
-          checked: true
-    weight: -49
-    settings:
-      states:
-        - completed
-      to_mail: webforms@portlandoregon.gov
-      to_options: {  }
-      bcc_mail: ''
-      bcc_options: {  }
-      cc_mail: ''
-      cc_options: {  }
-      from_mail: '[webform_submission:values:contact_email_address:raw]'
-      from_options: {  }
-      from_name: '[webform_submission:values:contact_name:raw]'
-      reply_to: ''
-      return_path: ''
-      sender_mail: ''
-      sender_name: ''
-      subject: 'TEST: [webform_submission:values:computed_subject]'
-      body: '<p style="color:red;"><strong>[webform_submission:values:computed_sent_to_all_message:html]</strong></p><p>[webform_submission:values:html]</p>'
-      excluded_elements:
-        report_location: report_location
-        markup_district_1: markup_district_1
-        markup_district_2: markup_district_2
-        markup_district_3: markup_district_3
-        markup_district_4: markup_district_4
-        testimony_instructions: testimony_instructions
-        markup_next_steps_press: markup_next_steps_press
-        meeting_venue_address: meeting_venue_address
-        markup_01: markup_01
-        public_records_statement_text: public_records_statement_text
-        computed_subject: computed_subject
-        computed_recipient: computed_recipient
-        computed_confirmation_message: computed_confirmation_message
-      ignore_access: true
-      exclude_empty: true
-      exclude_empty_checkbox: true
-      exclude_attachments: false
-      html: true
-      attachments: true
-      twig: false
-      theme_name: ''
-      parameters: {  }
-      debug: false
-  send_email_to_mayor:
-    id: email
-    handler_id: send_email_to_mayor
-    label: 'Send email to Mayor'
-    notes: 'Whether to enable us determined by the computed twig element computed_send_to_mayor.'
-    status: true
-    conditions:
-      enabled:
-        ':input[name="support_agent_use_only[test_submission]"]':
-          unchecked: true
-        ':input[name="computed_send_to_mayor"]':
-          value: 'Yes'
-    weight: -48
-    settings:
-      states:
-        - completed
-      to_mail: mayor@portlandoregon.gov
-      to_options: {  }
-      bcc_mail: ''
-      bcc_options: {  }
-      cc_mail: ''
-      cc_options: {  }
-      from_mail: '[webform_submission:values:contact_email_address:raw]'
-      from_options: {  }
-      from_name: '[webform_submission:values:contact_name:raw]'
-      reply_to: ''
-      return_path: ''
-      sender_mail: ''
-      sender_name: ''
-      subject: '[webform_submission:values:computed_subject]'
-      body: '<p style="color:red;"><strong>[webform_submission:values:computed_sent_to_all_message:html]</strong></p><p>[webform_submission:values:html]</p>'
-      excluded_elements:
-        prepopulate: prepopulate
-        card: card
-        markup_continue: markup_continue
-        report_location: report_location
-        markup_district_1: markup_district_1
-        markup_district_2: markup_district_2
-        markup_district_3: markup_district_3
-        markup_district_4: markup_district_4
-        markup_avalos: markup_avalos
-        markup_dunphy: markup_dunphy
-        markup_smith: markup_smith
-        markup_ryan: markup_ryan
-        markup_pirtle_guiney: markup_pirtle_guiney
-        markup_kanal: markup_kanal
-        markup_morillo: markup_morillo
-        markup_novick: markup_novick
-        markup_lane: markup_lane
-        markup_zimmerman: markup_zimmerman
-        markup_green: markup_green
-        markup_clark: markup_clark
-        markup_wilson: markup_wilson
-        markup_rede: markup_rede
-        testimony_instructions: testimony_instructions
-        markup_next_steps_press: markup_next_steps_press
-        meeting_venue_address: meeting_venue_address
-        markup_01: markup_01
-        your_address: your_address
-        public_records_statement_text: public_records_statement_text
-        computed_subject: computed_subject
-        computed_recipient: computed_recipient
-        computed_confirmation_message: computed_confirmation_message
-        computed_send_to_mayor: computed_send_to_mayor
-        computed_send_to_auditor: computed_send_to_auditor
-        computed_send_to_district1: computed_send_to_district1
-        computed_send_to_district2: computed_send_to_district2
-        computed_send_to_district3: computed_send_to_district3
-        computed_send_to_district4: computed_send_to_district4
-        computed_sent_to_all_message: computed_sent_to_all_message
-      ignore_access: true
-      exclude_empty: true
-      exclude_empty_checkbox: true
-      exclude_attachments: true
-      html: true
-      attachments: true
-      twig: false
-      theme_name: ''
-      parameters: {  }
-      debug: false
   send_email_to_auditor:
     id: email
     handler_id: send_email_to_auditor
@@ -1644,251 +1515,43 @@ handlers:
       theme_name: ''
       parameters: {  }
       debug: false
-  send_email_to_district_2:
-    id: email
-    handler_id: send_email_to_district_2
-    label: 'Send email to District 2'
-    notes: 'Whether to enable us determined by the computed twig element computed_send_to_district2.'
+  zendesk_new_request_mayor:
+    id: zendesk
+    handler_id: zendesk_new_request_mayor
+    label: 'Zendesk ticket for Mayor'
+    notes: ''
     status: true
     conditions:
       enabled:
         ':input[name="support_agent_use_only[test_submission]"]':
           unchecked: true
-        ':input[name="computed_send_to_district2"]':
+        ':input[name="computed_send_to_mayor"]':
           value: 'Yes'
-    weight: -44
+    weight: 0
     settings:
-      states:
-        - completed
-      to_mail: councildistrict2@portlandoregon.gov
-      to_options: {  }
-      bcc_mail: ''
-      bcc_options: {  }
-      cc_mail: ''
-      cc_options: {  }
-      from_mail: '[webform_submission:values:contact_email_address:raw]'
-      from_options: {  }
-      from_name: '[webform_submission:values:contact_name:raw]'
-      reply_to: ''
-      return_path: ''
-      sender_mail: ''
-      sender_name: ''
+      requester_name: contact_name
+      requester_email: contact_email_address
       subject: '[webform_submission:values:computed_subject]'
-      body: '<p style="color:red;"><strong>[webform_submission:values:computed_sent_to_all_message:html]</strong></p><p>[webform_submission:values:html]</p>'
-      excluded_elements:
-        prepopulate: prepopulate
-        card: card
-        markup_continue: markup_continue
-        report_location: report_location
-        markup_district_1: markup_district_1
-        markup_district_2: markup_district_2
-        markup_district_3: markup_district_3
-        markup_district_4: markup_district_4
-        markup_avalos: markup_avalos
-        markup_dunphy: markup_dunphy
-        markup_smith: markup_smith
-        markup_ryan: markup_ryan
-        markup_pirtle_guiney: markup_pirtle_guiney
-        markup_kanal: markup_kanal
-        markup_morillo: markup_morillo
-        markup_novick: markup_novick
-        markup_lane: markup_lane
-        markup_zimmerman: markup_zimmerman
-        markup_green: markup_green
-        markup_clark: markup_clark
-        markup_wilson: markup_wilson
-        markup_rede: markup_rede
-        testimony_instructions: testimony_instructions
-        markup_next_steps_press: markup_next_steps_press
-        contact_country: contact_country
-        markup_01: markup_01
-        your_address: your_address
-        public_records_statement_text: public_records_statement_text
-        computed_subject: computed_subject
-        computed_recipient: computed_recipient
-        computed_confirmation_message: computed_confirmation_message
-        computed_send_to_mayor: computed_send_to_mayor
-        computed_send_to_auditor: computed_send_to_auditor
-        computed_send_to_district1: computed_send_to_district1
-        computed_send_to_district2: computed_send_to_district2
-        computed_send_to_district3: computed_send_to_district3
-        computed_send_to_district4: computed_send_to_district4
-        computed_sent_to_all_message: computed_sent_to_all_message
-      ignore_access: true
-      exclude_empty: true
-      exclude_empty_checkbox: true
-      exclude_attachments: false
-      html: true
-      attachments: true
-      twig: false
-      theme_name: ''
-      parameters: {  }
-      debug: false
-  send_email_to_district_3:
-    id: email
-    handler_id: send_email_to_district_3
-    label: 'Send email to District 3'
-    notes: 'Whether to enable us determined by the computed twig element computed_send_to_district3.'
-    status: true
-    conditions:
-      enabled:
-        ':input[name="support_agent_use_only[test_submission]"]':
-          unchecked: true
-        ':input[name="computed_send_to_district3"]':
-          value: 'Yes'
-    weight: -43
-    settings:
-      states:
-        - completed
-      to_mail: councildistrict3@portlandoregon.gov
-      to_options: {  }
-      bcc_mail: ''
-      bcc_options: {  }
-      cc_mail: ''
-      cc_options: {  }
-      from_mail: '[webform_submission:values:contact_email_address:raw]'
-      from_options: {  }
-      from_name: '[webform_submission:values:contact_name:raw]'
-      reply_to: ''
-      return_path: ''
-      sender_mail: ''
-      sender_name: ''
-      subject: '[webform_submission:values:computed_subject]'
-      body: '<p style="color:red;"><strong>[webform_submission:values:computed_sent_to_all_message:html]</strong></p><p>[webform_submission:values:html]</p>'
-      excluded_elements:
-        prepopulate: prepopulate
-        card: card
-        markup_continue: markup_continue
-        report_location: report_location
-        markup_district_1: markup_district_1
-        markup_district_2: markup_district_2
-        markup_district_3: markup_district_3
-        markup_district_4: markup_district_4
-        markup_avalos: markup_avalos
-        markup_dunphy: markup_dunphy
-        markup_smith: markup_smith
-        markup_ryan: markup_ryan
-        markup_pirtle_guiney: markup_pirtle_guiney
-        markup_kanal: markup_kanal
-        markup_morillo: markup_morillo
-        markup_novick: markup_novick
-        markup_lane: markup_lane
-        markup_zimmerman: markup_zimmerman
-        markup_green: markup_green
-        markup_clark: markup_clark
-        markup_wilson: markup_wilson
-        markup_rede: markup_rede
-        testimony_instructions: testimony_instructions
-        markup_next_steps_press: markup_next_steps_press
-        contact_country: contact_country
-        markup_01: markup_01
-        your_address: your_address
-        public_records_statement_text: public_records_statement_text
-        computed_subject: computed_subject
-        computed_recipient: computed_recipient
-        computed_confirmation_message: computed_confirmation_message
-        computed_send_to_mayor: computed_send_to_mayor
-        computed_send_to_auditor: computed_send_to_auditor
-        computed_send_to_district1: computed_send_to_district1
-        computed_send_to_district2: computed_send_to_district2
-        computed_send_to_district3: computed_send_to_district3
-        computed_send_to_district4: computed_send_to_district4
-        computed_sent_to_all_message: computed_sent_to_all_message
-      ignore_access: true
-      exclude_empty: true
-      exclude_empty_checkbox: true
-      exclude_attachments: false
-      html: true
-      attachments: true
-      twig: false
-      theme_name: ''
-      parameters: {  }
-      debug: false
-  send_email_to_district_4:
-    id: email
-    handler_id: send_email_to_district_4
-    label: 'Send email to District 4'
-    notes: 'Whether to enable us determined by the computed twig element computed_send_to_district4.'
-    status: true
-    conditions:
-      enabled:
-        ':input[name="support_agent_use_only[test_submission]"]':
-          unchecked: true
-        ':input[name="computed_send_to_district4"]':
-          value: 'Yes'
-    weight: -42
-    settings:
-      states:
-        - completed
-      to_mail: councildistrict4@portlandoregon.gov
-      to_options: {  }
-      bcc_mail: ''
-      bcc_options: {  }
-      cc_mail: ''
-      cc_options: {  }
-      from_mail: '[webform_submission:values:contact_email_address:raw]'
-      from_options: {  }
-      from_name: '[webform_submission:values:contact_name:raw]'
-      reply_to: ''
-      return_path: ''
-      sender_mail: ''
-      sender_name: ''
-      subject: '[webform_submission:values:computed_subject]'
-      body: '<p style="color:red;"><strong>[webform_submission:values:computed_sent_to_all_message:html]</strong></p><p>[webform_submission:values:html]</p>'
-      excluded_elements:
-        prepopulate: prepopulate
-        card: card
-        markup_continue: markup_continue
-        report_location: report_location
-        markup_district_1: markup_district_1
-        markup_district_2: markup_district_2
-        markup_district_3: markup_district_3
-        markup_district_4: markup_district_4
-        markup_avalos: markup_avalos
-        markup_dunphy: markup_dunphy
-        markup_smith: markup_smith
-        markup_ryan: markup_ryan
-        markup_pirtle_guiney: markup_pirtle_guiney
-        markup_kanal: markup_kanal
-        markup_morillo: markup_morillo
-        markup_novick: markup_novick
-        markup_lane: markup_lane
-        markup_zimmerman: markup_zimmerman
-        markup_green: markup_green
-        markup_clark: markup_clark
-        markup_wilson: markup_wilson
-        markup_rede: markup_rede
-        testimony_instructions: testimony_instructions
-        markup_next_steps_press: markup_next_steps_press
-        contact_country: contact_country
-        markup_01: markup_01
-        your_address: your_address
-        public_records_statement_text: public_records_statement_text
-        computed_subject: computed_subject
-        computed_recipient: computed_recipient
-        computed_confirmation_message: computed_confirmation_message
-        computed_send_to_mayor: computed_send_to_mayor
-        computed_send_to_auditor: computed_send_to_auditor
-        computed_send_to_district1: computed_send_to_district1
-        computed_send_to_district2: computed_send_to_district2
-        computed_send_to_district3: computed_send_to_district3
-        computed_send_to_district4: computed_send_to_district4
-        computed_sent_to_all_message: computed_sent_to_all_message
-      ignore_access: true
-      exclude_empty: true
-      exclude_empty_checkbox: true
-      exclude_attachments: false
-      html: true
-      attachments: true
-      twig: false
-      theme_name: ''
-      parameters: {  }
-      debug: false
-  send_email_to_district_1:
-    id: email
-    handler_id: send_email_to_district_1
-    label: 'Send email to District 1'
-    notes: 'Whether to enable us determined by the computed twig element computed_send_to_district1.'
+      comment: "<p style=\"color:red;\">\r\n    <strong>[webform_submission:values:computed_sent_to_all_message:html]</strong>\r\n</p>\r\n<p>\r\n    [webform_submission:values:html]\r\n</p>"
+      tags: 'drupal webform'
+      priority: normal
+      status: new
+      recipient: ''
+      group_id: '28461402652823'
+      assignee_id: ''
+      type: incident
+      is_child_incident: 0
+      collaborators: ''
+      custom_fields: ''
+      ticket_id_field: request_ticket_id
+      parent_ticket_id_field: ''
+      ticket_fork_field: ''
+      ticket_form_id: '10273938527639'
+  zendesk_new_request_district1:
+    id: zendesk
+    handler_id: zendesk_new_request_district1
+    label: 'Zendesk ticket for District 1'
+    notes: ''
     status: true
     conditions:
       enabled:
@@ -1896,71 +1559,150 @@ handlers:
           unchecked: true
         ':input[name="computed_send_to_district1"]':
           value: 'Yes'
-    weight: -45
+    weight: 8
     settings:
-      states:
-        - completed
-      to_mail: councildistrict1@portlandoregon.gov
-      to_options: {  }
-      bcc_mail: ''
-      bcc_options: {  }
-      cc_mail: ''
-      cc_options: {  }
-      from_mail: '[webform_submission:values:contact_email_address:raw]'
-      from_options: {  }
-      from_name: '[webform_submission:values:contact_name:raw]'
-      reply_to: ''
-      return_path: ''
-      sender_mail: ''
-      sender_name: ''
+      requester_name: contact_name
+      requester_email: contact_email_address
       subject: '[webform_submission:values:computed_subject]'
-      body: '<p style="color:red;"><strong>[webform_submission:values:computed_sent_to_all_message:html]</strong></p><p>[webform_submission:values:html]</p>'
-      excluded_elements:
-        prepopulate: prepopulate
-        card: card
-        report_location: report_location
-        markup_district_1: markup_district_1
-        markup_district_2: markup_district_2
-        markup_district_3: markup_district_3
-        markup_district_4: markup_district_4
-        markup_avalos: markup_avalos
-        markup_dunphy: markup_dunphy
-        markup_smith: markup_smith
-        markup_ryan: markup_ryan
-        markup_pirtle_guiney: markup_pirtle_guiney
-        markup_kanal: markup_kanal
-        markup_morillo: markup_morillo
-        markup_novick: markup_novick
-        markup_lane: markup_lane
-        markup_zimmerman: markup_zimmerman
-        markup_green: markup_green
-        markup_clark: markup_clark
-        markup_wilson: markup_wilson
-        markup_rede: markup_rede
-        testimony_instructions: testimony_instructions
-        markup_next_steps_press: markup_next_steps_press
-        contact_country: contact_country
-        markup_01: markup_01
-        your_address: your_address
-        public_records_statement_text: public_records_statement_text
-        computed_subject: computed_subject
-        computed_recipient: computed_recipient
-        computed_confirmation_message: computed_confirmation_message
-        computed_send_to_mayor: computed_send_to_mayor
-        computed_send_to_auditor: computed_send_to_auditor
-        computed_send_to_district1: computed_send_to_district1
-        computed_send_to_district2: computed_send_to_district2
-        computed_send_to_district3: computed_send_to_district3
-        computed_send_to_district4: computed_send_to_district4
-        computed_sent_to_all_message: computed_sent_to_all_message
-      ignore_access: true
-      exclude_empty: true
-      exclude_empty_checkbox: true
-      exclude_attachments: false
-      html: true
-      attachments: true
-      twig: false
-      theme_name: ''
-      parameters: {  }
-      debug: false
+      comment: "<p style=\"color:red;\">\r\n    <strong>[webform_submission:values:computed_sent_to_all_message:html]</strong>\r\n</p>\r\n<p>\r\n    [webform_submission:values:html]\r\n</p>"
+      tags: 'drupal webform'
+      priority: normal
+      status: new
+      recipient: ''
+      group_id: '28343058534167'
+      assignee_id: ''
+      type: incident
+      is_child_incident: 0
+      collaborators: ''
+      custom_fields: ''
+      ticket_id_field: request_ticket_id
+      parent_ticket_id_field: ''
+      ticket_fork_field: ''
+      ticket_form_id: '10273938527639'
+  zendesk_new_request_district2:
+    id: zendesk
+    handler_id: zendesk_new_request_district2
+    label: 'Zendesk ticket for District 2'
+    notes: ''
+    status: true
+    conditions:
+      enabled:
+        ':input[name="support_agent_use_only[test_submission]"]':
+          unchecked: true
+        ':input[name="computed_send_to_district2"]':
+          value: 'Yes'
+    weight: 9
+    settings:
+      requester_name: contact_name
+      requester_email: contact_email_address
+      subject: '[webform_submission:values:computed_subject]'
+      comment: "<p style=\"color:red;\">\r\n    <strong>[webform_submission:values:computed_sent_to_all_message:html]</strong>\r\n</p>\r\n<p>\r\n    [webform_submission:values:html]\r\n</p>"
+      tags: 'drupal webform'
+      priority: normal
+      status: new
+      recipient: ''
+      group_id: '28343102272279'
+      assignee_id: ''
+      type: incident
+      is_child_incident: 0
+      collaborators: ''
+      custom_fields: ''
+      ticket_id_field: request_ticket_id
+      parent_ticket_id_field: ''
+      ticket_fork_field: ''
+      ticket_form_id: '10273938527639'
+  zendesk_new_request_district3:
+    id: zendesk
+    handler_id: zendesk_new_request_district3
+    label: 'Zendesk ticket for District 3'
+    notes: ''
+    status: true
+    conditions:
+      enabled:
+        ':input[name="support_agent_use_only[test_submission]"]':
+          unchecked: true
+        ':input[name="computed_send_to_district3"]':
+          value: 'Yes'
+    weight: 10
+    settings:
+      requester_name: contact_name
+      requester_email: contact_email_address
+      subject: '[webform_submission:values:computed_subject]'
+      comment: "<p style=\"color:red;\">\r\n    <strong>[webform_submission:values:computed_sent_to_all_message:html]</strong>\r\n</p>\r\n<p>\r\n    [webform_submission:values:html]\r\n</p>"
+      tags: 'drupal webform'
+      priority: normal
+      status: new
+      recipient: ''
+      group_id: '28343081455127'
+      assignee_id: ''
+      type: incident
+      is_child_incident: 0
+      collaborators: ''
+      custom_fields: ''
+      ticket_id_field: request_ticket_id
+      parent_ticket_id_field: ''
+      ticket_fork_field: ''
+      ticket_form_id: '10273938527639'
+  zendesk_new_request_district4:
+    id: zendesk
+    handler_id: zendesk_new_request_district4
+    label: 'Zendesk ticket for District 4'
+    notes: ''
+    status: true
+    conditions:
+      enabled:
+        ':input[name="support_agent_use_only[test_submission]"]':
+          unchecked: true
+        ':input[name="computed_send_to_district4"]':
+          value: 'Yes'
+    weight: 11
+    settings:
+      requester_name: contact_name
+      requester_email: contact_email_address
+      subject: '[webform_submission:values:computed_subject]'
+      comment: "<p style=\"color:red;\">\r\n    <strong>[webform_submission:values:computed_sent_to_all_message:html]</strong>\r\n</p>\r\n<p>\r\n    [webform_submission:values:html]\r\n</p>"
+      tags: 'drupal webform'
+      priority: normal
+      status: new
+      recipient: ''
+      group_id: '28343098474391'
+      assignee_id: ''
+      type: incident
+      is_child_incident: 0
+      collaborators: ''
+      custom_fields: ''
+      ticket_id_field: request_ticket_id
+      parent_ticket_id_field: ''
+      ticket_fork_field: ''
+      ticket_form_id: '10273938527639'
+  zendesk_ticket_for_district_4:
+    id: zendesk
+    handler_id: zendesk_ticket_for_district_4
+    label: 'TEST: Zendesk ticket for Developer Test'
+    notes: ''
+    status: true
+    conditions:
+      enabled:
+        ':input[name="support_agent_use_only[test_submission]"]':
+          checked: true
+    weight: 6
+    settings:
+      requester_name: contact_name
+      requester_email: contact_email_address
+      subject: '[webform_submission:values:computed_subject]'
+      comment: "<p style=\"color:red;\">\r\n    <strong>[webform_submission:values:computed_sent_to_all_message:html]</strong>\r\n</p>\r\n<p>\r\n    [webform_submission:values:html]\r\n</p>"
+      tags: 'drupal webform'
+      priority: normal
+      status: new
+      recipient: ''
+      group_id: '4549352062487'
+      assignee_id: ''
+      type: incident
+      is_child_incident: 0
+      collaborators: ''
+      custom_fields: ''
+      ticket_id_field: request_ticket_id
+      parent_ticket_id_field: ''
+      ticket_fork_field: ''
+      ticket_form_id: '10273938527639'
 variants: {  }
