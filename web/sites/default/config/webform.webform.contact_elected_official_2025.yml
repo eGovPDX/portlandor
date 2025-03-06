@@ -12,10 +12,17 @@ third_party_settings:
       prepopulate: prepopulate
       card: card
       recipient: recipient
-      report_location: report_location
+      computed_district_message: computed_district_message
       your_address: your_address
       computed_subject: computed_subject
       computed_confirmation_message: computed_confirmation_message
+      computed_send_to_mayor: computed_send_to_mayor
+      computed_send_to_auditor: computed_send_to_auditor
+      computed_send_to_district1: computed_send_to_district1
+      computed_send_to_district2: computed_send_to_district2
+      computed_send_to_district3: computed_send_to_district3
+      computed_send_to_district4: computed_send_to_district4
+      computed_sent_to_all_message: computed_sent_to_all_message
 weight: 0
 open: null
 close: null
@@ -1076,61 +1083,6 @@ elements: |-
 
       {{ subject }}
     '#whitespace': spaceless
-  computed_recipient:
-    '#type': webform_computed_twig
-    '#title': 'Computed Recipient'
-    '#display_on': view
-    '#mode': text
-    '#template': |
-      {% set recipient = "" %}
-
-      {% if data.request_purpose is not iterable and data.request_purpose_individual is not iterable %}
-
-        {% if data.prepopulate == "district" and data.request_district and data.request_district != "Not sure..." %}
-          {# prepopulated district #}
-          {% set recipient = "councildistrict" ~ data.request_district ~ "@portlandoregon.gov" %}
-
-        {% elseif data.request_purpose == "Provide comment or feedback to my district's City Council members" %}
-          {# request to district reps #}
-          
-          {% if data.request_district == "Not sure..." %}
-            {% if data.report_location.location_region_id %}
-              {% set recipient = "councildistrict" ~ data.report_location.location_region_id ~ "@portlandoregon.gov" %}
-            {% endif %}
-          
-          {% elseif data.request_district %}
-            {% set recipient = "councildistrict" ~ data.request_district ~ "@portlandoregon.gov" %}
-          
-          {% endif %}
-
-        {% elseif data.request_purpose == "Provide comment or feedback to the Mayor and full City Council" %}
-            {% set recipient = "mayor@portlandoregon.gov,councildistrict1@portlandoregon.gov,councildistrict2@portlandoregon.gov,councildistrict3@portlandoregon.gov,councildistrict4@portlandoregon.gov" %}
-          
-        {% else %}
-          {# request to individual elected official #}
-
-          {% set name = data.recipient ? data.recipient : data.request_recipient %}
-
-          {% if name == "Councilor Candace Avalos" or name == "Councilor Loretta Smith" or name == "Councilor Jamie Dunphy" %}
-            {% set recipient = "councildistrict1@portlandoregon.gov" %}
-          {% elseif name == "Councilor Elana Pirtle-Guiney" or name == "Councilor Dan Ryan" or name == "Councilor Sameer Kanal" %}
-            {% set recipient = "councildistrict2@portlandoregon.gov" %}
-          {% elseif name == "Councilor Steve Novick" or name == "Councilor Angelita Morillo" or name == "Councilor Tiffany Koyama Lane" %}
-            {% set recipient = "councildistrict3@portlandoregon.gov" %}
-          {% elseif name == "Councilor Olivia Clark" or name == "Councilor Mitch Green" or name == "Councilor Eric Zimmerman" %}
-            {% set recipient = "councildistrict4@portlandoregon.gov" %}
-          {% elseif name == "Mayor Keith Wilson" %}
-            {% set recipient = "mayor@portlandoregon.gov" %}
-          {% elseif name == "Auditor Simone Rede" %}
-            {% set recipient = "auditorsoffice@portlandoregon.gov" %}
-          {% endif %}
-
-        {% endif %}
-        
-      {% endif %}
-
-      {{ recipient }}
-    '#whitespace': trim
   computed_confirmation_message:
     '#type': webform_computed_twig
     '#title': 'Computed Confirmation Message'
