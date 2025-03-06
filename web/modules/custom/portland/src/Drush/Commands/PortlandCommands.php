@@ -4,7 +4,6 @@ namespace Drupal\portland\Drush\Commands;
 
 use Drush\Attributes as CLI;
 use Drush\Commands\DrushCommands;
-use Drupal\focal_point\Plugin\ImageEffect\FocalPointScaleAndCropImageEffect;
 
 class PortlandCommands extends DrushCommands {
   /**
