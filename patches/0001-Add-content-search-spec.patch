@@ -1,0 +1,37 @@
+From 1a296b1fe62103ea0e63559534ed10158d05c71e Mon Sep 17 00:00:00 2001
+From: Oden <hello@odensc.com>
+Date: Mon, 24 Feb 2025 13:05:39 -0800
+Subject: [PATCH] Add content search spec
+
+---
+ src/Plugin/Search/VertexAISearch.php | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
+
+diff --git a/src/Plugin/Search/VertexAISearch.php b/src/Plugin/Search/VertexAISearch.php
+index 8f6a1a5..b5f3dd6 100644
+--- a/src/Plugin/Search/VertexAISearch.php
++++ b/src/Plugin/Search/VertexAISearch.php
+@@ -180,6 +180,11 @@ class VertexAISearch extends ConfigurableSearchPluginBase {
+     $safeSearch = !empty($this->configuration['safeSearch']) ? TRUE : FALSE;
+     $request->setSafeSearch($safeSearch);
+ 
++    // Enable snippets in the search request.
++    $snippetSpec = new SearchRequest\ContentSearchSpec\SnippetSpec();
++    $snippetSpec->setReturnSnippet(true);
++    $request->setContentSearchSpec((new SearchRequest\ContentSearchSpec())->setSnippetSpec($snippetSpec));
++
+     // Specify the spelling correction mode (automatic or not).
+     $spellCorrection = new SpellCorrectionSpec();
+     $spellCorrection->setMode(MODE::value($this->configuration['spelling_correction_mode']));
+@@ -290,7 +295,7 @@ class VertexAISearch extends ConfigurableSearchPluginBase {
+       $parsedResult['snippet'] = NULL;
+ 
+       if ($this->configuration['result_parts'] === 'SNIPPETS') {
+-        $parsedResult['snippet'] = $derivedStructData['snippets'][0]['htmlSnippet'];
++        $parsedResult['snippet'] = $derivedStructData['snippets'][0]['snippet'];
+       }
+ 
+       // Remove the domain if the feature is enabled.
+-- 
+2.34.1
+
