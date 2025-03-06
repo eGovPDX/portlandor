@@ -4,6 +4,16 @@
  * Implements hook_views_data_alter().
  */
 function portland_views_data_alter(array &$data) {
+  $data['node']['editoria11y_results'] = [
+    'title' => t('Editoria11y results count'),
+    'group' => t('Content'),
+    'field' => [
+      'title' => t('Editoria11y results count'),
+      'help' => t('Shows count of Editoria11y accessibility results for this node.'),
+      'id' => 'node_editoria11y_results',
+    ],
+  ];
+
   $data['node']['has_translations'] = [
     'title' => t('Has translations'),
     'group' => t('Content'),
