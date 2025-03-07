@@ -320,9 +320,29 @@ function _add_node_to_govdelivery_queue($node)
     }
   }
 
+  // Get the node's featured image
+  $featured_image_id = $node->get("field_featured_media")[0]?->getValue()['target_id'];
+  if ($featured_image_id) {
+    $featured_image = \Drupal::entityTypeManager()->getStorage('media')->load($featured_image_id);
+    
+    // Render the media entity using the 'email' view mode.
+    $view_builder = \Drupal::entityTypeManager()->getViewBuilder('media');
+    $render_array = $view_builder->view($featured_image, 'email');
+    $image_html = \Drupal::service('renderer')->renderRoot($render_array);
+    
+    // Convert relative image URLs to absolute URLs
+    $base_url = \Drupal::request()->getSchemeAndHttpHost();
+    $search_str = ['href="/', 'src="/', 'srcset="/', 'action="/'];
+    $replace_str = ["href=\"$base_url/", "src=\"$base_url/", "srcset=\"$base_url/", "action=\"$base_url/"];
+    $image_html = str_ireplace($search_str, $replace_str, $image_html);
+  } else {
+    $image_html = '';
+  }
+
   // Build the email content
   $body = sprintf('<p class="groupHeading">%s %s</p>', $group_name, ucfirst($node->bundle()));
   $body .= sprintf('<h2>%s</h2>', $node->getTitle());
+  $body .= sprintf('%s', $image_html);
   
   // If the node is an event, render the group date twig template and include the output in the email body
   if ($node->bundle() == 'event') {
@@ -345,6 +365,7 @@ function _add_node_to_govdelivery_queue($node)
   
   $body .= sprintf('<p>%s</p>', $node->get("field_summary")->value);
   $body .= sprintf('<p><a href="%s">Read more</a></p>', $node->toUrl()->setAbsolute()->toString());
+  $body .= '<div class="clear" />';
   $body .= "
     <style>
       .groupHeading {
@@ -352,6 +373,13 @@ function _add_node_to_govdelivery_queue($node)
         font-size: .9rem;
         text-transform: uppercase;
         color: #666;
+      }
+      div.field--type-image {
+        float: right;
+        margin-left: 1em;
+      }
+      .clear {
+        clear: both;
       }
     </style>";
   
