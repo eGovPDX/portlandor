@@ -191,6 +191,10 @@ class RevisionBlock extends BlockBase {
     $moderation_state = $node->moderation_state->value;
 
     switch ($moderation_state) {
+      case "agenda_scheduling":
+        $result = "unpublished and waiting to be scheduled for an agenda";
+        break;
+
       case "attorney_review":
         $result = "unpublished and waiting for attorney review";
         break;
