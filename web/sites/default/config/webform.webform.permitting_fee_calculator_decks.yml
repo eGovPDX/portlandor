@@ -1,0 +1,295 @@
+uuid: a9911177-4f80-4f4b-a4d1-185a2718cce0
+langcode: en
+status: open
+dependencies: {  }
+weight: 0
+open: null
+close: null
+uid: 60
+template: false
+archive: false
+id: permitting_fee_calculator_decks
+title: 'Permitting Fee Calculator - Decks'
+description: ''
+categories:
+  - Calculator
+elements: |-
+  markup:
+    '#type': webform_markup
+    '#markup': '<h2>Fee Calculator</h2><p>Use the calculator below to estimate your permitting fees. Estimates may change as you add more details to your application.</p>'
+  input_tools_equipment:
+    '#type': textfield
+    '#title': 'Tools and Equipment'
+    '#description': '<p>Enter the estimated cost of any tools or equipment you need to rent or buy for this project.</p>'
+    '#description_display': before
+    '#input_mask': "'alias': 'currency'"
+  input_building_materials:
+    '#type': textfield
+    '#title': 'Building Materials'
+    '#description': '<p>How much will you spend on materials like wood, screws, concrete, and other supplies?</p>'
+    '#description_display': before
+    '#input_mask': "'alias': 'currency'"
+  input_contractor_cost:
+    '#type': textfield
+    '#title': 'Contractor Cost (if hiring a profesional)'
+    '#description': "<p>If you're hiring a contractor, enter their total estimated price for the project. If you're doing the work yourself, leave this blank.</p>"
+    '#description_display': before
+    '#input_mask': "'alias': 'currency'"
+  computed_fee_table:
+    '#type': webform_computed_twig
+    '#title': 'Computed Fee Table'
+    '#title_display': invisible
+    '#states':
+      visible:
+        - ':input[name="input_tools_equipment"]':
+            filled: true
+        - or
+        - ':input[name="input_building_materials"]':
+            filled: true
+        - or
+        - ':input[name="input_contractor_cost"]':
+            filled: true
+    '#mode': text
+    '#template': |
+      {% set total_valuation = data.input_tools_equipment|replace({'$ ': ''})|replace({',':''})|number_format(2, '.', '') + data.input_building_materials|replace({'$ ': ''})|replace({',':''})|number_format(2, '.', '') + data.input_contractor_cost|replace({'$ ': ''})|replace({',':''})|number_format(2, '.', '') %}
+
+      {% if total_valuation <= 500 %}
+        {% set permit_fee = 145 %}
+      {% elseif total_valuation <= 2000 %}
+        {% set permit_fee = 145 + ((total_valuation - 500) / 100) * 3.13 %}
+      {% elseif total_valuation <= 25000 %}
+        {% set permit_fee = 191.95 + ((total_valuation - 2000) / 1000) * 12.15 %}
+      {% elseif total_valuation <= 50000 %}
+        {% set permit_fee = 471.40 + ((total_valuation - 25000) / 1000) * 8.96 %}
+      {% elseif total_valuation <= 100000 %}
+        {% set permit_fee = 695.40 + ((total_valuation - 50000) / 1000) * 5.94 %}
+      {% else %}
+        {% set permit_fee = 992.40 + ((total_valuation - 100000) / 1000) * 4.91 %}
+      {% endif %}
+
+      {% set plan_review_fee = permit_fee * 0.65 %}
+      {% set state_surcharge = permit_fee * 0.12 %}
+      {% set system_surcharge = 175 %}
+      {% set life_safety_fee = permit_fee * 0.10 %}
+      {% set land_use_fee = permit_fee * 0.15 %}
+      {% set issuance_fee = permit_fee * 0.08 %}
+      {% set development_services_fee = permit_fee * 0.07625 %}
+      {% set site_review_fee = permit_fee * 0.1 %}
+      {% set school_cet_fee = permit_fee * 0.12 %}
+      {% set afforadable_housing_cet_fee = permit_fee * 0.04 %}
+      {% set sdcs = permit_fee * 0.05 %}
+
+      {% set total = plan_review_fee + state_surcharge + system_surcharge + life_safety_fee + land_use_fee + issuance_fee + development_services_fee + site_review_fee + school_cet_fee + afforadable_housing_cet_fee + sdcs %}
+
+      {% set percent = total and total_valuation ? total / total_valuation * 100 : 0 %}
+
+      <table class="table">
+        <tr><th>Estimated Valuation:</th><th class="text-end">$ {{ total_valuation|number_format(2, '.', ',') }}</th></tr>
+        <tr><td>Permit Fee:</td><td class="text-end">$ {{ permit_fee|number_format(2, '.', ',') }}</td></tr>
+        
+        <tr><td>Plan Review Fee:</td><td class="text-end">$ {{ plan_review_fee|number_format(2, '.', ',') }}</td></tr>
+        <tr><td>State Surcharge:</td><td class="text-end">$ {{ state_surcharge|number_format(2, '.', ',') }}</td></tr>
+        <tr><td>System Surcharge:</td><td class="text-end">$ {{ system_surcharge|number_format(2, '.', ',') }}</td></tr>
+        <tr><td>Life Safety Fee:</td><td class="text-end">$ {{ life_safety_fee|number_format(2, '.', ',') }}</td></tr>
+        <tr><td>Land Use Fee:</td><td class="text-end">$ {{ land_use_fee|number_format(2, '.', ',') }}</td></tr>
+        <tr><td>Issuance Fee:</td><td class="text-end">$ {{ issuance_fee|number_format(2, '.', ',') }}</td></tr>
+        <tr><td>Development Services Fee:</td><td class="text-end">$ {{ development_services_fee|number_format(2, '.', ',') }}</td></tr>
+        <tr><td>Site Review Fee:</td><td class="text-end">$ {{ site_review_fee|number_format(2, '.', ',') }}</td></tr>
+        <tr><td>School CET Fee:</td><td class="text-end">$ {{ school_cet_fee|number_format(2, '.', ',') }}</td></tr>
+        <tr><td>Affordable Housing CET Fee:</td><td class="text-end">$ {{ afforadable_housing_cet_fee|number_format(2, '.', ',') }}</td></tr>
+        <tr><td>SDCs:</td><td class="text-end">$ {{ sdcs|number_format(2, '.', ',') }}</td></tr>
+        <tr><td><span class="h3">Total Fees:</span></td><td class="text-end"><span class="h3">$ {{ total|number_format(2, '.', ',') }}</span></td></tr>
+        <tr><td><em>Percentage of estimated value:</td><td class="text-end">{{ percent|number_format(2, '.', ',') }}%</em></td></tr>
+      </table>
+    '#whitespace': trim
+    '#ajax': true
+  actions:
+    '#type': webform_actions
+    '#title': 'Submit button(s)'
+    '#submit_hide': true
+    '#update_hide': true
+css: ''
+javascript: ''
+settings:
+  ajax: false
+  ajax_scroll_top: form
+  ajax_progress_type: ''
+  ajax_effect: ''
+  ajax_speed: null
+  page: true
+  page_submit_path: ''
+  page_confirm_path: ''
+  page_theme_name: ''
+  form_title: both
+  form_submit_once: false
+  form_open_message: ''
+  form_close_message: ''
+  form_exception_message: ''
+  form_previous_submissions: true
+  form_confidential: false
+  form_confidential_message: ''
+  form_disable_remote_addr: false
+  form_convert_anonymous: false
+  form_prepopulate: false
+  form_prepopulate_source_entity: false
+  form_prepopulate_source_entity_required: false
+  form_prepopulate_source_entity_type: ''
+  form_unsaved: false
+  form_disable_back: false
+  form_submit_back: false
+  form_disable_autocomplete: false
+  form_novalidate: false
+  form_disable_inline_errors: false
+  form_required: false
+  form_autofocus: false
+  form_details_toggle: false
+  form_reset: false
+  form_access_denied: default
+  form_access_denied_title: ''
+  form_access_denied_message: ''
+  form_access_denied_attributes: {  }
+  form_file_limit: ''
+  form_attributes: {  }
+  form_method: ''
+  form_action: ''
+  share: false
+  share_node: false
+  share_theme_name: ''
+  share_title: true
+  share_page_body_attributes: {  }
+  submission_label: ''
+  submission_exception_message: ''
+  submission_locked_message: ''
+  submission_log: false
+  submission_excluded_elements: {  }
+  submission_exclude_empty: false
+  submission_exclude_empty_checkbox: false
+  submission_views: {  }
+  submission_views_replace: {  }
+  submission_user_columns: {  }
+  submission_user_duplicate: false
+  submission_access_denied: default
+  submission_access_denied_title: ''
+  submission_access_denied_message: ''
+  submission_access_denied_attributes: {  }
+  previous_submission_message: ''
+  previous_submissions_message: ''
+  autofill: false
+  autofill_message: ''
+  autofill_excluded_elements: {  }
+  wizard_progress_bar: true
+  wizard_progress_pages: false
+  wizard_progress_percentage: false
+  wizard_progress_link: false
+  wizard_progress_states: false
+  wizard_start_label: ''
+  wizard_preview_link: false
+  wizard_confirmation: true
+  wizard_confirmation_label: ''
+  wizard_auto_forward: true
+  wizard_auto_forward_hide_next_button: false
+  wizard_keyboard: true
+  wizard_track: ''
+  wizard_prev_button_label: ''
+  wizard_next_button_label: ''
+  wizard_toggle: false
+  wizard_toggle_show_label: ''
+  wizard_toggle_hide_label: ''
+  wizard_page_type: container
+  wizard_page_title_tag: h2
+  preview: 0
+  preview_label: ''
+  preview_title: ''
+  preview_message: ''
+  preview_attributes: {  }
+  preview_excluded_elements: {  }
+  preview_exclude_empty: true
+  preview_exclude_empty_checkbox: false
+  draft: none
+  draft_multiple: false
+  draft_auto_save: false
+  draft_saved_message: ''
+  draft_loaded_message: ''
+  draft_pending_single_message: ''
+  draft_pending_multiple_message: ''
+  confirmation_type: page
+  confirmation_url: ''
+  confirmation_title: ''
+  confirmation_message: ''
+  confirmation_attributes: {  }
+  confirmation_back: true
+  confirmation_back_label: ''
+  confirmation_back_attributes: {  }
+  confirmation_exclude_query: false
+  confirmation_exclude_token: false
+  confirmation_update: false
+  limit_total: null
+  limit_total_interval: null
+  limit_total_message: ''
+  limit_total_unique: false
+  limit_user: null
+  limit_user_interval: null
+  limit_user_message: ''
+  limit_user_unique: false
+  entity_limit_total: null
+  entity_limit_total_interval: null
+  entity_limit_user: null
+  entity_limit_user_interval: null
+  purge: none
+  purge_days: null
+  results_disabled: false
+  results_disabled_ignore: false
+  results_customize: false
+  token_view: false
+  token_update: false
+  token_delete: false
+  serial_disabled: false
+access:
+  create:
+    roles:
+      - anonymous
+      - authenticated
+    users: {  }
+    permissions: {  }
+  view_any:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  update_any:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  delete_any:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  purge_any:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  view_own:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  update_own:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  delete_own:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  administer:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  test:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  configuration:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+handlers: {  }
+variants: {  }
