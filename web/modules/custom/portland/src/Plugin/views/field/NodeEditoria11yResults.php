@@ -63,6 +63,6 @@ class NodeEditoria11yResults extends FieldPluginBase implements ContainerFactory
    * {@inheritdoc}
    */
   public function render(ResultRow $rows) {
-    return $rows->{$this->field_alias} ?? 0;
+    return $rows->{$this->field_alias} ?? t('Not checked');
   }
 }
