@@ -100,6 +100,25 @@ function portland_ecouncil_form_relation_form_alter(array &$form, FormStateInter
 }
 
 /**
+ * If current user has Council Agenda Scheduler role and editing a council document where
+ * the state is Agenda Scheduling: hide all fields except Requested Council Date and Time Requested.
+ */
+function _check_council_agenda_scheduling_state(array &$form, Node $node) {
+  $user_roles = \Drupal::currentUser()->getRoles();
+  if (in_array('council_agenda_scheduler', $user_roles) && $node->moderation_state->value === 'agenda_scheduling') {
+    // Hide title field
+    $form['title']['#access'] = false;
+    // Hide all other non-president fields
+    foreach ($form as $key => &$element) {
+      if ((str_starts_with($key, 'field_') || str_starts_with($key, 'group_'))
+        && ($key !== 'field_requested_council_date'  && $key !== 'field_time_requested')) {
+        $element['#access'] = false;
+      }
+    }
+  }
+}
+
+/**
  * If current user has Council President role and editing a council document where
  * the state is Council President Review: hide all fields except the President Only Fields.
  * If current user is not Council Clerk/Admin or user is Council President and the state is not Council President Review: hide the President Only Fields.
@@ -125,15 +144,11 @@ function _check_council_president_state(array &$form, Node $node) {
   }
 }
 
-const COUNCIL_DOCUMENT_TYPE_PRESENTATION_TID = 76;
 const COUNCIL_DOCUMENT_TYPE_PROCLAMATION_TID = 75;
 /**
- * "Presentation" type is presently unused/deprecated, but may be re-enabled at a later date.
  * "Proclamation" type should only be accessible to Council Clerk/admin.
  */
 function _hide_council_document_types(array &$form) {
-  unset($form['field_council_document_type']['widget']['#options'][COUNCIL_DOCUMENT_TYPE_PRESENTATION_TID]);
-
   $user_roles = \Drupal::currentUser()->getRoles();
   if (!in_array('administrator', $user_roles) && !in_array('council_clerk', $user_roles)) {
     unset($form['field_council_document_type']['widget']['#options'][COUNCIL_DOCUMENT_TYPE_PROCLAMATION_TID]);
@@ -159,6 +174,7 @@ function portland_ecouncil_field_group_form_process_build_alter(array &$element,
   /** @var \Drupal\node\Entity\Node */
   $node = $form_object->getEntity();
   if ($node->bundle() === 'council_document') {
+    _check_council_agenda_scheduling_state($form, $node);
     _check_council_president_state($form, $node);
     _hide_council_document_types($form);
     _hide_deprecated_field_values($form);
