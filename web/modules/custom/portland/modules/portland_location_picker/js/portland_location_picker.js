@@ -1351,6 +1351,9 @@
           }
 
           setLocationDetails(data);
+
+          const event = new Event("location-picked");
+          locationPickerEl.dispatchEvent(event);
         }
 
         function doClickQuery(latlng) {
@@ -1494,9 +1497,6 @@
             $('.verified-checkmark.' + type).removeClass('invisible');
             $('.location-verify.' + type).prop('disabled', true);
           }
-
-          const event = new Event("location-picked");
-          locationPickerEl.dispatchEvent(event);
         }
 
         function setUnverified(type = "address") {
