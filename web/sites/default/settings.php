@@ -245,3 +245,6 @@ if (getenv('IS_DDEV_PROJECT') == 'true' && is_readable($ddev_settings)) {
 // Set the MySQL transaction isolation level
 // See https://www.drupal.org/docs/getting-started/system-requirements/setting-the-mysql-transaction-isolation-level
 $databases['default']['default']['init_commands']['isolation_level'] = 'SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED';
+
+// PGOV-1404 skip removing old image styles to save deployment time
+$settings['dont_remove_files_when_image_style_config_changes'] = TRUE;
