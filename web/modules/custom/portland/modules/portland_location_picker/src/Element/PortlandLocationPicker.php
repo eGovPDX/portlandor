@@ -26,7 +26,7 @@ class PortlandLocationPicker extends WebformCompositeBase {
    * {@inheritdoc}
    * //NOTE: custom elements must have a #title attribute. if a value is not set here, it must be set
    * //in the field config. if not, an error is thrown when trying to add an email handler.
-   * 
+   *
    * How to programmatically set field conditions: https://www.drupal.org/docs/drupal-apis/form-api/conditional-form-fields
    */
   public static function getCompositeElements(array $element) {
@@ -34,7 +34,7 @@ class PortlandLocationPicker extends WebformCompositeBase {
     $nodes = \Drupal::entityTypeManager()->getStorage('node')->loadByProperties(['type' => 'park_facility', 'status' => 1]);
 
     $element_id = "report_location";
-    
+
     if (array_key_exists("#webform_key", $element)) {
       $element_id = $element['#webform_key'];
     }
@@ -88,6 +88,11 @@ class PortlandLocationPicker extends WebformCompositeBase {
       '#type' => 'hidden',
       '#title' => 'Taxlot',
       '#attributes' => ['id' => 'location_type_taxlot'],
+    ];
+    $element['location_taxlot_id'] = [
+      '#type' => 'hidden',
+      '#title' => 'Taxlot ID',
+      '#attributes' => ['id' => 'location_taxlot_id'],
     ];
     $element['location_type_park'] = [
       '#type' => 'hidden',
