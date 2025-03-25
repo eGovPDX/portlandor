@@ -19,6 +19,7 @@ dependencies:
     - field.storage.node.field_time_requested
     - field.storage.relation.field_agenda_item_number
     - field.storage.relation.field_agenda_sub_item_number
+    - field.storage.relation.field_session_start_datetime
     - node.type.council_document
     - taxonomy.vocabulary.council_committee
     - taxonomy.vocabulary.council_document_status
@@ -685,8 +686,8 @@ display:
         type: full
         options:
           offset: 0
-          pagination_heading_level: h4
-          items_per_page: 25
+          pagination_heading_level: h3
+          items_per_page: 15
           total_pages: null
           id: 0
           tags:
@@ -926,11 +927,11 @@ display:
     display_plugin: block
     position: 9
     display_options:
-      title: 'Assigned Documents'
+      title: 'Assigned documents'
       fields:
         view_node:
           id: view_node
-          table: node_field_revision
+          table: node
           field: view_node
           relationship: none
           group_type: group
@@ -940,7 +941,7 @@ display:
           label: ''
           exclude: true
           alter:
-            alter_text: true
+            alter_text: false
             text: ''
             make_link: false
             path: ''
@@ -981,6 +982,134 @@ display:
           text: view
           output_url_as_text: true
           absolute: false
+        field_document_number:
+          id: field_document_number
+          table: node__field_document_number
+          field: field_document_number
+          relationship: none
+          group_type: group
+          admin_label: ''
+          plugin_id: field
+          label: ''
+          exclude: true
+          alter:
+            alter_text: false
+            text: ''
+            make_link: false
+            path: ''
+            absolute: false
+            external: false
+            replace_spaces: false
+            path_case: none
+            trim_whitespace: false
+            alt: ''
+            rel: ''
+            link_class: ''
+            prefix: ''
+            suffix: ''
+            target: ''
+            nl2br: false
+            max_length: 0
+            word_boundary: true
+            ellipsis: true
+            more_link: false
+            more_link_text: ''
+            more_link_path: ''
+            strip_tags: false
+            trim: false
+            preserve_tags: ''
+            html: false
+          element_type: ''
+          element_class: ''
+          element_label_type: ''
+          element_label_class: ''
+          element_label_colon: false
+          element_wrapper_type: ''
+          element_wrapper_class: ''
+          element_default_classes: true
+          empty: ''
+          hide_empty: false
+          empty_zero: false
+          hide_alter_empty: true
+          click_sort_column: value
+          type: string
+          settings:
+            link_to_entity: false
+          group_column: value
+          group_columns: {  }
+          group_rows: true
+          delta_limit: 0
+          delta_offset: 0
+          delta_reversed: false
+          delta_first_last: false
+          multi_type: separator
+          separator: ', '
+          field_api_classes: false
+        field_session_start_datetime:
+          id: field_session_start_datetime
+          table: relation__field_session_start_datetime
+          field: field_session_start_datetime
+          relationship: field_council_session
+          group_type: group
+          admin_label: ''
+          plugin_id: field
+          label: ''
+          exclude: true
+          alter:
+            alter_text: false
+            text: ''
+            make_link: false
+            path: ''
+            absolute: false
+            external: false
+            replace_spaces: false
+            path_case: none
+            trim_whitespace: false
+            alt: ''
+            rel: ''
+            link_class: ''
+            prefix: ''
+            suffix: ''
+            target: ''
+            nl2br: false
+            max_length: 0
+            word_boundary: true
+            ellipsis: true
+            more_link: false
+            more_link_text: ''
+            more_link_path: ''
+            strip_tags: false
+            trim: false
+            preserve_tags: ''
+            html: false
+          element_type: ''
+          element_class: ''
+          element_label_type: ''
+          element_label_class: ''
+          element_label_colon: false
+          element_wrapper_type: ''
+          element_wrapper_class: ''
+          element_default_classes: true
+          empty: ''
+          hide_empty: false
+          empty_zero: false
+          hide_alter_empty: true
+          click_sort_column: value
+          type: datetime_time_ago
+          settings:
+            future_format: 'Upcoming meeting in @interval'
+            past_format: 'Last action @interval ago'
+            granularity: 1
+          group_column: entity_id
+          group_columns: {  }
+          group_rows: true
+          delta_limit: 0
+          delta_offset: 0
+          delta_reversed: false
+          delta_first_last: false
+          multi_type: separator
+          separator: ', '
+          field_api_classes: false
         field_full_document_title:
           id: field_full_document_title
           table: node__field_full_document_title
@@ -993,7 +1122,7 @@ display:
           exclude: false
           alter:
             alter_text: true
-            text: '<a href="{{ view_node }}"> {{ field_full_document_title }} </a>'
+            text: "<div class=\"d-flex w-100 align-items-center justify-content-between mb-1\">\r\n  <h3 class=\"h5 mb-0\">{{ field_document_number }}</h3>\r\n  <small class=\"text-muted\">{{ field_session_start_datetime ?: 'Unscheduled'|t }}</small>\r\n</div>\r\n<a class=\"stretched-link\" href=\"{{ view_node }}\">{{ field_full_document_title }}</a>"
             make_link: false
             path: ''
             absolute: false
@@ -1033,7 +1162,7 @@ display:
           click_sort_column: value
           type: basic_string
           settings: {  }
-          group_column: value
+          group_column: entity_id
           group_columns: {  }
           group_rows: true
           delta_limit: 0
@@ -1044,6 +1173,21 @@ display:
           separator: ', '
           field_api_classes: false
       empty: {  }
+      sorts:
+        field_session_start_datetime_value:
+          id: field_session_start_datetime_value
+          table: relation__field_session_start_datetime
+          field: field_session_start_datetime_value
+          relationship: field_council_session
+          group_type: max
+          admin_label: ''
+          plugin_id: datetime
+          order: ASC
+          expose:
+            label: ''
+            field_identifier: ''
+          exposed: false
+          granularity: second
       arguments:
         field_committee_target_id:
           id: field_committee_target_id
@@ -1232,11 +1376,32 @@ display:
         operator: AND
         groups:
           1: AND
+      style:
+        type: html_list
+        options:
+          grouping: {  }
+          row_class: 'list-group-item list-group-item-action'
+          default_row_class: false
+          type: ul
+          wrapper_class: ''
+          class: list-group
+      row:
+        type: fields
+        options:
+          default_field_elements: false
+          inline: {  }
+          separator: ' - '
+          hide_empty: false
       defaults:
         empty: false
+        query: true
         title: false
+        group_by: false
+        style: false
+        row: false
         relationships: false
         fields: false
+        sorts: false
         arguments: false
         filters: false
         filter_groups: false
@@ -1251,6 +1416,26 @@ display:
           admin_label: 'field_committee: Taxonomy term'
           plugin_id: standard
           required: false
+        reverse__relation__field_council_document:
+          id: reverse__relation__field_council_document
+          table: node_field_data
+          field: reverse__relation__field_council_document
+          relationship: none
+          group_type: group
+          admin_label: 'Agenda Items using field_council_document'
+          entity_type: node
+          plugin_id: entity_reverse
+          required: false
+        field_council_session:
+          id: field_council_session
+          table: relation__field_council_session
+          field: field_council_session
+          relationship: reverse__relation__field_council_document
+          group_type: group
+          admin_label: 'Council Session of Agenda Item'
+          plugin_id: standard
+          required: false
+      group_by: true
       display_description: ''
       header: {  }
       display_extenders:
@@ -1269,7 +1454,9 @@ display:
         - 'user.node_grants:view'
         - user.permissions
       tags:
+        - 'config:field.storage.node.field_document_number'
         - 'config:field.storage.node.field_full_document_title'
+        - 'config:field.storage.relation.field_session_start_datetime'
   block_date_time_requested:
     id: block_date_time_requested
     display_title: 'Block: Date and Time Information'
@@ -1290,7 +1477,7 @@ display:
           exclude: false
           alter:
             alter_text: true
-            text: "<div class=\"field field--label-inline d-flex mb-3>\r\n  <div class=\"field__label\">Requested Council Date</div>\r\n  <div class=\"field__item\">{{ field_requested_council_date }}</div>\r\n</div>"
+            text: "<div class=\"field field--label-inline d-flex mb-3>\r\n  <div class=\"field__label\">Meeting Date</div>\r\n  <div class=\"field__item\">{{ field_requested_council_date }}</div>\r\n</div>"
             make_link: false
             path: ''
             absolute: false
@@ -1354,7 +1541,7 @@ display:
           exclude: false
           alter:
             alter_text: true
-            text: "<div class=\"field field--label-inline d-flex mb-3>\r\n  <div class=\"field__label\">Requested Start Time</div>\r\n  <div class=\"field__item\">{{ field_requested_start_time }}</div>\r\n</div>"
+            text: "<div class=\"field field--label-inline d-flex mb-3>\r\n  <div class=\"field__label\">Start Time</div>\r\n  <div class=\"field__item\">{{ field_requested_start_time }}</div>\r\n</div>"
             make_link: false
             path: ''
             absolute: false
@@ -1811,7 +1998,7 @@ display:
         metatag_display_extender:
           metatags: {  }
           tokenize: false
-      block_description: 'Requested Date and Time Information'
+      block_description: 'Date and Time Information'
       block_hide_empty: true
     cache_metadata:
       max-age: -1

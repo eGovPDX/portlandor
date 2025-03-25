@@ -23,6 +23,7 @@ dependencies:
     - field.storage.node.field_body_content
     - field.storage.node.field_bureau
     - field.storage.node.field_city_section
+    - field.storage.node.field_committee
     - field.storage.node.field_community_actions
     - field.storage.node.field_construction_estimate
     - field.storage.node.field_construction_type
@@ -31,6 +32,7 @@ dependencies:
     - field.storage.node.field_council_document_type
     - field.storage.node.field_date_of_final_disposition
     - field.storage.node.field_display_groups
+    - field.storage.node.field_document_number
     - field.storage.node.field_end_date
     - field.storage.node.field_end_time
     - field.storage.node.field_event_type
@@ -60,6 +62,7 @@ dependencies:
     - field.storage.node.field_project_status
     - field.storage.node.field_public_notice_type
     - field.storage.node.field_published_on
+    - field.storage.node.field_related_content
     - field.storage.node.field_reservations_available
     - field.storage.node.field_search_keywords
     - field.storage.node.field_section_body
@@ -222,7 +225,7 @@ field_settings:
     label: 'Content Title'
     datasource_id: 'entity:node'
     property_path: title
-    type: 'solr_text_custom:edge'
+    type: text
     boost: 5.0
     dependencies:
       module:
@@ -275,6 +278,14 @@ field_settings:
     dependencies:
       config:
         - field.storage.node.field_city_section
+  field_committee:
+    label: 'Assigned committee'
+    datasource_id: 'entity:node'
+    property_path: field_committee
+    type: integer
+    dependencies:
+      config:
+        - field.storage.node.field_committee
   field_community_actions:
     label: 'Content Actions'
     datasource_id: 'entity:node'
@@ -299,6 +310,15 @@ field_settings:
     dependencies:
       config:
         - field.storage.node.field_construction_type
+  field_content_summary:
+    label: 'Content Summary'
+    datasource_id: 'entity:node'
+    property_path: field_summary
+    type: text
+    boost: 2.0
+    dependencies:
+      config:
+        - field.storage.node.field_summary
   field_contract_scope:
     label: 'Contract Scope'
     datasource_id: 'entity:node'
@@ -347,6 +367,14 @@ field_settings:
     dependencies:
       config:
         - field.storage.node.field_display_groups
+  field_document_number:
+    label: 'Document number'
+    datasource_id: 'entity:node'
+    property_path: field_document_number
+    type: text
+    dependencies:
+      config:
+        - field.storage.node.field_document_number
   field_end_date:
     label: 'Content End date'
     datasource_id: 'entity:node'
@@ -674,6 +702,16 @@ field_settings:
     dependencies:
       config:
         - field.storage.node.field_published_on
+  field_related_content_title:
+    label: 'Related » Content » Title'
+    datasource_id: 'entity:node'
+    property_path: 'field_related_content:entity:title'
+    type: text
+    dependencies:
+      config:
+        - field.storage.node.field_related_content
+      module:
+        - node
   field_reservations_available:
     label: 'Content Reservations available'
     datasource_id: 'entity:node'
@@ -760,18 +798,11 @@ field_settings:
     label: 'Group Summary'
     datasource_id: 'entity:group'
     property_path: field_summary
-    type: string
+    type: text
+    boost: 2.0
     dependencies:
       config:
         - field.storage.group.field_summary
-  field_summary_1:
-    label: 'Content Summary'
-    datasource_id: 'entity:node'
-    property_path: field_summary
-    type: string
-    dependencies:
-      config:
-        - field.storage.node.field_summary
   field_topics:
     label: 'Content Topics'
     datasource_id: 'entity:node'
@@ -835,7 +866,7 @@ field_settings:
     label: 'Group Title'
     datasource_id: 'entity:group'
     property_path: label
-    type: 'solr_text_custom:edge'
+    type: text
     boost: 13.0
     dependencies:
       module:
@@ -956,7 +987,7 @@ field_settings:
     label: 'Term Name'
     datasource_id: 'entity:taxonomy_term'
     property_path: name
-    type: 'solr_text_custom:edge'
+    type: text
     boost: 5.0
     dependencies:
       module:
@@ -1076,6 +1107,7 @@ processor_settings:
       - content_title
       - content_type
       - field_body_content
+      - field_content_summary
       - field_history
       - field_news_type
       - field_official_organization_name
@@ -1085,7 +1117,6 @@ processor_settings:
       - field_section_body
       - field_shortname_or_acronym
       - field_summary
-      - field_summary_1
       - group_field_search_keywords
       - group_title
       - group_topic_name
@@ -1114,6 +1145,7 @@ processor_settings:
       - content_title
       - content_type
       - field_body_content
+      - field_content_summary
       - field_history
       - field_news_type
       - field_official_organization_name
@@ -1123,7 +1155,6 @@ processor_settings:
       - field_section_body
       - field_shortname_or_acronym
       - field_summary
-      - field_summary_1
       - group_field_search_keywords
       - group_title
       - group_topic_name
@@ -1172,6 +1203,7 @@ tracker_settings:
     indexing_order: fifo
 options:
   cron_limit: 50
+  delete_on_fail: true
   index_directly: true
   track_changes_in_references: false
 server: pantheon_solr8

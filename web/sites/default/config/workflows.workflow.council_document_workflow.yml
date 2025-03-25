@@ -11,6 +11,11 @@ label: 'Council document workflow'
 type: content_moderation
 type_settings:
   states:
+    agenda_scheduling:
+      label: 'Agenda scheduling'
+      weight: 2
+      published: false
+      default_revision: true
     attorney_review:
       label: 'Attorney review (if needed)'
       weight: -4
@@ -22,13 +27,13 @@ type_settings:
       published: false
       default_revision: true
     bureau_review:
-      label: 'Bureau review'
+      label: 'In review'
       weight: -5
       published: false
       default_revision: true
     cancelled:
       label: 'Cancelled (request deletion)'
-      weight: 4
+      weight: 6
       published: false
       default_revision: true
     code_review:
@@ -53,28 +58,35 @@ type_settings:
       default_revision: true
     president_review:
       label: 'Council president review'
-      weight: 0
+      weight: 1
       published: false
       default_revision: true
     published:
       label: Published
-      weight: 2
+      weight: 4
       published: true
       default_revision: true
     ready_for_agenda:
       label: 'Ready for agenda'
-      weight: 1
+      weight: 3
       published: false
       default_revision: true
     unpublished:
       label: Unpublished
-      weight: 3
+      weight: 5
       published: false
       default_revision: true
   transitions:
+    agenda_scheduling_to_ready_for_agenda:
+      label: 'Agenda Scheduling to Ready for Agenda (Council Clerk and Council Agenda Scheduler)'
+      from:
+        - agenda_scheduling
+      to: ready_for_agenda
+      weight: 5
     attorney_review_council_clerk_:
       label: 'Attorney Review (Council Clerk)'
       from:
+        - agenda_scheduling
         - cancelled
         - code_review
         - council_clerk_review
@@ -85,8 +97,9 @@ type_settings:
       to: attorney_review
       weight: 1
     bureau_review_council_clerk_:
-      label: 'Bureau Review (Council Clerk)'
+      label: 'In Review (Council Clerk)'
       from:
+        - agenda_scheduling
         - cancelled
         - code_review
         - council_clerk_review
@@ -109,6 +122,7 @@ type_settings:
     code_review_council_clerk_:
       label: 'Code Review (Council Clerk)'
       from:
+        - agenda_scheduling
         - cancelled
         - code_review
         - council_clerk_review
@@ -121,6 +135,7 @@ type_settings:
     council_clerk_review_council_clerk_:
       label: 'Council Clerk Review (Council Clerk)'
       from:
+        - agenda_scheduling
         - cancelled
         - code_review
         - council_clerk_review
@@ -144,6 +159,7 @@ type_settings:
     elected_review_council_clerk_:
       label: 'Elected Review (Council Clerk)'
       from:
+        - agenda_scheduling
         - cancelled
         - code_review
         - council_clerk_review
@@ -153,6 +169,19 @@ type_settings:
         - unpublished
       to: elected_review
       weight: 3
+    move_to_agenda_scheduling:
+      label: 'Agenda Scheduling (Council Clerk)'
+      from:
+        - agenda_scheduling
+        - cancelled
+        - code_review
+        - council_clerk_review
+        - president_review
+        - published
+        - ready_for_agenda
+        - unpublished
+      to: agenda_scheduling
+      weight: 4
     move_to_attorney_review:
       label: 'Move to attorney review'
       from:
@@ -196,6 +225,7 @@ type_settings:
     move_to_council_president_review:
       label: 'Council President Review (Council Clerk)'
       from:
+        - agenda_scheduling
         - cancelled
         - code_review
         - council_clerk_review
@@ -230,6 +260,7 @@ type_settings:
     publish:
       label: Publish
       from:
+        - agenda_scheduling
         - attorney_review
         - budget_office_review
         - bureau_review

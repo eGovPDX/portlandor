@@ -114,6 +114,6 @@ describe('SuperAdmin user test', () => {
         throw e;
       }
     },
-    120000 // 90s timeout
+    120000 // 120s timeout
   );
 });
