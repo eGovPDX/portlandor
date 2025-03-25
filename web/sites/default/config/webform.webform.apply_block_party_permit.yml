@@ -22,7 +22,7 @@ elements: |-
       '#type': portland_location_picker
       '#title': 'Location of the Block Party'
       '#description_display': before
-      '#required': true
+      '#location_search__description': 'Search the map for an address, cross streets, park, or community center. Or use the map to click a location. Please click, tap, or drag the marker to the precise location in the street where you plant o have your block party.'
       '#place_name__access': false
       '#location_details__description': 'Block Party events must take place on the street of which you are a resident. Please describe the location requested including street and cross street names, example – NE 21st Ave between NE Going and NE Wygant'
       '#location_details__required': true
@@ -36,16 +36,15 @@ elements: |-
     apply_street_painting:
       '#type': radios
       '#title': 'Is this a Street Painting and/or repainting project?'
-      '#options':
-        'YES': 'YES'
-        'NO': 'NO'
+      '#options': yes_no
+      '#options_display': side_by_side
       '#required': true
     markup_street_painting:
       '#type': webform_markup
       '#states':
         visible:
           ':input[name="apply_street_painting"]':
-            value: 'YES'
+            value: 'Yes'
       '#markup': '<div class="alert alert--info next-steps"><h2 class="mt-0">Next Steps</h2><p class="mb-0"><span data-teams="true">If you are considering a new Street Painting, please consult the Street Painting program to initiate the application process, if you have not already done so.</span></p></div>'
     apply_blocks_requested:
       '#type': number
@@ -72,9 +71,13 @@ elements: |-
       '#description': '<p>For example, a weekend event that spans Saturday and Sunday.</p>'
     container_dates:
       '#type': container
-      '#attributes':
-        class:
-          - form--inline
+      markup_01:
+        '#type': webform_markup
+        '#states':
+          visible:
+            ':input[name="apply_multiple_dates"]':
+              checked: true
+        '#markup': '<p>Residents may apply to use their street for Block Party activities up to 8 hours per week and if recurring, for up to one month. End date must be within 30 calendar days of the start date.</p>'
       apply_event_start_date:
         '#type': date
         '#title': 'Start date'
@@ -95,7 +98,7 @@ elements: |-
       apply_event_end_date:
         '#type': date
         '#title': 'End date'
-        '#description': '<p>Can only be up to 30 days after the Start Date.</p>'
+        '#description_display': before
         '#states':
           visible:
             ':input[name="apply_multiple_dates"]':
@@ -109,10 +112,59 @@ elements: |-
         '#wrapper_attributes':
           class:
             - mt-0
+            - mb-0
         '#attributes':
           class:
             - mt-0
         '#date_date_max': '[webform_submission:values:computed_end_date_limit]'
+      date_range_validator:
+        '#type': webform_computed_twig
+        '#title': 'Date Range Validator'
+        '#title_display': invisible
+        '#wrapper_attributes':
+          class:
+            - mt-0
+        '#attributes':
+          class:
+            - mt-0
+        '#display_on': form
+        '#mode': html
+        '#template': |-
+          {% if data.apply_event_start_date is not empty and data.apply_event_end_date is not empty %}
+
+          {# Convert date strings to timestamps #}
+          {% set start = date(data.apply_event_start_date).getTimestamp %}
+          {% set end = date(data.apply_event_end_date).getTimestamp %}
+
+          {# Calculate difference in days #}
+          {% set diff_days = ((end - start) / 86400)|round(0, 'floor') %}
+
+          {# Return a message if the range exceeds 30 days #}
+          {% if start and end and diff_days > 30 %}
+            <div class="mt-0 invalid-feedback">End date must be within 30 calendar days of the start date.</div>
+          {% endif %}
+
+          {% endif %}
+        '#whitespace': spaceless
+        '#hide_empty': true
+        '#ajax': true
+      date_validation_blocker:
+        '#type': textfield
+        '#title': 'End date must be within 30 calendar days of the start date'
+        '#title_display': none
+        '#required': true
+        '#required_error': 'End date must be within 30 calendar days of the start date.'
+        '#pattern': ^$
+        '#states':
+          visible:
+            ':input[name="date_range_validator"]':
+              filled: true
+        '#wrapper_attributes':
+          class:
+            - d-none
+        '#attributes':
+          class:
+            - d-none
     apply_recurring:
       '#type': checkbox
       '#title': 'This event reoccurs on a regular basis'
@@ -152,36 +204,35 @@ elements: |-
     '#type': webform_wizard_page
     '#title': 'Additional Information'
     apply_is_church:
-      '#type': checkbox
-      '#title': 'This is a church event'
+      '#type': radios
+      '#title': 'Is this a church event?'
+      '#options': yes_no
+      '#options_display': side_by_side
+      '#required': true
     apply_amplified_sound:
       '#type': radios
       '#title': 'Are you planning to have amplified sound?'
-      '#options':
-        'YES': 'YES'
-        'NO': 'NO'
+      '#options': yes_no
+      '#options_display': side_by_side
       '#required': true
     markup_noise_variance:
       '#type': webform_markup
       '#states':
         visible:
           ':input[name="apply_amplified_sound"]':
-            value: 'YES'
+            value: 'Yes'
       '#markup': '<div class="alert alert--info next-steps"><h2 class="mt-0">Next Steps</h2><p class="mb-0">Amplified sound at events must obtain a <a href="/ppd/noise/apply-noise-variance" target="_blank">Noise Variance</a> from the Bureau of Development Services. You will receive more information about this requirement in your confirmation email.</p></div>'
     apply_pop_registration:
       '#type': radios
       '#title': 'Did you register this event with Party on Portland (POP)?'
-      '#options':
-        'YES': 'YES'
-        'NO': 'NO'
+      '#options': yes_no
+      '#options_display': side_by_side
       '#required': true
     apply_bipoc:
       '#type': radios
       '#title': 'Do you identify as BIPOC?'
-      '#options':
-        'YES': 'YES'
-        'NO': 'NO'
-        'Choose not to answer': 'Choose not to answer'
+      '#options': yes_no
+      '#options_display': side_by_side
     apply_learned_about_program:
       '#type': textarea
       '#title': 'How did you learn about the Block Party program?'
