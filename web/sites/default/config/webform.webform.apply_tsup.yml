@@ -891,20 +891,39 @@ elements: |-
         visible:
           ':input[name="simple_permit_bds_associated[radios]"]':
             checked: true
-    simple_permit_acknowledge_conditions:
-      '#type': checkbox
-      '#title': 'I have read and agree with the conditions of this permit (see below).'
-      '#description': |-
-        By applying to obtain this permit from the City of Portland, the permittee agrees to comply with all permit conditions, including, without limitation, the permit conditions stated here:<br />
-        <a target="_blank" href="/transportation/permitting/documents/temporary-street-use-permit-conditions/download">Conditions of a Permit to Use a Dedicated Street Area</a><br />
-        <a target="_blank" href="/transportation/permitting/documents/non-metered-parking-reservation-overview/download">Parking Enforcement verification procedure</a><br />
-        <a target="_blank" href="/transportation/permitting/temporary-street-use-permitting-tsup#toc-fees">Change Fee and Refund Policies</a>
-      '#required': true
-      '#required_error': 'You must agree with the permit conditions.'
+    container_simple_tocs:
+      '#type': container
       '#states':
         visible:
           ':input[name="simple_permit_bds_associated[radios]"]':
             checked: true
+      simple_permit_acknowledge_conditions:
+        '#type': checkbox
+        '#title': 'I have read and agree with the conditions of this permit (see below).'
+        '#description': |-
+          By applying to obtain this permit from the City of Portland, the permittee agrees to comply with all permit conditions, including, without limitation, the permit conditions stated here:<br />
+        '#required': true
+        '#required_error': 'You must agree with the permit conditions.'
+      markup_simple_toc_conditions:
+        '#type': webform_markup
+        '#markup': '<a target="_blank" href="/transportation/permitting/documents/temporary-street-use-permit-conditions/download">Conditions of a Permit to Use a Dedicated Street Area</a><br />'
+      markup_simple_toc_changes_refunds:
+        '#type': webform_markup
+        '#markup': '<a target="_blank" href="/transportation/permitting/temporary-street-use-permitting-tsup#toc-fees">Change Fee and Refund Policies</a><br />'
+      markup_simple_toc_nonmetered_parking_enforcement:
+        '#type': webform_markup
+        '#states':
+          visible:
+            ':input[name="permit_location_metered"]':
+              value: 'false'
+        '#markup': '<a target="_blank" href="/transportation/permitting/documents/non-metered-parking-reservation-overview/download">Non-Metered Parking Enforcement verification procedure</a>'
+      markup_simple_toc_metered_parking_enforcement:
+        '#type': webform_markup
+        '#states':
+          visible:
+            ':input[name="permit_location_metered"]':
+              value: 'true'
+        '#markup': '<a target="_blank" href="/transportation/permitting/documents/metered-parking-reservation-overview/download">Metered Parking Enforcement verification procedure</a>'
   page_complex_permit:
     '#type': webform_wizard_page
     '#title': 'Request Details'
@@ -1414,7 +1433,14 @@ elements: |-
                 visible:
                   ':input[name="permit_location_metered"]':
                     value: 'false'
-              '#markup': '<a target="_blank" href="/transportation/permitting/documents/non-metered-parking-reservation-overview/download">Parking Enforcement verification procedure</a><br />'
+              '#markup': '<a target="_blank" href="/transportation/permitting/documents/non-metered-parking-reservation-overview/download">Non-Metered Parking Enforcement verification procedure</a><br />'
+            markup_toc_metered_parking_enforcement:
+              '#type': webform_markup
+              '#states':
+                visible:
+                  ':input[name="permit_location_metered"]':
+                    value: 'true'
+              '#markup': '<a target="_blank" href="/transportation/permitting/documents/metered-parking-reservation-overview/download">Metered Parking Enforcement verification procedure</a><br />'
           markup_toc_change_fee:
             '#type': webform_markup
             '#states':
@@ -1715,7 +1741,11 @@ elements: |-
         <p>As part of submitting this application, you agreed with the conditions of this permit:</p>
         <ul>
           <li><a href="https://www.portland.gov/transportation/permitting/documents/temporary-street-use-permit-conditions/download" target="_blank">Conditions of a Permit to Use a Dedicated Street Area</a></li>
-          <li><a href="https://www.portland.gov/transportation/permitting/documents/non-metered-parking-reservation-overview/download" target="_blank">Parking Enforcement verification procedure</a></li>
+          {% if data.permit_location_metered == "false" %}
+          <li><a href="https://www.portland.gov/transportation/permitting/documents/non-metered-parking-reservation-overview/download" target="_blank">Non-Metered Parking Enforcement verification procedure</a></li>
+          {% elseif data.permit_location_metered == "true" %}
+          <li><a href="https://www.portland.gov/transportation/permitting/documents/metered-parking-reservation-overview/download" target="_blank">Metered Parking Enforcement verification procedure</a></li>
+          {% endif %}
           <li><a href="https://www.portland.gov/transportation/permitting/temporary-street-use-permitting-tsup#toc-fees" target="_blank">Change Fee and Refund Policies</a></li>
         </ul>
       {% elseif data.permit_type == "7day" %}
@@ -1836,8 +1866,11 @@ elements: |-
           {% if data.permit_type == "traffic_control" %}
           <li><a href="https://www.portland.gov/transportation/permitting/documents/temporary-street-use-permit-conditions/download" target="_blank">Conditions of a Permit to Use a Dedicated Street Area</a></li>
           {% endif %}
+          {% if (data.wizard_permit_need == "parking" or "parking" in data.complex_permit_closure_type) and data.permit_location_metered == "false" %}
+          <li><a href="https://www.portland.gov/transportation/permitting/documents/non-metered-parking-reservation-overview/download" target="_blank">Non-Metered Parking Enforcement verification procedure</a></li>
+          {% endif %}
           {% if (data.wizard_permit_need == "parking" or "parking" in data.complex_permit_closure_type) and data.permit_location_metered == "true" %}
-          <li><a href="https://www.portland.gov/transportation/permitting/documents/non-metered-parking-reservation-overview/download" target="_blank">Parking Enforcement verification procedure</a></li>
+          <li><a href="https://www.portland.gov/transportation/permitting/documents/metered-parking-reservation-overview/download" target="_blank">Metered Parking Enforcement verification procedure</a></li>
           {% endif %}
           {% if data.complex_permit_acknowledge_supervision %}
           <li>You certify that the person implementing traffic control measures will be under the supervision of a competent person experienced and knowledgeable in safely setting up temporary traffic control devices.</li>
