@@ -672,7 +672,7 @@ function _validate_document(&$form, FormStateInterface $form_state)
     if (!empty($efiles_link) && !empty($efiles_link[0]['uri'])) {
       $external_file_url = strtolower($efiles_link[0]['uri']);
       // Validate the file URL is an eFiles link
-      $efiles_url_regex = '/^https:\/\/efiles\.portlandoregon\.gov\/record\/\d+(\/file\/document)?$/';
+      $efiles_url_regex = '/^https:\/\/efiles\.portlandoregon\.gov\/record\/\d+(\/|\/file\/document)?$/';
       if (!preg_match($efiles_url_regex, $external_file_url)) {
         $form_state->setErrorByName('field_efiles_link', t('The eFiles link must be in the format of https://efiles.portlandoregon.gov/record/[DIGITS] or https://efiles.portlandoregon.gov/record/[DIGITS]/file/document.'));
         return;
@@ -719,8 +719,9 @@ function _validate_document(&$form, FormStateInterface $form_state)
         }
 
         if(isset($json_data["Results"][0]["RecordRecordType"]["RecordTypeName"]["Value"])) {
+          // Get the media entity in either an inline entity form or regular Media add/edit form
+          $entity = ($form["#id"] === "edit-inline-entity-form")? $form["#entity"] : $form_state->getFormObject()->getEntity();
           $record_type_name = $json_data["Results"][0]["RecordRecordType"]["RecordTypeName"]["Value"];
-          $entity = $form_state->getFormObject()->getEntity();
           switch($record_type_name) {
             case "E-Folder":
               $entity->set('field_file_size', 0);
