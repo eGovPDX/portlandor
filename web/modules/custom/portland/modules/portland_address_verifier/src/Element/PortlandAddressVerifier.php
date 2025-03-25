@@ -165,10 +165,14 @@ class PortlandAddressVerifier extends WebformCompositeBase {
       '#attributes' => [ 'id' => 'location_address_label']
     ];
     $element['location_verification_status'] = [
-      '#type' => 'hidden',
+      '#type' => 'textfield',
       '#title' => t('Verification Status'),
-      '#attributes' => [ 'id' => 'location_verification_status'],
-      '#required_error' => 'Please verify the address before continuing.'
+      '#title_display' => 'invisible',
+      '#attributes' => [
+        'id' => 'location_verification_status',
+        'class' => ['d-none']
+      ],
+      '#required_error' => 'Please verify the address before continuing by clicking the Verify button.'
     ];
     $element['location_capture_field'] = [
       '#type' => 'hidden',

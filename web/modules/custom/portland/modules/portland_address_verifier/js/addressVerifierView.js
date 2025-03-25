@@ -13,6 +13,8 @@ function AddressVerifierView(jQuery, element, model, settings) {
     this.$checkmark;
     this.$status;
     this.$button;
+
+    this._setUpFieldChangeHandlers(); // Add this line to set up the change handlers
 }
 
 // globals /////////////////////////////
@@ -35,6 +37,20 @@ AddressVerifierView.prototype.renderAddressVerifier = function () {
     }
     this._setUpUnitNumberField();
 
+    // Check if the status is "Verified" on page load
+    if (this.$verificationStatus.val() === "Verified") {
+        this._displayVerifiedStatus();
+    }
+
+    // if there's address data on page load, such as from failed validation, regenerate full address
+    var address = this.$element.find('#location_address').val();
+    var city = this.$element.find('#location_city').val();
+    var state = this.$element.find('#location_state').val();
+    var zip = this.$element.find('#location_zip').val();
+    var unit = this.$element.find('#unit_number').val();
+
+    this.$element.find('#location_full_address').val(AddressVerifierModel.buildFullAddress(address, city, state, zip, unit));
+    
 };
 
 AddressVerifierView.prototype._setUpVerifyButton = function () {
@@ -392,18 +408,21 @@ AddressVerifierView.prototype._useUnverified = function () {
     this.isVerified = true;
 }
 
-// AddressVerifierView.prototype.updateAddressUI = function (address) {
-//     // Update the UI with the verified address data
-//     alert('Putting the validated address in the UI');
-// };
+AddressVerifierView.prototype._setUpFieldChangeHandlers = function () {
+    var self = this;
+    var fieldsToWatch = ['#location_address', '#location_city', '#location_state', '#location_zip'];
 
-// AddressVerifierView.prototype._getTaxLotNumber = function (item) {
-//     var lat = item.lat;
-//     var lon = item.lon;
-//     this.model.getTaxLotId(lat, lon);
-// }
+    fieldsToWatch.forEach(function (selector) {
+        self.$element.find(selector).on('change', function () {
+            if (self.$verificationStatus.val() === "Verified") {
+                self.$verificationStatus.val("").trigger('change');
+            }
+        });
+    });
+};
 
-// AddressVerifierView.prototype.handleTaxlotId = function (taxlotId, $element) {
-//     $element.find('#location_taxlot_id').val(taxlotId);
-//     // alert($element.find('#location_taxlot_id').val());
-// }
+AddressVerifierView.prototype._displayVerifiedStatus = function () {
+    this.$checkmark.removeClass("invisible").addClass("fa-solid fa-check verified");
+    this.$status.text(VERIFIED_MESSAGE).removeClass("invisible").addClass("verified");
+    this.isVerified = true;
+};
