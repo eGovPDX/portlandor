@@ -4,6 +4,7 @@ namespace Drupal\portland_address_verifier\Plugin\WebformElement;
 
 use Drupal\webform\Plugin\WebformElement\WebformCompositeBase;
 use Drupal\webform\WebformSubmissionInterface;
+use Drupal\Core\Form\FormStateInterface;
 
 /**
  * Provides a 'portland_address_verifier' element.
@@ -158,6 +159,13 @@ class PortlandAddressVerifier extends WebformCompositeBase {
 
     $notVerifiedRemedy = array_key_exists('#not_verified_remedy', $element) ? $element['#not_verified_remedy'] : "If you're certain the address is correct, you may use it without verification.";
     $element['#attached']['drupalSettings']['webform']['portland_address_verifier'][$machine_name]['not_verified_remedy'] = $notVerifiedRemedy;
+
+    $requirePortlandCityLimits = array_key_exists('#require_portland_city_limits', $element) && strtolower($element['#require_portland_city_limits']) == "1";
+    $element['#attached']['drupalSettings']['webform']['portland_address_verifier'][$machine_name]['require_portland_city_limits'] = $requirePortlandCityLimits;
+
+    $outOfBoundsMessage = array_key_exists('#out_of_bounds_message', $element) ? $element['#out_of_bounds_message'] : "The address you provided is outside of the Portland city limits. Please try a different address.";
+    $element['#attached']['drupalSettings']['webform']['portland_address_verifier'][$machine_name]['out_of_bounds_message'] = $outOfBoundsMessage;
+
   }
 
 }
