@@ -18,24 +18,24 @@ categories:
 elements: |-
   contact_name:
     '#type': textfield
-    '#title': 'Your first and last name'
+    '#title': 'First and last name'
     '#required': true
   contact_email:
     '#type': textfield
-    '#title': 'Your email address'
+    '#title': 'Email address'
+    '#required': true
     '#pattern': '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
     '#pattern_error': 'Please enter a correctly formatted email address, such as myname@example.com.'
-    '#required': true
   contact_phone:
     '#type': textfield
-    '#title': 'Your phone number'
+    '#title': 'Phone number'
     '#description': '<p>In case we need to contact you</p>'
     '#description_display': before
     '#input_mask': '(999) 999-9999'
     '#required': true
   contact_preference:
     '#type': radios
-    '#title': 'How do you prefer to be contacted?'
+    '#title': 'How do you prefer we contact you?'
     '#options':
       Email: Email
       Phone: Phone
@@ -43,7 +43,7 @@ elements: |-
     '#required': true
   contact_reason:
     '#type': webform_select_other
-    '#title': 'Reason for contact'
+    '#title': 'What can we help you with?'
     '#options':
       'Accessory Dwelling Unit (ADU) short-term rental': 'Accessory Dwelling Unit (ADU) short-term rental'
       'Apply for or check permit status': 'Apply for or check permit status'
@@ -62,7 +62,7 @@ elements: |-
         - mt-0
   contact_about_property:
     '#type': radios
-    '#title': 'Is your question about a specific property within the Portland city limits?'
+    '#title': 'Is your question about a specific property in Portland?'
     '#options': yes_no
     '#options_display': side_by_side
     '#required': true
@@ -73,7 +73,7 @@ elements: |-
       visible:
         ':input[name="contact_about_property"]':
           value: 'Yes'
-    '#location_address__title': 'Search for an address'
+    '#location_address__title': 'Property address'
     '#location_address__description': 'Begin typing a Portland street address to see a list of possible matches and select one, or enter a partial address and click Verify.'
     '#location_address__required': true
     '#location_full_address__description': 'This is the full address'
@@ -117,11 +117,11 @@ elements: |-
       'I have a permit number': 'I have a permit number'
       'I have an IVR number': 'I have an IVR number'
       'I have a case number': 'I have a case number'
-      "I don't know/don't have my number": "I don't know/don't have my number"
+      "I don't know my number": "I don't know my number"
     '#required': true
   request_permit_number:
     '#type': textfield
-    '#title': 'Permit/IVR/case number'
+    '#title': "What's the number?"
     '#required': true
     '#states':
       visible:
@@ -135,13 +135,13 @@ elements: |-
             value: 'I have a case number'
   request:
     '#type': textarea
-    '#title': 'Your question or request'
+    '#title': "What's your question or request?"
     '#required': true
   file_upload:
     '#type': managed_file
-    '#title': 'File upload'
+    '#title': 'Upload related files'
     '#multiple': 5
-    '#description': '<p>Add files like permits, documents or drawings to help us assist you.</p>'
+    '#description': '<p>Add files like permits, documents, or drawings to help us assist you.</p>'
     '#description_display': before
     '#file_extensions': 'jpg pdf'
     '#sanitize': true
@@ -151,6 +151,13 @@ elements: |-
     '#display_on': none
     '#mode': text
     '#template': "https://www.portlandmaps.com/search/?query={{ data.location_address.location_address|replace({' ': '%20'}) }}"
+    '#whitespace': trim
+  computed_permit_number:
+    '#type': webform_computed_twig
+    '#title': 'Computed Permit Number'
+    '#display_on': none
+    '#mode': text
+    '#template': '{% if data.request_number_type != "I don''t know my number" %}data.request_permit_number{% else %}Not known{% endif %}'
     '#whitespace': trim
 css: "div.form-item-contact-reason-select, div.form-item-computed-verified-address {\r\n  margin-top: 0;\r\n}\r\n\r\ndiv.form-item-location-address-location-address, fieldset.webform-type-portland-address-verifier, div.form-item-contact-reason-select, div.webform-select-other-input {\r\n  margin-bottom: 0;\r\n}"
 javascript: ''
@@ -355,7 +362,7 @@ handlers:
         3764517488250756: location_address__location_full_address
         7473244162707332: computed_address_link
         4239210158706564: location_address__location_taxlot_id
-        8268117115621252: request_permit_number
+        8268117115621252: computed_permit_number
         949767721144196: request
         5453367348514692: ''
         3201567534829444: ''
