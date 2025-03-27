@@ -400,6 +400,9 @@ basic_tests: &basic_tests
     - store_artifacts:
         path: /home/circleci/artifacts
         destination: /
+    - jira/notify:
+        pipeline_id: << pipeline.id >>
+        pipeline_number: << pipeline.number >>
 
 full_regression: &full_regression
   docker:
@@ -457,6 +460,12 @@ full_regression: &full_regression
     - store_artifacts:
         path: /home/circleci/artifacts
         destination: /
+    - jira/notify:
+        environment: development
+        environment_type: development
+        job_type: deployment
+        pipeline_id: << pipeline.id >>
+        pipeline_number: << pipeline.number >>
     # - slack/notify:
     #     branch_pattern: powr-3508
     #     event: fail
@@ -531,6 +540,7 @@ jobs:
 orbs:
 # percy: percy/agent@0.1.2
   slack: circleci/slack@4.4.2
+  jira: circleci/jira@2.2.0
 
 # Declare a workflow that runs all of our jobs in parallel.
 workflows:
@@ -542,6 +552,7 @@ workflows:
     jobs:
       - deploy
       - basic_tests:
+          context: eGovPDX
           requires:
             - deploy
       - full_regression:
@@ -552,7 +563,6 @@ workflows:
             branches:
               only:
                 - master
-                - pgov-1366
   # The update database workflow runs when the scheduled pipeline named "Update Sandbox
   # Database" runs. Scheduled pipelines are configured in the CircleCI web UI at
   # https://app.circleci.com/settings/project/github/eGovPDX/portlandor/triggers
