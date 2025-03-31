@@ -616,24 +616,40 @@ function portland_form_node_form_alter(&$form, &$form_state) {
   }
 }
 
+const FILE_EXTENSION_TO_MIMETYPE_MAP = [
+  "PDF" => "application/pdf",
+  "DOC" => "application/msword",
+  "DOCX" => "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "XLS" => "application/vnd.ms-excel",
+  "XLSX" => "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  "PPT" => "application/vnd.ms-powerpoint",
+  "PPTX" => "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+  "TXT" => "text/plain",
+  "CSV" => "text/plain",
+];
+
 /**
  * A helper function to validate document.
  */
-function _validate_document(&$form, FormStateInterface $form_state)
+function _validate_document(&$form, FormStateInterface $form_state, $form_id = []) 
 {
   $is_embedded_document_form_with_efiles = $form_state->hasValue("inline_entity_form") &&
     ($form_state->getValue("inline_entity_form")["field_efiles_link"] != null);
+
   if ($form_state->hasValue('field_efiles_link') || $is_embedded_document_form_with_efiles) {
     // DO NOT validate when the user clicks on the remove document button.
     // ONLY validate when the entire form is submitted.
     if ($form_state->getTriggeringElement()["#name"] === "field_document_0_remove_button") return;
+
+    // Get the field parent prefix in order to set error message next to the field correctly inside inline entity forms.
+    $field_parent_prefix = (!empty($form_id) && $form_id["#id"] === "entity-browser-document-browser-embed-form") ? "inline_entity_form][" : "";
 
     // Get values from the inline entity form
     if($is_embedded_document_form_with_efiles) {
       // Can't have both uploaded document and eFiles
       if( $form_state->getValue("inline_entity_form")["field_efiles_link"][0]['uri'] &&
         count($form_state->getValue("inline_entity_form")["field_document"][0]['fids']) !== 0) {
-        $form_state->setErrorByName('field_document', t('Cannot have both uploaded document and eFiles link'));
+        $form_state->setErrorByName($field_parent_prefix . 'field_document', t('Cannot have both uploaded document and eFiles link'));
         return;
       }
 
@@ -647,74 +663,94 @@ function _validate_document(&$form, FormStateInterface $form_state)
 
     // PGOV-809 Validate document and efiles link fields
     if( empty($efiles_link[0]["uri"]) && empty($document[0]["fids"]) ) {
-      $form_state->setErrorByName('field_document', t('Must have either an uploaded document or an eFiles link'));
+      $form_state->setErrorByName($field_parent_prefix . 'field_document', t('Must have either an uploaded document or an eFiles link'));
       return;
     }
     else if ( !empty($efiles_link[0]["uri"]) && !empty($document[0]["fids"]) ) {
-      $form_state->setErrorByName('field_document', t('Cannot have both uploaded document and eFiles link'));
+      $form_state->setErrorByName($field_parent_prefix . 'field_document', t('Cannot have both uploaded document and eFiles link'));
       return;
     }
 
     // If the eFiles link has value
     if (!empty($efiles_link) && !empty($efiles_link[0]['uri'])) {
       $external_file_url = strtolower($efiles_link[0]['uri']);
-      $orig_external_file_url = $external_file_url;
       // Validate the file URL is an eFiles link
-      $efiles_url_regex = '/^https:\/\/efiles.portlandoregon.gov\/(.*)/i';
+      $efiles_url_regex = '/^https:\/\/efiles\.portlandoregon\.gov\/record\/\d+(\/|\/file\/document)?$/';
       if (!preg_match($efiles_url_regex, $external_file_url)) {
-        $form_state->setErrorByName('field_efiles_link', t('The eFiles link must start with https://efiles.portlandoregon.gov/.'));
+        $form_state->setErrorByName($field_parent_prefix . 'field_efiles_link', t('The eFiles link must be in the format of https://efiles.portlandoregon.gov/record/[DIGITS] or https://efiles.portlandoregon.gov/record/[DIGITS]/file/document.'));
         return;
       }
 
-      // Append "/file/document" if it's missing on an eFiles link in order to retrieve mime type and file size
-      if (
-        strpos($external_file_url, 'https://efiles.portlandoregon.gov/') === 0 &&
-        !(substr_compare($external_file_url, "/file/document", -strlen("/file/document")) === 0)
-      ) {
-        $external_file_url .= "/file/document";
+      // PGOV-1461 EFiles switched to ServiceStack to provide a RESTful API. To get the eFiles record data:
+      // curl -X GET "https://efiles.portlandoregon.gov/record/17093751" -H "Accept: application/json"
+
+      // Remove "/file/document" at the end of the eFiles link
+      if (substr($external_file_url, -strlen("/file/document")) === "/file/document") {
+        $external_file_url = substr($external_file_url, 0, -strlen("/file/document"));
       }
 
-      // Get eFiles file size and MIME type
-      try {
-        $headers = get_headers($external_file_url, 1);
-      } catch (Exception $e) {
-        $form_state->setErrorByName('field_efiles_link', 'Cannot retrieve file size and mimetype from this link.');
+      // Make call to ServieStack API to get file size and mimetype
+      $result = file_get_contents($external_file_url, false, stream_context_create([
+        'http' => [
+            'method' => 'GET',
+            'header' => 'Accept: application/json',
+        ],
+      ]));
+      if($result === false) {
+        $form_state->setErrorByName($field_parent_prefix . 'field_efiles_link', 'Cannot retrieve file size and mimetype from this link.');
         return;
       }
-      if (
-        !empty($headers) &&
-        (substr_compare($headers[0], "200 OK", -strlen("200 OK")) === 0) &&
-        array_key_exists('Content-Type', $headers) &&
-        array_key_exists('Content-Length', $headers)
-      ) {
-        // When the link is invalid, eFiles return a HTML page
-        $content_type = isset($headers['Content-Type']) ? $headers['Content-Type'] : 'text/html';
-        if ($content_type === 'text/html') {
-          $form_state->setErrorByName('field_efiles_link', t('The linked file is not found.'));
-          return;
-        }
-        $file_size = isset($headers['Content-Length']) ? (int)$headers['Content-Length'] : 0;
-        if ($file_size === 0) {
-          $form_state->setErrorByName('field_efiles_link', t('The linked file is empty.'));
-          return;
-        }
+
+      $json_data = json_decode($result, true);
+      if ($json_data === null && json_last_error() !== JSON_ERROR_NONE) {
+        $form_state->setErrorByName($field_parent_prefix . 'field_efiles_link', t("Failed to parse JSON data from the eFiles link for $external_file_url. Please report to the site administrator."));
+        // Something seriously wrong with the eFiles link or the server side. Log the error.
+        \Drupal::logger('portland')->error("Failed to parse JSON data from the eFiles link for $external_file_url.");
+        return;
       } else {
-        // Verify it's a valid eFiles folder
-        try {
-          $headers = get_headers($orig_external_file_url, 1);
-        } catch (Exception $e) {
-          $form_state->setErrorByName('field_efiles_link', 'Please verify the eFiles link is valid.');
+        // Get the file size and mimetype from the JSON data
+        if(isset($json_data["TotalResults"])) {
+          if($json_data["TotalResults"] === 0) {
+            $form_state->setErrorByName($field_parent_prefix . 'field_efiles_link', "eFiles record not found: $external_file_url");
+            return;
+          }
+        }
+        else {
+          $form_state->setErrorByName($field_parent_prefix . 'field_efiles_link', "Cannot validate the eFiles link: $external_file_url. Please report to the site administrater.");
+          \Drupal::logger('portland')->error("Cannot retrieve Results.TotalResults for $external_file_url");
           return;
         }
 
-        // Make sure the response code is 200 and content type is HTML
-        if (
-          empty($headers) ||
-          (substr_compare($headers[0], "200 OK", -strlen("200 OK")) !== 0) ||
-          (!array_key_exists('Content-Type', $headers)) ||
-          substr($headers['Content-Type'], 0, strlen("text/html")) !== "text/html"
-        ) {
-          $form_state->setErrorByName('field_efiles_link', t('Please verify the eFiles link is valid.'));
+        if(isset($json_data["Results"][0]["RecordRecordType"]["RecordTypeName"]["Value"])) {
+          // Get the media entity in either an inline entity form or regular Media add/edit form
+          $entity = ($form["#id"] === "edit-inline-entity-form")? $form["#entity"] : $form_state->getFormObject()->getEntity();
+          $record_type_name = $json_data["Results"][0]["RecordRecordType"]["RecordTypeName"]["Value"];
+          switch($record_type_name) {
+            case "E-Folder":
+              $entity->set('field_file_size', 0);
+              $entity->set('field_mime_type', "");
+              break;
+            case "E-Document":
+              if( !isset($json_data["Results"][0]["RecordDocumentSize"]["Value"]) ||  !isset($json_data["Results"][0]["RecordExtension"]["Value"])) {
+                $form_state->setErrorByName($field_parent_prefix . 'field_efiles_link', "Cannot retrieve RecordDocumentSize or RecordExtension for the eFiles link: $external_file_url. Please report to the site administrater.");
+                \Drupal::logger('portland')->error("Cannot retrieve RecordDocumentSize or RecordExtension for the eFiles link: $external_file_url");
+                return;
+              }
+              // See the list of MIME types in web/themes/custom/cloudy/templates/field/field--media--field-efiles-link.html.twig
+              $file_extension = $json_data["Results"][0]["RecordExtension"]["Value"];
+              $entity->set('field_file_size', $json_data["Results"][0]["RecordDocumentSize"]["Value"]);
+              $entity->set('field_mime_type', FILE_EXTENSION_TO_MIMETYPE_MAP[$file_extension] ?? "text/plain");
+              break;
+            default:
+              $form_state->setErrorByName($field_parent_prefix . 'field_efiles_link', "Invalid RecordTypeName: $record_type_name. URL: $external_file_url. Please report to the site administrater.");
+              \Drupal::logger('portland')->error("Invalid RecordTypeName: $record_type_name. URL: $external_file_url.");
+              return;
+          };
+        }
+        else {
+          $form_state->setErrorByName($field_parent_prefix . 'field_efiles_link', "Cannot retrieve RecordTypeName for the eFiles link: $external_file_url. Please report to the site administrater.");
+          \Drupal::logger('portland')->error("Cannot retrieve RecordTypeName for the eFiles link: $external_file_url");
+          return;
         }
       }
     }
@@ -1271,62 +1307,6 @@ function portland_form_user_form_alter(&$form, FormStateInterface $form_state) {
 }
 
 /**
- * Implements hook_media_presave().
- */
-function portland_media_presave($media)
-{
-  // Get file size and mime type from eFiles link
-  if($media->hasField('field_efiles_link')) {
-    if (!empty($media->field_efiles_link) && !empty($media->field_efiles_link[0]->uri)) {
-      $efiles_link = $media->field_efiles_link[0]->uri;
-      $external_file_url = strtolower($efiles_link);
-
-      // Append "/file/document" if it's missing on an eFiles link in order to retrieve mime type and file size
-      if (
-        strpos($external_file_url, 'https://efiles.portlandoregon.gov/') === 0 &&
-        !(substr_compare($external_file_url, "/file/document", -strlen("/file/document")) === 0)
-      ) {
-        $external_file_url .= "/file/document";
-      }
-
-      // Get eFiles file size and MIME type
-      try {
-        $headers = get_headers($external_file_url, 1);
-      } catch (Exception $e) {
-        \Drupal::logger('media')->notice('Cannot retrieve file size and mimetype from eFiles link ' . $external_file_url );
-        return;
-      }
-
-      if (
-        !empty($headers) &&
-        (substr_compare($headers[0], "200 OK", -strlen("200 OK")) === 0) &&
-        array_key_exists('Content-Type', $headers) &&
-        array_key_exists('Content-Length', $headers)
-      ) {
-        $file_size = isset($headers['Content-Length']) ? (int)$headers['Content-Length'] : 0;
-        if ($file_size === 0) {
-          \Drupal::logger('media')->notice('The eFiles link file is empty: ' . $external_file_url );
-          return;
-        }
-        // Content-Type header can be "text/html; charset=utf-8"
-        $content_type_array = explode(';', $headers['Content-Type']);
-        // If content type is text/HTML, it's not a file. Could be a eFiles folder link.
-        if (empty($content_type_array) || $content_type_array[0] === "text/html") {
-          return;
-        }
-
-        $media->field_file_size = $file_size;
-        $media->field_mime_type = $content_type_array[0];
-      }
-      else {
-        $media->field_file_size = 0;
-        $media->field_mime_type = '';
-      }
-    }
-  }
-}
-
-/**
  * Implements hook_form_FORM_ID_alter().
  * Add lightning_media browser CSS to the image browser embed form.
  * See web/modules/contrib/lightning_media/modules/lightning_media_image/lightning_media_image.module
@@ -1362,5 +1342,16 @@ function portland_preprocess_fieldset(&$variables): void {
   // Clear the duplicated error message for Updated date/time in News
   if(isset($variables["attributes"]["id"]) && $variables["attributes"]["id"] === "edit-field-updated-on-0") {
     unset($variables["errors"]);
+  }
+}
+
+/**
+ * Implements hook_field_widget_single_element_form_alter().
+ */
+function portland_field_widget_single_element_form_alter(array &$element, FormStateInterface $form_state, array $context) {
+  // Customize the description of the eFiles link field.
+  if (isset($context["widget"]) && isset($context["items"]) &&
+    $context['widget']->getPluginId() === 'link_default' && $context["items"]->getName() === "field_efiles_link") {
+    $element['uri']['#description'] = t('Enter a valid eFiles URL in the format of https://efiles.portlandoregon.gov/record/[DIGITS] or https://efiles.portlandoregon.gov/record/[DIGITS]/file/document.');
   }
 }
