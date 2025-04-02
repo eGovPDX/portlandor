@@ -311,16 +311,10 @@ build_and_deploy: &build_and_deploy
             last_log=$(git log origin/$CIRCLE_BRANCH --pretty=format:%s -1)
             lowercase_last_log="${last_log,,}"
             JIRA_STORY_ID=""
-            # Simple merge
-            # Example: Merge pull request #35 from eGovPDX/powr-152
-            if [[ $lowercase_last_log =~ (^merge pull request #[0-9]* from egovpdx\/)([^,]*) ]]; then
-              echo "Found story ID from merge commit message: '${BASH_REMATCH[2]}'";
-              JIRA_STORY_ID=${BASH_REMATCH[2]}
-            # Squash and Merge on other feature branches
-            # Should also match all other Jira project codes
-            # Example: CSM-3058 Delete all related multi-devs when a branch is merged
-            elif [[ $lowercase_last_log =~ ^(([[:alpha:]]+)-[0-9]+) ]]; then
-              echo "Found story ID from squash and merge commit message: '${BASH_REMATCH[1]}'";
+            # Expect the commit message to be like below for both squash and merge and simple merge:
+            # PGOV-1234 Delete all related multi-devs when a branch is merged
+            if [[ $lowercase_last_log =~ ^(([[:alpha:]]+)-[0-9]+) ]]; then
+              echo "Found story ID from the commit message: '${BASH_REMATCH[1]}'";
               JIRA_STORY_ID=${BASH_REMATCH[1]}
             else
               echo "Cannot find JIRA story ID from the last commit message: $lowercase_last_log"
@@ -400,6 +394,9 @@ basic_tests: &basic_tests
     - store_artifacts:
         path: /home/circleci/artifacts
         destination: /
+    - jira/notify:
+        pipeline_id: << pipeline.id >>
+        pipeline_number: << pipeline.number >>
 
 full_regression: &full_regression
   docker:
@@ -457,6 +454,12 @@ full_regression: &full_regression
     - store_artifacts:
         path: /home/circleci/artifacts
         destination: /
+    - jira/notify:
+        environment: development
+        environment_type: development
+        job_type: deployment
+        pipeline_id: << pipeline.id >>
+        pipeline_number: << pipeline.number >>
     # - slack/notify:
     #     branch_pattern: powr-3508
     #     event: fail
@@ -531,6 +534,7 @@ jobs:
 orbs:
 # percy: percy/agent@0.1.2
   slack: circleci/slack@4.4.2
+  jira: circleci/jira@2.2.0
 
 # Declare a workflow that runs all of our jobs in parallel.
 workflows:
@@ -542,6 +546,7 @@ workflows:
     jobs:
       - deploy
       - basic_tests:
+          context: eGovPDX
           requires:
             - deploy
       - full_regression:
@@ -552,7 +557,6 @@ workflows:
             branches:
               only:
                 - master
-                - pgov-1366
   # The update database workflow runs when the scheduled pipeline named "Update Sandbox
   # Database" runs. Scheduled pipelines are configured in the CircleCI web UI at
   # https://app.circleci.com/settings/project/github/eGovPDX/portlandor/triggers
