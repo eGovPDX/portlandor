@@ -21,12 +21,14 @@ use Drupal\Core\Plugin;
 /**
  * Returns responses for 'group_node' GroupRelationship routes.
  */
-class PortlandGroupRelationshipController extends GroupRelationshipController {
+class PortlandGroupRelationshipController extends GroupRelationshipController
+{
 
     /**
      * {@inheritdoc}
      */
-    public function addPage(GroupInterface $group, $create_mode = FALSE, $base_plugin_id = NULL) {
+    public function addPage(GroupInterface $group, $create_mode = FALSE, $base_plugin_id = NULL)
+    {
 
         $build = GroupRelationshipController::addPage($group, $create_mode, $base_plugin_id);
 
@@ -45,7 +47,7 @@ class PortlandGroupRelationshipController extends GroupRelationshipController {
         $new_bundles = [];
         foreach ($page_bundles as $plugin_id => $bundle_name) {
             // Don't process Media types. They are handled by PortlanMediaController next door.
-            if(strpos($plugin_id, 'group_media:') === 0) {
+            if (strpos($plugin_id, 'group_media:') === 0) {
                 unset($build['#bundles'][$bundle_name]);
                 continue;
             }
@@ -67,7 +69,7 @@ class PortlandGroupRelationshipController extends GroupRelationshipController {
 
         // Sort the new array by key (i.e. bundle label)
         ksort($new_bundles);
-        
+
         $build['#bundles'] = $new_bundles;
         return $build;
     }
@@ -83,7 +85,8 @@ class PortlandGroupRelationshipController extends GroupRelationshipController {
      * @return string
      *   The page title.
      */
-    public function createFormTitle(GroupInterface $group, $plugin_id) {
+    public function createFormTitle(GroupInterface $group, $plugin_id)
+    {
         /** @var \Drupal\gnode\Plugin\Group\Relation\GroupNode $plugin */
         $plugin = $group->getGroupType()->getPlugin($plugin_id);
         $entity_type = $plugin->getPluginDefinition()->getEntityTypeId();
@@ -91,15 +94,19 @@ class PortlandGroupRelationshipController extends GroupRelationshipController {
         switch ($entity_type) {
             case "media":
                 $content_type = MediaType::load($plugin_bundle);
+                $name = $content_type->label();
                 break;
             case "node":
                 $content_type = NodeType::load($plugin_bundle);
+                $name = $content_type->label();
+                break;
+            case "taxonomy_term":
+                $name = $plugin_bundle . " term";
                 break;
             default:
-                $content_type = "undefined";
+                $name = "undefined";
         }
-        $return = $this->t('Create @name in @group', ['@name' => $content_type->label(), '@group' => $group->label()]);
+        $return = $this->t('Create @name in @group', ['@name' => $name, '@group' => $group->label()]);
         return $return;
     }
 }
-
