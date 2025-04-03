@@ -21,6 +21,7 @@ Drupal.behaviors.dynamicGlossaryTooltip = {
         })
         .then(data => {
           const termLabel = data.data.attributes.name || 'Glossary Term';
+          const pronunciation = data.data.attributes.field_english_pronunciation || '';
           const description = data.data.attributes.field_short_definition?.value || 'No description available.';
 
           let imageHtml = '';
@@ -46,6 +47,7 @@ Drupal.behaviors.dynamicGlossaryTooltip = {
               <div class="glossary-content">
                 ${imageHtml}
                 <strong class="term-title">${termLabel}</strong>
+                <p class="term-pronunciation">${pronunciation}</p>
                 <p class="term-definition">${description}</p>
                 <a class="learn-more" href="${termUrl}" target="_blank" rel="noopener noreferrer">Learn more</a>
               </div>
