@@ -62,7 +62,9 @@ const config = {
     new StylelintPlugin(),
   ],
   optimization: {
-    minimizer: [new CssMinimizerPlugin()],
+    // ... preserves the default JS minimizer (TerserPlugin)
+    // https://webpack.js.org/configuration/optimization/#optimizationminimizer
+    minimizer: ["...", new CssMinimizerPlugin()],
   },
   module: {
     rules: [
