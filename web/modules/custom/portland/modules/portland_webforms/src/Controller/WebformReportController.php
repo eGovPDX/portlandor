@@ -95,6 +95,55 @@ class WebformReportController extends ControllerBase {
   }
 
   /**
+   * Generates a CSV report of all webforms with their details.
+   */
+  public function generateFormsCsv() {
+    $response = new Response(
+      '',
+      200,
+      [
+        'Content-Type' => 'text/csv',
+        'Content-Disposition' => 'attachment; filename="webform-forms-report.csv"',
+      ]
+    );
+
+    // Check if the report is already cached.
+    $cache = \Drupal::cache()->get(self::CACHE_ID . ':forms');
+    if ($cache && !empty($cache->data)) {
+      $response->setContent($cache->data);
+    } else {
+      // Generate the report data.
+      $webforms = Webform::loadMultiple();
+      $rows = [];
+
+      foreach ($webforms as $webform) {
+        $handlers = $webform->getHandlers();
+        $handler_types = [];
+        foreach ($handlers as $handler) {
+          $handler_types[] = $handler->getPluginId();
+        }
+
+        $rows[] = [
+          'Webform ID' => $webform->id(),
+          'Webform Title' => $webform->label(),
+          'Admin Description' => $webform->get('description') ?? 'No description',
+          'Number of Fields' => count($webform->getElementsInitializedFlattenedAndHasValue()),
+          'Number of Handlers' => count($handlers),
+          'Handler Types' => implode(', ', $handler_types),
+        ];
+      }
+
+      // Generate CSV content.
+      $csvContent = $this->serializer->serialize($rows, 'csv');
+      $response->setContent($csvContent);
+      // Cache the generated CSV content for 1 hour.
+      \Drupal::cache()->set(self::CACHE_ID . ':forms', $csvContent, time() + 3600);
+    }
+
+    return $response;
+  }
+
+  /**
    * Gets the value of a specific custom field from the webform handler configuration.
    *
    * @param \Drupal\webform\Entity\Webform $webform
