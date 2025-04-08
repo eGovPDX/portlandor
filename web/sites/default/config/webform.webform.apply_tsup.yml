@@ -55,17 +55,20 @@ elements: |-
       '#type': textfield
       '#title': 'Full name'
       '#required': true
+      '#prepopulate': true
     contact_company:
       '#type': textfield
       '#title': 'Company name (if applicable)'
       '#description': '<p>Leave blank if requesting permit on your own behalf.</p>'
       '#help': '<p>You must either work for this company or be authorized to represent them.<br><br>The permit will be issued with this company as the permit holder, and the permit holder is the liable party for any damages<br><br>If your permit requires an insurance certificate, the company name on that certificate must exactly match the company name provided on this permit application.<br><br>Any refunds of permit fees will be issued to this company name, regardless of payment method.</p>'
       '#description_display': before
+      '#prepopulate': true
     contact_phone:
       '#type': textfield
       '#title': 'Contact phone number'
       '#input_mask': 999-999-9999
       '#required': true
+      '#prepopulate': true
     contact_email:
       '#type': webform_email_confirm
       '#title': 'Email address'
@@ -75,6 +78,7 @@ elements: |-
       '#required': true
       '#pattern': '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
       '#pattern_error': 'Please enter a correctly formatted email address, such as myname@example.com.'
+      '#prepopulate': true
     contact_applicant_type:
       '#type': radios
       '#title': 'Do any of the below apply to you? (Optional)'
@@ -90,7 +94,6 @@ elements: |-
       '#type': radios
       '#title': 'This work is being performed by:'
       '#required': true
-      '#prepopulate': true
       '#states':
         visible:
           ':input[name="contact_applicant_type"]':
@@ -99,10 +102,10 @@ elements: |-
         contractor: 'A contractor hired by the City of Portland'
         city_employees: 'City of Portland employees'
       '#options_display': buttons_vertical
+      '#prepopulate': true
     contact_fun_company:
       '#type': webform_radios_other
       '#title': 'Which company?'
-      '#prepopulate': true
       '#states':
         visible:
           ':input[name="contact_applicant_type"]':
@@ -119,10 +122,10 @@ elements: |-
         'Zayo Group': 'Zayo Group'
       '#options_display': buttons_vertical
       '#required': true
+      '#prepopulate': true
     contact_bureau:
       '#type': webform_radios_other
       '#title': 'What Bureau is this work for?'
-      '#prepopulate': true
       '#options':
         BES: BES
         BPS: BPS
@@ -135,6 +138,7 @@ elements: |-
         visible:
           ':input[name="contact_applicant_type"]':
             value: cbn
+      '#prepopulate': true
     complex_permit_billing_info:
       '#type': textfield
       '#title': 'Billing information'
@@ -144,6 +148,7 @@ elements: |-
           ':input[name="contact_applicant_type"]':
             value: cbn
       '#required': true
+      '#prepopulate': true
     complex_permit_bureau_contact:
       '#type': textfield
       '#title': 'Provide the first and last name of your City Bureau contact'
@@ -152,6 +157,7 @@ elements: |-
           ':input[name="contact_city_work_type"]':
             value: contractor
       '#required': true
+      '#prepopulate': true
     complex_permit_job_number:
       '#type': textfield
       '#title': 'Job number?'
@@ -159,6 +165,7 @@ elements: |-
         visible:
           ':input[name="contact_applicant_type"]':
             value: fun
+      '#prepopulate': true
     support_agent_use_only:
       '#type': portland_support_agent_widget
       '#title': 'Support Agent Use Only'
@@ -1589,6 +1596,13 @@ elements: |-
         needs_tcp_review
       {% endif %}
 
+      {# add relevant sidewalk closure tag for Sidewalk Repair path #}
+      {% if data.complex_permit_sidewalk_repair_closure == "open_with_clearance" %}
+        30554467339031_sidewalk_use
+      {% elseif data.complex_permit_sidewalk_repair_closure == "closed" %}
+        30554467339031_sidewalk
+      {% endif %}
+
       {% for closure in data.complex_permit_closure_type %}
         30554467339031_{{ closure }}
       {% endfor %}
@@ -1947,6 +1961,7 @@ elements: |-
     '#display_on': none
     '#mode': html
     '#template': |-
+      <p><a href="{{ webform_token('[webform:url]', webform_submission) }}?assessment_prefilled=1&wizard_permit_need={{ data.wizard_permit_need }}&wizard_existing_permit_situation={{ data.wizard_existing_permit_situation }}&contact_full_legal_name={{ data.contact_full_legal_name|url_encode }}&contact_company={{ data.contact_company|url_encode }}&contact_phone={{ data.contact_phone|url_encode }}&contact_email={{ data.contact_email|url_encode }}&contact_applicant_type={{ data.contact_applicant_type|url_encode }}&contact_city_work_type={{ data.contact_city_work_type|url_encode }}&contact_fun_company={{ data.contact_fun_company|url_encode }}&contact_bureau={{ data.contact_bureau|url_encode }}&complex_permit_billing_info={{ data.complex_permit_billing_info|url_encode }}&complex_permit_bureau_contact={{ data.complex_permit_bureau_contact|url_encode }}&complex_permit_job_number={{ data.complex_permit_job_number|url_encode }}"><em>Submit another application</em></a></p>
       {% if data.permit_type == "parking_only" %}
         <p><strong>Your Application Number: </strong>{{ data.report_ticket_id }}</p>
         <p>Thank you for submitting a Temporary Street Use Permit application. We will contact you shortly with the price and next steps.</p>
