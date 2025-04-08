@@ -46,7 +46,7 @@ class GlossaryTermMatcher extends PluginBase implements MatcherInterface, Contai
       $suggestion->setLabel($node->label());
       $suggestion->setPath('/node/' . $node->id());
       $suggestion->setGroup('Glossary Terms');
-      $suggestion->setDescription($node->toUrl()->toString() . ' (glossary_term)');
+      $suggestion->setDescription($node->toUrl()->toString());
       $suggestion->setExtraAttributes([
         'class' => 'glossary-term',
       ]);
@@ -56,72 +56,46 @@ class GlossaryTermMatcher extends PluginBase implements MatcherInterface, Contai
     return $suggestions;
   }
 
-  /**
-   * {@inheritdoc}
-   */
   public function getUuid() {
     return $this->configuration['uuid'] ?? NULL;
   }
 
-  /**
-   * {@inheritdoc}
-   */
+  public function getPluginId() {
+    return $this->pluginId;
+  }
+
   public function getLabel() {
-    return $this->getPluginDefinition()['label'] ?? 'Glossary Term Matcher';
+    return $this->getPluginDefinition()['label'];
   }
 
-  /**
-   * {@inheritdoc}
-   */
   public function getSummary() {
-    return $this->t('Matches glossary_term nodes, adds class="glossary-term".');
+    return $this->t('Matches Glossary Term nodes.');
   }
 
-  /**
-   * {@inheritdoc}
-   */
   public function getWeight() {
     return $this->configuration['weight'] ?? 0;
   }
 
-  /**
-   * {@inheritdoc}
-   */
   public function setWeight($weight) {
     $this->configuration['weight'] = $weight;
   }
 
-  /**
-   * {@inheritdoc}
-   */
   public function getConfiguration() {
     return $this->configuration;
   }
 
-  /**
-   * {@inheritdoc}
-   */
   public function setConfiguration(array $configuration) {
     $this->configuration = $configuration;
   }
 
-  /**
-   * {@inheritdoc}
-   */
   public function defaultConfiguration() {
     return [];
   }
 
-  /**
-   * {@inheritdoc}
-   */
   public function calculateDependencies() {
     return [];
   }
 
-  /**
-   * {@inheritdoc}
-   */
   public function getTarget() {
     return 'node';
   }
