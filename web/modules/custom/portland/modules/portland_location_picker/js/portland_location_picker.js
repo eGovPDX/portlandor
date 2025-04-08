@@ -934,6 +934,7 @@
           $('input[name=' + elementId + '\\[location_region_id\\]]').val('').trigger('change');
           $('input[name=' + elementId + '\\[location_municipality_name\\]]').val('');
           $('input[name=' + elementId + '\\[location_attributes\\]]').val('');
+          $('input[name=' + elementId + '\\[location_taxlot_id\\]]').val('');
 
           if (clickQueryUrl && clickQueryPropertyPath) {
             $('#' + clickQueryDestinationField).val('').trigger('change');
@@ -956,6 +957,8 @@
             $('input[name=' + elementId + '\\[location_type_taxlot\\]]').val("true");
             location_type += "taxlot,";
             var taxlot_id = results.detail.taxlot[0].property_id;
+            // store taxlot id in its own field
+            $('input[name=' + elementId + '\\[location_taxlot_id\\]]').val(taxlot_id).trigger('change');
             internal_details += "Tax lot: " + taxlot_id + ', ';
             type_count += 1;
           }
