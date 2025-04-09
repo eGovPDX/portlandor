@@ -1619,7 +1619,7 @@ elements: |-
       '#require_boundary': false
     tcpcoord_comment_details:
       '#type': textarea
-      '#title': 'Detailed description of activity causing disruption to traffic'
+      '#title': 'Detailed description of activity causing disruption to traffic:'
       '#required': true
     tcpcoord_documents:
       '#type': webform_document_file
@@ -1741,7 +1741,7 @@ elements: |-
     '#mode': text
     '#template': |-
       {# add tags to set Days of Week custom field #}
-      {% for day in data.permit_date_days_of_week %}
+      {% for day in (data.permit_date_days_of_week ?: data.renewal_request_permit_date_days_of_week ?: data.moratorium_days_of_week ?: data.tcpcoord_days_of_week) %}
         22193428346135_{{ day }}
       {% endfor %}
 
@@ -2118,6 +2118,50 @@ elements: |-
           <li><a href="https://www.portland.gov/transportation/permitting/insurance-and-bond-requirements-permits-public-right-way" target="_blank">Your insurance information is on file or is being submitted,</a> naming the City of Portland as additionally insured.</li>
           <li>You have notified TriMet if your work is along a transit route.</li>
         </ul>
+      {% elseif data.wizard_permit_need == "general" and data.general_subpage == "" %}
+        <p><strong>Details:</strong></p>
+        <p>{{ webform_token('[webform_submission:values:general_comment_details]', webform_submission) }}</p>
+        <p><strong>Permit Number:</strong> {{ webform_token('[webform_submission:values:general_permit_number]', webform_submission) }}</p>
+      {% elseif data.wizard_permit_need == "general" and data.general_subpage == "moratorium_appeal" %}
+        {% set location_search = webform_token('[webform_submission:values:moratorium_location:location_search:clear]', webform_submission) %}
+        <h2>Your moratorium appeal</h2>
+        <ul>
+          {% if data.moratorium_permit_number %}
+          <li>Permit/Application Number: <strong>{{ webform_token('[webform_submission:values:moratorium_permit_number]', webform_submission) }}</strong></li>
+          {% endif %}
+          <li>At the address: <strong>{{ webform_token('[webform_submission:values:moratorium_location:location_address]', webform_submission) }}</strong>{% if location_search %}<em> (you entered: {{ location_search }})</em>{% endif %}</li>
+          <li>Requested start date: <strong>{{ data.moratorium_requested_start_date|date('D, m/d/Y') }}</strong></li>
+          <li>Requested end date: <strong>{{ data.moratorium_requested_end_date|date('D, m/d/Y') }}</strong></li>
+          <li>Days of week: <strong>{{ webform_token('[webform_submission:values:moratorium_days_of_week]', webform_submission) }}</strong></li>
+          <li>Requested times: <strong>{{ webform_token('[webform_submission:values:moratorium_requested_times]', webform_submission) }}</strong></li>
+          <li>
+            Describe what you are requesting a permit for:
+            <ul><li><strong>{{ webform_token('[webform_submission:values:moratorium_comment_details]', webform_submission) }}</strong></li></ul>
+          </li>
+          <li>
+            Describe how your situation is an emergency that poses an immediate threat to life safety or property damage:
+            <ul><li><strong>{{ webform_token('[webform_submission:values:moratorium_emergency_details]', webform_submission) }}</strong></li></ul>
+          </li>
+        </ul>
+        {{ block('contact_info') }}
+      {% elseif data.wizard_permit_need == "general" and data.general_subpage == "tcp_coordination" %}
+        {% set location_search = webform_token('[webform_submission:values:tcpcoord_location:location_search:clear]', webform_submission) %}
+        <h2>Your TCP coordination request</h2>
+        <ul>
+          {% if data.tcpcoord_permit_number %}
+          <li>Permit/Application Number: <strong>{{ webform_token('[webform_submission:values:tcpcoord_permit_number]', webform_submission) }}</strong></li>
+          {% endif %}
+          <li>At the address: <strong>{{ webform_token('[webform_submission:values:tcpcoord_location:location_address]', webform_submission) }}</strong>{% if location_search %}<em> (you entered: {{ location_search }})</em>{% endif %}</li>
+          <li>Requested start date: <strong>{{ data.tcpcoord_requested_start_date|date('D, m/d/Y') }}</strong></li>
+          <li>Requested end date: <strong>{{ data.tcpcoord_requested_end_date|date('D, m/d/Y') }}</strong></li>
+          <li>Days of week: <strong>{{ webform_token('[webform_submission:values:tcpcoord_days_of_week]', webform_submission) }}</strong></li>
+          <li>Requested times: <strong>{{ webform_token('[webform_submission:values:tcpcoord_requested_times]', webform_submission) }}</strong></li>
+          <li>
+            Detailed description of activity causing disruption to traffic:
+            <ul><li><strong>{{ webform_token('[webform_submission:values:tcpcoord_comment_details]', webform_submission) }}</strong></li></ul>
+          </li>
+        </ul>
+        {{ block('contact_info') }}
       {% endif %}
   report_ticket_id:
     '#type': hidden
@@ -2128,7 +2172,7 @@ elements: |-
     '#display_on': none
     '#mode': html
     '#template': |-
-      <p><a href="{{ webform_token('[webform:url]', webform_submission) }}?assessment_prefilled=1&wizard_permit_need={{ data.wizard_permit_need }}&wizard_existing_permit_situation={{ data.wizard_existing_permit_situation }}&contact_full_legal_name={{ data.contact_full_legal_name|url_encode }}&contact_company={{ data.contact_company|url_encode }}&contact_phone={{ data.contact_phone|url_encode }}&contact_email={{ data.contact_email|url_encode }}&contact_applicant_type={{ data.contact_applicant_type|url_encode }}&contact_city_work_type={{ data.contact_city_work_type|url_encode }}&contact_fun_company={{ data.contact_fun_company|url_encode }}&contact_bureau={{ data.contact_bureau|url_encode }}&complex_permit_billing_info={{ data.complex_permit_billing_info|url_encode }}&complex_permit_bureau_contact={{ data.complex_permit_bureau_contact|url_encode }}&complex_permit_job_number={{ data.complex_permit_job_number|url_encode }}"><em>Submit another application</em></a></p>
+      <p><a href="{{ webform_token('[webform:url]', webform_submission) }}?assessment_prefilled=1&wizard_permit_need={{ data.wizard_permit_need }}&wizard_existing_permit_situation={{ data.wizard_existing_permit_situation }}&general_subpage={{ data.general_subpage }}&contact_full_legal_name={{ data.contact_full_legal_name|url_encode }}&contact_company={{ data.contact_company|url_encode }}&contact_phone={{ data.contact_phone|url_encode }}&contact_email={{ data.contact_email|url_encode }}&contact_applicant_type={{ data.contact_applicant_type|url_encode }}&contact_city_work_type={{ data.contact_city_work_type|url_encode }}&contact_fun_company={{ data.contact_fun_company|url_encode }}&contact_bureau={{ data.contact_bureau|url_encode }}&complex_permit_billing_info={{ data.complex_permit_billing_info|url_encode }}&complex_permit_bureau_contact={{ data.complex_permit_bureau_contact|url_encode }}&complex_permit_job_number={{ data.complex_permit_job_number|url_encode }}"><em>Submit another application</em></a></p>
       {% if data.permit_type == "parking_only" %}
         <p><strong>Your Application Number: </strong>{{ data.report_ticket_id }}</p>
         <p>Thank you for submitting a Temporary Street Use Permit application. We will contact you shortly with the price and next steps.</p>
@@ -2186,9 +2230,13 @@ elements: |-
         <p>If you are impacting a Sidewalk or Lane and your work is along a TriMet transit route, you are required to notify them at least five business days in advance of your work. Email TriMet at <a href="mailto:foc@trimet.org">foc@trimet.org</a> or call them at <a href="tel:+1-503-962-4949">503-962-4949</a>.</p>
         <p>To cancel or make changes to your application, please submit a Change Request form. We will do our best to accommodate your change request.</p>
         <p>If you have not heard back from us about this submission within 5 business days, please first check your SPAM folder, and then contact us at <a href="mailto:TSUP@portlandoregon.gov">TSUP@portlandoregon.gov</a> or <a href="tel:+1-503-823-7365">503-823-7365</a>.</p>
-      {% elseif data.general_subpage == "moratorium_appeal" %}
+      {% elseif data.wizard_permit_need == "general" and data.general_subpage == "" %}
+        <p>Thank you for your submission. You will receive an email confirmation.</p>
+      {% elseif data.wizard_permit_need == "general" and data.general_subpage == "moratorium_appeal" %}
+        <p><strong>Your Application Number: </strong>{{ data.report_ticket_id }}</p>
         <p>Thank you for submitting your appeal. Someone will contact you about this submission within two weeks.</p>
-      {% elseif data.general_subpage == "tcp_coordination" %}
+      {% elseif data.wizard_permit_need == "general" and data.general_subpage == "tcp_coordination" %}
+        <p><strong>Your Application Number: </strong>{{ data.report_ticket_id }}</p>
         <p>Thank you for your submittal. PBOT staff will review your application and follow up with you within five business days.</p>
       {% endif %}
   general_subpage:
@@ -2390,14 +2438,11 @@ handlers:
     notes: ''
     status: true
     conditions:
-      disabled:
-        -
-          ':input[name="wizard_permit_need"]':
-            value: general
-        - or
-        -
-          ':input[name="support_agent_use_only[test_submission]"]':
-            checked: true
+      enabled:
+        ':input[name="wizard_permit_need"]':
+          '!value': general
+        ':input[name="support_agent_use_only[test_submission]"]':
+          checked: false
     weight: 0
     settings:
       requester_name: contact_full_legal_name
@@ -2453,25 +2498,24 @@ handlers:
   zendesk_general:
     id: zendesk
     handler_id: zendesk_general
-    label: 'Create new Zendesk request - General Comment/Question'
+    label: 'Create new Zendesk request - General Main Page (Comment/Question)'
     notes: ''
     status: true
     conditions:
-      disabled:
-        -
-          ':input[name="wizard_permit_need"]':
-            '!value': general
-        - or
-        -
-          ':input[name="support_agent_use_only[test_submission]"]':
-            checked: true
+      enabled:
+        ':input[name="wizard_permit_need"]':
+          value: general
+        ':input[name="general_subpage"]':
+          value: ''
+        ':input[name="support_agent_use_only[test_submission]"]':
+          checked: false
     weight: 2
     settings:
       requester_name: ''
       requester_email: general_email
       subject: 'General permit question'
-      comment: "<p><strong>Details:</strong></p>\r\n<p>[webform_submission:values:general_comment_details]</p>\r\n<p><strong>Permit Number:</strong> [webform_submission:values:general_permit_number]</p>"
-      tags: 'drupal webform tsup'
+      comment: '[webform_submission:values:computed_ticket_description:raw]'
+      tags: 'drupal webform tsup general_question [webform_submission:values:computed_tags]'
       priority: normal
       status: new
       group_id: '12281750992407'
@@ -2483,18 +2527,20 @@ handlers:
       ticket_form_id: '9791802547607'
       recipient: tsup@portlandoregon.gov
       ticket_fork_field: ''
-      is_child_incident: ''
+      is_child_incident: 0
       parent_ticket_id_field: ''
   zendesk_general_dev:
     id: zendesk
     handler_id: zendesk_general_dev
-    label: 'Create new Zendesk request - General Comment/Question - Developer Test'
+    label: 'Create new Zendesk request - General Main Page (Comment/Question) - Developer Test'
     notes: ''
     status: true
     conditions:
       enabled:
         ':input[name="wizard_permit_need"]':
           value: general
+        ':input[name="general_subpage"]':
+          value: ''
         ':input[name="support_agent_use_only[test_submission]"]':
           checked: true
     weight: 3
@@ -2502,8 +2548,8 @@ handlers:
       requester_name: ''
       requester_email: general_email
       subject: 'General permit question'
-      comment: "<p><strong>Details:</strong></p>\r\n<p>[webform_submission:values:general_comment_details]</p>\r\n<p><strong>Permit Number:</strong> [webform_submission:values:general_permit_number]</p>"
-      tags: 'drupal webform tsup'
+      comment: '[webform_submission:values:computed_ticket_description:raw]'
+      tags: 'drupal webform tsup general_question [webform_submission:values:computed_tags]'
       priority: normal
       status: new
       group_id: '4549352062487'
@@ -2515,6 +2561,142 @@ handlers:
       ticket_form_id: '9791802547607'
       recipient: tsup@portlandoregon.gov
       ticket_fork_field: ''
-      is_child_incident: ''
+      is_child_incident: 0
+      parent_ticket_id_field: ''
+  zendesk_moratorium_appeal:
+    id: zendesk
+    handler_id: zendesk_moratorium_appeal
+    label: 'Create new Zendesk request - General - Moratorium Appeal'
+    notes: ''
+    status: true
+    conditions:
+      enabled:
+        ':input[name="wizard_permit_need"]':
+          value: general
+        ':input[name="general_subpage"]':
+          value: moratorium_appeal
+        ':input[name="support_agent_use_only[test_submission]"]':
+          checked: false
+    weight: 4
+    settings:
+      requester_name: contact_full_legal_name
+      requester_email: contact_email
+      subject: 'Moratorium Appeal ([webform_submission:values:moratorium_requested_start_date] - [webform_submission:values:moratorium_requested_end_date])'
+      comment: '[webform_submission:values:computed_ticket_description:raw]'
+      tags: 'drupal webform tsup moratorium submit_appeal [webform_submission:values:computed_tags]'
+      priority: normal
+      status: new
+      group_id: '12281750992407'
+      assignee_id: ''
+      type: question
+      collaborators: ''
+      custom_fields: "6353388345367: 'apply_tsup'\r\n1500013095781: '[webform_submission:uuid]'\r\n5581480390679: ['[webform_submission:values:moratorium_location:location_lat]', 'moratorium_location:location_lat']\r\n5581490332439: ['[webform_submission:values:moratorium_location:location_lon]', 'moratorium_location:location_lon']\r\n1500012743961: ['[webform_submission:values:moratorium_location:location_address]', 'moratorium_location:location_address']\r\n12280733221015: ['[webform_submission:values:moratorium_requested_start_date]', 'moratorium_requested_start_date']\r\n12280737894935: ['[webform_submission:values:moratorium_requested_end_date]', 'moratorium_requested_end_date']\r\n"
+      ticket_id_field: report_ticket_id
+      ticket_form_id: '9791802547607'
+      recipient: tsup@portlandoregon.gov
+      ticket_fork_field: ''
+      is_child_incident: 0
+      parent_ticket_id_field: ''
+  zendesk_moratorium_appeal_dev:
+    id: zendesk
+    handler_id: zendesk_moratorium_appeal_dev
+    label: 'Create new Zendesk request - General - Moratorium Appeal - Developer Test'
+    notes: ''
+    status: true
+    conditions:
+      enabled:
+        ':input[name="wizard_permit_need"]':
+          value: general
+        ':input[name="general_subpage"]':
+          value: moratorium_appeal
+        ':input[name="support_agent_use_only[test_submission]"]':
+          checked: true
+    weight: 5
+    settings:
+      requester_name: contact_full_legal_name
+      requester_email: contact_email
+      subject: 'Moratorium Appeal ([webform_submission:values:moratorium_requested_start_date] - [webform_submission:values:moratorium_requested_end_date])'
+      comment: '[webform_submission:values:computed_ticket_description:raw]'
+      tags: 'drupal webform tsup moratorium submit_appeal [webform_submission:values:computed_tags]'
+      priority: normal
+      status: new
+      group_id: '4549352062487'
+      assignee_id: ''
+      type: question
+      collaborators: ''
+      custom_fields: "6353388345367: 'apply_tsup'\r\n1500013095781: '[webform_submission:uuid]'\r\n5581480390679: ['[webform_submission:values:moratorium_location:location_lat]', 'moratorium_location:location_lat']\r\n5581490332439: ['[webform_submission:values:moratorium_location:location_lon]', 'moratorium_location:location_lon']\r\n1500012743961: ['[webform_submission:values:moratorium_location:location_address]', 'moratorium_location:location_address']\r\n12280733221015: ['[webform_submission:values:moratorium_requested_start_date]', 'moratorium_requested_start_date']\r\n12280737894935: ['[webform_submission:values:moratorium_requested_end_date]', 'moratorium_requested_end_date']\r\n"
+      ticket_id_field: report_ticket_id
+      ticket_form_id: '9791802547607'
+      recipient: tsup@portlandoregon.gov
+      ticket_fork_field: ''
+      is_child_incident: 0
+      parent_ticket_id_field: ''
+  zendesk_tcp_coordination:
+    id: zendesk
+    handler_id: zendesk_tcp_coordination
+    label: 'Create new Zendesk request - General - TCP Coordination'
+    notes: ''
+    status: true
+    conditions:
+      enabled:
+        ':input[name="wizard_permit_need"]':
+          value: general
+        ':input[name="general_subpage"]':
+          value: tcp_coordination
+        ':input[name="support_agent_use_only[test_submission]"]':
+          checked: false
+    weight: 6
+    settings:
+      requester_name: contact_full_legal_name
+      requester_email: contact_email
+      subject: 'TCP Coordination Request ([webform_submission:values:tcpcoord_requested_start_date] - [webform_submission:values:tcpcoord_requested_end_date])'
+      comment: '[webform_submission:values:computed_ticket_description:raw]'
+      tags: 'drupal webform tsup needs_tcp_review [webform_submission:values:computed_tags]'
+      priority: normal
+      status: new
+      group_id: '12281750992407'
+      assignee_id: ''
+      type: question
+      collaborators: ''
+      custom_fields: "6353388345367: 'apply_tsup'\r\n1500013095781: '[webform_submission:uuid]'\r\n5581480390679: ['[webform_submission:values:tcpcoord_location:location_lat]', 'tcpcoord_location:location_lat']\r\n5581490332439: ['[webform_submission:values:tcpcoord_location:location_lon]', 'tcpcoord_location:location_lon']\r\n1500012743961: ['[webform_submission:values:tcpcoord_location:location_address]', 'tcpcoord_location:location_address']\r\n12280733221015: ['[webform_submission:values:tcpcoord_requested_start_date]', 'tcpcoord_requested_start_date']\r\n12280737894935: ['[webform_submission:values:tcpcoord_requested_end_date]', 'tcpcoord_requested_end_date']\r\n"
+      ticket_id_field: report_ticket_id
+      ticket_form_id: '9791802547607'
+      recipient: tsup@portlandoregon.gov
+      ticket_fork_field: ''
+      is_child_incident: 0
+      parent_ticket_id_field: ''
+  zendesk_tcp_coordination_dev:
+    id: zendesk
+    handler_id: zendesk_tcp_coordination_dev
+    label: 'Create new Zendesk request - General - TCP Coordination - Developer Test'
+    notes: ''
+    status: true
+    conditions:
+      enabled:
+        ':input[name="wizard_permit_need"]':
+          value: general
+        ':input[name="general_subpage"]':
+          value: tcp_coordination
+        ':input[name="support_agent_use_only[test_submission]"]':
+          checked: true
+    weight: 7
+    settings:
+      requester_name: contact_full_legal_name
+      requester_email: contact_email
+      subject: 'TCP Coordination Request ([webform_submission:values:tcpcoord_requested_start_date] - [webform_submission:values:tcpcoord_requested_end_date])'
+      comment: '[webform_submission:values:computed_ticket_description:raw]'
+      tags: 'drupal webform tsup needs_tcp_review [webform_submission:values:computed_tags]'
+      priority: normal
+      status: new
+      group_id: '4549352062487'
+      assignee_id: ''
+      type: question
+      collaborators: ''
+      custom_fields: "6353388345367: 'apply_tsup'\r\n1500013095781: '[webform_submission:uuid]'\r\n5581480390679: ['[webform_submission:values:tcpcoord_location:location_lat]', 'tcpcoord_location:location_lat']\r\n5581490332439: ['[webform_submission:values:tcpcoord_location:location_lon]', 'tcpcoord_location:location_lon']\r\n1500012743961: ['[webform_submission:values:tcpcoord_location:location_address]', 'tcpcoord_location:location_address']\r\n12280733221015: ['[webform_submission:values:tcpcoord_requested_start_date]', 'tcpcoord_requested_start_date']\r\n12280737894935: ['[webform_submission:values:tcpcoord_requested_end_date]', 'tcpcoord_requested_end_date']\r\n"
+      ticket_id_field: report_ticket_id
+      ticket_form_id: '9791802547607'
+      recipient: tsup@portlandoregon.gov
+      ticket_fork_field: ''
+      is_child_incident: 0
       parent_ticket_id_field: ''
 variants: {  }
