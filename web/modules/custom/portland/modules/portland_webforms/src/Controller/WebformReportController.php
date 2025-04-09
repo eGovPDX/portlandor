@@ -7,6 +7,7 @@ use Drupal\webform\Entity\Webform;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Serializer\SerializerInterface;
+use Drupal\Core\Url;
 
 class WebformReportController extends ControllerBase {
   private const CACHE_ID = 'portland_webforms:webform_report_cache';
@@ -123,6 +124,9 @@ class WebformReportController extends ControllerBase {
           $handler_types[] = $handler->getPluginId();
         }
 
+        // Generate the webform's URL.
+        $webform_url = Url::fromRoute('entity.webform.canonical', ['webform' => $webform->id()], ['absolute' => TRUE])->toString();
+
         $rows[] = [
           'Webform ID' => $webform->id(),
           'Webform Title' => $webform->label(),
@@ -130,6 +134,7 @@ class WebformReportController extends ControllerBase {
           'Number of Fields' => count($webform->getElementsInitializedFlattenedAndHasValue()),
           'Number of Handlers' => count($handlers),
           'Handler Types' => implode(', ', $handler_types),
+          'Webform URL' => $webform_url,
         ];
       }
 
@@ -185,32 +190,4 @@ class WebformReportController extends ControllerBase {
     return '';
   }
 
-  // /**
-  //  * Finds the entities where a webform is embedded.
-  //  *
-  //  * @param string $webform_id
-  //  *   The ID of the webform.
-  //  *
-  //  * @return array
-  //  *   An array of entity titles or labels where the webform is embedded.
-  //  */
-  // protected function getEmbeddedLocations($webform_id) {
-  //   $query = \Drupal::entityTypeManager()->getStorage('node')->getQuery();
-  //   $query->condition('field_webform', $webform_id); // Replace 'field_webform' with the correct field name if needed.
-  //   $query->condition('type', 'city_service'); // Filter by content type if necessary.
-  //   $query->accessCheck(TRUE); // Ensure access checks are performed.
-
-  //   $node_ids = $query->execute();
-
-  //   if (empty($node_ids)) {
-  //       return [''];
-  //   }
-
-  //   $nodes = \Drupal::entityTypeManager()->getStorage('node')->loadMultiple($node_ids);
-  //   $embedded_locations = [];
-  //   foreach ($nodes as $node) {
-  //       $embedded_locations[] = $node->label();
-  //   }
-  //   return $embedded_locations;
-  // }
 }
