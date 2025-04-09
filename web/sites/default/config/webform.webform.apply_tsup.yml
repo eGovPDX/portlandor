@@ -11,9 +11,10 @@ third_party_settings:
     exclude_from_json:
       permit_date_unenforceable_agree: permit_date_unenforceable_agree
       friendly_permit_type: friendly_permit_type
+      computed_tags: computed_tags
       computed_permit_reason: computed_permit_reason
       computed_permit_street_name: computed_permit_street_name
-      computed_tags: computed_tags
+      general_subpage: general_subpage
 weight: 0
 open: null
 close: null
@@ -32,10 +33,13 @@ elements: |-
       invisible:
         ':input[name="assessment_prefilled"]':
           '!value': ''
+        ':input[name="wizard_permit_need"]':
+          '!value': ''
     wizard_permit_need:
       '#type': radios
       '#title': 'What do you need?'
       '#prepopulate': true
+      '#states_clear': false
       '#options':
         parking: 'I need to use or reserve parking space(s) -- Used for moving trucks, storage containers, construction activities, property maintenance, and passenger loading and unloading. Not to be used for vending, passenger vehicles, or SUVs.'
         traffic: 'I need to use or close a traffic lane, bike lane, sidewalk, or full street -- Used for construction activities, utility work, crane lifts, and property maintenance.'
@@ -51,6 +55,8 @@ elements: |-
       invisible:
         ':input[name="wizard_permit_need"]':
           value: general
+        ':input[name="general_subpage"]':
+          value: ''
     contact_full_legal_name:
       '#type': textfield
       '#title': 'Full name'
@@ -59,8 +65,8 @@ elements: |-
     contact_company:
       '#type': textfield
       '#title': 'Company name (if applicable)'
-      '#description': '<p>Leave blank if requesting permit on your own behalf.</p>'
-      '#help': '<p>You must either work for this company or be authorized to represent them.<br><br>The permit will be issued with this company as the permit holder, and the permit holder is the liable party for any damages<br><br>If your permit requires an insurance certificate, the company name on that certificate must exactly match the company name provided on this permit application.<br><br>Any refunds of permit fees will be issued to this company name, regardless of payment method.</p>'
+      '#description': '<p>Leave blank if requesting on your own behalf.</p>'
+      '#help': '<p>You must either work for this company or be authorized to represent them.<br><br>Any permit will be issued with this company as the permit holder, and the permit holder is the liable party for any damages<br><br>If your permit requires an insurance certificate, the company name on that certificate must exactly match the company name provided on this permit application.<br><br>Any refunds of permit fees will be issued to this company name, regardless of payment method.</p>'
       '#description_display': before
       '#prepopulate': true
     contact_phone:
@@ -82,6 +88,11 @@ elements: |-
     contact_applicant_type:
       '#type': radios
       '#title': 'Do any of the below apply to you? (Optional)'
+      '#states':
+        invisible:
+          ':input[name="wizard_permit_need"]':
+            value:
+              pattern: existing_permit|general
       '#prepopulate': true
       '#options':
         fun: 'I am performing work for a Franchise Utility Company -- Select this option if you work for a franchise utility company that has an annual street use permit with the City of Portland.'
@@ -169,13 +180,6 @@ elements: |-
     support_agent_use_only:
       '#type': portland_support_agent_widget
       '#title': 'Support Agent Use Only'
-      '#states':
-        visible:
-          - ':input[name="wizard_permit_need"]':
-              value: general
-          - or
-          - ':input[name="permit_type"]':
-              '!value': unknown
       '#wrapper_attributes':
         style: 'background-color: #ccc; padding: 15px;'
       '#access_create_roles':
@@ -442,18 +446,6 @@ elements: |-
         <p>Allow 2 business days of processing time for locations where you already have a pre-approved TCP or where you are only requesting to reserve non-metered parking</p>
         <p>Allow 6 business days of processing time for locations where you do not already have a pre-approved TCP</p>
         <p>Allow 5 business days of processing time for locations that require Metered Parking</p>
-    permit_date_days_of_week:
-      '#type': checkboxes
-      '#title': 'What days of the week would you like your permit to be active?'
-      '#options':
-        monday: Monday
-        tuesday: Tuesday
-        wednesday: Wednesday
-        thursday: Thursday
-        friday: Friday
-        saturday: Saturday
-        sunday: Sunday
-      '#required': true
     permit_date_start:
       '#type': date
       '#title': 'Start Date'
@@ -465,6 +457,18 @@ elements: |-
       '#title': 'End Date'
       '#required': true
       '#date_date_min': today
+    permit_date_days_of_week:
+      '#type': checkboxes
+      '#title': 'What days of the week would you like this to be active?'
+      '#options':
+        monday: Monday
+        tuesday: Tuesday
+        wednesday: Wednesday
+        thursday: Thursday
+        friday: Friday
+        saturday: Saturday
+        sunday: Sunday
+      '#required': true
     markup_permit_date_calculator:
       '#type': webform_markup
       '#admin_title': 'Date Calculator'
@@ -907,8 +911,7 @@ elements: |-
       simple_permit_acknowledge_conditions:
         '#type': checkbox
         '#title': 'I have read and agree with the conditions of this permit (see below).'
-        '#description': |-
-          By applying to obtain this permit from the City of Portland, the permittee agrees to comply with all permit conditions, including, without limitation, the permit conditions stated here:<br />
+        '#description': 'By applying to obtain this permit from the City of Portland, the permittee agrees to comply with all permit conditions, including, without limitation, the permit conditions stated here:<br />'
         '#required': true
         '#required_error': 'You must agree with the permit conditions.'
       markup_simple_toc_conditions:
@@ -1006,7 +1009,7 @@ elements: |-
       '#title_tag': h3
       complex_permit_street_name:
         '#type': textfield
-        '#title': 'Name of the street you wish to request a permit for'
+        '#title': 'Name of the street this request is for:'
         '#placeholder': 'e.g. NW Glisan St'
         '#required': true
       complex_permit_street_side:
@@ -1471,6 +1474,8 @@ elements: |-
       visible:
         ':input[name="wizard_permit_need"]':
           value: general
+        ':input[name="general_subpage"]':
+          value: ''
     '#admin_title': 'General Permit Question'
     general_comment_details:
       '#type': textarea
@@ -1490,6 +1495,166 @@ elements: |-
       '#title': 'Permit/Application Number (Optional)'
       '#description': 'If you already have a permit or a pending application, please provide the number so we can better assist you.'
       '#description_display': before
+    general_documents:
+      '#type': webform_document_file
+      '#title': 'Additional Documentation'
+      '#description': '<p>If you have any documentation you would like to send along with your question.</p>'
+      '#description_display': before
+      '#multiple': 2
+      '#max_filesize': '30'
+      '#file_help': help
+      '#file_extensions': 'pdf jpg jpeg png'
+  page_moratorium_appeal:
+    '#type': webform_wizard_page
+    '#title': 'Request Details'
+    '#states':
+      visible:
+        ':input[name="general_subpage"]':
+          value: moratorium_appeal
+    '#admin_title': 'Moratorium Appeal'
+    markup_page_moratorium_appeal:
+      '#type': processed_text
+      '#text': |
+        <h2>Submit a Moratorium Appeal</h2>
+
+        <p>Exemptions are granted based on certain criteria. All appeals are reviewed by the Portland Bureau of Transportation (PBOT)’s Moratorium Committee. If you have an emergency situation or extenuating circumstances and want to appeal a restriction, complete this form and submit it for review.</p>
+      '#format': simple_editor
+    moratorium_permit_number:
+      '#type': textfield
+      '#title': 'Permit/Application Number (Optional)'
+      '#description': 'If you already have a permit or a pending application, please provide the number so we can better assist you.'
+      '#description_display': before
+    moratorium_location:
+      '#type': portland_location_picker
+      '#title': 'Moratorium Location'
+      '#required': true
+      '#location_search__title': 'What is the address of the job site or closure?'
+      '#location_search__description': '<p>Please enter the address below. <strong>Move the pin to the exact area of your closure/reservation.</strong></p>'
+      '#location_lat__required': true
+      '#place_name__access': false
+      '#location_details__access': false
+      '#location_type__access': false
+      '#location_park_container__access': false
+      '#location_private_owner__access': false
+      '#precision_text__access': false
+      '#waterway_instructions__access': false
+      '#require_boundary': true
+    moratorium_comment_details:
+      '#type': textarea
+      '#title': 'Describe what you are requesting a permit for:'
+      '#description': '<p>Such as: 20 ft of parking, lane closure, etc. Include street names where applicable.</p>'
+      '#description_display': before
+      '#required': true
+    moratorium_requested_start_date:
+      '#type': date
+      '#title': 'Requested Start Date'
+      '#required': true
+      '#date_date_min': today
+    moratorium_requested_end_date:
+      '#type': date
+      '#title': 'Requested End Date'
+      '#required': true
+      '#date_date_min': today
+    moratorium_days_of_week:
+      '#type': checkboxes
+      '#title': 'Days of the Week'
+      '#options':
+        monday: Monday
+        tuesday: Tuesday
+        wednesday: Wednesday
+        thursday: Thursday
+        friday: Friday
+        saturday: Saturday
+        sunday: Sunday
+      '#required': true
+    moratorium_requested_times:
+      '#type': textfield
+      '#title': 'Requested Start and End times (include AM or PM)'
+      '#placeholder': 'e.g. 7am - 4pm or All Hours'
+      '#required': true
+    moratorium_emergency_details:
+      '#type': textarea
+      '#title': 'Describe how your situation is an emergency that poses an immediate threat to life safety or property damage:'
+      '#required': true
+    moratorium_documents:
+      '#type': webform_document_file
+      '#title': 'Additional Documentation'
+      '#description': '<p>If you have any documentation you would like to send along with your appeal.</p>'
+      '#description_display': before
+      '#multiple': 2
+      '#max_filesize': '30'
+      '#file_help': help
+      '#file_extensions': 'pdf jpg jpeg png'
+  page_tcp_coordination:
+    '#type': webform_wizard_page
+    '#title': 'Request Details'
+    '#states':
+      visible:
+        ':input[name="general_subpage"]':
+          value: tcp_coordination
+    '#admin_title': 'TCP Coordination'
+    markup_page_tcp_coordination:
+      '#type': processed_text
+      '#text': '<h2>Submit a Traffic Control Plan for coordination review</h2><p>This form is intended for two scenarios:</p><ol><li>You will be performing a traffic closure on a street that is not under Portland Bureau of Transportation (PBOT) jurisdiction, but the closure will have a traffic impact on PBOT streets. Please use this form to submit your traffic control plan (TCP) for our review. For example, if you have a permit from Multnomah County to restrict vehicle traffic on a bridge that they control, PBOT would like to review your TCP for any impacts it may have to traffic circulation.<br>&nbsp;</li><li>You will be hosting an event on private property that may result in a traffic impact. Please use this form to submit your plan details so we can review and provide guidance. For example, if you will be hosting a drive-through medical screening in a private parking lot, please use this form so we can review any potential traffic impacts.</li></ol><p>Do not use this form if:</p><ol><li>You will be performing construction on private property and need to close any adjacent City of Portland right-of-way (sidewalk, parking, travel lanes).<br>&nbsp;</li><li>You will be performing utility work in a City of Portland street and need to close the adjacent sidewalk, parking, or travel lanes.</li></ol><p>In those cases, please submit a Temporary Street Use Permit Application.</p><p>Typical traffic management measures PBOT may recommend include reserving on-street parking, closing a travel lane, adding directional signage, prohibiting certain turning movements, etc.</p><p>Fees may apply to this process, and you will be responsible for providing all the required traffic control devices (signs, barricades, cones, etc).</p><p>In order to begin the process, please fill out this form to provide us with the necessary information. Our staff will assess your situation and follow up with more information about fees and next steps.</p><p>Please note that to place any traffic control devices on city streets, you need to provide PBOT with a current certificate of insurance.</p><p>Visit our <a href="/transportation/permitting/insurance-and-bond-requirements-permits-public-right-way">insurance requirements page</a> or our <a href="/transportation/safestreetspdx/basic-traffic-control-devices-and-vendors">basic traffic control devices and vendors</a> to learn more.</p>'
+      '#format': simple_editor
+    tcpcoord_permit_number:
+      '#type': textfield
+      '#title': 'Permit/Application Number (Optional)'
+      '#description': 'If you already have a permit or a pending application, please provide the number so we can better assist you.'
+      '#description_display': before
+    tcpcoord_location:
+      '#type': portland_location_picker
+      '#title': 'Coordination Location'
+      '#required': true
+      '#location_search__title': 'What is the address of the job site or closure?'
+      '#location_search__description': '<p>Please enter the address below. <strong>Move the pin to the exact area of your closure/reservation.</strong></p>'
+      '#location_lat__required': true
+      '#place_name__access': false
+      '#location_details__access': false
+      '#location_type__access': false
+      '#location_park_container__access': false
+      '#location_private_owner__access': false
+      '#precision_text__access': false
+      '#waterway_instructions__access': false
+      '#require_boundary': false
+    tcpcoord_comment_details:
+      '#type': textarea
+      '#title': 'Detailed description of activity causing disruption to traffic'
+      '#required': true
+    tcpcoord_documents:
+      '#type': webform_document_file
+      '#title': 'Using the PBOT BaseMap, please create and upload a sketch of the expected disruption to traffic:'
+      '#required': true
+      '#max_filesize': '30'
+      '#file_help': help
+      '#file_extensions': 'pdf jpg jpeg png'
+    tcpcoord_requested_start_date:
+      '#type': date
+      '#title': 'Requested Start Date'
+      '#required': true
+      '#date_date_min': today
+    tcpcoord_requested_end_date:
+      '#type': date
+      '#title': 'Requested End Date'
+      '#required': true
+      '#date_date_min': today
+    tcpcoord_days_of_week:
+      '#type': checkboxes
+      '#title': 'Days of the Week'
+      '#options':
+        monday: Monday
+        tuesday: Tuesday
+        wednesday: Wednesday
+        thursday: Thursday
+        friday: Friday
+        saturday: Saturday
+        sunday: Sunday
+      '#required': true
+    tcpcoord_requested_times:
+      '#type': textfield
+      '#title': 'Requested Start and End times (include AM or PM)'
+      '#placeholder': 'e.g. 7am - 4pm or All Hours'
+      '#required': true
   page_placeholder_permit:
     '#type': webform_wizard_page
     '#title': 'Request Details'
@@ -1635,7 +1800,7 @@ elements: |-
     '#title': 'Computed number of parking spaces'
     '#display_on': none
     '#mode': text
-    '#template': "{{ data.complex_permit_parking_spaces_affected|default(data.permit_amount_20ft_spaces)|default('0') }}"
+    '#template': "{{ (data.permit_type == 'parking_only' or data.permit_type == '7day') ? data.permit_amount_20ft_spaces : (data.complex_permit_parking_spaces_affected ?: '0') }}"
     '#whitespace': trim
     '#store': true
   computed_date_start:
@@ -1857,6 +2022,8 @@ elements: |-
           <li>Lanes affected: <strong>{{ webform_token('[webform_submission:values:complex_permit_lanes_affected]', webform_submission) ?: '0' }}</strong></li>
           <li>Parking spaces affected: <strong>{{ webform_token('[webform_submission:values:complex_permit_parking_spaces_affected]', webform_submission) ?: '0' }}</strong></li>
           {% endif %}
+          {% if data.complex_permit_document_choice_tcp_required %}<li>TCP choice: <strong>{{ webform_token('[webform_submission:values:complex_permit_document_choice_tcp_required]', webform_submission) }}</strong></li>{% endif %}
+          {% if data.complex_permit_document_choice_wsd_required %}<li>WSD choice: <strong>{{ webform_token('[webform_submission:values:complex_permit_document_choice_wsd_required]', webform_submission) }}</strong></li>{% endif %}
           {% if data.complex_permit_sidewalk_repair_closure %}<li>Sidewalk closure: <strong>{{ webform_token('[webform_submission:values:complex_permit_sidewalk_repair_closure]', webform_submission) }}</strong></li>{% endif %}
           {% if data.complex_permit_duration_impact %}<li>Expected duration of work / ROW impact: <strong>{{ webform_token('[webform_submission:values:complex_permit_duration_impact]', webform_submission) }}</strong></li>{% endif %}
           {% if data.complex_permit_sidewalk_permit_number %}<li>Sidewalk Repair permit number: <strong>{{ webform_token('[webform_submission:values:complex_permit_sidewalk_permit_number]', webform_submission) }}</strong></li>{% endif %}
@@ -1979,6 +2146,35 @@ elements: |-
         <p><strong>Due to processing times and parking enforcement logistics, your permit may not be valid for up to 15 business days. If the application is incomplete, you will be contacted for additional information.</strong></p>
         <p>If you have not heard back from us about this submission within 5 business days, please first check your SPAM folder, and then contact us at <a href="mailto:TSUP@portlandoregon.gov">TSUP@portlandoregon.gov</a> or <a href="tel:+1-503-823-7365">503-823-7365</a>.</p>
         <p>To cancel or make a change to this request, please <a href="{{ webform_token('[webform:url]', webform_submission) }}?assessment_prefilled=1&wizard_permit_need=existing_permit&wizard_existing_permit_situation=change&change_request_id[]={{ data.report_ticket_id }}">submit a Change Request here.</a></p>
+      {% elseif data.permit_type == "cbn" %}
+        <p><strong>Your Application Number: </strong>{{ data.report_ticket_id }}</p>
+        <p>Thank you for notifying Temporary Street Use Permitting about your upcoming work.</p>
+        <p>If your work is along a <a href="https://ride.trimet.org/home/?tool=routes#/">TriMet transit route</a>, you are required to notify them at least five business days in advance of your work. Email TriMet at <a href="mailto:bsc@trimet.org">bsc@trimet.org</a>.</p>
+
+        <h2>Processing Wait Times</h2>
+        <ul>
+        <li><strong>If you submitted a TCP that has not yet been reviewed by a PBOT Traffic Engineer:</strong> 6 Business Days</li>
+        <ul><li><em>Following your submittal, you will receive an approved TCP from one of our traffic engineers; do not proceed prior to this.</em></li></ul>
+        <li><strong>If your request has metered parking:</strong> 5 Business Days</li>
+        <ul><li><em>Following your submittal, you will receive a copy of the metered parking reservation details from us; do not proceed prior to this.</em></li></ul>
+        <li><strong>All other requests:</strong> 2 Business Days</li>
+        <ul><li>All other requests are subject to 2 business days of review. We will not respond unless there is an issue or further coordination is needed.</li></ul>
+        </ul>
+
+        <p><strong>Do Not implement any closures before the required processing time.</strong></p>
+
+        {% if data.permit_location_metered == "false" %}
+        <p><a href="/transportation/permitting/documents/city-bureau-notification-sign-template-and-instructions">To reserve your parking, follow these directions and utilize these documents.</a></p>
+        {% endif %}
+      {% elseif data.permit_type == "fun" %}
+        <p><strong>Your Application Number: </strong>{{ data.report_ticket_id }}</p>
+        <p>Thank you for notifying Temporary Street Use Permitting about your upcoming work.</p>
+        <p>Please allow the necessary processing time as outlined on your FUN permit.</p>
+        <p>If your work is along a <a href="https://ride.trimet.org/home/?tool=routes#/">TriMet transit route</a>, you are required to notify them at least five business days in advance of your work. Email TriMet at <a href="mailto:bsc@trimet.org">bsc@trimet.org</a>.</p>
+      {% elseif data.permit_type == "sidewalk_repair" %}
+        <p><strong>Your Application Number: </strong>{{ data.report_ticket_id }}</p>
+        <p>Thank you for notifying Temporary Street Use Permitting about your upcoming work. You will NOT receive communication from us if there are no conflicts with your proposed work. If there is a conflict with the proposed work, someone will contact you within 5 business days. No work should commence within 5 business days of this notification.</p>
+        <p>If your work is along a <a href="https://ride.trimet.org/home/?tool=routes#/">TriMet transit route</a>, you are required to notify them at least five business days in advance of your work. Email TriMet at <a href="mailto:bsc@trimet.org">bsc@trimet.org</a>.</p>
       {% elseif data.permit_type == "change_request" %}
         <p><strong>Your Change Request Number: </strong>{{ data.report_ticket_id }}</p>
         <p>Thank you for submitting a Change Request. We will do our best to accommodate your request. A member of our staff should respond to your request within 2 business days.</p>
@@ -1990,7 +2186,15 @@ elements: |-
         <p>If you are impacting a Sidewalk or Lane and your work is along a TriMet transit route, you are required to notify them at least five business days in advance of your work. Email TriMet at <a href="mailto:foc@trimet.org">foc@trimet.org</a> or call them at <a href="tel:+1-503-962-4949">503-962-4949</a>.</p>
         <p>To cancel or make changes to your application, please submit a Change Request form. We will do our best to accommodate your change request.</p>
         <p>If you have not heard back from us about this submission within 5 business days, please first check your SPAM folder, and then contact us at <a href="mailto:TSUP@portlandoregon.gov">TSUP@portlandoregon.gov</a> or <a href="tel:+1-503-823-7365">503-823-7365</a>.</p>
+      {% elseif data.general_subpage == "moratorium_appeal" %}
+        <p>Thank you for submitting your appeal. Someone will contact you about this submission within two weeks.</p>
+      {% elseif data.general_subpage == "tcp_coordination" %}
+        <p>Thank you for your submittal. PBOT staff will review your application and follow up with you within five business days.</p>
       {% endif %}
+  general_subpage:
+    '#type': hidden
+    '#title': 'Hidden - General Questions Subpage (moratorium_appeal or tcp_coordination)'
+    '#prepopulate': true
   assessment_prefilled:
     '#type': hidden
     '#title': 'Assessment Prefilled (skips first page)'
@@ -2104,7 +2308,7 @@ settings:
   confirmation_title: ''
   confirmation_message: '[webform_submission:values:computed_confirmation_message:raw] [webform_submission:values:computed_ticket_description:raw]'
   confirmation_attributes: {  }
-  confirmation_back: true
+  confirmation_back: false
   confirmation_back_label: 'Submit another application'
   confirmation_back_attributes: {  }
   confirmation_exclude_query: false
