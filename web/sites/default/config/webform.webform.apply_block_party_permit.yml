@@ -3,7 +3,12 @@ langcode: en
 status: open
 dependencies:
   module:
+    - portland
     - portland_zendesk
+third_party_settings:
+  portland:
+    disable_demographic_form_prompt: 0
+    exclude_from_json: {  }
 weight: 0
 open: null
 close: null
@@ -22,10 +27,17 @@ elements: |-
       '#type': portland_location_picker
       '#title': 'Location of the Block Party'
       '#description_display': before
-      '#location_search__description': 'Search the map for an address, cross streets, park, or community center. Or use the map to click a location. Please click, tap, or drag the marker to the precise location in the street where you plant o have your block party.'
+      '#location_search__description': 'Search the map for an address, cross streets, park, or community center. Or use the map to click a location. Please click, tap, or drag the marker to the precise location in the street where you plan to have your block party.'
       '#place_name__access': false
       '#location_details__description': 'Block Party events must take place on the street of which you are a resident. Please describe the location requested including street and cross street names, example – NE 21st Ave between NE Going and NE Wygant'
       '#location_details__required': true
+    markup_address_verification:
+      '#type': webform_markup
+      '#states':
+        visible:
+          ':input[name="apply_applicant_address[location_verification_status]"]':
+            filled: true
+      '#markup': '<p>Warning</p><p>Address not verified</p>'
     markup_taxlot_warning:
       '#type': webform_markup
       '#states':
@@ -45,7 +57,7 @@ elements: |-
         visible:
           ':input[name="apply_street_painting"]':
             value: 'Yes'
-      '#markup': '<div class="alert alert--info next-steps"><h2 class="mt-0">Next Steps</h2><p class="mb-0"><span data-teams="true">If you are considering a new Street Painting, please consult the Street Painting program to initiate the application process, if you have not already done so.</span></p></div>'
+      '#markup': '<div class="alert alert--info next-steps"><h2 class="mt-0">Next Steps</h2><p class="mb-0"><span data-teams="true">If you are considering a new Street Painting, please consult the </span><a href="/node/18358" data-entity-type="node" data-entity-uuid="02f5c29e-3bdd-4d4c-b4e4-166c1fd4c782" data-entity-substitution="canonical"><span data-teams="true">Street Painting program</span></a><span data-teams="true"> to initiate the application process, if you have not already done so.</span></p></div>'
     apply_blocks_requested:
       '#type': number
       '#title': 'Number of blocks requested'
@@ -181,6 +193,7 @@ elements: |-
         '#options':
           Weekly: Weekly
           Bi-Weekly: Bi-Weekly
+          Monthly: Monthly
         '#other__placeholder': 'Please describe...'
       apply_occurences_days:
         '#type': checkboxes
@@ -197,15 +210,17 @@ elements: |-
     apply_event_times:
       '#type': textfield
       '#title': 'Start and end times'
-      '#required': true
-      '#description': '<p>Include any time that the right-of-way will be used for this event, including load-in/out.</p>'
+      '#description': '<p>Include any time that the right-of-way will be used for this event, including <span class="fabric-text-color-mark" style="--custom-palette-color:var(--ds-text-accent-red, #BF2600);" data-renderer-mark="true" data-text-custom-color="#bf2600">set up &amp; break down.</span></p>'
       '#description_display': before
+      '#required': true
   page_block_party_extras:
     '#type': webform_wizard_page
     '#title': 'Additional Information'
     apply_is_church:
       '#type': radios
-      '#title': 'Is this a church event?'
+      '#title': 'Is this event taking place at a church, religious facility, or community gathering place?'
+      '#help': '<p>Block parties are usually required to take place on the street where you live. However, if your event is at a church, religious facility, or community gathering place, an exception may be made.</p>'
+      '#help_display': title_before
       '#options': yes_no
       '#options_display': side_by_side
       '#required': true
@@ -228,9 +243,18 @@ elements: |-
       '#options': yes_no
       '#options_display': side_by_side
       '#required': true
+    markup_partyon_portland:
+      '#type': webform_markup
+      '#states':
+        visible:
+          ':input[name="apply_pop_registration"]':
+            value: 'No'
+      '#markup': '<p data-renderer-start-pos="1729">For more information on POP, visit</p><ul class="ak-ul" data-indent-level="2"><li><p data-renderer-start-pos="1792">NNO National Webpage</p></li><li><p data-renderer-start-pos="1820">POP Event Schedule</p></li></ul>'
     apply_bipoc:
       '#type': radios
-      '#title': 'Do you identify as BIPOC?'
+      '#title': 'Do you identify as Black, Indigenous, or a Person of Color?'
+      '#help': "<p>The Portland Bureau of Transportation's Portland in the Streets Program is committed to engaging with underserved communities in Portland. Data collected will assess our reach and identify opportunities to enhance interaction with these communities.</p>"
+      '#help_display': title_before
       '#options': yes_no
       '#options_display': side_by_side
     apply_learned_about_program:
@@ -379,11 +403,11 @@ elements: |-
 css: ''
 javascript: ''
 settings:
-  ajax: false
+  ajax: true
   ajax_scroll_top: form
   ajax_progress_type: ''
-  ajax_effect: ''
-  ajax_speed: null
+  ajax_effect: none
+  ajax_speed: 0
   page: true
   page_submit_path: ''
   page_confirm_path: ''
