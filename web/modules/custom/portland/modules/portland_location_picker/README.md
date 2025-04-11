@@ -146,6 +146,8 @@ These properties are set in the Advanced tab of the Location Picker element. Dat
 
 - ***require_city_limits_plus_parks*** - When TRUE, selected locations are required to be within the Portland city limits or within park boundaries managed by PP&R (some parks outside city limits are managed by PP&R, such as sections of the Springwater Corridor in Gresham). Clicks outside the permiter will result in a Javascript alert, and the click will not be registered. Default is FALSE.
 
+- ***out_of_bounds_message*** - The message displayed when a user clicks outisde the required boundary. Default is, "The location you selected is not within our service area. Please try a different location."
+
 - ***location_types*** - NOT IMPLEMENTED. Configurable to contain a list of location type codes that are used by the parent form. Can be used to inform widget functionaltiy. For example, if only "park" is included, only parks-specific functionality is enabled.
 
 - ***region_id_property_name*** - The property name of the feature property that holds the region value we want to capture. Assumes the value is located at features[x].properties[y][regionIdPropertyName]. Defaults to 'region_id.'
