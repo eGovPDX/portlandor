@@ -1,0 +1,375 @@
+uuid: e97139cd-3c12-45a6-bbaa-af62edda191b
+langcode: en
+status: open
+dependencies:
+  module:
+    - portland_smartsheet
+weight: 0
+open: null
+close: null
+uid: 60
+template: false
+archive: false
+id: contact_ppd
+title: 'Contact Portland Permitting and Development'
+description: ''
+categories:
+  - Contact
+elements: |-
+  contact_name:
+    '#type': textfield
+    '#title': 'First and last name'
+    '#required': true
+  contact_email:
+    '#type': textfield
+    '#title': 'Email address'
+    '#required': true
+    '#pattern': '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    '#pattern_error': 'Please enter a correctly formatted email address, such as myname@example.com.'
+  contact_phone:
+    '#type': textfield
+    '#title': 'Phone number'
+    '#description': '<p>In case we need to contact you</p>'
+    '#description_display': before
+    '#input_mask': '(999) 999-9999'
+    '#required': true
+  contact_preference:
+    '#type': radios
+    '#title': 'How do you prefer we contact you?'
+    '#options':
+      Email: Email
+      Phone: Phone
+    '#options_display': side_by_side
+    '#required': true
+  contact_reason:
+    '#type': webform_select_other
+    '#title': 'What can we help you with?'
+    '#options':
+      'Accessory Dwelling Unit (ADU) short-term rental': 'Accessory Dwelling Unit (ADU) short-term rental'
+      'Apply for or check permit status': 'Apply for or check permit status'
+      'Building codes': 'Building codes'
+      'Technical issues with DevHub': 'Technical issues with DevHub'
+      Inspections: Inspections
+      'Report a code violation': 'Report a code violation'
+      'Request public records': 'Request public records'
+      'Electrical, mechanical, or plumbing': 'Electrical, mechanical, or plumbing'
+      'Zoning information': 'Zoning information'
+    '#other__option_label': 'Something else...'
+    '#other__placeholder': 'Please describe...'
+    '#required': true
+    '#attributes':
+      class:
+        - mt-0
+  contact_about_property:
+    '#type': radios
+    '#title': 'Is your question about a specific property?'
+    '#options': yes_no
+    '#options_display': side_by_side
+    '#required': true
+  location_address:
+    '#type': portland_address_verifier
+    '#title': 'Property address'
+    '#states':
+      visible:
+        ':input[name="contact_about_property"]':
+          value: 'Yes'
+    '#location_address__title': 'Property address'
+    '#location_address__description': 'Begin typing a Portland street address to see a list of possible matches and select one, or enter a partial address and click Verify.'
+    '#location_address__required': true
+    '#location_full_address__description': 'This is the full address'
+    '#unit_number__description': 'This is the unit number'
+    '#location_city__description': 'This is the city'
+    '#location_state__description': 'This is the state'
+    '#location_zip__description': 'This is the zipcode'
+    '#location_full_address__wrapper_attributes':
+      class:
+        - d-none
+    '#unit_number__wrapper_attributes':
+      class:
+        - d-none
+    '#location_city__wrapper_attributes':
+      class:
+        - d-none
+    '#location_state__wrapper_attributes':
+      class:
+        - d-none
+    '#location_zip__wrapper_attributes':
+      class:
+        - d-none
+    '#require_portland_city_limits': 1
+    '#lookup_taxlot': 1
+  computed_verified_address:
+    '#type': webform_computed_twig
+    '#title': 'Full Address'
+    '#title_display': none
+    '#states':
+      visible:
+        ':input[name="location_address[location_verification_status]"]':
+          value: Verified
+    '#display_on': form
+    '#template': '<strong>Full verified address:</strong> {{ data.location_address.location_full_address }}'
+    '#ajax': true
+    '#lookup_taxlot': 1
+  request_number_type:
+    '#type': radios
+    '#title': 'Do you have a permit, IVR, or case number?'
+    '#options':
+      'I have a permit number': 'I have a permit number'
+      'I have an IVR number': 'I have an IVR number'
+      'I have a case number': 'I have a case number'
+      "I don't know my number": "I don't know my number"
+    '#required': true
+  request_permit_number:
+    '#type': textfield
+    '#title': "What's the number?"
+    '#required': true
+    '#states':
+      visible:
+        - ':input[name="request_number_type"]':
+            value: 'I have a permit number'
+        - or
+        - ':input[name="request_number_type"]':
+            value: 'I have an IVR number'
+        - or
+        - ':input[name="request_number_type"]':
+            value: 'I have a case number'
+  request:
+    '#type': textarea
+    '#title': "What's your question or request?"
+    '#required': true
+  file_upload:
+    '#type': managed_file
+    '#title': 'Upload related files'
+    '#multiple': 5
+    '#description': '<p>Add files like permits, documents, or drawings to help us assist you.</p>'
+    '#description_display': before
+    '#file_extensions': 'jpg pdf'
+    '#sanitize': true
+  computed_address_link:
+    '#type': webform_computed_twig
+    '#title': 'Computed Address Link'
+    '#display_on': none
+    '#mode': text
+    '#template': 'https://www.portlandmaps.com/search/?query={{ data.location_address.location_address|url_encode }}'
+    '#whitespace': trim
+  computed_permit_number:
+    '#type': webform_computed_twig
+    '#title': 'Computed Permit Number'
+    '#display_on': none
+    '#mode': text
+    '#template': '{% if data.request_number_type != "I don''t know my number" %}{{ data.request_permit_number }}{% else %}Not known{% endif %}'
+    '#whitespace': trim
+css: "div.form-item-contact-reason-select, div.form-item-computed-verified-address {\r\n  margin-top: 0;\r\n}\r\n\r\ndiv.form-item-location-address-location-address, fieldset.webform-type-portland-address-verifier, div.form-item-contact-reason-select, div.webform-select-other-input {\r\n  margin-bottom: 0;\r\n}"
+javascript: ''
+settings:
+  ajax: false
+  ajax_scroll_top: form
+  ajax_progress_type: ''
+  ajax_effect: ''
+  ajax_speed: null
+  page: true
+  page_submit_path: ''
+  page_confirm_path: ''
+  page_theme_name: ''
+  form_title: both
+  form_submit_once: false
+  form_open_message: ''
+  form_close_message: ''
+  form_exception_message: ''
+  form_previous_submissions: true
+  form_confidential: false
+  form_confidential_message: ''
+  form_disable_remote_addr: false
+  form_convert_anonymous: false
+  form_prepopulate: false
+  form_prepopulate_source_entity: false
+  form_prepopulate_source_entity_required: false
+  form_prepopulate_source_entity_type: ''
+  form_unsaved: false
+  form_disable_back: false
+  form_submit_back: false
+  form_disable_autocomplete: false
+  form_novalidate: false
+  form_disable_inline_errors: false
+  form_required: false
+  form_autofocus: false
+  form_details_toggle: false
+  form_reset: false
+  form_access_denied: default
+  form_access_denied_title: ''
+  form_access_denied_message: ''
+  form_access_denied_attributes: {  }
+  form_file_limit: ''
+  form_attributes: {  }
+  form_method: ''
+  form_action: ''
+  share: false
+  share_node: false
+  share_theme_name: ''
+  share_title: true
+  share_page_body_attributes: {  }
+  submission_label: ''
+  submission_exception_message: ''
+  submission_locked_message: ''
+  submission_log: false
+  submission_excluded_elements: {  }
+  submission_exclude_empty: false
+  submission_exclude_empty_checkbox: false
+  submission_views: {  }
+  submission_views_replace: {  }
+  submission_user_columns: {  }
+  submission_user_duplicate: false
+  submission_access_denied: default
+  submission_access_denied_title: ''
+  submission_access_denied_message: ''
+  submission_access_denied_attributes: {  }
+  previous_submission_message: ''
+  previous_submissions_message: ''
+  autofill: false
+  autofill_message: ''
+  autofill_excluded_elements: {  }
+  wizard_progress_bar: true
+  wizard_progress_pages: false
+  wizard_progress_percentage: false
+  wizard_progress_link: false
+  wizard_progress_states: false
+  wizard_start_label: ''
+  wizard_preview_link: false
+  wizard_confirmation: true
+  wizard_confirmation_label: ''
+  wizard_auto_forward: true
+  wizard_auto_forward_hide_next_button: false
+  wizard_keyboard: true
+  wizard_track: ''
+  wizard_prev_button_label: ''
+  wizard_next_button_label: ''
+  wizard_toggle: false
+  wizard_toggle_show_label: ''
+  wizard_toggle_hide_label: ''
+  wizard_page_type: container
+  wizard_page_title_tag: h2
+  preview: 0
+  preview_label: ''
+  preview_title: ''
+  preview_message: ''
+  preview_attributes: {  }
+  preview_excluded_elements: {  }
+  preview_exclude_empty: true
+  preview_exclude_empty_checkbox: false
+  draft: none
+  draft_multiple: false
+  draft_auto_save: false
+  draft_saved_message: ''
+  draft_loaded_message: ''
+  draft_pending_single_message: ''
+  draft_pending_multiple_message: ''
+  confirmation_type: page
+  confirmation_url: ''
+  confirmation_title: 'Thank you!'
+  confirmation_message: '<p>Thank you for reaching out to Portland Permitting &amp; Development. We’ve received your request and will follow up within 2 business days. We appreciate your patience.</p>'
+  confirmation_attributes: {  }
+  confirmation_back: true
+  confirmation_back_label: ''
+  confirmation_back_attributes: {  }
+  confirmation_exclude_query: false
+  confirmation_exclude_token: false
+  confirmation_update: false
+  limit_total: null
+  limit_total_interval: null
+  limit_total_message: ''
+  limit_total_unique: false
+  limit_user: null
+  limit_user_interval: null
+  limit_user_message: ''
+  limit_user_unique: false
+  entity_limit_total: null
+  entity_limit_total_interval: null
+  entity_limit_user: null
+  entity_limit_user_interval: null
+  purge: all
+  purge_days: 14
+  results_disabled: false
+  results_disabled_ignore: false
+  results_customize: false
+  token_view: false
+  token_update: false
+  token_delete: false
+  serial_disabled: false
+access:
+  create:
+    roles:
+      - anonymous
+      - authenticated
+    users: {  }
+    permissions: {  }
+  view_any:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  update_any:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  delete_any:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  purge_any:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  view_own:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  update_own:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  delete_own:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  administer:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  test:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  configuration:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+handlers:
+  smartsheet_add_row_to_existing_sheet:
+    id: smartsheet_add_row
+    handler_id: smartsheet_add_row_to_existing_sheet
+    label: 'Smartsheet: add row to existing sheet'
+    notes: ''
+    status: true
+    conditions: {  }
+    weight: 0
+    settings:
+      column_mappings:
+        2963074443333508: _submission_id_
+        7466674070704004: contact_name
+        1837174536490884: contact_email
+        6340774163861380: contact_phone
+        4088974350176132: contact_preference
+        8592573977546628: contact_reason
+        3764517488250756: location_address__location_full_address
+        7473244162707332: computed_address_link
+        4239210158706564: location_address__location_taxlot_id
+        8268117115621252: computed_permit_number
+        949767721144196: request
+        5453367348514692: ''
+        3201567534829444: ''
+      multiple_rows_enable: null
+      multiple_rows_field: ''
+      multiple_rows_separator: ''
+      row_location: toTop
+      sheet_id: '1601591393079172'
+      upload_attachments: '1'
+variants: {  }
