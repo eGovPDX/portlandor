@@ -715,11 +715,11 @@ class ZendeskHandler extends WebformHandlerBase
         // else use the value as the token
         $value = is_array($raw_value) ? $raw_value[0] : $raw_value;
 
-        // KLUGE: this is a kludge to prevent querystring ampersands from being escaped in the resolution_url custom field,
+        // KLUGE: this is a kludge to prevent querystring ampersands from being escaped in the resolution_url or location_address custom field,
         // which prevents the URL from being usable in Zendesk emails, since it doesn't unescape them in triggers. For the
         // Portland instance, the resolution_url field should always have this key, but other url custom fields may need
         // to be added in the future.
-        if ($key == "6355783758871") {
+        if ($key == "6355783758871" || $key == "1500012743961") {
           $value = str_replace("&amp;", "&", $value);
           $value = str_replace("&#039;", '\'', $value);
         } // END KLUGE

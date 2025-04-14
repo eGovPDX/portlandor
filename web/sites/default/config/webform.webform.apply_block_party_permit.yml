@@ -3,7 +3,12 @@ langcode: en
 status: open
 dependencies:
   module:
+    - portland
     - portland_zendesk
+third_party_settings:
+  portland:
+    disable_demographic_form_prompt: 0
+    exclude_from_json: {  }
 weight: 0
 open: null
 close: null
@@ -22,7 +27,7 @@ elements: |-
       '#type': portland_location_picker
       '#title': 'Location of the Block Party'
       '#description_display': before
-      '#location_search__description': 'Search the map for an address, cross streets, park, or community center. Or use the map to click a location. Please click, tap, or drag the marker to the precise location in the street where you plant o have your block party.'
+      '#location_search__description': 'Search the map for an address, cross streets, park, or community center. Or use the map to click a location. Please click, tap, or drag the marker to the precise location in the street where you plan to have your block party.'
       '#place_name__access': false
       '#location_details__description': 'Block Party events must take place on the street of which you are a resident. Please describe the location requested including street and cross street names, example – NE 21st Ave between NE Going and NE Wygant'
       '#location_details__required': true
@@ -45,7 +50,7 @@ elements: |-
         visible:
           ':input[name="apply_street_painting"]':
             value: 'Yes'
-      '#markup': '<div class="alert alert--info next-steps"><h2 class="mt-0">Next Steps</h2><p class="mb-0"><span data-teams="true">If you are considering a new Street Painting, please consult the Street Painting program to initiate the application process, if you have not already done so.</span></p></div>'
+      '#markup': '<div class="alert alert--info next-steps"><h2 class="mt-0">Next Steps</h2><p class="mb-0">If you are considering a new Street Painting, please consult the <a href="/node/18358" data-entity-type="node" data-entity-uuid="02f5c29e-3bdd-4d4c-b4e4-166c1fd4c782" data-entity-substitution="canonical">Street Painting program</a> to initiate the application process, if you have not already done so.</p></div>'
     apply_blocks_requested:
       '#type': number
       '#title': 'Number of blocks requested'
@@ -181,6 +186,7 @@ elements: |-
         '#options':
           Weekly: Weekly
           Bi-Weekly: Bi-Weekly
+          Monthly: Monthly
         '#other__placeholder': 'Please describe...'
       apply_occurences_days:
         '#type': checkboxes
@@ -197,15 +203,17 @@ elements: |-
     apply_event_times:
       '#type': textfield
       '#title': 'Start and end times'
-      '#required': true
-      '#description': '<p>Include any time that the right-of-way will be used for this event, including load-in/out.</p>'
+      '#description': '<p>Include any time that the right-of-way will be used for this event, including set up &amp; break down. Street closures are limited to 8 hours per week (not to exceed 8 hours total within 7 consecutive days) between the hours of 9:00 a.m. - 9:00 p.m.</p>'
       '#description_display': before
+      '#required': true
   page_block_party_extras:
     '#type': webform_wizard_page
     '#title': 'Additional Information'
     apply_is_church:
       '#type': radios
-      '#title': 'Is this a church event?'
+      '#title': 'Is this event taking place at a church, religious facility, or community gathering place?'
+      '#description': '<p>Block parties are usually required to take place on the street where you live. However, if your event is at a church, religious facility, or community gathering place, an exception may be made.</p>'
+      '#description_display': before
       '#options': yes_no
       '#options_display': side_by_side
       '#required': true
@@ -225,12 +233,16 @@ elements: |-
     apply_pop_registration:
       '#type': radios
       '#title': 'Did you register this event with Party on Portland (POP)?'
+      '#description': '<p>For more information on POP, visit the <a href="https://natw.org/">National Night Out webpage</a> and <a href="/community-safety/ovp/safe-blocks/pop">POP Event Schedule</a>.</p>'
+      '#description_display': before
       '#options': yes_no
       '#options_display': side_by_side
       '#required': true
     apply_bipoc:
       '#type': radios
-      '#title': 'Do you identify as BIPOC?'
+      '#title': 'Do you identify as Black, Indigenous, or a Person of Color?'
+      '#description': '<p>The Portland Bureau of Transportation''s Portland in the Streets Program is committed to engaging with underserved communities in Portland. Data collected will assess our reach and identify opportunities to enhance interaction with these communities.</p>'
+      '#description_display': before
       '#options': yes_no
       '#options_display': side_by_side
     apply_learned_about_program:
@@ -239,6 +251,8 @@ elements: |-
     apply_event_flyer_upload:
       '#type': managed_file
       '#title': 'Event Flyer Upload'
+      '#description': '<p><a href="/transportation/permitting/documents/block-party-flier/download">Download PDF File Block Party notification flyer</a></p>'
+      '#description_display': before
       '#file_extensions': 'jpg png bmp pdf doc docx ppt pptx zip '
       '#file_name': 'Event_Flyer_[current-date:html_date]'
   page_contact_information:
@@ -275,6 +289,21 @@ elements: |-
         '#location_zip__required': true
         '#location_address__description_display': invisible
         '#address_suggest': 1
+      markup_address_verification:
+        '#type': webform_markup
+        '#states':
+          visible:
+            ':input[name="apply_applicant_address[location_address]"]':
+              filled: true
+            ':input[name="apply_applicant_address[location_city]"]':
+              filled: true
+            ':input[name="apply_applicant_address[location_state]"]':
+              filled: true
+            ':input[name="apply_applicant_address[location_zip]"]':
+              filled: true
+            ':input[name="apply_applicant_address[location_verification_status]"]':
+              empty: true
+        '#markup': '<div class="webform-alert alert alert--warning" aria-hidden="true"><p><strong>Warning: </strong>Address not verified.</p></div>'
     page_agreements:
       '#type': webform_section
       '#title': Agreements
@@ -379,11 +408,11 @@ elements: |-
 css: ''
 javascript: ''
 settings:
-  ajax: false
+  ajax: true
   ajax_scroll_top: form
   ajax_progress_type: ''
-  ajax_effect: ''
-  ajax_speed: null
+  ajax_effect: none
+  ajax_speed: 0
   page: true
   page_submit_path: ''
   page_confirm_path: ''
