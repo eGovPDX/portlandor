@@ -1,0 +1,440 @@
+uuid: c708ba9b-46ad-4362-ae23-3798a258e800
+langcode: en
+status: open
+dependencies:
+  module:
+    - portland
+third_party_settings:
+  portland:
+    disable_demographic_form_prompt: 0
+    exclude_from_json: {  }
+weight: 0
+open: null
+close: null
+uid: 60
+template: false
+archive: false
+id: permitting_wizard_res_deck
+title: 'Permitting Wizard - Residential Deck'
+description: ''
+categories:
+  - Calculator
+  - Permitting
+elements: |-
+  project_type:
+    '#type': hidden
+    '#title': 'Project Type'
+    '#prepopulate': true
+  page_details:
+    '#type': webform_wizard_page
+    '#title': 'Do you need a permit?'
+    '#next_button_label': Continue
+    section_project_details:
+      '#type': webform_section
+      '#title': 'Project Details'
+      markup:
+        '#type': webform_markup
+        '#markup': "<p>Tell us about your project, and we'll give you a list of the requirements to meet City of Portland rules.</p>"
+      project_type_custom:
+        '#type': textfield
+        '#title': 'What are you planning to do?'
+        '#required': true
+        '#states':
+          invisible:
+            ':input[name="project_type"]':
+              filled: true
+      computed_project_type:
+        '#type': webform_computed_twig
+        '#title': 'What are you planning to do?'
+        '#states':
+          visible:
+            ':input[name="project_type"]':
+              filled: true
+        '#display_on': form
+        '#template': '{{ data.project_type }}'
+      project_work_by:
+        '#type': radios
+        '#title': 'Who will do the work?'
+        '#options':
+          Myself: Myself
+          'A hired contractor': 'A hired contractor'
+        '#required': true
+      project_contractor_license:
+        '#type': textfield
+        '#title': "Enter the contractor's license number."
+        '#required': true
+        '#states':
+          visible:
+            ':input[name="project_work_by"]':
+              value: 'A hired contractor'
+      project_deck_height:
+        '#type': number
+        '#title': 'How high will the deck be off the ground?'
+        '#description': '<p>Enter the height (in inches) from the base of the deck to the ground.</p>'
+        '#description_display': before
+        '#field_suffix': inches
+        '#placeholder': '0'
+        '#required': true
+      project_following_state_codes:
+        '#type': radios
+        '#title': 'Are you following Oregon deck codes?'
+        '#description': '<p>Will you be following the building codes in the <a href="https://www.oregon.gov/bcd/permit-services/Documents/ready-build-deck-2018.pdf">Oregon Deck Design Guide</a>?</p>'
+        '#description_display': before
+        '#options':
+          'Yes': 'Yes'
+          'No': 'No'
+          'Not sure': 'Not sure'
+        '#required': true
+    horizontal_rule:
+      '#type': webform_horizontal_rule
+    section_worksite_details:
+      '#type': webform_section
+      '#title': 'Worksite Details'
+      project_location:
+        '#type': portland_address_verifier
+        '#title': 'Project Location'
+        '#description': '<p><span style="-webkit-text-stroke-width:0px;background-color:rgb(255, 255, 255);color:rgb(21, 25, 30);display:inline !important;float:none;font-family:&quot;open sans&quot;, &quot;helvetica neue&quot;, helvetica, arial, sans-serif;font-size:14px;font-style:normal;font-variant-caps:normal;font-variant-ligatures:normal;font-weight:400;letter-spacing:normal;orphans:2;text-align:start;text-decoration-color:initial;text-decoration-style:initial;text-decoration-thickness:initial;text-indent:0px;text-transform:none;white-space:normal;widows:2;word-spacing:0px;">We''ll use this address to determine whether your project needs to consider zoning rules.</span></p>'
+        '#title_display': before
+        '#description_display': before
+        '#location_address__title': 'Street Address'
+        '#location_address__description': 'Begin typing to see a list of possible address matches in the Portland metro area, then select one. You must provide a verified address to continue.'
+        '#location_address__required': true
+        '#location_city__required': true
+        '#location_state__required': true
+        '#location_zip__required': true
+        '#not_verified_reasons': 'You must have a verfied address within the Portland city limits in order to use this wizard.'
+        '#not_verified_remedy': 'Please try again. If our system is unable to find your address, <a href="#">contact us</a> for assistance.'
+        '#lookup_taxlot': 1
+      markup_verified_to_continue_message:
+        '#type': webform_markup
+        '#states':
+          visible:
+            ':input[name="project_location[location_verification_status]"]':
+              '!value': Verified
+        '#markup': '<p><strong>Enter and verify an address to continue with this wizard.</strong></p>'
+      container_address_verified:
+        '#type': container
+        '#states':
+          visible:
+            ':input[name="project_location[location_verification_status]"]':
+              value: Verified
+        project_property_type:
+          '#type': radios
+          '#title': 'Is the property residential or commercial?'
+          '#options':
+            Residential: Residential
+            Commercial: Commercial
+          '#required': true
+          '#states':
+            visible:
+              ':input[name="project_location[location_verification_status]"]':
+                value: Verified
+        project_is_owner:
+          '#type': radios
+          '#title': 'Do you own the property?'
+          '#options': yes_no
+          '#states':
+            visible:
+              ':input[name="project_location[location_verification_status]"]':
+                value: Verified
+          '#required': true
+        project_site_slope:
+          '#type': number
+          '#title': 'What is the slope of the site?'
+          '#description': '<p>Enter the slope of the site as a percentage. <a href="#">Learn more about slope</a>.</p>'
+          '#description_display': before
+          '#field_suffix': '%'
+          '#placeholder': '0'
+          '#required': true
+        project_adding_hard_surface:
+          '#type': radios
+          '#title': 'Are you adding more than 500 square feet of hard surface?'
+          '#description': '<p>Hard surfaces include pavement, concrete, asphalt, or other materials that do not absorb rainwater.</p>'
+          '#description_display': before
+          '#options':
+            'Yes': 'Yes'
+            'No': 'No'
+            'Not sure': 'Not sure'
+          '#required': true
+        project_has_septic:
+          '#type': radios
+          '#title': 'Is there a septic system or cesspool on the property?'
+          '#options':
+            'Yes': 'Yes'
+            'No': 'No'
+            'Not sure': 'Not sure'
+          '#required': true
+        project_septic_distance:
+          '#type': number
+          '#title': 'How far is the septic system or cesspool from the deck?'
+          '#description': '<p>Enter the distance (in feet) that the septic system or cesspool is away from the deck.</p>'
+          '#field_suffix': ft
+          '#placeholder': '0'
+          '#required': true
+          '#states':
+            visible:
+              ':input[name="project_has_septic"]':
+                value: 'Yes'
+  page_results:
+    '#type': webform_wizard_page
+    '#title': Results
+    '#prev_button_label': 'Edit details'
+    section_permit_needed:
+      '#type': webform_section
+      '#title': '<i class="fa-solid fa-circle-check"></i> You need a permit.'
+      '#description': "<p>Based on the information you've provided about your project, you will need to apply for a permit for your deck project.</p>"
+      '#states':
+        visible:
+          - ':input[name="project_site_slope"]':
+              value:
+                greater: '5'
+          - or
+          - ':input[name="project_deck_height"]':
+              value:
+                greater: '30'
+          - or
+          - ':input[name="project_septic_distance"]':
+              value:
+                less: '20'
+      markup_01:
+        '#type': webform_markup
+        '#markup': '<p><a class="button button--primary" href="/311/report-trash">Apply for a permit</a></p>'
+      horizontal_rule_01:
+        '#type': webform_horizontal_rule
+    section_no_permit_needed:
+      '#type': webform_section
+      '#title': '<i class="fa-solid fa-face-smile"></i> No permit needed'
+      '#description': "<p>Based on the information you've provided about your project, we've determined you don't need a permit for your deck project.</p>"
+      '#states':
+        visible:
+          ':input[name="project_site_slope"]':
+            value:
+              less_equal: '5'
+          ':input[name="project_deck_height"]':
+            value:
+              less_equal: '30'
+          ':input[name="project_septic_distance"]':
+            value:
+              greater_equal: '20'
+    computed_project_details_grid:
+      '#type': webform_computed_twig
+      '#title': 'Computed Project Details Grid'
+      '#title_display': none
+      '#template': |
+        <h3><i class="fa-solid fa-person-digging"></i> Project Details</h3>
+
+        <table class="results">
+          <tr><th>Project type:</th><td>{{ data.project_type ? data.project_type : data.project_type_custom }}</td></tr>
+          <tr><th>Who is doing the work:</th><td>{{ data.project_work_by }}</td></tr>
+        {% if data.project_contractor_license %}
+          <tr><th>Contractor license number:</th><td>{{ data.project_contractor_license }}</td></tr>
+        {% endif %}
+          <tr><th>Deck height from ground:</th><td>{{ data.project_deck_height }} in</td></tr>
+          <tr><th>Using Oregon Deck Codes:</th><td>{{ data.project_following_state_codes }}</td></tr>
+          <tr><th>Project address:</th><td>{{ data.project_location.location_full_address }}</td></tr>
+          <tr><th>Taxlot ID:</th><td>{{ data.project_location.location_taxlot_id }}</td></tr>
+          <tr><th>Property type:</th><td>{{ data.project_property_type }}</td></tr>
+          <tr><th>Do you own the property:</th><td>{{ data.project_is_owner }}</td></tr>
+          <tr><th>Worksite slope:</th><td>{{ data.project_site_slope }}%</td></tr>
+          <tr><th>Adding more than 500 sq ft of hard surface:</th><td>{{ data.project_adding_hard_surface }}</td></tr>
+          <tr><th>Septic or cesspool on property:</th><td>{{ data.project_has_septic }}</td></tr>
+        {% if data.project_septic_distance %}
+          <tr><th>Distance of ceptic/cesspool from worksite:</th><td>{{ data.project_septic_distance }} ft</td>
+        {% endif %}
+        </tr>
+
+        </table>
+  actions:
+    '#type': webform_actions
+    '#title': 'Submit button(s)'
+    '#states':
+      visible:
+        ':input[name="project_location[location_verification_status]"]':
+          value: Verified
+    '#submit_hide': true
+    '#update_hide': true
+css: ".results tr {\r\n  border-bottom: solid 1px black;\r\n}"
+javascript: ''
+settings:
+  ajax: false
+  ajax_scroll_top: form
+  ajax_progress_type: ''
+  ajax_effect: ''
+  ajax_speed: null
+  page: true
+  page_submit_path: ''
+  page_confirm_path: ''
+  page_theme_name: ''
+  form_title: source_entity_webform
+  form_submit_once: false
+  form_open_message: ''
+  form_close_message: ''
+  form_exception_message: ''
+  form_previous_submissions: true
+  form_confidential: false
+  form_confidential_message: ''
+  form_disable_remote_addr: false
+  form_convert_anonymous: false
+  form_prepopulate: false
+  form_prepopulate_source_entity: false
+  form_prepopulate_source_entity_required: false
+  form_prepopulate_source_entity_type: ''
+  form_unsaved: false
+  form_disable_back: false
+  form_submit_back: false
+  form_disable_autocomplete: false
+  form_novalidate: false
+  form_disable_inline_errors: false
+  form_required: false
+  form_autofocus: false
+  form_details_toggle: false
+  form_reset: false
+  form_access_denied: default
+  form_access_denied_title: ''
+  form_access_denied_message: ''
+  form_access_denied_attributes: {  }
+  form_file_limit: ''
+  form_attributes: {  }
+  form_method: ''
+  form_action: ''
+  share: false
+  share_node: false
+  share_theme_name: ''
+  share_title: true
+  share_page_body_attributes: {  }
+  submission_label: ''
+  submission_exception_message: ''
+  submission_locked_message: ''
+  submission_log: false
+  submission_excluded_elements: {  }
+  submission_exclude_empty: false
+  submission_exclude_empty_checkbox: false
+  submission_views: {  }
+  submission_views_replace: {  }
+  submission_user_columns: {  }
+  submission_user_duplicate: false
+  submission_access_denied: default
+  submission_access_denied_title: ''
+  submission_access_denied_message: ''
+  submission_access_denied_attributes: {  }
+  previous_submission_message: ''
+  previous_submissions_message: ''
+  autofill: false
+  autofill_message: ''
+  autofill_excluded_elements: {  }
+  wizard_progress_bar: false
+  wizard_progress_pages: false
+  wizard_progress_percentage: false
+  wizard_progress_link: false
+  wizard_progress_states: false
+  wizard_start_label: ''
+  wizard_preview_link: false
+  wizard_confirmation: true
+  wizard_confirmation_label: ''
+  wizard_auto_forward: true
+  wizard_auto_forward_hide_next_button: false
+  wizard_keyboard: true
+  wizard_track: ''
+  wizard_prev_button_label: ''
+  wizard_next_button_label: ''
+  wizard_toggle: false
+  wizard_toggle_show_label: ''
+  wizard_toggle_hide_label: ''
+  wizard_page_type: container
+  wizard_page_title_tag: h2
+  preview: 0
+  preview_label: ''
+  preview_title: ''
+  preview_message: ''
+  preview_attributes: {  }
+  preview_excluded_elements: {  }
+  preview_exclude_empty: true
+  preview_exclude_empty_checkbox: false
+  draft: none
+  draft_multiple: false
+  draft_auto_save: false
+  draft_saved_message: ''
+  draft_loaded_message: ''
+  draft_pending_single_message: ''
+  draft_pending_multiple_message: ''
+  confirmation_type: page
+  confirmation_url: ''
+  confirmation_title: ''
+  confirmation_message: ''
+  confirmation_attributes: {  }
+  confirmation_back: true
+  confirmation_back_label: ''
+  confirmation_back_attributes: {  }
+  confirmation_exclude_query: false
+  confirmation_exclude_token: false
+  confirmation_update: false
+  limit_total: null
+  limit_total_interval: null
+  limit_total_message: ''
+  limit_total_unique: false
+  limit_user: null
+  limit_user_interval: null
+  limit_user_message: ''
+  limit_user_unique: false
+  entity_limit_total: null
+  entity_limit_total_interval: null
+  entity_limit_user: null
+  entity_limit_user_interval: null
+  purge: none
+  purge_days: null
+  results_disabled: false
+  results_disabled_ignore: false
+  results_customize: false
+  token_view: false
+  token_update: false
+  token_delete: false
+  serial_disabled: false
+access:
+  create:
+    roles:
+      - anonymous
+      - authenticated
+    users: {  }
+    permissions: {  }
+  view_any:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  update_any:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  delete_any:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  purge_any:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  view_own:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  update_own:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  delete_own:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  administer:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  test:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  configuration:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+handlers: {  }
+variants: {  }
