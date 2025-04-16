@@ -48,6 +48,11 @@ Some addresses are technically outside of incorporated areas but are related by 
 Allowed values: 1|0
 Default value: 0
 
+**require_portland_city_limits**
+When enabled, only allows addresses within Portland city limits.
+Allowed values: 1|0
+Default value: 0
+
 **secondary_query_url**
 When populated, a second API call is made to the specified API URL with the x/y coordinates passed in the geometry parameter. All 3 properties (secondary_query_url, secondary_query_capture_property, and secondary_query_capture_field) must be set for this to work.
 
@@ -56,3 +61,7 @@ The path of the property to capture from the JSON returned by the secondary_quer
 
 **secondary_query_capture_field**
 The ID of the form field into which the captured value should be stored. All 3 properties (secondary_query_url, secondary_query_capture_property, and secondary_query_capture_field) must be set for this to work.
+
+**out_of_bounds_message**
+The message that is displayed if an address is outside the city boundary when require_portland_city_limits is enabled.
+Default value: "The address you provided is outside of the Portland city limits. Please try a different address."
