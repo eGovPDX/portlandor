@@ -41,4 +41,5 @@ class GlossaryLookupController extends ControllerBase {
 
     return new JsonResponse($results);
   }
+
 }
