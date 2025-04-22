@@ -71,14 +71,22 @@ Drupal.behaviors.dynamicGlossaryTooltip = {
           function show() {
             clearTimeout(hideTimeout);
             tooltip.classList.add('visible');
+            tooltip.setAttribute('aria-hidden', 'false'); // Make tooltip visible to screen readers
+            tooltip.focus(); // Move focus to the tooltip
             popperInstance.update();
           }
 
           function hide() {
             hideTimeout = setTimeout(() => {
               tooltip.classList.remove('visible');
-            }, 150);
+              tooltip.setAttribute('aria-hidden', 'true'); // Hide tooltip from screen readers
+              reference.focus(); // Return focus to the glossary term
+            }, 300); // Increased delay
           }
+
+          // Ensure the tooltip is focusable
+          tooltip.setAttribute('tabindex', '-1');
+          tooltip.setAttribute('aria-hidden', 'true'); // Initially hidden from screen readers
 
           wrapper.addEventListener('mouseenter', show);
           wrapper.addEventListener('focus', show);
@@ -86,13 +94,23 @@ Drupal.behaviors.dynamicGlossaryTooltip = {
           wrapper.addEventListener('blur', hide);
           tooltip.addEventListener('mouseenter', show);
           tooltip.addEventListener('mouseleave', hide);
+
+          // Add keyboard dismissal for the tooltip
+          document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') {
+              hide();
+            }
+          });
         })
         .catch(err => {
           console.warn(`Glossary tooltip failed to load for term "${term}":`, err);
 
           const isLoggedIn = drupalSettings.user && drupalSettings.user.uid && drupalSettings.user.uid !== 0;
           if (!isLoggedIn) {
-            span.replaceWith(document.createTextNode(term));
+            const notFoundSpan = document.createElement('span');
+            notFoundSpan.classList.add('glossary-term-missing');
+            notFoundSpan.textContent = term;
+            span.replaceWith(notFoundSpan);
             return;
           }
 
@@ -141,14 +159,22 @@ Drupal.behaviors.dynamicGlossaryTooltip = {
           function show() {
             clearTimeout(hideTimeout);
             tooltip.classList.add('visible');
+            tooltip.setAttribute('aria-hidden', 'false'); // Make tooltip visible to screen readers
+            tooltip.focus(); // Move focus to the tooltip
             popperInstance.update();
           }
 
           function hide() {
             hideTimeout = setTimeout(() => {
               tooltip.classList.remove('visible');
-            }, 150);
+              tooltip.setAttribute('aria-hidden', 'true'); // Hide tooltip from screen readers
+              reference.focus(); // Return focus to the glossary term
+            }, 300); // Increased delay
           }
+
+          // Ensure the tooltip is focusable
+          tooltip.setAttribute('tabindex', '-1');
+          tooltip.setAttribute('aria-hidden', 'true'); // Initially hidden from screen readers
 
           wrapper.addEventListener('mouseenter', show);
           wrapper.addEventListener('focus', show);
@@ -156,6 +182,13 @@ Drupal.behaviors.dynamicGlossaryTooltip = {
           wrapper.addEventListener('blur', hide);
           tooltip.addEventListener('mouseenter', show);
           tooltip.addEventListener('mouseleave', hide);
+
+          // Add keyboard dismissal for the tooltip
+          document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') {
+              hide();
+            }
+          });
         });
     });
   }
