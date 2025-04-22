@@ -33,7 +33,7 @@ Drupal.behaviors.dynamicGlossaryTooltip = {
           wrapper.classList.add('glossary-term-wrapper');
           wrapper.setAttribute('tabindex', '0');
           wrapper.innerHTML = `
-            <span class="glossary-term" aria-describedby="${tooltipId}">${term}</span>
+            <span class="glossary-term-label" aria-describedby="${tooltipId}">${term}</span>
             <span class="glossary-popper" id="${tooltipId}" role="tooltip">
               <div class="glossary-content">
                 <strong class="term-title">${termLabel}</strong>

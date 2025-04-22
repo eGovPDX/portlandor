@@ -29,12 +29,11 @@ class GlossaryLookupController extends ControllerBase {
     foreach ($nodes as $node) {
       if (strcasecmp($node->getTitle(), $term) === 0) {
         $url = Url::fromRoute('entity.node.canonical', ['node' => $node->id()])->toString();
-        $body_field = $node->get('body');
         $results[] = [
           'nid' => $node->id(),
           'title' => $node->getTitle(),
-          'definition' => $body_field->value,
-          'short_definition' => $body_field->summary, // Changed "summary" to "short_definition"
+          'definition' => $node->get('field_body_content')->value, // Updated to use field_body_content
+          'short_definition' => $node->get('field_summary')->value, // Updated to use field_summary
           'url' => $url,
           'pronunciation' => $node->get('field_english_pronunciation')->value,
         ];
