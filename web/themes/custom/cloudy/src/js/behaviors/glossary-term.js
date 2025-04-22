@@ -1,10 +1,9 @@
 Drupal.behaviors.dynamicGlossaryTooltip = {
   attach(context, drupalSettings) {
     once('dynamicGlossaryTooltip', 'span.glossary-term', context).forEach(span => {
-      const term = span.textContent.trim(); // Extract the term from the span's inner text
+      const term = span.textContent.trim();
       if (!term) return;
 
-      // Use the new JSON:API path
       const path = `/jsonapi/glossary/lookup/${encodeURIComponent(term)}`;
 
       fetch(path)
@@ -20,12 +19,11 @@ Drupal.behaviors.dynamicGlossaryTooltip = {
             throw new Error(`No data found for term "${term}"`);
           }
 
-          // Use the first object in the array
           const termData = data[0];
           const termLabel = termData.title || 'Glossary Term';
-          const pronunciation = termData.pronunciation || ''; // Use "pronunciation"
-          const description = termData.short_definition || 'No description available.'; // Use "short_definition"
-          const url = termData.url || '#'; // Use "url"
+          const pronunciation = termData.pronunciation || '';
+          const description = termData.short_definition || 'No description available.';
+          const url = termData.url || '#';
 
           const tooltipId = `glossary-tooltip-${term.replace(/\s+/g, '-').toLowerCase()}`;
 
@@ -47,7 +45,7 @@ Drupal.behaviors.dynamicGlossaryTooltip = {
 
           span.replaceWith(wrapper);
 
-          const reference = wrapper.querySelector('.glossary-term');
+          const reference = wrapper.querySelector('.glossary-term-label');
           const tooltip = wrapper.querySelector('.glossary-popper');
           const arrow = wrapper.querySelector('[data-popper-arrow]');
           let hideTimeout;
@@ -57,13 +55,18 @@ Drupal.behaviors.dynamicGlossaryTooltip = {
 
           const popperInstance = createPopper(reference, tooltip, {
             placement: 'top',
-            strategy: 'fixed',
+            strategy: 'absolute', // <-- FIXED HERE
             modifiers: [
               { name: 'offset', options: { offset: [0, 2] } },
               { name: 'arrow', options: { element: arrow } },
               { name: 'preventOverflow', options: { padding: 8 } },
             ],
           });
+
+          // Ensure the tooltip position stays accurate on scroll/resize
+          ['scroll', 'resize'].forEach(event =>
+            window.addEventListener(event, () => popperInstance.update(), { passive: true })
+          );
 
           function show() {
             clearTimeout(hideTimeout);
@@ -88,17 +91,12 @@ Drupal.behaviors.dynamicGlossaryTooltip = {
           console.warn(`Glossary tooltip failed to load for term "${term}":`, err);
 
           const isLoggedIn = drupalSettings.user && drupalSettings.user.uid && drupalSettings.user.uid !== 0;
-
           if (!isLoggedIn) {
-            // If the user is anonymous, replace the span with plain text
-            const textNode = document.createTextNode(term);
-            span.replaceWith(textNode);
+            span.replaceWith(document.createTextNode(term));
             return;
           }
 
-          // If the user is logged in, show the "Glossary term not found" message
           const tooltipId = `glossary-tooltip-missing-${term.replace(/\s+/g, '-').toLowerCase()}`;
-
           const wrapper = document.createElement('span');
           wrapper.classList.add('glossary-term-wrapper');
           wrapper.setAttribute('tabindex', '0');
@@ -128,13 +126,17 @@ Drupal.behaviors.dynamicGlossaryTooltip = {
 
           const popperInstance = createPopper(reference, tooltip, {
             placement: 'top',
-            strategy: 'fixed',
+            strategy: 'absolute',
             modifiers: [
               { name: 'offset', options: { offset: [0, 2] } },
               { name: 'arrow', options: { element: arrow } },
               { name: 'preventOverflow', options: { padding: 8 } },
             ],
           });
+
+          ['scroll', 'resize'].forEach(event =>
+            window.addEventListener(event, () => popperInstance.update(), { passive: true })
+          );
 
           function show() {
             clearTimeout(hideTimeout);
