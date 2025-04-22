@@ -37,7 +37,7 @@ Drupal.behaviors.dynamicGlossaryTooltip = {
                 <strong class="term-title">${termLabel}</strong>
                 <p class="term-pronunciation">${pronunciation}</p>
                 <p class="term-definition">${description}</p>
-                <a class="learn-more" href="${url}" target="_blank" rel="noopener noreferrer">Learn more</a>
+                <a class="learn-more button button--primary" href="${url}" rel="noopener noreferrer" aria-label="Learn more about glossary term ${termLabel}">Learn more</a>
               </div>
               <div class="popper-arrow" data-popper-arrow></div>
             </span>
@@ -125,7 +125,7 @@ Drupal.behaviors.dynamicGlossaryTooltip = {
             <span class="glossary-popper" id="${tooltipId}" role="tooltip">
               <div class="glossary-content">
                 <p class="term-definition">
-                  Glossary term not found. Please check the term or contact the site administrator.
+                  <strong>Glossary term "${term}" not found.</strong> Please verify that the term exists or contact an administrator for assistance.
                 </p>
               </div>
               <div class="popper-arrow" data-popper-arrow></div>
