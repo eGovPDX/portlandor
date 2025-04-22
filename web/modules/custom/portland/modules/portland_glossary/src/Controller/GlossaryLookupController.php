@@ -6,6 +6,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Drupal\node\Entity\Node;
 use Drupal\Core\Controller\ControllerBase;
+use Drupal\Core\Url;
 
 class GlossaryLookupController extends ControllerBase {
 
@@ -27,10 +28,15 @@ class GlossaryLookupController extends ControllerBase {
 
     foreach ($nodes as $node) {
       if (strcasecmp($node->getTitle(), $term) === 0) {
+        $url = Url::fromRoute('entity.node.canonical', ['node' => $node->id()])->toString();
+        $body_field = $node->get('body');
         $results[] = [
           'nid' => $node->id(),
           'title' => $node->getTitle(),
-          'definition' => $node->get('body')->value,
+          'definition' => $body_field->value,
+          'short_definition' => $body_field->summary, // Changed "summary" to "short_definition"
+          'url' => $url,
+          'pronunciation' => $node->get('field_english_pronunciation')->value,
         ];
       }
     }

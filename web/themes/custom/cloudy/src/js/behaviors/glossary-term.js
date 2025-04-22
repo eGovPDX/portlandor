@@ -1,61 +1,51 @@
 Drupal.behaviors.dynamicGlossaryTooltip = {
   attach(context, drupalSettings) {
-    once('dynamicGlossaryTooltip', 'a[data-entity-type="taxonomy_term"]', context).forEach(link => {
-      const uuid = link.getAttribute('data-entity-uuid');
-      const termUrl = link.getAttribute('href');
-      const originalText = link.textContent;
+    once('dynamicGlossaryTooltip', 'span.glossary-term', context).forEach(span => {
+      const term = span.textContent.trim(); // Extract the term from the span's inner text
+      if (!term) return;
 
-      if (!uuid) return;
-
-      const isLoggedIn = drupalSettings.user && drupalSettings.user.uid && drupalSettings.user.uid !== 0;
-
-      var path = `/jsonapi/taxonomy_term/glossary/${uuid}`;
+      // Use the new JSON:API path
+      const path = `/jsonapi/glossary/lookup/${encodeURIComponent(term)}`;
 
       fetch(path)
         .then(res => {
           const contentType = res.headers.get('content-type') || '';
-          if (!res.ok || !contentType.includes('application/vnd.api+json')) {
-            throw new Error(`Invalid JSON response for term ${uuid}`);
+          if (!res.ok || !contentType.includes('application/json')) {
+            throw new Error(`Invalid JSON response for term "${term}"`);
           }
           return res.json();
         })
         .then(data => {
-          const termLabel = data.data.attributes.name || 'Glossary Term';
-          const pronunciation = data.data.attributes.field_english_pronunciation || '';
-          const description = data.data.attributes.field_short_definition?.value || 'No description available.';
-
-          let imageHtml = '';
-          const imageData = data.included?.find(
-            item =>
-              item.type === 'file--file' &&
-              item.id === data.data.relationships.field_image?.data?.id
-          );
-
-          if (imageData) {
-            const imageUrl = imageData.attributes.uri.url;
-            imageHtml = `<img src="${imageUrl}" alt="" class="glossary-image" />`;
+          if (!Array.isArray(data) || data.length === 0) {
+            throw new Error(`No data found for term "${term}"`);
           }
 
-          const tooltipId = `glossary-tooltip-${uuid}`;
+          // Use the first object in the array
+          const termData = data[0];
+          const termLabel = termData.title || 'Glossary Term';
+          const pronunciation = termData.pronunciation || ''; // Use "pronunciation"
+          const description = termData.short_definition || 'No description available.'; // Use "short_definition"
+          const url = termData.url || '#'; // Use "url"
+
+          const tooltipId = `glossary-tooltip-${term.replace(/\s+/g, '-').toLowerCase()}`;
 
           const wrapper = document.createElement('span');
           wrapper.classList.add('glossary-term-wrapper');
           wrapper.setAttribute('tabindex', '0');
           wrapper.innerHTML = `
-            <span class="glossary-term" aria-describedby="${tooltipId}">${originalText}</span>
+            <span class="glossary-term" aria-describedby="${tooltipId}">${term}</span>
             <span class="glossary-popper" id="${tooltipId}" role="tooltip">
               <div class="glossary-content">
-                ${imageHtml}
                 <strong class="term-title">${termLabel}</strong>
                 <p class="term-pronunciation">${pronunciation}</p>
                 <p class="term-definition">${description}</p>
-                <a class="learn-more" href="${termUrl}" target="_blank" rel="noopener noreferrer">Learn more</a>
+                <a class="learn-more" href="${url}" rel="noopener noreferrer">Learn more</a>
               </div>
               <div class="popper-arrow" data-popper-arrow></div>
             </span>
           `;
 
-          link.replaceWith(wrapper);
+          span.replaceWith(wrapper);
 
           const reference = wrapper.querySelector('.glossary-term');
           const tooltip = wrapper.querySelector('.glossary-popper');
@@ -95,36 +85,28 @@ Drupal.behaviors.dynamicGlossaryTooltip = {
           tooltip.addEventListener('mouseleave', hide);
         })
         .catch(err => {
-          console.warn('Glossary tooltip failed to load:', err);
+          console.warn(`Glossary tooltip failed to load for term "${term}":`, err);
 
-          if (!isLoggedIn) {
-            const span = document.createElement('span');
-            span.textContent = originalText;
-            link.replaceWith(span);
-            return;
-          }
-
-          const tooltipId = `glossary-tooltip-missing-${uuid}`;
+          const tooltipId = `glossary-tooltip-missing-${term.replace(/\s+/g, '-').toLowerCase()}`;
 
           const wrapper = document.createElement('span');
           wrapper.classList.add('glossary-term-wrapper');
           wrapper.setAttribute('tabindex', '0');
           wrapper.innerHTML = `
             <span class="glossary-term glossary-missing" aria-describedby="${tooltipId}">
-              <i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i>
-              ${originalText}
+              ${term}
             </span>
             <span class="glossary-popper" id="${tooltipId}" role="tooltip">
               <div class="glossary-content">
                 <p class="term-definition">
-                  Taxonomy term not found. If you are the editor of this page, please remove the broken link.
+                  Glossary term not found. Please check the term or contact the site administrator.
                 </p>
               </div>
               <div class="popper-arrow" data-popper-arrow></div>
             </span>
           `;
 
-          link.replaceWith(wrapper);
+          span.replaceWith(wrapper);
 
           const reference = wrapper.querySelector('.glossary-term');
           const tooltip = wrapper.querySelector('.glossary-popper');
