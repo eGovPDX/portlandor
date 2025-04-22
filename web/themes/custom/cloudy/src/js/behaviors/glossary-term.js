@@ -39,7 +39,7 @@ Drupal.behaviors.dynamicGlossaryTooltip = {
                 <strong class="term-title">${termLabel}</strong>
                 <p class="term-pronunciation">${pronunciation}</p>
                 <p class="term-definition">${description}</p>
-                <a class="learn-more" href="${url}" rel="noopener noreferrer">Learn more</a>
+                <a class="learn-more" href="${url}" target="_blank" rel="noopener noreferrer">Learn more</a>
               </div>
               <div class="popper-arrow" data-popper-arrow></div>
             </span>
@@ -87,6 +87,16 @@ Drupal.behaviors.dynamicGlossaryTooltip = {
         .catch(err => {
           console.warn(`Glossary tooltip failed to load for term "${term}":`, err);
 
+          const isLoggedIn = drupalSettings.user && drupalSettings.user.uid && drupalSettings.user.uid !== 0;
+
+          if (!isLoggedIn) {
+            // If the user is anonymous, replace the span with plain text
+            const textNode = document.createTextNode(term);
+            span.replaceWith(textNode);
+            return;
+          }
+
+          // If the user is logged in, show the "Glossary term not found" message
           const tooltipId = `glossary-tooltip-missing-${term.replace(/\s+/g, '-').toLowerCase()}`;
 
           const wrapper = document.createElement('span');
