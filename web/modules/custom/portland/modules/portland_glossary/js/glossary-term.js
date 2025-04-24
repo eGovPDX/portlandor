@@ -50,56 +50,62 @@ Drupal.behaviors.dynamicGlossaryTooltip = {
 
           const reference = link;
           const tooltip = wrapper.querySelector('.glossary-popper');
-          const arrow = wrapper.querySelector('[data-popper-arrow]');
+          const arrow = tooltip.querySelector('[data-popper-arrow]');
           let hideTimeout;
 
           const createPopper = window.Popper?.createPopper;
           if (!createPopper) return;
 
-          const popperInstance = createPopper(reference, tooltip, {
-            placement: 'top',
-            strategy: 'absolute',
-            modifiers: [
-              { name: 'offset', options: { offset: [0, 2] } },
-              { name: 'arrow', options: { element: arrow } },
-              { name: 'preventOverflow', options: { padding: 8 } },
-            ],
-          });
+          // Force reflow before Popper init
+          tooltip.offsetHeight;
 
-          ['scroll', 'resize'].forEach(event =>
-            window.addEventListener(event, () => popperInstance.update(), { passive: true })
-          );
+          requestAnimationFrame(() => {
+            const popperInstance = createPopper(reference, tooltip, {
+              placement: 'top',
+              strategy: 'absolute',
+              modifiers: [
+                { name: 'offset', options: { offset: [0, 2] } },
+                { name: 'arrow', options: { element: arrow } },
+                { name: 'preventOverflow', options: { padding: 8 } },
+              ],
+            });
 
-          function show() {
-            clearTimeout(hideTimeout);
-            tooltip.classList.add('visible');
-            tooltip.setAttribute('aria-hidden', 'false');
-            tooltip.focus();
-            popperInstance.update();
-          }
+            ['scroll', 'resize'].forEach(event =>
+              window.addEventListener(event, () => popperInstance.update(), { passive: true })
+            );
 
-          function hide() {
-            hideTimeout = setTimeout(() => {
-              tooltip.classList.remove('visible');
-              tooltip.setAttribute('aria-hidden', 'true');
-              reference.focus();
-            }, 300);
-          }
-
-          tooltip.setAttribute('tabindex', '-1');
-          tooltip.setAttribute('aria-hidden', 'true');
-
-          wrapper.addEventListener('mouseenter', show);
-          wrapper.addEventListener('focus', show);
-          wrapper.addEventListener('mouseleave', hide);
-          wrapper.addEventListener('blur', hide);
-          tooltip.addEventListener('mouseenter', show);
-          tooltip.addEventListener('mouseleave', hide);
-
-          document.addEventListener('keydown', (event) => {
-            if (event.key === 'Escape') {
-              hide();
+            function show() {
+              clearTimeout(hideTimeout);
+              tooltip.classList.add('visible');
+              tooltip.setAttribute('aria-hidden', 'false');
+              tooltip.style.transform = 'scale(1)'; // GPU promotion
+              tooltip.offsetHeight; // Force repaint
+              popperInstance.update();
             }
+
+            function hide() {
+              hideTimeout = setTimeout(() => {
+                tooltip.classList.remove('visible');
+                tooltip.setAttribute('aria-hidden', 'true');
+                reference.focus();
+              }, 300);
+            }
+
+            tooltip.setAttribute('tabindex', '-1');
+            tooltip.setAttribute('aria-hidden', 'true');
+
+            wrapper.addEventListener('mouseenter', show);
+            wrapper.addEventListener('focus', show);
+            wrapper.addEventListener('mouseleave', hide);
+            wrapper.addEventListener('blur', hide);
+            tooltip.addEventListener('mouseenter', show);
+            tooltip.addEventListener('mouseleave', hide);
+
+            document.addEventListener('keydown', (event) => {
+              if (event.key === 'Escape') {
+                hide();
+              }
+            });
           });
         })
         .catch(err => {
