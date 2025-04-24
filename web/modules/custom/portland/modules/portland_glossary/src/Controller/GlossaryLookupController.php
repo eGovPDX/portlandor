@@ -10,41 +10,36 @@ use Drupal\Core\Url;
 
 class GlossaryLookupController extends ControllerBase {
 
-  public function lookup($term) {
-    $matches = \Drupal::entityTypeManager()
+  public function lookup($uuid) {
+    // Load the node by UUID.
+    $node = \Drupal::entityTypeManager()
       ->getStorage('node')
-      ->getQuery()
-      ->accessCheck(TRUE)
-      ->condition('type', 'glossary_term')
-      ->condition('title', $term, 'CONTAINS')  // case-insensitive match workaround
-      ->execute();
+      ->loadByProperties(['uuid' => $uuid, 'type' => 'glossary_term']);
 
-    if (empty($matches)) {
-      throw new NotFoundHttpException("No glossary term found for '$term'.");
+    if (empty($node)) {
+      throw new NotFoundHttpException("No glossary term found for UUID '$uuid'.");
     }
 
-    $nodes = Node::loadMultiple($matches);
-    $results = [];
+    // Get the first node (there should only be one).
+    $node = reset($node);
 
-    foreach ($nodes as $node) {
-      if (strcasecmp($node->getTitle(), $term) === 0) {
-        $url = Url::fromRoute('entity.node.canonical', ['node' => $node->id()])->toString();
-        $results[] = [
-          'nid' => $node->id(),
-          'title' => $node->getTitle(),
-          'definition' => $node->get('field_body_content')->value, // Updated to use field_body_content
-          'short_definition' => $node->get('field_summary')->value, // Updated to use field_summary
-          'url' => $url,
-          'pronunciation' => $node->get('field_english_pronunciation')->value,
-        ];
-      }
+    // Ensure the node is loaded as a Node entity.
+    if (!$node instanceof Node) {
+      throw new NotFoundHttpException("The loaded entity is not a valid Node.");
     }
 
-    if (empty($results)) {
-      throw new NotFoundHttpException("No exact glossary term match found for '$term'.");
-    }
+    // Prepare the result.
+    $url = Url::fromRoute('entity.node.canonical', ['node' => $node->id()])->toString();
+    $result = [
+      'nid' => $node->id(),
+      'title' => $node->label(),
+      'definition' => $node->get('field_body_content')->value, // Updated to use field_body_content
+      'short_definition' => $node->get('field_summary')->value, // Updated to use field_summary
+      'url' => $url,
+      'pronunciation' => $node->get('field_english_pronunciation')->value,
+    ];
 
-    return new JsonResponse($results);
+    return new JsonResponse([$result]);
   }
 
 }
