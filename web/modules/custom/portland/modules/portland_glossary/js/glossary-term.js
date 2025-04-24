@@ -19,34 +19,36 @@ Drupal.behaviors.dynamicGlossaryTooltip = {
             throw new Error(`No data found for UUID "${uuid}".`);
           }
 
-          // Access the first element of the array
           const termData = data[0];
           const termLabel = termData.title || 'Glossary Term';
           const pronunciation = termData.pronunciation || '';
-          const description = termData.short_definition || 'No description available.'; // Updated line
+          const description = termData.short_definition || 'No description available.';
           const url = termData.url || '#';
 
           const tooltipId = `glossary-tooltip-${uuid}`;
+
+          const pronunciationElement = pronunciation
+            ? `<p class="term-pronunciation">${pronunciation}</p>`
+            : '';
 
           const wrapper = document.createElement('span');
           wrapper.classList.add('glossary-term-wrapper');
           wrapper.setAttribute('tabindex', '0');
           wrapper.innerHTML = `
-            <span class="glossary-term-label" aria-describedby="${tooltipId}">${termLabel}</span>
             <span class="glossary-popper" id="${tooltipId}" role="tooltip">
               <div class="glossary-content">
                 <strong class="term-title">${termLabel}</strong>
-                <p class="term-pronunciation">${pronunciation}</p>
+                ${pronunciationElement}
                 <p class="term-definition">${description}</p>
                 <a class="learn-more button button--primary" href="${url}" rel="noopener noreferrer" aria-label="Learn more about glossary term ${termLabel}">Learn more</a>
               </div>
-              <div class="popper-arrow" data-popper-arrow></div>
             </span>
           `;
 
-          link.replaceWith(wrapper);
+          link.parentNode.insertBefore(wrapper, link);
+          wrapper.appendChild(link);
 
-          const reference = wrapper.querySelector('.glossary-term-label');
+          const reference = link;
           const tooltip = wrapper.querySelector('.glossary-popper');
           const arrow = wrapper.querySelector('[data-popper-arrow]');
           let hideTimeout;
@@ -64,7 +66,6 @@ Drupal.behaviors.dynamicGlossaryTooltip = {
             ],
           });
 
-          // Ensure the tooltip position stays accurate on scroll/resize
           ['scroll', 'resize'].forEach(event =>
             window.addEventListener(event, () => popperInstance.update(), { passive: true })
           );
@@ -72,22 +73,21 @@ Drupal.behaviors.dynamicGlossaryTooltip = {
           function show() {
             clearTimeout(hideTimeout);
             tooltip.classList.add('visible');
-            tooltip.setAttribute('aria-hidden', 'false'); // Make tooltip visible to screen readers
-            tooltip.focus(); // Move focus to the tooltip
+            tooltip.setAttribute('aria-hidden', 'false');
+            tooltip.focus();
             popperInstance.update();
           }
 
           function hide() {
             hideTimeout = setTimeout(() => {
               tooltip.classList.remove('visible');
-              tooltip.setAttribute('aria-hidden', 'true'); // Hide tooltip from screen readers
-              reference.focus(); // Return focus to the glossary term
-            }, 300); // Increased delay
+              tooltip.setAttribute('aria-hidden', 'true');
+              reference.focus();
+            }, 300);
           }
 
-          // Ensure the tooltip is focusable
           tooltip.setAttribute('tabindex', '-1');
-          tooltip.setAttribute('aria-hidden', 'true'); // Initially hidden from screen readers
+          tooltip.setAttribute('aria-hidden', 'true');
 
           wrapper.addEventListener('mouseenter', show);
           wrapper.addEventListener('focus', show);
@@ -96,7 +96,6 @@ Drupal.behaviors.dynamicGlossaryTooltip = {
           tooltip.addEventListener('mouseenter', show);
           tooltip.addEventListener('mouseleave', hide);
 
-          // Add keyboard dismissal for the tooltip
           document.addEventListener('keydown', (event) => {
             if (event.key === 'Escape') {
               hide();
