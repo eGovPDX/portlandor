@@ -7,6 +7,7 @@ use Drupal\webform\Entity\Webform;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Serializer\SerializerInterface;
+use Drupal\Core\Url;
 
 class WebformReportController extends ControllerBase {
   private const CACHE_ID = 'portland_webforms:webform_report_cache';
@@ -95,6 +96,59 @@ class WebformReportController extends ControllerBase {
   }
 
   /**
+   * Generates a CSV report of all webforms with their details.
+   */
+  public function generateFormsCsv() {
+    $response = new Response(
+      '',
+      200,
+      [
+        'Content-Type' => 'text/csv',
+        'Content-Disposition' => 'attachment; filename="webform-forms-report.csv"',
+      ]
+    );
+
+    // Check if the report is already cached.
+    $cache = \Drupal::cache()->get(self::CACHE_ID . ':forms');
+    if ($cache && !empty($cache->data)) {
+      $response->setContent($cache->data);
+    } else {
+      // Generate the report data.
+      $webforms = Webform::loadMultiple();
+      $rows = [];
+
+      foreach ($webforms as $webform) {
+        $handlers = $webform->getHandlers();
+        $handler_types = [];
+        foreach ($handlers as $handler) {
+          $handler_types[] = $handler->getPluginId();
+        }
+
+        // Generate the webform's URL.
+        $webform_url = Url::fromRoute('entity.webform.canonical', ['webform' => $webform->id()], ['absolute' => TRUE])->toString();
+
+        $rows[] = [
+          'Webform ID' => $webform->id(),
+          'Webform Title' => $webform->label(),
+          'Admin Description' => $webform->get('description') ?? 'No description',
+          'Number of Fields' => count($webform->getElementsInitializedFlattenedAndHasValue()),
+          'Number of Handlers' => count($handlers),
+          'Handler Types' => implode(', ', $handler_types),
+          'Webform URL' => $webform_url,
+        ];
+      }
+
+      // Generate CSV content.
+      $csvContent = $this->serializer->serialize($rows, 'csv');
+      $response->setContent($csvContent);
+      // Cache the generated CSV content for 1 hour.
+      \Drupal::cache()->set(self::CACHE_ID . ':forms', $csvContent, time() + 3600);
+    }
+
+    return $response;
+  }
+
+  /**
    * Gets the value of a specific custom field from the webform handler configuration.
    *
    * @param \Drupal\webform\Entity\Webform $webform
@@ -136,32 +190,4 @@ class WebformReportController extends ControllerBase {
     return '';
   }
 
-  // /**
-  //  * Finds the entities where a webform is embedded.
-  //  *
-  //  * @param string $webform_id
-  //  *   The ID of the webform.
-  //  *
-  //  * @return array
-  //  *   An array of entity titles or labels where the webform is embedded.
-  //  */
-  // protected function getEmbeddedLocations($webform_id) {
-  //   $query = \Drupal::entityTypeManager()->getStorage('node')->getQuery();
-  //   $query->condition('field_webform', $webform_id); // Replace 'field_webform' with the correct field name if needed.
-  //   $query->condition('type', 'city_service'); // Filter by content type if necessary.
-  //   $query->accessCheck(TRUE); // Ensure access checks are performed.
-
-  //   $node_ids = $query->execute();
-
-  //   if (empty($node_ids)) {
-  //       return [''];
-  //   }
-
-  //   $nodes = \Drupal::entityTypeManager()->getStorage('node')->loadMultiple($node_ids);
-  //   $embedded_locations = [];
-  //   foreach ($nodes as $node) {
-  //       $embedded_locations[] = $node->label();
-  //   }
-  //   return $embedded_locations;
-  // }
 }
