@@ -122,10 +122,6 @@ class ZendeskHandler extends WebformHandlerBase
    */
   public function buildConfigurationForm(array $form, FormStateInterface $form_state)
   {
-    // TODO: remove once zendesk PHP library is updated for PHP 8.2
-    $error_level = error_reporting();
-    error_reporting(E_ALL & ~E_DEPRECATED);
-
     $webform_fields = $this->getWebform()->getElementsDecoded();
     $zendesk_subdomain = \Drupal::config('portland_zendesk.adminsettings')->get('subdomain');
     $options = [
@@ -491,9 +487,6 @@ class ZendeskHandler extends WebformHandlerBase
       $form['ticket_form_id']['#weight'] = 4;
       $form['ticket_fork_field']['#weight'] = 5;
       $form['custom_fields']['#weight'] = 6;
-
-      // TODO: remove once zendesk PHP library is updated for PHP 8.2
-      error_reporting($error_level);
 
       return parent::buildConfigurationForm($form, $form_state);
   }
