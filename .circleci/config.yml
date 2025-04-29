@@ -1,6 +1,11 @@
 # CircleCI integration with Drupal 8.
 version: 2.1
 
+parameters:
+  pantheon-env:
+    type: string
+    default: dev
+
 # Common tasks defined as commands
 commands:
   checkout_source:
@@ -485,7 +490,7 @@ clone_live_database: &clone_live_database
         command: |
           # On Master branch, clone to Dev
           if [[ $CIRCLE_BRANCH = "master" ]]; then
-            echo 'export PANTHEON_ENV="dev"' >> $BASH_ENV && source $BASH_ENV
+            echo 'export PANTHEON_ENV="<< pipeline.parameters.pantheon-env >>"' >> $BASH_ENV && source $BASH_ENV
           else
             echo 'export PANTHEON_ENV=${CIRCLE_BRANCH}' >> $BASH_ENV && source $BASH_ENV
           fi
@@ -557,8 +562,8 @@ workflows:
             branches:
               only:
                 - master
-  # The update database workflow runs when the scheduled pipeline named "Update Sandbox
-  # Database" runs. Scheduled pipelines are configured in the CircleCI web UI at
+  # The update database workflow runs when the following scheduled pipelines run.
+  # Scheduled pipelines are configured in the CircleCI web UI at
   # https://app.circleci.com/settings/project/github/eGovPDX/portlandor/triggers
   update_database:
     when:
@@ -567,6 +572,7 @@ workflows:
         - or:
           - equal: [ "Update Sandbox Database", << pipeline.schedule.name >> ]
           - equal: [ "Update Dev Database", << pipeline.schedule.name >> ]
+          - equal: [ "Update Test Database", << pipeline.schedule.name >> ]
     jobs:
       - clone_live_database
 

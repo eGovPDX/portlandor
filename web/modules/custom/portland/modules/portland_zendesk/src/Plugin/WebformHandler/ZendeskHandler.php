@@ -686,6 +686,12 @@ class ZendeskHandler extends WebformHandlerBase
         $request['requester_email'] = self::ANONYMOUS_EMAIL;
       }
 
+      // if requester_name contains an html entity, we need to html decode it
+      // so it doesn't get passed to Zendesk as an entity.
+      if (str_contains($request['requester_name'], '&')) {
+        $request['requester_name'] = html_entity_decode($request['requester_name']);
+      }
+
       $request['requester'] = $request['requester_name']
         ? [
           'name' => Utility::convertName($request['requester_name']),
