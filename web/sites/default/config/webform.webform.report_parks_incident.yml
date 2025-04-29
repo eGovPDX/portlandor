@@ -69,6 +69,7 @@ elements: |-
         'Medical event/first aid': 'Medical event/first aid'
         'Park violation or safety issue': 'Park violation or safety issue'
         'Trail or facility hazard': 'Trail or facility hazard'
+        'Vehicle damage or collision': 'Vehicle damage or collision'
       '#required': true
     report_issue_type_crime:
       '#type': select
@@ -126,8 +127,6 @@ elements: |-
         DOLA: DOLA
         'Drug use/paraphernalia': 'Drug use/paraphernalia'
         Hate/bias: Hate/bias
-        'Vehicle damage - employee': 'Vehicle damage - employee'
-        'Vehicle damage - public': 'Vehicle damage - public'
         'Verbal threats or harassment': 'Verbal threats or harassment'
         'Other Park Rule (Title 20) Violation': 'Other Park Rule (Title 20) Violation'
         Other: Other
@@ -147,6 +146,16 @@ elements: |-
         visible:
           ':input[name="report_issue_category"]':
             value: 'Trail or facility hazard'
+    report_issue_type_vehicle:
+      '#type': select
+      '#title': 'What type of vehicle was damaged?'
+      '#options':
+        Employee: Employee
+        Public: Public
+      '#states':
+        visible:
+          ':input[name="report_issue_category"]':
+            value: 'Vehicle damage or collision'
   container_continue:
     '#type': container
     '#states':
@@ -164,6 +173,9 @@ elements: |-
             filled: true
         - or
         - ':input[name="report_issue_type_trail_facility_hazard"]':
+            filled: true
+        - or
+        - ':input[name="report_issue_type_vehicle"]':
             filled: true
     incident_details:
       '#type': webform_section
@@ -363,6 +375,10 @@ elements: |-
 
       {% if data.report_issue_type_trail_facility_hazard and data.report_issue_type_trail_facility_hazard is not iterable %}
         <p><strong>What type of trail/facility hazard</strong>: {{ data.report_issue_type_trail_facility_hazard }}</p>
+      {% endif %}
+
+      {% if data.report_issue_type_vehicle and data.report_issue_type_vehicle is not iterable %}
+        <p><strong>What type of vehicle</strong>: {{ data.report_issue_type_vehicle }}</p>
       {% endif %}
 
       <p><strong>Incident details</strong>:<br>{{ data.report_description }}</p>
@@ -634,6 +650,8 @@ handlers:
       ticket_id_field: request_ticket_id
       ticket_fork_field: ''
       ticket_form_id: '24762621756055'
+      is_child_incident: ''
+      parent_ticket_id_field: ''
   test_zendesk_new_request:
     id: zendesk
     handler_id: test_zendesk_new_request
@@ -662,6 +680,8 @@ handlers:
       ticket_id_field: request_ticket_id
       ticket_fork_field: ''
       ticket_form_id: '24762621756055'
+      is_child_incident: ''
+      parent_ticket_id_field: ''
   email:
     id: email
     handler_id: email
