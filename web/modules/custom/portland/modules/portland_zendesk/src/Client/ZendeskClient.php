@@ -26,7 +26,6 @@ class ZendeskClient extends HttpClient
         $port = 443;
         $guzzle = new Client([
             'timeout' => 30,
-            'verify' => false,
         ]);
        
         $config = \Drupal::config('portland_zendesk.adminsettings');
