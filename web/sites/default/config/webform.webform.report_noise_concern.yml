@@ -1,0 +1,1189 @@
+uuid: d4ea996a-9398-4e0b-9833-6d055363ee44
+langcode: en
+status: open
+dependencies:
+  module:
+    - portland
+    - portland_smartsheet
+third_party_settings:
+  portland:
+    disable_demographic_form_prompt: 0
+    exclude_from_json: {  }
+weight: 0
+open: null
+close: null
+uid: 628
+template: false
+archive: false
+id: report_noise_concern
+title: 'Report Noise Concern'
+description: ''
+categories: {  }
+elements: |-
+  computed_address:
+    '#type': webform_computed_twig
+    '#title': 'Computed Address'
+    '#wrapper_attributes':
+      class:
+        - d-none
+    '#display_on': form
+    '#mode': text
+    '#template': '{{ data.report_location.location_address }}'
+  page_noise_source:
+    '#type': webform_wizard_page
+    '#title': 'Noise Source'
+    report_live_own_operate_in_pdx:
+      '#type': radios
+      '#title': 'Do you live, own property, or operate a business within the City of Portland?'
+      '#options':
+        'Yes': 'Yes'
+        'No': 'No'
+    markup_non_portland_code:
+      '#type': webform_markup
+      '#states':
+        visible:
+          ':input[name="report_live_own_operate_in_pdx"]':
+            value: 'No'
+      '#markup': '<div class="alert alert--info next-steps"><h2>Information</h2><p>The Noise Program does not accept noise concerns if the reporter does not live, own property, or operate a business within the City of Portland.&nbsp;</p></div>'
+    report_location:
+      '#type': portland_location_picker
+      '#title': 'Where is the noise coming from?'
+      '#states':
+        invisible:
+          ':input[name="report_live_own_operate_in_pdx"]':
+            value: 'No'
+      '#location_search__title': 'Where is the noise coming from?'
+      '#location_address__required': true
+      '#location_details__access': false
+      '#location_type__access': false
+      '#location_park_container__access': false
+      '#location_private_owner__access': false
+      '#out_of_bounds_message': 'This location is outside the City of Portland’s city limits. Please report the noise issue to the local jurisdiction. You can call 311 or email 311@portlandoregon.gov if you need help determining who to contact.'
+      '#require_boundary': true
+    computed_location_name:
+      '#type': webform_computed_twig
+      '#title': 'Computed - Location Name'
+      '#display_on': none
+      '#mode': text
+      '#template': '{{ data.report_location.place_name }}'
+    computed_location_coordinates:
+      '#type': webform_computed_twig
+      '#title': 'Computed - Location Coordinates'
+      '#display_on': none
+      '#mode': text
+      '#template': '{{ data.report_location.location_lat }},{{ data.report_location.location_lon }}'
+    actions:
+      '#type': webform_actions
+      '#title': 'Submit button(s)'
+      '#states':
+        invisible:
+          ':input[name="report_live_own_operate_in_pdx"]':
+            value: 'No'
+  page_noise_type:
+    '#type': webform_wizard_page
+    '#title': 'Noise Type'
+    report_noise_type:
+      '#type': webform_select_other
+      '#title': 'What type of noise do you want to report?'
+      '#options':
+        'Aircraft, including planes, helicopters, and drones': 'Aircraft, including planes, helicopters, and drones'
+        Alarms: Alarms
+        'Animals, including dogs and chickens': 'Animals, including dogs and chickens'
+        'Cars or vehicles': 'Cars or vehicles'
+        'Construction tools or industrial equipment, such as machinery, generators, or power tools': 'Construction tools or industrial equipment, such as machinery, generators, or power tools'
+        'Fireworks or possible gunshots': 'Fireworks or possible gunshots'
+        'Human voices': 'Human voices'
+        'Landscape equipment, such as lawn mowers or leaf blowers': 'Landscape equipment, such as lawn mowers or leaf blowers'
+        'Mechanical noises, such as air conditioners or ventilation units': 'Mechanical noises, such as air conditioners or ventilation units'
+        'Music, including stereos, musicians, bands or concerts': 'Music, including stereos, musicians, bands or concerts'
+        'Sports and recreation': 'Sports and recreation'
+        Trains: Trains
+        'Trucks or buses': 'Trucks or buses'
+        Watercraft: Watercraft
+      '#other__option_label': 'Something else'
+      '#other__placeholder': 'Please describe'
+      '#required': true
+    report_alarm_type:
+      '#type': select
+      '#title': 'What type of alarm?'
+      '#options':
+        'Car or vehicle alarm': 'Car or vehicle alarm'
+        'Building emergency or security alarm': 'Building emergency or security alarm'
+        'Warning alarm, such as those on doors or in parking garages': 'Warning alarm, such as those on doors or in parking garages'
+      '#empty_value': '-'
+      '#states':
+        visible:
+          ':input[name="report_noise_type[select]"]':
+            value: Alarms
+    markup_building_alarm:
+      '#type': webform_markup
+      '#states':
+        visible:
+          ':input[name="report_alarm_type"]':
+            value: 'Building emergency or security alarm'
+      '#markup': '<div class="alert alert--info next-steps"><h2>Information</h2><p>If this is a potential emergency, please call 9-1-1.</p></div>'
+    markup_warning_alarm:
+      '#type': webform_markup
+      '#states':
+        visible:
+          ':input[name="report_alarm_type"]':
+            value: 'Warning alarm, such as those on doors or in parking garages'
+      '#markup': '<div class="alert alert--info next-steps"><h2>Information</h2><p>Because warning alarms are a safety feature required by Federal law and mandated by the Occupational Safety and Health Administration, the City’s Noise Program cannot investigate this type of noise. Federal law supersedes state law and local city ordinances.</p></div>'
+    report_alarm_car_location:
+      '#type': select
+      '#title': 'Where is the car located?'
+      '#options':
+        'On private property, such as in a driveway or parking lot': 'On private property, such as in a driveway or parking lot'
+        'On the street': 'On the street'
+      '#empty_value': '-'
+      '#states':
+        visible:
+          ':input[name="report_alarm_type"]':
+            value: 'Car or vehicle alarm'
+    report_vehicle_noise_type:
+      '#type': select
+      '#title': 'What type of vehicle-related noise are you trying to report?'
+      '#options':
+        'Auto-repair work': 'Auto-repair work'
+        'Backup or reverse beepers': 'Backup or reverse beepers'
+        'Car alarm': 'Car alarm'
+        Horns: Horns
+        'Illegal street racing': 'Illegal street racing'
+        'Loud idling or unmuffled engines': 'Loud idling or unmuffled engines'
+        'Motorsports at Portland International Raceway (PIR)': 'Motorsports at Portland International Raceway (PIR)'
+        Stereo: Stereo
+      '#empty_value': '-'
+      '#states':
+        visible:
+          ':input[name="report_noise_type[select]"]':
+            value: 'Cars or vehicles'
+    markup_backup_beepers:
+      '#type': webform_markup
+      '#states':
+        visible:
+          ':input[name="report_vehicle_noise_type"]':
+            value: 'Backup or reverse beepers'
+      '#markup': |-
+        <div class="alert alert--info next-steps">
+        <h2>Information</h2>
+
+        <p>Backup beepers are a safety feature required by Federal law and mandated by the Occupational Safety and Health Administration. As such, the City’s Noise Program cannot investigate this type of noise. Federal law supersedes state law and local city ordinances.</a></p>
+        </div>
+    markup_vehicle_horns:
+      '#type': webform_markup
+      '#states':
+        visible:
+          ':input[name="report_vehicle_noise_type"]':
+            value: Horns
+      '#markup': '<div class="alert alert--info next-steps"><h2>Information</h2><p>The <a href="https://www.portland.gov/ppd/noise">Noise Program</a> is not able to respond to incidents not tied to a specific property or location, including noise from vehicles in the street or public right-of-way. <a>For mobile noise issues such as that from a vehicle alarm, horn, or stereo, you may wish to contact the Public Safety Non-Emergency Line at </a><a href="tel:+15038233333">503-823-3333</a>. When contacting non-emergency about vehicle-related incidents, please be prepared to provide identifying information such as vehicle make, model, color, and license plate number and state. If the noise is associated with an campsite or occupied vehicle or RV, you can report it to the through the Homelessness and Urban Camping Impact Reduction Program''s <a href="https://www.portland.gov/homelessness-impact-reduction/report-campsite">Report a Campsite form</a>, and note the noise issue in the Additional Information box.</p></div>'
+    markup_idling_engines:
+      '#type': webform_markup
+      '#states':
+        visible:
+          ':input[name="report_vehicle_noise_type"]':
+            value: 'Loud idling or unmuffled engines'
+      '#markup': |-
+        <div class="alert alert--info next-steps">
+        <h2>Information</h2>
+
+        <p>The City of Portland cannot enforce vehicle noise standards on public streets. Vehicle operation, including loud or unmuffled engines, is regulated by the Oregon Department of Environmental Quality (DEQ). However, the state eliminated DEQ’s Noise Control Program in 1991 and the department is no longer able to investigate noise complaints. We encourage you to contact both DEQ and your state representative to communicate the impact this type of noise is having on livability in your area.</a></p>
+        </div>
+    markup_motorsports:
+      '#type': webform_markup
+      '#states':
+        visible:
+          ':input[name="report_vehicle_noise_type"]':
+            value: 'Motorsports at Portland International Raceway (PIR)'
+      '#markup': '<div class="alert alert--info next-steps"><h2>Information</h2><p>The City of Portland requires that the Portland International Raceway follow the noise limits set by City Code, except for a maximum of four events per year which are approved through the noise variance process. The City of Portland''s Noise Program, the Noise Review Board, and Portland Parks & Recreation are working together on ways to mitigate or resolve Portland International Raceway''s (PIR) <a href="https://portlandraceway.com/?/about/noise_information">noise impacts</a> on surrounding neighborhoods. You may also be interested in the work of the <a href="https://www.portland.gov/ppd/noise/noisereviewboard/pir-subcommittee">Noise Review Board PIR subcommittee</a> which is tasked with further understanding the PIR''s noise impacts and exploring possible solutions to address noise-related community concerns.   Once submitted, your complaint will be added to the City''s documentation of raceway-related complaints and compared with the noise data kept by the raceway.</p></div>'
+    report_vehicle_location:
+      '#type': select
+      '#title': 'Where is the car located?'
+      '#options':
+        'On private property, such as in a driveway or parking lot': 'On private property, such as in a driveway or parking lot'
+        'On the street': 'On the street'
+      '#empty_value': '-'
+      '#states':
+        visible:
+          - ':input[name="report_vehicle_noise_type"]':
+              value: 'Car alarm'
+          - or
+          - ':input[name="report_vehicle_noise_type"]':
+              value: Stereo
+    report_tools_equipment_location:
+      '#type': select
+      '#title': 'Where is the noise coming from?'
+      '#options':
+        'Highway construction on I-5, I-84, I-205, or I-405': 'Highway construction on I-5, I-84, I-205, or I-405'
+        'Road construction or utility work in the street or right-of-way': 'Road construction or utility work in the street or right-of-way'
+        'Private property, including residences and businesses': 'Private property, including residences and businesses'
+      '#empty_value': '-'
+      '#states':
+        visible:
+          ':input[name="report_noise_type[select]"]':
+            value: 'Construction tools or industrial equipment, such as machinery, generators, or power tools'
+    report_tools_equipment_company:
+      '#type': webform_select_other
+      '#title': 'Which company is doing the work?'
+      '#description': '<p>Check for logos or names on the sides of construction vehicles.</p>'
+      '#description_display': before
+      '#options':
+        'City of Portland - Bureau of Environmental Services': 'City of Portland - Bureau of Environmental Services'
+        'City of Portland - Bureau of Transportation': 'City of Portland - Bureau of Transportation'
+        'City of Portland - Water Bureau': 'City of Portland - Water Bureau'
+        Comcast: Comcast
+        'Northwest Natural': 'Northwest Natural'
+        'PacificCorp / Pacific Power & Light': 'PacificCorp / Pacific Power & Light'
+        'Portland General Electric (PGE)': 'Portland General Electric (PGE)'
+        'Qwest / CenturyLink': 'Qwest / CenturyLink'
+        "I'm not sure": "I'm not sure"
+      '#empty_value': '-'
+      '#other__option_label': 'None of the above...'
+      '#other__placeholder': 'Please describe:'
+      '#states':
+        visible:
+          ':input[name="report_tools_equipment_location"]':
+            value: 'Road construction or utility work in the street or right-of-way'
+    report_tools_equipment_type:
+      '#type': webform_select_other
+      '#title': 'What type of equipment is making the noise?'
+      '#options':
+        "I'm not sure": "I'm not sure"
+        'Air compressor': 'Air compressor'
+        Backhoe: Backhoe
+        Bulldozer: Bulldozer
+        'Cement mixer': 'Cement mixer'
+        'Concrete breaking': 'Concrete breaking'
+        Digging: Digging
+        Drilling: Drilling
+        Excavator: Excavator
+        Forklift: Forklift
+        Generator: Generator
+        Hammering: Hammering
+        'High pitched screeching sound': 'High pitched screeching sound'
+        Jackhammer: Jackhammer
+        'Power tools - misc.': 'Power tools - misc.'
+        Pumping: Pumping
+        'Road graders / scrapers': 'Road graders / scrapers'
+        Rotohammer: Rotohammer
+        Saw: Saw
+        'Screw or nail gun': 'Screw or nail gun'
+        'Steel cutting': 'Steel cutting'
+        Welding: Welding
+      '#empty_value': '-'
+      '#other__option_label': 'Something else'
+      '#other__placeholder': 'Please describe:'
+      '#states':
+        visible:
+          - ':input[name="report_tools_equipment_location"]':
+              value: 'Road construction (except highways)'
+          - or
+          - ':input[name="report_tools_equipment_location"]':
+              value: 'Utility work in the street or right-of-way'
+    report_human_voice_amplified:
+      '#type': radios
+      '#title': 'Is the noise being amplified, like through a speaker, amplifier, or megaphone?'
+      '#options':
+        'Yes': 'Yes'
+        'No': 'No'
+      '#states':
+        visible:
+          ':input[name="report_noise_type[select]"]':
+            value: 'Human voices'
+    report_human_voice_amplified_location:
+      '#type': select
+      '#title': 'Where is the speaker or amplifier located?'
+      '#options':
+        "In someone's residence or a vehicle parked in their driveway": "In someone's residence or a vehicle parked in their driveway"
+        'In a business, restaurant/bar, food cart, or church': 'In a business, restuarant/bar, food '
+        'At a construction site': 'At a construction site'
+        'In a public park': 'In a public park'
+        'On a school property': 'On a school property'
+        'In a vehicle, RV, or campsite located in the street, sidewalk, or right-of-way': 'In a vehicle, RV, or campsite located in the street, sidewalk, or right-of-way'
+        'On the street or sidewalk, including on a person': 'On the street or sidewalk, including on a person'
+      '#empty_value': '-'
+      '#states':
+        visible:
+          ':input[name="report_human_voice_amplified"]':
+            value: 'Yes'
+    report_human_voice_amplified_source:
+      '#type': select
+      '#title': 'What is producing the noise?'
+      '#options':
+        'Musician, band, or concert': 'Musician, band, or concert'
+        'Stereo or radio': 'Stereo or radio'
+        'Public announcement system or megaphone': 'Public announcement system or megaphone'
+      '#empty_value': '-'
+      '#states':
+        visible:
+          - ':input[name="report_human_voice_amplified_location"]':
+              value: "In someone's residence or a vehicle parked in their driveway"
+          - or
+          - ':input[name="report_human_voice_amplified_location"]':
+              value: 'In a business, restaurant/bar, food cart, or church'
+          - or
+          - ':input[name="report_human_voice_amplified_location"]':
+              value: 'At a construction site'
+          - or
+          - ':input[name="report_human_voice_amplified_location"]':
+              value: 'In a public park'
+          - or
+          - ':input[name="report_human_voice_amplified_location"]':
+              value: 'On a school property'
+    report_landscape_equipment_type:
+      '#type': webform_select_other
+      '#title': 'What type of equipment is making the noise?'
+      '#options':
+        'Lawn mower': 'Lawn mower'
+        'Leaf blower': 'Leaf blower'
+        'Pressure washer': 'Pressure washer'
+      '#empty_value': '-'
+      '#other__option_label': 'Something else'
+      '#other__placeholder': 'Please describe:'
+      '#states':
+        visible:
+          ':input[name="report_noise_type[select]"]':
+            value: 'Landscape equipment, such as lawn mowers or leaf blowers'
+    report_landscape_equipment_operator:
+      '#type': webform_select_other
+      '#title': 'Who is operating the equipment?'
+      '#options':
+        'Resident or business': 'Resident or business'
+        'Landscaping company': 'Landscaping company'
+      '#empty_value': '-'
+      '#other__option_label': 'Someone else'
+      '#other__placeholder': 'Please describe:'
+      '#states':
+        visible:
+          ':input[name="report_noise_type[select]"]':
+            value: 'Landscape equipment, such as lawn mowers or leaf blowers'
+    report_landscape_equipment_company_name:
+      '#type': textfield
+      '#title': 'Which landscaping company?'
+      '#description': '<p>You may find this information on the side of a work truck/vehicle.</p>'
+      '#description_display': before
+      '#states':
+        visible:
+          ':input[name="report_landscape_equipment_operator[select]"]':
+            value: 'Landscaping company'
+    report_landscape_equipment_main_concern:
+      '#type': select
+      '#title': 'What is your main concern'
+      '#options':
+        'Too loud': 'Too loud'
+        'Too frequent': 'Too frequent'
+        'Constant noise': 'Constant noise'
+        'Excessive vibration': 'Excessive vibration'
+      '#states':
+        visible:
+          ':input[name="report_noise_type[select]"]':
+            value: 'Mechanical noises, such as air conditioners or ventilation units'
+    report_music_amplified:
+      '#type': radios
+      '#title': 'Is the noise being amplified, like through a speaker, amplifier, or megaphone?'
+      '#options':
+        'Yes': 'Yes'
+        'No': 'No'
+      '#states':
+        visible:
+          ':input[name="report_noise_type[select]"]':
+            value: 'Music, including stereos, musicians, bands or concerts'
+    report_music_amplified_location:
+      '#type': select
+      '#title': 'Where is the speaker or amplifier located?'
+      '#options':
+        "In someone's residence or a vehicle parked in their driveway": "In someone's residence or a vehicle parked in their driveway"
+        'In a business, restaurant/bar, food cart, or church': 'In a business, restuarant/bar, food '
+        'At a construction site': 'At a construction site'
+        'In a public park': 'In a public park'
+        'On a school property': 'On a school property'
+        'In a vehicle, RV, or campsite located in the street, sidewalk, or right-of-way': 'In a vehicle, RV, or campsite located in the street, sidewalk, or right-of-way'
+        'On the street or sidewalk, including on a person': 'On the street or sidewalk, including on a person'
+      '#empty_value': '-'
+      '#states':
+        visible:
+          ':input[name="report_music_amplified"]':
+            value: 'Yes'
+    markup_amplified_noise_row:
+      '#type': webform_markup
+      '#states':
+        visible:
+          - ':input[name="report_human_voice_amplified_location"]':
+              value: 'On the street or sidewalk, including on a person'
+          - or
+          - ':input[name="report_human_voice_amplified_location"]':
+              value: 'In a vehicle, RV, or campsite located in the street, sidewalk, or right-of-way'
+      '#markup': '<div class="alert alert--info next-steps"><h2>Information</h2><p>Until further notice, due to limited staff and resources, the City''s <a href="https://www.portland.gov/ppd/noise">Noise Program</a> will not be able to respond to or investigate complaints related to noise in public streets and rights of way. We are currently using our limited resources to address noise violations occurring on private property.  However, please complete your report so we have a record of your concern. It will be used to inform how we use limited resources in the future. Thank you for your support and patience.</p></div>'
+    report_music_source:
+      '#type': webform_select_other
+      '#title': 'What is producing the noise?'
+      '#options':
+        'Musician, band, or concert': 'Musician, band, or concert'
+        'Stereo or radio': 'Stereo or radio'
+        'Public announcement system or megaphone': 'Public announcement system or megaphone'
+      '#empty_value': '-'
+      '#states':
+        visible:
+          - ':input[name="report_music_amplified_location"]':
+              value: "In someone's residence or a vehicle parked in their driveway"
+          - or
+          - ':input[name="report_music_amplified_location"]':
+              value: 'In a business, restaurant/bar, food cart, or church'
+          - or
+          - ':input[name="report_music_amplified_location"]':
+              value: 'At a construction site'
+          - or
+          - ':input[name="report_music_amplified_location"]':
+              value: 'In a public park'
+          - or
+          - ':input[name="report_music_amplified_location"]':
+              value: 'On a school property'
+    report_music_noise_distance:
+      '#type': radios
+      '#title': 'Can you hear the noise from two blocks away? Or can you hear it from within your home or business with the doors and windows closed?'
+      '#options':
+        'Yes': 'Yes'
+        'No': 'No'
+      '#states':
+        visible:
+          - ':input[name="report_human_voice_amplified"]':
+              value: 'Yes'
+          - xor
+          - ':input[name="report_human_voice_amplified"]':
+              value: 'No'
+    report_sports_location:
+      '#type': select
+      '#title': 'Is the noise coming from any of the following locations?'
+      '#description': '<p>If "somewhere else...", please describe on the next page.</p>'
+      '#description_display': before
+      '#options':
+        'Portland International Raceway (PIR)': 'Portland International Raceway (PIR)'
+        'Providence Park': 'Providence Park'
+        'Lents Park': 'Lents Park'
+        'Waterfront Park': 'Waterfront Park'
+        'Another public park': 'Another public park'
+        School: School
+        'Private property, such as a residence or business': 'Private property, such as a residence or business'
+        'Somewhere else...': 'Somewhere else...'
+      '#empty_value': '-'
+      '#other__option_label': 'Somewhere else'
+      '#other__placeholder': 'Please describe:'
+      '#states':
+        visible:
+          ':input[name="report_noise_type[select]"]':
+            value: 'Sports and recreation'
+    markup_sports_pir:
+      '#type': webform_markup
+      '#states':
+        visible:
+          ':input[name="report_sports_location"]':
+            value: 'Portland International Raceway (PIR)'
+      '#markup': '<div class="alert alert--info next-steps"><h2>Information</h2><p>The City of Portland requires that the Portland International Raceway follow the noise limits set by City Code, except for a maximum of four events per year which are approved through the noise variance process. The City of Portland''s Noise Program, the Noise Review Board, and Portland Parks & Recreation are working together on ways to mitigate or resolve Portland International Raceway''s (PIR) <a href="https://portlandraceway.com/?/about/noise_information">noise impacts</a> on surrounding neighborhoods. You may also be interested in the work of the <a href="https://www.portland.gov/ppd/noise/noisereviewboard/pir-subcommittee">Noise Review Board PIR subcommittee</a> which is tasked with further understanding the PIR''s noise impacts and exploring possible solutions to address noise-related community concerns.   Once submitted, your complaint will be added to the City''s documentation of raceway-related complaints and compared with the noise data kept by the raceway.</p></div>'
+    markup_providence_park:
+      '#type': webform_markup
+      '#states':
+        visible:
+          ':input[name="report_sports_location"]':
+            value: 'Providence Park'
+      '#markup': '<div class="alert alert--info next-steps"><h2>Information</h2><p>The City of Portland, local neighborhood associations, and Peregrine Sports have entered into a Good Neighbor Agreement regarding the operation of Providence Park. Concerts held at Providence Park are covered under a noise variance. Once submitted, your complaint will be added to the City’s documentation of event-related complaints, reviewed by the Noise Review Board, and shared with Providence Park operators.</p></div>'
+    markup_waterfront_park:
+      '#type': webform_markup
+      '#states':
+        visible:
+          ':input[name="report_sports_location"]':
+            value: 'Waterfront Park'
+      '#markup': |-
+        <div class="alert alert--info next-steps"><h2>Information</h2>
+        <p>The City of Portland offers many Waterfront Park events during the summer months, including CityFair, the Rose Festival, Cinco de Mayo, Pride, the Blues Festival, and the Big Float. These popular annual events contribute to Portland's quality of life for residents and the organizers of these events have filed Noise Variances, as required by City Code Title 18.</p>
+        <p>Your noise concern will be reviewed by staff in the <a href="https://www.portland.gov/ppd/noise">Noise Program</a>. However, if the noise is related to the operation of an event under a pre-approved noise variance, no action will be taken. </p>
+        <p>If you are trying to report disorderly conduct in the park, please call the Public Safety Non-Emergency Line at <a href="tel:+15038233333">503-823-3333</a> and use the term "disturbing the peace".</p></div>
+    report_sports_type:
+      '#type': select
+      '#title': 'What kind of noise are you trying to report?'
+      '#options':
+        'Amplified music or voices': 'Amplified music or voices'
+        'Non-amplified voices, such as spectators cheering': 'Non-amplified voices, such as spectators cheering'
+        'Noise from the sport activity itself (e.g. basketball, pickleball, skateboarding)': 'Noise from the sport activity itself (e.g. basketball, pickleball, skateboarding)'
+      '#empty_value': '-'
+      '#other__option_label': 'Something else'
+      '#other__placeholder': 'Please describe:'
+      '#states':
+        visible:
+          - ':input[name="report_sports_location"]':
+              value: 'Lents Park'
+          - or
+          - ':input[name="report_sports_location"]':
+              value: 'Another public park'
+          - or
+          - ':input[name="report_sports_location"]':
+              value: School
+          - or
+          - ':input[name="report_sports_location"]':
+              value: 'Private property, such as a residence or business'
+          - or
+          - ':input[name="report_landscape_equipment_type[other]"]':
+              filled: true
+    markup_sporting_activity:
+      '#type': webform_markup
+      '#states':
+        visible:
+          ':input[name="report_sports_type"]':
+            value: 'Noise from the sport activity itself (e.g. basketball, pickleball, skateboarding)'
+      '#markup': '<div class="alert alert--info next-steps"><h2>Information</h2><p>The <a href="https://www.portland.gov/code/18">Noise Code</a> does not regulate noise from human voices or human actions, activities, or behavior that does not involve a sound producing equipment or amplifier and the <a href="https://www.portland.gov/ppd/noise">Noise Program</a> is not able to investigate these types of complaints.<br><br>If the noise is coming from disorderly conduct, we encourage you to report the noise issue to the Public Safety Non-Emergency Line at <a href="tel:+15038233333">503-823-3333</a> and use the term “disturbing the peace”. Calling the non-emergency line for each incident establishes a history and creates documentation that police are responding to ongoing issues rather than an isolated event.</p></div>'
+    report_train_type:
+      '#type': select
+      '#title': 'What kind of train?'
+      '#options':
+        'Railyard operations': 'Railyard operations'
+        'Heavy rail, including Amtrak and freight trains': 'Heavy rail, including Amtrak and freight trains'
+        'MAX light rail': 'MAX light rail'
+        'Portland Streetcar': 'Portland Streetcar'
+      '#empty_value': '-'
+      '#other__option_label': 'Something else'
+      '#other__placeholder': 'Please describe:'
+      '#states':
+        visible:
+          ':input[name="report_noise_type[select]"]':
+            value: Trains
+    report_trucks_buses_type:
+      '#type': select
+      '#title': 'What type of vehicle is causing the noise?'
+      '#options':
+        'Garbage, recycling, or compost collection truck': 'Garbage, recycling, or compost collection truck'
+        'Delivery truck': 'Delivery truck'
+        'Utility or construction truck': 'Utility or construction truck'
+        Buses: Buses
+      '#empty_value': '-'
+      '#other__option_label': ''
+      '#other__placeholder': ''
+      '#states':
+        visible:
+          ':input[name="report_noise_type[select]"]':
+            value: 'Trucks or buses'
+    markup_garbage_recycling_trucks:
+      '#type': webform_markup
+      '#states':
+        visible:
+          ':input[name="report_trucks_buses_type"]':
+            value: 'Garbage, recycling, or compost collection truck'
+      '#markup': '<div class="alert alert--info next-steps"><h2>Information</h2><p>The <a href="https://www.portland.gov/bps/garbage-recycling">Bureau of Planning & Sustainability</a> has jurisdiction over the recycling and waste removal services contracted by the City of Portland. Please report this issue <a href="https://www.portland.gov/bps/garbage-recycling/ask-garbage-and-recycling-question">online</a> or by calling <a href="tel:+15038237202">503-823-7202</a>.</p></div>'
+    markup_delivery_truck:
+      '#type': webform_markup
+      '#states':
+        visible:
+          ':input[name="report_trucks_buses_type"]':
+            value: 'Delivery truck'
+      '#markup': '<div class="alert alert--info next-steps"><h2>Information</h2><p>The <a href="https://www.portland.gov/code/18">Noise Code</a> allows delivery trucks to operate while goods are loaded or unloaded at a commercial property between 7 a.m. and 10 p.m. daily. If you are experiencing noise from delivery trucks after 10 p.m. and before 7 a.m. (for example if the truck is parked overnight with the motor running or if onloading / offloading is occurring at night) please continue with this report.</p></div>'
+    report_truck_buses_loading:
+      '#type': radios
+      '#title': 'Is the noise happening while someone is loading or unloading the truck?'
+      '#options':
+        'Yes': 'Yes'
+        'No': 'No'
+      '#empty_value': '-'
+      '#other__option_label': ''
+      '#other__placeholder': ''
+      '#states':
+        visible:
+          ':input[name="report_trucks_buses_type"]':
+            value: 'Delivery truck'
+  page_noise_details:
+    '#type': webform_wizard_page
+    '#title': 'Noise Details'
+    '#states':
+      invisible:
+        - ':input[name="report_noise_type[select]"]':
+            value: Watercraft
+        - or
+        - ':input[name="report_noise_type[select]"]':
+            value: 'Aircraft, including planes, helicopters, and drones'
+        - or
+        - ':input[name="report_alarm_car_location"]':
+            value: 'On the street'
+        - or
+        - ':input[name="report_noise_type[select]"]':
+            value: 'Animals, including dogs and chickens'
+        - or
+        - ':input[name="report_vehicle_noise_type"]':
+            value: 'Illegal street racing'
+        - or
+        - ':input[name="report_tools_equipment_location"]':
+            value: 'Highway construction on I-5, I-84, I-205, or I-405'
+        - or
+        - ':input[name="report_noise_type[select]"]':
+            value: 'Fireworks or possible gunshots'
+        - or
+        - ':input[name="report_train_type"]':
+            value: 'Heavy rail, including Amtrak and freight trains'
+        - or
+        - ':input[name="report_train_type"]':
+            value: 'MAX light rail'
+        - or
+        - ':input[name="report_trucks_buses_type"]':
+            value: Buses
+        - or
+        - ':input[name="report_human_voice_amplified"]':
+            value: 'No'
+    markup_construction_tools:
+      '#type': webform_markup
+      '#states':
+        visible:
+          ':input[name="report_noise_type[select]"]':
+            value: 'Construction tools or industrial equipment, such as machinery, generators, or power tools'
+      '#markup': '<div class="alert alert--info next-steps"><h2>Information</h2><p>Construction noise is allowed from <strong>7 a.m. to 6 p.m., Monday through Saturday</strong> at higher noise levels (up to 85 dBA at 50 feet). Outside of these hours — including Sundays and holidays — construction noise must follow lower neighborhood noise limits, and a variance may be required. Complaints are usually about early or late work rather than noise level. Please describe the type of noise, the equipment used (if known), and the time it occurred.</p></div>'
+    markup_equipment_noise:
+      '#type': webform_markup
+      '#states':
+        visible:
+          ':input[name="report_noise_type[select]"]':
+            value: 'Landscape equipment, such as lawn mowers or leaf blowers'
+      '#markup': '<div class="alert alert--info next-steps"><h2>Information</h2><p>Equipment noise is allowed from <storng>7 a.m. to 6 p.m.</strong>, at lower neighborhood noise. Complaints are usually about early or late work rather than noise level. Please describe the type of noise, and the time it occurred.</p></div>'
+    report_noise_description:
+      '#type': textarea
+      '#title': 'Please add any additional information about the noise and what is causing it.'
+      '#required': true
+    report_issue_date:
+      '#type': date
+      '#title': 'Date issue last occurred'
+      '#description': '<p>if multiple dates, indicate the last date</p>'
+      '#description_display': before
+      '#required': true
+      '#date_date_format': ''
+    report_time_start:
+      '#type': webform_time
+      '#title': 'What time did the noise start?'
+      '#required': true
+      '#time_format': 'g:i A'
+      '#step': ''
+    report_time_end:
+      '#type': webform_time
+      '#title': 'What time did the noise stop?'
+      '#required': true
+      '#time_format': 'g:i A'
+      '#step': ''
+    report_other_dates_times:
+      '#type': textarea
+      '#title': 'What other dates and times have you heard the noise?'
+      '#maxlength': 80
+    contact_address:
+      '#type': portland_address_verifier
+      '#title': 'Where are you hearing the noise from?'
+      '#location_address__title': 'Your Address'
+      '#required': true
+    computed_complainant_address:
+      '#type': webform_computed_twig
+      '#title': 'Computed Complainant Address'
+      '#display_on': none
+      '#mode': text
+      '#template': '{{ data.contact_address.location_address }}, {{ data.contact_address.location_city }} {{ data.contact_address.location_zip }}'
+      '#whitespace': trim
+    markup_same_address:
+      '#type': webform_markup
+      '#states':
+        visible:
+          ':input[name="hidden_same_address"]':
+            value: 'true'
+      '#markup': '<div class="alert alert--info next-steps"><h2>Next Steps</h2><p>The noise you are trying to report appears to be coming from the same property as where you live. If you believe this is an error, please go back and check your answers to the questions about your location and the source of the noise.</p><p>A situation where someone is complaining about noise coming from the same property is considered a landlord/tenant issue and is not handled by the City''s Noise Program. We recommend reaching out to the landlord, property manager, or building association for assistance addressing this issue. It is the responsibility of the property manager or landlord to resolve issues between tenants within their property. If you feel as though your concerns are not addressed or resolved, you may want to contact <a href="http://www.oregoncat.org/">Community Alliance of Tenants</a> to learn more about your rights as a tenant.</p><p>You can also file a Police Report through the Public Safety Non-Emergency Line at <a href="tel:+15038233333">503-823-3333</a> using the term "disturbing the peace". Portland Police Bureau officers may be able to respond if the issue is occurring after 10 p.m. or before 7 a.m. and at the time of your call. Officers may not be unable to respond to daytime concerns. When you call, you can ask whether an Officer will be dispatched to your location.</p><p>If you have additional questions, please call the Noise Program at <a href="tel:+15038237350">503-823-7350</a> between 8:30 a.m. and 5:00 p.m.</p></div>'
+    computed_noise_subtype:
+      '#type': webform_computed_twig
+      '#title': 'Computed - Noise Subtype'
+      '#display_on': none
+      '#mode': text
+      '#template': |
+        {% if data.report_alarm_type and data.report_alarm_type is not iterable %}
+          {{ data.report_alarm_type }}
+        {% elseif data.report_vehicle_noise_type and data.report_vehicle_noise_type is not iterable %}
+          {{ data.report_vehicle_noise_type }}
+        {% elseif data.report_tools_equipment_type and data.report_tools_equipment_type is not iterable %}
+          {{ data.report_tools_equipment_type }}
+        {% elseif data.report_landscape_equipment_type and data.report_landscape_equipment_type is not iterable %}
+          {{ data.report_landscape_equipment_type }}
+        {% elseif data.report_sports_type and data.report_sports_type is not iterable %}
+          {{ data.report_sports_type }}
+        {% elseif data.report_train_type and data.report_train_type is not iterable %}
+          {{ data.report_train_type }}
+        {% elseif data.report_trucks_buses_type and data.report_trucks_buses_type is not iterable %}
+          {{ data.report_trucks_buses_type }}
+        {% else %}
+          No Subtype
+        {% endif %}
+    hidden_same_address:
+      '#type': hidden
+      '#title': 'Hidden - Same Address'
+      '#default_value': 'false'
+  page_final_steps:
+    '#type': webform_wizard_page
+    '#title': 'Final Steps'
+    computed_stop_message:
+      '#type': webform_computed_twig
+      '#title': 'Computed Stop Message'
+      '#title_display': none
+      '#display_on': form
+      '#mode': html
+      '#template': |-
+        {% if data.report_noise_type == "Aircraft, including planes, helicopters, and drones" %}
+          <!-- Aircraft, including planes, helicopters, and drones -->
+          <div class="cloudy-alert alert--info next-steps">
+              <h2>
+                  Next Steps
+              </h2>
+        			<p>
+        					Noise from airplanes and helicopters is managed by the <a href="https://www.portofportland.com/NoiseManagement">Port of Portland Noise Management Office</a>. To submit a complaint, fill out an <a href="https://www.portofportland.com/NoiseManagement/ComplaintForm">Online Complaint Form</a> with the Port of Portland or call <a href="tel:+1-503-460-4100">503-460-4100</a> or <a href="tel:+1-800-938-6647">1-800-938-6647</a>.&nbsp;
+        			</p>
+        			<p>
+        					The Port of Portland recognizes the impact aircraft noise can have on our community and are committed to balancing the regional demand for air transportation services with the desire for a community with minimal aircraft noise.&nbsp;
+        			</p>
+        			<p class="mb-0">
+        					<em>While this type of noise is not regulated by the City of Portland's </em><a href="/code/18"><em>Noise Code</em></a><em>, information about your concern will be shared with the City of Portland's Noise Program and Noise Review Board so they can better understand overall noise issues in the community.</em>
+        			</p>
+          </div>
+
+        {% elseif data.report_alarm_car_location == "On the street" %}
+          <!-- On the street -->
+          <div class="cloudy-alert alert--info next-steps">
+              <h2>
+                  Next Steps
+              </h2>
+        			<p>
+        					The <a href="/ppd/noise">Noise Program</a> is not able to respond to incidents not tied to a specific property or location, including noise from vehicles in the street or public right-of-way.&nbsp;
+        			</p>
+        			<p>
+        					For mobile noise issues such as that from a vehicle alarm, horn, or stereo, you may wish to contact the Public Safety Non-Emergency Line at <a href="tel:+1-503-823-3333">503-823-3333</a>. When contacting non-emergency about vehicle-related incidents, please be prepared to provide identifying information such as vehicle make, model, color, and license plate number and state.&nbsp;
+        			</p>
+        			<p class="mb-0">
+        					If the noise is associated with an campsite or occupied vehicle or RV, you can report it to the through the Homelessness and Urban Camping Impact Reduction Program's <a href="/homelessness-impact-reduction/report-campsite">Report a Campsite form</a>, and note the noise issue in the Additional Information box.
+        			</p>
+        	</div>
+
+        {% elseif data.report_noise_type == "Animals, including dogs and chickens" %}
+          <!-- Animals, including dogs and chickens -->
+          <div class="cloudy-alert alert--info next-steps">
+              <h2>
+                  Next Steps
+              </h2>
+        			<p>
+        					Multnomah County enforces issues related to animals in the City of Portland. For noise issues related to:
+        			</p>
+        			<p>
+        					<strong>Dogs and cats:</strong> Multnomah County Animal Services has resources dedicated specifically to addressing livability issues arising from dogs, cats, and other pets. We encourage you to visit their <a href="https://www.multcopets.org/animal-nuisances">online resources</a> for information on next steps and to contact their offices at 503-988-7387 with any additional questions. Typically, Animal Services does not get involved in a barking dog or pet nuisance issue until you have taken <a href="https://www.multcopets.org/barking-dogs-other-noise-nuisances">initial steps to attempt to resolve the issue</a> which may include attempting to talk to the owner, sending out a letter to the owner, trying neighborhood mediation and providing documentation of the issue.
+        			</p>
+        			<p>
+        					<strong>Licensed animal facilities: </strong>If the noise is coming from an animal-related business, such as a boarding facility or dog daycare, please [go back and select a different option?]&nbsp;
+        			</p>
+        			<p>
+        					<strong>Roosters, bees, or other farm animals:</strong> <a href="https://docs.google.com/forms/d/e/1FAIpQLSco5w9A0aOo0kKjo6RKQImd-FYuPF4hRL4gdgvOiwVUVP3D5A/viewform">Please report issues online</a> to Multnomah County Vector Control. For more information, see the <a href="https://www.multco.us/health/records-and-regulations/chickens-bees-farm-animals">Chickens, Bees, &amp; Farm Animals Rules</a> information page or contact <a href="https://www.multco.us/environmental-health-hazards/vector-control-code-enforcement">Vector Control</a> at 503-988-7700.
+        			</p>
+        			<p class="mb-0">
+        					<strong>Urban wildlife:</strong> The City of Portland does not regulate noise from urban wildlife such as frogs, coyotes, or birds. If you believe there is a safety issue relating to these animals, please review the resources provided by the <a href="https://www.multcopets.org/investigations-field-services">Multnomah County Animal Services Investigations &amp; Field Services Unit</a> as next steps vary based on the type of animal involved.
+        			</p>
+        	</div>  
+
+        {% elseif data.report_vehicle_noise_type == "Illegal street racing" %}
+
+          <div class="cloudy-alert alert--info next-steps">
+              <h2>
+                  Next Steps
+              </h2>
+        			<p class="mb-0">
+        					Street racing is a Class A traffic violation and should be reported to the Portland Police Bureau and Portland Bureau of Transportation as a <a href="/police/divisions/street-racing">non-urgent traffic safety concern</a>.
+        			</p>
+        	</div>  
+
+        {% elseif data.report_tools_equipment_location == "Highway construction on I-5, I-84, I-205, or I-405" %}
+
+          <div class="cloudy-alert alert--info next-steps">
+              <h2>
+                  Next Steps
+              </h2>
+        			<p>
+        					The Oregon Department of Transportation (ODOT) oversees highway construction projects. Call them at 1-888-275-6368 to report a concern.
+        			</p>
+        			<p>
+        					Due to limited staff and resources, the Noise Program cannot respond to complaints related to construction noise on an interstate or state highway.
+        			</p>
+        	</div>  
+
+        {% elseif data.report_location == "Fireworks or possible gunshots" %}
+
+          <div class="cloudy-alert alert--info next-steps">
+              <h2>
+                  Next Steps
+              </h2>
+        			<p>
+        					While <a href="/fire/your-safety/fireworks-banned-portland">the City of Portland banned fireworks in 2022</a>, the <a href="/ppd/noise">Noise Program</a> is not able to investigate fireworks complaints. Additionally, please do not call 911 or the non-emergency line to report fireworks. The 911 system must be kept open to respond to active fires, crimes in progress, and serious medical problems.&nbsp;
+        			</p>
+        			<p class="mb-0">
+        					If you are concerned that you may have heard gunshots, please call the Public Safety Non-Emergency Line at <a href="tel:+1-503-823-3333">503-823-3333</a> to report them. If you are witnessing a crime in progress, please call <a href="tel:911">911</a>.
+        			</p>
+        	</div>  
+
+        {% elseif data.	report_human_voice_amplified == "No" %}
+
+          <div class="cloudy-alert alert--info next-steps">
+              <h2>
+                  Next Steps
+              </h2>
+        			<p>
+        					The <a href="/code/18">Noise Code</a> does not regulate noise from human voices or human actions, activities, or behavior that does not involve a sound producing equipment or amplifier and the <a href="/ppd/noise">Noise Program</a> is not able to investigate these types of complaints.&nbsp;
+        			</p>
+        			<p class="mb-0">
+        					If the noise is coming from disorderly conduct, we encourage you to report the noise issue to the Public Safety Non-Emergency Line at <a href="tel:+1-503-823-3333">503-823-3333</a> and use the term “disturbing the peace.” Calling the non-emergency line for each incident establishes a history and creates documentation that police are responding to ongoing issues rather than an isolated event.
+        			</p>
+        	</div>  
+
+        {% elseif data.report_train_type == "Heavy rail, including Amtrak and freight trains" %}
+
+          <div class="cloudy-alert alert--info next-steps">
+              <h2>
+                  Next Steps
+              </h2>
+        			<p class="mb-0">
+        					Train activity is regulated by United State Federal Code. To help ensure safety of motorists and others, <a href="https://railroads.dot.gov/railroad-safety/divisions/highway-rail-crossing-and-trespasser-programs/train-horn-rulequiet-zones">trains are required to sound their horns</a> at between 96 to 110 decibels when approaching a rail crossing. To submit a complaint, contact the US Department of Transportation, Federal Railway Administration Region 8 at <a href="tel:+1-800-724-5998">1-800-724-5998</a>.
+        			</p>
+        	</div>  
+
+        {% elseif data.report_train_type == "MAX light rail" %}
+
+          <div class="cloudy-alert alert--info next-steps">
+              <h2>
+                  Next Steps
+              </h2>
+        			<p class="mb-0">
+        					The City's Noise Program does not handle noise from vehicles operating in public rights-of-way. We recommend <a href="https://trimet.org/contact/">contacting TriMet directly</a> to let them know directly how their buses or trains are impacting your neighborhood.
+        			</p>
+        	</div>  
+
+        {% elseif data.report_trucks_buses_type == "Buses" %}
+
+          <div class="cloudy-alert alert--info next-steps">
+              <h2>
+                  Next Steps
+              </h2>
+        			<p class="mb-0">
+        					The City's Noise Program does not handle noise from vehicles operating in a public right of way. We recommend contacting the bus company (<a href="https://trimet.org/contact/">TriMet</a>, <a href="https://greyhound.my.site.com/CustomerSelfServicePortal/s/customerservice?language=en_US">Greyhound</a>, <a href="https://mail.c-tran.com/contact-us/customer-service">C-TRAN</a>) directly to let them know directly how their buses are impacting your neighborhood.
+        			</p>
+        	</div>  
+          
+        {% elseif data.report_noise_type == "Watercraft" %}
+          <!-- Boat -->
+          <div class="cloudy-alert alert--info next-steps">
+              <h2>
+                  Next Steps
+              </h2>
+              <p class="mb-0">
+              	To submit a complaint, contact the Harbor Master at <a href="tel:+1-503-241-8283">503-241-8283</a>.
+              </p>
+          </div>
+        {% endif %}
+      '#whitespace': spaceless
+    container_submission_allowed:
+      '#type': container
+      '#states':
+        invisible:
+          ':input[name="computed_stop_message"]':
+            '!value': ''
+      violation_determination_markup:
+        '#type': webform_markup
+        '#markup': '<p>The Noise Program will review your report to determine whether this specific noise is a violation of the City''s <a href="https://www.portland.gov/code/18">Noise Code</a>. If it does not, the case will be closed. If it does, the Noise Program can consider your report to be a formal Noise Complaint and will issue a warning letter to the source of the noise. If that does not resolve the issue, a Noise Control Officer will make direct contact with the source of the noise to try and resolve it and may possibly issue a citation.</p>'
+      report_testify_code_hearings:
+        '#type': radios
+        '#title': 'Would you like to submit a formal noise complaint if the noise you are reporting is found to be a violation of the City’s Noise Code?'
+        '#options':
+          'Yes, I want to file a formal noise complaint and am willing to testify at a Noise Control hearing.': 'Yes, I want to file a formal noise complaint and am willing to testify at a Noise Control hearing.'
+          'Yes, I want to file a formal noise complaint but do NOT want to testify.': 'Yes, I want to file a formal noise complaint but do NOT want to testify.'
+          'No, I simply want the City to be aware of this issue but do not want to submit a formal complaint.': 'No, I simply want the City to be aware of this issue but do not want to submit a formal complaint.'
+        '#options_display': side_by_side
+        '#required': true
+      section_contact:
+        '#type': webform_section
+        '#title': 'Your Contact Information'
+        contact_name:
+          '#type': textfield
+          '#title': 'Full Name'
+          '#description': '<p>In order for a case to be considered, a full name must be provided.</p>'
+          '#required': true
+        contact_email:
+          '#type': textfield
+          '#title': Email
+          '#description': 'We will use your email address to respond to your report or request if needed.'
+          '#required': true
+          '#pattern': '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+          '#pattern_error': 'Please enter a correctly formatted email address, such as myname@example.com.'
+        contact_phone:
+          '#type': textfield
+          '#title': Phone
+          '#input_mask': '(999) 999-9999'
+          '#required': true
+      section_public_records_statement:
+        '#type': webform_section
+        '#title': 'Public Records Statement'
+        public_records_statement_standard:
+          '#type': webform_markup
+          '#markup': 'Information you provide to the City is a public record and may be subject to release under <a data-renderer-mark="true" href="/attorney/oregon-public-records-law">Oregon Public Records Law</a>. This law classifies certain information as available to the public on request. See our <a data-renderer-mark="true" href="/help/about/privacy">privacy statement</a> for more information.'
+      actions_01:
+        '#type': webform_actions
+        '#title': 'Submit button(s)'
+  support_agent_use_only:
+    '#type': portland_support_agent_widget
+    '#title': 'Support Agent Use Only'
+    '#zendesk_request_number__access': false
+    '#employee_notes_panel__access': false
+    '#escalate_issue__access': false
+    '#test_submission__access': false
+    '#access_create_roles':
+      - authenticated
+    '#access_update_roles':
+      - support_agent
+      - administrator
+    '#access_view_roles':
+      - support_agent
+      - administrator
+  computed_employee_email:
+    '#type': webform_computed_twig
+    '#title': 'Computed - Employee Email'
+    '#display_on': none
+    '#mode': text
+    '#template': '{{ data.support_agent_use_only.employee_email|raw }}'
+css: ''
+javascript: "(function ($, Drupal) {\r\n  Drupal.behaviors.detectSameAddress = {\r\n    attach(context) {\r\n      once(\r\n        \"detectSameAddress\",\r\n        \"input[name='contact_address[location_zip]']\",\r\n        context\r\n      ).forEach((complainantZipEl) => {\r\n        $(complainantZipEl).on(\"change\", () => {\r\n          const noiseLocationAddress = $(\"input[name=computed_address]\").val();\r\n          const complainantAddress = `${$(\r\n            \"input[name='contact_address[location_address]']\"\r\n          ).val()}, ${$(\r\n            \"input[name='contact_address[location_city]']\"\r\n          ).val()} ${$(complainantZipEl).val()}`;\r\n          if (\r\n            complainantAddress.toUpperCase().replace(/\\s/g, \"\") ===\r\n            noiseLocationAddress.toUpperCase().replace(/\\s/g, \"\")\r\n          ) {\r\n            $(\"input[name=hidden_same_address]\").val(\"true\").trigger(\"change\");\r\n          } else {\r\n            $(\"input[name=hidden_same_address]\").val(\"false\").trigger(\"change\");\r\n          }\r\n        });\r\n      });\r\n    },\r\n  };\r\n\r\n  Drupal.behaviors.noiseFormSubmit = {\r\n    attach(context) {\r\n      once(\r\n        \"noiseFormSubmit\",\r\n        \"input[name=computed_stop_message]\",\r\n        context\r\n      ).forEach((computedStopMessage) => {\r\n        // If we load the \"Final Steps\" page, we submit the form automatically.\r\n        const form = document.querySelector(\".webform-submission-form\");\r\n\r\n        if (computedStopMessage && computedStopMessage.value !== \"\") {\r\n          const body = new URLSearchParams(new FormData(form));\r\n          body.append(\"op\", \"Submit\");\r\n          fetch(form.action, {\r\n            method: \"post\",\r\n            body: body,\r\n          });\r\n        }\r\n      });\r\n    },\r\n  };\r\n})(jQuery, Drupal);\r\n"
+settings:
+  ajax: true
+  ajax_scroll_top: form
+  ajax_progress_type: ''
+  ajax_effect: ''
+  ajax_speed: null
+  page: true
+  page_submit_path: ''
+  page_confirm_path: ''
+  page_theme_name: ''
+  form_title: source_entity_webform
+  form_submit_once: false
+  form_open_message: ''
+  form_close_message: ''
+  form_exception_message: ''
+  form_previous_submissions: true
+  form_confidential: false
+  form_confidential_message: ''
+  form_disable_remote_addr: false
+  form_convert_anonymous: false
+  form_prepopulate: false
+  form_prepopulate_source_entity: false
+  form_prepopulate_source_entity_required: false
+  form_prepopulate_source_entity_type: ''
+  form_unsaved: false
+  form_disable_back: false
+  form_submit_back: false
+  form_disable_autocomplete: false
+  form_novalidate: false
+  form_disable_inline_errors: false
+  form_required: false
+  form_autofocus: false
+  form_details_toggle: false
+  form_reset: false
+  form_access_denied: default
+  form_access_denied_title: ''
+  form_access_denied_message: ''
+  form_access_denied_attributes: {  }
+  form_file_limit: ''
+  form_attributes: {  }
+  form_method: ''
+  form_action: ''
+  share: false
+  share_node: false
+  share_theme_name: ''
+  share_title: true
+  share_page_body_attributes: {  }
+  submission_label: ''
+  submission_exception_message: ''
+  submission_locked_message: ''
+  submission_log: false
+  submission_excluded_elements: {  }
+  submission_exclude_empty: false
+  submission_exclude_empty_checkbox: false
+  submission_views: {  }
+  submission_views_replace: {  }
+  submission_user_columns: {  }
+  submission_user_duplicate: false
+  submission_access_denied: default
+  submission_access_denied_title: ''
+  submission_access_denied_message: ''
+  submission_access_denied_attributes: {  }
+  previous_submission_message: ''
+  previous_submissions_message: ''
+  autofill: false
+  autofill_message: ''
+  autofill_excluded_elements: {  }
+  wizard_progress_bar: true
+  wizard_progress_pages: false
+  wizard_progress_percentage: false
+  wizard_progress_link: false
+  wizard_progress_states: false
+  wizard_start_label: ''
+  wizard_preview_link: false
+  wizard_confirmation: true
+  wizard_confirmation_label: ''
+  wizard_auto_forward: true
+  wizard_auto_forward_hide_next_button: false
+  wizard_keyboard: true
+  wizard_track: ''
+  wizard_prev_button_label: ''
+  wizard_next_button_label: ''
+  wizard_toggle: false
+  wizard_toggle_show_label: ''
+  wizard_toggle_hide_label: ''
+  wizard_page_type: container
+  wizard_page_title_tag: h2
+  preview: 0
+  preview_label: ''
+  preview_title: ''
+  preview_message: ''
+  preview_attributes: {  }
+  preview_excluded_elements: {  }
+  preview_exclude_empty: true
+  preview_exclude_empty_checkbox: false
+  draft: none
+  draft_multiple: false
+  draft_auto_save: false
+  draft_saved_message: ''
+  draft_loaded_message: ''
+  draft_pending_single_message: ''
+  draft_pending_multiple_message: ''
+  confirmation_type: inline
+  confirmation_url: ''
+  confirmation_title: ''
+  confirmation_message: '<p>Your report has been received.</p>'
+  confirmation_attributes: {  }
+  confirmation_back: false
+  confirmation_back_label: ''
+  confirmation_back_attributes: {  }
+  confirmation_exclude_query: false
+  confirmation_exclude_token: false
+  confirmation_update: false
+  limit_total: null
+  limit_total_interval: null
+  limit_total_message: ''
+  limit_total_unique: false
+  limit_user: null
+  limit_user_interval: null
+  limit_user_message: ''
+  limit_user_unique: false
+  entity_limit_total: null
+  entity_limit_total_interval: null
+  entity_limit_user: null
+  entity_limit_user_interval: null
+  purge: none
+  purge_days: null
+  results_disabled: false
+  results_disabled_ignore: false
+  results_customize: false
+  token_view: false
+  token_update: false
+  token_delete: false
+  serial_disabled: false
+access:
+  create:
+    roles:
+      - anonymous
+      - authenticated
+    users: {  }
+    permissions: {  }
+  view_any:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  update_any:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  delete_any:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  purge_any:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  view_own:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  update_own:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  delete_own:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  administer:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  test:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  configuration:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+handlers:
+  smartsheet_add_row_to_existing_sheet:
+    id: smartsheet_add_row
+    handler_id: smartsheet_add_row_to_existing_sheet
+    label: 'Smartsheet: add row to existing sheet'
+    notes: ''
+    status: true
+    conditions: {  }
+    weight: 0
+    settings:
+      column_mappings:
+        3193731986706308: ''
+        1982355606818692: ''
+        4038174096707460: ''
+        4736540368654212: ''
+        1768911013105540: ''
+        6486567515541380: ''
+        2797649869623172: report_noise_type
+        8325170669244292: computed_noise_subtype
+        6917092052782980: computed_address
+        7398410547318660: ''
+        7528956078280580: computed_location_name
+        8639408627732356: computed_location_coordinates
+        5427273115324292: ''
+        8428857727078276: report_noise_description
+        2723660768169860: report_landscape_equipment_main_concern
+        2966926341918596: report_issue_date
+        2498940799766404: report_time_start
+        4639963743211396: report_time_end
+        6520532162006916: report_other_dates_times
+        4681966912753540: contact_name
+        2936131426406276: computed_complainant_address
+        4222776389881732: contact_phone
+        6727675405094788: contact_email
+        4725827118780292: report_testify_code_hearings
+        8894479426604932: ''
+        3730683541540740: report_alarm_car_location
+        5982483355225988: report_vehicle_location
+        8234283168911236: report_tools_equipment_location
+        915933774434180: report_tools_equipment_company
+        5419533401804676: report_human_voice_amplified
+        3167733588119428: report_human_voice_amplified_location
+        7671333215489924: report_human_voice_amplified_source
+        6545433308647300: report_landscape_equipment_operator
+        2041833681276804: report_landscape_equipment_company_name
+        4293633494962052: report_landscape_equipment_main_concern
+        8797233122332548: report_music_amplified
+        212246332657540: report_music_amplified_location
+        4715845960028036: report_music_source
+        2464046146342788: report_music_noise_distance
+        6967645773713284: report_sports_location
+        1338146239500164: report_truck_buses_loading
+        189466042126212: ''
+        4327997693972356: computed_employee_email
+      multiple_rows_enable: null
+      multiple_rows_field: ''
+      multiple_rows_separator: ''
+      row_location: toBottom
+      sheet_id: '6759739299942276'
+      upload_attachments: '1'
+variants: {  }

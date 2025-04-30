@@ -29,8 +29,10 @@ AddressVerifierView.prototype.renderAddressVerifier = function () {
 
     var self = this; // preserve refernece to "this" for use inside functions.
 
-    this._setUpVerifyButton();
-    this._setUpInputFieldAndAutocomplete();
+    if (this.settings && this.settings.address_suggest) {
+        this._setUpVerifyButton();
+        this._setUpInputFieldAndAutocomplete();
+    }
     this._setUpUnitNumberField();
 
 };
@@ -185,16 +187,19 @@ AddressVerifierView.prototype._setVerified = function (item, view = this) {
     // first reset
     view._resetVerified(view.$checkmark, view.$button);
 
-    // NOTE: Suggest API might return a positive match even if the address isn't exactly the same.
-    // (e.g. "123 Baldwin St N" vs "123 N Baldwin ST"). If it's not an exact match,
+    // if configured, require only Portland addresses
+    if (view.settings.require_portland_city_limits  && item.city.toUpperCase() != "PORTLAND") {
+        view._showOutOfBoundsErrorModal(item.fullAddress);
+        view.$element.find('#location_address').val('');
+        return false;
+    }
+
     view.$checkmark.removeClass("invisible").addClass("fa-solid fa-check verified");
     view.$status.text(VERIFIED_MESSAGE).removeClass("invisible").addClass("verified");
 
     view.$button.prop("disabled", "disabled");
     view.$button.removeClass("button--primary");
     view.$button.addClass("disabled button--info");
-
-    // TODO: if configured, set the taxlot id
 
     // populate hidden sub-elements for address data
     view.$element.find('#location_address').val(item.street).trigger('change');
@@ -219,7 +224,7 @@ AddressVerifierView.prototype._setVerified = function (item, view = this) {
     view.$element.find('#location_verification_status').val("Verified").trigger('change');
     view.$element.find('#location_data').val(JSON.stringify(item));
     view.isVerified = true;
-    console.log(JSON.stringify(item));
+    //console.log(JSON.stringify(item));
 }
 
 AddressVerifierView.prototype._setStateByLabel = function (view, state) {
@@ -306,6 +311,23 @@ AddressVerifierView.prototype._showNotFoundModal = function () {
     var self = this;
     var inputVal = self.$input.val().trim();
     this.$notFoundModal.html(`<p><strong>${this.settings.not_verified_heading}</strong> ${this.settings.not_verified_reasons}</p><p>${this.settings.not_verified_remedy}</p></p>`);
+    Drupal.dialog(this.$notFoundModal, {
+        width: '600px',
+        buttons: [{
+            text: "Okay",
+            class: 'btn-default',
+            click: function () {
+                self.$notFoundModal.dialog('close');
+            }
+        }]
+    }).showModal();
+    this.$notFoundModal.removeClass('visually-hidden');
+}
+
+AddressVerifierView.prototype._showOutOfBoundsErrorModal = function (address) {
+    var self = this;
+    var inputVal = self.$input.val().trim();
+    this.$notFoundModal.html(`<p><strong>${this.settings.out_of_bounds_message}</strong></p><p>${address}</p>`);
     Drupal.dialog(this.$notFoundModal, {
         width: '600px',
         buttons: [{

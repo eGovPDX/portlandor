@@ -69,6 +69,7 @@ elements: |-
         'Medical event/first aid': 'Medical event/first aid'
         'Park violation or safety issue': 'Park violation or safety issue'
         'Trail or facility hazard': 'Trail or facility hazard'
+        'Vehicle damage or collision': 'Vehicle damage or collision'
       '#required': true
     report_issue_type_crime:
       '#type': select
@@ -126,8 +127,6 @@ elements: |-
         DOLA: DOLA
         'Drug use/paraphernalia': 'Drug use/paraphernalia'
         Hate/bias: Hate/bias
-        'Vehicle damage - employee': 'Vehicle damage - employee'
-        'Vehicle damage - public': 'Vehicle damage - public'
         'Verbal threats or harassment': 'Verbal threats or harassment'
         'Other Park Rule (Title 20) Violation': 'Other Park Rule (Title 20) Violation'
         Other: Other
@@ -147,6 +146,16 @@ elements: |-
         visible:
           ':input[name="report_issue_category"]':
             value: 'Trail or facility hazard'
+    report_issue_type_vehicle:
+      '#type': select
+      '#title': 'What type of vehicle was damaged?'
+      '#options':
+        Employee: Employee
+        Public: Public
+      '#states':
+        visible:
+          ':input[name="report_issue_category"]':
+            value: 'Vehicle damage or collision'
   container_continue:
     '#type': container
     '#states':
@@ -164,6 +173,9 @@ elements: |-
             filled: true
         - or
         - ':input[name="report_issue_type_trail_facility_hazard"]':
+            filled: true
+        - or
+        - ':input[name="report_issue_type_vehicle"]':
             filled: true
     incident_details:
       '#type': webform_section
@@ -204,7 +216,7 @@ elements: |-
         '#file_preview': name
         '#max_filesize': '30'
         '#file_extensions': 'jpg jpeg png'
-        '#file_name': 'report_[webform_submission:sid]'
+        '#file_name': 'report_[webform_submission:uuid]'
         '#sanitize': true
         '#max_resolution': 1280x1280
         '#attachment_image_style': webform_report_uploaded_image
@@ -314,21 +326,21 @@ elements: |-
       markup_pre_submit:
         '#type': webform_markup
         '#markup': '<div class="alert alert--info next-steps"><h2>Please Note</h2><ul><li>For guest accidents and employee injuries, additional forms are needed. Please refer to the Red Book.&nbsp;</li><li>For criminal activity, remember to also fill out an online police report.</li></ul><p><strong>Except for specific health/injury information for employees or visitors, all submissions are considered public record.</strong> If you have questions, please reach out to the safety team or a supervisor by phone before submitting.</p></div>'
+      support_agent_use_only:
+        '#type': portland_support_agent_widget
+        '#title': 'Internal Use Only'
+        '#access_create_roles':
+          - authenticated
+        '#zendesk_request_number__access': false
+        '#employee_notes_panel__access': false
+        '#escalate_issue__access': false
+        '#support_agent_widget_title__markup': '<h2>Internal Use Only</h2>'
     actions:
       '#type': webform_actions
       '#title': 'Submit button(s)'
   request_ticket_id:
     '#type': hidden
     '#title': 'Zendesk Ticket ID'
-  support_agent_use_only:
-    '#type': portland_support_agent_widget
-    '#title': 'Internal Use Only'
-    '#access_create_roles':
-      - authenticated
-    '#zendesk_request_number__access': false
-    '#employee_notes_panel__access': false
-    '#escalate_issue__access': false
-    '#support_agent_widget_title__markup': '<h2>Internal Use Only</h2>'
   computed_issue_description:
     '#type': webform_computed_twig
     '#title': 'Computed Issue Description'
@@ -363,6 +375,10 @@ elements: |-
 
       {% if data.report_issue_type_trail_facility_hazard and data.report_issue_type_trail_facility_hazard is not iterable %}
         <p><strong>What type of trail/facility hazard</strong>: {{ data.report_issue_type_trail_facility_hazard }}</p>
+      {% endif %}
+
+      {% if data.report_issue_type_vehicle and data.report_issue_type_vehicle is not iterable %}
+        <p><strong>What type of vehicle</strong>: {{ data.report_issue_type_vehicle }}</p>
       {% endif %}
 
       <p><strong>Incident details</strong>:<br>{{ data.report_description }}</p>
@@ -549,8 +565,8 @@ settings:
   entity_limit_total_interval: null
   entity_limit_user: null
   entity_limit_user_interval: null
-  purge: none
-  purge_days: null
+  purge: all
+  purge_days: 14
   results_disabled: false
   results_disabled_ignore: false
   results_customize: false
@@ -634,6 +650,8 @@ handlers:
       ticket_id_field: request_ticket_id
       ticket_fork_field: ''
       ticket_form_id: '24762621756055'
+      is_child_incident: ''
+      parent_ticket_id_field: ''
   test_zendesk_new_request:
     id: zendesk
     handler_id: test_zendesk_new_request
@@ -662,6 +680,8 @@ handlers:
       ticket_id_field: request_ticket_id
       ticket_fork_field: ''
       ticket_form_id: '24762621756055'
+      is_child_incident: ''
+      parent_ticket_id_field: ''
   email:
     id: email
     handler_id: email

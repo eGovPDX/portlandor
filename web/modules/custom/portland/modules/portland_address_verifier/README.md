@@ -30,6 +30,14 @@ Allowed values: street|mailing|any
 Default value: "any"
 NOTE: This parameter is not yet implemented; currently defaults to "any"
 
+**address_suggest**
+Controls whether address suggestions are provided after user starts typing in address field. The default is to enable this
+behavior, but it can be disabled in use cases where the address may not be in the Portland area (it can only suggest
+addresses that are in the PortlandMaps database). IMPORTANT NOTE: When suggestions are disabled and the Verify button is
+not present, the location_full_address does not get populated. The individual address parts need to be called individually.
+Allowed values: 1|0
+Default value: 1
+
 **show_mailing_label**
 Displays the address as it would appear on a mailing label. Can be used for visual inspection of the full address prior to submission.
 Allowed values: 1|0
@@ -37,6 +45,11 @@ Default value: 0
 
 **find_unincorporated**
 Some addresses are technically outside of incorporated areas but are related by zipcode to a nearby city. If this property is true, an additional call is made to the Intersects API to retrieve the zipcode city and use that instead of "UNINCORPORATED."
+Allowed values: 1|0
+Default value: 0
+
+**require_portland_city_limits**
+When enabled, only allows addresses within Portland city limits.
 Allowed values: 1|0
 Default value: 0
 
@@ -48,3 +61,7 @@ The path of the property to capture from the JSON returned by the secondary_quer
 
 **secondary_query_capture_field**
 The ID of the form field into which the captured value should be stored. All 3 properties (secondary_query_url, secondary_query_capture_property, and secondary_query_capture_field) must be set for this to work.
+
+**out_of_bounds_message**
+The message that is displayed if an address is outside the city boundary when require_portland_city_limits is enabled.
+Default value: "The address you provided is outside of the Portland city limits. Please try a different address."

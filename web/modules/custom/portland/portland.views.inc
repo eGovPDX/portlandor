@@ -4,6 +4,16 @@
  * Implements hook_views_data_alter().
  */
 function portland_views_data_alter(array &$data) {
+  $data['node']['editoria11y_results'] = [
+    'title' => t('Editoria11y results count'),
+    'group' => t('Content'),
+    'field' => [
+      'title' => t('Editoria11y results count'),
+      'help' => t('Shows count of Editoria11y accessibility results for this node.'),
+      'id' => 'node_editoria11y_results',
+    ],
+  ];
+
   $data['node']['has_translations'] = [
     'title' => t('Has translations'),
     'group' => t('Content'),
@@ -11,16 +21,6 @@ function portland_views_data_alter(array &$data) {
       'title' => t('Has translations'),
       'help' => t('Whether this node has translations in non-default languages.'),
       'id' => 'node_has_translations',
-    ],
-  ];
-
-  $data['node']['node_council_document_impact_analysis'] = [
-    'title' => t('Council document impact analysis status'),
-    'group' => t('Content'),
-    'filter' => [
-      'title' => t('Council document impact analysis status'),
-      'help' => t('For E-Council: Whether this council document needs or has an impact statement of a specific type.'),
-      'id' => 'node_council_document_impact_analysis',
     ],
   ];
 

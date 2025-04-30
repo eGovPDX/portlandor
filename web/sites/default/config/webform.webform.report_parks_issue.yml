@@ -650,7 +650,7 @@ elements: |-
                 '#file_preview': 'medium:image'
                 '#max_filesize': '30'
                 '#file_extensions': 'gif jpg png svg jpeg'
-                '#file_name': 'report_[webform_submission:sid]'
+                '#file_name': 'report_[webform_submission:uuid]'
                 '#sanitize': true
                 '#max_resolution': 1280x1280
                 '#attachment_image_style': webform_report_uploaded_image
@@ -688,21 +688,26 @@ elements: |-
                 '#title': 'Public Records Statement'
                 public_records_statement_standard:
                   '#type': webform_markup
-                  '#markup': 'Information you provide to the City is a public record and may be subject to release under Oregon&rsquo;s <a data-renderer-mark="true" href="https://www.doj.state.or.us/oregon-department-of-justice/public-records/attorney-generals-public-records-and-meetings-manual/i-public-records/#:~:text=Under%20Oregon''s%20Public%20Records%20Law,committee%20of%20the%20Legislative%20Assembly" title="https://www.doj.state.or.us/oregon-department-of-justice/public-records/attorney-generals-public-records-and-meetings-manual/i-public-records/#:~:text=Under%20Oregon''s%20Public%20Records%20Law,committee%20of%20the%20Legislative%20Assembly">Public Records Law</a>. This law classifies certain information as available to the public on request. See our <a data-renderer-mark="true" href="/help/about/privacy" title="https://www.portland.gov/help/about/privacy">privacy statement</a> for more information.'
+                  '#markup': 'Information you provide to the City is a public record and may be subject to release under <a data-renderer-mark="true" href="/attorney/oregon-public-records-law">Oregon Public Records Law</a>. This law classifies certain information as available to the public on request. See our <a data-renderer-mark="true" href="/help/about/privacy">privacy statement</a> for more information.'
+              support_agent_use_only:
+                '#type': portland_support_agent_widget
+                '#title': 'Customer Service Use Only'
+                '#access_create_roles':
+                  - authenticated
+                '#access_update_roles':
+                  - support_agent
+                  - administrator
+                '#access_view_roles':
+                  - support_agent
+                  - administrator
+                '#employee_notes_panel__access': false
+                '#escalate_issue__description': '<strong>311 CSRs: ALWAYS CHECK THIS BOX. The report will be sent to Rangers supervisors since Ranger Dispatch is unavailable.</strong>'
+                '#employee_email__wrapper_attributes':
+                  class:
+                    - d-none
               actions:
                 '#type': webform_actions
                 '#title': 'Submit button(s)'
-  support_agent_use_only:
-    '#type': portland_support_agent_widget
-    '#title': 'Customer Service Use Only'
-    '#access_create_roles':
-      - authenticated
-    '#access_update_roles':
-      - support_agent
-      - administrator
-    '#access_view_roles':
-      - support_agent
-      - administrator
   computed_priority:
     '#type': webform_computed_twig
     '#title': 'Computed Priority'
@@ -765,10 +770,10 @@ elements: |-
     '#mode': text
     '#template': |
       {% if data.report_urgent == "Yes" %}
-      Ranger Request{{ data.report_location.location_region_id ? ' (' ~ data.report_location.location_region_id ~ ')' : '' }}: 
+      Ranger Request{{ data.report_location.location_region_id ? ' (' ~ data.report_location.location_region_id ~ ')' : '' }}:
       {{ data.report_staff_issue_type is iterable ? '' : webform_token('[webform_submission:values:report_staff_issue_type]', webform_submission) }}
       {% else %}
-      Ranger Request{{ data.report_location.location_region_id ? ' (' ~ data.report_location.location_region_id ~ ')' : '' }}: 
+      Ranger Request{{ data.report_location.location_region_id ? ' (' ~ data.report_location.location_region_id ~ ')' : '' }}:
       {{ data.report_issue_type is iterable ? '' : webform_token('[webform_submission:values:report_issue_type]', webform_submission) }}
       {% endif %}
     '#whitespace': trim
@@ -789,7 +794,7 @@ elements: |-
     '#template': |
       {% if data.report_urgent == "Yes" %}
         <strong>THIS IS AN URGENT LIFE-THREATENING ISSUE</strong><br><br>
-        
+
         {% if data.report_staff_issue_type %}
           <strong>Type of fire or medical issue</strong> {{ data.report_staff_issue_type is iterable ? '' : webform_token('[webform_submission:values:report_staff_issue_type]', webform_submission) }}<br><br>
         {% endif %}
@@ -812,7 +817,7 @@ elements: |-
       	  {% if data.urgent_contact_telephone_instructions %}<i>{{ data.urgent_contact_telephone_instructions }}</i><br>{% endif %}
       	  {% if data.urgent_callback_requested %}CALLBACK REQUESTED<br>{% endif %}
           {% endif %}
-        
+
         {% endif %}
 
       {% else %}
@@ -840,10 +845,10 @@ elements: |-
         {% if data.report_location.location_lat and data.report_location.location_lon %}
           Lat/Lon: <a href="https://www.google.com/maps/place/{{ data.report_location.location_lat }},{{ data.report_location.location_lon }}">{{ data.report_location.location_lat }},{{ data.report_location.location_lon }}</a><br>
         {% endif %}
-        
+
         <br>
         <a href="https://www.portlandmaps.com/detail/property/{{ data.report_location.location_x }}_{{ data.report_location.location_y}}_xy/">View in PortlandMaps</a><br><br>
-        
+
         {% if data.report_issue_type %}
           <strong>What type of issue are you reporting?</strong> {{ data.report_issue_type is iterable ? '' : webform_token('[webform_submission:values:report_issue_type]', webform_submission) }}<br>
         {% endif %}
@@ -883,7 +888,7 @@ elements: |-
         {% if data.report_comments %}
           <strong>Additional comments:</strong> {{ data.report_comments }}<br>
         {% endif %}
-        
+
         {% if data.contact_name or data.contact_email or data.contact_telephone %}
           <br><strong>Contact information:</strong><br>
           {% if data.contact_name %}
@@ -897,7 +902,7 @@ elements: |-
       	  {% if data.contact_telephone_instructions %}<i>{{ data.contact_telephone_instructions }}</i><br>{% endif %}
       	  {% if data.contact_callback_requested %}CALLBACK REQUESTED<br>{% endif %}
           {% endif %}
-        
+
         {% endif %}
 
       {% endif %}
@@ -1132,6 +1137,8 @@ handlers:
       ticket_form_id: '13176953771287'
       recipient: ''
       ticket_fork_field: ''
+      is_child_incident: ''
+      parent_ticket_id_field: ''
   zendesk_new_request_normal_priority:
     id: zendesk
     handler_id: zendesk_new_request_normal_priority
@@ -1162,6 +1169,8 @@ handlers:
       ticket_form_id: '13176953771287'
       recipient: ''
       ticket_fork_field: ''
+      is_child_incident: ''
+      parent_ticket_id_field: ''
   zendesk_new_request_urgent_priority:
     id: zendesk
     handler_id: zendesk_new_request_urgent_priority
@@ -1192,6 +1201,8 @@ handlers:
       ticket_form_id: '13176953771287'
       recipient: ''
       ticket_fork_field: ''
+      is_child_incident: ''
+      parent_ticket_id_field: ''
   zendesk_update_customer_support_interaction_request_handler:
     id: zendesk_update_ticket
     handler_id: zendesk_update_customer_support_interaction_request_handler
@@ -1216,6 +1227,7 @@ handlers:
       custom_fields: "8692493739543: '[webform_submission:values:report_ticket_id]'"
       ticket_id_field: zendesk_request_number
       ticket_form_id: ''
+      skip_attachments: false
   zendesk_new_request_1:
     id: zendesk
     handler_id: zendesk_new_request_1
@@ -1244,4 +1256,6 @@ handlers:
       ticket_id_field: report_ticket_id
       ticket_fork_field: ''
       ticket_form_id: '13176953771287'
+      is_child_incident: ''
+      parent_ticket_id_field: ''
 variants: {  }

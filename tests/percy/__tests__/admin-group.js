@@ -21,7 +21,7 @@ describe('SuperAdmin user test', () => {
 
     if (process.env.CIRCLECI) {
       // On CI, the CI script will call terminus to retrieve login URL
-      login_url = process.env.KEVIN_LOGIN;
+      login_url = process.env.SUPERADMIN_LOGIN;
       await page.goto(login_url);
     }
     else {
@@ -41,6 +41,7 @@ describe('SuperAdmin user test', () => {
     async function () {
       try {
         let text_content = '', selector='';
+        await page.setDefaultNavigationTimeout(60000);
 
         // If a previous test failed without deleting the test group, delete it first
         await page.goto(`${HOME_PAGE}/percy-test-group/delete`);
@@ -63,7 +64,7 @@ describe('SuperAdmin user test', () => {
         await page.type('#edit-field-official-organization-name-0-value', 'Official name of Percy test group');
         await page.type('#edit-field-summary-0-value', 'This is a test summary for the Percy Test group');
         // Must expand the admin fields group in order to input Group Path
-        await page.click('#edit-group-administrative-fields-site');
+        await page.click('#edit-group-path-and-redirects');
         await page.type('#edit-field-group-path-0-value', 'percy-test-group');
         // Publish group
         await page.select("#edit-moderation-state-0-state", "published");
@@ -112,6 +113,7 @@ describe('SuperAdmin user test', () => {
         });
         throw e;
       }
-    }
+    },
+    120000 // 120s timeout
   );
 });

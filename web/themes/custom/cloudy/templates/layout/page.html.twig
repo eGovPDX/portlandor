@@ -42,12 +42,14 @@
   {{ page.pre_header }}
 {% endblock %}
 
-{% if page.header|render is not empty or page.primary_menu|render is not empty %}
+{% set rendered_page_header = page.header|render %}
+{% set rendered_primary_menu = page.primary_menu|render %}
+{% if rendered_page_header is not empty or rendered_primary_menu is not empty %}
   <header role="banner" id="header" class="cloudy-header" aria-label="{{ 'Site header'|t }}">
     <div
       class="cloudy-header__wrapper d-flex justify-content-between align-items-center flex-wrap px-0">
       {# logo #}
-      {{ page.header }}
+      {{ rendered_page_header }}
 
       {% set toggle_attributes = create_attribute({
         'type': 'button',
@@ -71,19 +73,16 @@
 
       {# search form #}
       {% if page.header_form %}
-        <div{{create_attribute({'id':search_id,'class':['cloudy-header__search-wrapper','collapse']})}}>
+        <div{{create_attribute({'id':search_id,'class':['cloudy-header__search-wrapper','collapse'],'data-bs-parent':'#header'})}}>
           <div class="d-flex px-4 py-6 px-md-0 py-lg-0 align-items-center">
             {{ page.header_form }}
 
             {#  search close #}
             <button{{toggle_attributes|without('class').setAttribute('data-bs-target','#'~search_id).setAttribute('aria-controls',search_id).setAttribute('aria-label','close site search'|t).addClass('cloudy-header__close-search')}}>
-              {% include "@elements/icon/icon.twig" with {
-                name: "close",
-                classes: [
-                  'icon',
-                  'icon--size-s',
-                  'm-0',
-                  ]
+              {% include "@components/icon/icon.twig" with {
+                name: 'close',
+                size: 's',
+                classes: ['m-0'],
               } %}
             </button>
           </div>
@@ -94,17 +93,17 @@
       {% set menu_id = 'cloudy-menu' %}
 
       {# menu toggle #}
-      <button{{toggle_attributes|without('class').setAttribute('data-bs-target','#'~menu_id).setAttribute('aria-controls',menu_id).setAttribute('aria-label','toggle site menu'|t).addClass(['btn', 'cloudy-header__toggle','cloudy-header__toggle--menu'])}}>
+      <button{{toggle_attributes|without('class').setAttribute('data-bs-target','#'~menu_id).setAttribute('aria-controls',menu_id).setAttribute('aria-label','toggle site menu'|t).addClass(['btn', 'cloudy-header__toggle','cloudy-header__toggle--menu', 'collapsed'])}}>
         <span class="toggle__label">
-          <span class="icon toggle-icon icon-menu"></span>
+          <span class="icon toggle-icon"></span>
           {{ 'menu'|t|capitalize }}
         </span>
       </button>
     </div>
 
     {# main menu #}
-    <div{{create_attribute({'id':menu_id,'class':['cloudy-header__menu-wrapper','collapse']})}}>
-      {{ page.primary_menu }}
+    <div{{create_attribute({'id':menu_id,'class':['cloudy-header__menu-wrapper','collapse'],'data-bs-parent':'#header'})}}>
+      {{ rendered_primary_menu }}
     </div>
   </header>
 {% endif %}
@@ -128,7 +127,7 @@
 
 {% set content_attribute = create_attribute() %}
 {% set content_classes = [
-    page.tools or page.menu ? 'col-lg',
+    page.tools or page.menu ? 'col-lg order-1',
 ] %}
 
 <main id="main-content" class="d-print-block" role="main" data-swiftype-index="true">
@@ -171,50 +170,51 @@
       </section>
     {% endif %}
 
-        {% if page.footer_first or page.footer_second or page.footer_third or page.footer_fourth %}
-            <section class="cloudy-footer--bottom">
-                <div class="container">
-                    <div class="row">
-                        <div class="col-12 col-md-6 col-lg-3 mb-8">
-                            {{ page.footer_first }}
-                            <div>
-                                {% include "@components/contact-item/contact-item.twig" with {
-                                  "heading": {
-                                    "text": 'General information'|t,
-                                    "level": 2,
-                                    "style": 6
-                                  },
-                                  "email": '311@portlandoregon.gov',
-                                  "phone": '503-823-4000',
-                                  "display_311": true,
-                                  "oregon_relay": true,
-                                  "social": {
-                                    "twitter": "PortlandGov",
-                                    "facebook": "PortlandORGov",
-                                    "instagram": "PortlandGov"
-                                  }
-                                } only %}
-                            </div>
-                        </div>
-                        <div class="col-12 col-md-6 col-lg-3 mb-8">
-                            <div>
-                                {{ page.footer_second }}
-                            </div>
-                        </div>
-                        <div class="col-12 col-md-6 col-lg-3 mb-2 order-md-last">
-                            {{ page.footer_third }}
-                        </div>
-                        <div class="col-12 col-md-6 col-lg-3 mb-2 order-lg-first">
-                            <h2>{{ 'City of Portland, Oregon'|t }}</h2>
-                            <p>
-                                <source media="" srcset="/themes/custom/cloudy/images/city-seal.png"/>
-                                <img src="/themes/custom/cloudy/images/city-seal.png" alt="{{ "Official City of Portland seal. The image depicts Portlandia holding her trident backdropped by mountain and river, accompanied by the text 'City of Portland, Oregon 1851'"|t }}" class="img-fluid"/>
-                            </p>
-                            <p>&copy; {{ 'Copyright'|t }} 2018-{{ 'now'|date('Y') }}</p>
-                        </div>
-                    </div>
-                </div>
-            </section>
-        {% endif %}
-    </footer>
+    {% if page.footer_first or page.footer_second or page.footer_third or page.footer_fourth %}
+      <section class="cloudy-footer--bottom">
+        <div class="container">
+          <div class="row">
+            <div class="col-12 col-md-6 col-lg-3 mb-8">
+              {{ page.footer_first }}
+              <div>
+                {% include "@components/contact-item/contact-item.twig" with {
+                  "heading": {
+                    "text": 'General information'|t,
+                    "level": 2,
+                    "style": 6
+                  },
+                  "email": '311@portlandoregon.gov',
+                  "phone": '503-823-4000',
+                  "display_311": true,
+                  "oregon_relay": true,
+                  "social": {
+                    "twitter": "PortlandGov",
+                    "facebook": "PortlandORGov",
+                    "instagram": "PortlandGov"
+                  }
+                } only %}
+              </div>
+            </div>
+            <div class="col-12 col-md-6 col-lg-3 mb-8">
+              <div>
+                {{ page.footer_second }}
+              </div>
+            </div>
+            <div class="col-12 col-md-6 col-lg-3 mb-2 order-md-last">
+              {{ page.footer_third }}
+            </div>
+            <div class="col-12 col-md-6 col-lg-3 mb-2 order-lg-first">
+              <h2>{{ 'City of Portland, Oregon'|t }}</h2>
+              <p>
+                <img src="/themes/custom/cloudy/images/city-seal.png" width="120" height="120" alt="{{ "Official City of Portland seal. The image depicts Portlandia holding her trident backdropped by mountain and river, accompanied by the text 'City of Portland, Oregon 1851'"|t }}" class="img-fluid"/>
+              </p>
+              <p>&copy; {{ 'Copyright'|t }} 2018-{{ 'now'|date('Y') }}</p>
+            </div>
+          </div>
+        </div>
+      </section>
+    {% endif %}
+  </footer>
 {% endif %}
+
+<a class="cloudy-back-to-top btn btn-dark d-none" href="#header">{{ 'Back to top'|t }}</a>

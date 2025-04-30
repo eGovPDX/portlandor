@@ -1,6 +1,14 @@
 # CircleCI integration with Drupal 8.
 version: 2.1
 
+parameters:
+  pantheon-env:
+    type: string
+    default: dev
+  clone-type:
+    type: string
+    default: db-only
+
 # Common tasks defined as commands
 commands:
   checkout_source:
@@ -107,7 +115,7 @@ commands:
 ## Job to build and deploy to Pantheon
 build_and_deploy: &build_and_deploy
   docker:
-    - image: cimg/php:8.1-node
+    - image: cimg/php:8.3-node
       auth:
         username: egovpdx
         password: $DOCKERHUB_PASSWORD
@@ -165,7 +173,7 @@ build_and_deploy: &build_and_deploy
     - run:
         name: Deploy to Pantheon
         when: on_success
-        no_output_timeout: 20m # allow 20 minutes instead of 10 minute default for script to complete
+        no_output_timeout: 30m # allow 30 minutes instead of 10 minute default for script to complete
         command: |
           # Don't check the repo host key
           export GIT_SSH_COMMAND="ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no"
@@ -246,12 +254,22 @@ build_and_deploy: &build_and_deploy
           terminus build:workflow:wait $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV "Sync code on $PANTHEON_ENV"
 
           echo "Rebuilding cache..."
-          terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- cr
+          terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- cr || true
           echo "Running database updates..."
           terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- updb -y
           echo "Importing config..."
           # Retry config import once if it fails
           terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- cim -y || terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- cim -y
+
+          # Check config status after config import
+          if terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- config:status | grep -q 'No differences'
+          then
+            echo "The staged configuration is identical to the active configuration."
+          else
+            echo "The staged configuration is different from the active configuration. Check the config sync page."
+            exit 1
+          fi
+
           if [ $HAS_TRANSLATION_CHANGES -eq 1 ]; then
             echo "Importing interface translations..."
             terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV -- locale:check
@@ -301,16 +319,10 @@ build_and_deploy: &build_and_deploy
             last_log=$(git log origin/$CIRCLE_BRANCH --pretty=format:%s -1)
             lowercase_last_log="${last_log,,}"
             JIRA_STORY_ID=""
-            # Simple merge
-            # Example: Merge pull request #35 from eGovPDX/powr-152
-            if [[ $lowercase_last_log =~ (^merge pull request #[0-9]* from egovpdx\/)([^,]*) ]]; then
-              echo "Found story ID from merge commit message: '${BASH_REMATCH[2]}'";
-              JIRA_STORY_ID=${BASH_REMATCH[2]}
-            # Squash and Merge on other feature branches
-            # Should also match all other Jira project codes
-            # Example: CSM-3058 Delete all related multi-devs when a branch is merged
-            elif [[ $lowercase_last_log =~ ^(([[:alpha:]]+)-[0-9]+) ]]; then
-              echo "Found story ID from squash and merge commit message: '${BASH_REMATCH[1]}'";
+            # Expect the commit message to be like below for both squash and merge and simple merge:
+            # PGOV-1234 Delete all related multi-devs when a branch is merged
+            if [[ $lowercase_last_log =~ ^(([[:alpha:]]+)-[0-9]+) ]]; then
+              echo "Found story ID from the commit message: '${BASH_REMATCH[1]}'";
               JIRA_STORY_ID=${BASH_REMATCH[1]}
             else
               echo "Cannot find JIRA story ID from the last commit message: $lowercase_last_log"
@@ -347,9 +359,9 @@ build_and_deploy: &build_and_deploy
             fi
           fi
 
-visual_regression: &visual_regression
+basic_tests: &basic_tests
   docker:
-    - image: cimg/php:8.1-browsers
+    - image: cimg/php:8.3-browsers
       auth:
         username: egovpdx
         password: $DOCKERHUB_PASSWORD
@@ -381,9 +393,6 @@ visual_regression: &visual_regression
               echo 'export MARTY_LOGIN=$(terminus drush ${CIRCLE_PROJECT_REPONAME}.${SITE_NAME} -- uli --mail marty.member@portlandoregon.gov)' > $BASH_ENV && source $BASH_ENV
               npm run jest-test -- ${TESTFILE}
             elif [[ ${TESTFILE} == *"admin-group"* ]]; then
-              echo 'export KEVIN_LOGIN=$(terminus drush ${CIRCLE_PROJECT_REPONAME}.${SITE_NAME} -- uli --mail xinju.wang@portlandoregon.gov)' > $BASH_ENV && source $BASH_ENV
-              npm run jest-test -- ${TESTFILE}
-            elif [[ ${TESTFILE} == *"admin"* ]]; then
               echo 'export SUPERADMIN_LOGIN=$(terminus drush ${CIRCLE_PROJECT_REPONAME}.${SITE_NAME} -- uli --name superAdmin)' > $BASH_ENV && source $BASH_ENV
               npm run jest-test -- ${TESTFILE}
             elif [[ ${TESTFILE} == *"anonymous"* ]]; then
@@ -393,10 +402,13 @@ visual_regression: &visual_regression
     - store_artifacts:
         path: /home/circleci/artifacts
         destination: /
+    - jira/notify:
+        pipeline_id: << pipeline.id >>
+        pipeline_number: << pipeline.number >>
 
 full_regression: &full_regression
   docker:
-    - image: cimg/php:8.1-browsers
+    - image: cimg/php:8.3-browsers
       auth:
         username: egovpdx
         password: $DOCKERHUB_PASSWORD
@@ -450,6 +462,12 @@ full_regression: &full_regression
     - store_artifacts:
         path: /home/circleci/artifacts
         destination: /
+    - jira/notify:
+        environment: development
+        environment_type: development
+        job_type: deployment
+        pipeline_id: << pipeline.id >>
+        pipeline_number: << pipeline.number >>
     # - slack/notify:
     #     branch_pattern: powr-3508
     #     event: fail
@@ -458,7 +476,7 @@ full_regression: &full_regression
 
 clone_live_database: &clone_live_database
   docker:
-    - image: cimg/php:8.1-browsers
+    - image: cimg/php:8.3-browsers
       auth:
         username: egovpdx
         password: $DOCKERHUB_PASSWORD
@@ -475,13 +493,13 @@ clone_live_database: &clone_live_database
         command: |
           # On Master branch, clone to Dev
           if [[ $CIRCLE_BRANCH = "master" ]]; then
-            echo 'export PANTHEON_ENV="dev"' >> $BASH_ENV && source $BASH_ENV
+            echo 'export PANTHEON_ENV="<< pipeline.parameters.pantheon-env >>"' >> $BASH_ENV && source $BASH_ENV
           else
             echo 'export PANTHEON_ENV=${CIRCLE_BRANCH}' >> $BASH_ENV && source $BASH_ENV
           fi
 
-          echo "Cloning DB from Live to $PANTHEON_ENV..."
-          terminus env:clone-content $CIRCLE_PROJECT_REPONAME.live $PANTHEON_ENV --db-only -y || terminus env:clone-content $CIRCLE_PROJECT_REPONAME.live $PANTHEON_ENV --db-only -y
+          echo "Cloning << pipeline.parameters.clone-type >> from Live to $PANTHEON_ENV..."
+          terminus env:clone-content $CIRCLE_PROJECT_REPONAME.live $PANTHEON_ENV --<< pipeline.parameters.clone-type >> -y || terminus env:clone-content $CIRCLE_PROJECT_REPONAME.live $PANTHEON_ENV --<< pipeline.parameters.clone-type >> -y
           terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV deploy || terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV deploy
 
           # Reindex the Solr server. Indexing will take some time
@@ -514,8 +532,8 @@ clone_live_database: &clone_live_database
 jobs:
   deploy:
     <<: *build_and_deploy
-  visual_regression:
-    <<: *visual_regression
+  basic_tests:
+    <<: *basic_tests
   full_regression:
     <<: *full_regression
   clone_live_database:
@@ -524,6 +542,7 @@ jobs:
 orbs:
 # percy: percy/agent@0.1.2
   slack: circleci/slack@4.4.2
+  jira: circleci/jira@2.2.0
 
 # Declare a workflow that runs all of our jobs in parallel.
 workflows:
@@ -534,20 +553,20 @@ workflows:
         equal: [ scheduled_pipeline, << pipeline.trigger_source >> ]
     jobs:
       - deploy
-      - visual_regression:
+      - basic_tests:
+          context: eGovPDX
           requires:
             - deploy
       - full_regression:
           requires:
-            - visual_regression
+            - basic_tests
           context: eGovPDX
           filters:
             branches:
               only:
                 - master
-                - pgov-1236
-  # The update database workflow runs when the scheduled pipeline named "Update Sandbox
-  # Database" runs. Scheduled pipelines are configured in the CircleCI web UI at
+  # The update database workflow runs when the following scheduled pipelines run.
+  # Scheduled pipelines are configured in the CircleCI web UI at
   # https://app.circleci.com/settings/project/github/eGovPDX/portlandor/triggers
   update_database:
     when:
@@ -556,6 +575,8 @@ workflows:
         - or:
           - equal: [ "Update Sandbox Database", << pipeline.schedule.name >> ]
           - equal: [ "Update Dev Database", << pipeline.schedule.name >> ]
+          - equal: [ "Update Test Database", << pipeline.schedule.name >> ]
+          - equal: [ "Update Test Files", << pipeline.schedule.name >> ]
     jobs:
       - clone_live_database
 

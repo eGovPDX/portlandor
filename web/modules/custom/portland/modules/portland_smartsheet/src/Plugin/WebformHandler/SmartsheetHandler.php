@@ -110,7 +110,7 @@ class SmartsheetHandler extends WebformHandlerBase {
 
       $columns = $client->listAllColumns();
       $webform_fields = $this->getWebformFields();
-      $webform_fields['__submission_id'] = ['#title' => 'Submission ID'];
+      $webform_fields['_submission_id_'] = ['#title' => 'Submission ID'];
       $options = ['' => 'None'];
       foreach ($webform_fields as $key => $value) {
         $title = $value['#admin_title'] ?? $value['#title'] ?? NULL;
@@ -271,6 +271,7 @@ class SmartsheetHandler extends WebformHandlerBase {
 
       $cells[] = [
         'columnId' => (int) $col_id,
+        'strict' => false,
         'value' => is_array($field_data) ? join(';', $field_data) : $field_data,
       ];
     }
@@ -292,7 +293,7 @@ class SmartsheetHandler extends WebformHandlerBase {
     $submission_id = $submission_arr['sid'] !== '' ? $submission_arr['sid'] : $submission_arr['uuid'];
     $fields = [
       ...$submission_arr['data'],
-      '__submission_id' => $submission_id,
+      '_submission_id_' => $submission_id,
     ];
 
     $multiple_rows_enable = $this->configuration['multiple_rows_enable'];

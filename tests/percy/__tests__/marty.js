@@ -83,17 +83,13 @@ describe('Marty Member user test', () => {
       expect(text_content).toEqual(expect.stringContaining('Page type'));
       expect(text_content).toEqual(expect.stringContaining('Summary'));
       expect(text_content).toEqual(expect.stringContaining('Body content'));
-      expect(text_content).toEqual(expect.stringContaining('Legacy path'));
+      expect(text_content).toEqual(expect.stringContaining('URL redirects'));
 
-      await page.type('#edit-title-0-value', 'Test page');
-      await page.type('#edit-field-summary-0-value', 'Summary for the test page');
-      await page.type('#edit-field-menu-link-text-0-value', 'Test page');
-      await page.evaluate(() => {
-        ck5 = Drupal.CKEditor5Instances.keys().next().value;
-        editor = Drupal.CKEditor5Instances.get(ck5);
-        editor.setData('Body content for the test page');
-      });
-      await page.type('#edit-revision-log-0-value', 'Test revision message');
+      await page.locator('#edit-title-0-value').fill('Test page');
+      await page.locator('#edit-field-summary-0-value').fill('Summary for the test page');
+      await page.locator('#edit-field-menu-link-text-0-value').fill('Test page');
+      await page.locator('div.ck-content').fill('Body content for the test page');
+      await page.locator('#edit-revision-log-0-value').fill('Test revision message');
 
       // Click submit button and wait for page load
       selector = 'input#edit-submit';

@@ -138,7 +138,7 @@
         var locationType;
         var locationTextBlock;
 
-        var cityLimitsProperties = {
+        var cityLimitsStyle = {
           color: 'red',
           fillOpacity: 0,
           weight: 1,
@@ -200,6 +200,7 @@
             zoom: DEFAULT_ZOOM,
             gestureHandling: true
           });
+          drupalSettings.webform.portland_location_picker.lMap = map;
           map.addLayer(baseLayer);
           map.addControl(new L.control.zoom({ position: ZOOM_POSITION }));
           map.addControl(new AerialControl());
@@ -273,9 +274,8 @@
           // this will display error messages, or a status indicator when performing slow ajax operations such as self geolocation
           statusModal = $('#status_modal');
 
-          if (displayBoundary && boundaryUrl != "") {
-            // defaults to true && [basic Portland boundary]
-            initailizeBounaryLayer();
+          if (boundaryUrl != "") {
+            initializeBoundaryLayer();
           }
 
           // INITIALIZE GEOJSON LAYERS //////////
@@ -389,7 +389,7 @@
           });
         }
 
-        function initailizeBounaryLayer() {
+        function initializeBoundaryLayer() {
           // new function. uses default Portland basic boundary from PortlandMaps with border visible by default.
           // visiblity and boundary URL (geoJSON) can be configure in widget custom properties.
           // boundary_url = "https://www.portlandmaps.com/arcgis/rest/services/Public/Boundaries/MapServer/0/query?where=1%3D1&objectIds=35&outFields=*&returnGeometry=true&f=geojson"
@@ -400,7 +400,7 @@
               url: boundaryUrl,
               success: function (cityBoundaryResponse) {
                 var cityBoundaryFeatures = cityBoundaryResponse.features;
-                boundaryLayer = L.geoJson(cityBoundaryFeatures, cityLimitsProperties).addTo(map);
+                boundaryLayer = L.geoJson(cityBoundaryFeatures, displayBoundary ? cityLimitsStyle : { opacity: 0, fillOpacity: 0 }).addTo(map);
                 if (boundaryLayer.municipality) {
                   boundaryLayer.municipality = cityBoundaryFeatures[0].properties.CITYNAME;
                 }
@@ -928,6 +928,7 @@
           // get populated by the location, such as lat, lon, address, region id, etc.
           // every map click essentially resets the previous click. this function clears
           // the relevant location fields.
+          $('input[name=' + elementId + '\\[location_address\\]]').val('').trigger('change');
           $('input[name=' + elementId + '\\[location_lat\\]]').val('');
           $('input[name=' + elementId + '\\[location_lon\\]]').val('');
           $('input[name=' + elementId + '\\[location_x\\]]').val('');
@@ -936,6 +937,7 @@
           $('input[name=' + elementId + '\\[location_region_id\\]]').val('').trigger('change');
           $('input[name=' + elementId + '\\[location_municipality_name\\]]').val('');
           $('input[name=' + elementId + '\\[location_attributes\\]]').val('');
+          $('input[name=' + elementId + '\\[location_taxlot_id\\]]').val('');
 
           if (clickQueryUrl && clickQueryPropertyPath) {
             $('#' + clickQueryDestinationField).val('').trigger('change');
@@ -958,6 +960,8 @@
             $('input[name=' + elementId + '\\[location_type_taxlot\\]]').val("true");
             location_type += "taxlot,";
             var taxlot_id = results.detail.taxlot[0].property_id;
+            // store taxlot id in its own field
+            $('input[name=' + elementId + '\\[location_taxlot_id\\]]').val(taxlot_id).trigger('change');
             internal_details += "Tax lot: " + taxlot_id + ', ';
             type_count += 1;
           }
@@ -1367,9 +1371,10 @@
               // get the property specified by clickQueryPropertyPath
               var newValue = getPropertyByPath(results, clickQueryPropertyPath);
 
-              $('#' + clickQueryDestinationField).val(newValue);
+              $('#' + clickQueryDestinationField).val(newValue).trigger('change');
             },
             error: function (e) {
+              $('#' + clickQueryDestinationField).val('').trigger('change');
               // Handle any error cases
               console.error(e);
             }

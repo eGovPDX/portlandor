@@ -1,0 +1,619 @@
+uuid: da04b001-5c48-4db5-97b0-7ef521836687
+langcode: en
+status: open
+dependencies:
+  module:
+    - portland
+    - portland_zendesk
+third_party_settings:
+  portland:
+    disable_demographic_form_prompt: 0
+    exclude_from_json: {  }
+weight: 0
+open: null
+close: null
+uid: 221
+template: false
+archive: false
+id: apply_block_party_permit
+title: 'Apply Block Party Permit'
+description: ''
+categories: {  }
+elements: |-
+  page_block_party_location:
+    '#type': webform_wizard_page
+    '#title': 'Block Party Location'
+    apply_block_party_location:
+      '#type': portland_location_picker
+      '#title': 'Location of the Block Party'
+      '#description_display': before
+      '#location_search__description': 'Search the map for an address, cross streets, park, or community center. Or use the map to click a location. Please click, tap, or drag the marker to the precise location in the street where you plan to have your block party.'
+      '#place_name__access': false
+      '#location_details__description': 'Block Party events must take place on the street of which you are a resident. Please describe the location requested including street and cross street names, example – NE 21st Ave between NE Going and NE Wygant'
+      '#location_details__required': true
+    markup_taxlot_warning:
+      '#type': webform_markup
+      '#states':
+        visible:
+          ':input[name="apply_block_party_location[location_type_taxlot]"]':
+            value: 'true'
+      '#markup': '<div class="webform-alert alert alert--warning" aria-hidden="true"><strong>IMPORTANT:</strong> Your location appears to be within a property/tax lot. Please click, tap, or drag the map marker to a precise location within the right of way.</div>'
+    apply_street_painting:
+      '#type': radios
+      '#title': 'Is this a Street Painting and/or repainting project?'
+      '#options': yes_no
+      '#options_display': side_by_side
+      '#required': true
+    markup_street_painting:
+      '#type': webform_markup
+      '#states':
+        visible:
+          ':input[name="apply_street_painting"]':
+            value: 'Yes'
+      '#markup': '<div class="alert alert--info next-steps"><h2 class="mt-0">Next Steps</h2><p class="mb-0">If you are considering a new Street Painting, please consult the <a href="/node/18358" data-entity-type="node" data-entity-uuid="02f5c29e-3bdd-4d4c-b4e4-166c1fd4c782" data-entity-substitution="canonical">Street Painting program</a> to initiate the application process, if you have not already done so.</p></div>'
+    apply_blocks_requested:
+      '#type': number
+      '#title': 'Number of blocks requested'
+      '#description': '<p>Block Parties can be up to 2 blocks. Street Painting events can be up to 4 blocks. <strong>A street closure of more than 1 block requires a custom traffic control plan.</strong></p>'
+      '#description_display': before
+      '#required': true
+      '#attributes':
+        class:
+          - mt-0
+      '#min': 1
+      '#max': 4
+      '#step': 1
+  page_block_party_details:
+    '#type': webform_wizard_page
+    '#title': 'Block Party Details'
+    apply_block_party_description:
+      '#type': textarea
+      '#title': 'Please describe the activities you plan to have'
+      '#required': true
+    apply_multiple_dates:
+      '#type': checkbox
+      '#title': 'This event spans multiple days'
+      '#description': '<p>For example, a weekend event that spans Saturday and Sunday.</p>'
+    container_dates:
+      '#type': container
+      markup_01:
+        '#type': webform_markup
+        '#states':
+          visible:
+            ':input[name="apply_multiple_dates"]':
+              checked: true
+        '#markup': '<p>Residents may apply to use their street for Block Party activities up to 8 hours per week and if recurring, for up to one month. End date must be within 30 calendar days of the start date.</p>'
+      apply_event_start_date:
+        '#type': date
+        '#title': 'Start date'
+        '#required': true
+        '#wrapper_attributes':
+          class:
+            - mt-0
+        '#attributes':
+          class:
+            - mt-0
+        '#date_date_min': today
+      computed_end_date_limit:
+        '#type': webform_computed_twig
+        '#title': 'Computed - End Date Limit'
+        '#display_on': none
+        '#mode': text
+        '#template': "\"{{ data.apply_event_start_date|date_modify('+30 days')|date('Y-m-d') }}\""
+      apply_event_end_date:
+        '#type': date
+        '#title': 'End date'
+        '#description_display': before
+        '#states':
+          visible:
+            ':input[name="apply_multiple_dates"]':
+              checked: true
+          required:
+            ':input[name="apply_multiple_dates"]':
+              checked: true
+          disabled:
+            ':input[name="apply_event_start_date"]':
+              empty: true
+        '#wrapper_attributes':
+          class:
+            - mt-0
+            - mb-0
+        '#attributes':
+          class:
+            - mt-0
+        '#date_date_max': '[webform_submission:values:computed_end_date_limit]'
+      date_range_validator:
+        '#type': webform_computed_twig
+        '#title': 'Date Range Validator'
+        '#title_display': invisible
+        '#wrapper_attributes':
+          class:
+            - mt-0
+        '#attributes':
+          class:
+            - mt-0
+        '#display_on': form
+        '#mode': html
+        '#template': |-
+          {% if data.apply_event_start_date is not empty and data.apply_event_end_date is not empty %}
+
+          {# Convert date strings to timestamps #}
+          {% set start = date(data.apply_event_start_date).getTimestamp %}
+          {% set end = date(data.apply_event_end_date).getTimestamp %}
+
+          {# Calculate difference in days #}
+          {% set diff_days = ((end - start) / 86400)|round(0, 'floor') %}
+
+          {# Return a message if the range exceeds 30 days #}
+          {% if start and end and diff_days > 30 %}
+            <div class="mt-0 invalid-feedback">End date must be within 30 calendar days of the start date.</div>
+          {% endif %}
+
+          {% endif %}
+        '#whitespace': spaceless
+        '#hide_empty': true
+        '#ajax': true
+      date_validation_blocker:
+        '#type': textfield
+        '#title': 'End date must be within 30 calendar days of the start date'
+        '#title_display': none
+        '#required': true
+        '#required_error': 'End date must be within 30 calendar days of the start date.'
+        '#pattern': ^$
+        '#states':
+          visible:
+            ':input[name="date_range_validator"]':
+              filled: true
+        '#wrapper_attributes':
+          class:
+            - d-none
+        '#attributes':
+          class:
+            - d-none
+    apply_recurring:
+      '#type': checkbox
+      '#title': 'This event reoccurs on a regular basis'
+      '#description': '<p>Weekly, monthly, etc.</p>'
+    container_recurring:
+      '#type': container
+      '#states':
+        visible:
+          ':input[name="apply_recurring"]':
+            checked: true
+      apply_recurrence:
+        '#type': webform_radios_other
+        '#title': 'How often does the event occur?'
+        '#options':
+          Weekly: Weekly
+          Bi-Weekly: Bi-Weekly
+          Monthly: Monthly
+        '#other__placeholder': 'Please describe...'
+      apply_occurences_days:
+        '#type': checkboxes
+        '#title': 'On what days does it occur?'
+        '#options':
+          M: M
+          Tu: Tu
+          W: W
+          Th: Th
+          F: F
+          Sa: Sa
+          Su: Su
+        '#options_display': side_by_side
+    apply_event_times:
+      '#type': textfield
+      '#title': 'Start and end times'
+      '#description': '<p>Include any time that the right-of-way will be used for this event, including set up &amp; break down. Street closures are limited to 8 hours per week (not to exceed 8 hours total within 7 consecutive days) between the hours of 9:00 a.m. - 9:00 p.m.</p>'
+      '#description_display': before
+      '#required': true
+  page_block_party_extras:
+    '#type': webform_wizard_page
+    '#title': 'Additional Information'
+    apply_is_church:
+      '#type': radios
+      '#title': 'Is this event taking place at a church, religious facility, or community gathering place?'
+      '#description': '<p>Block parties are usually required to take place on the street where you live. However, if your event is at a church, religious facility, or community gathering place, an exception may be made.</p>'
+      '#description_display': before
+      '#options': yes_no
+      '#options_display': side_by_side
+      '#required': true
+    apply_amplified_sound:
+      '#type': radios
+      '#title': 'Are you planning to have amplified sound?'
+      '#options': yes_no
+      '#options_display': side_by_side
+      '#required': true
+    markup_noise_variance:
+      '#type': webform_markup
+      '#states':
+        visible:
+          ':input[name="apply_amplified_sound"]':
+            value: 'Yes'
+      '#markup': '<div class="alert alert--info next-steps"><h2 class="mt-0">Next Steps</h2><p class="mb-0">Amplified sound at events must obtain a <a href="/ppd/noise/apply-noise-variance" target="_blank">Noise Variance</a> from the Bureau of Development Services. You will receive more information about this requirement in your confirmation email.</p></div>'
+    apply_pop_registration:
+      '#type': radios
+      '#title': 'Did you register this event with Party on Portland (POP)?'
+      '#description': '<p>For more information on POP, visit the <a href="https://natw.org/">National Night Out webpage</a> and <a href="/community-safety/ovp/safe-blocks/pop">POP Event Schedule</a>.</p>'
+      '#description_display': before
+      '#options': yes_no
+      '#options_display': side_by_side
+      '#required': true
+    apply_bipoc:
+      '#type': radios
+      '#title': 'Do you identify as Black, Indigenous, or a Person of Color?'
+      '#description': '<p>The Portland Bureau of Transportation''s Portland in the Streets Program is committed to engaging with underserved communities in Portland. Data collected will assess our reach and identify opportunities to enhance interaction with these communities.</p>'
+      '#description_display': before
+      '#options': yes_no
+      '#options_display': side_by_side
+    apply_learned_about_program:
+      '#type': textarea
+      '#title': 'How did you learn about the Block Party program?'
+    apply_event_flyer_upload:
+      '#type': managed_file
+      '#title': 'Event Flyer Upload'
+      '#description': '<p><a href="/transportation/permitting/documents/block-party-flier/download">Download PDF File Block Party notification flyer</a></p>'
+      '#description_display': before
+      '#file_extensions': 'jpg png bmp pdf doc docx ppt pptx zip '
+      '#file_name': 'Event_Flyer_[current-date:html_date]'
+  page_contact_information:
+    '#type': webform_wizard_page
+    '#title': 'Contact Information'
+    section_contact:
+      '#type': webform_section
+      '#title': 'Your Contact Information'
+      contact_name:
+        '#type': textfield
+        '#title': Name
+        '#required': true
+      contact_email:
+        '#type': webform_email_confirm
+        '#title': Email
+        '#description': '<p>We will use your email to confirm your submission and correspond.</p>'
+        '#pattern': '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        '#pattern_error': 'Please enter a correctly formatted email address, such as myname@example.com.'
+        '#required': true
+      contact_phone:
+        '#type': textfield
+        '#title': Phone
+        '#description': 'Please provide your phone number in case we need additional information.'
+        '#input_mask': '(999) 999-9999'
+        '#required': true
+      apply_applicant_address:
+        '#type': portland_address_verifier
+        '#title': 'Physical address of applicant'
+        '#required': true
+        '#location_address__title': 'Physical address of applicant'
+        '#location_address__required': true
+        '#location_city__required': true
+        '#location_state__required': true
+        '#location_zip__required': true
+        '#location_address__description_display': invisible
+        '#address_suggest': 1
+      markup_address_verification:
+        '#type': webform_markup
+        '#states':
+          visible:
+            ':input[name="apply_applicant_address[location_address]"]':
+              filled: true
+            ':input[name="apply_applicant_address[location_city]"]':
+              filled: true
+            ':input[name="apply_applicant_address[location_state]"]':
+              filled: true
+            ':input[name="apply_applicant_address[location_zip]"]':
+              filled: true
+            ':input[name="apply_applicant_address[location_verification_status]"]':
+              empty: true
+        '#markup': '<div class="webform-alert alert alert--warning" aria-hidden="true"><p><strong>Warning: </strong>Address not verified.</p></div>'
+    page_agreements:
+      '#type': webform_section
+      '#title': Agreements
+      apply_idemnification:
+        '#type': checkbox
+        '#title': 'By checking the checkbox below, I agree to the Terms of Indemnification below'
+        '#required': true
+        '#description': '<p>Indemnification: the Permittee agrees to defend, indemnify, and hold harmless the City of Portland, its officials, officers, employees, and agents against: (1) any liability, claims, causes of action, judgements, or expenses, including reasonable attorney fees, resulting directly or indirectly from any act or omission of the Permittee, its subcontractors, anyone directly or indirectly employed by them, and anyone whose acts or omissions may be liable, arising out of the Permittee’s use or occupancy of the public right-of-way; and (2) all loss by the failure of the Permittee to fully or adequately perform in any respect, all authorizations or obligations under the permit.</p>'
+      apply_terms_conditions_requirements:
+        '#type': checkbox
+        '#title': 'By checking the checkbox below, I agree to the Terms, Conditions, and Requirements as specified below'
+        '#required': true
+        '#description': '<p>Terms, Conditions, and Requirements: I understand that this permit may be revoked at any time. I certify that the application and statements are complete and correct to the best of my knowledge. I further understand that the penalties are provided for furnishing false information. I hereby request to perform the work specified in this application once it has been approved and permitted by the City of Portland. I agree to comply with all the applicable provisions of the Charter, including but not limited to the Portland City Code chapter 16 Vehicles and Traffic, and Chapter 17 Public Improvements, as well as all applicable laws of state and federal law. I agree to use this permit in accordance with all applicable regulations, standards, and specifications of the City of Portland. I understand that all fees paid for this permit are non-refundable. I have read and understand the terms and conditions.</p>'
+  computed_dates:
+    '#type': webform_computed_twig
+    '#title': 'Computed Dates'
+    '#display_on': none
+    '#mode': text
+    '#template': "{{ data.apply_event_start_date|date('m/d/Y') }}{% if data.apply_event_end_date %}—{{ data.apply_event_end_date|date('m/d/Y') }}{% endif %}"
+    '#whitespace': trim
+  computed_description:
+    '#type': webform_computed_twig
+    '#title': 'Computed Description'
+    '#display_on': none
+    '#mode': html
+    '#template': |-
+      <h2>Block Party Application</h2>
+
+      <h3>Contact Information</h3>
+
+      <p>
+        <strong>Name:</strong> {{ data.contact_name }}<br>
+        {% if data.contact_email is not iterable %}
+          <strong>Email:</strong> {{ data.contact_email }}<br>
+        {% endif %}
+        <strong>Phone:</strong> {{ data.contact_phone }}<br>
+        <strong>Physical address of applicant:</strong> {{ data.apply_applicant_address.location_address }}, {{ data.apply_applicant_address.location_city }}, {{ data.apply_applicant_address.location_state }} {{ data.apply_applicant_address.location_zip }}
+      </p>
+
+      <h3>Block Party Location</h3>
+
+      <p>{{ data.apply_block_party_location.location_address }}<br>
+      <strong>Details:</strong> {{ data.apply_block_party_location.location_details }}<br>
+      <strong>Lat/Lon:</strong> <a href="https://www.google.com/maps/place/{{ data.apply_block_party_location.location_lat }},{{ data.apply_block_party_location.location_lon }}">{{ data.apply_block_party_location.location_lat }},{{ data.apply_block_party_location.location_lon }}</a><br>
+      <strong>Number of blocks requested:</strong> {{ data.apply_blocks_requested }}</p>
+
+      <h3>Block Party Details</h3>
+      <p>  
+        <strong>Start date:</strong> {{ data.apply_event_start_date }}
+        {% if data.apply_event_end_date %}
+          <br><strong>End date:</strong> {{ data.apply_event_end_date }}
+        {% endif %}
+        {% if data.apply_recurring and data.apply_recurrence is not iterable %}
+          <br><strong>How often does it occur?</strong> {{ data.apply_recurrence }}
+          <br><strong>On what days does it occur?</strong> {{ data.apply_occurences_days | join(', ') }}
+        {% endif %}
+        <br><strong>Start and end times: </strong>{{ data.apply_event_times }}<br>
+        <strong>Block Party Description:</strong> {{ data.apply_block_party_description }}
+
+      </p>
+
+      <h3>Additional Information</h3>
+
+      <p>
+        {% if data.apply_street_painting and data.apply_street_painting is not iterable %}
+          <strong>Street Painting/Repainting project?</strong> {{ data.apply_street_painting }}<br>
+        {% endif %}
+        {% if data.apply_is_church and data.apply_is_church is not iterable %}
+          <strong>This is a church event?</strong> {{ data.apply_is_church }}<br>
+        {% endif %}
+        {% if data.apply_amplified_sound and data.apply_amplified_sound is not iterable %}
+          <strong>Will there be amplified sound?</strong> {{ data.apply_amplified_sound }}<br>
+        {% endif %}
+        {% if data.apply_pop_registration and data.apply_pop_registration is not iterable %}
+          <strong>This event is registered with Party on Portland?</strong> {{ data.apply_pop_registration }}<br>
+        {% endif %}
+      {% if data.apply_bipoc and data.apply_bipoc is not iterable %}
+        <strong>Applicant identifies as BIPOC?</strong> {{ data.apply_bipoc }}<br>
+        {% endif %}
+      {% if data.apply_learned_about_program and data.apply_learned_about_program is not iterable %}
+        <strong>How did you learn about the Block Party program?</strong> {{ data.apply_learned_about_program }}<br>
+        {% endif %}
+  computed_event_schedule:
+    '#type': webform_computed_twig
+    '#title': 'Computed Event Schedule'
+    '#display_on': none
+    '#mode': text
+    '#template': "{% if data.apply_recurrence is not iterable %}{% if data.apply_recurrence %}Occurs {{ data.apply_recurrence }}, {% endif %}{% if data.apply_occurences_days %}{{ data.apply_occurences_days|join('/') }}, {% endif %}{% if data.apply_event_times %}{{ data.apply_event_times }}{% endif %}{% endif %}"
+  computed_tags:
+    '#type': webform_computed_twig
+    '#title': 'Computed Tags'
+    '#display_on': none
+    '#mode': text
+    '#template': |-
+      {% if data.apply_blocks_requested > 1 %}
+        needs_tcp
+      {% endif %}
+    '#whitespace': trim
+  request_ticket_id:
+    '#type': hidden
+    '#title': 'Request Ticket ID'
+css: ''
+javascript: ''
+settings:
+  ajax: true
+  ajax_scroll_top: form
+  ajax_progress_type: ''
+  ajax_effect: none
+  ajax_speed: 0
+  page: true
+  page_submit_path: ''
+  page_confirm_path: ''
+  page_theme_name: ''
+  form_title: both
+  form_submit_once: false
+  form_open_message: ''
+  form_close_message: ''
+  form_exception_message: ''
+  form_previous_submissions: true
+  form_confidential: false
+  form_confidential_message: ''
+  form_disable_remote_addr: false
+  form_convert_anonymous: false
+  form_prepopulate: false
+  form_prepopulate_source_entity: false
+  form_prepopulate_source_entity_required: false
+  form_prepopulate_source_entity_type: ''
+  form_unsaved: false
+  form_disable_back: false
+  form_submit_back: false
+  form_disable_autocomplete: false
+  form_novalidate: false
+  form_disable_inline_errors: false
+  form_required: false
+  form_autofocus: false
+  form_details_toggle: false
+  form_reset: false
+  form_access_denied: default
+  form_access_denied_title: ''
+  form_access_denied_message: ''
+  form_access_denied_attributes: {  }
+  form_file_limit: ''
+  form_attributes: {  }
+  form_method: ''
+  form_action: ''
+  share: false
+  share_node: false
+  share_theme_name: ''
+  share_title: true
+  share_page_body_attributes: {  }
+  submission_label: ''
+  submission_exception_message: ''
+  submission_locked_message: ''
+  submission_log: false
+  submission_excluded_elements: {  }
+  submission_exclude_empty: false
+  submission_exclude_empty_checkbox: false
+  submission_views: {  }
+  submission_views_replace: {  }
+  submission_user_columns: {  }
+  submission_user_duplicate: false
+  submission_access_denied: default
+  submission_access_denied_title: ''
+  submission_access_denied_message: ''
+  submission_access_denied_attributes: {  }
+  previous_submission_message: ''
+  previous_submissions_message: ''
+  autofill: false
+  autofill_message: ''
+  autofill_excluded_elements: {  }
+  wizard_progress_bar: true
+  wizard_progress_pages: false
+  wizard_progress_percentage: false
+  wizard_progress_link: false
+  wizard_progress_states: false
+  wizard_start_label: ''
+  wizard_preview_link: false
+  wizard_confirmation: true
+  wizard_confirmation_label: ''
+  wizard_auto_forward: true
+  wizard_auto_forward_hide_next_button: false
+  wizard_keyboard: true
+  wizard_track: ''
+  wizard_prev_button_label: ''
+  wizard_next_button_label: ''
+  wizard_toggle: false
+  wizard_toggle_show_label: ''
+  wizard_toggle_hide_label: ''
+  wizard_page_type: container
+  wizard_page_title_tag: h2
+  preview: 0
+  preview_label: ''
+  preview_title: ''
+  preview_message: ''
+  preview_attributes: {  }
+  preview_excluded_elements: {  }
+  preview_exclude_empty: true
+  preview_exclude_empty_checkbox: false
+  draft: none
+  draft_multiple: false
+  draft_auto_save: false
+  draft_saved_message: ''
+  draft_loaded_message: ''
+  draft_pending_single_message: ''
+  draft_pending_multiple_message: ''
+  confirmation_type: page
+  confirmation_url: ''
+  confirmation_title: "Thank you for submitting a Block Party permit application!\_"
+  confirmation_message: '<p>You may receive a follow-up email from us should we have any questions regarding your event. Once your application has been processed, your permit will be issued and sent to the email address provided on your application. Additionally, please do not hesitate to reach out to us with any questions or concerns you may have, and we will be happy to assist you.&nbsp;</p><p>Permit Application #[webform_submission:values:request_ticket_id]</p>'
+  confirmation_attributes: {  }
+  confirmation_back: true
+  confirmation_back_label: ''
+  confirmation_back_attributes: {  }
+  confirmation_exclude_query: false
+  confirmation_exclude_token: false
+  confirmation_update: false
+  limit_total: null
+  limit_total_interval: null
+  limit_total_message: ''
+  limit_total_unique: false
+  limit_user: null
+  limit_user_interval: null
+  limit_user_message: ''
+  limit_user_unique: false
+  entity_limit_total: null
+  entity_limit_total_interval: null
+  entity_limit_user: null
+  entity_limit_user_interval: null
+  purge: none
+  purge_days: null
+  results_disabled: false
+  results_disabled_ignore: false
+  results_customize: false
+  token_view: false
+  token_update: false
+  token_delete: false
+  serial_disabled: false
+access:
+  create:
+    roles:
+      - anonymous
+      - authenticated
+    users: {  }
+    permissions: {  }
+  view_any:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  update_any:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  delete_any:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  purge_any:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  view_own:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  update_own:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  delete_own:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  administer:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  test:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+  configuration:
+    roles: {  }
+    users: {  }
+    permissions: {  }
+handlers:
+  zendesk_new_request:
+    id: zendesk
+    handler_id: zendesk_new_request
+    label: 'Zendesk new request'
+    notes: ''
+    status: true
+    conditions: {  }
+    weight: 0
+    settings:
+      requester_name: contact_name
+      requester_email: contact_email
+      subject: 'Block Party - [webform_submission:values:computed_dates]'
+      comment: '[webform_submission:values:computed_description:html]'
+      tags: 'drupal webform [webform_submission:values:computed_tags]'
+      priority: normal
+      status: new
+      recipient: ''
+      group_id: '29039577075735'
+      assignee_id: ''
+      type: problem
+      is_child_incident: 0
+      collaborators: ''
+      custom_fields: "6353388345367: 'apply_block_party_permit'\r\n1500013095781: '[webform_submission:uuid]'\r\n12280733221015: ['[webform_submission:values:apply_event_start_date:html_date]', 'apply_event_start_date']\r\n12280737894935: ['[webform_submission:values:apply_event_end_date:html_date]', 'apply_event_end_date']\r\n28402919852567: ['[webform_submission:values:computed_event_schedule]', 'computed_event_schedule']\r\n5873224754071: ['[webform_submission:values:apply_block_party_location:location_details]', 'apply_block_party_location:location_details']\r\n5581480390679: ['[webform_submission:values:apply_block_party_location:location_lat]', 'apply_block_party_location:location_lat']\r\n5581490332439: ['[webform_submission:values:apply_block_party_location:location_lon]', 'apply_block_party_location:location_lon']\r\n13407901552407: ['[webform_submission:values:apply_block_party_location:location_x]', 'apply_block_party_location:location_x']\r\n13407918835095: ['[webform_submission:values:apply_block_party_location:location_y]', 'apply_block_party_location:location_y']\r\n1500012743961: ['[webform_submission:values:apply_block_party_location:location_address]', 'apply_block_party_location:location_address']\r\n26252965203991: '[current-date:html_date]'"
+      ticket_id_field: request_ticket_id
+      parent_ticket_id_field: ''
+      ticket_fork_field: ''
+      ticket_form_id: '29039643933975'
+variants: {  }

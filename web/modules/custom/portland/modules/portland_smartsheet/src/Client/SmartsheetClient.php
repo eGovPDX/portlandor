@@ -14,7 +14,7 @@ class SmartsheetClient {
   public function __construct($sheet_id) {
     if ($sheet_id === '') throw new \Exception('No sheet ID passed to SmartsheetClient');
 
-    $this->$sheet_id = $sheet_id;
+    $this->sheet_id = $sheet_id;
     $config = \Drupal::config('portland_smartsheet.adminsettings');
     $access_token = $config->get('access_token');
 

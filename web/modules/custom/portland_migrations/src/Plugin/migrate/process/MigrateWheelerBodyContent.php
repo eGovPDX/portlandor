@@ -174,7 +174,7 @@ class MigrateWheelerBodyContent extends ProcessPluginBase {
             // Mayor Wheeler is group 71.
             // TODO: Is there a good way to dynamically get the group?
             $group = Group::load(71);
-            $group->addContent($media, $plugin_id);
+            $group->addRelationship($media, $plugin_id);
           }
         } else {
           // media entity already exists, get it

@@ -3,7 +3,7 @@ langcode: en
 status: true
 dependencies:
   config:
-    - entity_browser.browser.map_browser_embed
+    - entity_browser.browser.locations_browser
     - field.field.group.base_group.field_address
     - field.field.group.base_group.field_certified_advisory_body
     - field.field.group.base_group.field_contact
@@ -17,6 +17,8 @@ dependencies:
     - field.field.group.base_group.field_enable_const_project_menu
     - field.field.group.base_group.field_enable_documents_menu_item
     - field.field.group.base_group.field_enable_events_menu_item
+    - field.field.group.base_group.field_enable_for_event_types
+    - field.field.group.base_group.field_enable_for_news_types
     - field.field.group.base_group.field_enable_news_and_notices_me
     - field.field.group.base_group.field_enable_offices_menu_item
     - field.field.group.base_group.field_enable_past_meetings
@@ -33,16 +35,17 @@ dependencies:
     - field.field.group.base_group.field_featured_groups
     - field.field.group.base_group.field_featured_media
     - field.field.group.base_group.field_geo_map
+    - field.field.group.base_group.field_govdelivery_topic_code
     - field.field.group.base_group.field_group_menu_toggle
     - field.field.group.base_group.field_group_path
     - field.field.group.base_group.field_group_subtype
     - field.field.group.base_group.field_hide_map
     - field.field.group.base_group.field_location
     - field.field.group.base_group.field_logo_svg
-    - field.field.group.base_group.field_map
     - field.field.group.base_group.field_menu_link
     - field.field.group.base_group.field_neighborhood
     - field.field.group.base_group.field_official_organization_name
+    - field.field.group.base_group.field_only_custom_newsletter
     - field.field.group.base_group.field_parent_group
     - field.field.group.base_group.field_project_status
     - field.field.group.base_group.field_project_type
@@ -56,7 +59,6 @@ dependencies:
     - workflows.workflow.editorial
   module:
     - address
-    - conditional_fields
     - content_moderation
     - datetime
     - entity_browser
@@ -64,7 +66,6 @@ dependencies:
     - file
     - leaflet
     - maxlength
-    - menu_link
     - path
     - select2
 third_party_settings:
@@ -93,7 +94,7 @@ third_party_settings:
       label: Logo
       region: content
       parent_name: ''
-      weight: 11
+      weight: 12
       format_type: details
       format_settings:
         classes: ''
@@ -182,6 +183,7 @@ third_party_settings:
         required_fields: true
     group_path_and_redirects:
       children:
+        - field_group_path
         - field_redirects
         - field_disable_legacy_paths_block
       label: 'Path and Redirects'
@@ -199,28 +201,25 @@ third_party_settings:
     group_administrative_fields_site:
       children:
         - field_certified_advisory_body
-        - field_group_path
         - field_search_keywords
         - path
-        - field_menu_link
-        - field_service_area
       label: 'Administrative Fields'
       region: content
       parent_name: ''
-      weight: 23
+      weight: 24
       format_type: details
       format_settings:
         classes: ''
         show_empty_fields: false
         id: ''
+        label_as_html: false
         open: false
-        description: ''
+        description: 'These fields are not visible to our group admins and editors. Only sitewide administrators may change these values.'
         required_fields: true
     group_map:
       children:
         - field_geo_map
         - field_hide_map
-        - field_map
       label: Map
       region: content
       parent_name: ''
@@ -248,6 +247,25 @@ third_party_settings:
         open: false
         description: ''
         required_fields: true
+    group_custom_group_govdelivery:
+      children:
+        - field_govdelivery_topic_code
+        - field_enable_for_news_types
+        - field_enable_for_event_types
+        - field_only_custom_newsletter
+      label: 'Custom GovDelivery Newsletter'
+      region: content
+      parent_name: ''
+      weight: 23
+      format_type: details
+      format_settings:
+        classes: ''
+        show_empty_fields: false
+        id: ''
+        label_as_html: false
+        open: false
+        description: 'By default, news and events are sent to a GovDelivery newsletter for the service area or council district associated with a group. But you can also configure a custom GovDelivery newsletter for this group if some (or all) news and events need to be sent to a different newsletter.'
+        required_fields: true
 id: group.base_group.default
 targetEntityType: group
 bundle: base_group
@@ -261,7 +279,7 @@ content:
     third_party_settings: {  }
   field_certified_advisory_body:
     type: boolean_checkbox
-    weight: 28
+    weight: 27
     region: content
     settings:
       display_label: true
@@ -297,7 +315,7 @@ content:
     third_party_settings: {  }
   field_disable_legacy_paths_block:
     type: boolean_checkbox
-    weight: 27
+    weight: 30
     region: content
     settings:
       display_label: true
@@ -337,7 +355,7 @@ content:
     third_party_settings: {  }
   field_enable_advisory_menu_item:
     type: boolean_checkbox
-    weight: 37
+    weight: 38
     region: content
     settings:
       display_label: true
@@ -345,7 +363,7 @@ content:
       conditional_fields: {  }
   field_enable_bids_and_proposals:
     type: boolean_checkbox
-    weight: 32
+    weight: 33
     region: content
     settings:
       display_label: true
@@ -360,21 +378,21 @@ content:
       conditional_fields: {  }
   field_enable_const_proj_complete:
     type: boolean_checkbox
-    weight: 39
+    weight: 40
     region: content
     settings:
       display_label: true
     third_party_settings: {  }
   field_enable_const_project_menu:
     type: boolean_checkbox
-    weight: 38
+    weight: 39
     region: content
     settings:
       display_label: true
     third_party_settings: {  }
   field_enable_documents_menu_item:
     type: boolean_checkbox
-    weight: 33
+    weight: 34
     region: content
     settings:
       display_label: true
@@ -382,12 +400,24 @@ content:
       conditional_fields: {  }
   field_enable_events_menu_item:
     type: boolean_checkbox
-    weight: 30
+    weight: 31
     region: content
     settings:
       display_label: true
     third_party_settings:
       conditional_fields: {  }
+  field_enable_for_event_types:
+    type: options_buttons
+    weight: 29
+    region: content
+    settings: {  }
+    third_party_settings: {  }
+  field_enable_for_news_types:
+    type: options_buttons
+    weight: 28
+    region: content
+    settings: {  }
+    third_party_settings: {  }
   field_enable_news_and_notices_me:
     type: boolean_checkbox
     weight: 25
@@ -398,7 +428,7 @@ content:
       conditional_fields: {  }
   field_enable_offices_menu_item:
     type: boolean_checkbox
-    weight: 34
+    weight: 35
     region: content
     settings:
       display_label: true
@@ -406,7 +436,7 @@ content:
       conditional_fields: {  }
   field_enable_past_meetings:
     type: boolean_checkbox
-    weight: 31
+    weight: 32
     region: content
     settings:
       display_label: true
@@ -434,7 +464,7 @@ content:
     third_party_settings: {  }
   field_enable_programs_menu_item:
     type: boolean_checkbox
-    weight: 35
+    weight: 36
     region: content
     settings:
       display_label: true
@@ -442,7 +472,7 @@ content:
       conditional_fields: {  }
   field_enable_projects_menu_item:
     type: boolean_checkbox
-    weight: 36
+    weight: 37
     region: content
     settings:
       display_label: true
@@ -498,7 +528,7 @@ content:
     third_party_settings: {  }
   field_featured_media:
     type: entity_browser_entity_reference
-    weight: 12
+    weight: 13
     region: content
     settings:
       entity_browser: featured_image
@@ -513,7 +543,7 @@ content:
     third_party_settings: {  }
   field_geo_map:
     type: leaflet_widget_default
-    weight: 24
+    weight: 34
     region: content
     settings:
       map:
@@ -563,6 +593,7 @@ content:
       geocoder:
         control: false
         settings:
+          popup: false
           position: topright
           input_size: 25
           providers:
@@ -572,11 +603,18 @@ content:
           min_terms: 4
           delay: 800
           zoom: 16
-          popup: false
           options: ''
       geometry_validation: false
       feature_properties:
         values: ''
+    third_party_settings: {  }
+  field_govdelivery_topic_code:
+    type: string_textfield
+    weight: 27
+    region: content
+    settings:
+      size: 60
+      placeholder: ''
     third_party_settings: {  }
   field_group_menu_toggle:
     type: boolean_checkbox
@@ -587,7 +625,7 @@ content:
     third_party_settings: {  }
   field_group_path:
     type: string_textfield
-    weight: 29
+    weight: 28
     region: content
     settings:
       size: 60
@@ -604,14 +642,14 @@ content:
     third_party_settings: {  }
   field_hide_map:
     type: boolean_checkbox
-    weight: 25
+    weight: 35
     region: content
     settings:
       display_label: true
     third_party_settings: {  }
   field_location:
     type: entity_browser_entity_reference
-    weight: 19
+    weight: 31
     region: content
     settings:
       entity_browser: locations_browser
@@ -631,27 +669,6 @@ content:
     settings:
       progress_indicator: throbber
     third_party_settings: {  }
-  field_map:
-    type: entity_browser_entity_reference
-    weight: 26
-    region: content
-    settings:
-      entity_browser: map_browser_embed
-      field_widget_display: rendered_entity
-      field_widget_edit: true
-      field_widget_remove: true
-      field_widget_replace: false
-      open: false
-      field_widget_display_settings:
-        view_mode: thumbnail
-      selection_mode: selection_append
-    third_party_settings: {  }
-  field_menu_link:
-    type: menu_link_default
-    weight: 32
-    region: content
-    settings: {  }
-    third_party_settings: {  }
   field_neighborhood:
     type: select2_entity_reference
     weight: 10
@@ -669,6 +686,69 @@ content:
     settings:
       size: 60
       placeholder: ''
+    third_party_settings:
+      conditional_fields:
+        c3c58459-3aa2-49b7-89f9-46f8e7ffa3a3:
+          entity_type: group
+          bundle: base_group
+          dependee: field_group_subtype
+          settings:
+            state: visible
+            reset: false
+            condition: value
+            grouping: AND
+            values_set: 1
+            value: ''
+            values: {  }
+            value_form:
+              -
+                target_id: '850'
+            effect: show
+            effect_options: {  }
+            selector: ''
+        d0d62e9e-a4c8-4905-9b46-c7549cf6af72:
+          entity_type: group
+          bundle: base_group
+          dependee: field_group_subtype
+          settings:
+            state: required
+            reset: false
+            condition: value
+            grouping: AND
+            values_set: 1
+            value: ''
+            values: {  }
+            value_form:
+              -
+                target_id: '850'
+            effect: show
+            effect_options: {  }
+            selector: ''
+        9c943d63-803c-47ea-8378-d0bfeec7abd8:
+          entity_type: group
+          bundle: base_group
+          dependee: field_group_subtype
+          settings:
+            state: '!empty'
+            reset: false
+            condition: value
+            grouping: AND
+            values_set: 5
+            value: ''
+            values: '850'
+            value_form: {  }
+            effect: fill
+            effect_options:
+              fill:
+                value: ''
+                reset: 1
+            selector: ''
+  field_only_custom_newsletter:
+    type: boolean_checkbox
+    weight: 30
+    region: content
+    settings:
+      display_label: true
     third_party_settings: {  }
   field_parent_group:
     type: entity_reference_autocomplete
@@ -750,7 +830,7 @@ content:
             selector: ''
   field_redirects:
     type: string_textfield
-    weight: 26
+    weight: 29
     region: content
     settings:
       size: 60
@@ -758,21 +838,17 @@ content:
     third_party_settings: {  }
   field_search_keywords:
     type: string_textfield
-    weight: 30
+    weight: 28
     region: content
     settings:
       size: 60
       placeholder: ''
     third_party_settings: {  }
   field_service_area:
-    type: entity_reference_autocomplete
-    weight: 33
+    type: options_select
+    weight: 2
     region: content
-    settings:
-      match_operator: CONTAINS
-      match_limit: 10
-      size: 60
-      placeholder: ''
+    settings: {  }
     third_party_settings: {  }
   field_shortname_or_acronym:
     type: string_textfield
@@ -851,24 +927,24 @@ content:
         maxlength_js_enforce: false
   moderation_state:
     type: moderation_state_default
-    weight: 25
+    weight: 26
     region: content
     settings: {  }
     third_party_settings: {  }
   path:
     type: path
-    weight: 31
+    weight: 29
     region: content
     settings: {  }
     third_party_settings: {  }
   translation:
-    weight: 10
+    weight: 11
     region: content
     settings: {  }
     third_party_settings: {  }
   uid:
     type: entity_reference_autocomplete
-    weight: 24
+    weight: 25
     region: content
     settings:
       match_operator: CONTAINS
@@ -877,5 +953,6 @@ content:
       placeholder: ''
     third_party_settings: {  }
 hidden:
+  field_menu_link: true
   langcode: true
   status: true

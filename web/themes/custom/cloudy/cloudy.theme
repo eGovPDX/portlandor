@@ -7,7 +7,7 @@
 use Drupal\Core\Config\Config;
 use Drupal\Core\Form\FormStateInterface;
 
-use Drupal\group\Entity\GroupContent;
+use Drupal\group\Entity\GroupRelationship;
 use Drupal\group\Entity\GroupInterface;
 
 function setGroupVariables($group, &$variables) {
@@ -24,7 +24,7 @@ function cloudy_preprocess_html(&$variables) {
       $node = \Drupal\node\Entity\Node::load($node);
     }
     // that is group content
-    foreach (GroupContent::loadByEntity($node) as $group_content) {
+    foreach (GroupRelationship::loadByEntity($node) as $group_content) {
       // give it the shortname as a class
       setGroupVariables($group_content->getGroup(), $variables);
     }
@@ -169,20 +169,6 @@ function cloudy_preprocess_search_api_page(&$vars) {
   // Save URL query parameter as variable for Twig template
   if ( isset($_GET['keys']) ) {
     $vars['get']['keys'] = $_GET['keys'];
-  }
-}
-
-function cloudy_preprocess_responsive_image(&$variables) {
-  // Add attribute to Elected Official thumbnail
-  if($variables['responsive_image_style_id'] == "elected_official_thumbnail") {
-    $variables['img_element']['#attributes']['is_rounded'] = true;
-  }
-}
-
-function cloudy_preprocess_image(&$variables) {
-  // Apply class to Elected Official thumbnail if key exists
-  if(key_exists('is_rounded', $variables['attributes'])) {
-    $variables['attributes']['class'][] = 'rounded-circle';
   }
 }
 

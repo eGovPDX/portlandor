@@ -51,7 +51,7 @@ describe('Full regression test suite for Admin', () => {
     await browser.close();
   });
 
-  it('Admin can create a group and add Ally as admin', async () => {
+  it('Admin can create a group', async () => {
     try {
       let text_content = '',
         selector = '';
@@ -90,7 +90,7 @@ describe('Full regression test suite for Admin', () => {
         `This is a test summary for the ${TEST_GROUP_PATH}`
       );
       // Must expand the admin fields group in order to input Group Path
-      await page.click('details#edit-group-administrative-fields-site');
+      await page.click('details#edit-group-path-and-redirects');
       await page.type('#edit-field-group-path-0-value', TEST_GROUP_PATH);
 
       // Group needs to be published to be added to content in following test
@@ -191,7 +191,7 @@ describe('Full regression test suite for Admin', () => {
         () => document.querySelector('.page-title').textContent
       );
       expect(text_content).toEqual(
-        expect.stringContaining('Add Base group: Group membership')
+        expect.stringContaining('Add Group membership')
       );
       await page.type('#edit-entity-id-0-target-id', 'Ally Admin (62)');
       selector = '#edit-group-roles-base-group-admin';
@@ -229,7 +229,7 @@ describe('Full regression test suite for Admin', () => {
   });
 
   // Masquerade as Ally
-  it('Ally can create Page', async () => {
+  it('Ally can create page', async () => {
     try {
       var pageTester = Object.create(ContentTester);
       pageTester.init({
@@ -241,7 +241,7 @@ describe('Full regression test suite for Admin', () => {
           'Page type',
           'Summary',
           'Body content',
-          'Legacy path',
+          'URL redirects',
         ],
         homepageUrl: HOME_PAGE,
         testGroupPath: TEST_GROUP_PATH,

@@ -8,29 +8,29 @@ use \Drupal\Core\Access\AccessResult;
 /**
  * Implements hook_form_alter().
  *
- * For all forms with revision_log field:
- * - Hide disabled revision checkbox (defaults to new revision).
- * - Move revision_log to footer, right above submit.
- * - Add a callback to a validation function that makes revision_log required.
- *
- * NOTE: There is no documentation or information available online about making
- *       the revision log message required. This would be a good candidate for
- *       an entry level contrib module.
+ * For all forms with a revision log field:
+ * - Hide revision checkbox (since we don't want editors to be able to control this, we want to on a global basis via the entity bundle settings).
+ * - Hide revision log field if revisions are disabled on this bundle.
+ * - Move revision related fields (reviewer, log message) to the footer group.
  *
  * @param [type] $form
  * @param [type] $form_state
  * @param [type] $form_id
  * @return void
  */
-function portland_revision_helper_form_alter(&$form, $form_state, $form_id)
-{
+function portland_revision_helper_form_alter(&$form, $form_state, $form_id) {
+  // only run on forms with a revision log field (since we can then assume it's the edit form of a revisionable entity type)
+  // legacy entity types (like node) use revision_log but newer entity types (like media and our custom relation) use revision_log_message
+  if (!array_key_exists('revision_log', $form) && !array_key_exists('revision_log_message', $form)) return;
+
   // Hide "Create new revision" checkbox
   if (array_key_exists('revision', $form)) {
     $form['revision']['#access'] = false;
 
     // If revisions are disabled by default, hide the log message field.
-    if ($form['revision']['#default_value'] === 0 && array_key_exists('revision_log_message', $form)) {
-      $form['revision_log_message']['#access'] = false;
+    if (!$form['revision']['#default_value']) {
+      if (array_key_exists('revision_log', $form)) $form['revision_log']['#access'] = false;
+      if (array_key_exists('revision_log_message', $form)) $form['revision_log_message']['#access'] = false;
     }
   }
 
@@ -57,13 +57,13 @@ function portland_revision_helper_local_tasks_alter(&$local_tasks) {
 /**
  * Implements hook_entity_field_access().
  *
- * Grant access to the revision_log field.
+ * Grant access to the revision_log/revision_log_message field.
  *
  */
 function portland_revision_helper_entity_field_access($operation, FieldDefinitionInterface $field_definition, AccountInterface $account, FieldItemListInterface $items = null)
 {
   $access = AccessResult::neutral();
-  if ($operation == 'edit' && $field_definition->getName() == 'revision_log') {
+  if ($operation == 'edit' && ($field_definition->getName() === 'revision_log' || $field_definition->getName() === 'revision_log_message')) {
     // assumption: if a user can add/edit a node, they should also have permission
     // to add a log message, so access to that field should be assumed anytime it's referenced.
     $access = AccessResult::allowed();

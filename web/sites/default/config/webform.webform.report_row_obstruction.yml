@@ -16,7 +16,7 @@ uid: 60
 template: false
 archive: false
 id: report_row_obstruction
-title: 'Report an Obstruction on a Street, Sidewalk, or Other Right-of-Way'
+title: 'Report Obstruction in Right-of-Way'
 description: ''
 categories:
   - Report
@@ -331,6 +331,8 @@ elements: |-
         '#location_details__help': 'Please tell us as much as you can about how this obstruction is impacting the right-of-way.'
         '#location_type__access': false
         '#location_private_owner__access': false
+        '#require_city_limits': true
+        '#out_of_bounds_message': 'You''ve selected a location outside of the Portland city limits. Please try again, or call us at <a href="tel:311">3-1-1</a> or <a href="tel:+15038234000">503-823-4000</a> for assistance.'
       report_photo:
         '#type': webform_image_file
         '#title': 'Photo of Obstruction'
@@ -338,7 +340,7 @@ elements: |-
         '#file_preview': 'medium:image'
         '#max_filesize': '30'
         '#file_extensions': 'jpg jpeg png'
-        '#file_name': 'report_[webform_submission:sid]'
+        '#file_name': 'report_[webform_submission:uuid]'
         '#sanitize': true
         '#max_resolution': 1280x1280
         '#attachment_image_style': webform_report_uploaded_image
@@ -425,14 +427,14 @@ elements: |-
       '#title': 'Public Records Statement'
       markup_public_records_statement:
         '#type': webform_markup
-        '#markup': '<p>Information you provide to the City is a public record and may be subject to release under Oregon’s <a data-renderer-mark="true" href="https://www.doj.state.or.us/oregon-department-of-justice/public-records/attorney-generals-public-records-and-meetings-manual/i-public-records/#:~:text=Under%20Oregon''s%20Public%20Records%20Law,committee%20of%20the%20Legislative%20Assembly" title="https://www.doj.state.or.us/oregon-department-of-justice/public-records/attorney-generals-public-records-and-meetings-manual/i-public-records/#:~:text=Under%20Oregon''s%20Public%20Records%20Law,committee%20of%20the%20Legislative%20Assembly">Public Records Law</a>. This law classifies certain information as available to the public on request. See our <a data-renderer-mark="true" href="/help/about/privacy" title="https://www.portland.gov/help/about/privacy">privacy statement</a> for more information.</p>'
+        '#markup': '<p>Information you provide to the City is a public record and may be subject to release under <a data-renderer-mark="true" href="/attorney/oregon-public-records-law">Oregon Public Records Law</a>. This law classifies certain information as available to the public on request. See our <a data-renderer-mark="true" href="/help/about/privacy">privacy statement</a> for more information.</p>'
     support_agent_use_only:
       '#type': portland_support_agent_widget
       '#title': 'Support Agent Use Only'
       '#access_create_roles':
         - authenticated
-      '#zendesk_request_number__access': false
       '#escalate_issue__access': false
+      '#zendesk_request_number__access': false
     actions:
       '#type': webform_actions
       '#title': 'Submit button(s)'
@@ -730,8 +732,8 @@ settings:
   entity_limit_total_interval: null
   entity_limit_user: null
   entity_limit_user_interval: null
-  purge: none
-  purge_days: null
+  purge: all
+  purge_days: 14
   results_disabled: false
   results_disabled_ignore: false
   results_customize: false
@@ -817,6 +819,8 @@ handlers:
       ticket_form_id: '20531514301207'
       recipient: ''
       ticket_fork_field: ''
+      is_child_incident: ''
+      parent_ticket_id_field: ''
   email:
     id: email
     handler_id: email
@@ -889,6 +893,8 @@ handlers:
       ticket_form_id: '20531514301207'
       recipient: ''
       ticket_fork_field: ''
+      is_child_incident: ''
+      parent_ticket_id_field: ''
   zendesk_update_request:
     id: zendesk_update_ticket
     handler_id: zendesk_update_request
@@ -903,6 +909,7 @@ handlers:
     settings:
       comment: '[webform_submission:values:computed_triage_message:html]'
       comment_private: 1
+      skip_attachments: 1
       tags: ''
       priority: ''
       status: ''
@@ -943,6 +950,8 @@ handlers:
       ticket_form_id: '20531514301207'
       recipient: ''
       ticket_fork_field: ''
+      is_child_incident: ''
+      parent_ticket_id_field: ''
   test_submit_by_email:
     id: email
     handler_id: test_submit_by_email

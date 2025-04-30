@@ -40,6 +40,7 @@ elements: |-
       '#title': 'Is someone living in the vehicle or is it part of an encampment?'
       '#options': yes_no
       '#required': true
+      '#prepopulate': true
     markup_campsite_stop:
       '#type': webform_markup
       '#states':
@@ -53,7 +54,8 @@ elements: |-
       '#description_display': before
       '#options':
         'Missing parts or damage': 'Missing parts or other damage that makes the vehicle appear <strong>inoperable</strong>'
-        'Expired or missing registration': 'Displaying <strong>expired/missing</strong> registration'
+        'Expired registration': 'Displaying <strong>expired</strong> registration'
+        'Missing registration': 'Displaying <strong>missing</strong> registration'
         'Prohibited vehicle': 'A prohibited container, boat, trailer, travel trailer, drop box, storage container, motorhome or RV'
         'Fire damage': 'Severely damaged by <strong>fire</strong>'
       '#options_none': true
@@ -95,7 +97,10 @@ elements: |-
           - ':input[name="report_vehicle_inoperable[Missing parts or damage]"]':
               checked: true
           - or
-          - ':input[name="report_vehicle_inoperable[Expired or missing registration]"]':
+          - ':input[name="report_vehicle_inoperable[Expired registration]"]':
+              checked: true
+          - or
+          - ':input[name="report_vehicle_inoperable[Missing registration]"]':
               checked: true
           - or
           - ':input[name="report_vehicle_inoperable[Prohibited vehicle]"]':
@@ -148,8 +153,9 @@ elements: |-
           '#location_municipality_name__access': false
           '#location_private_owner__access': false
           '#location_is_portland__access': false
-          '#geojson_layer__access': false
-          '#geojson_layer_behavior__access': false
+          '#click_query_url': 'https://www.portlandmaps.com/arcgis/rest/services/Public/Geocoding_PDX/GeocodeServer/reverseGeocode?location=%7B%22x%22%3A{{x}}%2C+%22y%22%3A{{y}}%2C+%22spatialReference%22%3A%7B%22wkid%22+%3A+3857%7D%7D&f=json'
+          '#click_query_property_path': address.Address
+          '#click_query_destination_field': report_closest_address
           '#require_boundary': true
       container_abandoned_auto:
         '#type': webform_section
@@ -192,12 +198,16 @@ elements: |-
               '#title': 'License plate state'
               '#description': 'If the vehicle has a license plate, please select which state it&#39;s from.'
               '#description_display': before
+              '#autocomplete': 'off'
             license_plate_number:
               '#type': textfield
               '#title': 'License plate number'
               '#description': 'If the vehicle has a license plate, please enter the number.'
               '#description_display': before
               '#maxlength': 8
+              '#input_mask': '[*][*][*][*][*][*][*][*]'
+              '#pattern': '^[a-zA-Z0-9]{0,8}$'
+              '#pattern_error': 'License plate must be alphanumerical and maximum 8 characters.'
         container_submit:
           '#type': webform_section
           '#title': 'Finish your report'
@@ -210,7 +220,7 @@ elements: |-
             '#file_preview': 'medium:image'
             '#max_filesize': '30'
             '#file_extensions': 'jpg jpeg png'
-            '#file_name': 'report_[webform_submission:sid]'
+            '#file_name': 'vehicle-photo-[webform_submission:values:report_vehicle:color]-[webform_submission:values:report_vehicle:make]'
             '#sanitize': true
             '#max_resolution': 1280x1280
             '#attachment_image_style': webform_report_uploaded_image
@@ -238,7 +248,7 @@ elements: |-
             confidentiality_waiver:
               '#type': radios
               '#title': 'Confidentiality Waiver'
-              '#description': '<p>It is City policy to keep the information you provide on this form confidential for the purposes of fulfilling your request. The City will also attempt to keep your information confidential in the event someone requests it be released as a public record under Oregon&rsquo;s <a data-renderer-mark="true" href="https://www.doj.state.or.us/oregon-department-of-justice/public-records/attorney-generals-public-records-and-meetings-manual/i-public-records/#:~:text=Under%20Oregon''s%20Public%20Records%20Law,committee%20of%20the%20Legislative%20Assembly" title="https://www.doj.state.or.us/oregon-department-of-justice/public-records/attorney-generals-public-records-and-meetings-manual/i-public-records/#:~:text=Under%20Oregon''s%20Public%20Records%20Law,committee%20of%20the%20Legislative%20Assembly">Public Records Law</a>. If you would prefer to waive this confidentiality, please select that option below.</p>'
+              '#description': '<p>It is City policy to keep the information you provide on this form confidential for the purposes of fulfilling your request. The City will also attempt to keep your information confidential in the event someone requests it be released as a public record under <a data-renderer-mark="true" href="/attorney/oregon-public-records-law">Oregon Public Records Law</a>. If you would prefer to waive this confidentiality, please select that option below.</p>'
               '#description_display': before
               '#options':
                 'I do not waive confidentiality': 'I do <em>not</em> waive confidentiality.'
@@ -264,6 +274,11 @@ elements: |-
   report_ticket_id:
     '#type': hidden
     '#title': 'Report Ticket ID'
+  report_closest_address:
+    '#type': hidden
+    '#title': 'Closest Address for AbAutos'
+    '#attributes':
+      id: report_closest_address
   computed_confirmation:
     '#type': webform_computed_twig
     '#title': 'Computed Confirmation'
@@ -514,6 +529,7 @@ handlers:
       custom_fields: "8692493739543: '[webform_submission:values:support_agent_use_only:zendesk_request_number]'"
       ticket_id_field: zendesk_request_number
       ticket_form_id: ''
+      skip_attachments: false
   submit_to_zendesk_abautos:
     id: zendesk
     handler_id: submit_to_zendesk_abautos
@@ -542,6 +558,8 @@ handlers:
       ticket_form_id: '17751920813847'
       recipient: ''
       ticket_fork_field: report_vehicle
+      is_child_incident: ''
+      parent_ticket_id_field: ''
   submit_to_zendesk_abautos_developer_test:
     id: zendesk
     handler_id: submit_to_zendesk_abautos_developer_test
@@ -570,6 +588,8 @@ handlers:
       ticket_form_id: '17751920813847'
       recipient: ''
       ticket_fork_field: report_vehicle
+      is_child_incident: ''
+      parent_ticket_id_field: ''
   email:
     id: email
     handler_id: email
