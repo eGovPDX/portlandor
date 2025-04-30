@@ -21,6 +21,21 @@ Drupal.behaviors.dynamicGlossaryTooltip = {
 
           const termData = data[0];
           const termLabel = termData.title || 'Glossary Term';
+
+          // Check if Popper.js is enabled and viewport is not mobile
+          const createPopper = window.Popper?.createPopper;
+          const isMobileViewport = window.innerWidth <= 768;
+
+          if (createPopper && !isMobileViewport) {
+            // Remove the title attribute if Popper.js is enabled and viewport is not mobile
+            link.removeAttribute('title');
+          } else {
+            // Keep the title attribute for mobile viewports or if Popper.js is not available
+            if (link.title && link.title.trim().toLowerCase() === link.textContent.trim().toLowerCase()) {
+              link.title = 'Learn more about this term';
+            }
+          }
+
           const pronunciation = termData.pronunciation || '';
           const description = termData.short_definition || 'No description available.';
           const url = termData.url || '#';
@@ -45,16 +60,29 @@ Drupal.behaviors.dynamicGlossaryTooltip = {
             </span>
           `;
 
+          // Create the icon element
+          const icon = document.createElement('i');
+          icon.classList.add('fa-regular', 'fa-circle-info'); // Updated icon classes
+
+          // Add a non-breaking space before the icon
+          link.appendChild(document.createTextNode('\u00A0'));
+
+          // Append the icon to the link
+          link.appendChild(icon);
+
+          // Insert the wrapper and append the link
           link.parentNode.insertBefore(wrapper, link);
           wrapper.appendChild(link);
+
+          link.classList.add('glossary-term-link');
 
           const reference = link;
           const tooltip = wrapper.querySelector('.glossary-popper');
           const arrow = tooltip.querySelector('[data-popper-arrow]');
           let hideTimeout;
 
-          const createPopper = window.Popper?.createPopper;
-          if (!createPopper) return;
+          // Check if Popper.js is available and if the viewport width is greater than 768px
+          if (!createPopper || window.innerWidth <= 768) return;
 
           // Force reflow before Popper init
           tooltip.offsetHeight;
@@ -111,9 +139,19 @@ Drupal.behaviors.dynamicGlossaryTooltip = {
         .catch(err => {
           console.warn(`Glossary tooltip failed to load for UUID "${uuid}":`, err);
 
+          // Create a <span> to replace the <a> tag
           const notFoundSpan = document.createElement('span');
-          notFoundSpan.classList.add('glossary-term-missing');
           notFoundSpan.textContent = link.textContent.trim();
+
+          // Add the glossary-term-missing class and title attribute if the user is logged in
+          if (drupalSettings.user && drupalSettings.user.uid && drupalSettings.user.uid !== 0) {
+            notFoundSpan.classList.add('glossary-term-missing');
+          }
+
+          // Add the title attribute to indicate the term is missing
+          notFoundSpan.setAttribute('title', 'Glossary term missing. Please contact a group administrator.');
+
+          // Replace the <a> tag with the <span>
           link.replaceWith(notFoundSpan);
         });
     });
