@@ -282,11 +282,7 @@ class SmartsheetHandler extends WebformHandlerBase {
     ];
   }
 
-  public function validateForm(array &$form, FormStateInterface $form_state, WebformSubmissionInterface $webform_submission) {
-    // By submitting to the API during the validate phase, we can interrupt the form submission if any errors happen.
-    // But we need to check that the validation was triggered by the submit button, and that there were also no validation errors.
-    if ($form_state->hasAnyErrors() || !$form_state->getTriggeringElement() || $form_state->getTriggeringElement()['#parents'][0] !== "submit") return;
-
+  public function postSave(WebformSubmissionInterface $webform_submission, $update = TRUE) {
     $this->messageManager->setWebformSubmission($webform_submission);
 
     $submission_arr = $webform_submission->toArray(TRUE);
@@ -340,9 +336,6 @@ class SmartsheetHandler extends WebformHandlerBase {
 
       // Display error to user.
       $this->messageManager->display(WebformMessageManagerInterface::SUBMISSION_EXCEPTION_MESSAGE, 'error');
-
-      // Add validation error to prevent submission.
-      $form_state->setErrorByName('');
     }
   }
 
