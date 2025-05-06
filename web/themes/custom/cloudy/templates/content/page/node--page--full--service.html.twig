@@ -6,21 +6,26 @@
 
 <div class="row mt-lg-12">
   <div class="cloudy-side col-lg-3 col-md-12 mb-8 mb-lg-0 border-2 border-lg-0 border-top border-bottom border-dark">
-    <button class="d-lg-none btn px-0 py-4 w-100 text-start" type="button" data-bs-toggle="collapse" data-bs-target="#collapsePageMenu" aria-expanded="true" aria-controls="collapsePageMenu">
-      <h2 class="mb-0">{{ 'In this section...'|t }}</h2>
-    </button>
-    <div class="mb-6 mb-lg-0 d-lg-block collapse show" id="collapsePageMenu">
-      {# show current page's menu or parent page menu #}
-      {{ content.field_menu }}
-      {{ content.field_parent }}
-    </div>
+    {# show current page's menu or parent page menu #}
+    {% if content.field_menu.0 %}
+    {{ content.field_menu }}
+    {% elseif content.field_parent.0 %}
+    {{ content.field_parent }}
+    {% endif %}
   </div>
   <div class="cloudy-content col-lg-9 col-md-12">
     <article {{ attributes }}>
       {{ drupal_entity('block', 'views_block__content_translations_block_content_language_switch', check_access=false) }}
+      {# if this is a child page, show its own title and summary in content column #}
+      {% if content.field_parent.0 %}
+        <h2 class="mt-0">{{ label }}</h2>
+        {{ content.field_summary }}
+      {% endif %}
       <div {{ content_attributes.addClass('node__content', 'clearfix') }}>
+        {{ content.toc_js|add_suggestion('service') }}
         {{
           content|without(
+            'toc_js',
             'field_menu',
             'field_parent',
             'field_page_type',
