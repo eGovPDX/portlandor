@@ -24,7 +24,7 @@ class EntityReferenceHierarchyPageMenuFormatter extends EntityReferenceFormatter
    * {@inheritdoc}
    */
   public function viewElements(FieldItemListInterface $items, $langcode) {
-    $current_nid = \Drupal::routeMatch()->getRawParameter('node');
+    $current_nid = \Drupal::routeMatch()->getRawParameter('node') ?? \Drupal::routeMatch()->getRawParameter('node_preview');
     /** @var EntityReferenceHierarchyFieldItemList $items */
     $elements = [];
     $output_as_link = true;
