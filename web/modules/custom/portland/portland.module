@@ -28,7 +28,6 @@ use Drupal\views\Render\ViewsRenderPipelineMarkup;
 use Drupal\Core\Language\LanguageInterface;
 use Drupal\file\Plugin\Field\FieldType\FileFieldItemList;
 use Drupal\Core\Link;
-use Drupal\node\Entity\Node;
 
 // This file concerns itself with setting up tokens with hooks
 include 'portland.tokens.inc';
@@ -167,7 +166,7 @@ function portland_theme($existing, $type, $theme, $path)
       'variables' => [
         'markup' => null
       ]
-    ],
+    ]
   ];
 }
 
@@ -233,7 +232,7 @@ function portland_node_presave($node)
   // field values and modify a field value but the node hasn't been saved yet so it doesn't have a
   // node ID or URL which is required to send the email. So that part will happen in
   // hook_node_update() after it's saved.
-  if ($node->hasField("field_send_email") && $node->get("field_send_email")->value
+  if ($node->hasField("field_send_email") && $node->get("field_send_email")->value 
       && $node->get('moderation_state')->getString() == "published"
       && ($node->isNew() || $node->original->get('moderation_state')->getString() != "published")
       ) {
@@ -276,7 +275,7 @@ function _add_node_to_govdelivery_queue($node)
     }
     $only_custom_newsletter = $group->get("field_only_custom_newsletter")->value == true;
   }
-
+  
   if (!$use_custom_newsletter || !$only_custom_newsletter) {
     // Get the GovDelivery topic code from the group's associated service area or council district.
     // Look in parent group(s) if no service area or council district is associated with the current group.
@@ -311,7 +310,7 @@ function _add_node_to_govdelivery_queue($node)
       }
     }
   }
-
+  
   if ($use_custom_newsletter) {
     if ($only_custom_newsletter || $topic_code == null) {
       $topic_code = $group_topic_code;
@@ -325,12 +324,12 @@ function _add_node_to_govdelivery_queue($node)
   $featured_image_id = $node->get("field_featured_media")[0]?->getValue()['target_id'];
   if ($featured_image_id) {
     $featured_image = \Drupal::entityTypeManager()->getStorage('media')->load($featured_image_id);
-
+    
     // Render the media entity using the 'email' view mode.
     $view_builder = \Drupal::entityTypeManager()->getViewBuilder('media');
     $render_array = $view_builder->view($featured_image, 'email');
     $image_html = \Drupal::service('renderer')->renderRoot($render_array);
-
+    
     // Convert relative image URLs to absolute URLs
     $base_url = \Drupal::request()->getSchemeAndHttpHost();
     $search_str = ['href="/', 'src="/', 'srcset="/', 'action="/'];
@@ -344,12 +343,12 @@ function _add_node_to_govdelivery_queue($node)
   $body = sprintf('<p class="groupHeading">%s %s</p>', $group_name, ucfirst($node->bundle()));
   $body .= sprintf('<h2>%s</h2>', $node->getTitle());
   $body .= sprintf('%s', $image_html);
-
+  
   // If the node is an event, render the group date twig template and include the output in the email body
   if ($node->bundle() == 'event') {
     $twig = \Drupal::service('twig');
     $template = 'themes/custom/cloudy/templates/field/field-group-html-element--group-date--content.html.twig';
-
+    
     $variables = [
       'element' => [
         'field_display_date' => [''],
@@ -363,7 +362,7 @@ function _add_node_to_govdelivery_queue($node)
     $group_date_output = trim($twig->render($template, $variables));
     $body .= sprintf('<p>%s</p>', $group_date_output);
   }
-
+  
   $body .= sprintf('<p>%s</p>', $node->get("field_summary")->value);
   $body .= sprintf('<p><a href="%s">Read more</a></p>', $node->toUrl()->setAbsolute()->toString());
   $body .= '<div class="clear" />';
@@ -383,14 +382,14 @@ function _add_node_to_govdelivery_queue($node)
         clear: both;
       }
     </style>";
-
+  
   // $topic_code can be a comma-delimited list, so send a separate email for each topic
   // (If multiple topics are specified in the same email, the email won't use the correct
   // header and footer configured for the topics.)
   $topics = explode(",", $topic_code);
   foreach ($topics as $topic) {
     $topic = trim($topic);
-
+    
     // Add an email to the GovDelivery queue
     \Drupal::service('govdelivery_bulletins.add_bulletin_to_queue')
       ->setFlag('dedupe', TRUE)  // Optional
@@ -410,7 +409,7 @@ function _add_node_to_govdelivery_queue($node)
       // ->setXmlBool('urgent', FALSE)  // Optional
       ->addToQueueAndReset();
   }
-
+  
   \Drupal::messenger()->addMessage('GovDelivery email has been queued for delivery.');
 }
 
@@ -749,7 +748,7 @@ function portland_form_alter(&$form, &$form_state, $form_id)
       $form[$field_name]['#group'] = 'footer';
     }
   }
-
+  
 }
 
 /**
@@ -781,7 +780,13 @@ function portland_form_entity_browser_form_alter(&$form, &$form_state, $form_id)
   }
 }
 
-function _add_translation_warning(&$form, Node $node) {
+/**
+ * Implements hook_form_BASE_FORM_ID_alter().
+ *
+ * Override the node edit form to show a warning when editing the default translation, if there are translated versions.
+ */
+function portland_form_node_form_alter(&$form, &$form_state) {
+  $node = $form_state->getFormObject()->getEntity();
   // false = exclude default language
   $translation_langs = $node->getTranslationLanguages(false);
   $translation_langs_friendly = join(', ', array_map(fn($lang) => $lang->getName(), $translation_langs));
@@ -806,16 +811,6 @@ function _add_translation_warning(&$form, Node $node) {
   }
 }
 
-/**
- * Implements hook_form_BASE_FORM_ID_alter().
- *
- * Override the node edit form to show a warning when editing the default translation, if there are translated versions.
- */
-function portland_form_node_form_alter(&$form, &$form_state) {
-  $node = $form_state->getFormObject()->getEntity();
-  _add_translation_warning($form, $node);
-}
-
 const FILE_EXTENSION_TO_MIMETYPE_MAP = [
   "PDF" => "application/pdf",
   "DOC" => "application/msword",
@@ -831,7 +826,7 @@ const FILE_EXTENSION_TO_MIMETYPE_MAP = [
 /**
  * A helper function to validate document.
  */
-function _validate_document(&$form, FormStateInterface $form_state, $form_id = [])
+function _validate_document(&$form, FormStateInterface $form_state, $form_id = []) 
 {
   $is_embedded_document_form_with_efiles = $form_state->hasValue("inline_entity_form") &&
     ($form_state->getValue("inline_entity_form")["field_efiles_link"] != null);
@@ -1558,7 +1553,7 @@ function portland_preprocess_fieldset(&$variables): void {
     unset($variables["errors"]);
   }
 }
-
+ 
 /**
  * Implements hook_field_widget_single_element_form_alter().
  */
