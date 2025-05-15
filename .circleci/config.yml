@@ -1,6 +1,14 @@
 # CircleCI integration with Drupal 8.
 version: 2.1
 
+parameters:
+  pantheon-env:
+    type: string
+    default: dev
+  clone-type:
+    type: string
+    default: db-only
+
 # Common tasks defined as commands
 commands:
   checkout_source:
@@ -45,7 +53,9 @@ commands:
               ./terminus self:plugin:reload
               ./terminus self:plugin:install terminus-build-tools-plugin
             fi
-            echo 'export PATH=$PATH:~/terminus' >> $BASH_ENV
+            echo 'export PATH=$PATH:~/terminus' >> $BASH_ENV && source $BASH_ENV
+            terminus plugin:reload
+            terminus plugins
       - save_cache:
           name: Save Terminus cache
           key: terminus-cache-v1-{{ checksum "~/terminus_release.txt" }}
@@ -485,13 +495,13 @@ clone_live_database: &clone_live_database
         command: |
           # On Master branch, clone to Dev
           if [[ $CIRCLE_BRANCH = "master" ]]; then
-            echo 'export PANTHEON_ENV="dev"' >> $BASH_ENV && source $BASH_ENV
+            echo 'export PANTHEON_ENV="<< pipeline.parameters.pantheon-env >>"' >> $BASH_ENV && source $BASH_ENV
           else
             echo 'export PANTHEON_ENV=${CIRCLE_BRANCH}' >> $BASH_ENV && source $BASH_ENV
           fi
 
-          echo "Cloning DB from Live to $PANTHEON_ENV..."
-          terminus env:clone-content $CIRCLE_PROJECT_REPONAME.live $PANTHEON_ENV --db-only -y || terminus env:clone-content $CIRCLE_PROJECT_REPONAME.live $PANTHEON_ENV --db-only -y
+          echo "Cloning << pipeline.parameters.clone-type >> from Live to $PANTHEON_ENV..."
+          terminus env:clone-content $CIRCLE_PROJECT_REPONAME.live $PANTHEON_ENV --<< pipeline.parameters.clone-type >> -y || terminus env:clone-content $CIRCLE_PROJECT_REPONAME.live $PANTHEON_ENV --<< pipeline.parameters.clone-type >> -y
           terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV deploy || terminus drush $CIRCLE_PROJECT_REPONAME.$PANTHEON_ENV deploy
 
           # Reindex the Solr server. Indexing will take some time
@@ -557,8 +567,8 @@ workflows:
             branches:
               only:
                 - master
-  # The update database workflow runs when the scheduled pipeline named "Update Sandbox
-  # Database" runs. Scheduled pipelines are configured in the CircleCI web UI at
+  # The update database workflow runs when the following scheduled pipelines run.
+  # Scheduled pipelines are configured in the CircleCI web UI at
   # https://app.circleci.com/settings/project/github/eGovPDX/portlandor/triggers
   update_database:
     when:
@@ -567,6 +577,8 @@ workflows:
         - or:
           - equal: [ "Update Sandbox Database", << pipeline.schedule.name >> ]
           - equal: [ "Update Dev Database", << pipeline.schedule.name >> ]
+          - equal: [ "Update Test Database", << pipeline.schedule.name >> ]
+          - equal: [ "Update Test Files", << pipeline.schedule.name >> ]
     jobs:
       - clone_live_database
 
