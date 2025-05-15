@@ -865,11 +865,19 @@ function _add_translation_warning(&$form, Node $node) {
 }
 
 function _hide_menu_if_parent(&$form, Node $node) {
-  if ($node->bundle() === 'page' && $node->hasField('field_parent') && $node->field_parent->target_id) {
-    $form['field_menu']['#disabled'] = true;
-    $form['field_menu']['#suffix'] = t("This page is part of a parent menu. To edit the menu, please <a href=\"@edit_url\">edit the parent</a>.", [
-      '@edit_url' => Url::fromRoute('entity.node.edit_form', ['node' => $node->field_parent->target_id])->toString(),
-    ]);
+  if ($node->bundle() === 'page') {
+    // Parent field is always read-only.
+    $form['field_parent']['#disabled'] = true;
+    if ($node->field_parent->target_id) {
+      // If the page is a child, hide the menu field and add a warning.
+      $form['field_menu']['#access'] = false;
+      $form['field_parent']['#suffix'] = t("This page is part of a parent menu. To edit the menu, please <a href=\":edit_url\">edit the parent</a>.", [
+        ':edit_url' => Url::fromRoute('entity.node.edit_form', ['node' => $node->field_parent->target_id])->toString() . '#edit-group-menu',
+      ]);
+    } else {
+      // If the page is a parent, hide the parent field but leave it in the HTML for conditional logic to use.
+      $form['field_parent']['#attributes']['style'] = 'display: none;';
+    }
   }
 }
 
