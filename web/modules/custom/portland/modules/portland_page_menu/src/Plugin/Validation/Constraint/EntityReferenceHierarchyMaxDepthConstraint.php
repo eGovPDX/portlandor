@@ -1,6 +1,6 @@
 <?php
 
-namespace Drupal\portland\Plugin\Validation\Constraint;
+namespace Drupal\portland_page_menu\Plugin\Validation\Constraint;
 
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\Core\Validation\Attribute\Constraint;

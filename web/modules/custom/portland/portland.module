@@ -24,8 +24,6 @@ use Drupal\Core\Cache\Cache;
 use Drupal\Core\Mail\MailManagerInterface;
 use Drupal\Component\Utility\SafeMarkup;
 use Drupal\Component\Utility\Html;
-use Drupal\Core\Entity\EntityInterface;
-use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\views\Render\ViewsRenderPipelineMarkup;
 use Drupal\Core\Language\LanguageInterface;
 use Drupal\file\Plugin\Field\FieldType\FileFieldItemList;
@@ -170,13 +168,6 @@ function portland_theme($existing, $type, $theme, $path)
         'markup' => null
       ]
     ],
-
-    'portland_entity_reference_hierarchy_nav_links' => [
-      'variables' => [
-        'prev_url' => null,
-        'next_url' => null,
-      ],
-    ],
   ];
 }
 
@@ -189,19 +180,6 @@ function portland_entity_type_alter(array &$entity_types)
   $node->addConstraint('EventDateTime', []);
   $node->addConstraint('NewsDateTime', []);
   $node->addConstraint('ResourceUrl', []);
-}
-
-/**
- * Implements hook_entity_bundle_field_info_alter().
- *
- * Adds max menu depth validation constraint to the page bundle.
- */
-function portland_entity_bundle_field_info_alter(&$fields, EntityTypeInterface $entity_type, $bundle) {
-  if ($entity_type->id() === 'node' && $bundle === 'page') {
-    if (isset($fields['field_menu'])) {
-      $fields['field_menu']->addConstraint('EntityReferenceHierarchyMaxDepth', ['max_depth' => 1]);
-    }
-  }
 }
 
 /**
@@ -515,41 +493,6 @@ function _remove_file_usage_from_previous_revision($entity) {
   }
 }
 
-function _update_menu_children(EntityInterface $entity) {
-  if ($entity->getEntityTypeId() === "node" && $entity->bundle() === "page") {
-    // we only want to run on the top-level page
-    if ($entity->field_parent->value) return;
-
-    $prev_menu_children_nodes = $entity->original->field_menu->referencedEntities();
-    $menu_children_nodes = $entity->field_menu->referencedEntities();
-    $menu_children_nids = array_map(fn($node) => $node->id(), $menu_children_nodes);
-    // Find nodes that were removed from the menu field, clear their parent reference, and regenerate URL alias
-    foreach ($prev_menu_children_nodes as $prev_node) {
-      if (!in_array($prev_node->id(), $menu_children_nids)) {
-        $prev_node->set('field_parent', null);
-        $prev_node->save();
-        \Drupal::service('pathauto.generator')->updateEntityAlias($prev_node, 'update');
-      }
-    }
-
-    // Find newly added nodes, set their parent reference, and regenerate URL alias
-    foreach ($menu_children_nodes as $menu_child_node) {
-      if ($menu_child_node && $menu_child_node->field_parent->target_id != $entity->id()) {
-        $menu_child_node->set('field_parent', $entity->id());
-        $menu_child_node->save();
-        \Drupal::service('pathauto.generator')->updateEntityAlias($menu_child_node, 'update');
-      }
-    }
-
-    // Regenerate alias for all children nodes if the menu link text has changed
-    if ($entity->field_menu_link_text->value !== $entity->original->field_menu_link_text->value) {
-      foreach ($menu_children_nodes as $menu_child_node) {
-        \Drupal::service('pathauto.generator')->updateEntityAlias($menu_child_node, 'update');
-      }
-    }
-  }
-}
-
 /**
  * Implements hook_entity_update().
  */
@@ -557,7 +500,6 @@ function portland_entity_update($entity)
 {
   _remove_file_usage_from_previous_revision($entity);
   _notify_reviewer($entity, 'updated');
-  _update_menu_children($entity);
 }
 
 /**
@@ -864,34 +806,14 @@ function _add_translation_warning(&$form, Node $node) {
   }
 }
 
-function _hide_menu_if_parent(&$form, Node $node) {
-  if ($node->bundle() === 'page') {
-    // Parent field is always read-only.
-    $form['field_parent']['#disabled'] = true;
-    if ($node->field_parent->target_id) {
-      // If the page is a child, hide the menu field and add a warning.
-      $form['field_menu']['#access'] = false;
-      $form['field_parent']['#suffix'] = t("This page is part of a parent menu. To edit the menu, please <a href=\":edit_url\">edit the parent</a>.", [
-        ':edit_url' => Url::fromRoute('entity.node.edit_form', ['node' => $node->field_parent->target_id])->toString() . '#edit-group-menu',
-      ]);
-    } else {
-      // If the page is a parent, hide the parent field but leave it in the HTML for conditional logic to use.
-      $form['field_parent']['#attributes']['style'] = 'display: none;';
-    }
-  }
-}
-
 /**
  * Implements hook_form_BASE_FORM_ID_alter().
  *
- * - Override the node edit form to show a warning when editing the default translation, if there are translated versions.
- * - Override the node edit form to hide the Menu field on Pages when they are already part of a parent menu.
- * - Add menu depth validation to field_menu.
+ * Override the node edit form to show a warning when editing the default translation, if there are translated versions.
  */
 function portland_form_node_form_alter(&$form, &$form_state) {
   $node = $form_state->getFormObject()->getEntity();
   _add_translation_warning($form, $node);
-  _hide_menu_if_parent($form, $node);
 }
 
 const FILE_EXTENSION_TO_MIMETYPE_MAP = [

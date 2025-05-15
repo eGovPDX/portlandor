@@ -1,6 +1,6 @@
 <?php
 
-namespace Drupal\portland\Plugin\Validation\Constraint;
+namespace Drupal\portland_page_menu\Plugin\Validation\Constraint;
 
 use Drupal\entity_reference_hierarchy\EntityReferenceHierarchyFieldItemList;
 use Symfony\Component\Validator\Constraint;
