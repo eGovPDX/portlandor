@@ -24,11 +24,16 @@ Drupal.behaviors.dynamicGlossaryTooltip = {
           const pronunciation = termData.pronunciation || '';
           const description = termData.short_definition || 'No description available.';
           const url = termData.url || '#';
+          const hasLongDefinition = !!termData.has_long_definition;
 
           const tooltipId = `glossary-tooltip-${uuid}`;
 
           const pronunciationElement = pronunciation
             ? `<p class="term-pronunciation">${pronunciation}</p>`
+            : '';
+
+          const learnMoreButton = hasLongDefinition
+            ? `<a class="learn-more button button--primary" href="${url}" rel="noopener noreferrer" aria-label="Learn more about glossary term ${termLabel}">Learn more</a>`
             : '';
 
           const wrapper = document.createElement('span');
@@ -40,7 +45,7 @@ Drupal.behaviors.dynamicGlossaryTooltip = {
                 <strong class="term-title">${termLabel}</strong>
                 ${pronunciationElement}
                 <p class="term-definition">${description}</p>
-                <a class="learn-more button button--primary" href="${url}" rel="noopener noreferrer" aria-label="Learn more about glossary term ${termLabel}">Learn more</a>
+                ${learnMoreButton}
               </div>
             </span>
           `;
@@ -111,10 +116,19 @@ Drupal.behaviors.dynamicGlossaryTooltip = {
         .catch(err => {
           console.warn(`Glossary tooltip failed to load for UUID "${uuid}":`, err);
 
-          const notFoundSpan = document.createElement('span');
-          notFoundSpan.classList.add('glossary-term-missing');
-          notFoundSpan.textContent = link.textContent.trim();
-          link.replaceWith(notFoundSpan);
+          // Check if user is authenticated
+          const isLoggedIn = drupalSettings.user && drupalSettings.user.uid && drupalSettings.user.uid !== 0;
+          if (isLoggedIn) {
+            const missingSpan = document.createElement('span');
+            missingSpan.classList.add('glossary-term-missing');
+            missingSpan.title = 'Glossary term missing';
+            missingSpan.textContent = link.textContent.trim();
+            link.replaceWith(missingSpan);
+          } else {
+            // Replace the link with just its text content for anonymous users
+            const textNode = document.createTextNode(link.textContent.trim());
+            link.replaceWith(textNode);
+          }
         });
     });
   }

@@ -29,14 +29,16 @@ class GlossaryLookupController extends ControllerBase {
     }
 
     // Prepare the result.
+    $definition = $node->get('field_body_content')->value;
     $url = Url::fromRoute('entity.node.canonical', ['node' => $node->id()])->toString();
     $result = [
       'nid' => $node->id(),
       'title' => $node->label(),
-      'definition' => $node->get('field_body_content')->value, // Updated to use field_body_content
+      // 'definition' => $definition, // Do not include the long definition in the JSON
       'short_definition' => $node->get('field_summary')->value, // Updated to use field_summary
       'url' => $url,
       'pronunciation' => $node->get('field_english_pronunciation')->value,
+      'has_long_definition' => !empty($definition),
     ];
 
     return new JsonResponse([$result]);
