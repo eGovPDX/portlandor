@@ -45,6 +45,11 @@ class EntityReferenceHierarchyNavLinksFormatter extends EntityReferenceFormatter
         '#theme' => 'portland_entity_reference_hierarchy_nav_links',
         '#prev_url' => $prev_url,
         '#next_url' => $next_url,
+        '#cache' => [
+          'contexts' => [
+            'url.path',
+          ],
+        ],
       ];
   }
 

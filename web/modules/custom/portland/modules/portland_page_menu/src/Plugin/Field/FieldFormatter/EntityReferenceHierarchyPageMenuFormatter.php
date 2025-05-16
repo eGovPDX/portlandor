@@ -87,24 +87,26 @@ class EntityReferenceHierarchyPageMenuFormatter extends EntityReferenceFormatter
     $source_entity = $items->getEntity();
     if ($source_entity) {
       $is_active = $current_nid == $source_entity->id();
-      array_unshift($list, [
-        '#type' => 'html_tag',
-        '#tag' => 'li',
-        '#attributes' => [
-          'class' => 'nav-item' . ($is_active ? ' active' : ''),
-        ],
-        0 => [
-          [
-            '#type' => 'link',
-            '#title' => t('Overview'),
-            '#url' => $source_entity->toUrl('canonical'),
-            '#attributes' => [
-              'aria-current' => $is_active ? 'page' : NULL,
-              'class' => array_merge(['nav-link'], $is_active ? ['active'] : []),
+      array_unshift($list,
+        [
+          '#type' => 'html_tag',
+          '#tag' => 'li',
+          '#attributes' => [
+            'class' => 'nav-item' . ($is_active ? ' active' : ''),
+          ],
+          0 => [
+            [
+              '#type' => 'link',
+              '#title' => t('Overview'),
+              '#url' => $source_entity->toUrl('canonical'),
+              '#attributes' => [
+                'aria-current' => $is_active ? 'page' : NULL,
+                'class' => array_merge(['nav-link'], $is_active ? ['active'] : []),
+              ],
             ],
           ],
-        ],
-      ]);
+        ]
+      );
     }
 
     return [ $list ];
@@ -121,7 +123,7 @@ class EntityReferenceHierarchyPageMenuFormatter extends EntityReferenceFormatter
         'class' => 'nav nav-page-menu flex-column',
       ],
       '#cache' => [
-        'context' => 'url.path',
+        'contexts' => 'url.path',
       ],
     ];
 
