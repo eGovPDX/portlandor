@@ -163,7 +163,7 @@ class EntityReferenceHierarchyPageMenuFormatter extends EntityReferenceFormatter
   public function hasActiveChildren(array $delta_outline, array $referenced_entities, int $current_nid) {
     $has_active_children = false;
     foreach ($delta_outline as $delta => $branch) {
-      if ($referenced_entities[$delta]->id() == $current_nid) {
+      if (array_key_exists($delta, $referenced_entities) && $referenced_entities[$delta]->id() == $current_nid) {
         $has_active_children = true;
         break;
       }
