@@ -2,6 +2,7 @@
 
 namespace Drupal\portland_page_menu\Plugin\Field\FieldFormatter;
 
+use Drupal\Component\Utility\Html;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\Exception\UndefinedLinkTemplateException;
 use Drupal\Core\Field\Attribute\FieldFormatter;
@@ -49,14 +50,17 @@ class EntityReferenceHierarchyPageMenuFormatter extends EntityReferenceFormatter
 
       if ($output_as_link && isset($uri) && !$entity->isNew()) {
         $is_active = $current_nid == $entity->id();
+        $published = $entity->isPublished();
         $elements[$delta] = [
           '#type' => 'link',
-          '#title' => $label,
+          '#title' => [
+            '#markup' => Html::escape($label) . ($published ? '' : ' <span class="badge text-bg-danger">Unpublished</strong>')
+          ],
           '#url' => $uri,
           '#options' => $uri->getOptions(),
           '#attributes' => [
             'aria-current' => $is_active ? 'page' : NULL,
-            'class' => array_merge(['nav-link'], $is_active ? ['active'] : []),
+            'class' => ['nav-link', $is_active ? 'active' : ''],
           ],
         ];
 
@@ -123,7 +127,9 @@ class EntityReferenceHierarchyPageMenuFormatter extends EntityReferenceFormatter
         'class' => 'nav nav-page-menu flex-column',
       ],
       '#cache' => [
-        'contexts' => 'url.path',
+        'contexts' => [
+          'url.path'
+        ],
       ],
     ];
 
