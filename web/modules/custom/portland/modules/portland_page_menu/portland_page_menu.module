@@ -34,10 +34,13 @@ function portland_page_menu_entity_bundle_field_info_alter(&$fields, EntityTypeI
   }
 }
 
+/**
+ * Updates the field_parent of all children in the menu.
+ */
 function _update_menu_children(EntityInterface $entity) {
-  if ($entity->getEntityTypeId() === "node" && $entity->bundle() === "page") {
+  if ($entity->bundle() === "page") {
     // we only want to run on the top-level page
-    if ($entity->field_parent->value) return;
+    if ($entity->field_parent->count() > 0) return;
 
     $prev_menu_children_nodes = $entity->original->field_menu->referencedEntities();
     $menu_children_nodes = $entity->field_menu->referencedEntities();
@@ -70,10 +73,31 @@ function _update_menu_children(EntityInterface $entity) {
 }
 
 /**
- * Implements hook_entity_update().
+ * Implements hook_ENTITY_TYPE_update().
  */
-function portland_page_menu_entity_update($entity) {
+function portland_page_menu_node_update($entity) {
   _update_menu_children($entity);
+}
+
+/**
+ * If the field_parent is set (should only happen on new entity creation), add the child to the parent's menu.
+ */
+function _add_child_to_parent(EntityInterface $entity) {
+  if ($entity->bundle() === "page" && $entity->field_parent->entity) {
+    $parent = $entity->field_parent->entity;
+    $parent->field_menu->appendItem([
+      'target_id' => $entity->id(),
+      'depth' => 0,
+    ]);
+    $parent->save();
+  }
+}
+
+/**
+ * Implements hook_ENTITY_TYPE_insert().
+ */
+function portland_page_menu_node_insert($entity) {
+  _add_child_to_parent($entity);
 }
 
 function _hide_menu_if_parent(&$form, Node $node) {
