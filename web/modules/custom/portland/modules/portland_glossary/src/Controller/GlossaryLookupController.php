@@ -31,6 +31,18 @@ class GlossaryLookupController extends ControllerBase {
     // Prepare the result.
     $definition = $node->get('field_body_content')->value;
     $url = Url::fromRoute('entity.node.canonical', ['node' => $node->id()])->toString();
+
+    // Prepare see_also array.
+    $see_also = [];
+    if ($node->hasField('field_see_also') && !$node->get('field_see_also')->isEmpty()) {
+      foreach ($node->get('field_see_also')->referencedEntities() as $ref_node) {
+        $see_also[] = [
+          'title' => $ref_node->label(),
+          'url' => Url::fromRoute('entity.node.canonical', ['node' => $ref_node->id()], ['absolute' => TRUE])->toString(),
+        ];
+      }
+    }
+
     $result = [
       'nid' => $node->id(),
       'title' => $node->label(),
@@ -39,6 +51,7 @@ class GlossaryLookupController extends ControllerBase {
       'url' => $url,
       'pronunciation' => $node->get('field_english_pronunciation')->value,
       'has_long_definition' => !empty($definition),
+      'see_also' => $see_also,
     ];
 
     return new JsonResponse([$result]);

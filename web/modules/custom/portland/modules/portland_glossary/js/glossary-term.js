@@ -26,6 +26,14 @@ Drupal.behaviors.dynamicGlossaryTooltip = {
           const url = termData.url || '#';
           const hasLongDefinition = !!termData.has_long_definition;
 
+          const seeAlsoLinks = Array.isArray(termData.see_also) && termData.see_also.length
+            ? `<div class="term-see-also"><strong>See also:</strong> ` +
+                termData.see_also.map(item =>
+                  `<a href="${item.url}" rel="noopener noreferrer">${item.title}</a>`
+                ).join('') +
+              ` </div>`
+            : '';
+
           const tooltipId = `glossary-tooltip-${uuid}`;
 
           const pronunciationElement = pronunciation
@@ -45,6 +53,7 @@ Drupal.behaviors.dynamicGlossaryTooltip = {
                 <strong class="term-title">${termLabel}</strong>
                 ${pronunciationElement}
                 <p class="term-definition">${description}</p>
+                ${seeAlsoLinks}
                 ${learnMoreButton}
               </div>
             </span>
@@ -53,7 +62,35 @@ Drupal.behaviors.dynamicGlossaryTooltip = {
           link.parentNode.insertBefore(wrapper, link);
           wrapper.appendChild(link);
 
-          const reference = link;
+          // Detect mobile devices (phones & tablets, regardless of viewport size)
+          function isMobileDevice() {
+            // Checks for touch capability and common mobile user agents
+            return (
+              window.matchMedia('(pointer: coarse)').matches ||
+              'ontouchstart' in window ||
+              /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+            );
+          }
+          const isMobile = isMobileDevice();
+
+          let reference;
+          if (isMobile || !hasLongDefinition) {
+            // Replace link with span for mobile OR if there is no long definition
+            reference = document.createElement('span');
+            reference.className = link.className;
+            reference.textContent = link.textContent;
+            reference.setAttribute('tabindex', '0');
+            // Copy data attributes if needed
+            Array.from(link.attributes).forEach(attr => {
+              if (attr.name.startsWith('data-')) {
+                reference.setAttribute(attr.name, attr.value);
+              }
+            });
+            link.replaceWith(reference);
+          } else {
+            reference = link;
+          }
+
           const tooltip = wrapper.querySelector('.glossary-popper');
           const arrow = tooltip.querySelector('[data-popper-arrow]');
           let hideTimeout;
@@ -99,12 +136,30 @@ Drupal.behaviors.dynamicGlossaryTooltip = {
             tooltip.setAttribute('tabindex', '-1');
             tooltip.setAttribute('aria-hidden', 'true');
 
-            wrapper.addEventListener('mouseenter', show);
-            wrapper.addEventListener('focus', show);
-            wrapper.addEventListener('mouseleave', hide);
-            wrapper.addEventListener('blur', hide);
-            tooltip.addEventListener('mouseenter', show);
-            tooltip.addEventListener('mouseleave', hide);
+            if (isMobile) {
+              // On mobile, use click/tap to show/hide
+              reference.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (tooltip.classList.contains('visible')) {
+                  hide();
+                } else {
+                  show();
+                }
+              });
+              // Optional: hide tooltip when tapping outside
+              document.addEventListener('click', (e) => {
+                if (!wrapper.contains(e.target) && tooltip.classList.contains('visible')) {
+                  hide();
+                }
+              });
+            } else {
+              wrapper.addEventListener('mouseenter', show);
+              wrapper.addEventListener('focus', show);
+              wrapper.addEventListener('mouseleave', hide);
+              wrapper.addEventListener('blur', hide);
+              tooltip.addEventListener('mouseenter', show);
+              tooltip.addEventListener('mouseleave', hide);
+            }
 
             document.addEventListener('keydown', (event) => {
               if (event.key === 'Escape') {
